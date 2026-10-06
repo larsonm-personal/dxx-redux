@@ -1493,6 +1493,7 @@ int game_handler(window *wind, d_event *event, void *data)
 				}
 				game_render_frame();
 				#ifdef __ANDROID__
+				android_graphics_safety_main_view_rendered();
 				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RENDER);
 				#endif
 			}

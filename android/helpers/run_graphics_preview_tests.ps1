@@ -96,6 +96,7 @@ try {
                 try { $after = Read-PreviewJson $statePath; break } catch { Start-Sleep -Milliseconds 100 }
             }
             if ($after.graphics_safety.phase -ne 'disabled' -or $after.msaa.flip_serial -le $first.msaa.flip_serial) { throw 'Preview did not remain active with confirmation disabled' }
+            Invoke-PreviewDevice @('shell', 'run-as', $script:PACKAGE, 'test', '!', '-e', 'no_backup/graphics-first-run-offered') | Out-Null
             if ($after.framebuffer_probe.gl_error -ne 0 -or $after.framebuffer_probe.visible_pixels -le 0) { throw 'Preview did not produce visible pixels' }
             $after | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory "$caseName-after.json") -Encoding utf8NoBOM
             Invoke-PreviewDevice @('shell', 'input', 'keyevent', 'KEYCODE_BACK') | Out-Null

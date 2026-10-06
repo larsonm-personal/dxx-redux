@@ -189,6 +189,13 @@ class SkipButtonView(
         return true
     }
 
+    internal fun automationTouchPoint(): Pair<Float, Float> {
+        check(isShown && width > 0 && height > 0) { "Skip button is not shown" }
+        getLocationOnScreen(screenLocation)
+        return (screenLocation[0] + if (bigLabel) pillRect.centerX() else cx) to
+            (screenLocation[1] + if (bigLabel) pillRect.centerY() else cy)
+    }
+
     private fun handlePointerEvent(
         x: Float,
         y: Float,

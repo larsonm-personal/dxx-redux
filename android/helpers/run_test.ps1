@@ -20,6 +20,7 @@ param(
     [string]$Serial,
     [switch]$Install,
     [switch]$LeaveRunning,
+    [switch]$PreserveState,
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
     [string]$Game,
@@ -133,6 +134,12 @@ if ($Install) {
 }
 
 # -- Step 3: Determine which game(s) to run -------------------
+
+# Existing automation explicitly starts after onboarding; first-run fixtures reset this marker
+if (-not (Get-TestScriptInfo -ScriptPath $scriptPath)._graphics_first_run) {
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'no_backup') | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'touch', 'no_backup/graphics-first-run-offered') | Out-Null
+}
 
 if ($Game) {
     # Explicit -Game parameter overrides _info
@@ -293,7 +300,7 @@ try {
 
             Write-Status "Launcher script detected -- using SetupActivity flow"
             Stop-AppAndWait
-            Reset-GameState
+            if (-not $PreserveState) { Reset-GameState }
             Adb -AdbArgs @("logcat", "-c") | Out-Null
             Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json", "files/automation_result.json.tmp") | Out-Null
             Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null

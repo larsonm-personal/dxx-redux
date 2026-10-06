@@ -356,6 +356,7 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)
 		if (trace_swap)
 			crash_breadcrumb(snapshot.paused ? "ogl_swap: paused" : "ogl_swap: no surface");
 		android_surface_release_snapshot(&snapshot);
+		android_graphics_safety_presented(0, state->window_generation);
 		return;
 	}
 	if (state->window_generation != snapshot.generation) {
@@ -366,6 +367,7 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)
 			crash_breadcrumb("ogl_swap: recreate_egl");
 		if (!android_egl_recreate_surface(state, &snapshot)) {
 			android_surface_release_snapshot(&snapshot);
+			android_graphics_safety_presented(0, state->window_generation);
 			return;
 		}
 	}
@@ -395,6 +397,7 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)
 		android_graphics_safety_renderer_failed("egl_swap_failed");
 	}
 	android_surface_release_snapshot(&snapshot);
+	android_graphics_safety_presented(presented, state->window_generation);
 }
 
 int android_egl_surface_get_recreate_count(const struct android_egl_surface_state *state)

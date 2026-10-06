@@ -1681,7 +1681,7 @@ extern "C" char *game_introspect_get_state(void)
 {
 	json j;
 	{
-		char safety[2048];
+		char safety[8192];
 		android_graphics_safety_state_json(safety, sizeof(safety));
 		j["graphics_safety"] = json::parse(safety);
 	}

@@ -32,7 +32,8 @@ enum graphics_safety_phase {
 	GRAPHICS_SAFE_ATTEMPT,
 	GRAPHICS_SAFE_PREPARING,
 	GRAPHICS_SAFE_CHALLENGE,
-	GRAPHICS_SAFE_RESTORING
+	GRAPHICS_SAFE_RESTORING,
+	GRAPHICS_SAFE_PREVIEW
 };
 
 struct graphics_safety_record {
@@ -73,6 +74,9 @@ int graphics_safety_read_record(const char *root, struct graphics_safety_record 
 int graphics_safety_begin_attempt(const char *root, const struct graphics_safety_snapshot *candidate,
                                   uint64_t trial_id, int owner_pid, int preparing);
 int graphics_safety_arm(const char *root, uint64_t trial_id, uint64_t now_ms);
+/* Owned first-run editor; preserve the accepted tuple even when editing back to it */
+int graphics_safety_preview(const char *root, const struct graphics_safety_snapshot *candidate,
+                            uint64_t trial_id, int owner_pid, int preparing);
 /* 1 accepted, 2 restore required, 0 stale, -1 storage failure */
 int graphics_safety_decide(const char *root, uint64_t trial_id, int accept,
                            uint64_t now_ms, const char *reason);

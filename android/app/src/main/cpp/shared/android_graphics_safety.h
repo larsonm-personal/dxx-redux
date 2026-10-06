@@ -7,6 +7,13 @@ extern "C" {
 #endif
 int android_graphics_safety_initialize(const char *root);
 void android_graphics_safety_shutdown(void);
+void android_graphics_safety_first_run_marker(const char *path);
+/* Game-thread completed main view, consumed by its EGL presentation */
+void android_graphics_safety_main_view_rendered(void);
+void android_graphics_safety_presented(int success, uint64_t generation);
+int android_graphics_safety_preview_ready(uint64_t id);
+int android_graphics_safety_preview_option(uint64_t id, const char *name, int value);
+int android_graphics_safety_preview_done(uint64_t id);
 int android_graphics_safety_queue_option(const char *name, int value, int persist, int debounce);
 int android_graphics_safety_note_option(const char *name, int value);
 int android_graphics_safety_before_mode(int width, int height);

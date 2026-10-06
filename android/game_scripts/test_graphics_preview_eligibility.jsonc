@@ -8,6 +8,7 @@
         },
     },
     { "action": "enter_launcher" },
+    { "action": "setup_command", "command": "graphics_first_run_offered", "args": { "value": false } },
     {
         "action": "write_config",
         "file": "graphics_safety.json",

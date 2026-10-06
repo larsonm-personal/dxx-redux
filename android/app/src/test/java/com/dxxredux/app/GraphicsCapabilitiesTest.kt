@@ -59,6 +59,12 @@ class GraphicsCapabilitiesTest {
         assertTrue(caps.supportsAniso(8))
         assertFalse(caps.supportsAniso(16))
         assertTrue(caps.anisoDetail().contains("up to 8x"))
+        assertEquals(listOf(0, 2, 4), GraphicsOptionChoices.msaa(caps))
+        assertEquals(listOf(0, 2, 4, 8), GraphicsOptionChoices.anisotropy(caps.anisoMax))
+        assertEquals(0, GraphicsOptionChoices.next(GraphicsOptionChoices.msaa(caps), 4))
+        assertEquals(listOf(0), GraphicsOptionChoices.msaa(null))
+        assertEquals(listOf(0, 4), GraphicsOptionChoices.msaa(caps.copy(msaa2 = 0)))
+        assertEquals(listOf(0, 2, 4, 8, 16), GraphicsOptionChoices.anisotropy(64))
     }
 
     @Test fun unsupportedFeaturesRetainOffAndExplainWhy() {

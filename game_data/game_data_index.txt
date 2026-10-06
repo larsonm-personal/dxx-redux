@@ -12,6 +12,7 @@ d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68  game_data/CD i
 facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/GROUPA.PIG
 ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/ICE.PIG
 b40a60bccbb4e2eea5dad222f85fd63abd29f36a48b5bd60174e10820c174b84  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/intro-h.mvl
+e00a016f6064cbb96b791597d9bd1fe70b3cf2e573778cc3136e3814634fddd0  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/other-h.mvl
 de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1  game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/data_tracks/d2data/WATER.PIG
 8b00822dc291b76fdfd32f5543ea5657bd6bc4499e84c4fb37744518ce40e355  game_data/mission_files/castaway_redux.zip
 aa8ba1df48cddb118aaf3950318930fe3c19f63d3c7af31df0e06c797d0bcc2d  game_data/mission_files/drmsaga.zip

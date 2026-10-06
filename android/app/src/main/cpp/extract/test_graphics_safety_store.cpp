@@ -209,6 +209,40 @@ int main()
 	assert(!record().pending_mask);
 	assert(read("descent.cfg").find("GammaLevel=7\n") != std::string::npos);
 
+	/* Live editing owns a recoverable attempt even when initially equal or all-off */
+	assert(graphics_safety_preview(root, &baseline, 101, current_pid(), 0));
+	assert(record().phase == GRAPHICS_SAFE_PREVIEW && accepted_is(baseline));
+	assert(!graphics_safety_begin_attempt(root, &rejected, 102, current_pid(), 1));
+	assert(!graphics_safety_preview(root, &rejected, 102, current_pid(), 0));
+	assert(graphics_safety_preview(root, &rejected, 101, current_pid(), 0));
+	assert(accepted_is(baseline));
+	assert(graphics_safety_preview(root, &baseline, 101, current_pid(), 0));
+	assert(record().phase == GRAPHICS_SAFE_PREVIEW);
+	assert(graphics_safety_decide(root, 101, 1, 0, "early_ok") == 0);
+	assert(graphics_safety_stage(root, staged, 1) == 2);
+	assert(graphics_safety_clean_exit(root, current_pid()));
+	assert(graphics_safety_read_requested(root, "d2", &requested));
+	assert(graphics_safety_equal(&requested, &baseline));
+	assert(record().phase == GRAPHICS_SAFE_IDLE && accepted_is(baseline));
+	assert(graphics_safety_flush_staged(root) == 2);
+
+	assert(graphics_safety_preview(root, &rejected, 103, current_pid(), 0));
+	assert(graphics_safety_preview(root, &rejected, 103, current_pid(), 1));
+	assert(record().phase == GRAPHICS_SAFE_PREPARING);
+	assert(!graphics_safety_preview(root, &baseline, 103, current_pid(), 0));
+	assert(graphics_safety_arm(root, 103, 10000));
+	assert(graphics_safety_decide(root, 103, 0, 11000, "cancel_preview") == 2);
+	assert(graphics_safety_complete_restore(root, 103));
+	assert(accepted_is(baseline));
+
+	/* An abandoned editor rolls back just like an abandoned confirmation */
+	assert(graphics_safety_preview(root, &rejected, 104, current_pid(), 0));
+	auto abandoned_preview = nlohmann::json::parse(read("graphics_safety.json"));
+	abandoned_preview["attempt"]["owner_session"] = record().owner_session + 1;
+	write("graphics_safety.json", abandoned_preview.dump(2).c_str());
+	assert(graphics_safety_recover(root, current_pid()) == 2);
+	assert(accepted_is(baseline) && record().phase == GRAPHICS_SAFE_IDLE);
+
 	/* Corruption is an error, not permission to silently replace the accepted tuple */
 	write("graphics_safety.json", "{\"accepted\":{},\"attempt\":null,\"pending\":{}}\n");
 	graphics_safety_record invalid;

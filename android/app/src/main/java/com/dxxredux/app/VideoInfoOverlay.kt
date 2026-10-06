@@ -156,6 +156,8 @@ class VideoInfoOverlay(
 ) : View(context) {
     /** Provider that calls nativeGetVideoStats(). */
     var statsProvider: (() -> IntArray?)? = null
+    internal var capabilitiesProvider: (() -> GraphicsCapabilities?)? = null
+    private var capabilities: GraphicsCapabilities? = null
 
     /** Setter for C-side debug flags: (name, value) -> nativeSetDebugFlag. */
     var debugFlagSetter: ((String, Int) -> Unit)? = null
@@ -236,6 +238,7 @@ class VideoInfoOverlay(
                 DormancyDiagnostics.recordIndependentOverlayPoll()
                 try {
                     val stats = statsProvider?.invoke()
+                    capabilities = capabilitiesProvider?.invoke()
                     if (stats != null && stats.size >= 11) {
                         fps = stats[0]
                         totalLoaded = stats[1]
@@ -1015,24 +1018,20 @@ class VideoInfoOverlay(
     private fun cycleAnisotropy() {
         if (anisoMax <= 1) return
         // Cycle: 0 -> 2 -> 4 -> 8 -> 16 -> 0, capped by anisoMax
-        val levels = intArrayOf(0, 2, 4, 8, 16).filter { it <= anisoMax || it == 0 }
-        val idx = levels.indexOf(anisoLevel)
-        val next = levels[(idx + 1) % levels.size]
+        val next = GraphicsOptionChoices.next(GraphicsOptionChoices.anisotropy(anisoMax), anisoLevel)
         if (graphicsOptionSetter?.invoke("aniso_level", next) == true) anisoLevel = next
     }
 
     private fun cycleMsaa() {
         if (msaaMax < 2) return
         // Cycle: 0 -> 2 -> 4 -> 0, capped by msaaMax
-        val levels = intArrayOf(0, 2, 4).filter { it <= msaaMax || it == 0 }
-        val idx = levels.indexOf(msaaLevel)
-        val next = levels[(idx + 1) % levels.size]
+        val next = GraphicsOptionChoices.next(GraphicsOptionChoices.msaa(capabilities), msaaLevel)
         if (graphicsOptionSetter?.invoke("msaa_level", next) == true) msaaLevel = next
     }
 
     private fun cycleTexFilt() {
         // Cycle: 0 (nearest) -> 1 (bilinear) -> 2 (trilinear) -> 0
-        val next = (texFiltLevel + 1) % 3
+        val next = GraphicsOptionChoices.next(GraphicsOptionChoices.texture, texFiltLevel)
         if (graphicsOptionSetter?.invoke("tex_filt", next) == true) texFiltLevel = next
     }
 

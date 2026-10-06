@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
 #include "coop/coop_briefing.h"
+extern volatile int g_intro_active;
 #endif
 #include "args.h"
 
@@ -363,10 +364,13 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 
 #ifdef ANDROID
 		case EVENT_MOUSE_BUTTON_DOWN:
-			/* Touch dismissal belongs to the explicit upper-right Skip button */
-			return 1;
+			/* Launch intros accept taps; in-game movies require the Skip button */
+			if (!g_intro_active)
+				return 1;
+			/* fall through */
 		case EVENT_JOYSTICK_BUTTON_DOWN:
-			if (event_joystick_get_button(event) == 0) {
+			if (event->type == EVENT_MOUSE_BUTTON_DOWN ||
+			    event_joystick_get_button(event) == 0) {
 				if (!android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_MOVIE, event))
 					return 1;
 			}

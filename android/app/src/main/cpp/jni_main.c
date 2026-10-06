@@ -390,6 +390,9 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 		int ready = root && android_graphics_safety_initialize(root);
 		android_gpu_capabilities_set_root(root);
 		free(root);
+		char *marker = android_consume_activity_string(env, thiz, "getGraphicsFirstRunMarkerPath");
+		android_graphics_safety_first_run_marker(marker);
+		free(marker);
 		if (!ready || (*env)->ExceptionCheck(env)) {
 			LOGE("Graphics safety storage initialization failed");
 			android_finish_activity(env, thiz);
@@ -1021,12 +1024,48 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
 JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsCapabilities(JNIEnv *env, jobject thiz)
+{
+	(void) thiz;
+	char state[4096];
+	android_gpu_capabilities_json(state, sizeof(state));
+	return (*env)->NewStringUTF(env, state);
+}
+
+JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGraphicsSafetyState(JNIEnv *env, jobject thiz)
 {
 	(void) thiz;
-	char state[2048];
+	char state[8192];
 	android_graphics_safety_state_json(state, sizeof(state));
 	return (*env)->NewStringUTF(env, state);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsPreviewReady(JNIEnv *env, jobject thiz, jlong id)
+{
+	(void) env;
+	(void) thiz;
+	return android_graphics_safety_preview_ready((uint64_t) id) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsPreviewDone(JNIEnv *env, jobject thiz, jlong id)
+{
+	(void) env;
+	(void) thiz;
+	return android_graphics_safety_preview_done((uint64_t) id) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGraphicsPreviewOption(JNIEnv *env, jobject thiz, jlong id, jstring jname, jint value)
+{
+	(void) thiz;
+	char *name;
+	if (!dxx_jni_string_to_utf8(env, jname, &name)) return JNI_FALSE;
+	int result = android_graphics_safety_preview_option((uint64_t) id, name, value);
+	free(name);
+	return result ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL

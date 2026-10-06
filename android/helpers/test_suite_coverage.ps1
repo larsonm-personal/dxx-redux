@@ -280,11 +280,13 @@ function Get-TestSuiteCoveragePolicy {
             'test_engine_prefs_unified'
             'test_gamepad_menu_navigation_unified'
             'test_intro_skip_inputs_unified'
+            'test_movie_skip_controls_d2'
             'test_pilot_long_hold_delete_unified'
             'test_touch_layout_format'
         )
         launcher = @(
             'test_graphics_preview'
+            'test_graphics_first_run'
             'test_host_dialog_loading'
             'test_random_level_preview'
             'test_guidebot_simulation_browser'

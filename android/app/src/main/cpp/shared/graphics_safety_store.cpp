@@ -153,7 +153,7 @@ bool read_record(const char *root, graphics_safety_record &record)
 	record.phase = attempt.at("phase").get<int>();
 	std::snprintf(record.reason, sizeof(record.reason), "%s", attempt.at("reason").get<std::string>().c_str());
 	return record.trial_id != 0 && record.owner_pid > 0 &&
-	       record.phase >= GRAPHICS_SAFE_ATTEMPT && record.phase <= GRAPHICS_SAFE_RESTORING;
+	       record.phase >= GRAPHICS_SAFE_ATTEMPT && record.phase <= GRAPHICS_SAFE_PREVIEW;
 }
 
 bool alive(int pid)
@@ -381,7 +381,7 @@ try {
 	graphics_safety_record record;
 	if (!lock || !read_record(root, record)) return 0;
 	if (!record.pending_mask || record.phase == GRAPHICS_SAFE_PREPARING ||
-	    record.phase == GRAPHICS_SAFE_CHALLENGE || record.phase == GRAPHICS_SAFE_RESTORING) return 1;
+	    record.phase == GRAPHICS_SAFE_CHALLENGE || record.phase == GRAPHICS_SAFE_RESTORING || record.phase == GRAPHICS_SAFE_PREVIEW) return 1;
 	graphics_safety_snapshot snapshot;
 	if (!graphics_safety_read_requested(root, nullptr, &snapshot)) return 0;
 	merge_pending(record, snapshot);
@@ -411,7 +411,7 @@ try {
 	merge_pending(record, proposed);
 	if (!graphics_safety_normalize(&proposed) || !write_record(root, record)) return 0;
 	if (record.phase == GRAPHICS_SAFE_PREPARING || record.phase == GRAPHICS_SAFE_CHALLENGE ||
-	    record.phase == GRAPHICS_SAFE_RESTORING) return 2;
+	    record.phase == GRAPHICS_SAFE_RESTORING || record.phase == GRAPHICS_SAFE_PREVIEW) return 2;
 	return graphics_safety_flush_staged(root) == 2 ? 1 : 0;
 } catch (...) {
 	return 0;
@@ -423,7 +423,7 @@ try {
 	guard lock(root);
 	graphics_safety_record record;
 	if (!lock || !candidate || !trial_id || owner_pid <= 0 || !read_record(root, record)) return 0;
-	if (record.phase == GRAPHICS_SAFE_RESTORING ||
+	if (record.phase == GRAPHICS_SAFE_RESTORING || record.phase == GRAPHICS_SAFE_PREVIEW ||
 	    (record.phase != GRAPHICS_SAFE_IDLE && record.owner_pid != owner_pid && owner_alive(record))) return 0;
 	record.candidate = *candidate;
 	if (!graphics_safety_normalize(&record.candidate)) return 0;
@@ -436,6 +436,29 @@ try {
 	record.owner_session = process_session(owner_pid);
 	record.deadline_ms = 0;
 	record.phase = preparing ? GRAPHICS_SAFE_PREPARING : GRAPHICS_SAFE_ATTEMPT;
+	record.reason[0] = 0;
+	return write_record(root, record);
+} catch (...) {
+	return 0;
+}
+
+extern "C" int graphics_safety_preview(const char *root, const graphics_safety_snapshot *candidate,
+                                       uint64_t trial_id, int owner_pid, int preparing)
+try {
+	guard lock(root);
+	graphics_safety_record record;
+	if (!lock || !candidate || !trial_id || owner_pid <= 0 || !read_record(root, record)) return 0;
+	if (record.phase != GRAPHICS_SAFE_IDLE &&
+	    (record.phase != GRAPHICS_SAFE_PREVIEW || record.trial_id != trial_id ||
+	     record.owner_pid != owner_pid || record.owner_session != process_session(owner_pid))) return 0;
+	if (preparing && record.phase != GRAPHICS_SAFE_PREVIEW) return 0;
+	record.candidate = *candidate;
+	if (!graphics_safety_normalize(&record.candidate)) return 0;
+	record.trial_id = trial_id;
+	record.owner_pid = owner_pid;
+	record.owner_session = process_session(owner_pid);
+	record.phase = preparing ? GRAPHICS_SAFE_PREPARING : GRAPHICS_SAFE_PREVIEW;
+	record.deadline_ms = 0;
 	record.reason[0] = 0;
 	return write_record(root, record);
 } catch (...) {
@@ -536,7 +559,7 @@ try {
 	if (!lock || !read_record(root, record)) return 0;
 	if (record.phase == GRAPHICS_SAFE_IDLE) return graphics_safety_flush_staged(root) != 0;
 	if (record.owner_pid != owner_pid || record.owner_session != process_session(owner_pid)) return 1;
-	if (record.phase == GRAPHICS_SAFE_CHALLENGE || record.phase == GRAPHICS_SAFE_PREPARING)
+	if (record.phase == GRAPHICS_SAFE_CHALLENGE || record.phase == GRAPHICS_SAFE_PREPARING || record.phase == GRAPHICS_SAFE_PREVIEW)
 		return graphics_safety_decide(root, record.trial_id, 0, 0, "exit") == 2 &&
 		       graphics_safety_complete_restore(root, record.trial_id);
 	if (record.phase == GRAPHICS_SAFE_RESTORING)

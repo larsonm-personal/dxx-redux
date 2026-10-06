@@ -57,6 +57,12 @@ internal data class GraphicsCapabilities(
                 val data = JSONObject(File(filesDir, "graphics-capabilities-$colorDepth.json").readText())
                 require(data.getInt("schema") == 1 && data.getInt("color_depth") == colorDepth)
                 require(data.getString("fingerprint") == fingerprint)
+                fromReport(data)
+            }.getOrNull()
+
+        fun fromReport(data: JSONObject): GraphicsCapabilities? =
+            runCatching {
+                require(data.getInt("schema") == 1)
                 val max = data.getDouble("aniso_max")
                 val two = data.getInt("msaa_2")
                 val four = data.getInt("msaa_4")

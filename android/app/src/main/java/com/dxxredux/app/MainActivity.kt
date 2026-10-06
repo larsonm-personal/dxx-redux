@@ -209,6 +209,7 @@ class MainActivity :
         private const val SCREEN_ADVANCE_NONE = 0
         private const val SCREEN_ADVANCE_DEATH = 1
         private const val SCREEN_ADVANCE_ENDLEVEL = 2
+        private const val SCREEN_ADVANCE_MOVIE = 3
         private const val SCREEN_ADVANCE_LEVELCOMPLETE = 5
 
         // Library is loaded dynamically in onCreate based on intent extra
@@ -281,6 +282,18 @@ class MainActivity :
     external fun nativeGetGameState(): String
 
     external fun nativeGraphicsSafetyState(): String
+
+    external fun nativeGraphicsCapabilities(): String
+
+    external fun nativeGraphicsPreviewReady(id: Long): Boolean
+
+    external fun nativeGraphicsPreviewDone(id: Long): Boolean
+
+    external fun nativeGraphicsPreviewOption(
+        id: Long,
+        name: String,
+        value: Int,
+    ): Boolean
 
     external fun nativeGraphicsSafetyArm(id: Long): Boolean
 
@@ -395,7 +408,9 @@ class MainActivity :
                                 else -> error("Unknown graphics touch action")
                             }
                         val (x, y) =
-                            if (point.has("target")) {
+                            if (point.optString("target") == "skip_button") {
+                                skipButton.automationTouchPoint()
+                            } else if (point.has("target")) {
                                 checkNotNull(
                                     graphicsConfirmationOverlay,
                                 ).automationTouchPoint(point.getString("target"))
@@ -417,6 +432,8 @@ class MainActivity :
                             graphicsConfirmationOverlay?.controllerNavigationState().orEmpty() +
                             videoInfoOverlay?.controllerNavigationState().orEmpty() +
                             mapOf(
+                                "skip_button_shown" to skipButton.isShown,
+                                "skip_button_label" to skipButton.label,
                                 "idle_saver_active" to (idleScreenSaver?.active == true),
                                 "idle_saver_keep_screen_on" to
                                     ((window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0),
@@ -2086,6 +2103,14 @@ class MainActivity :
                         false
                     }
                 }
+                capabilitiesProvider =
+                    {
+                        runCatching {
+                            GraphicsCapabilities.fromReport(
+                                JSONObject(nativeGraphicsCapabilities()),
+                            )
+                        }.getOrNull()
+                    }
                 queuedGraphicsProvider = {
                     val state = JSONObject(nativeGraphicsSafetyState())
                     val values =
@@ -2166,6 +2191,9 @@ class MainActivity :
                 arm = ::nativeGraphicsSafetyArm,
                 decide = ::nativeGraphicsSafetyDecide,
                 readState = ::nativeGraphicsSafetyState,
+                previewReady = ::nativeGraphicsPreviewReady,
+                previewDone = ::nativeGraphicsPreviewDone,
+                previewOption = ::nativeGraphicsPreviewOption,
                 acquireInput = {
                     graphicsSuppressedKeys.addAll(controllerKeys.heldKeyCodes())
                     controllerKeys.releaseAll()
@@ -2481,7 +2509,7 @@ class MainActivity :
 
     private fun hasPendingGraphicsConfirmation(): Boolean =
         gameStarted && JSONObject(nativeGraphicsSafetyState()).optString("phase") in
-            setOf("preparing", "challenge", "restoring")
+            setOf("offering", "editing", "settling", "preparing", "challenge", "restoring")
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("graphics_trial_interrupted", graphicsTrialInterrupted || hasPendingGraphicsConfirmation())
@@ -3133,7 +3161,10 @@ class MainActivity :
                                 skipButton.bigLabel = true
                                 skipButton.label = "Skip every launch"
                                 skipButton.visibility = View.VISIBLE
-                            } else if (showCutsceneButton && !shouldShow) {
+                            } else if (showCutsceneButton &&
+                                (screenAdvanceKind == SCREEN_ADVANCE_MOVIE || !shouldShow)
+                            ) {
+                                // Movie Skip must remain available regardless of gameplay overlay state
                                 skipButton.screenAdvanceGeneration = screenAdvanceGeneration
                                 skipButton.bigLabel = false
                                 skipButton.label = if (playerDead) "CONTINUE" else "SKIP"
@@ -3268,6 +3299,8 @@ class MainActivity :
                         ).put("touch_overlay_active", touchOverlay.isActive)
                         .put("touch_overlay_shown", touchOverlay.isShown)
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
+                        .put("skip_button_shown", skipButton.isShown)
+                        .put("skip_button_label", skipButton.label)
                         .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
                         .put("admin_tray_open", touchOverlay.isAdminTrayOpen())
                         .put("graphics_confirmation_shown", graphicsConfirmationOverlay?.isShown == true)
@@ -3683,6 +3716,9 @@ class MainActivity :
 
     @Suppress("unused")
     fun getGraphicsFilesRoot(): String = filesDir.absolutePath
+
+    @Suppress("unused")
+    fun getGraphicsFirstRunMarkerPath(): String = File(noBackupFilesDir, "graphics-first-run-offered").absolutePath
 
     @Suppress("unused")
     fun onGraphicsSafetyState(state: String) {

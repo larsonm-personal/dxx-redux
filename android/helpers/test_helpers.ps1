@@ -750,6 +750,9 @@ function Start-EmulatorIfNeeded {
 }
 
 function Reset-GameState {
+    # Ordinary automation starts after onboarding; first-run fixtures explicitly clear this marker
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'no_backup') | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'touch', 'no_backup/graphics-first-run-offered') | Out-Null
     # Reset shared config and preferences for a fresh test state.
     # Preserve pilot files so launcher-backed tests do not re-enter the
     # first-launch pilot flow on every run. Tests that need a missing pilot

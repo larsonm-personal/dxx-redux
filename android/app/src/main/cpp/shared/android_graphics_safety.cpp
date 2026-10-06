@@ -12,6 +12,8 @@
 extern "C" {
 #include "android_graphics_safety.h"
 #include "graphics_safety_store.h"
+#include "graphics_config_transaction.h"
+#include "android_gpu_capabilities.h"
 #include "android_graphics_options.h"
 #include "android_jni_overlay.h"
 #include "android_log.h"
@@ -27,6 +29,10 @@ extern "C" {
 #include "automap.h"
 #include "newmenu.h"
 #include "ogl_init.h"
+#include "newdemo.h"
+#include "args.h"
+#include "gameseq.h"
+#include "input_demo_replay.h"
 }
 
 namespace
@@ -51,6 +57,22 @@ bool accepted_pending = false;
 bool preparing = false;
 bool armed = false;
 bool candidate_ready = false;
+enum preview_phase { preview_none,
+	                 preview_offering,
+	                 preview_editing,
+	                 preview_settling };
+preview_phase preview = preview_none;
+std::string first_run_marker;
+bool first_run_pending = false;
+bool first_run_trial = false;
+json preview_capabilities;
+uint64_t candidate_revision = 0, applied_revision = 0;
+uint64_t preview_apply_deadline = 0;
+uint64_t preview_presented_frames = 0;
+// Game-thread frame tag; a menu/failed/recreated-surface swap cannot consume a gameplay frame
+bool main_view_rendered = false;
+uint64_t rendered_generation = 0, rendered_revision = 0;
+EGLContext rendered_context = EGL_NO_CONTEXT;
 #ifdef INTROSPECT_ON
 int debug_stall_ms;
 bool debug_black_enabled, debug_black_started;
@@ -142,12 +164,25 @@ std::string state_json_locked()
 	json queued_options = json::object();
 	for (int i = 0; i < 5; ++i)
 		if (queued[i]) queued_options[graphics_safety_keys[i]] = queued_values[i];
-	const char *phase = restore_pending ? "restoring" : preparing ? "preparing"
-	                                                : armed       ? "challenge"
-	                                                              : "idle";
+	const char *phase = restore_pending ? "restoring" : preparing                 ? "preparing"
+	                                                : armed                       ? "challenge"
+	                                                : preview == preview_offering ? "offering"
+	                                                : preview == preview_editing  ? "editing"
+	                                                : preview == preview_settling ? "settling"
+	                                                                              : "idle";
 	json state = { { "phase", phase }, { "trial_id", active_id }, { "deadline_ms", deadline }, { "accepted", snapshot_json(record.accepted) }, { "candidate", snapshot_json(pending_candidate) }, { "requested", snapshot_json(requested) }, { "current", current_known ? snapshot_json(observed_current) : json(nullptr) }, { "queued", queued_options }, { "staged_generation", staged_generation }, { "reason", record.reason }, { "renderer_failure", renderer_failure } };
-#ifdef INTROSPECT_ON
+	state["first_run_pending"] = first_run_pending;
+	state["first_run_trial"] = first_run_trial;
 	state["candidate_ready"] = candidate_ready;
+	state["preview_presented_frames"] = preview_presented_frames;
+	if (first_run_trial) {
+		state["capabilities"] = preview_capabilities;
+		state["candidate_revision"] = candidate_revision;
+		state["applied_revision"] = applied_revision;
+		state["apply_deadline_ms"] = preview_apply_deadline;
+		state["quiet_until_ms"] = quiet_until;
+	}
+#ifdef INTROSPECT_ON
 	state["debug_black_output"] = { { "active", debug_black_enabled && armed && candidate_ready && !restore_pending }, { "frames", debug_black_frames }, { "valid_frames", debug_black_valid_frames } };
 #endif
 	return state.dump();
@@ -260,12 +295,142 @@ extern "C" void android_graphics_safety_shutdown(void)
 	initialized = false;
 }
 
+extern "C" void android_graphics_safety_first_run_marker(const char *path)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	first_run_marker = path ? path : "";
+	first_run_pending = !first_run_marker.empty() && access(first_run_marker.c_str(), F_OK) != 0 && errno == ENOENT;
+}
+
+extern "C" void android_graphics_safety_main_view_rendered(void)
+{
+	android_surface_snapshot surface;
+	android_surface_acquire_snapshot(&surface);
+	main_view_rendered = surface.window && !surface.paused;
+	rendered_generation = surface.generation;
+	android_surface_release_snapshot(&surface);
+	rendered_context = eglGetCurrentContext();
+	std::lock_guard<std::mutex> lock(mutex);
+	rendered_revision = applied_revision;
+}
+
+extern "C" void android_graphics_safety_presented(int success, uint64_t generation)
+{
+	const bool gameplay = main_view_rendered && success && generation == rendered_generation &&
+	                      rendered_context != EGL_NO_CONTEXT && rendered_context == eglGetCurrentContext();
+	main_view_rendered = false;
+	if (!gameplay || !eligible()) return;
+	bool offer = false;
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		if (!initialized || !storage_failure.empty() || restore_pending) return;
+		if (first_run_trial) ++preview_presented_frames;
+		if (first_run_trial && preview != preview_offering && rendered_revision == candidate_revision) {
+			candidate_ready = true;
+			preview_apply_deadline = 0;
+		}
+		if (!first_run_pending || first_run_trial || preparing || armed || preview != preview_none ||
+		    accepted_pending || !ui_foreground || ui_blocked || Game_mode & GM_MULTI ||
+		    Newdemo_state == ND_STATE_PLAYBACK || input_demo_replay_is_loaded() ||
+		    GameArg.SysInputDemoNoRender || Current_level_num == 0 || Player_is_dead) return;
+		for (bool option : queued)
+			if (option) return;
+		graphics_safety_record record;
+		if (!graphics_safety_read_record(files_root.c_str(), &record) || record.phase != GRAPHICS_SAFE_IDLE) return;
+		char capabilities[4096];
+		android_gpu_capabilities_json(capabilities, sizeof(capabilities));
+		auto report = json::parse(capabilities, nullptr, false);
+		if (!report.is_object() || report.value("schema", 0) != 1 ||
+		    report.value("color_depth", -1) != GameCfg.ColorDepth) return;
+		const auto candidate = live();
+		const uint64_t id = now_ms() * 1000 + (++serial % 1000);
+		if (!graphics_safety_preview(files_root.c_str(), &candidate, id, getpid(), 0)) {
+			storage_failure = "preview_persist_failed";
+			return;
+		}
+		preview_capabilities = std::move(report);
+		pending_candidate = observed_current = candidate;
+		current_known = true;
+		active_id = id;
+		first_run_trial = true;
+		preview = preview_offering;
+		candidate_ready = false;
+		candidate_revision = applied_revision = 0;
+		preview_presented_frames = 0;
+		preview_apply_deadline = now_ms() + overlay_prepare_timeout_ms;
+		offer = true;
+	}
+	if (offer) {
+		if (!pause_owned) {
+			stop_time();
+			pause_owned = true;
+		}
+		notify();
+	}
+}
+
+extern "C" int android_graphics_safety_preview_ready(uint64_t id)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	if (!initialized || id != active_id || preview != preview_offering || !ui_foreground || restore_pending) return 0;
+	// Called only after the Android chooser has drawn, before any maximum-setting GL change
+	if (graphics_config_atomic_replace(first_run_marker.c_str(), "offered\n", 8) != GRAPHICS_CONFIG_TRANSACTION_OK) return 0;
+	first_run_pending = false;
+	auto candidate = pending_candidate;
+	candidate.values[GRAPHICS_SAFE_TEXFILT] = 2;
+	candidate.values[GRAPHICS_SAFE_ANISO] = 0;
+	// These product choices match GraphicsOptionChoices.kt and the existing config limits
+	for (int value : { 2, 4, 8, 16 })
+		if (value <= preview_capabilities.value("aniso_max", 1.0)) candidate.values[GRAPHICS_SAFE_ANISO] = value;
+	candidate.values[GRAPHICS_SAFE_MSAA] = preview_capabilities.value("msaa_4", 0) >= 4 ? 4 : preview_capabilities.value("msaa_2", 0) >= 2 ? 2
+	                                                                                                                                       : 0;
+	if (!graphics_safety_preview(files_root.c_str(), &candidate, id, getpid(), 0)) return 0;
+	pending_candidate = candidate;
+	++candidate_revision;
+	preview = preview_editing;
+	preview_apply_deadline = now_ms() + overlay_prepare_timeout_ms;
+	return 1;
+}
+
+extern "C" int android_graphics_safety_preview_option(uint64_t id, const char *name, int value)
+{
+	const int index = field(name);
+	std::lock_guard<std::mutex> lock(mutex);
+	if (!initialized || id != active_id || preview != preview_editing || restore_pending || index < 0 || index > 2) return 0;
+	bool supported = index == GRAPHICS_SAFE_TEXFILT && value >= 0 && value <= 2;
+	if (index == GRAPHICS_SAFE_ANISO)
+		supported = (value == 0 || value == 2 || value == 4 || value == 8 || value == 16) &&
+		            (value == 0 || value <= preview_capabilities.value("aniso_max", 1.0));
+	if (index == GRAPHICS_SAFE_MSAA)
+		supported = value == 0 || (value == 2 && preview_capabilities.value("msaa_2", 0) >= 2) ||
+		            (value == 4 && preview_capabilities.value("msaa_4", 0) >= 4);
+	if (!supported) return 0;
+	auto candidate = pending_candidate;
+	candidate.values[index] = value;
+	if (!graphics_safety_preview(files_root.c_str(), &candidate, id, getpid(), 0)) return 0;
+	pending_candidate = candidate;
+	++candidate_revision;
+	candidate_ready = false;
+	if (!preview_apply_deadline) preview_apply_deadline = now_ms() + overlay_prepare_timeout_ms;
+	quiet_until = now_ms() + option_debounce_ms;
+	return 1;
+}
+
+extern "C" int android_graphics_safety_preview_done(uint64_t id)
+{
+	std::lock_guard<std::mutex> lock(mutex);
+	if (!initialized || id != active_id || preview != preview_editing || restore_pending) return 0;
+	preview = preview_settling;
+	quiet_until = now_ms() + option_debounce_ms;
+	return 1;
+}
+
 extern "C" int android_graphics_safety_queue_option(const char *name, int value, int persist, int debounce)
 {
 	const int index = field(name);
 	if (index < 0) return ANDROID_GRAPHICS_OPTION_UNKNOWN;
 	std::lock_guard<std::mutex> lock(mutex);
-	if (!initialized || !storage_failure.empty() || preparing || armed || restore_pending) return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
+	if (!initialized || !storage_failure.empty() || preparing || armed || restore_pending || preview != preview_none) return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	graphics_safety_snapshot normalized;
 	graphics_safety_defaults(&normalized);
 	normalized.values[index] = value;
@@ -291,7 +456,7 @@ extern "C" int android_graphics_safety_note_option(const char *name, int value)
 	if (index < 0) return 1;
 	std::lock_guard<std::mutex> lock(mutex);
 	if (!initialized) return 1; // Previews/metadata processes cannot validate graphics
-	if (!storage_failure.empty() || preparing || armed || restore_pending) return 0;
+	if (!storage_failure.empty() || preparing || armed || restore_pending || preview != preview_none) return 0;
 	auto candidate = live();
 	candidate.values[index] = value;
 	if (!graphics_safety_normalize(&candidate)) return 0;
@@ -306,7 +471,7 @@ extern "C" int android_graphics_safety_before_mode(int width, int height)
 	if (applying) return 1;
 	std::lock_guard<std::mutex> lock(mutex);
 	if (!initialized) return 1;
-	if (!storage_failure.empty() || preparing || armed || restore_pending) return 0;
+	if (!storage_failure.empty() || preparing || armed || restore_pending || preview != preview_none) return 0;
 	const auto candidate = live(width, height);
 	if (!begin(candidate, false)) return 0;
 	const auto current = live();
@@ -325,7 +490,7 @@ extern "C" void android_graphics_safety_ui_state(int foreground, int blocked)
 		std::lock_guard<std::mutex> lock(mutex);
 		ui_foreground = foreground != 0;
 		ui_blocked = blocked != 0;
-		if (!ui_foreground && (preparing || armed)) cancel_id = active_id;
+		if (!ui_foreground && (preparing || armed || preview != preview_none)) cancel_id = active_id;
 	}
 	if (cancel_id) android_graphics_safety_decide(cancel_id, 0, "background");
 }
@@ -362,6 +527,10 @@ extern "C" int android_graphics_safety_decide(uint64_t id, int accept, const cha
 			preparing = false;
 			armed = false;
 			std::memset(queued, 0, sizeof(queued));
+		}
+		if (result != 0) {
+			preview = preview_none;
+			preview_apply_deadline = 0;
 		}
 	}
 	debug_log_force(DLOG_GRAPHICS, "Graphics trial decision id=%llu accept=%d reason=%s result=%d now_ms=%llu deadline_ms=%llu",
@@ -424,12 +593,14 @@ extern "C" void android_graphics_safety_event_tick(void)
 	{
 		std::lock_guard<std::mutex> lock(mutex);
 		if (!initialized) return;
-		if (now_ms() >= staged_poll_at && !preparing && !armed && !restore_pending) {
+		if (now_ms() >= staged_poll_at && !preparing && !armed && !restore_pending && preview == preview_none) {
 			staged_poll_at = now_ms() + 250;
 			poll_staged = true;
 		}
 		if ((armed && (now_ms() >= deadline || !ui_foreground || !eligible())) ||
-		    (preparing && now_ms() - prepared_at >= overlay_prepare_timeout_ms)) cancel_id = active_id;
+		    (preparing && now_ms() - prepared_at >= overlay_prepare_timeout_ms) ||
+		    (preview != preview_none && (!ui_foreground || !eligible() ||
+		                                 (preview_apply_deadline && now_ms() >= preview_apply_deadline)))) cancel_id = active_id;
 		restore = restore_pending;
 		accepted = accepted_pending;
 		if (restore) {
@@ -442,6 +613,7 @@ extern "C" void android_graphics_safety_event_tick(void)
 			restore_id = active_id;
 		}
 		accepted_pending = false;
+		if (accepted) first_run_trial = false;
 	}
 	const int staged_result = poll_staged ? graphics_safety_flush_staged(files_root.c_str()) : 1;
 	if (!staged_result) {
@@ -473,6 +645,7 @@ extern "C" void android_graphics_safety_event_tick(void)
 			{
 				std::lock_guard<std::mutex> lock(mutex);
 				restore_pending = false;
+				first_run_trial = false;
 				observed_current = target;
 				current_known = true;
 			}
@@ -485,6 +658,7 @@ extern "C" int android_graphics_safety_before_main_view(void)
 {
 	graphics_safety_snapshot candidate;
 	bool apply = false, persist = false, show = false, trial_active = false;
+	uint64_t revision = 0, unchanged_preview = 0;
 	{
 		std::lock_guard<std::mutex> lock(mutex);
 		if (!initialized) return 1;
@@ -494,12 +668,31 @@ extern "C" int android_graphics_safety_before_main_view(void)
 		if (!graphics_safety_normalize(&current)) return 0;
 		observed_current = current;
 		current_known = true;
-		trial_active = armed;
-		if (armed) {
+		trial_active = armed || preview != preview_none;
+		if (preview == preview_offering) return 1;
+		if (preview == preview_editing || preview == preview_settling) {
 			candidate = pending_candidate;
+			revision = candidate_revision;
+			apply = !graphics_safety_equal(&candidate, &current);
+			if (preview == preview_settling && candidate_ready && now_ms() >= quiet_until) {
+				graphics_safety_record record;
+				if (!graphics_safety_read_record(files_root.c_str(), &record)) return 0;
+				if (graphics_safety_equal(&candidate, &record.accepted)) unchanged_preview = active_id;
+				else if (graphics_safety_preview(files_root.c_str(), &candidate, active_id, getpid(), 1)) {
+					preview = preview_none;
+					preparing = true;
+					prepared_at = now_ms();
+					candidate_ready = false;
+					queued_persist = true;
+					show = true;
+				} else storage_failure = "preview_confirm_persist_failed";
+			}
+		} else if (armed) {
+			candidate = pending_candidate;
+			revision = candidate_revision;
 			apply = !graphics_safety_equal(&candidate, &current);
 			persist = queued_persist;
-			if (!apply && !persist) candidate_ready = true;
+			if (!apply && !persist && !first_run_trial) candidate_ready = true;
 			queued_persist = false;
 		} else {
 			if (!ui_foreground || ui_blocked || now_ms() < quiet_until) return 1;
@@ -525,6 +718,10 @@ extern "C" int android_graphics_safety_before_main_view(void)
 			std::memset(queued, 0, sizeof(queued));
 		}
 	}
+	if (unchanged_preview) {
+		android_graphics_safety_decide(unchanged_preview, 0, "unchanged_preview");
+		return 0;
+	}
 	if (show) {
 		notify();
 		return 0;
@@ -546,11 +743,12 @@ extern "C" int android_graphics_safety_before_main_view(void)
 		android_graphics_safety_renderer_failed("anisotropy_unsupported");
 		return 0;
 	}
-	if (apply || persist) {
+	if (apply || persist || trial_active) {
 		std::lock_guard<std::mutex> lock(mutex);
 		observed_current = candidate;
 		current_known = true;
-		if (trial_active && armed && !restore_pending) candidate_ready = true;
+		applied_revision = revision;
+		if (trial_active && armed && !restore_pending && !first_run_trial) candidate_ready = true;
 	}
 #ifdef INTROSPECT_ON
 	if (trial_active && debug_stall_ms) {

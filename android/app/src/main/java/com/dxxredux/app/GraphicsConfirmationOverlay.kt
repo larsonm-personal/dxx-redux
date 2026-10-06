@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import org.json.JSONObject
 import kotlin.math.ceil
@@ -37,6 +39,9 @@ internal class GraphicsConfirmationOverlay(
     private val arm: (Long) -> Boolean,
     private val decide: (Long, Boolean, String) -> Int,
     private val readState: () -> String,
+    private val previewReady: (Long) -> Boolean,
+    private val previewDone: (Long) -> Boolean,
+    private val previewOption: (Long, String, Int) -> Boolean,
     private val acquireInput: () -> Unit,
     private val releaseInput: () -> Unit,
     private val recoverProcess: (String) -> Unit,
@@ -46,6 +51,17 @@ internal class GraphicsConfirmationOverlay(
     private val details = TextView(context)
     private val ok = TextView(context)
     private val cancel = TextView(context)
+    private val panel = LinearLayout(context)
+    private val scroll = ScrollView(context)
+    private val choices =
+        GraphicsFirstRunChoices(context) { name, value ->
+            if (!previewOption(trialId, name, value)) choose(false, "preview_option_failed")
+            update(readState())
+        }
+    private var phase = "idle"
+    private var previewPosted = false
+    private var previewSelection = 0
+    private var latestState = JSONObject()
     private var trialId = 0L
     private var deadline = 0L
     private var preparing = false
@@ -70,7 +86,10 @@ internal class GraphicsConfirmationOverlay(
             "graphics_restoring" to restoring,
             "graphics_cancel_text" to cancel.text.toString(),
             "graphics_first_draw_cancel_text" to firstDrawCancelText,
-        )
+            "graphics_chooser_open" to (active && phase in setOf("offering", "editing")),
+            "graphics_preview_settling" to (active && phase == "settling"),
+            "graphics_preview_selection" to previewSelection,
+        ) + choices.navigationState()
 
     fun automationTouchPoint(target: String): Pair<Float, Float> {
         check(active) { "Graphics confirmation is not active" }
@@ -79,9 +98,13 @@ internal class GraphicsConfirmationOverlay(
                 "ok" -> ok
                 "cancel" -> cancel
                 "outside" -> this
+                "tex_filt" -> choices.button(0)
+                "aniso_level" -> choices.button(1)
+                "msaa_level" -> choices.button(2)
                 else -> error("Unknown graphics touch target: $target")
             }
         check(view.width > 0 && view.height > 0) { "Graphics touch target is not laid out" }
+        if (view.parent === choices) view.requestRectangleOnScreen(Rect(0, 0, view.width, view.height), true)
         val location = IntArray(2)
         view.getLocationInWindow(location)
         return if (target == "outside") {
@@ -97,13 +120,12 @@ internal class GraphicsConfirmationOverlay(
         isFocusable = true
         setWillNotDraw(false)
         setBackgroundColor(0x77000000)
-        val panel =
-            LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(dp(24), dp(20), dp(24), dp(20))
-                background = PauseOverlayStyle.cardBackground(resources.displayMetrics.density)
-            }
+        panel.apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(24), dp(12), dp(24), dp(12))
+            background = PauseOverlayStyle.cardBackground(resources.displayMetrics.density)
+        }
         title.apply {
             text = "Keep these graphics settings?"
             textSize = 22f
@@ -115,11 +137,17 @@ internal class GraphicsConfirmationOverlay(
             textSize = 16f
             setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
             gravity = Gravity.CENTER
-            setPadding(0, dp(12), 0, dp(12))
+            setPadding(0, dp(8), 0, dp(8))
         }
         panel.addView(title)
         panel.addView(details)
-        val buttons = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
+        scroll.addView(choices, LayoutParams(-1, -2))
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
+        val buttons =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                isBaselineAligned = false
+            }
         ok.text = "OK"
         cancel.text = "Cancel (5)"
         for (button in listOf(ok, cancel)) {
@@ -134,25 +162,38 @@ internal class GraphicsConfirmationOverlay(
                 setPadding(dp(16), dp(8), dp(16), dp(8))
             }
         }
-        ok.setOnClickListener { choose(true, "ok") }
+        ok.setOnClickListener { if (phase == "editing") finishPreview() else choose(true, "ok") }
         cancel.setOnClickListener { choose(false, "cancel") }
-        buttons.addView(ok, LinearLayout.LayoutParams(dp(130), dp(56)).apply { marginEnd = dp(16) })
-        buttons.addView(cancel, LinearLayout.LayoutParams(dp(150), dp(56)))
-        panel.addView(buttons)
-        addView(panel, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        buttons.addView(ok, LinearLayout.LayoutParams(0, -1, 1f).apply { marginEnd = dp(12) })
+        buttons.addView(cancel, LinearLayout.LayoutParams(0, -1, 1f))
+        ok.minHeight = dp(56)
+        cancel.minHeight = dp(56)
+        panel.addView(buttons, LinearLayout.LayoutParams(-1, -2))
+        addView(panel, LayoutParams(dp(440), LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        setPadding(dp(12), dp(12), dp(12), dp(12))
         updateSelection()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
+        panel.layoutParams.width =
+            minOf(dp(440), (MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight).coerceAtLeast(0))
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    }
+
     fun update(stateText: String) {
         val state = JSONObject(stateText)
-        val phase = state.optString("phase")
+        phase = state.optString("phase")
+        latestState = state
         if (phase == "failed" || (phase == "disabled" && active)) {
             recoverProcess("Could not save or recover graphics settings. Return to the launcher to retry recovery")
             return
         }
-        if (phase !in setOf("preparing", "challenge", "restoring")) {
+        if (phase !in setOf("offering", "editing", "settling", "preparing", "challenge", "restoring")) {
             dismiss()
             return
         }
@@ -164,6 +205,8 @@ internal class GraphicsConfirmationOverlay(
             axisX = 0
             axisY = 0
             armPosted = false
+            previewPosted = false
+            previewSelection = 0
             restoreStarted = 0L
             restoreTimeoutMs = graphicsRestoreTimeoutMs(state)
             cancel.text = "Cancel (5)"
@@ -176,11 +219,43 @@ internal class GraphicsConfirmationOverlay(
         }
         preparing = phase == "preparing"
         restoring = phase == "restoring"
+        val editing = phase == "editing" || phase == "offering"
+        panel.visibility = if (phase == "settling") View.INVISIBLE else View.VISIBLE
+        setBackgroundColor(
+            if (phase == "settling") {
+                0x00000000
+            } else if (editing) {
+                0x33000000
+            } else {
+                0x77000000
+            },
+        )
+        choices.visibility = if (editing) View.VISIBLE else View.GONE
+        scroll.visibility = if (editing) View.VISIBLE else View.GONE
+        choices.update(state, previewSelection)
+        ok.text = if (editing) "Done" else "OK"
+        if (editing) {
+            cancel.text = "Keep previous settings"
+        } else if (preparing) {
+            cancel.text = "Cancel (5)"
+        }
+        if (editing) {
+            details.text = if (phase == "offering") "Game paused" else "Game paused - changes preview live"
+        } else {
+            details.text = changedSettings(state)
+        }
         deadline = state.optLong("deadline_ms")
-        ok.isEnabled = !preparing && !restoring
+        ok.isEnabled = phase == "editing" || (phase == "challenge" && state.optBoolean("candidate_ready", true))
         cancel.isEnabled = !restoring
         updateSelection()
-        title.text = if (restoring) "Restoring graphics settings..." else "Keep these graphics settings?"
+        title.text =
+            if (restoring) {
+                "Restoring graphics settings..."
+            } else if (editing) {
+                "Choose graphics options"
+            } else {
+                "Keep these graphics settings?"
+            }
         if (restoring && restoreStarted == 0L) restoreStarted = SystemClock.elapsedRealtime()
         // Frequent renderer notifications must not postpone either monotonic deadline
         if (!tickScheduled) {
@@ -193,6 +268,15 @@ internal class GraphicsConfirmationOverlay(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (firstDrawCancelText.isEmpty()) firstDrawCancelText = cancel.text.toString()
+        if (phase == "offering" && !previewPosted) {
+            previewPosted = true
+            post {
+                if (active && phase == "offering") {
+                    if (!previewReady(trialId)) choose(false, "preview_start_failed")
+                    update(readState())
+                }
+            }
+        }
         if (preparing && !armPosted) {
             armPosted = true
             // Run after this Android UI draw, before allowing the candidate game draw
@@ -214,6 +298,10 @@ internal class GraphicsConfirmationOverlay(
                 update(readState())
                 if (!active) return
                 val now = SystemClock.elapsedRealtime()
+                val applyDeadline = latestState.optLong("apply_deadline_ms")
+                if (phase in setOf("offering", "editing", "settling") && applyDeadline > 0 && now >= applyDeadline) {
+                    choose(false, "preview_apply_timeout")
+                }
                 if (!restoring && deadline > 0L) {
                     val remaining = deadline - now
                     cancel.text = "Cancel (${ceil(remaining.coerceAtLeast(0L) / 1000.0).toInt()})"
@@ -221,7 +309,8 @@ internal class GraphicsConfirmationOverlay(
                 }
                 if (restoring && now - restoreStarted >= restoreTimeoutMs) {
                     recoverProcess(
-                        "Graphics settings could not be restored in time. The game was closed; return to the launcher to recover the last accepted settings",
+                        "Graphics settings could not be restored in time. " +
+                            "The game was closed; return to the launcher to recover the last accepted settings",
                     )
                     return
                 }
@@ -237,6 +326,12 @@ internal class GraphicsConfirmationOverlay(
         update(readState())
     }
 
+    private fun finishPreview() {
+        if (phase != "editing") return
+        if (!previewDone(trialId)) choose(false, "preview_done_failed")
+        update(readState())
+    }
+
     fun cancelForLifecycle() {
         if (active) choose(false, "background")
     }
@@ -244,6 +339,51 @@ internal class GraphicsConfirmationOverlay(
     fun handleKey(event: KeyEvent): Boolean {
         if (!active) return false
         if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return true
+        if (phase == "settling") {
+            if (event.keyCode in
+                setOf(KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE)
+            ) {
+                choose(false, "cancel_preview")
+            }
+            return true
+        }
+        if (phase == "offering" || phase == "editing") {
+            val indices = choices.availableIndices() + listOf(3, 4)
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    previewSelection =
+                        indices[(indices.indexOf(previewSelection).coerceAtLeast(0) + indices.size - 1) % indices.size]
+                }
+
+                KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    previewSelection =
+                        indices[(indices.indexOf(previewSelection) + 1) % indices.size]
+                }
+
+                KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER,
+                -> {
+                    when (previewSelection) {
+                        3 -> finishPreview()
+                        4 -> choose(false, "keep_previous")
+                        else -> choices.activate(previewSelection)
+                    }
+                }
+
+                KeyEvent.KEYCODE_BUTTON_B, KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> {
+                    finishPreview()
+                }
+            }
+            updateSelection()
+            if (previewSelection in 0..2) {
+                val button = choices.button(previewSelection)
+                button.requestRectangleOnScreen(Rect(0, 0, button.width, button.height))
+            } else {
+                // Keep the footer reachable with controller/keyboard navigation at large text sizes
+                scroll.smoothScrollTo(0, choices.height)
+            }
+            return true
+        }
         when (event.keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_UP -> {
                 selectedOk = true
@@ -290,8 +430,23 @@ internal class GraphicsConfirmationOverlay(
             return true
         }
         if ((x != axisX && x != 0) || (y != axisY && y != 0)) {
-            selectedOk = x < 0 || y < 0
-            updateSelection()
+            if (phase == "editing") {
+                handleKey(
+                    KeyEvent(
+                        KeyEvent.ACTION_DOWN,
+                        if (x < 0 ||
+                            y < 0
+                        ) {
+                            KeyEvent.KEYCODE_DPAD_UP
+                        } else {
+                            KeyEvent.KEYCODE_DPAD_DOWN
+                        },
+                    ),
+                )
+            } else {
+                selectedOk = x < 0 || y < 0
+                updateSelection()
+            }
         }
         axisX = x
         axisY = y
@@ -299,8 +454,10 @@ internal class GraphicsConfirmationOverlay(
     }
 
     private fun updateSelection() {
-        ok.isSelected = selectedOk
-        cancel.isSelected = !selectedOk
+        val editing = phase == "editing" || phase == "offering"
+        if (editing) choices.update(latestState, previewSelection)
+        ok.isSelected = if (editing) previewSelection == 3 else selectedOk
+        cancel.isSelected = if (editing) previewSelection == 4 else !selectedOk
         ok.alpha = if (ok.isEnabled) 1f else 0.5f
         cancel.alpha = if (cancel.isEnabled) 1f else 0.5f
     }
