@@ -1,5 +1,7 @@
 package com.dxxredux.app
 
+import java.io.File
+
 internal data class PresetSettingPreview(
     val label: String,
     val enabled: Boolean? = null,
@@ -40,6 +42,23 @@ internal enum class GameSettingsPreset(
     val rewindEnabled: Boolean get() = helpersEnabled
     val serverCoopQol: Boolean get() = helpersEnabled
 
+    fun resetGraphicsPreferences(
+        filesDir: File,
+        noBackupFilesDir: File,
+    ) {
+        updateAllConfigFiles(
+            filesDir,
+            listOf(
+                "MainViewFov" to mainViewFov.toString(),
+                "TexFilt" to textureFilter.toString(),
+                "MsaaLevel" to "0",
+                "AnisoLevel" to "0",
+                "HudTexFilt" to if (hudFiltering) "1" else "0",
+            ),
+        )
+        GraphicsFirstRunPreference.setEnabled(noBackupFilesDir, true)
+    }
+
     fun resetMidiPreferences(
         store: SoundfontStore,
         activate: (String, Boolean) -> Boolean,
@@ -65,6 +84,9 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("New-server Coop QoL\n(teammate arrows, Guidebot, warp)", serverCoopQol))
                 add(PresetSettingPreview("Rewind support and overlay controls", rewindEnabled))
                 add(PresetSettingPreview("Texture filtering", value = "Nearest"))
+                add(PresetSettingPreview("MSAA", false))
+                add(PresetSettingPreview("Anisotropic filtering", false))
+                add(PresetSettingPreview("Show first boot graphics chooser", true))
                 add(PresetSettingPreview("HUD filtering", hudFiltering))
                 add(PresetSettingPreview("Skip intro movie on launch", skipIntroMovie))
                 add(PresetSettingPreview("Autoselect Only Once", false))

@@ -354,6 +354,7 @@ extern "C" void android_graphics_safety_presented(int success, uint64_t generati
 		active_id = id;
 		first_run_trial = true;
 		preview = preview_offering;
+		deadline = 0;
 		candidate_ready = false;
 		candidate_revision = applied_revision = 0;
 		preview_presented_frames = 0;
@@ -488,6 +489,9 @@ extern "C" void android_graphics_safety_ui_state(int foreground, int blocked)
 	uint64_t cancel_id = 0;
 	{
 		std::lock_guard<std::mutex> lock(mutex);
+		// Launcher preferences can re-arm or suppress the offer while this game is backgrounded
+		if (foreground && !ui_foreground)
+			first_run_pending = !first_run_marker.empty() && access(first_run_marker.c_str(), F_OK) != 0 && errno == ENOENT;
 		ui_foreground = foreground != 0;
 		ui_blocked = blocked != 0;
 		if (!ui_foreground && (preparing || armed || preview != preview_none)) cancel_id = active_id;

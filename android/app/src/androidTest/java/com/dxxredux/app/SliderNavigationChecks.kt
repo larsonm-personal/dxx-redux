@@ -10,6 +10,7 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.File
 
 /** Exercises production settings with real controller key dispatch and focus diagnostics */
@@ -88,6 +93,7 @@ internal class SliderNavigationChecks(
         val originalOrientation = onMain { launcher.requestedOrientation }
         try {
             if (capabilitiesOnly) {
+                firstBootGraphicsPreference(launcher)
                 graphicsCapabilityDetails(launcher)
                 return
             }
@@ -104,6 +110,7 @@ internal class SliderNavigationChecks(
                 }
             }
             graphicsCapabilityDetails(launcher)
+            firstBootGraphicsPreference(launcher)
             touchSliderNavigation(launcher)
             NavigationRepeatChecks(instrumentation).run(launcher)
         } finally {
@@ -111,6 +118,69 @@ internal class SliderNavigationChecks(
                 if (bytes != null) file.writeBytes(bytes) else file.delete()
             }
             onMain { launcher.requestedOrientation = originalOrientation }
+        }
+    }
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    private fun firstBootGraphicsPreference(launcher: SetupActivity) {
+        val directory = File(launcher.cacheDir, "graphics-first-run-ui-test").apply { mkdirs() }
+        val marker = GraphicsFirstRunPreference.marker(directory)
+        marker.delete()
+        val owner =
+            onMain {
+                object : LifecycleOwner {
+                    val registry = LifecycleRegistry(this)
+                    override val lifecycle: Lifecycle get() = registry
+                }.apply { registry.currentState = Lifecycle.State.RESUMED }
+            }
+
+        @Suppress("DEPRECATION") // The replacement checked API requires Android 36
+        fun checkbox(
+            checked: Boolean,
+            click: Boolean = false,
+        ) {
+            Thread.sleep(200)
+            instrumentation.waitForIdleSync()
+            onMain {
+                val provider = checkNotNull(composeView(launcher.window.decorView)?.accessibilityNodeProvider)
+                val id =
+                    (-1..16383).first {
+                        provider.createAccessibilityNodeInfo(it)?.className ==
+                            "android.widget.CheckBox"
+                    }
+                check(
+                    provider.createAccessibilityNodeInfo(id)!!.isChecked == checked,
+                ) { "First boot checkbox expected $checked" }
+                if (click) check(provider.performAction(id, AccessibilityNodeInfo.ACTION_CLICK, null))
+            }
+        }
+        try {
+            onMain {
+                launcher.setContent {
+                    MaterialTheme {
+                        CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                            FirstBootGraphicsChooserSection(directory)
+                        }
+                    }
+                }
+            }
+            checkbox(true, click = true)
+            checkbox(false)
+            check(marker.isFile) { "Disabling the chooser was not persisted" }
+            checkbox(false, click = true)
+            checkbox(true)
+            check(!marker.exists()) { "Rearming the chooser was not persisted" }
+            // The native chooser consumes the same file while the launcher is paused
+            onMain { owner.registry.currentState = Lifecycle.State.STARTED }
+            marker.writeText("offered\n")
+            onMain { owner.registry.currentState = Lifecycle.State.RESUMED }
+            checkbox(false, click = true)
+            checkbox(true)
+            check(!marker.exists())
+        } finally {
+            onMain { owner.registry.currentState = Lifecycle.State.DESTROYED }
+            marker.delete()
+            directory.delete()
         }
     }
 

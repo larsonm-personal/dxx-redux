@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
-    [ValidateSet('Accept', 'Cancel', 'Back', 'Timeout', 'Previous', 'Unchanged', 'Background', 'Stall', 'Unsupported', 'Crash')][string[]]$Scenario,
+    [ValidateSet('Accept', 'Cancel', 'Back', 'Timeout', 'Previous', 'Unchanged', 'Background', 'Stall', 'Unsupported', 'Crash', 'Rearm')][string[]]$Scenario,
     [switch]$D1InD2,
     [string]$Serial
 )
@@ -19,7 +19,7 @@ $output = Join-Path $script:ANDROID_ROOT ('temp/graphics-first-run-' + (Get-Date
 & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts @($output)
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 $games = if ($Game) { @($Game) } else { @('d1', 'd2') }
-$scenarios = if ($Scenario) { $Scenario } else { @('Accept', 'Cancel', 'Back', 'Timeout', 'Previous', 'Unchanged', 'Background', 'Stall', 'Unsupported', 'Crash') }
+$scenarios = if ($Scenario) { $Scenario } else { @('Accept', 'Cancel', 'Back', 'Timeout', 'Previous', 'Unchanged', 'Background', 'Stall', 'Unsupported', 'Crash', 'Rearm') }
 
 function New-ExpectStep([hashtable]$Expect, [switch]$Wait) {
     if ($Wait) { return @{ action = 'wait_for'; timeout_ms = 15000; expect = $Expect } }
@@ -115,12 +115,24 @@ foreach ($engine in $games) {
                 if ($case -ne 'Unchanged') {
                     $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'challenge'; 'graphics_safety.candidate_ready' = 'true'; 'time_paused' = 'true' }))
                     if ($case -in @('Accept', 'Unsupported')) { $steps.Add(@{ action = 'controller_input'; controller_keys = @('DLEFT', 'A'); post_delay_ms = 60 }) }
-                    elseif ($case -in @('Cancel', 'Back')) { $steps.Add(@{ action = 'controller_input'; key = 'B'; post_delay_ms = 60 }) }
+                    elseif ($case -in @('Cancel', 'Back', 'Rearm')) { $steps.Add(@{ action = 'controller_input'; key = 'B'; post_delay_ms = 60 }) }
                 }
             }
             $accepted = if ($case -in @('Accept', 'Unsupported')) { '1' } else { '0' }
             $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'idle'; 'graphics_safety.current.TexFilt' = $accepted; 'graphics_safety.accepted.TexFilt' = $accepted; 'graphics_safety.requested.TexFilt' = $accepted; 'time_paused' = 'false'; 'graphics_safety.first_run_pending' = 'false' }))
             $steps.Add((New-ExpectStep @{ 'fire_primary_state' = '0'; 'fire_primary_count' = '0' }))
+            if ($case -eq 'Rearm') {
+                $steps.Add(@{ action = 'log'; message = 'SCRIPT_BACKGROUND: rearm-chooser duration_s=4 rearm_graphics_chooser=true' })
+                $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'graphics_safety.phase' = 'idle'; 'graphics_safety.first_run_pending' = 'true' }))
+                $steps.Add(@{ action = 'key'; key = 'escape'; post_delay_ms = 100 })
+                $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
+                $steps.Add(@{ action = 'wait_ms'; ms = 5500 })
+                $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.deadline_ms' = '0' }))
+                $steps.Add((New-TouchStep 'cancel'))
+                $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'idle'; 'time_paused' = 'false' }))
+                $steps.Add(@{ action = 'wait_ms'; ms = 3000 })
+                $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'idle'; 'graphics_safety.first_run_pending' = 'false' }))
+            }
             Invoke-Case $case $engine $steps.ToArray()
         }
 

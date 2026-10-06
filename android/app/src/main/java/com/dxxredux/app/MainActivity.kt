@@ -2517,6 +2517,8 @@ class MainActivity :
     }
 
     override fun onPause() {
+        // Overlay polling must not reassert foreground state after graphics safety is paused
+        isActivityResumed = false
         getSystemService(
             android.hardware.input.InputManager::class.java,
         ).unregisterInputDeviceListener(controllerDeviceListener)
@@ -2550,7 +2552,6 @@ class MainActivity :
         )
         idleScreenSaver?.stop()
         super.onStop()
-        isActivityResumed = false
         gyroManager?.pause()
         suspendUiWork()
         controllerKeys.releaseAll()
@@ -3718,7 +3719,7 @@ class MainActivity :
     fun getGraphicsFilesRoot(): String = filesDir.absolutePath
 
     @Suppress("unused")
-    fun getGraphicsFirstRunMarkerPath(): String = File(noBackupFilesDir, "graphics-first-run-offered").absolutePath
+    fun getGraphicsFirstRunMarkerPath(): String = GraphicsFirstRunPreference.marker(noBackupFilesDir).absolutePath
 
     @Suppress("unused")
     fun onGraphicsSafetyState(state: String) {

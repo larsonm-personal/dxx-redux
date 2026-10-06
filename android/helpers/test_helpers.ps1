@@ -1987,6 +1987,10 @@ function Watch-AutomationResult {
                     Start-Sleep -Seconds 1
                     # BACK dismisses the new SetupActivity, revealing the
                     # running game's MainActivity underneath
+                    if ($line -match 'rearm_graphics_chooser=(true|1)') {
+                        Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                            '--es', 'command', 'graphics_first_run_offered', '--ez', 'value', 'false') | Out-Null
+                    }
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
                     Start-Sleep -Seconds 2
                     Write-Status "App resumed -- continuing test monitoring" "Green"

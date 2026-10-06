@@ -200,6 +200,12 @@ fun GraphicsSettingsPage(
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
+                        FirstBootGraphicsChooserSection(ctx.noBackupFilesDir)
+
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
+
                         // -- Selective Filtering (menu/HUD) --
                         SelectiveFilterSection(filesDir = filesDir)
 
@@ -521,6 +527,50 @@ internal fun AnisoSection(
         fontSize = 9.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+@Composable
+internal fun FirstBootGraphicsChooserSection(noBackupFilesDir: File) {
+    val context = LocalContext.current
+    var enabled by remember(noBackupFilesDir) { mutableStateOf(GraphicsFirstRunPreference.isEnabled(noBackupFilesDir)) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, noBackupFilesDir) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) enabled = GraphicsFirstRunPreference.isEnabled(noBackupFilesDir)
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    ) {
+        Checkbox(
+            checked = enabled,
+            onCheckedChange = { checked ->
+                runCatching { GraphicsFirstRunPreference.setEnabled(noBackupFilesDir, checked) }
+                    .onSuccess { enabled = checked }
+                    .onFailure {
+                        Toast
+                            .makeText(
+                                context,
+                                "Could not save graphics chooser preference",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                    }
+            },
+            modifier = Modifier.tvFocusBorder(),
+        )
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text("Show first boot graphics chooser", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Shows once when you next enter or resume a single-player level, then turns off automatically",
+                fontSize = 9.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 // Shared constant: selective filtering config keys

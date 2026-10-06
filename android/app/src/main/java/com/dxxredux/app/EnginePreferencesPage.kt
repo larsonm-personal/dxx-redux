@@ -212,14 +212,7 @@ fun EnginePreferencesPage(
         } else if (count > 0) {
             try {
                 if (preset != null) {
-                    updateAllConfigFiles(
-                        filesDir,
-                        listOf(
-                            "MainViewFov" to preset.mainViewFov.toString(),
-                            "TexFilt" to preset.textureFilter.toString(),
-                            "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
-                        ),
-                    )
+                    preset.resetGraphicsPreferences(filesDir, context.noBackupFilesDir)
                 }
                 prefs
                     .edit()

@@ -168,3 +168,15 @@ This is a moderate feature centered on live preview/recovery, not just an extra 
 Local evidence is under `android/temp/first-run-graphics-design/`: aggregate `results.json`, build/quality logs, integration logs and chooser screenshots. The registered reusable runner is `android/tests/test_graphics_first_run.ps1`; `-D1InD2` exercises the imported-D1 runtime
 
 GPU choice mapping also has JVM coverage for unavailable features, reduced AF maxima, unavailable individual MSAA requests and remapped sample counts. This run used the ANGLE emulator, not physical-phone performance measurements or a two-device multiplayer session; multiplayer deferral is enforced by the native eligibility guard
+
+## Rearm preference, 2026-10-05
+
+Add "Show first boot graphics chooser" to the launcher's Graphics settings. The existing no-backup marker remains the sole source of truth: absent means checked/pending, present means unchecked/handled. Unchecking suppresses the offer; checking schedules it once again. Refresh the checkbox when the launcher resumes and refresh the native pending flag when a backgrounded game resumes. Reset any previous confirmation deadline before the next chooser session
+
+The resume test exposed an existing lifecycle race: overlay polling could reassert foreground state between `onPause` and `onStop`. Move the activity's resumed flag reset into `onPause` so native graphics safety receives a reliable foreground transition when the game resumes
+
+Validation passed on `emulator-5582`: the existing graphics capability UI instrumentation now covers default/on/off, persistence and native consumption on resume. The first-run integration runner's new Rearm case passed for both engines, including showing once in the same resumed process, remaining open beyond a previous confirmation deadline, and staying handled on the next engine launch. The existing Background case and its cross-engine relaunch passed for both engines as well
+
+Android debug and instrumentation builds, scoped formatting/lint, both automation catalog checks and `git diff --check` passed. Evidence is under `android/temp/graphics-chooser-preference/`, with detailed runner logs under `android/temp/graphics-first-run-20261005-190103/` (Rearm) and `android/temp/graphics-first-run-20261005-190309/` (Background)
+
+Both Game Preferences presets, Original Descent and Restore Defaults, now reset TexFilt to Nearest (0), MSAA to Off (0) and AF to Off (0), and re-enable the first boot graphics chooser. Their confirmation previews list these changes. The shared preset reset is exercised for both game configs and both presets by `GraphicsConfigHelpersTest`; all 14 tests, the Android debug build, scoped formatting/lint and `git diff --check` passed. Logs are under `android/temp/graphics-preset-reset/`

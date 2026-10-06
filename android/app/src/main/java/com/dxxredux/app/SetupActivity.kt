@@ -1108,12 +1108,10 @@ class SetupActivity : ComponentActivity() {
 
                     "graphics_first_run_offered" -> {
                         if (BuildConfig.DEBUG) {
-                            val marker = File(noBackupFilesDir, "graphics-first-run-offered")
-                            if (intent.getBooleanExtra("value", true)) {
-                                marker.writeText("offered\n")
-                            } else if (marker.exists()) {
-                                check(marker.delete()) { "Could not reset graphics offer" }
-                            }
+                            GraphicsFirstRunPreference.setEnabled(
+                                noBackupFilesDir,
+                                !intent.getBooleanExtra("value", true),
+                            )
                         }
                     }
 

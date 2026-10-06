@@ -10,20 +10,23 @@ import java.io.File
 
 class GraphicsConfigHelpersTest {
     @Test
-    fun presetFiltersReachBothGamesAndRemainIndividuallyEditable() {
+    fun presetsResetGraphicsForBothGamesAndRearmChooser() {
         val filesDir = filesDirWithConfigs()
+        val noBackupFilesDir = tmp.newFolder("noBackup")
         updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to "1", "GammaLevel" to "4"))
         for (preset in GameSettingsPreset.entries) {
             updateAllConfigFiles(
                 filesDir,
-                listOf(
-                    "TexFilt" to preset.textureFilter.toString(),
-                    "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
-                ),
+                listOf("TexFilt" to "2", "MsaaLevel" to "4", "AnisoLevel" to "8"),
             )
+            GraphicsFirstRunPreference.setEnabled(noBackupFilesDir, false)
+            preset.resetGraphicsPreferences(filesDir, noBackupFilesDir)
+            assertTrue(GraphicsFirstRunPreference.isEnabled(noBackupFilesDir))
             for (game in listOf("d1", "d2")) {
                 val snapshot = readGraphicsConfigSnapshot(filesDir, game).toMap()
                 assertEquals(0, snapshot["tex_filt"])
+                assertEquals(0, snapshot["msaa_level"])
+                assertEquals(0, snapshot["aniso_level"])
                 assertEquals(if (preset == GameSettingsPreset.ORIGINAL) 0 else 1, snapshot["hud_tex_filt"])
                 assertEquals(1, snapshot["menu_tex_filt"])
                 assertEquals(4, snapshot["gamma_level"])
