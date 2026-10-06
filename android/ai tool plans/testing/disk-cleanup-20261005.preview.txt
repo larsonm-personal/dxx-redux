@@ -1,0 +1,154 @@
+Reading Git protection list
+[1s] Discovering scratch roots in C:\local\dxx-redux
+[3s] Inspecting C:\local\dxx-redux\temp (60928 files, 39.13 GiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\temp\gq603_generator_d835bccb0ca04e4fa74040e1f2f7dcbe\.git
+[5s] Inspecting C:\local\dxx-redux\temp\d1-trigger-exit-native (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\temp\fm-feasibility\deps\ymfmidi\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\temp\fm-feasibility\deps\ymfmidi\.git
+[7s] Inspecting C:\local\dxx-redux\temp\guidebot-full-verified (4096 files, 2.90 GiB)
+[9s] Inspecting C:\local\dxx-redux\temp\quality-validation (2048 files, 122.7 MiB)
+[11s] Inspecting C:\local\dxx-redux\temp\gq_report_294.py (0 files, 0.0 KiB)
+[13s] Discovering scratch roots in C:\local\dxx-redux\server\target\debug\incremental\nat_sim-13hn57gqmkbsj
+[15s] Inspecting C:\local\dxx-redux\android\temp (1024 files, 18.4 MiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\revival_branding_build_20261004\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_actions_followup_20261002\worktree\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_actions_repair\worktree\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_actions_repair_20261003\worktree\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f99ad07c64084fde99e2c80259465196\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_00c1b4c6a47b421e9165dc28aed2d2e3\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_082851ae3b58402cba8033239137c7c2\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_144ea67fd9df4450a444180db20ea7d0\wrong-version\.git
+[17s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_144ea67fd9df4450a444180db20ea7d0\head-changed.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_1ddc03abdce04999a383a35641226f70\publish\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_2134518411c04af982abeda0eb7cdd4b\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_215eb04a944c49d6a6ff8b4229a6e502\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_22743970256d4b01a4738ac60d2c70bc\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_2c132027d1a148ccb2e3e19b656a741c\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_2f23a2dc6dd348a2a3d5b2fbfa580c9f\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_38d552e986564c1c8e43cd549c4f6aac\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_39949f026a964bc48fde00a60707d21a\wrong-version\.git
+[19s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_39949f026a964bc48fde00a60707d21a\upload-only-tampered.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_429e5112730b4eb59725143b8aeec8de\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_43dee368ae434c46a14dc2dd44015059\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_499268290f4f4059b8e5a2eb785d290d\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_4d37dbacf7cc450b88c7dedf390cd4fa\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_4da76f7659334a2b8765794b806f6fa3\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_4e647f084d7f49368018d1324cfeff19\wrong-version\.git
+[21s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_4e647f084d7f49368018d1324cfeff19\became-immutable.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_583e78ac9d4b4e198a50b2a4c39058de\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_59e54cc79b1441a89daa53638531ac4e\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_62d2c7f6470b42f4ac2c5ab8fd23e193\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_67a6e566b54c40fe8084284fd50c81f4\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_68e845305cc245cc9517239c8f98e717\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_77eb5f7ad539474da9e1c23c8ca27c8a\wrong-version\.git
+[23s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_77eb5f7ad539474da9e1c23c8ca27c8a\rerun-unsigned.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_79186e40f5234501a07c98fa1267cb13\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_8193b8b1bd364d8cbaf41a6bd75d9cfb\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_85239ebf67a7442db581ed01d3cdadae\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_8b9aafaf6a184cd8ae8401d88919401d\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_8f5fe671535047e3bda14826a76c6e9f\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_919a3c06e9024258b9e2e4a7340bcaee\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_9bb39c973edf4a36bac426b82f18ecc9\wrong-version\.git
+[25s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_9bb39c973edf4a36bac426b82f18ecc9\upload-only-legacy-edition.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_a0f42732e2774732ad17247d12b68f38\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_a4f6511f2cd546b4bb10beeda79c6416\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_a91695735a6c4a4c8ccc2b77db4f4fb4\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_b248e2cfd4c348a4a4bc2f99905036cb\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_bdc85e0e149a4b9599821eee4748f125\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_d65f6428e9474141af09b45318af2bff\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_da4a3700d5f44329b1a306deec7892c8\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_dbe1b02d6e314b48ae6b2d9f64dbd332\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_dd92547a07d1488890c57d10769eb57b\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_e78231bc4bd24bd3b2be83a4aec02646\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_e8ca4fa571eb413ba3761aba4ed01d91\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f3befbc725d740ca85d946a2b1304bcf\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f55e291c8e2143c18adfa38f88baf88c\wrong-version\.git
+[27s] Inspecting C:\local\dxx-redux\android\temp\github_release_tests\run_f55e291c8e2143c18adfa38f88baf88c\wrong-target-sdk.git (0 files, 0.0 KiB)
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f7b1533158f64bdeb399a147096e0a0f\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f92645f8231a421389dfd3a1d6fec872\wrong-version\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\github_release_tests\run_f99ad07c64084fde99e2c80259465196\wrong-version\.git
+WARNING: Preserving tree containing a link: C:\local\dxx-redux\android\temp\host_metadata_helper_smoke_repo\game_data_to_copy_to_emulator\temp
+WARNING: Preserving tree containing a link: C:\local\dxx-redux\android\temp\host_metadata_helper_smoke_repo\game_data\extracted\d1 mac extracted
+WARNING: Preserving tree containing a link: C:\local\dxx-redux\android\temp\host_metadata_helper_smoke_repo\game_data\extracted\d1 mac extracted
+WARNING: Preserving tree containing a link: C:\local\dxx-redux\android\temp\host_metadata_helper_smoke_repo\game_data_to_copy_to_emulator\temp
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\manual_apk\worktree\.git
+WARNING: Preserving tree containing a nested repository: C:\local\dxx-redux\android\temp\po2_feature_study_20260823\d2x-xl-src\.git
+[29s] Inspecting C:\local\dxx-redux\android\temp\test_obsidian_level4_closed_trigger_source_19e2df1df8a54e5e99af478a643221a8 (0 files, 0.0 KiB)
+Finding build generations in C:\local\dxx-redux\build
+Finding build generations in C:\local\dxx-redux\build_test
+Finding build generations in C:\local\dxx-redux\build-br0237-extract
+Finding build generations in C:\local\dxx-redux\buildd1
+[31s] Inspecting C:\local\dxx-redux\buildd1 (0 files, 0.0 KiB)
+Finding build generations in C:\local\dxx-redux\buildd1-asan
+Finding build generations in C:\local\dxx-redux\buildd2
+Finding build generations in C:\local\dxx-redux\buildd2_host
+Finding build generations in C:\local\dxx-redux\buildd2_hostcheck
+Finding build generations in C:\local\dxx-redux\buildd2_winfix
+Finding build generations in C:\local\dxx-redux\buildd2-asan
+Finding build generations in C:\local\dxx-redux\buildd2asan
+Finding build generations in C:\local\dxx-redux\buildd2asan2
+Finding build generations in C:\local\dxx-redux\android\build
+Finding build generations in C:\local\dxx-redux\android\build-outputs
+Finding build generations in C:\local\dxx-redux\android\.cxx
+Finding build generations in C:\local\dxx-redux\android\.gradle
+Finding build generations in C:\local\dxx-redux\android\.kotlin
+Finding build generations in C:\local\dxx-redux\android\app\build
+Finding build generations in C:\local\dxx-redux\android\app\.cxx
+[34s] Inspecting C:\local\dxx-redux\android\app\.cxx\Debug\243r4g67 (0 files, 0.0 KiB)
+[36s] Inspecting C:\local\dxx-redux\android\app\.cxx\Debug\585cr1v5 (16384 files, 1.08 GiB)
+[38s] Inspecting C:\local\dxx-redux\android\app\.cxx\RelWithDebInfo\5d4wc554 (4608 files, 85.1 MiB)
+Finding build generations in C:\local\dxx-redux\android\mission-metadata-core\build
+Finding build generations in C:\local\dxx-redux\android\mission-metadata-cli\build
+Finding build generations in C:\local\dxx-redux\d2\out
+Finding build generations in C:\local\dxx-redux\server\target
+[KEEP] newest build generation: C:\local\dxx-redux\build-br0237-extract
+[KEEP] newest build generation: C:\local\dxx-redux\build_test
+[KEEP] newest build generation: C:\local\dxx-redux\android\build\host-extract-tests
+[KEEP] newest build generation: C:\local\dxx-redux\buildd1
+[KEEP] newest build generation: C:\local\dxx-redux\buildd1-asan
+[KEEP] newest build generation: C:\local\dxx-redux\build
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2_hostcheck
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2_winfix
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2asan2
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2_host
+[KEEP] newest build generation: C:\local\dxx-redux\d2\out\build\x86-release
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2asan
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2
+[KEEP] newest build generation: C:\local\dxx-redux\buildd2-asan
+[KEEP] newest build generation: C:\local\dxx-redux\android\app\.cxx\Debug\2c1w1y6q
+[KEEP] newest build generation: C:\local\dxx-redux\android\app\.cxx\RelWithDebInfo\4g72686d
+[KEEP] newest build generation: C:\local\dxx-redux\android\app\.cxx\tools\internal
+[KEEP] newest build generation: C:\local\dxx-redux\android\build-outputs\deploy-debug-v22200-3128f138de70413c99b0cb53c00d47da.aab
+[KEEP] newest build generation: C:\local\dxx-redux\android\build-outputs\deploy-internal-v24260-4fb2a71866b14fa794cb361abeda55b9.aab
+[KEEP] newest build generation: C:\local\dxx-redux\android\build-outputs\dxx-redux-debug-20260513-134022-v13330.aab
+[KEEP] newest build generation: C:\local\dxx-redux\android\build-outputs\dxx-redux-internal-20261002-213656-v23770.aab
+[KEEP] newest build generation: C:\local\dxx-redux\android\build-outputs\dxx-redux-release-20261002-155255-v23750.aab
+Scanning C:\local\dxx-redux\build
+Scanning C:\local\dxx-redux\build_test
+Scanning C:\local\dxx-redux\build-br0237-extract
+Scanning C:\local\dxx-redux\buildd1
+Scanning C:\local\dxx-redux\buildd1-asan
+Scanning C:\local\dxx-redux\buildd2
+Scanning C:\local\dxx-redux\buildd2_host
+Scanning C:\local\dxx-redux\buildd2_hostcheck
+Scanning C:\local\dxx-redux\buildd2_winfix
+Scanning C:\local\dxx-redux\buildd2-asan
+Scanning C:\local\dxx-redux\buildd2asan
+Scanning C:\local\dxx-redux\buildd2asan2
+Scanning C:\local\dxx-redux\android\build
+[48s] Inspecting C:\local\dxx-redux\android\build\reports (0 files, 0.0 KiB)
+Scanning C:\local\dxx-redux\android\build-outputs
+Scanning C:\local\dxx-redux\android\.cxx
+Scanning C:\local\dxx-redux\android\.gradle
+WARNING: Preserving locked workspace C:\local\dxx-redux\android\.gradle\buildOutputCleanup: Exception calling "Open" with "4" argument(s): "The process cannot access the file 'C:\local\dxx-redux\android\.gradle\buildOutputCleanup\buildOutputCleanup.lock' because it is being used by another process."
+Scanning C:\local\dxx-redux\android\.kotlin
+Scanning C:\local\dxx-redux\android\app\build
+Scanning C:\local\dxx-redux\android\app\.cxx
+Scanning C:\local\dxx-redux\android\mission-metadata-core\build
+Scanning C:\local\dxx-redux\android\mission-metadata-cli\build
+Scanning C:\local\dxx-redux\d2\out
+Scanning C:\local\dxx-redux\server\target
+Scanning C:\local\dxx-redux\android\app\.cxx
+Automatic cleanup: 7450 artifacts (174.71 GiB)
+Preview only: no files deleted and no prompts answered
+Removed 0 artifacts (0.0 KiB); sizes are logical bytes, not guaranteed disk savings

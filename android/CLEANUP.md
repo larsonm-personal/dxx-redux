@@ -17,6 +17,8 @@ The cleaner protects tracked files (even forcibly added ignored files), untracke
 
 Active build/test/formatter/emulator jobs block deletion. The script waits up to 60 seconds for them automatically (`-BusyWaitSeconds` controls this), then exits if they remain active. It does not terminate jobs or ask for permission. Known stale emulator marker directories are removable only through this idle-checked temporary cleanup; held file locks remain protected. It rechecks process activity, Git state, containment, links, modification/creation times, file count and bytes before deletion. Newly changed candidates are preserved. Locked/unreadable artifacts are reported and other eligible artifacts can still be removed. Run again once jobs finish or locks are released
 
+Emulator data directories with `config.ini` may have custom names such as `avd`; they do not need an `.avd` suffix for stale `hardware-qemu.ini.lock` and `snapshot.lock.lock` cleanup. A held file lock or unknown directory lock protects its owning workspace, including when it contains Git-visible files. It does not preserve unrelated siblings or the entire enclosing scratch root
+
 For interrupted formatting, preview this checkout's matching processes with
 `pwsh android/helpers/stop-stale-formatters.ps1`; add `-Kill` to stop the matched
 process trees. This is an explicit stop operation, not an age-based cleanup: it
@@ -28,6 +30,8 @@ process identity before stopping, and excludes its own process and ancestors
 `-Preview` and `-WhatIf` never delete; add `-Verbose` to list each candidate. `-AutoOnly` remains accepted by existing callers; cleanup is now always automatic. `-TemporaryOnly`, `-BuildsOnly` and `-PayloadsOnly` are mutually exclusive
 
 Outside scratch roots, normal cleanup also removes old generated build/download artifacts (default `-ArtifactDays 30`) and superseded native/package generations. It preserves the newest generation of each recognized build family; `-KeepBuildGenerations` and `-BuildGraceHours` adjust that retention. Explicit temporary cleanup takes precedence for builds located inside a scratch root. Use `-BuildsOnly` to apply build retention without clearing scratch files
+
+Normal and `-BuildsOnly` cleanup also discard `server/target/{debug,release}/incremental` without an age threshold. Cargo recreates this compiler state; this cache rule does not remove linked binaries or dependency artifacts. Normal age-based build cleanup still applies to those outputs. Scoped native producer cleanup does not touch Cargo caches, and active Cargo/rustc processes and held locks still prevent deletion
 
 ```powershell
 .\android\clean-workspace.ps1 -BuildsOnly

@@ -36,7 +36,7 @@ Existing native/Kotlin/Bash/CMake tools use the installers in `android/get_deps/
 .\android\run-code-quality.ps1 -InstallTools
 ```
 
-This uses `npm ci` with the checked-in lockfile, installs pinned Ruff under ignored `android/temp/code-quality/python`, and installs the exact Rust toolchain without changing rustup's default. It caches the resolved Node executable path in the same ignored directory, so later runs can reuse that installation without changing PATH. Python/Rust pins live in `get_deps/tool_versions.conf`; Prettier pins live in `tools/code-quality/package.json` and its lockfile. After temporary cleanup, rerun installation to restore Ruff and the Node path cache.
+This uses `npm ci` with the checked-in lockfile, installs pinned Ruff under ignored `android/tools/code-quality/python`, and installs the exact Rust toolchain without changing rustup's default. It records the resolved Node path in `android/tools/code-quality/node-path.txt` so later runs can reuse that installation without changing PATH. Keep Node itself outside disposable scratch directories. Python/Rust pins live in `get_deps/tool_versions.conf`; Prettier pins live in `tools/code-quality/package.json` and its lockfile. Installed formatters and the Node path cache survive temporary cleanup; only per-run manifests and status files belong under `android/temp`.
 
 Wait for formatting to finish before editing files or starting builds. The runner records its active stage and final summary under `android/temp/run-code-quality.*.json`. For interrupted runs, see [CLEANUP.md](CLEANUP.md) and preview matching processes with `helpers/stop-stale-formatters.ps1` before using `-Kill`.
 

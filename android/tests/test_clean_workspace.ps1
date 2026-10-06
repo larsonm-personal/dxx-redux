@@ -43,7 +43,7 @@ try {
     New-Item -ItemType Directory -Path $fixture -Force | Out-Null
     & git -C $fixture init --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Fixture git init failed' }
-    [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "temp/`nandroid/temp/`nbuild*/`ndownloads/`nserver/target/`n")
+    [IO.File]::WriteAllText((Join-Path $fixture '.gitignore'), "temp/`nandroid/temp/`nbuild*/`ndownloads/`nserver/target/`nandroid/tools/code-quality/python/`nandroid/tools/code-quality/node-path.txt`n")
     foreach ($path in @('temp/old.log', 'temp/recent.log', 'temp/tracked.log',
             'temp/copy [1].tmp', 'temp/review.json', 'temp/runs/old/result.json',
             'temp/runs/new/result.json', 'temp/nested-repo/.git/config',
@@ -51,6 +51,7 @@ try {
             'build-old/CMakeCache.txt', 'build-old/output.obj', 'build-old/released.lock',
             'build-protected/keep.cpp', 'downloads/tool.zip',
             'server/target/old/output.o', 'game_data/precious.log',
+            'android/tools/code-quality/python/ruff/__main__.py', 'android/tools/code-quality/node-path.txt',
             'android/regression_demos/precious.dximdemo', 'outside/precious.log')) {
         New-CleanupFixtureFile $path
     }
@@ -65,7 +66,7 @@ try {
     $linkType = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) { 'Junction' } else { 'SymbolicLink' }
     New-Item -ItemType $linkType -Path $link -Target (Join-Path $fixture 'outside') | Out-Null
     foreach ($item in Get-ChildItem -LiteralPath $fixture -Recurse -Force | Where-Object {
-            -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)
+            -not ($_.Attributes -band ([IO.FileAttributes]::ReparsePoint -bor [IO.FileAttributes]::ReadOnly))
         }) { $item.LastWriteTimeUtc = $old }
     (Get-Item -Force -LiteralPath (Join-Path $fixture 'temp/recent.log')).LastWriteTimeUtc = [DateTime]::UtcNow
     (Get-Item -Force -LiteralPath (Join-Path $fixture 'temp/runs/new/result.json')).LastWriteTimeUtc = [DateTime]::UtcNow
@@ -119,12 +120,65 @@ try {
         Assert-CleanupExists $path
     }
     if ($state.Prompts) { throw 'Temporary cleanup prompted' }
+    # A protected owner must not pin its entire ignored scratch collection
+    foreach ($path in @('android/temp/lock-collection/locked/result.json',
+            'android/temp/lock-collection/locked/producer.lock',
+            'android/temp/lock-collection/disposable/result.json',
+            'android/temp/marker-collection/locked/result.json',
+            'android/temp/marker-collection/disposable/result.json',
+            'android/temp/custom-emulator/avd/config.ini',
+            'android/temp/custom-emulator/avd/userdata.img')) {
+        New-CleanupFixtureFile $path
+    }
+    $collectionLock = [IO.File]::Open((Join-Path $fixture 'android/temp/lock-collection/locked/producer.lock'), 'Open', 'Read', 'None')
+    try {
+        New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/marker-collection/locked/unknown.lock') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/custom-emulator/avd/hardware-qemu.ini.lock') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/custom-emulator/avd/snapshot.lock.lock') -Force | Out-Null
+        & $helper -RepositoryRoot $fixture -TemporaryOnly -Preview
+        Assert-CleanupExists 'android/temp/lock-collection/disposable/result.json'
+        Assert-CleanupExists 'android/temp/custom-emulator/avd/userdata.img'
+        & $helper -RepositoryRoot $fixture -TemporaryOnly
+        Assert-CleanupExists 'android/temp/lock-collection/locked/result.json'
+        Assert-CleanupExists 'android/temp/marker-collection/locked/result.json'
+        Assert-CleanupExists 'android/temp/lock-collection/disposable' $false
+        Assert-CleanupExists 'android/temp/marker-collection/disposable' $false
+        Assert-CleanupExists 'android/temp/custom-emulator' $false
+        # Git protection within a locked owner must not cause descent past its lock
+        & git -C $fixture add -f android/temp/lock-collection/locked/result.json
+        New-CleanupFixtureFile 'android/temp/lock-collection/locked/ignored.bin'
+        & $helper -RepositoryRoot $fixture -TemporaryOnly
+        Assert-CleanupExists 'android/temp/lock-collection/locked/ignored.bin'
+    } finally { $collectionLock.Dispose() }
     # Normal cleanup also removes old disposable artifacts without asking
     & $helper -RepositoryRoot $fixture
     foreach ($path in @('build-old', 'downloads/tool.zip', 'server/target')) {
         Assert-CleanupExists $path $false
     }
     if ($state.Prompts) { throw 'Default cleanup prompted' }
+    Assert-CleanupExists 'android/tools/code-quality/python/ruff/__main__.py'
+    Assert-CleanupExists 'android/tools/code-quality/node-path.txt'
+
+    # Recent Cargo incremental state should not accumulate beside warm executables
+    foreach ($path in @('server/target/debug/incremental/session/work.o',
+            'server/target/release/incremental/session/work.o',
+            'server/target/debug/server.exe', 'server/target/debug/deps/library.rlib')) {
+        New-CleanupFixtureFile $path
+    }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Preview
+    Assert-CleanupExists 'server/target/debug/incremental/session/work.o'
+    & $helper -RepositoryRoot $fixture -BuildsOnly
+    Assert-CleanupExists 'server/target/debug/incremental' $false
+    Assert-CleanupExists 'server/target/release/incremental' $false
+    Assert-CleanupExists 'server/target/debug/server.exe'
+    Assert-CleanupExists 'server/target/debug/deps/library.rlib'
+    New-CleanupFixtureFile 'server/target/debug/incremental/session/work.o'
+    New-CleanupFixtureFile 'server/target/debug/incremental/session/producer.lock'
+    $cacheLock = [IO.File]::Open((Join-Path $fixture 'server/target/debug/incremental/session/producer.lock'), 'Open', 'Read', 'None')
+    try {
+        & $helper -RepositoryRoot $fixture -BuildsOnly
+        Assert-CleanupExists 'server/target/debug/incremental/session/work.o'
+    } finally { $cacheLock.Dispose() }
 
     # A file created after discovery invalidates the whole deletion candidate
     New-CleanupFixtureFile 'temp/race/original.bin'
@@ -290,6 +344,6 @@ try {
         throw 'Unexpected cleanup fixture path'
     }
     $fixtureLink = Join-Path $fixture 'android/temp/link'
-    if (Test-Path -LiteralPath $fixtureLink) { Remove-Item -LiteralPath $fixtureLink -Force }
+    if (Test-Path -LiteralPath $fixtureLink) { [IO.Directory]::Delete($fixtureLink) }
     Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
 }

@@ -150,6 +150,28 @@ function Assert-CleanupIdle {
     Write-Progress -Activity 'Waiting for active jobs before cleanup' -Completed
 }
 
+function Assert-CleanupLock {
+    param([IO.FileSystemInfo]$Lock, [switch]$AllowEmulatorLockMarkers)
+    $owner = if ($Lock -is [IO.DirectoryInfo]) { $Lock.Parent.FullName } else { $Lock.DirectoryName }
+    try {
+        if ($Lock -is [IO.DirectoryInfo]) {
+            # Managed AVDs may use a custom data directory without an .avd suffix
+            # Live emulators still block cleanup through Assert-CleanupIdle
+            $orphanMarker = $AllowEmulatorLockMarkers -and
+            $Lock.Name -in @('hardware-qemu.ini.lock', 'snapshot.lock.lock') -and
+            (Test-Path -LiteralPath (Join-Path $owner 'config.ini') -PathType Leaf)
+            if (-not $orphanMarker) { throw "Preserving directory lock: $($Lock.FullName)" }
+        } else {
+            $stream = [IO.File]::Open($Lock.FullName, 'Open', 'Read', 'None')
+            $stream.Dispose()
+        }
+    } catch {
+        $errorRecord = [IO.IOException]::new("Preserving locked workspace ${owner}: $($_.Exception.Message)", $_.Exception)
+        $errorRecord.Data['CleanupProtectedDirectory'] = $owner
+        throw $errorRecord
+    }
+}
+
 function Get-CleanupTreeInfo {
     param([string]$Path, [switch]$AllowBuildDependencies, [switch]$IncludeCreationTime, [switch]$IgnoreRootWriteTime, [switch]$AllowEmulatorLockMarkers)
     Assert-CleanupPath $Path
@@ -219,17 +241,7 @@ function Get-CleanupTreeInfo {
                 }
                 if ($child.Name -match '(\.(lock|lck)(\.json)?$|^\.ninja_lock$)') {
                     # CMake/Gradle leave lock files behind after releasing the lock
-                    if ($child -is [IO.DirectoryInfo]) {
-                        # Emulator processes are checked before every deletion; these
-                        # known marker directories remain after an unclean shutdown
-                        $orphanMarker = $AllowEmulatorLockMarkers -and $item.Name -like '*.avd' -and
-                        $child.Name -in @('hardware-qemu.ini.lock', 'snapshot.lock.lock') -and
-                        (Test-Path -LiteralPath (Join-Path $item.FullName 'config.ini') -PathType Leaf)
-                        if (-not $orphanMarker) { throw "Preserving directory lock: $($child.FullName)" }
-                    } else {
-                        $lockStream = [IO.File]::Open($child.FullName, 'Open', 'Read', 'None')
-                        $lockStream.Dispose()
-                    }
+                    Assert-CleanupLock $child -AllowEmulatorLockMarkers:$AllowEmulatorLockMarkers
                 }
                 $stack.Push($child)
             }
@@ -284,6 +296,16 @@ function Add-TemporaryCandidate {
     if ($Item.PSIsContainer -and @('.git', '.hg', '.svn' | Where-Object {
                 Test-Path -LiteralPath (Join-Path $Item.FullName $_)
             }).Count) { return }
+    if ($Item.PSIsContainer) {
+        # Check ownership before descending a Git-protected collection, too
+        try {
+            foreach ($child in $Item.EnumerateFileSystemInfos()) {
+                if ($child.Name -match '(\.(lock|lck)(\.json)?$|^\.ninja_lock$)') {
+                    Assert-CleanupLock $child -AllowEmulatorLockMarkers
+                }
+            }
+        } catch { Write-Warning $_.Exception.Message; return }
+    }
     if (-not $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)) { return }
     $descend = $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)
     if (-not $descend) {
@@ -307,7 +329,9 @@ function Add-TemporaryCandidate {
         } catch {
             Write-Warning $_.Exception.Message
             # A protected subtree must not strand unrelated siblings in a collection
-            $descend = $Item.PSIsContainer -and $_.Exception.Message -match 'containing a (link|nested repository)'
+            $lockedDirectory = $_.Exception.Data['CleanupProtectedDirectory']
+            $descend = $Item.PSIsContainer -and ($_.Exception.Message -match 'containing a (link|nested repository)' -or
+                ($lockedDirectory -and -not $Item.FullName.Equals($lockedDirectory, $comparison)))
         }
     }
     if ($descend) {
@@ -331,6 +355,7 @@ function Find-TemporaryFiles {
                     Add-TemporaryCandidate $item
                 } elseif ($item.Name -notin @('.git', '.hg', '.svn', 'game_data', 'game_data_to_copy_to_emulator',
                         'regression_demos', 'fixtures', 'node_modules', 'vcpkg_installed', '_deps', '.gradle', '.cxx') -and
+                    -not $item.FullName.Equals((Join-Path $RepositoryRoot 'server/target'), $comparison) -and
                     $item.Name -notmatch '^build(?:$|[_-]|d[12]|2)' -and
                     -not (Test-Path -LiteralPath (Join-Path $item.FullName '.git')) -and
                     -not (Test-Path -LiteralPath (Join-Path $item.FullName '.hg')) -and
@@ -554,6 +579,35 @@ foreach ($family in $buildGenerations | Group-Object Family) {
                 Bytes = $generation.Bytes; Count = $generation.Count; Latest = $generation.Latest
                 Days = $BuildGraceHours / 24; Retained = $ranked[0].Path
             })
+    }
+}
+# Cargo incremental state is disposable even when its executable was used recently
+# Keep linked binaries and dependency artifacts warm, and never touch external caches
+if (-not $TemporaryOnly -and -not $PayloadsOnly -and -not $BuildRoots) {
+    $cargoTarget = Join-Path $RepositoryRoot 'server/target'
+    if (Test-Path -LiteralPath $cargoTarget -PathType Container) {
+        Assert-CleanupPath $cargoTarget
+        foreach ($profile in @('debug', 'release')) {
+            $incremental = Join-Path $cargoTarget "$profile/incremental"
+            if (-not (Test-Path -LiteralPath $incremental -PathType Container)) { continue }
+            # A failed/protected inspection must also protect it from parent deletion
+            $null = $registeredBuilds.Add($incremental)
+            $parent = $incremental
+            while ($parent -and -not $parent.Equals($RepositoryRoot, $comparison)) {
+                $null = $buildContainers.Add($parent)
+                $parent = [IO.Path]::GetDirectoryName($parent)
+            }
+            if ($protectedPaths.Contains($incremental)) { continue }
+            try { $info = Get-CleanupTreeInfo $incremental } catch {
+                Write-Warning $_.Exception.Message
+                continue
+            }
+            $candidates.Add([pscustomobject]@{
+                    Path = $incremental; Category = 'build-cache'; Automatic = $true
+                    Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
+                    Days = 0; Retained = $null
+                })
+        }
     }
 }
 foreach ($root in $roots) {

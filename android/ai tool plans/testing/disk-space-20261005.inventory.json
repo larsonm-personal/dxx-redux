@@ -1,0 +1,551 @@
+{
+  "directories": [
+    {
+      "path": "android",
+      "GiB": 113.18,
+      "files": 578146
+    },
+    {
+      "path": "android/temp",
+      "GiB": 91.54,
+      "files": 308933
+    },
+    {
+      "path": "temp",
+      "GiB": 82.53,
+      "files": 170369
+    },
+    {
+      "path": "game_data",
+      "GiB": 46.74,
+      "files": 15374
+    },
+    {
+      "path": "server",
+      "GiB": 21.39,
+      "files": 37001
+    },
+    {
+      "path": "server/target",
+      "GiB": 21.38,
+      "files": 36962
+    },
+    {
+      "path": "server/target/debug",
+      "GiB": 20.04,
+      "files": 32383
+    },
+    {
+      "path": "game_data/CD images",
+      "GiB": 18.78,
+      "files": 11795
+    },
+    {
+      "path": "android/app",
+      "GiB": 13.94,
+      "files": 181489
+    },
+    {
+      "path": "android/temp/store-assets-tools",
+      "GiB": 12.32,
+      "files": 3417
+    },
+    {
+      "path": "android/app/.cxx",
+      "GiB": 11.14,
+      "files": 169276
+    },
+    {
+      "path": "android/temp/minsdk-study",
+      "GiB": 10.02,
+      "files": 97
+    },
+    {
+      "path": "temp/guidebot-routing-through3",
+      "GiB": 9.78,
+      "files": 14591
+    },
+    {
+      "path": "temp/opengl-efficiency-20260925",
+      "GiB": 9.51,
+      "files": 12325
+    },
+    {
+      "path": "game_data/music",
+      "GiB": 7.72,
+      "files": 681
+    },
+    {
+      "path": "android/temp/emulator-quiet-watch",
+      "GiB": 7.71,
+      "files": 1376
+    },
+    {
+      "path": "android/temp/revival_branding_build_20261004",
+      "GiB": 6.42,
+      "files": 69604
+    },
+    {
+      "path": "android/temp/device-adversarial-20261003-0040",
+      "GiB": 6.26,
+      "files": 3380
+    },
+    {
+      "path": "temp/guidebot-full-verified",
+      "GiB": 6.22,
+      "files": 25662
+    },
+    {
+      "path": "buildd2",
+      "GiB": 6.14,
+      "files": 5431
+    },
+    {
+      "path": "temp/opengl-efficiency-20260925/avds",
+      "GiB": 5.22,
+      "files": 24
+    },
+    {
+      "path": "android/temp/test_primary_target_grates",
+      "GiB": 5.05,
+      "files": 1624
+    },
+    {
+      "path": "buildd2/main",
+      "GiB": 4.86,
+      "files": 1581
+    },
+    {
+      "path": "temp/d1_replay_parity_20260925_223823_asset_retirement",
+      "GiB": 4.54,
+      "files": 198
+    },
+    {
+      "path": "android/temp/test_route_regeneration_audit",
+      "GiB": 4.11,
+      "files": 1776
+    },
+    {
+      "path": "android/temp/flyout-safety",
+      "GiB": 3.96,
+      "files": 109
+    },
+    {
+      "path": "android/temp/test_guided_shot_annotations",
+      "GiB": 3.71,
+      "files": 363
+    },
+    {
+      "path": "temp/d1-usable-corpus-continuation",
+      "GiB": 3.47,
+      "files": 83
+    },
+    {
+      "path": "temp/github-release-1.0.0",
+      "GiB": 3.09,
+      "files": 35866
+    },
+    {
+      "path": "temp/github-release-1.0.0/android",
+      "GiB": 3.06,
+      "files": 34429
+    },
+    {
+      "path": "temp/d1-selection-death-corpus",
+      "GiB": 3.0,
+      "files": 184
+    },
+    {
+      "path": "temp/guidebot-full-verified/stages",
+      "GiB": 2.89,
+      "files": 3763
+    },
+    {
+      "path": "temp/input_demo_determinism_matrix",
+      "GiB": 2.88,
+      "files": 24
+    },
+    {
+      "path": "temp/guidebot-full-verified/raw",
+      "GiB": 2.83,
+      "files": 2169
+    },
+    {
+      "path": "android/app/build",
+      "GiB": 2.78,
+      "files": 11163
+    },
+    {
+      "path": "game_data/gog installers",
+      "GiB": 2.7,
+      "files": 80
+    },
+    {
+      "path": "android/build-outputs",
+      "GiB": 2.65,
+      "files": 60
+    },
+    {
+      "path": "android/temp/store-assets_20261004_filtered",
+      "GiB": 2.59,
+      "files": 693
+    },
+    {
+      "path": "buildd1",
+      "GiB": 2.57,
+      "files": 4330
+    },
+    {
+      "path": "temp/d1-usable-corpus-continuation/d1_descent_level7_20260921_144212",
+      "GiB": 2.21,
+      "files": 15
+    },
+    {
+      "path": "temp/d1_replay_parity_20260925_223823_asset_retirement/d1_descent_level7_20260921_144212",
+      "GiB": 2.21,
+      "files": 15
+    },
+    {
+      "path": "game_data/mission_files",
+      "GiB": 2.1,
+      "files": 426
+    },
+    {
+      "path": "android/tools",
+      "GiB": 2.03,
+      "files": 61741
+    },
+    {
+      "path": "android/tools/etc2tool",
+      "GiB": 2.02,
+      "files": 61408
+    },
+    {
+      "path": "temp/guidebot-repeat-verified",
+      "GiB": 1.96,
+      "files": 2104
+    },
+    {
+      "path": "temp/guidebot-stage-verified",
+      "GiB": 1.96,
+      "files": 2063
+    },
+    {
+      "path": "game_data_to_copy_to_emulator",
+      "GiB": 1.92,
+      "files": 35
+    },
+    {
+      "path": "temp/d1-asset-retirement-build",
+      "GiB": 1.77,
+      "files": 4039
+    },
+    {
+      "path": "android/temp/test_lostlvls_key_contact",
+      "GiB": 1.72,
+      "files": 256
+    },
+    {
+      "path": "android/temp/store-assets_20261004_revision",
+      "GiB": 1.65,
+      "files": 251
+    },
+    {
+      "path": "buildd1/main",
+      "GiB": 1.48,
+      "files": 647
+    },
+    {
+      "path": "android/tests",
+      "GiB": 1.46,
+      "files": 16203
+    },
+    {
+      "path": "temp/suite-fixes-20260923",
+      "GiB": 1.44,
+      "files": 127
+    },
+    {
+      "path": "game_data/CD images/Descent II (USA) (Rerelease)",
+      "GiB": 1.44,
+      "files": 852
+    },
+    {
+      "path": "game_data/mods",
+      "GiB": 1.44,
+      "files": 2190
+    },
+    {
+      "path": "server/target/release",
+      "GiB": 1.34,
+      "files": 4577
+    },
+    {
+      "path": "temp/pr_engine_smoke_20261003",
+      "GiB": 1.32,
+      "files": 6300
+    },
+    {
+      "path": "game_data/mods/d2x-xl",
+      "GiB": 1.32,
+      "files": 25
+    },
+    {
+      "path": "game_data/mods - backup",
+      "GiB": 1.31,
+      "files": 20
+    },
+    {
+      "path": "android/temp/test_guidebot_secret_transition",
+      "GiB": 1.3,
+      "files": 327
+    },
+    {
+      "path": "game_data_to_copy_to_emulator/download",
+      "GiB": 1.24,
+      "files": 14
+    },
+    {
+      "path": "android/temp/store-assets_20261004_tempo",
+      "GiB": 1.22,
+      "files": 462
+    },
+    {
+      "path": "temp/d1-asset-retirement-build/main",
+      "GiB": 1.19,
+      "files": 1330
+    },
+    {
+      "path": "temp/d1-asset-retirement-reference-build",
+      "GiB": 1.15,
+      "files": 3154
+    },
+    {
+      "path": "buildd2-asan",
+      "GiB": 1.11,
+      "files": 3595
+    },
+    {
+      "path": "android/regression_demos",
+      "GiB": 1.09,
+      "files": 32
+    },
+    {
+      "path": "temp/d1_replay_parity_continuation_20260923",
+      "GiB": 1.09,
+      "files": 60
+    },
+    {
+      "path": "temp/d1-usable-corpus",
+      "GiB": 1.08,
+      "files": 95
+    },
+    {
+      "path": "temp/guidebot-routing-through3/guarded-sweep",
+      "GiB": 1.08,
+      "files": 3376
+    },
+    {
+      "path": "temp/guidebot-routing-through3/final-sweep",
+      "GiB": 1.08,
+      "files": 3376
+    },
+    {
+      "path": "temp/d1-selection-death-corpus/d1_descent_level7_20260921_144212",
+      "GiB": 1.08,
+      "files": 17
+    },
+    {
+      "path": "temp/guidebot-routing-through3/candidate-sweep",
+      "GiB": 1.08,
+      "files": 3376
+    },
+    {
+      "path": "game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)",
+      "GiB": 1.08,
+      "files": 455
+    },
+    {
+      "path": "game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 2)",
+      "GiB": 1.08,
+      "files": 455
+    },
+    {
+      "path": "temp/suite-fixes-20260923/parity",
+      "GiB": 1.08,
+      "files": 26
+    },
+    {
+      "path": "temp/guidebot-routing-through3/baseline-current",
+      "GiB": 1.07,
+      "files": 3376
+    },
+    {
+      "path": "game_data/CD images/Descent II (Europe) (v1.1)",
+      "GiB": 1.07,
+      "files": 447
+    },
+    {
+      "path": "temp/d1_replay_parity_continuation_20260923/d1_descent_level7_20260921_144212",
+      "GiB": 1.07,
+      "files": 15
+    },
+    {
+      "path": "game_data/CD images/Descent II (USA) (v1.1)",
+      "GiB": 1.07,
+      "files": 447
+    },
+    {
+      "path": "game_data/CD images/Descent II Infinite Abyss",
+      "GiB": 1.07,
+      "files": 447
+    },
+    {
+      "path": "game_data/CD images/Descent II (Europe)",
+      "GiB": 1.05,
+      "files": 67
+    },
+    {
+      "path": "game_data/CD images/Descent II (USA) (Alt)",
+      "GiB": 1.05,
+      "files": 69
+    },
+    {
+      "path": "game_data/CD images/Descent II (USA)",
+      "GiB": 1.05,
+      "files": 69
+    },
+    {
+      "path": "temp/input_demo_determinism_matrix/20261002_051805",
+      "GiB": 0.96,
+      "files": 8
+    },
+    {
+      "path": "temp/input_demo_determinism_matrix/20261002_033244",
+      "GiB": 0.96,
+      "files": 8
+    },
+    {
+      "path": "temp/input_demo_determinism_matrix/20261002_064047",
+      "GiB": 0.96,
+      "files": 8
+    },
+    {
+      "path": "game_data/CD images/d2 mac",
+      "GiB": 0.96,
+      "files": 31
+    },
+    {
+      "path": "temp/guidebot-modes-build",
+      "GiB": 0.93,
+      "files": 2735
+    },
+    {
+      "path": "temp/music-spectral-opl3",
+      "GiB": 0.91,
+      "files": 171
+    },
+    {
+      "path": "temp/music-eq",
+      "GiB": 0.9,
+      "files": 126
+    },
+    {
+      "path": "temp/music-eq/native",
+      "GiB": 0.9,
+      "files": 115
+    },
+    {
+      "path": "temp/music-spectral",
+      "GiB": 0.89,
+      "files": 169
+    },
+    {
+      "path": "buildd1-asan",
+      "GiB": 0.85,
+      "files": 3212
+    },
+    {
+      "path": "android/temp/test_diehard_opening_frontier",
+      "GiB": 0.84,
+      "files": 270
+    },
+    {
+      "path": "android/temp/guidebot_simulation_regression",
+      "GiB": 0.83,
+      "files": 92
+    },
+    {
+      "path": "game_data/music/Mission ZIP - ewithin-versions",
+      "GiB": 0.8,
+      "files": 67
+    },
+    {
+      "path": "game_data/gog installers/setup_descent_2_1.1_(16596)",
+      "GiB": 0.8,
+      "files": 29
+    },
+    {
+      "path": "android/temp/music-loudness-20261005",
+      "GiB": 0.8,
+      "files": 119
+    },
+    {
+      "path": "temp/pr_engine_smoke_20261003/d2",
+      "GiB": 0.8,
+      "files": 3532
+    },
+    {
+      "path": "temp/guidebot-stage-verified/raw",
+      "GiB": 0.79,
+      "files": 933
+    }
+  ],
+  "large_files": [
+    [
+      11.9,
+      "C:\\local\\dxx-redux\\game_data\\test_data.zip"
+    ],
+    [
+      7.95,
+      "C:\\local\\dxx-redux\\android\\temp\\store-assets-tools\\avd\\userdata-qemu.img.qcow2"
+    ],
+    [
+      4.0,
+      "C:\\local\\dxx-redux\\android\\temp\\store-assets-tools\\avd\\snapshots\\default_boot\\ram.img"
+    ],
+    [
+      3.13,
+      "C:\\local\\dxx-redux\\temp\\opengl-efficiency-20260925\\avds\\DxxOglEfficiency.avd\\userdata-qemu.img.qcow2"
+    ],
+    [
+      2.35,
+      "C:\\local\\dxx-redux\\android\\temp\\minsdk-study\\avd\\CurrentApi36.avd\\userdata-qemu.img.qcow2"
+    ],
+    [
+      2.0,
+      "C:\\local\\dxx-redux\\temp\\opengl-efficiency-20260925\\avds\\DxxOglEfficiency.avd\\snapshots\\default_boot\\ram.img"
+    ],
+    [
+      2.0,
+      "C:\\local\\dxx-redux\\android\\temp\\minsdk-study\\avd\\LegacyApi23.avd\\userdata-qemu.img"
+    ],
+    [
+      2.0,
+      "C:\\local\\dxx-redux\\android\\temp\\minsdk-study\\avd\\LegacyApi23.avd\\snapshots\\default_boot\\ram.img"
+    ],
+    [
+      2.0,
+      "C:\\local\\dxx-redux\\android\\temp\\minsdk-study\\avd\\CurrentApi36.avd\\snapshots\\default_boot\\ram.img"
+    ],
+    [
+      1.17,
+      "C:\\local\\dxx-redux\\android\\temp\\minsdk-study\\avd\\LegacyApi23.avd\\userdata-qemu.img.qcow2"
+    ],
+    [
+      1.0,
+      "C:\\local\\dxx-redux\\buildd2\\main\\dxx-redux-d2-headless-metadata.pdb"
+    ]
+  ],
+  "errors": []
+}

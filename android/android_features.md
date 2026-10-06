@@ -154,7 +154,6 @@
 - Direct gog installer support (for the gog offline PC/mac installer files), using libarchive, innoextract, etc., which gets game assets out of the installer plus redbook audio for d2
 - Support for installing from a bin+cue CD image, getting game assets from the data track and using the redbook audio tracks for music. Mac CD images are supported as well
 - Regression tests that install from one of the installable discs or gog files, open the game, start a level, and ensure the game runs in the first level
-- Integrated MIDI library
 - Some abstractions around the game’s existing file API so it can map to android and mod manager needs
 
 # Technical todo

@@ -6,7 +6,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $Paths = @(Get-CodeQualityScriptPaths -InputPaths $Paths -RemainingPaths @($args) -ExplicitScope ($PSBoundParameters.ContainsKey('Paths')))
 $files = @(Get-CodeQualityScopedFiles -RepoRoot $repoRoot -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.py'))
 if (-not $files.Count) { Write-Host 'No Python files in scope'; exit 0 }
-$pythonPackages = Join-Path $repoRoot 'android/temp/code-quality/python'
+$pythonPackages = Join-Path $repoRoot 'android/tools/code-quality/python'
 $oldPythonPath = $env:PYTHONPATH
 $ruffVersion = Get-CodeQualityToolVersion -RepoRoot $repoRoot -Name 'RUFF_VERSION'
 $python = Get-CodeQualityPython

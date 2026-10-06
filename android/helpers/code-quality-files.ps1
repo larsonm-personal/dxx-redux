@@ -23,7 +23,7 @@ function Get-CodeQualityNode {
     param([string]$RepoRoot)
     $command = Get-Command node -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
-    $cache = Join-Path $RepoRoot 'android/temp/code-quality/node-path.txt'
+    $cache = Join-Path $RepoRoot 'android/tools/code-quality/node-path.txt'
     if (Test-Path -LiteralPath $cache -PathType Leaf) {
         $candidate = (Get-Content -LiteralPath $cache -Raw).Trim()
         if ([IO.Path]::IsPathRooted($candidate) -and (Test-Path -LiteralPath $candidate -PathType Leaf)) { return $candidate }
