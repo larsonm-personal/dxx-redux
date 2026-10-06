@@ -146,6 +146,9 @@ fun EnginePreferencesPage(
     var showDemoInstallerOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
+    var screenSaverMinutes by remember {
+        mutableIntStateOf(idleSaverMinutes(prefs.getInt(PREF_IDLE_SAVER_MINUTES, 5)))
+    }
     val hasChanges =
         presetNeedsSave ||
             cockpitMode != savedCockpitMode ||
@@ -718,6 +721,29 @@ fun EnginePreferencesPage(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Screen saver after inactivity", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Text(
+                    "Single-player: saves and sleeps while paused. Multiplayer: darkens the display while play continues; you can still take damage",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                IDLE_SAVER_MINUTES_OPTIONS.forEach { minutes ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        RadioButton(
+                            selected = screenSaverMinutes == minutes,
+                            onClick = {
+                                screenSaverMinutes = minutes
+                                prefs.edit().putInt(PREF_IDLE_SAVER_MINUTES, minutes).apply()
+                            },
+                            modifier = Modifier.tvFocusBorder(),
+                        )
+                        Text(if (minutes == 0) "Off" else "$minutes minutes", fontSize = 10.sp)
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))

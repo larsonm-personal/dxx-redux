@@ -437,6 +437,7 @@ $testTimeouts = @{
     "test_input_demo_regressions_graphics" = 900
     "test_dos_midi_parity"                = 1500
     "test_level_metadata_benchmark"       = 300
+    "test_idle_screen_saver"             = 300
     "test_launcher_dpad"                  = 180
     "test_slider_navigation"              = 300
     "test_mission_zip_batch"              = 3600

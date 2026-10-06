@@ -21,6 +21,7 @@
 #include "coop/coop_endgame.h"
 #include "coop/coop_briefing.h"
 #include "android_lifecycle_actions.h"
+#include "android_idle_saver.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_graphics_safety.h"
 #include "digi_mixer_music.h"
@@ -236,6 +237,9 @@ void event_process(void)
 	android_overlay_game_tick();
 	android_graphics_safety_event_tick();
 #endif
+#ifdef ANDROID
+	android_idle_saver_tick(Game_wind != NULL, (Game_mode & GM_MULTI) != 0);
+#endif
 	timer_update();
 #ifdef __ANDROID__
 	coop_endgame_pump();
@@ -257,6 +261,16 @@ void event_process(void)
 		return;
 	}
 	
+#ifdef ANDROID
+	/* Paused sleep has no draw work; keep input and automation responsive */
+	if (android_idle_saver_state() == ANDROID_IDLE_SLEEP) {
+		SDL_Delay(50);
+#ifdef INTROSPECT_ON
+		game_introspect_check_and_dump();
+#endif
+		return;
+	}
+#endif
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
 #if defined(ANDROID) && defined(OGL)
 	android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_DRAW_DISPATCH);
@@ -282,6 +296,9 @@ void event_process(void)
 			wind = window_get_next(wind);
 	}
 
+#ifdef ANDROID
+	if (!android_idle_saver_hidden())
+#endif
 	gr_flip();
 #ifdef INTROSPECT_ON
 	game_introspect_check_and_dump();

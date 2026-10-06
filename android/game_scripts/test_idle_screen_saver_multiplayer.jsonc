@@ -1,0 +1,45 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "_standalone": false,
+            "_owner": "test_lan",
+        },
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 1500,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "4",
+        },
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "idle_saver_active": true,
+            "idle_saver_keep_screen_on": true,
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.checkpoints": "0",
+            "idle_saver.music_suspended": "true",
+            "idle_saver.audio_suspended": "false",
+            "multiplayer.num_connected": {
+                "gte": 2,
+            },
+        },
+    },
+    {
+        "action": "wait_ms",
+        "ms": 4000,
+    },
+    {
+        "action": "introspect",
+    },
+]

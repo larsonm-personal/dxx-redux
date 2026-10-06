@@ -22,6 +22,7 @@
 #include "android_profile.h"
 #include "android_screen_advance.h"
 #include "android_lifecycle_actions.h"
+#include "android_idle_saver.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_menu_scale.h"
 #include "android_rewind.h"
@@ -1176,9 +1177,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			if (has_game_window && android_reload_live_gamepad_config())
 				kc_set_controls();
 			android_profile_resume();
-			mix_background_resume();
-			RBABackgroundResume();
-			androidaud_background_resume();
+			android_idle_saver_foreground_audio();
 			android_lifecycle_diagnostics_set_suspend_state(
 			    ANDROID_LIFECYCLE_SUSPEND_RUNNING);
 			android_lifecycle_diagnostics_acknowledge(generation, visibility);
@@ -1196,9 +1195,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			android_lifecycle_diagnostics_checkpoint_request(
 			    generation, ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE);
 			android_lifecycle_diagnostics_checkpoint_writing();
-			checkpoint_result = state_android_save_lifecycle_checkpoint(
-			    ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE, ANDROID_SAVE_DESC_AUTO_MINIMIZE,
-			    ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
+			checkpoint_result = android_idle_saver_state() == ANDROID_IDLE_SLEEP ? 1 : state_android_save_lifecycle_checkpoint(ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE, ANDROID_SAVE_DESC_AUTO_MINIMIZE, ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
 			android_lifecycle_diagnostics_checkpoint_finish(
 			    checkpoint_result > 0
 			        ? ANDROID_LIFECYCLE_CHECKPOINT_COMMITTED

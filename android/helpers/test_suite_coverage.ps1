@@ -78,6 +78,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_active_game_data_reset'
             'test_android_saveload_dispatch_unified'
             'test_android_sdk_lifecycle'
+            'test_idle_screen_saver'
             'test_bot_client'
             'test_bounded_extraction'
             'test_bounded_python_runtime'

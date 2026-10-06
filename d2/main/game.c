@@ -98,6 +98,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
 #include "android_music_control.h"
+#include "android_idle_saver.h"
 #include "android_profile.h"
 #include "android_graphics_safety.h"
 #include "android_rewind.h"
@@ -527,9 +528,18 @@ void calc_frame_time()
 	{
 		int max_fps = GameCfg.VSync ? MAXIMUM_FPS : PlayerCfg.maxFps;
 		if (max_fps <= 0) max_fps = MAXIMUM_FPS;
+#ifdef __ANDROID__
+		/* Hidden multiplayer has no display swap to pace the simulation */
+		const int idle_saver = android_idle_saver_hidden();
+		if (idle_saver && max_fps > 60) max_fps = 60;
+#endif
 		while (FrameTime < f1_0 / max_fps)
 		{
-			if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
+			if ((GameArg.SysUseNiceFPS && !GameCfg.VSync)
+#ifdef __ANDROID__
+			    || idle_saver
+#endif
+			   )
 				timer_delay(f1_0 / max_fps - FrameTime);
 			timer_update();
 			timer_value = timer_query();
@@ -1469,6 +1479,7 @@ int game_handler(window *wind, d_event *event, void *data)
 
 			if (!Automap_active
 			#ifdef __ANDROID__
+			    && !android_idle_saver_hidden()
 			    && android_graphics_safety_before_main_view()
 			#endif
 			   )		// efficiency hack

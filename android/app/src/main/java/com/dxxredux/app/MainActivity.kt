@@ -340,6 +340,13 @@ class MainActivity :
         runOnUiThread {
             try {
                 val step = JSONObject(json)
+                if (BuildConfig.DEBUG &&
+                    step.has("idle_timeout_ms")
+                ) {
+                    nativeIdleSaverTimeout(step.getInt("idle_timeout_ms"))
+                }
+                if (BuildConfig.DEBUG && step.optBoolean("idle_fail_save_once")) nativeIdleSaverFailSaveOnce()
+                idleScreenSaver?.refresh()
                 if (step.optBoolean("reload_bindings")) loadMetaBindings()
                 step.optJSONObject("bindings")?.let { bindings ->
                     for (name in bindings.keys()) {
@@ -375,7 +382,7 @@ class MainActivity :
                     }
                     check(touchOverlay.isAdminTrayOpen()) { "Controller menu cycle did not open the admin tray" }
                 }
-                step.optJSONArray("graphics_touch")?.let { gesture ->
+                (step.optJSONArray("graphics_touch") ?: step.optJSONArray("screen_touch"))?.let { gesture ->
                     val downTime = android.os.SystemClock.uptimeMillis()
                     for (index in 0 until gesture.length()) {
                         val point = gesture.getJSONObject(index)
@@ -388,9 +395,13 @@ class MainActivity :
                                 else -> error("Unknown graphics touch action")
                             }
                         val (x, y) =
-                            checkNotNull(
-                                graphicsConfirmationOverlay,
-                            ).automationTouchPoint(point.getString("target"))
+                            if (point.has("target")) {
+                                checkNotNull(
+                                    graphicsConfirmationOverlay,
+                                ).automationTouchPoint(point.getString("target"))
+                            } else {
+                                point.getDouble("x").toFloat() to point.getDouble("y").toFloat()
+                            }
                         val event = MotionEvent.obtain(downTime, downTime + index * 10L, action, x, y, 0)
                         event.source = android.view.InputDevice.SOURCE_TOUCHSCREEN
                         try {
@@ -406,6 +417,9 @@ class MainActivity :
                             graphicsConfirmationOverlay?.controllerNavigationState().orEmpty() +
                             videoInfoOverlay?.controllerNavigationState().orEmpty() +
                             mapOf(
+                                "idle_saver_active" to (idleScreenSaver?.active == true),
+                                "idle_saver_keep_screen_on" to
+                                    ((window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0),
                                 "music_open" to (musicPanel != null),
                                 "video_open" to (videoInfoOverlay?.visibility == View.VISIBLE),
                                 "controller_connected" to controllerCoverage.connected,
@@ -582,7 +596,23 @@ class MainActivity :
 
     external fun nativeGetWeaponState(): IntArray
 
+    external fun nativeIdleSaverActivity()
+
+    external fun nativeIdleSaverTimeout(milliseconds: Int)
+
+    external fun nativeIdleSaverState(): Int
+
+    external fun nativeIdleSaverFailSaveOnce()
+
+    private var idleScreenSaver: IdleScreenSaver? = null
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (idleScreenSaver?.motion(event) == true) return true
+        return super.dispatchGenericMotionEvent(event)
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (idleScreenSaver?.touch(event) == true) return true
         tapFeedbackOverlay?.observe(event)
         if (::skipButton.isInitialized && skipButton.handleGlobalTouch(event)) {
             return true
@@ -932,7 +962,10 @@ class MainActivity :
 
             override fun onInputDeviceChanged(deviceId: Int) = refreshControllerDevices()
 
-            override fun onInputDeviceRemoved(deviceId: Int) = refreshControllerDevices()
+            override fun onInputDeviceRemoved(deviceId: Int) {
+                idleScreenSaver?.releaseInputs()
+                refreshControllerDevices()
+            }
         }
 
     private fun refreshControllerDevices() {
@@ -2149,6 +2182,22 @@ class MainActivity :
                 recoverProcess = ::recoverGraphicsProcess,
             ).also { frame.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         setContentView(frame)
+        idleScreenSaver =
+            IdleScreenSaver(
+                this,
+                ready = { gameStarted },
+                multiplayer = { nativeMultiplayerActive },
+                readState = ::nativeIdleSaverState,
+                setTimeout = ::nativeIdleSaverTimeout,
+                noteActivity = ::nativeIdleSaverActivity,
+                visibilityChanged = { hidden ->
+                    if (hidden) {
+                        suspendUiWork()
+                    } else if (isActivityResumed) {
+                        resumeUiWork()
+                    }
+                },
+            )
         frame.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateRoundedCornerTextInsets()
         }
@@ -2471,6 +2520,7 @@ class MainActivity :
             "game activity onStop finishing=$isFinishing " +
                 "changing_config=$isChangingConfigurations started=$gameStarted",
         )
+        idleScreenSaver?.stop()
         super.onStop()
         isActivityResumed = false
         gyroManager?.pause()
@@ -2554,6 +2604,7 @@ class MainActivity :
         updateRoundedCornerTextInsets()
         // Restore only work that was active before this Activity stopped
         resumeUiWork()
+        idleScreenSaver?.resume()
     }
 
     private fun syncDebugLogPrefs() {
@@ -3345,6 +3396,8 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        idleScreenSaver?.dispose()
+        idleScreenSaver = null
         lanJoinQr?.show(false)
         if (BuildConfig.DEBUG) {
             Log.i(
@@ -4072,6 +4125,7 @@ class MainActivity :
         )
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (idleScreenSaver?.key(event) == true) return true
         if (graphicsSuppressedKeys.contains(event.keyCode)) {
             if (event.action == KeyEvent.ACTION_UP) graphicsSuppressedKeys.remove(event.keyCode)
             return true

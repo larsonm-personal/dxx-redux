@@ -1,0 +1,431 @@
+[
+    {
+        "_info": {
+            "games": ["d1", "d2"],
+            "vars": {
+                "d1": {
+                    "GAME": "d1",
+                    "MISSION": "First Strike",
+                },
+                "d2": {
+                    "GAME": "d2",
+                    "MISSION": "Counterstrike",
+                },
+            },
+        },
+    },
+    {
+        "action": "enter_launcher",
+    },
+    {
+        "action": "reset_state",
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "show_resume_offer",
+            "value": false,
+        },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "skip_intro_movie",
+            "value": false,
+        },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "enter_game",
+        "game": "${GAME}",
+    },
+    {
+        "action": "wait_for",
+        "field": "intro_active",
+        "value": "true",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 20000,
+        "post_delay_ms": 200,
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 20000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "when": "d2",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "key",
+        "key": "enter",
+        "when": "d1",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select_mission",
+        "text": "${MISSION}",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "when": "d2",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "key",
+        "key": "enter",
+        "when": "d1",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "select",
+        "text": "Rookie",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "key",
+        "key": "escape",
+        "when": "d1",
+        "post_delay_ms": 100,
+    },
+    {
+        "action": "skip_briefing",
+        "when": "d2",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "wait_for",
+        "field": "game_window_is_front",
+        "value": "true",
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 1500,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 2000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.state": "0",
+            "idle_saver.checkpoints": "0",
+        },
+    },
+    {
+        "action": "key",
+        "key": "pause",
+    },
+    {
+        "action": "wait_for",
+        "field": "time_paused",
+        "value": "true",
+        "timeout_ms": 6000,
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 1500,
+        "idle_fail_save_once": true,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "5",
+        },
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "idle_saver_active": false,
+            "idle_saver_keep_screen_on": true,
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.checkpoints": "0",
+        },
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 2000,
+    },
+    {
+        "action": "controller_input",
+        "axes": {
+            "LS_X": 0.05,
+        },
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "3",
+        },
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "idle_saver_active": true,
+            "idle_saver_keep_screen_on": false,
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "time_paused": "true",
+            "idle_saver.checkpoints": "1",
+            "idle_saver.music_suspended": "true",
+            "idle_saver.audio_suspended": "true",
+        },
+    },
+    {
+        "action": "log",
+        "message": "SCRIPT_BACKGROUND: idle-sleep duration_s=2 lock_screen=true",
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "android_lifecycle.wake_count": {
+                "gte": 1,
+            },
+        },
+        "timeout_ms": 30000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.state": "3",
+            "idle_saver.music_suspended": "true",
+            "idle_saver.checkpoints": "1",
+        },
+    },
+    {
+        "action": "controller_input",
+        "key": "A",
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "2",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "time_paused": "true",
+            "idle_saver.music_suspended": "true",
+        },
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "0",
+        },
+    },
+    {
+        "action": "controller_input",
+        "expect_ui": {
+            "idle_saver_active": false,
+            "idle_saver_keep_screen_on": true,
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "wait_for",
+        "field": "time_paused",
+        "value": "false",
+        "timeout_ms": 6000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.music_suspended": "false",
+        },
+    },
+    {
+        "action": "key",
+        "key": "pause",
+    },
+    {
+        "action": "wait_for",
+        "field": "time_paused",
+        "value": "true",
+        "timeout_ms": 6000,
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 2000,
+    },
+    {
+        "action": "controller_input",
+        "key": "59",
+        "pressed": true,
+    },
+    {
+        "action": "wait_ms",
+        "ms": 2500,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.checkpoints": "1",
+        },
+    },
+    {
+        "action": "controller_input",
+        "key": "59",
+        "pressed": false,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "3",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "idle_saver.checkpoints": "2",
+        },
+    },
+    {
+        "action": "controller_input",
+        "axes": {
+            "LS_X": 0.8,
+        },
+    },
+    {
+        "action": "controller_input",
+        "axes": {
+            "LS_X": 0.8,
+        },
+    },
+    {
+        "action": "controller_input",
+        "axes": {
+            "LS_X": 0.0,
+        },
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 0,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.state": "0",
+        },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "time_paused": "true",
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "wait_for",
+        "field": "time_paused",
+        "value": "false",
+        "timeout_ms": 6000,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 6000,
+        "expect": {
+            "idle_saver.audio_suspended": "false",
+        },
+    },
+    {
+        "action": "key",
+        "key": "pause",
+    },
+    {
+        "action": "wait_for",
+        "field": "time_paused",
+        "value": "true",
+        "timeout_ms": 5000,
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 1500,
+    },
+    {
+        "action": "wait_for",
+        "expect": {
+            "idle_saver.state": "3",
+        },
+        "timeout_ms": 6000,
+    },
+    {
+        "action": "controller_input",
+        "screen_touch": [
+            {
+                "action": "down",
+                "x": 100,
+                "y": 100,
+            },
+            {
+                "action": "up",
+                "x": 100,
+                "y": 100,
+            },
+        ],
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 0,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "time_paused": "true",
+        },
+    },
+    {
+        "action": "key",
+        "key": "escape",
+    },
+    {
+        "action": "controller_input",
+        "idle_timeout_ms": 300000,
+    },
+    {
+        "action": "introspect",
+    },
+]

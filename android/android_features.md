@@ -63,6 +63,10 @@
 
 # Save file management
 
+- idle screen saver after 5 minutes by default (Off / 1 / 5 / 10 / 15 minutes in Game Preferences)
+  - paused single-player: confirms an automatic recovery save, silences audio, and allows Android screen-off; failed or unsupported saves cancel automatic sleep
+  - multiplayer: dims to a black screen, suspends music and main scene rendering, and keeps simulation, networking, and gameplay sounds running; players can still take damage
+  - waking consumes the first touch/button/stick gesture and leaves single-player paused; music resumes when play resumes
 - auto save on minimize (best effort: android minimize can be done in different ways) (can be disabled) and auto save on quit to launcher (can be disabled)
 - Auto save every 5 minutes of game time. Two slots dedicated to this. some special handling around deaths etc.
 - Quick save/load which can be mapped to controller buttons. One slot dedicated to this

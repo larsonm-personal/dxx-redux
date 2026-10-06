@@ -34,6 +34,7 @@ extern "C" {
 #include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_idle_saver.h"
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
 #include "android_screen_advance.h"
@@ -1696,6 +1697,15 @@ extern "C" char *game_introspect_get_state(void)
 	}
 	j["game_mode"] = Game_mode;
 	j["time_paused"] = game_is_time_paused() != 0;
+#ifdef ANDROID
+	j["idle_saver"] = {
+		{ "state", android_idle_saver_state() },
+		{ "checkpoints", android_idle_saver_checkpoints() },
+		{ "game_time", (double) GameTime64 / F1_0 },
+		{ "music_suspended", android_idle_saver_music_suspended() != 0 },
+		{ "audio_suspended", android_idle_saver_audio_suspended() != 0 }
+	};
+#endif
 	{
 		coop_transition_policy travel;
 		unsigned granted, released;
@@ -3129,6 +3139,14 @@ extern "C" char *game_introspect_get_state(void)
 		};
 	}
 
+#ifdef ANDROID
+	if (android_idle_saver_hidden()) {
+		j.erase("framebuffer_sample");
+		j.erase("framebuffer_avg");
+		j.erase("framebuffer_probe");
+	}
+#endif
+
 	/* -- Recent console output (last 50 con_printf lines) ----------- */
 	{
 		char *console_json = console_ringbuf_get_json(0, 50);
@@ -3193,11 +3211,14 @@ extern "C" void game_introspect_check_and_dump(void)
 	if (generation == Introspect_dump_generation || !introspect_path[0])
 		return;
 #if defined(ANDROID) && defined(OGL)
-	/* A request arriving during swap must wait for the next framebuffer sample */
-	if (Framebuffer_probe_generation == Introspect_dump_generation)
-		return;
-	/* Publish completed work while preserving newer requests arriving during sampling */
-	generation = Framebuffer_probe_generation;
+	/* A hidden screen has no new framebuffer; engine diagnostics must still advance */
+	if (!android_idle_saver_hidden()) {
+		/* A request arriving during swap must wait for the next framebuffer sample */
+		if (Framebuffer_probe_generation == Introspect_dump_generation)
+			return;
+		/* Publish completed work while preserving newer requests arriving during sampling */
+		generation = Framebuffer_probe_generation;
+	}
 #endif
 	Introspect_dump_generation = generation;
 

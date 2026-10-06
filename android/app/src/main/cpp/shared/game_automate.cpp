@@ -301,6 +301,7 @@ static const key_entry key_map[] = {
 	{ "esc", SDLK_ESCAPE },
 	{ "tab", SDLK_TAB },
 	{ "space", SDLK_SPACE },
+	{ "pause", SDLK_PAUSE },
 	{ "backspace", SDLK_BACKSPACE },
 	{ "delete", SDLK_DELETE },
 

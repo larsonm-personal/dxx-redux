@@ -94,6 +94,7 @@ param(
     [string]$RestoreSavePath,
     [switch]$SkipBuild,
     [switch]$GraphicsConfirmation,
+    [switch]$IdleScreenSaver,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
     [ValidateSet('Original', 'Enhanced')]
@@ -3211,6 +3212,35 @@ try {
     }
 
     $testPassed = $true
+    if ($IdleScreenSaver) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_idle_screen_saver_multiplayer.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_idle_screen_saver_multiplayer.jsonc' `
+                    -Description 'Multiplayer screen saver on host and client' -TimeoutSec 30)) {
+            throw 'Multiplayer screen saver activation failed'
+        }
+        $before = @{}
+        foreach ($serial in @($EMU1, $EMU2)) { $before[$serial] = Get-GameIntrospection -Serial $serial -Fresh }
+        Start-Sleep -Seconds 3
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $after = Get-GameIntrospection -Serial $serial -Fresh
+            Write-Status "Idle saver $serial state=$($after.idle_saver.state) time=$($before[$serial].idle_saver.game_time)->$($after.idle_saver.game_time) swaps=$($before[$serial].android_lifecycle.work_counters.swap_presented)->$($after.android_lifecycle.work_counters.swap_presented) players=$($after.multiplayer.num_connected)"
+            $simulatedSeconds = $after.idle_saver.game_time - $before[$serial].idle_saver.game_time
+            $draws = $after.android_lifecycle.work_counters.draw_dispatches - $before[$serial].android_lifecycle.work_counters.draw_dispatches
+            if ($draws -gt [Math]::Ceiling($simulatedSeconds * 75) + 5) {
+                throw "Hidden multiplayer exceeded its frame pacing budget on $serial"
+            }
+            if ($after.idle_saver.state -ne 4 -or $after.multiplayer.num_connected -lt 2 -or
+                $after.idle_saver.game_time -le $before[$serial].idle_saver.game_time -or
+                $after.android_lifecycle.work_counters.swap_presented -ne $before[$serial].android_lifecycle.work_counters.swap_presented) {
+                throw "Screen saver must preserve simulation/network and suspend presentation on $serial"
+            }
+        }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_idle_screen_saver_multiplayer_wake.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_idle_screen_saver_multiplayer_wake.jsonc' `
+                    -Description 'Multiplayer screen saver dismissal on host and client' -TimeoutSec 20)) {
+            throw 'Multiplayer screen saver wake failed'
+        }
+    }
     if ($GraphicsConfirmation) {
         $testPassed = Invoke-MultiplayerGraphicsScenario -TriggerScriptName 'test_graphics_multiplayer_trial.jsonc' -DecisionScriptName 'test_graphics_multiplayer_decide.jsonc'
     }
