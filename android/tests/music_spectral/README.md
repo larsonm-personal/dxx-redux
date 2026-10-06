@@ -154,6 +154,11 @@ attenuation, effects default, and separate launcher preview gains/multipliers.
 Each setting documents its units and purpose. The comparison reads its default
 `--gain-db` from that header and checks the renderer's compiled calibration
 
+Android MP3/OGG/FLAC/WAV gameplay uses a separate `MUSIC_FILE_VOLUME_SCALE`,
+initially -14 dB like CD playback, multiplied by the music slider. It does not
+also receive MIDI or CD gains. This is a starting point for CD-like recordings,
+not measured normalization of arbitrary file tracks
+
 The comparison fails on MIDI clipping or, with a baseline, a median D2/CD gap
 that does not improve or remains at least 1 dB. The existing registered
 `test_music_track_controls_unified.jsonc` also verifies the actual D1/D2 engine

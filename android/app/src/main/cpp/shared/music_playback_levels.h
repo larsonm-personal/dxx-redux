@@ -40,6 +40,13 @@
  * CD preview uses this scale too, with its separate preview multiplier below */
 #define MUSIC_CD_VOLUME_SCALE 0.1995262315f
 
+/* Gameplay MP3/OGG/FLAC/WAV sample multiplier: -14 dB, about 19.95% amplitude
+ * Output = decoded sample * this scale * (music slider / 8)
+ * Starts at the measured CD attenuation for CD-like recordings; independently
+ * tunable because file tracks vary in loudness; no per-track normalization
+ * This replaces the MIDI/CD gain path for files, rather than stacking with it */
+#define MUSIC_FILE_VOLUME_SCALE 0.1995262315f
+
 /* Initial effects slider position, an integer 0..8, not dB or a multiplier
  * 2 becomes 2/8 = 0.25 times amplitude, or 20*log10(0.25) = -12.04 dB
  * Applied in addition to each sound's own level; saved slider values override */

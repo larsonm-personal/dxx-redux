@@ -787,6 +787,8 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 
 	/* Apply volume scaling (cheap — just multiply) */
 	volume = tsf_atomic_load_float(&g_volume);
+	if (g_is_pcm)
+		volume *= MUSIC_FILE_VOLUME_SCALE;
 	if (volume < 0.99f) {
 		int i;
 		for (i = 0; i < got; i++)
