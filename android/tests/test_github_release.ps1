@@ -199,6 +199,7 @@ if ($global:dxxReleaseTestScenario -eq 'source-staged') {
     & git -C (Split-Path $root) add source.txt
 }
 if ($global:dxxReleaseTestScenario -eq 'helper-changed') { Add-Content (Join-Path $root 'release-github.ps1') '# Edited while Gradle runs' }
+if ($global:dxxReleaseTestScenario -eq 'docs-changed') { Add-Content (Join-Path $root 'android_features.md') 'Edited while Gradle runs' }
 if ($global:dxxReleaseTestScenario -eq 'head-changed') {
     Set-Content (Join-Path (Split-Path $root) 'source.txt') 'changed during build'
     & git -C (Split-Path $root) add source.txt
@@ -245,7 +246,7 @@ $cases = @('native-warning', 'publish', 'draft', 'build-only', 'dirty', 'unpushe
     'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure',
     'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
     'api-failure', 'clean-failure', 'build-failure', 'unsigned', 'wrong-package', 'wrong-version', 'debuggable', 'missing-abi', 'source-changed', 'upload-failure',
-    'helper-dirty', 'helper-changed', 'source-staged', 'head-changed', 'commit-api-failure',
+    'helper-dirty', 'helper-changed', 'docs-dirty', 'docs-changed', 'source-staged', 'head-changed', 'commit-api-failure',
     'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-tampered', 'upload-only-checksum',
     'upload-only-signature', 'upload-only-version', 'upload-only-unverified', 'upload-only-legacy', 'upload-only-legacy-changed',
     'upload-only-missing', 'upload-only-unpushed', 'upload-only-conflict', 'upload-only-notes', 'upload-only-replace', 'upload-only-dirty-build',
@@ -288,6 +289,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     Set-Content (Join-Path $androidDir 'distribution_versions.conf') "CURRENT_MIN_SDK=24`nCURRENT_TARGET_SDK=36`nLEGACY_MIN_SDK=23`nLEGACY_TARGET_SDK=36"
     Set-Content (Join-Path $androidDir 'keystore.properties') '# No real credentials'
     Set-Content (Join-Path $fixture 'source.txt') 'original source'
+    Set-Content (Join-Path $androidDir 'android_features.md') 'Original documentation'
     $notesText = 'Release notes: caf' + [char]0xE9 + ' ' + [char]0x65E5
     [IO.File]::WriteAllText((Join-Path $fixture 'notes.md'), $notesText, [Text.UTF8Encoding]::new($false))
     Set-Content (Join-Path $fixture '.gitignore') "android/build-outputs/`nandroid/app/build/`nBuildInfo.kt"
@@ -313,6 +315,12 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     Assert-Test ($LASTEXITCODE -eq 0) 'Cannot create fake GitHub Git repository'
     if ($global:dxxReleaseTestScenario -eq 'dirty') { Set-Content (Join-Path $fixture 'untracked.txt') 'new source' }
     if ($global:dxxReleaseTestScenario -eq 'helper-dirty') { Add-Content (Join-Path $androidDir 'release-github.ps1') '# Local release helper edit' }
+    if ($global:dxxReleaseTestScenario -eq 'docs-dirty') {
+        Add-Content (Join-Path $androidDir 'android_features.md') 'Staged documentation edit'
+        & git -C $fixture add android/android_features.md
+        Add-Content (Join-Path $androidDir 'android_features.md') 'Unstaged documentation edit'
+        Set-Content (Join-Path $fixture 'README.MD') 'Untracked documentation'
+    }
     $global:dxxReleaseTestVersion = if ($global:dxxReleaseTestScenario -eq 'draft') { '1.2.0-rc.1' } else { '1.2.0' }
     $global:dxxReleaseTestTag = "android-v$global:dxxReleaseTestVersion"
     $global:dxxReleaseTestRecommendedName = "dxx-revival-$global:dxxReleaseTestVersion-android-1-recommended-universal.apk"
@@ -398,9 +406,11 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
                 $saved.PSObject.Properties.Remove('sourceVerified')
                 $saved.sourceClean = $false
                 Add-Content (Join-Path $androidDir 'release-github.ps1') '# Comment change that previously blocked publication'
-                & git -C $fixture add android/release-github.ps1
+                Add-Content (Join-Path $androidDir 'android_features.md') 'Documentation changed since the saved build'
+                & git -C $fixture add android/release-github.ps1 android/android_features.md
                 & git -C $fixture -c user.name=ReleaseTest -c user.email=release@example.invalid -c commit.gpgsign=false commit --quiet -m 'helper comment'
                 Add-Content (Join-Path $androidDir 'release-github.ps1') '# Further helper-only change'
+                Add-Content (Join-Path $androidDir 'android_features.md') 'Further documentation change'
             }
             'upload-only-legacy-changed' {
                 $saved.PSObject.Properties.Remove('sourceVerified')
@@ -431,12 +441,12 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     $successExpected = $global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'draft', 'build-only',
         'existing-release', 'existing-draft', 'orphan-tag', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag',
         'older-draft-target', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-upload-failure',
-        'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'upload-only-replace',
+        'helper-dirty', 'helper-changed', 'docs-dirty', 'docs-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'upload-only-replace',
         'legacy-edition-build-only', 'combined-migration', 'draft-migration')
     Assert-Test (($null -eq $failure) -eq $successExpected) "Unexpected result for $global:dxxReleaseTestScenario`: $failure"
     if (-not $successExpected) {
         $expectedFailure = switch ($global:dxxReleaseTestScenario) {
-            { $_ -in @('dirty', 'source-changed', 'source-staged', 'legacy-source-changed') } { 'clean working tree' }
+            { $_ -in @('dirty', 'source-changed', 'source-staged', 'legacy-source-changed') } { 'App source has uncommitted changes' }
             { $_ -in @('unpushed', 'upload-only-unpushed') } { 'Push the branch' }
             'commit-api-failure' { 'check gh auth status' }
             { $_ -in @('api-failure', 'release-api-failure') } { 'gh failed' }
@@ -476,9 +486,9 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         Assert-Test ($global:dxxReleaseTestBuildNumber -eq 0) 'Assemble ran after clean failed'
     }
     Assert-Test ($publishes.Count -eq [int]($global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'orphan-tag', 'prefix-tag', 'rerun', 'rerun-new-commit', 'rerun-build-failure', 'rerun-unsigned',
-                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect publication for $global:dxxReleaseTestScenario"
+                'helper-dirty', 'helper-changed', 'docs-dirty', 'docs-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect publication for $global:dxxReleaseTestScenario"
     Assert-Test ($creates.Count -eq [int]($global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'draft', 'upload-failure', 'orphan-tag', 'prefix-tag', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
-                'helper-dirty', 'helper-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect upload for $global:dxxReleaseTestScenario"
+                'helper-dirty', 'helper-changed', 'docs-dirty', 'docs-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy'))) "Incorrect upload for $global:dxxReleaseTestScenario"
     Assert-Test ($replaces.Count -eq [int]($global:dxxReleaseTestScenario -in @('existing-release', 'existing-draft', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'older-draft-target', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-upload-failure', 'upload-only-replace', 'combined-migration', 'draft-migration', 'legacy-retirement-failure', 'uploaded-hash-mismatch'))) "Incorrect replacement for $global:dxxReleaseTestScenario"
     if ($global:dxxReleaseTestScenario -in @('replace-failure', 'notes-update-failure')) {
         Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'release delete-asset *' }).Count -eq 0) 'Failed APK/notes replacement deleted old attachments'

@@ -6,7 +6,8 @@
 Build, verify and publish current and Android 6.0 APKs in one release
 .DESCRIPTION
 Run from the repo root with PowerShell 5.1/7, Android tools/JDK 21 and keystore.properties
-Publishing needs clean, pushed app source and gh auth login; origin is the default (-Repository overrides)
+Publishing needs clean, pushed app source and gh auth login; Markdown and release-helper edits are allowed
+Origin is the default (-Repository overrides)
 Reusing a version builds both editions, moves android-vVERSION and replaces both APKs and generated notes
 Only APKs are uploaded; metadata/checksums stay local for recovery and obsolete uploads are removed
 GitHub automatically includes source ZIP/tarball links; these cannot be removed by the helper
@@ -41,8 +42,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path $PSScriptRoot
 . (Join-Path $PSScriptRoot 'helpers/test_host_platform.ps1')
-# These release-only files are not Gradle/APK inputs
-$sourcePaths = @('.', ':(exclude)android/release-github.ps1',
+# Markdown documentation and release-only files are not Gradle/APK inputs
+$sourcePaths = @('.', ':(exclude,icase)*.md', ':(exclude)android/release-github.ps1',
     ':(exclude)android/tests/test_github_release.ps1', ':(exclude)android/ai tool plans')
 
 function Invoke-ReleaseTool {
@@ -77,7 +78,7 @@ function Assert-ReleaseSource {
     }
     $status = Get-ReleaseSourceStatus
     if ($status) {
-        throw "Publishing requires a clean working tree for app source. Changed files:`n$status`nCommit or stash these before building (or use -BuildOnly). The final check prevents publishing an APK built from changing source; release-only helper edits are allowed"
+        throw "App source has uncommitted changes:`n$status`nCommit or stash these files, or use -BuildOnly"
     }
 }
 

@@ -27,22 +27,23 @@
 - A new special cheat that highlights and labels secret areas on the automap. When this cheat is active, guidebot can navigate to a secret as a task. Secret area classification isn’t perfect because the actual areas aren’t labeled by the map maker (like they are in doom), so the game is using some hints based on map geometry
 - Boss health bar (optional)
 - FoV slider for 90-100-110-120 degrees. when playing in landscape mode on a phone I find that 110-120 is best just so the up/down field of view works out. this is locked to the original 90 for competitive multiplayer
+  * the reason FoV is so weird in this game is that it refers to the *vertical* FoV, and vertical size changes a lot from the hud to the full screen view. the hud view actually gives something like 110 degrees horizontal view, and the full screen a lot less. when in full screen, the natural FoV setting is more like 110
 - D1 missions played within D2 have support for their textures etc. so they look right, plus an attempt to get weapon and robot behavior to match (with a sort of emulation layer). This gives the advantages of D2 (basically: hud cameras, and can spawn guidebot if desired). I recommend playing D1 this way. Long-term, there should be a unification of the game engines like d2xxl has done and rebirth has partially done and I've laid the groundwork for that
 
 # LAN play quality-of-life
 
-- launcher lobby: games can be set up and joined before the game engine starts. UDP broadcast/mdns helps find games. QR codes to share LAN IPs quickly. the launcher's coordination layer keeps running in the background to facilitate late joins
+- launcher lobby: games can be set up and joined before the game engine starts. UDP broadcast/mDNS helps find games. QR codes to share LAN IPs quickly. the launcher's coordination layer keeps running in the background to facilitate late joins
 - The game tries to automatically save cooperative game progress and show available saves to resume from the launcher. Resuming directly from the launcher (starting a game with a save game selected) is possible, it starts the level then loads the save when all players have joined
 - Allow more coop starts than maps have configured by generating offsets for existing start points
 - While in lobby, check mission zip size and hash vs. host (a warning only, it doesn’t prevent playing, but the intent is to flag incompatible versions)
 - Allow downloading missions from the host if the client needs them to play (excluding licensed base game data)
 - Optional guidebot for coop games. The player to release the guidebot becomes the owner. If they leave the game the guidebot attaches to another player. Ownership can be abdicated, giving the guidebot to another random player
-- Coop: allow briefings (optional setting. Base game behavior is to omit them). The host can force a mine start instead of waiting for players to finish watching them
-- Coop: allow mine exit sequences. in d1's in-engine exits, show other players exiting (as they exit)
+- Coop: allow briefings (optional setting. original behavior is to omit them). The host can force a mine start instead of waiting for players to finish watching them
+- Coop: allow mine exit sequences. in d1's in-engine exits, show other players exiting if they would be in view at the same time
 - Coop: allow joining an in-progress server during more phases (in briefings, flyouts, score review) with feedback about what's happening
-- Coop: allow traveling to secret areas (optional setting. The base game behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players then remain in the “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then to the next level after the secret area is completed
+- Coop: allow traveling to secret areas (optional setting. The original behavior is to disable them). If a player enters a secret warp door, the remaining players are brought to the secret area after a short countdown. Secret doors are blocked if a normal exit door is used by another player (all players then remain in the “beat the reactor countdown to the exit” race). Secret doors taken during reactor countdown work normally: they bring the whole party to the secret area, then to the next level after the secret area is completed
 - Coop: track a player’s loot so if they leave and rejoin they get it back (they still generate spew on exit, and any uncollected spew is given to them on return)
-- Coop: allow duplicate pickups of shields+energy (optional). allow picking up weapons-as-energy if all players have that weapon
+- Coop: allow duplicate pickups of shields+energy (optional, original behavior was non-duplicated and led to energy/shields starvation in many cases). allow picking up weapons-as-energy if all players have that weapon
 - Coop: remove absorption time from player spew (optional)
 - if the host leaves, a client can take over as host (allowing the host to rejoin what is now the server)
 - Warp to other player button is shown when a player is some distance away (optional). Helps prevent softlocks and makes the game more cooperative
@@ -63,10 +64,6 @@
 
 # Save file management
 
-- idle screen saver after 5 minutes by default (Off / 1 / 5 / 10 / 15 minutes in Game Preferences)
-  - paused single-player: confirms an automatic recovery save, silences audio, and allows Android screen-off; failed or unsupported saves cancel automatic sleep
-  - multiplayer: dims to a black screen, suspends music and main scene rendering, and keeps simulation, networking, and gameplay sounds running; players can still take damage
-  - waking consumes the first touch/button/stick gesture and leaves single-player paused; music resumes when play resumes
 - auto save on minimize (best effort: android minimize can be done in different ways) (can be disabled) and auto save on quit to launcher (can be disabled)
 - Auto save every 5 minutes of game time. Two slots dedicated to this. some special handling around deaths etc.
 - Quick save/load which can be mapped to controller buttons. One slot dedicated to this
@@ -121,22 +118,23 @@
 
 # Graphics
 
-- Ported the high res texture packs from d2x-xl. Used etc2 compression for arm gles size/performance. Texture packs are available @ 128x128 (downscaled from 512), 256x256, 512x512 (base game is 64x64). these imported textures aren't perfect. most players should stick to the base textures which look great with anisotropic filtering, texture filtering and msaa
-- ported/updted the xfing uud1tp/uud2tp/uud2sp to .dxa and set them up as patches rather than as redistributions of hog/pig/etc.
+- (in progress) Ported the high res texture packs from d2x-xl. Used etc2 compression for arm gles size/performance. Texture packs are available @ 128x128 (downscaled from 512), 256x256, 512x512 (base game is 64x64). these imported textures aren't perfect. most players should stick to the base textures which look great with anisotropic filtering, texture filtering and msaa
+- (in progress) ported/updted the xfing uud1tp/uud2tp/uud2sp to .dxa and set them up as patches rather than as redistributions of hog/pig/etc.
 - The game runs a gles 3.0 shim so it has access to etc2 and newer effects but the desktop code can stay the same
 - Texture filtering, anisotropic filtering, anti aliasing options (these existed in the base redux game, but are cleaned up and have more options)
-- Launcher graphics settings explain unavailable MSAA/AF options, GPU limits and effective MSAA sample counts below the controls. Support is checked when a game starts with each color mode; unavailable live overlay controls are skipped by controller navigation
-- MSAA matches the actual display format and uses a sample count shared by color and depth buffers. Unsupported trials restore the last accepted graphics settings
+- at first launch, a prompt asks the user to configure texture filtering, msaa, AF
 - Graphics debugging overlay with texture name labels
 - Option to move score and other corner text away from rounded android screen corners based on the android API for corner dimensions
 - Automap drawing optimized (example: very large level “uneasy 4” needing ~8k lines rendered ran at 1 frame/second on my flagship phone, now ~60 fps)
+- a few other optimizations based on play testing and profiling
+- idle screen saver with sensible behavior for single and multiplayer
 
 # Network play
 
 - Currently, LAN and direct (fill-in-IP, with port forwarding) connections work
   - Auto find LAN games with broadcast packets
   - In-game network overlays for connection info (connection type, ping, packet loss)
-- I’m planning a matchmaking server in future work, there is a partially working one already but support is hidden from the app
+- I’m planning a matchmaking server in future work, there is a partially working one already but support is hidden in the app
   - (planned) Matchmaking server with game list, friends list, etc.
   - (planned) “ICE”-style stun/turn/direct connection manager/helper for hole punching
   - (planned) Relay (“turn”-type) server built into the matchmaking server for network connections that fail hole punching/direct connect
