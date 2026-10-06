@@ -480,12 +480,12 @@ internal val DEMO_DOWNLOADS =
             name = "D2 Demo",
             url =
                 "https://github.com/larsonm-personal/dxx-redux/releases/download/" +
-                    "demo_installers/Descent.II.Preview.sit",
-            downloadFilename = "Descent.II.Preview.sit",
-            archiveName = "Descent II Preview.sit",
-            description = "Descent 2 Mac preview demo",
-            sizeBytes = 7_753_518L,
-            files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "descent2.s11", "exit.ham"),
+                    "demo_installers/d2demo10.zip",
+            downloadFilename = "d2demo10.zip",
+            archiveName = "d2demo10.zip",
+            description = "Descent 2 PC demo with MIDI music",
+            sizeBytes = 4_306_833L,
+            files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "d2demo.dem"),
         ),
         DemoPackage(
             game = "d1",

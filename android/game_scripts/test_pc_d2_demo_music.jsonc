@@ -1,0 +1,101 @@
+// TEST: Default D2 demo download plays MIDI on first launch and relaunch
+[
+    { "_info": { "games": ["d2"] } },
+    { "action": "enter_launcher" },
+    { "action": "reset_state" },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "show_resume_offer", "value": false },
+        "post_delay_ms": 250,
+    },
+    // Register any directory retained by the runner before clearing this fixture
+    {
+        "action": "setup_command",
+        "command": "create_set",
+        "args": { "name": "pc-demo-music" },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "delete_set",
+        "args": { "name": "pc-demo-music" },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "create_set",
+        "args": { "name": "pc-demo-music" },
+        "post_delay_ms": 250,
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": { "name": "pc-demo-music" },
+        "post_delay_ms": 250,
+    },
+    { "action": "wait_for", "field": "d2.ready", "value": "false", "timeout_ms": 10000 },
+    // D2 is the first download offer; use the same button as a fresh install
+    { "action": "tap_button", "text": "Download and install", "exact": true },
+    { "action": "wait_for", "field": "d2.ready", "value": "true", "timeout_ms": 120000 },
+    {
+        "action": "wait_for",
+        "field": "music_preview.midi_sources[0].id",
+        "value": "d2-builtin",
+        "timeout_ms": 10000,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "music_preview.midi_sources[0].id": "d2-builtin",
+            "music_preview.midi_sources[0].track_count": { "gte": 8 },
+        },
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "skip_intro_movie", "value": false },
+        "post_delay_ms": 250,
+    },
+    { "action": "enter_game", "game": "d2" },
+    { "action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000 },
+    { "action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select_mission", "text": "Descent 2 Demo", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000 },
+    { "action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000 },
+    { "action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "expect": {
+            "in_game": "true",
+            "music.type": "1",
+            "music.active": "true",
+            "audio.tsf_playing": "true",
+            "audio.tsf_peak_sample": { "gt": 0 },
+        },
+        "timeout_ms": 10000,
+    },
+    { "action": "enter_launcher" },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "skip_intro_movie", "value": true },
+        "post_delay_ms": 250,
+    },
+    { "action": "enter_game", "game": "d2" },
+    {
+        "action": "wait_for",
+        "expect": {
+            "screen_mode": "menu",
+            "music.type": "1",
+            "music.active": "true",
+            "audio.tsf_playing": "true",
+            "audio.tsf_peak_sample": { "gt": 0 },
+        },
+        "timeout_ms": 20000,
+    },
+    { "action": "log", "message": "PC D2 demo download and default MIDI playback passed" },
+]

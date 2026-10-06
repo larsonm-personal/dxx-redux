@@ -166,8 +166,8 @@ object NativePilotPreferences {
     private fun decodeMusicPrefs(raw: IntArray): MusicPrefs =
         MusicPrefs(
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
-            source = musicSourceName(if (raw.size >= 2) raw[1] else 2),
-            preferMissionSoundtrack = raw.size < 3 || raw[2] != 0,
+            source = musicSourceName(if (raw.size >= 2) raw[1] else 3),
+            preferMissionSoundtrack = raw.size >= 3 && raw[2] != 0,
             playOrder = (if (raw.size >= 4) raw[3] else 0).coerceIn(0, 2),
             volume = (if (raw.size >= 5) raw[4] else 8).coerceIn(0, 8),
         )

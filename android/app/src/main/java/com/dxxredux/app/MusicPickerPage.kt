@@ -135,7 +135,7 @@ fun MusicPickerPage(
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     var musicMode by remember {
-        val stored = prefs.getString("music_mode", MUSIC_MODE_CD) ?: MUSIC_MODE_CD
+        val stored = prefs.getString("music_mode", MUSIC_MODE_MIDI) ?: MUSIC_MODE_MIDI
         mutableStateOf(if (stored == "mission") MUSIC_MODE_MIDI else stored)
     }
 

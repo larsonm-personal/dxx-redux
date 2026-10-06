@@ -221,16 +221,13 @@ internal suspend fun extractZipContents(
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
-        val sowFiles = mutableListOf<File>()
+        val sowFiles = mutableMapOf<String, File>()
         val attemptPaths = mutableListOf<File>()
         val logicalSources = mutableMapOf<String, String>()
         var foundAudio = false
         val audioExts = setOf("mp3", "ogg", "flac")
-        val expectedDemoFiles =
-            archiveName
-                ?.let { DemoInstallerPackages.matchByName(it) }
-                ?.expectedFiles
-                ?.toSet()
+        val demoPackage = archiveName?.let { DemoInstallerPackages.matchByName(it) }
+        val expectedDemoFiles = demoPackage?.expectedFiles?.toSet()
 
         fun shouldKeepGameFile(name: String): Boolean =
             if (expectedDemoFiles != null) {
@@ -315,7 +312,9 @@ internal suspend fun extractZipContents(
                                 }
                                 val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
                                 if (name.endsWith(".sow")) {
-                                    sowFiles.add(tmpFile)
+                                    if (sowFiles.putIfAbsent(name, tmpFile) != null) {
+                                        return@withContext failure("Archive has duplicate SOW volume $name")
+                                    }
                                     Log.i("DXX-Setup", "Extracted SOW from archive: $name ($size bytes)")
                                 } else {
                                     results.add(ExtractedFile(name, tmpFile, sha256, size))
@@ -335,42 +334,54 @@ internal suspend fun extractZipContents(
                 }
             }
             if (sowFiles.isNotEmpty()) {
-                for (sowFile in sowFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
-                    kotlinx.coroutines.withContext(Dispatchers.Main) {
-                        onProgress(sowFile.name, 0L, sowFile.length())
+                val splitVolumes = demoPackage?.sowVolumes.orEmpty()
+                if (splitVolumes.isNotEmpty() && sowFiles.keys != splitVolumes.toSet()) {
+                    return@withContext failure("Installer has missing or unexpected SOW volumes")
+                }
+                val volumeGroups =
+                    if (splitVolumes.isNotEmpty()) {
+                        listOf(splitVolumes.map { sowFiles.getValue(it) })
+                    } else {
+                        sowFiles.toSortedMap().values.map { listOf(it) }
                     }
+                for (volumes in volumeGroups) {
+                    // Assemble known split installers in one fresh staging directory
                     val sowOutputDir = AtomicFilePublication.uniqueSibling(File(tmpDir, "sow-output"), "directory")
                     if (!sowOutputDir.mkdirs()) {
-                        return@withContext failure("Could not stage ${sowFile.name}")
+                        return@withContext failure("Could not stage SOW output")
                     }
                     attemptPaths.add(sowOutputDir)
-                    val sowAttempt = budget.newDiscExtractionAttempt()
-                    val extractionContext = currentCoroutineContext()
-                    val count =
-                        DiscImportBridge.extractSowFiles(
-                            sowFile.absolutePath,
-                            sowOutputDir.absolutePath,
-                            object : DiscImportBridge.ExtractProgress {
-                                override fun onProgress(
-                                    currentFile: String,
-                                    bytesDone: Long,
-                                    bytesTotal: Long,
-                                ): Int = if (extractionContext.isActive) 0 else 1
-                            },
-                            appendExisting = false,
-                            attempt = sowAttempt,
-                        )
-                    extractionContext.ensureActive()
-                    if (count < 0) {
-                        return@withContext failure("SOW extraction failed for ${sowFile.name}")
+                    for (sowFile in volumes) {
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            onProgress(sowFile.name, 0L, sowFile.length())
+                        }
+                        val sowAttempt = budget.newDiscExtractionAttempt()
+                        val count =
+                            DiscImportBridge.extractSowFiles(
+                                sowFile.absolutePath,
+                                sowOutputDir.absolutePath,
+                                object : DiscImportBridge.ExtractProgress {
+                                    override fun onProgress(
+                                        currentFile: String,
+                                        bytesDone: Long,
+                                        bytesTotal: Long,
+                                    ): Int = if (extractionContext.isActive) 0 else 1
+                                },
+                                appendExisting = splitVolumes.isNotEmpty(),
+                                attempt = sowAttempt,
+                            )
+                        extractionContext.ensureActive()
+                        if (count < 0) {
+                            return@withContext failure("SOW extraction failed for ${sowFile.name}")
+                        }
+                        budget.acceptDiscExtractionAttempt(sowAttempt)
+                        Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
                     }
-                    budget.acceptDiscExtractionAttempt(sowAttempt)
-                    Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
                     val extractedFiles = sowOutputDir.listFiles()?.filter { it.isFile } ?: emptyList()
                     for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
                         val lowerName = file.name.lowercase(Locale.ROOT)
                         if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
-                        val prior = logicalSources.putIfAbsent(lowerName, "${sowFile.name}:${file.name}")
+                        val prior = logicalSources.putIfAbsent(lowerName, "${volumes.first().name}:${file.name}")
                         if (prior != null) {
                             return@withContext failure(
                                 "Nested SOW has colliding game-file output $lowerName with $prior",

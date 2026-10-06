@@ -494,7 +494,7 @@ fun TouchEditorPage(
                     Text("Presets", fontSize = 12.sp)
                 }
                 TextButton(onClick = { showGlobalSettings = true }, modifier = toolbarButtonModifier(3)) {
-                    Text("Global", fontSize = 12.sp)
+                    Text("Settings", fontSize = 12.sp)
                 }
                 TextButton(onClick = { showGyroSettings = true }, modifier = toolbarButtonModifier(4)) {
                     Text("Gyro", fontSize = 12.sp)
@@ -4056,7 +4056,7 @@ private fun GlobalSettingsDialog(
     RequestLauncherControllerFocus(sliderFocus, true, layout.globalOpacity)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Global Settings") },
+        title = { Text("Settings") },
         text = {
             Column {
                 Text(

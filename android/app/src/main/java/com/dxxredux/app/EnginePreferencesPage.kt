@@ -285,7 +285,7 @@ fun EnginePreferencesPage(
                         presetError = "Create or select a pilot before applying a preset"
                         return@TextButton
                     }
-                    showRobotHostageCounts = preset.helpersEnabled
+                    showRobotHostageCounts = false
                     showBossHealthBar = preset.helpersEnabled
                     mapCheatsAccessible = preset.helpersEnabled
                     showGuidebotLine = preset.helpersEnabled

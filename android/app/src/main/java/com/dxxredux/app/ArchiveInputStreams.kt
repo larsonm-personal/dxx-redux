@@ -190,7 +190,9 @@ private fun validateLocalHeader(
     archive.skipBytes(16)
     val nameLength = archive.readU16()
     val extraLength = archive.readU16()
-    if (flags != expectedFlags || method != expectedMethod || nameLength != expectedName.size) {
+    // The original d2demo10.zip sets reserved bit 15 only in local headers
+    // Ignore that bit while requiring every supported stream flag to agree
+    if (flags and 0x7fff != expectedFlags || method != expectedMethod || nameLength != expectedName.size) {
         throw ZipException("ZIP local and central headers disagree")
     }
     val dataOffset = Math.addExact(offset, ZIP_LOCAL_HEADER_BYTES + nameLength + extraLength)

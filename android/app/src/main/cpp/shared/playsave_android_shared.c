@@ -60,9 +60,9 @@ void android_get_default_map_cheats_prefs(int *map_cheats_accessible)
 void android_get_default_music_prefs(int *source, int *prefer_mission, int *play_order, int *volume)
 {
 	if (source)
-		*source = 2;
+		*source = 3; /* MIDI; keep source IDs synchronized with NativePilotPreferences.kt */
 	if (prefer_mission)
-		*prefer_mission = 1;
+		*prefer_mission = 0;
 	if (play_order)
 		*play_order = 0;
 	if (volume)

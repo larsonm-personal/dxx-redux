@@ -17,6 +17,31 @@ import java.util.zip.ZipOutputStream
 
 class ArchiveInputStreamsTest {
     @Test
+    fun acceptsPcDemoReservedLocalFlagForStoredAndDeflatedEntries() {
+        for (method in listOf(ZipEntry.STORED, ZipEntry.DEFLATED)) {
+            val archive = makeZip(method)
+            archive[7] = (archive[7].toInt() or 0x80).toByte()
+            openZipInputStreamSkippingPreamble(ByteArrayInputStream(archive)).use { zip ->
+                assertEquals("DESCENT1.SOW", zip.nextEntry.name)
+                assertEquals("payload", zip.readBytes().toString(Charsets.US_ASCII))
+                assertEquals(null, zip.nextEntry)
+            }
+        }
+    }
+
+    @Test
+    fun reservedLocalFlagDoesNotPermitMismatchedStreamFlags() {
+        for (flag in listOf(1, 2, 8)) {
+            val archive = makeZip()
+            archive[7] = (archive[7].toInt() or 0x80).toByte()
+            archive[6] = (archive[6].toInt() xor flag).toByte()
+            assertThrows(ZipException::class.java) {
+                openZipInputStreamSkippingPreamble(ByteArrayInputStream(archive))
+            }
+        }
+    }
+
+    @Test
     fun opensZipAfterSelfExtractorPreamble() {
         val archive = "MZ fake self extractor".toByteArray(Charsets.US_ASCII) + makeZip()
 
@@ -215,9 +240,23 @@ class ArchiveInputStreamsTest {
         closeEntry()
     }
 
-    private fun makeZip(): ByteArray {
+    private fun makeZip(method: Int = ZipEntry.DEFLATED): ByteArray {
         val bytes = ByteArrayOutputStream()
-        ZipOutputStream(bytes).use { it.writeEntry("DESCENT1.SOW", "payload") }
+        val payload = "payload".toByteArray(Charsets.US_ASCII)
+        ZipOutputStream(bytes).use { zip ->
+            zip.putNextEntry(
+                ZipEntry("DESCENT1.SOW").apply {
+                    this.method = method
+                    if (method == ZipEntry.STORED) {
+                        size = payload.size.toLong()
+                        compressedSize = size
+                        crc = CRC32().apply { update(payload) }.value
+                    }
+                },
+            )
+            zip.write(payload)
+            zip.closeEntry()
+        }
         return bytes.toByteArray()
     }
 

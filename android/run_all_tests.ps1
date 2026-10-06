@@ -412,6 +412,7 @@ $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
     "test_engine_prefs_unified"           = 240
+    "test_pc_d2_demo_music"               = 300
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_disc_content_import"           = 420

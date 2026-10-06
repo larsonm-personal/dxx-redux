@@ -49,7 +49,7 @@ class DemoInstallerOfferTest {
         val byGame = DEMO_DOWNLOADS.associateBy { it.game }
 
         assertEquals("desc14sw.exe", byGame.getValue("d1").archiveName)
-        assertEquals("Descent II Preview.sit", byGame.getValue("d2").archiveName)
+        assertEquals("d2demo10.zip", byGame.getValue("d2").archiveName)
         assertEquals(
             byGame.getValue("d1").files,
             DemoInstallerPackages.matchByName(byGame.getValue("d1").archiveName)?.expectedFiles,

@@ -211,6 +211,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_merged_wall_two_pass_probe'
         )
         gameplay_scenarios = @(
+            'test_pc_d2_demo_music'
             'test_fov_demo_compatibility'
             'test_endgame_singleplayer_d1'
             'test_endgame_singleplayer_d2'

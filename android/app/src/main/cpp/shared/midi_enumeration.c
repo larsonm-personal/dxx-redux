@@ -387,9 +387,10 @@ char *midi_enumerate_tracks(const char *files_dir)
 	int first = 1;
 	int first_error = 1;
 
-	/* D2 built-in music from descent2.hog (case-insensitive lookup) */
+	/* D2 built-in music, including the PC demo (case-insensitive lookup) */
 	char hog_path[512];
-	if (find_file_ci(files_dir, "descent2.hog", hog_path, sizeof(hog_path))) {
+	if (find_file_ci(files_dir, "descent2.hog", hog_path, sizeof(hog_path)) ||
+	    find_file_ci(files_dir, "d2demo.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d2-builtin", "Descent 2 (built-in)",
 		                     "d2", &sb, &first, &errors, &first_error);
 	}

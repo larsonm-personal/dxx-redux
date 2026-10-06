@@ -50,7 +50,7 @@ internal enum class GameSettingsPreset(
     val settings: List<PresetSettingPreview>
         get() =
             buildList {
-                add(PresetSettingPreview("Robot / hostage / secret counts", helpersEnabled))
+                add(PresetSettingPreview("Robot / hostage / secret counts", false))
                 add(PresetSettingPreview("Map cheat buttons", helpersEnabled))
                 add(PresetSettingPreview("Boss health bar", helpersEnabled))
                 add(PresetSettingPreview("In-game FOV", value = "90 deg (Base)"))
