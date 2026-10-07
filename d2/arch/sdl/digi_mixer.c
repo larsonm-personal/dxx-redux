@@ -277,7 +277,7 @@ void digi_mixer_set_digi_volume( int dvolume )
 	digi_volume = dvolume;
 	if (!digi_initialised) return;
 #ifdef __ANDROID__
-	Mix_Volume(-1, (int)(fix2byte(dvolume) * AUDIO_EFFECTS_VOLUME_SCALE));
+	Mix_Volume(-1, (int)(fix2byte(dvolume) * AUDIO_EFFECTS_VOLUME_SCALE * AUDIO_GAMEPLAY_HEADROOM_SCALE));
 #else
 	Mix_Volume(-1, fix2byte(dvolume));
 #endif

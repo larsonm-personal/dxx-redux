@@ -147,9 +147,16 @@ Calibration lives in `shared/music_playback_levels.h`: MIDI receives no boost;
 CD playback and CD previews get -14 dB. All MIDI gameplay and preview profiles
 retain their existing synth gains. Removing the earlier +2 dB D2 adjustment
 adds headroom while lowering CD by the same amount preserves the measured match.
-The Android effects default is 2/8 (-12 dB); saved volume choices take precedence
+Both Android volume sliders default to 8/8. Effects use a separate fixed
+`AUDIO_EFFECTS_VOLUME_SCALE` of 0.25 (-12.04 dB). All gameplay sources then
+receive the same `AUDIO_GAMEPLAY_HEADROOM_SCALE` of 0.625 (-4.08 dB) before
+mixing, preserving their relative balance while leaving room for overlapping
+effects. The net effects scale is 0.15625 (-16.12 dB). Saved slider choices take
+precedence. The device master volume controls overall listening level.
+Source-only comparisons and launcher previews exclude the shared gameplay trim
 
-Android effects apply that slider once through SDL_mixer channel volume.
+Android effects apply that slider and fixed calibration once through SDL_mixer
+channel volume, including the shared headroom trim.
 Startup distance attenuation uses only each sound's own level, matching later
 positional updates. Previously startup also included the effects slider in the
 distance gain: a full-level sound at effects 2/8 received about -30 dB before
@@ -171,3 +178,37 @@ The comparison fails on MIDI clipping or, with a baseline, a median D2/CD gap
 that does not improve or remains at least 1 dB. The existing registered
 `test_music_track_controls_unified.jsonc` also verifies the actual D1/D2 engine
 calibration through introspection
+
+## Combined gameplay output
+
+Install a current Android debug APK, prepare the Python environment above, and
+run this against the repository test emulator (the runner resets test game state):
+
+```powershell
+.\android\tests\test_audio_mix.ps1 -Serial emulator-5582
+```
+
+`temp/audio-mix-normalization/report.html` contains the measured levels and raw
+listening captures. Adjacent WAVs contain the final mix, aligned music, and the
+effects residual. The JSON report records the source hash, calibration constants,
+LUFS, true peaks, PCM boundary counts and the final mute check
+
+The runner checks fresh 8/8 defaults in both games, effects slider 8/4/0 mapping,
+and actual silent output when both sliders are zero. It captures level-1 gameplay
+with weapon input, individual explosions, and eight simultaneous explosions for
+each of MIDI, CD and MP3. CD and MP3 use the same sixty-second excerpt from
+Definitive Collection Disc 2, track 5; MP3 is encoded at 320 kbit/s
+without normalizing it. Their captured music loudness must agree within 1 dB
+
+A seventh capture runs D2 game02 for over 120 seconds, with repeated overlapping
+explosions. This is the highest-peaking D2 MIDI selection in the source comparison,
+so the quiet opening of level-1 music cannot make the mix check artificially easy
+
+The first ten seconds are reported separately from the overlap stress and mute
+phases. Effects residuals are only interpretable when the mix does not clip.
+The test rejects PCM boundary samples and nonnegative true peaks in music or
+the final mix, missing music/effects, and a combined level below -30 LUFS. This
+finite fixture checks usable output and tested headroom, not loudness equality
+between different arrangements or a clipping guarantee for arbitrary mods,
+soundfonts, recordings or effect combinations. Original dynamics are preserved;
+there is no compressor, limiter or per-track automatic normalization

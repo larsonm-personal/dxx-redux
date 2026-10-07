@@ -1465,11 +1465,16 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 				        s_rb_underruns, got, needed, pcm_ring_available(&s_rb));
 		}
 	}
-	/* Volume scaling */
-	if (s_volume < 0.99f) {
+	/* Apply shared Android headroom before SDL_mixer adds effects */
+#ifdef ANDROID
+	const float output_volume = s_volume * AUDIO_GAMEPLAY_HEADROOM_SCALE;
+#else
+	const float output_volume = s_volume;
+#endif
+	if (output_volume < 0.99f) {
 		int i;
 		for (i = 0; i < got; i++)
-			out[i] = (short) (out[i] * s_volume);
+			out[i] = (short) (out[i] * output_volume);
 	}
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 	/* Diagnostic stem before SDL_mixer adds effects, matching the MIDI/file tap */

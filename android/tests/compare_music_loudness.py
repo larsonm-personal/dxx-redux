@@ -1,7 +1,7 @@
 """Measure production SC-55-like MIDI against D2 Definitive Collection CD audio.
 
 Uses the music_spectral Python environment and freshly built test_music_synth.
-Reports raw playback levels, without normalizing the listening samples.
+Reports source levels before shared gameplay headroom trim, without normalizing listening samples.
 """
 
 import argparse
@@ -77,7 +77,7 @@ def main():
         renderer_sha256=digest(args.renderer),
         soundfont_sha256=digest(font),
         settings=dict(seconds=args.seconds, gain_db=args.gain_db, eq=2, voices=128, volume=8, sample_rate=RATE),
-        scope="First measured seconds per selection, shorter CD tracks measured to their end; separate arrangements, not aligned pairs",
+        scope="Source levels before shared gameplay headroom trim. First measured seconds per selection, shorter CD tracks measured to their end; separate arrangements, not aligned pairs",
         tracks=[],
     )
     baseline = json.loads(args.baseline.read_text()) if args.baseline else None
@@ -195,7 +195,7 @@ def main():
         "<h1>Production MIDI / CD loudness</h1><p>Bundled SC-55-like bank, balanced EQ, 128 voices, effects enabled, "
         f"{args.gain_db:g} dB gameplay gain, volume 8. First {args.seconds} seconds per selection (shorter CD tracks to their end). "
         "CD and MIDI are different arrangements. Integrated loudness is measured in LUFS; peaks are oversampled true peaks. "
-        "Listening excerpts retain playback levels, with no normalization.</p>"
+        "Source levels exclude shared gameplay headroom trim. Listening excerpts retain source levels, with no normalization.</p>"
         f"<p>Median CD minus D2 MIDI: {report['cd_minus_d2_db']:.2f} dB. MIDI boundary samples: {report['midi_boundary_samples']}.</p>"
         f"<p>Calibration: D2 soundfont boost {midi_boost:g} dB; CD scale {cd_scale:.6f}. D1 gain unchanged. "
         "CD reference decoding uses FFmpeg resampling; gameplay uses linear resampling. These are host measurements, not speaker recordings.</p>"

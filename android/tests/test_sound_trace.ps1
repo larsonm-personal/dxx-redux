@@ -35,7 +35,7 @@ foreach ($row in $gainRows) {
     if ($distance -ne $expectedDistance) {
         throw "Effects startup applies extra attenuation: $($row.Value), expected distance=$expectedDistance"
     }
-    if ($channelVolume -eq 32) {
+    if ($channelVolume -eq 20) {
         if ($soundVolume -eq 65536) { $fullLevelSounds++ }
         elseif ($soundVolume -gt 0 -and $soundVolume -lt 65536) { $quietSounds++ }
     }
