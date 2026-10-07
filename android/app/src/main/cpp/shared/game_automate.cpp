@@ -83,6 +83,10 @@ extern "C" {
 #include "playsave.h"
 #include "rbaudio.h"
 #include "songs.h"
+#include "config.h"
+#include "digi.h"
+#include "digi_mixer_music.h"
+#include "sounds.h"
 #include "songs_android_shared.h"
 #include "state.h"
 #include "state_android_shared.h"
@@ -4160,6 +4164,45 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_SET_DEBUG:
+#ifdef ANDROID
+			if (s.field == "audio_effects_volume" || s.field == "audio_music_volume") {
+				if (s.value.size() != 1 || s.value[0] < '0' || s.value[0] > '8') {
+					stop_script_fail("Audio slider must be 0..8");
+					return;
+				}
+				const int volume = s.value[0] - '0';
+				if (s.field == "audio_effects_volume") {
+					GameCfg.DigiVolume = volume;
+					digi_set_digi_volume(volume * 32768 / 8);
+				} else {
+					GameCfg.MusicVolume = volume;
+					songs_set_volume(volume);
+				}
+				advance_step();
+				return;
+			}
+			if (s.field == "audio_music_file") {
+				songs_stop_all();
+				if (!mix_play_file(const_cast<char *>(s.value.c_str()), 1, nullptr)) {
+					stop_script_fail("Audio fixture file did not play");
+					return;
+				}
+				mix_set_music_volume(GameCfg.MusicVolume);
+				advance_step();
+				return;
+			}
+			if (s.field == "audio_effects_probe") {
+				if (s.value != "laser" && s.value != "explosion" && s.value != "stack") {
+					stop_script_fail("Unknown effects probe");
+					return;
+				}
+				const int count = s.value == "stack" ? 8 : 1;
+				for (int i = 0; i < count; ++i)
+					digi_play_sample(s.value == "laser" ? SOUND_LASER_FIRED : SOUND_EXPLODING_WALL, F1_0);
+				advance_step();
+				return;
+			}
+#endif
 			if (s.field == "capture_audio") {
 #ifdef ANDROID
 				if (!capture_audio_control(s.value)) {

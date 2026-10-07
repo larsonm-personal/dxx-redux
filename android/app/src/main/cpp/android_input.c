@@ -1676,6 +1676,7 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
 	static int joy_jni_diag_count[8];
 	const int touch_source = touchActive != JNI_FALSE;
 	const int raw_value = (int) (value * 32767.0f);
+	debug_log(DLOG_TOUCH_INPUT, "jni axis=%d touch=%d float=%.9g raw=%d", axis, touch_source, value, raw_value);
 	if (touch_source)
 		android_touch_enable_joystick_mode();
 	if (axis >= 0 && axis < 8 && (axis == 2 || axis == 3) && value != 0.0f) {
@@ -1685,7 +1686,8 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
 			debug_log(DLOG_GAME, "[joy-jni] axis=%d touch=%d in=%.4f sdl=%d\n", axis, touch_source, value, raw_value);
 	}
 
-	android_joystick_axis_publish(axis, raw_value, touch_source);
+	android_axis_generation generation = android_joystick_axis_publish(axis, raw_value, touch_source);
+	debug_log(DLOG_TOUCH_INPUT, "publish axis=%d raw=%d touch=%d generation=%llu", axis, raw_value, touch_source, generation);
 
 	if (++g_joy_axis_count <= 5)
 		LOGI("joystick axis %d = %.3f (sdl %d)", axis, value, raw_value);
@@ -1725,6 +1727,8 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickAxes(
 		axes[index] = jni_axes[index];
 		raw_values[index] = (int) (jni_values[index] * 32767.0f);
 		touch_sources[index] = jni_touches[index] != JNI_FALSE;
+		debug_log(DLOG_TOUCH_INPUT, "jni_batch axis=%d touch=%d float=%.9g raw=%d",
+		          axes[index], touch_sources[index], jni_values[index], raw_values[index]);
 		if (touch_sources[index])
 			android_touch_enable_joystick_mode();
 	}
@@ -1828,6 +1832,8 @@ int android_axis_mailbox_drain(int joystick_enabled)
 		    transition.generation, transition.axis,
 		    transition.raw_value, transition.touch_source);
 #endif
+		debug_log(DLOG_TOUCH_INPUT, "dispatch transition=1 axis=%d raw=%d touch=%d generation=%llu",
+		          transition.axis, transition.raw_value, transition.touch_source, transition.generation);
 		if (transition.axis < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT &&
 		    joy_axisbutton_handler(&ev))
 			++processed_count;
@@ -1867,6 +1873,8 @@ int android_axis_mailbox_drain(int joystick_enabled)
 		    snapshot.axis_generation[axis], axis,
 		    snapshot.raw_value[axis], snapshot.touch_source[axis]);
 #endif
+		debug_log(DLOG_TOUCH_INPUT, "dispatch transition=0 axis=%d raw=%d touch=%d generation=%llu",
+		          axis, snapshot.raw_value[axis], snapshot.touch_source[axis], snapshot.axis_generation[axis]);
 		if (axis < ANDROID_AXIS_MAILBOX_AXIS_BUTTON_COUNT &&
 		    joy_axisbutton_handler(&ev))
 			++processed_count;

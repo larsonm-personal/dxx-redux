@@ -41,6 +41,9 @@
 #include "config.h"
 #include "rbaudio_bin.h"
 #include "music_playback_levels.h"
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+#include "android_audio_capture.h"
+#endif
 #include "pcm_ring.h"
 #include "rbaudio.h"
 #include "console.h"
@@ -1468,6 +1471,10 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 		for (i = 0; i < got; i++)
 			out[i] = (short) (out[i] * s_volume);
 	}
+#if defined(ANDROID) && defined(INTROSPECT_ON)
+	/* Diagnostic stem before SDL_mixer adds effects, matching the MIDI/file tap */
+	androidaud_capture_music(stream, len);
+#endif
 }
 
 /* ── Public RBA API ──────────────────────────────────────────────────── */

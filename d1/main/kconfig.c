@@ -1312,6 +1312,11 @@ static fix joystick_axis_time(int axis, int control, fix limit)
 #else
 	(void)limit;
 #endif
+#ifdef ANDROID
+	debug_log(DLOG_TOUCH_INPUT, "binding axis=%d control=%d sens=%d under=%d command=%d limit=%d",
+	          axis, control, PlayerCfg.JoystickSens[control], PlayerCfg.JoystickUndercalibrate[control],
+	          (int) value, (int) limit);
+#endif
 	return value;
 }
 
@@ -1569,6 +1574,11 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 
 			Controls.raw_joy_axis[axis] = joy_apply_deadzone(Controls.raw_joy_axis[axis], joy_null_value);
 			Controls.joy_axis[axis] = (Controls.raw_joy_axis[axis]*FrameTime)/128;
+#ifdef ANDROID
+			debug_log(DLOG_TOUCH_INPUT, "axis axis=%d touch=%d quantized=%d deadzone=%d adjusted=%d command=%d frame=%d",
+			          axis, touch_source, value, joy_null_value, Controls.raw_joy_axis[axis],
+			          (int) Controls.joy_axis[axis], (int) FrameTime);
+#endif
 			if (raw_value != 0 && (joy_null_value > 0 || axis <= 5)) {
 				joy_diag_count++;
 				if (joy_diag_count <= 24 || joy_diag_count % 32 == 0 || Controls.raw_joy_axis[axis] == 0) {
@@ -2081,6 +2091,12 @@ void kconfig_read_controls(d_event *event, int automap_flag)
         }
         Controls.forward_thrust_time = -speed_factor * FrameTime;
     }
+#ifdef ANDROID
+	debug_log(DLOG_TOUCH_INPUT, "controls game=d1 event=%d frame=%d pitch=%d yaw=%d sideways=%d vertical=%d bank=%d forward=%d",
+	          event->type, (int) FrameTime, (int) Controls.pitch_time, (int) Controls.heading_time,
+	          (int) Controls.sideways_thrust_time, (int) Controls.vertical_thrust_time,
+	          (int) Controls.bank_time, (int) Controls.forward_thrust_time);
+#endif
 #if defined(ANDROID) && defined(INTROSPECT_ON)
 	game_automate_observe_axis_controls(
 		(int) Controls.pitch_time, (int) Controls.heading_time,

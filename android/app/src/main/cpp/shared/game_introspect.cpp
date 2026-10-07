@@ -71,6 +71,7 @@ extern "C" {
 #include "segment.h"
 #include "playsave.h"
 #include "kconfig.h"
+#include "config.h"
 #include "joy.h"
 #include "gr.h"
 #include "boss_hud.h"
@@ -2470,6 +2471,9 @@ extern "C" char *game_introspect_get_state(void)
 		int ch = 0;
 		int mixer_open = Mix_QuerySpec(&freq, &fmt, &ch);
 		json audio = {
+			{ "effects_volume", GameCfg.DigiVolume },
+			{ "music_volume", GameCfg.MusicVolume },
+			{ "effects_channel_volume", Mix_Volume(0, -1) },
 			{ "mixer_open", (bool) mixer_open },
 			{ "mixer_freq", freq },
 			{ "mixer_format", (int) fmt },

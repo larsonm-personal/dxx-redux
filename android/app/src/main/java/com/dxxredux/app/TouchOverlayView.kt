@@ -85,6 +85,8 @@ class TouchOverlayView
     ) : View(context, attrs) {
         /** Called with (axisIndex, value) when the stick moves. */
         var axisCallback: ((Int, Float) -> Unit)? = null
+        var inputCapture: TouchInputCapture? = null
+        private var lastTouchEventTimeMs = 0L
 
         /** Input mixer for OR-combining button states from multiple sources. */
         var inputMixer: InputMixer? = null
@@ -274,6 +276,7 @@ class TouchOverlayView
             var mouseLastSampleTimeMs = 0L
             var mouseRecentDistancePx = 0f
             var mouseRecentGracePx = 0f
+            var captureGesture = 0L
 
             // Button mode: direction press tracking
             var xNegPressed = false
@@ -696,6 +699,11 @@ class TouchOverlayView
                         )}) sens=(${"%.2f".format(s.control.sensitivityX)},${"%.2f".format(s.control.sensitivityY)}) " +
                         "mouseExp=${s.control.mouseExponential} curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
                 )
+                inputCapture?.record {
+                    "drain stick=${s.control.id} gesture=${s.captureGesture} pointer=${s.pointerId} " +
+                        "axis=${s.control.axisX},${s.control.axisY} emit=$emitX,$emitY edge=$edgeX,$edgeY " +
+                        "out=$outX,$outY cap=$capX,$capY pending=${s.mousePendingX},${s.mousePendingY}"
+                }
                 axisCallback?.invoke(s.control.axisX, outX)
                 axisCallback?.invoke(s.control.axisY, outY)
             }
@@ -724,6 +732,22 @@ class TouchOverlayView
             s.mouseRecentDistancePx = 0f
             s.mouseRecentGracePx = 0f
             s.floatingActive = true
+            inputCapture?.start {
+                val metrics = resources.displayMetrics
+                "game=$gameVariant build=${BuildConfig.VERSION_NAME}/${BuildConfig.VERSION_CODE} " +
+                    "device=${android.os.Build.MANUFACTURER}/${android.os.Build.MODEL} " +
+                    "sdk=${android.os.Build.VERSION.SDK_INT} viewport=$width,$height " +
+                    "density=${metrics.density} dpi=${metrics.xdpi},${metrics.ydpi} " +
+                    "drain_ms=$MOUSE_DRAIN_INTERVAL_MS reference_px=$MOUSE_REFERENCE_DISTANCE " +
+                    "gain=$MOUSE_SENSITIVITY_MULTIPLIER,$MOUSE_BASE_MULTIPLIER cap=$MOUSE_MAX_AXIS_PER_TICK"
+            }
+            s.captureGesture++
+            inputCapture?.record {
+                "begin stick=${s.control.id} gesture=${s.captureGesture} pointer=$pointerId " +
+                    "xy=$px,$py origin=$originX,$originY edge_origin=$edgeOriginX,$edgeOriginY " +
+                    "bounds=${s.fzLeft},${s.fzTop},${s.fzRight},${s.fzBottom} " +
+                    "event_ms=$lastTouchEventTimeMs sample_ms=${s.mouseLastSampleTimeMs} config=${s.control.toJson()}"
+            }
             startMouseDrain()
         }
 
@@ -2853,6 +2877,24 @@ class TouchOverlayView
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            lastTouchEventTimeMs = event.eventTime
+            // Observe delivered and historical samples without changing which samples drive controls
+            if (inputCapture?.active == true) {
+                for (i in 0 until event.pointerCount) {
+                    for (h in 0 until event.historySize) {
+                        inputCapture?.record {
+                            "motion pointer=${event.getPointerId(i)} action=${event.actionMasked} historical=1 " +
+                                "event_ms=${event.getHistoricalEventTime(h)} " +
+                                "xy=${event.getHistoricalX(i, h)},${event.getHistoricalY(i, h)}"
+                        }
+                    }
+                    inputCapture?.record {
+                        "motion pointer=${event.getPointerId(i)} action=${event.actionMasked} " +
+                            "action_index=${event.actionIndex} historical=0 event_ms=${event.eventTime} " +
+                            "xy=${event.getX(i)},${event.getY(i)}"
+                    }
+                }
+            }
             if (!isActive) return false
 
             if (gamePaused && handlePausedIndicatorTouch(event)) return true
@@ -3314,6 +3356,7 @@ class TouchOverlayView
             val dy = py - s.mouseLastY
             val stepDistance = hypot(dx, dy)
             val now = android.os.SystemClock.uptimeMillis()
+            val sampleDt = now - s.mouseLastSampleTimeMs
             val history =
                 updateMouseAccelerationHistory(
                     s.mouseRecentDistancePx,
@@ -3341,6 +3384,12 @@ class TouchOverlayView
                 )
             s.mousePendingX += dx * scaleX * multiplier
             s.mousePendingY += dy * scaleY * multiplier
+            inputCapture?.record {
+                "drag stick=${s.control.id} gesture=${s.captureGesture} pointer=${s.pointerId} " +
+                    "sample_ms=$now dt_ms=$sampleDt xy=$px,$py delta=$dx,$dy step=$stepDistance " +
+                    "history=${s.mouseRecentDistancePx},${s.mouseRecentGracePx} " +
+                    "scale=$scaleX,$scaleY multiplier=$multiplier pending=${s.mousePendingX},${s.mousePendingY}"
+            }
             logMouseDiag(
                 "drag axis=(${s.control.axisX},${s.control.axisY}) d=(${"%.3f".format(
                     dx,
@@ -3612,6 +3661,10 @@ class TouchOverlayView
             releaseStickExtremeActions(s)
             // Clear mouse-mode pending drag
             if (s.control.mouseMode) {
+                inputCapture?.record {
+                    "release stick=${s.control.id} gesture=${s.captureGesture} " +
+                        "discard_pending=${s.mousePendingX},${s.mousePendingY}"
+                }
                 s.mousePendingX = 0f
                 s.mousePendingY = 0f
                 s.mouseLastSampleTimeMs = 0L

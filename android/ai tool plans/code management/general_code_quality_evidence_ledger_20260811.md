@@ -57349,3 +57349,2139 @@ Disposition: CONFIRMED, admit GQF-0251 and GQR-0235. Use byte-oriented UTF-8 std
 </details>
 
 <!-- END IMPORT: GQI-0002 Windows diagnostics runtime investigation, resumed 2026-10-02 -->
+<!-- BEGIN IMPORT: GQ1 frozen-tail reconciliation 20261006 SHA256:60caa2ca6e73ce181089c79ec2521e023d4d72284bed8aebcead7b4874fc1e68 -->
+
+## GQ1 frozen-tail reconciliation 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/frozen-tail-reconciliation.md`
+- Imported SHA-256: `60caa2ca6e73ce181089c79ec2521e023d4d72284bed8aebcead7b4874fc1e68`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1 frozen-tail reconciliation 20261006
+
+## Scope and result
+
+- Frozen base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- Frozen head: 7877ad30d05887b8e19869ed4c50075e41e2f88e
+- Live checkpoint: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Reconciled all 58 candidates in the supplemental frozen-tail register; 54 were pending and four already had supplemental dispositions
+- All 58 tails belong to completed grouped assignments omitted from the original simple-path audit; no new queue units or product findings are needed
+- Reconstructed single-path queue ranges and grouped scope ranges from the canonical ledger, read their frozen Git blobs, and unioned inclusive ranges per path: 1,285 ranged paths, zero unassigned line gaps
+- This is assignment/evidence reconciliation, not a fresh whole-branch source review or proof of current-delta completion; hunk-only and mechanical paths retain their existing coverage records
+- Original imported reports and their historical digests remain unchanged; no new execution credit is attributed to their static review claims
+
+## Evidence exceptions and supplemental reads
+
+- TAIL-004 / CHUNK-0012 and TAIL-008 / CHUNK-0094: stored import digests did not reproduce from the present report bodies using LF/CRLF and trailing-newline variants, nor from their pre-October-format copies. The original digests are retained as historical metadata, not asserted to validate the present bytes. Fresh full reads of these exact frozen tails supply supplemental coverage
+- TAIL-025 / CHUNK-0168: report has the basename and exact range but omits the frozen blob. Fresh full read of the exact frozen tail, with enclosing projection context, binds its coverage to the blob below
+- TAIL-026 / CHUNK-0167 and TAIL-027 / CHUNK-0164: reports use basenames with exact ranges and blob IDs. Each basename resolves uniquely in the frozen tree to the full path below; imported digests reproduce
+- The other 53 mappings contain the exact path, range and blob, with reproducible imported report digest
+
+### Supplemental pkg_reader.c L601-L999
+
+Read all 399 frozen lines. Trailer size, selected game prefix, flat basename validation, case-insensitive manifest duplicates, sizes/CRC, scan and aggregate budgets, TOC allocation cleanup, subtractive heap bounds, extraction writes/close and removal were checked. Preflight still charges the complete catalog before skip-audio filtering; cancellation and direct-final-output publication remain prior CHUNK-0012 observations and BR-0021/BR-0020 ownership. No new root is admitted. Public output compatibility and the branch-added extraction owner remain appropriate; moving this tail cannot reduce inherited engine edits
+
+### Supplemental test_gog_fd.c L1201-L1467
+
+Read all 267 frozen lines. Fixture cleanup and controlled 4,096-byte PE fixture construction cover PE32/PE32+, late sections, short resources, directory/name cycles, entry overflow, truncated leaf data, raw-section crossings, virtual overflow and excessive section counts. Checked failure aggregation and actual extraction CRC checks. Missing real installers still return success/skip under existing BR-0158; resource-locator-only assertions remain GQF-0075/GQR-0062 consumer-bound coverage. No new finding, test execution, inherited change or format change is claimed
+
+### Supplemental route_planner.cpp L3001-L3201
+
+Read all 201 frozen tail lines plus L2931-L3000 projection context. Step/link capacity checks precede C-array projection; fixed buffers use bounded copies. Entry points validate nulls/endpoints, share the two-million work budget and 65,536-entry cache limit, carry cancellation and reject exhaustion. Strict transparent-shot retry shares the budget, advances its cache namespace and requires a valid result with preceding keys and no worse trigger count. C ABI exceptions are contained and reachability rejects aborted/exhausted searches. Existing route ownership remains; shared branch-added planning/projection is the natural boundary, with no new inherited minimization candidate. Current planner changes require separate live-delta coverage
+
+## Exact frozen tail mapping
+
+Range SHA-256 hashes UTF-8 source lines joined with LF and one final LF. Import SHA-256 is the original stored report digest; the two exceptions above are explicitly unverified. All owners have DONE queue rows and imported full reports in this evidence ledger
+
+| Tail | Frozen path | Range | Frozen blob | Range SHA-256 | Prior report owner | Import SHA-256 | Disposition |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GQ1-TAIL-001 | `android/app/src/main/cpp/extract/extract_cd.c` | L601-L704 | 412f8727c3605535525d557f05246818789742da | 06caffbf13a5c7e490eec4dc01521d807f848c1bc680ed173024be7a4ecf2531 | GQ1-CHUNK-0021 | d33ab7b939a02db8b4c2e62664009c5e13474b3cdfd9c35d10285cf302869ad2 | Reconciled prior complete review |
+| GQ1-TAIL-002 | `android/app/src/main/cpp/extract/hfs_reader.c` | L1201-L1408 | c93c15f3f4726e22df4b562d83c6d09dcb95dafb | 595e3535a3666cc3a5c04a0b816a0c636141eaece3dcc32fcc024b60bcd3055e | GQ1-CHUNK-0014 | d84e5e7a80c97ac46e6b8cfd88b6d9484db22fe9f769c91b34bee53e86cb06ed | Reconciled prior complete review |
+| GQ1-TAIL-003 | `android/app/src/main/cpp/extract/iso9660_reader.c` | L601-L996 | a14ed0839f0bcbab515e400e2f4ffd0955c3d7fe | 6dc0aa52a87c2cb3e6a454d2f64cad39acb432ced70c1a9ce932eac4c0fc44bf | GQ1-CHUNK-0013 | c9a52b0211d9b730d120d8c5d1afe8e2d80e3e28e5d318b41e525b1651c11635 | Reconciled prior complete review |
+| GQ1-TAIL-004 | `android/app/src/main/cpp/extract/pkg_reader.c` | L601-L999 | 6f9b92361246d3174484fe75359d8e468077cc31 | 694bd669fb77ec0995665b066e3ec7fe1ef2147cd7305b3e3d7ad3d03ec512cb | GQ1-CHUNK-0012 | 98a91456d0f05a845f31bfbe5aaa4894bc06517c6e9e6f35fe24d7b2218acdee | Fresh supplemental tail read; exception above |
+| GQ1-TAIL-005 | `android/app/src/main/cpp/extract/sow_extract.c` | L601-L1051 | a4c3eb138d19cb6d63d3d59b6a93550086bb8653 | 4555b9c8cc3940e53d7b6def12087579a42d73a67cdb9c8ea63d1c5b89dac7a8 | GQ1-CHUNK-0011 | 658ebf8614ade1f126ece5a9f2e81cd14f2ca8d7dcff74d7b117bae98ee838a5 | Reconciled prior complete review |
+| GQ1-TAIL-006 | `android/app/src/main/cpp/extract/sti2_extract.c` | L2401-L2404 | 78c99d73efe951fe26339277b2c5cb02ae94e86d | a4ade61ccdd5a468d573eab7472eb478c63856eeeb6091dc0c85bf3748ed09ef | GQ1-CHUNK-0016 | 367d0acd44f8ac2964463c3e878a4ed6b308ea53a695cf434a4e513eada794a2 | Reconciled prior complete review |
+| GQ1-TAIL-007 | `android/app/src/main/cpp/extract/test_cue_iso.c` | L3001-L3426 | 31f625d2c2fe23351755c8fa4f5a7f63787bcc2c | 7bd0d0d4fe6b7b7aec8f36c9473908af8586253bca0ad5328a029e2c4a8139d9 | GQ1-CHUNK-0095 | 05d55d1c5a96516c238279d780a7688658db252d4e8472f8cc2fbb71873b305f | Reconciled prior complete review |
+| GQ1-TAIL-008 | `android/app/src/main/cpp/extract/test_gog_fd.c` | L1201-L1467 | 709636b0f423e17b0033b29e3518a89716f17896 | d4b8ee4e5fb0a94438553a4b8722a75d6939add8101dd51f304d3e0278f71260 | GQ1-CHUNK-0094 | ce1ba01064d0d96b8ad3453183417608e905f41022509d5f0034ef8b70cfdc5b | Fresh supplemental tail read; exception above |
+| GQ1-TAIL-009 | `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c` | L601-L665 | 09383ac456410f8d56d14bf317f4987a4fed3fec | 62d45247480d1b1d48bff74d96f612477d411ec4347a4ee61e1286873b953bfd | GQ1-CHUNK-0096 | 77aa84913f43c2b8f4b7c673bc316e8cc9c15e897ed50c61023746c18a0c2d71 | Reconciled prior complete review |
+| GQ1-TAIL-010 | `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp` | L751-L1057 | 83b0e776a7a2fd2d5e428a2ec35430829906ce1d | 91c5404b4ca5641ad35ca5caaebe3e0e65a68012b1b647400b238d26454c0400 | GQ1-CHUNK-0165 | c940559dc177a708364beddc3637b5709fd529f5b0e459c8931a007ab2de4b91 | Reconciled prior complete review |
+| GQ1-TAIL-011 | `android/app/src/main/cpp/jni_main.c` | L1201-L1496 | ad63ea79c1e67201defce05aaf6debaa5663bc55 | 06d3ca617ce2e67e37b73b42df4ed16ae2af692f144bbea2e4fc1568608934f2 | GQ1-CHUNK-0015 | f58a12890b51f60e9b9bcef14ff5b53d7355a6f4dfdf80b2b71e8f937be2c06d | Reconciled prior complete review |
+| GQ1-TAIL-012 | `android/app/src/main/cpp/shared/automap_metadata_overlay.c` | L751-L797 | 2c9510aa8874567b3dff58688503dd5ad52abda5 | c6dee84700e31dbc2c5c8305f14ab2196c7a998a8a5f789bc3d8cfbcd0e54041 | GQ1-CHUNK-0199 | 0f89361c931d5ede72589e1f507adb59acddaa00f941f37e5c9de922962c509b | Reconciled prior complete review |
+| GQ1-TAIL-013 | `android/app/src/main/cpp/shared/cd_preview.c` | L751-L884 | 33809af2a1ffa15d3298792d726ceefad9fc8484 | 58917c6b8044df97ae2b09e621a6c8edb8d42e63910f4f6227dfe02dd4e86a82 | GQ1-CHUNK-0188 | bebc9b485dd84ff40d723b6ab929bb13418998c3e88aa069053f2b5b4bd381ff | Reconciled prior complete review |
+| GQ1-TAIL-014 | `android/app/src/main/cpp/shared/digi_tsf_music.c` | L751-L1288 | 9b9b18887dc038f487a600169e79d187fa321d2b | 7a4ac8a1b39b3c5961ca7ba481c334fa04d0f8aa5765667a880e47d64ca73b80 | GQ1-CHUNK-0151 | 10d19ad72811779f87e49335988d0b590fb339f8e978feb703d499770b37e8ee | Reconciled prior complete review |
+| GQ1-TAIL-015 | `android/app/src/main/cpp/shared/game_automate.cpp` | L3751-L3844 | 7d4eafe17760b861bdfdb10a95a9bbf34315bb1e | 851e55e6e62654129677de1399d30009b97eea28cbf292d916dce3df2544c18e | GQ1-CHUNK-0154 | c98d42762081fdc34fde27a1289908f4242a9257cc634b988ab51de5295fd0cd | Reconciled prior complete review |
+| GQ1-TAIL-016 | `android/app/src/main/cpp/shared/game_introspect.cpp` | L2251-L2435 | d0adb8d84d6d9659eeb84e41ecdb47396b7eacb9 | 9f9487cdf379af7eaa21a471d31ccb1d054fb754c42695b47e8eac6d1d72e2b7 | GQ1-CHUNK-0166 | 35fd8362b129570236e96cc9cc19e7b7531c689ee8a14341a6a190d489aceea9 | Reconciled prior complete review |
+| GQ1-TAIL-017 | `android/app/src/main/cpp/shared/gles3_shim.c` | L751-L1025 | 410c86b07f554e4eabdf2b00caf09d340368abe1 | ef5fd6879014cea192c5aaae84960b3b0173adadff86f7c570744692add13079 | GQ1-CHUNK-0147 | cbabd17845d7764176e7ab42c453982ad90685b134c33b2a7b7f2f2c4904211f | Reconciled prior complete review |
+| GQ1-TAIL-018 | `android/app/src/main/cpp/shared/input_demo_controls.cpp` | L751-L764 | d3d064af1d839eac56830aa4a6576dcc3dddb445 | b45166fc7078e7e80faaa44fd845b290479b30f0c3b24d67539d5a6adcb6b936 | GQ1-CHUNK-0148 | 83ab5576a800086992955028fdc3bdb1eee7a2bc391eaa586e7604f1ba1e577e | Reconciled prior complete review |
+| GQ1-TAIL-019 | `android/app/src/main/cpp/shared/input_demo_recorder.cpp` | L751-L775 | 4aae67d2eb6a9f3b00937a4cbcc2fc589adcc02a | f6b82420b437a8a2b997002e9b642f88d309cebc3dc33b1b05766446c7ad7344 | GQ1-CHUNK-0150 | 313c258bcbce9e774b79ab0326cf44f6f40bf3353322efe10760baf1ba4ff590 | Reconciled prior complete review |
+| GQ1-TAIL-020 | `android/app/src/main/cpp/shared/input_demo_replay.cpp` | L751-L817 | 143c5e8871d824c6c7b947f119de434310f12302 | e3a09e740caba817f13dee0c7833417dfc6f42578b52cc918001da6ea29d3239 | GQ1-CHUNK-0152 | 3a960ea07dff563708ae279e8d386685e5978ac2b259b5c6e99514e6ee37bd08 | Reconciled prior complete review |
+| GQ1-TAIL-021 | `android/app/src/main/cpp/shared/input_demo_start_shared.c` | L751-L774 | d99cf1269e7281ae12f0e582ef0eb99ad5049e4a | 0d060394337be5361657e524b681fde17e59eeef4b9435dea8498994ef882065 | GQ1-CHUNK-0149 | ed120a02e8d659685bbca515ae42b025ec6db8b163a9f8c6a30db59615fc32a0 | Reconciled prior complete review |
+| GQ1-TAIL-022 | `android/app/src/main/cpp/shared/input_demo_state_trace.cpp` | L751-L791 | 99bddf6c5535fedd29e40b32681752ba89c03804 | 441602b237ee4facda0936a8ed6d0fab674716531fa357ab50c0c5c5ba44b5cd | GQ1-CHUNK-0187 | 6ae3f941ee5ea909b5e5008734768999abea8a16ee82af9e8555498cfd2edfbc | Reconciled prior complete review |
+| GQ1-TAIL-023 | `android/app/src/main/cpp/shared/multi_save_transfer.c` | L751-L981 | cde3bd3d5b1c65ed7cd0a119e8a03df3da9b3a94 | 719c31c2629370cf7d540363b663f8ea7dd65a0be8dd8e7b050d19cc9ad00b28 | GQ1-CHUNK-0197 | 980ae5efa5030dc2adb30b7e6d5fde41a020b8ca13ea37a5b1bc80c9b4725ff3 | Reconciled prior complete review |
+| GQ1-TAIL-024 | `android/app/src/main/cpp/shared/rbaudio_bin.c` | L1501-L1960 | 36edcdeddf9e729b5ed80286f641ce5f5fbd31e0 | 777201b592523cbb23a8abdc3611e2deeef80c7e1c303698a5e9b4b2fc56734a | GQ1-CHUNK-0153 | 65e654f706f0bffda890fe6d4666e00f71a9f2efcd42a4580d9c4218b2d5d510 | Reconciled prior complete review |
+| GQ1-TAIL-025 | `android/app/src/main/cpp/shared/route_planner.cpp` | L3001-L3201 | 50eae3db31ec598e3d168008b90694478cc9761a | a2672a18d99099c8a0169f80e4cfa068a9f353e01e8d098cf7fd2ac010bc64a3 | GQ1-CHUNK-0168 | 82c1a0c0abc540cf7012eed5060cf8e915c8df8dac6f077a538623485e42e4ca | Fresh supplemental tail read; exception above |
+| GQ1-TAIL-026 | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | L2251-L2563 | 2ac0d3fb155689f8d409eece4bc3980eab86cda9 | 52afd713b4137297d122289b33995bafbcc1275276f22124c41defea1ac5a624 | GQ1-CHUNK-0167 | c98f74a808d45339e4dff402af673352c3193400a61b6aef0b49dd9abec5abee | Unique basename plus exact blob/range |
+| GQ1-TAIL-027 | `android/app/src/main/cpp/shared/secret_area_scan.c` | L751-L1190 | f1e07773749ac2e7f93b73af1297483ae328b2cf | a67ee9af51d2ba0e3f30d5fa68d21492d5e3e599739774eaae4abdaea25315a3 | GQ1-CHUNK-0164 | 69691441476b1546f2a951935d356b975483db2a31f6a3c96482874666605341 | Unique basename plus exact blob/range |
+| GQ1-TAIL-028 | `android/app/src/main/cpp/shared/state_android_shared.c` | L751-L1057 | 7097e2d188db8386656015edb364f39ad4ee7dc2 | b5b946a344f302d52296b6e782b680b55fbdcd1e2a29daae77de4ef43b9e526a | GQ1-CHUNK-0192 | bebc9bdc8e508a40f534891655038c79f53a2172f7c7aa86f76f47505e595a44 | Reconciled prior complete review |
+| GQ1-TAIL-029 | `android/app/src/main/java/com/dxxredux/app/AdvancedSettingsPage.kt` | L2251-L2679 | 72bd2df3b2cbf9cb13f357c735a6cf16306a175b | 35cc8c4725f6b4ead642cf88bdea7faac3af947e09d0fb8725e7666392c1039e | GQ1-CHUNK-0470 | 8b01f4731b4df183906c7979140cb2e18c48c1d3e0245756b35bb9f290c0ffb6 | Reconciled prior complete review |
+| GQ1-TAIL-030 | `android/app/src/main/java/com/dxxredux/app/AutoselectEditorPage.kt` | L751-L924 | b83fa93d57c4505f29206182a8dcc58f57121c09 | 0a9a04fb4e3c4878484018fe5300eefae5a80914a50526c5d412e501a56be3c5 | GQ1-CHUNK-0475 | 73eb6444c257b676740ca6baacc37c094b33eece9855ff8ebfd4d2ad097084db | Reconciled prior complete review |
+| GQ1-TAIL-031 | `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt` | L751-L763 | 5f5f6dda9a81d92060ca5e9b3551e8728565ba7e | 75495dfbe84edc561a857510cdaaa87a9a8c74055be4567b9e7ef5be81adad49 | GQ1-CHUNK-0476 | 2db007be3ab816ef4f6efc0acd0980e75b65a278e8fb3684ceef256bf5ddf984 | Reconciled prior complete review |
+| GQ1-TAIL-032 | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | L3751-L3982 | 3b13934808772a16ee2c7119f3d6bdac9770c9b8 | ec9263dafcf647fc72f8c10f2d8275ef2660fc32bad5b5858191cb760859b982 | GQ1-CHUNK-0483 | 9f10795eaecfd23455272f48c063fd57a1b2381fcbe01558fc72489aabbefba5 | Reconciled prior complete review |
+| GQ1-TAIL-033 | `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt` | L601-L698 | 7b65644c55c4a62a89dab4f059860f784ed64d22 | cc40ffa40a1807e395e2a4749870fd80856ac0bd2a87d3f2bd87c90330cc9970 | GQ1-CHUNK-0055 | 36d3844a34f6594b5afdd7e02227022ebda13b140a129042c1f0fd630782dbbb | Reconciled prior complete review |
+| GQ1-TAIL-034 | `android/app/src/main/java/com/dxxredux/app/ModManager.kt` | L1501-L1920 | ed6397937fe98e4905bb25a5fd8c37e216692fb2 | c1f1591055636f43d418a6cf33b6688ea647c7b891123a9c9865a615e346be45 | GQ1-CHUNK-0478 | 5a1dd662ac6767203d6f39c367fc8418b4673191082efa8f4602b56f12d6b06d | Reconciled prior complete review |
+| GQ1-TAIL-035 | `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt` | L751-L918 | 280aa9b032a918628025d273e671bf5a974db0f7 | 57c6a8abb8594b7ac844c2a2a0ae2c8ec5f171f85e3162b05cd915017cb418f6 | GQ1-CHUNK-0474 | 493e2a616bef66659785a3300c4f1d4d5a40baf2d5f0896f77c4ae7f1d370477 | Reconciled prior complete review |
+| GQ1-TAIL-036 | `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt` | L1501-L1966 | bb39c6cdfde5d0bbc711767dbc566a82ded57327 | ad8a539801f50a70cbe37c9bf95b771315d888f67cd6df71c3bb9ed8dd2b1c4d | GQ1-CHUNK-0479 | 983fae3cae3fdcbdb5fe8445b68eedf34b1f2ff64dd1fda6f594b25444a292f3 | Reconciled prior complete review |
+| GQ1-TAIL-037 | `android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt` | L751-L1086 | e3814a4fc1ac29cd867db5cde5204234be9e1539 | f43d9d97bc610466bad5a6f6987eadaac9f4c95d8b2caa833388574d6ff755c3 | GQ1-CHUNK-0454 | e0ed6a6a652075cb3e012295d9ca892f16b7abf2c9ab395e4bcbbeee8243cba2 | Reconciled prior complete review |
+| GQ1-TAIL-038 | `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt` | L751-L760 | 366aa137f0b40b572b1a4c7138654b8ee67ede8a | cc0fec972f4aaf205c63aeaa5f31338d70bc7e736d3f97c2b7cd5799e4b41661 | GQ1-CHUNK-0453 | 90c2c7f0ae3147de406210d2a395f4017ae1f64d537970ca9397cd4ad8a8acb2 | Reconciled prior complete review |
+| GQ1-TAIL-039 | `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt` | L3751-L4042 | a77c04048c85ece2a3d41a9815d200d3042ce90b | bdf62aedef45741b7f90c512d8eca590adf048190c6fe94243584c36b756d54a | GQ1-CHUNK-0456 | 1ced75dd67b4cc879f68a31e728e8311d97887d9222132d79ac0a08604007498 | Reconciled prior complete review |
+| GQ1-TAIL-040 | `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` | L5251-L5405 | 409c0d03ee55c5a51a7b364d04119b5ebfab6440 | 50525e14d7a5f238ac0163cc0beec9aaca044bb5d06d31b111d09f4746dc8ef4 | GQ1-CHUNK-0480 | 70e382b203d1a661eabfeb4140595ef9eb5db4374d1fe6dcce85fe76ddb578a7 | Reconciled prior complete review |
+| GQ1-TAIL-041 | `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt` | L751-L1004 | cc91012c6d671ec7e051f4f1113bdfd6b789329b | 481b27ad5799888927398340ede500b74bb18fbab7d62f2f18b7aa54004b5140 | GQ1-CHUNK-0477 | 91280bab0976882fdcb8222e92554cf7bc293b407ea91ce7c35307462db11783 | Reconciled prior complete review |
+| GQ1-TAIL-042 | `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | L751-L1101 | 3639e77c96f90fd6249c9942ff14c621067e1616 | 31477db671f2c1d816601f265ddc23adedcc715c89cbf3f77f8f727e4d3b5637 | GQ1-CHUNK-0455 | b1612a42c31deb01368c9877da0aea4889ba5c17b7ed0ca50842886704dda6a9 | Reconciled prior complete review |
+| GQ1-TAIL-043 | `android/get_deps/check-updates.ps1` | L1501-L1867 | 246c562947d44fb6e1e7dcc4b5afb8e2bf8a107f | c946e773a485804bf0e34ee5d0ac2c39bb902d55594a3ae15ed794712efba5e0 | GQ1-CHUNK-0587 | a9a9d9889145b9faf67099665abdd14568e52c8410a09e99fa0239486b93b105 | Reconciled prior complete review |
+| GQ1-TAIL-044 | `android/helpers/regenerate_all_mission_metadata_host.ps1` | L751-L868 | 946c3ffd2c1264b673f693e15d9f9782f8e9795c | 6635b2407d6977f92dd066cfb4174fed3041ded7fde3c9bf1e174d96361b1c9a | GQ1-CHUNK-0602 | a22bf07537b801541480f953536840028f787db969ec38601a40b114532b2490 | Reconciled prior complete review |
+| GQ1-TAIL-045 | `android/helpers/run_mission_zip_batch.ps1` | L601-L916 | c6bf3b5c65ad61190b66683ed4887237ecd24103 | 4d6532e574f217746b1c4de78c359239aad1bb45a20db647d8ce22d937b8e7d5 | GQ1-CHUNK-0082 | fdf1e4018502130ba9873cbf8c473ccf838d7c9e9c62701235ce18bb69045092 | Reconciled prior complete review |
+| GQ1-TAIL-046 | `android/tests/test_extract.ps1` | L1201-L1620 | 6d7dbd1d014fd68d67483cbdb98b8339af82034a | cb3e02f5167bfcda2cb6b8be7c0c49eed3bd48cbc4f24d21c45028b5f5bbeaa0 | GQ1-CHUNK-0132 | 8eb31857e4dafed8ff3ab210caf0f6236ffafde374c1899207e6c062213beab8 | Reconciled prior complete review |
+| GQ1-TAIL-047 | `android/tests/test_input_demo_recorder.cpp` | L901-L991 | d2591b1682238e5caf593d135d7861988348075a | 156c6607e96c171f8f34b00a8d3fdc0104a5ffcc4b341d7a5c6950eeac1e90c3 | GQ1-CHUNK-0677 | ce57e7394bb6261543270c33b1c4e1bab3288bf2a62169b0dd21a75a966c1c33 | Reconciled prior complete review |
+| GQ1-TAIL-048 | `android/tests/test_input_demo_replay.cpp` | L901-L1059 | 326d2f0c550c1c5320e9de326c3c672cf6992953 | 38da7f186eb04a3b4622f54574a251b95799ef148d66baecd9f451e707577c53 | GQ1-CHUNK-0679 | 5f5b80fa33e00f033ead0447764f41ca93802169b8d16b851fa51b8bab215dad | Reconciled prior complete review |
+| GQ1-TAIL-049 | `android/tests/test_lan.ps1` | L901-L1397 | c903031d082b817e96dbc6ccbf8aa67eabe3932d | 3ea9236f7fbe3508e7448bd1b7abceee724a3e7bb5eea6719a93d42452fa9417 | GQ1-CHUNK-0676 | 552ef71788eee11810e666e61f2c3786ec167a63413a2a9bf8c7d986429e6622 | Reconciled prior complete review |
+| GQ1-TAIL-050 | `android/tests/test_route_snapshot.cpp` | L901-L1385 | 186d879b05bceb5380415718e6f001409a7bc35d | 1cb4036eb58b0040302f498d70524b92713fc2a4a7e18ca92e77430190eaaf37 | GQ1-CHUNK-0673 | 731a1233c15b6ee5257104fff9f6f1e6b88903ba54ad23c6455445c9f5318f7e | Reconciled prior complete review |
+| GQ1-TAIL-051 | `android/tests/test_saf_archiver.ps1` | L601-L731 | e94ee73ee88ce924b3c1fdfb5b66868808a2399f | 47b1cf85c78037f6ee832badd450ec164c627a6107955cca650c2f5fa15352f0 | GQ1-CHUNK-0131 | a34a9c89c2773c3977aeaddcfa3d84c97b373cd9c3e6b93fc123cbef29fa9b81 | Reconciled prior complete review |
+| GQ1-TAIL-052 | `d1/main/input_demo_hooks.c` | L751-L1326 | d0a5724c5a13706ae19725a1c35d254101c4a599 | c51729e458a6747fe2c1fb5d1ccb7f0373e96450c8d29f4c03b334c04e73aa4f | GQ1-CHUNK-0292 | a5cb54da8ee350b067f3e3a6155c1b682278aab75d3d854a00de72d6e1c67058 | Reconciled prior complete review |
+| GQ1-TAIL-053 | `d1_d2_ogl_diff.txt` | L901-L922 | a985e69e68223ee95ac008606b661fc0411f8bce | c103a98d5ba21fb2c8980c678842523a371879d0ab02a26467147c4bd8764ff0 | GQ1-CHUNK-0628 | 70032808073e989627849528d8afd04bab4d185cd590510050fe6de5b3dfb453 | Reconciled prior complete review |
+| GQ1-TAIL-054 | `d2/main/d1_custom.c` | L751-L894 | 74feb3721d8f5ec494102a168503976554cea382 | d1b4d4b93b03eb0e63def02bf5305615b24f7f7c411a0b4e550f859726d51fb9 | GQ1-CHUNK-0340 | 1b79007485aab26a91fa4554a8d23a1f770fce6c5f7d867117c5e34f8b950cef | Reconciled prior complete review |
+| GQ1-TAIL-055 | `d2/main/d1_save_translate.c` | L1501-L1882 | ab10dce68b7c84dd51a263c76f961ca659b5d938 | 65f65c566a8e9066de8f635e3c9f28fb42b9d56175cbfd9c0fd408157e35d09b | GQ1-CHUNK-0330 | 59b6e2ea15000b8fde08bda812bcffa2cf4165a91339396d4329c1360c57907f | Reconciled prior complete review |
+| GQ1-TAIL-056 | `d2/main/dxa_metadata_patch.cpp` | L751-L1060 | 3e6e2ab9cc81333cc266552984ee0ca1f7b43953 | db5dac77d439255235a36e72c579877376de91a80a84b68089d7200e800f2cf5 | GQ1-CHUNK-0345 | 14316a25b31bbc09d27674aa4bf2eb9b32a0fbb878710553df91247fe777368e | Reconciled prior complete review |
+| GQ1-TAIL-057 | `d2/main/input_demo_hooks.c` | L6751-L7138 | 988a5c1b25ad0613524e2f6a8b2abcd35a0042b0 | e5786f33146fb932d95ce8cfd84a55871e59803cc9b570de3e0394f24aa64c01 | GQ1-CHUNK-0325 | badcf818d37c7b1e2ef5c92f3d949f3d0f3b7210c0e4eecb34deb453995b9b7e | Reconciled prior complete review |
+| GQ1-TAIL-058 | `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1` | L751-L1004 | e63225c510e7dd40fb5716b3910805509c7eb0d6 | 9b270dc271229f6b3373d135376b32f15b8116b7c93fac6c16107d2e70bce956 | GQ1-CHUNK-0618 | 54fe6274b0e6ac30ef7db428246297f0544e74c7e83d4e9381c12c9cdf0eea4f | Reconciled prior complete review |
+
+## Remaining gates
+
+Five investigation records still require terminal dispositions, including full application-path archive verification. Complete committed/tracked/untracked live-delta coverage, reconciliation of all accepted fixes, implementation and validation remain open. GQ1-CLOSE-001 remains TODO and the original queue stays 818 DONE / 1 TODO
+
+</details>
+
+<!-- END IMPORT: GQ1 frozen-tail reconciliation 20261006 -->
+<!-- BEGIN IMPORT: GQI-0004 deferred investigation checkpoint 20261006 SHA256:5dd2affa75dfb48ab79585be3539df3b269d327e24170b4ceb0add4d665702c4 -->
+
+## GQI-0004 deferred investigation checkpoint 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/archive-follow-up.md`
+- Imported SHA-256: `5dd2affa75dfb48ab79585be3539df3b269d327e24170b4ceb0add4d665702c4`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQI-0004 deferred investigation checkpoint 20261006
+
+## Status
+
+FOLLOW-UP at user request to avoid further adversarial security reproduction. No full application-path archive probe ran; no new confirmed finding or remediation is admitted
+
+## Existing evidence boundary
+
+- Live source checkpoint: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Device SDK: 34
+- Device build: google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys
+- Existing probe ran the Android tar listing/extraction commands under the application UID using independent synthetic fixtures and isolated probe-owned directories
+- Regular-file extraction succeeded. The symbolic-link case extracted and could read a probe-owned sentinel outside that case's output directory. FIFO extraction succeeded and was not opened. Tested hard-link and character-device extraction failed
+- Kotlin fallback has separate listing and post-extraction checks; raw command acceptance does not prove acceptance by that full path
+- The stat subcommand had a quoting error: it printed the type and also a nonzero diagnostic for an extra argument. Extraction exits and link reads are separately recorded; do not claim all inspection commands passed
+- No real user file was targeted or changed. No external write, production privacy loss, FIFO hang, or arbitrary execution was demonstrated
+- A fresh :app:compileReleaseKotlin preparation task completed successfully; no runtime validation follows from that build
+
+## Evidence identities
+
+| Artifact | SHA-256 |
+| --- | --- |
+| tar-probe.json | ce9999f22e687e7abfe2e1a64315a08e5091d5627a292bcc51b6f7930af9e092 |
+| probe_tar.py | b63d11c3906f580d72189fe1222993f8157e3d216684811105877e17b44177c8 |
+| regular.rar | 8a2199618e4fb8d9029b0bb67f3e8de9c7a5c3fd31446fdd71e536dd78463161 |
+| symlink.rar | 5ce2fde10d66a11c0868cf715ee06630fbc8d4835f1ff2aeac53c18ba2dff09e |
+| hardlink.rar | 2bd638c59585d2dcb8ee5df601272bc6415f9afdaaa288b44480573577c3874d |
+| fifo.rar | c88fa0addeda1124cef2059d16c04eb6433dc33a6982a4671da9a30cb93b1a19 |
+| char_device.rar | a2ce9c2f2e68b7a619244d1a511b173a113a5cdfea06a13218f67c8912316b22 |
+
+## Follow-up
+
+When authorized to resume this deferred work, verify the complete current application fallback, classify actual admitted entry types, reconcile existing archive policy owners and select a complete supported-platform fix. Preserve ordinary archive compatibility and keep native policy/data failures terminal. Existing scratch artifacts are reproducibility aids; this imported checkpoint is the authoritative status record
+
+</details>
+
+<!-- END IMPORT: GQI-0004 deferred investigation checkpoint 20261006 -->
+<!-- BEGIN IMPORT: GQI-0007 bounded host-config checkpoint 20261006 SHA256:cd896f02c5f96869ae55f4e46399f59cb66dff0c8905847a3f6eb788c056f2d7 -->
+
+## GQI-0007 bounded host-config checkpoint 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/headless-config-checkpoint.md`
+- Imported SHA-256: `cd896f02c5f96869ae55f4e46399f59cb66dff0c8905847a3f6eb788c056f2d7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQI-0007 bounded host-config checkpoint 20261006
+
+## Scope and outcome
+
+PARTIAL: fresh supported MSVC x86 RelWithDebInfo build of both games passed. Ten isolated D1/D2 metadata-tool runs passed with no output differences within each game. These cases do not establish a crash or metadata correctness defect; no finding/remediation is admitted
+
+- Live HEAD: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Command: run-windows-build.ps1 -Target both; terminal exit 0
+- Copied each freshly linked metadata EXE and its DLLs to a probe-owned scratch directory. Each descent.cfg and output stayed there; original build/user config files were not edited
+- Each execution used -hogdir <existing game data> -secretarea-json-out <unique scratch output> -level 1, a 45-second deadline, SDL_AUDIODRIVER=dummy and DXX_SECRET_AREA_DUMP_TRACE=1
+- Every run reached the existing screen and runtime_done trace stages and returned exit 0; no timeout occurred
+- Tested allocations are bounded below 7 MiB. No resource-exhaustion, large-allocation, sanitizer-overflow, archive or security probe ran
+- ReadConfigFile sets defaults, reads descent.cfg and admits minimum-only dimensions on the host. Windows PhysicsFS puts the executable directory before hogdir, so the isolated file has precedence
+- Config dimensions pack into 16-bit halves; screen dimensions then narrow to signed short. This remains a static representability concern, not a demonstrated metadata failure
+- Both fixdiv implementations explicitly return 1 for a zero denominator. The hypothesized immediate aspect division-by-zero crash is unsupported
+- Runtime values inside grd_curscreen were not separately instrumented. Config precedence is source-traced; identical outputs are actual execution evidence
+- The alternate D2 input-demo headless executable has analogous screen initialization but was not executed in this checkpoint. Android BR-0344 remains separate
+
+## Actual runs
+
+| Game | Case | Resolution | Aspect | Exit | Seconds | Output bytes | Output SHA-256 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| d1 | normal | 640x480 | 3:4 | 0 | 0.562 | 8201 | dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83 |
+| d1 | minimum | 320x200 | 3:4 | 0 | 0.297 | 8201 | dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83 |
+| d1 | zero_aspect | 640x480 | 3:0 | 0 | 0.297 | 8201 | dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83 |
+| d1 | packed_width | 65536x480 | 3:4 | 0 | 0.312 | 8201 | dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83 |
+| d1 | short_width | 32768x200 | 3:4 | 0 | 0.36 | 8201 | dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83 |
+| d2 | normal | 640x480 | 3:4 | 0 | 0.437 | 16394 | a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72 |
+| d2 | minimum | 320x200 | 3:4 | 0 | 0.313 | 16394 | a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72 |
+| d2 | zero_aspect | 640x480 | 3:0 | 0 | 0.312 | 16394 | a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72 |
+| d2 | packed_width | 65536x480 | 3:4 | 0 | 0.313 | 16394 | a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72 |
+| d2 | short_width | 32768x200 | 3:4 | 0 | 0.297 | 16394 | a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72 |
+
+## Provenance
+
+| Artifact/source | SHA-256 |
+| --- | --- |
+| temp/general_cleanup_20261006/windows-build.log | 1b04dc0e5fbcb3567e392e3789d6b539427750f9835a3f76b71796a3869a7035 |
+| temp/general_cleanup_20261006/probe_headless_config.py | c19b2e8a9f6a5b51f596c9b146a1d094626ee645e14d494faac47b944e17585b |
+| temp/general_cleanup_20261006/headless-config-probe.json | 32f6ac628afd99e9590cd23f944fb8269d328357071ad95876ec813ee62f6ab2 |
+| android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp | 2bc94e8a28d9437f1d65066111d75a150673218188f55a9153f574f801b2f375 |
+| android/app/src/main/cpp/headless/input_demo_headless_main.cpp | b083bf298556ab8930becf8a919d26519728073ac17449e165d93e4f953ad7d1 |
+| d1/main/config.c | 7d6779329c6f48290b25e656e980d2a4f542bc9785e26c13081ea7989ccba8de |
+| d2/main/config.c | edd65a6669243b00788d56f6dba9d1f0d342f8b4227ac5849b09f6d4e5c691b4 |
+| d1/misc/physfsx.c | 7f9da4c3bab994b17cb165d8676d8204c52bd7cc5df6474cbaaa7e3e367e54b8 |
+| d2/misc/physfsx.c | cf18118b23a0d3290cbcbecc1b930161ed6ec4d1fbeb82c8c6118012941e3d5f |
+| d1/maths/fixc.c | 54ab4495ea79dd73540a19c7a622e2ccda2832a640fabfbbc3710036bc5af5bf |
+| d2/maths/fixc.c | 378fcdcfd4d8cf2c09e0da5b665dbfdd2424c33434d1e7732e6790bd89b2b3c1 |
+| temp/general_cleanup_20261006/headless-config-d1/dxx-redux-d1-headless-metadata.exe | 754cbdba909721d9269fdb6539a1a210e795b10c60caf0a14d068531c9806336 |
+| temp/general_cleanup_20261006/headless-config-d2/dxx-redux-d2-headless-metadata.exe | 96b77fc2aaaca30456543bce522be81ae29d993f3ab003ea9137540dcc80fe1a |
+
+## Remaining decision
+
+GQI-0007 remains OPEN with narrower evidence. Decide whether headless tools should use a small fixed scratch canvas independent of user graphics settings, or validate a supported graphics domain. Cover the alternate replay tool and normal replay/metadata parity before a fix. Large resource-pressure/overflow reproduction is deferred under the user execution constraint; do not manufacture confirmation from unchanged ordinary outputs
+
+</details>
+
+<!-- END IMPORT: GQI-0007 bounded host-config checkpoint 20261006 -->
+<!-- BEGIN IMPORT: Ordinary investigation measurements 20261006 SHA256:25d4de972449ad487cafd4fd6853656ede20a595b11d30a1c15b2bf91906564a -->
+
+## Ordinary investigation measurements 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/ordinary-investigation-measurements.md`
+- Imported SHA-256: `25d4de972449ad487cafd4fd6853656ede20a595b11d30a1c15b2bf91906564a`
+
+<details>
+<summary>Full worker report</summary>
+
+# Ordinary investigation measurements 20261006
+
+## GQI-0005 scope and result
+
+PARTIAL, no new defect admitted. Compiled the unchanged production android_axis_mailbox.cpp with a bounded measurement driver using pinned NDK r30, x86_64-linux-android26, C++17, -O2 and static libc++. Ran four short serial processes on the Android API-34 emulator; every driver assertion uses explicit return values and remains active in optimized builds
+
+- The driver submits batches of three axes through the real production API, simulating consumer absence by postponing dequeue. It does not sleep for the modeled duration or drive actual Android UI/sensor events
+- Synthetic held input and threshold crossings cover 1,800 or 14,400 samples, with an explicit final zero batch. The loop verifies exact transition count, nondecreasing generation, legal axis identity, final snapshot release and final queued release
+- Payload bytes are count times sizeof(transition), excluding deque/allocator overhead. VmRSS is a coarse process measurement; it is not exact queue allocation accounting. Drain time includes mutex/dequeue and probe assertions, but excludes real SDL handlers, introspection and rendering
+- Current MainActivity publishes normalized controller axes at offset 16; the mailbox records transitions only below axis 13. The controller case therefore exercises latest-state coalescing and creates no transition backlog
+- MainActivity.onStop pauses gyro sampling and calls InputMixer.releaseAll; InputMixer suppresses unchanged mixed values and sends final zeros. These are static lifecycle observations, not a measured background sensor rate
+- Touch/gyro channels and automation still can queue crossings; the container has no explicit bound. The measurements alone do not establish harmful growth during a supported real loading/suspend scenario
+
+| Modeled case | Actual result |
+| --- | --- |
+| 30s at 60Hz held | `frames=1800 axes=3 offset=0 crossing=0 transitions=6 payload_bytes=144 rss_before_kib=2968 rss_queued_kib=2968 drain_us=8 ordered=1 final_released=1` |
+| 30s at 60Hz crossings | `frames=1800 axes=3 offset=0 crossing=1 transitions=5400 payload_bytes=129600 rss_before_kib=3068 rss_queued_kib=3068 drain_us=87 ordered=1 final_released=1` |
+| 120s at 120Hz crossings | `frames=14400 axes=3 offset=0 crossing=1 transitions=43200 payload_bytes=1036800 rss_before_kib=2956 rss_queued_kib=3872 drain_us=652 ordered=1 final_released=1` |
+| 120s at 120Hz normalized controller | `frames=14400 axes=3 offset=16 crossing=1 transitions=0 payload_bytes=0 rss_before_kib=2928 rss_queued_kib=2928 drain_us=14 ordered=1 final_released=1` |
+
+### Existing mailbox regression
+
+- Both normal Windows mailbox executables printed passed, but inspection of buildd2/build.ninja confirmed /DNDEBUG with no /UNDEBUG. Their assertion checks are disabled; do not count those runs as behavioral validation. This remains existing BR-0662 ownership
+- Independently rebuilt the unchanged maintained test plus unchanged mailbox with MSVC x86 /O2 /UNDEBUG, then ran it to terminal exit 0: android axis mailbox tests passed
+- An assertion-enabled NDK test binary compiled successfully, but the emulator disappeared before its push. adb devices then returned an empty list. No on-device unit-test execution or restart is claimed; the earlier four completed measurement processes remain valid
+
+### Remaining GQI-0005 decision
+
+Observe actual producer activity during a supported loading stall and full engine drain cost if needed. Do not invent an overflow policy that drops short pulses or final releases based only on an unbounded container. Any future admission must distinguish touch/gyro transitions from current normalized controller channels
+
+## GQI-0007 alternate headless startup addendum
+
+Copied the freshly built D2 replay executable into the isolated config directory. For all five configs from the earlier bounded checkpoint, launched with -hogdir and -inputdemo-replay naming a deliberately absent scratch path. Each returned exit 1 with HEADLESS-RUN FAIL load could not open demo file. Source control flow places this after successful complete runtime and screen initialization. Thus the alternate tool also survives the tested startup configurations; this is expected error-path startup coverage, not replay execution/parity or proof of internal screen representability
+
+| Config case | Exit | Observed stderr |
+| --- | --- | --- |
+| normal | 1 | HEADLESS-RUN FAIL load could not open demo file |
+| minimum | 1 | HEADLESS-RUN FAIL load could not open demo file |
+| zero_aspect | 1 | HEADLESS-RUN FAIL load could not open demo file |
+| packed_width | 1 | HEADLESS-RUN FAIL load could not open demo file |
+| short_width | 1 | HEADLESS-RUN FAIL load could not open demo file |
+
+## Provenance
+
+- Live HEAD: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Driver commands and complete raw per-case output are retained in the hashed JSON artifacts below
+
+| Artifact/source | SHA-256 |
+| --- | --- |
+| temp/general_cleanup_20261006/axis_queue_measure.cpp | 453c64b92095c00c8b8a1f395d2734f5d67ab552c761088f38f6a9980ff384ee |
+| temp/general_cleanup_20261006/axis_queue_measure | 95f83f85da045a181650d0bef1d92b5c1b2a436b8f7047bcf4ca4b898520a1f5 |
+| temp/general_cleanup_20261006/axis-queue-measure.json | bdcde1c2a5b0bc674e4df3447625ef4c6c5bddcae03daaff48a7928b59217f0b |
+| temp/general_cleanup_20261006/axis-queue-logcat.txt | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| temp/general_cleanup_20261006/build_axis_unit.cmd | 7dbf7e444c25a13bd6ae714ba33ff060010e4985cfc9c9d57dbbc9b1939f4f04 |
+| temp/general_cleanup_20261006/axis-unit-assertions.log | 65430a78118ec8c5aecc53724d42272c1e6b8a0983cb5c6f9861248e81c75596 |
+| temp/general_cleanup_20261006/axis_unit_assertions.exe | 5598ea75f171a018a51731a782d8f2304ff95fdcc9984456843f7870606ef387 |
+| temp/general_cleanup_20261006/test_android_axis_mailbox | b308cbd631101f7465fba15ecdab25f052d69330af349a1a67fe0b4977990596 |
+| temp/general_cleanup_20261006/headless-replay-startup-probe.json | a9e3ba481baf1e8b8a44d51fdde12ae1443bbd01ef282b78f37424a61aff7215 |
+| temp/general_cleanup_20261006/headless-config-d2/dxx-redux-d2-headless.exe | 58b57b537efcfcdce303f53824da99fce80211fcaeeb4c7feb40155bede9603a |
+| android/app/src/main/cpp/shared/android_axis_mailbox.cpp | b26b40a023bc244023710be3425d36506cb2ed4ba9a206db097bcd68e0ce2047 |
+| android/app/src/main/cpp/shared/android_axis_mailbox.h | 614b384e6a99c01b84663e248aa41a1d7344f5320a719ed4a144d06e27adaf61 |
+| android/app/src/main/cpp/android_input.c | 41920c07d748a2b56c97257027b5f74b7d8a081037ecde115a97f88ab45c8a3a |
+| android/app/src/main/java/com/dxxredux/app/InputMixer.kt | e4efc84b2281a14f56b35a4110151511486c9bf81962914a80500d7fc156d994 |
+| android/app/src/main/java/com/dxxredux/app/MainActivity.kt | 21ecde600bfb8908ac847191ed826449345108046e922a442c3e57e6a05fdf0f |
+| android/app/src/main/java/com/dxxredux/app/GyroInputManager.kt | 199b3987ed9c6c413ef4fd8c2357d42a2f386f839be09dfcccb82bf73ee2f1f9 |
+| android/tests/test_android_axis_mailbox.cpp | 6761665be3c39d8813c393d3894618a91555f88ecace2ecad0c879018420078a |
+
+No product code or maintained test was changed. Ordinary measurements narrow investigations without adding unsupported findings. Full current-delta review and accepted remediation work remain open; deferred security work retains follow-up status
+
+</details>
+
+<!-- END IMPORT: Ordinary investigation measurements 20261006 -->
+<!-- BEGIN IMPORT: GQI-0006 native save-pair interruption evidence 20261006 SHA256:4d7ff8b5a1096fe52aa0d09834bb94ec2cb2fd82dc3cc87efe2bdbe5b914aa28 -->
+
+## GQI-0006 native save-pair interruption evidence 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/save-pair-evidence.md`
+- Imported SHA-256: `4d7ff8b5a1096fe52aa0d09834bb94ec2cb2fd82dc3cc87efe2bdbe5b914aa28`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQI-0006 native save-pair interruption evidence 20261006
+
+## Result and scope
+
+Confirmed native-helper interruption/retry and cleanup/rollback failure behavior; broader GQI-0006 generation policy remains OPEN. This extends the existing BR-0235/GQI-0006 publication scope, not a new unrelated defect
+
+- Compiled unchanged android_file_pair_transaction.c with MSVC x86 /O2 /W4 and a small host driver. Final compilation has no warnings
+- Each case uses six synthetic ordinary files under its own repository-local scratch directory. No game save, player, manifest or user config was opened or modified
+- The production helper receives actual host filesystem exists/rename/remove callbacks. The probe intentionally returns failure for specified operations; after a selected successful rename it terminates its own process with _exit(99), preventing helper rollback
+- A fresh process then stages a distinct retry pair and invokes the same unchanged helper with no injected faults. All child executions have ten-second deadlines and checked exit codes
+- The Windows C-runtime callbacks are a test backend for the production operations interface. Actual Android PhysicsFS and full launcher/native restore paths were not run; no claim of filesystem power-loss durability is made
+- Normal publication and a second save both succeed. All four interrupted states reject the next save because a deterministic backup exists; retry deletes its own temporary pair and preserves the earlier remnants
+- Failed backup cleanup reports publication success while retaining both backups, then rejects the next save. Failure of primary publication followed by failure restoring its backup leaves primary absent, old companion live and old primary in backup; retry again rejects
+- No tested case permanently loses the old primary. A recoverable backup and an unusable current slot are different outcomes; do not describe them as proven permanent loss
+
+## Actual filesystem states
+
+Values O/N denote old/new generation, dash means absent. Retry staging uses a third generation. Each state below was read from disk after the child terminated
+
+| Case | First exit | Live primary | Live companion | Primary backup | Companion backup | Retry exit |
+| --- | --- | --- | --- | --- | --- | --- |
+| normal | 0 | N | N | - | - | 0 |
+| cut_1 | 99 | - | O | O | - | 1 |
+| cut_2 | 99 | - | - | O | O | 1 |
+| cut_3 | 99 | - | N | O | O | 1 |
+| cut_4 | 99 | N | N | O | O | 1 |
+| cleanup_failure | 0 | N | N | O | O | 1 |
+| rollback_failure | 1 | - | O | O | - | 1 |
+
+## Production linkage and policy constraints
+
+- state_android_publish_save_slot stages a secret companion, then supplies primary.tmp / primary / primary.bak and companion.tmp / companion / companion.bak to the shared helper through PhysicsFS callbacks
+- The helper refuses any existing backup before recording prior state. Success ignores backup-delete results; rollback ignores delete/restore results. No recovery entry point exists in its interface
+- A repair must resolve interrupted generations before a new save or restore attempt, preserve recoverable bytes through cleanup/rollback failures, distinguish committed companion absence, and avoid mixing an old main save with a new companion
+- File existence alone is ambiguous after partial rollback: primary may be restored while companion rollback still fails. Blindly removing backups whenever primary exists cannot establish a coherent generation
+- Prefer an explicit branch-owned transaction/generation identity and recovery state, with the main/companion/retained manifest/progress inventory contract reconciled before implementation. Preserve the native save formats; Android transaction metadata can use one current pre-release schema
+- Cleanup failure after an already committed pair must not make every later save fail without recovery. Failed recovery must preserve useful remnants and return actionable status rather than discard the only old copy
+- This report does not choose a complete journal/pointer design or claim retained restart/progress inventory admission is covered. Those remaining parts must be reviewed and validated before GQI-0006 closes
+
+## Complete callback evidence
+
+### normal
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+rename 4 primary.tmp -> primary result=1
+delete primary.bak result=1
+delete companion.bak result=1
+publish=1
+retry:
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+rename 4 primary.tmp -> primary result=1
+delete primary.bak result=1
+delete companion.bak result=1
+publish=1
+```
+
+### cut_1
+
+```text
+rename 1 primary -> primary.bak result=1
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+### cut_2
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+### cut_3
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+### cut_4
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+rename 4 primary.tmp -> primary result=1
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+### cleanup_failure
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+rename 4 primary.tmp -> primary result=1
+injected cleanup failure primary.bak
+injected cleanup failure companion.bak
+publish=1
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+### rollback_failure
+
+```text
+rename 1 primary -> primary.bak result=1
+rename 2 companion -> companion.bak result=1
+rename 3 companion.tmp -> companion result=1
+injected rename failure 4 primary.tmp -> primary
+delete companion result=1
+injected rename failure 5 primary.bak -> primary
+rename 6 companion.bak -> companion result=1
+delete primary.tmp result=1
+publish=0
+retry:
+delete primary.tmp result=1
+delete companion.tmp result=1
+publish=0
+```
+
+## Provenance
+
+- Live HEAD: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+
+| Artifact/source | SHA-256 |
+| --- | --- |
+| temp/general_cleanup_20261006/save_pair_probe.c | f6243f1fc2b3e6f772235dac06d849c9e42076c9bfdc6d0390c7751c5803236e |
+| temp/general_cleanup_20261006/build_save_pair_probe.cmd | f806d7baff4a0413dd7ab7040aae0a3a6d0a510b73a3ba4c5186b7489caf275d |
+| temp/general_cleanup_20261006/run_save_pair_probe.py | cc23f090988d2443fc3247ce1035f33b7a1e02a2dd529d13a6081153c5462b95 |
+| temp/general_cleanup_20261006/save-pair-build.log | 1020f8a1ffcf0817c9aee96d7207fe8eaecb73a083cbf9ec7d81ef8f4c02f2ac |
+| temp/general_cleanup_20261006/save_pair_probe.exe | 17050b2bcf8b1f45ef45dfe1056e5411352b8f815c706ed75083ef7d1f925868 |
+| temp/general_cleanup_20261006/save-pair-probe.json | 2084d02946f003dffcf61c83b748a2e1713489e3f1ac617483c7e5a9a18e5403 |
+| android/app/src/main/cpp/shared/android_file_pair_transaction.c | 602879eccf8c5aa7754d8e4d9e0d7b4d95d96a02a32bc8d45f2d22531b3b3f80 |
+| android/app/src/main/cpp/shared/android_file_pair_transaction.h | f26a51cc033e09b0569020cd7160643be7c3d81bd1672a132c9a17ce21464917 |
+| android/app/src/main/cpp/shared/state_android_shared.c | e3c1797c51f6974fbb2a4f973032c52944f1ef30938993f05951f3937ea159c3 |
+| android/tests/test_android_file_pair_transaction.c | 5525b2498891051be62ab08236bb4ad744cf661880c24537a39850a76c993f56 |
+
+No product edit, inherited-file change, new maintained test registration or remediation completion is claimed
+
+</details>
+
+<!-- END IMPORT: GQI-0006 native save-pair interruption evidence 20261006 -->
+<!-- BEGIN IMPORT: GQ2 generation and review-tool repair 20261006 SHA256:417b2e19e6894be8f7e9c58f4f7cc89650e2227173f506d91dd425e767b7e49e -->
+
+## GQ2 generation and review-tool repair 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-generation-evidence.md`
+- Imported SHA-256: `417b2e19e6894be8f7e9c58f4f7cc89650e2227173f506d91dd425e767b7e49e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2 generation and review-tool repair 20261006
+
+## Frozen delta
+
+- Parent: GQ1, review head 7877ad30d05887b8e19869ed4c50075e41e2f88e
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e
+- GQ2 head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited-file attribution base remains fb555eec75e1ed12c8348805ab335afb4c721b06; GQ2 delta status is not a substitute for 1996-original ownership
+- 4,350 rename-aware path records: 2,108 added, 2,054 modified, 168 deleted, 20 renamed; --no-renames gives 4,370 paths
+- 627 numbered source/mechanical chunks and 18 preflight/sweep/closure units, total 645. All start TODO; previous current-blob reports may be reconciled only with exact scope and compatible context
+- Generated with new_adversarial_review_ledger.ps1, CampaignId GQ2, SourceLinesPerChunk 750, TestLinesPerChunk 900, BatchPathsPerChunk 40, exact base/head above
+- Every rename-aware Git path is present as an exact backtick-delimited path in generated queue/scopes. Sorted path/status/old-path/base-mode/base-blob/head-mode/head-blob manifest SHA-256: e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4
+- The manifest is reconstructible from git diff --name-status -z --find-renames and git ls-tree -r -z at the two frozen commits; missing-side mode/blob use a dash
+- This proves inventory construction and identity, not substantive source review or completion. GQ1 tail reconciliation and other reports retain their own scopes
+
+## Preparation-tool fix
+
+- Initial complete-delta generation failed: Cannot bind argument to parameter Hunks because it is null
+- Git abbreviated rename numstat paths did not match full name-status paths. A hunkless change also produced null through PowerShell pipeline unrolling; the mandatory parameter rejected it before its existing empty-list branch
+- The helper now reads NUL-delimited name-status and numstat records with matching rename detection, resolves rename targets from their separate fields, and passes an explicitly collected hunk array to an AllowEmptyCollection parameter
+- No path is silently omitted or treated as a nonexistent brace-notation filename; no-text-hunk changes retain whole-diff scope
+- New maintained regression creates an isolated real Git repository and covers unchanged/edited renames, paths with spaces and Unicode, executable mode changes, additions, deletions and ordinary edits. Fixture Git hooks and line-ending conversion are disabled locally; recursive cleanup validates the owned absolute path
+- Registered test_review_ledger_generation in the core test suite. No native-engine source is changed
+
+## Validation
+
+- New real-Git regression: PASS before and after formatting
+- Scoped mixed-language quality on helper, test and catalog: PASS
+- test_validate_automation_catalog.ps1: PASS, 94 standalone JSON tests / 371 support scripts / 196 standalone PowerShell tests
+- test_run_all_tests_catalog.ps1: PASS, 294 top-level entries / 371 support scripts
+- Full GQ2 generator succeeds and retains identical queue content across the formatter run after excluding only the Generated timestamp
+- Exact-path inventory audit: all 4,350 records found, zero omissions
+- No commit/staging or original-engine edit; user-owned outstanding_bugs.md untouched
+
+## Working-tree supplement
+
+The frozen HEAD excludes this turn's generator repair, test registration, new test and campaign bookkeeping. GQ2-WORKTREE-001 owns the three code/test paths with fresh validation here. User-owned outstanding_bugs.md requires read-only reconciliation and remains outside implementation ownership. Campaign ledgers/plans are evidence-maintenance changes checked at closure; do not recursively generate new review generations for their own queue bookkeeping
+
+## Provenance
+
+| Artifact/source | SHA-256 |
+| --- | --- |
+| temp/general_cleanup_20261006/gq2-path-fingerprints.tsv | e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4 |
+| temp/general_cleanup_20261006/gq2-generated-queue.md | 8a44aa2daeea96d144bfffa04d9547fbd967a92395692aa381084e0a5a12ae57 |
+| temp/general_cleanup_20261006/gq2-generation.log | 1084533a212a1d1398e54184fa2bab7912b1d4bd5894b9e6a1091a2a12023d10 |
+| temp/general_cleanup_20261006/review-generator-test.log | 3e927f4fb86856c4536c1cc4ef72a10a7490819e8d09dbcac029d419b358bb09 |
+| temp/general_cleanup_20261006/review-generator-quality.log | de871a2b295a480099eb8b950009f77fc5d05dcfdf0d87653ec4f44e0e530bed |
+| temp/general_cleanup_20261006/review-generator-automation-catalog.log | 07df8d173edaadfcad44dd99717343ded87e5b4740f3a508d15b3729419fd026 |
+| temp/general_cleanup_20261006/review-generator-master-catalog.log | a2ae4090282162741513d4109c759d5a8564343404c6ebf5e1352d005bbb4f17 |
+| android/helpers/new_adversarial_review_ledger.ps1 | 33571cb60c4d165ac26d8b50d23833a940c71f864b4d74e020583263259e12e8 |
+| android/helpers/test_suite_coverage.ps1 | 97ed9407038cdd5ebb52da632c7357bd3a07c514d285b7925efa13f243998562 |
+| android/tests/test_review_ledger_generation.ps1 | af0e1095b67b04f1dc77f17b79ff83c538047802f1fb3cb64999af1786ecb7a3 |
+
+Security-sensitive reproduction and later secret-scan publication delta remain explicit follow-up under the user execution constraint. Generation does not authorize deferred probes or confer coverage on their findings
+
+</details>
+
+<!-- END IMPORT: GQ2 generation and review-tool repair 20261006 -->
+<!-- BEGIN IMPORT: GQI-0006 recovery policy and remediation admission 20261006 SHA256:922b9ae40d6c8b855fcbe752397b00674f8fab7878092b5290b24eac3e3bcf30 -->
+
+## GQI-0006 recovery policy and remediation admission 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/save-recovery-policy.md`
+- Imported SHA-256: `922b9ae40d6c8b855fcbe752397b00674f8fab7878092b5290b24eac3e3bcf30`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQI-0006 recovery policy and remediation admission 20261006
+
+## Disposition
+
+CONFIRMED and assigned GQR-0236 under existing BR-0235, with restore admission coordinated with BR-0206. Do not allocate another GQF for the same incomplete-generation publication root. The preceding imported actual-file interruption report proves the retry/rollback failure; this report completes ownership and recovery-policy preparation, not implementation validation
+
+## Current producer and consumer review
+
+- Read complete retained restart persistence and load paths in coop_level_restart.c, the progress publisher/reader in coop_save.c, shared fixed-slot and single-file publication in state_android_shared.c, the native pair helper and its existing test
+- Retained restart writes a temporary save and manifest, renames save first, manifest second, and deletes temporary files on failure. Its keep-highest decision reads the old manifest level and tests only save existence
+- A failure between retained-save and manifest renames can leave a new save beside an old manifest. Launcher readCoopLevelStartEntries already validates mission, client membership, containment, size and checksum; preserve those checks
+- Native coop_level_restart_load_retained_and_request opens the fixed save name, validates length/read, then labels the in-memory buffer with the current level/campaign/mission without reading the committed manifest or verifying its checksum/identity
+- CoopSaveCompatibility.selectedPath resolves the selected manifest path and native compatibility status, while hostRevision polls path/length/mtime. Neither replaces generation admission in the native restore path
+- Progress inventory writes mission-scoped and root copies independently. Its single-file publication duplicates the deterministic backup/delete/unchecked restore algorithm in state_android_shared.c. The reader validates format/version/length/checksum and mission/preceding level, but backup remnants have no recovery admission
+- Native save bodies and engine-owned schema/semantic restore checks remain in the native engine. The selected repair belongs in branch-added Android publication/restore owners; no broad inherited refactor is justified
+
+## Accepted recovery policy
+
+1. Define a committed generation before exposing its save, required companion-presence state and advertisement. A coherent old generation must remain recoverable until the new commit is established
+2. For fixed native slot names, record enough branch-owned transaction state to distinguish interrupted forward publication from partial rollback. Recover before read/restore and before another write. Existence of primary alone is insufficient, as the earlier fault matrix demonstrates
+3. For retained restart, the manifest is the generation authority: stage the owned save generation, publish its validated manifest last, and require native and launcher consumers to agree on mission/level/size/checksum and selected identity before use. Retain the previous complete generation until commit; do not add a second competing source of save metadata
+4. Progress inventory recovery preserves the last complete payload and requires scope/generation consistency before exposing progress state. Reconcile scoped/root publication policy explicitly; a failed scoped commit cannot silently advertise unrelated root inventory
+5. Check rename, delete, flush/close and recovery outcomes. Cleanup failure after commit must remain retryable and distinguishable from failed publication. Never discard the only useful backup merely because its deterministic name already exists
+6. Preserve native D1/D2 save formats and desktop behavior. Android transaction metadata is pre-release: use one current schema with no historical migration framework. Prefer extending shared branch-added ownership over copying transaction bodies into original engine files
+7. Serialize the actual readers/writers across launcher and game lifetimes as required by the existing ownership model. Keep source/manifest generation binding through validation and selection; do not implement recovery by racing an uncoordinated launcher scan
+
+## GQR-0236 implementation and validation boundary
+
+- Owners: android_file_pair_transaction.c/.h, state_android_shared.c, coop/coop_level_restart.c, coop/coop_save.c, their native/JNI selection seams and launcher retained checkpoint consumers where needed
+- Existing controls to retain: checked native body/trailer/close results, native compatibility validation, launcher checksum/size admission, companion staging before main publication, pointer publication only after save commit, failed-save suppression of history/peer success
+- Extend maintained native transaction tests with actual restart states, cleanup failures, failed rollback and retry; include explicit companion absence and preservation of all recoverable prior bytes
+- Add ordinary interrupted-publication integration for manual/autosave slots, retained restart and progress inventory: after every publication step, restart/reopen through production readers, require exactly one complete accepted generation, and then require another save to succeed
+- Inject or simulate write/flush/close/rename/delete failures through maintained interfaces; verify surfaced status, unchanged prior generation on uncommitted failure, and no success advertisement of an unaccepted generation
+- Run paired D1/D2 native and Android integration, relevant launcher tests and scoped formatting; preserve original-format compatibility and record inherited diff metrics
+- Power-loss filesystem durability and security reproduction are separate claims; do not infer them from orderly process termination or include deferred security probes
+
+## Evidence and limitations
+
+The actual host process-cut matrix is in GQI-0006 native save-pair interruption evidence 20261006. Broader retained/progress conclusions above are current-source tracing. Their end-to-end fault matrix is required fix validation, not already executed work. GQI-0006 can leave hypothesis status because the root is proven and policy/ownership are chosen; GQR-0236 and BR-0235 stay TODO/OPEN until implementation and full validation
+
+## Source identities
+
+| Source | SHA-256 |
+| --- | --- |
+| android/app/src/main/cpp/shared/android_file_pair_transaction.c | 602879eccf8c5aa7754d8e4d9e0d7b4d95d96a02a32bc8d45f2d22531b3b3f80 |
+| android/app/src/main/cpp/shared/android_file_pair_transaction.h | f26a51cc033e09b0569020cd7160643be7c3d81bd1672a132c9a17ce21464917 |
+| android/app/src/main/cpp/shared/state_android_shared.c | e3c1797c51f6974fbb2a4f973032c52944f1ef30938993f05951f3937ea159c3 |
+| android/app/src/main/cpp/shared/coop/coop_level_restart.c | f23445c593353217fee1c9d3e83c3bed4e8a9db9bbef773e33ff85c7387c7d1f |
+| android/app/src/main/cpp/shared/coop/coop_save.c | 7d8b4fcf63b931954e9d601edd650421e4453c80d3261cd97a55bb93c73fbceb |
+| android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt | c0cc55a86ae78c01d1b0e8a84c25d283eeaae91fc7e5f816a83118d31b72e97d |
+| android/app/src/main/java/com/dxxredux/app/multiplayer/CoopSaveCompatibility.kt | 29b1ae031ff5729f6d50c4d45590e7c8f64821a0777baec93a9f950da2571887 |
+| android/tests/test_android_file_pair_transaction.c | 5525b2498891051be62ab08236bb4ad744cf661880c24537a39850a76c993f56 |
+
+Live HEAD b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; implementation files remain unmodified
+
+</details>
+
+<!-- END IMPORT: GQI-0006 recovery policy and remediation admission 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0001 current-delta review 20261006 SHA256:910ec7c2d848309961e6ea52ae8400df383da9fe11ea88d11a91c1ca7e7306aa -->
+
+## GQ2-CHUNK-0001 current-delta review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0001.md`
+- Imported SHA-256: `910ec7c2d848309961e6ea52ae8400df383da9fe11ea88d11a91c1ca7e7306aa`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0001 current-delta review 20261006
+
+## Frozen scope and identity
+
+- Title: Android authentication examples
+- Delta base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned hunks were read in full, with enclosing and paired context described below
+- Current working copies of assigned/context sources match the frozen head after normalizing checkout line endings
+- Scope identity table SHA-256 (table data rows joined by LF, final LF): 41be0c2b16afa444f274d5bf9d01a225d7c567b05f7710fefc4218c9af3b002a
+
+- `android/auth_config.template.jsonc`: diff hunks 1-2, new L1-L25
+- `android/play-store-credentials.sample.json`: diff hunks 1-2, new L2-L18
+
+| Current path | Base path | Base blob | Head blob | Exact git diff -U0 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `android/auth_config.template.jsonc` | `android/auth_config.json5.template` | `5a6d4135fd0de2ede42dab8fecae79072a595039` | `2b0fa4f21aa68060d8373e87434b4fda98a0b7d3` | `9bf30d0ae215b980c6e1ceb58b275cf5e3b3a99af1f775654414c2bbe30c9ccc` |
+| `android/play-store-credentials.sample.json` | `android/play-store-credentials.sample.json` | `326b6fad877557a031665489cc99590de7922eb3` | `384d3a991561e33d88ceea6838a10428532511b6` | `d3bfadd82a08228b8a2f83fedc5f4eb33a1effb6f48bf6626eac76a141d507f8` |
+
+| Path | Attribution | Current delta | Original-base to head |
+| --- | --- | --- | --- |
+| `android/auth_config.template.jsonc` | branch-added | +4/-4, 2 hunks | +26/-0, 1 hunks |
+| `android/play-store-credentials.sample.json` | branch-added | +16/-16, 2 hunks | +19/-0, 1 hunks |
+
+## Diff-minimization assessment
+
+NO_INHERITED_EFFECT: both examples are branch-added relative to the original attribution base. Their direct contracts terminate at Android Gradle BuildConfig/manifest values, the Play Games wrapper and the branch-owned deployment signer. Neither example introduces an engine format or a D1/D2 hook. Combining these independent auth schemas would add coupling without removing inherited lines
+
+## Current-delta reconciliation
+
+- Read both complete samples and both exact base/head blob diffs. The auth template is R084 from auth_config.json5.template, not a new unrelated file. Its only content changes are the current filename in three comments and an accepted trailing comma. The strict JSON credential sample changes indentation only
+- Parsed both old/new credential samples with Python json; values are exactly equal. Parsed both auth templates after the same line-comment/trailing-comma transforms used by Gradle; keys and values are exactly equal. This checks the checked-in samples, not arbitrary user JSONC
+- Gradle reads auth_config.jsonc, generates GPGS_SERVER_CLIENT_ID and games_app_id, and the manifest/PlayGamesAuth consume those values. The YOUR_ placeholder disables configured sign-in. Root ignore checks recognize both actual local config filenames
+- Direct deployment code reads the sample-shaped JSON and uses the shared signer. The signer still strips either PEM envelope but imports PKCS#8 in both modern and fallback branches. The sample still advertises BEGIN RSA PRIVATE KEY. This is existing BR-0007, as recorded by GQC-0014 and GQ1-CHUNK-0001; formatting did not repair it
+- Retain the existing recommendation to document the downloaded PKCS#8 private_key value. No extra key-format compatibility layer is proposed. The existing non-ASCII sample instruction remains an attached cleanup note, not another finding
+
+## Clean dimensions and limits
+
+Checked placeholder-only content, parseability, filename migration, consumer key/default alignment, ignored actual filenames, ownership, duplication and retained mismatch. No actual credentials were opened, no history secret scan or cryptographic reproduction ran, and no provider console, authentication, deployment, upload, network or APK behavior was exercised. The earlier BR-0007 reproduction is historical evidence only. Google console instructions were not externally revalidated. Other consumer scopes retain their own queue units
+
+Provisional impact rating: 53 (H/M/B/C/R = 23/0/10/10/10); proposed owner: BR-0007 (reference); rationale: current sample and importer retain the already confirmed deployment mismatch
+
+Coverage outcome: ISSUES
+
+## Inspected context identities
+
+These are enclosing-function/call-contract reads described above, not complete coverage claims for every context file
+
+| Context path | Frozen head blob |
+| --- | --- |
+| `.gitignore` | `806e08e71d3db5a3ee0f888c0f59a21e88b111dd` |
+| `android/2_deploy-playstore.ps1` | `9ed7cdf40b78172ffb6b78faf7d5676a00b0318b` |
+| `android/app/build.gradle` | `27f1c438687ec7e752e1e4f299e8896d122803a1` |
+| `android/app/src/main/AndroidManifest.xml` | `8aba956461a98c585e718c0fb45fd24498ff07e3` |
+| `android/app/src/playServices/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt` | `5a5374eb77e533a0a5cd68068d4d99a157acaf86` |
+| `android/helpers/playstore-auth.ps1` | `55093f0009812abd2e4ff0ac38297ef9a2637e4c` |
+
+## Evidence procedure
+
+Used git show/rev-parse/ls-tree for frozen blobs, git diff of explicit old/new blobs for rename correctness, paired source comparisons, line-numbered source/reference searches, and existing GQ active/done, adversarial active/done and DMR records. No product edit, broad formatter or live runtime operation was performed. Reports are imported into the canonical evidence ledger; ignored scratch is not authoritative
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0001 current-delta review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0155 current-delta review 20261006 SHA256:16cc55bb1d884e9a3475ac12f7839b318f69ecc22a4df21abe6e95e152eeb1dd -->
+
+## GQ2-CHUNK-0155 current-delta review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0155.md`
+- Imported SHA-256: `16cc55bb1d884e9a3475ac12f7839b318f69ecc22a4df21abe6e95e152eeb1dd`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0155 current-delta review 20261006
+
+## Frozen scope and identity
+
+- Title: D1 font and PCX current delta
+- Delta base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned hunks were read in full, with enclosing and paired context described below
+- Current working copies of assigned/context sources match the frozen head after normalizing checkout line endings
+- Scope identity table SHA-256 (table data rows joined by LF, final LF): e4900f0c91de12d10f0b7a3438041f402cb6bc525a5819ec6be238147bad5bea
+
+- `d1/2d/font.c`: diff hunks 1-3, new L51-L1111
+- `d1/2d/pcx.c`: diff hunks 1-1, new L62-L63
+
+| Current path | Base path | Base blob | Head blob | Exact git diff -U0 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `d1/2d/font.c` | `d1/2d/font.c` | `15dbb07e4a619b729a6d03523142ca6f97381fe9` | `d3914a374fe6f5a68c21d454e2f45c3cdf19764b` | `cb0eac10bff794cee0bc042857232e18076a56800ad9eb2df13a4e54e2add7ba` |
+| `d1/2d/pcx.c` | `d1/2d/pcx.c` | `2ede821efc75fe6ac785f1683a51c1f12d2f4aed` | `9dec9c46686e40a18509d3e2b5b600d82b477c4b` | `a72947ac77c09747da9e19142560b528a9f6ad1cf2ce518e57e24526d8d08326` |
+
+| Path | Attribution | Current delta | Original-base to head |
+| --- | --- | --- | --- |
+| `d1/2d/font.c` | inherited-modified | +3/-3, 3 hunks | +135/-14, 16 hunks |
+| `d1/2d/pcx.c` | inherited-modified | +2/-0, 1 hunks | +2/-0, 1 hunks |
+
+## Diff-minimization assessment
+
+CANDIDATE, reference existing GQF-0197/GQR-0184: the complete current paired gr_internal_color_string_linear bodies remain byte-identical, 73 lines each, SHA-256 96df4c354dd8cfecb7f5cc186269367303fbd672e93b0a188d0a7761e2f4afcb after removing the separating trailing newline. The original attribution base has neither body. Removing the two bodies moves 146 inherited lines, with compact call/declaration changes still to be measured in the implementation. This is existing work, not an additional 146-line saving
+
+The separately per-game compiled android_font_scale.c owner is already registered in both 2d libraries and declares get_char_width/get_centered_x. An OGL-guarded color entry can retain each engine's font/bitmap types, scaling, kerning, centered/newline spacing and masked blit, without callback tables or moving native font-file decoding. Preserve the current filename buffer/copy, texture-upload argument and PCX header check: each is a compact local contract, not enough duplicated policy to justify a new abstraction
+
+## Current-delta reconciliation
+
+- Read all assigned font/PCX hunks, paired enclosing font initialization/remapping, texture-upload fallback and PCX header reader/caller failure paths. PATH_MAX plus snprintf preserves a terminated remap filename; D2 remapping reopens that saved path. This does not establish arbitrary-length pathname support or fix unrelated inherited font decoding
+- The NULL third argument matches the current ogl_loadbmtexture_f signature and requests its existing piggy_game_bitmap_name fallback. No filename policy is copied into the glyph atlas caller
+- PCXHeader_read_n now returns the number of completed headers when fewer than 128 bytes remain. D1's caller closes on header failure; D2's outer wrapper closes after the inner reader returns. Complete-header layout and native image decoding stay with the engine. No malformed-media probe ran
+- Re-read both complete color helpers, the shared scaled monochrome owner, its declarations, paired library registration and the native bitmap allocator. The existing unchecked raw/scaled allocations remain GQF-0206 within GQR-0184. Existing missing CC_COLOR/CC_LSPACING operand handling remains GQF-0218 under the same owner. No duplicate admission or completed-fix claim
+- Historical GQ1 chunks 0278/0311 and paired 2d build reviews 0385/0398 already own this consolidation. Current assigned changes do not invalidate the extraction boundary. DMR ownership is preserved through the existing GQR instead of a competing rewrite
+
+## Clean dimensions and limits
+
+Checked paired signature parity, filename termination, ordinary PCX header failure ownership, native data-format locality, current duplication and natural extraction boundary. The paired helper comparison and original-base absence check are mechanical evidence of duplication, not pixel equivalence or runtime coverage. No font/PCX fixture, allocation failure, malformed control, sanitizer, renderer, build or device test ran in this review. Preserve the maintained implementation acceptance requirements: actual paired pixel/layout and allocation/cleanup validation plus supported builds, with security-sensitive probes left for follow-up under the user constraint. Context reads do not confer whole-file coverage outside the assigned hunks
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0184 (reference); rationale: the current paired 146-line consolidation and existing checked-allocation boundary remain actionable
+
+Coverage outcome: ISSUES
+
+## Inspected context identities
+
+These are enclosing-function/call-contract reads described above, not complete coverage claims for every context file
+
+| Context path | Frozen head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_font_scale.c` | `f4c6e5b6ecb3c21a996251e1b9d550ce64ae8262` |
+| `android/app/src/main/cpp/shared/android_font_scale.h` | `585508a9644722ed8d7e8054bfe7777b159e5568` |
+| `d1/2d/CMakeLists.txt` | `df5b06b512dc10488c69474bb9eb38a15375f9eb` |
+| `d1/2d/bitmap.c` | `af8016320f4e0c1b9caffcf37b5b358bef595d53` |
+| `d1/2d/font.c` | `d3914a374fe6f5a68c21d454e2f45c3cdf19764b` |
+| `d1/2d/pcx.c` | `9dec9c46686e40a18509d3e2b5b600d82b477c4b` |
+| `d1/arch/ogl/ogl.c` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` |
+| `d1/include/ogl_init.h` | `e61636757a544898579c05b288f9dc64dfe1e958` |
+| `d1/main/piggy.c` | `1feec042e9dc6be3fc343077772cc44d6ba54aa7` |
+| `d2/2d/CMakeLists.txt` | `df5b06b512dc10488c69474bb9eb38a15375f9eb` |
+| `d2/2d/font.c` | `e30868d1a752d32560dccef026c29a741896d8f9` |
+| `d2/2d/pcx.c` | `3fe66a2eb007817ca23251554a8bfe243c93f19e` |
+| `d2/arch/ogl/ogl.c` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` |
+| `d2/include/ogl_init.h` | `3261b14c6912afc0f888b32ce9052c145a8b3070` |
+| `d2/main/piggy.c` | `7c6d0b4ac7d9d6c8f20f9f4c813bbeec169cf8e5` |
+
+## Evidence procedure
+
+Used git show/rev-parse/ls-tree for frozen blobs, git diff of explicit old/new blobs for rename correctness, paired source comparisons, line-numbered source/reference searches, and existing GQ active/done, adversarial active/done and DMR records. No product edit, broad formatter or live runtime operation was performed. Reports are imported into the canonical evidence ledger; ignored scratch is not authoritative
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0155 current-delta review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0156 current-delta review 20261006 SHA256:94a169714d3c9d2920b2762e57a206691813320d5bc7c16294a3e8585cc85f4e -->
+
+## GQ2-CHUNK-0156 current-delta review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0156.md`
+- Imported SHA-256: `94a169714d3c9d2920b2762e57a206691813320d5bc7c16294a3e8585cc85f4e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0156 current-delta review 20261006
+
+## Frozen scope and identity
+
+- Title: D1 instance and projection current delta
+- Delta base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned hunks were read in full, with enclosing and paired context described below
+- Current working copies of assigned/context sources match the frozen head after normalizing checkout line endings
+- Scope identity table SHA-256 (table data rows joined by LF, final LF): f86852c31def4fa3592195a32f1398b312cda58c6e18164a9d412decda12ac03
+
+- `d1/3d/instance.c`: diff hunks 1-1, new L25-L25
+- `d1/3d/interp.c`: diff hunks 1-2, new L500-L502
+- `d1/3d/setup.c`: diff hunks 1-2, new L35-L69
+
+| Current path | Base path | Base blob | Head blob | Exact git diff -U0 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `d1/3d/instance.c` | `d1/3d/instance.c` | `e8254220c938a5c7d2b34ac2610c49e6dd16b537` | `f9eb81811d5879e4aab0d66a97bc4a3f309f2749` | `693006e41b6e7a7c2cc79d1ae1a98d3367691087a1a1167ca215d2b2c71aeb13` |
+| `d1/3d/interp.c` | `d1/3d/interp.c` | `d1ac9e771b84a25e27bae337ece95890769921c7` | `f741771040db8d90761e808e417702d11dd64253` | `ffe463d98ffbd3aa8e384137107da7a038c9c8233e4b0da4510b8eeeb053746d` |
+| `d1/3d/setup.c` | `d1/3d/setup.c` | `cb1331ae64c936b49724660e7b5d2a0b242e69db` | `f0080252025df0e7d393205463b540dd71b47846` | `e7c78f30f8b758988a63a14ba2ece16305e8b0392b0ab2d5b6675c1a53df8c31` |
+
+| Path | Attribution | Current delta | Original-base to head |
+| --- | --- | --- | --- |
+| `d1/3d/instance.c` | inherited-modified | +1/-1, 1 hunks | +1/-1, 1 hunks |
+| `d1/3d/interp.c` | inherited-modified | +2/-0, 2 hunks | +25/-12, 16 hunks |
+| `d1/3d/setup.c` | inherited-modified | +8/-2, 2 hunks | +8/-2, 2 hunks |
+
+## Diff-minimization assessment
+
+RETAIN: the instance-depth constant and debug-only counter guard are local native contracts. Moving them adds an interface without reducing a policy body. The CPU projection split preserves the inherited projection implementation in setup.c and exposes one call; moving projection globals/math to Android would invert ownership. Both setup.c blobs are identical, but that inherited duplication is not a reason to broadly merge engines
+
+## Current-delta reconciliation
+
+- Read all assigned instance/interpreter/setup hunks and paired context. MAX_INSTANCE_DEPTH moves from 5 to 10 in the backport commit 735c9ffa; the array declaration and push assertion share this same constant. Pop ordering and matrix/vector state are unchanged. This is a bounded larger capacity, not a new dynamic allocation or an assurance about arbitrary recursion
+- nest_count is declared/reset only under !NDEBUG. Desktop Assert is assert, while Android release Assert evaluates its argument and logs. The new guard around Assert(++nest_count < 1000) therefore prevents referring to a missing release variable. Retain it; simply reverting these two lines would reintroduce the historical Android release compile failure documented in the BR-0408 archive
+- Compared the old g3_start_frame CPU body against new g3_start_frame_projection as exact source text: identical for both games. The ordinary wrapper calls projection before the same OGL or software backend setup. The shared render_gameplay_view.c collector can now prepare projection without invoking graphics; callers and paired declarations were inspected
+- Projection state, free-point initialization and backend ownership remain in their native engine. Existing CPU collector/endlevel/automap behavior was inspected only as call context, not granted complete current-generation coverage
+
+## Clean dimensions and limits
+
+Checked paired projection/body parity, backend ordering, debug/release declaration availability, fixed instance storage and narrow native ownership. No model, nesting, pixel, replay, headless, Android or desktop build ran in this review. Earlier build evidence is not claimed as new execution. Malformed model, recursion pressure and sanitizer reproduction remain outside this ordinary static review and follow the user deferral. Original model payload admission and archived BR-0307 retain their independent acceptance boundaries
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: narrow retained delta with no new actionable defect
+
+Coverage outcome: CLEAN
+
+## Inspected context identities
+
+These are enclosing-function/call-contract reads described above, not complete coverage claims for every context file
+
+| Context path | Frozen head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_dxxerror.h` | `1e2a74fd09c2f5525702c99af51dd08c4509ec8a` |
+| `android/app/src/main/cpp/shared/render_gameplay_view.c` | `d9113bc261abab61e92a557708e3f86757a2ad4b` |
+| `d1/3d/instance.c` | `f9eb81811d5879e4aab0d66a97bc4a3f309f2749` |
+| `d1/3d/interp.c` | `f741771040db8d90761e808e417702d11dd64253` |
+| `d1/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d1/include/3d.h` | `7c37f967a7fd94f0d6f3fb04a2ba93ada0743a26` |
+| `d1/include/dxxerror.h` | `cd8d293007b47dd6eef7d75d983fc8336b071ac7` |
+| `d2/3d/instance.c` | `e65cd1615b503801aae6e872a98181f00626c85e` |
+| `d2/3d/interp.c` | `0432576831ff23f848cb228a07da5378a6e11389` |
+| `d2/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d2/include/3d.h` | `94d8008bffd05271f754c29d6f8a50c11bc4b36f` |
+| `d2/include/dxxerror.h` | `43f9135568c373e2542e8621e1d0b26305adf973` |
+| `d2/include/interp.h` | `a0424f1ab0d68b68fd041592e0d35e2f265f0dd9` |
+| `d2/main/d1_in_d2/d1_in_d2_assets.c` | `38dc8ca3d5282be8fd499b25775a4a432f8854ae` |
+
+## Evidence procedure
+
+Used git show/rev-parse/ls-tree for frozen blobs, git diff of explicit old/new blobs for rename correctness, paired source comparisons, line-numbered source/reference searches, and existing GQ active/done, adversarial active/done and DMR records. No product edit, broad formatter or live runtime operation was performed. Reports are imported into the canonical evidence ledger; ignored scratch is not authoritative
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0156 current-delta review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0170 current-delta review 20261006 SHA256:55dad4ea0a9ef73da8adf397eec5b67660f0c6c2b992f8f091e4f3583560409c -->
+
+## GQ2-CHUNK-0170 current-delta review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0170.md`
+- Imported SHA-256: `55dad4ea0a9ef73da8adf397eec5b67660f0c6c2b992f8f091e4f3583560409c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0170 current-delta review 20261006
+
+## Frozen scope and identity
+
+- Title: D2 font and PCX current delta
+- Delta base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned hunks were read in full, with enclosing and paired context described below
+- Current working copies of assigned/context sources match the frozen head after normalizing checkout line endings
+- Scope identity table SHA-256 (table data rows joined by LF, final LF): d1ac3c48ab3a364a3ae5ffd2029c417a21a0ad145a142c7bdba81841b04b55a1
+
+- `d2/2d/font.c`: diff hunks 1-3, new L51-L1138
+- `d2/2d/pcx.c`: diff hunks 1-1, new L64-L65
+
+| Current path | Base path | Base blob | Head blob | Exact git diff -U0 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `d2/2d/font.c` | `d2/2d/font.c` | `62365a5c8486726ca1185e69cbb717095c7f2ec3` | `e30868d1a752d32560dccef026c29a741896d8f9` | `ac06a5e4abacc73ae92276d8eb7947f3d4381b88abe3c8eb4935bf00e14f2fea` |
+| `d2/2d/pcx.c` | `d2/2d/pcx.c` | `706e7f743abfa10a82b00f05cdfe757f6b6df7b0` | `3fe66a2eb007817ca23251554a8bfe243c93f19e` | `09e1bb3ca6262983c30270c958dc48460710871bb83e3620f916322b458e7445` |
+
+| Path | Attribution | Current delta | Original-base to head |
+| --- | --- | --- | --- |
+| `d2/2d/font.c` | inherited-modified | +3/-3, 3 hunks | +135/-14, 16 hunks |
+| `d2/2d/pcx.c` | inherited-modified | +2/-0, 1 hunks | +2/-0, 1 hunks |
+
+## Diff-minimization assessment
+
+CANDIDATE, reference existing GQF-0197/GQR-0184: the complete current paired gr_internal_color_string_linear bodies remain byte-identical, 73 lines each, SHA-256 96df4c354dd8cfecb7f5cc186269367303fbd672e93b0a188d0a7761e2f4afcb after removing the separating trailing newline. The original attribution base has neither body. Removing the two bodies moves 146 inherited lines, with compact call/declaration changes still to be measured in the implementation. This is existing work, not an additional 146-line saving
+
+The separately per-game compiled android_font_scale.c owner is already registered in both 2d libraries and declares get_char_width/get_centered_x. An OGL-guarded color entry can retain each engine's font/bitmap types, scaling, kerning, centered/newline spacing and masked blit, without callback tables or moving native font-file decoding. Preserve the current filename buffer/copy, texture-upload argument and PCX header check: each is a compact local contract, not enough duplicated policy to justify a new abstraction
+
+## Current-delta reconciliation
+
+- Read all assigned font/PCX hunks, paired enclosing font initialization/remapping, texture-upload fallback and PCX header reader/caller failure paths. PATH_MAX plus snprintf preserves a terminated remap filename; D2 remapping reopens that saved path. This does not establish arbitrary-length pathname support or fix unrelated inherited font decoding
+- The NULL third argument matches the current ogl_loadbmtexture_f signature and requests its existing piggy_game_bitmap_name fallback. No filename policy is copied into the glyph atlas caller
+- PCXHeader_read_n now returns the number of completed headers when fewer than 128 bytes remain. D1's caller closes on header failure; D2's outer wrapper closes after the inner reader returns. Complete-header layout and native image decoding stay with the engine. No malformed-media probe ran
+- Re-read both complete color helpers, the shared scaled monochrome owner, its declarations, paired library registration and the native bitmap allocator. The existing unchecked raw/scaled allocations remain GQF-0206 within GQR-0184. Existing missing CC_COLOR/CC_LSPACING operand handling remains GQF-0218 under the same owner. No duplicate admission or completed-fix claim
+- Historical GQ1 chunks 0278/0311 and paired 2d build reviews 0385/0398 already own this consolidation. Current assigned changes do not invalidate the extraction boundary. DMR ownership is preserved through the existing GQR instead of a competing rewrite
+
+## Clean dimensions and limits
+
+Checked paired signature parity, filename termination, ordinary PCX header failure ownership, native data-format locality, current duplication and natural extraction boundary. The paired helper comparison and original-base absence check are mechanical evidence of duplication, not pixel equivalence or runtime coverage. No font/PCX fixture, allocation failure, malformed control, sanitizer, renderer, build or device test ran in this review. Preserve the maintained implementation acceptance requirements: actual paired pixel/layout and allocation/cleanup validation plus supported builds, with security-sensitive probes left for follow-up under the user constraint. Context reads do not confer whole-file coverage outside the assigned hunks
+
+Provisional impact rating: 64 (H/M/B/C/R = 12/28/7/10/7); proposed owner: GQR-0184 (reference); rationale: the current paired 146-line consolidation and existing checked-allocation boundary remain actionable
+
+Coverage outcome: ISSUES
+
+## Inspected context identities
+
+These are enclosing-function/call-contract reads described above, not complete coverage claims for every context file
+
+| Context path | Frozen head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_font_scale.c` | `f4c6e5b6ecb3c21a996251e1b9d550ce64ae8262` |
+| `android/app/src/main/cpp/shared/android_font_scale.h` | `585508a9644722ed8d7e8054bfe7777b159e5568` |
+| `d1/2d/CMakeLists.txt` | `df5b06b512dc10488c69474bb9eb38a15375f9eb` |
+| `d1/2d/bitmap.c` | `af8016320f4e0c1b9caffcf37b5b358bef595d53` |
+| `d1/2d/font.c` | `d3914a374fe6f5a68c21d454e2f45c3cdf19764b` |
+| `d1/2d/pcx.c` | `9dec9c46686e40a18509d3e2b5b600d82b477c4b` |
+| `d1/arch/ogl/ogl.c` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` |
+| `d1/include/ogl_init.h` | `e61636757a544898579c05b288f9dc64dfe1e958` |
+| `d1/main/piggy.c` | `1feec042e9dc6be3fc343077772cc44d6ba54aa7` |
+| `d2/2d/CMakeLists.txt` | `df5b06b512dc10488c69474bb9eb38a15375f9eb` |
+| `d2/2d/font.c` | `e30868d1a752d32560dccef026c29a741896d8f9` |
+| `d2/2d/pcx.c` | `3fe66a2eb007817ca23251554a8bfe243c93f19e` |
+| `d2/arch/ogl/ogl.c` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` |
+| `d2/include/ogl_init.h` | `3261b14c6912afc0f888b32ce9052c145a8b3070` |
+| `d2/main/piggy.c` | `7c6d0b4ac7d9d6c8f20f9f4c813bbeec169cf8e5` |
+
+## Evidence procedure
+
+Used git show/rev-parse/ls-tree for frozen blobs, git diff of explicit old/new blobs for rename correctness, paired source comparisons, line-numbered source/reference searches, and existing GQ active/done, adversarial active/done and DMR records. No product edit, broad formatter or live runtime operation was performed. Reports are imported into the canonical evidence ledger; ignored scratch is not authoritative
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0170 current-delta review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0171 current-delta review 20261006 SHA256:2053ba3f3e8bfa78955ba2e8e6dd1214d10275724da39f4bae6d27f0b2633d7f -->
+
+## GQ2-CHUNK-0171 current-delta review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0171.md`
+- Imported SHA-256: `2053ba3f3e8bfa78955ba2e8e6dd1214d10275724da39f4bae6d27f0b2633d7f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0171 current-delta review 20261006
+
+## Frozen scope and identity
+
+- Title: D2 instance palette and projection current delta
+- Delta base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned hunks were read in full, with enclosing and paired context described below
+- Current working copies of assigned/context sources match the frozen head after normalizing checkout line endings
+- Scope identity table SHA-256 (table data rows joined by LF, final LF): 85c595c62629a13d232c74ce2ba0613b693fb734ff7d714f5161c9ac77aca951
+
+- `d2/3d/instance.c`: diff hunks 1-1, new L25-L25
+- `d2/3d/interp.c`: diff hunks 1-8, new L47-L771
+- `d2/3d/setup.c`: diff hunks 1-2, new L35-L69
+
+| Current path | Base path | Base blob | Head blob | Exact git diff -U0 SHA-256 |
+| --- | --- | --- | --- | --- |
+| `d2/3d/instance.c` | `d2/3d/instance.c` | `8e7f4243d19fece492bac0482c4e5da721d9b3b6` | `e65cd1615b503801aae6e872a98181f00626c85e` | `55bd337625836f6aa1d3594e1af4d0d9cc180d40a2eb371ab961b7674374e308` |
+| `d2/3d/interp.c` | `d2/3d/interp.c` | `f09287982495aa1eb79f0f7c30d2209972b3c51b` | `0432576831ff23f848cb228a07da5378a6e11389` | `63475e0142329c7401447acd5aeaea33518a0a5536ce5b9d75a5c690cb962403` |
+| `d2/3d/setup.c` | `d2/3d/setup.c` | `cb1331ae64c936b49724660e7b5d2a0b242e69db` | `f0080252025df0e7d393205463b540dd71b47846` | `e7c78f30f8b758988a63a14ba2ece16305e8b0392b0ab2d5b6675c1a53df8c31` |
+
+| Path | Attribution | Current delta | Original-base to head |
+| --- | --- | --- | --- |
+| `d2/3d/instance.c` | inherited-modified | +1/-1, 1 hunks | +1/-1, 1 hunks |
+| `d2/3d/interp.c` | inherited-modified | +12/-5, 8 hunks | +43/-17, 26 hunks |
+| `d2/3d/setup.c` | inherited-modified | +8/-2, 2 hunks | +8/-2, 2 hunks |
+
+## Diff-minimization assessment
+
+RETAIN: the instance-depth constant and debug-only counter guard are local native contracts. Moving them adds an interface without reducing a policy body. The CPU projection split preserves the inherited projection implementation in setup.c and exposes one call; moving projection globals/math to Android would invert ownership. Both setup.c blobs are identical, but that inherited duplication is not a reason to broadly merge engines
+
+## Current-delta reconciliation
+
+- Read all assigned instance/interpreter/setup hunks and paired context. MAX_INSTANCE_DEPTH moves from 5 to 10 in the backport commit 735c9ffa; the array declaration and push assertion share this same constant. Pop ordering and matrix/vector state are unchanged. This is a bounded larger capacity, not a new dynamic allocation or an assurance about arbitrary recursion
+- nest_count is declared/reset only under !NDEBUG. Desktop Assert is assert, while Android release Assert evaluates its argument and logs. The new guard around Assert(++nest_count < 1000) therefore prevents referring to a missing release variable. Retain it; simply reverting these two lines would reintroduce the historical Android release compile failure documented in the BR-0408 archive
+- Compared the old g3_start_frame CPU body against new g3_start_frame_projection as exact source text: identical for both games. The ordinary wrapper calls projection before the same OGL or software backend setup. The shared render_gameplay_view.c collector can now prepare projection without invoking graphics; callers and paired declarations were inspected
+- Projection state, free-point initialization and backend ownership remain in their native engine. Existing CPU collector/endlevel/automap behavior was inspected only as call context, not granted complete current-generation coverage
+- The D2-only model_palette_color decoder recognizes exactly 0x8000..0x80ff as indexed palette slots; RGB15 0x0000..0x7fff retains gr_find_closest_color_15bpp. Its ushort parameter preserves the high marker passed through signed word reads. Inspected all five replacement calls in color query, ordinary and morph paths, plus interp.h and the branch-owned d1_in_d2_assets producer. Native D2 model initialization does not overwrite this encoding; the D1 asset converter marks palette values during generation publication, before native model initialization. Keep the small decoder with the native interpreter: forcing a branch-owned callback into each polygon would obscure the runtime model format
+- Existing BR-0294 dead D2 face counters remain defined, exported and incremented, with no consuming reads in the current d2/native-source reference inventory. GQC-0325/GQD-0205 already own this cleanup. Archived BR-0307 count/copy guards remain present; no count-defect reopening or new root is justified by the palette change
+
+## Clean dimensions and limits
+
+Checked paired projection/body parity, backend ordering, debug/release declaration availability, fixed instance storage and narrow native ownership. No model, nesting, pixel, replay, headless, Android or desktop build ran in this review. Earlier build evidence is not claimed as new execution. Malformed model, recursion pressure and sanitizer reproduction remain outside this ordinary static review and follow the user deferral. Original model payload admission and archived BR-0307 retain their independent acceptance boundaries
+
+Provisional impact rating: 36 (H/M/B/C/R = 12/0/4/10/10); proposed owner: BR-0294 (reference); rationale: existing dead diagnostic cleanup remains current
+
+Coverage outcome: ISSUES
+
+## Inspected context identities
+
+These are enclosing-function/call-contract reads described above, not complete coverage claims for every context file
+
+| Context path | Frozen head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_dxxerror.h` | `1e2a74fd09c2f5525702c99af51dd08c4509ec8a` |
+| `android/app/src/main/cpp/shared/render_gameplay_view.c` | `d9113bc261abab61e92a557708e3f86757a2ad4b` |
+| `d1/3d/instance.c` | `f9eb81811d5879e4aab0d66a97bc4a3f309f2749` |
+| `d1/3d/interp.c` | `f741771040db8d90761e808e417702d11dd64253` |
+| `d1/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d1/include/3d.h` | `7c37f967a7fd94f0d6f3fb04a2ba93ada0743a26` |
+| `d1/include/dxxerror.h` | `cd8d293007b47dd6eef7d75d983fc8336b071ac7` |
+| `d2/3d/instance.c` | `e65cd1615b503801aae6e872a98181f00626c85e` |
+| `d2/3d/interp.c` | `0432576831ff23f848cb228a07da5378a6e11389` |
+| `d2/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d2/include/3d.h` | `94d8008bffd05271f754c29d6f8a50c11bc4b36f` |
+| `d2/include/dxxerror.h` | `43f9135568c373e2542e8621e1d0b26305adf973` |
+| `d2/include/interp.h` | `a0424f1ab0d68b68fd041592e0d35e2f265f0dd9` |
+| `d2/main/d1_in_d2/d1_in_d2_assets.c` | `38dc8ca3d5282be8fd499b25775a4a432f8854ae` |
+
+## Evidence procedure
+
+Used git show/rev-parse/ls-tree for frozen blobs, git diff of explicit old/new blobs for rename correctness, paired source comparisons, line-numbered source/reference searches, and existing GQ active/done, adversarial active/done and DMR records. No product edit, broad formatter or live runtime operation was performed. Reports are imported into the canonical evidence ledger; ignored scratch is not authoritative
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0171 current-delta review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0160 current native group review 20261006 SHA256:fa3b15476fa406f85071676c4690c31aa8c4f6e8b6499e36cba8283c80c850dc -->
+
+## GQ2-CHUNK-0160 current native group review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0160.md`
+- Imported SHA-256: `fa3b15476fa406f85071676c4690c31aa8c4f6e8b6499e36cba8283c80c850dc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0160 current native group review 20261006
+
+## Frozen scope and evidence identity
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All ten assigned paths are inherited-modified. Read every assigned changed hunk and relevant enclosing/caller/paired context; no whole-file completion credit for unassigned context
+- Scope-table SHA-256: 43f478b5b047cfdf3d89a28ada4fb8d1eca57ab4620a11891a66dba79d416197, data rows joined by LF with final LF
+
+- `d1/main/ai.c`: diff hunks 1-11, new L55-L3521
+- `d1/main/ai.h`: diff hunks 1-1, new L46-L65
+- `d1/main/automap.c`: diff hunks 1-5, new L72-L787
+- `d1/main/bmread.c`: diff hunks 1-1, new L132-L151
+- `d1/main/cntrlcen.c`: diff hunks 1-4, new L128-L409
+- `d1/main/cntrlcen.h`: diff hunks 1-1, new L89-L92
+- `d1/main/collide.c`: diff hunks 1-12, new L63-L1794
+- `d1/main/config.c`: diff hunks 1-15, new L25-L437
+- `d1/main/credits.c`: diff hunks 1-2, new L31-L77
+- `d1/main/custom.c`: diff hunks 1-9, new L6-L650
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d1/main/ai.c` | `b101bad84ce6ced13f00dad8ff43edd54d1bdd76` | `f29f3627d4466bf4b8b8c094289039ca5d1b6b99` | `a3d091e24354c6527b1e399417fb7410e67d5443c9b05a2e3528ab46e9434bf8` | +258/-38 |
+| `d1/main/ai.h` | `36ff37843be465abaa970a90c21eb8fc49e0a436` | `aae65e20f3a357711dc080e1a55bafbe6e188657` | `53fed952c747c673ab6d16ee6da53a9d38429318eed6f77194bff3a9eef4dcc5` | +37/-2 |
+| `d1/main/automap.c` | `1fd28eb589db917db89b6597d58a5d1c0bfb612a` | `add7494e4bccd437512060597655fb174240ac93` | `28c3db0dd20a888ea14f3216d91f411e21f6b39d1cb059d13df686fdb4827b1d` | +224/-22 |
+| `d1/main/bmread.c` | `c5a3ee1f695cb6867239593bae9b1312d5e19e73` | `85ebd22436ae223565f11b5e894c0090809b52cd` | `78d66003e4a601cb2dc14c1c8cb1744d65615312a49f001cab9af37426533ad4` | +20/-0 |
+| `d1/main/cntrlcen.c` | `043d9865d81f2bd2acc89c9a6f4c0b0d45938b9d` | `95589a688398e28f6b9a305c14f19d29e14521f5` | `252751fb35b2563fbe3e5092566a41870dc3ff6bef9f6907a9bda3e6ee52f5cb` | +79/-13 |
+| `d1/main/cntrlcen.h` | `47bd30a13cf9eeac470a04f14c9bed2d34d1207b` | `05ef73b54d587d3cdf88c871fae9317345127a44` | `1caecdc6690b9eb7ba73acb39fb2c9ea3cc3d21e25fe6c5b88ed22142d633e24` | +11/-3 |
+| `d1/main/collide.c` | `34addcb9855486263a7b8a98eaeaf3a310eeaeab` | `104cafbf0cdc0149f381d1789439a70e5b9dfcae` | `63903553155c01b9903994b16c7d2265f1a8ba01ec95b59b1087806e393ed029` | +160/-12 |
+| `d1/main/config.c` | `9ec99dfa5f3f696f86a3b6c417e95d7117bd1cbb` | `13e2dbe29b5128b444df3efebc935b03e184f7f2` | `90fcd4179864bef12dad0cd186d97565081cf81fda910719e51e19dcb4833fd7` | +160/-11 |
+| `d1/main/credits.c` | `7a3e765b77f0369f4a8434f3563bf00a5d755f85` | `129ac32ae7c5cb08b8e49eb32b668433dbe69be3` | `6fc9a82fd2651af0beb42b5d852d39119c9744ef20f9c6667e38a1d07cb72e6b` | +10/-0 |
+| `d1/main/custom.c` | `517900b978832a9c1951870dc38b70f3a4ded33e` | `032fecd7d00b6245f30f3e36ec9d4aef54d868ce` | `6c0818567e99201a2ede43e830094b85ad75da4caa797c5bd56de91523e84e2b` | +88/-12 |
+
+## Diff-minimization assessment
+
+CANDIDATE: retain existing GQF-0201/GQR-0188/DMR1-CHUNK-008 ownership of paired config last-player retention and loaded graphics synchronization. Current bodies remain identical between engines: 17 physical lines for the two retention functions including their separating blank line, and 15 for the loaded-graphics body/comment, plus the two loaded-graphics Android guard lines per game, reproducing the prior 68-line raw scope. The modeled 56..62-line inherited reduction remains an implementation estimate. Existing auto_net name selection and android_graphics_options are the proposed owners. Preserve the new graphics snapshot write lock and value selection, native config keys/parser and D2-only first-run music defaults
+
+NEW CANDIDATE GQF-0252/GQR-0237: the two automap EVENT_WINDOW_DRAW blocks duplicate the identical recorder/replay/network route-adoption decision. The exact duplicate gate-plus-call block SHA-256 is 1bdf8a9d8f4884cdbb2e8b720c810d5cf77a11bca6623d217c8bb2c09d852fc6. automap_metadata_update_route has only these two callers and explicitly discards player_objnum. Move eligibility into this existing per-game compiled shared owner, remove the unused player parameter, internalize allow_adoption and replace each inherited block with one no-argument call under its current Android guard
+
+An in-memory textual model removes 12 D1 lines and 9 D2 lines (21 net inherited lines), including D1's two now-unneeded input-demo includes and only the replay include in D2. D2 still uses the recorder for map markers and must retain that include. This is a proposal, not an applied or tested patch. The existing shared source needs direct declarations for game state and recorder/replay queries; no callback table, new subsystem or native format knowledge is needed. Keep all eligibility checks before cache adoption/revision mutation and preserve the current timer/progress/readiness query ordering. Non-Android build behavior must remain supported
+
+The general/adversarial active and done ledgers, DMR ledger and prior cleanup plans have no competing owner for this new gate duplication. The GQ1 automap review explicitly left the newer readiness/adoption delta for later review. Existing BR-0273 label behavior is independent. Do not combine this extraction with route-planner rewrites, D1's existing initial rescan, reactor policy, or the config candidate
+
+RETAIN other narrow boundaries: reactor pause mutates canonical countdown state used by native save, network and frame code, so moving only its small accessors to Android would complicate cross-platform ownership. BITMAPS.TBL reset belongs beside private parser statics. Native asset decoding, explicit disk-record serialization and AI runtime structures remain in their engines. Shared boss HUD, difficulty, recovery, graphics safety and menu translation already hold the branch feature policy; compact call sites do not need another facade
+
+## Common current-delta observations
+
+- Read complete assigned deltas against GQ1, both paired config/automap/reactor/credits changes and the named owner functions. The source tables record frozen identities; inspected working copies match after checkout line-ending normalization
+- Config read now uses signed wide file length, reserves the terminator, bounds PHYSFSX_fgets and rejects an absent strtok token. Retain these local read corrections. Android effects defaults use the shared AUDIO_DEFAULT_EFFECTS_VOLUME contract; desktop retains eight. These changes do not establish allocation-failure or arbitrary-config safety
+- Config write acquires the graphics-store snapshot before opening descent.cfg. Snapshot failure releases its lock internally and reports not-ready; open failure and ordinary completion release the acquired lock. Exactly the ten graphics-store field keys use GRAPHICS_CONFIG_VALUE; desktop expands it to the existing value. Existing unchecked native write/close behavior and broader publication/concurrency owners are not claimed fixed by this serialization
+- Automap idle consumes pending reactor/matcen actions on the game thread. Route cache adoption is disabled during recording, loaded replay and multiplayer; the shared updater throttles pending-cache checks and counts revision changes. Readiness drawing uses existing shared presentation logic. D1 keeps its initial route rescan; D2 removed that synchronous rescan. The proposed extraction changes neither distinction nor drawing order
+- Reactor pause requires an active positive countdown, updates seconds-left consistently, returns before shake/timer work while paused, and resets on destruction/level initialization. Shared meta actions check map-cheat accessibility and dispatch multiplayer toggles through the network path. Source references also show reset at native restore/host migration; this is static lifecycle tracing, not pause/save/network runtime validation
+- Boss HUD activation now uses actual weapon collisions instead of AI fire/teleport or generic damage. The shared owner checks target/weapon roles and the robot-parent signature; local cooperative collision sites send the dedicated HUD-shot action. This retains a small collision hook rather than repeating boss identification in the engines
+- Cooperative pickup records before/after inventory around do_powerup, checks recovery provenance first, and keeps ordinary native pickup semantics. Mine accounting receives the actual creation result and increments only for successful, active recovery. The shared owner retains identity, remaining-quantity and idempotency policy; full recovery protocol coverage is a separate scope
+- The MAX_PLAYERS comparison now rejects equality before indexing last_player_bump. Credits translate only the two accept/back controller buttons into a stack-owned key event whose lifetime covers the synchronous handler call; translation policy already resides in android_menu_navigation.h
+
+## New observation acceptance boundary
+
+GQF-0252 is P3/high, category diff-minimization/merge-pressure, branch-caused paired automap gate duplication and an unused shared API argument. Trigger: changing route-adoption eligibility requires matching edits in both inherited automaps although only one shared updater performs adoption. Impact: avoidable merge pressure and policy divergence risk, not a claimed observed gameplay failure. Allowed implementation scope: both automap.c files, existing automap_metadata_overlay.c/.h, the maintained readiness integration and a focused eligibility-path harness/runner if needed, required test registration and ledgers
+
+Validation must exercise the real shared entry with ordinary single-player, recorder active, replay loaded and multiplayer states, including no pending-cache adoption or revision change in blocked states; preserve marker recording and cache-poll cadence. Run the existing open-map readiness integration, extend it for D1 or provide equivalent paired coverage, verify desktop/Android builds and isolated original-file diff metrics. Existing test_automap_objective_readiness_progress.jsonc covers D2 cold-cache readiness and open-map refresh but does not establish the blocked-state matrix. No new test is claimed here
+
+Provisional impact rating for the new owner: 48 (H/M/B/C/R = 12/12/7/10/7), MEDIUM, with 21 modeled inherited lines and no new abstraction
+
+## D1-specific observations
+
+- AI constants and awareness_event move into the owning ai.h together with runtime externs for shared replay observation. Their values and fields remain native. init_ai_objects clears pending prior-mine events before rebuilding AI. difficulty_refresh_runtime_parameters retains the original D1 Gate_interval expression in the existing shared difficulty owner
+- AI restore's appended awareness/last-position vectors now use PHYSFSX_readVector, matching the explicit little-endian PHYSFSX_writeVector writer; scalar event fields retain native/swap handling. Preflight still reads an equally sized temporary vector only to check consumed bytes, so that temporary decoding does not reject by vector value. Preserve native save formats; no cross-endian runtime test ran
+- gamedata_android_reset_tbl resets the private installed/count/parser state after shared asset teardown calls gamedata_close and before baseline initialization. The implementation remains local to those private statics and exposes only one reset entry
+- custom.c computes final PIG/POG offsets in PHYSFS_sint64 and rejects negative relative offsets, positions outside the file and final int overflow before storing the native custom_info offset. Header reader failures release their allocated array; the new metadata caller closes the file. Existing raw header/platform assumptions are not newly certified
+- piggy_read_level_bitmap_flags reuses the engine's custom-header readers for pg1/dtx precedence, initializes an explicit flags array, distinguishes a missing optional file from an unreadable existing one, bounds DPOG header allocation, rejects unsupported PPIG remapping, skips negative/non-bitmap identities and returns failure before publishing a complete metadata result. Its secretarea consumer keeps a texture-completeness result rather than inventing a second Kotlin parser. Retain native format ownership even though this body is relatively large; moving it would duplicate private header readers or expose their internal layout
+- HXM model replacement now invokes the canonical polymodel reader instead of reading the runtime structure as a disk record. This is a narrow format-owner correction, not full transactional HXM admission or proof about truncated model input. Existing asset/save admission findings keep their own validation boundaries
+
+## Clean dimensions, ownership and limits
+
+Static review covered diff attribution, named ownership boundaries, paired gate/config equivalence, native format ownership, source call ordering, ordinary close/free paths, compile guards and existing finding deduplication. The current GQR-0188 candidate remains the highest confirmed impact owner for this unit: 57 (H/M/B/C/R = 12/21/7/10/7), reference-only. The new GQR-0237 gate extraction is 48, admitted once across these two units
+
+No product code changed. No build, replay, model/asset fault fixture, allocation-pressure probe, actual serialization round trip, controller/emulator, multiplayer or graphics test ran. The maintained readiness script was read, not executed. Security-sensitive reproductions remain deferred under the user constraint. Existing asset, concurrency, diagnostics and save-generation findings remain independent; no wholesale subsystem closure is implied by these compact current-delta checks
+
+Coverage outcome: ISSUES; diff-minimization disposition: CANDIDATE
+
+## Inspected source identities
+
+The following identities anchor the specific functions/contracts described above, not full-file reviews
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_graphics_safety.cpp` | `b39f995f5de6b2567de73c7a0ea2fde87eaf1fc3` |
+| `android/app/src/main/cpp/shared/android_menu_navigation.h` | `41fcb96eba83fbaf5f5b0df6877b03991e93a80f` |
+| `android/app/src/main/cpp/shared/android_meta_actions.c` | `48428d2ade73372997386d97d309ece2067c345c` |
+| `android/app/src/main/cpp/shared/android_mission_asset_reset.c` | `1c1709d4625aa226e257108d32cf8bdd5e825ea3` |
+| `android/app/src/main/cpp/shared/automap_metadata_overlay.c` | `b130fb307a08bab82fbc7376f2aaaf7b33746809` |
+| `android/app/src/main/cpp/shared/automap_metadata_overlay.h` | `157fe2b7dce5ef6f9b8d8bc0da4d8f01b246b781` |
+| `android/app/src/main/cpp/shared/boss_hud.c` | `6ac22086bb8da767bbad7484ab3ea65d1c6bf0dd` |
+| `android/app/src/main/cpp/shared/coop/coop_recovery.c` | `ab2d5b13b577c4fb7be5ea0f9fd11b7b6efd78dc` |
+| `android/app/src/main/cpp/shared/coop/coop_travel.c` | `b5a673bb06b6f7b3827bb64275939b10be4cbe78` |
+| `android/app/src/main/cpp/shared/difficulty_runtime_shared.c` | `5e93c254356d751ba916e88c8139f021ac945314` |
+| `android/app/src/main/cpp/shared/graphics_safety_store.cpp` | `05ea30198e7aa344ef4a664f6faa3c79dad117ff` |
+| `android/app/src/main/cpp/shared/route_confirmation.cpp` | `ba4b1cd484c6e93977016e32c69e14ea0071aa06` |
+| `android/app/src/main/cpp/shared/secretarea.c` | `081cbc960b19bf2b56d375a52e1cd5951cb051f7` |
+| `android/game_scripts/test_automap_objective_readiness_progress.jsonc` | `509d4b13ee0bee45f3271029951e5ed30ebd861f` |
+| `d1/include/physfsx.h` | `463639f756847a691afb9f399b753af812da6063` |
+| `d1/main/ai.c` | `f29f3627d4466bf4b8b8c094289039ca5d1b6b99` |
+| `d1/main/ai.h` | `aae65e20f3a357711dc080e1a55bafbe6e188657` |
+| `d1/main/automap.c` | `add7494e4bccd437512060597655fb174240ac93` |
+| `d1/main/bmread.c` | `85ebd22436ae223565f11b5e894c0090809b52cd` |
+| `d1/main/cntrlcen.c` | `95589a688398e28f6b9a305c14f19d29e14521f5` |
+| `d1/main/cntrlcen.h` | `05ef73b54d587d3cdf88c871fae9317345127a44` |
+| `d1/main/collide.c` | `104cafbf0cdc0149f381d1789439a70e5b9dfcae` |
+| `d1/main/config.c` | `13e2dbe29b5128b444df3efebc935b03e184f7f2` |
+| `d1/main/credits.c` | `129ac32ae7c5cb08b8e49eb32b668433dbe69be3` |
+| `d1/main/custom.c` | `032fecd7d00b6245f30f3e36ec9d4aef54d868ce` |
+| `d1/main/polyobj.c` | `2a2367c7f130a5edf5224865f6173df41893a120` |
+| `d2/main/automap.c` | `74e69c29585c092381176c13546e8d3771dfe9c4` |
+| `d2/main/cntrlcen.c` | `5fd718002de7e43c0e58822c2389c1feba9deb8a` |
+| `d2/main/config.c` | `9593fe12ebc09fe3cd774fc527ebb7c23c53ac20` |
+| `d2/main/d1_in_d2/d1_in_d2.c` | `815ae6d2d6f40d3c08ec4dac671791bc35be62fd` |
+| `d2/main/d1_in_d2/d1_in_d2_ai.c` | `62c7a1ee8922b13a49d95ea4629ffbb54e80017e` |
+| `d2/main/d1_in_d2/d1_in_d2_ai_storage.h` | `2c2fdbeddfd49581a07017df3bb8a36c0997e2a7` |
+| `d2/main/d1_in_d2/d1_in_d2_semantics.c` | `f2876f2487bcb5baa7016995a3c7ae3dcf3cabc1` |
+| `d2/main/d1_in_d2/d1_in_d2_weapons.c` | `0a648114897c22cd2def583f942f00e2945c4edd` |
+| `d2/main/input_demo_hooks.c` | `bff566b1408b04b426cb1880990ccb754ed7b040` |
+| `d2/main/input_demo_hooks.h` | `5d15cabe32397fe456abaa414e3cd39485d88b74` |
+| `d2/main/robot.c` | `230156641900b246f22a726a085fda816e5bd6fe` |
+| `d2/main/state.c` | `3bef466951096d28b9c29b0951360c3370c6c77a` |
+
+## Procedure
+
+git show/rev-parse/ls-tree and exact base/head git diff; complete changed hunks with surrounding source, named function bodies and current reference searches; paired textual comparison and an in-memory automap call-site model; active/done GQ and adversarial records, DMR and historical cleanup owner reconciliation. Authoritative evidence is this imported report rather than ignored scratch artifacts
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0160 current native group review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0176 current native group review 20261006 SHA256:3359fce42fdfd70c8dadcd5653553eb757455b399b5a70e3a770af2343817aa0 -->
+
+## GQ2-CHUNK-0176 current native group review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0176.md`
+- Imported SHA-256: `3359fce42fdfd70c8dadcd5653553eb757455b399b5a70e3a770af2343817aa0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0176 current native group review 20261006
+
+## Frozen scope and evidence identity
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All ten assigned paths are inherited-modified. Read every assigned changed hunk and relevant enclosing/caller/paired context; no whole-file completion credit for unassigned context
+- Scope-table SHA-256: 958a561eba1bc1e0f252677681e5b1bf4d9c18355557a16bb3e4ea5808471d23, data rows joined by LF with final LF
+
+- `d2/main/aistruct.h`: diff hunks 1-4, new L28-L189
+- `d2/main/automap.c`: diff hunks 1-6, new L75-L1157
+- `d2/main/bm.c`: diff hunks 1-8, new L20-L527
+- `d2/main/bm.h`: diff hunks 1-1, new L94-L94
+- `d2/main/bmread.c`: diff hunks 1-3, new L297-L2218
+- `d2/main/cntrlcen.c`: diff hunks 1-10, new L49-L621
+- `d2/main/cntrlcen.h`: diff hunks 1-2, new L93-L105
+- `d2/main/collide.c`: diff hunks 1-34, new L66-L2979
+- `d2/main/config.c`: diff hunks 1-16, new L25-L460
+- `d2/main/credits.c`: diff hunks 1-2, new L31-L81
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d2/main/aistruct.h` | `32afd6cb62490af6bb4ac102a859db1fc5a72b6a` | `aded780600635982c8e5f5786d329f0800e4470d` | `2b2e69b2fc96d9a5da22692830b359cf6c0b47dcdd560c1aed71e4ae77a2c695` | +4/-1 |
+| `d2/main/automap.c` | `4af717a22a4644edb98b71eb035c6322402d6f5d` | `74e69c29585c092381176c13546e8d3771dfe9c4` | `15ed599218f985bf5ce801adecd1a4371482cedeaf12a272db1878a0a0a271f6` | +425/-29 |
+| `d2/main/bm.c` | `299741b220751d6e3734b5b9c8d0836047ad7b96` | `6f810ff5a7c608679cd225fd7623139f583173be` | `f91f16c29fd36225a720ebb1582e7af906c97e44a3f401447a3549f6b06f5212` | +23/-2 |
+| `d2/main/bm.h` | `fb21f40c301a4b93577e1a3b5d5da5e8d6a38ca6` | `3ae6bd11ed8b133914642e2a9df16b3f2e962321` | `2de77243b942ca72c150fca222139b5d2bd3e2fa2f401931b3690bb6cd183db7` | +1/-0 |
+| `d2/main/bmread.c` | `9de9747ce8616d5e53d7ef8731a50bf1763bcea1` | `1f570bb3c13cf775c9f90f8ed2187083e00d0e78` | `313a565950b3ee628d4ee1cae86984d91cba845b49634beaeda3a0de9031cc30` | +6/-4 |
+| `d2/main/cntrlcen.c` | `55a7e254f79a12ac19643d3281ab39fc5504ecd2` | `5fd718002de7e43c0e58822c2389c1feba9deb8a` | `71bc088e5bf632b48e01c7d253edf00f8ee5e0084ac436b642bec9055e16898f` | +112/-15 |
+| `d2/main/cntrlcen.h` | `5770efb019b68340eeccb044979963bf2ee0c644` | `e9859b46bebbe9747ea842c733dea36b47f07cb7` | `2348a6424de558091f29b9e852b5e21e749c9215ee9e3ab57442d28fef051821` | +14/-4 |
+| `d2/main/collide.c` | `892902c158363e52294700b0cc79fabb703c3013` | `316cd59c15b9845bd059f98e68da20e8372a52db` | `2b280eb65f61ba9ef6aee968f67f20bc3144a5dbaf8c508c6b50d1f5f0016756` | +521/-92 |
+| `d2/main/config.c` | `98e2964c8bc3a90cf774f9a0d92bd442fe6eb7f3` | `9593fe12ebc09fe3cd774fc527ebb7c23c53ac20` | `d8ca5ada33f34ad0a136936fdf63e8ac45a90cf1a45734b856eb7f0a9b2d20a0` | +174/-11 |
+| `d2/main/credits.c` | `56567d4a7dcf9c40354a929ff2d0fdd135148cd8` | `4c2b6acc7a96067cb4ea95e1ec3e213e51e01b44` | `a386d9b0882e461f3536cde1b64895f39a912ce8c02659f4ced864de8c4b2f97` | +10/-0 |
+
+## Diff-minimization assessment
+
+CANDIDATE: retain existing GQF-0201/GQR-0188/DMR1-CHUNK-008 ownership of paired config last-player retention and loaded graphics synchronization. Current bodies remain identical between engines: 17 physical lines for the two retention functions including their separating blank line, and 15 for the loaded-graphics body/comment, plus the two loaded-graphics Android guard lines per game, reproducing the prior 68-line raw scope. The modeled 56..62-line inherited reduction remains an implementation estimate. Existing auto_net name selection and android_graphics_options are the proposed owners. Preserve the new graphics snapshot write lock and value selection, native config keys/parser and D2-only first-run music defaults
+
+NEW CANDIDATE GQF-0252/GQR-0237: the two automap EVENT_WINDOW_DRAW blocks duplicate the identical recorder/replay/network route-adoption decision. The exact duplicate gate-plus-call block SHA-256 is 1bdf8a9d8f4884cdbb2e8b720c810d5cf77a11bca6623d217c8bb2c09d852fc6. automap_metadata_update_route has only these two callers and explicitly discards player_objnum. Move eligibility into this existing per-game compiled shared owner, remove the unused player parameter, internalize allow_adoption and replace each inherited block with one no-argument call under its current Android guard
+
+An in-memory textual model removes 12 D1 lines and 9 D2 lines (21 net inherited lines), including D1's two now-unneeded input-demo includes and only the replay include in D2. D2 still uses the recorder for map markers and must retain that include. This is a proposal, not an applied or tested patch. The existing shared source needs direct declarations for game state and recorder/replay queries; no callback table, new subsystem or native format knowledge is needed. Keep all eligibility checks before cache adoption/revision mutation and preserve the current timer/progress/readiness query ordering. Non-Android build behavior must remain supported
+
+The general/adversarial active and done ledgers, DMR ledger and prior cleanup plans have no competing owner for this new gate duplication. The GQ1 automap review explicitly left the newer readiness/adoption delta for later review. Existing BR-0273 label behavior is independent. Do not combine this extraction with route-planner rewrites, D1's existing initial rescan, reactor policy, or the config candidate
+
+RETAIN other narrow boundaries: reactor pause mutates canonical countdown state used by native save, network and frame code, so moving only its small accessors to Android would complicate cross-platform ownership. BITMAPS.TBL reset belongs beside private parser statics. Native asset decoding, explicit disk-record serialization and AI runtime structures remain in their engines. Shared boss HUD, difficulty, recovery, graphics safety and menu translation already hold the branch feature policy; compact call sites do not need another facade
+
+## Common current-delta observations
+
+- Read complete assigned deltas against GQ1, both paired config/automap/reactor/credits changes and the named owner functions. The source tables record frozen identities; inspected working copies match after checkout line-ending normalization
+- Config read now uses signed wide file length, reserves the terminator, bounds PHYSFSX_fgets and rejects an absent strtok token. Retain these local read corrections. Android effects defaults use the shared AUDIO_DEFAULT_EFFECTS_VOLUME contract; desktop retains eight. These changes do not establish allocation-failure or arbitrary-config safety
+- Config write acquires the graphics-store snapshot before opening descent.cfg. Snapshot failure releases its lock internally and reports not-ready; open failure and ordinary completion release the acquired lock. Exactly the ten graphics-store field keys use GRAPHICS_CONFIG_VALUE; desktop expands it to the existing value. Existing unchecked native write/close behavior and broader publication/concurrency owners are not claimed fixed by this serialization
+- Automap idle consumes pending reactor/matcen actions on the game thread. Route cache adoption is disabled during recording, loaded replay and multiplayer; the shared updater throttles pending-cache checks and counts revision changes. Readiness drawing uses existing shared presentation logic. D1 keeps its initial route rescan; D2 removed that synchronous rescan. The proposed extraction changes neither distinction nor drawing order
+- Reactor pause requires an active positive countdown, updates seconds-left consistently, returns before shake/timer work while paused, and resets on destruction/level initialization. Shared meta actions check map-cheat accessibility and dispatch multiplayer toggles through the network path. Source references also show reset at native restore/host migration; this is static lifecycle tracing, not pause/save/network runtime validation
+- Boss HUD activation now uses actual weapon collisions instead of AI fire/teleport or generic damage. The shared owner checks target/weapon roles and the robot-parent signature; local cooperative collision sites send the dedicated HUD-shot action. This retains a small collision hook rather than repeating boss identification in the engines
+- Cooperative pickup records before/after inventory around do_powerup, checks recovery provenance first, and keeps ordinary native pickup semantics. Mine accounting receives the actual creation result and increments only for successful, active recovery. The shared owner retains identity, remaining-quantity and idempotency policy; full recovery protocol coverage is a separate scope
+- The MAX_PLAYERS comparison now rejects equality before indexing last_player_bump. Credits translate only the two accept/back controller buttons into a stack-owned key event whose lifetime covers the synchronous handler call; translation policy already resides in android_menu_navigation.h
+
+## New observation acceptance boundary
+
+GQF-0252 is P3/high, category diff-minimization/merge-pressure, branch-caused paired automap gate duplication and an unused shared API argument. Trigger: changing route-adoption eligibility requires matching edits in both inherited automaps although only one shared updater performs adoption. Impact: avoidable merge pressure and policy divergence risk, not a claimed observed gameplay failure. Allowed implementation scope: both automap.c files, existing automap_metadata_overlay.c/.h, the maintained readiness integration and a focused eligibility-path harness/runner if needed, required test registration and ledgers
+
+Validation must exercise the real shared entry with ordinary single-player, recorder active, replay loaded and multiplayer states, including no pending-cache adoption or revision change in blocked states; preserve marker recording and cache-poll cadence. Run the existing open-map readiness integration, extend it for D1 or provide equivalent paired coverage, verify desktop/Android builds and isolated original-file diff metrics. Existing test_automap_objective_readiness_progress.jsonc covers D2 cold-cache readiness and open-map refresh but does not establish the blocked-state matrix. No new test is claimed here
+
+Provisional impact rating for the new owner: 48 (H/M/B/C/R = 12/12/7/10/7), MEDIUM, with 21 modeled inherited lines and no new abstraction
+
+## D2-specific observations
+
+- aistruct.h widens the runtime path index and attaches D1 saved-only fields to the runtime records, using the compact branch-owned d1_in_d2_ai_storage.h. Native ai_static_rw/ai_local_rw records remain separate. The native save writer dispatches d1_in_d2_ai_write_object before the D2 field conversion. Keep lifetime with object/local-AI copies rather than introducing separately indexed shadow arrays; complete D1-in-D2 save/wire behavior is not established by this header read
+- gamedata_init dispatches requested D1 asset preparation through the branch-owned d1_in_d2 service before ordinary D2 data loading, then records successful D2 base selection on the ordinary path. load_exit_models preserves native D1 exit models and marks Robot_replacements_loaded before D2 extra-model teardown even if replacement exit files are absent. The profile-selection/publication body stays outside inherited bm.c
+- tmap_info_read_n exposes an existing native decoder used by the Guide-Bot asset reader. Editor HAM writers now call robot_info_write_n and check its result instead of dumping widened runtime robot_info records. The serializer prechecks widened sound IDs and writes explicit fields/endianness; the diagnostic reports the 480-byte native record size. The sound loader selects 22K only for the corresponding configured rate, otherwise 11K. No editor-format round trip or audio playback ran
+- D1 reactor behavior is selected through existing semantics helpers before native D2 behavior; the helpers retain D1 countdown/strength/fire/effects calculations and fall through for ordinary D2. Reactor link loading compacts valid segment/side links before the final validator, preserving supported released-mission handling rather than moving this native-format policy into an Android reader
+- collide.c removes two local D1 explosion-position implementations in favor of the existing D1 semantics owner, relocates the existing homing-bump environment helper to input_demo_hooks.c while retaining its body and collision call, and delegates D1 contact/weapon/boss decisions through narrow APIs. The homing helper remains live under the loaded-replay/desync-probe gate; this is relocation, not dead-code removal. Inspected selected helper bodies and D1 native counterpart ordering: D1 wall shove randomness precedes its rotational kick, while D2 retains its original ordering. Runtime replay parity remains a separate required oracle
+- Final-boss route confirmation intercepts only an active confirmation exit step before ordinary endlevel dispatch. Cooperative travel blocks accepted player damage at its existing freeze policy boundary. These hooks retain branch-owned decision logic; full route/travel protocol review remains separately queued
+
+## Clean dimensions, ownership and limits
+
+Static review covered diff attribution, named ownership boundaries, paired gate/config equivalence, native format ownership, source call ordering, ordinary close/free paths, compile guards and existing finding deduplication. The current GQR-0188 candidate remains the highest confirmed impact owner for this unit: 57 (H/M/B/C/R = 12/21/7/10/7), reference-only. The new GQR-0237 gate extraction is 48, admitted once across these two units
+
+No product code changed. No build, replay, model/asset fault fixture, allocation-pressure probe, actual serialization round trip, controller/emulator, multiplayer or graphics test ran. The maintained readiness script was read, not executed. Security-sensitive reproductions remain deferred under the user constraint. Existing asset, concurrency, diagnostics and save-generation findings remain independent; no wholesale subsystem closure is implied by these compact current-delta checks
+
+Coverage outcome: ISSUES; diff-minimization disposition: CANDIDATE
+
+## Inspected source identities
+
+The following identities anchor the specific functions/contracts described above, not full-file reviews
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_graphics_safety.cpp` | `b39f995f5de6b2567de73c7a0ea2fde87eaf1fc3` |
+| `android/app/src/main/cpp/shared/android_menu_navigation.h` | `41fcb96eba83fbaf5f5b0df6877b03991e93a80f` |
+| `android/app/src/main/cpp/shared/android_meta_actions.c` | `48428d2ade73372997386d97d309ece2067c345c` |
+| `android/app/src/main/cpp/shared/android_mission_asset_reset.c` | `1c1709d4625aa226e257108d32cf8bdd5e825ea3` |
+| `android/app/src/main/cpp/shared/automap_metadata_overlay.c` | `b130fb307a08bab82fbc7376f2aaaf7b33746809` |
+| `android/app/src/main/cpp/shared/automap_metadata_overlay.h` | `157fe2b7dce5ef6f9b8d8bc0da4d8f01b246b781` |
+| `android/app/src/main/cpp/shared/boss_hud.c` | `6ac22086bb8da767bbad7484ab3ea65d1c6bf0dd` |
+| `android/app/src/main/cpp/shared/coop/coop_recovery.c` | `ab2d5b13b577c4fb7be5ea0f9fd11b7b6efd78dc` |
+| `android/app/src/main/cpp/shared/coop/coop_travel.c` | `b5a673bb06b6f7b3827bb64275939b10be4cbe78` |
+| `android/app/src/main/cpp/shared/difficulty_runtime_shared.c` | `5e93c254356d751ba916e88c8139f021ac945314` |
+| `android/app/src/main/cpp/shared/graphics_safety_store.cpp` | `05ea30198e7aa344ef4a664f6faa3c79dad117ff` |
+| `android/app/src/main/cpp/shared/route_confirmation.cpp` | `ba4b1cd484c6e93977016e32c69e14ea0071aa06` |
+| `android/app/src/main/cpp/shared/secretarea.c` | `081cbc960b19bf2b56d375a52e1cd5951cb051f7` |
+| `android/game_scripts/test_automap_objective_readiness_progress.jsonc` | `509d4b13ee0bee45f3271029951e5ed30ebd861f` |
+| `d1/include/physfsx.h` | `463639f756847a691afb9f399b753af812da6063` |
+| `d1/main/automap.c` | `add7494e4bccd437512060597655fb174240ac93` |
+| `d1/main/cntrlcen.c` | `95589a688398e28f6b9a305c14f19d29e14521f5` |
+| `d1/main/config.c` | `13e2dbe29b5128b444df3efebc935b03e184f7f2` |
+| `d1/main/polyobj.c` | `2a2367c7f130a5edf5224865f6173df41893a120` |
+| `d2/main/aistruct.h` | `aded780600635982c8e5f5786d329f0800e4470d` |
+| `d2/main/automap.c` | `74e69c29585c092381176c13546e8d3771dfe9c4` |
+| `d2/main/bm.c` | `6f810ff5a7c608679cd225fd7623139f583173be` |
+| `d2/main/bm.h` | `3ae6bd11ed8b133914642e2a9df16b3f2e962321` |
+| `d2/main/bmread.c` | `1f570bb3c13cf775c9f90f8ed2187083e00d0e78` |
+| `d2/main/cntrlcen.c` | `5fd718002de7e43c0e58822c2389c1feba9deb8a` |
+| `d2/main/cntrlcen.h` | `e9859b46bebbe9747ea842c733dea36b47f07cb7` |
+| `d2/main/collide.c` | `316cd59c15b9845bd059f98e68da20e8372a52db` |
+| `d2/main/config.c` | `9593fe12ebc09fe3cd774fc527ebb7c23c53ac20` |
+| `d2/main/credits.c` | `4c2b6acc7a96067cb4ea95e1ec3e213e51e01b44` |
+| `d2/main/d1_in_d2/d1_in_d2.c` | `815ae6d2d6f40d3c08ec4dac671791bc35be62fd` |
+| `d2/main/d1_in_d2/d1_in_d2_ai.c` | `62c7a1ee8922b13a49d95ea4629ffbb54e80017e` |
+| `d2/main/d1_in_d2/d1_in_d2_ai_storage.h` | `2c2fdbeddfd49581a07017df3bb8a36c0997e2a7` |
+| `d2/main/d1_in_d2/d1_in_d2_semantics.c` | `f2876f2487bcb5baa7016995a3c7ae3dcf3cabc1` |
+| `d2/main/d1_in_d2/d1_in_d2_weapons.c` | `0a648114897c22cd2def583f942f00e2945c4edd` |
+| `d2/main/input_demo_hooks.c` | `bff566b1408b04b426cb1880990ccb754ed7b040` |
+| `d2/main/input_demo_hooks.h` | `5d15cabe32397fe456abaa414e3cd39485d88b74` |
+| `d2/main/robot.c` | `230156641900b246f22a726a085fda816e5bd6fe` |
+| `d2/main/state.c` | `3bef466951096d28b9c29b0951360c3370c6c77a` |
+
+## Procedure
+
+git show/rev-parse/ls-tree and exact base/head git diff; complete changed hunks with surrounding source, named function bodies and current reference searches; paired textual comparison and an in-memory automap call-site model; active/done GQ and adversarial records, DMR and historical cleanup owner reconciliation. Authoritative evidence is this imported report rather than ignored scratch artifacts
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0176 current native group review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0158 native interface and format review 20261006 SHA256:224db18060a867e163b234111833c88a6a310ebb7b237b8aefdb33828d480cbd -->
+
+## GQ2-CHUNK-0158 native interface and format review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0158.md`
+- Imported SHA-256: `224db18060a867e163b234111833c88a6a310ebb7b237b8aefdb33828d480cbd`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0158 native interface and format review 20261006
+
+## Assigned scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified; every assigned changed hunk and the named enclosing/caller/paired contexts were read
+- Scope-table SHA-256: 055e3c4c8e635a8a55128c90d2bd1259c616afaaf260bb76591dfaac92c094c6, data rows joined by LF with final LF
+
+| GQ2-CHUNK-0158 | [ ] TODO | source | high | authored-source | `d1/iff/iff.c` | diff hunks 1-6, new L758-L863 | - |
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d1/iff/iff.c` | `41db4ebec747c0306fdfebeb35f35ed02a1c73ea` | `4d3b3587f7d0a23867b5404e2674c39f102623e5` | `e5b03b23e0d515de0c24bc55e09bde05928f7c675feaf70d43f6313a178ff2f3` | +12/-6 |
+
+## Current-source observations
+
+- All six writer changes move required PHYSFSX_fseek operations out of Assert expressions into unconditional if conditions, retaining the same offsets and write/pad order in write_body, optional write_tiny and write_pbm
+- Desktop Assert expands to standard assert, whose expression is omitted under NDEBUG. Android currently logs and continues on release assertion failure, so retain the explicit unconditional call on every platform. PHYSFSX_fseek returns zero on success; the new comparison matches the previous assertion predicate
+- These native operations belong with the format writer. Replacing them with an Android helper would obscure offset ownership, and removing them to shrink the inherited diff would restore the desktop release bug
+- The completed debug_release_behavior_parity_audit_20260824.md records this exact repair. Its historical Android assertion-policy statement is not used as proof of today's macro behavior; the current android_dxxerror.h was read directly
+- Error-return propagation, write failures and existing parser arithmetic/allocation behavior are not established by this narrow fix. These concerns predate the assigned writer delta; this review does not certify all IFF inputs or execute malformed-media probes
+- Six exact seek transformations reverse to the frozen base; normalized base SHA-256 9fce86d52c9a250840737c6ba05e45217e0176b27ee22f00cc15543b4ad261ef
+
+## Disposition and evidence limits
+
+CLEAN / RETAIN for this assigned current delta. No new finding or remediation. Impact score 0 (H/M/B/C/R = 0/0/0/0/0), REFERENCE; no new inherited saving. Existing unrelated implementation owners remain open
+
+The assigned changes preserve a necessary native interface, retain an already completed consolidation or correct native format operations. No new wrapper or bulk upstream deduplication is justified. Static checks cover the entire assigned delta, native format/interface ownership, signatures, conditionals and named current callers; inspected context is not credited as a full additional file review
+
+No product code changed. No fresh build, preprocessor/compiler test, pixel comparison, model rendering, editor round trip, IFF encode/decode execution, runtime fault test or security probe ran. Historical plan/build evidence is historical only. Pending full shared/native implementation units and final current-worktree reconciliation remain required
+
+## Inspected source identities
+
+Working copies match frozen blobs after checkout line-ending normalization. These identify the specific contracts described above, not blanket subsystem coverage
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_dxxerror.h` | `1e2a74fd09c2f5525702c99af51dd08c4509ec8a` |
+| `d1/iff/iff.c` | `4d3b3587f7d0a23867b5404e2674c39f102623e5` |
+| `d1/include/dxxerror.h` | `cd8d293007b47dd6eef7d75d983fc8336b071ac7` |
+| `d1/include/physfsx.h` | `463639f756847a691afb9f399b753af812da6063` |
+
+## Procedure
+
+Exact git base/head changed hunks and original-base attribution; current source and named caller searches; paired source/header/build-owner inspection; mechanical reverse-transform equality for all six IFF writer edits in each game plus the D2 final seek; signature equivalence for all eight moved audio declarations; historical general/adversarial/DMR owner checks. Authoritative evidence is this imported report
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0158 native interface and format review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0159 native interface and format review 20261006 SHA256:f9ea5bdba2c706d4760a54dbfae21040df4e06ddd3641fcb5b77a08aedba3729 -->
+
+## GQ2-CHUNK-0159 native interface and format review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0159.md`
+- Imported SHA-256: `f9ea5bdba2c706d4760a54dbfae21040df4e06ddd3641fcb5b77a08aedba3729`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0159 native interface and format review 20261006
+
+## Assigned scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified; every assigned changed hunk and the named enclosing/caller/paired contexts were read
+- Scope-table SHA-256: 81cae4dc28f8a585f923dedca0fc55fa8f363aeef26e53c0c121ad1be8bcf850, data rows joined by LF with final LF
+
+- `d1/include/3d.h`: diff hunks 1-1, new L115-L116
+- `d1/include/args.h`: diff hunks 1-1, new L31-L31
+- `d1/include/gr.h`: diff hunks 1-1, new L282-L290
+- `d1/include/ogl_init.h`: diff hunks 1-1, new L110-L110
+- `d1/include/rbaudio.h`: diff hunks 1-1, new L62-L62
+- `d1/include/strutil.h`: diff hunks 1-1, new L4-L5
+- `d1/include/xmodel.h`: diff hunks 1-2, new L10-L28
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d1/include/3d.h` | `0bc79b313fce61867c7b3f95422ef89de0fde61e` | `7c37f967a7fd94f0d6f3fb04a2ba93ada0743a26` | `3b06b661b2b2161a70def465a9303a3514843dc78827de66c50d5e26fdba8af6` | +9/-0 |
+| `d1/include/args.h` | `f1cb7ccbe009799081a8fd848f6b15e76512f8c1` | `014011e9e4b98f277a113f8df6a943cc75b7a64f` | `79e2cc10db44484768230815bac0a8f093c6e922cae733154b175fbdb18c299c` | +3/-0 |
+| `d1/include/gr.h` | `5c8aa4f1a364f3511a107c791f52f75a9339f3bf` | `96d941361c7b0b1b0a66689ee2454537800d0270` | `a4c0872b11ea8ecfcda4e7aa432fd8e2e22f5126e908d2b694b41a88a2e137eb` | +10/-0 |
+| `d1/include/ogl_init.h` | `9303296a10dae9e4ff4fff0e6a37925f13a08c62` | `e61636757a544898579c05b288f9dc64dfe1e958` | `e6cf2060523fd02cde18c60aa56e98eb131b26218e592d8906b1cda02e1e7c9a` | +32/-2 |
+| `d1/include/rbaudio.h` | `a30c29aea6ff2e8839744618a9a470094b43bc1f` | `a97900bf37de5df5351dd095bf58225f05bbc2a2` | `c55bf11297e7ba535dad91a50f7b7606efcdfe53fa0424e0015f7c882b97ebc8` | +2/-0 |
+| `d1/include/strutil.h` | `3b960bb673e9459f0ebe75451eaadced66acba0f` | `0d7c23454a857498eb1da7142510e53415815e76` | `c8091e80e78133c94e673c7fbc12b763c9456500084224f42e1771263b499d2e` | +2/-0 |
+| `d1/include/xmodel.h` | `c1c2f2c2b534564cf856e6f8cbb41a311edcc952` | `9f490fcdf7b259b897dab6e52a1c3f080e259b46` | `ee22ab14a183ccba090790a8d66da457ce375dbb358dcdd57e8bc0ccc6459055` | +12/-1 |
+
+## Current-source observations
+
+- 3d.h declares the existing CPU-only projection owner with the same signature as the paired setup.c definitions. The earlier completed GQ2-CHUNK-0156/0171 reports established the projection-body equivalence and unchanged drawing wrapper order; this declaration is necessary for the shared visibility caller
+- args.h exposes ReadCmdArgs(void), matching the existing per-engine definition. A repository-wide source search found real calls in android/tests/test_args_defaults.c: the maintained test poisons GameArg, calls the function with no arguments and with -netlog, then verifies desktop defaults/override. Retain this declaration; absence of ordinary gameplay calls does not make it unused
+- gr.h places batch begin/end beside the native 2D primitive API, with OGL declarations and non-OGL no-op macros. The existing shared ogl_2d_batch.c owns bounded storage, flushing and actual begin/end definitions, and both arch/ogl CMake targets include it. This is the completed September lines/rectangles boundary, not a second copy to extract. GQR-0185 remains the separate pending textured-glyph/automap-line candidate
+- ogl_init.h now declares the bitmap-name argument present in each implementation. The inspected entry resolves a NULL name with piggy_game_bitmap_name; the ordinary texture-load call passes NULL. Retain the public native signature; this does not complete the separately queued texture loading implementation review
+- rbaudio.h replaces eight duplicate branch-specific prototypes with the existing shared rbaudio_bin.h include. A mechanical comparison verifies every removed signature in the shared header after whitespace normalization. Paired root CMake includes already expose the shared directory. Preserve the completed header consolidation and existing C/C++ caller linkage conventions; no new runtime behavior is inferred
+- strutil.h includes stddef.h for its size_t-based non-Windows string APIs. This is header self-containment and should remain local
+- xmodel.h adds explicit polygon/powerup identity and the existence query, matching xmodel_xlate, xmodel_show_if_loaded and xmodel_exists in both engines. Translation rejects negative/out-of-range input indices and unknown kinds; paired powerup callers use XM_POWERUP while polyobj uses XM_POLYOBJ. Preserve the native typed interface. Translation-table contents, asset loading and all draw outcomes remain separately scoped
+- Existing BR-0197 Android enhanced-model mipmap issue remains in the context loader (legacy GL_GENERATE_MIPMAP under OGLES, explicit generation excluded there). This header change neither creates nor fixes that separately owned implementation issue. Archived BR-0196 remains separate; no new finding or false closure
+
+## Disposition and evidence limits
+
+CLEAN / RETAIN for this assigned current delta. No new finding or remediation. Impact score 0 (H/M/B/C/R = 0/0/0/0/0), REFERENCE; no new inherited saving. Existing unrelated implementation owners remain open
+
+The assigned changes preserve a necessary native interface, retain an already completed consolidation or correct native format operations. No new wrapper or bulk upstream deduplication is justified. Static checks cover the entire assigned delta, native format/interface ownership, signatures, conditionals and named current callers; inspected context is not credited as a full additional file review
+
+No product code changed. No fresh build, preprocessor/compiler test, pixel comparison, model rendering, editor round trip, IFF encode/decode execution, runtime fault test or security probe ran. Historical plan/build evidence is historical only. Pending full shared/native implementation units and final current-worktree reconciliation remain required
+
+## Inspected source identities
+
+Working copies match frozen blobs after checkout line-ending normalization. These identify the specific contracts described above, not blanket subsystem coverage
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/ogl_2d_batch.c` | `02a9b3ed32fcd51afbf20f5b4e39236c419ad430` |
+| `android/app/src/main/cpp/shared/rbaudio_bin.h` | `ee57820f0e51d5d89f1c1f8bdc52c3b688cc29ac` |
+| `android/tests/test_args_defaults.c` | `9a279d6340d764a11bafd61dfd326fa60664efee` |
+| `d1/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d1/CMakeLists.txt` | `16222bc7b9512418993a1715ae2742653f824508` |
+| `d1/arch/ogl/CMakeLists.txt` | `8814194789f79e31c34194e67032f3cc5042ec2e` |
+| `d1/arch/ogl/ogl.c` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` |
+| `d1/include/3d.h` | `7c37f967a7fd94f0d6f3fb04a2ba93ada0743a26` |
+| `d1/include/args.h` | `014011e9e4b98f277a113f8df6a943cc75b7a64f` |
+| `d1/include/gr.h` | `96d941361c7b0b1b0a66689ee2454537800d0270` |
+| `d1/include/ogl_init.h` | `e61636757a544898579c05b288f9dc64dfe1e958` |
+| `d1/include/rbaudio.h` | `a97900bf37de5df5351dd095bf58225f05bbc2a2` |
+| `d1/include/strutil.h` | `0d7c23454a857498eb1da7142510e53415815e76` |
+| `d1/include/xmodel.h` | `9f490fcdf7b259b897dab6e52a1c3f080e259b46` |
+| `d1/main/polyobj.c` | `2a2367c7f130a5edf5224865f6173df41893a120` |
+| `d1/main/powerup.c` | `8196a589f49475c4001542d1a65572e624130f0e` |
+| `d1/misc/args.c` | `81753245841709539c0441c3b70e20751770918a` |
+| `d1/xmodel/xmodel.cpp` | `c0977252375693c0de42e3c96fac72ddaab474cf` |
+| `d2/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d2/CMakeLists.txt` | `13650a9162be86deef2329e7ef68d8c933942c73` |
+| `d2/arch/ogl/CMakeLists.txt` | `8814194789f79e31c34194e67032f3cc5042ec2e` |
+| `d2/arch/ogl/ogl.c` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` |
+| `d2/main/polyobj.c` | `c513fee795e51d63e595757a073c2ff39a5a6bec` |
+| `d2/main/powerup.c` | `34fbe8fb544b381887e98fe2c53d2f7ffe549c0c` |
+| `d2/misc/args.c` | `80a33654a5b0f86179e663a24a0354b0b27757a5` |
+| `d2/xmodel/xmodel.cpp` | `0c3eb794756dae768bd38ea73fd96e6353e44d00` |
+
+## Procedure
+
+Exact git base/head changed hunks and original-base attribution; current source and named caller searches; paired source/header/build-owner inspection; mechanical reverse-transform equality for all six IFF writer edits in each game plus the D2 final seek; signature equivalence for all eight moved audio declarations; historical general/adversarial/DMR owner checks. Authoritative evidence is this imported report
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0159 native interface and format review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0173 native interface and format review 20261006 SHA256:48317b00db4b0741556c2841d646cc91d01d9b3c0314fd3c9a691538f7f04519 -->
+
+## GQ2-CHUNK-0173 native interface and format review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0173.md`
+- Imported SHA-256: `48317b00db4b0741556c2841d646cc91d01d9b3c0314fd3c9a691538f7f04519`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0173 native interface and format review 20261006
+
+## Assigned scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified; every assigned changed hunk and the named enclosing/caller/paired contexts were read
+- Scope-table SHA-256: a0a502aa718e4a9e9b2f51f759593042b185b3fe2fdbb1d88cce27eb34791706, data rows joined by LF with final LF
+
+| GQ2-CHUNK-0173 | [ ] TODO | source | high | authored-source | `d2/editor/mine.c` | diff hunks 1-1, new L405-L405 | - |
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d2/editor/mine.c` | `916d52909054b45a4730dd2e6c7b11a88b921570` | `6df9260c34a44440c4ce46e877243c4ddb38f6bc` | `20c64bb2b6018c8195cdde644e1dddf88c5e54c513aa4b6ca44996116d6e6b7b` | +1/-1 |
+
+## Current-source observations
+
+- The sole changed statement sets mine_fileinfo.triggers_sizeof to TRIGGER_DISK_SIZE instead of sizeof(trigger). The current trigger carries a trailing d1_saved runtime extension; TRIGGER_DISK_SIZE is offsetof(trigger, d1_saved), excluding that extension
+- Inspected the enclosing save_mine_data offset/header construction and complete tail: this legacy editor function writes mine/header/editor/textures/vertices/segments/new-segment data; it does not gain a trigger payload writer in this change. Do not claim a newly verified editor trigger round trip
+- The native gamemine reader's default fileinfo uses the same disk-size constant. trigger_read_n_swap clears the runtime extension and reads only TRIGGER_DISK_SIZE; versioned trigger_write uses explicit fields. Keep this small disk-record declaration local to the native format owner rather than sharing runtime structure layout with Android
+- No new defect is established by this one-line correction. Remaining editor raw records, return handling and broader D1-in-D2 runtime/serialization behavior are separate scopes
+
+## Disposition and evidence limits
+
+CLEAN / RETAIN for this assigned current delta. No new finding or remediation. Impact score 0 (H/M/B/C/R = 0/0/0/0/0), REFERENCE; no new inherited saving. Existing unrelated implementation owners remain open
+
+The assigned changes preserve a necessary native interface, retain an already completed consolidation or correct native format operations. No new wrapper or bulk upstream deduplication is justified. Static checks cover the entire assigned delta, native format/interface ownership, signatures, conditionals and named current callers; inspected context is not credited as a full additional file review
+
+No product code changed. No fresh build, preprocessor/compiler test, pixel comparison, model rendering, editor round trip, IFF encode/decode execution, runtime fault test or security probe ran. Historical plan/build evidence is historical only. Pending full shared/native implementation units and final current-worktree reconciliation remain required
+
+## Inspected source identities
+
+Working copies match frozen blobs after checkout line-ending normalization. These identify the specific contracts described above, not blanket subsystem coverage
+
+| Source/context | Head blob |
+| --- | --- |
+| `d2/editor/mine.c` | `6df9260c34a44440c4ce46e877243c4ddb38f6bc` |
+| `d2/main/gamemine.c` | `f2e30774b35e1deed4f47558d2e79b8424216bc1` |
+| `d2/main/switch.c` | `be38442790f90c68ee2233754e9295a2f7c28110` |
+| `d2/main/switch.h` | `098980450ba57ca574cebccbc4ab3c79eaf090a9` |
+
+## Procedure
+
+Exact git base/head changed hunks and original-base attribution; current source and named caller searches; paired source/header/build-owner inspection; mechanical reverse-transform equality for all six IFF writer edits in each game plus the D2 final seek; signature equivalence for all eight moved audio declarations; historical general/adversarial/DMR owner checks. Authoritative evidence is this imported report
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0173 native interface and format review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0174 native interface and format review 20261006 SHA256:fb033d9f8c19f84290210a8a2a2647f358240067b8ed528cffd106e54b2f860c -->
+
+## GQ2-CHUNK-0174 native interface and format review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0174.md`
+- Imported SHA-256: `fb033d9f8c19f84290210a8a2a2647f358240067b8ed528cffd106e54b2f860c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0174 native interface and format review 20261006
+
+## Assigned scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified; every assigned changed hunk and the named enclosing/caller/paired contexts were read
+- Scope-table SHA-256: 7e9c4b8bc6f820e8b5cb60ac71296a0682239481b436a8ddf4471f94ee61adf5, data rows joined by LF with final LF
+
+| GQ2-CHUNK-0174 | [ ] TODO | source | high | authored-source | `d2/iff/iff.c` | diff hunks 1-7, new L237-L878 | - |
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d2/iff/iff.c` | `a647e8da8b0dcee005b267ec8e166732010276af` | `c7ed19fe156012ba41d51722af45977efabf2e32` | `ebbda2beac61d96eb98ab2281831c5c801e6e244de73d74d5e0bd75ffcccb43d` | +13/-7 |
+
+## Current-source observations
+
+- All six writer changes move required PHYSFSX_fseek operations out of Assert expressions into unconditional if conditions, retaining the same offsets and write/pad order in write_body, optional write_tiny and write_pbm
+- Desktop Assert expands to standard assert, whose expression is omitted under NDEBUG. Android currently logs and continues on release assertion failure, so retain the explicit unconditional call on every platform. PHYSFSX_fseek returns zero on success; the new comparison matches the previous assertion predicate
+- These native operations belong with the format writer. Replacing them with an Android helper would obscure offset ownership, and removing them to shrink the inherited diff would restore the desktop release bug
+- The completed debug_release_behavior_parity_audit_20260824.md records this exact repair. Its historical Android assertion-policy statement is not used as proof of today's macro behavior; the current android_dxxerror.h was read directly
+- Error-return propagation, write failures and existing parser arithmetic/allocation behavior are not established by this narrow fix. These concerns predate the assigned writer delta; this review does not certify all IFF inputs or execute malformed-media probes
+- D2 additionally seeks to end_pos after parse_body has verified the decoded pixel extent. end_pos includes the declared BODY length and odd-byte padding; the outer parser proceeds to another chunk and ultimately checks FORM position. The new final seek makes the existing skip-tail comment effective and returns IFF_CORRUPT if seeking fails
+- This is a D2-only local decoder correction from 7c377556. Do not impose blanket D1/D2 equivalence or broaden it into a new format abstraction. Existing end_pos narrowing and compressed-run admission are not newly certified
+- Six exact seek transformations reverse to the frozen base after reversing the one parse_body final-seek line; normalized base SHA-256 de4f6e84ecf72449d11e4eba59176080063a66f1a9ea36f11286e5b118d83a59
+
+## Disposition and evidence limits
+
+CLEAN / RETAIN for this assigned current delta. No new finding or remediation. Impact score 0 (H/M/B/C/R = 0/0/0/0/0), REFERENCE; no new inherited saving. Existing unrelated implementation owners remain open
+
+The assigned changes preserve a necessary native interface, retain an already completed consolidation or correct native format operations. No new wrapper or bulk upstream deduplication is justified. Static checks cover the entire assigned delta, native format/interface ownership, signatures, conditionals and named current callers; inspected context is not credited as a full additional file review
+
+No product code changed. No fresh build, preprocessor/compiler test, pixel comparison, model rendering, editor round trip, IFF encode/decode execution, runtime fault test or security probe ran. Historical plan/build evidence is historical only. Pending full shared/native implementation units and final current-worktree reconciliation remain required
+
+## Inspected source identities
+
+Working copies match frozen blobs after checkout line-ending normalization. These identify the specific contracts described above, not blanket subsystem coverage
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/android_dxxerror.h` | `1e2a74fd09c2f5525702c99af51dd08c4509ec8a` |
+| `d2/iff/iff.c` | `c7ed19fe156012ba41d51722af45977efabf2e32` |
+| `d2/include/dxxerror.h` | `43f9135568c373e2542e8621e1d0b26305adf973` |
+| `d2/include/physfsx.h` | `e5801d0112bb55dd656c5f1a1fccf64fe21283e9` |
+
+## Procedure
+
+Exact git base/head changed hunks and original-base attribution; current source and named caller searches; paired source/header/build-owner inspection; mechanical reverse-transform equality for all six IFF writer edits in each game plus the D2 final seek; signature equivalence for all eight moved audio declarations; historical general/adversarial/DMR owner checks. Authoritative evidence is this imported report
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0174 native interface and format review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0175 native interface and format review 20261006 SHA256:4c517b0d339dab89bb1e5f5b15354728742998a2821b0577ed20d3f4e94e3f27 -->
+
+## GQ2-CHUNK-0175 native interface and format review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0175.md`
+- Imported SHA-256: `4c517b0d339dab89bb1e5f5b15354728742998a2821b0577ed20d3f4e94e3f27`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0175 native interface and format review 20261006
+
+## Assigned scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef
+- Original inherited attribution base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified; every assigned changed hunk and the named enclosing/caller/paired contexts were read
+- Scope-table SHA-256: 1ab40fc82a43bb40c95d1884e69154bffea2eb155a160faabe3ed9a716c8d951, data rows joined by LF with final LF
+
+- `d2/include/3d.h`: diff hunks 1-1, new L98-L99
+- `d2/include/args.h`: diff hunks 1-1, new L28-L28
+- `d2/include/gr.h`: diff hunks 1-1, new L266-L274
+- `d2/include/interp.h`: diff hunks 1-1, new L17-L21
+- `d2/include/ogl_init.h`: diff hunks 1-1, new L110-L110
+- `d2/include/rbaudio.h`: diff hunks 1-1, new L62-L62
+- `d2/include/strutil.h`: diff hunks 1-1, new L4-L5
+- `d2/include/xmodel.h`: diff hunks 1-2, new L10-L28
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d2/include/3d.h` | `ff7533ac655b74ce93b39f2b447aca5cf1aa213c` | `94d8008bffd05271f754c29d6f8a50c11bc4b36f` | `1b0a4a26b57948864d764d2c3fb36fce4ad0bd4529eba86842b1178d3a7dfbdc` | +9/-0 |
+| `d2/include/args.h` | `2acdd6cfffa335f4527a134fad5bdec9ef046ce5` | `967fbf102923745a39492da5853f67b471c46a71` | `030a506b2bbacfa310eb447c49dd67309a480bee9e5a06fc87a4e653ae8bf688` | +3/-0 |
+| `d2/include/gr.h` | `ec071a323631d865f6200b78ac5cc04c695eec63` | `1441b8a74f459743cdc6ae220e039c416b1fd567` | `28c55c1976a7a44995914afdfb5cef97f23a7c4dceae4ba4166ba1f0e076de32` | +10/-0 |
+| `d2/include/interp.h` | `6dfd9b1394fac9d9bdfe375ddc4c47771f9e58bd` | `a0424f1ab0d68b68fd041592e0d35e2f265f0dd9` | `5b2efa12c1892bdcf23d1418e4c407675cfdccb9008f03c0dfa3b304fc1cf215` | +9/-0 |
+| `d2/include/ogl_init.h` | `f3759d00d1902718872da7fbb706c470ff283790` | `3261b14c6912afc0f888b32ce9052c145a8b3070` | `a28f1fe136c0dcb8ab7ebc2d71e88cb9ad39ec80aea347f46c5ac2efbc715aa1` | +32/-2 |
+| `d2/include/rbaudio.h` | `a30c29aea6ff2e8839744618a9a470094b43bc1f` | `a97900bf37de5df5351dd095bf58225f05bbc2a2` | `c55bf11297e7ba535dad91a50f7b7606efcdfe53fa0424e0015f7c882b97ebc8` | +2/-0 |
+| `d2/include/strutil.h` | `235d0451020280f7d38ea056187550f8e4511055` | `8672a646373502efb6dda51a8cfa939c37176471` | `1f6254d76717802aae6e60bf969454b508fdcce900493f96cda26e9ad496fec1` | +2/-0 |
+| `d2/include/xmodel.h` | `44caf18d60812a5a667211cfbf9f68c59930f3fd` | `7c1698b01cdc1182eb7335a7189308b356e2eb0e` | `78c77854e910c79fd29193b71079682a421cb45d7c81d3536dc33678974b597d` | +12/-1 |
+
+## Current-source observations
+
+- 3d.h declares the existing CPU-only projection owner with the same signature as the paired setup.c definitions. The earlier completed GQ2-CHUNK-0156/0171 reports established the projection-body equivalence and unchanged drawing wrapper order; this declaration is necessary for the shared visibility caller
+- args.h exposes ReadCmdArgs(void), matching the existing per-engine definition. A repository-wide source search found real calls in android/tests/test_args_defaults.c: the maintained test poisons GameArg, calls the function with no arguments and with -netlog, then verifies desktop defaults/override. Retain this declaration; absence of ordinary gameplay calls does not make it unused
+- gr.h places batch begin/end beside the native 2D primitive API, with OGL declarations and non-OGL no-op macros. The existing shared ogl_2d_batch.c owns bounded storage, flushing and actual begin/end definitions, and both arch/ogl CMake targets include it. This is the completed September lines/rectangles boundary, not a second copy to extract. GQR-0185 remains the separate pending textured-glyph/automap-line candidate
+- ogl_init.h now declares the bitmap-name argument present in each implementation. The inspected entry resolves a NULL name with piggy_game_bitmap_name; the ordinary texture-load call passes NULL. Retain the public native signature; this does not complete the separately queued texture loading implementation review
+- rbaudio.h replaces eight duplicate branch-specific prototypes with the existing shared rbaudio_bin.h include. A mechanical comparison verifies every removed signature in the shared header after whitespace normalization. Paired root CMake includes already expose the shared directory. Preserve the completed header consolidation and existing C/C++ caller linkage conventions; no new runtime behavior is inferred
+- strutil.h includes stddef.h for its size_t-based non-Windows string APIs. This is header self-containment and should remain local
+- xmodel.h adds explicit polygon/powerup identity and the existence query, matching xmodel_xlate, xmodel_show_if_loaded and xmodel_exists in both engines. Translation rejects negative/out-of-range input indices and unknown kinds; paired powerup callers use XM_POWERUP while polyobj uses XM_POLYOBJ. Preserve the native typed interface. Translation-table contents, asset loading and all draw outcomes remain separately scoped
+- Existing BR-0197 Android enhanced-model mipmap issue remains in the context loader (legacy GL_GENERATE_MIPMAP under OGLES, explicit generation excluded there). This header change neither creates nor fixes that separately owned implementation issue. Archived BR-0196 remains separate; no new finding or false closure
+- interp.h adds G3_MODEL_COLOR_INDEXED = 0x8000 with the explicit RGB15/indexed contract. GQ2-CHUNK-0171 already checked the matching interpreter and D1-asset producer: retaining a palette index is explicit runtime encoding, not format guessing. Keep the constant beside the native interpreter API
+
+## Disposition and evidence limits
+
+CLEAN / RETAIN for this assigned current delta. No new finding or remediation. Impact score 0 (H/M/B/C/R = 0/0/0/0/0), REFERENCE; no new inherited saving. Existing unrelated implementation owners remain open
+
+The assigned changes preserve a necessary native interface, retain an already completed consolidation or correct native format operations. No new wrapper or bulk upstream deduplication is justified. Static checks cover the entire assigned delta, native format/interface ownership, signatures, conditionals and named current callers; inspected context is not credited as a full additional file review
+
+No product code changed. No fresh build, preprocessor/compiler test, pixel comparison, model rendering, editor round trip, IFF encode/decode execution, runtime fault test or security probe ran. Historical plan/build evidence is historical only. Pending full shared/native implementation units and final current-worktree reconciliation remain required
+
+## Inspected source identities
+
+Working copies match frozen blobs after checkout line-ending normalization. These identify the specific contracts described above, not blanket subsystem coverage
+
+| Source/context | Head blob |
+| --- | --- |
+| `android/app/src/main/cpp/shared/ogl_2d_batch.c` | `02a9b3ed32fcd51afbf20f5b4e39236c419ad430` |
+| `android/app/src/main/cpp/shared/rbaudio_bin.h` | `ee57820f0e51d5d89f1c1f8bdc52c3b688cc29ac` |
+| `android/tests/test_args_defaults.c` | `9a279d6340d764a11bafd61dfd326fa60664efee` |
+| `d1/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d1/CMakeLists.txt` | `16222bc7b9512418993a1715ae2742653f824508` |
+| `d1/arch/ogl/CMakeLists.txt` | `8814194789f79e31c34194e67032f3cc5042ec2e` |
+| `d1/arch/ogl/ogl.c` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` |
+| `d1/main/polyobj.c` | `2a2367c7f130a5edf5224865f6173df41893a120` |
+| `d1/main/powerup.c` | `8196a589f49475c4001542d1a65572e624130f0e` |
+| `d1/misc/args.c` | `81753245841709539c0441c3b70e20751770918a` |
+| `d1/xmodel/xmodel.cpp` | `c0977252375693c0de42e3c96fac72ddaab474cf` |
+| `d2/3d/setup.c` | `f0080252025df0e7d393205463b540dd71b47846` |
+| `d2/CMakeLists.txt` | `13650a9162be86deef2329e7ef68d8c933942c73` |
+| `d2/arch/ogl/CMakeLists.txt` | `8814194789f79e31c34194e67032f3cc5042ec2e` |
+| `d2/arch/ogl/ogl.c` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` |
+| `d2/include/3d.h` | `94d8008bffd05271f754c29d6f8a50c11bc4b36f` |
+| `d2/include/args.h` | `967fbf102923745a39492da5853f67b471c46a71` |
+| `d2/include/gr.h` | `1441b8a74f459743cdc6ae220e039c416b1fd567` |
+| `d2/include/interp.h` | `a0424f1ab0d68b68fd041592e0d35e2f265f0dd9` |
+| `d2/include/ogl_init.h` | `3261b14c6912afc0f888b32ce9052c145a8b3070` |
+| `d2/include/rbaudio.h` | `a97900bf37de5df5351dd095bf58225f05bbc2a2` |
+| `d2/include/strutil.h` | `8672a646373502efb6dda51a8cfa939c37176471` |
+| `d2/include/xmodel.h` | `7c1698b01cdc1182eb7335a7189308b356e2eb0e` |
+| `d2/main/polyobj.c` | `c513fee795e51d63e595757a073c2ff39a5a6bec` |
+| `d2/main/powerup.c` | `34fbe8fb544b381887e98fe2c53d2f7ffe549c0c` |
+| `d2/misc/args.c` | `80a33654a5b0f86179e663a24a0354b0b27757a5` |
+| `d2/xmodel/xmodel.cpp` | `0c3eb794756dae768bd38ea73fd96e6353e44d00` |
+
+## Procedure
+
+Exact git base/head changed hunks and original-base attribution; current source and named caller searches; paired source/header/build-owner inspection; mechanical reverse-transform equality for all six IFF writer edits in each game plus the D2 final seek; signature equivalence for all eight moved audio declarations; historical general/adversarial/DMR owner checks. Authoritative evidence is this imported report
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0175 native interface and format review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0157 platform renderer and audio review 20261006 SHA256:4ac136784e5dc51b8f83043602026358ba7a65c9006c2e9fcc88cf5f25863d7a -->
+
+## GQ2-CHUNK-0157 platform renderer and audio review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0157.md`
+- Imported SHA-256: `4ac136784e5dc51b8f83043602026358ba7a65c9006c2e9fcc88cf5f25863d7a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0157 platform renderer and audio review 20261006
+
+## Frozen scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original inherited base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified. Read every assigned changed hunk, named enclosing and paired context; 12 D1 / 13 D2 files across these two units
+- Scope-table SHA-256: f26535570dca823e09ccf6b1010d1789adc16414dcc3cd07e580b25e03bd729a, data rows joined by LF with final LF
+
+- `d1/arch/include/joy.h`: diff hunks 1-1, new L16-L16
+- `d1/arch/include/window.h`: diff hunks 1-1, new L36-L36
+- `d1/arch/ogl/gr.c`: diff hunks 1-13, new L57-L1066
+- `d1/arch/ogl/ogl.c`: diff hunks 1-46, new L36-L3661
+- `d1/arch/ogl/oglprog.c`: diff hunks 1-3, new L26-L191
+- `d1/arch/sdl/digi_mixer_music.c`: diff hunks 1-1, new L47-L47
+- `d1/arch/sdl/digi_mixer.c`: diff hunks 1-16, new L11-L231
+- `d1/arch/sdl/event.c`: diff hunks 1-10, new L18-L302
+- `d1/arch/sdl/gr.c`: diff hunks 1-1, new L117-L121
+- `d1/arch/sdl/joy.c`: diff hunks 1-6, new L32-L359
+- `d1/arch/sdl/jukebox.c`: diff hunks 1-1, new L59-L59
+- `d1/arch/sdl/window.c`: diff hunks 1-2, new L225-L228
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d1/arch/include/joy.h` | `c9a9db488cf3982f9f0ee00736350af80ddfc62c` | `9c8d84a9982627d6ed242dcf24e737fbdc12dad7` | `db11489667a2d86ede3656cd801072e73de001c92c225bdf3d1712ef58226f09` | +11/-1 |
+| `d1/arch/include/window.h` | `b6ecc3653df7d2b3c9991867e1b599ba41953c85` | `66eadcfb7ebdd30771e2191fd9a61329294063a4` | `d7957846b18977e8ecbb3c666718e4bdb415676e6d73052a40f9aa76f07f3e8f` | +2/-0 |
+| `d1/arch/ogl/gr.c` | `933ebbb8597fd0fd152d132a0e7e34daf5a31df2` | `0e1d1491feb422bd36ee4ee0937fdd478a5e47b8` | `f3539fd241f9f68908b7ec6a78f9b7297b58863bf2e275e02df40d6f378c39fc` | +133/-12 |
+| `d1/arch/ogl/ogl.c` | `cda1161ddf0e99e013b1526029882b3e1e1ae483` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` | `8a1736b873b59fbc4e32670cdb44430fe294cbc804cb56441122cdc50ed3647f` | +1989/-76 |
+| `d1/arch/ogl/oglprog.c` | `f79a55711dfcfca0602c71a83cffd9329ea59765` | `65e07c171bd39adcd4d642693515961cb44f0131` | `bbc5147113d418d9d8e71aff467bfc81d79e68490d26df59073da4e279e9339d` | +89/-23 |
+| `d1/arch/sdl/digi_mixer_music.c` | `f4c185cc73552f9beedfafb3bd8d6120f294c301` | `3da9703c747e271889139d8f353c3e52d0c51e80` | `e8ce12a4dd413b938232c53de3c5038b6ed3e2ee71f8ff2b5b0aa0396015d72b` | +1/-1 |
+| `d1/arch/sdl/digi_mixer.c` | `deda0b448caed3fe95dccef5d5259e051be6f0e8` | `f6ef4bb749505fe372cf2194b0764384700d6dd7` | `4c55a9f4f73ba1c9fc54e2bb20ad96ca4c3ee600390aeb2ad5693e4bc139e02b` | +82/-16 |
+| `d1/arch/sdl/event.c` | `9e9683640bb70769251d598bf8c789fe5dfe9a94` | `21c25d1fa3ef35ea7a47dfb4feb5a03e21d8fdb4` | `8a36b31c145610f959c45d65f67126d66dbfdec1eca508d2091c24f2935387d4` | +117/-1 |
+| `d1/arch/sdl/gr.c` | `107c9b74555fb68bf8d65a4f0aad05aa7f6250df` | `cf318ee77158dffc394786ef36aac4afa247f893` | `07a5168e3e27cc47c3cc3ebabb7e5d9dbf8a281e82dce5a69f83fe1114e34a6e` | +32/-2 |
+| `d1/arch/sdl/joy.c` | `298920c491e15a0e091cf7dc4078099a98f918b3` | `d3115b8b6287f21f7ea9c832f65975ec671bb843` | `3c06ed2c630ae637c64c23acea9c9add1b45beda046a78fa3ec1d43be2da31b3` | +170/-16 |
+| `d1/arch/sdl/jukebox.c` | `3ea0db1b011de4d014caabe0ab163d39926632cd` | `a447ba38206ab90011321d7e532c4e0afd89ec05` | `58a576bb1206a3c355da95f3ecf65bb7dbdee7bd39171115fdd64597dfed97fc` | +24/-3 |
+| `d1/arch/sdl/window.c` | `d9b86af404da9c20ea852efde9652352112f4689` | `b0e79cbed26240c408ed529a4871a54254416920` | `4591a59724ccd391bfb67c7ac7dd8b44ba598315e2193afce199dd9e9134e525` | +12/-4 |
+
+## Platform/input/lifecycle observations
+
+- The paired virtual joystick limit increases from 8 to 16; desktop enumeration clamps the count before SDL_Joysticks indexing. JOY_MAX_AXES/BUTTONS scale with that limit; the local label buffer grows to 64. Keep the native device inventory and individual mapping policy local. Existing event index-admission concerns are not certified by this enumeration clamp
+- Android joystick setup now calls the existing shared android_virtual_gamepad_init. Read its complete current body and constants: it owns names, base axes/buttons, axis-button exclusions, combiner axes, D-pad buttons, digital shoulders and BRAKE/GAS mappings. Native SDL handles and count publication stay local. This preserves the completed September/DMR1-CHUNK-004 extraction; no second helper is needed
+- Normalized controller channels 16..31 bypass the legacy divide-by-256; the mailbox header explicitly defines that domain, while legacy/touch channels retain their scaling. Held nonzero events still dispatch. Event polling drains the mailbox before SDL events, and the idle-saver sleep branch follows event_poll, so sleep does not itself bypass input drain. GQI-0005 still needs actual supported loading-stall producer/full-handler measurements
+- event_process ticks graphics/lifecycle/overlay/idle owners, updates the timer, pumps cooperative endgame/observer flyout, runs automation, and polls input before checking front-window changes. The shared endgame/flyout entries retain their own active/game-window/observer guards. The shared fast-replay entry steps only a foreground game and returns false for a frontmost dialog; the draw loop suppresses the replay game window but lets other windows draw. Sleeping single-player idles for 50 ms after input, while multiplayer hidden mode continues processing and skips presentation. No runtime timing or network correctness is inferred from call-site review
+- window.h uses the existing shared accessor header, and window.c supplies one private-layout snapshot for the shared public accessors. Preserve completed GQR-0143. Current window_close still notifies before freeing the detached window; BR-0345's separate nonlocal-exit lifetime owner remains open
+
+## Renderer observations and inherited minimization
+
+- gr.c retains a local context-rebuild adapter because ogl_init_state is private: initialize render state, initialize merge programs under OGL_MERGE, then cache level textures. The EGL owner invokes it after replacing the lost context and initializing the shim. Shader deletion skips stale context names through ogl_shader_delete_program. Per-context MSAA, viewport, GPU-query and texture state is reset at the narrow smash hook
+- Android mode changes call the shared graphics-safety admission before buffer reallocation, propagate EGL initialization failure, and suppress redundant level precache during restoration. Read the current shared admission/failure/restoration entry points and EGL resume sequence. Preserve this progress without closing BR-0251 or GQR-0174: full prerequisite failures, transaction and context lifecycle validation remain separately owned
+- Desktop icon loading now checks the returned surface and frees it after SDL_WM_SetIcon in both OGL and software paths. Desktop shader construction checks the extension function before calling it. These small platform corrections belong at their native call sites
+- Circle/disk geometry is regenerated when the computed side count changes; cache destruction clears the pointers, so unchanged remembered side counts do not prevent recreation. Preserve this correction without generalizing the native circle implementation or claiming allocation-failure handling
+- Existing shared ogl_2d_batch_draw replaces direct line/rectangle draws, preserving caller array enable/disable structure. This completed 2D primitive extraction is separate from the still-paired textured glyph and automap line machinery owned by GQR-0185. Current GQR-0178 merged-wall cache creation and GQR-0186 unused D1 polymodel cache helper remain actionable; source references show only D2 callers of that helper
+- Texture runtime adapters now carry per-unit binding state through the existing shared merged-wall owner. The new skip optimization has a confirmed invalidation gap described below. Existing BR-0304 remains independently current: the compositor changes both source wrap states before selecting/binding the sources. Do not conflate that ordering defect with stale binding state
+- Android transient blits reuse one shared texture record within the bounded cache dimensions, upload contents on every call, choose linear level-zero filtering for unscaled output, reset reused anisotropy and avoid incrementing texture count on handle reuse. Desktop retains fresh allocation/free. Keep current size/fallback and palette/upload ordering; this static read does not validate rendered output or every upload failure
+- Desktop scene clear saves/restores the scissor box and enable state and confines color/depth clear to the current canvas. Android retains its nested MSAA clear policy, routes error collection to the existing shared owner, and adds staged trace/probe/presentation calls. MSAA trace entry gates GL queries by remaining trace count and category; full probe implementation review remains queued
+- The explicit bitmap-name argument retains native fallback lookup when NULL. All five extension lookups now pass their actual filename capacity to the completed GQR-0001 shared builder. PNG upload reinitializes texture metadata for the decoded dimensions/channels even when a cache record exists. Preserve these fixes and D1/D2 texture-root differences; no whole decoder or resource-limit certification
+
+## Audio observations and concurrent scope
+
+- Preserve completed GQR-0159: actual Mix_QuerySpec and mixer-init diagnostics now have one shared owner. Android retains 256 output frames; desktop changes to 2048, or 1024 on Apple. No latency or listening equivalence is claimed for that deliberate buffer change
+- Both engines call sound_mixer_convert for source-rate conversion and publish/free its malloc-owned output through SoundChunks. Read the shared body: it initializes outputs, validates length/rates/channel count, bounds rounded output frame count and SDL allocation multiplier, explicitly resamples U8 mono, checks allocation/conversion and publishes only success. This is a shared implementation already, not another extraction candidate
+- D1 uses per-sample rate with 11K fallback. D2 conversion uses per-sample rate with 22K fallback; current PIG/SND/D1-asset producers explicitly assign sample rates. D2's trace fallback additionally consults GameArg; no supported zero-rate producer defect was established here
+- Sound trace baseline capture follows successful conversion; play tracing precedes Mix_PlayChannel so its hashing/logging cannot delay later volume setup after playback has begun. The trace entry gates repeated play diagnostics by category and bounded report count; conversion baseline hashing is deliberately retained. D1 cached-sound clearing frees only allocated buffers and zeros records; its shared asset-reset caller stops sounds first. This is lifecycle tracing, not live audio quiescence validation
+- HMQ now shares HMP conversion, and jukebox extensions add HMQ/MIDI/WAV with a NULL terminator. D2's declaration loses its stale fixed bound. Preserve native filename dispatch and current format support
+- The paired digi_mixer.c working copies have concurrent effects-slider changes beyond frozen HEAD. Those edits were read as an ownership boundary, not changed or credited as frozen GQ2 coverage. Shared android_audio_diagnostics.c/.h also have concurrent edits. The snapshot table records those deltas; final working-tree reconciliation must revisit their completed state
+
+## Confirmed BR-0256 reopening and fix boundary
+
+The archived BR-0256 repair deliberately made every requested bind unconditional. Current source restores a cache skip, now indexed by active texture unit. That fixes cross-unit aliasing but does not invalidate the cache after outside mutations. Both xmodel_show bodies bind their own textures directly and return without restoring bindings or invalidating the engine cache; ogl_freetexture deletes a name without invalidating the corresponding cached entries. The GLES shim does not redefine glBindTexture
+
+Ordinary sequence: engine helper binds texture A on unit 0, enhanced-model rendering directly binds B on that unit, then another cached engine request for A takes the equality early return while actual binding remains B. This is a current regression under the same binding-state owner, not a new GQF root. Native deletion followed by name reuse needs the same ownership rule; the deletion case below models the state change rather than exercising a driver allocator
+
+GQR-0238: repair coherent binding ownership across cached engine binds, raw enhanced-model/shared/probe binds, deletion, filter changes and context reset. Keep per-game compilation and native model ownership; retain the optimization only where cache validity is established. The obsolete scalar last_bound_tex is no longer read as a binding value; remove its residual adapter/reset plumbing if the chosen coherent boundary makes it unnecessary. Do not add a parallel cache or claim a one-site workaround covers all mutations
+
+Validation must exercise actual production helpers with stateful GL calls and positive reuse controls, then paired Android rendering with mixed enhanced/native objects and sentinel textures, unit transitions, deletion/reuse, bulk filtering, context restoration and existing merged-wall paths. Verify actual binding and pixels/counters, relevant desktop/Android builds, scoped quality and isolated inherited metrics. The existing structural test must not be the sole oracle. Coordinate GQR-0178/GQR-0185 and BR-0304 without merging independent wrap-state or batching defects
+
+New remediation rating: 56, MEDIUM-HIGH (H/M/B/C/R = 32/0/7/10/7), existing BR-0256 owner. This unit's highest inherited-minimization reference remains GQR-0185 at 84 (32/28/7/10/7); no new savings are counted
+
+
+## Executed ordinary correctness evidence
+
+- MSVC x86 /W4 /O2 /MD /DNDEBUG compiled the three unmodified production binding helper bodies and exact bind-state struct against a tiny stateful GL-call stand-in. No compiler warning; executable exit 0 indicates the expected defect and positive controls were observed
+- Helper source blob ecc2c8f0aa1f4e7f6788fe8da529c789039b6855; function text SHA-256 bba6e03f25ee6391f6802858dbd38089a7abe60760206c82ff1245c78e2de459; struct text SHA-256 4542acaf3f00a39a0667190439dadd3e8c002e47af8949256d34522a03ff3d53; generated harness SHA-256 9ffd1faa6326a7a9ac264308a0b58b82378f549e3bcf0f9586b45645b89c4b89
+- Log SHA-256 6df14166a7a3103390f9d23f29943810c4e60a9186287b5920c514484e0d7445; executable SHA-256 d481f743b020ba40ea38cfde2ecdb1a83c5b7c83af5ec3730e1633dc4ca8a89b
+- python -m unittest android.tests.test_android_renderer_contracts: 7 tests pass, exit 0. Its binding test checks string structure/per-unit arrays and macros; it does not execute raw mutation, deletion or mixed model draws. Passing that suite does not contradict the reproduced cache gap
+
+```text
+PASS control: same-unit reuse and separate-unit first bind
+external_bind requested=37 actual=99 cached=37 reuse=2
+PASS control: explicit invalidation restores required bind
+deleted_binding requested=37 actual=0 cached=37 reuse=3
+CONFIRMED: helper trusts stale cache after raw bind or simulated deletion
+```
+
+Exact harness for reproducibility (GL stand-in, not real GLES):
+
+```c
+#include <stdio.h>
+#include <string.h>
+typedef unsigned int GLuint;
+typedef unsigned int GLenum;
+#define GL_TEXTURE_2D 0x0de1u
+#define GL_TEXTURE0 0x84c0u
+static GLuint actual[3];
+static int actual_unit;
+static unsigned int calls;
+static void glBindTexture(GLenum target, GLuint handle) {
+    (void)target;
+    actual[actual_unit] = handle;
+    ++calls;
+}
+static void glActiveTexture(GLenum texture) {
+    actual_unit = (int)(texture - GL_TEXTURE0);
+}
+struct android_ogl_bind_texture_state {
+	GLuint *bound_textures;
+	int bound_texture_count;
+	int *active_texture_unit;
+	int *texbinds;
+	int *texbind_reuse;
+};
+
+void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
+                                 GLuint handle)
+{
+	GLuint *bound_texture = NULL;
+
+	if (state && state->bound_textures && state->active_texture_unit &&
+	    *state->active_texture_unit >= 0 &&
+	    *state->active_texture_unit < state->bound_texture_count)
+		bound_texture = &state->bound_textures[*state->active_texture_unit];
+	if (bound_texture && *bound_texture == handle) {
+		if (state->texbind_reuse)
+			(*state->texbind_reuse)++;
+		return;
+	}
+	glBindTexture(GL_TEXTURE_2D, handle);
+	if (state) {
+		if (bound_texture)
+			*bound_texture = handle;
+		if (state->texbinds)
+			(*state->texbinds)++;
+	}
+}
+
+void android_ogl_active_texture(const struct android_ogl_bind_texture_state *state,
+                                GLenum texture)
+{
+	glActiveTexture(texture);
+	if (!state || !state->active_texture_unit)
+		return;
+	if (texture >= GL_TEXTURE0 &&
+	    texture < GL_TEXTURE0 + state->bound_texture_count)
+		*state->active_texture_unit = (int) (texture - GL_TEXTURE0);
+	else
+		*state->active_texture_unit = -1;
+}
+
+void android_ogl_reset_texture_bindings(const struct android_ogl_bind_texture_state *state)
+{
+	if (!state)
+		return;
+	if (state->bound_textures && state->bound_texture_count > 0)
+		memset(state->bound_textures, 0xff,
+		       sizeof(*state->bound_textures) * state->bound_texture_count);
+	if (state->active_texture_unit)
+		*state->active_texture_unit = 0;
+}
+
+
+int main(void) {
+    GLuint cache[3];
+    int unit = 0, binds = 0, reuse = 0;
+    struct android_ogl_bind_texture_state state = {cache, 3, &unit, &binds, &reuse};
+    android_ogl_reset_texture_bindings(&state);
+    android_ogl_active_texture(&state, GL_TEXTURE0);
+    android_ogl_bind_texture_2d(&state, 37);
+    android_ogl_bind_texture_2d(&state, 37);
+    if (actual[0] != 37 || binds != 1 || reuse != 1 || calls != 1) return 1;
+    android_ogl_active_texture(&state, GL_TEXTURE0 + 1);
+    android_ogl_bind_texture_2d(&state, 37);
+    if (actual[1] != 37 || binds != 2 || calls != 2) return 2;
+    puts("PASS control: same-unit reuse and separate-unit first bind");
+    android_ogl_active_texture(&state, GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 99);
+    android_ogl_bind_texture_2d(&state, 37);
+    printf("external_bind requested=37 actual=%u cached=%u reuse=%d\n", actual[0], cache[0], reuse);
+    if (actual[0] != 99 || cache[0] != 37 || reuse != 2) return 3;
+    android_ogl_reset_texture_bindings(&state);
+    android_ogl_bind_texture_2d(&state, 37);
+    if (actual[0] != 37) return 4;
+    puts("PASS control: explicit invalidation restores required bind");
+    actual[0] = 0;
+    android_ogl_bind_texture_2d(&state, 37);
+    printf("deleted_binding requested=37 actual=%u cached=%u reuse=%d\n", actual[0], cache[0], reuse);
+    if (actual[0] != 0 || cache[0] != 37 || reuse != 3) return 5;
+    puts("CONFIRMED: helper trusts stale cache after raw bind or simulated deletion");
+    return 0;
+}
+```
+
+
+## Disposition and limits
+
+ISSUES / CANDIDATE. Reopen BR-0256 with GQR-0238; retain existing GQR-0178/0185/0186 and BR-0251/0304/0345 plus separate input/lifecycle/graphics owners. Completed GQR-0001/0143/0159 and September virtual-gamepad/2D extractions stay preserved. No duplicate finding or savings
+
+The compiled harness proves shared-helper cache behavior under documented caller mutations. It does not run the native renderer, a real GL driver, any complete game draw order, texture-name allocation/reuse or pixel comparison. No whole-game build, emulator/audio/controller/network integration, context-failure matrix, resource-pressure or security probe ran. Concurrent audio and chooser edits remain owned elsewhere; final current-worktree reconciliation is open. No product source changed in this review
+
+## Source identities and working-tree boundary
+
+These identities anchor only the named functions/contracts inspected, not entire context-file coverage
+
+| Source/context | Frozen head blob | Current working copy |
+| --- | --- | --- |
+| `android/app/src/main/cpp/shared/android_audio_diagnostics.c` | `e68661a77836e498dc3d4fd88ac2f20750102e48` | concurrent delta SHA-256 e53d682e7c3edbb31e5d5c3053ca15e8a402a50d1879cfd1bed77dcbf0311a1d |
+| `android/app/src/main/cpp/shared/android_audio_diagnostics.h` | `88b0e0d6af611cadee0575f6c145daa41bd916ad` | concurrent delta SHA-256 17cd5f1bbc7452bb9fa589efd1b24ec26b3a29890130fc667df9a212b0ff2d67 |
+| `android/app/src/main/cpp/shared/android_axis_mailbox.h` | `706727fd8eaace70ae91617834539de13bfb9018` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_egl_surface.c` | `2168c32755924ed38f2cf1295b5d886e49a78766` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_graphics_safety.cpp` | `b39f995f5de6b2567de73c7a0ea2fde87eaf1fc3` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_idle_saver.c` | `eaf4d0265e1844ab506063c52ea13fd6fe512d0f` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_mission_asset_reset.c` | `1c1709d4625aa226e257108d32cf8bdd5e825ea3` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_sound_trace.c` | `cae89c52a2d59e12ed0d1790813f3e82a65f760d` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_virtual_gamepad.c` | `c29df3aeaeeabf826a43c852c871f75a326a3009` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_virtual_gamepad.h` | `695200680a92e2f13e52538ffc872e4a194c7dd2` | matches frozen head |
+| `android/app/src/main/cpp/shared/coop/coop_briefing.c` | `f1660e59732e68f968c23952a9dec3ba6b5abed7` | matches frozen head |
+| `android/app/src/main/cpp/shared/coop/coop_endgame.c` | `3428187e9fcb32e08a5a192dc827decc4b55eecd` | matches frozen head |
+| `android/app/src/main/cpp/shared/game_window_introspect_accessors.c` | `e9db358ac51b1385363d62b097dd2412f60da6e9` | matches frozen head |
+| `android/app/src/main/cpp/shared/game_window_introspect_accessors.h` | `fea20b92b9f3b71a8f761e01199b0df08a2c3b7b` | matches frozen head |
+| `android/app/src/main/cpp/shared/gles3_shim.h` | `af3240a65cb4f0d7705c87e447a4b01ac13408ba` | matches frozen head |
+| `android/app/src/main/cpp/shared/input_demo_hooks_shared.c` | `7b87436ece67c2b90c733a96f8014c1f9216b975` | matches frozen head |
+| `android/app/src/main/cpp/shared/merged_wall_debug.c` | `0e0e224aa0f7b8bdba285d3bd728d46f95143f40` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_2d_batch.c` | `02a9b3ed32fcd51afbf20f5b4e39236c419ad430` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_msaa_android.c` | `ea78729332ee3bad45f99aa0302e5431b0648fc3` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_shader_runtime.c` | `ad5e17e52a1e02b3e88558c52f6fd634eaf1f5c4` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_texture_android.c` | `ecc2c8f0aa1f4e7f6788fe8da529c789039b6855` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_texture_android.h` | `df80e3c1a750fc906c5361756339d3bc7259f5db` | matches frozen head |
+| `android/app/src/main/cpp/shared/sound_mixer_convert.c` | `a23498bd73bf1680c9871cc4614eb62d8c3c5f78` | matches frozen head |
+| `android/tests/test_android_renderer_contracts.py` | `8fe365235b5fa5d6e359dfffb6355ae835a53da8` | matches frozen head |
+| `d1/arch/include/joy.h` | `9c8d84a9982627d6ed242dcf24e737fbdc12dad7` | matches frozen head |
+| `d1/arch/include/window.h` | `66eadcfb7ebdd30771e2191fd9a61329294063a4` | matches frozen head |
+| `d1/arch/ogl/gr.c` | `0e1d1491feb422bd36ee4ee0937fdd478a5e47b8` | matches frozen head |
+| `d1/arch/ogl/ogl.c` | `fc428d047960da7d9022e6b9b804b91a5d9171ce` | matches frozen head |
+| `d1/arch/ogl/oglprog.c` | `65e07c171bd39adcd4d642693515961cb44f0131` | matches frozen head |
+| `d1/arch/sdl/digi_mixer.c` | `f6ef4bb749505fe372cf2194b0764384700d6dd7` | concurrent delta SHA-256 447e04e80bcd80e787e5f8ca7ba3f440c022b44fe3f998281bdd19b13cf14159 |
+| `d1/arch/sdl/digi_mixer_music.c` | `3da9703c747e271889139d8f353c3e52d0c51e80` | matches frozen head |
+| `d1/arch/sdl/event.c` | `21c25d1fa3ef35ea7a47dfb4feb5a03e21d8fdb4` | matches frozen head |
+| `d1/arch/sdl/gr.c` | `cf318ee77158dffc394786ef36aac4afa247f893` | matches frozen head |
+| `d1/arch/sdl/joy.c` | `d3115b8b6287f21f7ea9c832f65975ec671bb843` | matches frozen head |
+| `d1/arch/sdl/jukebox.c` | `a447ba38206ab90011321d7e532c4e0afd89ec05` | matches frozen head |
+| `d1/arch/sdl/window.c` | `b0e79cbed26240c408ed529a4871a54254416920` | matches frozen head |
+| `d1/xmodel/xmodel.cpp` | `c0977252375693c0de42e3c96fac72ddaab474cf` | matches frozen head |
+| `d2/main/d1_in_d2/d1_in_d2_assets.c` | `38dc8ca3d5282be8fd499b25775a4a432f8854ae` | matches frozen head |
+| `d2/main/piggy.c` | `7c6d0b4ac7d9d6c8f20f9f4c813bbeec169cf8e5` | matches frozen head |
+| `d2/xmodel/xmodel.cpp` | `0c3eb794756dae768bd38ea73fd96e6353e44d00` | matches frozen head |
+
+## Procedure
+
+git exact base/head changed hunks, original-base attribution and current source/reference searches; shared/native ownership and archived finding reconciliation; current production-helper host harness with positive controls; maintained structural contract suite. Detailed evidence and harness are retained here rather than relying on scratch-file permanence
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0157 platform renderer and audio review 20261006 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0172 platform renderer and audio review 20261006 SHA256:ccbbcc3deb57b49d3ba399d69da8c77c89803a870d1eb4e2d3daa212e56aeef9 -->
+
+## GQ2-CHUNK-0172 platform renderer and audio review 20261006 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0172.md`
+- Imported SHA-256: `ccbbcc3deb57b49d3ba399d69da8c77c89803a870d1eb4e2d3daa212e56aeef9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0172 platform renderer and audio review 20261006
+
+## Frozen scope and attribution
+
+- GQ2 base: 7877ad30d05887b8e19869ed4c50075e41e2f88e; frozen head: b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original inherited base: fb555eec75e1ed12c8348805ab335afb4c721b06
+- All assigned paths are inherited-modified. Read every assigned changed hunk, named enclosing and paired context; 12 D1 / 13 D2 files across these two units
+- Scope-table SHA-256: 5b7d8b3ea5ed5c69458f8626062624a131bc85f740c9c14a2db8697f6f020cc4, data rows joined by LF with final LF
+
+- `d2/arch/include/joy.h`: diff hunks 1-1, new L16-L16
+- `d2/arch/include/jukebox.h`: diff hunks 1-1, new L4-L4
+- `d2/arch/include/window.h`: diff hunks 1-1, new L36-L36
+- `d2/arch/ogl/gr.c`: diff hunks 1-13, new L57-L1073
+- `d2/arch/ogl/ogl.c`: diff hunks 1-47, new L36-L3768
+- `d2/arch/ogl/oglprog.c`: diff hunks 1-3, new L26-L191
+- `d2/arch/sdl/digi_mixer_music.c`: diff hunks 1-1, new L47-L47
+- `d2/arch/sdl/digi_mixer.c`: diff hunks 1-16, new L11-L226
+- `d2/arch/sdl/event.c`: diff hunks 1-10, new L18-L302
+- `d2/arch/sdl/gr.c`: diff hunks 1-1, new L116-L120
+- `d2/arch/sdl/joy.c`: diff hunks 1-6, new L32-L356
+- `d2/arch/sdl/jukebox.c`: diff hunks 1-1, new L58-L58
+- `d2/arch/sdl/window.c`: diff hunks 1-2, new L225-L228
+
+| Path | Base blob | Head blob | Exact git diff -U0 SHA-256 | Original-base to head lines |
+| --- | --- | --- | --- | --- |
+| `d2/arch/include/joy.h` | `c9a9db488cf3982f9f0ee00736350af80ddfc62c` | `9c8d84a9982627d6ed242dcf24e737fbdc12dad7` | `db11489667a2d86ede3656cd801072e73de001c92c225bdf3d1712ef58226f09` | +11/-1 |
+| `d2/arch/include/jukebox.h` | `05befd2b4deaa6cf06ff4ac64dd6145cb6f114e9` | `6423c1bd1735b3c57c5396bc482028676375b1c1` | `0cad5df7c246491431440a3d8bba61f8ddb92e5084c566d9b45e6c7f4d7a6b1d` | +5/-1 |
+| `d2/arch/include/window.h` | `b6ecc3653df7d2b3c9991867e1b599ba41953c85` | `66eadcfb7ebdd30771e2191fd9a61329294063a4` | `d7957846b18977e8ecbb3c666718e4bdb415676e6d73052a40f9aa76f07f3e8f` | +2/-0 |
+| `d2/arch/ogl/gr.c` | `0e9beb486303849e314343c3181af02c0bab2059` | `12d22a44d3727395f94825f2ca832f2c67308a7f` | `063c3cc65b9292b2e0ad088cf8de0c3f0f2d5f0aec23e8b1f6d0fa838d691c44` | +134/-12 |
+| `d2/arch/ogl/ogl.c` | `a638868ecbe463bce270a305780d8a0d083d7996` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` | `27f330170539a508182e753e0ec13818b74194c778e59016d40545cb2f6df648` | +2082/-76 |
+| `d2/arch/ogl/oglprog.c` | `f79a55711dfcfca0602c71a83cffd9329ea59765` | `65e07c171bd39adcd4d642693515961cb44f0131` | `bbc5147113d418d9d8e71aff467bfc81d79e68490d26df59073da4e279e9339d` | +89/-23 |
+| `d2/arch/sdl/digi_mixer_music.c` | `f4c185cc73552f9beedfafb3bd8d6120f294c301` | `3da9703c747e271889139d8f353c3e52d0c51e80` | `e8ce12a4dd413b938232c53de3c5038b6ed3e2ee71f8ff2b5b0aa0396015d72b` | +1/-1 |
+| `d2/arch/sdl/digi_mixer.c` | `926270e276268047cd4b4a10bf10841ad423cc23` | `e887dccca723f97f4a0ec7128d26329a9b08b812` | `cfaa55052a71455ec77c0703db6e3665e2138368fd51f82e2a9759e1199c2c0b` | +76/-16 |
+| `d2/arch/sdl/event.c` | `9e9683640bb70769251d598bf8c789fe5dfe9a94` | `21c25d1fa3ef35ea7a47dfb4feb5a03e21d8fdb4` | `8a36b31c145610f959c45d65f67126d66dbfdec1eca508d2091c24f2935387d4` | +117/-1 |
+| `d2/arch/sdl/gr.c` | `35e52103c941d4fa8caa520604f03f4ef9ec64b0` | `63658e44ffcc9faffdff18ad03414e7606d07ef7` | `e33dc5142837eb8e1d015c9c6e31c0a90b3cd1e8948dd8b74eb28b221b0d247e` | +29/-1 |
+| `d2/arch/sdl/joy.c` | `78865561a8b3282fc86911b3a25e84bee4854a4c` | `67423a5793f507dcfaf5b041b5b834b4a56f9e24` | `b675485e583f77c1cf700bb890d77fba1f2df4f09cb054e0b1b277bce9dd2b19` | +172/-17 |
+| `d2/arch/sdl/jukebox.c` | `3a7b46baa84f5345f1b34e48e860fb1893a9aa96` | `3c2e37d78b420bb5c68647a0d933ec7c9d302837` | `762de00fe8965e72f359919dd77b2e8fafe16d3c9e2482efbf9434d91b19063a` | +24/-3 |
+| `d2/arch/sdl/window.c` | `d9b86af404da9c20ea852efde9652352112f4689` | `b0e79cbed26240c408ed529a4871a54254416920` | `4591a59724ccd391bfb67c7ac7dd8b44ba598315e2193afce199dd9e9134e525` | +12/-4 |
+
+## Platform/input/lifecycle observations
+
+- The paired virtual joystick limit increases from 8 to 16; desktop enumeration clamps the count before SDL_Joysticks indexing. JOY_MAX_AXES/BUTTONS scale with that limit; the local label buffer grows to 64. Keep the native device inventory and individual mapping policy local. Existing event index-admission concerns are not certified by this enumeration clamp
+- Android joystick setup now calls the existing shared android_virtual_gamepad_init. Read its complete current body and constants: it owns names, base axes/buttons, axis-button exclusions, combiner axes, D-pad buttons, digital shoulders and BRAKE/GAS mappings. Native SDL handles and count publication stay local. This preserves the completed September/DMR1-CHUNK-004 extraction; no second helper is needed
+- Normalized controller channels 16..31 bypass the legacy divide-by-256; the mailbox header explicitly defines that domain, while legacy/touch channels retain their scaling. Held nonzero events still dispatch. Event polling drains the mailbox before SDL events, and the idle-saver sleep branch follows event_poll, so sleep does not itself bypass input drain. GQI-0005 still needs actual supported loading-stall producer/full-handler measurements
+- event_process ticks graphics/lifecycle/overlay/idle owners, updates the timer, pumps cooperative endgame/observer flyout, runs automation, and polls input before checking front-window changes. The shared endgame/flyout entries retain their own active/game-window/observer guards. The shared fast-replay entry steps only a foreground game and returns false for a frontmost dialog; the draw loop suppresses the replay game window but lets other windows draw. Sleeping single-player idles for 50 ms after input, while multiplayer hidden mode continues processing and skips presentation. No runtime timing or network correctness is inferred from call-site review
+- window.h uses the existing shared accessor header, and window.c supplies one private-layout snapshot for the shared public accessors. Preserve completed GQR-0143. Current window_close still notifies before freeing the detached window; BR-0345's separate nonlocal-exit lifetime owner remains open
+
+## Renderer observations and inherited minimization
+
+- gr.c retains a local context-rebuild adapter because ogl_init_state is private: initialize render state, initialize merge programs under OGL_MERGE, then cache level textures. The EGL owner invokes it after replacing the lost context and initializing the shim. Shader deletion skips stale context names through ogl_shader_delete_program. Per-context MSAA, viewport, GPU-query and texture state is reset at the narrow smash hook
+- Android mode changes call the shared graphics-safety admission before buffer reallocation, propagate EGL initialization failure, and suppress redundant level precache during restoration. Read the current shared admission/failure/restoration entry points and EGL resume sequence. Preserve this progress without closing BR-0251 or GQR-0174: full prerequisite failures, transaction and context lifecycle validation remain separately owned
+- Desktop icon loading now checks the returned surface and frees it after SDL_WM_SetIcon in both OGL and software paths. Desktop shader construction checks the extension function before calling it. These small platform corrections belong at their native call sites
+- Circle/disk geometry is regenerated when the computed side count changes; cache destruction clears the pointers, so unchanged remembered side counts do not prevent recreation. Preserve this correction without generalizing the native circle implementation or claiming allocation-failure handling
+- Existing shared ogl_2d_batch_draw replaces direct line/rectangle draws, preserving caller array enable/disable structure. This completed 2D primitive extraction is separate from the still-paired textured glyph and automap line machinery owned by GQR-0185. Current GQR-0178 merged-wall cache creation and GQR-0186 unused D1 polymodel cache helper remain actionable; source references show only D2 callers of that helper
+- Texture runtime adapters now carry per-unit binding state through the existing shared merged-wall owner. The new skip optimization has a confirmed invalidation gap described below. Existing BR-0304 remains independently current: the compositor changes both source wrap states before selecting/binding the sources. Do not conflate that ordering defect with stale binding state
+- Android transient blits reuse one shared texture record within the bounded cache dimensions, upload contents on every call, choose linear level-zero filtering for unscaled output, reset reused anisotropy and avoid incrementing texture count on handle reuse. Desktop retains fresh allocation/free. Keep current size/fallback and palette/upload ordering; this static read does not validate rendered output or every upload failure
+- Desktop scene clear saves/restores the scissor box and enable state and confines color/depth clear to the current canvas. Android retains its nested MSAA clear policy, routes error collection to the existing shared owner, and adds staged trace/probe/presentation calls. MSAA trace entry gates GL queries by remaining trace count and category; full probe implementation review remains queued
+- The explicit bitmap-name argument retains native fallback lookup when NULL. All five extension lookups now pass their actual filename capacity to the completed GQR-0001 shared builder. PNG upload reinitializes texture metadata for the decoded dimensions/channels even when a cache record exists. Preserve these fixes and D1/D2 texture-root differences; no whole decoder or resource-limit certification
+
+## Audio observations and concurrent scope
+
+- Preserve completed GQR-0159: actual Mix_QuerySpec and mixer-init diagnostics now have one shared owner. Android retains 256 output frames; desktop changes to 2048, or 1024 on Apple. No latency or listening equivalence is claimed for that deliberate buffer change
+- Both engines call sound_mixer_convert for source-rate conversion and publish/free its malloc-owned output through SoundChunks. Read the shared body: it initializes outputs, validates length/rates/channel count, bounds rounded output frame count and SDL allocation multiplier, explicitly resamples U8 mono, checks allocation/conversion and publishes only success. This is a shared implementation already, not another extraction candidate
+- D1 uses per-sample rate with 11K fallback. D2 conversion uses per-sample rate with 22K fallback; current PIG/SND/D1-asset producers explicitly assign sample rates. D2's trace fallback additionally consults GameArg; no supported zero-rate producer defect was established here
+- Sound trace baseline capture follows successful conversion; play tracing precedes Mix_PlayChannel so its hashing/logging cannot delay later volume setup after playback has begun. The trace entry gates repeated play diagnostics by category and bounded report count; conversion baseline hashing is deliberately retained. D1 cached-sound clearing frees only allocated buffers and zeros records; its shared asset-reset caller stops sounds first. This is lifecycle tracing, not live audio quiescence validation
+- HMQ now shares HMP conversion, and jukebox extensions add HMQ/MIDI/WAV with a NULL terminator. D2's declaration loses its stale fixed bound. Preserve native filename dispatch and current format support
+- The paired digi_mixer.c working copies have concurrent effects-slider changes beyond frozen HEAD. Those edits were read as an ownership boundary, not changed or credited as frozen GQ2 coverage. Shared android_audio_diagnostics.c/.h also have concurrent edits. The snapshot table records those deltas; final working-tree reconciliation must revisit their completed state
+
+## Confirmed BR-0256 reopening and fix boundary
+
+The archived BR-0256 repair deliberately made every requested bind unconditional. Current source restores a cache skip, now indexed by active texture unit. That fixes cross-unit aliasing but does not invalidate the cache after outside mutations. Both xmodel_show bodies bind their own textures directly and return without restoring bindings or invalidating the engine cache; ogl_freetexture deletes a name without invalidating the corresponding cached entries. The GLES shim does not redefine glBindTexture
+
+Ordinary sequence: engine helper binds texture A on unit 0, enhanced-model rendering directly binds B on that unit, then another cached engine request for A takes the equality early return while actual binding remains B. This is a current regression under the same binding-state owner, not a new GQF root. Native deletion followed by name reuse needs the same ownership rule; the deletion case below models the state change rather than exercising a driver allocator
+
+GQR-0238: repair coherent binding ownership across cached engine binds, raw enhanced-model/shared/probe binds, deletion, filter changes and context reset. Keep per-game compilation and native model ownership; retain the optimization only where cache validity is established. The obsolete scalar last_bound_tex is no longer read as a binding value; remove its residual adapter/reset plumbing if the chosen coherent boundary makes it unnecessary. Do not add a parallel cache or claim a one-site workaround covers all mutations
+
+Validation must exercise actual production helpers with stateful GL calls and positive reuse controls, then paired Android rendering with mixed enhanced/native objects and sentinel textures, unit transitions, deletion/reuse, bulk filtering, context restoration and existing merged-wall paths. Verify actual binding and pixels/counters, relevant desktop/Android builds, scoped quality and isolated inherited metrics. The existing structural test must not be the sole oracle. Coordinate GQR-0178/GQR-0185 and BR-0304 without merging independent wrap-state or batching defects
+
+New remediation rating: 56, MEDIUM-HIGH (H/M/B/C/R = 32/0/7/10/7), existing BR-0256 owner. This unit's highest inherited-minimization reference remains GQR-0185 at 84 (32/28/7/10/7); no new savings are counted
+
+
+## Executed ordinary correctness evidence
+
+- MSVC x86 /W4 /O2 /MD /DNDEBUG compiled the three unmodified production binding helper bodies and exact bind-state struct against a tiny stateful GL-call stand-in. No compiler warning; executable exit 0 indicates the expected defect and positive controls were observed
+- Helper source blob ecc2c8f0aa1f4e7f6788fe8da529c789039b6855; function text SHA-256 bba6e03f25ee6391f6802858dbd38089a7abe60760206c82ff1245c78e2de459; struct text SHA-256 4542acaf3f00a39a0667190439dadd3e8c002e47af8949256d34522a03ff3d53; generated harness SHA-256 9ffd1faa6326a7a9ac264308a0b58b82378f549e3bcf0f9586b45645b89c4b89
+- Log SHA-256 6df14166a7a3103390f9d23f29943810c4e60a9186287b5920c514484e0d7445; executable SHA-256 d481f743b020ba40ea38cfde2ecdb1a83c5b7c83af5ec3730e1633dc4ca8a89b
+- python -m unittest android.tests.test_android_renderer_contracts: 7 tests pass, exit 0. Its binding test checks string structure/per-unit arrays and macros; it does not execute raw mutation, deletion or mixed model draws. Passing that suite does not contradict the reproduced cache gap
+
+```text
+PASS control: same-unit reuse and separate-unit first bind
+external_bind requested=37 actual=99 cached=37 reuse=2
+PASS control: explicit invalidation restores required bind
+deleted_binding requested=37 actual=0 cached=37 reuse=3
+CONFIRMED: helper trusts stale cache after raw bind or simulated deletion
+```
+
+The complete identical harness is retained in the paired GQ2-CHUNK-0157 report; this unit shares the same helper and mutation pattern, not a second runtime run
+
+
+## Disposition and limits
+
+ISSUES / CANDIDATE. Reopen BR-0256 with GQR-0238; retain existing GQR-0178/0185/0186 and BR-0251/0304/0345 plus separate input/lifecycle/graphics owners. Completed GQR-0001/0143/0159 and September virtual-gamepad/2D extractions stay preserved. No duplicate finding or savings
+
+The compiled harness proves shared-helper cache behavior under documented caller mutations. It does not run the native renderer, a real GL driver, any complete game draw order, texture-name allocation/reuse or pixel comparison. No whole-game build, emulator/audio/controller/network integration, context-failure matrix, resource-pressure or security probe ran. Concurrent audio and chooser edits remain owned elsewhere; final current-worktree reconciliation is open. No product source changed in this review
+
+## Source identities and working-tree boundary
+
+These identities anchor only the named functions/contracts inspected, not entire context-file coverage
+
+| Source/context | Frozen head blob | Current working copy |
+| --- | --- | --- |
+| `android/app/src/main/cpp/shared/android_audio_diagnostics.c` | `e68661a77836e498dc3d4fd88ac2f20750102e48` | concurrent delta SHA-256 e53d682e7c3edbb31e5d5c3053ca15e8a402a50d1879cfd1bed77dcbf0311a1d |
+| `android/app/src/main/cpp/shared/android_audio_diagnostics.h` | `88b0e0d6af611cadee0575f6c145daa41bd916ad` | concurrent delta SHA-256 17cd5f1bbc7452bb9fa589efd1b24ec26b3a29890130fc667df9a212b0ff2d67 |
+| `android/app/src/main/cpp/shared/android_axis_mailbox.h` | `706727fd8eaace70ae91617834539de13bfb9018` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_egl_surface.c` | `2168c32755924ed38f2cf1295b5d886e49a78766` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_graphics_safety.cpp` | `b39f995f5de6b2567de73c7a0ea2fde87eaf1fc3` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_idle_saver.c` | `eaf4d0265e1844ab506063c52ea13fd6fe512d0f` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_mission_asset_reset.c` | `1c1709d4625aa226e257108d32cf8bdd5e825ea3` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_sound_trace.c` | `cae89c52a2d59e12ed0d1790813f3e82a65f760d` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_virtual_gamepad.c` | `c29df3aeaeeabf826a43c852c871f75a326a3009` | matches frozen head |
+| `android/app/src/main/cpp/shared/android_virtual_gamepad.h` | `695200680a92e2f13e52538ffc872e4a194c7dd2` | matches frozen head |
+| `android/app/src/main/cpp/shared/coop/coop_briefing.c` | `f1660e59732e68f968c23952a9dec3ba6b5abed7` | matches frozen head |
+| `android/app/src/main/cpp/shared/coop/coop_endgame.c` | `3428187e9fcb32e08a5a192dc827decc4b55eecd` | matches frozen head |
+| `android/app/src/main/cpp/shared/game_window_introspect_accessors.c` | `e9db358ac51b1385363d62b097dd2412f60da6e9` | matches frozen head |
+| `android/app/src/main/cpp/shared/game_window_introspect_accessors.h` | `fea20b92b9f3b71a8f761e01199b0df08a2c3b7b` | matches frozen head |
+| `android/app/src/main/cpp/shared/gles3_shim.h` | `af3240a65cb4f0d7705c87e447a4b01ac13408ba` | matches frozen head |
+| `android/app/src/main/cpp/shared/input_demo_hooks_shared.c` | `7b87436ece67c2b90c733a96f8014c1f9216b975` | matches frozen head |
+| `android/app/src/main/cpp/shared/merged_wall_debug.c` | `0e0e224aa0f7b8bdba285d3bd728d46f95143f40` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_2d_batch.c` | `02a9b3ed32fcd51afbf20f5b4e39236c419ad430` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_msaa_android.c` | `ea78729332ee3bad45f99aa0302e5431b0648fc3` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_shader_runtime.c` | `ad5e17e52a1e02b3e88558c52f6fd634eaf1f5c4` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_texture_android.c` | `ecc2c8f0aa1f4e7f6788fe8da529c789039b6855` | matches frozen head |
+| `android/app/src/main/cpp/shared/ogl_texture_android.h` | `df80e3c1a750fc906c5361756339d3bc7259f5db` | matches frozen head |
+| `android/app/src/main/cpp/shared/sound_mixer_convert.c` | `a23498bd73bf1680c9871cc4614eb62d8c3c5f78` | matches frozen head |
+| `android/tests/test_android_renderer_contracts.py` | `8fe365235b5fa5d6e359dfffb6355ae835a53da8` | matches frozen head |
+| `d1/xmodel/xmodel.cpp` | `c0977252375693c0de42e3c96fac72ddaab474cf` | matches frozen head |
+| `d2/arch/include/joy.h` | `9c8d84a9982627d6ed242dcf24e737fbdc12dad7` | matches frozen head |
+| `d2/arch/include/jukebox.h` | `6423c1bd1735b3c57c5396bc482028676375b1c1` | matches frozen head |
+| `d2/arch/include/window.h` | `66eadcfb7ebdd30771e2191fd9a61329294063a4` | matches frozen head |
+| `d2/arch/ogl/gr.c` | `12d22a44d3727395f94825f2ca832f2c67308a7f` | matches frozen head |
+| `d2/arch/ogl/ogl.c` | `4d3bd7a8d71a9aad0f7f9e8b46dbd2bf9ea5f99c` | matches frozen head |
+| `d2/arch/ogl/oglprog.c` | `65e07c171bd39adcd4d642693515961cb44f0131` | matches frozen head |
+| `d2/arch/sdl/digi_mixer.c` | `e887dccca723f97f4a0ec7128d26329a9b08b812` | concurrent delta SHA-256 1bbc999b65de68693f36b1f24407f4b12fc11c9bb8544a9c8a120e959eba5257 |
+| `d2/arch/sdl/digi_mixer_music.c` | `3da9703c747e271889139d8f353c3e52d0c51e80` | matches frozen head |
+| `d2/arch/sdl/event.c` | `21c25d1fa3ef35ea7a47dfb4feb5a03e21d8fdb4` | matches frozen head |
+| `d2/arch/sdl/gr.c` | `63658e44ffcc9faffdff18ad03414e7606d07ef7` | matches frozen head |
+| `d2/arch/sdl/joy.c` | `67423a5793f507dcfaf5b041b5b834b4a56f9e24` | matches frozen head |
+| `d2/arch/sdl/jukebox.c` | `3c2e37d78b420bb5c68647a0d933ec7c9d302837` | matches frozen head |
+| `d2/arch/sdl/window.c` | `b0e79cbed26240c408ed529a4871a54254416920` | matches frozen head |
+| `d2/main/d1_in_d2/d1_in_d2_assets.c` | `38dc8ca3d5282be8fd499b25775a4a432f8854ae` | matches frozen head |
+| `d2/main/piggy.c` | `7c6d0b4ac7d9d6c8f20f9f4c813bbeec169cf8e5` | matches frozen head |
+| `d2/xmodel/xmodel.cpp` | `0c3eb794756dae768bd38ea73fd96e6353e44d00` | matches frozen head |
+
+## Procedure
+
+git exact base/head changed hunks, original-base attribution and current source/reference searches; shared/native ownership and archived finding reconciliation; current production-helper host harness with positive controls; maintained structural contract suite. Detailed evidence and harness are retained here rather than relying on scratch-file permanence
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0172 platform renderer and audio review 20261006 -->

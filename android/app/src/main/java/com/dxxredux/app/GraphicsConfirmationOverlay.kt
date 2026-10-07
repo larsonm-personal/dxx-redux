@@ -49,6 +49,7 @@ internal class GraphicsConfirmationOverlay(
     private val handler = Handler(Looper.getMainLooper())
     private val title = TextView(context)
     private val details = TextView(context)
+    private val footer = TextView(context)
     private val ok = TextView(context)
     private val cancel = TextView(context)
     private val panel = LinearLayout(context)
@@ -134,15 +135,28 @@ internal class GraphicsConfirmationOverlay(
             gravity = Gravity.CENTER
         }
         details.apply {
-            textSize = 16f
+            textSize = 15f
             setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
             gravity = Gravity.CENTER
-            setPadding(0, dp(8), 0, dp(8))
+            setPadding(0, dp(4), 0, dp(4))
         }
-        panel.addView(title)
-        panel.addView(details)
-        scroll.addView(choices, LayoutParams(-1, -2))
+        panel.addView(title, LinearLayout.LayoutParams(-1, -2))
+        val content =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(details, LinearLayout.LayoutParams(-1, -2))
+                addView(choices, LinearLayout.LayoutParams(-1, -2))
+            }
+        scroll.addView(content, LayoutParams(-1, -2))
+        scroll.isScrollbarFadingEnabled = false
         panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
+        footer.apply {
+            text = "Change later in Settings > Video Info or the launcher's Graphics page"
+            textSize = 14f
+            setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
+            setPadding(0, 0, 0, dp(4))
+        }
+        panel.addView(footer, LinearLayout.LayoutParams(-1, -2))
         val buttons =
             LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -180,8 +194,18 @@ internal class GraphicsConfirmationOverlay(
         widthMeasureSpec: Int,
         heightMeasureSpec: Int,
     ) {
+        val editing = phase == "editing" || phase == "offering"
+        val compact = editing && MeasureSpec.getSize(heightMeasureSpec) < dp(360)
+        val verticalPadding = dp(if (compact) 8 else 12)
+        setPadding(dp(12), verticalPadding, dp(12), verticalPadding)
+        panel.setPadding(dp(24), verticalPadding, dp(24), verticalPadding)
+        ok.minHeight = dp(if (compact) 48 else 56)
+        cancel.minHeight = dp(if (compact) 48 else 56)
         panel.layoutParams.width =
-            minOf(dp(440), (MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight).coerceAtLeast(0))
+            minOf(
+                dp(if (editing) 560 else 440),
+                (MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight).coerceAtLeast(0),
+            )
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 
@@ -231,7 +255,7 @@ internal class GraphicsConfirmationOverlay(
             },
         )
         choices.visibility = if (editing) View.VISIBLE else View.GONE
-        scroll.visibility = if (editing) View.VISIBLE else View.GONE
+        footer.visibility = if (editing) View.VISIBLE else View.GONE
         choices.update(state, previewSelection)
         ok.text = if (editing) "Done" else "OK"
         if (editing) {
@@ -379,8 +403,8 @@ internal class GraphicsConfirmationOverlay(
                 val button = choices.button(previewSelection)
                 button.requestRectangleOnScreen(Rect(0, 0, button.width, button.height))
             } else {
-                // Keep the footer reachable with controller/keyboard navigation at large text sizes
-                scroll.smoothScrollTo(0, choices.height)
+                // Reveal the last option when controller navigation reaches the pinned actions
+                scroll.smoothScrollTo(0, scroll.getChildAt(0).height)
             }
             return true
         }

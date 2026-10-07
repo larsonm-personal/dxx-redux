@@ -79,6 +79,7 @@ internal class SliderNavigationChecks(
     }
 
     fun run(capabilitiesOnly: Boolean = false) {
+        GraphicsChooserLayoutChecks(instrumentation).run()
         val launcher =
             instrumentation.startActivitySync(
                 Intent(instrumentation.targetContext, SetupActivity::class.java).apply {

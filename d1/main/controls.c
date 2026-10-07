@@ -27,6 +27,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "object.h"
 #include "player.h"
 #include "controls.h"
+#ifdef ANDROID
+#include "android_log.h"
+#endif
 #include "render.h"
 #include "args.h"
 #include "palette.h"
@@ -39,6 +42,14 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 void read_flying_controls( object * obj )
 {
+#ifdef ANDROID
+	/* Android capture: actual per-physics-frame commands, after input event processing */
+	debug_log(DLOG_TOUCH_INPUT, "consume game=d1 game_time=%lld frame=%d pitch=%d yaw=%d sideways=%d vertical=%d bank=%d forward=%d",
+	          (long long) GameTime64, (int) FrameTime, (int) Controls.pitch_time,
+	          (int) Controls.heading_time, (int) Controls.sideways_thrust_time,
+	          (int) Controls.vertical_thrust_time, (int) Controls.bank_time,
+	          (int) Controls.forward_thrust_time);
+#endif
 	Assert(FrameTime > 0); 		//Get MATT if hit this!
 
 	int no_thrust = 0; 

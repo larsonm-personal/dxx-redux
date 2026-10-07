@@ -260,7 +260,7 @@ function Get-AllDiffHunks {
 
 function Get-ModifiedFileChunks {
     param(
-        [Parameter(Mandatory)][object[]]$Hunks,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Hunks,
         [Parameter(Mandatory)][int]$Limit
     )
 
@@ -315,30 +315,38 @@ $reviewBase = $mergeBaseLines[0]
 
 $statusByPath = @{}
 $oldPathByPath = @{}
-$statusLines = @(Invoke-GitLines -Arguments @(
-        "diff", "--name-status", "--find-renames", $reviewBase, $headCommit, "--"
-    ))
-foreach ($line in $statusLines) {
-    $parts = $line -split "`t"
-    if ($parts.Count -lt 2) {
-        continue
+$statusRecords = ((Invoke-GitLines -Arguments @(
+            "diff", "--name-status", "-z", "--find-renames", $reviewBase, $headCommit, "--"
+        )) -join "`n") -split "`0"
+for ($index = 0; $index -lt $statusRecords.Count - 1; $index++) {
+    $status = $statusRecords[$index]
+    $path = $statusRecords[++$index]
+    $oldPath = ""
+    if ($status -match '^[RC]') {
+        $oldPath = $path
+        $path = $statusRecords[++$index]
     }
-    $status = $parts[0]
-    $path = $parts[-1]
     $statusByPath[$path] = $status
-    if ($parts.Count -ge 3) {
-        $oldPathByPath[$path] = $parts[-2]
+    if ($oldPath) {
+        $oldPathByPath[$path] = $oldPath
     }
 }
 
 $files = [Collections.Generic.List[object]]::new()
-$numstatLines = @(Invoke-GitLines -Arguments @("diff", "--numstat", $reviewBase, $headCommit, "--"))
-foreach ($line in $numstatLines) {
-    $parts = $line -split "`t", 3
+$numstatRecords = ((Invoke-GitLines -Arguments @(
+            "diff", "--numstat", "-z", "--find-renames", $reviewBase, $headCommit, "--"
+        )) -join "`n") -split "`0"
+for ($index = 0; $index -lt $numstatRecords.Count - 1; $index++) {
+    $parts = $numstatRecords[$index] -split "`t", 3
     if ($parts.Count -lt 3) {
         continue
     }
     $path = $parts[2]
+    if (-not $path) {
+        # NUL-delimited rename records contain separate old and new paths
+        $index++
+        $path = $numstatRecords[++$index]
+    }
     $isBinary = $parts[0] -eq "-" -or $parts[1] -eq "-"
     $added = if ($isBinary) { 0 } else { [int64]$parts[0] }
     $deleted = if ($isBinary) { 0 } else { [int64]$parts[1] }
@@ -384,7 +392,7 @@ foreach ($file in $lineReviewFiles) {
         continue
     }
 
-    $fileHunks = if ($allDiffHunks.ContainsKey($file.Path)) { @($allDiffHunks[$file.Path]) } else { @() }
+    $fileHunks = @(if ($allDiffHunks.ContainsKey($file.Path)) { $allDiffHunks[$file.Path] })
     $fileChunks = @(Get-ModifiedFileChunks -Hunks $fileHunks -Limit $limit)
     foreach ($fileChunk in $fileChunks) {
         $details = if ($file.OldPath) { "renamed from $($file.OldPath)" } else { "" }

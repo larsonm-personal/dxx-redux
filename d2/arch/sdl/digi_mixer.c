@@ -10,6 +10,7 @@
 
 #ifdef __ANDROID__
 #include "android_sound_trace.h"
+#include "music_playback_levels.h"
 #endif
 
 #include <stdlib.h>
@@ -193,7 +194,12 @@ void mixdigi_convert_sound(int i)
 // Volume 0-F1_0
 int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int loop_start, int loop_end, int soundobj)
 {
+#ifdef __ANDROID__
+	/* Mix_Volume already applies the effects slider; match channel updates */
+	int mix_vol = fix2byte(volume);
+#else
 	int mix_vol = fix2byte(fixmul(digi_volume, volume));
+#endif
 	int mix_pan = fix2byte(pan);
 	int mix_loop = looping * -1;
 	int channel;
@@ -232,7 +238,7 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 		Mix_SetDistance(channel, 255-mix_vol);
 #ifdef ANDROID
 	androidaud_log_mixer_sfx_start(soundnum, channel, SoundChunks[soundnum].abuf,
-		SoundChunks[soundnum].alen, &start_log_count);
+		SoundChunks[soundnum].alen, volume, volume > F1_0 ? 0 : 255-mix_vol, &start_log_count);
 #endif
 	channels[channel] = 1;
 	Mix_ChannelFinished(digi_mixer_free_channel);
@@ -270,7 +276,11 @@ void digi_mixer_set_digi_volume( int dvolume )
 {
 	digi_volume = dvolume;
 	if (!digi_initialised) return;
+#ifdef __ANDROID__
+	Mix_Volume(-1, (int)(fix2byte(dvolume) * AUDIO_EFFECTS_VOLUME_SCALE));
+#else
 	Mix_Volume(-1, fix2byte(dvolume));
+#endif
 }
 
 int digi_mixer_is_sound_playing(int soundno) { return 0; }

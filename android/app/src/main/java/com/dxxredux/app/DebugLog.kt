@@ -171,6 +171,7 @@ object DebugLog {
     fun logBatch(
         category: Int,
         payload: String,
+        timestampEachLine: Boolean = true,
     ) {
         synchronized(lock) {
             writer ?: return
@@ -178,6 +179,11 @@ object DebugLog {
             if (!enabledCategories[category]) return
             try {
                 val tag = DebugLogCategory.labels[category].uppercase()
+                // Captures already contain source timestamps; write their batch with one disk flush
+                if (!timestampEachLine) {
+                    writeLine(tag, payload)
+                    return
+                }
                 var wroteAny = false
                 payload.lineSequence().forEach { line ->
                     if (line.isEmpty()) return@forEach

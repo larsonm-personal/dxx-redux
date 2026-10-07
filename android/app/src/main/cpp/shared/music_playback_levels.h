@@ -7,8 +7,8 @@
  * tracks, and four D1 controls, at music volume 8
  * Current D2/CD median gap: 0.175 dB; highest D2 true peak: -2.82 dBFS
  * No sampled clipping; other tracks and the final effects mix can peak higher
- * Match by attenuation, preserving dynamics; effects are a user-chosen starting
- * point and launcher preview levels retain their earlier, separate settings
+ * Match by attenuation, preserving dynamics; effects calibration is separate
+ * from the sliders and launcher previews retain their own levels
  * Reproduction and measurement limits: tests/music_spectral/README.md */
 
 /* Units and combination rules
@@ -47,10 +47,14 @@
  * This replaces the MIDI/CD gain path for files, rather than stacking with it */
 #define MUSIC_FILE_VOLUME_SCALE 0.1995262315f
 
-/* Initial effects slider position, an integer 0..8, not dB or a multiplier
- * 2 becomes 2/8 = 0.25 times amplitude, or 20*log10(0.25) = -12.04 dB
- * Applied in addition to each sound's own level; saved slider values override */
-#define AUDIO_DEFAULT_EFFECTS_VOLUME 2
+/* Fixed Android SDL_mixer effects calibration, applied once to channel gain
+ * 0.25 is -12.04 dB, in addition to sound level/distance and panning
+ * At slider 8 this preserves the corrected mixer's former slider-2 level
+ * Both sliders default to maximum; device volume controls overall loudness */
+#define AUDIO_EFFECTS_VOLUME_SCALE 0.25f
+
+/* Initial effects slider position, integer 0..8; saved choices override */
+#define AUDIO_DEFAULT_EFFECTS_VOLUME 8
 
 /* Launcher MIDI synth gain in dB; replaces the gameplay gain/boost for previews
  * -10 dB is about 0.316 times the synth's 0 dB amplitude, before output scaling */
