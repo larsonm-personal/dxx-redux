@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <android/log.h>
+#include <time.h>
 
 extern JavaVM *g_jvm;
 extern jobject g_activity;
@@ -32,6 +33,7 @@ static const char *category_tags[DLOG_COUNT] = {
 	"COOP_DESYNC",
 	"DORMANCY",
 	"GUIDEBOT",
+	"TOUCH_INPUT",
 };
 
 static int debug_log_get_env(JNIEnv **env_out)
@@ -112,6 +114,17 @@ void debug_log(int category, const char *fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
+
+	/* Android touch capture is buffered by the Activity, without per-sample disk/logcat writes */
+	if (category == DLOG_TOUCH_INPUT) {
+		struct timespec now;
+		char timed[1152];
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		snprintf(timed, sizeof(timed), "native_ms=%lld %s",
+		         (long long) now.tv_sec * 1000 + now.tv_nsec / 1000000, buf);
+		debug_log_call_java_method("debugLogFromNative", category, timed);
+		return;
+	}
 
 	/* Also print to logcat for immediate visibility */
 	__android_log_print(ANDROID_LOG_DEBUG, "DXX-DLOG",

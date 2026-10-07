@@ -117,7 +117,7 @@ void androidaud_log_sfx_latency_probe(int *last_logged_probe_count)
 }
 
 void androidaud_log_mixer_sfx_start(int soundnum, int channel,
-                                    const void *chunk_buffer, unsigned int chunk_length, int *start_log_count)
+                                    const void *chunk_buffer, unsigned int chunk_length, int sound_volume, int distance, int *start_log_count)
 {
 	int lead_ms = -1;
 	int chunk_ms;
@@ -129,10 +129,10 @@ void androidaud_log_mixer_sfx_start(int soundnum, int channel,
 	(*start_log_count)++;
 	if (*start_log_count <= 128 || (*start_log_count % 32) == 0)
 		debug_log(DLOG_GAME,
-		          "[audio] sfx start: seq=%d sound=%d channel=%d lead_ms=%d chunk_ms=%d mixer_buf_frames=%d native_buf_frames=%d",
+		          "[audio] sfx start: seq=%d sound=%d channel=%d lead_ms=%d chunk_ms=%d mixer_buf_frames=%d native_buf_frames=%d channel_volume=%d sound_volume=%d distance=%d",
 		          *start_log_count, soundnum, channel, lead_ms, chunk_ms,
 		          androidaud_get_audio_buf_frames(),
-		          androidaud_get_native_buffer_frames());
+		          androidaud_get_native_buffer_frames(), Mix_Volume(channel, -1), sound_volume, distance);
 }
 
 #endif

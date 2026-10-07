@@ -1420,6 +1420,12 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
     }
     Spacer(modifier = Modifier.height(8.dp))
 
+    Text(
+        "Touch Input Capture records 30 seconds from the first mouse-look touch per game launch. " +
+            "Return here and export the newest debug log. Turn it off after testing.",
+        fontSize = 11.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
     for (cat in 0 until DebugLogCategory.COUNT) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(DebugLogCategory.labels[cat], fontSize = 13.sp)

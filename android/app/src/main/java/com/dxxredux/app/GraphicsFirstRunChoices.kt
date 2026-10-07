@@ -24,7 +24,7 @@ internal class GraphicsFirstRunChoices(
                 setTextColor(PauseOverlayStyle.TEXT_COLOR)
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(14), dp(10), dp(14), dp(10))
-                minHeight = dp(56)
+                minHeight = dp(48)
                 isClickable = true
                 isFocusable = true
                 background = PauseOverlayStyle.choiceBackground(resources.displayMetrics.density)
@@ -34,16 +34,7 @@ internal class GraphicsFirstRunChoices(
 
     init {
         orientation = VERTICAL
-        buttons.forEach { addView(it, LayoutParams(-1, -2).apply { bottomMargin = dp(8) }) }
-        addView(
-            TextView(context).apply {
-                text = "These can be edited later live in Settings > Video Info, or in the launcher's Graphics page"
-                textSize = 13f
-                setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
-                setPadding(0, dp(4), 0, dp(4))
-            },
-            LayoutParams(-1, -2),
-        )
+        buttons.forEach { addView(it, LayoutParams(-1, -2).apply { bottomMargin = dp(4) }) }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

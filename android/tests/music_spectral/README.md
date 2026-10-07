@@ -149,6 +149,14 @@ retain their existing synth gains. Removing the earlier +2 dB D2 adjustment
 adds headroom while lowering CD by the same amount preserves the measured match.
 The Android effects default is 2/8 (-12 dB); saved volume choices take precedence
 
+Android effects apply that slider once through SDL_mixer channel volume.
+Startup distance attenuation uses only each sound's own level, matching later
+positional updates. Previously startup also included the effects slider in the
+distance gain: a full-level sound at effects 2/8 received about -30 dB before
+panning, instead of -12 dB. `test_sound_trace.ps1` checks the runtime channel and
+distance gains for full-level and quieter sounds. Music-only measurements did
+not detect this effects mixer error
+
 The same header collects the gameplay synth gain, D2 profile adjustment, CD
 attenuation, effects default, and separate launcher preview gains/multipliers.
 Each setting documents its units and purpose. The comparison reads its default

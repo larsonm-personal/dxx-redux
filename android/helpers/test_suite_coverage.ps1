@@ -38,6 +38,7 @@ function Get-TestSuiteCoveragePolicy {
         audio_preferences = @(
             'test_dos_midi_parity'
             'test_sound_trace'
+            'test_audio_mix'
             'test_soundfont_download_catalog'
             'test_music_track_controls_unified'
             'test_launcher_media_controls'
@@ -162,6 +163,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_regenerate_all_regression_data'
             'test_regression_process_lifetime'
             'test_repository_artifact_policy'
+            'test_review_ledger_generation'
             'test_runtime_targeted_sampling'
             'test_secret_area_baseline'
             'test_secret_area_baseline_diff'

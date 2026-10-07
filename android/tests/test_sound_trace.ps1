@@ -22,4 +22,25 @@ foreach ($pattern in @(
     )) {
     if ($trace -notmatch $pattern) { throw "Missing sound trace evidence: $pattern (see $logPath)" }
 }
-Write-Host "Sound trace smoke test passed: $logPath"
+# A full-level sound must not get a second copy of the effects slider through
+# distance attenuation, and quieter sounds must retain their own attenuation
+$gainRows = [regex]::Matches($trace, 'channel_volume=(\d+) sound_volume=(\d+) distance=(\d+)')
+$fullLevelSounds = 0
+$quietSounds = 0
+foreach ($row in $gainRows) {
+    $channelVolume = [int]$row.Groups[1].Value
+    $soundVolume = [int]$row.Groups[2].Value
+    $distance = [int]$row.Groups[3].Value
+    $expectedDistance = 255 - [Math]::Min(255, [Math]::Floor($soundVolume / 256))
+    if ($distance -ne $expectedDistance) {
+        throw "Effects startup applies extra attenuation: $($row.Value), expected distance=$expectedDistance"
+    }
+    if ($channelVolume -eq 32) {
+        if ($soundVolume -eq 65536) { $fullLevelSounds++ }
+        elseif ($soundVolume -gt 0 -and $soundVolume -lt 65536) { $quietSounds++ }
+    }
+}
+if ($fullLevelSounds -eq 0 -or $quietSounds -eq 0) {
+    throw "Missing calibrated effects gain coverage: full=$fullLevelSounds quiet=$quietSounds (see $logPath)"
+}
+Write-Host "Sound trace and effects gain checks passed: $logPath"

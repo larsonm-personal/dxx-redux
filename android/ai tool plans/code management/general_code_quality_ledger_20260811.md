@@ -23,6 +23,21 @@ This is the only canonical file for review progress, findings, dispositions, and
 
 Review the frozen commits even if the live branch moves. `GQ1-CLOSE-001` must account for every later commit before the campaign can finish
 
+## 2026-10-06 execution constraint
+
+- User requested avoiding Daybreak-triggering work and marking it for follow-up
+- Defer further adversarial archive probes and other security-sensitive reproduction work; continue ordinary correctness, cleanup, coverage reconciliation and validation
+- GQI-0004 remains a follow-up investigation, not a completed fix or a confirmed end-to-end application exploit. Existing Android API-34 raw-tar probes accepted a symlink and FIFO; application fallback admission was not executed. Hard-link and device-node probes failed. Existing evidence and limitations are durably imported as `GQI-0004 deferred investigation checkpoint 20261006`; complete application evidence remains follow-up
+- Fresh `:app:compileReleaseKotlin` passed during investigation preparation; this is compilation evidence only and gives no archive runtime validation credit
+
+## 2026-10-06 frozen-tail reconciliation
+
+- Imported `GQ1 frozen-tail reconciliation 20261006` in the detailed evidence ledger with all 58 exact path/range/blob mappings, range SHA-256 values and original report digests
+- All 54 pending tail candidates are now reconciled to earlier completed grouped assignments; four prior supplemental dispositions are preserved
+- The initial simple-path tail audit omitted grouped assignments. Reconstructing both assignment forms covers all lines of the 1,285 ranged frozen paths with no gaps; this does not confer current-delta or mechanical/hunk-only review credit
+- Two historical report digests do not reproduce and one report omits its frozen blob. Fresh exact frozen-tail reads supply coverage for those three exceptions; historical reports remain unchanged
+- Original queue remains 818 DONE / 1 TODO. GQ1-CLOSE-001, five investigation dispositions, full live delta and accepted live fixes remain open
+
 ## 2026-09-30 resume checkpoint
 
 - Live baseline: `49a4be27ab90a3f223f093bec1390989d1c5aee1`; worktree was initially clean
@@ -138,214 +153,217 @@ Each lane is descending by score and the documented tie-breakers. Run the live o
 | 25 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQR-0199` | `TODO`     | `GQF-0213`                         | Guard serialized model pointer ownership in base assets                           |
 | 26 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQR-0212` | `TODO`     | `GQF-0227`                         | Bound BinHex and shared metadata work and live memory                             |
 | 27 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQR-0218` | `TODO`     | `GQF-0233`                         | Guard music snapshot allocation before publication                                |
-| 28 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0006` | `DONE`     | `GQF-0005`                         | Constrain exported automation receivers without breaking intended tests           |
-| 29 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0011` | `TODO`     | `GQF-0024`                         | Finish verified dependency acquisition on native desktop paths                    |
-| 30 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0034` | `DONE`     | `GQF-0047`                         | Enforce physical ISO output containment                                           |
-| 31 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0038` | `DONE`     | `GQF-0051`                         | Enforce one peak-live-memory budget for STi2 method 15                            |
-| 32 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0042` | `DONE`     | `GQF-0055`                         | Require route proof before every reconnect state mutation                         |
-| 33 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0043` | `DONE`     | `GQF-0056`                         | Version and domain-separate reconnect transcripts/generations                     |
-| 34 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0044` | `DONE`     | `GQF-0057`                         | Bound unauthenticated reconnect verification before JNI/JCA                       |
-| 35 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0048` | `DONE`     | `GQF-0061`                         | Carry one budget through complete CD composition                                  |
-| 36 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0063` | `DONE`     | `GQF-0076`                         | Enforce one peak-live-memory budget for Inno metadata decode                      |
-| 37 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0065` | `DONE`     | `GQF-0078`                         | Make Inno version admission overflow-free                                         |
-| 38 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0070` | `DONE`     | `GQF-0083`                         | Bound aggregate Inno solid-chunk decode work                                      |
-| 39 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0087` | `DONE`     | `GQF-0100`                         | Require valid ZIP structure before lifting prompt limits                          |
-| 40 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0090` | `DONE`     | `GQF-0103`                         | Apply one extraction budget to direct Setup ZIP import                            |
-| 41 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0091` | `DONE`     | `GQF-0104`                         | Enforce peak-live-memory policy in Kotlin bounded reads                           |
-| 42 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0095` | `DONE`     | `GQF-0108`                         | Prevent weaker fallback after RAR policy rejection                                |
-| 43 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0096` | `DONE`     | `GQF-0109`                         | Bound RAR enumeration before materialization                                      |
-| 44 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0105` | `DONE`     | `GQF-0118`                         | Carry one catalog budget through nested music containers                          |
-| 45 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0106` | `DONE`     | `GQF-0119`                         | Preserve nested streaming size and expansion accounting                           |
-| 46 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0112` | `DONE`     | `GQF-0125`                         | Bind bounded extraction to an admitted Python runtime                             |
-| 47 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0114` | `DONE`     | `GQF-0127`                         | Supervise bounded extractor process trees                                         |
-| 48 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0115` | `DONE`     | `GQF-0128`                         | Reject unsafe extractor output types                                              |
-| 49 |    54 | MEDIUM-HIGH | 32/0/2/10/10  | `GQR-0005` | `DONE`     | `GQF-0001`                         | Remove tracked runtime/scratch artifacts and establish narrow recurrence policy   |
-| 50 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0187` | `TODO`     | `GQF-0200`                         | Bound D1 duplicate-callsign text fallback                                         |
-| 51 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0193` | `TODO`     | `GQF-0207`                         | Bound and guard native MVE resampling                                             |
-| 52 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0194` | `TODO`     | `GQF-0208`                         | Guard Guide-Bot scaled source allocation                                          |
-| 53 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0195` | `TODO`     | `GQF-0209`                         | Validate D1 model interpreter field domains                                       |
-| 54 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0200` | `TODO`     | `GQF-0214`                         | Validate restored AI consumer domains before publication                          |
-| 55 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0219` | `TODO`     | `GQF-0234`                         | Clamp oversized vertical scroll-strip spans safely                                |
-| 56 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0039` | `DONE`     | `GQF-0052`                         | Make assigned JNI acquisitions and allocations exception-safe                     |
-| 57 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0045` | `TODO`     | `GQF-0058`                         | Bound and cancel complete-track fingerprint work                                  |
-| 58 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0102` | `TODO`     | `GQF-0115`                         | Bind mission scan to one extraction source generation                             |
-| 59 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0128` | `TODO`     | `GQF-0141`                         | Preserve graphics transaction originals through rollback                          |
-| 60 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0160` | `TODO`     | `GQF-0173`                         | Make SDL audio callback lifetime entry-safe                                       |
-| 61 |    53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQR-0144` | `TODO`     | `GQF-0157`                         | Make bounded-extractor quota tests reason-exact                                   |
-| 62 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0018` | `TODO`     | `GQF-0031`                         | Make declared CD audio identity/counts executable regression oracles              |
-| 63 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0020` | `TODO`     | `GQF-0033`                         | Add non-mutating combined-oracle semantic freshness validation                    |
-| 64 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0055` | `TODO`     | `GQF-0068`                         | Register audio enumeration regression coverage                                    |
-| 65 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0140` | `TODO`     | `GQF-0153`                         | Make D2 Mac extraction oracle content-exact                                       |
-| 66 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0145` | `TODO`     | `GQF-0158`                         | Register bounded-extractor Python regression                                      |
-| 67 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0146` | `TODO`     | `GQF-0159`                         | Require source-bearing extraction regression specs                                |
-| 68 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0149` | `TODO`     | `GQF-0162`                         | Make extraction workflow assertions behavioral                                    |
-| 69 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0150` | `TODO`     | `GQF-0163`                         | Bind app-private extraction staging to source identity                            |
-| 70 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0151` | `TODO`     | `GQF-0164`                         | Make descriptor-only SAF success observation-gated                                |
-| 71 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0154` | `TODO`     | `GQF-0167`                         | Publish final audio samples before producer completion                            |
-| 72 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0222` | `TODO`     | `GQF-0237`                         | Preserve JSONC comment token boundaries                                           |
-| 73 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0109` | `TODO`     | `GQF-0122`                         | Make sequential-port prediction conservative                                      |
-| 74 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0164` | `TODO`     | `GQF-0177`                         | Reject out-of-range Chromaprint integer metadata before narrowing                 |
-| 75 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0166` | `TODO`     | `GQF-0179`                         | Require exact music sidecar schema version                                        |
-| 76 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0167` | `TODO`     | `GQF-0180`                         | Repair crash and outbound automation JNI encoding and acquisition cleanup         |
-| 77 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0169` | `TODO`     | `GQF-0182`                         | Serialize cooperative metadata through one JSON owner                             |
-| 78 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0171` | `TODO`     | `GQF-0184`                         | Preserve complete bounded slowdown-capture envelopes                              |
-| 79 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0207` | `TODO`     | `GQF-0222`                         | Preserve distinct fingerprint identities through projection                       |
-| 80 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0208` | `TODO`     | `GQF-0223`                         | Publish copied audio additions and registry as one owned transaction              |
-| 81 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0213` | `TODO`     | `GQF-0228`                         | Share supported archive admission between folder and file imports                 |
-| 82 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0215` | `TODO`     | `GQF-0230`                         | Resolve custom audio previews through their owning source                         |
-| 83 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0217` | `TODO`     | `GQF-0232`                         | Preserve exact secret-level origin admission                                      |
-| 84 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0223` | `TODO`     | `GQF-0238`                         | Use shared JSONC parsing for CD source manifests                                  |
-| 85 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0225` | `TODO`     | `GQF-0240`                         | Preserve canonical Git paths in review queue generation                           |
-| 86 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0226` | `TODO`     | `GQF-0241`                         | Confine host metadata source staging before replacement                           |
-| 87 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0227` | `TODO`     | `GQF-0242`                         | Match paired packet decoders to native log grammar                                |
-| 88 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0228` | `TODO`     | `GQF-0243`                         | Preserve signed fields and partial-header packet diagnostics                      |
-| 89 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0229` | `TODO`     | `GQF-0245`                         | Reject unsupported descriptor modes before disc publication                       |
-| 90 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0230` | `TODO`     | `GQF-0246`                         | Enforce exact regression spec generation selection                                |
-| 91 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0232` | `TODO`     | `GQF-0248`                         | Resolve automation template string values before JSON serialization               |
-| 92 | 47 | MEDIUM | 23/0/4/10/10 | `GQR-0233` | `TODO` | `GQF-0249` | Require complete actual co-op start inventories before PASS |
-| 93 | 47 | MEDIUM | 23/0/4/10/10 | `GQR-0234` | `TODO` | `GQF-0250` | Validate complete RNG trace inputs before comparison |
-| 94 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0016` | `TODO`     | `GQF-0029`                         | Regenerate and bind the stale Anniversary fingerprint                             |
-| 95 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0017` | `TODO`     | `GQF-0030`                         | Version and bind physical-disc fingerprint generations                            |
-| 96 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0019` | `TODO`     | `GQF-0032`                         | Replace size-based combined-component collision selection with explicit ownership |
-| 97 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0021` | `TODO`     | `GQF-0034`                         | Enforce typed complete mission fingerprint cache/publication schema               |
-| 98 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0025` | `TODO`     | `GQF-0038`                         | Replace HFS wrapper fixed-buffer joins with checked path ownership                |
-| 99 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0027` | `TODO`     | `GQF-0040`                         | Make flattened HFS collision policy explicit and order-independent                |
-| 100 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0031` | `TODO`     | `GQF-0044`                         | Align PKG no-audio free-space checks with selected outputs                        |
-| 101 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0032` | `TODO`     | `GQF-0045`                         | Make PKG JNI progress stable and cumulative                                       |
-| 102 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0035` | `TODO`     | `GQF-0048`                         | Define ISO normalized version/collision semantics                                 |
-| 103 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0036` | `TODO`     | `GQF-0049`                         | Implement or explicitly reject ISO extended/interleaved layouts                   |
-| 104 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0040` | `TODO`     | `GQF-0053`                         | Bind Inno extraction to its analyzed source generation                            |
-| 105 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0064` | `TODO`     | `GQF-0077`                         | Require strict setup-header LZMA terminal state                                   |
-| 106 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0066` | `TODO`     | `GQF-0079`                         | Preserve and assemble Galaxy multipart groups                                     |
-| 107 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0067` | `TODO`     | `GQF-0080`                         | Model the complete Windows destination namespace                                  |
-| 108 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0075` | `TODO`     | `GQF-0088`                         | Enforce ISO declared-volume containment                                           |
-| 109 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0076` | `TODO`     | `GQF-0089`                         | Make bounded CUE titles preserve valid UTF-8                                      |
-| 110 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0078` | `TODO`     | `GQF-0091`                         | Bind PKG extraction to a collision-resistant source generation                    |
-| 111 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0083` | `TODO`     | `GQF-0096`                         | Preserve complete resume-save mission identity                                    |
-| 112 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0084` | `TODO`     | `GQF-0097`                         | Move resume-save discovery off the Compose looper                                 |
-| 113 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0089` | `TODO`     | `GQF-0102`                         | Bind ZIP extraction to the validated central entry set                            |
-| 114 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0100` | `TODO`     | `GQF-0113`                         | Reject stored ZIP collisions before registration                                  |
-| 115 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0103` | `TODO`     | `GQF-0116`                         | Eliminate repeated synchronous mission freshness hashing                          |
-| 116 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0118` | `TODO`     | `GQF-0131`                         | Validate DOS demo output before first publication                                 |
-| 117 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0126` | `TODO`     | `GQF-0139`                         | Retire stale audio generations on no-audio success                                |
-| 118 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0147` | `TODO`     | `GQF-0160`                         | Put host-only extraction tests in the host tier                                   |
-| 119 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0174` | `TODO`     | `GQF-0187`                         | Reject failed GLES3 shader pipeline initialization                                |
-| 120 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0177` | `TODO`     | `GQF-0190`                         | Reject narrowing aliases in replay direct commands                                |
-| 121 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0198` | `TODO`     | `GQF-0212`                         | Bind decoded native assets to their exact source identity                         |
-| 122 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0209` | `TODO`     | `GQF-0224`                         | Bind delayed multiplayer expiry shutdown to its game generation                   |
-| 123 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0216` | `TODO`     | `GQF-0231`                         | Publish and consume resume handoffs as durable generations                        |
-| 124 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0220` | `TODO`     | `GQF-0235`                         | Preserve editor-supported disabled gyro mappings on reload                        |
-| 125 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0023` | `TODO`     | `GQF-0036`                         | Bound SAF manifest decoded allocation and duplicate work                          |
-| 126 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0059` | `TODO`     | `GQF-0072`                         | Bound and cancel HFS metadata and ancestry work                                   |
-| 127 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0072` | `TODO`     | `GQF-0085`                         | Make Inno output-name uniqueness preflight bounded                                |
-| 128 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0108` | `TODO`     | `GQF-0121`                         | Bound NAT simulator live mappings and tasks                                       |
-| 129 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0122` | `TODO`     | `GQF-0135`                         | Bound every Mac demo external process                                             |
-| 130 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0124` | `TODO`     | `GQF-0137`                         | Bound mission music archive nesting                                               |
-| 131 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0003` | `TODO`     | `GQF-0008`                         | Restore always-active HUD layout test oracles                                     |
-| 132 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0004` | `TODO`     | `GQF-0009`                         | Restore always-active escort policy test oracles                                  |
-| 133 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0007` | `TODO`     | `GQF-0011`                         | Replace ambiguous optional menu selection with stable semantics                   |
-| 134 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0012` | `TODO`     | `GQF-0025`                         | Repair quick-test catalog migration and add target-resolution coverage            |
-| 135 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0080` | `TODO`     | `GQF-0093`                         | Add a successful production STi2 method-14 oracle                                 |
-| 136 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0130` | `TODO`     | `GQF-0143`                         | Make CUE extension-filter tests exact                                             |
-| 137 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0131` | `TODO`     | `GQF-0144`                         | Validate HMP output through production wrappers                                   |
-| 138 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0136` | `TODO`     | `GQF-0149`                         | Prove fingerprint input-byte and stream parity                                    |
-| 139 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0137` | `TODO`     | `GQF-0150`                         | Validate raw fingerprint fixtures exactly                                         |
-| 140 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0152` | `TODO`     | `GQF-0165`                         | Register and bound the WAV parser regression                                      |
-| 141 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0205` | `TODO`     | `GQF-0220`                         | Preserve debug SAF pipe producer error and ownership                              |
-| 142 |    45 | MEDIUM      | 12/12/4/10/7  | `GQR-0186` | `TODO`     | `GQF-0199`                         | Remove unused copied D1 polymodel texture cache                                   |
-| 143 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0022` | `TODO`     | `GQF-0035`                         | Restore evidence-backed deterministic AcoustID candidate selection                |
-| 144 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0028` | `TODO`     | `GQF-0041`                         | Preserve valid SOW append prefixes on later failure                               |
-| 145 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0037` | `TODO`     | `GQF-0050`                         | Scan ISO volume descriptor sequences correctly                                    |
-| 146 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0046` | `TODO`     | `GQF-0059`                         | Preserve lossless fingerprint ranking evidence                                    |
-| 147 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0047` | `TODO`     | `GQF-0060`                         | Make exact-collision duration decisions symmetric                                 |
-| 148 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0050` | `TODO`     | `GQF-0063`                         | Make CUE FILE grammar strict and source ordering shared                           |
-| 149 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0051` | `TODO`     | `GQF-0064`                         | Reject oversized CUE physical lines without synthetic parsing                     |
-| 150 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0052` | `TODO`     | `GQF-0065`                         | Define and enforce CUE track identity rules                                       |
-| 151 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0057` | `TODO`     | `GQF-0070`                         | Make Windows CD fingerprint paths Unicode-safe                                    |
-| 152 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0058` | `TODO`     | `GQF-0071`                         | Validate the complete HFS catalog parent graph before projection                  |
-| 153 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0060` | `TODO`     | `GQF-0073`                         | Accept standards-conforming multi-node HFS allocation maps                        |
-| 154 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0061` | `TODO`     | `GQF-0074`                         | Require complete classic-HFS catalog record schemas                               |
-| 155 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0068` | `TODO`     | `GQF-0081`                         | Bind Inno chunks to validated split-volume sources                                |
-| 156 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0074` | `TODO`     | `GQF-0087`                         | Scope or remove ISO `zero` directory suppression                                  |
-| 157 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0077` | `TODO`     | `GQF-0090`                         | Parse exact XAR field structure                                                   |
-| 158 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0088` | `TODO`     | `GQF-0101`                         | Select a fully valid ZIP EOCD candidate                                           |
-| 159 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0092` | `TODO`     | `GQF-0105`                         | Share song filename capacity with both engines                                    |
-| 160 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0093` | `TODO`     | `GQF-0106`                         | Key contained-track sidecars by member identity                                   |
-| 161 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0094` | `TODO`     | `GQF-0107`                         | Separate sidecar freshness from identification completeness                       |
-| 162 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0098` | `TODO`     | `GQF-0111`                         | Validate loadable mission level payloads                                          |
-| 163 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0099` | `TODO`     | `GQF-0112`                         | Preserve qualified mission descriptor identities                                  |
-| 164 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0111` | `TODO`     | `GQF-0124`                         | Contain mission-batch diagnostic capture failures                                 |
-| 165 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0119` | `TODO`     | `GQF-0132`                         | Share strict CUE sector geometry with Mac extraction                              |
-| 166 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0120` | `TODO`     | `GQF-0133`                         | Validate Mac extraction CUE INDEX fields                                          |
-| 167 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0121` | `TODO`     | `GQF-0134`                         | Bind Mac extraction cache to supervisor policy                                    |
-| 168 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0123` | `TODO`     | `GQF-0136`                         | Regenerate and enforce Mac demo oracle provenance                                 |
-| 169 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0125` | `TODO`     | `GQF-0138`                         | Make tracklist selector conflicts explicit                                        |
-| 170 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0134` | `TODO`     | `GQF-0147`                         | Reject reserved Windows ISO output components                                     |
-| 171 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0168` | `TODO`     | `GQF-0181`                         | Close HOG payload files after read failure                                        |
-| 172 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0172` | `TODO`     | `GQF-0185`                         | Release automation condition JSON exactly once                                    |
-| 173 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0173` | `TODO`     | `GQF-0186`                         | Contain introspection producer failures and scope acquired buffers                |
-| 174 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0175` | `TODO`     | `GQF-0188`                         | Bound restored checkpoint subsystem clocks                                        |
-| 175 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0180` | `TODO`     | `GQF-0193`                         | Close every opened BIN after CUE admission failure                                |
-| 176 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0182` | `TODO`     | `GQF-0195`                         | Make route geometry safe for admitted fixed-point coordinates                     |
-| 177 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0196` | `TODO`     | `GQF-0210`                         | Bound Android PIG cache sizing before narrowing                                   |
-| 178 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0201` | `TODO`     | `GQF-0215`                         | Reject DXA integer aliases before narrowing                                       |
-| 179 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0204` | `TODO`     | `GQF-0219`                         | Produce valid JSONC server public addresses                                       |
-| 180 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0009` | `TODO`     | `GQF-0016`                         | Limit compiler-process cleanup to owned children                                  |
-| 181 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0026` | `TODO`     | `GQF-0039`                         | Give HFS installer scratch files exclusive attempt ownership                      |
-| 182 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0033` | `TODO`     | `GQF-0046`                         | Make direct PKG and standalone ISO publication transactional                      |
-| 183 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0056` | `TODO`     | `GQF-0069`                         | Bind each CD fingerprint run to one immutable BIN generation                      |
-| 184 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0062` | `TODO`     | `GQF-0075`                         | Preserve the PE resource leaf bound through offset-table parsing                  |
-| 185 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0069` | `TODO`     | `GQF-0082`                         | Route solid chunks by complete decoded prefix                                     |
-| 186 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0071` | `TODO`     | `GQF-0084`                         | Validate Galaxy external size before final publication                            |
-| 187 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0081` | `TODO`     | `GQF-0094`                         | Move STi2 fixed entry catalogs off native stack                                   |
-| 188 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0082` | `TODO`     | `GQF-0095`                         | Make level-metadata runtime initialization transactional                          |
-| 189 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0085` | `TODO`     | `GQF-0098`                         | Bind conditional save deletion to one file generation                             |
-| 190 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0086` | `TODO`     | `GQF-0099`                         | Freeze one SAF mounted-source generation                                          |
-| 191 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0097` | `TODO`     | `GQF-0110`                         | Preserve staged RAR source ownership                                              |
-| 192 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0117` | `TODO`     | `GQF-0130`                         | Serialize extraction publication by destination                                   |
-| 193 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0127` | `TODO`     | `GQF-0140`                         | Bound native mission fingerprint processes                                        |
-| 194 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0129` | `TODO`     | `GQF-0142`                         | Close graphics transaction descriptors on sync failure                            |
-| 195 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0135` | `TODO`     | `GQF-0148`                         | Use production heap ownership in CUE/ISO tests                                    |
-| 196 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0155` | `TODO`     | `GQF-0168`                         | Decode replay direct commands once per frame                                      |
-| 197 |    43 | MEDIUM      | 23/0/10/6/4   | `GQR-0029` | `TODO`     | `GQF-0042`                         | Give SOW output leaves no-follow regular-file ownership                           |
-| 198 |    43 | MEDIUM      | 23/0/10/6/4   | `GQR-0054` | `TODO`     | `GQF-0067`                         | Restrict fingerprint CLI enumeration to owned regular inputs                      |
-| 199 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0008` | `TODO`     | `GQF-0012`                         | Pin NAT testbed base image reproducibly                                           |
-| 200 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0110` | `TODO`     | `GQF-0123`                         | Bind TinySoundFont updates to incremental rebuilds                                |
-| 201 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0116` | `TODO`     | `GQF-0129`                         | Make the POSIX CUE/ISO entry point executable                                     |
-| 202 |    42 | MEDIUM      | 12/0/10/10/10 | `GQR-0153` | `TODO`     | `GQF-0166`                         | Complete and guard the server configuration template                              |
-| 203 |    41 | MEDIUM      | 23/0/4/10/4   | `GQR-0132` | `TODO`     | `GQF-0145`                         | Make invalid fingerprint database configuration fail closed                       |
-| 204 |    41 | MEDIUM      | 12/5/7/10/7   | `GQR-0158` | `TODO`     | `GQF-0171`                         | Remove unused paired FP environment includes                                      |
-| 205 |    40 | MEDIUM      | 23/0/7/6/4    | `GQR-0053` | `TODO`     | `GQF-0066`                         | Make CUE parsing length-aware and reject embedded NUL                             |
-| 206 |    40 | MEDIUM      | 23/0/7/6/4    | `GQR-0107` | `TODO`     | `GQF-0120`                         | Lease staged music generations across preview use                                 |
-| 207 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0163` | `TODO`     | `GQF-0176`                         | Remove the orphan JNI skeleton                                                    |
-| 208 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0203` | `TODO`     | `GQF-0217`                         | Share repeated Android executable source inventory                                |
-| 209 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0214` | `TODO`     | `GQF-0229`                         | Reconcile chat scrolling with bounded-history appends                             |
-| 210 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0165` | `TODO`     | `GQF-0178`                         | Remove the orphaned ETC2 software decoder and header                              |
-| 211 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0206` | `TODO`     | `GQF-0221`                         | Close the owned fingerprint track-name asset reader                               |
-| 212 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0211` | `TODO`     | `GQF-0226`                         | Preserve exact bounded recent endpoint identities                                 |
-| 213 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0224` | `TODO`     | `GQF-0239`                         | Remove dead host metadata projection and legacy scanner helpers                   |
-| 214 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0231` | `TODO`     | `GQF-0247`                         | Remove unused XFing raw payload and byte-range helpers                            |
-| 215 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0010` | `DEFERRED` | `GQF-0019`                         | Evaluate paired ETC2 self-test extraction                                         |
-| 216 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0014` | `TODO`     | `GQF-0027`                         | Finish audio URI persistence schema migration                                     |
-| 217 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0148` | `TODO`     | `GQF-0161`                         | Remove stale extraction failure state                                             |
-| 218 |    34 | LOW         | 12/0/2/10/10  | `GQR-0015` | `TODO`     | `GQF-0028`                         | Remove no-op crash Activity compatibility shim                                    |
-| 219 |    34 | LOW         | 12/0/2/10/10  | `GQR-0101` | `TODO`     | `GQF-0114`                         | Remove or restore `isMissionHog` ownership                                        |
-| 220 |    34 | LOW         | 12/0/2/10/10  | `GQR-0133` | `TODO`     | `GQF-0146`                         | Remove unused CUE test helpers                                                    |
-| 221 |    34 | LOW         | 12/0/2/10/10  | `GQR-0221` | `TODO`     | `GQF-0236`                         | Remove unreachable former Play artifact-promotion path                            |
-| 222 |    33 | LOW         | 12/0/4/10/7   | `GQR-0013` | `TODO`     | `GQF-0026`                         | Remove unsupported launcher file-layout migration state                           |
-| 223 |    33 | LOW         | 12/0/4/10/7   | `GQR-0030` | `TODO`     | `GQF-0043`                         | Correct SOW filtered progress population accounting                               |
-| 224 |    33 | LOW         | 12/0/4/10/7   | `GQR-0073` | `TODO`     | `GQF-0086`                         | Define truthful Inno solid-chunk progress                                         |
-| 225 |    33 | LOW         | 12/0/4/10/7   | `GQR-0104` | `TODO`     | `GQF-0117`                         | Include generated aliases in storage and progress totals                          |
-| 226 |    33 | LOW         | 12/0/4/10/7   | `GQR-0113` | `TODO`     | `GQF-0126`                         | Preserve zero-length HFS files                                                    |
-| 227 |    33 | LOW         | 12/0/4/10/7   | `GQR-0138` | `TODO`     | `GQF-0151`                         | Make fingerprint assertions evaluate operands once                                |
-| 228 |    33 | LOW         | 12/0/4/10/7   | `GQR-0141` | `TODO`     | `GQF-0154`                         | Make empty music generations explicit                                             |
-| 229 |    33 | LOW         | 12/0/4/10/7   | `GQR-0183` | `TODO`     | `GQF-0196`                         | Check import reservation and declared-size arithmetic                             |
-| 230 |    32 | LOW         | 12/0/7/6/7    | `GQR-0049` | `TODO`     | `GQF-0062`                         | Resolve or reject Windows drive-relative output identity                          |
-| 231 |    31 | LOW         | 12/0/2/10/7   | `GQR-0139` | `TODO`     | `GQF-0152`                         | Initialize GOG LZMA trailing-data fixtures                                        |
-| 232 |    29 | LOW         | 12/0/4/6/7    | `GQR-0041` | `TODO`     | `GQF-0054`                         | Propagate native JSON/output stream failures                                      |
-| 233 |    29 | LOW         | 12/0/4/6/7    | `GQR-0079` | `TODO`     | `GQF-0092`                         | Make zero-length SOW extraction allocation-independent                            |
-| 234 | 26 | LOW | 8/0/4/10/4 | `GQR-0235` | `TODO` | `GQF-0251` | Use consistent UTF-8 fingerprint audio diagnostics |
-| 235 |     0 | REFERENCE   | 0/0/0/0/0     | `GQR-0001` | `DONE`     | -                                  | Add a capacity-aware shared texture extension lookup and exact boundary tests     |
+| 28 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0238` | `TODO` | `BR-0256` | Restore coherent texture binding ownership |
+| 29 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0006` | `DONE`     | `GQF-0005`                         | Constrain exported automation receivers without breaking intended tests           |
+| 30 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0011` | `TODO`     | `GQF-0024`                         | Finish verified dependency acquisition on native desktop paths                    |
+| 31 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0034` | `DONE`     | `GQF-0047`                         | Enforce physical ISO output containment                                           |
+| 32 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0038` | `DONE`     | `GQF-0051`                         | Enforce one peak-live-memory budget for STi2 method 15                            |
+| 33 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0042` | `DONE`     | `GQF-0055`                         | Require route proof before every reconnect state mutation                         |
+| 34 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0043` | `DONE`     | `GQF-0056`                         | Version and domain-separate reconnect transcripts/generations                     |
+| 35 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0044` | `DONE`     | `GQF-0057`                         | Bound unauthenticated reconnect verification before JNI/JCA                       |
+| 36 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0048` | `DONE`     | `GQF-0061`                         | Carry one budget through complete CD composition                                  |
+| 37 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0063` | `DONE`     | `GQF-0076`                         | Enforce one peak-live-memory budget for Inno metadata decode                      |
+| 38 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0065` | `DONE`     | `GQF-0078`                         | Make Inno version admission overflow-free                                         |
+| 39 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0070` | `DONE`     | `GQF-0083`                         | Bound aggregate Inno solid-chunk decode work                                      |
+| 40 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0087` | `DONE`     | `GQF-0100`                         | Require valid ZIP structure before lifting prompt limits                          |
+| 41 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0090` | `DONE`     | `GQF-0103`                         | Apply one extraction budget to direct Setup ZIP import                            |
+| 42 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0091` | `DONE`     | `GQF-0104`                         | Enforce peak-live-memory policy in Kotlin bounded reads                           |
+| 43 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0095` | `DONE`     | `GQF-0108`                         | Prevent weaker fallback after RAR policy rejection                                |
+| 44 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0096` | `DONE`     | `GQF-0109`                         | Bound RAR enumeration before materialization                                      |
+| 45 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0105` | `DONE`     | `GQF-0118`                         | Carry one catalog budget through nested music containers                          |
+| 46 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0106` | `DONE`     | `GQF-0119`                         | Preserve nested streaming size and expansion accounting                           |
+| 47 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0112` | `DONE`     | `GQF-0125`                         | Bind bounded extraction to an admitted Python runtime                             |
+| 48 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0114` | `DONE`     | `GQF-0127`                         | Supervise bounded extractor process trees                                         |
+| 49 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQR-0115` | `DONE`     | `GQF-0128`                         | Reject unsafe extractor output types                                              |
+| 50 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQR-0236` | `TODO` | `BR-0235`; `GQI-0006` | Recover complete Android save generations before restore or retry |
+| 51 |    54 | MEDIUM-HIGH | 32/0/2/10/10  | `GQR-0005` | `DONE`     | `GQF-0001`                         | Remove tracked runtime/scratch artifacts and establish narrow recurrence policy   |
+| 52 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0187` | `TODO`     | `GQF-0200`                         | Bound D1 duplicate-callsign text fallback                                         |
+| 53 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0193` | `TODO`     | `GQF-0207`                         | Bound and guard native MVE resampling                                             |
+| 54 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0194` | `TODO`     | `GQF-0208`                         | Guard Guide-Bot scaled source allocation                                          |
+| 55 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0195` | `TODO`     | `GQF-0209`                         | Validate D1 model interpreter field domains                                       |
+| 56 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0200` | `TODO`     | `GQF-0214`                         | Validate restored AI consumer domains before publication                          |
+| 57 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQR-0219` | `TODO`     | `GQF-0234`                         | Clamp oversized vertical scroll-strip spans safely                                |
+| 58 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0039` | `DONE`     | `GQF-0052`                         | Make assigned JNI acquisitions and allocations exception-safe                     |
+| 59 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0045` | `TODO`     | `GQF-0058`                         | Bound and cancel complete-track fingerprint work                                  |
+| 60 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0102` | `TODO`     | `GQF-0115`                         | Bind mission scan to one extraction source generation                             |
+| 61 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0128` | `TODO`     | `GQF-0141`                         | Preserve graphics transaction originals through rollback                          |
+| 62 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQR-0160` | `TODO`     | `GQF-0173`                         | Make SDL audio callback lifetime entry-safe                                       |
+| 63 |    53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQR-0144` | `TODO`     | `GQF-0157`                         | Make bounded-extractor quota tests reason-exact                                   |
+| 64 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0018` | `TODO`     | `GQF-0031`                         | Make declared CD audio identity/counts executable regression oracles              |
+| 65 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0020` | `TODO`     | `GQF-0033`                         | Add non-mutating combined-oracle semantic freshness validation                    |
+| 66 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0055` | `TODO`     | `GQF-0068`                         | Register audio enumeration regression coverage                                    |
+| 67 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0140` | `TODO`     | `GQF-0153`                         | Make D2 Mac extraction oracle content-exact                                       |
+| 68 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0145` | `TODO`     | `GQF-0158`                         | Register bounded-extractor Python regression                                      |
+| 69 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0146` | `TODO`     | `GQF-0159`                         | Require source-bearing extraction regression specs                                |
+| 70 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0149` | `TODO`     | `GQF-0162`                         | Make extraction workflow assertions behavioral                                    |
+| 71 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0150` | `TODO`     | `GQF-0163`                         | Bind app-private extraction staging to source identity                            |
+| 72 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0151` | `TODO`     | `GQF-0164`                         | Make descriptor-only SAF success observation-gated                                |
+| 73 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0154` | `TODO`     | `GQF-0167`                         | Publish final audio samples before producer completion                            |
+| 74 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQR-0222` | `TODO`     | `GQF-0237`                         | Preserve JSONC comment token boundaries                                           |
+| 75 | 48 | MEDIUM | 12/12/7/10/7 | `GQR-0237` | `TODO` | `GQF-0252` | Consolidate automap route-adoption eligibility |
+| 76 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0109` | `TODO`     | `GQF-0122`                         | Make sequential-port prediction conservative                                      |
+| 77 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0164` | `TODO`     | `GQF-0177`                         | Reject out-of-range Chromaprint integer metadata before narrowing                 |
+| 78 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0166` | `TODO`     | `GQF-0179`                         | Require exact music sidecar schema version                                        |
+| 79 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0167` | `TODO`     | `GQF-0180`                         | Repair crash and outbound automation JNI encoding and acquisition cleanup         |
+| 80 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0169` | `TODO`     | `GQF-0182`                         | Serialize cooperative metadata through one JSON owner                             |
+| 81 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0171` | `TODO`     | `GQF-0184`                         | Preserve complete bounded slowdown-capture envelopes                              |
+| 82 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0207` | `TODO`     | `GQF-0222`                         | Preserve distinct fingerprint identities through projection                       |
+| 83 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0208` | `TODO`     | `GQF-0223`                         | Publish copied audio additions and registry as one owned transaction              |
+| 84 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0213` | `TODO`     | `GQF-0228`                         | Share supported archive admission between folder and file imports                 |
+| 85 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0215` | `TODO`     | `GQF-0230`                         | Resolve custom audio previews through their owning source                         |
+| 86 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0217` | `TODO`     | `GQF-0232`                         | Preserve exact secret-level origin admission                                      |
+| 87 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0223` | `TODO`     | `GQF-0238`                         | Use shared JSONC parsing for CD source manifests                                  |
+| 88 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0225` | `TODO`     | `GQF-0240`                         | Preserve canonical Git paths in review queue generation                           |
+| 89 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0226` | `TODO`     | `GQF-0241`                         | Confine host metadata source staging before replacement                           |
+| 90 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0227` | `TODO`     | `GQF-0242`                         | Match paired packet decoders to native log grammar                                |
+| 91 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0228` | `TODO`     | `GQF-0243`                         | Preserve signed fields and partial-header packet diagnostics                      |
+| 92 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0229` | `TODO`     | `GQF-0245`                         | Reject unsupported descriptor modes before disc publication                       |
+| 93 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0230` | `TODO`     | `GQF-0246`                         | Enforce exact regression spec generation selection                                |
+| 94 |    47 | MEDIUM      | 23/0/4/10/10  | `GQR-0232` | `TODO`     | `GQF-0248`                         | Resolve automation template string values before JSON serialization               |
+| 95 | 47 | MEDIUM | 23/0/4/10/10 | `GQR-0233` | `TODO` | `GQF-0249` | Require complete actual co-op start inventories before PASS |
+| 96 | 47 | MEDIUM | 23/0/4/10/10 | `GQR-0234` | `TODO` | `GQF-0250` | Validate complete RNG trace inputs before comparison |
+| 97 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0016` | `TODO`     | `GQF-0029`                         | Regenerate and bind the stale Anniversary fingerprint                             |
+| 98 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0017` | `TODO`     | `GQF-0030`                         | Version and bind physical-disc fingerprint generations                            |
+| 99 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0019` | `TODO`     | `GQF-0032`                         | Replace size-based combined-component collision selection with explicit ownership |
+| 100 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0021` | `TODO`     | `GQF-0034`                         | Enforce typed complete mission fingerprint cache/publication schema               |
+| 101 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0025` | `TODO`     | `GQF-0038`                         | Replace HFS wrapper fixed-buffer joins with checked path ownership                |
+| 102 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0027` | `TODO`     | `GQF-0040`                         | Make flattened HFS collision policy explicit and order-independent                |
+| 103 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0031` | `TODO`     | `GQF-0044`                         | Align PKG no-audio free-space checks with selected outputs                        |
+| 104 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0032` | `TODO`     | `GQF-0045`                         | Make PKG JNI progress stable and cumulative                                       |
+| 105 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0035` | `TODO`     | `GQF-0048`                         | Define ISO normalized version/collision semantics                                 |
+| 106 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0036` | `TODO`     | `GQF-0049`                         | Implement or explicitly reject ISO extended/interleaved layouts                   |
+| 107 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0040` | `TODO`     | `GQF-0053`                         | Bind Inno extraction to its analyzed source generation                            |
+| 108 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0064` | `TODO`     | `GQF-0077`                         | Require strict setup-header LZMA terminal state                                   |
+| 109 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0066` | `TODO`     | `GQF-0079`                         | Preserve and assemble Galaxy multipart groups                                     |
+| 110 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0067` | `TODO`     | `GQF-0080`                         | Model the complete Windows destination namespace                                  |
+| 111 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0075` | `TODO`     | `GQF-0088`                         | Enforce ISO declared-volume containment                                           |
+| 112 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0076` | `TODO`     | `GQF-0089`                         | Make bounded CUE titles preserve valid UTF-8                                      |
+| 113 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0078` | `TODO`     | `GQF-0091`                         | Bind PKG extraction to a collision-resistant source generation                    |
+| 114 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0083` | `TODO`     | `GQF-0096`                         | Preserve complete resume-save mission identity                                    |
+| 115 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0084` | `TODO`     | `GQF-0097`                         | Move resume-save discovery off the Compose looper                                 |
+| 116 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0089` | `TODO`     | `GQF-0102`                         | Bind ZIP extraction to the validated central entry set                            |
+| 117 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0100` | `TODO`     | `GQF-0113`                         | Reject stored ZIP collisions before registration                                  |
+| 118 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0103` | `TODO`     | `GQF-0116`                         | Eliminate repeated synchronous mission freshness hashing                          |
+| 119 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0118` | `TODO`     | `GQF-0131`                         | Validate DOS demo output before first publication                                 |
+| 120 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0126` | `TODO`     | `GQF-0139`                         | Retire stale audio generations on no-audio success                                |
+| 121 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0147` | `TODO`     | `GQF-0160`                         | Put host-only extraction tests in the host tier                                   |
+| 122 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0174` | `TODO`     | `GQF-0187`                         | Reject failed GLES3 shader pipeline initialization                                |
+| 123 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0177` | `TODO`     | `GQF-0190`                         | Reject narrowing aliases in replay direct commands                                |
+| 124 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0198` | `TODO`     | `GQF-0212`                         | Bind decoded native assets to their exact source identity                         |
+| 125 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0209` | `TODO`     | `GQF-0224`                         | Bind delayed multiplayer expiry shutdown to its game generation                   |
+| 126 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0216` | `TODO`     | `GQF-0231`                         | Publish and consume resume handoffs as durable generations                        |
+| 127 |    47 | MEDIUM      | 23/0/7/10/7   | `GQR-0220` | `TODO`     | `GQF-0235`                         | Preserve editor-supported disabled gyro mappings on reload                        |
+| 128 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0023` | `TODO`     | `GQF-0036`                         | Bound SAF manifest decoded allocation and duplicate work                          |
+| 129 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0059` | `TODO`     | `GQF-0072`                         | Bound and cancel HFS metadata and ancestry work                                   |
+| 130 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0072` | `TODO`     | `GQF-0085`                         | Make Inno output-name uniqueness preflight bounded                                |
+| 131 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0108` | `TODO`     | `GQF-0121`                         | Bound NAT simulator live mappings and tasks                                       |
+| 132 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0122` | `TODO`     | `GQF-0135`                         | Bound every Mac demo external process                                             |
+| 133 |    47 | MEDIUM      | 23/0/10/10/4  | `GQR-0124` | `TODO`     | `GQF-0137`                         | Bound mission music archive nesting                                               |
+| 134 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0003` | `TODO`     | `GQF-0008`                         | Restore always-active HUD layout test oracles                                     |
+| 135 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0004` | `TODO`     | `GQF-0009`                         | Restore always-active escort policy test oracles                                  |
+| 136 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0007` | `TODO`     | `GQF-0011`                         | Replace ambiguous optional menu selection with stable semantics                   |
+| 137 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0012` | `TODO`     | `GQF-0025`                         | Repair quick-test catalog migration and add target-resolution coverage            |
+| 138 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0080` | `TODO`     | `GQF-0093`                         | Add a successful production STi2 method-14 oracle                                 |
+| 139 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0130` | `TODO`     | `GQF-0143`                         | Make CUE extension-filter tests exact                                             |
+| 140 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0131` | `TODO`     | `GQF-0144`                         | Validate HMP output through production wrappers                                   |
+| 141 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0136` | `TODO`     | `GQF-0149`                         | Prove fingerprint input-byte and stream parity                                    |
+| 142 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0137` | `TODO`     | `GQF-0150`                         | Validate raw fingerprint fixtures exactly                                         |
+| 143 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0152` | `TODO`     | `GQF-0165`                         | Register and bound the WAV parser regression                                      |
+| 144 |    45 | MEDIUM      | 23/0/2/10/10  | `GQR-0205` | `TODO`     | `GQF-0220`                         | Preserve debug SAF pipe producer error and ownership                              |
+| 145 |    45 | MEDIUM      | 12/12/4/10/7  | `GQR-0186` | `TODO`     | `GQF-0199`                         | Remove unused copied D1 polymodel texture cache                                   |
+| 146 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0022` | `TODO`     | `GQF-0035`                         | Restore evidence-backed deterministic AcoustID candidate selection                |
+| 147 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0028` | `TODO`     | `GQF-0041`                         | Preserve valid SOW append prefixes on later failure                               |
+| 148 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0037` | `TODO`     | `GQF-0050`                         | Scan ISO volume descriptor sequences correctly                                    |
+| 149 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0046` | `TODO`     | `GQF-0059`                         | Preserve lossless fingerprint ranking evidence                                    |
+| 150 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0047` | `TODO`     | `GQF-0060`                         | Make exact-collision duration decisions symmetric                                 |
+| 151 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0050` | `TODO`     | `GQF-0063`                         | Make CUE FILE grammar strict and source ordering shared                           |
+| 152 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0051` | `TODO`     | `GQF-0064`                         | Reject oversized CUE physical lines without synthetic parsing                     |
+| 153 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0052` | `TODO`     | `GQF-0065`                         | Define and enforce CUE track identity rules                                       |
+| 154 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0057` | `TODO`     | `GQF-0070`                         | Make Windows CD fingerprint paths Unicode-safe                                    |
+| 155 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0058` | `TODO`     | `GQF-0071`                         | Validate the complete HFS catalog parent graph before projection                  |
+| 156 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0060` | `TODO`     | `GQF-0073`                         | Accept standards-conforming multi-node HFS allocation maps                        |
+| 157 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0061` | `TODO`     | `GQF-0074`                         | Require complete classic-HFS catalog record schemas                               |
+| 158 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0068` | `TODO`     | `GQF-0081`                         | Bind Inno chunks to validated split-volume sources                                |
+| 159 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0074` | `TODO`     | `GQF-0087`                         | Scope or remove ISO `zero` directory suppression                                  |
+| 160 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0077` | `TODO`     | `GQF-0090`                         | Parse exact XAR field structure                                                   |
+| 161 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0088` | `TODO`     | `GQF-0101`                         | Select a fully valid ZIP EOCD candidate                                           |
+| 162 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0092` | `TODO`     | `GQF-0105`                         | Share song filename capacity with both engines                                    |
+| 163 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0093` | `TODO`     | `GQF-0106`                         | Key contained-track sidecars by member identity                                   |
+| 164 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0094` | `TODO`     | `GQF-0107`                         | Separate sidecar freshness from identification completeness                       |
+| 165 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0098` | `TODO`     | `GQF-0111`                         | Validate loadable mission level payloads                                          |
+| 166 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0099` | `TODO`     | `GQF-0112`                         | Preserve qualified mission descriptor identities                                  |
+| 167 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0111` | `TODO`     | `GQF-0124`                         | Contain mission-batch diagnostic capture failures                                 |
+| 168 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0119` | `TODO`     | `GQF-0132`                         | Share strict CUE sector geometry with Mac extraction                              |
+| 169 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0120` | `TODO`     | `GQF-0133`                         | Validate Mac extraction CUE INDEX fields                                          |
+| 170 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0121` | `TODO`     | `GQF-0134`                         | Bind Mac extraction cache to supervisor policy                                    |
+| 171 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0123` | `TODO`     | `GQF-0136`                         | Regenerate and enforce Mac demo oracle provenance                                 |
+| 172 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0125` | `TODO`     | `GQF-0138`                         | Make tracklist selector conflicts explicit                                        |
+| 173 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0134` | `TODO`     | `GQF-0147`                         | Reject reserved Windows ISO output components                                     |
+| 174 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0168` | `TODO`     | `GQF-0181`                         | Close HOG payload files after read failure                                        |
+| 175 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0172` | `TODO`     | `GQF-0185`                         | Release automation condition JSON exactly once                                    |
+| 176 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0173` | `TODO`     | `GQF-0186`                         | Contain introspection producer failures and scope acquired buffers                |
+| 177 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0175` | `TODO`     | `GQF-0188`                         | Bound restored checkpoint subsystem clocks                                        |
+| 178 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0180` | `TODO`     | `GQF-0193`                         | Close every opened BIN after CUE admission failure                                |
+| 179 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0182` | `TODO`     | `GQF-0195`                         | Make route geometry safe for admitted fixed-point coordinates                     |
+| 180 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0196` | `TODO`     | `GQF-0210`                         | Bound Android PIG cache sizing before narrowing                                   |
+| 181 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0201` | `TODO`     | `GQF-0215`                         | Reject DXA integer aliases before narrowing                                       |
+| 182 |    44 | MEDIUM      | 23/0/4/10/7   | `GQR-0204` | `TODO`     | `GQF-0219`                         | Produce valid JSONC server public addresses                                       |
+| 183 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0009` | `TODO`     | `GQF-0016`                         | Limit compiler-process cleanup to owned children                                  |
+| 184 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0026` | `TODO`     | `GQF-0039`                         | Give HFS installer scratch files exclusive attempt ownership                      |
+| 185 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0033` | `TODO`     | `GQF-0046`                         | Make direct PKG and standalone ISO publication transactional                      |
+| 186 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0056` | `TODO`     | `GQF-0069`                         | Bind each CD fingerprint run to one immutable BIN generation                      |
+| 187 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0062` | `TODO`     | `GQF-0075`                         | Preserve the PE resource leaf bound through offset-table parsing                  |
+| 188 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0069` | `TODO`     | `GQF-0082`                         | Route solid chunks by complete decoded prefix                                     |
+| 189 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0071` | `TODO`     | `GQF-0084`                         | Validate Galaxy external size before final publication                            |
+| 190 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0081` | `TODO`     | `GQF-0094`                         | Move STi2 fixed entry catalogs off native stack                                   |
+| 191 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0082` | `TODO`     | `GQF-0095`                         | Make level-metadata runtime initialization transactional                          |
+| 192 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0085` | `TODO`     | `GQF-0098`                         | Bind conditional save deletion to one file generation                             |
+| 193 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0086` | `TODO`     | `GQF-0099`                         | Freeze one SAF mounted-source generation                                          |
+| 194 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0097` | `TODO`     | `GQF-0110`                         | Preserve staged RAR source ownership                                              |
+| 195 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0117` | `TODO`     | `GQF-0130`                         | Serialize extraction publication by destination                                   |
+| 196 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0127` | `TODO`     | `GQF-0140`                         | Bound native mission fingerprint processes                                        |
+| 197 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0129` | `TODO`     | `GQF-0142`                         | Close graphics transaction descriptors on sync failure                            |
+| 198 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0135` | `TODO`     | `GQF-0148`                         | Use production heap ownership in CUE/ISO tests                                    |
+| 199 |    44 | MEDIUM      | 23/0/7/10/4   | `GQR-0155` | `TODO`     | `GQF-0168`                         | Decode replay direct commands once per frame                                      |
+| 200 |    43 | MEDIUM      | 23/0/10/6/4   | `GQR-0029` | `TODO`     | `GQF-0042`                         | Give SOW output leaves no-follow regular-file ownership                           |
+| 201 |    43 | MEDIUM      | 23/0/10/6/4   | `GQR-0054` | `TODO`     | `GQF-0067`                         | Restrict fingerprint CLI enumeration to owned regular inputs                      |
+| 202 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0008` | `TODO`     | `GQF-0012`                         | Pin NAT testbed base image reproducibly                                           |
+| 203 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0110` | `TODO`     | `GQF-0123`                         | Bind TinySoundFont updates to incremental rebuilds                                |
+| 204 |    42 | MEDIUM      | 23/0/2/10/7   | `GQR-0116` | `TODO`     | `GQF-0129`                         | Make the POSIX CUE/ISO entry point executable                                     |
+| 205 |    42 | MEDIUM      | 12/0/10/10/10 | `GQR-0153` | `TODO`     | `GQF-0166`                         | Complete and guard the server configuration template                              |
+| 206 |    41 | MEDIUM      | 23/0/4/10/4   | `GQR-0132` | `TODO`     | `GQF-0145`                         | Make invalid fingerprint database configuration fail closed                       |
+| 207 |    41 | MEDIUM      | 12/5/7/10/7   | `GQR-0158` | `TODO`     | `GQF-0171`                         | Remove unused paired FP environment includes                                      |
+| 208 |    40 | MEDIUM      | 23/0/7/6/4    | `GQR-0053` | `TODO`     | `GQF-0066`                         | Make CUE parsing length-aware and reject embedded NUL                             |
+| 209 |    40 | MEDIUM      | 23/0/7/6/4    | `GQR-0107` | `TODO`     | `GQF-0120`                         | Lease staged music generations across preview use                                 |
+| 210 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0163` | `TODO`     | `GQF-0176`                         | Remove the orphan JNI skeleton                                                    |
+| 211 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0203` | `TODO`     | `GQF-0217`                         | Share repeated Android executable source inventory                                |
+| 212 |    39 | MEDIUM      | 12/0/7/10/10  | `GQR-0214` | `TODO`     | `GQF-0229`                         | Reconcile chat scrolling with bounded-history appends                             |
+| 213 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0165` | `TODO`     | `GQF-0178`                         | Remove the orphaned ETC2 software decoder and header                              |
+| 214 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0206` | `TODO`     | `GQF-0221`                         | Close the owned fingerprint track-name asset reader                               |
+| 215 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0211` | `TODO`     | `GQF-0226`                         | Preserve exact bounded recent endpoint identities                                 |
+| 216 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0224` | `TODO`     | `GQF-0239`                         | Remove dead host metadata projection and legacy scanner helpers                   |
+| 217 |    36 | MEDIUM      | 12/0/4/10/10  | `GQR-0231` | `TODO`     | `GQF-0247`                         | Remove unused XFing raw payload and byte-range helpers                            |
+| 218 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0010` | `DEFERRED` | `GQF-0019`                         | Evaluate paired ETC2 self-test extraction                                         |
+| 219 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0014` | `TODO`     | `GQF-0027`                         | Finish audio URI persistence schema migration                                     |
+| 220 |    36 | MEDIUM      | 12/0/7/10/7   | `GQR-0148` | `TODO`     | `GQF-0161`                         | Remove stale extraction failure state                                             |
+| 221 |    34 | LOW         | 12/0/2/10/10  | `GQR-0015` | `TODO`     | `GQF-0028`                         | Remove no-op crash Activity compatibility shim                                    |
+| 222 |    34 | LOW         | 12/0/2/10/10  | `GQR-0101` | `TODO`     | `GQF-0114`                         | Remove or restore `isMissionHog` ownership                                        |
+| 223 |    34 | LOW         | 12/0/2/10/10  | `GQR-0133` | `TODO`     | `GQF-0146`                         | Remove unused CUE test helpers                                                    |
+| 224 |    34 | LOW         | 12/0/2/10/10  | `GQR-0221` | `TODO`     | `GQF-0236`                         | Remove unreachable former Play artifact-promotion path                            |
+| 225 |    33 | LOW         | 12/0/4/10/7   | `GQR-0013` | `TODO`     | `GQF-0026`                         | Remove unsupported launcher file-layout migration state                           |
+| 226 |    33 | LOW         | 12/0/4/10/7   | `GQR-0030` | `TODO`     | `GQF-0043`                         | Correct SOW filtered progress population accounting                               |
+| 227 |    33 | LOW         | 12/0/4/10/7   | `GQR-0073` | `TODO`     | `GQF-0086`                         | Define truthful Inno solid-chunk progress                                         |
+| 228 |    33 | LOW         | 12/0/4/10/7   | `GQR-0104` | `TODO`     | `GQF-0117`                         | Include generated aliases in storage and progress totals                          |
+| 229 |    33 | LOW         | 12/0/4/10/7   | `GQR-0113` | `TODO`     | `GQF-0126`                         | Preserve zero-length HFS files                                                    |
+| 230 |    33 | LOW         | 12/0/4/10/7   | `GQR-0138` | `TODO`     | `GQF-0151`                         | Make fingerprint assertions evaluate operands once                                |
+| 231 |    33 | LOW         | 12/0/4/10/7   | `GQR-0141` | `TODO`     | `GQF-0154`                         | Make empty music generations explicit                                             |
+| 232 |    33 | LOW         | 12/0/4/10/7   | `GQR-0183` | `TODO`     | `GQF-0196`                         | Check import reservation and declared-size arithmetic                             |
+| 233 |    32 | LOW         | 12/0/7/6/7    | `GQR-0049` | `TODO`     | `GQF-0062`                         | Resolve or reject Windows drive-relative output identity                          |
+| 234 |    31 | LOW         | 12/0/2/10/7   | `GQR-0139` | `TODO`     | `GQF-0152`                         | Initialize GOG LZMA trailing-data fixtures                                        |
+| 235 |    29 | LOW         | 12/0/4/6/7    | `GQR-0041` | `TODO`     | `GQF-0054`                         | Propagate native JSON/output stream failures                                      |
+| 236 |    29 | LOW         | 12/0/4/6/7    | `GQR-0079` | `TODO`     | `GQF-0092`                         | Make zero-length SOW extraction allocation-independent                            |
+| 237 | 26 | LOW | 8/0/4/10/4 | `GQR-0235` | `TODO` | `GQF-0251` | Use consistent UTF-8 fingerprint audio diagnostics |
+| 238 |     0 | REFERENCE   | 0/0/0/0/0     | `GQR-0001` | `DONE`     | -                                  | Add a capacity-aware shared texture extension lookup and exact boundary tests     |
 
 ## Terminal coverage-chunk impact annotations
 
@@ -360,816 +378,830 @@ On 2026-09-30, annotations 0168-0184 were reconciled from their durable historic
 | 3 |    84 | IMMEDIATE   | 32/28/7/10/7  | `GQ1-CHUNK-0285` | `DEFER`               | `GQR-0185`          | `REFERENCE` | native header APIs, RNG annotation contract and final-line reader                                                                                     |
 | 4 |    84 | IMMEDIATE   | 32/28/7/10/7  | `GQ1-CHUNK-0314` | `RETAIN`              | `GQR-0185`          | `REFERENCE` | D2 textured glyph batch, KTX2 and PNG/stock upload lifecycle, ETC2 diagnostic and dual-texture shader program                                         |
 | 5 |    84 | IMMEDIATE   | 32/28/7/10/7  | `GQ1-CHUNK-0316` | `RETAIN`              | `GQR-0185`          | `REFERENCE` | D2 native texture/cache lifecycle, paired line batch, current unit binding and single/dual-texture draw integration                                   |
-| 6 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0014` | `REFACTOR` | `BR-0106` | `REFERENCE` | Server configuration defaults, non-Play method enablement and implicit unverified Google identity |
-| 7 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0024` | `REFACTOR` | `BR-0121` | `REFERENCE` | Friend acceptance/block transitions, presence disclosure, coded-lobby join and client acknowledgements |
-| 8 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0025` | `REFACTOR` | `BR-0123` | `REFERENCE` | Admin ban database-only enforcement versus live websocket/lobby/relay/STUN capabilities |
-| 9 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0027` | `REFACTOR` | `BR-0125` | `REFERENCE` | External Google verifier per-attempt transport, missing flow budgets and body processing |
-| 10 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0028` | `REFACTOR` | `BR-0126` | `REFERENCE` | Public status per-request global lobby cloning, SQLite aggregates and HTTP admission |
-| 11 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0029` | `REFACTOR` | `BR-0127` | `REFERENCE` | Server pre-auth cap, repeated identity admission, player registry overwrite and stale cleanup |
-| 12 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0030` | `REFACTOR` | `BR-0128` | `REFERENCE` | Server required listener startup, nested detached STUN loop, health and failure exit |
-| 13 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0032` | `REFACTOR` | `BR-0132` | `REFERENCE` | Relay weak shared token, destination-driven sender registration and client frame acceptance |
-| 14 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0033` | `REFACTOR` | `BR-0133` | `REFERENCE` | Relay non-atomic capacity, repeated starts and two-hour absolute lifetime without terminal release |
-| 15 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0034` | `REFACTOR` | `BR-0137` | `REFERENCE` | Three authentication branches still convert ban-query errors into permission |
-| 16 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0035` | `REFACTOR` | `BR-0139` | `REFERENCE` | Synchronous rusqlite mutex operations called inline from asynchronous service work |
-| 17 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0036` | `REFACTOR` | `BR-0140` | `REFERENCE` | SQLite append-only identity, connection, match and snapshot growth without maintenance budgets |
-| 18 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0037` | `REFACTOR` | `BR-0143` | `REFERENCE` | Known-key callsign/timestamp signatures lack nonce, audience and transcript binding |
-| 19 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0038` | `REFACTOR` | `BR-0144` | `REFERENCE` | Bounded delivery silently loses control events and writer failure does not cancel reader |
-| 20 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0039` | `REFACTOR` | `BR-0153` | `REFERENCE` | Late-join still holds outer session read guard when reacquiring same session mutably |
-| 21 | 83 | IMMEDIATE | 35/28/7/10/3 | `GQ1-SWEEP-005` | `REFACTOR` | `BR-0153` | `REFERENCE` | Cross-language server startup/auth/transport/lock/resource sweep; current local repairs do not close existing production roots |
-| 22 |    82 | IMMEDIATE   | 23/35/7/10/7  | `GQ1-CHUNK-0165` | `CANDIDATE`           | `GQF-0175`          | `PRIMARY`   | Paired headless executable target construction                                                                                                        |
-| 23 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0127` | `CANDIDATE`           | `GQF-0156`          | `PRIMARY`   | Paired menu/window debug accessors                                                                                                                    |
-| 24 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0132` | `CANDIDATE`           | `GQF-0156`          | `REFERENCE` | Paired menu/window debug accessors                                                                                                                    |
-| 25 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0135` | `CANDIDATE`           | `GQF-0156`          | `REFERENCE` | Paired menu/window debug accessors                                                                                                                    |
-| 26 |    71 | HIGH        | 12/35/7/10/7  | `GQ1-CHUNK-0377` | `CANDIDATE`           | `GQR-0192`          | `REFERENCE` | D2 RNG backend/streams/state/counters/annotation and full paired shared-owner candidate                                                               |
-| 27 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-004` | `REFACTOR` | `GQR-0128` | `REFERENCE` | Archive projection/budgets, Kotlin atomic publication, storage arithmetic, strict config admission and native save recovery sweep |
-| 28 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-006` | `REFACTOR` | `GQR-0154` | `REFERENCE` | Audio EOF ordering, music snapshot allocation, input transition budget, surface references and cross-domain ownership sweep |
-| 29 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-010` | `RETAIN` | `GQR-0212` | `REFERENCE` | Frame profiling bounds, source hashing/materialization, cache retention and UI storage work sweep |
-| 30 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-011` | `REFACTOR` | `GQR-0170` | `REFERENCE` | Native/JVM diagnostic ownership, durable error delivery, privacy and truthful process/storage outcomes sweep |
-| 31 | 65 | HIGH | 35/12/5/8/5 | `GQ1-RECHECK-0045` | `REFACTOR` | `BR-0164` | `REFERENCE` | Standalone emulator relay still learns any first sender and forwards every other source |
-| 32 | 65 | HIGH | 32/12/7/10/4 | `GQ1-RECHECK-0020` | `REFACTOR` | `BR-0114` | `REFERENCE` | Proxy-derived client identity for websocket limiting, observed candidates and STUN allowlisting |
-| 33 | 65 | HIGH | 32/12/7/10/4 | `GQ1-RECHECK-0021` | `REFACTOR` | `BR-0117` | `REFERENCE` | Unused five-per-hour authentication limiter and failure-branch admission |
-| 34 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0245` | `CANDIDATE`           | `GQF-0191`          | `PRIMARY`   | merged-wall cache ownership, texture lifetime and inherited transaction residue                                                                       |
-| 35 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0246` | `CANDIDATE`           | `GQF-0191`          | `REFERENCE` | merged-wall cache composition, reservation, UV/source samples and GL-state queries                                                                    |
-| 36 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0278` | `CANDIDATE`           | `GQF-0197`          | `PRIMARY`   | paired bitmap/font dispatch, color glyph fallback and deterministic palette cache                                                                     |
-| 37 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0294` | `CANDIDATE`           | `GQR-0189`          | `PRIMARY`   | native pilot adapters/persistence/model color and cooperative duplicate pickup rewards                                                                |
-| 38 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0298` | `CANDIDATE`           | `GQR-0190`          | `PRIMARY`   | render/FOV and paired texture-label production, native score/music and save-format prefix                                                             |
-| 39 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0307` | `CANDIDATE`           | `GQR-0192`          | `PRIMARY`   | native RNG streams, state/count and annotation implementation, paired header/default/compiler/opt-out ABI                                             |
-| 40 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0311` | `CANDIDATE`           | `GQR-0184`          | `REFERENCE` | D2 paired bitmap/font dispatch and glyph allocation, current font names, deterministic palette cache and rectangles                                   |
-| 41 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0318` | `CANDIDATE`           | `GQR-0192`          | `REFERENCE` | D2 RNG/header annotation, render/input/platform and texture interfaces, diagnostic externs and final-line read contract                               |
-| 42 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0337` | `CANDIDATE`           | `GQR-0189`          | `REFERENCE` | D2 pilot schemas/helpers, model rendering interfaces and cooperative/native powerup rewards                                                           |
-| 43 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0341` | `RETAIN`              | `GQR-0190`          | `REFERENCE` | D2 rendering, high scores, secret-area interface, songs and save schema top                                                                           |
-| 44 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0344` | `RETAIN`              | `GQR-0178`          | `REFERENCE` | D2 restore tail, trigger disk/runtime storage, cache ownership, text, thief policy and titles                                                         |
-| 45 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0385` | `RETAIN`              | `GQR-0184`          | `REFERENCE` | D1 2D CMake source registration and paired shared font ownership                                                                                      |
-| 46 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0398` | `RETAIN`              | `GQR-0184`          | `REFERENCE` | D2 2D CMake source registration, paired font dispatch and shared monochrome glyph/control handling                                                    |
-| 47 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0016` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
-| 48 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0040` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
-| 49 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0041` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
-| 50 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0042` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
-| 51 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0044` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
-| 52 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0467` | `RETAIN`              | `GQR-0210`          | `PRIMARY`   | Retain shared slot presentation and bounded IO; make preparse nesting admission match the accepted JSON grammar                                       |
-| 53 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0492` | `RETAIN`              | `GQR-0210`          | `REFERENCE` | Retain typed configuration admission and ordinary rollback; complete existing grammar and cross-process generation owners                             |
-| 54 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0650` | `RETAIN`              | `GQR-0210`          | `REFERENCE` | Retain shared typed config and controller policy; finish existing bounded grammar and durable publication owners                                      |
-| 55 |    59 | MEDIUM-HIGH | 32/0/10/10/7  | `GQ1-CHUNK-0141` | `NO_INHERITED_EFFECT` | `BR-0194`           | `REFERENCE` | Bootstrap certificates before enabling the nginx TLS site                                                                                             |
-| 56 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0125` | `CANDIDATE`           | `GQF-0155`          | `PRIMARY`   | Paired Android PhysFS initialization residue                                                                                                          |
-| 57 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0137` | `CANDIDATE`           | `GQF-0155`          | `REFERENCE` | Paired Android PhysFS initialization residue                                                                                                          |
-| 58 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0153` | `CANDIDATE`           | `GQF-0169`          | `PRIMARY`   | Paired Redbook Android extension declarations                                                                                                         |
-| 59 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0155` | `CANDIDATE`           | `GQF-0170`          | `PRIMARY`   | Paired HMP Android wrapper residue                                                                                                                    |
-| 60 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0158` | `CANDIDATE`           | `DMR1-CHUNK-003`    | `REFERENCE` | Extract paired texture-overlay draw bodies                                                                                                            |
-| 61 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0159` | `CANDIDATE`           | `GQF-0172`          | `PRIMARY`   | Residual paired Android mixer init logging                                                                                                            |
-| 62 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0164` | `CANDIDATE`           | `GQF-0174`          | `PRIMARY`   | Paired secret-area save serialization helpers                                                                                                         |
-| 63 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0167` | `NO_INHERITED_EFFECT` | `GQF-0174`          | `REFERENCE` | Paired secret-area save serialization helpers                                                                                                         |
-| 64 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0289` | `CANDIDATE`           | `GQR-0188`          | `PRIMARY`   | native collision/loot/FVI/effects/console/config/endlevel integration and paired config minimization                                                  |
-| 65 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0338` | `CANDIDATE`           | `GQR-0188`          | `REFERENCE` | D2 config/defaults/graphics publication, console routing, control probes and coop forwarding headers                                                  |
-| 66 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-001` | `RETAIN` | `GQR-0188` | `REFERENCE` | Paired overlay, virtual input and scene profiling already shared; paired config policy remains an accepted candidate |
-| 67 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-009` | `RETAIN` | `GQR-0192` | `REFERENCE` | Paired RNG/checkpoint state, per-frame FP environment, shared replay gates and artifact identity sweep |
-| 68 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-013` | `REFACTOR` | `GQR-0189` | `REFERENCE` | Paired cooperative pickup predicates, orphan JNI/ETC2 code and narrow shared ownership reconciliation |
-| 69 |    56 | MEDIUM-HIGH | 32/0/4/10/10  | `GQ1-CHUNK-0376` | `RETAIN`              | `GQR-0202`          | `PRIMARY`   | D2 save thumbnail/object/player codecs, scoped save paths, raw copy, writer and restore lifecycle                                                     |
-| 70 | 56 | MEDIUM-HIGH | 32/0/4/10/10 | `GQ1-CHUNK-0691` | `RETAIN` | `BR-0078` | `REFERENCE` | Retain current verified dependency and bitmap owner fixtures; reconcile TGA failure oracle with existing output-preservation policy |
-| 71 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0009` | `PRE-0108`            | `GQF-0037`          | `PRIMARY`   | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
-| 72 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0015` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
-| 73 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0019` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
-| 74 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0023` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
-| 75 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0093` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
-| 76 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0170` | `RETAIN`              | `GQF-0007`          | REFERENCE   | duplicate evidence for an open high-confidence stack-boundary defect, with no second remediation owner                                                |
-| 77 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0203` | `RETAIN`              | `GQF-0183`          | `PRIMARY`   | weapon-order pilot summaries, patch coordination and JNI publication                                                                                  |
-| 78 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0204` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | controller schema admission, pilot patch batches and JNI acquisition                                                                                  |
-| 79 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0207` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | batch-axis JNI acquisition, mailbox drain, keyboard callbacks and admin input                                                                         |
-| 80 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0208` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | launcher pilot selection, grouped preference publication and JNI failure handling                                                                     |
-| 81 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0231` | `RETAIN`              | `GQR-0176`          | `PRIMARY`   | Input-demo file/header/frame parsing and aggregate typed memory admission                                                                             |
-| 82 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0237` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | recorder session memory, capture, staging, truncate and artifact flush                                                                                |
-| 83 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0238` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | replay command numeric admission, aggregate expansion, checkpoint integrity and session publication                                                   |
-| 84 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0239` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | result schema, comparison, standalone file I/O and C-facing allocation boundaries                                                                     |
-| 85 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0242` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | state-trace schema, header/frame I/O, final close and C-facing allocation boundaries                                                                  |
-| 86 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0260` | `RETAIN`              | `GQF-0192`          | `PRIMARY`   | replacement texture discovery, decoder ownership and borrowed-path eviction lifetime                                                                  |
-| 87 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0261` | `RETAIN`              | `GQF-0194`          | `PRIMARY`   | Redbook source handle ownership and native playlist JSON admission                                                                                    |
-| 88 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0262` | `RETAIN`              | `GQF-0194`          | `REFERENCE` | Redbook complete source admission, sector reads, final PCM publication and initialization                                                             |
-| 89 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0273` | `RETAIN`              | `BR-0339`           | `REFERENCE` | network overlay viewport sizing, polling lifecycle and diagnostic freshness                                                                           |
-| 90 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0274` | `RETAIN`              | `BR-0342`           | `REFERENCE` | import size arithmetic, LAN packet authority and shared protocol constants                                                                            |
-| 91 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0275` | `RETAIN`              | `BR-0090`           | `REFERENCE` | client/server wire schema, authentication and metric/candidate admission                                                                              |
-| 92 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0277` | `RETAIN`              | `BR-0343`           | `REFERENCE` | build-variant cleartext transport policy                                                                                                              |
-| 93 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0286` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | multi-source audio and model header contracts                                                                                                         |
-| 94 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0291` | `DEFER`               | `BR-0195`           | `REFERENCE` | native cooperative network dispatch, restore/election/status, difficulty history, diagnostics and robot movement/kill hooks                           |
-| 95 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0295` | `RETAIN`              | `BR-0195`           | `REFERENCE` | native UDP tail/headers, heartbeat/refusal/extras and classic/input recording lifecycle                                                               |
-| 96 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0301` | `RETAIN`              | `BR-0356`           | `REFERENCE` | native UDP admission, authenticated sequence/welcome, object synchronization and full game-info codecs                                                |
-| 97 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0302` | `RETAIN`              | `BR-0356`           | `REFERENCE` | native UDP authenticated dispatch, sync publication, reliable relay and position-state acceptance                                                     |
-| 98 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0305` | `RETAIN`              | `GQR-0191`          | `PRIMARY`   | native runtime footer write/preflight/apply, morph/effect/stuck references, secret serialization and thumbnails                                       |
-| 99 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0324` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 PDATA liveness/playing/world gates, P2P heartbeat, observer relay, extras and current protocol headers                                             |
-| 100 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0327` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 companion reservation and robot position/thief/flare/explosion/boss hooks plus evolving multiplayer headers                                        |
-| 101 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0333` | `RETAIN`              | `GQR-0197`          | `PRIMARY`   | D2 AI paths/SIM/runtime adapters, automap labels/batching/lifecycle and HAM codec interfaces                                                          |
-| 102 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0334` | `RETAIN`              | `GQR-0191`          | `REFERENCE` | D2 walls, doorway semantics, stuck-object retirement and native weapon adapters                                                                       |
-| 103 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0348` | `RETAIN`              | `GQR-0199`          | `PRIMARY`   | D2 original base asset generation, model ownership and bounded sound/source admission                                                                 |
-| 104 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0351` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D1 checkpoint preview, bounded memory codec, object unions and native identity admission                                                              |
-| 105 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0368` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 multiplayer cooperative dispatch, inventory/status, thief, master migration and evolving recovery/gameplay stamps                                  |
-| 106 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0369` | `RETAIN`              | `BR-0356`           | `REFERENCE` | D2 UDP admission, reconnect/welcome, object sync, identity and game-info with current stamped join/transport probes                                   |
-| 107 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0370` | `RETAIN`              | `BR-0356`           | `REFERENCE` | D2 UDP sync, menus, selection, join wait, lifecycle, reliable queues, observer relay and current packet fences                                        |
-| 108 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0375` | `RETAIN`              | `GQR-0191`          | `REFERENCE` | D2 save runtime IO, fidelity records, footer preflight and current delegated runtime tails                                                            |
-| 109 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0445` | `RETAIN`              | `BR-0343`           | `REFERENCE` | Preserve process isolation and flavor-specific manifest declarations; close existing release transport policy owner                                   |
-| 110 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0446` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain shared loading overlay and LAN diagnostic policy; authentication remains an existing distinct owner                                            |
-| 111 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0450` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Keep controller mapping policy shared and close existing slot-generation transaction owner                                                            |
-| 112 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0455` | `RETAIN`              | `BR-0490`           | `REFERENCE` | Retain distinct LAN and online projections; finish authoritative LAN transitions and host controls under existing owners                              |
-| 113 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0456` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Preserve shared touch models and disposable-format policy; close ordinary publication and asset ownership owners                                      |
-| 114 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0459` | `RETAIN`              | `BR-0457`           | `REFERENCE` | Keep cryptographic reconnect identity distinct from LAN display IDs; retain completed button deduplication and bound optional UPnP                    |
-| 115 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0462` | `RETAIN`              | `BR-0148`           | `REFERENCE` | Keep probe cancellation and owned socket boundaries; complete pair association and shared initial-focus policy                                        |
-| 116 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0469` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Preserve shared touch slots and colors; complete ordinary durable publication and event-time acceleration owners                                      |
-| 117 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0471` | `RETAIN`              | `GQR-0170`          | `REFERENCE` | Retain game-specific native format ownership and scoped caches; complete existing JNI and grouped pilot contracts                                     |
-| 118 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0476` | `RETAIN`              | `BR-0461`           | `REFERENCE` | Retain shared bounded folder traversal and safe migration repairs; use one supported import-format admission policy                                   |
-| 119 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0478` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain current schema, active-set and registry repairs; complete existing metadata budgets and capped chat update ownership                           |
-| 120 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0479` | `RETAIN`              | `GQR-0170`          | `REFERENCE` | Retain typed autoselect and preview lifecycle repairs; resolve previews through their owning audio set                                                |
-| 121 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0484` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain typed AcoustID retry and candidate evidence; complete existing metadata budgets and immutable join approval                                    |
-| 122 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0489` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain one disposable plural audio URI schema and atomic registry publication; finish existing native parser and resource transaction owners          |
-| 123 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0500` | `RETAIN`              | `BR-0463`           | `REFERENCE` | Retain authoritative format roles and shared mission policy; reject malformed secret origins without changing their identity                          |
-| 124 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0501` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain validated PIG layout metadata; apply existing shared budgets to every summary reader                                                           |
-| 125 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0507` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain request-generation identity and current metadata target helpers; enforce shared bounded descriptor admission before analysis                   |
-| 126 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0508` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain archive staging bounds and scoped cancellation; reopen existing worker protocol acceptance at actual callers                                   |
-| 127 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0509` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain isolated paired metadata services and FIFO lifetime; complete reopened request protocol through service terminal paths                         |
-| 128 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0510` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain LAN transport recovery and mission handshake; complete existing unauthenticated discovery and session owners                                   |
-| 129 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0511` | `RETAIN`              | `BR-0490`           | `REFERENCE` | Keep correlated LAN launch preparation; finish serialized membership and validated host controls                                                      |
-| 130 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0512` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain one joined lobby heartbeat owner and complete its authenticated generation lifetime                                                            |
-| 131 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0513` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep activity JNI contracts and current input helpers; validate existing engine ownership and lifecycle repairs                                       |
-| 132 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0514` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared activity overlay wiring and game-process bridge; finish existing accessible actions and command contracts                               |
-| 133 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0515` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain lifecycle-owned polling and current release routing; finish existing cross-process preferences and launch admission                            |
-| 134 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0516` | `RETAIN`              | `BR-0266`           | `REFERENCE` | Retain one activity poll and private debug boundary; finish correlated automation and durable transient launches                                      |
-| 135 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0517` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep centralized controller destinations and raw menu axes; finish existing takeover and input-admission acceptance                                   |
-| 136 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0518` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain catalog stream ownership; carry existing shared metadata budget through every nested archive and skipped payload                               |
-| 137 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0519` | `RETAIN`              | `BR-0186`           | `REFERENCE` | Retain file-set mod ownership and scanner preflight; finish existing archive, identity and registry transactions                                      |
-| 138 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0520` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Keep mission-scoped launch catalogs and partial HAM schema validation; finish shared metadata admission and launch publication                        |
-| 139 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0522` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Keep shared mission status, invitation and join routing; finish existing LAN host authority and lifetime owners                                       |
-| 140 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0523` | `RETAIN`              | `BR-0497`           | `REFERENCE` | Retain the shared UDP forwarder and explicit startup/failure seam; finish existing peer authority and teardown                                        |
-| 141 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0524` | `RETAIN`              | `BR-0499`           | `REFERENCE` | Retain one matchmaking service and its generation-owned transport handoff; close existing endpoint and protocol owners                                |
-| 142 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0525` | `RETAIN`              | `BR-0116`           | `REFERENCE` | Keep shared matchmaking dispatch and game-process IPC; enforce existing bounded protocol and acknowledged state owners                                |
-| 143 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0527` | `RETAIN`              | `BR-0499`           | `REFERENCE` | Retain shared multiplayer navigation and dialog factories; reconcile online reachability and existing endpoint/resume owners                          |
-| 144 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0530` | `RETAIN`              | `BR-0339`           | `REFERENCE` | Retain bounded shared stats projection and native snapshots; close existing viewport, detach and escort-affinity owners                               |
-| 145 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0531` | `RETAIN`              | `GQR-0218`          | `PRIMARY`   | Retain shared music commands and source admission; guard native snapshot allocation and reconcile list generations                                    |
-| 146 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0536` | `RETAIN`              | `BR-0497`           | `REFERENCE` | Retain shared setup command and migration adapters; finish existing authenticated proxy and replacement ownership                                     |
-| 147 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0539` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain shared launcher navigation and import dialogs; finish ownership-consistent removal and config transaction acceptance                           |
-| 148 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0548` | `RETAIN`              | `BR-0018`           | `REFERENCE` | Retain repaired direct ZIP and collision checks; reopen existing archive-budget owner for direct Setup 7z bypass                                      |
-| 149 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0552` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain file-set content grouping and shared detail readers; finish existing metadata, publication and download terminal owners                        |
-| 150 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0553` | `RETAIN`              | `GQR-0045`          | `REFERENCE` | Preserve current music identity and preview repairs; complete existing full-track work and metadata cancellation owners                               |
-| 151 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0554` | `RETAIN`              | `BR-0018`           | `REFERENCE` | Retain bounded shared text and immutable grants; extend existing provider UI and extraction budget owners at actual callers                           |
-| 152 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0555` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Preserve bounded descriptor reads and owned preview requests; retain existing worker terminal and metadata admission owners                           |
-| 153 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0556` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain shared native-summary presentation and current route labels; finish existing bounded metadata and retry owners                                 |
-| 154 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0631` | `RETAIN`              | `BR-0642`           | `REFERENCE` | Retain handwritten issue tracking and distribution guidance; reconcile partially repaired privacy disclosure against shipped sources                  |
-| 155 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0634` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | Preserve explicit recording-fidelity and engine-parity gates; reconcile the surviving private corpus without replay compensation                      |
-| 156 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0643` | `RETAIN`              | `BR-0461`           | `REFERENCE` | Preserve current-only touch policy and verified import-root transaction boundary; keep lifecycle and fault acceptance owned                           |
-| 157 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0647` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain safe PIG metadata and press-owned dispatcher replacement; require shared budgets and coherent graphics/GOG admission                           |
-| 158 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0649` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Preserve typed remote lookup, native format parity and current tray controls; close existing bounded metadata and generation owners                   |
-| 159 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0651` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Preserve shared encoding, mission admission and diagnostics; close existing metadata, native parity and lifecycle owners                              |
-| 160 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0652` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain shared resume and authenticated reconnect primitives; complete existing native save and session identity acceptance                            |
-| 161 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0654` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain plural audio schema, external ownership and decoder integrity; finish existing admission and resource publication owners                       |
-| 162 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0655` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain bounded traversal, atomic leaf copy and input mixing; close existing grouped replay and metadata-worker owners                                 |
-| 163 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0656` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain shared metadata and preview helpers; close actual worker-generation and LAN authority owners                                                   |
-| 164 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0658` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain parameterized game automation and paired cooperative scenarios; distinguish assertions from diagnostic actions                                 |
-| 165 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0660` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain real renderer, import, preview and route assertions; finish existing native audio and lifetime acceptance                                      |
-| 166 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0664` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Preserve paired save, axis and boss behavior fixtures without promoting happy-path coverage to admission or concurrency proof                         |
-| 167 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQ1-CHUNK-0710` | `RETAIN` | `BR-0392` | `REFERENCE` | Retain exact Cargo lock provenance; close existing TLS graph and test-only dependency owners |
-| 168 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0013` | `PRE-0108`            | `GQF-0047`          | `PRIMARY`   | ISO output directory traversal and final opens                                                                                                        |
-| 169 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0018` | `PRE-0108`            | `BR-0497`           | `REFERENCE` | Authenticate and bound dynamic host-proxy peer admission                                                                                              |
-| 170 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0021` | `PRE-0108`            | `GQF-0061`          | `PRIMARY`   | Complete CD extraction attempt budget                                                                                                                 |
-| 171 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0030` | `PRE-0108`            | `GQF-0051`          | `PRIMARY`   | STi2 method-15 decode scratch                                                                                                                         |
-| 172 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0031` | `PRE-0108`            | `GQF-0078`          | `PRIMARY`   | Inno version admission arithmetic                                                                                                                     |
-| 173 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0032` | `PRE-0108`            | `GQF-0076`          | `PRIMARY`   | Inno metadata LZMA peak-live memory                                                                                                                   |
-| 174 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0033` | `PRE-0108`            | `GQF-0083`          | `PRIMARY`   | Inno aggregate repeated solid-chunk decoding                                                                                                          |
-| 175 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0034` | `PRE-0108`            | `GQF-0083`          | `REFERENCE` | Inno aggregate repeated solid-chunk decoding                                                                                                          |
-| 176 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0036` | `PRE-0108`            | `GQF-0047`          | `REFERENCE` | ISO output directory traversal and final opens                                                                                                        |
-| 177 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0043` | `PRE-0108`            | `GQF-0051`          | `REFERENCE` | STi2 method-15 decode scratch                                                                                                                         |
-| 178 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0049` | `PRE-0108`            | `BR-0080`           | `REFERENCE` | Validate ship-status player and weapon indices before caching or display                                                                              |
-| 179 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0054` | `PRE-0108`            | `GQF-0100`          | `PRIMARY`   | ZIP early-marker prompt bypass                                                                                                                        |
-| 180 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0056` | `PRE-0108`            | `GQF-0108`          | `PRIMARY`   | RAR policy rejection fallback                                                                                                                         |
-| 181 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0061` | `PRE-0108`            | `GQF-0118`          | `PRIMARY`   | Nested mission music container catalogs                                                                                                               |
-| 182 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0062` | `PRE-0108`            | `GQF-0119`          | `PRIMARY`   | Streaming descriptor nested music budget                                                                                                              |
-| 183 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0063` | `PRE-0108`            | `BR-0090`           | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication                                                                 |
-| 184 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0065` | `PRE-0108`            | `BR-0106`           | `REFERENCE` | Fail closed when Google authentication is not configured                                                                                              |
-| 185 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0066` | `PRE-0108`            | `BR-0108`           | `REFERENCE` | Reject incomplete TLS configuration instead of serving plaintext                                                                                      |
-| 186 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0067` | `PRE-0108`            | `BR-0090`           | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication                                                                 |
-| 187 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0068` | `PRE-0108`            | `BR-0121`           | `REFERENCE` | Enforce the friend-state authorization invariant on accept, presence, and join                                                                        |
-| 188 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0069` | `PRE-0108`            | `BR-0127`           | `REFERENCE` | Give every WebSocket connection generation-safe session ownership                                                                                     |
-| 189 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0070` | `PRE-0108`            | `BR-0132`           | `REFERENCE` | Authenticate each relay endpoint and preserve its exact lobby slot                                                                                    |
-| 190 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0071` | `PRE-0108`            | `BR-0137`           | `REFERENCE` | Fail closed when ban enforcement cannot read the database                                                                                             |
-| 191 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0073` | `PRE-0108`            | `BR-0115`           | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work                                                                                |
-| 192 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0075` | `PRE-0108`            | `BR-0115`           | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work                                                                                |
-| 193 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0076` | `PRE-0108`            | `BR-0116`           | `REFERENCE` | Validate and cap ICE candidates before storing or expanding them                                                                                      |
-| 194 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0079` | `PRE-0108`            | `GQF-0024`          | `PRIMARY`   | android/app/src/main/cpp/CMakeLists.txt` production dependency fetches                                                                                |
-| 195 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0083` | `PRE-0108`            | `GQF-0125`          | `PRIMARY`   | Bounded extraction Python runtime                                                                                                                     |
-| 196 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0084` | `PRE-0108`            | `GQF-0127`          | `PRIMARY`   | Bounded extractor descendant ownership                                                                                                                |
-| 197 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0088` | `PRE-0108`            | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
-| 198 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0090` | `PRE-0108`            | `GQF-0128`          | `PRIMARY`   | Extractor link and special-file outputs                                                                                                               |
-| 199 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0092` | `PRE-0108`            | `GQF-0078`          | `REFERENCE` | Inno version admission arithmetic                                                                                                                     |
-| 200 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0095` | `PRE-0108`            | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
-| 201 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0106` | `PRE-0108`            | `GQF-0076`          | `REFERENCE` | Inno metadata LZMA peak-live memory                                                                                                                   |
-| 202 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0119` | `NO_INHERITED_EFFECT` | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
-| 203 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0121` | `NO_INHERITED_EFFECT` | `GQF-0119`          | `REFERENCE` | Streaming descriptor nested music budget                                                                                                              |
-| 204 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0122` | `NO_INHERITED_EFFECT` | `GQF-0118`          | `REFERENCE` | Nested mission music container catalogs                                                                                                               |
-| 205 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0128` | `CANDIDATE`           | `GQF-0127`          | `REFERENCE` | Bounded extractor descendant ownership                                                                                                                |
-| 206 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0130` | `NO_INHERITED_EFFECT` | `GQF-0125`          | `REFERENCE` | Bounded extraction Python runtime                                                                                                                     |
-| 207 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0390` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D1 native executable/source/Android policy, headless metadata/test construction and paired desktop JSON fallback                                      |
-| 208 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0391` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D1 maths target naming, platform math, relocated native test graph and current shared test registration                                               |
-| 209 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0404` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D2 native executable/source inventories, headless/route/metadata targets and desktop JSON acquisition                                                 |
-| 210 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0405` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D2 maths target and completed native test relocation                                                                                                  |
-| 211 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0606` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | Align paired packet-log consumers with the native producer; finish existing verified texture-tool acquisition                                         |
-| 212 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0716` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 213 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0717` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 214 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0718` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 215 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0719` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 216 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0720` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 217 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0721` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 218 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0722` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 219 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0723` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 220 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0724` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 221 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0725` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 222 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0726` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 223 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0727` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 224 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0728` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 225 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0729` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 226 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0730` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 227 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0731` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 228 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0732` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 229 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0733` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 230 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0734` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 231 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0735` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 232 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0736` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 233 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0737` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 234 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0738` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 235 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0739` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 236 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0740` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 237 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0741` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 238 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0742` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 239 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0743` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 240 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0744` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 241 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0745` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 242 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0746` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 243 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0747` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 244 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0748` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 245 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0749` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 246 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-SWEEP-007` | `RETAIN` | `GQR-0011` | `REFERENCE` | Build portability, exact tool identity, verified dependency publication and release artifact admission sweep |
-| 247 | 54 | MEDIUM-HIGH | 32/0/2/10/10 | `GQ1-CHUNK-0709` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain intentional launcher and Redbook inputs; reconcile remaining generated extraction residue with existing hygiene owner |
-| 248 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0074` | `PRE-0108`            | `BR-0148`           | `REFERENCE` | Track and complete connectivity checks per player pair                                                                                                |
-| 249 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0287` | `RETAIN`              | `GQR-0187`          | `PRIMARY`   | native title/briefing/cache/weapon/rewind interfaces and D1 text extension                                                                            |
-| 250 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0320` | `RETAIN`              | `GQR-0193`          | `PRIMARY`   | D2 MVE output-rate conversion, custom allocation, startup trim and callback/producer/teardown ownership                                               |
-| 251 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0322` | `RETAIN`              | `GQR-0194`          | `PRIMARY`   | D2 Guide-Bot menu dispatch, scaled source allocation and native cooperative owner generation with current extensions                                  |
-| 252 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0326` | `RETAIN`              | `GQR-0195`          | `PRIMARY`   | D1-in-D2 facade, exact RLE/remap and model structural validation with unchecked signed renderer fields                                                |
-| 253 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0350` | `RETAIN`              | `GQR-0195`          | `REFERENCE` | D2 original model/Guide-Bot/effect/wall/robot publication overlay                                                                                     |
-| 254 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0352` | `RETAIN`              | `GQR-0200`          | `PRIMARY`   | D1 checkpoint object/AI/world validation and current morph/stuck/effect staging                                                                       |
-| 255 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0403` | `RETAIN`              | `GQR-0193`          | `REFERENCE` | D2 movie decoder CMake target naming, optional mixer links and platform timing definitions                                                            |
-| 256 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0411` | `RETAIN`              | `BR-0398`           | `REFERENCE` | Server deployment, LAN certificate, service, NAT and Rust maintenance scripts                                                                         |
-| 257 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0475` | `RETAIN`              | `GQR-0212`          | `PRIMARY`   | Retain validated BinHex integrity and preview lifecycle repairs; enforce the existing shared live-memory policy during BinHex decoding                |
-| 258 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0483` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared preview lifecycle and game UI ownership; finish existing IME and preview acceptance                                                     |
-| 259 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0486` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain asynchronous settings inventories and active-set ownership; complete existing configuration and reset transactions                             |
-| 260 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0494` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain controller page and raw input diagnostics; close existing persistence and nested picker owners                                                 |
-| 261 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0496` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain paired picker controls and shared dialog motion bridge; finish existing transactional state and slot publication owners                        |
-| 262 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0498` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain staged engine toggles and preset confirmation; complete coherent multi-owner preference publication                                            |
-| 263 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0533` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared CD and audio preview composition; finish existing preview ownership and completion contracts                                            |
-| 264 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0534` | `RETAIN`              | `GQR-0219`          | `PRIMARY`   | Retain shared strip geometry; make valid oversized vertical spans safe in the touch editor                                                            |
-| 265 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0535` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared launcher orchestration and repaired admission boundaries; finish existing durable launch generations                                    |
-| 266 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0558` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Preserve shared finite-domain and current-only touch parsing; reconcile typed action and accepted strip geometry owners                               |
-| 267 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0559` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain one current touch codec; finish typed radial and finite oversized-strip acceptance without compatibility paths                                 |
-| 268 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0561` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain current stacked gesture and presentation helpers; make editor drag safe for accepted vertical strip geometry                                   |
-| 269 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0562` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain shared diagnostic and stacked hit geometry; fix the existing valid oversized vertical clamp at its actual mover                                |
-| 270 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0563` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Keep bounded shared property controls; finish existing strip clamp, Custom preset and typed binding contracts                                         |
-| 271 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0614` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain shared descriptor and normalized atomic publication; complete exact selectors, source identity and deterministic bounded AcoustID policy       |
-| 272 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0644` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain shared save projections, launch admission and strip geometry; extend accepted finite geometry and integration acceptance                       |
-| 273 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-SWEEP-008` | `REFACTOR` | `BR-0662` | `REFERENCE` | Test registration, enabled assertions, fixture admission, source-contract limitations and actual integration coverage sweep |
-| 274 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0017` | `PRE-0108`            | `GQF-0052`          | `PRIMARY`   | Assigned JNI array/string acquisitions and MIDI byte-array creation                                                                                   |
-| 275 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0024` | `PRE-0108`            | `GQF-0058`          | `PRIMARY`   | Complete-track disc and compressed-file fingerprinting                                                                                                |
-| 276 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0025` | `PRE-0108`            | `GQF-0058`          | `REFERENCE` | Complete-track disc and compressed-file fingerprinting                                                                                                |
-| 277 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0026` | `PRE-0108`            | `GQF-0058`          | `REFERENCE` | Complete-track disc and compressed-file fingerprinting                                                                                                |
-| 278 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0037` | `PRE-0108`            | `GQF-0052`          | `REFERENCE` | Assigned JNI array/string acquisitions and MIDI byte-array creation                                                                                   |
-| 279 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0048` | `PRE-0108`            | `BR-0029`           | `REFERENCE` | Marshal overlay game-state access through the engine thread                                                                                           |
-| 280 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0050` | `PRE-0108`            | `BR-0029`           | `REFERENCE` | Marshal overlay game-state access through the engine thread                                                                                           |
-| 281 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0059` | `PRE-0108`            | `GQF-0115`          | `PRIMARY`   | Mission extraction `ScanResult` generation                                                                                                            |
-| 282 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0094` | `PRE-0108`            | `GQF-0141`          | `PRIMARY`   | Graphics configuration rollback backup                                                                                                                |
-| 283 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0118` | `NO_INHERITED_EFFECT` | `GQF-0115`          | `REFERENCE` | Mission extraction `ScanResult` generation                                                                                                            |
-| 284 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0161` | `RETAIN`              | `BR-0078`           | `REFERENCE` | Make native engine admission atomic through process termination                                                                                       |
-| 285 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0178` | `NO_INHERITED_EFFECT` | `GQF-0058`          | REFERENCE   | duplicate high-confidence complete-media resource and cancellation exposure is the highest live root                                                  |
-| 286 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0181` | `RETAIN`              | `BR-0029`           | REFERENCE   | duplicate high-confidence cross-thread engine and renderer ownership is the highest live root                                                         |
-| 287 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0185` | `RETAIN`              | `BR-0195`           | REFERENCE   | existing protocol authority work is broader than the assigned handlers                                                                                |
-| 288 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0186` | `RETAIN`              | `BR-0029`           | REFERENCE   | UI/engine thread ownership needs a subsystem boundary                                                                                                 |
-| 289 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0191` | `RETAIN`              | `BR-0029`           | `REFERENCE` | save metadata, save-set paths and screen admission API                                                                                                |
-| 290 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0192` | `RETAIN`              | `BR-0029`           | `REFERENCE` | save lifecycle, periodic checkpoints and music overlays                                                                                               |
-| 291 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0193` | `RETAIN`              | `BR-0463`           | `REFERENCE` | slowdown detection, surface API, texture diagnostics and visual admission                                                                             |
-| 292 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0195` | `NO_INHERITED_EFFECT` | `GQF-0058`          | `REFERENCE` | ETC2 decoder, fingerprint generation/duration and font controls                                                                                       |
-| 293 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0197` | `RETAIN`              | `BR-0195`           | `REFERENCE` | transfer admission, music schema and serialization budgets                                                                                            |
-| 294 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0200` | `RETAIN`              | `BR-0029`           | `REFERENCE` | profile APIs, FOV/resolution policy, resume pilot and rewind selection                                                                                |
-| 295 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0205` | `RETAIN`              | `BR-0029`           | `REFERENCE` | touch gestures, screen generations and discrete event publication                                                                                     |
-| 296 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0206` | `RETAIN`              | `BR-0266`           | `REFERENCE` | keyboard/lifecycle dispatch, UI state queries and join approval                                                                                       |
-| 297 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0210` | `RETAIN`              | `BR-0029`           | `REFERENCE` | menu scaling, scratch allocation, OGL lifetime and UI transform publication                                                                           |
-| 298 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0212` | `RETAIN`              | `BR-0029`           | `REFERENCE` | frame admission, JNI capture requests, storage records and capture completion                                                                         |
-| 299 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0215` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Coop and guidebot indicator paths, keep-out clipping and diagnostic ownership                                                                         |
-| 300 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0226` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Introspection lifecycle/audio/input snapshots and producer failure containment                                                                        |
-| 301 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0247` | `RETAIN`              | `BR-0029`           | `REFERENCE` | merged-wall geometry logs, diagnostic session lifetime and paired source provenance                                                                   |
-| 302 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0258` | `RETAIN`              | `BR-0206`           | `REFERENCE` | cooperative save-transfer send/apply ordering, acknowledgements and current restore-barrier reconciliation                                            |
-| 303 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0282` | `RETAIN`              | `BR-0029`           | `REFERENCE` | paired SDL event/window/input/timer/music and virtual-gamepad integration                                                                             |
-| 304 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0288` | `RETAIN`              | `BR-0029`           | `REFERENCE` | native controls, postlevel admission, homing/weapon probes, graphics/pilot menus and mission formats                                                  |
-| 305 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0290` | `RETAIN`              | `BR-0029`           | `REFERENCE` | startup quit/resume/replay/metadata/preview lifecycle and native input conversion                                                                     |
-| 306 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0299` | `RETAIN`              | `BR-0029`           | `REFERENCE` | AI save/visibility/FX, path runtime, automap input/metadata/edges and reactor validation                                                              |
-| 307 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0335` | `RETAIN`              | `BR-0029`           | `REFERENCE` | D2 replay startup, control settings/rendering/navigation and ordinary/terminal postlevel lifecycle                                                    |
-| 308 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0342` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D2 laser runtime interface, lighting, menus, mission selection and movie lifecycle                                                                    |
-| 309 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0343` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D2 font/mine/palette, frame composition, native level sections, placement RNG and level lifecycle                                                     |
-| 310 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0454` | `RETAIN`              | `GQF-0141/GQR-0128` | `REFERENCE` | Retain launcher configuration and snapshot owners; preserve batch originals and correlate introspection requests                                      |
-| 311 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0468` | `RETAIN`              | `GQF-0141/GQR-0128` | `REFERENCE` | Preserve shared publication and identity-checked preview ownership; retain original generations when batch rollback fails                             |
-| 312 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0477` | `RETAIN`              | `BR-0463`           | `REFERENCE` | Retain shared overlay navigation, geometry and ammo presentation; complete existing stock-PvP provenance and accessibility owners                     |
-| 313 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0521` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Keep one shared host dialog and asynchronous mission/save loader; finish existing defaults, save and host admission                                   |
-| 314 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0528` | `RETAIN`              | `BR-0115`           | `REFERENCE` | Retain engine-owned save validation and shared cooperative selection; finish existing protocol, metadata and publication boundaries                   |
-| 315 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0565` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared touch dispatch and mixer ownership; align supported disabled gyro axes across editor and codecs                                         |
-| 316 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0566` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared overlay geometry and controller menus; complete existing action snapshot and per-diagnostic scale owners                                |
-| 317 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0567` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Preserve shared draw/input policy and current pause presentation; complete existing physical release and native snapshot owners                       |
-| 318 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0568` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep shared radial and strip presentation; finish existing opacity, exclusive pointer admission and abandoned-source cleanup                          |
-| 319 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0569` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared stick and selector helpers; close existing cadence, command routing and immutable selection roots                                       |
-| 320 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0570` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared admin action policy and menu geometry; finish existing stable gesture, callback lifetime and native ownership contracts                 |
-| 321 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0571` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared admin rendering and bounded slider policy; finish immutable touch generations and preserve current controller edges                     |
-| 322 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0572` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared Video Info layout and diagnostics; reconcile current graphics acknowledgement with existing gesture and native lifetime owners          |
-| 323 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0653` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Preserve finite touch geometry and shared action inventories; finish existing gesture, typed dispatch and snapshot owners                             |
-| 324 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0001` | `RETAIN` | `BR-0016` | `REFERENCE` | Current preview reservation, stop ordering, composition disposal and native serialized teardown |
-| 325 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0003` | `RETAIN` | `BR-0029` | `REFERENCE` | Overlay publication, paired music apply hooks, synth tuning and residual escort/debug affinity |
-| 326 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0004` | `RETAIN` | `BR-0044` | `REFERENCE` | Repeated overlay JNI cleanup, strict text policy, attachment failures and keyboard requested state |
-| 327 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0006` | `RETAIN` | `BR-0078` | `REFERENCE` | Game/preview atomic admission, callback-owner publication, failed setup and process termination |
-| 328 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0007` | `RETAIN` | `BR-0080` | `REFERENCE` | Ship-status decoder admission, player/weapon snapshot bounds and transport origin |
-| 329 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0010` | `REFACTOR` | `BR-0090` | `REFERENCE` | Non-Play authentication flavors, wire fields, ephemeral dev identity and server keypair protocol |
-| 330 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0013` | `REFACTOR` | `BR-0103` | `REFERENCE` | Mission extraction tree/manifest replacement, reader lifetime, corrupt records and linked cleanup |
-| 331 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0015` | `REFACTOR` | `BR-0109` | `REFERENCE` | NAT simulator main/inbound task lifecycle, best-effort abort and STUN handle cleanup |
-| 332 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0017` | `REFACTOR` | `BR-0111` | `REFERENCE` | Rust simulator and Android STUN body/attribute/padding bounds and response provenance |
-| 333 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0019` | `REFACTOR` | `BR-0113` | `REFERENCE` | Public-key hex decoding versus textual hashing and durable account lookup |
-| 334 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0022` | `REFACTOR` | `BR-0118` | `REFERENCE` | Rate-limit stale-key snapshot removal versus concurrent accepted events |
-| 335 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0026` | `REFACTOR` | `BR-0124` | `REFERENCE` | Admin u64 hour conversion, chrono constructor/addition overflow and expiry semantics |
-| 336 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0031` | `REFACTOR` | `BR-0131` | `REFERENCE` | Daily tracing appender retention, journal duplication and disk budgets |
-| 337 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0040` | `REFACTOR` | `BR-0158` | `REFERENCE` | Extraction optional fixture accounting, new synthetic coverage and registered SOW skip repair |
-| 338 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0041` | `RETAIN` | `BR-0159` | `REFERENCE` | 7-Zip staged hash-verified publication repair and remaining discovery/crash boundaries |
-| 339 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0042` | `REFACTOR` | `BR-0160` | `REFERENCE` | CUE/ISO runner shared paths, set-e cleanup bypass and unchecked generated fixture writes |
-| 340 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0043` | `REFACTOR` | `BR-0162` | `REFERENCE` | All-skipped mission/extraction batches still report success despite improved preflight failure classification |
-| 341 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0044` | `REFACTOR` | `BR-0163` | `REFERENCE` | LAN cleanup improvements and managed-ending exception before relay teardown |
-| 342 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0046` | `REFACTOR` | `BR-0167` | `REFERENCE` | Mission device/host batch timestamp and normalized-label/base-name artifact collisions |
-| 343 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0047` | `REFACTOR` | `BR-0168` | `REFERENCE` | Mission batch direct ADB push/copy lacks deadline and shared staging cleanup transaction |
-| 344 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0048` | `REFACTOR` | `BR-0169` | `REFERENCE` | CD nonzero aggregate status repaired while GOG still falls through after counted errors |
-| 345 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0049` | `RETAIN` | `BR-0663` | `REFERENCE` | Replay result publication now preserves natural failure except forced-stop classification race and smoke acceptance |
-| 346 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-003` | `RETAIN` | `GQR-0084` | `REFERENCE` | Launcher/main lifecycle, suspend releases, blocking resume discovery, SAF permission and durable handoff reconciliation |
-| 347 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-012` | `RETAIN` | `GQR-0170` | `REFERENCE` | JNI save preflight, network authentication/version parity, controller dimensions and native ABI interface sweep |
-| 348 | 53 | MEDIUM-HIGH | 23/12/4/10/4 | `GQ1-SWEEP-002` | `REFACTOR` | `GQR-0170` | `REFERENCE` | JNI attachment, partial acquisition, standard UTF-8 and Activity publication remain cross-cutting owners |
-| 349 |    53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ1-CHUNK-0001` | `PRE-0108`            | `BR-0007`           | `REFERENCE` | Make the Play Store credential sample match the supported key format                                                                                  |
-| 350 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0002` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 351 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0003` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 352 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0004` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 353 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0005` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 354 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0006` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 355 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0007` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 356 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0080` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 357 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0082` | `PRE-0108`            | `BR-0162`           | `REFERENCE` | Fail test batches that execute no archive                                                                                                             |
-| 358 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0085` | `PRE-0108`            | `BR-0165`           | `REFERENCE` | Derive the default mission archive directory from the repository                                                                                      |
-| 359 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0086` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
-| 360 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0087` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
-| 361 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0089` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
-| 362 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0099` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 363 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0100` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 364 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0101` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 365 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0102` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 366 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0103` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 367 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
-| 368 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0109` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
-| 369 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0113` | `NO_INHERITED_EFFECT` | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 370 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0114` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
-| 371 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0116` | `NO_INHERITED_EFFECT` | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
-| 372 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0129` | `NO_INHERITED_EFFECT` | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 373 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0131` | `CANDIDATE`           | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 374 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0133` | `NO_INHERITED_EFFECT` | `GQF-0153`          | `PRIMARY`   | D2 Mac native extraction output oracle                                                                                                                |
-| 375 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0134` | `NO_INHERITED_EFFECT` | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
-| 376 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0136` | `NO_INHERITED_EFFECT` | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
-| 377 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0138` | `NO_INHERITED_EFFECT` | `GQF-0158`          | `PRIMARY`   | Bounded extractor Python regression registration                                                                                                      |
-| 378 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0151` | `RETAIN`              | `GQF-0167`          | `PRIMARY`   | Shared TSF/PCM producer completion ordering                                                                                                           |
-| 379 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0218` | `RETAIN`              | `GQF-0167`          | `REFERENCE` | Game music producer publication, tuning ownership, ring drain and startup                                                                             |
-| 380 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0292` | `RETAIN`              | `BR-0209`           | `REFERENCE` | native replay diagnostics, result lifecycle, public hooks and D1 startup adapter                                                                      |
-| 381 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0436` | `RETAIN`              | `GQR-0020`          | `REFERENCE` | Complete combined-launch helper, extension-only current references, component-union check and generator derivation                                    |
-| 382 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0504` | `RETAIN`              | `BR-0516`           | `REFERENCE` | Preserve strict current layout admission and direct per-axis gyro values; finish existing radial namespace and preset owners                          |
-| 383 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0588` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain shared platform selection, destination-owned installer transactions and inert configuration serialization                                      |
-| 384 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0589` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep staged exact tool acquisition in shared installer policy and avoid duplicating upstream host package management                                  |
-| 385 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0590` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared verified staged installers, native host identity and explicit delegated option contracts                                                  |
-| 386 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0591` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared SDK writer, complete package admission and exact tool-generation policy; preserve focused external oracle walls                           |
-| 387 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0592` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared dependency discovery, exact installed identity and bounded action execution under existing updater owners                                 |
-| 388 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0593` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain one typed dependency-discovery and selection owner; bound remote processes and couple accepted release metadata                                |
-| 389 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0594` | `RETAIN`              | `GQR-0222`          | `PRIMARY`   | Retain shared string-aware JSONC parsing and serial-scoped emulator recovery; preserve lexical token boundaries                                       |
-| 390 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0595` | `RETAIN`              | `BR-0168`           | `REFERENCE` | Retain schema-specific metadata canonicalization and verified provisioner ownership; finish existing path and transaction boundaries                  |
-| 391 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0599` | `RETAIN`              | `GQR-0222`          | `REFERENCE` | Retain shared managed-emulator recovery and fingerprint identity owners; consolidate remaining comment parser and build-process boundaries            |
-| 392 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0633` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain the Ubuntu bootstrap entry point and verified bounded-runtime policy; keep installer remainder with existing owners                            |
-| 393 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0638` | `RETAIN`              | `BR-0168`           | `REFERENCE` | Retain additive device provisioning and explicit owned-sync policy; finish its shared transfer, filename and publication owners                       |
-| 394 |    50 | MEDIUM-HIGH | 23/0/10/10/7  | `GQ1-CHUNK-0182` | `RETAIN`              | `BR-0244`           | REFERENCE   | duplicate high-confidence request loss spans every newly added mailbox and existing action paths                                                      |
-| 395 |    50 | MEDIUM-HIGH | 23/0/10/10/7  | `GQ1-CHUNK-0659` | `RETAIN`              | `BR-0381`           | `REFERENCE` | Retain semantic route and lifecycle assertions; finish existing observational probe and metadata lifecycle acceptance                                 |
-| 396 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0188` | `NO_INHERITED_EFFECT` | `GQF-0177`          | `PRIMARY`   | Reject out-of-range database integers before narrowing                                                                                                |
-| 397 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0198` | `RETAIN`              | `GQF-0180`          | `PRIMARY`   | crash JNI, breadcrumb publication, EGL and save pair recovery                                                                                         |
-| 398 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0202` | `RETAIN`              | `GQF-0182`          | `PRIMARY`   | cooperative metadata contracts, migration and retained restart publication                                                                            |
-| 399 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0211` | `RETAIN`              | `GQF-0184`          | `PRIMARY`   | profiling batches, texture burst boundaries and bounded flight envelope                                                                               |
-| 400 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0213` | `RETAIN`              | `BR-0273`           | `REFERENCE` | automap labels, grouping, live key positions and connector endpoints                                                                                  |
-| 401 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0449` | `RETAIN`              | `GQR-0207`          | `PRIMARY`   | Close fingerprint asset reader ownership and preserve distinct-identity ambiguity through database projection                                         |
-| 402 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0452` | `RETAIN`              | `GQR-0208`          | `PRIMARY`   | Preserve custom-audio generation and metadata policy; make copied append publication transactional                                                    |
-| 403 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0480` | `RETAIN`              | `BR-0454`           | `REFERENCE` | Retain shared controller edge ownership and flavor updates; complete existing gesture identity and callback owners                                    |
-| 404 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0487` | `RETAIN`              | `BR-0443`           | `REFERENCE` | Retain immutable shared artifacts and asynchronous inventory; finish pending Downloads and log lifecycle owners                                       |
-| 405 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0488` | `RETAIN`              | `BR-0419`           | `REFERENCE` | Retain asynchronous storage dialogs and atomic registry leaves; finish existing audio-resource and truthful removal ownership                         |
-| 406 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0497` | `RETAIN`              | `BR-0479`           | `REFERENCE` | Keep shared drawing helpers; finish existing picker cancellation and nested input routing                                                             |
-| 407 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0499` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain atomic set metadata and current-only storage; finish ownership-consistent deletion and clearing                                                |
-| 408 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0585` | `RETAIN`              | `BR-0558`           | `REFERENCE` | Keep shared Gradle build identity, exact tool policy and flavor-specific runtime ownership                                                            |
-| 409 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0587` | `RETAIN`              | `BR-0579`           | `REFERENCE` | Keep one dependency update manifest owner and shared SDK provisioning policy; publish coupled identities together                                     |
-| 410 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0598` | `RETAIN`              | `BR-0586`           | `REFERENCE` | Retain exact oracle executable identities, checked warning capture and shared runtime estimates; finish existing oracle and snapshot acceptance       |
-| 411 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0600` | `RETAIN`              | `GQR-0223`          | `PRIMARY`   | Consolidate CD source manifest parsing onto the shared JSONC owner; retain transactional publication and scoped artifact protection                   |
-| 412 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0603` | `RETAIN`              | `GQR-0225`          | `PRIMARY`   | Parse canonical Git paths before generating review scopes; retain deterministic frozen campaign and supplemental audit ownership                      |
-| 413 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0604` | `RETAIN`              | `GQR-0226`          | `PRIMARY`   | Confine host metadata staging before recursive replacement; remove dead projection under its already admitted owner                                   |
-| 414 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0607` | `RETAIN`              | `GQR-0228`          | `PRIMARY`   | Preserve signed wire fields and partial-packet diagnostics in the PowerShell decoder                                                                  |
-| 415 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0610` | `RETAIN`              | `GQR-0229`          | `PRIMARY`   | Retain repaired complete version and track admission; share JSONC readers and align descriptor modes with native ownership                            |
-| 416 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0628` | `RETAIN`              | `BR-0006`           | `REFERENCE` | Retain deleted scratch artifacts and document complete root-helper versus manual Linux build alternatives                                             |
-| 417 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0645` | `RETAIN`              | `GQR-0217`          | `REFERENCE` | Preserve bounded DXA inspection, immutable grants and current-only storage; extend exact descriptor and shared configuration tests                    |
-| 418 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0669` | `RETAIN`              | `GQR-0232`          | `PRIMARY`   | Retain managed emulator repair and shared JSONC parsing; resolve template values before serialization                                                 |
-| 419 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0671` | `RETAIN`              | `BR-0652`           | `REFERENCE` | Retain shared paired control codec tests; preserve runner failure independently of trace agreement                                                    |
-| 420 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0672` | `RETAIN`              | `BR-0651`           | `REFERENCE` | Retain shared portable and gzip trace reads; compare complete unique frame identity                                                                   |
-| 421 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0673` | `RETAIN`              | `BR-0193`           | `REFERENCE` | Retain expanded shared route semantic tests; complete owned SAF fixture restoration and admission                                                     |
-| 422 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0674` | `RETAIN`              | `BR-0659`           | `REFERENCE` | Retain shared WLAN resolution and expanded lifecycle probes; require exact transport result and lobby generation                                      |
-| 423 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0681` | `RETAIN`              | `GQR-0223`          | `REFERENCE` | Retain bounded native RLE and transactional conversion checks; extend shared CD metadata/runner and PCM regression coverage                           |
-| 424 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0682` | `RETAIN`              | `BR-0008`           | `REFERENCE` | Keep paired replay wrappers and shared build admission; close existing data provenance and device-state transaction owners                            |
-| 425 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0683` | `RETAIN`              | `BR-0181`           | `REFERENCE` | Retain canonical fingerprint policy and transactional dependency fixtures; repair existing complete-reference and measured-data owners                |
-| 426 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0684` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Retain shared native policy fixtures and paired renderer contracts; preserve existing save-body and namespace owners                                  |
-| 427 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0685` | `RETAIN`              | `BR-0669`           | `REFERENCE` | Retain current JSONC subset and shared replay diagnostics; strengthen existing smoke semantics and resource owners                                    |
-| 428 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0686` | `RETAIN`              | `BR-0667`           | `REFERENCE` | Retain shared metadata normalization and asynchronous MIDI preview contracts; require existing complete travel-row coverage                           |
-| 429 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0687` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Retain native staged state admission and verified data staging; close existing bounded server and output owners                                       |
-| 430 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0688` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain mock runner ownership and catalog rotation coverage; finish shared checked-device and artifact-lifetime policy                                 |
-| 431 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0689` | `RETAIN`              | `BR-0662`           | `REFERENCE` | Retain bounded structural distance tolerance and audio snapshot owners; keep mailbox behavioral checks active                                         |
-| 432 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0690` | `RETAIN`              | `BR-0662`           | `REFERENCE` | Retain paired installer policy and native HUD/homing ownership; synchronize existing Inno progress capability contract                                |
-| 433 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0692` | `RETAIN` | `BR-0277` | `REFERENCE` | Retain shared native fixtures and completed validation; synchronize stale cockpit source guard with staged pilot writer |
-| 434 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0693` | `RETAIN` | `GQR-0233` | `PRIMARY` | Require actual co-op start inventories before reporting fanout success; retain native format and restore fixture ownership |
-| 435 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0694` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain current transfer pacing and shared regression policy; reconcile complete native test inventory and preview lifecycle |
-| 436 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0695` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain real fingerprint publication/enumeration checks and shared native ownership; keep escort exit oracles active |
-| 437 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0696` | `RETAIN` | `GQR-0234` | `PRIMARY` | Validate complete RNG trace envelopes before filtering or comparison |
-| 438 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0697` | `RETAIN` | `BR-0545` | `REFERENCE` | Retain exact replay selection, sanitizer forwarding and required-primary rejection; verify shared aggregate status/lifetime owners |
-| 439 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0698` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain strengthened replay process verdicts and diagnostic preservation; complete existing lifetime and publication owners |
-| 440 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0699` | `RETAIN` | `BR-0209` | `REFERENCE` | Preserve current strict replay controls while removing the existing terminal-result compensation root during implementation |
-| 441 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0700` | `RETAIN` | `BR-0292` | `REFERENCE` | Keep paired recorder semantic and long-recording coverage; finish existing disabled-diagnostic and publication acceptance |
-| 442 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0701` | `RETAIN` | `BR-0231` | `REFERENCE` | Retain paired replay loader and validate-before-apply policy fixtures; complete shared terminal failure integration |
-| 443 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0702` | `RETAIN` | `BR-0163` | `REFERENCE` | Retain expanded paired LAN scenarios and shared helpers; close existing cleanup and correlated-oracle owners |
-| 444 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0703` | `RETAIN` | `BR-0302` | `REFERENCE` | Retain shared level-metadata fixtures and truthful partial-route semantics; validate existing route owners |
-| 445 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0704` | `RETAIN` | `BR-0301` | `REFERENCE` | Preserve corrected all-link completion and bounded metadata distance tests; reconcile existing live-route validation |
-| 446 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0705` | `RETAIN` | `BR-0656` | `REFERENCE` | Retain shared multiplayer orchestration improvements; close existing false-pass and ownership findings |
-| 447 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0706` | `RETAIN` | `BR-0332` | `REFERENCE` | Retain current prepared-route profile identity tests; complete semantic cache and I/O acceptance |
-| 448 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0707` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain expanded shared route transition and convergence fixtures; reconcile existing route geometry and cache owners |
-| 449 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0711` | `RETAIN` | `BR-0337` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 450 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0712` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 451 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0713` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 452 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0714` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 453 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0750` | `RETAIN` | `BR-0659` | `REFERENCE` | Complete22 frozen/current payloads; exact CUE consumers and existing root reconciliation |
-| 454 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0008` | `PRE-0108`            | `BR-0623`           | `REFERENCE` | Share one complete portable source-manifest policy                                                                                                    |
-| 455 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0010` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 456 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0011` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 457 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0012` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 458 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0014` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 459 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0027` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 460 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0028` | `PRE-0108`            | `GQF-0040`          | `PRIMARY`   | Flattened HFS loose-file projection                                                                                                                   |
-| 461 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0035` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 462 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0038` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 463 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0051` | `PRE-0108`            | `BR-0082`           | `REFERENCE` | Validate metadata-backed save bodies before offering Resume                                                                                           |
-| 464 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0052` | `PRE-0108`            | `BR-0417`           | `REFERENCE` | Repair last-save selection after deleting an empty set                                                                                                |
-| 465 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0057` | `PRE-0108`            | `GQF-0113`          | `PRIMARY`   | Stored ZIP collision validation timing                                                                                                                |
-| 466 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0058` | `PRE-0108`            | `GQF-0030`          | `PRIMARY`   | Physical-disc and mission fingerprint generation and cache reuse                                                                                      |
-| 467 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0072` | `PRE-0108`            | `BR-0111`           | `REFERENCE` | Bounds-check complete STUN attributes before slicing                                                                                                  |
-| 468 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0081` | `PRE-0108`            | `BR-0174`           | `REFERENCE` | Gate external reference extractors to supported hosts                                                                                                 |
-| 469 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0091` | `PRE-0108`            | `BR-0174`           | `REFERENCE` | Gate external reference extractors to supported hosts                                                                                                 |
-| 470 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0096` | `PRE-0108`            | `GQF-0091`          | `PRIMARY`   | PKG analysis-to-extraction generation identity                                                                                                        |
-| 471 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0097` | `PRE-0108`            | `BR-0236`           | `REFERENCE` | Report and roll back partial all-pilot preference writes                                                                                              |
-| 472 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0110` | `NO_INHERITED_EFFECT` | `GQF-0091`          | `REFERENCE` | PKG analysis-to-extraction generation identity                                                                                                        |
-| 473 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0111` | `NO_INHERITED_EFFECT` | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
-| 474 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0120` | `NO_INHERITED_EFFECT` | `GQF-0030`          | `REFERENCE` | Physical-disc and mission fingerprint generation and cache reuse                                                                                      |
-| 475 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0171` | `RETAIN`              | `BR-0332`           | REFERENCE   | duplicate high-confidence cache identity evidence is the highest-impact live owner in this scope                                                      |
-| 476 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0172` | `RETAIN`              | `BR-0247`           | REFERENCE   | duplicate evidence for the open unbounded trace-growth root is the highest-impact live owner                                                          |
-| 477 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0173` | `RETAIN`              | `BR-0236`           | REFERENCE   | duplicate high-confidence partial-commit evidence is the only live quality root                                                                       |
-| 478 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0174` | `RETAIN`              | `BR-0238`           | REFERENCE   | duplicate high-confidence mission-source identity evidence is the highest ready live root                                                             |
-| 479 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0175` | `NO_INHERITED_EFFECT` | `BR-0276`           | REFERENCE   | duplicate evidence for the remaining preview completion/clock root is the highest live owner                                                          |
-| 480 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0176` | `RETAIN`              | `BR-0257`           | REFERENCE   | duplicate high-confidence one-shot lifecycle failure remains the highest live root                                                                    |
-| 481 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0177` | `RETAIN`              | `BR-0251`           | REFERENCE   | duplicate renderer recovery evidence is the highest-impact live owner                                                                                 |
-| 482 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0179` | `RETAIN`              | `BR-0236`           | REFERENCE   | duplicate grouped partial-publication risk is the broadest live owner in this scope                                                                   |
-| 483 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0184` | `RETAIN`              | `BR-0078`           | REFERENCE   | duplicate lifecycle exposure is the broadest high-confidence failure boundary in the assigned logging path                                            |
-| 484 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0187` | `RETAIN`              | `BR-0209`           | REFERENCE   | requested-output failure must be propagated through the shared replay completion boundary                                                             |
-| 485 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0190` | `RETAIN`              | `BR-0250`           | `REFERENCE` | Coherent audio diagnostic publication; mailbox queue measurement pending                                                                              |
-| 486 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0194` | `RETAIN`              | `BR-0236`           | `REFERENCE` | PhysFS setup and grouped pilot preference transactions                                                                                                |
-| 487 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0196` | `RETAIN`              | `BR-0244`           | `REFERENCE` | meta actions, music control, text wrapping and pilot hold gestures                                                                                    |
-| 488 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0214` | `RETAIN`              | `BR-0276`           | `REFERENCE` | CD preview PCM/resampling, producer EOF, callback output and startup ownership                                                                        |
-| 489 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0216` | `RETAIN`              | `GQF-0096`          | `REFERENCE` | Cooperative metadata framing, identity remapping and absent-player snapshots                                                                          |
-| 490 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0217` | `RETAIN`              | `BR-0278`           | `REFERENCE` | Cooperative autosave schedulers, sidecars, progress inventory and restore admission                                                                   |
-| 491 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0219` | `RETAIN`              | `BR-0282`           | `REFERENCE` | Automation result/JSONL publication, outbound radial JNI and key injection                                                                            |
-| 492 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0220` | `RETAIN`              | `BR-0283`           | `REFERENCE` | Automation input domains, mission discovery, direct window dispatch and face geometry                                                                 |
-| 493 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0221` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Automation pose/objective controls, condition cleanup and script replacement admission                                                                |
-| 494 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0222` | `RETAIN`              | `BR-0223`           | `REFERENCE` | Automation cursor admission, typed assertions, replacement and menu deadlines                                                                         |
-| 495 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0223` | `RETAIN`              | `BR-0286`           | `REFERENCE` | Automation overlay/run assertions, briefing deadlines, renderer probes and native controls                                                            |
-| 496 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0227` | `RETAIN`              | `GQR-0174`          | `PRIMARY`   | GLES3 shader initialization, matrices and client-state policy                                                                                         |
-| 497 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0232` | `RETAIN`              | `BR-0292`           | `REFERENCE` | recording capture, replay lifecycle, RNG synchronization and diagnostics                                                                              |
-| 498 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0233` | `RETAIN`              | `BR-0293`           | `REFERENCE` | runtime allocator, player weapons, local segment chains and robot diagnostic history                                                                  |
-| 499 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0234` | `RETAIN`              | `BR-0293`           | `REFERENCE` | object histories, current result, segment aggregates and collision step output                                                                        |
-| 500 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0235` | `RETAIN`              | `BR-0296`           | `REFERENCE` | recording admission, checkpoint capture, quick naming, retention and flush                                                                            |
-| 501 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0241` | `RETAIN`              | `BR-0246`           | `REFERENCE` | replay startup, metadata binding, owned checkpoint temporary, configuration and restored clocks                                                       |
-| 502 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0243` | `RETAIN`              | `BR-0301`           | `REFERENCE` | metadata world-state completion, connected components, energy distance, volume and guidebot summary                                                   |
-| 503 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0248` | `RETAIN`              | `BR-0308`           | `REFERENCE` | merged-wall projected geometry, crosshair coordinates and focus ranking                                                                               |
-| 504 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0249` | `RETAIN`              | `BR-0310`           | `REFERENCE` | merged-wall framebuffer coordinate conversion, source provenance and readback admission                                                               |
-| 505 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0250` | `RETAIN`              | `BR-0311`           | `REFERENCE` | merged-wall cover dumps, GL-state/readback transactions and sampled-texture LOD                                                                       |
-| 506 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0251` | `RETAIN`              | `BR-0312`           | `REFERENCE` | merged-wall face capacity, cover matching and per-frame/view lifecycle                                                                                |
-| 507 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0252` | `RETAIN`              | `BR-0313`           | `REFERENCE` | merged-wall focus ranking, route orientation models and native texture/effect/door diagnostics                                                        |
-| 508 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0253` | `RETAIN`              | `BR-0315`           | `REFERENCE` | merged-wall side/palette provenance, geometry hit classification and rear-view ray                                                                    |
-| 509 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0254` | `RETAIN`              | `BR-0316`           | `REFERENCE` | merged-wall final tap ranking, route models and composed framebuffer sampling                                                                         |
-| 510 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0255` | `RETAIN`              | `BR-0317`           | `REFERENCE` | merged-wall zero-candidate probe terminal behavior, selection and result publication                                                                  |
-| 511 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0257` | `RETAIN`              | `BR-0276`           | `REFERENCE` | MIDI preview lifecycle, PCM EOF drain, synth timeline and current approximate-seek reconciliation                                                     |
-| 512 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0264` | `RETAIN`              | `BR-0302`           | `REFERENCE` | route graph traversal, target capacity and current multiple-boss reconciliation                                                                       |
-| 513 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0266` | `RETAIN`              | `BR-0331`           | `REFERENCE` | trigger opener alternatives, dependency rollback, fallback plans and route projection                                                                 |
-| 514 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0267` | `RETAIN`              | `BR-0332`           | `REFERENCE` | route snapshot staging, navigation identity and current domain/replay capture reconciliation                                                          |
-| 515 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0268` | `RETAIN`              | `BR-0334`           | `REFERENCE` | native metadata state, visibility cache admission and engine portal clearance                                                                         |
-| 516 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0270` | `RETAIN`              | `BR-0334`           | `REFERENCE` | topology indexing, persistent cache ownership and canonical live reuse                                                                                |
-| 517 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0271` | `RETAIN`              | `BR-0337`           | `REFERENCE` | secret scanner required progression, bounded components and published entrance inventory                                                              |
-| 518 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0272` | `RETAIN`              | `GQF-0096`          | `REFERENCE` | save namespace, staged publication, trailers and lifecycle memory adapters                                                                            |
-| 519 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0280` | `RETAIN`              | `BR-0251`           | `REFERENCE` | paired graphics initialization, render admission and arch hook declarations                                                                           |
-| 520 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0284` | `DEFER`               | `BR-0347`           | `REFERENCE` | paired diagnostic clipping RGB, nested render frame/MSAA/timer and upload/scratch integration                                                         |
-| 521 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0293` | `DEFER`               | `BR-0349`           | `REFERENCE` | native HUD visible-frame integration, paired corner geometry/counts and cooperative level/spawn/score lifecycle                                       |
-| 522 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0296` | `DEFER`               | `BR-0278`           | `REFERENCE` | game loop, replay controls, font/render policy and native level-I/O adapters                                                                          |
-| 523 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0297` | `RETAIN`              | `BR-0294`           | `REFERENCE` | listbox tail/accessors, object runtime/effects, physics probes and bitmap paging/flags                                                                |
-| 524 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0300` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D1 typed replay commands, checkpoint links and weapon/physics diagnostic adapters                                                                     |
-| 525 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0303` | `DEFER`               | `BR-0269`           | `REFERENCE` | native newmenu background cache, readable text, reorder and tap/key/geometry adapters                                                                 |
-| 526 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0304` | `DEFER`               | `BR-0269`           | `REFERENCE` | native scaled menu/listbox draw callbacks, wrapped teardown, joystick/tap and hold lifecycles                                                         |
-| 527 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0306` | `RETAIN`              | `BR-0082`           | `REFERENCE` | native save body/header/callsign conversion, checkpoint topology fallback, cooperative remap and current restore failure/publication containment      |
-| 528 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0313` | `RETAIN`              | `BR-0345`           | `REFERENCE` | D2 SDL mixer/convert/start, event/window nonlocal lifetime, virtual input and desktop joystick, software mode, jukebox/mouse/timer and resource guard |
-| 529 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0315` | `RETAIN`              | `BR-0251`           | `REFERENCE` | D2 platform/header input/music/window interfaces and EGL/canvas/mode integration                                                                      |
-| 530 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0317` | `DEFER`               | `BR-0347`           | `REFERENCE` | D2 diagnostic clipping and RGB payload, external draw cleanup, MSAA/frame/timer/readback and ordinary upload scratch lifecycle                        |
-| 531 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0323` | `RETAIN`              | `BR-0202`           | `REFERENCE` | D2 pilot hold draw polling, listbox lifecycle/window title geometry and completed accessor headers with comment encoding residue                      |
-| 532 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0325` | `RETAIN`              | `BR-0209`           | `REFERENCE` | D2 hooks tail, terminal overrides, RNG and replay lifecycle/header interfaces                                                                         |
-| 533 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0328` | `RETAIN`              | `BR-0278`           | `REFERENCE` | D2 frame/tick/palette/profiling/RNG lifecycle and native replay/control/autosave hooks                                                                |
-| 534 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0329` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI restore tail, path/actor/route interfaces and AI2 visibility/fire/movement/boss/native-D1 policy                                                |
-| 535 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0330` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D1 translated checkpoint runtime/world/AI/player publication and digital audio sample contract                                                        |
-| 536 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0332` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 reactor codecs/runtime clocks, collision diagnostics/native actor damage and cooperative death/pickup wrappers                                     |
-| 537 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0336` | `DEFER`               | `BR-0349`           | `REFERENCE` | D2 HUD messages/gauges/controls, score recording and startup lifecycle                                                                                |
-| 538 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0339` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 explosion/drop/fuel/matcen and FVI callbacks/native transparency                                                                                   |
-| 539 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0340` | `RETAIN`              | `GQR-0198`          | `PRIMARY`   | D2 custom asset staging, source identity publication, native semantic and result adapters                                                             |
-| 540 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0345` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 metadata patch tail, effects, endlevel and escort ownership/exit policy                                                                            |
-| 541 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0346` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI scheduling, awareness, native actor dispatch, diagnostics and legacy timestamp save/read                                                        |
-| 542 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0347` | `RETAIN`              | `GQR-0198`          | `REFERENCE` | D2 custom PIG/POG/PCM original assets and current HX1 unpublished generation                                                                          |
-| 543 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0349` | `RETAIN`              | `GQR-0198`          | `REFERENCE` | D2 original sound, palette, gauges/cockpit overlay and native robot/weapon decode                                                                     |
-| 544 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0354` | `DEFER`               | `BR-0381`           | `REFERENCE` | D2 Guide-Bot route state/probes/events/guidance/completion and spawn lifecycle                                                                        |
-| 545 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0357` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 included energy trace helper and native caller ownership                                                                                           |
-| 546 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0358` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 input-demo direct command adapters, player control/wiggle and render/motion probe ownership                                                        |
-| 547 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0359` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 motion/physics/FVI probes, shared result hooks, debris/explosion and replay probe transport                                                        |
-| 548 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0360` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 weapon/debris path and activity probes, hard-coded FVI geometry, contact and powerup delta/state diagnostics                                       |
-| 549 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0361` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI schedule, baseline, awareness, focus predicates and weapon/impact/damage event capture                                                          |
-| 550 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0362` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 homing/shot/spreadfire, reactor/shield, collision/powerup and follow-path diagnostics                                                              |
-| 551 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0363` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 path hash, escort RNG/path/restore, chase/follow and escort/snipe observation snapshots                                                            |
-| 552 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0364` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 thief/path requests, path hash suppression, RNG/agitation and lifecycle/pose diagnostics                                                           |
-| 553 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0365` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 tracked robot pose lifecycle, robot fire, visibility/FVI and awareness-roll diagnostics                                                            |
-| 554 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0366` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 awareness chain, physical/claw recorder events, AI state/fire and partial wall-repair diagnostics                                                  |
-| 555 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0372` | `DEFER`               | `BR-0269`           | `REFERENCE` | D2 native menu background cache, readable text, reorder and touch/key geometry with current snapshots and interaction publication                     |
-| 556 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0373` | `DEFER`               | `BR-0269`           | `REFERENCE` | D2 scaled menu/listbox draw, wrapped teardown, touch/controller gestures and pilot hold lifecycle                                                     |
-| 557 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0387` | `RETAIN`              | `GQR-0174`          | `REFERENCE` | D1 Cocoa/OGL/SDL/Windows/X11 CMake and current per-game shared registrations                                                                          |
-| 558 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0400` | `RETAIN`              | `GQR-0174`          | `REFERENCE` | D2 platform CMake prefixes, shader runtime registration and conditional SDL audio ownership                                                           |
-| 559 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0414` | `RETAIN`              | `BR-0402`           | `REFERENCE` | Server Rust version snapshot and active toolchain-selection owner                                                                                     |
-| 560 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0420` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Server integration harness and initial auth/lobby/HTTP/database/friend/ready/start/kick cases                                                         |
-| 561 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0421` | `RETAIN`              | `BR-0403`           | `REFERENCE` | Welcome, stable identity, messaging, coded lobbies, friend joins, relay and NAT candidate fixtures                                                    |
-| 562 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0422` | `RETAIN`              | `BR-0404`           | `REFERENCE` | Verified-only lobbies, Ed25519/PoW, known-key reconnect and lobby lifecycle; complete current mission-status hunk                                     |
-| 563 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0423` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Final integration chat/discovery, relay age cleanup, connectivity, STUN allowlist/UDP and full friend lifecycle                                       |
-| 564 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0424` | `RETAIN`              | `BR-0406`           | `REFERENCE` | Full NAT simulator integration suite: STUN, mapping/filtering, sequential reservation, bidirectional cone, permissive mixed case and tiny packets     |
-| 565 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0428` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Known albums primary metadata 1-750, full current rename/regeneration hunks and byte-level payload audit                                              |
-| 566 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0429` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Known albums final ambiguity comments, empty Ulterior album and Uneasy audio row                                                                      |
-| 567 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0433` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 10-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                |
-| 568 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0434` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 16-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                |
-| 569 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0435` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 8-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                 |
-| 570 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0438` | `RETAIN`              | `BR-0192`           | `REFERENCE` | All four GOG regression specs, complete current rename/count changes, JSON audit and existing extraction-test owners                                  |
-| 571 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0440` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 16-album/318-track source corpus, comment-only rename and strict full-byte/schema audit                                                      |
-| 572 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0441` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 7-album/80-track source corpus, comment-only rename and strict full-byte/schema audit                                                        |
-| 573 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0447` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Retain shared weapon-state presentation and close existing cross-game touch admission owner                                                           |
-| 574 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0453` | `RETAIN`              | `BR-0415`           | `REFERENCE` | Keep launcher content and engine policy distinct; finish coherent D2 variant precedence under existing owner                                          |
-| 575 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0457` | `RETAIN`              | `BR-0447`           | `REFERENCE` | Retain shared logging policy and demo declarations; coordinate logging budgets and cross-process ownership                                            |
-| 576 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0458` | `RETAIN`              | `BR-0420`           | `REFERENCE` | Keep transient actions distinct from launch-intro policy; complete the existing custom-control accessibility owner                                    |
-| 577 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0460` | `RETAIN`              | `GQR-0209`          | `PRIMARY`   | Preserve callsign and shared resume projections; bind delayed foreground-service shutdown to the expired game session                                 |
-| 578 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0461` | `RETAIN`              | `BR-0440`           | `REFERENCE` | Retain typed mission metadata and shared state boundaries; complete native mode compatibility and supported preference publication                    |
-| 579 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0463` | `RETAIN`              | `BR-0460`           | `REFERENCE` | Retain isolated preview request ownership and corrected PixelCopy API guard; finish controller and probe correlation owners                           |
-| 580 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0464` | `RETAIN`              | `BR-0021`           | `REFERENCE` | Retain press-owned controller dispatch and strict GOG catalog parsing; complete existing cancellation and diagnostic owners                           |
-| 581 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0465` | `RETAIN`              | `BR-0451`           | `REFERENCE` | Retain shared focus navigation, bounded DXA traversal and crash retention; finish existing focus cancellation and retry owners                        |
-| 582 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0466` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Preserve exact disc hashing and shared attempt budgets; finish disc identity and owned asset-reader scopes                                            |
-| 583 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0470` | `RETAIN`              | `BR-0508`           | `REFERENCE` | Retain repaired storage ownership and manifest publication; complete Downloads export and failed-hash feedback owners                                 |
-| 584 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0472` | `RETAIN`              | `BR-0241`           | `REFERENCE` | Retain shared controller sampling and navigation helpers; complete existing crash provenance and input ownership contracts                            |
-| 585 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0473` | `RETAIN`              | `BR-0111`           | `REFERENCE` | Keep thin logging and process IPC owners; encode recent endpoints without a delimiter collision                                                       |
-| 586 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0474` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain shared music geometry, typed bounded sidecar and active-set availability; complete existing UI and process publication owners                  |
-| 587 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0482` | `RETAIN`              | `GQR-0216`          | `PRIMARY`   | Retain owned descriptor staging and shared action policy; serialize durable resume handoff generations                                                |
-| 588 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0485` | `RETAIN`              | `BR-0222`           | `REFERENCE` | Retain atomic single-file copies and shared input mixing; complete coherent demo artifact publication                                                 |
-| 589 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0490` | `RETAIN`              | `BR-0244`           | `REFERENCE` | Retain the small shared automap policy; fix existing mailbox, gesture identity and command latch boundaries                                           |
-| 590 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0491` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain IO and debounce for weapon ordering; finish existing paired pilot transaction and interaction generations                                      |
-| 591 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0493` | `RETAIN`              | `BR-0263`           | `REFERENCE` | Retain shared controller maps and independent trigger inventory; complete existing game-specific keyboard schema owner                                |
-| 592 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0495` | `RETAIN`              | `BR-0420`           | `REFERENCE` | Retain diagram presentation and physical-device display selection; complete existing hit testing and semantic controls                                |
-| 593 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0502` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain shared graphics controls and focus links; publish live preferences through the existing process owner                                          |
-| 594 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0503` | `RETAIN`              | `BR-0422`           | `REFERENCE` | Retain shared gyro producer; close existing activation, calibration and source lifetime owners                                                        |
-| 595 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0505` | `RETAIN`              | `BR-0224`           | `REFERENCE` | Retain exact-label activation and command failure propagation; close existing script schema and handoff owners                                        |
-| 596 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0506` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Preserve shared metadata projection and atomic individual reports; complete existing automation session and assertion contracts                       |
-| 597 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0526` | `RETAIN`              | `GQR-0084`          | `REFERENCE` | Retain one typed resume configuration and native save boundary; remove unused roster persistence and finish off-main discovery                        |
-| 598 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0532` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain shared active-set music UI and native format adapters; finish existing preference and provider lifecycles                                      |
-| 599 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0537` | `RETAIN`              | `BR-0506`           | `REFERENCE` | Retain shared launcher startup and input adapters; finish lifecycle cancellation and coherent launch publication                                      |
-| 600 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0538` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Retain shared setup projection and bounded import owners; finish correlated automation and stable hash outcomes                                       |
-| 601 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0540` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain exact shared copy and single-flight result imports; reconcile remaining global temporary cleanup and readiness policy                          |
-| 602 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0541` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain exact-copy and shared launcher controls; reopen incomplete temporary-owner closure and finish existing retry policy                            |
-| 603 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0542` | `RETAIN`              | `BR-0510`           | `REFERENCE` | Retain shared automation adapters and lightweight introspection; finish stable activation identity and acknowledged handoff                           |
-| 604 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0543` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain shared set dialogs and archive publication; finish existing truthful deletion and staging-owner lifecycle                                      |
-| 605 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0544` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain staged installer/disc publication and native CUE ownership; finish caller cancellation and durable source admission                            |
-| 606 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0545` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain current disc staging and typed audio identification; unify explicit dismissal with existing attempt lifetime owner                             |
-| 607 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0546` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain shared disc helpers and repaired collision/publication paths; consolidate authoritative CUE identities in existing parser owner                |
-| 608 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0547` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Preserve all-track staging and shared attempt budgets; complete existing cancellation and file/source transaction acceptance                          |
-| 609 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0549` | `RETAIN`              | `GQR-0216`          | `REFERENCE` | Retain one launcher thumbnail/presentation owner; resume identity and handoff safety remain existing cross-layer owners                               |
-| 610 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0550` | `RETAIN`              | `GQR-0085`          | `REFERENCE` | Retain shared save browsing and grant-safe sharing; bind destructive confirmation and late publication to existing generation owners                  |
-| 611 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0551` | `RETAIN`              | `GQR-0085`          | `REFERENCE` | Retain shared save presentation and native format admission; finish existing candidate/deletion generation acceptance                                 |
-| 612 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0557` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Keep shared touch/native binding inventories; finish existing typed radial and cross-game dispatch admission                                          |
-| 613 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0560` | `RETAIN`              | `BR-0517`           | `REFERENCE` | Keep current editor geometry and shared properties; preserve unsaved generations across typed import outcomes                                         |
-| 614 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0564` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Keep shared bounded editor widgets and native action labels; finish existing per-game admission and preset reader lifetime                            |
-| 615 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0574` | `RETAIN`              | `BR-0322`           | `REFERENCE` | Preserve bounded standalone ETC2 conversion and checked shared layout; finish existing packaged mip consumer acceptance                               |
-| 616 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0576` | `RETAIN`              | `BR-0533`           | `REFERENCE` | Keep Windows toolchain discovery at its platform boundary and refresh existing toolchain identity owner                                               |
-| 617 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0577` | `RETAIN`              | `BR-0549`           | `REFERENCE` | Retain installer and aggregate orchestration boundaries with existing release/configuration owners                                                    |
-| 618 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0578` | `RETAIN`              | `BR-0539`           | `REFERENCE` | Retain script-relative launcher/settings ownership and existing menu/device/provisioning fixes                                                        |
-| 619 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0579` | `RETAIN`              | `BR-0556`           | `REFERENCE` | Retain release script/build boundaries and remove obsolete unreachable promotion policy                                                               |
-| 620 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0580` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain catalog discovery and scheduling at the aggregate runner boundary                                                                              |
-| 621 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0581` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain aggregate preflight and result execution ownership; complete existing resource and provisioning acceptance                                     |
-| 622 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0582` | `RETAIN`              | `BR-0554`           | `REFERENCE` | Retain ordered tier and report orchestration; remove disconnected Docker coverage through existing owner                                              |
-| 623 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0583` | `RETAIN`              | `BR-0544`           | `REFERENCE` | Retain deliberately budgeted quick-suite policy and existing exact-APK preflight owner                                                                |
-| 624 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0584` | `RETAIN`              | `BR-0538`           | `REFERENCE` | Keep one mixed-language quality coordinator and atomic ownership in the existing formatter root                                                       |
-| 625 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0596` | `RETAIN`              | `BR-0584`           | `REFERENCE` | Retain shared profile parsing and dependency verification; complete existing producer coverage and cleanup truthfulness                               |
-| 626 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0597` | `RETAIN`              | `BR-0603`           | `REFERENCE` | Retain pinned shared game-data staging and process identity repairs; complete existing NAT readiness and transactional demo stripping                 |
-| 627 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0601` | `RETAIN`              | `BR-0600`           | `REFERENCE` | Keep shared quality file selection; close remaining checked mutation, test coverage and exact dependency identity owners                              |
-| 628 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0602` | `RETAIN`              | `BR-0582`           | `REFERENCE` | Remove the disconnected PowerShell metadata projection; preserve shared Kotlin projection and finish bounded worker ownership                         |
-| 629 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0605` | `RETAIN`              | `BR-0607`           | `REFERENCE` | Retain local replay artifact rules while completing required corpus provenance and clean-checkout acceptance                                          |
-| 630 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0608` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Retain shared CMake policy owners and verified codec acquisition; honor explicit tool selection and canonical build identity                          |
-| 631 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0609` | `RETAIN`              | `BR-0615`           | `REFERENCE` | Reuse shared string-aware JSONC and source identity policy; finish complete music album and index generation under existing owners                    |
-| 632 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0611` | `RETAIN`              | `BR-0611`           | `REFERENCE` | Retain physical/album schema separation and ordinal ordering; complete shared parser, private matcher and symmetric collision owners                  |
-| 633 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0612` | `RETAIN`              | `BR-0623`           | `REFERENCE` | Retain current canonical spec and extraction identity policy; enforce explicit generation selections and portable source inventory                    |
-| 634 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0613` | `RETAIN`              | `BR-0620`           | `REFERENCE` | Retain shared sampler and data owners; complete aggregate stage routing, non-mutating previews and contained portable export                          |
-| 635 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0615` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Retain native HAM format ownership and rollback; complete exact DXA inventory, shared schema and full composition oracle                              |
-| 636 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0616` | `RETAIN`              | `BR-0626`           | `REFERENCE` | Retain shared HAM analysis and source exclusions; complete alias-safe, verified and reproducible DXA generation                                       |
-| 637 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0617` | `RETAIN`              | `BR-0634`           | `REFERENCE` | Retain shared conversion progress and pack policy; finish truthful complete merge, private stages and reproducible tool identity                      |
-| 638 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0618` | `RETAIN`              | `BR-0636`           | `REFERENCE` | Retain portable bounded TGA repair and shared pack naming; complete exact sizing, collision rejection and archive publication                         |
-| 639 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0619` | `RETAIN`              | `BR-0634`           | `REFERENCE` | Retain per-game sound format and checked RIFF spans; complete sound pack status, private stages and source-bound publication                          |
-| 640 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0620` | `RETAIN`              | `BR-0637`           | `REFERENCE` | Retain exact portable TGA ownership and engine naming boundary; finish shared resize and collision-safe conversion policy                             |
-| 641 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0621` | `RETAIN`              | `BR-0626`           | `REFERENCE` | Retain branch-owned pack conversion and narrow paired engine seams; close exact source identity and namespace contracts                               |
-| 642 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0622` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Retain branch-owned semantic HAM projection; agree host field domains with the actual native consumer                                                 |
-| 643 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0623` | `RETAIN`              | `BR-0630`           | `REFERENCE` | Retain branch-owned verifier; replace candidate-directed success with independent exact consumer validation                                           |
-| 644 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0624` | `RETAIN`              | `BR-0636`           | `REFERENCE` | Retain shared bounded asset readers and portable pixel ownership; finish source namespace and cumulative work policy                                  |
-| 645 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0625` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Remove disconnected raw payload and byte-difference helpers; retain bounded semantic source readers and native contracts                              |
-| 646 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0626` | `RETAIN`              | `BR-0233`           | `REFERENCE` | Retain one shared branch-owned archive writer; publish a complete validated generation with exact source/output ownership                             |
-| 647 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0632` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Keep compatibility disc hashes separate from identity admission and refresh the actual database maintenance contract                                  |
-| 648 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0636` | `RETAIN`              | `BR-0607`           | `REFERENCE` | Keep replay sandbox and trace ownership in existing runners; repair recording prerequisites and required corpus contracts                             |
-| 649 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0637` | `RETAIN`              | `BR-0008`           | `REFERENCE` | Keep measured source identity distinct from path lookup and converge generated inventories on one source policy                                       |
-| 650 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0639` | `RETAIN`              | `BR-0169`           | `REFERENCE` | Retain engine-owned demo extraction and source tables; correct executable validation commands and complete oracle outcomes                            |
-| 651 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0640` | `RETAIN`              | `BR-0630`           | `REFERENCE` | Restore a concise mod family index and complete staged-input instructions while preserving converter/runtime ownership                                |
-| 652 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0641` | `RETAIN`              | `BR-0556`           | `REFERENCE` | Preserve exact build-to-upload artifact handoff and shared host setup while reconciling release identity and signing owners                           |
-| 653 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0642` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Keep policy tests beside branch-owned controller, audio, demo and import owners; require native and lifecycle acceptance separately                   |
-| 654 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0648` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain explicit music source policy, bounded typed sidecars and cache confinement; verify runtime publication and overlay lifecycle separately        |
-| 655 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0661` | `RETAIN`              | `BR-0649`           | `REFERENCE` | Retain SAF audio generation and asset teardown assertions; close existing title-music oracle and state-restoration owners                             |
-| 656 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0662` | `RETAIN`              | `BR-0644`           | `REFERENCE` | Retain shared render, music and generation assertions; reconcile existing binding oracle at current merged script                                     |
-| 657 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0663` | `RETAIN`              | `BR-0645`           | `REFERENCE` | Retain distinct route, rendering and recorder fixtures; finish existing paired pilot deletion oracle                                                  |
-| 658 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0665` | `RETAIN`              | `BR-0546`           | `REFERENCE` | Retain shared correlated runner and centralized host discovery; finish exact tool identity and existing staging lifetime policy                       |
-| 659 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0666` | `RETAIN`              | `BR-0171`           | `REFERENCE` | Retain shared host adapters and duration estimator; constrain existing process cleanup to owned generations                                           |
-| 660 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0667` | `RETAIN`              | `BR-0190`           | `REFERENCE` | Preserve centralized emulator readiness and active-set publication; finish typed ADB failures and bounded process ownership                           |
-| 661 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0668` | `RETAIN`              | `BR-0190`           | `REFERENCE` | Retain correlated terminal outcomes and shared dependency policy; replace name/size admission and uncovered lexical reader                            |
-| 662 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0675` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain shared managed emulators and fail-closed port conflicts; guarantee owned provisioning cleanup                                                  |
-| 663 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0676` | `RETAIN`              | `BR-0653`           | `REFERENCE` | Retain expanded paired LAN scenarios and controller-page waits; preserve accepted synchronization oracle through final verification                   |
-| 664 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0680` | `RETAIN`              | `BR-0665`           | `REFERENCE` | Retain slowdown/ABI/pilot invariants and removed stale route fixture; repair existing WebSocket bot protocol and lifetime owners                      |
-| 665 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0002` | `RETAIN` | `BR-0021` | `REFERENCE` | Extraction callback cancellation, JNI exception unwind, ISO abort and Mac fallback suppression |
-| 666 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0005` | `RETAIN` | `BR-0077` | `REFERENCE` | Native load status propagation, missing-secret policy and launcher assertion consumers |
-| 667 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0008` | `RETAIN` | `BR-0082` | `REFERENCE` | Metadata-backed Resume admission, scope/path checks and paired body/runtime readers |
-| 668 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0009` | `REMOVE` | `BR-0084` | `REFERENCE` | Dormant SAF base-file archive registration, managed-copy picker and injected-provider tests |
-| 669 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0011` | `RETAIN` | `BR-0099` | `REFERENCE` | Bundled audio database invalidation, local analysis completion and music name sidecar identity |
-| 670 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0016` | `REFACTOR` | `BR-0110` | `REFERENCE` | Simulator multi-client mapping identity and last-sender inbound delivery |
-| 671 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0023` | `RETAIN` | `BR-0119` | `REFERENCE` | Future protocol admission after version2 bump and rejection response contract |
-| 672 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0053` | `PRE-0108`            | `GQF-0036`          | `PRIMARY`   | saf_manifest_parser.c` retained strings and duplicate lookup                                                                                          |
-| 673 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0481` | `RETAIN`              | `GQR-0023`          | `REFERENCE` | Retain strict atomic SAF publication and save projection; complete existing bounded parsing and deletion identity owners                              |
-| 674 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0646` | `RETAIN`              | `GQR-0023`          | `REFERENCE` | Retain shared touch action policy and validated save/SAF projection; cover true publication and runtime generations at their owners                   |
-| 675 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0104` | `PRE-0108`            | `BR-0181`           | `REFERENCE` | Compare the complete fpcalc reference fingerprint                                                                                                     |
-| 676 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0105` | `PRE-0108`            | `BR-0662`           | `REFERENCE` | Keep mailbox assertions active in registered builds                                                                                                   |
-| 677 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0115` | `NO_INHERITED_EFFECT` | `BR-0182`           | `REFERENCE` | Exercise the production StuffIt parser in corpus tests                                                                                                |
-| 678 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0154` | `RETAIN`              | `BR-0224`           | `REFERENCE` | Fail closed on unknown automation actions and debug fields                                                                                            |
-| 679 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0156` | `RETAIN`              | `BR-0231`           | `REFERENCE` | Stop replay when direct-command policy fails                                                                                                          |
-| 680 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0160` | `RETAIN`              | `BR-0396`           | `REFERENCE` | Register route snapshot and cache tests with CTest                                                                                                    |
-| 681 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0163` | `RETAIN`              | `BR-0396`           | `REFERENCE` | Register route snapshot and cache tests with CTest                                                                                                    |
-| 682 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0444` | `RETAIN`              | `GQR-0205`          | `PRIMARY`   | Preserve debug SAF pipe error status before ordinary writer close                                                                                     |
-| 683 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0586` | `RETAIN`              | `BR-0561`           | `REFERENCE` | Retain a focused NAT simulation owner with canonical resolved endpoints and bounded mapping lifecycle                                                 |
-| 684 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0020` | `PRE-0108`            | `GQF-0059`          | `PRIMARY`   | Fingerprint matcher score serialization and best-CD selection                                                                                         |
-| 685 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0022` | `PRE-0108`            | `GQF-0063`          | `PRIMARY`   | CUE `FILE` directive grammar                                                                                                                          |
-| 686 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0039` | `PRE-0108`            | `GQF-0070`          | `PRIMARY`   | Windows `fingerprint_cd` CUE and BIN paths                                                                                                            |
-| 687 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0046` | `PRE-0108`            | `BR-0077`           | `REFERENCE` | Propagate loaded level failures to the metadata result                                                                                                |
-| 688 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0047` | `PRE-0108`            | `BR-0077`           | `REFERENCE` | Propagate loaded level failures to the metadata result                                                                                                |
-| 689 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0055` | `PRE-0108`            | `GQF-0105`          | `PRIMARY`   | Song-list token versus engine filename capacity                                                                                                       |
-| 690 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0117` | `DEFER`               | `GQF-0106`          | `PRIMARY`   | Container-track sidecar identity                                                                                                                      |
-| 691 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0123` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `PRIMARY`   | Mission ZIP loadable-level admission                                                                                                                  |
-| 692 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `REFERENCE` | Mission ZIP loadable-level admission                                                                                                                  |
-| 693 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0126` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `REFERENCE` | Mission ZIP loadable-level admission                                                                                                                  |
-| 694 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0147` | `RETAIN`              | `BR-0289`           | `REFERENCE` | Preserve resolution-scaled point primitives in GLES3                                                                                                  |
-| 695 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0149` | `RETAIN`              | `BR-0300`           | `REFERENCE` | Remove or restore the dead D1-in-D2 level-start mode                                                                                                  |
-| 696 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0157` | `CANDIDATE`           | `BR-0201`           | `REFERENCE` | Restore the replay floating-point environment on every platform                                                                                       |
-| 697 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0166` | `RETAIN`              | `BR-0588`           | `REFERENCE` | Correlate introspection reads with the current request                                                                                                |
-| 698 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0201` | `RETAIN`              | `GQF-0181`          | `PRIMARY`   | audio catalog payload lifetime, homing/HUD and demo codec                                                                                             |
-| 699 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0224` | `RETAIN`              | `BR-0588`           | `REFERENCE` | Introspection sampling, menus, player, secrets and route snapshots                                                                                    |
-| 700 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0225` | `RETAIN`              | `BR-0288`           | `REFERENCE` | Introspection route, Guide-Bot, thief, rendering, HUD and multiplayer snapshots                                                                       |
-| 701 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0230` | `RETAIN`              | `GQR-0175`          | `PRIMARY`   | Input-demo fixture settings, RNG/checkpoint schema and restored timer admission                                                                       |
-| 702 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0263` | `RETAIN`              | `GQF-0195`          | `PRIMARY`   | route geometry arithmetic, visibility cache, trigger source discovery and packing reconciliation                                                      |
-| 703 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0265` | `RETAIN`              | `GQF-0195`          | `REFERENCE` | route objective progression, fleeing carrier anchors and partial-result semantics                                                                     |
-| 704 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0310` | `RETAIN`              | `BR-0197`           | `REFERENCE` | private model headers, disabled TGA breakpoint, model texture upload and ClassicDepth draw policy                                                     |
-| 705 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0331` | `RETAIN`              | `GQR-0196`          | `PRIMARY`   | D2 object runtime interfaces, native/hybrid physics diagnostics and PIG cache/replacement ownership                                                   |
-| 706 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0353` | `RETAIN`              | `GQR-0201`          | `PRIMARY`   | D2 DXA patch snapshot, integer/frame parsing and native row/field test codecs                                                                         |
-| 707 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0355` | `RETAIN`              | `BR-0382`           | `REFERENCE` | D2 Guide-Bot warp/release/commands, secret search, traversal and path-goal resolution                                                                 |
-| 708 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0356` | `RETAIN`              | `GQR-0175`          | `REFERENCE` | D2 Guide-Bot path continuation, runtime reconstruction, replay probes, thief inventory and partial menu                                               |
-| 709 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0367` | `RETAIN`              | `BR-0386`           | `REFERENCE` | D2 weapon/homing, energy and RNG hooks, guided rebuild and runtime state with current D1 adapter delegation                                           |
-| 710 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0371` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 classic demo control trace, event/dump admission, quick recording and current D1 identity hooks                                                    |
-| 711 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0374` | `RETAIN`              | `GQR-0175`          | `REFERENCE` | D2 object allocator/runtime, warning view, FX RNG, diagnostics, missile-camera wakes and current cooperative death hooks                              |
-| 712 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0380` | `RETAIN`              | `BR-0197`           | `REFERENCE` | D2 model string/name guards, disabled TGA breakpoint, texture upload and ClassicDepth policy                                                          |
-| 713 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0426` | `RETAIN`              | `BR-0559`           | `REFERENCE` | AcoustID example rename, optional generated asset integration and keystore properties example                                                         |
-| 714 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0427` | `RETAIN`              | `BR-0471`           | `REFERENCE` | Controller/touch frozen presets, full current successors/discovery and fingerprint matching configuration                                             |
-| 715 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0430` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Complete known-discs corpus, identical current rename, strict full-byte audit and full current DiscIdentifier                                         |
-| 716 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0432` | `RETAIN`              | `BR-0562`           | `REFERENCE` | Complete frozen 196-line dependency manifest, full current delta, current JDK/fpcalc helpers, exact platform URL and updater pin paths                |
-| 717 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0437` | `RETAIN`              | `GQR-0123`          | `REFERENCE` | Complete Mac StuffIt oracle, identical current bytes, schema audit and full current native consumer                                                   |
-| 718 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-SWEEP-014` | `RETAIN` | `GQR-0008` | `REFERENCE` | Tracked artifact recurrence, cleanup/retention contracts, formatter selection and release review hygiene sweep |
-| 719 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0029` | `PRE-0108`            | `GQF-0075`          | `PRIMARY`   | Inno PE resource offset-table leaf                                                                                                                    |
-| 720 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0045` | `PRE-0108`            | `GQF-0095`          | `PRIMARY`   | Level-metadata process-global initialization retry                                                                                                    |
-| 721 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0098` | `PRE-0108`            | `GQF-0069`          | `PRIMARY`   | CD fingerprint BIN source generation                                                                                                                  |
-| 722 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0107` | `PRE-0108`            | `GQF-0082`          | `PRIMARY`   | Inno solid-chunk decoded prefix and terminal routing                                                                                                  |
-| 723 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0150` | `RETAIN`              | `BR-0222`           | `REFERENCE` | Publish input-demo artifact sets transactionally                                                                                                      |
-| 724 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0152` | `RETAIN`              | `GQF-0168`          | `PRIMARY`   | Replay current-frame direct-command acquisition                                                                                                       |
-| 725 |    43 | MEDIUM      | 23/0/7/10/3   | `GQ1-CHUNK-0180` | `RETAIN`              | `BR-0243`           | REFERENCE   | duplicate high-confidence diagnostic pagination loss is the only live root in this scope                                                              |
-| 726 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0139` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback                                                                                         |
-| 727 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0140` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback                                                                                         |
-| 728 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0382` | `RETAIN`              | `GQR-0110`          | `REFERENCE` | Android native CMake dependency acquisition, SDL patches, compiler/options and first target registrations                                             |
-| 729 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0012` | `REFACTOR` | `BR-0101` | `REFERENCE` | Global mission audio fingerprint retention and whole-file lookup/update costs |
-| 730 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0018` | `RETAIN` | `BR-0112` | `REFERENCE` | NAT sequential32-port reservation, startup errors and exhausted mapping admission |
-| 731 |    39 | MEDIUM      | 12/0/7/10/10  | `GQ1-CHUNK-0383` | `CANDIDATE`           | `GQR-0203`          | `PRIMARY`   | Android D2 target tail, native compile/link fixups and complete paired executable source-list comparison                                              |
-| 732 |    38 | MEDIUM      | 12/5/4/10/7   | `GQ1-CHUNK-0229` | `CANDIDATE`           | `BR-0290`           | `REFERENCE` | Input-demo diagnostic logger and duplicate inherited collision probes                                                                                 |
-| 733 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0209` | `RETAIN`              | `BR-0234`           | `REFERENCE` | headless metadata runtime, cooperative diagnostics and canonical serializers                                                                          |
-| 734 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0312` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 polygon/morph UVL and RGB ownership, count guards, face counters and current indexed-color handling                                                |
-| 735 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0431` | `RETAIN`              | `BR-0411`           | `REFERENCE` | Complete 452-line version corpus, identical current rename, strict schema/alias audit and complete KnownVersions consumer                             |
-| 736 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0451` | `RETAIN`              | `BR-0494`           | `REFERENCE` | Retain friend UI actions and replace terminal ICE ordinal projection under its existing owner                                                         |
-| 737 | 35 | MEDIUM | 12/7/2/10/4 | `GQ1-SWEEP-015` | `RETAIN` | `GQR-0015` | `REFERENCE` | Current dead-code/schema cleanup, historical owner reconciliation and exact remaining analysis gates |
-| 738 |    34 | LOW         | 12/0/2/10/10  | `GQ1-CHUNK-0575` | `RETAIN`              | `BR-0532`           | `REFERENCE` | Retain narrow repository tooling policy and platform-specific build discovery; align existing C/C++ editor/formatter indentation                      |
-| 739 |    33 | LOW         | 12/0/4/10/7   | `GQ1-CHUNK-0060` | `PRE-0108`            | `GQF-0117`          | `PRIMARY`   | Generated `descent.sng` alias bytes                                                                                                                   |
-| 740 |    31 | LOW         | 12/0/2/10/7   | `GQ1-CHUNK-0425` | `RETAIN`              | `BR-0407`           | `REFERENCE` | VS Code C/C++, extensions and current Java/search settings                                                                                            |
-| 741 | 12 | REFERENCE | 8/0/0/4/0 | `GQ1-RECHECK-0050` | `REMOVE` | `BR-0668` | `REFERENCE` | Assigned route-corpus wrapper and baseline were deleted in committed test cleanup |
-| 742 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0064` | `PRE-0108`            | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 743 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0077` | `PRE-0108`            | -                   | `NONE`      | No live canonical fix remains                                                                                                                         |
-| 744 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0078` | `PRE-0108`            | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 745 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0112` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 746 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0142` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 747 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0143` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 748 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0144` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 749 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0145` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 750 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0146` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 751 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0148` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 752 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0162` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
-| 753 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0168` | `NO_INHERITED_EFFECT` | -                   | NONE        | branch-added shared ownership is already natural and no new live defect survived reconciliation                                                       |
-| 754 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0169` | `DEFER`               | `BR-0029`           | REFERENCE   | all live quality evidence is already owned and the only minimization is an existing below-payoff deferral                                             |
-| 755 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0183` | `RETAIN`              | -                   | NONE        | all historical roots are closed or non-applicable and no new root survived complete reconciliation                                                    |
-| 756 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0189` | `RETAIN`              | NONE                | `REFERENCE` | Frozen timer issue already repaired in live code                                                                                                      |
-| 757 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0199` | `RETAIN`              | `NONE`              | `REFERENCE` | automap predicates, boss HUD, bounded music reads and RLE validation                                                                                  |
-| 758 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0228` | `RETAIN`              | `none`              | `REFERENCE` | Input-demo control state/pulse parsing, validation and coalescing                                                                                     |
-| 759 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0236` | `RETAIN`              | `none`              | `REFERENCE` | shared recording facade declarations                                                                                                                  |
-| 760 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0240` | `RETAIN`              | `none`              | `REFERENCE` | RNG trace C/C++ declarations, context/lifecycle signatures and suffix contract                                                                        |
-| 761 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0244` | `RETAIN`              | `none`              | `REFERENCE` | metadata view, route/state schemas, packing and declarations                                                                                          |
-| 762 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0256` | `RETAIN`              | `NONE`              | `REFERENCE` | MIDI enumeration header contract and caller ownership                                                                                                 |
-| 763 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0259` | `RETAIN`              | `NONE`              | `REFERENCE` | UDP shared authentication, welcome/observer admission and proxy/rebind adapter reconciliation                                                         |
-| 764 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0269` | `RETAIN`              | `-`                 | `REFERENCE` | native object, visibility and shootable-wall callbacks                                                                                                |
-| 765 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0276` | `RETAIN`              | `-`                 | `REFERENCE` | shared storage failure dialog presentation                                                                                                            |
-| 766 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0279` | `RETAIN`              | `-`                 | `REFERENCE` | paired model UVL ownership and ordinary/morph polygon admission                                                                                       |
-| 767 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0308` | `RETAIN`              | `none`              | `REFERENCE` | native argument defaults/initialization, fatal exit and bounded current messages, HMP wrapper and PhysFS platform setup                               |
-| 768 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0309` | `RETAIN`              | `none`              | `REFERENCE` | private texture-mapper declarations and balanced header guard                                                                                         |
-| 769 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0319` | `RETAIN`              | `none`              | `REFERENCE` | D2 native type aliases, multisource audio declarations, bounded replay-label header and guarded typed xmodel interface                                |
-| 770 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0321` | `RETAIN`              | `none`              | `REFERENCE` | D2 classic-demo dump snapshots, alias checks, temporary output and cleanup with current mount/input/asset-identity integration                        |
-| 771 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0378` | `RETAIN`              | `none`              | `REFERENCE` | D2 argument defaults/init, fatal output, removed HMP wrapper and shared PhysFS initialization                                                         |
-| 772 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0379` | `RETAIN`              | `none`              | `REFERENCE` | D2 private software texture mapper include guard                                                                                                      |
-| 773 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0381` | `RETAIN`              | `none`              | `REFERENCE` | Rust server manifest, removed json5 and scoped root lock consistency                                                                                  |
-| 774 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0384` | `RETAIN`              | `none`              | `REFERENCE` | D1 root native CMake options, Android platform seam, prefixed dependencies and current host-test/sanitizer registration                               |
-| 775 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0386` | `RETAIN`              | `none`              | `REFERENCE` | D1 3D archive prefix, platform compile option and dependency includes                                                                                 |
-| 776 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0388` | `RETAIN`              | `none`              | `REFERENCE` | D1 native editor CMake identity and dependency includes                                                                                               |
-| 777 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0389` | `RETAIN`              | `none`              | `REFERENCE` | D1 native IFF CMake identity and dependency includes                                                                                                  |
-| 778 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0392` | `RETAIN`              | `-`                 | `REFERENCE` | D1 memory CMake target and paired native target context                                                                                               |
-| 779 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0393` | `RETAIN`              | `-`                 | `REFERENCE` | D1 misc CMake target naming, optional PNG registration and relocated defaults test                                                                    |
-| 780 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0394` | `RETAIN`              | `-`                 | `REFERENCE` | D1 texture mapping CMake source and compile definition branches                                                                                       |
-| 781 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0395` | `RETAIN`              | `-`                 | `REFERENCE` | D1 UI CMake target naming and paired editor UI source context                                                                                         |
-| 782 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0396` | `RETAIN`              | `-`                 | `REFERENCE` | D1 external-model CMake target naming and paired renderer dependency context                                                                          |
-| 783 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0397` | `RETAIN`              | `-`                 | `REFERENCE` | D2 native root naming, deterministic compiler settings, Android platform admission and current host test registration                                 |
-| 784 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0399` | `RETAIN`              | `-`                 | `REFERENCE` | D2 3D CMake target naming, native Apple compiler policy and paired library context                                                                    |
-| 785 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0401` | `RETAIN`              | `-`                 | `REFERENCE` | D2 editor CMake target naming and source registration                                                                                                 |
-| 786 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0402` | `RETAIN`              | `-`                 | `REFERENCE` | D2 IFF CMake target naming and decoder registration                                                                                                   |
-| 787 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0406` | `RETAIN`              | `-`                 | `REFERENCE` | D2 memory CMake target prefix and public dependencies                                                                                                 |
-| 788 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0407` | `RETAIN`              | `-`                 | `REFERENCE` | D2 misc CMake target naming, optional PNG and relocated defaults test                                                                                 |
-| 789 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0408` | `RETAIN`              | `-`                 | `REFERENCE` | D2 texture-mapping CMake target prefix and software/ASM policy                                                                                        |
-| 790 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0409` | `RETAIN`              | `-`                 | `REFERENCE` | D2 editor UI target prefix and source inventory                                                                                                       |
-| 791 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0410` | `RETAIN`              | `-`                 | `REFERENCE` | D2 external-model target prefix and renderer dependencies                                                                                             |
-| 792 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0412` | `RETAIN`              | `-`                 | `REFERENCE` | D1 install-note mission archive sentence                                                                                                              |
-| 793 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0413` | `RETAIN`              | `-`                 | `REFERENCE` | D2 install-note mission archive sentence                                                                                                              |
-| 794 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0415` | `RETAIN`              | `-`                 | `REFERENCE` | Shared music-name/track, PhysFS setup, rewind, RGBA and SAF focused native tests                                                                      |
-| 795 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0416` | `RETAIN`              | `-`                 | `REFERENCE` | Audio format/read/decode, wall/GLES source, HOG catalog, replay limits, geometry and MIDI seek tests                                                  |
-| 796 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0417` | `RETAIN`              | `-`                 | `REFERENCE` | Secret-area scan state size, candidate saturation and opener/work-budget regression                                                                   |
-| 797 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0418` | `RETAIN`              | `-`                 | `REFERENCE` | Custom audio staging/publication, disc fingerprint projection, storage guard and lobby packet contracts                                               |
-| 798 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0419` | `RETAIN`              | `-`                 | `REFERENCE` | Paired player layout/text/transaction fixtures and D2 thief policy regression                                                                         |
-| 799 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0439` | `RETAIN`              | `-`                 | `REFERENCE` | Complete source manifest, identical current rename, resolver and exclusion/test context                                                               |
-| 800 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0442` | `RETAIN`              | `-`                 | `REFERENCE` | Retain small explicit Gradle rendering/tool settings                                                                                                  |
-| 801 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0443` | `RETAIN`              | `-`                 | `REFERENCE` | Retain debug-only nonexported SAF fixture registration                                                                                                |
-| 802 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0448` | `RETAIN`              | `-`                 | `REFERENCE` | Preserve immutable FileProvider generation store and completed exit-view removal                                                                      |
-| 803 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0529` | `RETAIN`              | `none`              | `REFERENCE` | Retain the closing boundary of the shared status-log composable; no inherited change or independent repair                                            |
-| 804 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0573` | `RETAIN`              | `-`                 | `REFERENCE` | Retain explicit backup exclusions and confined FileProvider cache roots                                                                               |
-| 805 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0627` | `RETAIN`              | `-`                 | `REFERENCE` | Retain concise current repository instructions and paired engine ownership guidance                                                                   |
-| 806 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0629` | `RETAIN`              | `-`                 | `REFERENCE` | Retain the repository-level Codex instruction pointer                                                                                                 |
-| 807 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0630` | `RETAIN`              | `BR-0001`           | `REFERENCE` | Retain removal of the stale nonconsumed D1/D2 OpenGL diff snapshot                                                                                    |
-| 808 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0635` | `RETAIN`              | `-`                 | `REFERENCE` | Retain the reviewed engine-generated secret baseline command and explicit required-asset gate                                                         |
-| 809 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0657` | `RETAIN`              | `NONE`              | `REFERENCE` | Retain paired weapon slot/current presentation and shared ammo policy without another engine inventory copy                                           |
-| 810 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0670` | `RETAIN`              | `NONE`              | `REFERENCE` | Retain focused asset fixtures and thin paired baseline wrapper                                                                                        |
-| 811 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0677` | `RETAIN`              | `-`                 | `REFERENCE` | Retain shared recorder diagnostics and thin headless/graphics regression entry points                                                                 |
-| 812 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0678` | `RETAIN`              | `-`                 | `REFERENCE` | Retain paired native fixture contracts, streaming boundary coverage and isolated sanitizer build selection                                            |
-| 813 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0679` | `RETAIN`              | `-`                 | `REFERENCE` | Retain transactional direct-command policy, explicit partial-result contracts and strict RNG backend probes                                           |
-| 814 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0708` | `RETAIN` | `none` | `REFERENCE` | Retain small always-active ETC2 layout boundary regression |
-| 815 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0715` | `RETAIN` | `none` | `REFERENCE` | Retain the completed local scroll-strip geometry plan and branch-owned math boundary |
+| 6 | 84 | IMMEDIATE | 32/28/7/10/7 | `GQ2-CHUNK-0157` | `CANDIDATE` | `GQR-0185` | `REFERENCE` | D1 platform, renderer and audio current delta |
+| 7 | 84 | IMMEDIATE | 32/28/7/10/7 | `GQ2-CHUNK-0172` | `CANDIDATE` | `GQR-0185` | `REFERENCE` | D2 platform, renderer and audio current delta |
+| 8 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0014` | `REFACTOR` | `BR-0106` | `REFERENCE` | Server configuration defaults, non-Play method enablement and implicit unverified Google identity |
+| 9 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0024` | `REFACTOR` | `BR-0121` | `REFERENCE` | Friend acceptance/block transitions, presence disclosure, coded-lobby join and client acknowledgements |
+| 10 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0025` | `REFACTOR` | `BR-0123` | `REFERENCE` | Admin ban database-only enforcement versus live websocket/lobby/relay/STUN capabilities |
+| 11 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0027` | `REFACTOR` | `BR-0125` | `REFERENCE` | External Google verifier per-attempt transport, missing flow budgets and body processing |
+| 12 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0028` | `REFACTOR` | `BR-0126` | `REFERENCE` | Public status per-request global lobby cloning, SQLite aggregates and HTTP admission |
+| 13 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0029` | `REFACTOR` | `BR-0127` | `REFERENCE` | Server pre-auth cap, repeated identity admission, player registry overwrite and stale cleanup |
+| 14 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0030` | `REFACTOR` | `BR-0128` | `REFERENCE` | Server required listener startup, nested detached STUN loop, health and failure exit |
+| 15 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0032` | `REFACTOR` | `BR-0132` | `REFERENCE` | Relay weak shared token, destination-driven sender registration and client frame acceptance |
+| 16 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0033` | `REFACTOR` | `BR-0133` | `REFERENCE` | Relay non-atomic capacity, repeated starts and two-hour absolute lifetime without terminal release |
+| 17 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0034` | `REFACTOR` | `BR-0137` | `REFERENCE` | Three authentication branches still convert ban-query errors into permission |
+| 18 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0035` | `REFACTOR` | `BR-0139` | `REFERENCE` | Synchronous rusqlite mutex operations called inline from asynchronous service work |
+| 19 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0036` | `REFACTOR` | `BR-0140` | `REFERENCE` | SQLite append-only identity, connection, match and snapshot growth without maintenance budgets |
+| 20 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0037` | `REFACTOR` | `BR-0143` | `REFERENCE` | Known-key callsign/timestamp signatures lack nonce, audience and transcript binding |
+| 21 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0038` | `REFACTOR` | `BR-0144` | `REFERENCE` | Bounded delivery silently loses control events and writer failure does not cancel reader |
+| 22 | 83 | IMMEDIATE | 40/16/10/10/7 | `GQ1-RECHECK-0039` | `REFACTOR` | `BR-0153` | `REFERENCE` | Late-join still holds outer session read guard when reacquiring same session mutably |
+| 23 | 83 | IMMEDIATE | 35/28/7/10/3 | `GQ1-SWEEP-005` | `REFACTOR` | `BR-0153` | `REFERENCE` | Cross-language server startup/auth/transport/lock/resource sweep; current local repairs do not close existing production roots |
+| 24 |    82 | IMMEDIATE   | 23/35/7/10/7  | `GQ1-CHUNK-0165` | `CANDIDATE`           | `GQF-0175`          | `PRIMARY`   | Paired headless executable target construction                                                                                                        |
+| 25 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0127` | `CANDIDATE`           | `GQF-0156`          | `PRIMARY`   | Paired menu/window debug accessors                                                                                                                    |
+| 26 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0132` | `CANDIDATE`           | `GQF-0156`          | `REFERENCE` | Paired menu/window debug accessors                                                                                                                    |
+| 27 |    75 | HIGH        | 23/28/7/10/7  | `GQ1-CHUNK-0135` | `CANDIDATE`           | `GQF-0156`          | `REFERENCE` | Paired menu/window debug accessors                                                                                                                    |
+| 28 |    71 | HIGH        | 12/35/7/10/7  | `GQ1-CHUNK-0377` | `CANDIDATE`           | `GQR-0192`          | `REFERENCE` | D2 RNG backend/streams/state/counters/annotation and full paired shared-owner candidate                                                               |
+| 29 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-004` | `REFACTOR` | `GQR-0128` | `REFERENCE` | Archive projection/budgets, Kotlin atomic publication, storage arithmetic, strict config admission and native save recovery sweep |
+| 30 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-006` | `REFACTOR` | `GQR-0154` | `REFERENCE` | Audio EOF ordering, music snapshot allocation, input transition budget, surface references and cross-domain ownership sweep |
+| 31 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-010` | `RETAIN` | `GQR-0212` | `REFERENCE` | Frame profiling bounds, source hashing/materialization, cache retention and UI storage work sweep |
+| 32 | 65 | HIGH | 35/12/4/10/4 | `GQ1-SWEEP-011` | `REFACTOR` | `GQR-0170` | `REFERENCE` | Native/JVM diagnostic ownership, durable error delivery, privacy and truthful process/storage outcomes sweep |
+| 33 | 65 | HIGH | 35/12/5/8/5 | `GQ1-RECHECK-0045` | `REFACTOR` | `BR-0164` | `REFERENCE` | Standalone emulator relay still learns any first sender and forwards every other source |
+| 34 | 65 | HIGH | 32/12/7/10/4 | `GQ1-RECHECK-0020` | `REFACTOR` | `BR-0114` | `REFERENCE` | Proxy-derived client identity for websocket limiting, observed candidates and STUN allowlisting |
+| 35 | 65 | HIGH | 32/12/7/10/4 | `GQ1-RECHECK-0021` | `REFACTOR` | `BR-0117` | `REFERENCE` | Unused five-per-hour authentication limiter and failure-branch admission |
+| 36 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0245` | `CANDIDATE`           | `GQF-0191`          | `PRIMARY`   | merged-wall cache ownership, texture lifetime and inherited transaction residue                                                                       |
+| 37 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0246` | `CANDIDATE`           | `GQF-0191`          | `REFERENCE` | merged-wall cache composition, reservation, UV/source samples and GL-state queries                                                                    |
+| 38 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0278` | `CANDIDATE`           | `GQF-0197`          | `PRIMARY`   | paired bitmap/font dispatch, color glyph fallback and deterministic palette cache                                                                     |
+| 39 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0294` | `CANDIDATE`           | `GQR-0189`          | `PRIMARY`   | native pilot adapters/persistence/model color and cooperative duplicate pickup rewards                                                                |
+| 40 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0298` | `CANDIDATE`           | `GQR-0190`          | `PRIMARY`   | render/FOV and paired texture-label production, native score/music and save-format prefix                                                             |
+| 41 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0307` | `CANDIDATE`           | `GQR-0192`          | `PRIMARY`   | native RNG streams, state/count and annotation implementation, paired header/default/compiler/opt-out ABI                                             |
+| 42 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0311` | `CANDIDATE`           | `GQR-0184`          | `REFERENCE` | D2 paired bitmap/font dispatch and glyph allocation, current font names, deterministic palette cache and rectangles                                   |
+| 43 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0318` | `CANDIDATE`           | `GQR-0192`          | `REFERENCE` | D2 RNG/header annotation, render/input/platform and texture interfaces, diagnostic externs and final-line read contract                               |
+| 44 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0337` | `CANDIDATE`           | `GQR-0189`          | `REFERENCE` | D2 pilot schemas/helpers, model rendering interfaces and cooperative/native powerup rewards                                                           |
+| 45 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0341` | `RETAIN`              | `GQR-0190`          | `REFERENCE` | D2 rendering, high scores, secret-area interface, songs and save schema top                                                                           |
+| 46 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0344` | `RETAIN`              | `GQR-0178`          | `REFERENCE` | D2 restore tail, trigger disk/runtime storage, cache ownership, text, thief policy and titles                                                         |
+| 47 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0385` | `RETAIN`              | `GQR-0184`          | `REFERENCE` | D1 2D CMake source registration and paired shared font ownership                                                                                      |
+| 48 |    64 | MEDIUM-HIGH | 12/28/7/10/7  | `GQ1-CHUNK-0398` | `RETAIN`              | `GQR-0184`          | `REFERENCE` | D2 2D CMake source registration, paired font dispatch and shared monochrome glyph/control handling                                                    |
+| 49 | 64 | MEDIUM-HIGH | 12/28/7/10/7 | `GQ2-CHUNK-0155` | `CANDIDATE` | `GQR-0184` | `REFERENCE` | D1 font and PCX current delta |
+| 50 | 64 | MEDIUM-HIGH | 12/28/7/10/7 | `GQ2-CHUNK-0170` | `CANDIDATE` | `GQR-0184` | `REFERENCE` | D2 font and PCX current delta |
+| 51 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0016` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
+| 52 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0040` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
+| 53 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0041` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
+| 54 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0042` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
+| 55 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0044` | `PRE-0108`            | `BR-0073`           | `REFERENCE` | Resolve LGPL obligations for the embedded XADMaster-derived extractors                                                                                |
+| 56 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0467` | `RETAIN`              | `GQR-0210`          | `PRIMARY`   | Retain shared slot presentation and bounded IO; make preparse nesting admission match the accepted JSON grammar                                       |
+| 57 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0492` | `RETAIN`              | `GQR-0210`          | `REFERENCE` | Retain typed configuration admission and ordinary rollback; complete existing grammar and cross-process generation owners                             |
+| 58 |    59 | MEDIUM-HIGH | 32/0/7/10/10  | `GQ1-CHUNK-0650` | `RETAIN`              | `GQR-0210`          | `REFERENCE` | Retain shared typed config and controller policy; finish existing bounded grammar and durable publication owners                                      |
+| 59 |    59 | MEDIUM-HIGH | 32/0/10/10/7  | `GQ1-CHUNK-0141` | `NO_INHERITED_EFFECT` | `BR-0194`           | `REFERENCE` | Bootstrap certificates before enabling the nginx TLS site                                                                                             |
+| 60 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0125` | `CANDIDATE`           | `GQF-0155`          | `PRIMARY`   | Paired Android PhysFS initialization residue                                                                                                          |
+| 61 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0137` | `CANDIDATE`           | `GQF-0155`          | `REFERENCE` | Paired Android PhysFS initialization residue                                                                                                          |
+| 62 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0153` | `CANDIDATE`           | `GQF-0169`          | `PRIMARY`   | Paired Redbook Android extension declarations                                                                                                         |
+| 63 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0155` | `CANDIDATE`           | `GQF-0170`          | `PRIMARY`   | Paired HMP Android wrapper residue                                                                                                                    |
+| 64 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0158` | `CANDIDATE`           | `DMR1-CHUNK-003`    | `REFERENCE` | Extract paired texture-overlay draw bodies                                                                                                            |
+| 65 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0159` | `CANDIDATE`           | `GQF-0172`          | `PRIMARY`   | Residual paired Android mixer init logging                                                                                                            |
+| 66 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0164` | `CANDIDATE`           | `GQF-0174`          | `PRIMARY`   | Paired secret-area save serialization helpers                                                                                                         |
+| 67 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0167` | `NO_INHERITED_EFFECT` | `GQF-0174`          | `REFERENCE` | Paired secret-area save serialization helpers                                                                                                         |
+| 68 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0289` | `CANDIDATE`           | `GQR-0188`          | `PRIMARY`   | native collision/loot/FVI/effects/console/config/endlevel integration and paired config minimization                                                  |
+| 69 |    57 | MEDIUM-HIGH | 12/21/7/10/7  | `GQ1-CHUNK-0338` | `CANDIDATE`           | `GQR-0188`          | `REFERENCE` | D2 config/defaults/graphics publication, console routing, control probes and coop forwarding headers                                                  |
+| 70 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-001` | `RETAIN` | `GQR-0188` | `REFERENCE` | Paired overlay, virtual input and scene profiling already shared; paired config policy remains an accepted candidate |
+| 71 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-009` | `RETAIN` | `GQR-0192` | `REFERENCE` | Paired RNG/checkpoint state, per-frame FP environment, shared replay gates and artifact identity sweep |
+| 72 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ1-SWEEP-013` | `REFACTOR` | `GQR-0189` | `REFERENCE` | Paired cooperative pickup predicates, orphan JNI/ETC2 code and narrow shared ownership reconciliation |
+| 73 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ2-CHUNK-0160` | `CANDIDATE` | `GQR-0188` | `REFERENCE` | D1 AI, automap, assets, reactor, collision, config and credits current delta |
+| 74 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ2-CHUNK-0176` | `CANDIDATE` | `GQR-0188` | `REFERENCE` | D2 AI, automap, assets, reactor, collision, config and credits current delta |
+| 75 |    56 | MEDIUM-HIGH | 32/0/4/10/10  | `GQ1-CHUNK-0376` | `RETAIN`              | `GQR-0202`          | `PRIMARY`   | D2 save thumbnail/object/player codecs, scoped save paths, raw copy, writer and restore lifecycle                                                     |
+| 76 | 56 | MEDIUM-HIGH | 32/0/4/10/10 | `GQ1-CHUNK-0691` | `RETAIN` | `BR-0078` | `REFERENCE` | Retain current verified dependency and bitmap owner fixtures; reconcile TGA failure oracle with existing output-preservation policy |
+| 77 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0009` | `PRE-0108`            | `GQF-0037`          | `PRIMARY`   | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
+| 78 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0015` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
+| 79 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0019` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
+| 80 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0023` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
+| 81 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0093` | `PRE-0108`            | `GQF-0037`          | `REFERENCE` | SAF URI and MIDI path/JSON JNI text bridges                                                                                                           |
+| 82 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0170` | `RETAIN`              | `GQF-0007`          | REFERENCE   | duplicate evidence for an open high-confidence stack-boundary defect, with no second remediation owner                                                |
+| 83 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0203` | `RETAIN`              | `GQF-0183`          | `PRIMARY`   | weapon-order pilot summaries, patch coordination and JNI publication                                                                                  |
+| 84 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0204` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | controller schema admission, pilot patch batches and JNI acquisition                                                                                  |
+| 85 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0207` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | batch-axis JNI acquisition, mailbox drain, keyboard callbacks and admin input                                                                         |
+| 86 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0208` | `RETAIN`              | `GQF-0183`          | `REFERENCE` | launcher pilot selection, grouped preference publication and JNI failure handling                                                                     |
+| 87 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0231` | `RETAIN`              | `GQR-0176`          | `PRIMARY`   | Input-demo file/header/frame parsing and aggregate typed memory admission                                                                             |
+| 88 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0237` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | recorder session memory, capture, staging, truncate and artifact flush                                                                                |
+| 89 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0238` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | replay command numeric admission, aggregate expansion, checkpoint integrity and session publication                                                   |
+| 90 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0239` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | result schema, comparison, standalone file I/O and C-facing allocation boundaries                                                                     |
+| 91 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0242` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | state-trace schema, header/frame I/O, final close and C-facing allocation boundaries                                                                  |
+| 92 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0260` | `RETAIN`              | `GQF-0192`          | `PRIMARY`   | replacement texture discovery, decoder ownership and borrowed-path eviction lifetime                                                                  |
+| 93 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0261` | `RETAIN`              | `GQF-0194`          | `PRIMARY`   | Redbook source handle ownership and native playlist JSON admission                                                                                    |
+| 94 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0262` | `RETAIN`              | `GQF-0194`          | `REFERENCE` | Redbook complete source admission, sector reads, final PCM publication and initialization                                                             |
+| 95 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0273` | `RETAIN`              | `BR-0339`           | `REFERENCE` | network overlay viewport sizing, polling lifecycle and diagnostic freshness                                                                           |
+| 96 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0274` | `RETAIN`              | `BR-0342`           | `REFERENCE` | import size arithmetic, LAN packet authority and shared protocol constants                                                                            |
+| 97 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0275` | `RETAIN`              | `BR-0090`           | `REFERENCE` | client/server wire schema, authentication and metric/candidate admission                                                                              |
+| 98 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0277` | `RETAIN`              | `BR-0343`           | `REFERENCE` | build-variant cleartext transport policy                                                                                                              |
+| 99 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0286` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | multi-source audio and model header contracts                                                                                                         |
+| 100 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0291` | `DEFER`               | `BR-0195`           | `REFERENCE` | native cooperative network dispatch, restore/election/status, difficulty history, diagnostics and robot movement/kill hooks                           |
+| 101 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0295` | `RETAIN`              | `BR-0195`           | `REFERENCE` | native UDP tail/headers, heartbeat/refusal/extras and classic/input recording lifecycle                                                               |
+| 102 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0301` | `RETAIN`              | `BR-0356`           | `REFERENCE` | native UDP admission, authenticated sequence/welcome, object synchronization and full game-info codecs                                                |
+| 103 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0302` | `RETAIN`              | `BR-0356`           | `REFERENCE` | native UDP authenticated dispatch, sync publication, reliable relay and position-state acceptance                                                     |
+| 104 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0305` | `RETAIN`              | `GQR-0191`          | `PRIMARY`   | native runtime footer write/preflight/apply, morph/effect/stuck references, secret serialization and thumbnails                                       |
+| 105 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0324` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 PDATA liveness/playing/world gates, P2P heartbeat, observer relay, extras and current protocol headers                                             |
+| 106 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0327` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 companion reservation and robot position/thief/flare/explosion/boss hooks plus evolving multiplayer headers                                        |
+| 107 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0333` | `RETAIN`              | `GQR-0197`          | `PRIMARY`   | D2 AI paths/SIM/runtime adapters, automap labels/batching/lifecycle and HAM codec interfaces                                                          |
+| 108 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0334` | `RETAIN`              | `GQR-0191`          | `REFERENCE` | D2 walls, doorway semantics, stuck-object retirement and native weapon adapters                                                                       |
+| 109 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0348` | `RETAIN`              | `GQR-0199`          | `PRIMARY`   | D2 original base asset generation, model ownership and bounded sound/source admission                                                                 |
+| 110 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0351` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D1 checkpoint preview, bounded memory codec, object unions and native identity admission                                                              |
+| 111 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0368` | `RETAIN`              | `BR-0195`           | `REFERENCE` | D2 multiplayer cooperative dispatch, inventory/status, thief, master migration and evolving recovery/gameplay stamps                                  |
+| 112 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0369` | `RETAIN`              | `BR-0356`           | `REFERENCE` | D2 UDP admission, reconnect/welcome, object sync, identity and game-info with current stamped join/transport probes                                   |
+| 113 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0370` | `RETAIN`              | `BR-0356`           | `REFERENCE` | D2 UDP sync, menus, selection, join wait, lifecycle, reliable queues, observer relay and current packet fences                                        |
+| 114 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0375` | `RETAIN`              | `GQR-0191`          | `REFERENCE` | D2 save runtime IO, fidelity records, footer preflight and current delegated runtime tails                                                            |
+| 115 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0445` | `RETAIN`              | `BR-0343`           | `REFERENCE` | Preserve process isolation and flavor-specific manifest declarations; close existing release transport policy owner                                   |
+| 116 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0446` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain shared loading overlay and LAN diagnostic policy; authentication remains an existing distinct owner                                            |
+| 117 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0450` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Keep controller mapping policy shared and close existing slot-generation transaction owner                                                            |
+| 118 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0455` | `RETAIN`              | `BR-0490`           | `REFERENCE` | Retain distinct LAN and online projections; finish authoritative LAN transitions and host controls under existing owners                              |
+| 119 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0456` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Preserve shared touch models and disposable-format policy; close ordinary publication and asset ownership owners                                      |
+| 120 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0459` | `RETAIN`              | `BR-0457`           | `REFERENCE` | Keep cryptographic reconnect identity distinct from LAN display IDs; retain completed button deduplication and bound optional UPnP                    |
+| 121 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0462` | `RETAIN`              | `BR-0148`           | `REFERENCE` | Keep probe cancellation and owned socket boundaries; complete pair association and shared initial-focus policy                                        |
+| 122 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0469` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Preserve shared touch slots and colors; complete ordinary durable publication and event-time acceleration owners                                      |
+| 123 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0471` | `RETAIN`              | `GQR-0170`          | `REFERENCE` | Retain game-specific native format ownership and scoped caches; complete existing JNI and grouped pilot contracts                                     |
+| 124 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0476` | `RETAIN`              | `BR-0461`           | `REFERENCE` | Retain shared bounded folder traversal and safe migration repairs; use one supported import-format admission policy                                   |
+| 125 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0478` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain current schema, active-set and registry repairs; complete existing metadata budgets and capped chat update ownership                           |
+| 126 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0479` | `RETAIN`              | `GQR-0170`          | `REFERENCE` | Retain typed autoselect and preview lifecycle repairs; resolve previews through their owning audio set                                                |
+| 127 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0484` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain typed AcoustID retry and candidate evidence; complete existing metadata budgets and immutable join approval                                    |
+| 128 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0489` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain one disposable plural audio URI schema and atomic registry publication; finish existing native parser and resource transaction owners          |
+| 129 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0500` | `RETAIN`              | `BR-0463`           | `REFERENCE` | Retain authoritative format roles and shared mission policy; reject malformed secret origins without changing their identity                          |
+| 130 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0501` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain validated PIG layout metadata; apply existing shared budgets to every summary reader                                                           |
+| 131 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0507` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain request-generation identity and current metadata target helpers; enforce shared bounded descriptor admission before analysis                   |
+| 132 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0508` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain archive staging bounds and scoped cancellation; reopen existing worker protocol acceptance at actual callers                                   |
+| 133 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0509` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain isolated paired metadata services and FIFO lifetime; complete reopened request protocol through service terminal paths                         |
+| 134 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0510` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain LAN transport recovery and mission handshake; complete existing unauthenticated discovery and session owners                                   |
+| 135 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0511` | `RETAIN`              | `BR-0490`           | `REFERENCE` | Keep correlated LAN launch preparation; finish serialized membership and validated host controls                                                      |
+| 136 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0512` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain one joined lobby heartbeat owner and complete its authenticated generation lifetime                                                            |
+| 137 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0513` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep activity JNI contracts and current input helpers; validate existing engine ownership and lifecycle repairs                                       |
+| 138 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0514` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared activity overlay wiring and game-process bridge; finish existing accessible actions and command contracts                               |
+| 139 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0515` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain lifecycle-owned polling and current release routing; finish existing cross-process preferences and launch admission                            |
+| 140 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0516` | `RETAIN`              | `BR-0266`           | `REFERENCE` | Retain one activity poll and private debug boundary; finish correlated automation and durable transient launches                                      |
+| 141 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0517` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep centralized controller destinations and raw menu axes; finish existing takeover and input-admission acceptance                                   |
+| 142 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0518` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain catalog stream ownership; carry existing shared metadata budget through every nested archive and skipped payload                               |
+| 143 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0519` | `RETAIN`              | `BR-0186`           | `REFERENCE` | Retain file-set mod ownership and scanner preflight; finish existing archive, identity and registry transactions                                      |
+| 144 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0520` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Keep mission-scoped launch catalogs and partial HAM schema validation; finish shared metadata admission and launch publication                        |
+| 145 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0522` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Keep shared mission status, invitation and join routing; finish existing LAN host authority and lifetime owners                                       |
+| 146 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0523` | `RETAIN`              | `BR-0497`           | `REFERENCE` | Retain the shared UDP forwarder and explicit startup/failure seam; finish existing peer authority and teardown                                        |
+| 147 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0524` | `RETAIN`              | `BR-0499`           | `REFERENCE` | Retain one matchmaking service and its generation-owned transport handoff; close existing endpoint and protocol owners                                |
+| 148 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0525` | `RETAIN`              | `BR-0116`           | `REFERENCE` | Keep shared matchmaking dispatch and game-process IPC; enforce existing bounded protocol and acknowledged state owners                                |
+| 149 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0527` | `RETAIN`              | `BR-0499`           | `REFERENCE` | Retain shared multiplayer navigation and dialog factories; reconcile online reachability and existing endpoint/resume owners                          |
+| 150 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0530` | `RETAIN`              | `BR-0339`           | `REFERENCE` | Retain bounded shared stats projection and native snapshots; close existing viewport, detach and escort-affinity owners                               |
+| 151 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0531` | `RETAIN`              | `GQR-0218`          | `PRIMARY`   | Retain shared music commands and source admission; guard native snapshot allocation and reconcile list generations                                    |
+| 152 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0536` | `RETAIN`              | `BR-0497`           | `REFERENCE` | Retain shared setup command and migration adapters; finish existing authenticated proxy and replacement ownership                                     |
+| 153 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0539` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain shared launcher navigation and import dialogs; finish ownership-consistent removal and config transaction acceptance                           |
+| 154 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0548` | `RETAIN`              | `BR-0018`           | `REFERENCE` | Retain repaired direct ZIP and collision checks; reopen existing archive-budget owner for direct Setup 7z bypass                                      |
+| 155 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0552` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain file-set content grouping and shared detail readers; finish existing metadata, publication and download terminal owners                        |
+| 156 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0553` | `RETAIN`              | `GQR-0045`          | `REFERENCE` | Preserve current music identity and preview repairs; complete existing full-track work and metadata cancellation owners                               |
+| 157 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0554` | `RETAIN`              | `BR-0018`           | `REFERENCE` | Retain bounded shared text and immutable grants; extend existing provider UI and extraction budget owners at actual callers                           |
+| 158 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0555` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Preserve bounded descriptor reads and owned preview requests; retain existing worker terminal and metadata admission owners                           |
+| 159 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0556` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain shared native-summary presentation and current route labels; finish existing bounded metadata and retry owners                                 |
+| 160 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0631` | `RETAIN`              | `BR-0642`           | `REFERENCE` | Retain handwritten issue tracking and distribution guidance; reconcile partially repaired privacy disclosure against shipped sources                  |
+| 161 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0634` | `RETAIN`              | `GQR-0176`          | `REFERENCE` | Preserve explicit recording-fidelity and engine-parity gates; reconcile the surviving private corpus without replay compensation                      |
+| 162 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0643` | `RETAIN`              | `BR-0461`           | `REFERENCE` | Preserve current-only touch policy and verified import-root transaction boundary; keep lifecycle and fault acceptance owned                           |
+| 163 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0647` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain safe PIG metadata and press-owned dispatcher replacement; require shared budgets and coherent graphics/GOG admission                           |
+| 164 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0649` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Preserve typed remote lookup, native format parity and current tray controls; close existing bounded metadata and generation owners                   |
+| 165 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0651` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Preserve shared encoding, mission admission and diagnostics; close existing metadata, native parity and lifecycle owners                              |
+| 166 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0652` | `RETAIN`              | `BR-0342`           | `REFERENCE` | Retain shared resume and authenticated reconnect primitives; complete existing native save and session identity acceptance                            |
+| 167 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0654` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain plural audio schema, external ownership and decoder integrity; finish existing admission and resource publication owners                       |
+| 168 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0655` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain bounded traversal, atomic leaf copy and input mixing; close existing grouped replay and metadata-worker owners                                 |
+| 169 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0656` | `RETAIN`              | `BR-0484`           | `REFERENCE` | Retain shared metadata and preview helpers; close actual worker-generation and LAN authority owners                                                   |
+| 170 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0658` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain parameterized game automation and paired cooperative scenarios; distinguish assertions from diagnostic actions                                 |
+| 171 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0660` | `RETAIN`              | `GQR-0181`          | `REFERENCE` | Retain real renderer, import, preview and route assertions; finish existing native audio and lifetime acceptance                                      |
+| 172 |    56 | MEDIUM-HIGH | 32/0/7/10/7   | `GQ1-CHUNK-0664` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Preserve paired save, axis and boss behavior fixtures without promoting happy-path coverage to admission or concurrency proof                         |
+| 173 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQ1-CHUNK-0710` | `RETAIN` | `BR-0392` | `REFERENCE` | Retain exact Cargo lock provenance; close existing TLS graph and test-only dependency owners |
+| 174 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0013` | `PRE-0108`            | `GQF-0047`          | `PRIMARY`   | ISO output directory traversal and final opens                                                                                                        |
+| 175 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0018` | `PRE-0108`            | `BR-0497`           | `REFERENCE` | Authenticate and bound dynamic host-proxy peer admission                                                                                              |
+| 176 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0021` | `PRE-0108`            | `GQF-0061`          | `PRIMARY`   | Complete CD extraction attempt budget                                                                                                                 |
+| 177 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0030` | `PRE-0108`            | `GQF-0051`          | `PRIMARY`   | STi2 method-15 decode scratch                                                                                                                         |
+| 178 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0031` | `PRE-0108`            | `GQF-0078`          | `PRIMARY`   | Inno version admission arithmetic                                                                                                                     |
+| 179 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0032` | `PRE-0108`            | `GQF-0076`          | `PRIMARY`   | Inno metadata LZMA peak-live memory                                                                                                                   |
+| 180 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0033` | `PRE-0108`            | `GQF-0083`          | `PRIMARY`   | Inno aggregate repeated solid-chunk decoding                                                                                                          |
+| 181 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0034` | `PRE-0108`            | `GQF-0083`          | `REFERENCE` | Inno aggregate repeated solid-chunk decoding                                                                                                          |
+| 182 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0036` | `PRE-0108`            | `GQF-0047`          | `REFERENCE` | ISO output directory traversal and final opens                                                                                                        |
+| 183 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0043` | `PRE-0108`            | `GQF-0051`          | `REFERENCE` | STi2 method-15 decode scratch                                                                                                                         |
+| 184 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0049` | `PRE-0108`            | `BR-0080`           | `REFERENCE` | Validate ship-status player and weapon indices before caching or display                                                                              |
+| 185 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0054` | `PRE-0108`            | `GQF-0100`          | `PRIMARY`   | ZIP early-marker prompt bypass                                                                                                                        |
+| 186 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0056` | `PRE-0108`            | `GQF-0108`          | `PRIMARY`   | RAR policy rejection fallback                                                                                                                         |
+| 187 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0061` | `PRE-0108`            | `GQF-0118`          | `PRIMARY`   | Nested mission music container catalogs                                                                                                               |
+| 188 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0062` | `PRE-0108`            | `GQF-0119`          | `PRIMARY`   | Streaming descriptor nested music budget                                                                                                              |
+| 189 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0063` | `PRE-0108`            | `BR-0090`           | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication                                                                 |
+| 190 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0065` | `PRE-0108`            | `BR-0106`           | `REFERENCE` | Fail closed when Google authentication is not configured                                                                                              |
+| 191 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0066` | `PRE-0108`            | `BR-0108`           | `REFERENCE` | Reject incomplete TLS configuration instead of serving plaintext                                                                                      |
+| 192 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0067` | `PRE-0108`            | `BR-0090`           | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication                                                                 |
+| 193 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0068` | `PRE-0108`            | `BR-0121`           | `REFERENCE` | Enforce the friend-state authorization invariant on accept, presence, and join                                                                        |
+| 194 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0069` | `PRE-0108`            | `BR-0127`           | `REFERENCE` | Give every WebSocket connection generation-safe session ownership                                                                                     |
+| 195 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0070` | `PRE-0108`            | `BR-0132`           | `REFERENCE` | Authenticate each relay endpoint and preserve its exact lobby slot                                                                                    |
+| 196 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0071` | `PRE-0108`            | `BR-0137`           | `REFERENCE` | Fail closed when ban enforcement cannot read the database                                                                                             |
+| 197 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0073` | `PRE-0108`            | `BR-0115`           | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work                                                                                |
+| 198 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0075` | `PRE-0108`            | `BR-0115`           | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work                                                                                |
+| 199 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0076` | `PRE-0108`            | `BR-0116`           | `REFERENCE` | Validate and cap ICE candidates before storing or expanding them                                                                                      |
+| 200 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0079` | `PRE-0108`            | `GQF-0024`          | `PRIMARY`   | android/app/src/main/cpp/CMakeLists.txt` production dependency fetches                                                                                |
+| 201 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0083` | `PRE-0108`            | `GQF-0125`          | `PRIMARY`   | Bounded extraction Python runtime                                                                                                                     |
+| 202 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0084` | `PRE-0108`            | `GQF-0127`          | `PRIMARY`   | Bounded extractor descendant ownership                                                                                                                |
+| 203 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0088` | `PRE-0108`            | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
+| 204 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0090` | `PRE-0108`            | `GQF-0128`          | `PRIMARY`   | Extractor link and special-file outputs                                                                                                               |
+| 205 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0092` | `PRE-0108`            | `GQF-0078`          | `REFERENCE` | Inno version admission arithmetic                                                                                                                     |
+| 206 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0095` | `PRE-0108`            | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
+| 207 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0106` | `PRE-0108`            | `GQF-0076`          | `REFERENCE` | Inno metadata LZMA peak-live memory                                                                                                                   |
+| 208 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0119` | `NO_INHERITED_EFFECT` | `GQF-0061`          | `REFERENCE` | Complete CD extraction attempt budget                                                                                                                 |
+| 209 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0121` | `NO_INHERITED_EFFECT` | `GQF-0119`          | `REFERENCE` | Streaming descriptor nested music budget                                                                                                              |
+| 210 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0122` | `NO_INHERITED_EFFECT` | `GQF-0118`          | `REFERENCE` | Nested mission music container catalogs                                                                                                               |
+| 211 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0128` | `CANDIDATE`           | `GQF-0127`          | `REFERENCE` | Bounded extractor descendant ownership                                                                                                                |
+| 212 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0130` | `NO_INHERITED_EFFECT` | `GQF-0125`          | `REFERENCE` | Bounded extraction Python runtime                                                                                                                     |
+| 213 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0390` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D1 native executable/source/Android policy, headless metadata/test construction and paired desktop JSON fallback                                      |
+| 214 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0391` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D1 maths target naming, platform math, relocated native test graph and current shared test registration                                               |
+| 215 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0404` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D2 native executable/source inventories, headless/route/metadata targets and desktop JSON acquisition                                                 |
+| 216 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0405` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | D2 maths target and completed native test relocation                                                                                                  |
+| 217 |    56 | MEDIUM-HIGH | 32/0/10/10/4  | `GQ1-CHUNK-0606` | `RETAIN`              | `GQR-0011`          | `REFERENCE` | Align paired packet-log consumers with the native producer; finish existing verified texture-tool acquisition                                         |
+| 218 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0716` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 219 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0717` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 220 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0718` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 221 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0719` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 222 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0720` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 223 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0721` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 224 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0722` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 225 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0723` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 226 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0724` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 227 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0725` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 228 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0726` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 229 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0727` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 230 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0728` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 231 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0729` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 232 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0730` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 233 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0731` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 234 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0732` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 235 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0733` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 236 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0734` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 237 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0735` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 238 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0736` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 239 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0737` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 240 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0738` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 241 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0739` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 242 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0740` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 243 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0741` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 244 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0742` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 245 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0743` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 246 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0744` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 247 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0745` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 248 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0746` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 249 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0747` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 250 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0748` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 251 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0749` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 252 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-SWEEP-007` | `RETAIN` | `GQR-0011` | `REFERENCE` | Build portability, exact tool identity, verified dependency publication and release artifact admission sweep |
+| 253 | 54 | MEDIUM-HIGH | 32/0/2/10/10 | `GQ1-CHUNK-0709` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain intentional launcher and Redbook inputs; reconcile remaining generated extraction residue with existing hygiene owner |
+| 254 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0074` | `PRE-0108`            | `BR-0148`           | `REFERENCE` | Track and complete connectivity checks per player pair                                                                                                |
+| 255 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0287` | `RETAIN`              | `GQR-0187`          | `PRIMARY`   | native title/briefing/cache/weapon/rewind interfaces and D1 text extension                                                                            |
+| 256 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0320` | `RETAIN`              | `GQR-0193`          | `PRIMARY`   | D2 MVE output-rate conversion, custom allocation, startup trim and callback/producer/teardown ownership                                               |
+| 257 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0322` | `RETAIN`              | `GQR-0194`          | `PRIMARY`   | D2 Guide-Bot menu dispatch, scaled source allocation and native cooperative owner generation with current extensions                                  |
+| 258 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0326` | `RETAIN`              | `GQR-0195`          | `PRIMARY`   | D1-in-D2 facade, exact RLE/remap and model structural validation with unchecked signed renderer fields                                                |
+| 259 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0350` | `RETAIN`              | `GQR-0195`          | `REFERENCE` | D2 original model/Guide-Bot/effect/wall/robot publication overlay                                                                                     |
+| 260 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0352` | `RETAIN`              | `GQR-0200`          | `PRIMARY`   | D1 checkpoint object/AI/world validation and current morph/stuck/effect staging                                                                       |
+| 261 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0403` | `RETAIN`              | `GQR-0193`          | `REFERENCE` | D2 movie decoder CMake target naming, optional mixer links and platform timing definitions                                                            |
+| 262 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0411` | `RETAIN`              | `BR-0398`           | `REFERENCE` | Server deployment, LAN certificate, service, NAT and Rust maintenance scripts                                                                         |
+| 263 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0475` | `RETAIN`              | `GQR-0212`          | `PRIMARY`   | Retain validated BinHex integrity and preview lifecycle repairs; enforce the existing shared live-memory policy during BinHex decoding                |
+| 264 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0483` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared preview lifecycle and game UI ownership; finish existing IME and preview acceptance                                                     |
+| 265 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0486` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain asynchronous settings inventories and active-set ownership; complete existing configuration and reset transactions                             |
+| 266 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0494` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain controller page and raw input diagnostics; close existing persistence and nested picker owners                                                 |
+| 267 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0496` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain paired picker controls and shared dialog motion bridge; finish existing transactional state and slot publication owners                        |
+| 268 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0498` | `RETAIN`              | `BR-0438`           | `REFERENCE` | Retain staged engine toggles and preset confirmation; complete coherent multi-owner preference publication                                            |
+| 269 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0533` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared CD and audio preview composition; finish existing preview ownership and completion contracts                                            |
+| 270 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0534` | `RETAIN`              | `GQR-0219`          | `PRIMARY`   | Retain shared strip geometry; make valid oversized vertical spans safe in the touch editor                                                            |
+| 271 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0535` | `RETAIN`              | `BR-0016`           | `REFERENCE` | Retain shared launcher orchestration and repaired admission boundaries; finish existing durable launch generations                                    |
+| 272 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0558` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Preserve shared finite-domain and current-only touch parsing; reconcile typed action and accepted strip geometry owners                               |
+| 273 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0559` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain one current touch codec; finish typed radial and finite oversized-strip acceptance without compatibility paths                                 |
+| 274 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0561` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain current stacked gesture and presentation helpers; make editor drag safe for accepted vertical strip geometry                                   |
+| 275 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0562` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain shared diagnostic and stacked hit geometry; fix the existing valid oversized vertical clamp at its actual mover                                |
+| 276 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0563` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Keep bounded shared property controls; finish existing strip clamp, Custom preset and typed binding contracts                                         |
+| 277 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0614` | `RETAIN`              | `GQR-0212`          | `REFERENCE` | Retain shared descriptor and normalized atomic publication; complete exact selectors, source identity and deterministic bounded AcoustID policy       |
+| 278 |    53 | MEDIUM-HIGH | 32/0/4/10/7   | `GQ1-CHUNK-0644` | `RETAIN`              | `GQR-0219`          | `REFERENCE` | Retain shared save projections, launch admission and strip geometry; extend accepted finite geometry and integration acceptance                       |
+| 279 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-SWEEP-008` | `REFACTOR` | `BR-0662` | `REFERENCE` | Test registration, enabled assertions, fixture admission, source-contract limitations and actual integration coverage sweep |
+| 280 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0017` | `PRE-0108`            | `GQF-0052`          | `PRIMARY`   | Assigned JNI array/string acquisitions and MIDI byte-array creation                                                                                   |
+| 281 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0024` | `PRE-0108`            | `GQF-0058`          | `PRIMARY`   | Complete-track disc and compressed-file fingerprinting                                                                                                |
+| 282 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0025` | `PRE-0108`            | `GQF-0058`          | `REFERENCE` | Complete-track disc and compressed-file fingerprinting                                                                                                |
+| 283 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0026` | `PRE-0108`            | `GQF-0058`          | `REFERENCE` | Complete-track disc and compressed-file fingerprinting                                                                                                |
+| 284 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0037` | `PRE-0108`            | `GQF-0052`          | `REFERENCE` | Assigned JNI array/string acquisitions and MIDI byte-array creation                                                                                   |
+| 285 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0048` | `PRE-0108`            | `BR-0029`           | `REFERENCE` | Marshal overlay game-state access through the engine thread                                                                                           |
+| 286 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0050` | `PRE-0108`            | `BR-0029`           | `REFERENCE` | Marshal overlay game-state access through the engine thread                                                                                           |
+| 287 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0059` | `PRE-0108`            | `GQF-0115`          | `PRIMARY`   | Mission extraction `ScanResult` generation                                                                                                            |
+| 288 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0094` | `PRE-0108`            | `GQF-0141`          | `PRIMARY`   | Graphics configuration rollback backup                                                                                                                |
+| 289 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0118` | `NO_INHERITED_EFFECT` | `GQF-0115`          | `REFERENCE` | Mission extraction `ScanResult` generation                                                                                                            |
+| 290 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0161` | `RETAIN`              | `BR-0078`           | `REFERENCE` | Make native engine admission atomic through process termination                                                                                       |
+| 291 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0178` | `NO_INHERITED_EFFECT` | `GQF-0058`          | REFERENCE   | duplicate high-confidence complete-media resource and cancellation exposure is the highest live root                                                  |
+| 292 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0181` | `RETAIN`              | `BR-0029`           | REFERENCE   | duplicate high-confidence cross-thread engine and renderer ownership is the highest live root                                                         |
+| 293 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0185` | `RETAIN`              | `BR-0195`           | REFERENCE   | existing protocol authority work is broader than the assigned handlers                                                                                |
+| 294 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0186` | `RETAIN`              | `BR-0029`           | REFERENCE   | UI/engine thread ownership needs a subsystem boundary                                                                                                 |
+| 295 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0191` | `RETAIN`              | `BR-0029`           | `REFERENCE` | save metadata, save-set paths and screen admission API                                                                                                |
+| 296 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0192` | `RETAIN`              | `BR-0029`           | `REFERENCE` | save lifecycle, periodic checkpoints and music overlays                                                                                               |
+| 297 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0193` | `RETAIN`              | `BR-0463`           | `REFERENCE` | slowdown detection, surface API, texture diagnostics and visual admission                                                                             |
+| 298 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0195` | `NO_INHERITED_EFFECT` | `GQF-0058`          | `REFERENCE` | ETC2 decoder, fingerprint generation/duration and font controls                                                                                       |
+| 299 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0197` | `RETAIN`              | `BR-0195`           | `REFERENCE` | transfer admission, music schema and serialization budgets                                                                                            |
+| 300 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0200` | `RETAIN`              | `BR-0029`           | `REFERENCE` | profile APIs, FOV/resolution policy, resume pilot and rewind selection                                                                                |
+| 301 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0205` | `RETAIN`              | `BR-0029`           | `REFERENCE` | touch gestures, screen generations and discrete event publication                                                                                     |
+| 302 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0206` | `RETAIN`              | `BR-0266`           | `REFERENCE` | keyboard/lifecycle dispatch, UI state queries and join approval                                                                                       |
+| 303 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0210` | `RETAIN`              | `BR-0029`           | `REFERENCE` | menu scaling, scratch allocation, OGL lifetime and UI transform publication                                                                           |
+| 304 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0212` | `RETAIN`              | `BR-0029`           | `REFERENCE` | frame admission, JNI capture requests, storage records and capture completion                                                                         |
+| 305 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0215` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Coop and guidebot indicator paths, keep-out clipping and diagnostic ownership                                                                         |
+| 306 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0226` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Introspection lifecycle/audio/input snapshots and producer failure containment                                                                        |
+| 307 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0247` | `RETAIN`              | `BR-0029`           | `REFERENCE` | merged-wall geometry logs, diagnostic session lifetime and paired source provenance                                                                   |
+| 308 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0258` | `RETAIN`              | `BR-0206`           | `REFERENCE` | cooperative save-transfer send/apply ordering, acknowledgements and current restore-barrier reconciliation                                            |
+| 309 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0282` | `RETAIN`              | `BR-0029`           | `REFERENCE` | paired SDL event/window/input/timer/music and virtual-gamepad integration                                                                             |
+| 310 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0288` | `RETAIN`              | `BR-0029`           | `REFERENCE` | native controls, postlevel admission, homing/weapon probes, graphics/pilot menus and mission formats                                                  |
+| 311 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0290` | `RETAIN`              | `BR-0029`           | `REFERENCE` | startup quit/resume/replay/metadata/preview lifecycle and native input conversion                                                                     |
+| 312 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0299` | `RETAIN`              | `BR-0029`           | `REFERENCE` | AI save/visibility/FX, path runtime, automap input/metadata/edges and reactor validation                                                              |
+| 313 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0335` | `RETAIN`              | `BR-0029`           | `REFERENCE` | D2 replay startup, control settings/rendering/navigation and ordinary/terminal postlevel lifecycle                                                    |
+| 314 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0342` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D2 laser runtime interface, lighting, menus, mission selection and movie lifecycle                                                                    |
+| 315 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0343` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D2 font/mine/palette, frame composition, native level sections, placement RNG and level lifecycle                                                     |
+| 316 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0454` | `RETAIN`              | `GQF-0141/GQR-0128` | `REFERENCE` | Retain launcher configuration and snapshot owners; preserve batch originals and correlate introspection requests                                      |
+| 317 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0468` | `RETAIN`              | `GQF-0141/GQR-0128` | `REFERENCE` | Preserve shared publication and identity-checked preview ownership; retain original generations when batch rollback fails                             |
+| 318 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0477` | `RETAIN`              | `BR-0463`           | `REFERENCE` | Retain shared overlay navigation, geometry and ammo presentation; complete existing stock-PvP provenance and accessibility owners                     |
+| 319 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0521` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Keep one shared host dialog and asynchronous mission/save loader; finish existing defaults, save and host admission                                   |
+| 320 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0528` | `RETAIN`              | `BR-0115`           | `REFERENCE` | Retain engine-owned save validation and shared cooperative selection; finish existing protocol, metadata and publication boundaries                   |
+| 321 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0565` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared touch dispatch and mixer ownership; align supported disabled gyro axes across editor and codecs                                         |
+| 322 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0566` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared overlay geometry and controller menus; complete existing action snapshot and per-diagnostic scale owners                                |
+| 323 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0567` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Preserve shared draw/input policy and current pause presentation; complete existing physical release and native snapshot owners                       |
+| 324 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0568` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Keep shared radial and strip presentation; finish existing opacity, exclusive pointer admission and abandoned-source cleanup                          |
+| 325 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0569` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared stick and selector helpers; close existing cadence, command routing and immutable selection roots                                       |
+| 326 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0570` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared admin action policy and menu geometry; finish existing stable gesture, callback lifetime and native ownership contracts                 |
+| 327 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0571` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared admin rendering and bounded slider policy; finish immutable touch generations and preserve current controller edges                     |
+| 328 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0572` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Retain shared Video Info layout and diagnostics; reconcile current graphics acknowledgement with existing gesture and native lifetime owners          |
+| 329 |    53 | MEDIUM-HIGH | 32/0/7/10/4   | `GQ1-CHUNK-0653` | `RETAIN`              | `BR-0029`           | `REFERENCE` | Preserve finite touch geometry and shared action inventories; finish existing gesture, typed dispatch and snapshot owners                             |
+| 330 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0001` | `RETAIN` | `BR-0016` | `REFERENCE` | Current preview reservation, stop ordering, composition disposal and native serialized teardown |
+| 331 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0003` | `RETAIN` | `BR-0029` | `REFERENCE` | Overlay publication, paired music apply hooks, synth tuning and residual escort/debug affinity |
+| 332 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0004` | `RETAIN` | `BR-0044` | `REFERENCE` | Repeated overlay JNI cleanup, strict text policy, attachment failures and keyboard requested state |
+| 333 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0006` | `RETAIN` | `BR-0078` | `REFERENCE` | Game/preview atomic admission, callback-owner publication, failed setup and process termination |
+| 334 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0007` | `RETAIN` | `BR-0080` | `REFERENCE` | Ship-status decoder admission, player/weapon snapshot bounds and transport origin |
+| 335 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0010` | `REFACTOR` | `BR-0090` | `REFERENCE` | Non-Play authentication flavors, wire fields, ephemeral dev identity and server keypair protocol |
+| 336 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0013` | `REFACTOR` | `BR-0103` | `REFERENCE` | Mission extraction tree/manifest replacement, reader lifetime, corrupt records and linked cleanup |
+| 337 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0015` | `REFACTOR` | `BR-0109` | `REFERENCE` | NAT simulator main/inbound task lifecycle, best-effort abort and STUN handle cleanup |
+| 338 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0017` | `REFACTOR` | `BR-0111` | `REFERENCE` | Rust simulator and Android STUN body/attribute/padding bounds and response provenance |
+| 339 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0019` | `REFACTOR` | `BR-0113` | `REFERENCE` | Public-key hex decoding versus textual hashing and durable account lookup |
+| 340 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0022` | `REFACTOR` | `BR-0118` | `REFERENCE` | Rate-limit stale-key snapshot removal versus concurrent accepted events |
+| 341 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0026` | `REFACTOR` | `BR-0124` | `REFERENCE` | Admin u64 hour conversion, chrono constructor/addition overflow and expiry semantics |
+| 342 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0031` | `REFACTOR` | `BR-0131` | `REFERENCE` | Daily tracing appender retention, journal duplication and disk budgets |
+| 343 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0040` | `REFACTOR` | `BR-0158` | `REFERENCE` | Extraction optional fixture accounting, new synthetic coverage and registered SOW skip repair |
+| 344 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0041` | `RETAIN` | `BR-0159` | `REFERENCE` | 7-Zip staged hash-verified publication repair and remaining discovery/crash boundaries |
+| 345 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0042` | `REFACTOR` | `BR-0160` | `REFERENCE` | CUE/ISO runner shared paths, set-e cleanup bypass and unchecked generated fixture writes |
+| 346 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0043` | `REFACTOR` | `BR-0162` | `REFERENCE` | All-skipped mission/extraction batches still report success despite improved preflight failure classification |
+| 347 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0044` | `REFACTOR` | `BR-0163` | `REFERENCE` | LAN cleanup improvements and managed-ending exception before relay teardown |
+| 348 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0046` | `REFACTOR` | `BR-0167` | `REFERENCE` | Mission device/host batch timestamp and normalized-label/base-name artifact collisions |
+| 349 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0047` | `REFACTOR` | `BR-0168` | `REFERENCE` | Mission batch direct ADB push/copy lacks deadline and shared staging cleanup transaction |
+| 350 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0048` | `REFACTOR` | `BR-0169` | `REFERENCE` | CD nonzero aggregate status repaired while GOG still falls through after counted errors |
+| 351 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0049` | `RETAIN` | `BR-0663` | `REFERENCE` | Replay result publication now preserves natural failure except forced-stop classification race and smoke acceptance |
+| 352 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-003` | `RETAIN` | `GQR-0084` | `REFERENCE` | Launcher/main lifecycle, suspend releases, blocking resume discovery, SAF permission and durable handoff reconciliation |
+| 353 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-012` | `RETAIN` | `GQR-0170` | `REFERENCE` | JNI save preflight, network authentication/version parity, controller dimensions and native ABI interface sweep |
+| 354 | 53 | MEDIUM-HIGH | 23/12/4/10/4 | `GQ1-SWEEP-002` | `REFACTOR` | `GQR-0170` | `REFERENCE` | JNI attachment, partial acquisition, standard UTF-8 and Activity publication remain cross-cutting owners |
+| 355 |    53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ1-CHUNK-0001` | `PRE-0108`            | `BR-0007`           | `REFERENCE` | Make the Play Store credential sample match the supported key format                                                                                  |
+| 356 | 53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ2-CHUNK-0001` | `NO_INHERITED_EFFECT` | `BR-0007` | `REFERENCE` | Android authentication examples |
+| 357 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0002` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 358 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0003` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 359 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0004` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 360 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0005` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 361 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0006` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 362 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0007` | `PRE-0108`            | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 363 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0080` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 364 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0082` | `PRE-0108`            | `BR-0162`           | `REFERENCE` | Fail test batches that execute no archive                                                                                                             |
+| 365 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0085` | `PRE-0108`            | `BR-0165`           | `REFERENCE` | Derive the default mission archive directory from the repository                                                                                      |
+| 366 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0086` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
+| 367 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0087` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
+| 368 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0089` | `PRE-0108`            | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
+| 369 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0099` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 370 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0100` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 371 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0101` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 372 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0102` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 373 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0103` | `PRE-0108`            | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 374 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
+| 375 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0109` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
+| 376 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0113` | `NO_INHERITED_EFFECT` | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 377 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0114` | `NO_INHERITED_EFFECT` | `BR-0158`           | `REFERENCE` | Report absent extraction fixtures as skipped or failed                                                                                                |
+| 378 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0116` | `NO_INHERITED_EFFECT` | `BR-0160`           | `REFERENCE` | Bound and isolate CUE/ISO test runs                                                                                                                   |
+| 379 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0129` | `NO_INHERITED_EFFECT` | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 380 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0131` | `CANDIDATE`           | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 381 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0133` | `NO_INHERITED_EFFECT` | `GQF-0153`          | `PRIMARY`   | D2 Mac native extraction output oracle                                                                                                                |
+| 382 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0134` | `NO_INHERITED_EFFECT` | `BR-0169`           | `REFERENCE` | Return a failing status when any batch extraction fails                                                                                               |
+| 383 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0136` | `NO_INHERITED_EFFECT` | `BR-0008`           | `REFERENCE` | Enforce recorded source hashes before extraction regression tests                                                                                     |
+| 384 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0138` | `NO_INHERITED_EFFECT` | `GQF-0158`          | `PRIMARY`   | Bounded extractor Python regression registration                                                                                                      |
+| 385 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0151` | `RETAIN`              | `GQF-0167`          | `PRIMARY`   | Shared TSF/PCM producer completion ordering                                                                                                           |
+| 386 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0218` | `RETAIN`              | `GQF-0167`          | `REFERENCE` | Game music producer publication, tuning ownership, ring drain and startup                                                                             |
+| 387 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0292` | `RETAIN`              | `BR-0209`           | `REFERENCE` | native replay diagnostics, result lifecycle, public hooks and D1 startup adapter                                                                      |
+| 388 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0436` | `RETAIN`              | `GQR-0020`          | `REFERENCE` | Complete combined-launch helper, extension-only current references, component-union check and generator derivation                                    |
+| 389 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0504` | `RETAIN`              | `BR-0516`           | `REFERENCE` | Preserve strict current layout admission and direct per-axis gyro values; finish existing radial namespace and preset owners                          |
+| 390 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0588` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain shared platform selection, destination-owned installer transactions and inert configuration serialization                                      |
+| 391 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0589` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep staged exact tool acquisition in shared installer policy and avoid duplicating upstream host package management                                  |
+| 392 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0590` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared verified staged installers, native host identity and explicit delegated option contracts                                                  |
+| 393 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0591` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared SDK writer, complete package admission and exact tool-generation policy; preserve focused external oracle walls                           |
+| 394 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0592` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Keep shared dependency discovery, exact installed identity and bounded action execution under existing updater owners                                 |
+| 395 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0593` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain one typed dependency-discovery and selection owner; bound remote processes and couple accepted release metadata                                |
+| 396 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0594` | `RETAIN`              | `GQR-0222`          | `PRIMARY`   | Retain shared string-aware JSONC parsing and serial-scoped emulator recovery; preserve lexical token boundaries                                       |
+| 397 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0595` | `RETAIN`              | `BR-0168`           | `REFERENCE` | Retain schema-specific metadata canonicalization and verified provisioner ownership; finish existing path and transaction boundaries                  |
+| 398 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0599` | `RETAIN`              | `GQR-0222`          | `REFERENCE` | Retain shared managed-emulator recovery and fingerprint identity owners; consolidate remaining comment parser and build-process boundaries            |
+| 399 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0633` | `RETAIN`              | `BR-0159`           | `REFERENCE` | Retain the Ubuntu bootstrap entry point and verified bounded-runtime policy; keep installer remainder with existing owners                            |
+| 400 |    50 | MEDIUM-HIGH | 23/0/7/10/10  | `GQ1-CHUNK-0638` | `RETAIN`              | `BR-0168`           | `REFERENCE` | Retain additive device provisioning and explicit owned-sync policy; finish its shared transfer, filename and publication owners                       |
+| 401 |    50 | MEDIUM-HIGH | 23/0/10/10/7  | `GQ1-CHUNK-0182` | `RETAIN`              | `BR-0244`           | REFERENCE   | duplicate high-confidence request loss spans every newly added mailbox and existing action paths                                                      |
+| 402 |    50 | MEDIUM-HIGH | 23/0/10/10/7  | `GQ1-CHUNK-0659` | `RETAIN`              | `BR-0381`           | `REFERENCE` | Retain semantic route and lifecycle assertions; finish existing observational probe and metadata lifecycle acceptance                                 |
+| 403 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0188` | `NO_INHERITED_EFFECT` | `GQF-0177`          | `PRIMARY`   | Reject out-of-range database integers before narrowing                                                                                                |
+| 404 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0198` | `RETAIN`              | `GQF-0180`          | `PRIMARY`   | crash JNI, breadcrumb publication, EGL and save pair recovery                                                                                         |
+| 405 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0202` | `RETAIN`              | `GQF-0182`          | `PRIMARY`   | cooperative metadata contracts, migration and retained restart publication                                                                            |
+| 406 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0211` | `RETAIN`              | `GQF-0184`          | `PRIMARY`   | profiling batches, texture burst boundaries and bounded flight envelope                                                                               |
+| 407 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0213` | `RETAIN`              | `BR-0273`           | `REFERENCE` | automap labels, grouping, live key positions and connector endpoints                                                                                  |
+| 408 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0449` | `RETAIN`              | `GQR-0207`          | `PRIMARY`   | Close fingerprint asset reader ownership and preserve distinct-identity ambiguity through database projection                                         |
+| 409 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0452` | `RETAIN`              | `GQR-0208`          | `PRIMARY`   | Preserve custom-audio generation and metadata policy; make copied append publication transactional                                                    |
+| 410 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0480` | `RETAIN`              | `BR-0454`           | `REFERENCE` | Retain shared controller edge ownership and flavor updates; complete existing gesture identity and callback owners                                    |
+| 411 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0487` | `RETAIN`              | `BR-0443`           | `REFERENCE` | Retain immutable shared artifacts and asynchronous inventory; finish pending Downloads and log lifecycle owners                                       |
+| 412 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0488` | `RETAIN`              | `BR-0419`           | `REFERENCE` | Retain asynchronous storage dialogs and atomic registry leaves; finish existing audio-resource and truthful removal ownership                         |
+| 413 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0497` | `RETAIN`              | `BR-0479`           | `REFERENCE` | Keep shared drawing helpers; finish existing picker cancellation and nested input routing                                                             |
+| 414 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0499` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain atomic set metadata and current-only storage; finish ownership-consistent deletion and clearing                                                |
+| 415 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0585` | `RETAIN`              | `BR-0558`           | `REFERENCE` | Keep shared Gradle build identity, exact tool policy and flavor-specific runtime ownership                                                            |
+| 416 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0587` | `RETAIN`              | `BR-0579`           | `REFERENCE` | Keep one dependency update manifest owner and shared SDK provisioning policy; publish coupled identities together                                     |
+| 417 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0598` | `RETAIN`              | `BR-0586`           | `REFERENCE` | Retain exact oracle executable identities, checked warning capture and shared runtime estimates; finish existing oracle and snapshot acceptance       |
+| 418 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0600` | `RETAIN`              | `GQR-0223`          | `PRIMARY`   | Consolidate CD source manifest parsing onto the shared JSONC owner; retain transactional publication and scoped artifact protection                   |
+| 419 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0603` | `RETAIN`              | `GQR-0225`          | `PRIMARY`   | Parse canonical Git paths before generating review scopes; retain deterministic frozen campaign and supplemental audit ownership                      |
+| 420 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0604` | `RETAIN`              | `GQR-0226`          | `PRIMARY`   | Confine host metadata staging before recursive replacement; remove dead projection under its already admitted owner                                   |
+| 421 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0607` | `RETAIN`              | `GQR-0228`          | `PRIMARY`   | Preserve signed wire fields and partial-packet diagnostics in the PowerShell decoder                                                                  |
+| 422 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0610` | `RETAIN`              | `GQR-0229`          | `PRIMARY`   | Retain repaired complete version and track admission; share JSONC readers and align descriptor modes with native ownership                            |
+| 423 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0628` | `RETAIN`              | `BR-0006`           | `REFERENCE` | Retain deleted scratch artifacts and document complete root-helper versus manual Linux build alternatives                                             |
+| 424 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0645` | `RETAIN`              | `GQR-0217`          | `REFERENCE` | Preserve bounded DXA inspection, immutable grants and current-only storage; extend exact descriptor and shared configuration tests                    |
+| 425 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0669` | `RETAIN`              | `GQR-0232`          | `PRIMARY`   | Retain managed emulator repair and shared JSONC parsing; resolve template values before serialization                                                 |
+| 426 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0671` | `RETAIN`              | `BR-0652`           | `REFERENCE` | Retain shared paired control codec tests; preserve runner failure independently of trace agreement                                                    |
+| 427 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0672` | `RETAIN`              | `BR-0651`           | `REFERENCE` | Retain shared portable and gzip trace reads; compare complete unique frame identity                                                                   |
+| 428 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0673` | `RETAIN`              | `BR-0193`           | `REFERENCE` | Retain expanded shared route semantic tests; complete owned SAF fixture restoration and admission                                                     |
+| 429 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0674` | `RETAIN`              | `BR-0659`           | `REFERENCE` | Retain shared WLAN resolution and expanded lifecycle probes; require exact transport result and lobby generation                                      |
+| 430 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0681` | `RETAIN`              | `GQR-0223`          | `REFERENCE` | Retain bounded native RLE and transactional conversion checks; extend shared CD metadata/runner and PCM regression coverage                           |
+| 431 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0682` | `RETAIN`              | `BR-0008`           | `REFERENCE` | Keep paired replay wrappers and shared build admission; close existing data provenance and device-state transaction owners                            |
+| 432 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0683` | `RETAIN`              | `BR-0181`           | `REFERENCE` | Retain canonical fingerprint policy and transactional dependency fixtures; repair existing complete-reference and measured-data owners                |
+| 433 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0684` | `RETAIN`              | `BR-0082`           | `REFERENCE` | Retain shared native policy fixtures and paired renderer contracts; preserve existing save-body and namespace owners                                  |
+| 434 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0685` | `RETAIN`              | `BR-0669`           | `REFERENCE` | Retain current JSONC subset and shared replay diagnostics; strengthen existing smoke semantics and resource owners                                    |
+| 435 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0686` | `RETAIN`              | `BR-0667`           | `REFERENCE` | Retain shared metadata normalization and asynchronous MIDI preview contracts; require existing complete travel-row coverage                           |
+| 436 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0687` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Retain native staged state admission and verified data staging; close existing bounded server and output owners                                       |
+| 437 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0688` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain mock runner ownership and catalog rotation coverage; finish shared checked-device and artifact-lifetime policy                                 |
+| 438 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0689` | `RETAIN`              | `BR-0662`           | `REFERENCE` | Retain bounded structural distance tolerance and audio snapshot owners; keep mailbox behavioral checks active                                         |
+| 439 |    47 | MEDIUM      | 23/0/4/10/10  | `GQ1-CHUNK-0690` | `RETAIN`              | `BR-0662`           | `REFERENCE` | Retain paired installer policy and native HUD/homing ownership; synchronize existing Inno progress capability contract                                |
+| 440 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0692` | `RETAIN` | `BR-0277` | `REFERENCE` | Retain shared native fixtures and completed validation; synchronize stale cockpit source guard with staged pilot writer |
+| 441 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0693` | `RETAIN` | `GQR-0233` | `PRIMARY` | Require actual co-op start inventories before reporting fanout success; retain native format and restore fixture ownership |
+| 442 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0694` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain current transfer pacing and shared regression policy; reconcile complete native test inventory and preview lifecycle |
+| 443 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0695` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain real fingerprint publication/enumeration checks and shared native ownership; keep escort exit oracles active |
+| 444 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0696` | `RETAIN` | `GQR-0234` | `PRIMARY` | Validate complete RNG trace envelopes before filtering or comparison |
+| 445 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0697` | `RETAIN` | `BR-0545` | `REFERENCE` | Retain exact replay selection, sanitizer forwarding and required-primary rejection; verify shared aggregate status/lifetime owners |
+| 446 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0698` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain strengthened replay process verdicts and diagnostic preservation; complete existing lifetime and publication owners |
+| 447 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0699` | `RETAIN` | `BR-0209` | `REFERENCE` | Preserve current strict replay controls while removing the existing terminal-result compensation root during implementation |
+| 448 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0700` | `RETAIN` | `BR-0292` | `REFERENCE` | Keep paired recorder semantic and long-recording coverage; finish existing disabled-diagnostic and publication acceptance |
+| 449 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0701` | `RETAIN` | `BR-0231` | `REFERENCE` | Retain paired replay loader and validate-before-apply policy fixtures; complete shared terminal failure integration |
+| 450 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0702` | `RETAIN` | `BR-0163` | `REFERENCE` | Retain expanded paired LAN scenarios and shared helpers; close existing cleanup and correlated-oracle owners |
+| 451 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0703` | `RETAIN` | `BR-0302` | `REFERENCE` | Retain shared level-metadata fixtures and truthful partial-route semantics; validate existing route owners |
+| 452 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0704` | `RETAIN` | `BR-0301` | `REFERENCE` | Preserve corrected all-link completion and bounded metadata distance tests; reconcile existing live-route validation |
+| 453 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0705` | `RETAIN` | `BR-0656` | `REFERENCE` | Retain shared multiplayer orchestration improvements; close existing false-pass and ownership findings |
+| 454 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0706` | `RETAIN` | `BR-0332` | `REFERENCE` | Retain current prepared-route profile identity tests; complete semantic cache and I/O acceptance |
+| 455 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0707` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain expanded shared route transition and convergence fixtures; reconcile existing route geometry and cache owners |
+| 456 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0711` | `RETAIN` | `BR-0337` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 457 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0712` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 458 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0713` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 459 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0714` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 460 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0750` | `RETAIN` | `BR-0659` | `REFERENCE` | Complete22 frozen/current payloads; exact CUE consumers and existing root reconciliation |
+| 461 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0008` | `PRE-0108`            | `BR-0623`           | `REFERENCE` | Share one complete portable source-manifest policy                                                                                                    |
+| 462 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0010` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 463 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0011` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 464 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0012` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 465 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0014` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 466 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0027` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 467 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0028` | `PRE-0108`            | `GQF-0040`          | `PRIMARY`   | Flattened HFS loose-file projection                                                                                                                   |
+| 468 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0035` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 469 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0038` | `PRE-0108`            | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 470 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0051` | `PRE-0108`            | `BR-0082`           | `REFERENCE` | Validate metadata-backed save bodies before offering Resume                                                                                           |
+| 471 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0052` | `PRE-0108`            | `BR-0417`           | `REFERENCE` | Repair last-save selection after deleting an empty set                                                                                                |
+| 472 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0057` | `PRE-0108`            | `GQF-0113`          | `PRIMARY`   | Stored ZIP collision validation timing                                                                                                                |
+| 473 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0058` | `PRE-0108`            | `GQF-0030`          | `PRIMARY`   | Physical-disc and mission fingerprint generation and cache reuse                                                                                      |
+| 474 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0072` | `PRE-0108`            | `BR-0111`           | `REFERENCE` | Bounds-check complete STUN attributes before slicing                                                                                                  |
+| 475 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0081` | `PRE-0108`            | `BR-0174`           | `REFERENCE` | Gate external reference extractors to supported hosts                                                                                                 |
+| 476 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0091` | `PRE-0108`            | `BR-0174`           | `REFERENCE` | Gate external reference extractors to supported hosts                                                                                                 |
+| 477 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0096` | `PRE-0108`            | `GQF-0091`          | `PRIMARY`   | PKG analysis-to-extraction generation identity                                                                                                        |
+| 478 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0097` | `PRE-0108`            | `BR-0236`           | `REFERENCE` | Report and roll back partial all-pilot preference writes                                                                                              |
+| 479 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0110` | `NO_INHERITED_EFFECT` | `GQF-0091`          | `REFERENCE` | PKG analysis-to-extraction generation identity                                                                                                        |
+| 480 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0111` | `NO_INHERITED_EFFECT` | `BR-0021`           | `REFERENCE` | Honor and propagate documented extraction cancellation                                                                                                |
+| 481 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0120` | `NO_INHERITED_EFFECT` | `GQF-0030`          | `REFERENCE` | Physical-disc and mission fingerprint generation and cache reuse                                                                                      |
+| 482 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0171` | `RETAIN`              | `BR-0332`           | REFERENCE   | duplicate high-confidence cache identity evidence is the highest-impact live owner in this scope                                                      |
+| 483 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0172` | `RETAIN`              | `BR-0247`           | REFERENCE   | duplicate evidence for the open unbounded trace-growth root is the highest-impact live owner                                                          |
+| 484 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0173` | `RETAIN`              | `BR-0236`           | REFERENCE   | duplicate high-confidence partial-commit evidence is the only live quality root                                                                       |
+| 485 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0174` | `RETAIN`              | `BR-0238`           | REFERENCE   | duplicate high-confidence mission-source identity evidence is the highest ready live root                                                             |
+| 486 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0175` | `NO_INHERITED_EFFECT` | `BR-0276`           | REFERENCE   | duplicate evidence for the remaining preview completion/clock root is the highest live owner                                                          |
+| 487 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0176` | `RETAIN`              | `BR-0257`           | REFERENCE   | duplicate high-confidence one-shot lifecycle failure remains the highest live root                                                                    |
+| 488 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0177` | `RETAIN`              | `BR-0251`           | REFERENCE   | duplicate renderer recovery evidence is the highest-impact live owner                                                                                 |
+| 489 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0179` | `RETAIN`              | `BR-0236`           | REFERENCE   | duplicate grouped partial-publication risk is the broadest live owner in this scope                                                                   |
+| 490 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0184` | `RETAIN`              | `BR-0078`           | REFERENCE   | duplicate lifecycle exposure is the broadest high-confidence failure boundary in the assigned logging path                                            |
+| 491 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0187` | `RETAIN`              | `BR-0209`           | REFERENCE   | requested-output failure must be propagated through the shared replay completion boundary                                                             |
+| 492 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0190` | `RETAIN`              | `BR-0250`           | `REFERENCE` | Coherent audio diagnostic publication; mailbox queue measurement pending                                                                              |
+| 493 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0194` | `RETAIN`              | `BR-0236`           | `REFERENCE` | PhysFS setup and grouped pilot preference transactions                                                                                                |
+| 494 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0196` | `RETAIN`              | `BR-0244`           | `REFERENCE` | meta actions, music control, text wrapping and pilot hold gestures                                                                                    |
+| 495 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0214` | `RETAIN`              | `BR-0276`           | `REFERENCE` | CD preview PCM/resampling, producer EOF, callback output and startup ownership                                                                        |
+| 496 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0216` | `RETAIN`              | `GQF-0096`          | `REFERENCE` | Cooperative metadata framing, identity remapping and absent-player snapshots                                                                          |
+| 497 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0217` | `RETAIN`              | `BR-0278`           | `REFERENCE` | Cooperative autosave schedulers, sidecars, progress inventory and restore admission                                                                   |
+| 498 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0219` | `RETAIN`              | `BR-0282`           | `REFERENCE` | Automation result/JSONL publication, outbound radial JNI and key injection                                                                            |
+| 499 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0220` | `RETAIN`              | `BR-0283`           | `REFERENCE` | Automation input domains, mission discovery, direct window dispatch and face geometry                                                                 |
+| 500 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0221` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Automation pose/objective controls, condition cleanup and script replacement admission                                                                |
+| 501 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0222` | `RETAIN`              | `BR-0223`           | `REFERENCE` | Automation cursor admission, typed assertions, replacement and menu deadlines                                                                         |
+| 502 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0223` | `RETAIN`              | `BR-0286`           | `REFERENCE` | Automation overlay/run assertions, briefing deadlines, renderer probes and native controls                                                            |
+| 503 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0227` | `RETAIN`              | `GQR-0174`          | `PRIMARY`   | GLES3 shader initialization, matrices and client-state policy                                                                                         |
+| 504 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0232` | `RETAIN`              | `BR-0292`           | `REFERENCE` | recording capture, replay lifecycle, RNG synchronization and diagnostics                                                                              |
+| 505 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0233` | `RETAIN`              | `BR-0293`           | `REFERENCE` | runtime allocator, player weapons, local segment chains and robot diagnostic history                                                                  |
+| 506 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0234` | `RETAIN`              | `BR-0293`           | `REFERENCE` | object histories, current result, segment aggregates and collision step output                                                                        |
+| 507 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0235` | `RETAIN`              | `BR-0296`           | `REFERENCE` | recording admission, checkpoint capture, quick naming, retention and flush                                                                            |
+| 508 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0241` | `RETAIN`              | `BR-0246`           | `REFERENCE` | replay startup, metadata binding, owned checkpoint temporary, configuration and restored clocks                                                       |
+| 509 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0243` | `RETAIN`              | `BR-0301`           | `REFERENCE` | metadata world-state completion, connected components, energy distance, volume and guidebot summary                                                   |
+| 510 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0248` | `RETAIN`              | `BR-0308`           | `REFERENCE` | merged-wall projected geometry, crosshair coordinates and focus ranking                                                                               |
+| 511 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0249` | `RETAIN`              | `BR-0310`           | `REFERENCE` | merged-wall framebuffer coordinate conversion, source provenance and readback admission                                                               |
+| 512 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0250` | `RETAIN`              | `BR-0311`           | `REFERENCE` | merged-wall cover dumps, GL-state/readback transactions and sampled-texture LOD                                                                       |
+| 513 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0251` | `RETAIN`              | `BR-0312`           | `REFERENCE` | merged-wall face capacity, cover matching and per-frame/view lifecycle                                                                                |
+| 514 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0252` | `RETAIN`              | `BR-0313`           | `REFERENCE` | merged-wall focus ranking, route orientation models and native texture/effect/door diagnostics                                                        |
+| 515 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0253` | `RETAIN`              | `BR-0315`           | `REFERENCE` | merged-wall side/palette provenance, geometry hit classification and rear-view ray                                                                    |
+| 516 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0254` | `RETAIN`              | `BR-0316`           | `REFERENCE` | merged-wall final tap ranking, route models and composed framebuffer sampling                                                                         |
+| 517 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0255` | `RETAIN`              | `BR-0317`           | `REFERENCE` | merged-wall zero-candidate probe terminal behavior, selection and result publication                                                                  |
+| 518 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0257` | `RETAIN`              | `BR-0276`           | `REFERENCE` | MIDI preview lifecycle, PCM EOF drain, synth timeline and current approximate-seek reconciliation                                                     |
+| 519 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0264` | `RETAIN`              | `BR-0302`           | `REFERENCE` | route graph traversal, target capacity and current multiple-boss reconciliation                                                                       |
+| 520 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0266` | `RETAIN`              | `BR-0331`           | `REFERENCE` | trigger opener alternatives, dependency rollback, fallback plans and route projection                                                                 |
+| 521 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0267` | `RETAIN`              | `BR-0332`           | `REFERENCE` | route snapshot staging, navigation identity and current domain/replay capture reconciliation                                                          |
+| 522 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0268` | `RETAIN`              | `BR-0334`           | `REFERENCE` | native metadata state, visibility cache admission and engine portal clearance                                                                         |
+| 523 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0270` | `RETAIN`              | `BR-0334`           | `REFERENCE` | topology indexing, persistent cache ownership and canonical live reuse                                                                                |
+| 524 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0271` | `RETAIN`              | `BR-0337`           | `REFERENCE` | secret scanner required progression, bounded components and published entrance inventory                                                              |
+| 525 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0272` | `RETAIN`              | `GQF-0096`          | `REFERENCE` | save namespace, staged publication, trailers and lifecycle memory adapters                                                                            |
+| 526 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0280` | `RETAIN`              | `BR-0251`           | `REFERENCE` | paired graphics initialization, render admission and arch hook declarations                                                                           |
+| 527 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0284` | `DEFER`               | `BR-0347`           | `REFERENCE` | paired diagnostic clipping RGB, nested render frame/MSAA/timer and upload/scratch integration                                                         |
+| 528 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0293` | `DEFER`               | `BR-0349`           | `REFERENCE` | native HUD visible-frame integration, paired corner geometry/counts and cooperative level/spawn/score lifecycle                                       |
+| 529 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0296` | `DEFER`               | `BR-0278`           | `REFERENCE` | game loop, replay controls, font/render policy and native level-I/O adapters                                                                          |
+| 530 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0297` | `RETAIN`              | `BR-0294`           | `REFERENCE` | listbox tail/accessors, object runtime/effects, physics probes and bitmap paging/flags                                                                |
+| 531 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0300` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D1 typed replay commands, checkpoint links and weapon/physics diagnostic adapters                                                                     |
+| 532 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0303` | `DEFER`               | `BR-0269`           | `REFERENCE` | native newmenu background cache, readable text, reorder and tap/key/geometry adapters                                                                 |
+| 533 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0304` | `DEFER`               | `BR-0269`           | `REFERENCE` | native scaled menu/listbox draw callbacks, wrapped teardown, joystick/tap and hold lifecycles                                                         |
+| 534 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0306` | `RETAIN`              | `BR-0082`           | `REFERENCE` | native save body/header/callsign conversion, checkpoint topology fallback, cooperative remap and current restore failure/publication containment      |
+| 535 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0313` | `RETAIN`              | `BR-0345`           | `REFERENCE` | D2 SDL mixer/convert/start, event/window nonlocal lifetime, virtual input and desktop joystick, software mode, jukebox/mouse/timer and resource guard |
+| 536 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0315` | `RETAIN`              | `BR-0251`           | `REFERENCE` | D2 platform/header input/music/window interfaces and EGL/canvas/mode integration                                                                      |
+| 537 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0317` | `DEFER`               | `BR-0347`           | `REFERENCE` | D2 diagnostic clipping and RGB payload, external draw cleanup, MSAA/frame/timer/readback and ordinary upload scratch lifecycle                        |
+| 538 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0323` | `RETAIN`              | `BR-0202`           | `REFERENCE` | D2 pilot hold draw polling, listbox lifecycle/window title geometry and completed accessor headers with comment encoding residue                      |
+| 539 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0325` | `RETAIN`              | `BR-0209`           | `REFERENCE` | D2 hooks tail, terminal overrides, RNG and replay lifecycle/header interfaces                                                                         |
+| 540 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0328` | `RETAIN`              | `BR-0278`           | `REFERENCE` | D2 frame/tick/palette/profiling/RNG lifecycle and native replay/control/autosave hooks                                                                |
+| 541 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0329` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI restore tail, path/actor/route interfaces and AI2 visibility/fire/movement/boss/native-D1 policy                                                |
+| 542 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0330` | `RETAIN`              | `BR-0206`           | `REFERENCE` | D1 translated checkpoint runtime/world/AI/player publication and digital audio sample contract                                                        |
+| 543 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0332` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 reactor codecs/runtime clocks, collision diagnostics/native actor damage and cooperative death/pickup wrappers                                     |
+| 544 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0336` | `DEFER`               | `BR-0349`           | `REFERENCE` | D2 HUD messages/gauges/controls, score recording and startup lifecycle                                                                                |
+| 545 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0339` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 explosion/drop/fuel/matcen and FVI callbacks/native transparency                                                                                   |
+| 546 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0340` | `RETAIN`              | `GQR-0198`          | `PRIMARY`   | D2 custom asset staging, source identity publication, native semantic and result adapters                                                             |
+| 547 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0345` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 metadata patch tail, effects, endlevel and escort ownership/exit policy                                                                            |
+| 548 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0346` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI scheduling, awareness, native actor dispatch, diagnostics and legacy timestamp save/read                                                        |
+| 549 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0347` | `RETAIN`              | `GQR-0198`          | `REFERENCE` | D2 custom PIG/POG/PCM original assets and current HX1 unpublished generation                                                                          |
+| 550 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0349` | `RETAIN`              | `GQR-0198`          | `REFERENCE` | D2 original sound, palette, gauges/cockpit overlay and native robot/weapon decode                                                                     |
+| 551 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0354` | `DEFER`               | `BR-0381`           | `REFERENCE` | D2 Guide-Bot route state/probes/events/guidance/completion and spawn lifecycle                                                                        |
+| 552 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0357` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 included energy trace helper and native caller ownership                                                                                           |
+| 553 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0358` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 input-demo direct command adapters, player control/wiggle and render/motion probe ownership                                                        |
+| 554 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0359` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 motion/physics/FVI probes, shared result hooks, debris/explosion and replay probe transport                                                        |
+| 555 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0360` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 weapon/debris path and activity probes, hard-coded FVI geometry, contact and powerup delta/state diagnostics                                       |
+| 556 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0361` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 AI schedule, baseline, awareness, focus predicates and weapon/impact/damage event capture                                                          |
+| 557 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0362` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 homing/shot/spreadfire, reactor/shield, collision/powerup and follow-path diagnostics                                                              |
+| 558 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0363` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 path hash, escort RNG/path/restore, chase/follow and escort/snipe observation snapshots                                                            |
+| 559 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0364` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 thief/path requests, path hash suppression, RNG/agitation and lifecycle/pose diagnostics                                                           |
+| 560 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0365` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 tracked robot pose lifecycle, robot fire, visibility/FVI and awareness-roll diagnostics                                                            |
+| 561 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0366` | `DEFER`               | `BR-0294`           | `REFERENCE` | D2 awareness chain, physical/claw recorder events, AI state/fire and partial wall-repair diagnostics                                                  |
+| 562 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0372` | `DEFER`               | `BR-0269`           | `REFERENCE` | D2 native menu background cache, readable text, reorder and touch/key geometry with current snapshots and interaction publication                     |
+| 563 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0373` | `DEFER`               | `BR-0269`           | `REFERENCE` | D2 scaled menu/listbox draw, wrapped teardown, touch/controller gestures and pilot hold lifecycle                                                     |
+| 564 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0387` | `RETAIN`              | `GQR-0174`          | `REFERENCE` | D1 Cocoa/OGL/SDL/Windows/X11 CMake and current per-game shared registrations                                                                          |
+| 565 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0400` | `RETAIN`              | `GQR-0174`          | `REFERENCE` | D2 platform CMake prefixes, shader runtime registration and conditional SDL audio ownership                                                           |
+| 566 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0414` | `RETAIN`              | `BR-0402`           | `REFERENCE` | Server Rust version snapshot and active toolchain-selection owner                                                                                     |
+| 567 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0420` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Server integration harness and initial auth/lobby/HTTP/database/friend/ready/start/kick cases                                                         |
+| 568 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0421` | `RETAIN`              | `BR-0403`           | `REFERENCE` | Welcome, stable identity, messaging, coded lobbies, friend joins, relay and NAT candidate fixtures                                                    |
+| 569 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0422` | `RETAIN`              | `BR-0404`           | `REFERENCE` | Verified-only lobbies, Ed25519/PoW, known-key reconnect and lobby lifecycle; complete current mission-status hunk                                     |
+| 570 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0423` | `RETAIN`              | `BR-0401`           | `REFERENCE` | Final integration chat/discovery, relay age cleanup, connectivity, STUN allowlist/UDP and full friend lifecycle                                       |
+| 571 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0424` | `RETAIN`              | `BR-0406`           | `REFERENCE` | Full NAT simulator integration suite: STUN, mapping/filtering, sequential reservation, bidirectional cone, permissive mixed case and tiny packets     |
+| 572 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0428` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Known albums primary metadata 1-750, full current rename/regeneration hunks and byte-level payload audit                                              |
+| 573 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0429` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Known albums final ambiguity comments, empty Ulterior album and Uneasy audio row                                                                      |
+| 574 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0433` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 10-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                |
+| 575 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0434` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 16-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                |
+| 576 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0435` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 8-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities                                                 |
+| 577 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0438` | `RETAIN`              | `BR-0192`           | `REFERENCE` | All four GOG regression specs, complete current rename/count changes, JSON audit and existing extraction-test owners                                  |
+| 578 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0440` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 16-album/318-track source corpus, comment-only rename and strict full-byte/schema audit                                                      |
+| 579 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0441` | `RETAIN`              | `GQR-0017`          | `REFERENCE` | Complete 7-album/80-track source corpus, comment-only rename and strict full-byte/schema audit                                                        |
+| 580 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0447` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Retain shared weapon-state presentation and close existing cross-game touch admission owner                                                           |
+| 581 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0453` | `RETAIN`              | `BR-0415`           | `REFERENCE` | Keep launcher content and engine policy distinct; finish coherent D2 variant precedence under existing owner                                          |
+| 582 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0457` | `RETAIN`              | `BR-0447`           | `REFERENCE` | Retain shared logging policy and demo declarations; coordinate logging budgets and cross-process ownership                                            |
+| 583 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0458` | `RETAIN`              | `BR-0420`           | `REFERENCE` | Keep transient actions distinct from launch-intro policy; complete the existing custom-control accessibility owner                                    |
+| 584 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0460` | `RETAIN`              | `GQR-0209`          | `PRIMARY`   | Preserve callsign and shared resume projections; bind delayed foreground-service shutdown to the expired game session                                 |
+| 585 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0461` | `RETAIN`              | `BR-0440`           | `REFERENCE` | Retain typed mission metadata and shared state boundaries; complete native mode compatibility and supported preference publication                    |
+| 586 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0463` | `RETAIN`              | `BR-0460`           | `REFERENCE` | Retain isolated preview request ownership and corrected PixelCopy API guard; finish controller and probe correlation owners                           |
+| 587 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0464` | `RETAIN`              | `BR-0021`           | `REFERENCE` | Retain press-owned controller dispatch and strict GOG catalog parsing; complete existing cancellation and diagnostic owners                           |
+| 588 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0465` | `RETAIN`              | `BR-0451`           | `REFERENCE` | Retain shared focus navigation, bounded DXA traversal and crash retention; finish existing focus cancellation and retry owners                        |
+| 589 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0466` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Preserve exact disc hashing and shared attempt budgets; finish disc identity and owned asset-reader scopes                                            |
+| 590 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0470` | `RETAIN`              | `BR-0508`           | `REFERENCE` | Retain repaired storage ownership and manifest publication; complete Downloads export and failed-hash feedback owners                                 |
+| 591 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0472` | `RETAIN`              | `BR-0241`           | `REFERENCE` | Retain shared controller sampling and navigation helpers; complete existing crash provenance and input ownership contracts                            |
+| 592 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0473` | `RETAIN`              | `BR-0111`           | `REFERENCE` | Keep thin logging and process IPC owners; encode recent endpoints without a delimiter collision                                                       |
+| 593 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0474` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain shared music geometry, typed bounded sidecar and active-set availability; complete existing UI and process publication owners                  |
+| 594 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0482` | `RETAIN`              | `GQR-0216`          | `PRIMARY`   | Retain owned descriptor staging and shared action policy; serialize durable resume handoff generations                                                |
+| 595 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0485` | `RETAIN`              | `BR-0222`           | `REFERENCE` | Retain atomic single-file copies and shared input mixing; complete coherent demo artifact publication                                                 |
+| 596 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0490` | `RETAIN`              | `BR-0244`           | `REFERENCE` | Retain the small shared automap policy; fix existing mailbox, gesture identity and command latch boundaries                                           |
+| 597 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0491` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain IO and debounce for weapon ordering; finish existing paired pilot transaction and interaction generations                                      |
+| 598 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0493` | `RETAIN`              | `BR-0263`           | `REFERENCE` | Retain shared controller maps and independent trigger inventory; complete existing game-specific keyboard schema owner                                |
+| 599 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0495` | `RETAIN`              | `BR-0420`           | `REFERENCE` | Retain diagram presentation and physical-device display selection; complete existing hit testing and semantic controls                                |
+| 600 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0502` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain shared graphics controls and focus links; publish live preferences through the existing process owner                                          |
+| 601 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0503` | `RETAIN`              | `BR-0422`           | `REFERENCE` | Retain shared gyro producer; close existing activation, calibration and source lifetime owners                                                        |
+| 602 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0505` | `RETAIN`              | `BR-0224`           | `REFERENCE` | Retain exact-label activation and command failure propagation; close existing script schema and handoff owners                                        |
+| 603 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0506` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Preserve shared metadata projection and atomic individual reports; complete existing automation session and assertion contracts                       |
+| 604 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0526` | `RETAIN`              | `GQR-0084`          | `REFERENCE` | Retain one typed resume configuration and native save boundary; remove unused roster persistence and finish off-main discovery                        |
+| 605 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0532` | `RETAIN`              | `BR-0236`           | `REFERENCE` | Retain shared active-set music UI and native format adapters; finish existing preference and provider lifecycles                                      |
+| 606 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0537` | `RETAIN`              | `BR-0506`           | `REFERENCE` | Retain shared launcher startup and input adapters; finish lifecycle cancellation and coherent launch publication                                      |
+| 607 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0538` | `RETAIN`              | `BR-0284`           | `REFERENCE` | Retain shared setup projection and bounded import owners; finish correlated automation and stable hash outcomes                                       |
+| 608 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0540` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain exact shared copy and single-flight result imports; reconcile remaining global temporary cleanup and readiness policy                          |
+| 609 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0541` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain exact-copy and shared launcher controls; reopen incomplete temporary-owner closure and finish existing retry policy                            |
+| 610 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0542` | `RETAIN`              | `BR-0510`           | `REFERENCE` | Retain shared automation adapters and lightweight introspection; finish stable activation identity and acknowledged handoff                           |
+| 611 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0543` | `RETAIN`              | `BR-0472`           | `REFERENCE` | Retain shared set dialogs and archive publication; finish existing truthful deletion and staging-owner lifecycle                                      |
+| 612 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0544` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain staged installer/disc publication and native CUE ownership; finish caller cancellation and durable source admission                            |
+| 613 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0545` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain current disc staging and typed audio identification; unify explicit dismissal with existing attempt lifetime owner                             |
+| 614 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0546` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Retain shared disc helpers and repaired collision/publication paths; consolidate authoritative CUE identities in existing parser owner                |
+| 615 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0547` | `RETAIN`              | `BR-0456`           | `REFERENCE` | Preserve all-track staging and shared attempt budgets; complete existing cancellation and file/source transaction acceptance                          |
+| 616 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0549` | `RETAIN`              | `GQR-0216`          | `REFERENCE` | Retain one launcher thumbnail/presentation owner; resume identity and handoff safety remain existing cross-layer owners                               |
+| 617 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0550` | `RETAIN`              | `GQR-0085`          | `REFERENCE` | Retain shared save browsing and grant-safe sharing; bind destructive confirmation and late publication to existing generation owners                  |
+| 618 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0551` | `RETAIN`              | `GQR-0085`          | `REFERENCE` | Retain shared save presentation and native format admission; finish existing candidate/deletion generation acceptance                                 |
+| 619 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0557` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Keep shared touch/native binding inventories; finish existing typed radial and cross-game dispatch admission                                          |
+| 620 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0560` | `RETAIN`              | `BR-0517`           | `REFERENCE` | Keep current editor geometry and shared properties; preserve unsaved generations across typed import outcomes                                         |
+| 621 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0564` | `RETAIN`              | `BR-0529`           | `REFERENCE` | Keep shared bounded editor widgets and native action labels; finish existing per-game admission and preset reader lifetime                            |
+| 622 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0574` | `RETAIN`              | `BR-0322`           | `REFERENCE` | Preserve bounded standalone ETC2 conversion and checked shared layout; finish existing packaged mip consumer acceptance                               |
+| 623 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0576` | `RETAIN`              | `BR-0533`           | `REFERENCE` | Keep Windows toolchain discovery at its platform boundary and refresh existing toolchain identity owner                                               |
+| 624 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0577` | `RETAIN`              | `BR-0549`           | `REFERENCE` | Retain installer and aggregate orchestration boundaries with existing release/configuration owners                                                    |
+| 625 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0578` | `RETAIN`              | `BR-0539`           | `REFERENCE` | Retain script-relative launcher/settings ownership and existing menu/device/provisioning fixes                                                        |
+| 626 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0579` | `RETAIN`              | `BR-0556`           | `REFERENCE` | Retain release script/build boundaries and remove obsolete unreachable promotion policy                                                               |
+| 627 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0580` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain catalog discovery and scheduling at the aggregate runner boundary                                                                              |
+| 628 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0581` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain aggregate preflight and result execution ownership; complete existing resource and provisioning acceptance                                     |
+| 629 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0582` | `RETAIN`              | `BR-0554`           | `REFERENCE` | Retain ordered tier and report orchestration; remove disconnected Docker coverage through existing owner                                              |
+| 630 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0583` | `RETAIN`              | `BR-0544`           | `REFERENCE` | Retain deliberately budgeted quick-suite policy and existing exact-APK preflight owner                                                                |
+| 631 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0584` | `RETAIN`              | `BR-0538`           | `REFERENCE` | Keep one mixed-language quality coordinator and atomic ownership in the existing formatter root                                                       |
+| 632 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0596` | `RETAIN`              | `BR-0584`           | `REFERENCE` | Retain shared profile parsing and dependency verification; complete existing producer coverage and cleanup truthfulness                               |
+| 633 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0597` | `RETAIN`              | `BR-0603`           | `REFERENCE` | Retain pinned shared game-data staging and process identity repairs; complete existing NAT readiness and transactional demo stripping                 |
+| 634 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0601` | `RETAIN`              | `BR-0600`           | `REFERENCE` | Keep shared quality file selection; close remaining checked mutation, test coverage and exact dependency identity owners                              |
+| 635 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0602` | `RETAIN`              | `BR-0582`           | `REFERENCE` | Remove the disconnected PowerShell metadata projection; preserve shared Kotlin projection and finish bounded worker ownership                         |
+| 636 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0605` | `RETAIN`              | `BR-0607`           | `REFERENCE` | Retain local replay artifact rules while completing required corpus provenance and clean-checkout acceptance                                          |
+| 637 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0608` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Retain shared CMake policy owners and verified codec acquisition; honor explicit tool selection and canonical build identity                          |
+| 638 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0609` | `RETAIN`              | `BR-0615`           | `REFERENCE` | Reuse shared string-aware JSONC and source identity policy; finish complete music album and index generation under existing owners                    |
+| 639 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0611` | `RETAIN`              | `BR-0611`           | `REFERENCE` | Retain physical/album schema separation and ordinal ordering; complete shared parser, private matcher and symmetric collision owners                  |
+| 640 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0612` | `RETAIN`              | `BR-0623`           | `REFERENCE` | Retain current canonical spec and extraction identity policy; enforce explicit generation selections and portable source inventory                    |
+| 641 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0613` | `RETAIN`              | `BR-0620`           | `REFERENCE` | Retain shared sampler and data owners; complete aggregate stage routing, non-mutating previews and contained portable export                          |
+| 642 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0615` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Retain native HAM format ownership and rollback; complete exact DXA inventory, shared schema and full composition oracle                              |
+| 643 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0616` | `RETAIN`              | `BR-0626`           | `REFERENCE` | Retain shared HAM analysis and source exclusions; complete alias-safe, verified and reproducible DXA generation                                       |
+| 644 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0617` | `RETAIN`              | `BR-0634`           | `REFERENCE` | Retain shared conversion progress and pack policy; finish truthful complete merge, private stages and reproducible tool identity                      |
+| 645 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0618` | `RETAIN`              | `BR-0636`           | `REFERENCE` | Retain portable bounded TGA repair and shared pack naming; complete exact sizing, collision rejection and archive publication                         |
+| 646 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0619` | `RETAIN`              | `BR-0634`           | `REFERENCE` | Retain per-game sound format and checked RIFF spans; complete sound pack status, private stages and source-bound publication                          |
+| 647 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0620` | `RETAIN`              | `BR-0637`           | `REFERENCE` | Retain exact portable TGA ownership and engine naming boundary; finish shared resize and collision-safe conversion policy                             |
+| 648 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0621` | `RETAIN`              | `BR-0626`           | `REFERENCE` | Retain branch-owned pack conversion and narrow paired engine seams; close exact source identity and namespace contracts                               |
+| 649 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0622` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Retain branch-owned semantic HAM projection; agree host field domains with the actual native consumer                                                 |
+| 650 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0623` | `RETAIN`              | `BR-0630`           | `REFERENCE` | Retain branch-owned verifier; replace candidate-directed success with independent exact consumer validation                                           |
+| 651 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0624` | `RETAIN`              | `BR-0636`           | `REFERENCE` | Retain shared bounded asset readers and portable pixel ownership; finish source namespace and cumulative work policy                                  |
+| 652 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0625` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Remove disconnected raw payload and byte-difference helpers; retain bounded semantic source readers and native contracts                              |
+| 653 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0626` | `RETAIN`              | `BR-0233`           | `REFERENCE` | Retain one shared branch-owned archive writer; publish a complete validated generation with exact source/output ownership                             |
+| 654 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0632` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Keep compatibility disc hashes separate from identity admission and refresh the actual database maintenance contract                                  |
+| 655 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0636` | `RETAIN`              | `BR-0607`           | `REFERENCE` | Keep replay sandbox and trace ownership in existing runners; repair recording prerequisites and required corpus contracts                             |
+| 656 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0637` | `RETAIN`              | `BR-0008`           | `REFERENCE` | Keep measured source identity distinct from path lookup and converge generated inventories on one source policy                                       |
+| 657 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0639` | `RETAIN`              | `BR-0169`           | `REFERENCE` | Retain engine-owned demo extraction and source tables; correct executable validation commands and complete oracle outcomes                            |
+| 658 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0640` | `RETAIN`              | `BR-0630`           | `REFERENCE` | Restore a concise mod family index and complete staged-input instructions while preserving converter/runtime ownership                                |
+| 659 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0641` | `RETAIN`              | `BR-0556`           | `REFERENCE` | Preserve exact build-to-upload artifact handoff and shared host setup while reconciling release identity and signing owners                           |
+| 660 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0642` | `RETAIN`              | `BR-0493`           | `REFERENCE` | Keep policy tests beside branch-owned controller, audio, demo and import owners; require native and lifecycle acceptance separately                   |
+| 661 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0648` | `RETAIN`              | `BR-0491`           | `REFERENCE` | Retain explicit music source policy, bounded typed sidecars and cache confinement; verify runtime publication and overlay lifecycle separately        |
+| 662 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0661` | `RETAIN`              | `BR-0649`           | `REFERENCE` | Retain SAF audio generation and asset teardown assertions; close existing title-music oracle and state-restoration owners                             |
+| 663 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0662` | `RETAIN`              | `BR-0644`           | `REFERENCE` | Retain shared render, music and generation assertions; reconcile existing binding oracle at current merged script                                     |
+| 664 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0663` | `RETAIN`              | `BR-0645`           | `REFERENCE` | Retain distinct route, rendering and recorder fixtures; finish existing paired pilot deletion oracle                                                  |
+| 665 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0665` | `RETAIN`              | `BR-0546`           | `REFERENCE` | Retain shared correlated runner and centralized host discovery; finish exact tool identity and existing staging lifetime policy                       |
+| 666 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0666` | `RETAIN`              | `BR-0171`           | `REFERENCE` | Retain shared host adapters and duration estimator; constrain existing process cleanup to owned generations                                           |
+| 667 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0667` | `RETAIN`              | `BR-0190`           | `REFERENCE` | Preserve centralized emulator readiness and active-set publication; finish typed ADB failures and bounded process ownership                           |
+| 668 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0668` | `RETAIN`              | `BR-0190`           | `REFERENCE` | Retain correlated terminal outcomes and shared dependency policy; replace name/size admission and uncovered lexical reader                            |
+| 669 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0675` | `RETAIN`              | `BR-0543`           | `REFERENCE` | Retain shared managed emulators and fail-closed port conflicts; guarantee owned provisioning cleanup                                                  |
+| 670 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0676` | `RETAIN`              | `BR-0653`           | `REFERENCE` | Retain expanded paired LAN scenarios and controller-page waits; preserve accepted synchronization oracle through final verification                   |
+| 671 |    47 | MEDIUM      | 23/0/7/10/7   | `GQ1-CHUNK-0680` | `RETAIN`              | `BR-0665`           | `REFERENCE` | Retain slowdown/ABI/pilot invariants and removed stale route fixture; repair existing WebSocket bot protocol and lifetime owners                      |
+| 672 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0002` | `RETAIN` | `BR-0021` | `REFERENCE` | Extraction callback cancellation, JNI exception unwind, ISO abort and Mac fallback suppression |
+| 673 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0005` | `RETAIN` | `BR-0077` | `REFERENCE` | Native load status propagation, missing-secret policy and launcher assertion consumers |
+| 674 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0008` | `RETAIN` | `BR-0082` | `REFERENCE` | Metadata-backed Resume admission, scope/path checks and paired body/runtime readers |
+| 675 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0009` | `REMOVE` | `BR-0084` | `REFERENCE` | Dormant SAF base-file archive registration, managed-copy picker and injected-provider tests |
+| 676 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0011` | `RETAIN` | `BR-0099` | `REFERENCE` | Bundled audio database invalidation, local analysis completion and music name sidecar identity |
+| 677 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0016` | `REFACTOR` | `BR-0110` | `REFERENCE` | Simulator multi-client mapping identity and last-sender inbound delivery |
+| 678 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0023` | `RETAIN` | `BR-0119` | `REFERENCE` | Future protocol admission after version2 bump and rejection response contract |
+| 679 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0053` | `PRE-0108`            | `GQF-0036`          | `PRIMARY`   | saf_manifest_parser.c` retained strings and duplicate lookup                                                                                          |
+| 680 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0481` | `RETAIN`              | `GQR-0023`          | `REFERENCE` | Retain strict atomic SAF publication and save projection; complete existing bounded parsing and deletion identity owners                              |
+| 681 |    47 | MEDIUM      | 23/0/10/10/4  | `GQ1-CHUNK-0646` | `RETAIN`              | `GQR-0023`          | `REFERENCE` | Retain shared touch action policy and validated save/SAF projection; cover true publication and runtime generations at their owners                   |
+| 682 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0104` | `PRE-0108`            | `BR-0181`           | `REFERENCE` | Compare the complete fpcalc reference fingerprint                                                                                                     |
+| 683 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0105` | `PRE-0108`            | `BR-0662`           | `REFERENCE` | Keep mailbox assertions active in registered builds                                                                                                   |
+| 684 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0115` | `NO_INHERITED_EFFECT` | `BR-0182`           | `REFERENCE` | Exercise the production StuffIt parser in corpus tests                                                                                                |
+| 685 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0154` | `RETAIN`              | `BR-0224`           | `REFERENCE` | Fail closed on unknown automation actions and debug fields                                                                                            |
+| 686 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0156` | `RETAIN`              | `BR-0231`           | `REFERENCE` | Stop replay when direct-command policy fails                                                                                                          |
+| 687 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0160` | `RETAIN`              | `BR-0396`           | `REFERENCE` | Register route snapshot and cache tests with CTest                                                                                                    |
+| 688 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0163` | `RETAIN`              | `BR-0396`           | `REFERENCE` | Register route snapshot and cache tests with CTest                                                                                                    |
+| 689 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0444` | `RETAIN`              | `GQR-0205`          | `PRIMARY`   | Preserve debug SAF pipe error status before ordinary writer close                                                                                     |
+| 690 |    45 | MEDIUM      | 23/0/2/10/10  | `GQ1-CHUNK-0586` | `RETAIN`              | `BR-0561`           | `REFERENCE` | Retain a focused NAT simulation owner with canonical resolved endpoints and bounded mapping lifecycle                                                 |
+| 691 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0020` | `PRE-0108`            | `GQF-0059`          | `PRIMARY`   | Fingerprint matcher score serialization and best-CD selection                                                                                         |
+| 692 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0022` | `PRE-0108`            | `GQF-0063`          | `PRIMARY`   | CUE `FILE` directive grammar                                                                                                                          |
+| 693 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0039` | `PRE-0108`            | `GQF-0070`          | `PRIMARY`   | Windows `fingerprint_cd` CUE and BIN paths                                                                                                            |
+| 694 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0046` | `PRE-0108`            | `BR-0077`           | `REFERENCE` | Propagate loaded level failures to the metadata result                                                                                                |
+| 695 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0047` | `PRE-0108`            | `BR-0077`           | `REFERENCE` | Propagate loaded level failures to the metadata result                                                                                                |
+| 696 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0055` | `PRE-0108`            | `GQF-0105`          | `PRIMARY`   | Song-list token versus engine filename capacity                                                                                                       |
+| 697 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0117` | `DEFER`               | `GQF-0106`          | `PRIMARY`   | Container-track sidecar identity                                                                                                                      |
+| 698 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0123` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `PRIMARY`   | Mission ZIP loadable-level admission                                                                                                                  |
+| 699 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `REFERENCE` | Mission ZIP loadable-level admission                                                                                                                  |
+| 700 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0126` | `NO_INHERITED_EFFECT` | `GQF-0111`          | `REFERENCE` | Mission ZIP loadable-level admission                                                                                                                  |
+| 701 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0147` | `RETAIN`              | `BR-0289`           | `REFERENCE` | Preserve resolution-scaled point primitives in GLES3                                                                                                  |
+| 702 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0149` | `RETAIN`              | `BR-0300`           | `REFERENCE` | Remove or restore the dead D1-in-D2 level-start mode                                                                                                  |
+| 703 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0157` | `CANDIDATE`           | `BR-0201`           | `REFERENCE` | Restore the replay floating-point environment on every platform                                                                                       |
+| 704 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0166` | `RETAIN`              | `BR-0588`           | `REFERENCE` | Correlate introspection reads with the current request                                                                                                |
+| 705 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0201` | `RETAIN`              | `GQF-0181`          | `PRIMARY`   | audio catalog payload lifetime, homing/HUD and demo codec                                                                                             |
+| 706 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0224` | `RETAIN`              | `BR-0588`           | `REFERENCE` | Introspection sampling, menus, player, secrets and route snapshots                                                                                    |
+| 707 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0225` | `RETAIN`              | `BR-0288`           | `REFERENCE` | Introspection route, Guide-Bot, thief, rendering, HUD and multiplayer snapshots                                                                       |
+| 708 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0230` | `RETAIN`              | `GQR-0175`          | `PRIMARY`   | Input-demo fixture settings, RNG/checkpoint schema and restored timer admission                                                                       |
+| 709 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0263` | `RETAIN`              | `GQF-0195`          | `PRIMARY`   | route geometry arithmetic, visibility cache, trigger source discovery and packing reconciliation                                                      |
+| 710 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0265` | `RETAIN`              | `GQF-0195`          | `REFERENCE` | route objective progression, fleeing carrier anchors and partial-result semantics                                                                     |
+| 711 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0310` | `RETAIN`              | `BR-0197`           | `REFERENCE` | private model headers, disabled TGA breakpoint, model texture upload and ClassicDepth draw policy                                                     |
+| 712 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0331` | `RETAIN`              | `GQR-0196`          | `PRIMARY`   | D2 object runtime interfaces, native/hybrid physics diagnostics and PIG cache/replacement ownership                                                   |
+| 713 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0353` | `RETAIN`              | `GQR-0201`          | `PRIMARY`   | D2 DXA patch snapshot, integer/frame parsing and native row/field test codecs                                                                         |
+| 714 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0355` | `RETAIN`              | `BR-0382`           | `REFERENCE` | D2 Guide-Bot warp/release/commands, secret search, traversal and path-goal resolution                                                                 |
+| 715 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0356` | `RETAIN`              | `GQR-0175`          | `REFERENCE` | D2 Guide-Bot path continuation, runtime reconstruction, replay probes, thief inventory and partial menu                                               |
+| 716 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0367` | `RETAIN`              | `BR-0386`           | `REFERENCE` | D2 weapon/homing, energy and RNG hooks, guided rebuild and runtime state with current D1 adapter delegation                                           |
+| 717 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0371` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 classic demo control trace, event/dump admission, quick recording and current D1 identity hooks                                                    |
+| 718 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0374` | `RETAIN`              | `GQR-0175`          | `REFERENCE` | D2 object allocator/runtime, warning view, FX RNG, diagnostics, missile-camera wakes and current cooperative death hooks                              |
+| 719 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0380` | `RETAIN`              | `BR-0197`           | `REFERENCE` | D2 model string/name guards, disabled TGA breakpoint, texture upload and ClassicDepth policy                                                          |
+| 720 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0426` | `RETAIN`              | `BR-0559`           | `REFERENCE` | AcoustID example rename, optional generated asset integration and keystore properties example                                                         |
+| 721 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0427` | `RETAIN`              | `BR-0471`           | `REFERENCE` | Controller/touch frozen presets, full current successors/discovery and fingerprint matching configuration                                             |
+| 722 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0430` | `RETAIN`              | `BR-0643`           | `REFERENCE` | Complete known-discs corpus, identical current rename, strict full-byte audit and full current DiscIdentifier                                         |
+| 723 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0432` | `RETAIN`              | `BR-0562`           | `REFERENCE` | Complete frozen 196-line dependency manifest, full current delta, current JDK/fpcalc helpers, exact platform URL and updater pin paths                |
+| 724 |    44 | MEDIUM      | 23/0/4/10/7   | `GQ1-CHUNK-0437` | `RETAIN`              | `GQR-0123`          | `REFERENCE` | Complete Mac StuffIt oracle, identical current bytes, schema audit and full current native consumer                                                   |
+| 725 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-SWEEP-014` | `RETAIN` | `GQR-0008` | `REFERENCE` | Tracked artifact recurrence, cleanup/retention contracts, formatter selection and release review hygiene sweep |
+| 726 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0029` | `PRE-0108`            | `GQF-0075`          | `PRIMARY`   | Inno PE resource offset-table leaf                                                                                                                    |
+| 727 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0045` | `PRE-0108`            | `GQF-0095`          | `PRIMARY`   | Level-metadata process-global initialization retry                                                                                                    |
+| 728 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0098` | `PRE-0108`            | `GQF-0069`          | `PRIMARY`   | CD fingerprint BIN source generation                                                                                                                  |
+| 729 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0107` | `PRE-0108`            | `GQF-0082`          | `PRIMARY`   | Inno solid-chunk decoded prefix and terminal routing                                                                                                  |
+| 730 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0150` | `RETAIN`              | `BR-0222`           | `REFERENCE` | Publish input-demo artifact sets transactionally                                                                                                      |
+| 731 |    44 | MEDIUM      | 23/0/7/10/4   | `GQ1-CHUNK-0152` | `RETAIN`              | `GQF-0168`          | `PRIMARY`   | Replay current-frame direct-command acquisition                                                                                                       |
+| 732 |    43 | MEDIUM      | 23/0/7/10/3   | `GQ1-CHUNK-0180` | `RETAIN`              | `BR-0243`           | REFERENCE   | duplicate high-confidence diagnostic pagination loss is the only live root in this scope                                                              |
+| 733 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0139` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback                                                                                         |
+| 734 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0140` | `RETAIN`              | `BR-0610`           | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback                                                                                         |
+| 735 |    42 | MEDIUM      | 23/0/2/10/7   | `GQ1-CHUNK-0382` | `RETAIN`              | `GQR-0110`          | `REFERENCE` | Android native CMake dependency acquisition, SDL patches, compiler/options and first target registrations                                             |
+| 736 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0012` | `REFACTOR` | `BR-0101` | `REFERENCE` | Global mission audio fingerprint retention and whole-file lookup/update costs |
+| 737 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0018` | `RETAIN` | `BR-0112` | `REFERENCE` | NAT sequential32-port reservation, startup errors and exhausted mapping admission |
+| 738 |    39 | MEDIUM      | 12/0/7/10/10  | `GQ1-CHUNK-0383` | `CANDIDATE`           | `GQR-0203`          | `PRIMARY`   | Android D2 target tail, native compile/link fixups and complete paired executable source-list comparison                                              |
+| 739 |    38 | MEDIUM      | 12/5/4/10/7   | `GQ1-CHUNK-0229` | `CANDIDATE`           | `BR-0290`           | `REFERENCE` | Input-demo diagnostic logger and duplicate inherited collision probes                                                                                 |
+| 740 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0209` | `RETAIN`              | `BR-0234`           | `REFERENCE` | headless metadata runtime, cooperative diagnostics and canonical serializers                                                                          |
+| 741 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0312` | `RETAIN`              | `BR-0294`           | `REFERENCE` | D2 polygon/morph UVL and RGB ownership, count guards, face counters and current indexed-color handling                                                |
+| 742 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0431` | `RETAIN`              | `BR-0411`           | `REFERENCE` | Complete 452-line version corpus, identical current rename, strict schema/alias audit and complete KnownVersions consumer                             |
+| 743 |    36 | MEDIUM      | 12/0/4/10/10  | `GQ1-CHUNK-0451` | `RETAIN`              | `BR-0494`           | `REFERENCE` | Retain friend UI actions and replace terminal ICE ordinal projection under its existing owner                                                         |
+| 744 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0171` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 instance palette and projection current delta |
+| 745 | 35 | MEDIUM | 12/7/2/10/4 | `GQ1-SWEEP-015` | `RETAIN` | `GQR-0015` | `REFERENCE` | Current dead-code/schema cleanup, historical owner reconciliation and exact remaining analysis gates |
+| 746 |    34 | LOW         | 12/0/2/10/10  | `GQ1-CHUNK-0575` | `RETAIN`              | `BR-0532`           | `REFERENCE` | Retain narrow repository tooling policy and platform-specific build discovery; align existing C/C++ editor/formatter indentation                      |
+| 747 |    33 | LOW         | 12/0/4/10/7   | `GQ1-CHUNK-0060` | `PRE-0108`            | `GQF-0117`          | `PRIMARY`   | Generated `descent.sng` alias bytes                                                                                                                   |
+| 748 |    31 | LOW         | 12/0/2/10/7   | `GQ1-CHUNK-0425` | `RETAIN`              | `BR-0407`           | `REFERENCE` | VS Code C/C++, extensions and current Java/search settings                                                                                            |
+| 749 | 12 | REFERENCE | 8/0/0/4/0 | `GQ1-RECHECK-0050` | `REMOVE` | `BR-0668` | `REFERENCE` | Assigned route-corpus wrapper and baseline were deleted in committed test cleanup |
+| 750 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0064` | `PRE-0108`            | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 751 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0077` | `PRE-0108`            | -                   | `NONE`      | No live canonical fix remains                                                                                                                         |
+| 752 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0078` | `PRE-0108`            | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 753 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0112` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 754 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0142` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 755 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0143` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 756 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0144` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 757 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0145` | `NO_INHERITED_EFFECT` | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 758 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0146` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 759 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0148` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 760 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0162` | `RETAIN`              | -                   | `NONE`      | Clean coverage; no live fix                                                                                                                           |
+| 761 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0168` | `NO_INHERITED_EFFECT` | -                   | NONE        | branch-added shared ownership is already natural and no new live defect survived reconciliation                                                       |
+| 762 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0169` | `DEFER`               | `BR-0029`           | REFERENCE   | all live quality evidence is already owned and the only minimization is an existing below-payoff deferral                                             |
+| 763 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0183` | `RETAIN`              | -                   | NONE        | all historical roots are closed or non-applicable and no new root survived complete reconciliation                                                    |
+| 764 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0189` | `RETAIN`              | NONE                | `REFERENCE` | Frozen timer issue already repaired in live code                                                                                                      |
+| 765 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0199` | `RETAIN`              | `NONE`              | `REFERENCE` | automap predicates, boss HUD, bounded music reads and RLE validation                                                                                  |
+| 766 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0228` | `RETAIN`              | `none`              | `REFERENCE` | Input-demo control state/pulse parsing, validation and coalescing                                                                                     |
+| 767 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0236` | `RETAIN`              | `none`              | `REFERENCE` | shared recording facade declarations                                                                                                                  |
+| 768 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0240` | `RETAIN`              | `none`              | `REFERENCE` | RNG trace C/C++ declarations, context/lifecycle signatures and suffix contract                                                                        |
+| 769 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0244` | `RETAIN`              | `none`              | `REFERENCE` | metadata view, route/state schemas, packing and declarations                                                                                          |
+| 770 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0256` | `RETAIN`              | `NONE`              | `REFERENCE` | MIDI enumeration header contract and caller ownership                                                                                                 |
+| 771 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0259` | `RETAIN`              | `NONE`              | `REFERENCE` | UDP shared authentication, welcome/observer admission and proxy/rebind adapter reconciliation                                                         |
+| 772 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0269` | `RETAIN`              | `-`                 | `REFERENCE` | native object, visibility and shootable-wall callbacks                                                                                                |
+| 773 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0276` | `RETAIN`              | `-`                 | `REFERENCE` | shared storage failure dialog presentation                                                                                                            |
+| 774 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0279` | `RETAIN`              | `-`                 | `REFERENCE` | paired model UVL ownership and ordinary/morph polygon admission                                                                                       |
+| 775 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0308` | `RETAIN`              | `none`              | `REFERENCE` | native argument defaults/initialization, fatal exit and bounded current messages, HMP wrapper and PhysFS platform setup                               |
+| 776 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0309` | `RETAIN`              | `none`              | `REFERENCE` | private texture-mapper declarations and balanced header guard                                                                                         |
+| 777 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0319` | `RETAIN`              | `none`              | `REFERENCE` | D2 native type aliases, multisource audio declarations, bounded replay-label header and guarded typed xmodel interface                                |
+| 778 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0321` | `RETAIN`              | `none`              | `REFERENCE` | D2 classic-demo dump snapshots, alias checks, temporary output and cleanup with current mount/input/asset-identity integration                        |
+| 779 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0378` | `RETAIN`              | `none`              | `REFERENCE` | D2 argument defaults/init, fatal output, removed HMP wrapper and shared PhysFS initialization                                                         |
+| 780 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0379` | `RETAIN`              | `none`              | `REFERENCE` | D2 private software texture mapper include guard                                                                                                      |
+| 781 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0381` | `RETAIN`              | `none`              | `REFERENCE` | Rust server manifest, removed json5 and scoped root lock consistency                                                                                  |
+| 782 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0384` | `RETAIN`              | `none`              | `REFERENCE` | D1 root native CMake options, Android platform seam, prefixed dependencies and current host-test/sanitizer registration                               |
+| 783 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0386` | `RETAIN`              | `none`              | `REFERENCE` | D1 3D archive prefix, platform compile option and dependency includes                                                                                 |
+| 784 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0388` | `RETAIN`              | `none`              | `REFERENCE` | D1 native editor CMake identity and dependency includes                                                                                               |
+| 785 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0389` | `RETAIN`              | `none`              | `REFERENCE` | D1 native IFF CMake identity and dependency includes                                                                                                  |
+| 786 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0392` | `RETAIN`              | `-`                 | `REFERENCE` | D1 memory CMake target and paired native target context                                                                                               |
+| 787 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0393` | `RETAIN`              | `-`                 | `REFERENCE` | D1 misc CMake target naming, optional PNG registration and relocated defaults test                                                                    |
+| 788 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0394` | `RETAIN`              | `-`                 | `REFERENCE` | D1 texture mapping CMake source and compile definition branches                                                                                       |
+| 789 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0395` | `RETAIN`              | `-`                 | `REFERENCE` | D1 UI CMake target naming and paired editor UI source context                                                                                         |
+| 790 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0396` | `RETAIN`              | `-`                 | `REFERENCE` | D1 external-model CMake target naming and paired renderer dependency context                                                                          |
+| 791 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0397` | `RETAIN`              | `-`                 | `REFERENCE` | D2 native root naming, deterministic compiler settings, Android platform admission and current host test registration                                 |
+| 792 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0399` | `RETAIN`              | `-`                 | `REFERENCE` | D2 3D CMake target naming, native Apple compiler policy and paired library context                                                                    |
+| 793 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0401` | `RETAIN`              | `-`                 | `REFERENCE` | D2 editor CMake target naming and source registration                                                                                                 |
+| 794 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0402` | `RETAIN`              | `-`                 | `REFERENCE` | D2 IFF CMake target naming and decoder registration                                                                                                   |
+| 795 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0406` | `RETAIN`              | `-`                 | `REFERENCE` | D2 memory CMake target prefix and public dependencies                                                                                                 |
+| 796 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0407` | `RETAIN`              | `-`                 | `REFERENCE` | D2 misc CMake target naming, optional PNG and relocated defaults test                                                                                 |
+| 797 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0408` | `RETAIN`              | `-`                 | `REFERENCE` | D2 texture-mapping CMake target prefix and software/ASM policy                                                                                        |
+| 798 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0409` | `RETAIN`              | `-`                 | `REFERENCE` | D2 editor UI target prefix and source inventory                                                                                                       |
+| 799 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0410` | `RETAIN`              | `-`                 | `REFERENCE` | D2 external-model target prefix and renderer dependencies                                                                                             |
+| 800 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0412` | `RETAIN`              | `-`                 | `REFERENCE` | D1 install-note mission archive sentence                                                                                                              |
+| 801 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0413` | `RETAIN`              | `-`                 | `REFERENCE` | D2 install-note mission archive sentence                                                                                                              |
+| 802 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0415` | `RETAIN`              | `-`                 | `REFERENCE` | Shared music-name/track, PhysFS setup, rewind, RGBA and SAF focused native tests                                                                      |
+| 803 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0416` | `RETAIN`              | `-`                 | `REFERENCE` | Audio format/read/decode, wall/GLES source, HOG catalog, replay limits, geometry and MIDI seek tests                                                  |
+| 804 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0417` | `RETAIN`              | `-`                 | `REFERENCE` | Secret-area scan state size, candidate saturation and opener/work-budget regression                                                                   |
+| 805 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0418` | `RETAIN`              | `-`                 | `REFERENCE` | Custom audio staging/publication, disc fingerprint projection, storage guard and lobby packet contracts                                               |
+| 806 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0419` | `RETAIN`              | `-`                 | `REFERENCE` | Paired player layout/text/transaction fixtures and D2 thief policy regression                                                                         |
+| 807 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0439` | `RETAIN`              | `-`                 | `REFERENCE` | Complete source manifest, identical current rename, resolver and exclusion/test context                                                               |
+| 808 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0442` | `RETAIN`              | `-`                 | `REFERENCE` | Retain small explicit Gradle rendering/tool settings                                                                                                  |
+| 809 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0443` | `RETAIN`              | `-`                 | `REFERENCE` | Retain debug-only nonexported SAF fixture registration                                                                                                |
+| 810 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0448` | `RETAIN`              | `-`                 | `REFERENCE` | Preserve immutable FileProvider generation store and completed exit-view removal                                                                      |
+| 811 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0529` | `RETAIN`              | `none`              | `REFERENCE` | Retain the closing boundary of the shared status-log composable; no inherited change or independent repair                                            |
+| 812 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0573` | `RETAIN`              | `-`                 | `REFERENCE` | Retain explicit backup exclusions and confined FileProvider cache roots                                                                               |
+| 813 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0627` | `RETAIN`              | `-`                 | `REFERENCE` | Retain concise current repository instructions and paired engine ownership guidance                                                                   |
+| 814 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0629` | `RETAIN`              | `-`                 | `REFERENCE` | Retain the repository-level Codex instruction pointer                                                                                                 |
+| 815 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0630` | `RETAIN`              | `BR-0001`           | `REFERENCE` | Retain removal of the stale nonconsumed D1/D2 OpenGL diff snapshot                                                                                    |
+| 816 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0635` | `RETAIN`              | `-`                 | `REFERENCE` | Retain the reviewed engine-generated secret baseline command and explicit required-asset gate                                                         |
+| 817 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0657` | `RETAIN`              | `NONE`              | `REFERENCE` | Retain paired weapon slot/current presentation and shared ammo policy without another engine inventory copy                                           |
+| 818 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0670` | `RETAIN`              | `NONE`              | `REFERENCE` | Retain focused asset fixtures and thin paired baseline wrapper                                                                                        |
+| 819 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0677` | `RETAIN`              | `-`                 | `REFERENCE` | Retain shared recorder diagnostics and thin headless/graphics regression entry points                                                                 |
+| 820 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0678` | `RETAIN`              | `-`                 | `REFERENCE` | Retain paired native fixture contracts, streaming boundary coverage and isolated sanitizer build selection                                            |
+| 821 |     0 | REFERENCE   | 0/0/0/0/0     | `GQ1-CHUNK-0679` | `RETAIN`              | `-`                 | `REFERENCE` | Retain transactional direct-command policy, explicit partial-result contracts and strict RNG backend probes                                           |
+| 822 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0708` | `RETAIN` | `none` | `REFERENCE` | Retain small always-active ETC2 layout boundary regression |
+| 823 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0715` | `RETAIN` | `none` | `REFERENCE` | Retain the completed local scroll-strip geometry plan and branch-owned math boundary |
+| 824 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0156` | `RETAIN` | `none` | `REFERENCE` | D1 instance and projection current delta |
+| 825 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0158` | `RETAIN` | `none` | `REFERENCE` | D1 required IFF writer seek execution |
+| 826 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0159` | `RETAIN` | `none` | `REFERENCE` | D1 native graphics, audio, argument and model interfaces |
+| 827 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0173` | `RETAIN` | `none` | `REFERENCE` | D2 editor trigger disk-size boundary |
+| 828 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0174` | `RETAIN` | `none` | `REFERENCE` | D2 IFF seek execution and BODY chunk positioning |
+| 829 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0175` | `RETAIN` | `none` | `REFERENCE` | D2 native graphics, audio, argument and model interfaces |
 
 ## Review queue
 
@@ -7253,6 +7285,20 @@ Beginning with Chunk 0108, this table is the primary output of each coverage uni
 | `GQD-0706` | `GQ1-SWEEP-013` | `REFACTOR` | Consolidate accepted branch-added paired policy at existing shared seams and remove proven orphan implementations |
 | `GQD-0707` | `GQ1-SWEEP-014` | `RETAIN` | Preserve completed narrow artifact cleanup and protected work; require exact tool/source identity and reviewable scoped validation |
 | `GQD-0708` | `GQ1-SWEEP-015` | `RETAIN` | Reconcile removed shims and current schemas before fixing remaining accepted warnings, dead roots and paired duplication |
+| `GQD-0709` | `GQ2-CHUNK-0001` | `NO_INHERITED_EFFECT` | Rename and formatting preserve auth schema; sample/importer key-format mismatch remains BR-0007; no inherited effect or external auth execution; exact frozen scope and context in imported GQ2-CHUNK-0001 current-delta review 20261006 |
+| `GQD-0710` | `GQ2-CHUNK-0155` | `CANDIDATE` | Current paired 73-line color-font bodies still support existing GQR-0184; retain compact filename, texture signature and PCX header changes; exact frozen scope and context in imported GQ2-CHUNK-0155 current-delta review 20261006 |
+| `GQD-0711` | `GQ2-CHUNK-0156` | `RETAIN` | Retain fixed instance capacity, release counter guard and exact CPU projection split; no new actionable defect or runtime execution; exact frozen scope and context in imported GQ2-CHUNK-0156 current-delta review 20261006 |
+| `GQD-0712` | `GQ2-CHUNK-0170` | `CANDIDATE` | Paired color-font consolidation/allocation/control owners remain GQR-0184; no duplicate saving or new root; exact frozen scope and context in imported GQ2-CHUNK-0170 current-delta review 20261006 |
+| `GQD-0713` | `GQ2-CHUNK-0171` | `RETAIN` | Retain indexed-color producer/decoder and paired projection; existing BR-0294 dead face counters remain current; archived BR-0307 preserved; exact frozen scope and context in imported GQ2-CHUNK-0171 current-delta review 20261006 |
+| `GQD-0714` | `GQ2-CHUNK-0160` | `CANDIDATE` | Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237; 21 modeled inherited automap lines admitted once, config scope remains 68 raw lines. Exact scope in imported GQ2-CHUNK-0160 current native group review 20261006 |
+| `GQD-0715` | `GQ2-CHUNK-0176` | `CANDIDATE` | Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237; 21 modeled inherited automap lines admitted once, config scope remains 68 raw lines. Exact scope in imported GQ2-CHUNK-0176 current native group review 20261006 |
+| `GQD-0716` | `GQ2-CHUNK-0158` | `RETAIN` | Retain six unconditional native IFF writer seeks; exact reverse transform equals frozen base; no new format abstraction; exact frozen scope and context in imported GQ2-CHUNK-0158 native interface and format review 20261006 |
+| `GQD-0717` | `GQ2-CHUNK-0159` | `RETAIN` | Retain paired native API declarations, shared audio prototypes and required type include; ReadCmdArgs has maintained test callers; exact frozen scope and context in imported GQ2-CHUNK-0159 native interface and format review 20261006 |
+| `GQD-0718` | `GQ2-CHUNK-0173` | `RETAIN` | Retain native trigger disk-size metadata excluding the runtime D1 extension; no editor round trip claimed; exact frozen scope and context in imported GQ2-CHUNK-0173 native interface and format review 20261006 |
+| `GQD-0719` | `GQ2-CHUNK-0174` | `RETAIN` | Retain unconditional writer seeks and D2 final BODY positioning; format admission and I/O failure policy are not newly certified; exact frozen scope and context in imported GQ2-CHUNK-0174 native interface and format review 20261006 |
+| `GQD-0720` | `GQ2-CHUNK-0175` | `RETAIN` | Retain native interfaces and explicit indexed-color contract; independent BR-0197 and GQR-0185 implementation scopes remain open; exact frozen scope and context in imported GQ2-CHUNK-0175 native interface and format review 20261006 |
+| `GQD-0721` | `GQ2-CHUNK-0157` | `CANDIDATE` | Reopen BR-0256 under GQR-0238 after real-helper stale-bind reproduction with mocked GL; retain GQR-0178/0185/0186 and existing lifecycle owners; concurrent audio delta remains separate; exact frozen scope and context in imported GQ2-CHUNK-0157 platform renderer and audio review 20261006 |
+| `GQD-0722` | `GQ2-CHUNK-0172` | `CANDIDATE` | Paired reference to BR-0256/GQR-0238; preserve existing shared gamepad/window/audio/2D owners and native state adapters; no duplicate finding or runtime run; exact frozen scope and context in imported GQ2-CHUNK-0172 platform renderer and audio review 20261006 |
 
 ### Weighted tranche 0138-0167 summary
 
@@ -7536,6 +7582,7 @@ The initial broad live survey seeded the following evidence-backed findings. The
 | `GQF-0249` | `OPEN` | P2/high | test-gap/false-pass | android/tests/test_coop_start_fanout_mapset.ps1 assertion inventory | Actual maintained AST assertion block reports eight distinct starts for levels=[] and for one level advertising8 but containing one actual start. No nonempty/expected level inventory or actual cardinality requirement; min(AssertSlots, starts.Count) silently skips absent starts and trusts producer separation summary. Require complete expected level and start identities plus bounded position/separation validation before PASS |
 | `GQF-0250` | `OPEN` | P2/high | test-gap/false-pass | android/tests/compare_input_demo_rng_trace.ps1 raw trace admission | Actual maintained CLI reports PASS for two empty files, identical malformed JSON, matching truncated=true traces and meta declaring9 events with1 actual event. Equal invalid bytes bypass parsing; declared counts are removed without inventory validation and truncation only compares equality. Require strict typed current envelope and exact raw inventory before filtering and semantic comparison |
 | `GQF-0251` | `OPEN` | P3/high | portability/diagnostics | android/app/src/main/cpp/extract/fingerprint_audio.c Windows stderr | Fresh supported MSVC/UCRT success and missing-directory captures replace Japanese directory characters with question marks, while UTF-8 filename progress remains exact. Mixed wide/byte stderr uses inconsistent encodings. GQI-0002 actual runtime report confirms the Unicode defect, with progress/Done preserved; use one byte-oriented UTF-8 diagnostic policy |
+| `GQF-0252` | `OPEN` | P3/high | diff-minimization/merge-pressure | d1/main/automap.c; d2/main/automap.c; shared automap_metadata_overlay.c/.h | Paired draw handlers duplicate recorder/replay/multiplayer route-adoption eligibility while the existing shared updater alone owns adoption and discards its player argument. Internalize eligibility and remove the unused argument in the existing per-game compiled owner; preserve query order, blocked-state behavior, cache cadence and D2 marker recorder use. Static model removes 21 inherited lines; no applied patch or runtime validation yet. GQR-0237 owns implementation and paired tests |
 
 ## Investigations
 
@@ -7545,11 +7592,11 @@ Investigations hold material risks that cannot yet be asserted as defects. They 
 | ---------- | ------ | ----------------- | ------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GQI-0001` | `RESOLVED` | P0 | security/secrets | All reachable local refs: 2481 commits / 32431 blobs | Actual Gitleaks 8.30.1 all-ref git scan plus all 32431 unique reachable raw blobs, binary/provider canary and isolated classification: no confirmed credential at HEAD 8ae346d346d976fb48c9e03517f4a7df01bc077c. Full imported investigation report preserves tool/object/artifact digests and limitations; later publication delta requires recheck |
 | `GQI-0002` | `CONFIRMED` | P3 | portability/diagnostics | Windows `fingerprint_audio` stderr orientation | Fresh supported MSVC/UCRT capture preserves progress/Done but replaces Japanese directory characters with question marks on success/error. Admitted GQF-0251/GQR-0235 for consistent UTF-8 stderr; maintained enumeration test and 11/11 retained HFS assertions passed. Fix remains TODO; full imported runtime evidence |
-| `GQI-0003` | `OPEN` | P2                | correctness/data-integrity/malformed-media | HFS volume allocation and cross-fork ownership                                 | The reader proves extent bounds but neither reads the volume allocation bitmap nor rejects physical overlap among admitted forks. Confirm strict-importer versus recovery-reader policy and supported-media sharing; if strict, promote one allocation/ownership finding with bitmap, overlap and known-media fixtures                                                                                                                                                                                                                                                                                                 |
-| `GQI-0004` | `OPEN` | P1                | security/filesystem-safety/privacy         | Host-tar link and special-file extraction                                      | Confirm Android host-tar behavior for links, devices and special entries under the actual fallback command and staging root; if exposed, admit one fail-closed entry-type/containment finding                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `GQI-0005` | `OPEN` | P2                | performance/input-lifecycle                | Axis mailbox transition queue                                                  | The frozen and live mailbox retain an unbounded deque of threshold transitions until event polling. Measure producer activity during supported loading or suspended-consumer stalls and storage/drain latency before admitting a budget defect; any overflow policy must preserve final releases and short-pulse order                                                                                                                                                                                                                                                                                                 |
-| `GQI-0006` | `OPEN` | P2                | correctness/save-publication               | D2 save pair, retained restart and progress inventory generation recovery      | Highest-level save/manifest renames can publish mismatched generations; loader skips manifest identity/checksum admission. Pair helper ignores backup-delete and restore failures and refuses existing backups; production uses deterministic .bak names without remnant recovery. Progress inventory publication also deletes deterministic backups and ignores rollback/delete outcomes. Inject process interruption and delete/rollback failures, verify restart/retry behavior and establish recovery policy before forming a complete fix. Preserve available backups and avoid unsupported permanent-loss claims |
-| `GQI-0007` | `OPEN` | P2                | correctness/resource-budget/host-config    | Headless metadata screen initialization                                        | Host config minimum-only admission reaches int dimension products, short storage and aspect division without a local screen budget. Trace real production config/argument admission and reproduce excessive/packed dimensions or invalid aspects in both tools before forming a defect; keep completed Android BR-0344 scope distinct                                                                                                                                                                                                                                                                                  |
+| `GQI-0003` | `FOLLOW-UP` | P2                | correctness/data-integrity/malformed-media | HFS volume allocation and cross-fork ownership                                 | Deferred malformed-media allocation-bitmap/cross-fork overlap investigation under the user request to avoid security-sensitive reproduction. Existing partition/extent/catalog bounds and known-media support remain intact. A strict-importer versus recovery-reader policy and any newly proposed consistency checks need supported-media evidence before admission; do not weaken current checks or count this hypothesis as a confirmed defect. |
+| `GQI-0004` | `FOLLOW-UP` | P1                | security/filesystem-safety/privacy         | Host-tar link and special-file extraction                                      | Further adversarial reproduction deferred by user request on 2026-10-06. Imported GQI-0004 deferred investigation checkpoint 20261006 records existing Android raw-tar symlink/FIFO acceptance and hard-link/device rejection, artifact hashes and limitations. Full Kotlin fallback admission remains unverified; no confirmed application exploit or new remediation is admitted. Resume full-path verification and entry-type/containment decision in the deferred follow-up |
+| `GQI-0005` | `OPEN` | P2                | performance/input-lifecycle                | Axis mailbox transition queue                                                  | The frozen and live mailbox retain an unbounded deque of threshold transitions until event polling. Measure producer activity during supported loading or suspended-consumer stalls and storage/drain latency before admitting a budget defect; any overflow policy must preserve final releases and short-pulse order Oct6 imported Ordinary investigation measurements: bounded Android production-mailbox simulation preserves order/releases; 43,200 crossings use 1,036,800 payload bytes and dequeue in 652 us, excluding real handlers. Normalized controller channels queue none; lifecycle stops gyro/releases axes. Fresh MSVC assertion-enabled maintained test passes; normal CMake assertions remain BR-0662. Actual supported-stall producer/drain observation remains before admission. |
+| `GQI-0006` | `CONFIRMED` | P2                | correctness/save-publication               | D2 save pair, retained restart and progress inventory generation recovery      | Confirmed by actual host-file process cuts after four native pair renames, cleanup failure and rollback failure; retry is blocked by deterministic backups while old bytes remain recoverable. Imported recovery policy and remediation admission 20261006 assigns GQR-0236 under existing BR-0235, coordinating native restore admission with BR-0206. Preserve one complete generation, recover before read/write, treat retained manifest as authority and check all recovery outcomes. Broader Android and retained/progress fault matrices are required implementation validation; fix remains TODO. |
+| `GQI-0007` | `FOLLOW-UP` | P2                | correctness/resource-budget/host-config    | Headless metadata screen initialization                                        | Bounded ordinary probes completed: fresh D1/D2 metadata tools pass ten configs with identical per-game outputs; alternate D2 replay tool passes initialization in five configs before expected missing-demo failure. fixdiv guards zero; no tested crash or output defect. Larger resource-pressure/overflow reproduction is deferred under the user constraint. Static packed/signed dimension concern and a possible fixed headless canvas policy remain follow-up; no new defect admitted and no Android BR-0344 reopening. |
 
 ## Observation normalization provenance
 
@@ -8726,6 +8773,20 @@ Rows are append-only mappings from raw worker observations to canonical owners. 
 | `GQ1-SWEEP-015` | `EXTENDS/RETAIN/CURRENT-RECONCILIATION` | GQR-0013/0014/0015/0163/0165/0184/0185/0186/0188/0189/0190/0192, BR-0446/0447/0532 and previous sweep owners retained; all GQI-0001..0007 and tail/live-delta gates audited as still open |
 | `GQI-0001-RESUME-20261002` | `RESOLVED/NO-CONFIRMED-SECRET` | Actual pinned maintained reachable-history and raw-binary scanner coverage; full imported metadata-only classification and limits |
 | `GQI-0002-RESUME-20261002` | `ADMIT` | `GQF-0251`, `GQR-0235`; actual Unicode directory diagnostic loss confirmed; no unsupported progress-loss claim |
+| `GQ2-CHUNK-0001` | `DUPLICATE/CURRENT-RECONCILIATION` | Rename and formatting preserve auth schema; sample/importer key-format mismatch remains BR-0007; no inherited effect or external auth execution; immutable import SHA-256 `910ec7c2d848309961e6ea52ae8400df383da9fe11ea88d11a91c1ca7e7306aa` |
+| `GQ2-CHUNK-0155` | `DUPLICATE/CURRENT-RECONCILIATION` | Current paired 73-line color-font bodies still support existing GQR-0184; retain compact filename, texture signature and PCX header changes; immutable import SHA-256 `16cc55bb1d884e9a3475ac12f7839b318f69ecc22a4df21abe6e95e152eeb1dd` |
+| `GQ2-CHUNK-0156` | `CLEAN/RETAIN` | Retain fixed instance capacity, release counter guard and exact CPU projection split; no new actionable defect or runtime execution; immutable import SHA-256 `94a169714d3c9d2920b2762e57a206691813320d5bc7c16294a3e8585cc85f4e` |
+| `GQ2-CHUNK-0170` | `DUPLICATE/CURRENT-RECONCILIATION` | Paired color-font consolidation/allocation/control owners remain GQR-0184; no duplicate saving or new root; immutable import SHA-256 `55dad4ea0a9ef73da8adf397eec5b67660f0c6c2b992f8f091e4f3583560409c` |
+| `GQ2-CHUNK-0171` | `DUPLICATE/CURRENT-RECONCILIATION` | Retain indexed-color producer/decoder and paired projection; existing BR-0294 dead face counters remain current; archived BR-0307 preserved; immutable import SHA-256 `2053ba3f3e8bfa78955ba2e8e6dd1214d10275724da39f4bae6d27f0b2633d7f` |
+| `GQ2-CHUNK-0160` | `ADMIT/RETAIN/CURRENT-RECONCILIATION` | Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237; immutable import SHA-256 `fa3b15476fa406f85071676c4690c31aa8c4f6e8b6499e36cba8283c80c850dc` |
+| `GQ2-CHUNK-0176` | `REFERENCE/RETAIN/CURRENT-RECONCILIATION` | Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237; immutable import SHA-256 `3359fce42fdfd70c8dadcd5653553eb757455b399b5a70e3a770af2343817aa0` |
+| `GQ2-CHUNK-0158` | `CLEAN/RETAIN` | Retain six unconditional native IFF writer seeks; exact reverse transform equals frozen base; no new format abstraction; immutable import SHA-256 `224db18060a867e163b234111833c88a6a310ebb7b237b8aefdb33828d480cbd` |
+| `GQ2-CHUNK-0159` | `CLEAN/RETAIN` | Retain paired native API declarations, shared audio prototypes and required type include; ReadCmdArgs has maintained test callers; immutable import SHA-256 `f9ea5bdba2c706d4760a54dbfae21040df4e06ddd3641fcb5b77a08aedba3729` |
+| `GQ2-CHUNK-0173` | `CLEAN/RETAIN` | Retain native trigger disk-size metadata excluding the runtime D1 extension; no editor round trip claimed; immutable import SHA-256 `48317b00db4b0741556c2841d646cc91d01d9b3c0314fd3c9a691538f7f04519` |
+| `GQ2-CHUNK-0174` | `CLEAN/RETAIN` | Retain unconditional writer seeks and D2 final BODY positioning; format admission and I/O failure policy are not newly certified; immutable import SHA-256 `fb033d9f8c19f84290210a8a2a2647f358240067b8ed528cffd106e54b2f860c` |
+| `GQ2-CHUNK-0175` | `CLEAN/RETAIN` | Retain native interfaces and explicit indexed-color contract; independent BR-0197 and GQR-0185 implementation scopes remain open; immutable import SHA-256 `4c517b0d339dab89bb1e5f5b15354728742998a2821b0577ed20d3f4e94e3f27` |
+| `GQ2-CHUNK-0157` | `REOPEN/EXTENDS/CURRENT-RECONCILIATION` | Reopen BR-0256 under GQR-0238 after real-helper stale-bind reproduction with mocked GL; retain GQR-0178/0185/0186 and existing lifecycle owners; concurrent audio delta remains separate; immutable import SHA-256 `4ac136784e5dc51b8f83043602026358ba7a65c9006c2e9fcc88cf5f25863d7a` |
+| `GQ2-CHUNK-0172` | `REOPEN/EXTENDS/CURRENT-RECONCILIATION` | Paired reference to BR-0256/GQR-0238; preserve existing shared gamepad/window/audio/2D owners and native state adapters; no duplicate finding or runtime run; immutable import SHA-256 `ccbbcc3deb57b49d3ba399d69da8c77c89803a870d1eb4e2d3daa212e56aeef9` |
 
 ## Bootstrap coverage records
 
@@ -9561,6 +9622,20 @@ The broad live survey produced ten preliminary `PARTIAL` records. They establish
 | `GQC-0826` | `ISSUES_FOUND` | `GQ1-SWEEP-013` Paired cooperative pickup predicates, orphan JNI/ETC2 code and narrow shared ownership reconciliation | `GQD-0706`; GQR-0163/0165/0184/0185/0186/0188/0189/0190/0192 and DMR reconciliation retained; no broad inherited deduplication or duplicate finding. Full live ranges and hashes are in the imported report |
 | `GQC-0827` | `ISSUES_FOUND` | `GQ1-SWEEP-014` Tracked artifact recurrence, cleanup/retention contracts, formatter selection and release review hygiene sweep | `GQD-0707`; Completed GQR-0005 retained; GQR-0008/0011/0225, BR-0001/0002/0556/0558/0563/0579/0663/0672 and existing publication/tooling owners reconciled; no duplicate finding. Full live ranges and hashes are in the imported report |
 | `GQC-0828` | `ISSUES_FOUND` | `GQ1-SWEEP-015` Current dead-code/schema cleanup, historical owner reconciliation and exact remaining analysis gates | `GQD-0708`; GQR-0013/0014/0015/0163/0165/0184/0185/0186/0188/0189/0190/0192, BR-0446/0447/0532 and previous sweep owners retained; all GQI-0001..0007 and tail/live-delta gates audited as still open. Full live ranges and hashes are in the imported report |
+| `GQC-0829` | `ISSUES` | `GQ2-CHUNK-0001` Android authentication examples | `GQD-0709`; Rename and formatting preserve auth schema; sample/importer key-format mismatch remains BR-0007; no inherited effect or external auth execution. Scope fingerprint `41be0c2b16afa444f274d5bf9d01a225d7c567b05f7710fefc4218c9af3b002a`; complete report imported in evidence ledger |
+| `GQC-0830` | `ISSUES` | `GQ2-CHUNK-0155` D1 font and PCX current delta | `GQD-0710`; Current paired 73-line color-font bodies still support existing GQR-0184; retain compact filename, texture signature and PCX header changes. Scope fingerprint `e4900f0c91de12d10f0b7a3438041f402cb6bc525a5819ec6be238147bad5bea`; complete report imported in evidence ledger |
+| `GQC-0831` | `CLEAN` | `GQ2-CHUNK-0156` D1 instance and projection current delta | `GQD-0711`; Retain fixed instance capacity, release counter guard and exact CPU projection split; no new actionable defect or runtime execution. Scope fingerprint `f86852c31def4fa3592195a32f1398b312cda58c6e18164a9d412decda12ac03`; complete report imported in evidence ledger |
+| `GQC-0832` | `ISSUES` | `GQ2-CHUNK-0170` D2 font and PCX current delta | `GQD-0712`; Paired color-font consolidation/allocation/control owners remain GQR-0184; no duplicate saving or new root. Scope fingerprint `d1ac3c48ab3a364a3ae5ffd2029c417a21a0ad145a142c7bdba81841b04b55a1`; complete report imported in evidence ledger |
+| `GQC-0833` | `ISSUES` | `GQ2-CHUNK-0171` D2 instance palette and projection current delta | `GQD-0713`; Retain indexed-color producer/decoder and paired projection; existing BR-0294 dead face counters remain current; archived BR-0307 preserved. Scope fingerprint `85c595c62629a13d232c74ce2ba0613b693fb734ff7d714f5161c9ac77aca951`; complete report imported in evidence ledger |
+| `GQC-0834` | `ISSUES` | `GQ2-CHUNK-0160` D1 AI, automap, assets, reactor, collision, config and credits current delta | `GQD-0714`; Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237. Scope fingerprint `43f478b5b047cfdf3d89a28ada4fb8d1eca57ab4620a11891a66dba79d416197`; complete report imported in evidence ledger |
+| `GQC-0835` | `ISSUES` | `GQ2-CHUNK-0176` D2 AI, automap, assets, reactor, collision, config and credits current delta | `GQD-0715`; Retain native AI/assets/reactor/collision boundaries and compact branch hooks; existing paired config GQR-0188 remains current; new paired automap eligibility owner GQF-0252/GQR-0237. Scope fingerprint `958a561eba1bc1e0f252677681e5b1bf4d9c18355557a16bb3e4ea5808471d23`; complete report imported in evidence ledger |
+| `GQC-0836` | `CLEAN` | `GQ2-CHUNK-0158` D1 required IFF writer seek execution | `GQD-0716`; Retain six unconditional native IFF writer seeks; exact reverse transform equals frozen base; no new format abstraction. Scope fingerprint `055e3c4c8e635a8a55128c90d2bd1259c616afaaf260bb76591dfaac92c094c6`; complete report imported in evidence ledger |
+| `GQC-0837` | `CLEAN` | `GQ2-CHUNK-0159` D1 native graphics, audio, argument and model interfaces | `GQD-0717`; Retain paired native API declarations, shared audio prototypes and required type include; ReadCmdArgs has maintained test callers. Scope fingerprint `81cae4dc28f8a585f923dedca0fc55fa8f363aeef26e53c0c121ad1be8bcf850`; complete report imported in evidence ledger |
+| `GQC-0838` | `CLEAN` | `GQ2-CHUNK-0173` D2 editor trigger disk-size boundary | `GQD-0718`; Retain native trigger disk-size metadata excluding the runtime D1 extension; no editor round trip claimed. Scope fingerprint `a0a502aa718e4a9e9b2f51f759593042b185b3fe2fdbb1d88cce27eb34791706`; complete report imported in evidence ledger |
+| `GQC-0839` | `CLEAN` | `GQ2-CHUNK-0174` D2 IFF seek execution and BODY chunk positioning | `GQD-0719`; Retain unconditional writer seeks and D2 final BODY positioning; format admission and I/O failure policy are not newly certified. Scope fingerprint `7e9c4b8bc6f820e8b5cb60ac71296a0682239481b436a8ddf4471f94ee61adf5`; complete report imported in evidence ledger |
+| `GQC-0840` | `CLEAN` | `GQ2-CHUNK-0175` D2 native graphics, audio, argument and model interfaces | `GQD-0720`; Retain native interfaces and explicit indexed-color contract; independent BR-0197 and GQR-0185 implementation scopes remain open. Scope fingerprint `1ab40fc82a43bb40c95d1884e69154bffea2eb155a160faabe3ed9a716c8d951`; complete report imported in evidence ledger |
+| `GQC-0841` | `ISSUES` | `GQ2-CHUNK-0157` D1 platform, renderer and audio current delta | `GQD-0721`; Reopen BR-0256 under GQR-0238 after real-helper stale-bind reproduction with mocked GL; retain GQR-0178/0185/0186 and existing lifecycle owners; concurrent audio delta remains separate. Scope fingerprint `f26535570dca823e09ccf6b1010d1789adc16414dcc3cd07e580b25e03bd729a`; complete report imported in evidence ledger |
+| `GQC-0842` | `ISSUES` | `GQ2-CHUNK-0172` D2 platform, renderer and audio current delta | `GQD-0722`; Paired reference to BR-0256/GQR-0238; preserve existing shared gamepad/window/audio/2D owners and native state adapters; no duplicate finding or runtime run. Scope fingerprint `5b7d8b3ea5ed5c69458f8626062624a131bc85f740c9c14a2db8697f6f020cc4`; complete report imported in evidence ledger |
 
 ## Initial remediation queue
 
@@ -9803,6 +9878,9 @@ This queue is deliberately much smaller than the coverage queue. Each row is one
 | `GQR-0233` | `TODO` | `GQF-0249` | Require complete actual co-op start inventories before PASS | Allowed android/tests/test_coop_start_fanout_mapset.ps1 and focused maintained host fixture plus canonical ledgers. Preflight a nonempty exact expected mission level inventory and AssertSlots domain; require each expected level once and exactly the advertised/requested number of actual starts, valid position coordinates and unique slot identities. Independently verify required separation from actual positions rather than trust producer counters. Preserve current native generator and shared process/staging policy; do not fabricate starts to satisfy the oracle. Actual assertion fixture must reject zero/missing/extra/duplicate levels, short/extra/duplicate/malformed starts, lying counters and too-close positions, retain complete valid controls; run actual representative native mission fanout and scoped PowerShell quality |
 | `GQR-0234` | `TODO` | `GQF-0250` | Validate complete RNG trace inputs before comparison | Allowed android/tests/compare_input_demo_rng_trace.ps1 and android/tests/test_input_demo_rng_trace_compare.ps1 plus canonical ledgers; coordinate existing GQR0176 host trace budget. Validate every input independently against actual current native version1 meta and event contract before filtering: exactly one required header, supported types/domains, strict JSON without ambiguous members, declared raw event count matching inventory and no truncated required evidence. Preserve legitimate complete zero-event trace policy explicitly, documented SIM/context supplemental exclusions and source-line/sequence diagnostic exclusions; do not require unsupported new native fields or compensate replay divergence. Compare remaining semantic fields exactly and case-sensitively where meaningful. Actual CLI fixture rejects absent header/empty file, malformed identical JSON, duplicate/midstream headers, bad types/domains/counts, missing/extra records and truncated traces; retains ordinary matching/mismatch diagnostics, valid zero-event policy and supplemental/line-only controls. Run real native-generated paired trace controls, scoped PowerShell quality and relevant replay checks |
 | `GQR-0235` | `TODO` | `GQF-0251` | Use consistent UTF-8 fingerprint audio diagnostics | Allowed fingerprint_audio.c and maintained test_fingerprint_audio_enumeration.ps1 plus canonical ledgers. Convert Windows directory arguments using the existing strict wide_to_utf8 owner and keep stderr byte-oriented throughout; preserve native wide path access, JSON, error/capacity bounds and Linux behavior. Add exact Unicode success/missing/empty directory and progress/failure/completion assertions in the existing integration runner; fresh CMake MSVC build, actual complete runner and relevant native tests, scoped mixed quality. No claim that UCRT lost progress in the reproduced probes |
+| `GQR-0236` | `TODO` | `BR-0235`; `GQI-0006` | Recover complete Android save generations before restore or retry | Extend branch-owned pair/single publication and retained/progress producers/readers under the imported GQI-0006 recovery policy. Preserve old bytes until a new generation commits; validate native retained identity/size/checksum; coordinate companion absence, last-save advertisement and scoped progress. Cover every interruption, failed cleanup/rollback, reopen and retry through maintained native and Android integration; preserve native formats and desktop behavior. BR-0206 remains the restore-semantic owner; no duplicate GQF |
+| `GQR-0237` | `TODO` | `GQF-0252` | Consolidate automap route-adoption eligibility | Existing shared automap_metadata_overlay.c/.h plus paired inherited automap.c calls; compute recorder/replay/network eligibility in the existing owner, remove unused player argument and internalize eligibility parameter. Preserve evaluation/query order, blocked-state cache/revision behavior, poll cadence, D1 initial rescan and D2 marker recording. Exercise actual shared entry in single-player, recording, replay and multiplayer states; paired open-map readiness integration, desktop/Android builds, scoped quality and isolated inherited metrics. Maintained D2 readiness script needs paired/blocked-state coverage; no broad route rewrite |
+| `GQR-0238` | `TODO` | `BR-0256` reopened | Restore coherent texture binding ownership | Reconcile existing ogl_texture_android.c/.h and paired renderer/xmodel bindings, shared merged-wall/probe callers and deletion/filter/context lifecycle. A cached equality may skip a bind only while actual per-unit state is known; preserve legitimate reuse and counters or explicitly remove an optimization that cannot establish validity. Remove obsolete scalar adapter plumbing if no longer needed; avoid another cache. Production-helper ordinary mutation controls plus actual paired GLES binding/pixel tests for mixed enhanced/native draws, unit transitions, delete/reuse, bulk filters and context restoration; maintained runner registration, desktop/Android builds, scoped quality and isolated inherited metrics. Coordinate GQR-0178/0185 and BR-0304. Existing seven structural contracts pass but miss this regression |
 
 ### GQR-0142 completion
 
@@ -10039,3 +10117,6193 @@ Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a
 - GQI-0002 confirmed as GQF-0251/GQR-0235, product fix TODO
 - 251 findings and 235 remediations now formed; GQI-0003 through GQI-0007, 54 frozen missing tails and full live delta remain open
 - Analysis is not complete; CLOSE remains TODO; no product edits in this investigation checkpoint
+
+## 2026-10-06 ordinary investigation checkpoint
+
+- Frozen-tail reconciliation is complete with durable exact evidence; original queue remains 818 DONE / 1 TODO
+- GQI-0004 is FOLLOW-UP under the user constraint; further adversarial security reproduction is deferred
+- GQI-0005 and GQI-0007 have imported bounded runtime measurements and narrower remaining questions; neither has a newly confirmed defect
+- Fresh paired Windows build and release Kotlin compile passed. Optimized native mailbox test was separately rebuilt with assertions enabled and passed
+- Remaining ordinary preparation: HFS policy, actual supported input stalls, save-generation interruption/recovery policy, headless canvas policy, and full committed/tracked/untracked current-delta reconciliation
+- Accepted live fixes and inherited-file minimization remain the subsequent implementation phase; no campaign completion claimed
+
+### Save-pair interruption checkpoint, 2026-10-06
+
+- Imported GQI-0006 native save-pair interruption evidence 20261006 with complete callback logs, actual file states, repeat-process outcomes and exact source/artifact hashes
+- Normal commit/retry passes; four rename interruption points, failed backup cleanup and failed rollback each leave deterministic remnants that block retry. Recoverable old bytes remain
+- Ordinary correctness probe uses only owned synthetic host files and the unchanged shared production helper; no adversarial archive/security work or real save mutation
+- Before implementation, complete retained restart/progress inventory generation admission and choose coherent recovery metadata/commit policy, preserving original engine file formats and all useful remnants
+
+## GQ2 current-branch delta generation
+
+- Frozen base: `7877ad30d05887b8e19869ed4c50075e41e2f88e`; frozen head: `b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef`
+- Parent GQ1 remains 818 DONE / 1 TODO; this generation supplies its mandatory current-delta work without rewriting frozen reports
+- 4,350 rename-aware path records; 627 numbered chunks; 645 total queue units, initially TODO
+- Manifest SHA-256: `e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4`; imported `GQ2 generation and review-tool repair 20261006` records reproducible construction and complete inventory checks
+- Apply the general cleanup process and original inherited attribution base `fb555eec75e1ed12c8348805ab335afb4c721b06`; generator labels/risk ordering are an inventory seed, not a new adversarial execution mandate
+- Work serially. Defer security-sensitive reproduction under the user constraint and retain named follow-up owners
+- GQ2-WORKTREE-001 covers the validated generator repair, suite registration and new regression; completion evidence is the generation report. User-owned outstanding_bugs.md is read-only scope, separate from implementation ownership
+- Campaign bookkeeping is reconciled at closure. Every other later committed, tracked or untracked change needs explicit supplemental coverage
+
+### GQ2 working-tree supplement
+
+| Unit | State | Exact owned scope | Evidence |
+| --- | --- | --- | --- |
+| GQ2-WORKTREE-001 | [x] DONE | `android/helpers/new_adversarial_review_ledger.ps1`, `android/helpers/test_suite_coverage.ps1`, `android/tests/test_review_ledger_generation.ps1` | Imported GQ2 generation and review-tool repair 20261006: source SHA-256 values, real-Git regression, full generation, scoped quality and both catalog checks |
+| GQ2-WORKTREE-002 | [ ] TODO | User-owned `android/outstanding_bugs.md` | Read-only documentation reconciliation at closure; no edit ownership |
+
+### GQ2 inventory summary
+
+| Kind | Paths | Added | Deleted |
+|---|---:|---:|---:|
+| artifact | 7 | 0 | 56407 |
+| authored-config | 143 | 20024 | 1018 |
+| authored-source | 874 | 121796 | 22661 |
+| build-script | 207 | 18297 | 5046 |
+| dependency-lock | 2 | 67 | 17 |
+| documentation | 53 | 6040 | 1387 |
+| generated-fixture | 291 | 637191 | 87658 |
+| historical-plan | 1577 | 146077 | 5655 |
+| other-data | 139 | 756 | 10509 |
+| test-source | 1057 | 119474 | 4201 |
+
+### GQ2 review queue
+
+| ID | State | Phase | Risk | Kind | Path | Assigned scope | Result |
+|---|---|---|---|---|---|---|---|
+| GQ2-PREFLIGHT-001 | [ ] TODO | preflight | critical | pr-scope | `complete diff` | PR composition, provenance, generated artifacts, secrets, licenses, and split strategy | - |
+| GQ2-PREFLIGHT-002 | [ ] TODO | preflight | high | architecture | `complete diff` | Subsystem map, intended behavior, ownership boundaries, and highest-risk data flows | - |
+| GQ2-PREFLIGHT-003 | [ ] TODO | preflight | high | change-history | `complete diff` | Commit clusters, superseded approaches, partial migrations, and abandoned compatibility paths | - |
+| GQ2-CHUNK-0001 | [x] DONE | source | critical | authored-config | `2 related paths` | 40 review lines under android | `GQC-0829`; `GQD-0709`; BR-0007 |
+| GQ2-CHUNK-0002 | [ ] TODO | source | critical | authored-config | `15 related paths` | 591 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0003 | [ ] TODO | source | critical | authored-config | `5 related paths` | 302 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0004 | [ ] TODO | source | critical | authored-config | `9 related paths` | 561 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0005 | [ ] TODO | source | critical | authored-config | `9 related paths` | 585 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0006 | [ ] TODO | source | critical | authored-config | `game_data/combined launches/Descent II plus Vertigo (USA)/extract_regression.jsonc` | L1-L32 | - |
+| GQ2-CHUNK-0007 | [ ] TODO | source | critical | authored-config | `2 related paths` | 409 review lines under game_data/music | - |
+| GQ2-CHUNK-0008 | [ ] TODO | source | critical | authored-config | `3 related paths` | 210 review lines under game_data/music | - |
+| GQ2-CHUNK-0009 | [ ] TODO | source | critical | authored-config | `3 related paths` | 585 review lines under game_data/music | - |
+| GQ2-CHUNK-0010 | [ ] TODO | source | critical | authored-config | `3 related paths` | 315 review lines under game_data/music | - |
+| GQ2-CHUNK-0011 | [ ] TODO | source | critical | authored-source | `android/app/src/directInstall/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt` | L1-L18 | - |
+| GQ2-CHUNK-0012 | [ ] TODO | source | critical | authored-source | `2 related paths` | 596 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0013 | [ ] TODO | source | critical | authored-source | `3 related paths` | 170 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0014 | [ ] TODO | source | critical | authored-source | `3 related paths` | 257 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0015 | [ ] TODO | source | critical | authored-source | `3 related paths` | 472 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0016 | [ ] TODO | source | critical | authored-source | `5 related paths` | 428 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0017 | [ ] TODO | source | critical | authored-source | `5 related paths` | 354 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0018 | [ ] TODO | source | critical | authored-source | `5 related paths` | 377 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0019 | [ ] TODO | source | critical | authored-source | `6 related paths` | 485 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0020 | [ ] TODO | source | critical | authored-source | `6 related paths` | 571 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0021 | [ ] TODO | source | critical | authored-source | `6 related paths` | 599 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0022 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/extract/inno_reader.c` | diff hunks 1-122, new L45-L3125 | - |
+| GQ2-CHUNK-0023 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/jni_level_metadata.cpp` | diff hunks 1-73, new L1-L1137 | - |
+| GQ2-CHUNK-0024 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/jni_level_metadata.cpp` | diff hunks 74-102, new L1144-L1629 | - |
+| GQ2-CHUNK-0025 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/jni_main.c` | diff hunks 1-51, new L12-L793 | - |
+| GQ2-CHUNK-0026 | [ ] TODO | source | critical | authored-source | `android/app/src/main/cpp/jni_main.c` | diff hunks 52-75, new L805-L1883 | - |
+| GQ2-CHUNK-0027 | [ ] TODO | source | critical | authored-source | `2 related paths` | 273 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0028 | [ ] TODO | source | critical | authored-source | `2 related paths` | 458 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0029 | [ ] TODO | source | critical | authored-source | `3 related paths` | 570 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0030 | [ ] TODO | source | critical | authored-source | `3 related paths` | 470 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0031 | [ ] TODO | source | critical | authored-source | `android/app/src/main/res/xml/data_extraction_rules.xml` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0032 | [ ] TODO | source | critical | authored-source | `android/app/src/playServices/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt` | diff hunks 1-2, new L27-L32 | - |
+| GQ2-CHUNK-0033 | [ ] TODO | source | critical | authored-source | `android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/ArchiveEntryDates.kt` | L1-L68 | - |
+| GQ2-CHUNK-0034 | [ ] TODO | source | critical | authored-source | `5 related paths` | 415 review lines under server/src | - |
+| GQ2-CHUNK-0035 | [ ] TODO | source | critical | build-script | `android/app/src/main/cpp/extract/CMakeLists.txt` | diff hunks 1-37, new L12-L659 | - |
+| GQ2-CHUNK-0036 | [ ] TODO | source | critical | build-script | `android/get_deps/helpers/get_7zip.ps1` | diff hunks 1-14, new L2-L112 | - |
+| GQ2-CHUNK-0037 | [ ] TODO | source | critical | build-script | `5 related paths` | 326 review lines under android/helpers | - |
+| GQ2-CHUNK-0038 | [ ] TODO | source | critical | build-script | `android/helpers/run_bounded_extractor.py` | diff hunks 1-25, new L5-L630 | - |
+| GQ2-CHUNK-0039 | [ ] TODO | source | critical | build-script | `android/helpers/run_mission_zip_batch.ps1` | diff hunks 1-33, new L7-L852 | - |
+| GQ2-CHUNK-0040 | [ ] TODO | source | critical | build-script | `2 related paths` | 121 review lines under game_data | - |
+| GQ2-CHUNK-0041 | [ ] TODO | source | critical | build-script | `3 related paths` | 325 review lines under game_data | - |
+| GQ2-CHUNK-0042 | [ ] TODO | source | critical | build-script | `game_data/extract_mac_cd.ps1` | diff hunks 1-58, new L121-L452 | - |
+| GQ2-CHUNK-0043 | [ ] TODO | source | critical | documentation | `android/MISSION_ASSET_ISOLATION_STUDY.md` | L1-L600 | - |
+| GQ2-CHUNK-0044 | [ ] TODO | source | critical | documentation | `android/MISSION_ASSET_ISOLATION_STUDY.md` | L601-L646 | - |
+| GQ2-CHUNK-0045 | [ ] TODO | source | critical | documentation | `android/app/src/main/assets/licenses/fluidsynth-authors.txt` | L1-L160 | - |
+| GQ2-CHUNK-0046 | [ ] TODO | source | critical | documentation | `android/app/src/main/cpp/extract/INNO_READER_CAPABILITIES.md` | diff hunks 1-4, new L10-L43 | - |
+| GQ2-CHUNK-0047 | [ ] TODO | source | critical | test-source | `2 related paths` | 585 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0048 | [ ] TODO | source | critical | test-source | `2 related paths` | 206 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0049 | [ ] TODO | source | critical | test-source | `4 related paths` | 584 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0050 | [ ] TODO | source | critical | test-source | `4 related paths` | 247 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0051 | [ ] TODO | source | critical | test-source | `5 related paths` | 406 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0052 | [ ] TODO | source | critical | test-source | `5 related paths` | 506 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0053 | [ ] TODO | source | critical | test-source | `2 related paths` | 310 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0054 | [ ] TODO | source | critical | test-source | `2 related paths` | 424 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0055 | [ ] TODO | source | critical | test-source | `4 related paths` | 446 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0056 | [ ] TODO | source | critical | test-source | `5 related paths` | 530 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0057 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/MissionZipTest.kt` | diff hunks 1-15, new L14-L878 | - |
+| GQ2-CHUNK-0058 | [ ] TODO | source | critical | test-source | `android/app/src/test/java/com/dxxredux/app/ModManagerMissionZipTest.kt` | diff hunks 1-29, new L8-L1062 | - |
+| GQ2-CHUNK-0059 | [ ] TODO | source | critical | test-source | `2 related paths` | 141 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0060 | [ ] TODO | source | critical | test-source | `2 related paths` | 97 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0061 | [ ] TODO | source | critical | test-source | `android/game_scripts/test_mission_asset_isolation.jsonc` | L1-L526 | - |
+| GQ2-CHUNK-0062 | [ ] TODO | source | critical | test-source | `android/mission-metadata-core/src/test/kotlin/com/dxxredux/app/ArchiveEntryDatesTest.kt` | L1-L53 | - |
+| GQ2-CHUNK-0063 | [ ] TODO | source | critical | test-source | `4 related paths` | 467 review lines under android/tests | - |
+| GQ2-CHUNK-0064 | [ ] TODO | source | critical | test-source | `6 related paths` | 482 review lines under android/tests | - |
+| GQ2-CHUNK-0065 | [ ] TODO | source | critical | test-source | `6 related paths` | 348 review lines under android/tests | - |
+| GQ2-CHUNK-0066 | [ ] TODO | source | critical | test-source | `7 related paths` | 562 review lines under android/tests | - |
+| GQ2-CHUNK-0067 | [ ] TODO | source | critical | test-source | `8 related paths` | 562 review lines under android/tests | - |
+| GQ2-CHUNK-0068 | [ ] TODO | source | critical | test-source | `android/tests/test_net_udp_reconnect_auth.c` | diff hunks 1-13, new L22-L560 | - |
+| GQ2-CHUNK-0069 | [ ] TODO | source | high | authored-config | `3 related paths` | 57 review lines under server | - |
+| GQ2-CHUNK-0070 | [ ] TODO | source | high | authored-source | `11 related paths` | 642 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0071 | [ ] TODO | source | high | authored-source | `11 related paths` | 720 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0072 | [ ] TODO | source | high | authored-source | `16 related paths` | 420 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0073 | [ ] TODO | source | high | authored-source | `16 related paths` | 720 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0074 | [ ] TODO | source | high | authored-source | `16 related paths` | 734 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0075 | [ ] TODO | source | high | authored-source | `2 related paths` | 353 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0076 | [ ] TODO | source | high | authored-source | `2 related paths` | 411 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0077 | [ ] TODO | source | high | authored-source | `2 related paths` | 663 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0078 | [ ] TODO | source | high | authored-source | `2 related paths` | 262 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0079 | [ ] TODO | source | high | authored-source | `2 related paths` | 731 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0080 | [ ] TODO | source | high | authored-source | `2 related paths` | 251 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0081 | [ ] TODO | source | high | authored-source | `2 related paths` | 446 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0082 | [ ] TODO | source | high | authored-source | `3 related paths` | 458 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0083 | [ ] TODO | source | high | authored-source | `3 related paths` | 737 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0084 | [ ] TODO | source | high | authored-source | `3 related paths` | 136 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0085 | [ ] TODO | source | high | authored-source | `3 related paths` | 283 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0086 | [ ] TODO | source | high | authored-source | `3 related paths` | 497 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0087 | [ ] TODO | source | high | authored-source | `4 related paths` | 712 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0088 | [ ] TODO | source | high | authored-source | `4 related paths` | 737 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0089 | [ ] TODO | source | high | authored-source | `4 related paths` | 195 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0090 | [ ] TODO | source | high | authored-source | `4 related paths` | 520 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0091 | [ ] TODO | source | high | authored-source | `4 related paths` | 718 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0092 | [ ] TODO | source | high | authored-source | `4 related paths` | 680 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0093 | [ ] TODO | source | high | authored-source | `4 related paths` | 598 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0094 | [ ] TODO | source | high | authored-source | `5 related paths` | 698 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0095 | [ ] TODO | source | high | authored-source | `5 related paths` | 581 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0096 | [ ] TODO | source | high | authored-source | `5 related paths` | 415 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0097 | [ ] TODO | source | high | authored-source | `5 related paths` | 686 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0098 | [ ] TODO | source | high | authored-source | `5 related paths` | 749 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0099 | [ ] TODO | source | high | authored-source | `5 related paths` | 569 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0100 | [ ] TODO | source | high | authored-source | `5 related paths` | 724 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0101 | [ ] TODO | source | high | authored-source | `5 related paths` | 460 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0102 | [ ] TODO | source | high | authored-source | `5 related paths` | 607 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0103 | [ ] TODO | source | high | authored-source | `6 related paths` | 623 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0104 | [ ] TODO | source | high | authored-source | `6 related paths` | 509 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0105 | [ ] TODO | source | high | authored-source | `6 related paths` | 629 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0106 | [ ] TODO | source | high | authored-source | `6 related paths` | 728 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0107 | [ ] TODO | source | high | authored-source | `6 related paths` | 741 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0108 | [ ] TODO | source | high | authored-source | `6 related paths` | 710 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0109 | [ ] TODO | source | high | authored-source | `7 related paths` | 637 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0110 | [ ] TODO | source | high | authored-source | `7 related paths` | 617 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0111 | [ ] TODO | source | high | authored-source | `8 related paths` | 389 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0112 | [ ] TODO | source | high | authored-source | `8 related paths` | 745 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0113 | [ ] TODO | source | high | authored-source | `9 related paths` | 669 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0114 | [ ] TODO | source | high | authored-source | `9 related paths` | 623 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0115 | [ ] TODO | source | high | authored-source | `9 related paths` | 565 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0116 | [ ] TODO | source | high | authored-source | `9 related paths` | 694 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0117 | [ ] TODO | source | high | authored-source | `9 related paths` | 684 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0118 | [ ] TODO | source | high | authored-source | `9 related paths` | 528 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0119 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/android_graphics_safety.cpp` | L1-L750 | - |
+| GQ2-CHUNK-0120 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/android_level_preview.cpp` | diff hunks 19-19, new L450-L1687 | - |
+| GQ2-CHUNK-0121 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_briefing.c` | L1-L750 | - |
+| GQ2-CHUNK-0122 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_recovery.c` | L1-L750 | - |
+| GQ2-CHUNK-0123 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_save.c` | diff hunks 1-46, new L16-L1160 | - |
+| GQ2-CHUNK-0124 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_travel.c` | L1-L750 | - |
+| GQ2-CHUNK-0125 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_travel.c` | L751-L1500 | - |
+| GQ2-CHUNK-0126 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/game_automate.cpp` | diff hunks 1-69, new L29-L4304 | - |
+| GQ2-CHUNK-0127 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/game_automate.cpp` | diff hunks 70-72, new L4313-L4402 | - |
+| GQ2-CHUNK-0128 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/game_automate.cpp` | diff hunks 73-73, new L4421-L5774 | - |
+| GQ2-CHUNK-0129 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/game_introspect.cpp` | diff hunks 1-65, new L14-L2152 | - |
+| GQ2-CHUNK-0130 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/guidebot_route_certifier.c` | L1-L750 | - |
+| GQ2-CHUNK-0131 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/guidebot_route_certifier.c` | L751-L1500 | - |
+| GQ2-CHUNK-0132 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/guidebot_route_certifier.c` | L1501-L2250 | - |
+| GQ2-CHUNK-0133 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/input_demo_state_trace.cpp` | diff hunks 5-5, new L70-L434 | - |
+| GQ2-CHUNK-0134 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/midi_metadata.c` | L1-L750 | - |
+| GQ2-CHUNK-0135 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/multi_save_transfer_policy.h` | diff hunks 1-3, new L4-L114 | - |
+| GQ2-CHUNK-0136 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/multi_save_transfer.c` | diff hunks 1-101, new L12-L1529 | - |
+| GQ2-CHUNK-0137 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/ogl_msaa_probe_android.cpp` | L1-L719 | - |
+| GQ2-CHUNK-0138 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_confirmation.cpp` | L1-L750 | - |
+| GQ2-CHUNK-0139 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_confirmation.cpp` | L751-L1500 | - |
+| GQ2-CHUNK-0140 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_confirmation.cpp` | L1501-L2250 | - |
+| GQ2-CHUNK-0141 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | diff hunks 1-70, new L3-L1761 | - |
+| GQ2-CHUNK-0142 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | diff hunks 71-121, new L1763-L3115 | - |
+| GQ2-CHUNK-0143 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | diff hunks 122-145, new L3163-L4222 | - |
+| GQ2-CHUNK-0144 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/route_planner.cpp` | diff hunks 146-194, new L4226-L5462 | - |
+| GQ2-CHUNK-0145 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secret_area_game_adapter.c` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0146 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L1-L750 | - |
+| GQ2-CHUNK-0147 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L751-L1500 | - |
+| GQ2-CHUNK-0148 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L1501-L2250 | - |
+| GQ2-CHUNK-0149 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L2251-L3000 | - |
+| GQ2-CHUNK-0150 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L3001-L3750 | - |
+| GQ2-CHUNK-0151 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L3751-L4500 | - |
+| GQ2-CHUNK-0152 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/secretarea.c` | L4501-L5250 | - |
+| GQ2-CHUNK-0153 | [ ] TODO | source | high | authored-source | `8 related paths` | 576 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0154 | [ ] TODO | source | high | authored-source | `android/app/src/main/res/xml/network_security_config.xml` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0155 | [x] DONE | source | high | authored-source | `2 related paths` | 8 review lines under d1/2d | `GQC-0830`; `GQD-0710`; GQR-0184 |
+| GQ2-CHUNK-0156 | [x] DONE | source | high | authored-source | `3 related paths` | 14 review lines under d1/3d | `GQC-0831`; `GQD-0711`; none |
+| GQ2-CHUNK-0157 | [x] DONE | source | high | authored-source | `12 related paths` | 463 review lines under d1/arch | `GQC-0841`; `GQD-0721`; GQR-0185; BR-0256/GQR-0238 |
+| GQ2-CHUNK-0158 | [x] DONE | source | high | authored-source | `d1/iff/iff.c` | diff hunks 1-6, new L758-L863 | `GQC-0836`; `GQD-0716`; none |
+| GQ2-CHUNK-0159 | [x] DONE | source | high | authored-source | `7 related paths` | 35 review lines under d1/include | `GQC-0837`; `GQD-0717`; none |
+| GQ2-CHUNK-0160 | [x] DONE | source | high | authored-source | `10 related paths` | 338 review lines under d1/main | `GQC-0834`; `GQD-0714`; GQR-0188; GQR-0237 |
+| GQ2-CHUNK-0161 | [ ] TODO | source | high | authored-source | `13 related paths` | 745 review lines under d1/main | - |
+| GQ2-CHUNK-0162 | [ ] TODO | source | high | authored-source | `14 related paths` | 626 review lines under d1/main | - |
+| GQ2-CHUNK-0163 | [ ] TODO | source | high | authored-source | `16 related paths` | 683 review lines under d1/main | - |
+| GQ2-CHUNK-0164 | [ ] TODO | source | high | authored-source | `2 related paths` | 650 review lines under d1/main | - |
+| GQ2-CHUNK-0165 | [ ] TODO | source | high | authored-source | `5 related paths` | 662 review lines under d1/main | - |
+| GQ2-CHUNK-0166 | [ ] TODO | source | high | authored-source | `9 related paths` | 740 review lines under d1/main | - |
+| GQ2-CHUNK-0167 | [ ] TODO | source | high | authored-source | `d1/main/net_udp.c` | diff hunks 1-56, new L25-L4601 | - |
+| GQ2-CHUNK-0168 | [ ] TODO | source | high | authored-source | `4 related paths` | 72 review lines under d1/misc | - |
+| GQ2-CHUNK-0169 | [ ] TODO | source | high | authored-source | `4 related paths` | 143 review lines under d1/xmodel | - |
+| GQ2-CHUNK-0170 | [x] DONE | source | high | authored-source | `2 related paths` | 8 review lines under d2/2d | `GQC-0832`; `GQD-0712`; GQR-0184 |
+| GQ2-CHUNK-0171 | [x] DONE | source | high | authored-source | `3 related paths` | 29 review lines under d2/3d | `GQC-0833`; `GQD-0713`; BR-0294 |
+| GQ2-CHUNK-0172 | [x] DONE | source | high | authored-source | `13 related paths` | 465 review lines under d2/arch | `GQC-0842`; `GQD-0722`; GQR-0185; BR-0256/GQR-0238 |
+| GQ2-CHUNK-0173 | [x] DONE | source | high | authored-source | `d2/editor/mine.c` | diff hunks 1-1, new L405-L405 | `GQC-0838`; `GQD-0718`; none |
+| GQ2-CHUNK-0174 | [x] DONE | source | high | authored-source | `d2/iff/iff.c` | diff hunks 1-7, new L237-L878 | `GQC-0839`; `GQD-0719`; none |
+| GQ2-CHUNK-0175 | [x] DONE | source | high | authored-source | `8 related paths` | 40 review lines under d2/include | `GQC-0840`; `GQD-0720`; none |
+| GQ2-CHUNK-0176 | [x] DONE | source | high | authored-source | `10 related paths` | 339 review lines under d2/main | `GQC-0835`; `GQD-0715`; GQR-0188; GQR-0237 |
+| GQ2-CHUNK-0177 | [ ] TODO | source | high | authored-source | `10 related paths` | 739 review lines under d2/main | - |
+| GQ2-CHUNK-0178 | [ ] TODO | source | high | authored-source | `11 related paths` | 719 review lines under d2/main | - |
+| GQ2-CHUNK-0179 | [ ] TODO | source | high | authored-source | `11 related paths` | 677 review lines under d2/main | - |
+| GQ2-CHUNK-0180 | [ ] TODO | source | high | authored-source | `12 related paths` | 748 review lines under d2/main | - |
+| GQ2-CHUNK-0181 | [ ] TODO | source | high | authored-source | `2 related paths` | 104 review lines under d2/main | - |
+| GQ2-CHUNK-0182 | [ ] TODO | source | high | authored-source | `2 related paths` | 50 review lines under d2/main | - |
+| GQ2-CHUNK-0183 | [ ] TODO | source | high | authored-source | `2 related paths` | 58 review lines under d2/main | - |
+| GQ2-CHUNK-0184 | [ ] TODO | source | high | authored-source | `2 related paths` | 600 review lines under d2/main | - |
+| GQ2-CHUNK-0185 | [ ] TODO | source | high | authored-source | `2 related paths` | 283 review lines under d2/main | - |
+| GQ2-CHUNK-0186 | [ ] TODO | source | high | authored-source | `2 related paths` | 335 review lines under d2/main | - |
+| GQ2-CHUNK-0187 | [ ] TODO | source | high | authored-source | `2 related paths` | 700 review lines under d2/main | - |
+| GQ2-CHUNK-0188 | [ ] TODO | source | high | authored-source | `2 related paths` | 249 review lines under d2/main | - |
+| GQ2-CHUNK-0189 | [ ] TODO | source | high | authored-source | `3 related paths` | 258 review lines under d2/main | - |
+| GQ2-CHUNK-0190 | [ ] TODO | source | high | authored-source | `3 related paths` | 539 review lines under d2/main | - |
+| GQ2-CHUNK-0191 | [ ] TODO | source | high | authored-source | `3 related paths` | 742 review lines under d2/main | - |
+| GQ2-CHUNK-0192 | [ ] TODO | source | high | authored-source | `3 related paths` | 137 review lines under d2/main | - |
+| GQ2-CHUNK-0193 | [ ] TODO | source | high | authored-source | `4 related paths` | 604 review lines under d2/main | - |
+| GQ2-CHUNK-0194 | [ ] TODO | source | high | authored-source | `4 related paths` | 749 review lines under d2/main | - |
+| GQ2-CHUNK-0195 | [ ] TODO | source | high | authored-source | `4 related paths` | 613 review lines under d2/main | - |
+| GQ2-CHUNK-0196 | [ ] TODO | source | high | authored-source | `4 related paths` | 445 review lines under d2/main | - |
+| GQ2-CHUNK-0197 | [ ] TODO | source | high | authored-source | `5 related paths` | 655 review lines under d2/main | - |
+| GQ2-CHUNK-0198 | [ ] TODO | source | high | authored-source | `5 related paths` | 380 review lines under d2/main | - |
+| GQ2-CHUNK-0199 | [ ] TODO | source | high | authored-source | `5 related paths` | 640 review lines under d2/main | - |
+| GQ2-CHUNK-0200 | [ ] TODO | source | high | authored-source | `5 related paths` | 716 review lines under d2/main | - |
+| GQ2-CHUNK-0201 | [ ] TODO | source | high | authored-source | `7 related paths` | 660 review lines under d2/main | - |
+| GQ2-CHUNK-0202 | [ ] TODO | source | high | authored-source | `7 related paths` | 216 review lines under d2/main | - |
+| GQ2-CHUNK-0203 | [ ] TODO | source | high | authored-source | `7 related paths` | 668 review lines under d2/main | - |
+| GQ2-CHUNK-0204 | [ ] TODO | source | high | authored-source | `d2/main/aipath.c` | diff hunks 1-56, new L23-L2419 | - |
+| GQ2-CHUNK-0205 | [ ] TODO | source | high | authored-source | `d2/main/d1_custom.c` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0206 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2.c` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0207 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_ai_path.c` | L1-L710 | - |
+| GQ2-CHUNK-0208 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_ai_storage.h` | L1-L34 | - |
+| GQ2-CHUNK-0209 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_ai.c` | L1-L750 | - |
+| GQ2-CHUNK-0210 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_ai.c` | L751-L1500 | - |
+| GQ2-CHUNK-0211 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_ai.c` | L1501-L2248 | - |
+| GQ2-CHUNK-0212 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_assets.c` | L1-L750 | - |
+| GQ2-CHUNK-0213 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_bitmaps.c` | L1-L750 | - |
+| GQ2-CHUNK-0214 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_briefing.c` | L1-L750 | - |
+| GQ2-CHUNK-0215 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_briefing.c` | L751-L1247 | - |
+| GQ2-CHUNK-0216 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_cockpit.c` | L1-L750 | - |
+| GQ2-CHUNK-0217 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_cockpit.c` | L751-L1500 | - |
+| GQ2-CHUNK-0218 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_guidebot.c` | L1-L750 | - |
+| GQ2-CHUNK-0219 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_levels.c` | L1-L750 | - |
+| GQ2-CHUNK-0220 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_semantics.c` | L1-L651 | - |
+| GQ2-CHUNK-0221 | [ ] TODO | source | high | authored-source | `d2/main/d1_in_d2/d1_in_d2_weapons.c` | L1-L665 | - |
+| GQ2-CHUNK-0222 | [ ] TODO | source | high | authored-source | `d2/main/escort.c` | diff hunks 10-10, new L165-L169 | - |
+| GQ2-CHUNK-0223 | [ ] TODO | source | high | authored-source | `d2/main/escort.c` | diff hunks 11-86, new L171-L1946 | - |
+| GQ2-CHUNK-0224 | [ ] TODO | source | high | authored-source | `d2/main/escort.c` | diff hunks 87-168, new L1948-L4297 | - |
+| GQ2-CHUNK-0225 | [ ] TODO | source | high | authored-source | `d2/main/guidebot_route_internal.h` | L1-L168 | - |
+| GQ2-CHUNK-0226 | [ ] TODO | source | high | authored-source | `d2/main/guidebot_route.c` | L1-L750 | - |
+| GQ2-CHUNK-0227 | [ ] TODO | source | high | authored-source | `d2/main/guidebot_route.c` | L751-L1500 | - |
+| GQ2-CHUNK-0228 | [ ] TODO | source | high | authored-source | `d2/main/guidebot_route.c` | L1501-L2250 | - |
+| GQ2-CHUNK-0229 | [ ] TODO | source | high | authored-source | `d2/main/net_udp.c` | diff hunks 1-58, new L29-L4434 | - |
+| GQ2-CHUNK-0230 | [ ] TODO | source | high | authored-source | `d2/main/net_udp.c` | diff hunks 59-175, new L4512-L9570 | - |
+| GQ2-CHUNK-0231 | [ ] TODO | source | high | authored-source | `5 related paths` | 75 review lines under d2/misc | - |
+| GQ2-CHUNK-0232 | [ ] TODO | source | high | authored-source | `4 related paths` | 231 review lines under d2/xmodel | - |
+| GQ2-CHUNK-0233 | [ ] TODO | source | high | authored-source | `server/Cargo.toml` | diff hunks 1-1, new L12-L12 | - |
+| GQ2-CHUNK-0234 | [ ] TODO | source | high | build-script | `android/app/src/main/cpp/CMakeLists.txt` | diff hunks 1-63, new L18-L871 | - |
+| GQ2-CHUNK-0235 | [ ] TODO | source | high | build-script | `d1/CMakeLists.txt` | diff hunks 1-2, new L7-L165 | - |
+| GQ2-CHUNK-0236 | [ ] TODO | source | high | build-script | `2 related paths` | 2 review lines under d1/arch | - |
+| GQ2-CHUNK-0237 | [ ] TODO | source | high | build-script | `d1/main/CMakeLists.txt` | diff hunks 1-13, new L23-L344 | - |
+| GQ2-CHUNK-0238 | [ ] TODO | source | high | build-script | `d1/maths/CMakeLists.txt` | diff hunks 1-1, new L11-L11 | - |
+| GQ2-CHUNK-0239 | [ ] TODO | source | high | build-script | `d1/misc/CMakeLists.txt` | diff hunks 1-1, new L20-L20 | - |
+| GQ2-CHUNK-0240 | [ ] TODO | source | high | build-script | `d2/CMakeLists.txt` | diff hunks 1-2, new L11-L170 | - |
+| GQ2-CHUNK-0241 | [ ] TODO | source | high | build-script | `2 related paths` | 2 review lines under d2/arch | - |
+| GQ2-CHUNK-0242 | [ ] TODO | source | high | build-script | `d2/main/CMakeLists.txt` | diff hunks 1-19, new L13-L423 | - |
+| GQ2-CHUNK-0243 | [ ] TODO | source | high | build-script | `d2/maths/CMakeLists.txt` | diff hunks 1-1, new L11-L11 | - |
+| GQ2-CHUNK-0244 | [ ] TODO | source | high | build-script | `d2/misc/CMakeLists.txt` | diff hunks 1-1, new L21-L21 | - |
+| GQ2-CHUNK-0245 | [ ] TODO | source | high | build-script | `8 related paths` | 79 review lines under server | - |
+| GQ2-CHUNK-0246 | [ ] TODO | source | high | documentation | `d2/main/d1_in_d2/README.md` | L1-L30 | - |
+| GQ2-CHUNK-0247 | [ ] TODO | source | high | test-source | `3 related paths` | 506 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0248 | [ ] TODO | source | high | test-source | `5 related paths` | 707 review lines under android/app/src/main/cpp | - |
+| GQ2-CHUNK-0249 | [ ] TODO | source | high | test-source | `android/app/src/main/cpp/shared/test_secret_area_liquids.c` | L1-L339 | - |
+| GQ2-CHUNK-0250 | [ ] TODO | source | high | test-source | `7 related paths` | 517 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0251 | [ ] TODO | source | high | test-source | `13 related paths` | 180 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0252 | [ ] TODO | source | high | test-source | `7 related paths` | 579 review lines under android/tests | - |
+| GQ2-CHUNK-0253 | [ ] TODO | source | high | test-source | `android/tests/network_asset_fixture.hpp` | L1-L322 | - |
+| GQ2-CHUNK-0254 | [ ] TODO | source | high | test-source | `android/tests/run_device_network_campaign.py` | L1-L750 | - |
+| GQ2-CHUNK-0255 | [ ] TODO | source | high | test-source | `android/tests/run_device_network_campaign.py` | L751-L1500 | - |
+| GQ2-CHUNK-0256 | [ ] TODO | source | high | test-source | `server/tests/integration.rs` | diff hunks 1-1, new L2055-L2191 | - |
+| GQ2-CHUNK-0257 | [ ] TODO | source | medium | authored-config | `2 related paths` | 30 review lines under .vscode | - |
+| GQ2-CHUNK-0258 | [ ] TODO | source | medium | authored-config | `4 related paths` | 128 review lines under android | - |
+| GQ2-CHUNK-0259 | [ ] TODO | source | medium | authored-config | `2 related paths` | 423 review lines under android/app/src/main/assets | - |
+| GQ2-CHUNK-0260 | [ ] TODO | source | medium | authored-config | `3 related paths` | 319 review lines under android/app/src/main/assets | - |
+| GQ2-CHUNK-0261 | [ ] TODO | source | medium | authored-config | `6 related paths` | 697 review lines under android/app/src/main/assets | - |
+| GQ2-CHUNK-0262 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_albums.jsonc` | L1-L750 | - |
+| GQ2-CHUNK-0263 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_albums.jsonc` | L751-L1500 | - |
+| GQ2-CHUNK-0264 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_albums.jsonc` | L1501-L2250 | - |
+| GQ2-CHUNK-0265 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_albums.jsonc` | L2251-L3000 | - |
+| GQ2-CHUNK-0266 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_albums.jsonc` | L3001-L3251 | - |
+| GQ2-CHUNK-0267 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_discs.jsonc` | L1-L750 | - |
+| GQ2-CHUNK-0268 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_discs.jsonc` | L751-L1500 | - |
+| GQ2-CHUNK-0269 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_discs.jsonc` | L1501-L2250 | - |
+| GQ2-CHUNK-0270 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_discs.jsonc` | L2251-L2288 | - |
+| GQ2-CHUNK-0271 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_versions.jsonc` | L1-L750 | - |
+| GQ2-CHUNK-0272 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_versions.jsonc` | L751-L1500 | - |
+| GQ2-CHUNK-0273 | [ ] TODO | source | medium | authored-config | `android/app/src/main/assets/known_versions.jsonc` | L1501-L2068 | - |
+| GQ2-CHUNK-0274 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L1-L750 | - |
+| GQ2-CHUNK-0275 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L751-L1500 | - |
+| GQ2-CHUNK-0276 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L1501-L2250 | - |
+| GQ2-CHUNK-0277 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L2251-L3000 | - |
+| GQ2-CHUNK-0278 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L3001-L3750 | - |
+| GQ2-CHUNK-0279 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_history.json` | L3751-L4464 | - |
+| GQ2-CHUNK-0280 | [ ] TODO | source | medium | authored-config | `android/benchmarks/level_metadata_analysis_manifest.jsonc` | L1-L109 | - |
+| GQ2-CHUNK-0281 | [ ] TODO | source | medium | authored-config | `android/get_deps/tool_versions.conf` | diff hunks 1-26, new L6-L271 | - |
+| GQ2-CHUNK-0282 | [ ] TODO | source | medium | authored-config | `android/tools/code-quality/package.json` | L1-L11 | - |
+| GQ2-CHUNK-0283 | [ ] TODO | source | medium | authored-config | `16 related paths` | 16 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0284 | [ ] TODO | source | medium | authored-config | `16 related paths` | 16 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0285 | [ ] TODO | source | medium | authored-config | `2 related paths` | 2 review lines under game_data/CD images | - |
+| GQ2-CHUNK-0286 | [ ] TODO | source | medium | authored-config | `game_data/combined launches/Descent II plus Vertigo (USA)/combined_launch.jsonc` | L1-L11 | - |
+| GQ2-CHUNK-0287 | [ ] TODO | source | medium | authored-config | `4 related paths` | 96 review lines under game_data/gog installers | - |
+| GQ2-CHUNK-0288 | [ ] TODO | source | medium | authored-config | `game_data/mission_files/cd_level_metadata_sources.jsonc` | L1-L61 | - |
+| GQ2-CHUNK-0289 | [ ] TODO | source | medium | authored-config | `3 related paths` | 646 review lines under game_data/music | - |
+| GQ2-CHUNK-0290 | [ ] TODO | source | medium | authored-config | `4 related paths` | 566 review lines under game_data/music | - |
+| GQ2-CHUNK-0291 | [ ] TODO | source | medium | authored-config | `8 related paths` | 654 review lines under game_data/music | - |
+| GQ2-CHUNK-0292 | [ ] TODO | source | medium | authored-config | `8 related paths` | 664 review lines under game_data/music | - |
+| GQ2-CHUNK-0293 | [ ] TODO | source | medium | authored-config | `game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.jsonc` | L1-L114 | - |
+| GQ2-CHUNK-0294 | [ ] TODO | source | medium | authored-source | `9 related paths` | 532 review lines under .github/workflows | - |
+| GQ2-CHUNK-0295 | [ ] TODO | source | medium | authored-source | `android/gradle.properties` | diff hunks 1-1, new L3-L7 | - |
+| GQ2-CHUNK-0296 | [ ] TODO | source | medium | authored-source | `3 related paths` | 683 review lines under android/app/src/androidTest/java | - |
+| GQ2-CHUNK-0297 | [ ] TODO | source | medium | authored-source | `4 related paths` | 736 review lines under android/app/src/androidTest/java | - |
+| GQ2-CHUNK-0298 | [ ] TODO | source | medium | authored-source | `android/app/src/androidTest/java/com/dxxredux/app/NavigationRepeatChecks.kt` | L1-L277 | - |
+| GQ2-CHUNK-0299 | [ ] TODO | source | medium | authored-source | `android/app/src/androidTest/java/com/dxxredux/app/RecoveryInstrumentation.kt` | L1-L639 | - |
+| GQ2-CHUNK-0300 | [ ] TODO | source | medium | authored-source | `android/app/src/androidTest/java/com/dxxredux/app/SliderNavigationChecks.kt` | L1-L352 | - |
+| GQ2-CHUNK-0301 | [ ] TODO | source | medium | authored-source | `android/app/src/debug/AndroidManifest.xml` | diff hunks 1-2, new L5-L8 | - |
+| GQ2-CHUNK-0302 | [ ] TODO | source | medium | authored-source | `android/app/src/directInstall/java/com/dxxredux/app/UpdateChecker.kt` | L1-L7 | - |
+| GQ2-CHUNK-0303 | [ ] TODO | source | medium | authored-source | `android/app/src/main/AndroidManifest.xml` | diff hunks 1-25, new L1-L173 | - |
+| GQ2-CHUNK-0304 | [ ] TODO | source | medium | authored-source | `10 related paths` | 730 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0305 | [ ] TODO | source | medium | authored-source | `10 related paths` | 282 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0306 | [ ] TODO | source | medium | authored-source | `12 related paths` | 713 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0307 | [ ] TODO | source | medium | authored-source | `2 related paths` | 522 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0308 | [ ] TODO | source | medium | authored-source | `2 related paths` | 421 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0309 | [ ] TODO | source | medium | authored-source | `2 related paths` | 214 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0310 | [ ] TODO | source | medium | authored-source | `2 related paths` | 688 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0311 | [ ] TODO | source | medium | authored-source | `2 related paths` | 571 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0312 | [ ] TODO | source | medium | authored-source | `2 related paths` | 458 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0313 | [ ] TODO | source | medium | authored-source | `2 related paths` | 594 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0314 | [ ] TODO | source | medium | authored-source | `2 related paths` | 715 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0315 | [ ] TODO | source | medium | authored-source | `3 related paths` | 333 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0316 | [ ] TODO | source | medium | authored-source | `3 related paths` | 670 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0317 | [ ] TODO | source | medium | authored-source | `3 related paths` | 377 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0318 | [ ] TODO | source | medium | authored-source | `3 related paths` | 605 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0319 | [ ] TODO | source | medium | authored-source | `3 related paths` | 464 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0320 | [ ] TODO | source | medium | authored-source | `4 related paths` | 83 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0321 | [ ] TODO | source | medium | authored-source | `4 related paths` | 718 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0322 | [ ] TODO | source | medium | authored-source | `4 related paths` | 711 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0323 | [ ] TODO | source | medium | authored-source | `4 related paths` | 650 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0324 | [ ] TODO | source | medium | authored-source | `4 related paths` | 677 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0325 | [ ] TODO | source | medium | authored-source | `4 related paths` | 712 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0326 | [ ] TODO | source | medium | authored-source | `5 related paths` | 692 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0327 | [ ] TODO | source | medium | authored-source | `5 related paths` | 639 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0328 | [ ] TODO | source | medium | authored-source | `5 related paths` | 654 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0329 | [ ] TODO | source | medium | authored-source | `5 related paths` | 662 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0330 | [ ] TODO | source | medium | authored-source | `5 related paths` | 687 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0331 | [ ] TODO | source | medium | authored-source | `5 related paths` | 687 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0332 | [ ] TODO | source | medium | authored-source | `5 related paths` | 592 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0333 | [ ] TODO | source | medium | authored-source | `6 related paths` | 385 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0334 | [ ] TODO | source | medium | authored-source | `6 related paths` | 701 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0335 | [ ] TODO | source | medium | authored-source | `6 related paths` | 671 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0336 | [ ] TODO | source | medium | authored-source | `6 related paths` | 748 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0337 | [ ] TODO | source | medium | authored-source | `7 related paths` | 666 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0338 | [ ] TODO | source | medium | authored-source | `8 related paths` | 622 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0339 | [ ] TODO | source | medium | authored-source | `8 related paths` | 743 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0340 | [ ] TODO | source | medium | authored-source | `8 related paths` | 732 review lines under android/app/src/main/java | - |
+| GQ2-CHUNK-0341 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/AdvancedSettingsPage.kt` | diff hunks 1-45, new L50-L3204 | - |
+| GQ2-CHUNK-0342 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt` | L1-L750 | - |
+| GQ2-CHUNK-0343 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/LauncherPreviewMediaSession.kt` | L1-L292 | - |
+| GQ2-CHUNK-0344 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/LevelMetadata.kt` | diff hunks 1-108, new L23-L1755 | - |
+| GQ2-CHUNK-0345 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt` | diff hunks 1-102, new L3-L1245 | - |
+| GQ2-CHUNK-0346 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt` | diff hunks 103-150, new L1269-L2404 | - |
+| GQ2-CHUNK-0347 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | diff hunks 1-85, new L8-L2345 | - |
+| GQ2-CHUNK-0348 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | diff hunks 86-163, new L2415-L3986 | - |
+| GQ2-CHUNK-0349 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` | diff hunks 164-202, new L3988-L5034 | - |
+| GQ2-CHUNK-0350 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/multiplayer/LanDiscoveryTab.kt` | diff hunks 1-56, new L25-L1298 | - |
+| GQ2-CHUNK-0351 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/multiplayer/LocalhostProxy.kt` | diff hunks 1-22, new L5-L397 | - |
+| GQ2-CHUNK-0352 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt` | diff hunks 1-60, new L5-L1176 | - |
+| GQ2-CHUNK-0353 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionTransferService.kt` | L1-L737 | - |
+| GQ2-CHUNK-0354 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/RobotPreviewActivity.kt` | L1-L608 | - |
+| GQ2-CHUNK-0355 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/RouteMetadataPrecomputeCoordinator.kt` | L1-L750 | - |
+| GQ2-CHUNK-0356 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` | diff hunks 1-66, new L9-L1241 | - |
+| GQ2-CHUNK-0357 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` | diff hunks 67-137, new L1250-L2937 | - |
+| GQ2-CHUNK-0358 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` | diff hunks 138-244, new L2939-L6362 | - |
+| GQ2-CHUNK-0359 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt` | diff hunks 1-22, new L20-L1275 | - |
+| GQ2-CHUNK-0360 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt` | diff hunks 23-30, new L1372-L1920 | - |
+| GQ2-CHUNK-0361 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupSections.kt` | diff hunks 1-60, new L15-L2496 | - |
+| GQ2-CHUNK-0362 | [ ] TODO | source | medium | authored-source | `android/app/src/main/java/com/dxxredux/app/SetupSections.kt` | diff hunks 61-93, new L2498-L3717 | - |
+| GQ2-CHUNK-0363 | [ ] TODO | source | medium | authored-source | `3 related paths` | 9 review lines under android/app/src/main/res | - |
+| GQ2-CHUNK-0364 | [ ] TODO | source | medium | authored-source | `android/app/src/playServices/java/com/dxxredux/app/UpdateChecker.kt` | diff hunks 1-3, new L3-L65 | - |
+| GQ2-CHUNK-0365 | [ ] TODO | source | medium | authored-source | `android/mission-metadata-cli/src/main/kotlin/com/dxxredux/metadata/cli/Main.kt` | L1-L98 | - |
+| GQ2-CHUNK-0366 | [ ] TODO | source | medium | authored-source | `3 related paths` | 441 review lines under android/mission-metadata-core | - |
+| GQ2-CHUNK-0367 | [ ] TODO | source | medium | build-script | `5 related paths` | 197 review lines under [root] | - |
+| GQ2-CHUNK-0368 | [ ] TODO | source | medium | build-script | `5 related paths` | 724 review lines under android | - |
+| GQ2-CHUNK-0369 | [ ] TODO | source | medium | build-script | `5 related paths` | 398 review lines under android | - |
+| GQ2-CHUNK-0370 | [ ] TODO | source | medium | build-script | `6 related paths` | 380 review lines under android | - |
+| GQ2-CHUNK-0371 | [ ] TODO | source | medium | build-script | `android/clean-workspace.ps1` | L1-L679 | - |
+| GQ2-CHUNK-0372 | [ ] TODO | source | medium | build-script | `android/release-github.ps1` | L1-L469 | - |
+| GQ2-CHUNK-0373 | [ ] TODO | source | medium | build-script | `android/run_all_tests.ps1` | diff hunks 1-114, new L7-L2078 | - |
+| GQ2-CHUNK-0374 | [ ] TODO | source | medium | build-script | `android/app/build.gradle` | diff hunks 1-30, new L7-L550 | - |
+| GQ2-CHUNK-0375 | [ ] TODO | source | medium | build-script | `12 related paths` | 704 review lines under android/get_deps | - |
+| GQ2-CHUNK-0376 | [ ] TODO | source | medium | build-script | `15 related paths` | 744 review lines under android/get_deps | - |
+| GQ2-CHUNK-0377 | [ ] TODO | source | medium | build-script | `2 related paths` | 598 review lines under android/get_deps | - |
+| GQ2-CHUNK-0378 | [ ] TODO | source | medium | build-script | `6 related paths` | 187 review lines under android/get_deps | - |
+| GQ2-CHUNK-0379 | [ ] TODO | source | medium | build-script | `10 related paths` | 600 review lines under android/helpers | - |
+| GQ2-CHUNK-0380 | [ ] TODO | source | medium | build-script | `4 related paths` | 529 review lines under android/helpers | - |
+| GQ2-CHUNK-0381 | [ ] TODO | source | medium | build-script | `4 related paths` | 701 review lines under android/helpers | - |
+| GQ2-CHUNK-0382 | [ ] TODO | source | medium | build-script | `4 related paths` | 701 review lines under android/helpers | - |
+| GQ2-CHUNK-0383 | [ ] TODO | source | medium | build-script | `5 related paths` | 572 review lines under android/helpers | - |
+| GQ2-CHUNK-0384 | [ ] TODO | source | medium | build-script | `5 related paths` | 568 review lines under android/helpers | - |
+| GQ2-CHUNK-0385 | [ ] TODO | source | medium | build-script | `5 related paths` | 739 review lines under android/helpers | - |
+| GQ2-CHUNK-0386 | [ ] TODO | source | medium | build-script | `6 related paths` | 595 review lines under android/helpers | - |
+| GQ2-CHUNK-0387 | [ ] TODO | source | medium | build-script | `7 related paths` | 689 review lines under android/helpers | - |
+| GQ2-CHUNK-0388 | [ ] TODO | source | medium | build-script | `8 related paths` | 726 review lines under android/helpers | - |
+| GQ2-CHUNK-0389 | [ ] TODO | source | medium | build-script | `8 related paths` | 704 review lines under android/helpers | - |
+| GQ2-CHUNK-0390 | [ ] TODO | source | medium | build-script | `8 related paths` | 632 review lines under android/helpers | - |
+| GQ2-CHUNK-0391 | [ ] TODO | source | medium | build-script | `android/helpers/generate_store_assets.py` | L1-L750 | - |
+| GQ2-CHUNK-0392 | [ ] TODO | source | medium | build-script | `android/helpers/process_lifetime.ps1` | L1-L55 | - |
+| GQ2-CHUNK-0393 | [ ] TODO | source | medium | build-script | `android/helpers/regenerate_all_guidebot_simulations.ps1` | L1-L750 | - |
+| GQ2-CHUNK-0394 | [ ] TODO | source | medium | build-script | `android/helpers/regenerate_all_guidebot_simulations.ps1` | L751-L1003 | - |
+| GQ2-CHUNK-0395 | [ ] TODO | source | medium | build-script | `android/helpers/regenerate_all_mission_metadata_host.ps1` | diff hunks 1-58, new L5-L982 | - |
+| GQ2-CHUNK-0396 | [ ] TODO | source | medium | build-script | `android/helpers/store_asset_boss_video.py` | L1-L439 | - |
+| GQ2-CHUNK-0397 | [ ] TODO | source | medium | build-script | `android/helpers/store_asset_media.py` | L1-L750 | - |
+| GQ2-CHUNK-0398 | [ ] TODO | source | medium | build-script | `android/mission-metadata-cli/build.gradle` | L1-L20 | - |
+| GQ2-CHUNK-0399 | [ ] TODO | source | medium | build-script | `android/mission-metadata-core/build.gradle` | L1-L22 | - |
+| GQ2-CHUNK-0400 | [ ] TODO | source | medium | build-script | `2 related paths` | 122 review lines under android/tools | - |
+| GQ2-CHUNK-0401 | [ ] TODO | source | medium | build-script | `7 related paths` | 433 review lines under cmake | - |
+| GQ2-CHUNK-0402 | [ ] TODO | source | medium | build-script | `3 related paths` | 149 review lines under contrib/packaging | - |
+| GQ2-CHUNK-0403 | [ ] TODO | source | medium | build-script | `4 related paths` | 376 review lines under game_data | - |
+| GQ2-CHUNK-0404 | [ ] TODO | source | medium | build-script | `9 related paths` | 742 review lines under game_data | - |
+| GQ2-CHUNK-0405 | [ ] TODO | source | medium | build-script | `8 related paths` | 281 review lines under game_data/mods | - |
+| GQ2-CHUNK-0406 | [ ] TODO | source | low | documentation | `2 related paths` | 339 review lines under .github | - |
+| GQ2-CHUNK-0407 | [ ] TODO | source | low | documentation | `AGENTS.md` | diff hunks 1-1, new L3-L3 | - |
+| GQ2-CHUNK-0408 | [ ] TODO | source | low | documentation | `d1_d2_ogl_diff.txt` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0409 | [ ] TODO | source | low | documentation | `test.txt` | diff hunks 1-1, new L1-L1 | - |
+| GQ2-CHUNK-0410 | [ ] TODO | source | low | documentation | `4 related paths` | 745 review lines under android | - |
+| GQ2-CHUNK-0411 | [ ] TODO | source | low | documentation | `4 related paths` | 599 review lines under android | - |
+| GQ2-CHUNK-0412 | [ ] TODO | source | low | documentation | `android/store-assets.md` | L1-L341 | - |
+| GQ2-CHUNK-0413 | [ ] TODO | source | low | documentation | `3 related paths` | 415 review lines under android/app/src/main/assets | - |
+| GQ2-CHUNK-0414 | [ ] TODO | source | low | documentation | `5 related paths` | 750 review lines under android/app/src/main/assets | - |
+| GQ2-CHUNK-0415 | [ ] TODO | source | low | documentation | `android/benchmarks/README.md` | L1-L39 | - |
+| GQ2-CHUNK-0416 | [ ] TODO | source | low | documentation | `android/get_deps/README-ubuntu.md` | diff hunks 1-1, new L26-L45 | - |
+| GQ2-CHUNK-0417 | [ ] TODO | source | low | documentation | `android/mission-metadata-core/PROVENANCE.md` | L1-L51 | - |
+| GQ2-CHUNK-0418 | [ ] TODO | source | low | documentation | `android/regression_demos/README.md` | diff hunks 1-2, new L2-L181 | - |
+| GQ2-CHUNK-0419 | [ ] TODO | source | low | documentation | `3 related paths` | 591 review lines under android/tests | - |
+| GQ2-CHUNK-0420 | [ ] TODO | source | low | documentation | `6 related paths` | 487 review lines under android/tests | - |
+| GQ2-CHUNK-0421 | [ ] TODO | source | low | documentation | `8 related paths` | 899 review lines under android/tests | - |
+| GQ2-CHUNK-0422 | [ ] TODO | source | low | documentation | `game_data/game_data_index.txt` | diff hunks 1-4, new L9-L30 | - |
+| GQ2-CHUNK-0423 | [ ] TODO | source | low | documentation | `game_data/demo installers/README.md` | whole diff | - |
+| GQ2-CHUNK-0424 | [ ] TODO | source | low | documentation | `game_data/mission_files/d2xxl_downloads/po2_compatibility_notes.md` | L1-L55 | - |
+| GQ2-CHUNK-0425 | [ ] TODO | source | low | documentation | `3 related paths` | 9 review lines under game_data/mods | - |
+| GQ2-CHUNK-0426 | [ ] TODO | source | low | test-source | `android/0_upload_to_test.ps1` | diff hunks 1-10, new L2-L205 | - |
+| GQ2-CHUNK-0427 | [ ] TODO | source | low | test-source | `11 related paths` | 852 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0428 | [ ] TODO | source | low | test-source | `11 related paths` | 816 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0429 | [ ] TODO | source | low | test-source | `12 related paths` | 858 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0430 | [ ] TODO | source | low | test-source | `12 related paths` | 726 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0431 | [ ] TODO | source | low | test-source | `14 related paths` | 768 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0432 | [ ] TODO | source | low | test-source | `14 related paths` | 696 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0433 | [ ] TODO | source | low | test-source | `16 related paths` | 747 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0434 | [ ] TODO | source | low | test-source | `2 related paths` | 318 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0435 | [ ] TODO | source | low | test-source | `4 related paths` | 861 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0436 | [ ] TODO | source | low | test-source | `6 related paths` | 845 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0437 | [ ] TODO | source | low | test-source | `7 related paths` | 676 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0438 | [ ] TODO | source | low | test-source | `8 related paths` | 811 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0439 | [ ] TODO | source | low | test-source | `8 related paths` | 758 review lines under android/app/src/test/java | - |
+| GQ2-CHUNK-0440 | [ ] TODO | source | low | test-source | `10 related paths` | 892 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0441 | [ ] TODO | source | low | test-source | `11 related paths` | 752 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0442 | [ ] TODO | source | low | test-source | `11 related paths` | 840 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0443 | [ ] TODO | source | low | test-source | `13 related paths` | 865 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0444 | [ ] TODO | source | low | test-source | `13 related paths` | 729 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0445 | [ ] TODO | source | low | test-source | `13 related paths` | 858 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0446 | [ ] TODO | source | low | test-source | `16 related paths` | 436 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0447 | [ ] TODO | source | low | test-source | `16 related paths` | 194 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0448 | [ ] TODO | source | low | test-source | `16 related paths` | 592 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0449 | [ ] TODO | source | low | test-source | `16 related paths` | 727 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0450 | [ ] TODO | source | low | test-source | `16 related paths` | 848 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0451 | [ ] TODO | source | low | test-source | `16 related paths` | 775 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0452 | [ ] TODO | source | low | test-source | `16 related paths` | 301 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0453 | [ ] TODO | source | low | test-source | `16 related paths` | 359 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0454 | [ ] TODO | source | low | test-source | `16 related paths` | 642 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0455 | [ ] TODO | source | low | test-source | `16 related paths` | 153 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0456 | [ ] TODO | source | low | test-source | `16 related paths` | 487 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0457 | [ ] TODO | source | low | test-source | `2 related paths` | 881 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0458 | [ ] TODO | source | low | test-source | `2 related paths` | 440 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0459 | [ ] TODO | source | low | test-source | `2 related paths` | 842 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0460 | [ ] TODO | source | low | test-source | `3 related paths` | 885 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0461 | [ ] TODO | source | low | test-source | `3 related paths` | 744 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0462 | [ ] TODO | source | low | test-source | `3 related paths` | 900 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0463 | [ ] TODO | source | low | test-source | `3 related paths` | 798 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0464 | [ ] TODO | source | low | test-source | `3 related paths` | 684 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0465 | [ ] TODO | source | low | test-source | `3 related paths` | 895 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0466 | [ ] TODO | source | low | test-source | `3 related paths` | 810 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0467 | [ ] TODO | source | low | test-source | `4 related paths` | 582 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0468 | [ ] TODO | source | low | test-source | `4 related paths` | 707 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0469 | [ ] TODO | source | low | test-source | `4 related paths` | 884 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0470 | [ ] TODO | source | low | test-source | `4 related paths` | 870 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0471 | [ ] TODO | source | low | test-source | `4 related paths` | 661 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0472 | [ ] TODO | source | low | test-source | `5 related paths` | 878 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0473 | [ ] TODO | source | low | test-source | `5 related paths` | 831 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0474 | [ ] TODO | source | low | test-source | `6 related paths` | 887 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0475 | [ ] TODO | source | low | test-source | `6 related paths` | 870 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0476 | [ ] TODO | source | low | test-source | `6 related paths` | 624 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0477 | [ ] TODO | source | low | test-source | `7 related paths` | 823 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0478 | [ ] TODO | source | low | test-source | `8 related paths` | 840 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0479 | [ ] TODO | source | low | test-source | `8 related paths` | 865 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0480 | [ ] TODO | source | low | test-source | `8 related paths` | 848 review lines under android/game_scripts | - |
+| GQ2-CHUNK-0481 | [ ] TODO | source | low | test-source | `android/game_scripts/test_fov_demo_compatibility.jsonc` | L1-L620 | - |
+| GQ2-CHUNK-0482 | [ ] TODO | source | low | test-source | `android/game_scripts/test_gamepad_menu_navigation_unified.jsonc` | L1-L900 | - |
+| GQ2-CHUNK-0483 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_capabilities.jsonc` | L1-L509 | - |
+| GQ2-CHUNK-0484 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_confirmation_input.jsonc` | L1-L818 | - |
+| GQ2-CHUNK-0485 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_mode_restore.jsonc` | L1-L517 | - |
+| GQ2-CHUNK-0486 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_video_overlay.jsonc` | L1-L728 | - |
+| GQ2-CHUNK-0487 | [ ] TODO | source | low | test-source | `android/game_scripts/test_movie_skip_controls_d2.jsonc` | L1-L264 | - |
+| GQ2-CHUNK-0488 | [ ] TODO | source | low | test-source | `android/game_scripts/test_msaa_render_and_menu.jsonc` | L1-L900 | - |
+| GQ2-CHUNK-0489 | [ ] TODO | source | low | test-source | `4 related paths` | 825 review lines under android/helpers | - |
+| GQ2-CHUNK-0490 | [ ] TODO | source | low | test-source | `6 related paths` | 876 review lines under android/helpers | - |
+| GQ2-CHUNK-0491 | [ ] TODO | source | low | test-source | `7 related paths` | 740 review lines under android/helpers | - |
+| GQ2-CHUNK-0492 | [ ] TODO | source | low | test-source | `8 related paths` | 892 review lines under android/helpers | - |
+| GQ2-CHUNK-0493 | [ ] TODO | source | low | test-source | `3 related paths` | 134 review lines under android/mission-metadata-core | - |
+| GQ2-CHUNK-0494 | [ ] TODO | source | low | test-source | `10 related paths` | 797 review lines under android/tests | - |
+| GQ2-CHUNK-0495 | [ ] TODO | source | low | test-source | `10 related paths` | 762 review lines under android/tests | - |
+| GQ2-CHUNK-0496 | [ ] TODO | source | low | test-source | `10 related paths` | 894 review lines under android/tests | - |
+| GQ2-CHUNK-0497 | [ ] TODO | source | low | test-source | `10 related paths` | 834 review lines under android/tests | - |
+| GQ2-CHUNK-0498 | [ ] TODO | source | low | test-source | `11 related paths` | 798 review lines under android/tests | - |
+| GQ2-CHUNK-0499 | [ ] TODO | source | low | test-source | `11 related paths` | 842 review lines under android/tests | - |
+| GQ2-CHUNK-0500 | [ ] TODO | source | low | test-source | `12 related paths` | 893 review lines under android/tests | - |
+| GQ2-CHUNK-0501 | [ ] TODO | source | low | test-source | `12 related paths` | 899 review lines under android/tests | - |
+| GQ2-CHUNK-0502 | [ ] TODO | source | low | test-source | `12 related paths` | 850 review lines under android/tests | - |
+| GQ2-CHUNK-0503 | [ ] TODO | source | low | test-source | `13 related paths` | 883 review lines under android/tests | - |
+| GQ2-CHUNK-0504 | [ ] TODO | source | low | test-source | `13 related paths` | 892 review lines under android/tests | - |
+| GQ2-CHUNK-0505 | [ ] TODO | source | low | test-source | `13 related paths` | 806 review lines under android/tests | - |
+| GQ2-CHUNK-0506 | [ ] TODO | source | low | test-source | `15 related paths` | 821 review lines under android/tests | - |
+| GQ2-CHUNK-0507 | [ ] TODO | source | low | test-source | `15 related paths` | 791 review lines under android/tests | - |
+| GQ2-CHUNK-0508 | [ ] TODO | source | low | test-source | `16 related paths` | 809 review lines under android/tests | - |
+| GQ2-CHUNK-0509 | [ ] TODO | source | low | test-source | `16 related paths` | 650 review lines under android/tests | - |
+| GQ2-CHUNK-0510 | [ ] TODO | source | low | test-source | `16 related paths` | 834 review lines under android/tests | - |
+| GQ2-CHUNK-0511 | [ ] TODO | source | low | test-source | `16 related paths` | 709 review lines under android/tests | - |
+| GQ2-CHUNK-0512 | [ ] TODO | source | low | test-source | `16 related paths` | 583 review lines under android/tests | - |
+| GQ2-CHUNK-0513 | [ ] TODO | source | low | test-source | `3 related paths` | 778 review lines under android/tests | - |
+| GQ2-CHUNK-0514 | [ ] TODO | source | low | test-source | `3 related paths` | 681 review lines under android/tests | - |
+| GQ2-CHUNK-0515 | [ ] TODO | source | low | test-source | `3 related paths` | 686 review lines under android/tests | - |
+| GQ2-CHUNK-0516 | [ ] TODO | source | low | test-source | `3 related paths` | 76 review lines under android/tests | - |
+| GQ2-CHUNK-0517 | [ ] TODO | source | low | test-source | `3 related paths` | 496 review lines under android/tests | - |
+| GQ2-CHUNK-0518 | [ ] TODO | source | low | test-source | `4 related paths` | 822 review lines under android/tests | - |
+| GQ2-CHUNK-0519 | [ ] TODO | source | low | test-source | `4 related paths` | 810 review lines under android/tests | - |
+| GQ2-CHUNK-0520 | [ ] TODO | source | low | test-source | `4 related paths` | 735 review lines under android/tests | - |
+| GQ2-CHUNK-0521 | [ ] TODO | source | low | test-source | `4 related paths` | 562 review lines under android/tests | - |
+| GQ2-CHUNK-0522 | [ ] TODO | source | low | test-source | `5 related paths` | 821 review lines under android/tests | - |
+| GQ2-CHUNK-0523 | [ ] TODO | source | low | test-source | `5 related paths` | 229 review lines under android/tests | - |
+| GQ2-CHUNK-0524 | [ ] TODO | source | low | test-source | `5 related paths` | 744 review lines under android/tests | - |
+| GQ2-CHUNK-0525 | [ ] TODO | source | low | test-source | `6 related paths` | 486 review lines under android/tests | - |
+| GQ2-CHUNK-0526 | [ ] TODO | source | low | test-source | `6 related paths` | 895 review lines under android/tests | - |
+| GQ2-CHUNK-0527 | [ ] TODO | source | low | test-source | `6 related paths` | 598 review lines under android/tests | - |
+| GQ2-CHUNK-0528 | [ ] TODO | source | low | test-source | `6 related paths` | 891 review lines under android/tests | - |
+| GQ2-CHUNK-0529 | [ ] TODO | source | low | test-source | `7 related paths` | 721 review lines under android/tests | - |
+| GQ2-CHUNK-0530 | [ ] TODO | source | low | test-source | `7 related paths` | 875 review lines under android/tests | - |
+| GQ2-CHUNK-0531 | [ ] TODO | source | low | test-source | `7 related paths` | 857 review lines under android/tests | - |
+| GQ2-CHUNK-0532 | [ ] TODO | source | low | test-source | `7 related paths` | 877 review lines under android/tests | - |
+| GQ2-CHUNK-0533 | [ ] TODO | source | low | test-source | `8 related paths` | 673 review lines under android/tests | - |
+| GQ2-CHUNK-0534 | [ ] TODO | source | low | test-source | `8 related paths` | 761 review lines under android/tests | - |
+| GQ2-CHUNK-0535 | [ ] TODO | source | low | test-source | `8 related paths` | 900 review lines under android/tests | - |
+| GQ2-CHUNK-0536 | [ ] TODO | source | low | test-source | `9 related paths` | 701 review lines under android/tests | - |
+| GQ2-CHUNK-0537 | [ ] TODO | source | low | test-source | `9 related paths` | 548 review lines under android/tests | - |
+| GQ2-CHUNK-0538 | [ ] TODO | source | low | test-source | `9 related paths` | 799 review lines under android/tests | - |
+| GQ2-CHUNK-0539 | [ ] TODO | source | low | test-source | `9 related paths` | 825 review lines under android/tests | - |
+| GQ2-CHUNK-0540 | [ ] TODO | source | low | test-source | `9 related paths` | 769 review lines under android/tests | - |
+| GQ2-CHUNK-0541 | [ ] TODO | source | low | test-source | `9 related paths` | 869 review lines under android/tests | - |
+| GQ2-CHUNK-0542 | [ ] TODO | source | low | test-source | `android/tests/d1_replay_parity.py` | L1-L900 | - |
+| GQ2-CHUNK-0543 | [ ] TODO | source | low | test-source | `android/tests/d1_replay_parity.py` | L901-L1737 | - |
+| GQ2-CHUNK-0544 | [ ] TODO | source | low | test-source | `android/tests/fm_feasibility/experiment.py` | L1-L541 | - |
+| GQ2-CHUNK-0545 | [ ] TODO | source | low | test-source | `android/tests/guidebot_redux_reference.c` | L1-L900 | - |
+| GQ2-CHUNK-0546 | [ ] TODO | source | low | test-source | `android/tests/guidebot_redux_reference.c` | L901-L1800 | - |
+| GQ2-CHUNK-0547 | [ ] TODO | source | low | test-source | `android/tests/run_input_demo_replay.ps1` | diff hunks 1-68, new L3-L1948 | - |
+| GQ2-CHUNK-0548 | [ ] TODO | source | low | test-source | `android/tests/test_coop_recovery.c` | L1-L900 | - |
+| GQ2-CHUNK-0549 | [ ] TODO | source | low | test-source | `android/tests/test_d1_replay_parity_compare.py` | L1-L900 | - |
+| GQ2-CHUNK-0550 | [ ] TODO | source | low | test-source | `android/tests/test_d1_replay_parity_compare.py` | L901-L1778 | - |
+| GQ2-CHUNK-0551 | [ ] TODO | source | low | test-source | `android/tests/test_guidebot_original_navigation.cpp` | L1-L775 | - |
+| GQ2-CHUNK-0552 | [ ] TODO | source | low | test-source | `android/tests/test_guidebot_route_certifier.c` | L1-L900 | - |
+| GQ2-CHUNK-0553 | [ ] TODO | source | low | test-source | `android/tests/test_guidebot_route_certifier.c` | L901-L1800 | - |
+| GQ2-CHUNK-0554 | [ ] TODO | source | low | test-source | `android/tests/test_guidebot_route_certifier.c` | L1801-L2626 | - |
+| GQ2-CHUNK-0555 | [ ] TODO | source | low | test-source | `android/tests/test_lan.ps1` | diff hunks 1-26, new L21-L611 | - |
+| GQ2-CHUNK-0556 | [ ] TODO | source | low | test-source | `android/tests/test_lan.ps1` | diff hunks 27-50, new L627-L1979 | - |
+| GQ2-CHUNK-0557 | [ ] TODO | source | low | test-source | `android/tests/test_lan.ps1` | diff hunks 51-78, new L1984-L3188 | - |
+| GQ2-CHUNK-0558 | [ ] TODO | source | low | test-source | `android/tests/test_lan.ps1` | diff hunks 79-86, new L3215-L4035 | - |
+| GQ2-CHUNK-0559 | [ ] TODO | source | low | test-source | `android/tests/test_route_snapshot.cpp` | diff hunks 1-51, new L4-L1689 | - |
+| GQ2-CHUNK-0560 | [ ] TODO | source | low | test-source | `android/tests/test_route_snapshot.cpp` | diff hunks 52-74, new L1701-L2957 | - |
+| GQ2-CHUNK-0561 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L1-L900 | - |
+| GQ2-CHUNK-0562 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L901-L1800 | - |
+| GQ2-CHUNK-0563 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L1801-L2700 | - |
+| GQ2-CHUNK-0564 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L2701-L3600 | - |
+| GQ2-CHUNK-0565 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L3601-L4500 | - |
+| GQ2-CHUNK-0566 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L4501-L5400 | - |
+| GQ2-CHUNK-0567 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L5401-L6300 | - |
+| GQ2-CHUNK-0568 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L6301-L7200 | - |
+| GQ2-CHUNK-0569 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L7201-L8100 | - |
+| GQ2-CHUNK-0570 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L8101-L9000 | - |
+| GQ2-CHUNK-0571 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L9001-L9900 | - |
+| GQ2-CHUNK-0572 | [ ] TODO | source | low | test-source | `android/tests/test_upstream_compat.cpp` | L9901-L10800 | - |
+| GQ2-CHUNK-0573 | [ ] TODO | source | low | test-source | `android/tests/weapon_order_profile_fixture.hpp` | L1-L200 | - |
+| GQ2-CHUNK-0574 | [ ] TODO | mechanical | mechanical | artifact | `7 paths` | batch 1 | - |
+| GQ2-CHUNK-0575 | [ ] TODO | mechanical | mechanical | dependency-lock | `2 paths` | batch 1 | - |
+| GQ2-CHUNK-0576 | [ ] TODO | mechanical | mechanical | generated-fixture | `11 paths` | batch 8 | - |
+| GQ2-CHUNK-0577 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 1 | - |
+| GQ2-CHUNK-0578 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 2 | - |
+| GQ2-CHUNK-0579 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 3 | - |
+| GQ2-CHUNK-0580 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 4 | - |
+| GQ2-CHUNK-0581 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 5 | - |
+| GQ2-CHUNK-0582 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 6 | - |
+| GQ2-CHUNK-0583 | [ ] TODO | mechanical | mechanical | generated-fixture | `40 paths` | batch 7 | - |
+| GQ2-CHUNK-0584 | [ ] TODO | mechanical | mechanical | historical-plan | `17 paths` | batch 40 | - |
+| GQ2-CHUNK-0585 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 1 | - |
+| GQ2-CHUNK-0586 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 2 | - |
+| GQ2-CHUNK-0587 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 3 | - |
+| GQ2-CHUNK-0588 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 4 | - |
+| GQ2-CHUNK-0589 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 5 | - |
+| GQ2-CHUNK-0590 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 6 | - |
+| GQ2-CHUNK-0591 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 7 | - |
+| GQ2-CHUNK-0592 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 8 | - |
+| GQ2-CHUNK-0593 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 9 | - |
+| GQ2-CHUNK-0594 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 10 | - |
+| GQ2-CHUNK-0595 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 11 | - |
+| GQ2-CHUNK-0596 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 12 | - |
+| GQ2-CHUNK-0597 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 13 | - |
+| GQ2-CHUNK-0598 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 14 | - |
+| GQ2-CHUNK-0599 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 15 | - |
+| GQ2-CHUNK-0600 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 16 | - |
+| GQ2-CHUNK-0601 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 17 | - |
+| GQ2-CHUNK-0602 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 18 | - |
+| GQ2-CHUNK-0603 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 19 | - |
+| GQ2-CHUNK-0604 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 20 | - |
+| GQ2-CHUNK-0605 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 21 | - |
+| GQ2-CHUNK-0606 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 22 | - |
+| GQ2-CHUNK-0607 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 23 | - |
+| GQ2-CHUNK-0608 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 24 | - |
+| GQ2-CHUNK-0609 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 25 | - |
+| GQ2-CHUNK-0610 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 26 | - |
+| GQ2-CHUNK-0611 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 27 | - |
+| GQ2-CHUNK-0612 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 28 | - |
+| GQ2-CHUNK-0613 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 29 | - |
+| GQ2-CHUNK-0614 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 30 | - |
+| GQ2-CHUNK-0615 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 31 | - |
+| GQ2-CHUNK-0616 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 32 | - |
+| GQ2-CHUNK-0617 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 33 | - |
+| GQ2-CHUNK-0618 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 34 | - |
+| GQ2-CHUNK-0619 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 35 | - |
+| GQ2-CHUNK-0620 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 36 | - |
+| GQ2-CHUNK-0621 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 37 | - |
+| GQ2-CHUNK-0622 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 38 | - |
+| GQ2-CHUNK-0623 | [ ] TODO | mechanical | mechanical | historical-plan | `40 paths` | batch 39 | - |
+| GQ2-CHUNK-0624 | [ ] TODO | mechanical | mechanical | other-data | `19 paths` | batch 4 | - |
+| GQ2-CHUNK-0625 | [ ] TODO | mechanical | mechanical | other-data | `40 paths` | batch 1 | - |
+| GQ2-CHUNK-0626 | [ ] TODO | mechanical | mechanical | other-data | `40 paths` | batch 2 | - |
+| GQ2-CHUNK-0627 | [ ] TODO | mechanical | mechanical | other-data | `40 paths` | batch 3 | - |
+| GQ2-SWEEP-001 | [ ] TODO | sweep | high | d1-d2 | `d1/ and d2/` | Parity, minimal upstream edits, platform guards, and shared-new-code boundaries | - |
+| GQ2-SWEEP-002 | [ ] TODO | sweep | critical | native-boundary | `Android JNI and native code` | Ownership, lifetimes, thread attachment, references, bounds, and exception paths | - |
+| GQ2-SWEEP-003 | [ ] TODO | sweep | high | android-lifecycle | `Android Kotlin and Java` | Activity lifecycle, state restoration, cancellation, permissions, backgrounding, and touch-only operation | - |
+| GQ2-SWEEP-004 | [ ] TODO | sweep | critical | files-data | `Import, archive, storage, config, and save paths` | Trust boundaries, traversal, size limits, transactions, schema ownership, and C source of truth | - |
+| GQ2-SWEEP-005 | [ ] TODO | sweep | critical | server-network | `server/ and multiplayer clients` | Protocol validation, abuse cases, rate and size limits, timeouts, cleanup, deadlocks, and compatibility | - |
+| GQ2-SWEEP-006 | [ ] TODO | sweep | high | concurrency-resources | `complete diff` | Threads, locks, cancellation, handles, memory, GL resources, and lifecycle cleanup | - |
+| GQ2-SWEEP-007 | [ ] TODO | sweep | high | build-portability | `Build, packaging, dependency, and release files` | Pinned inputs, host preservation, ABI matrix, paths with spaces, exit codes, and reproducibility | - |
+| GQ2-SWEEP-008 | [ ] TODO | sweep | high | tests | `Tests, automation, fixtures, and runners` | Meaningful assertions, false passes, cleanup, timeouts, determinism, and missing integration coverage | - |
+| GQ2-SWEEP-009 | [ ] TODO | sweep | high | determinism | `Simulation, save, replay, and metadata code` | RNG ownership, floating point, serialization completeness, state restore, and demo transparency | - |
+| GQ2-SWEEP-010 | [ ] TODO | sweep | medium | performance | `Hot paths and large-data workflows` | Per-frame work, allocations, blocking I/O, repeated parsing, caching, and unbounded growth | - |
+| GQ2-SWEEP-011 | [ ] TODO | sweep | high | errors-logging | `Complete diff` | Fail-safe behavior, cleanup on error, actionable diagnostics, privacy, and Android debug-log routing | - |
+| GQ2-SWEEP-012 | [ ] TODO | sweep | high | interfaces | `Cross-language and cross-process interfaces` | API, ABI, protocol, schema, duplicated constants, versioning, and compatibility | - |
+| GQ2-SWEEP-013 | [ ] TODO | sweep | medium | maintainability | `Complete diff` | Confusing names, unnecessary layers, duplication, dead code, stale comments, and simpler alternatives | - |
+| GQ2-SWEEP-014 | [ ] TODO | sweep | high | pr-hygiene | `Complete diff` | Unexpected artifacts, generated files, historical plans, private data, licenses, and reviewability | - |
+| GQ2-CLOSE-001 | [ ] TODO | closure | critical | coverage | `Ledger and live branch` | Reconcile every path and chunk, validate findings, inspect head delta, and produce closure summary | - |
+
+### GQ2 exact grouped and mechanical scopes
+
+### GQ2-CHUNK-0001
+
+- `android/auth_config.template.jsonc`: diff hunks 1-2, new L1-L25
+- `android/play-store-credentials.sample.json`: diff hunks 1-2, new L2-L18
+
+### GQ2-CHUNK-0002
+
+- `game_data/CD images/d1 mac 2nd bin+cue/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/d1 mac 2nd bin+cue/track_fingerprints.json`: whole diff
+- `game_data/CD images/d1 mac 2nd bin+cue/track_hashes.json`: whole diff
+- `game_data/CD images/d2 mac/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent - Anniversary Edition (USA)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent - Destination Saturn (USA)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent - Levels of the World (USA)/extract_regression.jsonc`: L1-L225
+- `game_data/CD images/Descent - Mac macplay/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent - Test Flight (USA)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent (Europe) (Alt)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent (Europe)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent (USA)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent Anniversary (ISO)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent Anniversary (ISO)/track_fingerprints.json`: whole diff
+
+### GQ2-CHUNK-0003
+
+- `game_data/CD images/Descent II (USA)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II Infinite Abyss/extract_regression.jsonc`: L1-L65
+- `game_data/CD images/Descent-II-Destination-Quartzon_Win_EN_ISO-Version/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent-II-Destination-Quartzon_Win_EN_ISO-Version/track_fingerprints.json`: whole diff
+- `game_data/CD images/Dimensions for Descent (USA)/extract_regression.jsonc`: L1-L122
+
+### GQ2-CHUNK-0004
+
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/extract_regression.jsonc`: L1-L65
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/extract_regression.jsonc`: L1-L61
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 1)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 2)/extract_regression.jsonc`: L1-L65
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 3)/extract_regression.jsonc`: L1-L61
+- `game_data/CD images/Descent II - Destination Quartzon (Europe)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Logitech OEM)/extract_regression.jsonc`: L1-L81
+
+### GQ2-CHUNK-0005
+
+- `game_data/CD images/Descent II - Destination Quartzon (USA)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/extract_regression.jsonc`: L1-L53
+- `game_data/CD images/Descent II - The Vertigo Series (USA)/extract_regression.jsonc`: L1-L61
+- `game_data/CD images/Descent II (Europe) (v1.1)/extract_regression.jsonc`: L1-L65
+- `game_data/CD images/Descent II (Europe)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/extract_regression.jsonc`: L1-L33
+- `game_data/CD images/Descent II (USA) (Alt)/extract_regression.jsonc`: L1-L81
+- `game_data/CD images/Descent II (USA) (Rerelease)/extract_regression.jsonc`: L1-L65
+- `game_data/CD images/Descent II (USA) (v1.1)/extract_regression.jsonc`: L1-L65
+
+### GQ2-CHUNK-0007
+
+- `game_data/music/Mission ZIP - ulterior_v1.0.6b/chromaprint_info.jsonc`: L1-L391
+- `game_data/music/Mission ZIP - Uneasy4/chromaprint_info.jsonc`: L1-L18
+
+### GQ2-CHUNK-0008
+
+- `game_data/music/Mission ZIP - castaway_redux/chromaprint_info.jsonc`: L1-L111
+- `game_data/music/Mission ZIP - cererian_1.3/chromaprint_info.jsonc`: L1-L81
+- `game_data/music/Mission ZIP - D2X-XL - levelpack/chromaprint_info.jsonc`: L1-L18
+
+### GQ2-CHUNK-0009
+
+- `game_data/music/Mission ZIP - ewithin-versions/chromaprint_info.jsonc`: L1-L473
+- `game_data/music/Mission ZIP - KCXF2RMv11/chromaprint_info.jsonc`: L1-L91
+- `game_data/music/Mission ZIP - nefarious/chromaprint_info.jsonc`: L1-L21
+
+### GQ2-CHUNK-0010
+
+- `game_data/music/Mission ZIP - Trine1/chromaprint_info.jsonc`: L1-L145
+- `game_data/music/Mission ZIP - trine2/chromaprint_info.jsonc`: L1-L145
+- `game_data/music/Mission ZIP - U3AAH/chromaprint_info.jsonc`: L1-L25
+
+### GQ2-CHUNK-0012
+
+- `android/app/src/main/cpp/jni_midi_preview.c`: diff hunks 1-15, new L14-L239
+- `android/app/src/main/cpp/jni_music_control.c`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0013
+
+- `android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.h`: diff hunks 1-6, new L7-L134
+- `android/app/src/main/cpp/shared/net/net_udp_reconnect_jni.c`: diff hunks 1-22, new L40-L291
+- `android/app/src/main/cpp/shared/net/net_udp_reconnect_jni.h`: diff hunks 1-1, new L9-L9
+
+### GQ2-CHUNK-0014
+
+- `android/app/src/main/cpp/extract/mac_hfs_extract.c`: diff hunks 1-16, new L184-L353
+- `android/app/src/main/cpp/extract/mac_hfs_extract.h`: diff hunks 1-3, new L4-L32
+- `android/app/src/main/cpp/extract/midi_tsf_render.c`: L1-L174
+
+### GQ2-CHUNK-0015
+
+- `android/app/src/main/cpp/extract/physical_output_file.c`: L1-L365
+- `android/app/src/main/cpp/extract/physical_output_file.h`: L1-L37
+- `android/app/src/main/cpp/extract/pkg_reader.c`: diff hunks 1-14, new L12-L1011
+
+### GQ2-CHUNK-0016
+
+- `android/app/src/main/cpp/extract/extract_attempt_budget.c`: L1-L99
+- `android/app/src/main/cpp/extract/extract_attempt_budget.h`: L1-L56
+- `android/app/src/main/cpp/extract/extract_cd.c`: diff hunks 1-18, new L47-L512
+- `android/app/src/main/cpp/extract/extract_gog.c`: diff hunks 1-7, new L65-L144
+- `android/app/src/main/cpp/extract/extract_limits.h`: diff hunks 1-1, new L21-L21
+
+### GQ2-CHUNK-0017
+
+- `android/app/src/main/cpp/extract/fingerprint_cd.c`: diff hunks 1-6, new L45-L228
+- `android/app/src/main/cpp/extract/fingerprint_match.c`: diff hunks 1-3, new L13-L130
+- `android/app/src/main/cpp/extract/game_file_extensions.c`: diff hunks 1-3, new L34-L89
+- `android/app/src/main/cpp/extract/game_file_extensions.h`: diff hunks 1-2, new L19-L24
+- `android/app/src/main/cpp/extract/hmp_midi_export.c`: L1-L137
+
+### GQ2-CHUNK-0018
+
+- `android/app/src/main/cpp/extract/sha1.c`: L1-L132
+- `android/app/src/main/cpp/extract/sha1.h`: L1-L27
+- `android/app/src/main/cpp/extract/soundfont_coverage.cpp`: L1-L144
+- `android/app/src/main/cpp/extract/sow_extract.c`: diff hunks 1-24, new L840-L1094
+- `android/app/src/main/cpp/extract/sow_extract.h`: diff hunks 1-2, new L20-L80
+
+### GQ2-CHUNK-0019
+
+- `android/app/src/main/cpp/extract/sti2_extract.c`: diff hunks 1-31, new L81-L2555
+- `android/app/src/main/cpp/extract/sti2_extract.h`: diff hunks 1-4, new L5-L88
+- `android/app/src/main/cpp/extract/stuffit_extract.c`: diff hunks 1-16, new L400-L512
+- `android/app/src/main/cpp/jni_cd_preview.c`: diff hunks 1-18, new L13-L171
+- `android/app/src/main/cpp/jni_engine_query.cpp`: L1-L71
+- `android/app/src/main/cpp/jni_fingerprint.c`: diff hunks 1-17, new L22-L294
+
+### GQ2-CHUNK-0020
+
+- `android/app/src/main/cpp/jni_resume_save.cpp`: diff hunks 1-8, new L21-L832
+- `android/app/src/main/cpp/jni_saf.c`: diff hunks 1-4, new L16-L92
+- `android/app/src/main/cpp/shared/android_jni_overlay.c`: diff hunks 1-7, new L16-L76
+- `android/app/src/main/cpp/shared/android_jni_overlay.h`: diff hunks 1-1, new L18-L22
+- `android/app/src/main/cpp/shared/jni_graphics_safety.cpp`: L1-L79
+- `android/app/src/main/cpp/shared/net/net_udp_reconnect_auth.c`: diff hunks 1-14, new L6-L441
+
+### GQ2-CHUNK-0021
+
+- `android/app/src/main/cpp/extract/inno_reader.c`: diff hunks 123-144, new L3174-L3732
+- `android/app/src/main/cpp/extract/inno_reader.h`: diff hunks 1-7, new L117-L223
+- `android/app/src/main/cpp/extract/iso9660_reader.c`: diff hunks 1-27, new L23-L993
+- `android/app/src/main/cpp/extract/iso9660_reader.h`: diff hunks 1-3, new L15-L156
+- `android/app/src/main/cpp/extract/jni_disc_import.c`: diff hunks 1-37, new L41-L595
+- `android/app/src/main/cpp/extract/jni_gog_import.c`: diff hunks 1-30, new L17-L421
+
+### GQ2-CHUNK-0027
+
+- `android/app/src/main/java/com/dxxredux/app/MissionZipMusicStageManager.kt`: diff hunks 1-61, new L47-L664
+- `android/app/src/main/java/com/dxxredux/app/MusicEditorArchiveSources.kt`: L1-L48
+
+### GQ2-CHUNK-0028
+
+- `android/app/src/main/java/com/dxxredux/app/MissionZip.kt`: diff hunks 1-31, new L10-L831
+- `android/app/src/main/java/com/dxxredux/app/MissionZipAudioFingerprintCache.kt`: diff hunks 1-11, new L35-L391
+
+### GQ2-CHUNK-0029
+
+- `android/app/src/main/java/com/dxxredux/app/MissionZipExtractionStore.kt`: diff hunks 1-51, new L10-L765
+- `android/app/src/main/java/com/dxxredux/app/MissionZipMusic.kt`: diff hunks 1-47, new L7-L817
+- `android/app/src/main/java/com/dxxredux/app/MissionZipMusicNames.kt`: diff hunks 1-11, new L48-L128
+
+### GQ2-CHUNK-0030
+
+- `android/app/src/main/java/com/dxxredux/app/ArchiveFiles.kt`: diff hunks 1-23, new L3-L536
+- `android/app/src/main/java/com/dxxredux/app/ArchiveInputStreams.kt`: diff hunks 1-10, new L19-L195
+- `android/app/src/main/java/com/dxxredux/app/ExtractionLimits.kt`: diff hunks 1-12, new L12-L271
+
+### GQ2-CHUNK-0032
+
+- renamed from android/app/src/main/java/com/dxxredux/app/multiplayer/PlayGamesAuth.kt
+
+### GQ2-CHUNK-0034
+
+- `server/src/config.rs`: diff hunks 1-6, new L5-L308
+- `server/src/lobby.rs`: diff hunks 1-3, new L52-L212
+- `server/src/protocol.rs`: diff hunks 1-3, new L10-L416
+- `server/src/relay.rs`: diff hunks 1-4, new L62-L150
+- `server/src/ws_handler.rs`: diff hunks 1-13, new L47-L2881
+
+### GQ2-CHUNK-0037
+
+- `android/helpers/bounded_extraction.ps1`: diff hunks 1-6, new L2-L420
+- `android/helpers/extract_hfs_machfs.py`: diff hunks 1-1, new L76-L76
+- `android/helpers/mission_archive_sources.ps1`: L1-L97
+- `android/helpers/mission_archive_variants.ps1`: L1-L64
+- `android/helpers/mission_rar_archive.ps1`: L1-L26
+
+### GQ2-CHUNK-0040
+
+- `game_data/extract_mac_demos.ps1`: diff hunks 1-1, new L206-L206
+- `game_data/fingerprint_mission_zip_music.ps1`: diff hunks 1-27, new L5-L1006
+
+### GQ2-CHUNK-0041
+
+- `game_data/extract_all_cds.ps1`: diff hunks 1-6, new L18-L176
+- `game_data/extract_all_gog.ps1`: diff hunks 1-14, new L7-L248
+- `game_data/extract_dos_demos.ps1`: diff hunks 1-19, new L17-L270
+
+### GQ2-CHUNK-0047
+
+- `android/app/src/main/cpp/extract/test_gog_fd.c`: diff hunks 1-10, new L2-L1781
+- `android/app/src/main/cpp/extract/test_graphics_safety_store.cpp`: L1-L259
+
+### GQ2-CHUNK-0048
+
+- `android/app/src/main/cpp/extract/test_hmp_android_shared.c`: diff hunks 1-8, new L11-L334
+- `android/app/src/main/cpp/extract/test_music_fluid.cpp`: L1-L99
+
+### GQ2-CHUNK-0049
+
+- `android/app/src/main/cpp/extract/test_music_synth.c`: L1-L450
+- `android/app/src/main/cpp/extract/test_pkg_toc_bounds.c`: diff hunks 1-4, new L429-L447
+- `android/app/src/main/cpp/extract/test_sha1.c`: L1-L67
+- `android/app/src/main/cpp/extract/test_sti2.c`: diff hunks 1-3, new L31-L1080
+
+### GQ2-CHUNK-0050
+
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit7_dlx.macx1.sit.json`: diff hunks 1-1, new L2-L92
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit7.win.sit.json`: diff hunks 1-1, new L2-L47
+- `android/app/src/main/cpp/extract/test/test_ogl_texture_filename.c`: L1-L56
+- `android/app/src/main/cpp/shared/test_saf_manifest_parser.c`: diff hunks 1-2, new L38-L101
+
+### GQ2-CHUNK-0051
+
+- `android/app/src/main/cpp/extract/test_cd_sha1.cmake`: L1-L32
+- `android/app/src/main/cpp/extract/test_cue_iso.c`: diff hunks 1-6, new L26-L3678
+- `android/app/src/main/cpp/extract/test_extract_limits.c`: diff hunks 1-3, new L5-L75
+- `android/app/src/main/cpp/extract/test_fm_resampler.cpp`: L1-L74
+- `android/app/src/main/cpp/extract/test_game_file_extensions.c`: diff hunks 1-1, new L12-L16
+
+### GQ2-CHUNK-0052
+
+- `android/app/src/main/cpp/extract/test_stuffit_demo_oracles.cmake`: diff hunks 1-8, new L1-L153
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit45_dlx.mac9.sit.json`: diff hunks 1-1, new L2-L92
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit651_dlx.mac9.sit.json`: diff hunks 1-1, new L2-L92
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit651_dlx.macx1.sit.json`: diff hunks 1-1, new L2-L92
+- `android/app/src/main/cpp/extract/test/data/stuffit_manifests/testfile.stuffit7_dlx.mac9.sit.json`: diff hunks 1-1, new L2-L92
+
+### GQ2-CHUNK-0053
+
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MissionScannerManagedArchiveTest.kt`: L1-L226
+- `android/app/src/test/java/com/dxxredux/app/MusicEditorArchiveSourcesTest.kt`: L1-L84
+
+### GQ2-CHUNK-0054
+
+- `android/app/src/test/java/com/dxxredux/app/ArchiveInputStreamsTest.kt`: diff hunks 1-8, new L6-L340
+- `android/app/src/test/java/com/dxxredux/app/CueDataTrackExtractionTest.kt`: diff hunks 1-17, new L5-L337
+
+### GQ2-CHUNK-0055
+
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicExtractedPreviewTest.kt`: diff hunks 1-5, new L11-L236
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicNamesTest.kt`: diff hunks 1-2, new L97-L270
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicStageManagerTest.kt`: diff hunks 1-1, new L19-L35
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicTest.kt`: diff hunks 1-14, new L18-L296
+
+### GQ2-CHUNK-0056
+
+- `android/app/src/test/java/com/dxxredux/app/ExtractionLimitsTest.kt`: diff hunks 1-6, new L4-L303
+- `android/app/src/test/java/com/dxxredux/app/MissionZipExtractionStoreTest.kt`: diff hunks 1-6, new L11-L371
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMidiMetadataResolutionTest.kt`: L1-L62
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicAnalysisSkipTest.kt`: diff hunks 1-1, new L29-L56
+- `android/app/src/test/java/com/dxxredux/app/MissionZipMusicDisplayTest.kt`: diff hunks 1-1, new L35-L46
+
+### GQ2-CHUNK-0059
+
+- `android/game_scripts/test_extract_regression_template.jsonc`: L1-L77
+- `android/game_scripts/test_level_metadata_launcher_zip_reusable.jsonc`: L1-L64
+
+### GQ2-CHUNK-0060
+
+- `android/game_scripts/test_mission_zip_batch_import_metadata_launch.jsonc`: L1-L61
+- `android/game_scripts/test_mission_zip_batch_import_metadata.jsonc`: L1-L36
+
+### GQ2-CHUNK-0063
+
+- `android/tests/test_run_bounded_extractor.py`: diff hunks 1-15, new L2-L404
+- `android/tests/test_saf_archiver.ps1`: diff hunks 1-15, new L58-L563
+- `android/tests/test_strict_jni_utf8_contracts.py`: L1-L58
+- `android/tests/validate_extract_regression_specs.ps1`: diff hunks 1-2, new L44-L46
+
+### GQ2-CHUNK-0064
+
+- `android/tests/extract_regression_recovery.ps1`: diff hunks 1-2, new L4-L7
+- `android/tests/extract_regression_spec_helpers.ps1`: diff hunks 1-15, new L1-L413
+- `android/tests/render_dos_midi_comparison.py`: L1-L133
+- `android/tests/render_game08_comparison.py`: L1-L99
+- `android/tests/test_7zip_install.ps1`: L1-L51
+- `android/tests/test_all_extracts.ps1`: diff hunks 1-22, new L7-L422
+
+### GQ2-CHUNK-0065
+
+- `android/tests/test_mission_archive_variants.ps1`: L1-L82
+- `android/tests/test_mission_asset_isolation.ps1`: L1-L87
+- `android/tests/test_mission_metadata_archive_sources.ps1`: L1-L108
+- `android/tests/test_mission_rar_archive.ps1`: L1-L48
+- `android/tests/test_mission_zip_batch_publication.ps1`: L1-L18
+- `android/tests/test_mission_zip_batch.ps1`: diff hunks 1-2, new L4-L18
+
+### GQ2-CHUNK-0066
+
+- `android/tests/test_archive_install.sh`: L1-L438
+- `android/tests/test_bounded_extraction.ps1`: diff hunks 1-5, new L10-L205
+- `android/tests/test_cd_mission_hog_isolation.ps1`: L1-L20
+- `android/tests/test_cue_iso.ps1`: diff hunks 1-4, new L2-L24
+- `android/tests/test_extract_all_cds_batch.ps1`: diff hunks 1-3, new L6-L127
+- `android/tests/test_extract_all_gog_batch.ps1`: diff hunks 1-7, new L6-L111
+- `android/tests/test_extract_hfs_machfs.py`: diff hunks 1-2, new L55-L71
+
+### GQ2-CHUNK-0067
+
+- `android/tests/test_extract_regression_workflow.ps1`: diff hunks 1-19, new L5-L285
+- `android/tests/test_extract.ps1`: diff hunks 1-48, new L9-L1447
+- `android/tests/test_extraction_cache_provenance.ps1`: diff hunks 1-3, new L5-L120
+- `android/tests/test_extraction_publication.ps1`: diff hunks 1-3, new L5-L45
+- `android/tests/test_fingerprint_mission_zip_budgets.ps1`: diff hunks 1-3, new L2-L173
+- `android/tests/test_input_demo_comparison_policy.ps1`: L1-L74
+- `android/tests/test_jni_exception_safety_contracts.py`: L1-L74
+- `android/tests/test_mac_extract_saf.ps1`: diff hunks 1-9, new L20-L158
+
+### GQ2-CHUNK-0069
+
+- `server/config.default.jsonc`: diff hunks 1-9, new L2-L52
+- `server/config.lan.jsonc`: diff hunks 1-6, new L3-L29
+- `server/server_config.template.jsonc`: diff hunks 1-14, new L2-L39
+
+### GQ2-CHUNK-0070
+
+- `android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp`: L1-L369
+- `android/app/src/main/cpp/SDL_androidaudio.c`: diff hunks 1-3, new L28-L209
+- `android/app/src/main/cpp/shared/android_audio_capture.h`: L1-L12
+- `android/app/src/main/cpp/shared/android_audio_diagnostics.c`: diff hunks 1-3, new L3-L89
+- `android/app/src/main/cpp/shared/android_audio_diagnostics.h`: diff hunks 1-1, new L8-L9
+- `android/app/src/main/cpp/shared/android_axis_mailbox.h`: diff hunks 1-1, new L4-L10
+- `android/app/src/main/cpp/shared/android_briefing_text.h`: L1-L15
+- `android/app/src/main/cpp/shared/android_controller_response.h`: L1-L16
+- `android/app/src/main/cpp/shared/android_crash_handler.c`: diff hunks 1-2, new L14-L305
+- `android/app/src/main/cpp/shared/android_crash_handler.h`: diff hunks 1-2, new L35-L53
+- `android/app/src/main/cpp/shared/android_dxxerror.h`: diff hunks 1-3, new L5-L23
+
+### GQ2-CHUNK-0071
+
+- `android/app/src/main/cpp/shared/coop/coop_endgame.c`: L1-L260
+- `android/app/src/main/cpp/shared/coop/coop_endgame.h`: L1-L22
+- `android/app/src/main/cpp/shared/coop/coop_flyout_engine.h`: L1-L51
+- `android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h`: L1-L130
+- `android/app/src/main/cpp/shared/coop/coop_gameplay_runtime.h`: L1-L42
+- `android/app/src/main/cpp/shared/coop/coop_gear_restore.h`: L1-L18
+- `android/app/src/main/cpp/shared/coop/coop_host_migration.c`: diff hunks 1-8, new L2-L106
+- `android/app/src/main/cpp/shared/coop/coop_level_restart.c`: diff hunks 1-13, new L4-L377
+- `android/app/src/main/cpp/shared/coop/coop_multi_status.c`: diff hunks 1-14, new L15-L255
+- `android/app/src/main/cpp/shared/coop/coop_multi_status.h`: diff hunks 1-1, new L35-L42
+- `android/app/src/main/cpp/shared/coop/coop_player_session.h`: diff hunks 1-2, new L8-L47
+
+### GQ2-CHUNK-0072
+
+- `android/app/src/main/cpp/shared/ogl_msaa_probe_android.h`: L1-L37
+- `android/app/src/main/cpp/shared/ogl_shader_runtime.c`: diff hunks 1-2, new L3-L39
+- `android/app/src/main/cpp/shared/ogl_shader_runtime.h`: diff hunks 1-1, new L7-L7
+- `android/app/src/main/cpp/shared/ogl_texture_android.c`: diff hunks 1-12, new L5-L470
+- `android/app/src/main/cpp/shared/ogl_texture_android.h`: diff hunks 1-6, new L6-L88
+- `android/app/src/main/cpp/shared/ogl_texture_filename.c`: L1-L21
+- `android/app/src/main/cpp/shared/ogl_texture_filename.h`: L1-L9
+- `android/app/src/main/cpp/shared/ogl_viewport_android.c`: diff hunks 1-1, new L7-L17
+- `android/app/src/main/cpp/shared/ogl_viewport_android.h`: diff hunks 1-1, new L16-L16
+- `android/app/src/main/cpp/shared/pcm_ring.h`: L1-L67
+- `android/app/src/main/cpp/shared/physfsx_android_setup.c`: diff hunks 1-4, new L91-L226
+- `android/app/src/main/cpp/shared/physfsx_android_setup.h`: diff hunks 1-1, new L27-L27
+- `android/app/src/main/cpp/shared/physfsx_android_shared.c`: diff hunks 1-7, new L1-L95
+- `android/app/src/main/cpp/shared/physfsx_android_shared.h`: diff hunks 1-3, new L1-L12
+- `android/app/src/main/cpp/shared/player_death_runtime.h`: L1-L22
+- `android/app/src/main/cpp/shared/playsave_android_shared.c`: diff hunks 1-11, new L54-L294
+
+### GQ2-CHUNK-0073
+
+- `android/app/src/main/cpp/shared/android_render_fov.h`: diff hunks 1-1, new L12-L20
+- `android/app/src/main/cpp/shared/android_rewind.c`: diff hunks 1-10, new L2-L414
+- `android/app/src/main/cpp/shared/android_rewind.h`: diff hunks 1-1, new L36-L36
+- `android/app/src/main/cpp/shared/android_route_metadata_progress_policy.c`: L1-L37
+- `android/app/src/main/cpp/shared/android_route_metadata_progress_policy.h`: L1-L32
+- `android/app/src/main/cpp/shared/android_route_metadata.c`: L1-L247
+- `android/app/src/main/cpp/shared/android_route_metadata.h`: L1-L22
+- `android/app/src/main/cpp/shared/android_save_meta.c`: diff hunks 1-6, new L10-L196
+- `android/app/src/main/cpp/shared/android_save_meta.h`: diff hunks 1-11, new L4-L129
+- `android/app/src/main/cpp/shared/android_save_set.c`: diff hunks 1-1, new L9-L16
+- `android/app/src/main/cpp/shared/android_slowdown_detector.c`: diff hunks 1-2, new L246-L266
+- `android/app/src/main/cpp/shared/android_slowdown_detector.h`: diff hunks 1-1, new L32-L32
+- `android/app/src/main/cpp/shared/android_sound_trace.c`: L1-L206
+- `android/app/src/main/cpp/shared/android_sound_trace.h`: L1-L21
+- `android/app/src/main/cpp/shared/android_surface_lifecycle.h`: diff hunks 1-1, new L18-L19
+- `android/app/src/main/cpp/shared/android_texture_debug.c`: diff hunks 1-2, new L9-L57
+
+### GQ2-CHUNK-0074
+
+- `android/app/src/main/cpp/shared/automap_metadata_overlay.c`: diff hunks 1-8, new L10-L947
+- `android/app/src/main/cpp/shared/automap_metadata_overlay.h`: diff hunks 1-2, new L15-L32
+- `android/app/src/main/cpp/shared/autoselect_runtime.h`: L1-L47
+- `android/app/src/main/cpp/shared/boss_health_shared.c`: L1-L70
+- `android/app/src/main/cpp/shared/boss_health_shared.h`: L1-L49
+- `android/app/src/main/cpp/shared/boss_hud.c`: diff hunks 1-7, new L3-L118
+- `android/app/src/main/cpp/shared/boss_hud.h`: diff hunks 1-3, new L10-L52
+- `android/app/src/main/cpp/shared/briefing_canvas.h`: L1-L43
+- `android/app/src/main/cpp/shared/cadence_runtime.h`: L1-L83
+- `android/app/src/main/cpp/shared/cd_preview.c`: diff hunks 1-9, new L18-L786
+- `android/app/src/main/cpp/shared/chromaprint_android/config.h`: L1-L7
+- `android/app/src/main/cpp/shared/chromaprint_db.c`: diff hunks 1-1, new L28-L28
+- `android/app/src/main/cpp/shared/chromaprint_db.h`: diff hunks 1-1, new L60-L60
+- `android/app/src/main/cpp/shared/coop_indicator_lines.c`: diff hunks 1-2, new L140-L141
+- `android/app/src/main/cpp/shared/coop_start_positions.c`: diff hunks 1-2, new L8-L155
+- `android/app/src/main/cpp/shared/coop_start_positions.h`: diff hunks 1-2, new L5-L13
+
+### GQ2-CHUNK-0075
+
+- `android/app/src/main/cpp/shared/secret_area_scan.c`: diff hunks 1-15, new L5-L1427
+- `android/app/src/main/cpp/shared/secret_area_scan.h`: diff hunks 1-6, new L8-L153
+
+### GQ2-CHUNK-0076
+
+- `android/app/src/main/cpp/shared/guidebot_path_recovery.c`: L1-L389
+- `android/app/src/main/cpp/shared/guidebot_path_recovery.h`: L1-L22
+
+### GQ2-CHUNK-0077
+
+- `android/app/src/main/cpp/shared/graphics_safety_store.cpp`: L1-L571
+- `android/app/src/main/cpp/shared/graphics_safety_store.h`: L1-L92
+
+### GQ2-CHUNK-0078
+
+- `android/app/src/main/cpp/shared/game_automate_weapon_art.cpp`: L1-L253
+- `android/app/src/main/cpp/shared/game_automate_weapon_art.h`: L1-L9
+
+### GQ2-CHUNK-0079
+
+- `android/app/src/main/cpp/shared/guidebot_route_decision.c`: L1-L520
+- `android/app/src/main/cpp/shared/guidebot_route_decision.h`: L1-L211
+
+### GQ2-CHUNK-0080
+
+- `android/app/src/main/cpp/shared/game_automate.cpp`: diff hunks 74-85, new L5790-L6171
+- `android/app/src/main/cpp/shared/game_automate.h`: diff hunks 1-1, new L68-L71
+
+### GQ2-CHUNK-0081
+
+- `android/app/src/main/cpp/shared/guidebot_route_certifier.c`: L2251-L2484
+- `android/app/src/main/cpp/shared/guidebot_route_certifier.h`: L1-L212
+
+### GQ2-CHUNK-0082
+
+- `android/app/src/main/cpp/shared/guidebot_save_io.h`: L1-L155
+- `android/app/src/main/cpp/shared/guided_missile_route.cpp`: L1-L273
+- `android/app/src/main/cpp/shared/guided_missile_route.h`: L1-L30
+
+### GQ2-CHUNK-0083
+
+- `android/app/src/main/cpp/shared/mission_intent_classification.hpp`: L1-L218
+- `android/app/src/main/cpp/shared/mission_provenance.hpp`: L1-L261
+- `android/app/src/main/cpp/shared/multi_save_transfer_barrier.h`: L1-L258
+
+### GQ2-CHUNK-0084
+
+- `android/app/src/main/cpp/shared/coop/coop_portable.h`: L1-L82
+- `android/app/src/main/cpp/shared/coop/coop_powerup_duplication.c`: diff hunks 1-9, new L5-L321
+- `android/app/src/main/cpp/shared/coop/coop_powerup_duplication.h`: diff hunks 1-4, new L9-L38
+
+### GQ2-CHUNK-0085
+
+- `android/app/src/main/cpp/shared/ogl_gpu_timer_android.c`: diff hunks 1-4, new L35-L77
+- `android/app/src/main/cpp/shared/ogl_msaa_android.c`: diff hunks 1-35, new L10-L465
+- `android/app/src/main/cpp/shared/ogl_msaa_android.h`: diff hunks 1-6, new L15-L63
+
+### GQ2-CHUNK-0086
+
+- `android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp`: diff hunks 1-65, new L1-L1472
+- `android/app/src/main/cpp/headless/input_demo_headless_main.cpp`: diff hunks 1-2, new L1-L92
+- `android/app/src/main/cpp/headless/level_metadata_worker_main.cpp`: L1-L18
+
+### GQ2-CHUNK-0087
+
+- `android/app/src/main/cpp/shared/route_planner.h`: diff hunks 1-18, new L26-L365
+- `android/app/src/main/cpp/shared/route_snapshot_c.h`: diff hunks 1-4, new L23-L70
+- `android/app/src/main/cpp/shared/route_snapshot.cpp`: diff hunks 1-21, new L2-L1187
+- `android/app/src/main/cpp/shared/route_snapshot.h`: diff hunks 1-13, new L7-L242
+
+### GQ2-CHUNK-0088
+
+- `android/app/src/main/cpp/shared/digi_tsf_music.c`: diff hunks 1-65, new L2-L1438
+- `android/app/src/main/cpp/shared/endlevel_bitmap.h`: L1-L93
+- `android/app/src/main/cpp/shared/endlevel_multi_impl.h`: L1-L199
+- `android/app/src/main/cpp/shared/endlevel_multi.h`: L1-L31
+
+### GQ2-CHUNK-0089
+
+- `android/app/src/main/cpp/shared/track_names.c`: diff hunks 1-7, new L7-L308
+- `android/app/src/main/cpp/shared/track_names.h`: diff hunks 1-1, new L17-L18
+- `android/app/src/main/cpp/shared/trigger_navigation_actions.h`: L1-L74
+- `android/app/src/main/cpp/shared/tsf_impl.c`: diff hunks 1-1, new L12-L42
+
+### GQ2-CHUNK-0090
+
+- `android/app/src/main/cpp/shared/input_demo_state_trace.cpp`: diff hunks 6-13, new L479-L577
+- `android/app/src/main/cpp/shared/input_demo_state_trace.h`: diff hunks 1-4, new L13-L394
+- `android/app/src/main/cpp/shared/input_demo_world_trace.cpp`: L1-L417
+- `android/app/src/main/cpp/shared/input_demo_world_trace.h`: L1-L21
+
+### GQ2-CHUNK-0091
+
+- `android/app/src/main/cpp/shared/coop/coop_save.c`: diff hunks 47-91, new L1173-L2276
+- `android/app/src/main/cpp/shared/coop/coop_save.h`: diff hunks 1-10, new L18-L241
+- `android/app/src/main/cpp/shared/coop/coop_transition_policy.c`: L1-L300
+- `android/app/src/main/cpp/shared/coop/coop_transition_policy.h`: L1-L127
+
+### GQ2-CHUNK-0092
+
+- `android/app/src/main/cpp/shared/coop/coop_briefing.c`: L751-L869
+- `android/app/src/main/cpp/shared/coop/coop_briefing.h`: L1-L65
+- `android/app/src/main/cpp/shared/coop/coop_campaign.c`: L1-L418
+- `android/app/src/main/cpp/shared/coop/coop_campaign.h`: L1-L78
+
+### GQ2-CHUNK-0093
+
+- `android/app/src/main/cpp/shared/coop/coop_recovery.c`: L751-L1163
+- `android/app/src/main/cpp/shared/coop/coop_recovery.h`: L1-L97
+- `android/app/src/main/cpp/shared/coop/coop_restore_remap.h`: diff hunks 1-1, new L13-L13
+- `android/app/src/main/cpp/shared/coop/coop_save_format.h`: L1-L87
+
+### GQ2-CHUNK-0094
+
+- `android/app/src/main/cpp/shared/music_soundfont.c`: L1-L184
+- `android/app/src/main/cpp/shared/music_soundfont.h`: L1-L29
+- `android/app/src/main/cpp/shared/music_synth_hmp.h`: L1-L27
+- `android/app/src/main/cpp/shared/music_synth.cpp`: L1-L412
+- `android/app/src/main/cpp/shared/music_synth.h`: L1-L46
+
+### GQ2-CHUNK-0095
+
+- `android/app/src/main/cpp/shared/endlevel_runtime_accessors.h`: L1-L35
+- `android/app/src/main/cpp/shared/endlevel_runtime.h`: L1-L45
+- `android/app/src/main/cpp/shared/endlevel_validation.h`: L1-L128
+- `android/app/src/main/cpp/shared/exploding_wall_runtime.h`: L1-L73
+- `android/app/src/main/cpp/shared/flyout_metadata.hpp`: L1-L300
+
+### GQ2-CHUNK-0096
+
+- `android/app/src/main/cpp/android_gamepad_config.cpp`: diff hunks 1-8, new L70-L235
+- `android/app/src/main/cpp/android_input.c`: diff hunks 1-38, new L21-L2002
+- `android/app/src/main/cpp/android_pilot_prefs.cpp`: diff hunks 1-20, new L24-L451
+- `android/app/src/main/cpp/android_surface.c`: diff hunks 1-1, new L119-L133
+- `android/app/src/main/cpp/headless/headless_diagnostics.h`: L1-L26
+
+### GQ2-CHUNK-0097
+
+- `android/app/src/main/cpp/shared/android_texture_debug.h`: diff hunks 1-1, new L20-L20
+- `android/app/src/main/cpp/shared/android_virtual_gamepad.c`: L1-L86
+- `android/app/src/main/cpp/shared/android_virtual_gamepad.h`: L1-L16
+- `android/app/src/main/cpp/shared/audio_tag_metadata.cpp`: L1-L516
+- `android/app/src/main/cpp/shared/audio_tag_metadata.h`: L1-L67
+
+### GQ2-CHUNK-0098
+
+- `android/app/src/main/cpp/shared/android_music_control.c`: L1-L594
+- `android/app/src/main/cpp/shared/android_music_control.h`: diff hunks 1-1, new L9-L10
+- `android/app/src/main/cpp/shared/android_profile.c`: diff hunks 1-10, new L13-L1490
+- `android/app/src/main/cpp/shared/android_profile.h`: diff hunks 1-4, new L11-L98
+- `android/app/src/main/cpp/shared/android_render_fov.c`: diff hunks 1-1, new L5-L20
+
+### GQ2-CHUNK-0099
+
+- `android/app/src/main/cpp/shared/android_meta_actions.c`: diff hunks 1-18, new L17-L550
+- `android/app/src/main/cpp/shared/android_meta_actions.h`: diff hunks 1-5, new L61-L132
+- `android/app/src/main/cpp/shared/android_mission_asset_reset.c`: L1-L80
+- `android/app/src/main/cpp/shared/android_mission_assets.cpp`: L1-L218
+- `android/app/src/main/cpp/shared/android_mission_assets.h`: L1-L32
+
+### GQ2-CHUNK-0100
+
+- `android/app/src/main/cpp/shared/guidebot_goal_message_impl.h`: L1-L184
+- `android/app/src/main/cpp/shared/guidebot_goal_message.h`: L1-L16
+- `android/app/src/main/cpp/shared/guidebot_info_overlay_impl.h`: L1-L188
+- `android/app/src/main/cpp/shared/guidebot_info_overlay.h`: L1-L13
+- `android/app/src/main/cpp/shared/guidebot_metadata_save_fields.h`: L1-L323
+
+### GQ2-CHUNK-0101
+
+- `android/app/src/main/cpp/shared/android_graphics_safety.cpp`: L751-L835
+- `android/app/src/main/cpp/shared/android_graphics_safety.h`: L1-L42
+- `android/app/src/main/cpp/shared/android_idle_saver.c`: L1-L172
+- `android/app/src/main/cpp/shared/android_idle_saver.h`: L1-L22
+- `android/app/src/main/cpp/shared/android_level_preview.cpp`: diff hunks 1-18, new L4-L396
+
+### GQ2-CHUNK-0102
+
+- `android/app/src/main/cpp/shared/route_confirmation.cpp`: L2251-L2547
+- `android/app/src/main/cpp/shared/route_confirmation.h`: L1-L111
+- `android/app/src/main/cpp/shared/route_edge.cpp`: diff hunks 1-23, new L53-L398
+- `android/app/src/main/cpp/shared/route_edge.h`: diff hunks 1-5, new L16-L74
+- `android/app/src/main/cpp/shared/route_planner_c.h`: diff hunks 1-1, new L29-L32
+
+### GQ2-CHUNK-0103
+
+- `android/app/src/main/cpp/shared/merged_wall_debug.c`: diff hunks 1-23, new L28-L6782
+- `android/app/src/main/cpp/shared/merged_wall_debug.h`: diff hunks 1-6, new L38-L305
+- `android/app/src/main/cpp/shared/midi_enumeration.c`: diff hunks 1-9, new L14-L393
+- `android/app/src/main/cpp/shared/midi_metadata_json.hpp`: L1-L149
+- `android/app/src/main/cpp/shared/midi_metadata_physfs.c`: L1-L156
+- `android/app/src/main/cpp/shared/midi_metadata_physfs.h`: L1-L21
+
+### GQ2-CHUNK-0104
+
+- `android/app/src/main/cpp/shared/android_egl_surface.c`: diff hunks 1-55, new L11-L423
+- `android/app/src/main/cpp/shared/android_egl_surface.h`: diff hunks 1-2, new L11-L38
+- `android/app/src/main/cpp/shared/android_gpu_capabilities.cpp`: L1-L182
+- `android/app/src/main/cpp/shared/android_gpu_capabilities.h`: L1-L21
+- `android/app/src/main/cpp/shared/android_gpu_policy.h`: L1-L41
+- `android/app/src/main/cpp/shared/android_graphics_options.c`: diff hunks 1-8, new L13-L283
+
+### GQ2-CHUNK-0105
+
+- `android/app/src/main/cpp/shared/hmp_android_shared.c`: diff hunks 1-22, new L5-L710
+- `android/app/src/main/cpp/shared/hmp_android_shared.h`: diff hunks 1-2, new L5-L30
+- `android/app/src/main/cpp/shared/hmp_tsf_state.h`: L1-L71
+- `android/app/src/main/cpp/shared/hog_midi_catalog.h`: diff hunks 1-3, new L73-L180
+- `android/app/src/main/cpp/shared/hud_counts_shared.c`: diff hunks 1-7, new L84-L179
+- `android/app/src/main/cpp/shared/hud_counts_shared.h`: diff hunks 1-1, new L24-L24
+
+### GQ2-CHUNK-0106
+
+- `android/app/src/main/cpp/shared/playsave_android_shared.h`: diff hunks 1-3, new L10-L18
+- `android/app/src/main/cpp/shared/playsave_transaction.c`: diff hunks 1-1, new L54-L68
+- `android/app/src/main/cpp/shared/pngfile.c`: diff hunks 1-6, new L2-L301
+- `android/app/src/main/cpp/shared/rbaudio_bin.c`: diff hunks 1-66, new L29-L2048
+- `android/app/src/main/cpp/shared/rbaudio_bin.h`: L1-L21
+- `android/app/src/main/cpp/shared/render_gameplay_view.c`: L1-L252
+
+### GQ2-CHUNK-0107
+
+- `android/app/src/main/cpp/shared/net/net_udp_join_wait_transport.h`: L1-L159
+- `android/app/src/main/cpp/shared/net/net_udp_join_wait.c`: L1-L285
+- `android/app/src/main/cpp/shared/net/net_udp_join_wait.h`: L1-L70
+- `android/app/src/main/cpp/shared/net/net_udp_score_catchup.h`: L1-L90
+- `android/app/src/main/cpp/shared/ogl_2d_batch.c`: L1-L124
+- `android/app/src/main/cpp/shared/ogl_2d_batch.h`: L1-L13
+
+### GQ2-CHUNK-0108
+
+- `android/app/src/main/cpp/shared/midi_metadata.c`: L751-L787
+- `android/app/src/main/cpp/shared/midi_metadata.h`: L1-L63
+- `android/app/src/main/cpp/shared/midi_preview.c`: diff hunks 1-69, new L5-L907
+- `android/app/src/main/cpp/shared/midi_preview.h`: diff hunks 1-9, new L4-L63
+- `android/app/src/main/cpp/shared/midi_seek_timeline.c`: diff hunks 1-6, new L34-L122
+- `android/app/src/main/cpp/shared/midi_seek_timeline.h`: diff hunks 1-2, new L20-L36
+
+### GQ2-CHUNK-0109
+
+- `android/app/src/main/cpp/shared/music_decode_limits.h`: diff hunks 1-2, new L7-L18
+- `android/app/src/main/cpp/shared/music_eq_presets.h`: L1-L38
+- `android/app/src/main/cpp/shared/music_eq.h`: L1-L102
+- `android/app/src/main/cpp/shared/music_fluid.cpp`: L1-L231
+- `android/app/src/main/cpp/shared/music_fluid.h`: L1-L48
+- `android/app/src/main/cpp/shared/music_fm_resampler.h`: L1-L134
+- `android/app/src/main/cpp/shared/music_playback_levels.h`: L1-L70
+
+### GQ2-CHUNK-0110
+
+- `android/app/src/main/cpp/shared/input_demo_ai_trace.cpp`: L1-L167
+- `android/app/src/main/cpp/shared/input_demo_ai_trace.h`: L1-L12
+- `android/app/src/main/cpp/shared/input_demo_fixture.cpp`: diff hunks 1-34, new L10-L1428
+- `android/app/src/main/cpp/shared/input_demo_fixture.h`: diff hunks 1-5, new L36-L224
+- `android/app/src/main/cpp/shared/input_demo_hooks_shared.c`: diff hunks 1-36, new L6-L2298
+- `android/app/src/main/cpp/shared/input_demo_limits.h`: diff hunks 1-2, new L9-L42
+- `android/app/src/main/cpp/shared/input_demo_newdemo_shared.c`: diff hunks 1-3, new L176-L346
+
+### GQ2-CHUNK-0111
+
+- `android/app/src/main/cpp/shared/coop/coop_travel.c`: L1501-L1677
+- `android/app/src/main/cpp/shared/coop/coop_travel.h`: L1-L87
+- `android/app/src/main/cpp/shared/coop/coop_warp.c`: diff hunks 1-2, new L12-L119
+- `android/app/src/main/cpp/shared/coop/coop_world_visit.c`: L1-L58
+- `android/app/src/main/cpp/shared/coop/coop_world_visit.h`: L1-L26
+- `android/app/src/main/cpp/shared/d1_in_d2_save_format.h`: L1-L12
+- `android/app/src/main/cpp/shared/debug_log_categories.h`: diff hunks 1-1, new L19-L20
+- `android/app/src/main/cpp/shared/difficulty_runtime_shared.c`: diff hunks 1-5, new L1-L116
+
+### GQ2-CHUNK-0112
+
+- `android/app/src/main/cpp/shared/secretarea.c`: L5251-L5482
+- `android/app/src/main/cpp/shared/secretarea.h`: L1-L154
+- `android/app/src/main/cpp/shared/software_renderer_debug.c`: diff hunks 1-5, new L50-L129
+- `android/app/src/main/cpp/shared/sound_mixer_convert.c`: L1-L45
+- `android/app/src/main/cpp/shared/sound_mixer_convert.h`: L1-L20
+- `android/app/src/main/cpp/shared/sound_trace_fingerprint.h`: L1-L40
+- `android/app/src/main/cpp/shared/state_android_shared.c`: diff hunks 1-18, new L18-L1206
+- `android/app/src/main/cpp/shared/state_android_shared.h`: diff hunks 1-6, new L14-L52
+
+### GQ2-CHUNK-0113
+
+- `android/app/src/main/cpp/shared/music_wav_decode.h`: L1-L69
+- `android/app/src/main/cpp/shared/net/auto_net.c`: diff hunks 1-4, new L18-L208
+- `android/app/src/main/cpp/shared/net/auto_net.h`: diff hunks 1-1, new L47-L49
+- `android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.c`: diff hunks 1-4, new L122-L226
+- `android/app/src/main/cpp/shared/net/net_udp_android_autonet_shared.h`: diff hunks 1-2, new L1-L9
+- `android/app/src/main/cpp/shared/net/net_udp_android.c`: diff hunks 1-41, new L17-L798
+- `android/app/src/main/cpp/shared/net/net_udp_android.h`: diff hunks 1-5, new L21-L66
+- `android/app/src/main/cpp/shared/net/net_udp_endlevel_probe.h`: L1-L93
+- `android/app/src/main/cpp/shared/net/net_udp_initial_sync_retry.h`: L1-L55
+
+### GQ2-CHUNK-0114
+
+- `android/app/src/main/cpp/shared/input_demo_object_trace.cpp`: L1-L216
+- `android/app/src/main/cpp/shared/input_demo_object_trace.h`: L1-L23
+- `android/app/src/main/cpp/shared/input_demo_recorder.cpp`: diff hunks 1-20, new L23-L724
+- `android/app/src/main/cpp/shared/input_demo_recorder.h`: diff hunks 1-2, new L16-L41
+- `android/app/src/main/cpp/shared/input_demo_replay.cpp`: diff hunks 1-3, new L8-L545
+- `android/app/src/main/cpp/shared/input_demo_rng_mode.c`: diff hunks 1-6, new L31-L187
+- `android/app/src/main/cpp/shared/input_demo_start_shared.c`: diff hunks 1-15, new L13-L821
+- `android/app/src/main/cpp/shared/input_demo_start_shared.h`: diff hunks 1-1, new L46-L46
+- `android/app/src/main/cpp/shared/input_demo_state_trace.cpp`: diff hunks 1-4, new L7-L49
+
+### GQ2-CHUNK-0115
+
+- `android/app/src/main/cpp/shared/render_gameplay_view.h`: L1-L35
+- `android/app/src/main/cpp/shared/route_analysis_cache.c`: diff hunks 1-9, new L46-L115
+- `android/app/src/main/cpp/shared/route_analysis_cache.h`: diff hunks 1-9, new L15-L55
+- `android/app/src/main/cpp/shared/route_collision.c`: L1-L59
+- `android/app/src/main/cpp/shared/route_collision.h`: L1-L17
+- `android/app/src/main/cpp/shared/route_confirmation_desktop.cpp`: L1-L214
+- `android/app/src/main/cpp/shared/route_confirmation_desktop.h`: L1-L19
+- `android/app/src/main/cpp/shared/route_confirmation_result.cpp`: L1-L155
+- `android/app/src/main/cpp/shared/route_confirmation_result.h`: L1-L18
+
+### GQ2-CHUNK-0116
+
+- `android/app/src/main/cpp/shared/level_metadata_replacements.hpp`: L1-L234
+- `android/app/src/main/cpp/shared/level_metadata_scan.c`: diff hunks 1-18, new L10-L692
+- `android/app/src/main/cpp/shared/level_metadata_scan.h`: diff hunks 1-26, new L4-L329
+- `android/app/src/main/cpp/shared/level_section_io.h`: L1-L19
+- `android/app/src/main/cpp/shared/level_statistics.hpp`: L1-L57
+- `android/app/src/main/cpp/shared/level_texture_diagnostics.cpp`: L1-L28
+- `android/app/src/main/cpp/shared/level_texture_diagnostics.h`: L1-L20
+- `android/app/src/main/cpp/shared/matcen_mode.c`: L1-L70
+- `android/app/src/main/cpp/shared/matcen_mode.h`: L1-L24
+
+### GQ2-CHUNK-0117
+
+- `android/app/src/main/cpp/shared/android_level_preview.cpp`: diff hunks 20-24, new L1725-L2160
+- `android/app/src/main/cpp/shared/android_level_preview.h`: diff hunks 1-1, new L14-L20
+- `android/app/src/main/cpp/shared/android_lifecycle_actions.h`: diff hunks 1-1, new L8-L11
+- `android/app/src/main/cpp/shared/android_log.c`: diff hunks 1-1, new L34-L34
+- `android/app/src/main/cpp/shared/android_menu_navigation.h`: L1-L35
+- `android/app/src/main/cpp/shared/android_menu_scale.c`: diff hunks 1-23, new L3-L771
+- `android/app/src/main/cpp/shared/android_menu_scale.h`: diff hunks 1-5, new L28-L110
+- `android/app/src/main/cpp/shared/android_menu_touch_log.c`: diff hunks 1-1, new L56-L67
+- `android/app/src/main/cpp/shared/android_menu_touch_log.h`: diff hunks 1-1, new L51-L51
+
+### GQ2-CHUNK-0118
+
+- `android/app/src/main/cpp/shared/game_introspect.cpp`: diff hunks 66-111, new L2156-L3237
+- `android/app/src/main/cpp/shared/game_menu_introspect_accessors.c`: L1-L45
+- `android/app/src/main/cpp/shared/game_menu_introspect_accessors.h`: L1-L25
+- `android/app/src/main/cpp/shared/game_window_introspect_accessors.c`: L1-L20
+- `android/app/src/main/cpp/shared/game_window_introspect_accessors.h`: L1-L16
+- `android/app/src/main/cpp/shared/gles3_shim.c`: diff hunks 1-26, new L12-L1061
+- `android/app/src/main/cpp/shared/gles3_shim.h`: diff hunks 1-3, new L44-L102
+- `android/app/src/main/cpp/shared/graphics_config_transaction.c`: diff hunks 1-7, new L8-L506
+- `android/app/src/main/cpp/shared/graphics_config_transaction.h`: diff hunks 1-2, new L30-L58
+
+### GQ2-CHUNK-0153
+
+- `android/app/src/main/java/com/dxxredux/app/ImportStorageGuard.kt`: diff hunks 1-8, new L8-L137
+- `android/app/src/main/java/com/dxxredux/app/lobby/LobbyProtocol.kt`: diff hunks 1-23, new L5-L507
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionContentProtocol.kt`: L1-L157
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkConstants.kt`: diff hunks 1-1, new L5-L5
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkEventsOverlay.kt`: diff hunks 1-19, new L13-L316
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/NetworkProtocol.kt`: diff hunks 1-2, new L63-L234
+- `android/app/src/main/java/com/dxxredux/app/StorageFailureDialog.kt`: diff hunks 1-2, new L3-L8
+- `android/app/src/main/java/com/dxxredux/app/StorageInspectorDiagnostics.kt`: L1-L89
+
+### GQ2-CHUNK-0155
+
+- `d1/2d/font.c`: diff hunks 1-3, new L51-L1111
+- `d1/2d/pcx.c`: diff hunks 1-1, new L62-L63
+
+### GQ2-CHUNK-0156
+
+- `d1/3d/instance.c`: diff hunks 1-1, new L25-L25
+- `d1/3d/interp.c`: diff hunks 1-2, new L500-L502
+- `d1/3d/setup.c`: diff hunks 1-2, new L35-L69
+
+### GQ2-CHUNK-0157
+
+- `d1/arch/include/joy.h`: diff hunks 1-1, new L16-L16
+- `d1/arch/include/window.h`: diff hunks 1-1, new L36-L36
+- `d1/arch/ogl/gr.c`: diff hunks 1-13, new L57-L1066
+- `d1/arch/ogl/ogl.c`: diff hunks 1-46, new L36-L3661
+- `d1/arch/ogl/oglprog.c`: diff hunks 1-3, new L26-L191
+- `d1/arch/sdl/digi_mixer_music.c`: diff hunks 1-1, new L47-L47
+- `d1/arch/sdl/digi_mixer.c`: diff hunks 1-16, new L11-L231
+- `d1/arch/sdl/event.c`: diff hunks 1-10, new L18-L302
+- `d1/arch/sdl/gr.c`: diff hunks 1-1, new L117-L121
+- `d1/arch/sdl/joy.c`: diff hunks 1-6, new L32-L359
+- `d1/arch/sdl/jukebox.c`: diff hunks 1-1, new L59-L59
+- `d1/arch/sdl/window.c`: diff hunks 1-2, new L225-L228
+
+### GQ2-CHUNK-0159
+
+- `d1/include/3d.h`: diff hunks 1-1, new L115-L116
+- `d1/include/args.h`: diff hunks 1-1, new L31-L31
+- `d1/include/gr.h`: diff hunks 1-1, new L282-L290
+- `d1/include/ogl_init.h`: diff hunks 1-1, new L110-L110
+- `d1/include/rbaudio.h`: diff hunks 1-1, new L62-L62
+- `d1/include/strutil.h`: diff hunks 1-1, new L4-L5
+- `d1/include/xmodel.h`: diff hunks 1-2, new L10-L28
+
+### GQ2-CHUNK-0160
+
+- `d1/main/ai.c`: diff hunks 1-11, new L55-L3521
+- `d1/main/ai.h`: diff hunks 1-1, new L46-L65
+- `d1/main/automap.c`: diff hunks 1-5, new L72-L787
+- `d1/main/bmread.c`: diff hunks 1-1, new L132-L151
+- `d1/main/cntrlcen.c`: diff hunks 1-4, new L128-L409
+- `d1/main/cntrlcen.h`: diff hunks 1-1, new L89-L92
+- `d1/main/collide.c`: diff hunks 1-12, new L63-L1794
+- `d1/main/config.c`: diff hunks 1-15, new L25-L437
+- `d1/main/credits.c`: diff hunks 1-2, new L31-L77
+- `d1/main/custom.c`: diff hunks 1-9, new L6-L650
+
+### GQ2-CHUNK-0161
+
+- `d1/main/gamesave.c`: diff hunks 1-16, new L42-L1320
+- `d1/main/gameseq.c`: diff hunks 1-39, new L21-L1901
+- `d1/main/gauges.c`: diff hunks 1-15, new L46-L4497
+- `d1/main/inferno.c`: diff hunks 1-5, new L250-L578
+- `d1/main/input_demo_hooks.c`: diff hunks 1-15, new L160-L999
+- `d1/main/input_demo_hooks.h`: diff hunks 1-1, new L80-L80
+- `d1/main/input_demo_start.h`: diff hunks 1-2, new L11-L18
+- `d1/main/kconfig.c`: diff hunks 1-37, new L37-L2197
+- `d1/main/kconfig.h`: diff hunks 1-1, new L43-L45
+- `d1/main/laser.c`: diff hunks 1-3, new L575-L1590
+- `d1/main/menu.c`: diff hunks 1-31, new L28-L2359
+- `d1/main/mission.c`: diff hunks 1-17, new L39-L885
+- `d1/main/mission.h`: diff hunks 1-1, new L101-L102
+
+### GQ2-CHUNK-0162
+
+- `d1/main/songs.c`: diff hunks 1-4, new L151-L339
+- `d1/main/songs.h`: diff hunks 1-2, new L22-L26
+- `d1/main/state.c`: diff hunks 1-63, new L38-L2940
+- `d1/main/state.h`: diff hunks 1-3, new L40-L64
+- `d1/main/switch.c`: diff hunks 1-1, new L53-L59
+- `d1/main/switch.h`: diff hunks 1-1, new L81-L83
+- `d1/main/terrain.c`: diff hunks 1-8, new L33-L394
+- `d1/main/terrain.h`: diff hunks 1-1, new L26-L26
+- `d1/main/titles.c`: diff hunks 1-29, new L29-L1375
+- `d1/main/vers_id.h`: diff hunks 1-2, new L21-L25
+- `d1/main/wall.c`: diff hunks 1-1, new L970-L977
+- `d1/main/wall.h`: diff hunks 1-1, new L281-L281
+- `d1/main/weapon.c`: diff hunks 1-9, new L71-L763
+- `d1/main/weapon.h`: diff hunks 1-1, new L175-L177
+
+### GQ2-CHUNK-0163
+
+- `d1/main/newmenu.c`: diff hunks 1-39, new L105-L3469
+- `d1/main/newmenu.h`: diff hunks 1-2, new L115-L145
+- `d1/main/object.c`: diff hunks 1-26, new L37-L2477
+- `d1/main/object.h`: diff hunks 1-1, new L105-L105
+- `d1/main/piggy.c`: diff hunks 1-10, new L20-L1177
+- `d1/main/piggy.h`: diff hunks 1-1, new L140-L140
+- `d1/main/player.h`: diff hunks 1-1, new L43-L43
+- `d1/main/playsave.c`: diff hunks 1-7, new L164-L1023
+- `d1/main/playsave.h`: diff hunks 1-4, new L139-L195
+- `d1/main/polyobj.c`: diff hunks 1-6, new L537-L785
+- `d1/main/polyobj.h`: diff hunks 1-1, new L93-L96
+- `d1/main/powerup.c`: diff hunks 1-17, new L47-L568
+- `d1/main/render.c`: diff hunks 1-7, new L59-L1630
+- `d1/main/render.h`: diff hunks 1-1, new L30-L34
+- `d1/main/scores.c`: diff hunks 1-4, new L31-L426
+- `d1/main/secretarea.h`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0164
+
+- `d1/main/net_udp.c`: diff hunks 57-160, new L4607-L9272
+- `d1/main/net_udp.h`: diff hunks 1-14, new L13-L276
+
+### GQ2-CHUNK-0165
+
+- `d1/main/morph.c`: diff hunks 1-2, new L32-L440
+- `d1/main/multi.c`: diff hunks 1-56, new L42-L6100
+- `d1/main/multi.h`: diff hunks 1-22, new L28-L638
+- `d1/main/multibot.c`: diff hunks 1-19, new L23-L1370
+- `d1/main/multibot.h`: diff hunks 1-2, new L30-L54
+
+### GQ2-CHUNK-0166
+
+- `d1/main/endlevel.c`: diff hunks 1-77, new L61-L1561
+- `d1/main/fireball.c`: diff hunks 1-2, new L954-L1356
+- `d1/main/fireball.h`: diff hunks 1-1, new L86-L94
+- `d1/main/fuelcen.c`: diff hunks 1-9, new L55-L683
+- `d1/main/fuelcen.h`: diff hunks 1-2, new L71-L144
+- `d1/main/game.c`: diff hunks 1-26, new L92-L1647
+- `d1/main/game.h`: diff hunks 1-3, new L121-L171
+- `d1/main/gamecntl.c`: diff hunks 1-6, new L34-L916
+- `d1/main/gamerend.c`: diff hunks 1-5, new L61-L700
+
+### GQ2-CHUNK-0168
+
+- `d1/misc/error.c`: diff hunks 1-2, new L74-L99
+- `d1/misc/hmp.c`: diff hunks 1-2, new L15-L779
+- `d1/misc/physfsx.c`: diff hunks 1-2, new L44-L48
+- `d1/misc/pngfile.c`: diff hunks 1-7, new L23-L116
+
+### GQ2-CHUNK-0169
+
+- `d1/xmodel/aseread.cpp`: diff hunks 1-1, new L1072-L1072
+- `d1/xmodel/xcfile.h`: diff hunks 1-3, new L94-L102
+- `d1/xmodel/xmodel.cpp`: diff hunks 1-9, new L3-L333
+- `d1/xmodel/xmodelnames.h`: diff hunks 1-9, new L33-L240
+
+### GQ2-CHUNK-0170
+
+- `d2/2d/font.c`: diff hunks 1-3, new L51-L1138
+- `d2/2d/pcx.c`: diff hunks 1-1, new L64-L65
+
+### GQ2-CHUNK-0171
+
+- `d2/3d/instance.c`: diff hunks 1-1, new L25-L25
+- `d2/3d/interp.c`: diff hunks 1-8, new L47-L771
+- `d2/3d/setup.c`: diff hunks 1-2, new L35-L69
+
+### GQ2-CHUNK-0172
+
+- `d2/arch/include/joy.h`: diff hunks 1-1, new L16-L16
+- `d2/arch/include/jukebox.h`: diff hunks 1-1, new L4-L4
+- `d2/arch/include/window.h`: diff hunks 1-1, new L36-L36
+- `d2/arch/ogl/gr.c`: diff hunks 1-13, new L57-L1073
+- `d2/arch/ogl/ogl.c`: diff hunks 1-47, new L36-L3768
+- `d2/arch/ogl/oglprog.c`: diff hunks 1-3, new L26-L191
+- `d2/arch/sdl/digi_mixer_music.c`: diff hunks 1-1, new L47-L47
+- `d2/arch/sdl/digi_mixer.c`: diff hunks 1-16, new L11-L226
+- `d2/arch/sdl/event.c`: diff hunks 1-10, new L18-L302
+- `d2/arch/sdl/gr.c`: diff hunks 1-1, new L116-L120
+- `d2/arch/sdl/joy.c`: diff hunks 1-6, new L32-L356
+- `d2/arch/sdl/jukebox.c`: diff hunks 1-1, new L58-L58
+- `d2/arch/sdl/window.c`: diff hunks 1-2, new L225-L228
+
+### GQ2-CHUNK-0175
+
+- `d2/include/3d.h`: diff hunks 1-1, new L98-L99
+- `d2/include/args.h`: diff hunks 1-1, new L28-L28
+- `d2/include/gr.h`: diff hunks 1-1, new L266-L274
+- `d2/include/interp.h`: diff hunks 1-1, new L17-L21
+- `d2/include/ogl_init.h`: diff hunks 1-1, new L110-L110
+- `d2/include/rbaudio.h`: diff hunks 1-1, new L62-L62
+- `d2/include/strutil.h`: diff hunks 1-1, new L4-L5
+- `d2/include/xmodel.h`: diff hunks 1-2, new L10-L28
+
+### GQ2-CHUNK-0176
+
+- `d2/main/aistruct.h`: diff hunks 1-4, new L28-L189
+- `d2/main/automap.c`: diff hunks 1-6, new L75-L1157
+- `d2/main/bm.c`: diff hunks 1-8, new L20-L527
+- `d2/main/bm.h`: diff hunks 1-1, new L94-L94
+- `d2/main/bmread.c`: diff hunks 1-3, new L297-L2218
+- `d2/main/cntrlcen.c`: diff hunks 1-10, new L49-L621
+- `d2/main/cntrlcen.h`: diff hunks 1-2, new L93-L105
+- `d2/main/collide.c`: diff hunks 1-34, new L66-L2979
+- `d2/main/config.c`: diff hunks 1-16, new L25-L460
+- `d2/main/credits.c`: diff hunks 1-2, new L31-L81
+
+### GQ2-CHUNK-0177
+
+- `d2/main/piggy.c`: diff hunks 38-38, new L1995-L1995
+- `d2/main/piggy.h`: diff hunks 1-3, new L68-L132
+- `d2/main/player.h`: diff hunks 1-1, new L42-L42
+- `d2/main/playsave.c`: diff hunks 1-13, new L175-L814
+- `d2/main/playsave.h`: diff hunks 1-7, new L29-L191
+- `d2/main/polyobj.c`: diff hunks 1-8, new L43-L798
+- `d2/main/polyobj.h`: diff hunks 1-1, new L90-L93
+- `d2/main/powerup.c`: diff hunks 1-34, new L50-L645
+- `d2/main/render.c`: diff hunks 1-10, new L29-L1950
+- `d2/main/render.h`: diff hunks 1-1, new L32-L36
+
+### GQ2-CHUNK-0178
+
+- `d2/main/switch.c`: diff hunks 1-29, new L29-L937
+- `d2/main/switch.h`: diff hunks 1-6, new L27-L120
+- `d2/main/terrain.c`: diff hunks 1-8, new L37-L399
+- `d2/main/terrain.h`: diff hunks 1-1, new L26-L26
+- `d2/main/text.c`: diff hunks 1-6, new L31-L218
+- `d2/main/text.h`: diff hunks 1-1, new L33-L33
+- `d2/main/titles.c`: diff hunks 1-75, new L28-L1534
+- `d2/main/titles.h`: diff hunks 1-1, new L24-L24
+- `d2/main/vers_id.h`: diff hunks 1-2, new L25-L29
+- `d2/main/wall.c`: diff hunks 1-14, new L28-L1518
+- `d2/main/wall.h`: diff hunks 1-4, new L183-L227
+
+### GQ2-CHUNK-0179
+
+- `d2/main/escort.c`: diff hunks 169-170, new L4346-L4492
+- `d2/main/escort.h`: diff hunks 1-3, new L8-L15
+- `d2/main/fireball.c`: diff hunks 1-12, new L59-L1694
+- `d2/main/fireball.h`: diff hunks 1-1, new L67-L67
+- `d2/main/fuelcen.c`: diff hunks 1-11, new L56-L761
+- `d2/main/fuelcen.h`: diff hunks 1-2, new L70-L149
+- `d2/main/fvi.c`: diff hunks 1-5, new L42-L956
+- `d2/main/game.c`: diff hunks 1-31, new L46-L2194
+- `d2/main/game.h`: diff hunks 1-3, new L135-L185
+- `d2/main/gamecntl.c`: diff hunks 1-9, new L34-L2375
+- `d2/main/gamefont.c`: diff hunks 1-7, new L30-L194
+
+### GQ2-CHUNK-0180
+
+- `d2/main/input_demo_hooks.c`: diff hunks 1-7, new L4-L7013
+- `d2/main/input_demo_hooks.h`: diff hunks 1-2, new L29-L325
+- `d2/main/input_demo_start.h`: diff hunks 1-2, new L13-L22
+- `d2/main/kconfig.c`: diff hunks 1-37, new L37-L2249
+- `d2/main/kconfig.h`: diff hunks 1-1, new L44-L46
+- `d2/main/kmatrix.c`: diff hunks 1-6, new L33-L491
+- `d2/main/laser.c`: diff hunks 1-35, new L59-L2816
+- `d2/main/laser.h`: diff hunks 1-1, new L111-L111
+- `d2/main/menu.c`: diff hunks 1-31, new L28-L2422
+- `d2/main/menu.h`: diff hunks 1-1, new L42-L44
+- `d2/main/mission.c`: diff hunks 1-23, new L39-L1185
+- `d2/main/mission.h`: diff hunks 1-1, new L140-L145
+
+### GQ2-CHUNK-0181
+
+- `d2/main/d1_in_d2/d1_in_d2_semantics.h`: L1-L93
+- `d2/main/d1_in_d2/d1_in_d2_trigger_storage.h`: L1-L11
+
+### GQ2-CHUNK-0182
+
+- `d2/main/weapon.c`: diff hunks 1-22, new L40-L988
+- `d2/main/weapon.h`: diff hunks 1-1, new L219-L221
+
+### GQ2-CHUNK-0183
+
+- `d2/main/d1_in_d2_semantics.c`: diff hunks 1-1, new L1-L1
+- `d2/main/d1_in_d2_semantics.h`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0184
+
+- `d2/main/state.c`: diff hunks 1-94, new L38-L3917
+- `d2/main/state.h`: diff hunks 1-2, new L41-L59
+
+### GQ2-CHUNK-0185
+
+- `d2/main/d1_in_d2/d1_in_d2_ai.h`: L1-L119
+- `d2/main/d1_in_d2/d1_in_d2_asset_identity.cpp`: L1-L164
+
+### GQ2-CHUNK-0186
+
+- `d2/main/d1_in_d2/d1_in_d2_bitmaps.c`: L751-L1060
+- `d2/main/d1_in_d2/d1_in_d2_bitmaps.h`: L1-L25
+
+### GQ2-CHUNK-0187
+
+- `d2/main/d1_in_d2/d1_in_d2_assets.c`: L751-L1303
+- `d2/main/d1_in_d2/d1_in_d2_assets.h`: L1-L147
+
+### GQ2-CHUNK-0188
+
+- `d2/main/d1_in_d2/d1_in_d2_cockpit.c`: L1501-L1733
+- `d2/main/d1_in_d2/d1_in_d2_cockpit.h`: L1-L16
+
+### GQ2-CHUNK-0189
+
+- `d2/main/multi.h`: diff hunks 1-24, new L27-L717
+- `d2/main/multibot.c`: diff hunks 1-23, new L20-L1627
+- `d2/main/multibot.h`: diff hunks 1-3, new L26-L60
+
+### GQ2-CHUNK-0190
+
+- `d2/main/ai.c`: diff hunks 1-61, new L59-L2448
+- `d2/main/ai.h`: diff hunks 1-11, new L65-L336
+- `d2/main/ai2.c`: diff hunks 1-49, new L57-L2491
+
+### GQ2-CHUNK-0191
+
+- `d2/main/morph.c`: diff hunks 1-2, new L35-L447
+- `d2/main/movie.c`: diff hunks 1-29, new L59-L952
+- `d2/main/multi.c`: diff hunks 1-87, new L45-L8376
+
+### GQ2-CHUNK-0192
+
+- `d2/main/d1_in_d2/d1_in_d2_guidebot.c`: L751-L877
+- `d2/main/d1_in_d2/d1_in_d2_input_demo.c`: diff hunks 1-2, new L12-L18
+- `d2/main/d1_in_d2/d1_in_d2_input_demo.h`: diff hunks 1-1, new L12-L14
+
+### GQ2-CHUNK-0193
+
+- `d2/main/net_udp.h`: diff hunks 1-16, new L11-L278
+- `d2/main/newdemo.c`: diff hunks 1-51, new L99-L4756
+- `d2/main/newmenu.c`: diff hunks 1-42, new L109-L3462
+- `d2/main/newmenu.h`: diff hunks 1-2, new L115-L145
+
+### GQ2-CHUNK-0194
+
+- `d2/main/gameseq.c`: diff hunks 1-74, new L21-L2566
+- `d2/main/gameseq.h`: diff hunks 1-3, new L58-L87
+- `d2/main/gauges.c`: diff hunks 1-40, new L32-L5061
+- `d2/main/guidebot_extensions.h`: L1-L170
+
+### GQ2-CHUNK-0195
+
+- `d2/main/d1_in_d2.h`: diff hunks 1-1, new L1-L1
+- `d2/main/d1_in_d2/d1_custom.c`: L1-L527
+- `d2/main/d1_in_d2/d1_custom.h`: diff hunks 1-1, new L22-L25
+- `d2/main/d1_in_d2/d1_in_d2_ai_internal.h`: L1-L14
+
+### GQ2-CHUNK-0196
+
+- `d2/main/d1_in_d2/d1_save_translate.c`: diff hunks 1-54, new L6-L1976
+- `d2/main/d1_in_d2/d1_save_translate.h`: whole diff
+- `d2/main/digiobj.c`: diff hunks 1-4, new L37-L107
+- `d2/main/dxa_metadata_patch.cpp`: diff hunks 1-2, new L1-L220
+
+### GQ2-CHUNK-0197
+
+- `d2/main/object.c`: diff hunks 1-34, new L37-L3207
+- `d2/main/object.h`: diff hunks 1-3, new L106-L589
+- `d2/main/physics.c`: diff hunks 1-7, new L43-L1052
+- `d2/main/physics.h`: diff hunks 1-1, new L55-L57
+- `d2/main/piggy.c`: diff hunks 1-37, new L21-L1985
+
+### GQ2-CHUNK-0198
+
+- `d2/main/d1_in_d2/d1_in_d2_weapons.h`: L1-L63
+- `d2/main/d1_in_d2/d1_in_d2.c`: L1-L193
+- `d2/main/d1_in_d2/d1_in_d2.h`: L1-L95
+- `d2/main/d1_in_d2/d1_pig_validation.c`: diff hunks 1-8, new L154-L254
+- `d2/main/d1_in_d2/d1_pig_validation.h`: diff hunks 1-1, new L13-L13
+
+### GQ2-CHUNK-0199
+
+- `d2/main/endlevel.c`: diff hunks 1-87, new L57-L1746
+- `d2/main/escort_goal_policy.h`: L1-L62
+- `d2/main/escort_owner_policy.c`: diff hunks 1-2, new L81-L114
+- `d2/main/escort_owner_policy.h`: diff hunks 1-2, new L21-L35
+- `d2/main/escort.c`: diff hunks 1-9, new L59-L162
+
+### GQ2-CHUNK-0200
+
+- `d2/main/guidebot_route.c`: L2251-L2746
+- `d2/main/guidebot_routing.c`: L1-L103
+- `d2/main/guidebot_routing.h`: L1-L26
+- `d2/main/hud.c`: diff hunks 1-8, new L36-L257
+- `d2/main/inferno.c`: diff hunks 1-18, new L84-L696
+
+### GQ2-CHUNK-0201
+
+- `d2/main/gamemine.c`: diff hunks 1-8, new L51-L742
+- `d2/main/gamemine.h`: diff hunks 1-1, new L129-L129
+- `d2/main/gamepal.c`: diff hunks 1-3, new L52-L113
+- `d2/main/gamepal.h`: diff hunks 1-1, new L27-L28
+- `d2/main/gamerend.c`: diff hunks 1-8, new L40-L1161
+- `d2/main/gamesave.c`: diff hunks 1-32, new L41-L1455
+- `d2/main/gamesave.h`: diff hunks 1-1, new L42-L43
+
+### GQ2-CHUNK-0202
+
+- `d2/main/robot.c`: diff hunks 1-3, new L290-L424
+- `d2/main/robot.h`: diff hunks 1-3, new L104-L185
+- `d2/main/scores.c`: diff hunks 1-9, new L31-L458
+- `d2/main/scores.h`: diff hunks 1-1, new L50-L53
+- `d2/main/secretarea.h`: diff hunks 1-1, new L1-L1
+- `d2/main/songs.c`: diff hunks 1-4, new L151-L352
+- `d2/main/songs.h`: diff hunks 1-2, new L22-L26
+
+### GQ2-CHUNK-0203
+
+- `d2/main/d1_in_d2/d1_in_d2_levels.c`: L751-L771
+- `d2/main/d1_in_d2/d1_in_d2_levels.h`: L1-L61
+- `d2/main/d1_in_d2/d1_in_d2_net.h`: L1-L12
+- `d2/main/d1_in_d2/d1_in_d2_presentation.c`: L1-L294
+- `d2/main/d1_in_d2/d1_in_d2_presentation.h`: L1-L31
+- `d2/main/d1_in_d2/d1_in_d2_render.c`: L1-L241
+- `d2/main/d1_in_d2/d1_in_d2_render.h`: L1-L8
+
+### GQ2-CHUNK-0231
+
+- `d2/misc/args.c`: diff hunks 1-1, new L323-L324
+- `d2/misc/error.c`: diff hunks 1-2, new L74-L99
+- `d2/misc/hmp.c`: diff hunks 1-2, new L15-L778
+- `d2/misc/physfsx.c`: diff hunks 1-2, new L44-L48
+- `d2/misc/pngfile.c`: diff hunks 1-7, new L23-L116
+
+### GQ2-CHUNK-0232
+
+- `d2/xmodel/aseread.cpp`: diff hunks 1-1, new L1072-L1072
+- `d2/xmodel/xcfile.h`: diff hunks 1-3, new L94-L102
+- `d2/xmodel/xmodel.cpp`: diff hunks 1-9, new L3-L333
+- `d2/xmodel/xmodelnames.h`: diff hunks 1-17, new L33-L464
+
+### GQ2-CHUNK-0236
+
+- `d1/arch/ogl/CMakeLists.txt`: diff hunks 1-1, new L4-L4
+- `d1/arch/sdl/CMakeLists.txt`: diff hunks 1-1, new L19-L19
+
+### GQ2-CHUNK-0241
+
+- `d2/arch/ogl/CMakeLists.txt`: diff hunks 1-1, new L4-L4
+- `d2/arch/sdl/CMakeLists.txt`: diff hunks 1-1, new L19-L19
+
+### GQ2-CHUNK-0245
+
+- `server/.gitignore`: diff hunks 1-1, new L9-L10
+- `server/deploy_build.sh`: diff hunks 1-15, new L17-L236
+- `server/deploy_service.sh`: diff hunks 1-2, new L23-L36
+- `server/generate_lan_cert.sh`: diff hunks 1-1, new L43-L43
+- `server/rust_dependency_lint.sh`: diff hunks 1-2, new L7-L9
+- `server/rust_lint.sh`: diff hunks 1-2, new L7-L16
+- `server/rust_upgrade.sh`: diff hunks 1-2, new L7-L25
+- `server/update_all.sh`: diff hunks 1-1, new L7-L7
+
+### GQ2-CHUNK-0247
+
+- `android/app/src/main/cpp/shared/multi_save_transfer_barrier_test.h`: L1-L184
+- `android/app/src/main/cpp/shared/test_audio_tag_metadata.cpp`: L1-L311
+- `android/app/src/main/cpp/shared/test_input_demo_limits.c`: diff hunks 1-2, new L29-L39
+
+### GQ2-CHUNK-0248
+
+- `android/app/src/main/cpp/shared/test_midi_metadata.c`: L1-L400
+- `android/app/src/main/cpp/shared/test_midi_seek_timeline.c`: diff hunks 1-4, new L8-L366
+- `android/app/src/main/cpp/shared/test_mission_intent_classification.cpp`: L1-L69
+- `android/app/src/main/cpp/shared/test_music_soundfont.c`: L1-L66
+- `android/app/src/main/cpp/shared/test_physfsx_android_setup.c`: diff hunks 1-8, new L163-L292
+
+### GQ2-CHUNK-0250
+
+- `android/app/src/test/java/com/dxxredux/app/DiscDatabaseContractTest.kt`: diff hunks 1-5, new L4-L211
+- `android/app/src/test/java/com/dxxredux/app/FileSetStorageTest.kt`: L1-L74
+- `android/app/src/test/java/com/dxxredux/app/ImportStorageGuardTest.kt`: diff hunks 1-2, new L8-L34
+- `android/app/src/test/java/com/dxxredux/app/LobbyProtocolStartOptionsTest.kt`: diff hunks 1-7, new L3-L173
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MissionContentProtocolTest.kt`: L1-L102
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/NetworkEventsOverlayTest.kt`: L1-L30
+- `android/app/src/test/java/com/dxxredux/app/StorageInspectorDiagnosticsTest.kt`: L1-L75
+
+### GQ2-CHUNK-0251
+
+- `android/game_scripts/test_device_network_abort_game.jsonc`: L1-L11
+- `android/game_scripts/test_device_network_automap_open.jsonc`: L1-L6
+- `android/game_scripts/test_device_network_cancel_join.jsonc`: L1-L6
+- `android/game_scripts/test_device_network_controls.jsonc`: L1-L32
+- `android/game_scripts/test_device_network_death_wait.jsonc`: L1-L6
+- `android/game_scripts/test_device_network_menu_open.jsonc`: L1-L10
+- `android/game_scripts/test_device_network_native_host.jsonc`: L1-L23
+- `android/game_scripts/test_device_network_options_back.jsonc`: L1-L5
+- `android/game_scripts/test_device_network_options_open.jsonc`: L1-L12
+- `android/game_scripts/test_device_network_recovery_new_game.jsonc`: L1-L26
+- `android/game_scripts/test_device_network_respawn.jsonc`: L1-L14
+- `android/game_scripts/test_device_network_ui_close.jsonc`: L1-L10
+- `android/game_scripts/test_graphics_storage_trigger.jsonc`: L1-L19
+
+### GQ2-CHUNK-0252
+
+- `android/tests/run_device_network_campaign.py`: L1501-L1888
+- `android/tests/test_d1_network_assets.ps1`: L1-L28
+- `android/tests/test_device_network_campaign.ps1`: L1-L41
+- `android/tests/test_playsave_layout.c`: diff hunks 1-12, new L7-L111
+- `android/tests/test_playsave_text.c`: diff hunks 1-11, new L29-L103
+- `android/tests/test_playsave_transaction.c`: diff hunks 1-7, new L30-L104
+- `android/tests/test_thief_network_policy.c`: diff hunks 1-2, new L12-L18
+
+### GQ2-CHUNK-0257
+
+- `.vscode/extensions.json`: diff hunks 1-1, new L16-L16
+- `.vscode/settings.json`: diff hunks 1-7, new L3-L47
+
+### GQ2-CHUNK-0258
+
+- `android/acoustid_config.example.jsonc`: diff hunks 1-2, new L1-L17
+- `android/distribution_versions.conf`: L1-L9
+- `android/store-preview-boss.json`: L1-L16
+- `android/store-stills.json`: L1-L95
+
+### GQ2-CHUNK-0259
+
+- `android/app/src/main/assets/configs/touch/touch_default.json`: L1-L419
+- `android/app/src/main/assets/fingerprint_config.jsonc`: diff hunks 1-2, new L1-L14
+
+### GQ2-CHUNK-0260
+
+- `android/app/src/main/assets/music_eq_sc55.json`: L1-L224
+- `android/app/src/main/assets/robot_names_d1.jsonc`: L1-L26
+- `android/app/src/main/assets/robot_names_d2.jsonc`: L1-L69
+
+### GQ2-CHUNK-0261
+
+- `android/app/src/main/assets/configs/controller/default.json`: diff hunks 1-1, new L2-L50
+- `android/app/src/main/assets/configs/touch/advanced.json`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/assets/configs/touch/claw.json`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/assets/configs/touch/controller_menus.json`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/assets/configs/touch/simple.json`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/assets/configs/touch/touch_controller_menus.json`: L1-L46
+
+### GQ2-CHUNK-0283
+
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 2)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 3)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - Destination Quartzon (Europe)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Logitech OEM)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - Destination Quartzon (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II - The Vertigo Series (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (Europe) (v1.1)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (Europe)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (USA) (Alt)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (USA) (Rerelease)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (USA) (v1.1)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent II Infinite Abyss/track_fingerprints.json`: whole diff
+
+### GQ2-CHUNK-0284
+
+- `game_data/CD images/d2 mac/track_fingerprints.json`: whole diff
+- `game_data/CD images/d2 mac/track_hashes.json`: whole diff
+- `game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent - Anniversary Edition (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent - Destination Saturn (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent - Levels of the World (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent - Mac macplay/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent - Mac macplay/track_hashes.json`: whole diff
+- `game_data/CD images/Descent - Test Flight (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent (Europe) (Alt)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent (Europe)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent (USA)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/track_fingerprints.json`: whole diff
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 1)/track_fingerprints.json`: whole diff
+
+### GQ2-CHUNK-0285
+
+- `game_data/CD images/Descent II Infinite Abyss/track_hashes.json`: whole diff
+- `game_data/CD images/Dimensions for Descent (USA)/track_fingerprints.json`: whole diff
+
+### GQ2-CHUNK-0287
+
+- `game_data/gog installers/descent_2_enUS_1_0_51877_regression.jsonc`: L1-L24
+- `game_data/gog installers/descent_enUS_1_0_35122_regression.jsonc`: L1-L24
+- `game_data/gog installers/setup_descent_1.4a_(16596)_regression.jsonc`: L1-L24
+- `game_data/gog installers/setup_descent_2_1.1_(16596)_regression.jsonc`: L1-L24
+
+### GQ2-CHUNK-0289
+
+- `game_data/music/D1 MIDI mp3 sc55/chromaprint_info.jsonc`: L1-L362
+- `game_data/music/D1 MIDI mp3 SC88/chromaprint_info.jsonc`: L1-L142
+- `game_data/music/D1 MIDI mp3 SC88Pro/chromaprint_info.jsonc`: L1-L142
+
+### GQ2-CHUNK-0290
+
+- `game_data/music/D1 macplay mp3/chromaprint_info.jsonc`: L1-L120
+- `game_data/music/D1 MIDI mp3 ARACHNO/chromaprint_info.jsonc`: L1-L142
+- `game_data/music/D1 MIDI mp3 MU80/chromaprint_info.jsonc`: L1-L142
+- `game_data/music/D1 MIDI mp3 opl3/chromaprint_info.jsonc`: L1-L162
+
+### GQ2-CHUNK-0291
+
+- `game_data/music/D1 MIDI mp3/chromaprint_info.jsonc`: L1-L142
+- `game_data/music/D1 playstation mp3/chromaprint_info.jsonc`: L1-L156
+- `game_data/music/D1 sunspire remix/chromaprint_info.jsonc`: L1-L17
+- `game_data/music/D2 infinite abyss redbook mp3/chromaprint_info.jsonc`: L1-L75
+- `game_data/music/D2 macplay mp3/chromaprint_info.jsonc`: L1-L118
+- `game_data/music/D2 MIDI mp3 ARACHNO/chromaprint_info.jsonc`: L1-L52
+- `game_data/music/D2 MIDI mp3 MU80/chromaprint_info.jsonc`: L1-L52
+- `game_data/music/D2 midi mp3 opl3/chromaprint_info.jsonc`: L1-L42
+
+### GQ2-CHUNK-0292
+
+- `game_data/music/D2 midi mp3 sc55/chromaprint_info.jsonc`: L1-L102
+- `game_data/music/D2 MIDI mp3 SC88/chromaprint_info.jsonc`: L1-L52
+- `game_data/music/D2 MIDI mp3 SC88Pro/chromaprint_info.jsonc`: L1-L52
+- `game_data/music/D2 mp3/chromaprint_info.jsonc`: L1-L134
+- `game_data/music/D2 redbook mp3 rips/chromaprint_info.jsonc`: L1-L125
+- `game_data/music/D2 vampyro mp3/chromaprint_info.jsonc`: L1-L22
+- `game_data/music/D2 vertigo mp3/chromaprint_info.jsonc`: L1-L70
+- `game_data/music/Descent Maximum (MP3)/chromaprint_info.jsonc`: L1-L107
+
+### GQ2-CHUNK-0294
+
+- `.github/workflows/android-tooling.yml`: L1-L75
+- `.github/workflows/engine-smoke.yml`: L1-L71
+- `.github/workflows/package-all.yml`: diff hunks 1-6, new L5-L20
+- `.github/workflows/package-android.yml`: L1-L164
+- `.github/workflows/package-linux.yml`: diff hunks 1-6, new L14-L66
+- `.github/workflows/package-macos-arm.yml`: diff hunks 1-7, new L14-L66
+- `.github/workflows/package-macos.yml`: diff hunks 1-7, new L14-L68
+- `.github/workflows/package-msvc.yml`: diff hunks 1-15, new L8-L95
+- `.github/workflows/package-windows.yml`: diff hunks 1-8, new L14-L97
+
+### GQ2-CHUNK-0296
+
+- `android/app/src/androidTest/java/com/dxxredux/app/ControllerOverlayChecks.kt`: L1-L423
+- `android/app/src/androidTest/java/com/dxxredux/app/CoopSessionChecks.kt`: L1-L96
+- `android/app/src/androidTest/java/com/dxxredux/app/EngineQueryChecks.kt`: L1-L164
+
+### GQ2-CHUNK-0297
+
+- `android/app/src/androidTest/java/com/dxxredux/app/LanQrChecks.kt`: L1-L185
+- `android/app/src/androidTest/java/com/dxxredux/app/LobbyLatencyChecks.kt`: L1-L307
+- `android/app/src/androidTest/java/com/dxxredux/app/MissionLoadingChecks.kt`: L1-L144
+- `android/app/src/androidTest/java/com/dxxredux/app/MusicVolumeTouchChecks.kt`: L1-L100
+
+### GQ2-CHUNK-0304
+
+- `android/app/src/main/java/com/dxxredux/app/NativeGraphicsSafety.kt`: L1-L59
+- `android/app/src/main/java/com/dxxredux/app/NativePilotPreferences.kt`: diff hunks 1-30, new L18-L310
+- `android/app/src/main/java/com/dxxredux/app/NavigationDialogs.kt`: L1-L89
+- `android/app/src/main/java/com/dxxredux/app/NavigationRepeat.kt`: L1-L61
+- `android/app/src/main/java/com/dxxredux/app/NavigationRepeatRoot.kt`: L1-L149
+- `android/app/src/main/java/com/dxxredux/app/PauseOverlayStyle.kt`: L1-L44
+- `android/app/src/main/java/com/dxxredux/app/PlayStorePage.kt`: L1-L22
+- `android/app/src/main/java/com/dxxredux/app/PostResumeRefreshPolicy.kt`: L1-L5
+- `android/app/src/main/java/com/dxxredux/app/PreviewMediaIntegrationTest.kt`: L1-L205
+- `android/app/src/main/java/com/dxxredux/app/PreviewTransport.kt`: L1-L47
+
+### GQ2-CHUNK-0305
+
+- `android/app/src/main/java/com/dxxredux/app/CustomAudioSetManager.kt`: diff hunks 1-31, new L12-L446
+- `android/app/src/main/java/com/dxxredux/app/DebugLog.kt`: diff hunks 1-5, new L254-L402
+- `android/app/src/main/java/com/dxxredux/app/DebugLogCategory.kt`: diff hunks 1-2, new L16-L30
+- `android/app/src/main/java/com/dxxredux/app/DemoInstallerPackages.kt`: diff hunks 1-3, new L11-L80
+- `android/app/src/main/java/com/dxxredux/app/DiscIdentifier.kt`: diff hunks 1-4, new L11-L143
+- `android/app/src/main/java/com/dxxredux/app/DiscImportBridge.kt`: diff hunks 1-17, new L6-L410
+- `android/app/src/main/java/com/dxxredux/app/DpadFocusUtils.kt`: diff hunks 1-6, new L35-L194
+- `android/app/src/main/java/com/dxxredux/app/DxaTextureScanner.kt`: diff hunks 1-1, new L18-L18
+- `android/app/src/main/java/com/dxxredux/app/DxxReduxApp.kt`: diff hunks 1-4, new L11-L66
+- `android/app/src/main/java/com/dxxredux/app/DynamicReceiverPolicy.kt`: L1-L44
+
+### GQ2-CHUNK-0306
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerCallsigns.kt`: diff hunks 1-4, new L15-L52
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerForegroundService.kt`: diff hunks 1-20, new L3-L362
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerResumeOffer.kt`: diff hunks 1-1, new L15-L16
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerResumePrefs.kt`: diff hunks 1-10, new L28-L359
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerScreen.kt`: diff hunks 1-17, new L16-L1489
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/RuntimeGameStateBridge.kt`: diff hunks 1-3, new L256-L276
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/TvButtons.kt`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/UdpReconnectIdentity.kt`: diff hunks 1-7, new L3-L44
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/UdpReconnectStore.kt`: L1-L97
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/UpnpClient.kt`: diff hunks 1-1, new L222-L222
+- `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`: diff hunks 1-22, new L21-L845
+- `android/app/src/main/java/com/dxxredux/app/MusicEq.kt`: L1-L47
+
+### GQ2-CHUNK-0307
+
+- `android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt`: diff hunks 1-26, new L5-L1301
+- `android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt`: diff hunks 1-19, new L36-L327
+
+### GQ2-CHUNK-0308
+
+- `android/app/src/main/java/com/dxxredux/app/RouteMetadataScheduling.kt`: L1-L419
+- `android/app/src/main/java/com/dxxredux/app/SaveMetadataLabels.kt`: diff hunks 1-2, new L8-L16
+
+### GQ2-CHUNK-0309
+
+- `android/app/src/main/java/com/dxxredux/app/MissionMusicCatalogBudget.kt`: L1-L128
+- `android/app/src/main/java/com/dxxredux/app/MissionProvenance.kt`: L1-L86
+
+### GQ2-CHUNK-0310
+
+- `android/app/src/main/java/com/dxxredux/app/SoundfontDownloads.kt`: L1-L144
+- `android/app/src/main/java/com/dxxredux/app/SoundfontSelector.kt`: L1-L544
+
+### GQ2-CHUNK-0311
+
+- `android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt`: diff hunks 1-44, new L19-L1727
+- `android/app/src/main/java/com/dxxredux/app/LaunchPreparationWork.kt`: L1-L37
+
+### GQ2-CHUNK-0312
+
+- `android/app/src/main/java/com/dxxredux/app/FileProviderGrantStore.kt`: diff hunks 1-10, new L7-L251
+- `android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt`: L1-L295
+
+### GQ2-CHUNK-0313
+
+- `android/app/src/main/java/com/dxxredux/app/EnginePreferencesPage.kt`: diff hunks 1-38, new L16-L900
+- `android/app/src/main/java/com/dxxredux/app/ExitButtonView.kt`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0314
+
+- `android/app/src/main/java/com/dxxredux/app/RouteMetadataPrecomputeCoordinator.kt`: L751-L945
+- `android/app/src/main/java/com/dxxredux/app/RouteMetadataPrecomputeMonitor.kt`: L1-L520
+
+### GQ2-CHUNK-0315
+
+- `android/app/src/main/java/com/dxxredux/app/RarCatalogAdmission.kt`: L1-L213
+- `android/app/src/main/java/com/dxxredux/app/RemainingTouchActions.kt`: diff hunks 1-12, new L3-L238
+- `android/app/src/main/java/com/dxxredux/app/RobotNameCatalog.kt`: L1-L73
+
+### GQ2-CHUNK-0316
+
+- `android/app/src/main/java/com/dxxredux/app/TouchEditorPage.kt`: diff hunks 1-38, new L33-L4323
+- `android/app/src/main/java/com/dxxredux/app/TouchLayoutRepository.kt`: diff hunks 1-9, new L8-L132
+- `android/app/src/main/java/com/dxxredux/app/TouchLayoutSlotRepository.kt`: diff hunks 1-7, new L4-L198
+
+### GQ2-CHUNK-0317
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/CoopSaveOptions.kt`: L1-L57
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/CreateGameDialog.kt`: diff hunks 1-30, new L17-L707
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/FriendsTab.kt`: diff hunks 1-3, new L12-L33
+
+### GQ2-CHUNK-0318
+
+- `android/app/src/main/java/com/dxxredux/app/RobotPreviewRequestStore.kt`: L1-L236
+- `android/app/src/main/java/com/dxxredux/app/RouteMetadataBackground.kt`: L1-L308
+- `android/app/src/main/java/com/dxxredux/app/RouteMetadataCacheMaintenance.kt`: L1-L61
+
+### GQ2-CHUNK-0319
+
+- `android/app/src/main/java/com/dxxredux/app/lobby/LobbyService.kt`: diff hunks 151-188, new L2409-L3092
+- `android/app/src/main/java/com/dxxredux/app/LogAssetSnapshot.kt`: L1-L52
+- `android/app/src/main/java/com/dxxredux/app/LogFileRetention.kt`: L1-L20
+
+### GQ2-CHUNK-0320
+
+- `android/app/src/main/java/com/dxxredux/app/AcceptJoinButtonView.kt`: diff hunks 1-3, new L63-L70
+- `android/app/src/main/java/com/dxxredux/app/AcoustIdClient.kt`: diff hunks 1-3, new L47-L76
+- `android/app/src/main/java/com/dxxredux/app/AcoustIdConfiguration.kt`: diff hunks 1-2, new L16-L28
+- `android/app/src/main/java/com/dxxredux/app/AdminTrayPolicy.kt`: diff hunks 1-11, new L11-L215
+
+### GQ2-CHUNK-0321
+
+- `android/app/src/main/java/com/dxxredux/app/ModManager.kt`: diff hunks 1-70, new L31-L2061
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/ChatArea.kt`: diff hunks 1-1, new L26-L26
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/ConnectivityChecker.kt`: diff hunks 1-2, new L47-L60
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/CoopSaveCompatibility.kt`: L1-L122
+
+### GQ2-CHUNK-0322
+
+- `android/app/src/main/java/com/dxxredux/app/ControllerConfigStore.kt`: diff hunks 1-18, new L18-L552
+- `android/app/src/main/java/com/dxxredux/app/ControllerInputAutomation.kt`: L1-L150
+- `android/app/src/main/java/com/dxxredux/app/ControllerInputDiagnostics.kt`: L1-L255
+- `android/app/src/main/java/com/dxxredux/app/ControllerInputDiagnosticsState.kt`: L1-L189
+
+### GQ2-CHUNK-0323
+
+- `android/app/src/main/java/com/dxxredux/app/lobby/EngineQuery.kt`: L1-L160
+- `android/app/src/main/java/com/dxxredux/app/lobby/LanLaunchPreparation.kt`: L1-L21
+- `android/app/src/main/java/com/dxxredux/app/lobby/LanNsdDiscovery.kt`: L1-L428
+- `android/app/src/main/java/com/dxxredux/app/lobby/LobbyDiagnostics.kt`: diff hunks 1-2, new L5-L57
+
+### GQ2-CHUNK-0324
+
+- `android/app/src/main/java/com/dxxredux/app/GraphicsConfirmationOverlay.kt`: L1-L530
+- `android/app/src/main/java/com/dxxredux/app/GraphicsFirstRunChoices.kt`: L1-L104
+- `android/app/src/main/java/com/dxxredux/app/GraphicsFirstRunPreference.kt`: L1-L23
+- `android/app/src/main/java/com/dxxredux/app/GraphicsOptionChoices.kt`: L1-L20
+
+### GQ2-CHUNK-0325
+
+- `android/app/src/main/java/com/dxxredux/app/SetupSections.kt`: diff hunks 94-106, new L3725-L4437
+- `android/app/src/main/java/com/dxxredux/app/ShareUriGrants.kt`: L1-L16
+- `android/app/src/main/java/com/dxxredux/app/SkipButtonView.kt`: diff hunks 1-1, new L192-L198
+- `android/app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt`: L1-L286
+
+### GQ2-CHUNK-0326
+
+- `android/app/src/main/java/com/dxxredux/app/MenuInteractionOverlayView.kt`: L1-L426
+- `android/app/src/main/java/com/dxxredux/app/MetadataLoadProgress.kt`: diff hunks 1-4, new L36-L101
+- `android/app/src/main/java/com/dxxredux/app/MidiBytesPreviewDialog.kt`: diff hunks 1-21, new L9-L322
+- `android/app/src/main/java/com/dxxredux/app/MidiEnumerationBridge.kt`: diff hunks 1-1, new L22-L22
+- `android/app/src/main/java/com/dxxredux/app/MidiMetadataBridge.kt`: L1-L56
+
+### GQ2-CHUNK-0327
+
+- `android/app/src/main/java/com/dxxredux/app/SoundfontStore.kt`: L1-L330
+- `android/app/src/main/java/com/dxxredux/app/TapFeedbackOverlay.kt`: L1-L83
+- `android/app/src/main/java/com/dxxredux/app/TopEdgeActionButtonLayout.kt`: L1-L34
+- `android/app/src/main/java/com/dxxredux/app/TouchBindings.kt`: diff hunks 1-7, new L132-L443
+- `android/app/src/main/java/com/dxxredux/app/TouchControl.kt`: diff hunks 1-22, new L26-L1278
+
+### GQ2-CHUNK-0328
+
+- `android/app/src/main/java/com/dxxredux/app/TouchMouseEdgeMovement.kt`: L1-L140
+- `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt`: diff hunks 1-72, new L140-L5662
+- `android/app/src/main/java/com/dxxredux/app/VideoInfoOverlay.kt`: diff hunks 1-23, new L25-L1035
+- `android/app/src/main/java/com/dxxredux/app/VisualReplacementPolicy.kt`: diff hunks 1-1, new L32-L32
+- `android/app/src/main/java/com/dxxredux/app/WarpButtonOverlay.kt`: diff hunks 1-1, new L102-L104
+
+### GQ2-CHUNK-0329
+
+- `android/app/src/main/java/com/dxxredux/app/SetupDiscImport.kt`: diff hunks 1-33, new L9-L1237
+- `android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt`: diff hunks 1-27, new L9-L413
+- `android/app/src/main/java/com/dxxredux/app/SetupGameFiles.kt`: diff hunks 1-12, new L31-L499
+- `android/app/src/main/java/com/dxxredux/app/SetupResumePanel.kt`: diff hunks 1-3, new L52-L415
+- `android/app/src/main/java/com/dxxredux/app/SetupSaveExplorer.kt`: diff hunks 1-30, new L3-L1292
+
+### GQ2-CHUNK-0330
+
+- `android/app/src/main/java/com/dxxredux/app/MidiPreviewBridge.kt`: diff hunks 1-16, new L5-L228
+- `android/app/src/main/java/com/dxxredux/app/MissionContentIdentity.kt`: L1-L70
+- `android/app/src/main/java/com/dxxredux/app/MissionDistributionPolicy.kt`: L1-L53
+- `android/app/src/main/java/com/dxxredux/app/MissionLaunchCatalog.kt`: L1-L240
+- `android/app/src/main/java/com/dxxredux/app/MissionLaunchPublication.kt`: L1-L155
+
+### GQ2-CHUNK-0331
+
+- `android/app/src/main/java/com/dxxredux/app/ConfigImportExport.kt`: diff hunks 1-27, new L21-L836
+- `android/app/src/main/java/com/dxxredux/app/ConfigSlotDialog.kt`: diff hunks 1-1, new L36-L37
+- `android/app/src/main/java/com/dxxredux/app/ControllerAxisResponse.kt`: L1-L47
+- `android/app/src/main/java/com/dxxredux/app/ControllerConfigModel.kt`: diff hunks 1-10, new L19-L250
+- `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt`: diff hunks 1-61, new L7-L2540
+
+### GQ2-CHUNK-0332
+
+- `android/app/src/main/java/com/dxxredux/app/LevelMetadata.kt`: diff hunks 109-162, new L1770-L2684
+- `android/app/src/main/java/com/dxxredux/app/LevelMetadataResultCache.kt`: L1-L218
+- `android/app/src/main/java/com/dxxredux/app/LevelPreviewActivity.kt`: diff hunks 1-3, new L290-L361
+- `android/app/src/main/java/com/dxxredux/app/LevelPreviewRequestStore.kt`: diff hunks 1-1, new L116-L116
+- `android/app/src/main/java/com/dxxredux/app/lobby/DiscoveryTrace.kt`: L1-L24
+
+### GQ2-CHUNK-0333
+
+- `android/app/src/main/java/com/dxxredux/app/GamepadButtonEdgeTracker.kt`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/java/com/dxxredux/app/GameProcessExitDiagnostics.kt`: L1-L140
+- `android/app/src/main/java/com/dxxredux/app/GameSettingsPreset.kt`: L1-L102
+- `android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt`: diff hunks 1-1, new L30-L30
+- `android/app/src/main/java/com/dxxredux/app/GraphicsCapabilities.kt`: L1-L82
+- `android/app/src/main/java/com/dxxredux/app/GraphicsConfigSerialization.kt`: L1-L41
+
+### GQ2-CHUNK-0334
+
+- `android/app/src/main/java/com/dxxredux/app/MusicEqDialog.kt`: L1-L206
+- `android/app/src/main/java/com/dxxredux/app/MusicEqResponse.kt`: L1-L69
+- `android/app/src/main/java/com/dxxredux/app/MusicOverlaySourceOption.kt`: diff hunks 1-7, new L13-L39
+- `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt`: diff hunks 1-58, new L42-L2003
+- `android/app/src/main/java/com/dxxredux/app/MusicSourcePreference.kt`: L1-L13
+- `android/app/src/main/java/com/dxxredux/app/NativeGameDataSupport.kt`: L1-L13
+
+### GQ2-CHUNK-0335
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LanHostAddresses.kt`: L1-L202
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LanHostQr.kt`: L1-L140
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LanInvitation.kt`: L1-L60
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LanJoinLinkActivity.kt`: L1-L54
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LanJoinQrView.kt`: L1-L131
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/LobbyScreen.kt`: diff hunks 1-15, new L24-L327
+
+### GQ2-CHUNK-0336
+
+- `android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt`: L751-L779
+- `android/app/src/main/java/com/dxxredux/app/FileSetManager.kt`: diff hunks 1-18, new L7-L393
+- `android/app/src/main/java/com/dxxredux/app/FileSetMissionInventory.kt`: L1-L70
+- `android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt`: diff hunks 1-15, new L17-L477
+- `android/app/src/main/java/com/dxxredux/app/GameFileFormats.kt`: diff hunks 1-7, new L52-L492
+- `android/app/src/main/java/com/dxxredux/app/GameLaunchTarget.kt`: L1-L29
+
+### GQ2-CHUNK-0337
+
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt`: diff hunks 61-62, new L1179-L1366
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingState.kt`: diff hunks 1-11, new L95-L252
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionCatalog.kt`: L1-L48
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionCompatibilityResolver.kt`: L1-L154
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionLoadState.kt`: L1-L58
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionPicker.kt`: diff hunks 1-26, new L11-L284
+- `android/app/src/main/java/com/dxxredux/app/multiplayer/MissionStatusIndicator.kt`: L1-L55
+
+### GQ2-CHUNK-0338
+
+- `android/app/src/main/java/com/dxxredux/app/AppBuildDetails.kt`: L1-L26
+- `android/app/src/main/java/com/dxxredux/app/AssetManifest.kt`: diff hunks 1-7, new L139-L210
+- `android/app/src/main/java/com/dxxredux/app/AudioFilePreviewDialog.kt`: diff hunks 1-19, new L11-L298
+- `android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt`: diff hunks 1-44, new L58-L697
+- `android/app/src/main/java/com/dxxredux/app/AudioTagMetadataBridge.kt`: L1-L76
+- `android/app/src/main/java/com/dxxredux/app/BinarySizeFormatter.kt`: L1-L29
+- `android/app/src/main/java/com/dxxredux/app/CdAudioSourceNormalization.kt`: diff hunks 1-1, new L25-L25
+- `android/app/src/main/java/com/dxxredux/app/CdPreviewBridge.kt`: diff hunks 1-11, new L5-L133
+
+### GQ2-CHUNK-0339
+
+- `android/app/src/main/java/com/dxxredux/app/GraphicsSettingsPage.kt`: diff hunks 1-46, new L3-L642
+- `android/app/src/main/java/com/dxxredux/app/GuidebotRoutingMode.kt`: L1-L11
+- `android/app/src/main/java/com/dxxredux/app/HumanReadableConfig.kt`: diff hunks 1-15, new L34-L747
+- `android/app/src/main/java/com/dxxredux/app/IdleScreenSaver.kt`: L1-L248
+- `android/app/src/main/java/com/dxxredux/app/Json5.kt`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/java/com/dxxredux/app/Jsonc.kt`: L1-L56
+- `android/app/src/main/java/com/dxxredux/app/KnownVersions.kt`: diff hunks 1-4, new L11-L47
+- `android/app/src/main/java/com/dxxredux/app/LauncherFileCopy.kt`: diff hunks 1-4, new L31-L139
+
+### GQ2-CHUNK-0340
+
+- `android/app/src/main/java/com/dxxredux/app/ControllerInputs.kt`: L1-L48
+- `android/app/src/main/java/com/dxxredux/app/ControllerKeyDispatch.kt`: L1-L62
+- `android/app/src/main/java/com/dxxredux/app/ControllerLongPressDetector.kt`: diff hunks 1-3, new L41-L244
+- `android/app/src/main/java/com/dxxredux/app/ControllerMenuAxes.kt`: L1-L62
+- `android/app/src/main/java/com/dxxredux/app/ControllerResponseEditor.kt`: L1-L148
+- `android/app/src/main/java/com/dxxredux/app/ControllerTouchCoverage.kt`: L1-L199
+- `android/app/src/main/java/com/dxxredux/app/CoopBriefingOverlayView.kt`: L1-L165
+- `android/app/src/main/java/com/dxxredux/app/CrashLog.kt`: diff hunks 1-10, new L23-L370
+
+### GQ2-CHUNK-0363
+
+- `android/app/src/main/res/values-v24/legacy_vm_safe_mode.xml`: L1-L4
+- `android/app/src/main/res/xml/backup_rules.xml`: diff hunks 1-1, new L1-L1
+- `android/app/src/main/res/xml/file_paths.xml`: diff hunks 1-2, new L1-L8
+
+### GQ2-CHUNK-0364
+
+- renamed from android/app/src/main/java/com/dxxredux/app/UpdateChecker.kt
+
+### GQ2-CHUNK-0366
+
+- `android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionDescriptorPolicy.kt`: L1-L202
+- `android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionMetadataProjection.kt`: L1-L177
+- `android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/MissionVariantPolicy.kt`: L1-L62
+
+### GQ2-CHUNK-0367
+
+- `.clang-format`: diff hunks 1-1, new L47-L49
+- `.editorconfig`: diff hunks 1-1, new L38-L38
+- `.gitignore`: diff hunks 1-5, new L33-L127
+- `run-linux-build.sh`: diff hunks 1-9, new L12-L279
+- `run-windows-build.ps1`: diff hunks 1-14, new L7-L510
+
+### GQ2-CHUNK-0368
+
+- `android/generate-store-assets.ps1`: L1-L147
+- `android/generate-store-boss-preview.ps1`: L1-L53
+- `android/install-aab.ps1`: diff hunks 1-3, new L111-L174
+- `android/PSScriptAnalyzerSettings.psd1`: diff hunks 1-1, new L62-L73
+- `android/regenerate_all_regression_data.ps1`: diff hunks 1-28, new L4-L541
+
+### GQ2-CHUNK-0369
+
+- `android/.gitignore`: diff hunks 1-1, new L2-L8
+- `android/1_build_aab_apk.ps1`: L1-L213
+- `android/1_build-aab.ps1`: diff hunks 1-1, new L1-L1
+- `android/2_deploy-playstore.ps1`: diff hunks 1-1, new L22-L22
+- `android/build.gradle`: diff hunks 1-1, new L6-L21
+
+### GQ2-CHUNK-0370
+
+- `android/run_all_tests.ps1`: diff hunks 115-124, new L2087-L2392
+- `android/run_quick_tests.ps1`: diff hunks 1-15, new L34-L464
+- `android/run-code-quality.ps1`: diff hunks 1-26, new L3-L420
+- `android/Run-Emulator.ps1`: diff hunks 1-4, new L44-L246
+- `android/Run-TestMenu.ps1`: diff hunks 1-7, new L7-L129
+- `android/settings.gradle`: diff hunks 1-2, new L15-L39
+
+### GQ2-CHUNK-0375
+
+- `android/get_deps/helpers/get_ndk.sh`: diff hunks 1-3, new L14-L40
+- `android/get_deps/helpers/get_powershell.ps1`: diff hunks 1-3, new L24-L76
+- `android/get_deps/helpers/get_powershell.sh`: diff hunks 1-8, new L12-L234
+- `android/get_deps/helpers/get_sdk.sh`: diff hunks 1-7, new L11-L76
+- `android/get_deps/helpers/get_shellcheck.sh`: diff hunks 1-6, new L12-L42
+- `android/get_deps/helpers/get_shfmt.sh`: diff hunks 1-5, new L12-L41
+- `android/get_deps/helpers/get_soundfont.sh`: diff hunks 1-6, new L2-L52
+- `android/get_deps/helpers/get_unar.sh`: diff hunks 1-6, new L29-L59
+- `android/get_deps/helpers/Get-DepPlatform.ps1`: diff hunks 1-4, new L3-L203
+- `android/get_deps/helpers/invoke_sdk_writer.ps1`: L1-L84
+- `android/get_deps/helpers/platform.sh`: diff hunks 1-7, new L83-L422
+- `android/get_deps/helpers/safe_conf_value.ps1`: diff hunks 1-1, new L37-L42
+
+### GQ2-CHUNK-0376
+
+- `android/get_deps/clean-sdk-packages.ps1`: L1-L252
+- `android/get_deps/get_all.sh`: diff hunks 1-4, new L71-L159
+- `android/get_deps/helpers/assert_install_not_in_use.ps1`: L1-L18
+- `android/get_deps/helpers/create_avd.sh`: diff hunks 1-1, new L13-L15
+- `android/get_deps/helpers/create_light_avds.ps1`: diff hunks 1-2, new L16-L143
+- `android/get_deps/helpers/finalize.sh`: diff hunks 1-9, new L11-L58
+- `android/get_deps/helpers/get_bounded_python.sh`: L1-L48
+- `android/get_deps/helpers/get_clang_format.sh`: diff hunks 1-13, new L13-L79
+- `android/get_deps/helpers/get_cmake_format.sh`: diff hunks 1-11, new L23-L152
+- `android/get_deps/helpers/get_cmake.sh`: diff hunks 1-6, new L15-L61
+- `android/get_deps/helpers/get_dosbox.sh`: diff hunks 1-4, new L16-L67
+- `android/get_deps/helpers/get_emulator.sh`: diff hunks 1-9, new L11-L54
+- `android/get_deps/helpers/get_jdk.sh`: diff hunks 1-12, new L9-L138
+- `android/get_deps/helpers/get_ktlint.sh`: diff hunks 1-5, new L13-L37
+- `android/get_deps/helpers/get_linux_build_prereqs.sh`: diff hunks 1-3, new L61-L171
+
+### GQ2-CHUNK-0377
+
+- `android/get_deps/check-updates.ps1`: diff hunks 1-38, new L355-L1927
+- `android/get_deps/clean-dependencies.ps1`: L1-L361
+
+### GQ2-CHUNK-0378
+
+- `android/get_deps/helpers/sdk_tools.sh`: L1-L100
+- `android/get_deps/helpers/sync-vscode-java-settings.ps1`: L1-L59
+- `android/get_deps/helpers/uninstall_sdk_package.ps1`: L1-L12
+- `android/get_deps/helpers/verify_dependency_tree.ps1`: L1-L4
+- `android/get_deps/inspect-sdk-retention.ps1`: L1-L10
+- `android/get_deps/update-powershell.ps1`: diff hunks 1-1, new L84-L84
+
+### GQ2-CHUNK-0379
+
+- `android/helpers/atomic_text_file.ps1`: diff hunks 1-2, new L16-L36
+- `android/helpers/build.sh`: diff hunks 1-2, new L3-L20
+- `android/helpers/capture_dos_midi.ps1`: L1-L47
+- `android/helpers/capture_msaa_live.ps1`: L1-L118
+- `android/helpers/cd_level_metadata_sources.ps1`: diff hunks 1-3, new L24-L162
+- `android/helpers/clean-old-artifacts.ps1`: diff hunks 1-22, new L16-L439
+- `android/helpers/code-quality-files.ps1`: L1-L141
+- `android/helpers/collect_crash.ps1`: diff hunks 1-8, new L44-L131
+- `android/helpers/compare_mission_metadata_engines.ps1`: L1-L46
+- `android/helpers/diff_vs_upstream.ps1`: diff hunks 1-4, new L37-L85
+
+### GQ2-CHUNK-0380
+
+- `android/helpers/run_dos_midi_capture.py`: L1-L255
+- `android/helpers/run_fov_demo_tests.ps1`: L1-L45
+- `android/helpers/run_graphics_black_output_tests.ps1`: L1-L110
+- `android/helpers/run_graphics_preview_tests.ps1`: L1-L119
+
+### GQ2-CHUNK-0381
+
+- `android/helpers/store_asset_media.py`: L751-L1040
+- `android/helpers/store_asset_video.py`: L1-L274
+- `android/helpers/strip_input_demo_frame_state.ps1`: diff hunks 1-4, new L8-L190
+- `android/helpers/summarize_flyout_metadata.py`: L1-L130
+
+### GQ2-CHUNK-0382
+
+- `android/helpers/generate_store_assets.py`: L751-L1040
+- `android/helpers/generate-stuffit-corpus-manifests.ps1`: diff hunks 1-1, new L292-L292
+- `android/helpers/get-test-report-runtimes.ps1`: diff hunks 1-2, new L16-L41
+- `android/helpers/guidebot_simulation_regression.ps1`: L1-L402
+
+### GQ2-CHUNK-0383
+
+- `android/helpers/sdk_package_inventory.ps1`: L1-L189
+- `android/helpers/sdk_retirement_snapshot.ps1`: L1-L90
+- `android/helpers/set_vars.sh`: diff hunks 1-7, new L10-L45
+- `android/helpers/standard_game_data.ps1`: diff hunks 1-2, new L18-L127
+- `android/helpers/stop-stale-formatters.ps1`: diff hunks 1-8, new L2-L57
+
+### GQ2-CHUNK-0384
+
+- `android/helpers/update-general-quality-evidence-ledger.ps1`: L1-L115
+- `android/helpers/verified_dependencies.ps1`: diff hunks 1-3, new L40-L48
+- `android/helpers/verify_fov_demo_artifacts.py`: L1-L63
+- `android/helpers/verify_route_confirmation.ps1`: L1-L75
+- `android/helpers/watch_guidebot_simulation.ps1`: L1-L309
+
+### GQ2-CHUNK-0385
+
+- `android/helpers/dos_midi_capture.py`: L1-L206
+- `android/helpers/emu_health.ps1`: diff hunks 1-13, new L2-L50
+- `android/helpers/formatter_processes.ps1`: L1-L72
+- `android/helpers/gather-warnings-msvc.ps1`: diff hunks 1-3, new L27-L84
+- `android/helpers/gather-warnings.ps1`: diff hunks 1-6, new L31-L83
+
+### GQ2-CHUNK-0386
+
+- `android/helpers/regenerate_all_mission_metadata_host.ps1`: diff hunks 59-67, new L985-L1282
+- `android/helpers/regenerate_all_mission_metadata.ps1`: diff hunks 1-10, new L3-L204
+- `android/helpers/retain-recent-artifacts.ps1`: diff hunks 1-7, new L2-L57
+- `android/helpers/routing_development_missions.ps1`: L1-L23
+- `android/helpers/run_all_tests_profile_menu.ps1`: L1-L44
+- `android/helpers/run_automation.sh`: diff hunks 1-5, new L6-L62
+
+### GQ2-CHUNK-0387
+
+- `android/helpers/run_graphics_recovery_tests.ps1`: L1-L317
+- `android/helpers/run_graphics_restored_touch_tests.ps1`: L1-L118
+- `android/helpers/run_graphics_safety_tests.ps1`: L1-L31
+- `android/helpers/run_msaa_render_tests.ps1`: L1-L39
+- `android/helpers/run-clang-format.ps1`: diff hunks 1-10, new L2-L106
+- `android/helpers/run-cmake-format.ps1`: diff hunks 1-7, new L6-L90
+- `android/helpers/run-cmake-lint.ps1`: diff hunks 1-4, new L16-L75
+
+### GQ2-CHUNK-0388
+
+- `android/helpers/kill-stale-emulators.ps1`: diff hunks 1-6, new L2-L36
+- `android/helpers/new_adversarial_review_ledger.ps1`: diff hunks 1-1, new L101-L101
+- `android/helpers/normalize_json.py`: diff hunks 1-12, new L14-L232
+- `android/helpers/normalized_json_text.ps1`: L1-L147
+- `android/helpers/output_disk_space.ps1`: L1-L30
+- `android/helpers/powershell_compat.ps1`: L1-L113
+- `android/helpers/process_lifetime_linux.py`: L1-L107
+- `android/helpers/process_lifetime_windows.ps1`: L1-L29
+
+### GQ2-CHUNK-0389
+
+- `android/helpers/run-ktlint.ps1`: diff hunks 1-8, new L5-L88
+- `android/helpers/run-prettier.ps1`: L1-L25
+- `android/helpers/run-psscriptanalyzer.ps1`: diff hunks 1-9, new L5-L159
+- `android/helpers/run-ruff.ps1`: L1-L27
+- `android/helpers/run-rustfmt.ps1`: L1-L19
+- `android/helpers/run-shellcheck.ps1`: diff hunks 1-8, new L2-L86
+- `android/helpers/run-shfmt.ps1`: diff hunks 1-9, new L2-L97
+- `android/helpers/runtime_targeted_sampling.ps1`: L1-L356
+
+### GQ2-CHUNK-0390
+
+- `android/helpers/headless_process_pool.ps1`: L1-L125
+- `android/helpers/host_metadata_worker.ps1`: L1-L133
+- `android/helpers/host_metadata_workspace.ps1`: L1-L106
+- `android/helpers/host_processes.ps1`: L1-L55
+- `android/helpers/input_demo_replay_menu.ps1`: L1-L42
+- `android/helpers/install-code-quality-tools.ps1`: L1-L22
+- `android/helpers/invoke_process_with_exit_code.ps1`: L1-L128
+- `android/helpers/jsonc.ps1`: diff hunks 1-5, new L1-L129
+
+### GQ2-CHUNK-0400
+
+- `android/tools/code-quality/.gitignore`: L1-L4
+- `android/tools/decode_object_packets.py`: diff hunks 1-23, new L20-L393
+
+### GQ2-CHUNK-0401
+
+- `cmake/audio-tag-metadata-deps.cmake`: L1-L62
+- `cmake/dxx-headless-targets.cmake`: L1-L96
+- `cmake/dxx-sanitizers.cmake`: L1-L26
+- `cmake/dxx-verified-dependencies.cmake`: L1-L69
+- `cmake/fluidsynth-music.cmake`: L1-L107
+- `cmake/input-demo-codec-deps.cmake`: diff hunks 1-3, new L3-L15
+- `cmake/ymfm-music.cmake`: L1-L62
+
+### GQ2-CHUNK-0402
+
+- `contrib/packaging/linux/build_package.sh`: diff hunks 1-14, new L2-L86
+- `contrib/packaging/macos/build_package.sh`: diff hunks 1-8, new L2-L60
+- `contrib/packaging/windows/build_package.sh`: diff hunks 1-11, new L2-L56
+
+### GQ2-CHUNK-0403
+
+- `game_data/run_all_cd_regressions.ps1`: diff hunks 1-10, new L30-L174
+- `game_data/update_all_fingerprints.ps1`: diff hunks 1-7, new L28-L128
+- `game_data/update_known_discs_albums.ps1`: diff hunks 1-21, new L2-L507
+- `game_data/update_known_discs_fingerprints.ps1`: diff hunks 1-11, new L2-L126
+
+### GQ2-CHUNK-0404
+
+- `game_data/disc_track_manifest.ps1`: L1-L51
+- `game_data/fingerprint_disc_tracks.ps1`: diff hunks 1-22, new L19-L385
+- `game_data/fingerprint_music_packs.ps1`: diff hunks 1-21, new L9-L470
+- `game_data/generate_game_data_index.ps1`: diff hunks 1-8, new L17-L258
+- `game_data/generate_regression_specs.ps1`: diff hunks 1-30, new L4-L513
+- `game_data/generate_source_manifest.ps1`: diff hunks 1-3, new L13-L58
+- `game_data/hash_assets.ps1`: diff hunks 1-12, new L2-L369
+- `game_data/hash_disc_tracks.ps1`: diff hunks 1-9, new L2-L102
+- `game_data/manage_data.ps1`: diff hunks 1-1, new L276-L276
+
+### GQ2-CHUNK-0405
+
+- `game_data/mods/d2x-xl/convert_d2xxl_textures.ps1`: diff hunks 1-4, new L286-L422
+- `game_data/mods/d2x-xl/repack_d2xxl_docs_and_layout.ps1`: diff hunks 1-1, new L157-L157
+- `game_data/mods/xfing/convert-xfing-minimal-dxa.ps1`: diff hunks 1-2, new L41-L113
+- `game_data/mods/xfing/d2x_sp/convert-uud2sp-ham-patch-dxa.ps1`: diff hunks 1-4, new L13-L257
+- `game_data/mods/xfing/d2x_sp/verify-uud2sp-ham-patch-dxa.ps1`: diff hunks 1-3, new L11-L196
+- `game_data/mods/xfing/d2x_sp/verify-uud2sp-uud2tp-ham-composition.ps1`: diff hunks 1-3, new L13-L407
+- `game_data/mods/xfing/verify-xfing-minimal-dxa.ps1`: diff hunks 1-2, new L119-L153
+- `game_data/mods/xfing/xfing_minimal_dxa_lib.ps1`: diff hunks 1-13, new L3-L1512
+
+### GQ2-CHUNK-0406
+
+- `.github/CI.md`: L1-L61
+- `.github/copilot-instructions.md`: diff hunks 1-13, new L1-L68
+
+### GQ2-CHUNK-0410
+
+- `android/outstanding_bugs.md`: diff hunks 1-24, new L3-L413
+- `android/privacy_policy.md`: diff hunks 1-1, new L1-L38
+- `android/README.md`: diff hunks 1-6, new L2-L137
+- `android/SOUND_TRACE.md`: L1-L101
+
+### GQ2-CHUNK-0411
+
+- `android/android_features.md`: L1-L162
+- `android/CLEANUP.md`: L1-L348
+- `android/CODE_QUALITY.md`: L1-L43
+- `android/MANUAL_APK.md`: L1-L46
+
+### GQ2-CHUNK-0413
+
+- `android/app/src/main/assets/licenses/TimGM6mb.txt`: L1-L357
+- `android/app/src/main/assets/licenses/ymfm.txt`: L1-L29
+- `android/app/src/main/assets/licenses/ymfmidi.txt`: L1-L29
+
+### GQ2-CHUNK-0414
+
+- `android/app/src/main/assets/DISC_HASHING.md`: diff hunks 1-12, new L4-L69
+- `android/app/src/main/assets/licenses/fluidsynth-notice.txt`: L1-L16
+- `android/app/src/main/assets/licenses/fluidsynth.txt`: L1-L501
+- `android/app/src/main/assets/licenses/gcem.txt`: L1-L202
+- `android/app/src/main/assets/licenses/nitro-shoe-sc55.txt`: L1-L16
+
+### GQ2-CHUNK-0419
+
+- `android/tests/fixtures/dos-midi/README.md`: L1-L264
+- `android/tests/fluidsynth_quality/AUDIT.md`: L1-L128
+- `android/tests/fluidsynth_quality/README.md`: L1-L199
+
+### GQ2-CHUNK-0420
+
+- `android/tests/music_spectral/requirements.txt`: L1-L13
+- `android/tests/README.md`: L1-L188
+- `android/tests/SANITIZERS.md`: L1-L42
+- `android/tests/soundfont-downloads.md`: L1-L145
+- `android/tests/soundfont-profiles.md`: L1-L60
+- `android/tests/TOOLING_SMOKE.md`: L1-L39
+
+### GQ2-CHUNK-0421
+
+- `android/tests/fm_feasibility/README.md`: L1-L342
+- `android/tests/fm_quality/README.md`: L1-L100
+- `android/tests/fm-prototype.md`: L1-L105
+- `android/tests/HOST_INPUT_DEMO_REPLAY.md`: diff hunks 1-1, new L49-L49
+- `android/tests/input_demo_determinism_fixtures.txt`: diff hunks 1-1, new L4-L4
+- `android/tests/midi-game-preferences.md`: L1-L81
+- `android/tests/music_realtime/README.md`: L1-L102
+- `android/tests/music_spectral/README.md`: L1-L165
+
+### GQ2-CHUNK-0425
+
+- `game_data/mods/d2x-xl/README.md`: diff hunks 1-3, new L6-L18
+- `game_data/mods/README.md`: diff hunks 1-3, new L11-L23
+- `game_data/mods/xfing/README.md`: diff hunks 1-2, new L6-L20
+
+### GQ2-CHUNK-0427
+
+- `android/app/src/test/java/com/dxxredux/app/MusicLaunchPolicyTest.kt`: diff hunks 1-11, new L10-L63
+- `android/app/src/test/java/com/dxxredux/app/MusicOverlayPollingTest.kt`: L1-L16
+- `android/app/src/test/java/com/dxxredux/app/MusicOverlaySourcesTest.kt`: diff hunks 1-9, new L6-L223
+- `android/app/src/test/java/com/dxxredux/app/MusicSourcePreferenceTest.kt`: L1-L36
+- `android/app/src/test/java/com/dxxredux/app/NavigationDirectionRepeatTest.kt`: L1-L41
+- `android/app/src/test/java/com/dxxredux/app/OverlayVisibilityPolicyTest.kt`: diff hunks 1-4, new L119-L183
+- `android/app/src/test/java/com/dxxredux/app/PostResumeRefreshPolicyTest.kt`: L1-L11
+- `android/app/src/test/java/com/dxxredux/app/PreviewTransportTest.kt`: L1-L48
+- `android/app/src/test/java/com/dxxredux/app/QuickSaveLoadActionTest.kt`: L1-L84
+- `android/app/src/test/java/com/dxxredux/app/RarCatalogAdmissionTest.kt`: L1-L163
+- `android/app/src/test/java/com/dxxredux/app/RarFallbackPolicyTest.kt`: L1-L126
+
+### GQ2-CHUNK-0428
+
+- `android/app/src/test/java/com/dxxredux/app/ControllerAxisResponseTest.kt`: L1-L176
+- `android/app/src/test/java/com/dxxredux/app/ControllerConfigSerializationTest.kt`: diff hunks 1-1, new L11-L36
+- `android/app/src/test/java/com/dxxredux/app/ControllerDeviceSelectionTest.kt`: diff hunks 1-1, new L38-L38
+- `android/app/src/test/java/com/dxxredux/app/ControllerInputDiagnosticsTest.kt`: L1-L91
+- `android/app/src/test/java/com/dxxredux/app/ControllerKeyDispatchTest.kt`: L1-L111
+- `android/app/src/test/java/com/dxxredux/app/ControllerLongPressDetectorTest.kt`: diff hunks 1-2, new L8-L215
+- `android/app/src/test/java/com/dxxredux/app/ControllerMenuAxesTest.kt`: L1-L36
+- `android/app/src/test/java/com/dxxredux/app/ControllerMenuCycleTest.kt`: diff hunks 1-1, new L10-L41
+- `android/app/src/test/java/com/dxxredux/app/ControllerMenuTouchOverlayDefaultTest.kt`: diff hunks 1-4, new L10-L40
+- `android/app/src/test/java/com/dxxredux/app/ControllerTouchCoverageTest.kt`: L1-L175
+- `android/app/src/test/java/com/dxxredux/app/ControllerTriggerBindingsTest.kt`: L1-L57
+
+### GQ2-CHUNK-0429
+
+- `android/app/src/test/java/com/dxxredux/app/MissionMusicCatalogBudgetTest.kt`: L1-L238
+- `android/app/src/test/java/com/dxxredux/app/MissionProvenanceTest.kt`: L1-L119
+- `android/app/src/test/java/com/dxxredux/app/MouseModeTuningTest.kt`: diff hunks 1-1, new L91-L91
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/LanInvitationTest.kt`: L1-L62
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/LanMissionStatusDisplayTest.kt`: L1-L25
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MissionTransferResumeTest.kt`: L1-L96
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MultiplayerControllerFocusPolicyTest.kt`: diff hunks 1-2, new L24-L64
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MultiplayerResumePrefsTest.kt`: diff hunks 1-10, new L90-L340
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/MultiplayerServiceLeaseStateTest.kt`: L1-L32
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/UdpReconnectIdentityTest.kt`: diff hunks 1-4, new L6-L25
+- `android/app/src/test/java/com/dxxredux/app/multiplayer/UdpReconnectStoreTest.kt`: L1-L76
+- `android/app/src/test/java/com/dxxredux/app/MusicEqResponseTest.kt`: L1-L40
+
+### GQ2-CHUNK-0430
+
+- `android/app/src/test/java/com/dxxredux/app/CustomAudioSetManagerTest.kt`: diff hunks 1-7, new L3-L201
+- `android/app/src/test/java/com/dxxredux/app/DebugLogCategoryTest.kt`: diff hunks 1-1, new L11-L11
+- `android/app/src/test/java/com/dxxredux/app/DebugLogFileFingerprintTest.kt`: diff hunks 1-2, new L2-L5
+- `android/app/src/test/java/com/dxxredux/app/DemoInstallerOfferTest.kt`: diff hunks 1-2, new L48-L52
+- `android/app/src/test/java/com/dxxredux/app/DemoInstallerPackagesTest.kt`: diff hunks 1-5, new L23-L64
+- `android/app/src/test/java/com/dxxredux/app/DiscContentImportTest.kt`: L1-L244
+- `android/app/src/test/java/com/dxxredux/app/DiscIdentifierHashTest.kt`: diff hunks 1-2, new L2-L8
+- `android/app/src/test/java/com/dxxredux/app/DiscImportHoistTest.kt`: diff hunks 1-3, new L60-L105
+- `android/app/src/test/java/com/dxxredux/app/DxaTextureScannerTest.kt`: diff hunks 1-1, new L23-L28
+- `android/app/src/test/java/com/dxxredux/app/DynamicReceiverPolicyTest.kt`: L1-L33
+- `android/app/src/test/java/com/dxxredux/app/FileProviderGrantStoreTest.kt`: diff hunks 1-1, new L11-L60
+- `android/app/src/test/java/com/dxxredux/app/FileSetContentCatalogTest.kt`: L1-L159
+
+### GQ2-CHUNK-0431
+
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataWorkerIdentityTest.kt`: diff hunks 1-4, new L3-L158
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataWorkerResultGraceTest.kt`: L1-L33
+- `android/app/src/test/java/com/dxxredux/app/LevelPreviewRequestStoreTest.kt`: diff hunks 1-2, new L11-L103
+- `android/app/src/test/java/com/dxxredux/app/LoadingProgressOverlayLayoutTest.kt`: diff hunks 1-1, new L38-L38
+- `android/app/src/test/java/com/dxxredux/app/lobby/LobbyMissionRefreshTest.kt`: L1-L85
+- `android/app/src/test/java/com/dxxredux/app/LobbyDiagnosticsTest.kt`: diff hunks 1-6, new L4-L136
+- `android/app/src/test/java/com/dxxredux/app/LogFileRetentionTest.kt`: L1-L69
+- `android/app/src/test/java/com/dxxredux/app/MemoryPreferences.kt`: L1-L66
+- `android/app/src/test/java/com/dxxredux/app/MenuInteractionOverlayViewTest.kt`: L1-L37
+- `android/app/src/test/java/com/dxxredux/app/MetadataLoadProgressTest.kt`: diff hunks 1-1, new L46-L65
+- `android/app/src/test/java/com/dxxredux/app/MissionContentIdentityTest.kt`: L1-L40
+- `android/app/src/test/java/com/dxxredux/app/MissionImportIdentityTest.kt`: L1-L27
+- `android/app/src/test/java/com/dxxredux/app/MissionLaunchCatalogTest.kt`: L1-L174
+- `android/app/src/test/java/com/dxxredux/app/MissionLaunchPublicationTest.kt`: L1-L73
+
+### GQ2-CHUNK-0432
+
+- `android/app/src/test/java/com/dxxredux/app/GameProcessExitDiagnosticsTest.kt`: L1-L97
+- `android/app/src/test/java/com/dxxredux/app/GraphicsCapabilitiesTest.kt`: L1-L82
+- `android/app/src/test/java/com/dxxredux/app/GraphicsConfigHelpersTest.kt`: diff hunks 1-2, new L12-L78
+- `android/app/src/test/java/com/dxxredux/app/GuidebotLockedWheelTest.kt`: diff hunks 1-4, new L82-L94
+- `android/app/src/test/java/com/dxxredux/app/GyroToggleConfigTest.kt`: diff hunks 1-2, new L15-L255
+- `android/app/src/test/java/com/dxxredux/app/ImportChooserConfigTest.kt`: diff hunks 1-1, new L28-L28
+- `android/app/src/test/java/com/dxxredux/app/InputDemoManagerTest.kt`: diff hunks 1-6, new L20-L117
+- `android/app/src/test/java/com/dxxredux/app/InputMixerTest.kt`: diff hunks 1-1, new L31-L35
+- `android/app/src/test/java/com/dxxredux/app/JsoncTest.kt`: L1-L22
+- `android/app/src/test/java/com/dxxredux/app/LanLaunchPreparationTest.kt`: L1-L34
+- `android/app/src/test/java/com/dxxredux/app/LauncherFileCopyTest.kt`: diff hunks 1-2, new L16-L23
+- `android/app/src/test/java/com/dxxredux/app/LauncherFileLabelsTest.kt`: diff hunks 1-1, new L51-L70
+- `android/app/src/test/java/com/dxxredux/app/LaunchPreparationWorkTest.kt`: L1-L77
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataLevelProgressEstimatorTest.kt`: L1-L79
+
+### GQ2-CHUNK-0433
+
+- `android/app/src/test/java/com/dxxredux/app/AboutBuildLineTest.kt`: L1-L17
+- `android/app/src/test/java/com/dxxredux/app/AcoustIdConfigurationTest.kt`: diff hunks 1-2, new L11-L47
+- `android/app/src/test/java/com/dxxredux/app/AdminTrayUiTest.kt`: diff hunks 1-11, new L9-L340
+- `android/app/src/test/java/com/dxxredux/app/AdvancedPageLoadProgressTest.kt`: diff hunks 1-1, new L30-L67
+- `android/app/src/test/java/com/dxxredux/app/AndroidGameFileExtensionsTest.kt`: diff hunks 1-4, new L38-L114
+- `android/app/src/test/java/com/dxxredux/app/AssetManifestTest.kt`: diff hunks 1-1, new L60-L71
+- `android/app/src/test/java/com/dxxredux/app/AudioPlaylistCapacityTest.kt`: diff hunks 1-3, new L2-L21
+- `android/app/src/test/java/com/dxxredux/app/AudioSourceManagerArtifactPathsTest.kt`: diff hunks 1-7, new L27-L233
+- `android/app/src/test/java/com/dxxredux/app/AudioSourceManagerPersistenceTest.kt`: diff hunks 1-8, new L3-L213
+- `android/app/src/test/java/com/dxxredux/app/AudioTrackIdentificationProgressTest.kt`: L1-L34
+- `android/app/src/test/java/com/dxxredux/app/BinarySizeFormatterTest.kt`: L1-L20
+- `android/app/src/test/java/com/dxxredux/app/BinHexDecoderTest.kt`: diff hunks 1-1, new L37-L48
+- `android/app/src/test/java/com/dxxredux/app/CdAudioSourceVisibilityTest.kt`: diff hunks 1-12, new L31-L199
+- `android/app/src/test/java/com/dxxredux/app/ConfigImportExportPreferenceTest.kt`: diff hunks 1-4, new L18-L138
+- `android/app/src/test/java/com/dxxredux/app/ConfigSlotRepositoryTest.kt`: diff hunks 1-2, new L76-L98
+- `android/app/src/test/java/com/dxxredux/app/ControllerAxisExponentTest.kt`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0434
+
+- `android/app/src/test/java/com/dxxredux/app/TouchMouseEdgeMovementTest.kt`: L1-L285
+- `android/app/src/test/java/com/dxxredux/app/TouchStickExtremeActionTest.kt`: diff hunks 1-3, new L59-L119
+
+### GQ2-CHUNK-0435
+
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataResultCacheTest.kt`: L1-L298
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataResultTest.kt`: diff hunks 1-4, new L4-L421
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataRouteNumberingTest.kt`: diff hunks 1-4, new L41-L77
+- `android/app/src/test/java/com/dxxredux/app/LevelMetadataTargetsTest.kt`: diff hunks 1-9, new L3-L402
+
+### GQ2-CHUNK-0436
+
+- `android/app/src/test/java/com/dxxredux/app/SoundfontDownloadTest.kt`: L1-L257
+- `android/app/src/test/java/com/dxxredux/app/SoundfontStoreTest.kt`: L1-L255
+- `android/app/src/test/java/com/dxxredux/app/TopEdgeActionButtonLayoutTest.kt`: L1-L31
+- `android/app/src/test/java/com/dxxredux/app/TouchAxisRegionTravelTest.kt`: diff hunks 1-4, new L9-L60
+- `android/app/src/test/java/com/dxxredux/app/TouchEditorZoneEdgeTest.kt`: diff hunks 1-5, new L23-L484
+- `android/app/src/test/java/com/dxxredux/app/TouchLayoutFormatTest.kt`: L1-L54
+
+### GQ2-CHUNK-0437
+
+- `android/app/src/test/java/com/dxxredux/app/RouteMetadataPrecomputeOrderingTest.kt`: L1-L236
+- `android/app/src/test/java/com/dxxredux/app/RouteMetadataSchedulingTest.kt`: L1-L238
+- `android/app/src/test/java/com/dxxredux/app/SafUriPermissionsTest.kt`: diff hunks 1-1, new L76-L76
+- `android/app/src/test/java/com/dxxredux/app/SaveExplorerTest.kt`: diff hunks 1-7, new L174-L303
+- `android/app/src/test/java/com/dxxredux/app/ScrollStripTest.kt`: diff hunks 1-2, new L103-L131
+- `android/app/src/test/java/com/dxxredux/app/SetupIntrospectionPolicyTest.kt`: L1-L17
+- `android/app/src/test/java/com/dxxredux/app/SetupLaunchReadinessTest.kt`: diff hunks 1-8, new L3-L327
+
+### GQ2-CHUNK-0438
+
+- `android/app/src/test/java/com/dxxredux/app/FileSetContentManagerTest.kt`: L1-L402
+- `android/app/src/test/java/com/dxxredux/app/FileSetMigrationTest.kt`: diff hunks 1-1, new L1-L1
+- `android/app/src/test/java/com/dxxredux/app/FileSetMissionInventoryTest.kt`: L1-L64
+- `android/app/src/test/java/com/dxxredux/app/FileSetTrackedUriOwnershipTest.kt`: L1-L71
+- `android/app/src/test/java/com/dxxredux/app/FingerprintMatchingConfigTest.kt`: diff hunks 1-3, new L42-L52
+- `android/app/src/test/java/com/dxxredux/app/GameFileFormatsTest.kt`: diff hunks 1-5, new L5-L153
+- `android/app/src/test/java/com/dxxredux/app/GamepadButtonDispatchPolicyTest.kt`: diff hunks 1-1, new L1-L1
+- `android/app/src/test/java/com/dxxredux/app/GamepadButtonEdgeTrackerTest.kt`: diff hunks 1-1, new L1-L1
+
+### GQ2-CHUNK-0439
+
+- `android/app/src/test/java/com/dxxredux/app/RemainingKeyTouchActionsTest.kt`: diff hunks 1-3, new L8-L551
+- `android/app/src/test/java/com/dxxredux/app/ResumeSavePanelTest.kt`: diff hunks 1-5, new L4-L192
+- `android/app/src/test/java/com/dxxredux/app/RewindPreferencePolicyTest.kt`: diff hunks 1-1, new L18-L18
+- `android/app/src/test/java/com/dxxredux/app/RobotNameCatalogTest.kt`: L1-L89
+- `android/app/src/test/java/com/dxxredux/app/RobotPreviewRequestStoreTest.kt`: L1-L179
+- `android/app/src/test/java/com/dxxredux/app/RouteMetadataCacheMaintenanceTest.kt`: L1-L42
+- `android/app/src/test/java/com/dxxredux/app/RouteMetadataCurrentProgressTrackerTest.kt`: L1-L61
+- `android/app/src/test/java/com/dxxredux/app/RouteMetadataPrecomputeMonitorTest.kt`: L1-L215
+
+### GQ2-CHUNK-0440
+
+- `android/game_scripts/test_coop_rewind_rewind.jsonc`: L1-L39
+- `android/game_scripts/test_coop_rewind_seed.jsonc`: L1-L18
+- `android/game_scripts/test_coop_rewind_verify.jsonc`: L1-L23
+- `android/game_scripts/test_coop_score_catchup_fast_client.jsonc`: L1-L177
+- `android/game_scripts/test_coop_score_catchup_fast_host.jsonc`: L1-L195
+- `android/game_scripts/test_coop_score_catchup_slow_client.jsonc`: L1-L163
+- `android/game_scripts/test_coop_score_catchup_slow_host.jsonc`: L1-L181
+- `android/game_scripts/test_coop_secret_advance_client.jsonc`: L1-L43
+- `android/game_scripts/test_coop_secret_advance_host.jsonc`: L1-L46
+- `android/game_scripts/test_coop_secret_advance_prepare.jsonc`: L1-L7
+
+### GQ2-CHUNK-0441
+
+- `android/game_scripts/test_coop_world_rollback_tag.jsonc`: L1-L4
+- `android/game_scripts/test_coop_world_travel_client.jsonc`: L1-L21
+- `android/game_scripts/test_coop_world_travel_host.jsonc`: L1-L31
+- `android/game_scripts/test_coop_world_travel_prepare.jsonc`: L1-L8
+- `android/game_scripts/test_counterstrike_level20_guidebot_dropped_notification.jsonc`: L1-L80
+- `android/game_scripts/test_counterstrike_level20_guidebot_post_boss_exit.jsonc`: L1-L95
+- `android/game_scripts/test_counterstrike_level20_guidebot_trigger3.jsonc`: L1-L127
+- `android/game_scripts/test_counterstrike_level21_guidebot_pre_reactor_exit.jsonc`: L1-L89
+- `android/game_scripts/test_counterstrike_level23_guidebot_trigger_liveness.jsonc`: L1-L177
+- `android/game_scripts/test_counterstrike_level24_guidebot_gold_key_liveness.jsonc`: L1-L83
+- `android/game_scripts/test_d1_in_d2_metadata.jsonc`: L1-L37
+
+### GQ2-CHUNK-0442
+
+- `android/game_scripts/test_coop_endgame_custom_fast.jsonc`: L1-L71
+- `android/game_scripts/test_coop_endgame_custom_slow.jsonc`: L1-L80
+- `android/game_scripts/test_coop_endgame_d1_fast.jsonc`: L1-L75
+- `android/game_scripts/test_coop_endgame_d1_observer_host.jsonc`: L1-L64
+- `android/game_scripts/test_coop_endgame_d1_slow.jsonc`: L1-L84
+- `android/game_scripts/test_coop_endgame_d2_fast.jsonc`: L1-L94
+- `android/game_scripts/test_coop_endgame_d2_observer_host.jsonc`: L1-L83
+- `android/game_scripts/test_coop_endgame_d2_slow.jsonc`: L1-L113
+- `android/game_scripts/test_coop_endgame_missing_fast.jsonc`: L1-L43
+- `android/game_scripts/test_coop_flyout_deadline_client.jsonc`: L1-L75
+- `android/game_scripts/test_coop_flyout_deadline_host.jsonc`: L1-L58
+
+### GQ2-CHUNK-0443
+
+- `android/game_scripts/test_d1_in_d2_standalone.jsonc`: L1-L170
+- `android/game_scripts/test_d1_optional_guidebot.jsonc`: L1-L106
+- `android/game_scripts/test_d1_rewind_source_prepare.jsonc`: L1-L20
+- `android/game_scripts/test_d1_rewind_source_recover.jsonc`: L1-L27
+- `android/game_scripts/test_d1_rewind_source_reject.jsonc`: L1-L19
+- `android/game_scripts/test_d1_weapon_art.jsonc`: L1-L14
+- `android/game_scripts/test_d2_boss_difficulty_save_restore.jsonc`: L1-L109
+- `android/game_scripts/test_d2_level7_reactor_water_profile.jsonc`: L1-L81
+- `android/game_scripts/test_death.jsonc`: L1-L139
+- `android/game_scripts/test_debug_log_refresh_button.jsonc`: L1-L14
+- `android/game_scripts/test_demo_group_file_set_content.jsonc`: L1-L80
+- `android/game_scripts/test_device_loading_background.jsonc`: L1-L8
+- `android/game_scripts/test_distribution_launch.jsonc`: L1-L78
+
+### GQ2-CHUNK-0444
+
+- `android/game_scripts/test_quick_record_classic_sidecar.jsonc`: L1-L115
+- `android/game_scripts/test_random_level_preview.jsonc`: L1-L28
+- `android/game_scripts/test_readable_tiny_help_d2.jsonc`: L1-L82
+- `android/game_scripts/test_resolution_unified.jsonc`: L1-L131
+- `android/game_scripts/test_restore_report_fail_after_hide.jsonc`: L1-L7
+- `android/game_scripts/test_restore_report_interrupted_restore.jsonc`: L1-L5
+- `android/game_scripts/test_restore_report_normal_quit.jsonc`: L1-L1
+- `android/game_scripts/test_restore_report_unexpected_exit.jsonc`: L1-L4
+- `android/game_scripts/test_robot_preview.jsonc`: L1-L26
+- `android/game_scripts/test_route_metadata_background_priority.jsonc`: L1-L90
+- `android/game_scripts/test_route_metadata_import_handoff.jsonc`: L1-L96
+- `android/game_scripts/test_route_metadata_large_level_budget.jsonc`: L1-L68
+- `android/game_scripts/test_saf_basic.jsonc`: L1-L76
+
+### GQ2-CHUNK-0445
+
+- `android/game_scripts/test_controller_touch_start.jsonc`: L1-L234
+- `android/game_scripts/test_controller_trigger_axis_priority.jsonc`: L1-L54
+- `android/game_scripts/test_controls_readability_d2.jsonc`: L1-L194
+- `android/game_scripts/test_coop_base_load_client.jsonc`: L1-L30
+- `android/game_scripts/test_coop_base_load_host.jsonc`: L1-L35
+- `android/game_scripts/test_coop_base_save_host.jsonc`: L1-L4
+- `android/game_scripts/test_coop_base_save_seed.jsonc`: L1-L23
+- `android/game_scripts/test_coop_briefing_client_lost.jsonc`: L1-L28
+- `android/game_scripts/test_coop_briefing_client.jsonc`: L1-L40
+- `android/game_scripts/test_coop_briefing_host_deadline_client.jsonc`: L1-L61
+- `android/game_scripts/test_coop_briefing_host_deadline_host.jsonc`: L1-L66
+- `android/game_scripts/test_coop_briefing_host_lost.jsonc`: L1-L36
+- `android/game_scripts/test_coop_briefing_host.jsonc`: L1-L53
+
+### GQ2-CHUNK-0446
+
+- `android/game_scripts/test_coop_briefing_reading_client.jsonc`: L1-L43
+- `android/game_scripts/test_coop_briefing_reading_host.jsonc`: L1-L42
+- `android/game_scripts/test_coop_briefing_rejoin_client.jsonc`: L1-L19
+- `android/game_scripts/test_coop_briefing_rejoin_deadline_host.jsonc`: L1-L16
+- `android/game_scripts/test_coop_briefing_rejoin_host.jsonc`: L1-L25
+- `android/game_scripts/test_coop_briefing_rejoin_prepare.jsonc`: L1-L12
+- `android/game_scripts/test_coop_briefing_release_client_lost.jsonc`: L1-L36
+- `android/game_scripts/test_coop_briefing_release_delay_client.jsonc`: L1-L37
+- `android/game_scripts/test_coop_briefing_release_delay_host.jsonc`: L1-L50
+- `android/game_scripts/test_coop_briefing_release_loss_prepare_client.jsonc`: L1-L26
+- `android/game_scripts/test_coop_briefing_release_loss_prepare_host.jsonc`: L1-L31
+- `android/game_scripts/test_coop_briefing_skip_movie.jsonc`: L1-L18
+- `android/game_scripts/test_coop_briefing_solo_start.jsonc`: L1-L15
+- `android/game_scripts/test_coop_countdown_save_idle.jsonc`: L1-L4
+- `android/game_scripts/test_coop_countdown_save_mutate.jsonc`: L1-L23
+- `android/game_scripts/test_coop_countdown_save_restore.jsonc`: L1-L39
+
+### GQ2-CHUNK-0447
+
+- `android/game_scripts/test_coop_secret_save_idle.jsonc`: L1-L13
+- `android/game_scripts/test_coop_secret_save_mutate.jsonc`: L1-L18
+- `android/game_scripts/test_coop_secret_save_seed.jsonc`: L1-L23
+- `android/game_scripts/test_coop_terminal_failure.jsonc`: L1-L5
+- `android/game_scripts/test_coop_travel_gate_arm.jsonc`: L1-L8
+- `android/game_scripts/test_coop_travel_gate_client.jsonc`: L1-L9
+- `android/game_scripts/test_coop_travel_gate_host.jsonc`: L1-L16
+- `android/game_scripts/test_coop_travel_normal_client.jsonc`: L1-L6
+- `android/game_scripts/test_coop_travel_normal_host.jsonc`: L1-L7
+- `android/game_scripts/test_coop_world_capture.jsonc`: L1-L4
+- `android/game_scripts/test_coop_world_carry.jsonc`: L1-L7
+- `android/game_scripts/test_coop_world_restore_client.jsonc`: L1-L6
+- `android/game_scripts/test_coop_world_restore_host.jsonc`: L1-L7
+- `android/game_scripts/test_coop_world_rollback_client.jsonc`: L1-L27
+- `android/game_scripts/test_coop_world_rollback_host.jsonc`: L1-L27
+- `android/game_scripts/test_coop_world_rollback_prepare_host.jsonc`: L1-L11
+
+### GQ2-CHUNK-0448
+
+- `android/game_scripts/test_coop_secret_cold_resume.jsonc`: L1-L14
+- `android/game_scripts/test_coop_secret_endgame_client.jsonc`: L1-L50
+- `android/game_scripts/test_coop_secret_endgame_host_leaves_client.jsonc`: L1-L65
+- `android/game_scripts/test_coop_secret_endgame_host_leaves_host.jsonc`: L1-L51
+- `android/game_scripts/test_coop_secret_endgame_host.jsonc`: L1-L49
+- `android/game_scripts/test_coop_secret_endgame_modal_client.jsonc`: L1-L58
+- `android/game_scripts/test_coop_secret_endgame_modal_host.jsonc`: L1-L57
+- `android/game_scripts/test_coop_secret_endgame_modal_prepare.jsonc`: L1-L7
+- `android/game_scripts/test_coop_secret_endgame_prepare.jsonc`: L1-L7
+- `android/game_scripts/test_coop_secret_exit_race_client.jsonc`: L1-L28
+- `android/game_scripts/test_coop_secret_exit_race_host.jsonc`: L1-L43
+- `android/game_scripts/test_coop_secret_exit_race_prepare_client.jsonc`: L1-L8
+- `android/game_scripts/test_coop_secret_exit_race_prepare_host.jsonc`: L1-L11
+- `android/game_scripts/test_coop_secret_load_client.jsonc`: L1-L30
+- `android/game_scripts/test_coop_secret_load_host.jsonc`: L1-L35
+- `android/game_scripts/test_coop_secret_save_host.jsonc`: L1-L79
+
+### GQ2-CHUNK-0449
+
+- `android/game_scripts/test_coop_briefing_missing_movie_client.jsonc`: L1-L49
+- `android/game_scripts/test_coop_briefing_missing_movie_host.jsonc`: L1-L48
+- `android/game_scripts/test_coop_briefing_movie_closed.jsonc`: L1-L18
+- `android/game_scripts/test_coop_briefing_observer_host_client.jsonc`: L1-L44
+- `android/game_scripts/test_coop_briefing_observer_host_host.jsonc`: L1-L58
+- `android/game_scripts/test_coop_briefing_overall_deadline_client.jsonc`: L1-L50
+- `android/game_scripts/test_coop_briefing_overall_deadline_host.jsonc`: L1-L50
+- `android/game_scripts/test_coop_briefing_overlay_touch_host.jsonc`: L1-L35
+- `android/game_scripts/test_coop_briefing_partial_skip_client.jsonc`: L1-L46
+- `android/game_scripts/test_coop_briefing_partial_skip_host.jsonc`: L1-L56
+- `android/game_scripts/test_coop_briefing_pause_host.jsonc`: L1-L35
+- `android/game_scripts/test_coop_briefing_paused_client_lost.jsonc`: L1-L35
+- `android/game_scripts/test_coop_briefing_paused_client.jsonc`: L1-L51
+- `android/game_scripts/test_coop_briefing_paused_force_host.jsonc`: L1-L40
+- `android/game_scripts/test_coop_briefing_paused_overall_client.jsonc`: L1-L59
+- `android/game_scripts/test_coop_briefing_paused_overall_host.jsonc`: L1-L53
+
+### GQ2-CHUNK-0450
+
+- `android/game_scripts/test_coop_d1_transition_client.jsonc`: L1-L145
+- `android/game_scripts/test_coop_d1_transition_host.jsonc`: L1-L148
+- `android/game_scripts/test_coop_death_prepare.jsonc`: L1-L6
+- `android/game_scripts/test_coop_death_survivor.jsonc`: L1-L5
+- `android/game_scripts/test_coop_death.jsonc`: L1-L29
+- `android/game_scripts/test_coop_disconnect_capturing.jsonc`: L1-L45
+- `android/game_scripts/test_coop_disconnect_committed.jsonc`: L1-L45
+- `android/game_scripts/test_coop_disconnect_freezing.jsonc`: L1-L45
+- `android/game_scripts/test_coop_disconnect_loading.jsonc`: L1-L45
+- `android/game_scripts/test_coop_disconnect_release.jsonc`: L1-L45
+- `android/game_scripts/test_coop_dying_expect_client.jsonc`: L1-L4
+- `android/game_scripts/test_coop_dying_expect_host.jsonc`: L1-L4
+- `android/game_scripts/test_coop_dying_travel_alive.jsonc`: L1-L45
+- `android/game_scripts/test_coop_dying_travel_dead.jsonc`: L1-L39
+- `android/game_scripts/test_coop_endgame_boss_client.jsonc`: L1-L110
+- `android/game_scripts/test_coop_endgame_boss_host.jsonc`: L1-L88
+
+### GQ2-CHUNK-0451
+
+- `android/game_scripts/test_coop_flyout_force_client.jsonc`: L1-L71
+- `android/game_scripts/test_coop_flyout_force_host.jsonc`: L1-L63
+- `android/game_scripts/test_coop_flyout_natural_client.jsonc`: L1-L65
+- `android/game_scripts/test_coop_flyout_natural_host.jsonc`: L1-L46
+- `android/game_scripts/test_coop_guidebot_client_cage.jsonc`: L1-L27
+- `android/game_scripts/test_coop_guidebot_client_deploy.jsonc`: L1-L27
+- `android/game_scripts/test_coop_guidebot_client_release_host.jsonc`: L1-L25
+- `android/game_scripts/test_coop_guidebot_observer_host.jsonc`: L1-L43
+- `android/game_scripts/test_coop_guidebot_observer_joiner.jsonc`: L1-L41
+- `android/game_scripts/test_coop_guidebot_owner_host.jsonc`: L1-L84
+- `android/game_scripts/test_coop_guidebot_owner_joiner.jsonc`: L1-L82
+- `android/game_scripts/test_coop_guidebot_restore_remap_host.jsonc`: L1-L26
+- `android/game_scripts/test_coop_guidebot_restore_remap_joiner.jsonc`: L1-L27
+- `android/game_scripts/test_coop_guidebot_restore_save_host.jsonc`: L1-L55
+- `android/game_scripts/test_coop_guidebot_restore_save_joiner.jsonc`: L1-L32
+- `android/game_scripts/test_coop_guidebot_spawn_client.jsonc`: L1-L61
+
+### GQ2-CHUNK-0452
+
+- `android/game_scripts/test_coop_guidebot_spawn_host.jsonc`: L1-L50
+- `android/game_scripts/test_coop_guidebot_travel_dock_client.jsonc`: L1-L6
+- `android/game_scripts/test_coop_guidebot_travel_docked.jsonc`: L1-L14
+- `android/game_scripts/test_coop_guidebot_travel_navigation_client.jsonc`: L1-L18
+- `android/game_scripts/test_coop_guidebot_travel_redeploy_client.jsonc`: L1-L26
+- `android/game_scripts/test_coop_guidebot_travel_released.jsonc`: L1-L15
+- `android/game_scripts/test_coop_guidebot_travel_seed_client.jsonc`: L1-L7
+- `android/game_scripts/test_coop_guidebot_travel_seed_host.jsonc`: L1-L6
+- `android/game_scripts/test_coop_host_migration_prepare_host.jsonc`: L1-L36
+- `android/game_scripts/test_coop_host_migration_prepare_joiner.jsonc`: L1-L33
+- `android/game_scripts/test_coop_late_join_accept.jsonc`: L1-L1
+- `android/game_scripts/test_coop_late_join_regression.jsonc`: L1-L27
+- `android/game_scripts/test_coop_late_join_save.jsonc`: L1-L5
+- `android/game_scripts/test_coop_late_join_seed.jsonc`: L1-L5
+- `android/game_scripts/test_coop_late_join_start.jsonc`: L1-L6
+- `android/game_scripts/test_coop_launch_feedback.jsonc`: L1-L46
+
+### GQ2-CHUNK-0453
+
+- `android/game_scripts/test_coop_level_restart_mutate.jsonc`: L1-L23
+- `android/game_scripts/test_coop_level_restart_remember_client.jsonc`: L1-L14
+- `android/game_scripts/test_coop_level_restart_remember.jsonc`: L1-L21
+- `android/game_scripts/test_coop_level_restart_restart.jsonc`: L1-L39
+- `android/game_scripts/test_coop_level_restart_verify.jsonc`: L1-L23
+- `android/game_scripts/test_coop_maximum_exit_client.jsonc`: L1-L21
+- `android/game_scripts/test_coop_maximum_exit_host.jsonc`: L1-L13
+- `android/game_scripts/test_coop_mdata_capacity.jsonc`: L1-L15
+- `android/game_scripts/test_coop_mdata_fence_arm.jsonc`: L1-L6
+- `android/game_scripts/test_coop_mdata_fence.jsonc`: L1-L19
+- `android/game_scripts/test_coop_normal_countdown.jsonc`: L1-L52
+- `android/game_scripts/test_coop_normal_exit_client.jsonc`: L1-L31
+- `android/game_scripts/test_coop_normal_exit_host.jsonc`: L1-L30
+- `android/game_scripts/test_coop_normal_exit_prepare_client.jsonc`: L1-L8
+- `android/game_scripts/test_coop_normal_exit_prepare_host.jsonc`: L1-L11
+- `android/game_scripts/test_coop_normal_exit_race_client.jsonc`: L1-L33
+
+### GQ2-CHUNK-0454
+
+- `android/game_scripts/test_coop_normal_exit_race_host.jsonc`: L1-L31
+- `android/game_scripts/test_coop_normal_reactor_death_client.jsonc`: L1-L90
+- `android/game_scripts/test_coop_normal_reactor_death_host.jsonc`: L1-L70
+- `android/game_scripts/test_coop_packet_fences_verify.jsonc`: L1-L5
+- `android/game_scripts/test_coop_partial_pickup_client.jsonc`: L1-L18
+- `android/game_scripts/test_coop_physical_prepare_client.jsonc`: L1-L12
+- `android/game_scripts/test_coop_physical_prepare_host.jsonc`: L1-L8
+- `android/game_scripts/test_coop_physical_travel_client.jsonc`: L1-L35
+- `android/game_scripts/test_coop_pickup_seed.jsonc`: L1-L5
+- `android/game_scripts/test_coop_pickup_trace.jsonc`: L1-L4
+- `android/game_scripts/test_coop_reactor_countdown_prepare.jsonc`: L1-L14
+- `android/game_scripts/test_coop_reactor_countdown.jsonc`: L1-L90
+- `android/game_scripts/test_coop_reactor_death_client.jsonc`: L1-L116
+- `android/game_scripts/test_coop_reactor_death_host.jsonc`: L1-L104
+- `android/game_scripts/test_coop_reactor_death_prepare.jsonc`: L1-L19
+- `android/game_scripts/test_coop_recovery_drop.jsonc`: L1-L21
+
+### GQ2-CHUNK-0455
+
+- `android/game_scripts/test_coop_recovery_host.jsonc`: L1-L13
+- `android/game_scripts/test_coop_respawn_pickup_client.jsonc`: L1-L14
+- `android/game_scripts/test_coop_respawn_pickup_host.jsonc`: L1-L10
+- `android/game_scripts/test_coop_restore_autosave_guard.jsonc`: L1-L8
+- `android/game_scripts/test_coop_restore_checkpoint_client.jsonc`: L1-L6
+- `android/game_scripts/test_coop_restore_checkpoint_host.jsonc`: L1-L5
+- `android/game_scripts/test_coop_restore_load_error_arm.jsonc`: L1-L5
+- `android/game_scripts/test_coop_restore_load_error_new_game.jsonc`: L1-L20
+- `android/game_scripts/test_coop_restore_loss_arm.jsonc`: L1-L4
+- `android/game_scripts/test_coop_restore_loss_dismiss.jsonc`: L1-L9
+- `android/game_scripts/test_coop_restore_loss_start.jsonc`: L1-L4
+- `android/game_scripts/test_coop_restore_resilience_seed.jsonc`: L1-L6
+- `android/game_scripts/test_coop_restore_resilience_verify.jsonc`: L1-L15
+- `android/game_scripts/test_coop_restore_status_client.jsonc`: L1-L5
+- `android/game_scripts/test_coop_restore_status_host.jsonc`: L1-L7
+- `android/game_scripts/test_coop_restore_status_replay.jsonc`: L1-L22
+
+### GQ2-CHUNK-0456
+
+- `android/game_scripts/test_coop_restore_sync_stall_arm.jsonc`: L1-L4
+- `android/game_scripts/test_coop_retired_load_client.jsonc`: L1-L30
+- `android/game_scripts/test_coop_retired_load_host.jsonc`: L1-L35
+- `android/game_scripts/test_coop_retired_save_host.jsonc`: L1-L79
+- `android/game_scripts/test_coop_retired_save_mutate.jsonc`: L1-L18
+- `android/game_scripts/test_coop_retired_save_seed.jsonc`: L1-L23
+- `android/game_scripts/test_coop_rewind_client_host.jsonc`: L1-L70
+- `android/game_scripts/test_coop_rewind_client_peer.jsonc`: L1-L82
+- `android/game_scripts/test_coop_rewind_client_record.jsonc`: L1-L23
+- `android/game_scripts/test_coop_rewind_guidebot_dock_client.jsonc`: L1-L16
+- `android/game_scripts/test_coop_rewind_guidebot_dock_host.jsonc`: L1-L14
+- `android/game_scripts/test_coop_rewind_guidebot_prepare.jsonc`: L1-L5
+- `android/game_scripts/test_coop_rewind_guidebot_verify_client.jsonc`: L1-L21
+- `android/game_scripts/test_coop_rewind_guidebot_verify_host.jsonc`: L1-L21
+- `android/game_scripts/test_coop_rewind_mutate.jsonc`: L1-L23
+- `android/game_scripts/test_coop_rewind_record.jsonc`: L1-L23
+
+### GQ2-CHUNK-0457
+
+- `android/game_scripts/test_graphics_context_loss.jsonc`: L1-L469
+- `android/game_scripts/test_graphics_egl_failure.jsonc`: L1-L412
+
+### GQ2-CHUNK-0458
+
+- `android/game_scripts/test_graphics_accept_trigger.jsonc`: L1-L34
+- `android/game_scripts/test_graphics_black_output.jsonc`: L1-L406
+
+### GQ2-CHUNK-0459
+
+- `android/game_scripts/test_engine_prefs_unified.jsonc`: L1-L150
+- `android/game_scripts/test_fov_cpu_visibility.jsonc`: L1-L692
+
+### GQ2-CHUNK-0460
+
+- `android/game_scripts/test_obsidian_level1_objective_markers.jsonc`: L1-L624
+- `android/game_scripts/test_obsidian_level13_open_wall_profile.jsonc`: L1-L81
+- `android/game_scripts/test_obsidian_level4_post_reactor_keys.jsonc`: L1-L180
+
+### GQ2-CHUNK-0461
+
+- `android/game_scripts/test_graphics_settings_confirmation.jsonc`: L1-L544
+- `android/game_scripts/test_graphics_staged_restart.jsonc`: L1-L176
+- `android/game_scripts/test_graphics_stall_trigger.jsonc`: L1-L24
+
+### GQ2-CHUNK-0462
+
+- `android/game_scripts/test_join_phase.jsonc`: L1-L171
+- `android/game_scripts/test_kcxf2_guidebot_route_next.jsonc`: L1-L653
+- `android/game_scripts/test_keyboard_manual.jsonc`: L1-L76
+
+### GQ2-CHUNK-0463
+
+- `android/game_scripts/test_independent_trigger_axes.jsonc`: L1-L474
+- `android/game_scripts/test_input_demo_recording_profile.jsonc`: L1-L266
+- `android/game_scripts/test_intro_skip_inputs_unified.jsonc`: L1-L58
+
+### GQ2-CHUNK-0464
+
+- `android/game_scripts/test_graphics_first_run_fixture.jsonc`: L1-L218
+- `android/game_scripts/test_graphics_lifecycle.jsonc`: L1-L434
+- `android/game_scripts/test_graphics_menu_abandon_trigger.jsonc`: L1-L32
+
+### GQ2-CHUNK-0465
+
+- `android/game_scripts/test_controller_compare_unified.jsonc`: L1-L125
+- `android/game_scripts/test_controller_raw_inputs.jsonc`: L1-L77
+- `android/game_scripts/test_controller_response.jsonc`: L1-L693
+
+### GQ2-CHUNK-0466
+
+- `android/game_scripts/test_endgame_singleplayer_d1.jsonc`: L1-L251
+- `android/game_scripts/test_endgame_singleplayer_d2.jsonc`: L1-L262
+- `android/game_scripts/test_enemy_within_level2.jsonc`: L1-L297
+
+### GQ2-CHUNK-0467
+
+- `android/game_scripts/test_unified_content_mission_picker.jsonc`: L1-L131
+- `android/game_scripts/test_unified_file_set_content.jsonc`: L1-L92
+- `android/game_scripts/test_vertigo_level_metadata.jsonc`: L1-L56
+- `android/game_scripts/test_vertigo_merge_creation.jsonc`: L1-L303
+
+### GQ2-CHUNK-0468
+
+- `android/game_scripts/test_guidebot_unexplored_goal.jsonc`: L1-L181
+- `android/game_scripts/test_idle_screen_saver_multiplayer_wake.jsonc`: L1-L50
+- `android/game_scripts/test_idle_screen_saver_multiplayer.jsonc`: L1-L45
+- `android/game_scripts/test_idle_screen_saver.jsonc`: L1-L431
+
+### GQ2-CHUNK-0469
+
+- `android/game_scripts/test_graphics_msaa_allocation_failure.jsonc`: L1-L401
+- `android/game_scripts/test_graphics_multiplayer_decide.jsonc`: L1-L32
+- `android/game_scripts/test_graphics_multiplayer_trial.jsonc`: L1-L35
+- `android/game_scripts/test_graphics_native_interruption.jsonc`: L1-L416
+
+### GQ2-CHUNK-0470
+
+- `android/game_scripts/test_gamepad_menu_navigation_unified.jsonc`: L901-L1268
+- `android/game_scripts/test_gles3_shim_vbo_arrays.jsonc`: L1-L41
+- `android/game_scripts/test_gog_installer_d1_unified.jsonc`: L1-L148
+- `android/game_scripts/test_gog_installer_redbook_unified.jsonc`: L1-L313
+
+### GQ2-CHUNK-0471
+
+- `android/game_scripts/test_msaa_render_and_menu.jsonc`: L901-L988
+- `android/game_scripts/test_music_save_source_restore_d2.jsonc`: L1-L91
+- `android/game_scripts/test_music_track_controls_unified.jsonc`: L1-L199
+- `android/game_scripts/test_newmenu_render_paths_unified.jsonc`: L1-L283
+
+### GQ2-CHUNK-0472
+
+- `android/game_scripts/test_mac_d2_demo_graphics.jsonc`: L1-L296
+- `android/game_scripts/test_merged_wall_snapshot_regression.jsonc`: L1-L165
+- `android/game_scripts/test_merged_wall_two_pass_probe.jsonc`: L1-L138
+- `android/game_scripts/test_mission_launch_cache.jsonc`: L1-L133
+- `android/game_scripts/test_mod_loading.jsonc`: L1-L146
+
+### GQ2-CHUNK-0473
+
+- `android/game_scripts/test_guidebot_goal_message.jsonc`: L1-L126
+- `android/game_scripts/test_guidebot_info_overlay.jsonc`: L1-L77
+- `android/game_scripts/test_guidebot_mission_metadata.jsonc`: L1-L182
+- `android/game_scripts/test_guidebot_recall_to_ship.jsonc`: L1-L86
+- `android/game_scripts/test_guidebot_routing_modes.jsonc`: L1-L360
+
+### GQ2-CHUNK-0474
+
+- `android/game_scripts/test_autoselect_crash_unified.jsonc`: L1-L205
+- `android/game_scripts/test_axis_mapping.jsonc`: L1-L409
+- `android/game_scripts/test_base_robot_preview.jsonc`: L1-L17
+- `android/game_scripts/test_boss_health_bar.jsonc`: L1-L162
+- `android/game_scripts/test_compressed_music_metadata.jsonc`: L1-L80
+- `android/game_scripts/test_compute_faster_dialog.jsonc`: L1-L14
+
+### GQ2-CHUNK-0475
+
+- `android/game_scripts/test_obsidian_level6_guidebot_switch_grate.jsonc`: L1-L124
+- `android/game_scripts/test_obsidian_level7_switch_guidance.jsonc`: L1-L142
+- `android/game_scripts/test_ogl_gauge_batch_unified.jsonc`: L1-L168
+- `android/game_scripts/test_ogl_runtime_texture_options_unified.jsonc`: L1-L247
+- `android/game_scripts/test_pc_d2_demo_music.jsonc`: L1-L101
+- `android/game_scripts/test_pilot_long_hold_delete_unified.jsonc`: L1-L88
+
+### GQ2-CHUNK-0476
+
+- `android/game_scripts/test_graphics_normal_exit_trigger.jsonc`: L1-L42
+- `android/game_scripts/test_graphics_preview_eligibility.jsonc`: L1-L40
+- `android/game_scripts/test_graphics_rebuild_trigger.jsonc`: L1-L87
+- `android/game_scripts/test_graphics_recovery_fixture.jsonc`: L1-L266
+- `android/game_scripts/test_graphics_recovery_restart.jsonc`: L1-L165
+- `android/game_scripts/test_graphics_repair_interrupt_trigger.jsonc`: L1-L24
+
+### GQ2-CHUNK-0477
+
+- `android/game_scripts/profile_uneasy4_level_preview.jsonc`: L1-L16
+- `android/game_scripts/test_abort_game_to_main_menu_d2.jsonc`: L1-L107
+- `android/game_scripts/test_android_saveload_dispatch_unified.jsonc`: L1-L171
+- `android/game_scripts/test_android_sdk_lifecycle.jsonc`: L1-L91
+- `android/game_scripts/test_anniversary_content_import.jsonc`: L1-L184
+- `android/game_scripts/test_automap_objective_readiness_progress.jsonc`: L1-L87
+- `android/game_scripts/test_autosave_resume_missing_pilot_unified.jsonc`: L1-L167
+
+### GQ2-CHUNK-0478
+
+- `android/game_scripts/test_saf_redbook.jsonc`: L1-L303
+- `android/game_scripts/test_secret_reveal_automap_d2.jsonc`: L1-L92
+- `android/game_scripts/test_skip_every_launch_button_manual_unified.jsonc`: L1-L53
+- `android/game_scripts/test_sound_trace.jsonc`: L1-L57
+- `android/game_scripts/test_soundfont_download_catalog.jsonc`: L1-L33
+- `android/game_scripts/test_texture_index_level_load.jsonc`: L1-L41
+- `android/game_scripts/test_title_music_skip_pref_unified.jsonc`: L1-L85
+- `android/game_scripts/test_trine2_d1_in_d2_custom_textures.jsonc`: L1-L176
+
+### GQ2-CHUNK-0479
+
+- `android/game_scripts/test_launch_to_automap.jsonc`: L1-L357
+- `android/game_scripts/test_launcher_media_controls.jsonc`: L1-L12
+- `android/game_scripts/test_level_metadata_hxm_worker_reuse.jsonc`: L1-L69
+- `android/game_scripts/test_level_metadata_interactive_preemption.jsonc`: L1-L70
+- `android/game_scripts/test_level_metadata_request_mount_scope.jsonc`: L1-L68
+- `android/game_scripts/test_level_metadata_result_cache_reuse.jsonc`: L1-L60
+- `android/game_scripts/test_levelcomplete_touch_skip.jsonc`: L1-L196
+- `android/game_scripts/test_lunar_series_revamped_metadata_only.jsonc`: L1-L33
+
+### GQ2-CHUNK-0480
+
+- `android/game_scripts/test_coop_countdown_save_save.jsonc`: L1-L18
+- `android/game_scripts/test_coop_countdown_save_seed.jsonc`: L1-L18
+- `android/game_scripts/test_coop_countdown_save_verify.jsonc`: L1-L23
+- `android/game_scripts/test_coop_countdown_save_wait.jsonc`: L1-L34
+- `android/game_scripts/test_coop_d1_flyout_near_client.jsonc`: L1-L171
+- `android/game_scripts/test_coop_d1_flyout_near_host.jsonc`: L1-L202
+- `android/game_scripts/test_coop_d1_flyout_players_client.jsonc`: L1-L171
+- `android/game_scripts/test_coop_d1_flyout_players_host.jsonc`: L1-L211
+
+### GQ2-CHUNK-0489
+
+- `android/helpers/test_graphics_multiplayer.ps1`: L1-L114
+- `android/helpers/test_headless_config_read_bounds.ps1`: L1-L109
+- `android/helpers/test_headless_route_stress.ps1`: L1-L56
+- `android/helpers/test_helpers.ps1`: diff hunks 1-89, new L25-L2798
+
+### GQ2-CHUNK-0490
+
+- `android/helpers/test_d1_in_d2_android.ps1`: L1-L523
+- `android/helpers/test_d1_in_d2_bootstrap.ps1`: L1-L59
+- `android/helpers/test_d1_render_candidates.ps1`: L1-L45
+- `android/helpers/test_d1_weapon_art.ps1`: L1-L55
+- `android/helpers/test_env.ps1`: diff hunks 1-1, new L30-L30
+- `android/helpers/test_execution_evidence.ps1`: L1-L143
+
+### GQ2-CHUNK-0491
+
+- `android/helpers/test_host_platform.ps1`: diff hunks 1-9, new L37-L590
+- `android/helpers/test_launcher_media_controls.ps1`: L1-L41
+- `android/helpers/test_level_loader_bounds.ps1`: L1-L49
+- `android/helpers/test_process_output.ps1`: L1-L51
+- `android/helpers/test_suite_coverage.ps1`: L1-L374
+- `android/helpers/test_suite_progress.ps1`: diff hunks 1-2, new L3-L45
+- `android/helpers/test_target.ps1`: L1-L127
+
+### GQ2-CHUNK-0492
+
+- `android/helpers/run_test.ps1`: diff hunks 1-50, new L5-L454
+- `android/helpers/test_d1_ai_checkpoints.ps1`: L1-L63
+- `android/helpers/test_d1_ai_frames.ps1`: L1-L54
+- `android/helpers/test_d1_briefings.ps1`: L1-L60
+- `android/helpers/test_d1_campaign.ps1`: L1-L67
+- `android/helpers/test_d1_death.ps1`: L1-L38
+- `android/helpers/test_d1_endlevel.ps1`: L1-L41
+- `android/helpers/test_d1_gameplay_rules.ps1`: L1-L63
+
+### GQ2-CHUNK-0493
+
+- `android/mission-metadata-core/src/test/kotlin/com/dxxredux/app/MissionDescriptorPolicyTest.kt`: L1-L50
+- `android/mission-metadata-core/src/test/kotlin/com/dxxredux/app/MissionMetadataProjectionTest.kt`: L1-L64
+- `android/mission-metadata-core/src/test/kotlin/com/dxxredux/app/MissionVariantPolicyTest.kt`: L1-L20
+
+### GQ2-CHUNK-0494
+
+- `android/tests/test_vertigo_secret3_switch_prerequisites.ps1`: L1-L35
+- `android/tests/test_vignettes_level22_frontier.ps1`: L1-L36
+- `android/tests/test_vignettes_level8_firing_position.ps1`: L1-L36
+- `android/tests/test_windows_mission_metadata_route_masks.ps1`: L1-L36
+- `android/tests/test_windows_mission_metadata_runner.ps1`: L1-L99
+- `android/tests/test_xcrash_native_report.ps1`: diff hunks 1-9, new L6-L153
+- `android/tests/TouchLayoutFormatProbe.java`: L1-L74
+- `android/tests/update_guidebot_redux_reference.py`: L1-L126
+- `android/tests/validate_music_eq.py`: L1-L159
+- `android/tests/wall_blast_save_fixture.hpp`: L1-L151
+
+### GQ2-CHUNK-0495
+
+- `android/tests/test_guided_shot_annotations.ps1`: L1-L62
+- `android/tests/test_hash_assets_force_completeness.ps1`: diff hunks 1-1, new L28-L28
+- `android/tests/test_headless_diagnostics.cpp`: L1-L29
+- `android/tests/test_headless_process_pool.ps1`: L1-L60
+- `android/tests/test_hmp_playback.py`: L1-L241
+- `android/tests/test_homing_compat.c`: diff hunks 1-4, new L5-L31
+- `android/tests/test_host_dialog_loading.ps1`: L1-L23
+- `android/tests/test_host_metadata_worker.ps1`: L1-L76
+- `android/tests/test_host_metadata_workspace.ps1`: L1-L190
+- `android/tests/test_host_process_cleanup.ps1`: L1-L65
+
+### GQ2-CHUNK-0496
+
+- `android/tests/test_coop_recovery.c`: L901-L953
+- `android/tests/test_coop_save_compatibility.ps1`: L1-L166
+- `android/tests/test_coop_save_format.c`: L1-L64
+- `android/tests/test_coop_session.ps1`: L1-L21
+- `android/tests/test_coop_start_fanout_mapset.ps1`: diff hunks 1-2, new L35-L85
+- `android/tests/test_coop_transition_policy.c`: L1-L354
+- `android/tests/test_coop_transition_policy.ps1`: L1-L26
+- `android/tests/test_coop_trigger_messages.py`: L1-L149
+- `android/tests/test_coop_warp_policy.c`: diff hunks 1-3, new L18-L22
+- `android/tests/test_coop_world_visit.c`: L1-L48
+
+### GQ2-CHUNK-0497
+
+- `android/tests/guidebot_redux_reference.c`: L1801-L1823
+- `android/tests/guidebot_redux_reference.h`: L1-L29
+- `android/tests/guidebot_route_regression_cases.ps1`: L1-L107
+- `android/tests/input_demo_host_build_guard.ps1`: diff hunks 1-11, new L3-L171
+- `android/tests/midi_diff.py`: L1-L318
+- `android/tests/music_realtime/probe.py`: L1-L173
+- `android/tests/music_spectral/opl3.json`: L1-L61
+- `android/tests/music_spectral/sc55.json`: L1-L47
+- `android/tests/music_test_preferences.py`: L1-L41
+- `android/tests/pcm_ring/CMakeLists.txt`: L1-L10
+
+### GQ2-CHUNK-0498
+
+- `android/tests/test_sdk_package_inventory.ps1`: L1-L100
+- `android/tests/test_sdk_provisioning.sh`: L1-L210
+- `android/tests/test_sdk_writer_lock.ps1`: L1-L140
+- `android/tests/test_secret_area_baseline_diff.ps1`: diff hunks 1-1, new L34-L43
+- `android/tests/test_secret_area_liquid_obsidian.py`: L1-L58
+- `android/tests/test_secret_area_serialization_contracts.py`: L1-L100
+- `android/tests/test_server_integration.ps1`: diff hunks 1-3, new L18-L36
+- `android/tests/test_slider_navigation.ps1`: L1-L25
+- `android/tests/test_sound_trace_fingerprint.c`: L1-L49
+- `android/tests/test_sound_trace.ps1`: L1-L25
+- `android/tests/test_soundfont_loop_bounds.py`: L1-L75
+
+### GQ2-CHUNK-0499
+
+- `android/tests/test_hud_counts.c`: L1-L202
+- `android/tests/test_hud_layout.c`: diff hunks 1-4, new L4-L145
+- `android/tests/test_inno_capability_docs.py`: diff hunks 1-3, new L18-L52
+- `android/tests/test_input_demo_determinism_matrix.ps1`: diff hunks 1-5, new L31-L203
+- `android/tests/test_input_demo_explicit_path.ps1`: L1-L15
+- `android/tests/test_input_demo_fixture.cpp`: diff hunks 1-5, new L47-L721
+- `android/tests/test_input_demo_host_build_guard.ps1`: diff hunks 1-1, new L20-L28
+- `android/tests/test_input_demo_policy_pack1.c`: diff hunks 1-1, new L9-L9
+- `android/tests/test_input_demo_policy_pack16.c`: diff hunks 1-1, new L9-L9
+- `android/tests/test_input_demo_recorder.cpp`: diff hunks 1-25, new L14-L1077
+- `android/tests/test_input_demo_replay_failures.ps1`: L1-L154
+
+### GQ2-CHUNK-0500
+
+- `android/tests/run_tooling_smoke.ps1`: L1-L67
+- `android/tests/save_endian_fixture.hpp`: L1-L338
+- `android/tests/secret_area_baseline_helpers.ps1`: diff hunks 1-1, new L96-L108
+- `android/tests/test_acoustid_config_packaging.ps1`: diff hunks 1-13, new L3-L67
+- `android/tests/test_acoustid_regeneration.ps1`: diff hunks 1-2, new L118-L127
+- `android/tests/test_active_game_data_reset.ps1`: diff hunks 1-2, new L75-L95
+- `android/tests/test_android_audio_lifecycle.py`: diff hunks 1-4, new L10-L242
+- `android/tests/test_android_axis_mailbox.cpp`: diff hunks 1-5, new L2-L201
+- `android/tests/test_android_distributions.ps1`: L1-L83
+- `android/tests/test_android_file_pair_transaction.c`: diff hunks 1-3, new L48-L120
+- `android/tests/test_android_gpu_policy.c`: L1-L31
+- `android/tests/test_android_metadata_worker.ps1`: L1-L135
+
+### GQ2-CHUNK-0501
+
+- `android/tests/test_asset_alternatives.py`: L1-L222
+- `android/tests/test_autoselect_order_validation.py`: diff hunks 1-4, new L10-L45
+- `android/tests/test_autoselect.cpp`: L1-L217
+- `android/tests/test_base_mission_route_status.ps1`: diff hunks 1-1, new L1-L1
+- `android/tests/test_bitesize_blastable_grate.ps1`: L1-L34
+- `android/tests/test_bitesize_crossed_triggers.ps1`: L1-L34
+- `android/tests/test_bitesize_reverse_door.ps1`: L1-L36
+- `android/tests/test_bot_client.ps1`: diff hunks 1-5, new L211-L295
+- `android/tests/test_bounded_python_runtime.ps1`: L1-L173
+- `android/tests/test_bounded_rle.c`: diff hunks 1-2, new L8-L24
+- `android/tests/test_castaway_alternative_exit.ps1`: L1-L33
+- `android/tests/test_castaway_level1_cage_route.ps1`: L1-L49
+
+### GQ2-CHUNK-0502
+
+- `android/tests/test_metadata_parallel_results.ps1`: L1-L58
+- `android/tests/test_midi_preview_sync.py`: diff hunks 1-13, new L47-L303
+- `android/tests/test_mission_intent_regression_schema.ps1`: L1-L56
+- `android/tests/test_mission_level_names.ps1`: L1-L32
+- `android/tests/test_mission_metadata_flyouts.ps1`: L1-L92
+- `android/tests/test_mission_metadata_json_normalization.ps1`: diff hunks 1-6, new L5-L104
+- `android/tests/test_mission_metadata_level_statistics.ps1`: L1-L41
+- `android/tests/test_mission_metadata_travel_times.ps1`: diff hunks 1-4, new L6-L27
+- `android/tests/test_mission_metadata_trigger_cycles.ps1`: L1-L19
+- `android/tests/test_mission_provenance.ps1`: L1-L109
+- `android/tests/test_mission_route_corpus.ps1`: diff hunks 1-1, new L1-L1
+- `android/tests/test_mp.ps1`: diff hunks 1-16, new L64-L554
+
+### GQ2-CHUNK-0503
+
+- `android/tests/test_lostlvls_directional_unlock.ps1`: L1-L50
+- `android/tests/test_lostlvls_door_recess.ps1`: L1-L48
+- `android/tests/test_lostlvls_key_contact.ps1`: L1-L49
+- `android/tests/test_lostlvls_level22_portal.ps1`: L1-L35
+- `android/tests/test_lostlvls_remote_door.ps1`: L1-L32
+- `android/tests/test_managed_dependencies.ps1`: L1-L304
+- `android/tests/test_managed_emulator_start.ps1`: L1-L52
+- `android/tests/test_mandrill_guidebot_clearance.ps1`: L1-L57
+- `android/tests/test_manual_ip_engine.ps1`: L1-L61
+- `android/tests/test_matcen_mode.c`: L1-L66
+- `android/tests/test_maximum_nested_secret.ps1`: L1-L42
+- `android/tests/test_maximum_restoring_wall.ps1`: L1-L36
+- `android/tests/test_metadata_level_headers.ps1`: L1-L51
+
+### GQ2-CHUNK-0504
+
+- `android/tests/test_multi_save_transfer_policy.c`: diff hunks 1-2, new L16-L102
+- `android/tests/test_multiplayer_recovery.ps1`: L1-L24
+- `android/tests/test_multiplayer_source_contracts.py`: diff hunks 1-2, new L22-L59
+- `android/tests/test_music_eq_device.py`: L1-L215
+- `android/tests/test_music_spectra.py`: L1-L66
+- `android/tests/test_music_wav_decode.c`: L1-L65
+- `android/tests/test_native_file_naming_contracts.py`: L1-L72
+- `android/tests/test_native_host_unit_tests.ps1`: diff hunks 1-2, new L35-L43
+- `android/tests/test_native_metadata_worker.ps1`: L1-L119
+- `android/tests/test_net_udp_initial_sync_retry.c`: L1-L41
+- `android/tests/test_obsidian_level1_route_confirmation.ps1`: L1-L62
+- `android/tests/test_obsidian_level10_firing_dependencies.ps1`: L1-L69
+- `android/tests/test_obsidian_level11_door_route.ps1`: L1-L49
+
+### GQ2-CHUNK-0505
+
+- `android/tests/test_fingerprint_audio_enumeration.ps1`: diff hunks 1-6, new L5-L141
+- `android/tests/test_fingerprint_manifest_publication.ps1`: diff hunks 1-24, new L5-L291
+- `android/tests/test_fingerprint_match_strict.py`: diff hunks 1-2, new L13-L16
+- `android/tests/test_fingerprint_music_pack_build_guard.ps1`: diff hunks 1-3, new L19-L34
+- `android/tests/test_fingerprint_source_identity.ps1`: diff hunks 1-3, new L52-L68
+- `android/tests/test_fingerprint_threshold.ps1`: diff hunks 1-7, new L3-L124
+- `android/tests/test_flyout_safety.ps1`: L1-L65
+- `android/tests/test_fm_playback.py`: L1-L130
+- `android/tests/test_fm_profiles.py`: L1-L183
+- `android/tests/test_formatter_process_cleanup.ps1`: L1-L88
+- `android/tests/test_fov_demo_compatibility.ps1`: L1-L12
+- `android/tests/test_fpcalc_and_acoustid.ps1`: diff hunks 1-3, new L14-L191
+- `android/tests/test_generate_regression_specs.ps1`: diff hunks 1-15, new L5-L208
+
+### GQ2-CHUNK-0506
+
+- `android/tests/test_input_demo_replay_menu.ps1`: L1-L67
+- `android/tests/test_input_demo_replay.cpp`: diff hunks 1-30, new L685-L1030
+- `android/tests/test_input_demo_result.cpp`: diff hunks 1-3, new L115-L347
+- `android/tests/test_input_demo_rng_mode.c`: diff hunks 1-9, new L6-L139
+- `android/tests/test_input_demo_rng_trace_compare.ps1`: diff hunks 1-3, new L17-L63
+- `android/tests/test_input_demo_runtime_smoke.ps1`: diff hunks 1-5, new L2-L256
+- `android/tests/test_input_demo_start_difficulty_validation.py`: diff hunks 1-2, new L6-L19
+- `android/tests/test_input_demo_state_trace_compare.ps1`: diff hunks 1-5, new L22-L109
+- `android/tests/test_introspection_accessor_contracts.py`: L1-L92
+- `android/tests/test_jdk_install.sh`: L1-L100
+- `android/tests/test_jsonc_and_tracklist_parsing.ps1`: diff hunks 1-9, new L6-L105
+- `android/tests/test_kconfig_android_shared.c`: diff hunks 1-8, new L7-L66
+- `android/tests/test_lan_active_discovery.ps1`: L1-L85
+- `android/tests/test_lan_broadcast.ps1`: diff hunks 1-3, new L7-L149
+- `android/tests/test_lan_launch_preparation.ps1`: L1-L56
+
+### GQ2-CHUNK-0507
+
+- `android/tests/test_castaway_level2_restored_switch_route.ps1`: L1-L43
+- `android/tests/test_castaway_level3_access_recovery.ps1`: L1-L38
+- `android/tests/test_castaway_level5_switch_dependencies.ps1`: L1-L59
+- `android/tests/test_castaway_level6_path_closure.ps1`: L1-L39
+- `android/tests/test_castaway_level6_trigger_route.ps1`: L1-L44
+- `android/tests/test_castaway_level7_trigger_dependencies.ps1`: L1-L57
+- `android/tests/test_castaway_level8_keyed_trigger_route.ps1`: L1-L63
+- `android/tests/test_castaway_level9_second_boss_route.ps1`: L1-L58
+- `android/tests/test_cd_level_metadata_sources.ps1`: diff hunks 1-3, new L3-L84
+- `android/tests/test_cd_preview_sync.py`: diff hunks 1-3, new L47-L75
+- `android/tests/test_cd_regression_runner.ps1`: diff hunks 1-15, new L8-L225
+- `android/tests/test_classic_demo_dump_transaction.py`: diff hunks 1-4, new L101-L125
+- `android/tests/test_classic_demo_json.c`: diff hunks 1-10, new L27-L257
+- `android/tests/test_classic_trigger_demo.ps1`: L1-L78
+- `android/tests/test_clean_old_artifacts.ps1`: diff hunks 1-6, new L8-L210
+
+### GQ2-CHUNK-0508
+
+- `android/tests/test_obsidian_level12_switch_approach.ps1`: L1-L54
+- `android/tests/test_obsidian_level13_remote_door_route.ps1`: L1-L47
+- `android/tests/test_obsidian_level2_key_preference.ps1`: diff hunks 1-1, new L1-L1
+- `android/tests/test_obsidian_level3_blastable_wall.ps1`: L1-L59
+- `android/tests/test_obsidian_level4_closed_trigger_source.ps1`: L1-L50
+- `android/tests/test_obsidian_level5_partial_frontier.ps1`: L1-L39
+- `android/tests/test_obsidian_level7_exit_route.ps1`: L1-L41
+- `android/tests/test_obsidian_level9_frontier_route.ps1`: L1-L46
+- `android/tests/test_obsidian_level9_motion_tolerance.ps1`: L1-L38
+- `android/tests/test_obsidian_recovery_collision.ps1`: L1-L29
+- `android/tests/test_ogl_gpu_timer.c`: L1-L91
+- `android/tests/test_ogl_runtime_texture_options_unified.ps1`: L1-L80
+- `android/tests/test_pcm_ring.ps1`: L1-L37
+- `android/tests/test_physfsx_android_init_contracts.py`: L1-L45
+- `android/tests/test_pickup_autoselect_parity.ps1`: L1-L66
+- `android/tests/test_plutonia_avoidance_endpoint.ps1`: L1-L29
+
+### GQ2-CHUNK-0509
+
+- `android/tests/test_test_process_output_capture.ps1`: L1-L87
+- `android/tests/test_test_report_runtimes.ps1`: diff hunks 1-5, new L13-L35
+- `android/tests/test_test_runner_result.ps1`: L1-L140
+- `android/tests/test_test_suite_progress.ps1`: diff hunks 1-1, new L30-L37
+- `android/tests/test_tew_hidden_door_approach.ps1`: L1-L29
+- `android/tests/test_tew_level1_adjacent_switch.ps1`: L1-L38
+- `android/tests/test_tew_level13_corner_recovery.ps1`: L1-L38
+- `android/tests/test_tew_level15_planning_budget.ps1`: L1-L38
+- `android/tests/test_tew_level20_countdown_door.ps1`: L1-L38
+- `android/tests/test_tew_level23_hidden_keyed_door.ps1`: L1-L38
+- `android/tests/test_tew_level26_timed_switches.ps1`: L1-L44
+- `android/tests/test_tew_secret3_trigger_door.ps1`: L1-L39
+- `android/tests/test_tew_tapered_route.ps1`: L1-L33
+- `android/tests/test_thief_checkpoint_index_validation.py`: diff hunks 1-1, new L22-L22
+- `android/tests/test_touch_layout_format.ps1`: L1-L47
+- `android/tests/test_tsf_render_thread_tuning.py`: diff hunks 1-2, new L81-L88
+
+### GQ2-CHUNK-0510
+
+- `android/tests/test_counterstrike_implicit_trigger_recovery.ps1`: L1-L39
+- `android/tests/test_counterstrike_keyed_access_recovery.ps1`: L1-L39
+- `android/tests/test_counterstrike_level1_route_confirmation.ps1`: L1-L42
+- `android/tests/test_counterstrike_level10_key_carriers.ps1`: L1-L48
+- `android/tests/test_counterstrike_level11_route_waypoints.ps1`: L1-L55
+- `android/tests/test_counterstrike_level12_asymmetric_return_door.ps1`: L1-L51
+- `android/tests/test_counterstrike_level17_carried_key_pickup.ps1`: L1-L50
+- `android/tests/test_counterstrike_level2_open_locked_route.ps1`: L1-L54
+- `android/tests/test_counterstrike_level2_trigger21_route.ps1`: diff hunks 1-18, new L11-L145
+- `android/tests/test_counterstrike_level20_trigger_door_replan.ps1`: L1-L57
+- `android/tests/test_counterstrike_level23_route_progress.ps1`: L1-L56
+- `android/tests/test_counterstrike_level24_final_boss_route.ps1`: L1-L41
+- `android/tests/test_counterstrike_level6_blue_door_route.ps1`: L1-L50
+- `android/tests/test_crossfire_zero_countdown.ps1`: L1-L38
+- `android/tests/test_d_tick_state_validation.py`: diff hunks 1-2, new L30-L39
+- `android/tests/test_d1_custom_rle_staging.py`: diff hunks 1-3, new L7-L40
+
+### GQ2-CHUNK-0511
+
+- `android/tests/test_dual_emu_setup.ps1`: diff hunks 1-8, new L43-L118
+- `android/tests/test_dual_emu.ps1`: diff hunks 1-8, new L42-L222
+- `android/tests/test_dxa_animation_validation.py`: diff hunks 1-3, new L68-L90
+- `android/tests/test_dxa_robot_weapon_validation.py`: diff hunks 1-4, new L30-L43
+- `android/tests/test_eaf_guided_launch_prerequisites.ps1`: L1-L50
+- `android/tests/test_eaf2_reactor_access.ps1`: L1-L46
+- `android/tests/test_emulator_recovery.ps1`: L1-L55
+- `android/tests/test_enemy_within_level2.ps1`: L1-L36
+- `android/tests/test_entropy2_level4_reactor_links.ps1`: L1-L34
+- `android/tests/test_entropy2_level5_key_carrier.ps1`: L1-L43
+- `android/tests/test_escort_goal_policy.c`: L1-L38
+- `android/tests/test_escort_owner_policy.c`: diff hunks 1-6, new L5-L166
+- `android/tests/test_ffyl_alternative_dependency.ps1`: L1-L32
+- `android/tests/test_ffyl_closed_path_door.ps1`: L1-L32
+- `android/tests/test_ffyl_fleeing_guidebot.ps1`: L1-L36
+- `android/tests/test_ffyl_forcefield_door.ps1`: L1-L35
+
+### GQ2-CHUNK-0512
+
+- `android/tests/test_dependency_install.ps1`: L1-L28
+- `android/tests/test_dependency_temp_files.sh`: diff hunks 1-1, new L73-L86
+- `android/tests/test_deployment_script_contracts.py`: diff hunks 1-3, new L22-L79
+- `android/tests/test_deterministic_math.c`: diff hunks 1-5, new L18-L26
+- `android/tests/test_diehard_countdown_switch.ps1`: L1-L37
+- `android/tests/test_diehard_directional_frontier.ps1`: L1-L32
+- `android/tests/test_diehard_exit_prerequisite.ps1`: L1-L37
+- `android/tests/test_diehard_keyless_frontier.ps1`: L1-L37
+- `android/tests/test_diehard_native_key_pickup.ps1`: L1-L30
+- `android/tests/test_diehard_opening_frontier.ps1`: L1-L45
+- `android/tests/test_diehard_player_assisted_door.ps1`: L1-L38
+- `android/tests/test_disc_content_import.ps1`: L1-L17
+- `android/tests/test_distribution_build_info.ps1`: L1-L60
+- `android/tests/test_dos_midi_parity.ps1`: L1-L111
+- `android/tests/test_download_verification.ps1`: diff hunks 1-8, new L10-L131
+- `android/tests/test_dpog_d1_bitmap_mapping.py`: diff hunks 1-4, new L7-L53
+
+### GQ2-CHUNK-0513
+
+- `android/tests/audit_soundfont_coverage.py`: L1-L147
+- `android/tests/classic_asset_demo_fixture.hpp`: L1-L297
+- `android/tests/classic_trigger_demo_fixture.hpp`: L1-L334
+
+### GQ2-CHUNK-0514
+
+- `android/tests/compare_music_profiles.py`: L1-L113
+- `android/tests/compare_music_spectra.py`: L1-L447
+- `android/tests/coop_restore_fixture.c`: L1-L121
+
+### GQ2-CHUNK-0515
+
+- `android/tests/test_robot_preview.ps1`: L1-L568
+- `android/tests/test_route_analysis_cache.c`: diff hunks 1-8, new L27-L127
+- `android/tests/test_route_regeneration_audit.ps1`: L1-L78
+
+### GQ2-CHUNK-0516
+
+- `android/tests/test_d1_in_d2_standalone.ps1`: L1-L21
+- `android/tests/test_d1_in_d2_text_mapping.py`: L1-L40
+- `android/tests/test_d1_pig_validation.c`: diff hunks 1-2, new L5-L97
+
+### GQ2-CHUNK-0517
+
+- `android/tests/test_guidebot_live_navigation.cpp`: L1-L369
+- `android/tests/test_guidebot_live_navigation.ps1`: L1-L65
+- `android/tests/test_guidebot_mission_metadata.ps1`: L1-L62
+
+### GQ2-CHUNK-0518
+
+- `android/tests/CMakeLists.txt`: L1-L483
+- `android/tests/compare_input_demo_rng_trace.ps1`: diff hunks 1-4, new L13-L73
+- `android/tests/compare_input_demo_state_trace.ps1`: diff hunks 1-12, new L16-L606
+- `android/tests/compare_music_loudness.py`: L1-L217
+
+### GQ2-CHUNK-0519
+
+- `android/tests/test_get_deps_runtime_updates.ps1`: diff hunks 1-12, new L12-L235
+- `android/tests/test_github_release.ps1`: L1-L595
+- `android/tests/test_gog_installer_d1_unified.ps1`: diff hunks 1-2, new L8-L50
+- `android/tests/test_gog_installer_redbook_unified.ps1`: diff hunks 1-3, new L8-L157
+
+### GQ2-CHUNK-0520
+
+- `android/tests/fm_feasibility/hmi_probe.py`: L1-L417
+- `android/tests/fm_feasibility/measure_hmi_pitch.py`: L1-L72
+- `android/tests/fm_feasibility/measure_hmi_volume.py`: L1-L134
+- `android/tests/fm_feasibility/opl_trace.py`: L1-L112
+
+### GQ2-CHUNK-0521
+
+- `android/tests/fluidsynth_quality/render.cpp`: L1-L273
+- `android/tests/fm_feasibility/CMakeLists.txt`: L1-L99
+- `android/tests/fm_feasibility/compare_opl.py`: L1-L170
+- `android/tests/fm_feasibility/dependencies.json`: L1-L20
+
+### GQ2-CHUNK-0522
+
+- `android/tests/fm_feasibility/verify_hmi_driver.py`: L1-L315
+- `android/tests/fm_feasibility/verify_opl.py`: L1-L122
+- `android/tests/fm_feasibility/verify.py`: L1-L26
+- `android/tests/fm_quality/CMakeLists.txt`: L1-L72
+- `android/tests/fm_quality/experiment.py`: L1-L286
+
+### GQ2-CHUNK-0523
+
+- `android/tests/test_guidebot_original_navigation.ps1`: L1-L50
+- `android/tests/test_guidebot_player_defaults.ps1`: L1-L18
+- `android/tests/test_guidebot_precision_recovery.ps1`: L1-L49
+- `android/tests/test_guidebot_publication_batching.ps1`: L1-L47
+- `android/tests/test_guidebot_reactor_lifetime.ps1`: L1-L65
+
+### GQ2-CHUNK-0524
+
+- `android/tests/fm_feasibility/patch_hmi.py`: L1-L202
+- `android/tests/fm_feasibility/patch_live.py`: L1-L120
+- `android/tests/fm_feasibility/probe.cpp`: L1-L228
+- `android/tests/fm_feasibility/replay_capture.py`: L1-L130
+- `android/tests/fm_feasibility/run.ps1`: L1-L64
+
+### GQ2-CHUNK-0525
+
+- `android/tests/fm_quality/prepare.py`: L1-L123
+- `android/tests/fm_quality/run.ps1`: L1-L41
+- `android/tests/fm_quality/verify_shipping.py`: L1-L87
+- `android/tests/game08_agogo_experiment.py`: L1-L183
+- `android/tests/gpu_timer_stubs/ogl_init.h`: L1-L18
+- `android/tests/guidebot_navigation_host.ps1`: L1-L34
+
+### GQ2-CHUNK-0526
+
+- `android/tests/test_guidebot_route_decision.c`: L1-L441
+- `android/tests/test_guidebot_route_regressions.ps1`: L1-L93
+- `android/tests/test_guidebot_routing_menus.ps1`: L1-L146
+- `android/tests/test_guidebot_saved_world.ps1`: L1-L79
+- `android/tests/test_guidebot_secret_transition.ps1`: L1-L57
+- `android/tests/test_guidebot_simulation_browser.ps1`: L1-L79
+
+### GQ2-CHUNK-0527
+
+- `android/tests/test_lan_lobby_discovery.ps1`: diff hunks 1-12, new L17-L361
+- `android/tests/test_lan_nsd.ps1`: L1-L174
+- `android/tests/test_lan_orphan_restart.ps1`: L1-L78
+- `android/tests/test_lan_qr_join.ps1`: L1-L122
+- `android/tests/test_lan_qr.ps1`: L1-L23
+- `android/tests/test_lan_transport_recovery.ps1`: L1-L45
+
+### GQ2-CHUNK-0528
+
+- `android/tests/test_d1_replay_parity.ps1`: L1-L63
+- `android/tests/test_d1_save_translate_weapon_validation.py`: diff hunks 1-3, new L6-L19
+- `android/tests/test_d1_wall_blast_save.ps1`: L1-L59
+- `android/tests/test_d2xxl_tga_layout.ps1`: diff hunks 1-39, new L2-L334
+- `android/tests/test_d2xxl_tga_pixels.ps1`: L1-L61
+- `android/tests/test_dep_platform.ps1`: L1-L129
+
+### GQ2-CHUNK-0529
+
+- `android/tests/pcm_ring/test_pcm_ring.c`: L1-L101
+- `android/tests/pickup_autoselect_fixture.hpp`: L1-L225
+- `android/tests/prepare_coop_endgame_fixture.py`: L1-L69
+- `android/tests/render_game08_gm_reference.py`: L1-L109
+- `android/tests/run_dos_midi_parity.py`: L1-L76
+- `android/tests/run_engine_sanitizers.ps1`: L1-L124
+- `android/tests/run_input_demo_regressions.ps1`: diff hunks 1-7, new L3-L248
+
+### GQ2-CHUNK-0530
+
+- `android/tests/test_guidebot_simulation_headed_headless_parity.ps1`: L1-L120
+- `android/tests/test_guidebot_simulation_reporting.ps1`: L1-L74
+- `android/tests/test_guidebot_simulation_runner.ps1`: L1-L176
+- `android/tests/test_guidebot_simulation_schema.ps1`: L1-L376
+- `android/tests/test_guidebot_simulation_timeout_policy.ps1`: L1-L93
+- `android/tests/test_guidebot_successive_frontiers.ps1`: L1-L16
+- `android/tests/test_guidebot_waypoint_clearance.ps1`: L1-L20
+
+### GQ2-CHUNK-0531
+
+- `android/tests/test_soundfont_profiles.py`: L1-L326
+- `android/tests/test_soundfont_release_download.py`: L1-L148
+- `android/tests/test_standard_game_data_resolution.ps1`: diff hunks 1-8, new L13-L93
+- `android/tests/test_state_persistence_contracts.py`: diff hunks 1-5, new L14-L178
+- `android/tests/test_store_asset_pipeline.ps1`: L1-L32
+- `android/tests/test_test_execution_evidence.ps1`: L1-L93
+- `android/tests/test_test_helpers_process_wait.ps1`: diff hunks 1-13, new L3-L309
+
+### GQ2-CHUNK-0532
+
+- `android/tests/test_route_snapshot.cpp`: diff hunks 75-75, new L3003-L3302
+- `android/tests/test_run_all_tests_catalog.ps1`: L1-L166
+- `android/tests/test_runtime_targeted_sampling.ps1`: L1-L114
+- `android/tests/test_saf_redbook.ps1`: diff hunks 1-2, new L7-L25
+- `android/tests/test_saturn_level15_simulation.ps1`: L1-L16
+- `android/tests/test_save_runtime_validation.py`: diff hunks 1-4, new L16-L183
+- `android/tests/test_sdk_package_cleanup.ps1`: L1-L263
+
+### GQ2-CHUNK-0533
+
+- `android/tests/test_regenerate_all_regression_data.ps1`: diff hunks 1-7, new L3-L249
+- `android/tests/test_regression_process_lifetime.ps1`: L1-L62
+- `android/tests/test_regression_tool_contracts.py`: diff hunks 1-4, new L23-L119
+- `android/tests/test_replacement_texture_limits.py`: diff hunks 1-2, new L15-L24
+- `android/tests/test_replay_trace_equivalence.py`: L1-L109
+- `android/tests/test_replay_window_progress.py`: L1-L161
+- `android/tests/test_repository_artifact_policy.ps1`: L1-L80
+- `android/tests/test_rng_seed_resume.c`: diff hunks 1-1, new L37-L37
+
+### GQ2-CHUNK-0534
+
+- `android/tests/test_controller_touch_hotplug.ps1`: L1-L119
+- `android/tests/test_coop_campaign.c`: L1-L277
+- `android/tests/test_coop_gameplay_fence.c`: L1-L188
+- `android/tests/test_coop_host_migration_policy.c`: diff hunks 1-8, new L11-L79
+- `android/tests/test_coop_indicator_lines_math.c`: diff hunks 1-13, new L26-L53
+- `android/tests/test_coop_launch_feedback.ps1`: L1-L15
+- `android/tests/test_coop_player_session.c`: diff hunks 1-5, new L3-L132
+- `android/tests/test_coop_powerup_duplication.c`: diff hunks 1-3, new L125-L167
+
+### GQ2-CHUNK-0535
+
+- `android/tests/test_launcher_dpad.ps1`: diff hunks 1-23, new L18-L283
+- `android/tests/test_launcher_media_controls.ps1`: L1-L12
+- `android/tests/test_level_metadata_benchmark.ps1`: L1-L331
+- `android/tests/test_level_metadata_scan.c`: diff hunks 1-24, new L29-L1841
+- `android/tests/test_level_section_io.c`: L1-L50
+- `android/tests/test_level_statistics.cpp`: L1-L70
+- `android/tests/test_linux_process_lifetime.py`: L1-L135
+- `android/tests/test_lobby_latency.ps1`: L1-L20
+
+### GQ2-CHUNK-0536
+
+- `android/tests/dependency_install_wsl.sh`: L1-L32
+- `android/tests/export_input_demo_state_trace.ps1`: diff hunks 1-3, new L13-L35
+- `android/tests/fit_music_eq.py`: L1-L201
+- `android/tests/fixtures/process_lifetime_worker.ps1`: L1-L51
+- `android/tests/fluidsynth_quality/android_probe.py`: L1-L75
+- `android/tests/fluidsynth_quality/CMakeLists.txt`: L1-L25
+- `android/tests/fluidsynth_quality/experiment.py`: L1-L156
+- `android/tests/fluidsynth_quality/package_sources.py`: L1-L82
+- `android/tests/fluidsynth_quality/popping.py`: L1-L74
+
+### GQ2-CHUNK-0537
+
+- `android/tests/test_graphics_first_run.ps1`: L1-L151
+- `android/tests/test_graphics_preview.ps1`: L1-L12
+- `android/tests/test_graphics_recovery.ps1`: L1-L13
+- `android/tests/test_graphics_video_overlay.ps1`: L1-L118
+- `android/tests/test_guidebot_firststrike_live_objects.ps1`: L1-L16
+- `android/tests/test_guidebot_firststrike_long_path.ps1`: L1-L16
+- `android/tests/test_guidebot_goal_message.c`: L1-L150
+- `android/tests/test_guidebot_key_checkpoint.ps1`: L1-L57
+- `android/tests/test_guidebot_live_key_pickup.ps1`: L1-L15
+
+### GQ2-CHUNK-0538
+
+- `android/tests/test_clean_workspace.ps1`: L1-L361
+- `android/tests/test_cmakelang_install.sh`: L1-L126
+- `android/tests/test_cockpit_mode_validation.py`: diff hunks 1-2, new L26-L31
+- `android/tests/test_code_quality_files.ps1`: L1-L129
+- `android/tests/test_combined_package_identity.ps1`: L1-L63
+- `android/tests/test_control_center_trigger_validation.py`: diff hunks 1-2, new L29-L33
+- `android/tests/test_controller_live_rebind.ps1`: L1-L61
+- `android/tests/test_controller_overlay.ps1`: L1-L24
+- `android/tests/test_controller_response.ps1`: L1-L21
+
+### GQ2-CHUNK-0539
+
+- `android/tests/test_plutonia_level11_boss_grate.ps1`: L1-L37
+- `android/tests/test_plutonia_level5_reactor_grate.ps1`: L1-L49
+- `android/tests/test_plutonia_narrow_funnel.ps1`: L1-L34
+- `android/tests/test_powershell_51_compatibility.ps1`: L1-L152
+- `android/tests/test_powershell_install.sh`: L1-L154
+- `android/tests/test_primary_target_grates.ps1`: L1-L45
+- `android/tests/test_publish_menu.ps1`: L1-L155
+- `android/tests/test_random_level_preview.ps1`: diff hunks 1-19, new L5-L369
+- `android/tests/test_rbaudio_bin_header_contracts.py`: L1-L116
+
+### GQ2-CHUNK-0540
+
+- `android/tests/test_android_mixer_diagnostics_contracts.py`: L1-L76
+- `android/tests/test_android_renderer_contracts.py`: diff hunks 1-9, new L79-L141
+- `android/tests/test_android_rewind_policy.c`: diff hunks 1-17, new L33-L207
+- `android/tests/test_android_route_metadata_progress.c`: L1-L99
+- `android/tests/test_android_save_meta.c`: diff hunks 1-15, new L53-L206
+- `android/tests/test_android_slowdown_detector.c`: diff hunks 1-3, new L25-L256
+- `android/tests/test_android_test_target.ps1`: L1-L101
+- `android/tests/test_android_virtual_gamepad.c`: L1-L81
+- `android/tests/test_args_defaults.c`: diff hunks 1-1, new L4-L6
+
+### GQ2-CHUNK-0541
+
+- `android/tests/test_upstream_compat.cpp`: L10801-L11114
+- `android/tests/test_validate_automation_catalog.ps1`: diff hunks 1-8, new L9-L256
+- `android/tests/test_verified_native_dependencies.py`: L1-L130
+- `android/tests/test_vertigo_level11_door_contact.ps1`: L1-L38
+- `android/tests/test_vertigo_level16_narrow_portal.ps1`: L1-L50
+- `android/tests/test_vertigo_level6_blue_door_route.ps1`: L1-L42
+- `android/tests/test_vertigo_merge_creation.ps1`: L1-L67
+- `android/tests/test_vertigo_metadata_checkpoints.ps1`: L1-L27
+- `android/tests/test_vertigo_metadata.ps1`: L1-L85
+
+### GQ2-CHUNK-0574
+
+- `.tmp`
+- `android/build_output.txt`
+- `android/test_output.txt`
+- `dxx_matchmaking.db`
+- `dxx_matchmaking.db-shm`
+- `dxx_matchmaking.db-wal`
+- `game_data_to_copy_to_emulator/debuglog_20260520_211753.txt`
+
+### GQ2-CHUNK-0575
+
+- `android/tools/code-quality/package-lock.json`
+- `server/Cargo.lock`
+
+### GQ2-CHUNK-0576
+
+- `game_data/mission_files/Vela1.json`
+- `game_data/mission_files/Vela1.simulation.json`
+- `game_data/mission_files/Vertigo Missions.json`
+- `game_data/mission_files/Vertigo Missions.simulation.json`
+- `game_data/mission_files/Vesta.json`
+- `game_data/mission_files/Vesta.simulation.json`
+- `game_data/mission_files/vignett2.json`
+- `game_data/mission_files/vignett2.simulation.json`
+- `game_data/mission_files/Vignettes.json`
+- `game_data/mission_files/Vignettes.simulation.json`
+- `game_data/test_data_manifest.json`
+
+### GQ2-CHUNK-0577
+
+- `android/test_fixtures/controller_live_rebind/game.json`
+- `android/test_fixtures/controller_live_rebind/launcher.json`
+- `android/test_fixtures/controller_touch/gamepad.json`
+- `android/test_fixtures/secret_area_base_game_baseline.json`
+- `android/tests/fixtures/dos-midi/descent14-game02.json`
+- `android/tests/fixtures/dos-midi/descent14-game07.json`
+- `android/tests/fixtures/dos-midi/descent14-game08-fm.json`
+- `android/tests/fixtures/dos-midi/descent14-game08.json`
+- `android/tests/fixtures/guidebot_saved_world_checkpoint.json`
+- `android/tests/fixtures/mission_route_baseline.json`
+- `game_data/mission_files/-MOON-.json`
+- `game_data/mission_files/-MOON-.simulation.json`
+- `game_data/mission_files/af_d1_beta.json`
+- `game_data/mission_files/af_d1_beta.simulation.json`
+- `game_data/mission_files/af-d2x.json`
+- `game_data/mission_files/af-d2x.simulation.json`
+- `game_data/mission_files/anachron.json`
+- `game_data/mission_files/anachron.simulation.json`
+- `game_data/mission_files/ascent.json`
+- `game_data/mission_files/ascent.simulation.json`
+- `game_data/mission_files/Bahagad.json`
+- `game_data/mission_files/Bahagad.simulation.json`
+- `game_data/mission_files/BelialSystemXL.json`
+- `game_data/mission_files/BelialSystemXL.simulation.json`
+- `game_data/mission_files/bitesize.json`
+- `game_data/mission_files/bitesize.simulation.json`
+- `game_data/mission_files/bratmaze.json`
+- `game_data/mission_files/bratmaze.simulation.json`
+- `game_data/mission_files/castaway_redux.json`
+- `game_data/mission_files/castaway_redux.simulation.json`
+- `game_data/mission_files/CD - Descent - Anniversary Edition (USA) extras.json`
+- `game_data/mission_files/CD - Descent - Anniversary Edition (USA) extras.simulation.json`
+- `game_data/mission_files/CD - Descent - Destination Saturn (USA).json`
+- `game_data/mission_files/CD - Descent - Destination Saturn (USA).simulation.json`
+- `game_data/mission_files/CD - Descent - Levels of the World (USA).json`
+- `game_data/mission_files/CD - Descent - Levels of the World (USA).simulation.json`
+- `game_data/mission_files/CD - Descent II - The Vertigo Series (USA).json`
+- `game_data/mission_files/CD - Descent II - The Vertigo Series (USA).simulation.json`
+- `game_data/mission_files/CD - Dimensions for Descent (USA).json`
+- `game_data/mission_files/CD - Dimensions for Descent (USA).simulation.json`
+
+### GQ2-CHUNK-0578
+
+- `game_data/mission_files/cererian_1.3.json`
+- `game_data/mission_files/cererian_1.3.simulation.json`
+- `game_data/mission_files/Chasm.json`
+- `game_data/mission_files/Chasm.simulation.json`
+- `game_data/mission_files/chromium.json`
+- `game_data/mission_files/chromium.simulation.json`
+- `game_data/mission_files/chron10b.json`
+- `game_data/mission_files/chron10b.simulation.json`
+- `game_data/mission_files/Colossus.json`
+- `game_data/mission_files/Colossus.simulation.json`
+- `game_data/mission_files/Countd2.json`
+- `game_data/mission_files/Countd2.simulation.json`
+- `game_data/mission_files/Counterstrike.json`
+- `game_data/mission_files/Counterstrike.simulation.json`
+- `game_data/mission_files/D1Lost.json`
+- `game_data/mission_files/D1Lost.simulation.json`
+- `game_data/mission_files/d1mercen.json`
+- `game_data/mission_files/d1mercen.simulation.json`
+- `game_data/mission_files/d1secret.json`
+- `game_data/mission_files/d1secret.simulation.json`
+- `game_data/mission_files/D2Crossfire.json`
+- `game_data/mission_files/D2Crossfire.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/bahagad.json`
+- `game_data/mission_files/d2xxl_downloads/bahagad.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/D1-levelpack.json`
+- `game_data/mission_files/d2xxl_downloads/D1-levelpack.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/diehard.json`
+- `game_data/mission_files/d2xxl_downloads/diehard.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/eaf.json`
+- `game_data/mission_files/d2xxl_downloads/eaf.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/eaf2.json`
+- `game_data/mission_files/d2xxl_downloads/eaf2.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/entropy.json`
+- `game_data/mission_files/d2xxl_downloads/entropy.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/harqyjia.json`
+- `game_data/mission_files/d2xxl_downloads/harqyjia.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/ironblade.json`
+- `game_data/mission_files/d2xxl_downloads/ironblade.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/ironstar.json`
+- `game_data/mission_files/d2xxl_downloads/ironstar.simulation.json`
+
+### GQ2-CHUNK-0579
+
+- `game_data/mission_files/d2xxl_downloads/levelpack.json`
+- `game_data/mission_files/d2xxl_downloads/levelpack.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/maximum.json`
+- `game_data/mission_files/d2xxl_downloads/maximum.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/norep.json`
+- `game_data/mission_files/d2xxl_downloads/norep.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/orionneb.json`
+- `game_data/mission_files/d2xxl_downloads/orionneb.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/phobos-e.json`
+- `game_data/mission_files/d2xxl_downloads/phobos-e.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/po2.json`
+- `game_data/mission_files/d2xxl_downloads/po2.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/revodrav.json`
+- `game_data/mission_files/d2xxl_downloads/revodrav.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/saturn.json`
+- `game_data/mission_files/d2xxl_downloads/saturn.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/tt.json`
+- `game_data/mission_files/d2xxl_downloads/tt.simulation.json`
+- `game_data/mission_files/d2xxl_downloads/vignettes.json`
+- `game_data/mission_files/d2xxl_downloads/vignettes.simulation.json`
+- `game_data/mission_files/dd1lvls1.json`
+- `game_data/mission_files/dd1lvls1.simulation.json`
+- `game_data/mission_files/dd2lvls1.json`
+- `game_data/mission_files/dd2lvls1.simulation.json`
+- `game_data/mission_files/Descend Again.json`
+- `game_data/mission_files/Descend Again.simulation.json`
+- `game_data/mission_files/Descent 1 to Descent 2 Conversion.json`
+- `game_data/mission_files/Descent 1 to Descent 2 Conversion.simulation.json`
+- `game_data/mission_files/descent_maximum_fixed.json`
+- `game_data/mission_files/descent_maximum_fixed.simulation.json`
+- `game_data/mission_files/Descent- Invertaus 1.2.json`
+- `game_data/mission_files/Descent- Invertaus 1.2.simulation.json`
+- `game_data/mission_files/descent.fan_d2_conversion.json`
+- `game_data/mission_files/descent.fan_d2_conversion.simulation.json`
+- `game_data/mission_files/diehard.json`
+- `game_data/mission_files/diehard.simulation.json`
+- `game_data/mission_files/Disint_Beta_3.json`
+- `game_data/mission_files/Disint_Beta_3.simulation.json`
+- `game_data/mission_files/dontpnic.json`
+- `game_data/mission_files/dontpnic.simulation.json`
+
+### GQ2-CHUNK-0580
+
+- `game_data/mission_files/dozen.json`
+- `game_data/mission_files/dozen.simulation.json`
+- `game_data/mission_files/driller1.json`
+- `game_data/mission_files/driller1.simulation.json`
+- `game_data/mission_files/driller2.json`
+- `game_data/mission_files/driller2.simulation.json`
+- `game_data/mission_files/drmsaga.json`
+- `game_data/mission_files/drmsaga.simulation.json`
+- `game_data/mission_files/DVLVLS1.json`
+- `game_data/mission_files/DVLVLS1.simulation.json`
+- `game_data/mission_files/EAF.json`
+- `game_data/mission_files/EAF.simulation.json`
+- `game_data/mission_files/EAF2.json`
+- `game_data/mission_files/EAF2.simulation.json`
+- `game_data/mission_files/entropy_v.1.0.json`
+- `game_data/mission_files/entropy_v.1.0.simulation.json`
+- `game_data/mission_files/Entropy.json`
+- `game_data/mission_files/Entropy.simulation.json`
+- `game_data/mission_files/Entropy2.json`
+- `game_data/mission_files/Entropy2.simulation.json`
+- `game_data/mission_files/eq-set.json`
+- `game_data/mission_files/eq-set.simulation.json`
+- `game_data/mission_files/erisreb.json`
+- `game_data/mission_files/erisreb.simulation.json`
+- `game_data/mission_files/ewithin-versions.json`
+- `game_data/mission_files/ewithin-versions.simulation.json`
+- `game_data/mission_files/ex0core.json`
+- `game_data/mission_files/ex0core.simulation.json`
+- `game_data/mission_files/Extra_Missions.json`
+- `game_data/mission_files/Extra_Missions.simulation.json`
+- `game_data/mission_files/FFYL.json`
+- `game_data/mission_files/FFYL.simulation.json`
+- `game_data/mission_files/fimbul.json`
+- `game_data/mission_files/fimbul.simulation.json`
+- `game_data/mission_files/FirstStrike.json`
+- `game_data/mission_files/FirstStrike.simulation.json`
+- `game_data/mission_files/freelan.json`
+- `game_data/mission_files/freelan.simulation.json`
+- `game_data/mission_files/GALAXY ASTEROIDS ALL.json`
+- `game_data/mission_files/GALAXY ASTEROIDS ALL.simulation.json`
+
+### GQ2-CHUNK-0581
+
+- `game_data/mission_files/galmond2.json`
+- `game_data/mission_files/galmond2.simulation.json`
+- `game_data/mission_files/gigalo.json`
+- `game_data/mission_files/gigalo.simulation.json`
+- `game_data/mission_files/gnomes.json`
+- `game_data/mission_files/gnomes.simulation.json`
+- `game_data/mission_files/grad3d.json`
+- `game_data/mission_files/grad3d.simulation.json`
+- `game_data/mission_files/HDPACK1.json`
+- `game_data/mission_files/HDPACK1.simulation.json`
+- `game_data/mission_files/HDVBETA2.json`
+- `game_data/mission_files/HDVBETA2.simulation.json`
+- `game_data/mission_files/Hydro.json`
+- `game_data/mission_files/Hydro.simulation.json`
+- `game_data/mission_files/icerealm.json`
+- `game_data/mission_files/icerealm.simulation.json`
+- `game_data/mission_files/Imds.json`
+- `game_data/mission_files/Imds.simulation.json`
+- `game_data/mission_files/INSANE MISSION PACK ULTRA.json`
+- `game_data/mission_files/INSANE MISSION PACK ULTRA.simulation.json`
+- `game_data/mission_files/ironblade.json`
+- `game_data/mission_files/ironblade.simulation.json`
+- `game_data/mission_files/ironstar.json`
+- `game_data/mission_files/ironstar.simulation.json`
+- `game_data/mission_files/k_sos.json`
+- `game_data/mission_files/k_sos.simulation.json`
+- `game_data/mission_files/KAK.json`
+- `game_data/mission_files/KAK.simulation.json`
+- `game_data/mission_files/kcxf2.json`
+- `game_data/mission_files/kcxf2.simulation.json`
+- `game_data/mission_files/KCXF2RMv11.json`
+- `game_data/mission_files/KCXF2RMv11.simulation.json`
+- `game_data/mission_files/KKR.json`
+- `game_data/mission_files/KKR.simulation.json`
+- `game_data/mission_files/lagrange.json`
+- `game_data/mission_files/lagrange.simulation.json`
+- `game_data/mission_files/legacy.json`
+- `game_data/mission_files/legacy.simulation.json`
+- `game_data/mission_files/levigen.json`
+- `game_data/mission_files/levigen.simulation.json`
+
+### GQ2-CHUNK-0582
+
+- `game_data/mission_files/Lostlvls.json`
+- `game_data/mission_files/Lostlvls.simulation.json`
+- `game_data/mission_files/Lunar Series Revamped.json`
+- `game_data/mission_files/Lunar Series Revamped.simulation.json`
+- `game_data/mission_files/magma.json`
+- `game_data/mission_files/magma.simulation.json`
+- `game_data/mission_files/Mandrill.json`
+- `game_data/mission_files/Mandrill.simulation.json`
+- `game_data/mission_files/megalo.json`
+- `game_data/mission_files/megalo.simulation.json`
+- `game_data/mission_files/mna.json`
+- `game_data/mission_files/mna.simulation.json`
+- `game_data/mission_files/mustfind.json`
+- `game_data/mission_files/mustfind.simulation.json`
+- `game_data/mission_files/nefarious.json`
+- `game_data/mission_files/nefarious.simulation.json`
+- `game_data/mission_files/Obsidian.json`
+- `game_data/mission_files/Obsidian.simulation.json`
+- `game_data/mission_files/odyssee.json`
+- `game_data/mission_files/odyssee.simulation.json`
+- `game_data/mission_files/ORION-D2.json`
+- `game_data/mission_files/ORION-D2.simulation.json`
+- `game_data/mission_files/Orion.json`
+- `game_data/mission_files/Orion.simulation.json`
+- `game_data/mission_files/outerrch11.json`
+- `game_data/mission_files/outerrch11.simulation.json`
+- `game_data/mission_files/phenomia.json`
+- `game_data/mission_files/phenomia.simulation.json`
+- `game_data/mission_files/Phobos.json`
+- `game_data/mission_files/Phobos.simulation.json`
+- `game_data/mission_files/plutonia.json`
+- `game_data/mission_files/plutonia.simulation.json`
+- `game_data/mission_files/plutonionOutbreak.json`
+- `game_data/mission_files/plutonionOutbreak.simulation.json`
+- `game_data/mission_files/prophecy.json`
+- `game_data/mission_files/prophecy.simulation.json`
+- `game_data/mission_files/quotienc_1.1.1.json`
+- `game_data/mission_files/quotienc_1.1.1.simulation.json`
+- `game_data/mission_files/reetus.json`
+- `game_data/mission_files/reetus.simulation.json`
+
+### GQ2-CHUNK-0583
+
+- `game_data/mission_files/reetus2.json`
+- `game_data/mission_files/reetus2.simulation.json`
+- `game_data/mission_files/revdrav2.json`
+- `game_data/mission_files/revdrav2.simulation.json`
+- `game_data/mission_files/revodrav.json`
+- `game_data/mission_files/revodrav.simulation.json`
+- `game_data/mission_files/ROGUE.json`
+- `game_data/mission_files/ROGUE.simulation.json`
+- `game_data/mission_files/sanitati2.json`
+- `game_data/mission_files/sanitati2.simulation.json`
+- `game_data/mission_files/sens9.json`
+- `game_data/mission_files/sens9.simulation.json`
+- `game_data/mission_files/sirius.json`
+- `game_data/mission_files/sirius.simulation.json`
+- `game_data/mission_files/sirius2.json`
+- `game_data/mission_files/sirius2.simulation.json`
+- `game_data/mission_files/TEW.json`
+- `game_data/mission_files/TEW.simulation.json`
+- `game_data/mission_files/THEHIVE.json`
+- `game_data/mission_files/THEHIVE.simulation.json`
+- `game_data/mission_files/TheOmicronProject.json`
+- `game_data/mission_files/TheOmicronProject.simulation.json`
+- `game_data/mission_files/trainng.json`
+- `game_data/mission_files/trainng.simulation.json`
+- `game_data/mission_files/Trine1.json`
+- `game_data/mission_files/Trine1.simulation.json`
+- `game_data/mission_files/trine2.json`
+- `game_data/mission_files/trine2.simulation.json`
+- `game_data/mission_files/TRINITY.json`
+- `game_data/mission_files/TRINITY.simulation.json`
+- `game_data/mission_files/tu.json`
+- `game_data/mission_files/tu.simulation.json`
+- `game_data/mission_files/Tyrsis.json`
+- `game_data/mission_files/Tyrsis.simulation.json`
+- `game_data/mission_files/U3AAH.json`
+- `game_data/mission_files/U3AAH.simulation.json`
+- `game_data/mission_files/ulterior_v1.0.6b.json`
+- `game_data/mission_files/ulterior_v1.0.6b.simulation.json`
+- `game_data/mission_files/Uneasy4.json`
+- `game_data/mission_files/Uneasy4.simulation.json`
+
+### GQ2-CHUNK-0584
+
+- `android/ai tool plans/testing/plan.TEST_REPORT_FIXES_20260328.md`
+- `android/ai tool plans/testing/regenerate_all_mission_metadata_20260705.md`
+- `android/ai tool plans/testing/report_20260612_165248_intro_state_cluster.md`
+- `android/ai tool plans/testing/report_20260612_165248_pause_cluster.md`
+- `android/ai tool plans/testing/report_20260612_201722_failure_triage.md`
+- `android/ai tool plans/testing/report_20260612_220011_autosave_missing_pilot_timeout.md`
+- `android/ai tool plans/testing/single_device_suite_20261003.md`
+- `android/ai tool plans/testing/suite_failures_20260923.md`
+- `android/ai tool plans/testing/suite_reliability_runtime_20260912.md`
+- `android/ai tool plans/testing/test_failures_20260826_223736.md`
+- `android/ai tool plans/testing/test_fixes_and_speed_survey_20260328.md`
+- `android/ai tool plans/testing/test_suite_speed_fixed_wait_audit_20260612.md`
+- `android/ai tool plans/testing/unify_test_cleanup_and_controller_compare.md`
+- `android/ai tool plans/ui/binary_size_labels_audit_20260830.md`
+- `android/ai tool plans/ui/host_lobby_chat_fit_20260830.md`
+- `android/ai tool plans/ui/host_mission_download_label_20260830.md`
+- `android/ai tool plans/zip_source_limit_20261002.md`
+
+### GQ2-CHUNK-0585
+
+- `android/ai tool plans/2026-09-04-cleanup-regression-payloads.md`
+- `android/ai tool plans/2026-09-04-empty-simulation-cd-hogs.md`
+- `android/ai tool plans/2026-09-04-ewithin-generation.md`
+- `android/ai tool plans/2026-09-04-host-metadata-disk-space.md`
+- `android/ai tool plans/2026-09-04-large-dxa-music.md`
+- `android/ai tool plans/2026-09-04-metadata-worker-failures.md`
+- `android/ai tool plans/2026-09-04-mission-launch-cache.md`
+- `android/ai tool plans/2026-09-04-robot-preview-navigation.md`
+- `android/ai tool plans/2026-09-05-descent-mission-identity.md`
+- `android/ai tool plans/2026-09-05-disc-import-content.md`
+- `android/ai tool plans/2026-09-05-fingerprint-and-simulation-failures.md`
+- `android/ai tool plans/2026-09-05-frontier-retry-progress.md`
+- `android/ai tool plans/2026-09-05-guidebot-long-path.md`
+- `android/ai tool plans/2026-09-05-producer-retention.md`
+- `android/ai tool plans/2026-09-05-saturn-and-timeouts.md`
+- `android/ai tool plans/2026-09-05-simulation-batch-failures.md`
+- `android/ai tool plans/2026-09-05-vertigo-content-policy.md`
+- `android/ai tool plans/2026-09-05-vertigo-ham.md`
+- `android/ai tool plans/2026-09-05-waypoint-clearance.md`
+- `android/ai tool plans/2026-09-06-castaway1-cage.md`
+- `android/ai tool plans/2026-09-06-dontpnic9-heap-corruption.md`
+- `android/ai tool plans/2026-09-06-firststrike-replanning.md`
+- `android/ai tool plans/2026-09-06-live-key-target.md`
+- `android/ai tool plans/2026-09-06-obsidian9-original-follower.md`
+- `android/ai tool plans/2026-09-06-sanitizer-corpus.md`
+- `android/ai tool plans/2026-09-07-castaway6-routing.md`
+- `android/ai tool plans/2026-09-07-core-four-routing.md`
+- `android/ai tool plans/2026-09-07-guidebot-robot-showcase.md`
+- `android/ai tool plans/2026-09-07-guidebot-route-videos.md`
+- `android/ai tool plans/2026-09-07-guidebot-view-smoothing.md`
+- `android/ai tool plans/2026-09-07-invalid-texture-fallback.md`
+- `android/ai tool plans/2026-09-07-invalid-texture-regression-notes.md`
+- `android/ai tool plans/2026-09-07-metadata-guidebot-route-player.md`
+- `android/ai tool plans/2026-09-07-metadata-worker-recovery.md`
+- `android/ai tool plans/2026-09-07-obsidian11-door.md`
+- `android/ai tool plans/2026-09-07-obsidian9-frontier.md`
+- `android/ai tool plans/2026-09-07-vertigo-metadata-timeout.md`
+- `android/ai tool plans/2026-09-08-castaway-coop-log-diagnosis.md`
+- `android/ai tool plans/2026-09-08-coop-save-kill-stats.md`
+- `android/ai tool plans/2026-09-08-disc-installer-extras.md`
+
+### GQ2-CHUNK-0586
+
+- `android/ai tool plans/2026-09-08-entropy2-level5.md`
+- `android/ai tool plans/2026-09-08-entropy2-routing.md`
+- `android/ai tool plans/2026-09-08-expanded-routing-missions.md`
+- `android/ai tool plans/2026-09-08-mandrill5-routing.md`
+- `android/ai tool plans/2026-09-08-plutonia-routing.md`
+- `android/ai tool plans/2026-09-08-tew-routing.md`
+- `android/ai tool plans/2026-09-08-vertigo-vignettes-routing.md`
+- `android/ai tool plans/2026-09-08-vertigo11-routing.md`
+- `android/ai tool plans/2026-09-08-vertigo16-routing.md`
+- `android/ai tool plans/2026-09-09-comprehensive-temp-cleanup.md`
+- `android/ai tool plans/2026-09-09-crossfire-crash-reporting.md`
+- `android/ai tool plans/2026-09-09-expanded-door-trigger-routing.md`
+- `android/ai tool plans/2026-09-09-fvi-adversarial-review.md`
+- `android/ai tool plans/2026-09-09-fvi-compatibility-fix.md`
+- `android/ai tool plans/2026-09-09-rar-regressions.md`
+- `android/ai tool plans/2026-09-09-reactor-escape-warning.md`
+- `android/ai tool plans/2026-09-09-routing-continuation.md`
+- `android/ai tool plans/2026-09-09-small-set-completion.md`
+- `android/ai tool plans/2026-09-10-full-regeneration-audit.md`
+- `android/ai tool plans/2026-09-10-regression-performance.md`
+- `android/ai tool plans/2026-09-10-regression-strict-mode.md`
+- `android/ai tool plans/2026-09-15-audio-onset-pop-investigation.md`
+- `android/ai tool plans/2026-09-15-mission-asset-isolation-study.md`
+- `android/ai tool plans/2026-09-15-sound-provenance-logging.md`
+- `android/ai tool plans/2026-09-16-autoselect-once-backport.md`
+- `android/ai tool plans/2026-09-16-d1-monitor-backport.md`
+- `android/ai tool plans/2026-09-16-png-menu-backport.md`
+- `android/ai tool plans/2026-09-16-upstream-fix-audit.md`
+- `android/ai tool plans/2026-09-20-flyout-categories.md`
+- `android/ai tool plans/2026-09-20-flyout-metadata-survey.md`
+- `android/ai tool plans/2026-09-20-maximum10-preview-secret.md`
+- `android/ai tool plans/2026-09-20-mission-provenance.md`
+- `android/ai tool plans/2026-09-20-shared-provenance-dates.md`
+- `android/ai tool plans/2026-09-26-launcher-launch-music.md`
+- `android/ai tool plans/2026-09-26-linux-build-test-cleanup-scope.md`
+- `android/ai tool plans/2026-10-04-enemy-within-investigation.md`
+- `android/ai tool plans/2026-10-04-flyout-hardening.md`
+- `android/ai tool plans/2026-10-04-play-store-assets.md`
+- `android/ai tool plans/2026-10-05-store-preview-boss.md`
+- `android/ai tool plans/android_controller_reference.md`
+
+### GQ2-CHUNK-0587
+
+- `android/ai tool plans/android_controls_reference.md`
+- `android/ai tool plans/android-gpu-portability-20261002.md`
+- `android/ai tool plans/asset management/ASSET_SYSTEM_PLAN.md`
+- `android/ai tool plans/asset management/d1-death-camera-rng-20260924.md`
+- `android/ai tool plans/asset management/d1-endlevel-persistence-20260924.md`
+- `android/ai tool plans/asset management/d1-in-d2-consolidation-plan.md`
+- `android/ai tool plans/asset management/d1-in-d2-continuation-20260923.md`
+- `android/ai tool plans/asset management/d1-in-d2-continuation-20260924.md`
+- `android/ai tool plans/asset management/d1-in-d2-fidelity-audit.md`
+- `android/ai tool plans/asset management/d1-in-d2-implementation-ledger.md`
+- `android/ai tool plans/asset management/d1-in-d2-support-matrix.md`
+- `android/ai tool plans/asset management/d1-usable-completion-20260924.md`
+- `android/ai tool plans/asset management/dxa-hash-integration.md`
+- `android/ai tool plans/asset management/file_import_generality.md`
+- `android/ai tool plans/asset management/MOD_SYSTEM_PLAN.md`
+- `android/ai tool plans/asset management/oversized_import_warning_investigation.md`
+- `android/ai tool plans/asset management/plan_7z_mission_import_20260619.md`
+- `android/ai tool plans/asset management/plan_briefing_single_tap_section_advance_20260609.md`
+- `android/ai tool plans/asset management/plan_cd_audio_fingerprint_matching_and_accounting_20260820.md`
+- `android/ai tool plans/asset management/plan_d1_in_d2_full_support_design_20260613.md`
+- `android/ai tool plans/asset management/plan_d2x_xl_hires_mods.md`
+- `android/ai tool plans/asset management/plan_demo_group_and_cd_audio_ownership_20260820.md`
+- `android/ai tool plans/asset management/plan_descent_maximum_briefing_screens_20260609.md`
+- `android/ai tool plans/asset management/plan_descent2workshop_ham_library_review_20260518.md`
+- `android/ai tool plans/asset management/plan_descriptor_hog_metadata_pairing_20260608.md`
+- `android/ai tool plans/asset management/plan_dxa_all_in_one_and_texture_test.md`
+- `android/ai tool plans/asset management/plan_dxa_download_suffix_import_20260518.md`
+- `android/ai tool plans/asset management/plan_dxa_error_reporting_and_fix.md`
+- `android/ai tool plans/asset management/plan_dxa_multi_mod_assessment_20260518.md`
+- `android/ai tool plans/asset management/plan_dxa_pack_docs_and_layout_20260518.md`
+- `android/ai tool plans/asset management/plan_dxa_parallel_speed_survey.md`
+- `android/ai tool plans/asset management/plan_dxa_patch_overlap_detection_20260518.md`
+- `android/ai tool plans/asset management/plan_enemy_within_15th_zip_support_20260606.md`
+- `android/ai tool plans/asset management/plan_etc2tool_logging_and_dxa_rebuild.md`
+- `android/ai tool plans/asset management/plan_extracted_mission_music_preview_20260619.md`
+- `android/ai tool plans/asset management/plan_fix_mod_loading_0pct.md`
+- `android/ai tool plans/asset management/plan_game_file_format_registry_consolidation_20260605.md`
+- `android/ai tool plans/asset management/plan_game_file_metadata_support_20260605.md`
+- `android/ai tool plans/asset management/plan_generic_dxa_texture_paths_20260518.md`
+- `android/ai tool plans/asset management/plan_import_storage_feedback_20260425.md`
+
+### GQ2-CHUNK-0588
+
+- `android/ai tool plans/asset management/plan_include_large_ewithin_zip_analysis_20260611.md`
+- `android/ai tool plans/asset management/plan_infinite_abyss_game_ready_import_20260521.md`
+- `android/ai tool plans/asset management/plan_large_mission_archive_extraction_design_20260619.md`
+- `android/ai tool plans/asset management/plan_large_mission_archive_extraction_feedback_20260619.md`
+- `android/ai tool plans/asset management/plan_large_mission_archive_extraction_impl_20260619.md`
+- `android/ai tool plans/asset management/plan_large_mission_zip_extraction_20260611.md`
+- `android/ai tool plans/asset management/plan_large_zip_metadata_resume_rescan_20260611.md`
+- `android/ai tool plans/asset management/plan_lunar_series_metadata_failure_json_20260611.md`
+- `android/ai tool plans/asset management/plan_macplay_track_identification_progress_20260820.md`
+- `android/ai tool plans/asset management/plan_metadata_introspection_tranche_20260605.md`
+- `android/ai tool plans/asset management/plan_metadata_tool_idea_review_20260605.md`
+- `android/ai tool plans/asset management/plan_mission_archive_import_progress_20260619.md`
+- `android/ai tool plans/asset management/plan_mission_zip_batch_failures_20260611.md`
+- `android/ai tool plans/asset management/plan_mission_zip_batch_order_debug_20260612.md`
+- `android/ai tool plans/asset management/plan_mission_zip_batch_ordering_20260611.md`
+- `android/ai tool plans/asset management/plan_mission_zip_category_and_storage_20260820.md`
+- `android/ai tool plans/asset management/plan_mission_zip_metadata_music_and_advanced_lazy_20260619.md`
+- `android/ai tool plans/asset management/plan_mission_zip_term_cleanup_20260605.md`
+- `android/ai tool plans/asset management/plan_mod_detail_path_and_hashes_20260518.md`
+- `android/ai tool plans/asset management/plan_mod_details_dialog_20260518.md`
+- `android/ai tool plans/asset management/plan_mod_details_visibility_and_hashes_20260518.md`
+- `android/ai tool plans/asset management/plan_mod_manager.md`
+- `android/ai tool plans/asset management/plan_mod_pack_tooling_relocation_20260518.md`
+- `android/ai tool plans/asset management/plan_mod_preview_scroll_clipping_20260606.md`
+- `android/ai tool plans/asset management/plan_multi_mission_zip_metadata_picker_20260608.md`
+- `android/ai tool plans/asset management/plan_music_track_chromaprint_progress_20260611.md`
+- `android/ai tool plans/asset management/plan_obsidian_zip_feature_support_20260606.md`
+- `android/ai tool plans/asset management/plan_plain_texture_dxa_base_version_preflight_20260518.md`
+- `android/ai tool plans/asset management/plan_plutonia_metadata_crash_20260609.md`
+- `android/ai tool plans/asset management/plan_rar_import_support_20260619.md`
+- `android/ai tool plans/asset management/plan_relocate_imported_files_storage.md`
+- `android/ai tool plans/asset management/plan_remove_mod_detail_md5_20260518.md`
+- `android/ai tool plans/asset management/plan_run_all_mission_zip_sample_20260612.md`
+- `android/ai tool plans/asset management/plan_single_mission_zip_metadata_button_20260608.md`
+- `android/ai tool plans/asset management/plan_unified_file_set_content_mods_levels_20260820.md`
+- `android/ai tool plans/asset management/plan_uud2sp_ham_patch_dxa_20260518.md`
+- `android/ai tool plans/asset management/plan_vertigo_import_mn2_20260608.md`
+- `android/ai tool plans/asset management/plan_vertigo_secret_level_metadata_20260608.md`
+- `android/ai tool plans/asset management/plan_xfing_engine_texture_patch_support_20260518.md`
+- `android/ai tool plans/asset management/plan_xfing_minimal_dxa_conversion_20260518.md`
+
+### GQ2-CHUNK-0589
+
+- `android/ai tool plans/asset management/plan_xfing_plain_texture_dxa_conversion_20260518.md`
+- `android/ai tool plans/asset management/plan_xfing_texture_pack_dxa_study_20260517.md`
+- `android/ai tool plans/asset management/plan-precompressed-etc2-dxa.md`
+- `android/ai tool plans/asset management/sort_downloaded_mission_archives_20260816.md`
+- `android/ai tool plans/asset management/stuffit-manifest-relocation-plan.md`
+- `android/ai tool plans/asset_alternative_fallbacks.md`
+- `android/ai tool plans/briefing_aspect_20260928.md`
+- `android/ai tool plans/briefing_coop_aspect_20260929.md`
+- `android/ai tool plans/build_aab_apk_20261002.md`
+- `android/ai tool plans/build, release, packaging/2026-09-04-cleanup-build-generations.md`
+- `android/ai tool plans/build, release, packaging/2026-09-04-headless-item-count.md`
+- `android/ai tool plans/build, release, packaging/2026-09-04-regression-process-lifetime.md`
+- `android/ai tool plans/build, release, packaging/2026-09-04-target-sdk-36.md`
+- `android/ai tool plans/build, release, packaging/2026-09-04-workspace-cleanup.md`
+- `android/ai tool plans/build, release, packaging/android_revival_branding_20261004.md`
+- `android/ai tool plans/build, release, packaging/apk_install_conflict_20261002.md`
+- `android/ai tool plans/build, release, packaging/combined_android_release_20261002.md`
+- `android/ai tool plans/build, release, packaging/github_apk_only_release_20261002.md`
+- `android/ai tool plans/build, release, packaging/github_apk_release.md`
+- `android/ai tool plans/build, release, packaging/minimum_sdk_feasibility_20261001.md`
+- `android/ai tool plans/build, release, packaging/plan_gradle_wrapper_vscode_sync_20260814.md`
+- `android/ai tool plans/build, release, packaging/publish_menu_20261003.md`
+- `android/ai tool plans/build, release, packaging/release_asset_order_20261002.md`
+- `android/ai tool plans/build, release, packaging/three_android_distributions_20261001.md`
+- `android/ai tool plans/CD audio/cd-image-acoustid-lookup.md`
+- `android/ai tool plans/CD audio/plan_android_sfx_latency_survey_20260605.md`
+- `android/ai tool plans/CD audio/plan_build_1030_music_fixes.md`
+- `android/ai tool plans/CD audio/plan_cd_audio_resume_programming_20260522.md`
+- `android/ai tool plans/CD audio/plan_cd_audio_saf_multibin_followup_20260508.md`
+- `android/ai tool plans/CD audio/plan_cd_audio_saf_tree_permission_crash_20260507.md`
+- `android/ai tool plans/CD audio/plan_cd_audio_synthetic_storage_cleanup_20260507.md`
+- `android/ai tool plans/CD audio/plan_chromaprint_song_recognition.md`
+- `android/ai tool plans/CD audio/plan_d2_redbook_mp3_manifest_20260525.md`
+- `android/ai tool plans/CD audio/plan_fix_acoustid_lookups.md`
+- `android/ai tool plans/CD audio/plan_fix_chromaprint_stereo_and_tests.md`
+- `android/ai tool plans/CD audio/plan_general_ui_audio_fixes.md`
+- `android/ai tool plans/CD audio/plan_gog_dialog_audio_import_saf.md`
+- `android/ai tool plans/CD audio/plan_gog_inst_music_visibility_20260525.md`
+- `android/ai tool plans/CD audio/plan_gog_tv_cd_audio_debug_20260507.md`
+- `android/ai tool plans/CD audio/plan_infinite_abyss_static_cd_audio_20260511.md`
+
+### GQ2-CHUNK-0590
+
+- `android/ai tool plans/CD audio/plan_mission_tracklist_sweep_20260619.md`
+- `android/ai tool plans/CD audio/plan_mission_zip_tracklist_fallback_20260619.md`
+- `android/ai tool plans/CD audio/plan_music_fixes.md`
+- `android/ai tool plans/CD audio/plan_music_import_and_midi.md`
+- `android/ai tool plans/CD audio/plan_music_playback_verification.md`
+- `android/ai tool plans/CD audio/plan_music_ui_improvements.md`
+- `android/ai tool plans/CD audio/plan_redbook_track_start_freeze_20260822.md`
+- `android/ai tool plans/CD audio/plan_redbook_track_start_freeze_followup_20260823.md`
+- `android/ai tool plans/CD audio/plan_reuse_hmp2mid.md`
+- `android/ai tool plans/CD audio/plan_saf_redbook_test_triage_20260516.md`
+- `android/ai tool plans/CD audio/plan_title_music_skip_all_20260425.md`
+- `android/ai tool plans/CD audio/plan_ui_audio_music_picker.md`
+- `android/ai tool plans/CD audio/plan_unbound_actions_and_multibin_track_investigation_20260522.md`
+- `android/ai tool plans/CD audio/plan_unified_music_controls.md`
+- `android/ai tool plans/CD, installer parsing/BINCUE_PLAN.md`
+- `android/ai tool plans/CD, installer parsing/combined-data-audio-import-20261005.md`
+- `android/ai tool plans/CD, installer parsing/extract-reorganization-plan.md`
+- `android/ai tool plans/CD, installer parsing/fix_gog_import_issues.md`
+- `android/ai tool plans/CD, installer parsing/GOG_AUDIO_OPTIONAL_EXTRACT.md`
+- `android/ai tool plans/CD, installer parsing/GOG_EXTRACTION_PLAN.md`
+- `android/ai tool plans/CD, installer parsing/INNOSETUP_FORMAT_SPEC.md`
+- `android/ai tool plans/CD, installer parsing/integrate_mac_macplay_cd.md`
+- `android/ai tool plans/CD, installer parsing/iso-data-loading-plan.md`
+- `android/ai tool plans/CD, installer parsing/mac_cd_desktop_script_consolidation.md`
+- `android/ai tool plans/CD, installer parsing/mac_extraction_pipeline.md`
+- `android/ai tool plans/CD, installer parsing/on_device_mac_extract.md`
+- `android/ai tool plans/CD, installer parsing/PKG_PARSER_PLAN.md`
+- `android/ai tool plans/CD, installer parsing/plan_android_tv_saf_multiselect_bin_cue.md`
+- `android/ai tool plans/CD, installer parsing/plan_chromaprint_import_recognition_research_20260620.md`
+- `android/ai tool plans/CD, installer parsing/plan_d1_gog_installer_regression.md`
+- `android/ai tool plans/CD, installer parsing/plan_demo_installer_extraction_20260524.md`
+- `android/ai tool plans/CD, installer parsing/plan_expanded_cd_image_support_20260521.md`
+- `android/ai tool plans/CD, installer parsing/plan_gog_installer_variant_coverage.md`
+- `android/ai tool plans/CD, installer parsing/plan_mission_archive_count_progress_20260621.md`
+- `android/ai tool plans/CD, installer parsing/plan_mission_zip_chromaprint_import_implementation_20260620.md`
+- `android/ai tool plans/CD, installer parsing/plan_mission_zip_metadata_decoded_names_20260621.md`
+- `android/ai tool plans/CD, installer parsing/plan_mission_zip_metadata_skip_cached_chromaprint_20260621.md`
+- `android/ai tool plans/CD, installer parsing/plan_pc_android_cd_extract_audit_20260521.md`
+- `android/ai tool plans/CD, installer parsing/plan_pc_android_extract_parity_audit_20260524.md`
+- `android/ai tool plans/CD, installer parsing/plan_pc_side_native_extract_utilities.md`
+
+### GQ2-CHUNK-0591
+
+- `android/ai tool plans/CD, installer parsing/plan_test_all_extracts_preview_disc_20260522.md`
+- `android/ai tool plans/code management/adversarial_review_worker_orchestration.md`
+- `android/ai tool plans/code management/args_defaults_crash_20260828.md`
+- `android/ai tool plans/code management/br_0018_extraction_budgets_20260721.md`
+- `android/ai tool plans/code management/br_0022_sow_huffman_length_validation_20260721.md`
+- `android/ai tool plans/code management/br_0023_sow_arj_crc_validation_20260722.md`
+- `android/ai tool plans/code management/br_0024_sow_ctest_coverage_20260722.md`
+- `android/ai tool plans/code management/br_0027_hfs_heap_catalog_20260722.md`
+- `android/ai tool plans/code management/br_0031_sti2_encryption_rejection_20260721.md`
+- `android/ai tool plans/code management/br_0178_sti2_method14_code_lengths_20260721.md`
+- `android/ai tool plans/code management/branch_adversarial_review_framework_20260718.md`
+- `android/ai tool plans/code management/branch_adversarial_review_ledger.done.md`
+- `android/ai tool plans/code management/branch_adversarial_review_ledger.md`
+- `android/ai tool plans/code management/branch_adversarial_review_process.md`
+- `android/ai tool plans/code management/build-919-fixes.md`
+- `android/ai tool plans/code management/cleanup_metl154_rename_finalize.md`
+- `android/ai tool plans/code management/cleanup_tranche_20260529_survey.md`
+- `android/ai tool plans/code management/CODE_QUALITY_TOOLING_PLAN.md`
+- `android/ai tool plans/code management/controller-config-model-store-split-20260524.md`
+- `android/ai tool plans/code management/D1_D2_COMPILATION_FIXES.md`
+- `android/ai tool plans/code management/D1_INTEGRATION_PLAN.md`
+- `android/ai tool plans/code management/d1d2_diff_candidate_catalog_20260711.md`
+- `android/ai tool plans/code management/d1d2_diff_minimization_ledger_20260811.md`
+- `android/ai tool plans/code management/d1d2_diff_shrink_study.md`
+- `android/ai tool plans/code management/d1d2_shrink_phase2_remaining_and_phase3_candidates.md`
+- `android/ai tool plans/code management/d1d2_shrink_phase3_execution_plan.md`
+- `android/ai tool plans/code management/debug_release_behavior_parity_audit_20260824.md`
+- `android/ai tool plans/code management/dual-game-test-markers.md`
+- `android/ai tool plans/code management/formatting_cleanup_20261001.md`
+- `android/ai tool plans/code management/general_code_quality_evidence_ledger_20260811.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0613.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0614.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0615.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0616.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0617.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0618.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0619.md`
+- `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0620.md`
+- `android/ai tool plans/code management/general_code_quality_ledger_20260811.md`
+- `android/ai tool plans/code management/general_code_quality_ledger.done.md`
+
+### GQ2-CHUNK-0592
+
+- `android/ai tool plans/code management/general_code_quality_worker_process.md`
+- `android/ai tool plans/code management/json5_to_jsonc_survey_20260819.md`
+- `android/ai tool plans/code management/kotlin-refactor-survey-20260524.md`
+- `android/ai tool plans/code management/luna_max_audit_trial.md`
+- `android/ai tool plans/code management/msaa_fbo_helper_extraction_20260530.md`
+- `android/ai tool plans/code management/native_file_naming_consistency_survey_20260812.md`
+- `android/ai tool plans/code management/ogl_overwrite_and_stale_formatter_defenses.md`
+- `android/ai tool plans/code management/ogl_phase24_31_recovery_after_checkout.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase1.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase10.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase11.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase12.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase13.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase14.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase15.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase16.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase17.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase18.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase19.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase2.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase20.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase21.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase22.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase23.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase24.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase25.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase26.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase27.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase28.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase29.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase3.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase30.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase31.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase32.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase33.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase34.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase35.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase36.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase4.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase5.md`
+
+### GQ2-CHUNK-0593
+
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase6.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase7.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase8.md`
+- `android/ai tool plans/code management/ogl_shared_helper_extraction_phase9.md`
+- `android/ai tool plans/code management/PATH_B_OGLES_NOTES.md`
+- `android/ai tool plans/code management/plan_add_pwsh_shebangs_20260524.md`
+- `android/ai tool plans/code management/plan_android_build_failures_20260508.md`
+- `android/ai tool plans/code management/plan_android_lint_cleanup_20260523.md`
+- `android/ai tool plans/code management/plan_android_test_gitignore_audit_20260527.md`
+- `android/ai tool plans/code management/plan_base_loop_render_side_effect_cleanup_20260503.md`
+- `android/ai tool plans/code management/plan_branch_cleanup_astra_20260925.md`
+- `android/ai tool plans/code management/plan_branch_cleanup_astra_20260926.md`
+- `android/ai tool plans/code management/plan_centralize_debug_logging.md`
+- `android/ai tool plans/code management/plan_check_updates_first_pass_install_20260703.md`
+- `android/ai tool plans/code management/plan_cmake_format_lint.md`
+- `android/ai tool plans/code management/plan_code_cleanup_and_test_cleanup_20260514.md`
+- `android/ai tool plans/code management/plan_crlf_lf_normalization.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_android_scaled_font_extract_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_automap_metadata_overlay_extract_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_coop_multi_status_extract_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_effect_runtime_extract_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_expansive_resurvey_20260710.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_gamecntl_saveload_extract_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_hmp_mem_extract_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_hud_counts_extract_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_input_demo_probe_centralization_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_masked_bitmap_scale_extract_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_minimization_campaign_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_ogl_dxa_mask_reuse_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_ogl_runtime_texture_controls_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_physfs_upstream_sync_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_physfsx_extract_20260711.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_refresh_biggest_changes_20260519.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_sdl_mixer_diagnostics_extract_20260712.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_shrink_next_20260519.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_shrink_refresh_20260710.md`
+- `android/ai tool plans/code management/plan_d1d2_diff_songs_extract_20260710.md`
+- `android/ai tool plans/code management/plan_fix_android_upload_build_20260428.md`
+- `android/ai tool plans/code management/plan_fix_android_upload_build_20260501.md`
+- `android/ai tool plans/code management/plan_fix_branch_touched_warnings_20260428.md`
+
+### GQ2-CHUNK-0594
+
+- `android/ai tool plans/code management/plan_game_data_manifest_20260524.md`
+- `android/ai tool plans/code management/plan_general_cleanup_resume_20260930.md`
+- `android/ai tool plans/code management/plan_general_code_quality_chunked_round_20260811.md`
+- `android/ai tool plans/code management/plan_gqr_0002_dxa_mask_filename_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0005_runtime_artifact_hygiene_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0006_automation_receiver_security_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0011_verified_android_dependencies_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0024_strict_jni_utf8_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0034_iso_physical_containment_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0038_sti2_method15_memory_budget_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0039_jni_exception_safety_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0042_reconnect_route_proof_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0043_reconnect_transcript_domain_separation_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0044_reconnect_verification_admission_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0048_complete_cd_attempt_budget_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0063_inno_metadata_peak_memory_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0065_inno_version_admission_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0070_inno_decode_work_budget_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0087_zip_prompt_admission_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0090_setup_zip_extraction_budget_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0091_kotlin_bounded_read_peak_memory_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0095_rar_terminal_policy_failure_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0096_rar_enumeration_admission_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0105_nested_music_catalog_budget_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0106_streaming_music_source_budget_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0112_bounded_python_runtime_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0114_bounded_process_tree_supervision_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0115_bounded_output_type_containment_20260813.md`
+- `android/ai tool plans/code management/plan_gqr_0157_hmp_wrapper_extraction_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0159_mixer_diagnostics_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0161_secret_area_serialization_20260812.md`
+- `android/ai tool plans/code management/plan_gqr_0161_shared_secretarea_header_20260812.md`
+- `android/ai tool plans/code management/plan_header_source_survey_20260519.md`
+- `android/ai tool plans/code management/plan_headless_dump_tool_split_20260611.md`
+- `android/ai tool plans/code management/plan_lint_cleanup_and_vscode_exclusions.md`
+- `android/ai tool plans/code management/plan_linux_dependency_bootstrap_20260525.md`
+- `android/ai tool plans/code management/plan_main_vs_cmake_diff_shrink_20260504.md`
+- `android/ai tool plans/code management/plan_native_file_naming_consistency_20260812.md`
+- `android/ai tool plans/code management/plan_next_30_local_correctness_fixes_20260811.md`
+- `android/ai tool plans/code management/plan_next_ten_ranked_remediations_20260812.md`
+
+### GQ2-CHUNK-0595
+
+- `android/ai tool plans/code management/plan_next_ten_ranked_remediations_20260813.md`
+- `android/ai tool plans/code management/plan_powershell_msi_system_update_20260624.md`
+- `android/ai tool plans/code management/plan_powershell_stable_only_20260624.md`
+- `android/ai tool plans/code management/plan_powershell_update_helper_20260624.md`
+- `android/ai tool plans/code management/plan_private_newmenu_rendering_state_20260712.md`
+- `android/ai tool plans/code management/plan_repo_root_cleanup_20260524.md`
+- `android/ai tool plans/code management/plan_sdk_cmdline_tools_install_sync_20260624.md`
+- `android/ai tool plans/code management/plan_task_mixup_audit_20260611.md`
+- `android/ai tool plans/code management/plan_windows_build_autofind.md`
+- `android/ai tool plans/code management/plan_write_side_cleanup_20260514.md`
+- `android/ai tool plans/code management/plan-reliable-debug-output.md`
+- `android/ai tool plans/code management/powershell_51_compatibility_20260823.md`
+- `android/ai tool plans/code management/script_cleanup_20260526.md`
+- `android/ai tool plans/code management/script_duplicate_cleanup_20260527.md`
+- `android/ai tool plans/code management/setup-activity-automation-api-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-config-disc-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-dialogs-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-file-import-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-game-files-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-resume-panel-split-20260524.md`
+- `android/ai tool plans/code management/setup-activity-sections-split-20260524.md`
+- `android/ai tool plans/code management/sit5_entry_header_bounds_br_0017_20260721.md`
+- `android/ai tool plans/code management/touch-overlay-helper-split-20260524.md`
+- `android/ai tool plans/code management/vscode_game_data_search_exclusions_20260823.md`
+- `android/ai tool plans/code management/windows_background_sleep_diagnosis_20260903.md`
+- `android/ai tool plans/control mapping/axis-fix-and-parameterized-tests.md`
+- `android/ai tool plans/control mapping/axis-test-completion.md`
+- `android/ai tool plans/control mapping/binding_limit_enforcement.md`
+- `android/ai tool plans/control mapping/control-mapping-root-cause-fixes.md`
+- `android/ai tool plans/control mapping/controller-aware-touch-visibility.md`
+- `android/ai tool plans/control mapping/controller-bugs-audio-menu-buttons.md`
+- `android/ai tool plans/control mapping/controller-defaults-and-guidebot-fix.md`
+- `android/ai tool plans/control mapping/controller-extra-inputs-and-trigger-fallback-20261001.md`
+- `android/ai tool plans/control mapping/controller-response-curves.svg`
+- `android/ai tool plans/control mapping/controller-response-defaults.md`
+- `android/ai tool plans/control mapping/controller-response-implementation.md`
+- `android/ai tool plans/control mapping/controller-response-study-20261002.md`
+- `android/ai tool plans/control mapping/controller-settings-slider-navigation-20261001.md`
+- `android/ai tool plans/control mapping/default-trigger-fire-bindings.md`
+- `android/ai tool plans/control mapping/double-tap-fix-and-cleanup.md`
+
+### GQ2-CHUNK-0596
+
+- `android/ai tool plans/control mapping/emulator-gyro-axisregion.md`
+- `android/ai tool plans/control mapping/etc2-reenable-launch-button.md`
+- `android/ai tool plans/control mapping/exit-button-disk-rebuild.md`
+- `android/ai tool plans/control mapping/EXTRA_CONTROLS_PLAN.md`
+- `android/ai tool plans/control mapping/fix-logging-and-exit-button.md`
+- `android/ai tool plans/control mapping/fix-start-exit-buttons-and-jni-log-bridge.md`
+- `android/ai tool plans/control mapping/gamepad_menu_navigation_20260925.md`
+- `android/ai tool plans/control mapping/guidebot_menu_parity_repeat_20261005.md`
+- `android/ai tool plans/control mapping/gyro-overhaul-touch-drag-gl-error.md`
+- `android/ai tool plans/control mapping/half-axis-trigger-ui.md`
+- `android/ai tool plans/control mapping/independent-trigger-sources-20261001.md`
+- `android/ai tool plans/control mapping/launcher_navigation_repeat_20261005.md`
+- `android/ai tool plans/control mapping/multiple-controller-touch-config-slots.md`
+- `android/ai tool plans/control mapping/overlay-controller-admin-fixes.md`
+- `android/ai tool plans/control mapping/phases-b-d-touch-mouse-missions.md`
+- `android/ai tool plans/control mapping/plan_android_tv_controller_support.md`
+- `android/ai tool plans/control mapping/plan_config_stale_cleanup.md`
+- `android/ai tool plans/control mapping/plan_controller_deadzone_and_live_view.md`
+- `android/ai tool plans/control mapping/plan_controller_mapping_and_exit_button_fixes.md`
+- `android/ai tool plans/control mapping/plan_controller_menu_cycle_and_overlay_focus_20260520.md`
+- `android/ai tool plans/control mapping/plan_controller_touch_editor_updates_20260507.md`
+- `android/ai tool plans/control mapping/plan_game_menu_guidebot_controller_20260522.md`
+- `android/ai tool plans/control mapping/plan_game_menu_touch_wheel_labels_20260522.md`
+- `android/ai tool plans/control mapping/plan_general_scroll_repeat_20260507.md`
+- `android/ai tool plans/control mapping/plan_input_mixer.md`
+- `android/ai tool plans/control mapping/plan_launcher_dpad_focus_fix.md`
+- `android/ai tool plans/control mapping/plan_level_select_numeric_keyboard_fix_20260504.md`
+- `android/ai tool plans/control mapping/plan_menu_checkbox_controller_activate.md`
+- `android/ai tool plans/control mapping/plan_mp_controller_fixes.md`
+- `android/ai tool plans/control mapping/plan_shield_controller_focus_fixes.md`
+- `android/ai tool plans/control mapping/plan_slide_up_button_col2.md`
+- `android/ai tool plans/control mapping/plan_touch_button_dynamic_weapon_labels_20260512.md`
+- `android/ai tool plans/control mapping/plan_touch_controls_music_radial.md`
+- `android/ai tool plans/control mapping/plan_touch_menu_and_exit_movie_research_20260525.md`
+- `android/ai tool plans/control mapping/plan_touch_more_action_filters_20260512.md`
+- `android/ai tool plans/control mapping/plan_touch_more_gyro_light_followup_20260512.md`
+- `android/ai tool plans/control mapping/plan_touch_more_overlay_fixes_20260511.md`
+- `android/ai tool plans/control mapping/plan_touch_stick_extreme_action_20260613.md`
+- `android/ai tool plans/control mapping/plan_touch_stick_initial_position_travel_20260613.md`
+- `android/ai tool plans/control mapping/plan_unbound_settings_controller_bindings_20260701.md`
+
+### GQ2-CHUNK-0597
+
+- `android/ai tool plans/control mapping/plan_unbound_settings_weapon_cycle_fallback_20260701.md`
+- `android/ai tool plans/control mapping/scroll-gyro-doubletap-chain.md`
+- `android/ai tool plans/control mapping/test_mp_button_nav_rewrite.md`
+- `android/ai tool plans/control mapping/TOUCH_INTERFACE_PLAN.md`
+- `android/ai tool plans/control mapping/touch-controller-fixes-build916.md`
+- `android/ai tool plans/control mapping/touch-controls-sensitivity-gyro.md`
+- `android/ai tool plans/control mapping/touch-interface-bugs.md`
+- `android/ai tool plans/controller_overlay_runtime_20261002.md`
+- `android/ai tool plans/controls/plan_default_touch_layout_and_slide_labels_20260827.md`
+- `android/ai tool plans/controls/plan_mouse_edge_full_rate_zone_20260823.md`
+- `android/ai tool plans/controls/plan_mouse_edge_region_visualization_20260826.md`
+- `android/ai tool plans/controls/plan_mouse_mode_edge_continuous_movement_design_20260822.md`
+- `android/ai tool plans/controls/top_edge_transient_gameplay_actions_20260811.md`
+- `android/ai tool plans/controls/touch_editor_reticle_preview_20260811.md`
+- `android/ai tool plans/controls/touch_layout_generous_recovery_20260812.md`
+- `android/ai tool plans/controls/touch_layout_overwrite_investigation_20260812.md`
+- `android/ai tool plans/controls/touch_overlay_region_edge_selection_20260826.md`
+- `android/ai tool plans/coop_restore_resilience.md`
+- `android/ai tool plans/coop_score_catchup.md`
+- `android/ai tool plans/crash, logging, diagnostics/2026-09-04-coop-restore-exit.md`
+- `android/ai tool plans/crash, logging, diagnostics/castaway_cd_audio_guidebot_log_investigation_20260830.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_crosshair_face_and_palette_probe_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_door26_palette_logs_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_door26_still_wrong_after_palette_invalidate_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_hidden_door_texture_reasoning_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level_state_tap_compare_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level7_blue_texture_log_review_20260706.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level7_new_logs_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level7_no_visual_change_after_route_unify_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level7_no_visual_change_log_review_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level7_ten_round_log_review_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_level8_start_crash_review_20260722.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_missile_crash_and_rewind_energy_20260901.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_rendering_difference_audit_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_restore_desync_log_study_20260708.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_sp_vs_coop_tap_compare_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_texture_cleanup_retrospective_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_texture_desync_logging_20260706.md`
+- `android/ai tool plans/crash, logging, diagnostics/coop_texture_ten_round_logging_20260707.md`
+- `android/ai tool plans/crash, logging, diagnostics/crash-reporting.md`
+
+### GQ2-CHUNK-0598
+
+- `android/ai tool plans/crash, logging, diagnostics/debug_log_share_incomplete_copy_20260831.md`
+- `android/ai tool plans/crash, logging, diagnostics/loading_snow_20261003.md`
+- `android/ai tool plans/crash, logging, diagnostics/multiplayer_loading_palette_20260708.md`
+- `android/ai tool plans/crash, logging, diagnostics/palette_lifetime_audit_20260708.md`
+- `android/ai tool plans/crash, logging, diagnostics/plan_crash_handler_and_flip_logging.md`
+- `android/ai tool plans/crash, logging, diagnostics/plan_death_animation_border_static_20260610.md`
+- `android/ai tool plans/crash, logging, diagnostics/plan_purge_gamelog_txt.md`
+- `android/ai tool plans/crash, logging, diagnostics/plan_xcrash_integration.md`
+- `android/ai tool plans/crash, logging, diagnostics/release_assert_game_log_20260824.md`
+- `android/ai tool plans/crash, logging, diagnostics/sigabrt-crash-fix.md`
+- `android/ai tool plans/crash, logging, diagnostics/single_player_level_load_freeze_log_review_20260811.md`
+- `android/ai tool plans/demo-sharing-cache.md`
+- `android/ai tool plans/dependencies/remove-manual-dependency-review-demands-20260822.md`
+- `android/ai tool plans/difficulty-menu-taps-20260920.md`
+- `android/ai tool plans/emulator_preflight_recovery_20260927.md`
+- `android/ai tool plans/emulator/plan_emulator_recovery_hardening_and_lint_20260518.md`
+- `android/ai tool plans/emulator/plan_emulator_start_crash_fallback_20260526.md`
+- `android/ai tool plans/emulator/plan_lan_multicast_emulator_365.md`
+- `android/ai tool plans/emulator/plan_lightweight_avds_and_separate_process.md`
+- `android/ai tool plans/emulator/plan_run_all_tests_auto_stale_emulator_cleanup_20260526.md`
+- `android/ai tool plans/emulator/plan_suite_emulator_recovery_20260515.md`
+- `android/ai tool plans/emulator/plan.DUAL_EMU_DOCKER_NAT.md`
+- `android/ai tool plans/emulator/plan.TWO_PLAYER_TEST.md`
+- `android/ai tool plans/emulator/texfilt-text-menu-emulator.md`
+- `android/ai tool plans/emulator/two-emu-reliability-phase8.md`
+- `android/ai tool plans/expanded_sim_regressions_20260911.md`
+- `android/ai tool plans/extraction/cd-regression-data-stage-failure-20260822.md`
+- `android/ai tool plans/extraction/restore-seven-extract-regressions-20260823.md`
+- `android/ai tool plans/file import/fix_br_0437_typed_preference_import.md`
+- `android/ai tool plans/floating-point determinism/fp-determinism-tranche-priority-lockdown-20260429.md`
+- `android/ai tool plans/floating-point determinism/fp-determinism-tranche-revision-20260429.md`
+- `android/ai tool plans/floating-point determinism/fp-startup-hardening-20260429.md`
+- `android/ai tool plans/floating-point determinism/plan_fp_environment_shared_helper_20260502.md`
+- `android/ai tool plans/full_suite_repair_20260911.md`
+- `android/ai tool plans/gameplay/2026-09-04-d1-texture-conversion.md`
+- `android/ai tool plans/gameplay/android_dormant_state_power_audit_20260805.md`
+- `android/ai tool plans/gameplay/autosave_level_description_20260825.md`
+- `android/ai tool plans/gameplay/base_mission_boss_guidebot_metadata_plan_20260704.md`
+- `android/ai tool plans/gameplay/boss_bar_shot_activation_20260828.md`
+- `android/ai tool plans/gameplay/castaway_level2_coop_cant_reach_log_20260831.md`
+
+### GQ2-CHUNK-0599
+
+- `android/ai tool plans/gameplay/castaway_level2_key_prerequisite_planner_fix_20260831.md`
+- `android/ai tool plans/gameplay/castaway_level2_reactor_access_20260904.md`
+- `android/ai tool plans/gameplay/castaway_level2_runtime_guidebot_20260830.md`
+- `android/ai tool plans/gameplay/castaway_level2_runtime_validation_20260831.md`
+- `android/ai tool plans/gameplay/castaway_level2_switch_route_planner_design_20260830.md`
+- `android/ai tool plans/gameplay/classic_guidebot_authenticity_audit_20260928.md`
+- `android/ai tool plans/gameplay/classic_guidebot_event_audit_20260928.md`
+- `android/ai tool plans/gameplay/coop_restore_partial_player_fix_20260901.md`
+- `android/ai tool plans/gameplay/coop_save_segregation_20260826.md`
+- `android/ai tool plans/gameplay/counterstrike level 20 grated switch yellow key routing 20260822.md`
+- `android/ai tool plans/gameplay/counterstrike level 20 post boss exit grate 20260822.md`
+- `android/ai tool plans/gameplay/d2_level17_guidebot_blue_key_regression_20260811.md`
+- `android/ai tool plans/gameplay/engine_confirmed_guidebot_route_reproduction_20260831.md`
+- `android/ai tool plans/gameplay/guidebot completed switch objective plan.md`
+- `android/ai tool plans/gameplay/guidebot convergent current-state design audit.md`
+- `android/ai tool plans/gameplay/guidebot pre-convergence save load diagnosis 20260822.md`
+- `android/ai tool plans/gameplay/guidebot_android_extraction_review_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_base_character_route_cycle_refinement_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_coop_endpoint_liveness_20260828.md`
+- `android/ai tool plans/gameplay/guidebot_coop_key_goal_20260701.md`
+- `android/ai tool plans/gameplay/guidebot_d1_return_target_20260929.md`
+- `android/ai tool plans/gameplay/guidebot_destination_stop_analysis_20260829.md`
+- `android/ai tool plans/gameplay/guidebot_destroyed_redeploy_20260819.md`
+- `android/ai tool plans/gameplay/guidebot_exit_countdown_defer_20260826.md`
+- `android/ai tool plans/gameplay/guidebot_game_thread_budget_20260827.md`
+- `android/ai tool plans/gameplay/guidebot_gold_key_stale_objective_log_review_20260827.md`
+- `android/ai tool plans/gameplay/guidebot_impassable_grate_routing_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_key_gated_exit_routing_20260814.md`
+- `android/ai tool plans/gameplay/guidebot_level21_halting_route_diagnosis_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_locked_objective_skip_20260824.md`
+- `android/ai tool plans/gameplay/guidebot_metadata_pathing_parity_20260705.md`
+- `android/ai tool plans/gameplay/guidebot_metadata_pathing_parity_survey_20260709.md`
+- `android/ai tool plans/gameplay/guidebot_metadata_pathing_unification_plan_20260711.md`
+- `android/ai tool plans/gameplay/guidebot_mid_level_trigger_routing_plan_20260705.md`
+- `android/ai tool plans/gameplay/guidebot_minimize_upstream_diff_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_obsidian_level12_repeat_20260827.md`
+- `android/ai tool plans/gameplay/guidebot_original_routing_scope_20260925.md`
+- `android/ai tool plans/gameplay/guidebot_owner_menu_crash_20260702.md`
+- `android/ai tool plans/gameplay/guidebot_pathing_modernization_remediation_20260709.md`
+- `android/ai tool plans/gameplay/guidebot_placement_metadata_plan_20260705.md`
+
+### GQ2-CHUNK-0600
+
+- `android/ai tool plans/gameplay/guidebot_recall_to_ship_20260829.md`
+- `android/ai tool plans/gameplay/guidebot_route_architecture_simplification_20260827.md`
+- `android/ai tool plans/gameplay/guidebot_route_stability_regression_20260823.md`
+- `android/ai tool plans/gameplay/guidebot_routing_modes_implementation_20260925.md`
+- `android/ai tool plans/gameplay/guidebot_save_continuity_audit_20260927.md`
+- `android/ai tool plans/gameplay/guidebot_save_continuity_fix_20260927.md`
+- `android/ai tool plans/gameplay/guidebot_save_preference_20260927.md`
+- `android/ai tool plans/gameplay/guidebot_save_restore_route_goal_reset_20260709.md`
+- `android/ai tool plans/gameplay/guidebot_spawn_release_sync_20260701.md`
+- `android/ai tool plans/gameplay/guidebot_stall_slowdown_log_review_20260826.md`
+- `android/ai tool plans/gameplay/guidebot_switch_shot_geometry_investigation_20260821.md`
+- `android/ai tool plans/gameplay/guidebot_unexplored_wheel_goal_20260709.md`
+- `android/ai tool plans/gameplay/guidebot_unreachable_fallback_explore_goal_20260709.md`
+- `android/ai tool plans/gameplay/guidebot_walls_opened_slowdown_20260828.md`
+- `android/ai tool plans/gameplay/headlight_not_on_default_qol_20260706.md`
+- `android/ai tool plans/gameplay/kcxf2_level1_partial_route_regression_20260709.md`
+- `android/ai tool plans/gameplay/kcxf2_level2_exit_path_20260704.md`
+- `android/ai tool plans/gameplay/kcxf2_level3_shootable_pathing_20260705.md`
+- `android/ai tool plans/gameplay/kcxf2_level5_multi_switch_route_20260711.md`
+- `android/ai tool plans/gameplay/kcxf2_metadata_status_and_route_wording_20260710.md`
+- `android/ai tool plans/gameplay/kcxf2_worker_crash_obsidian_live_route_20260815.md`
+- `android/ai tool plans/gameplay/level_metadata_trigger_route_guidebot_plan_20260704.md`
+- `android/ai tool plans/gameplay/live_difficulty_state_adjustment_audit_20260813.md`
+- `android/ai tool plans/gameplay/map_reactor_countdown_pause_20260814.md`
+- `android/ai tool plans/gameplay/matcen_one_round_cheat_20260816.md`
+- `android/ai tool plans/gameplay/multiplayer_level_intent_audit_20260826.md`
+- `android/ai tool plans/gameplay/obsidian saved-game metadata progress diagnosis.md`
+- `android/ai tool plans/gameplay/obsidian_level13_blue_key_nested_switch_20260828.md`
+- `android/ai tool plans/gameplay/obsidian_level2_post_blue_grate_skip_20260811.md`
+- `android/ai tool plans/gameplay/obsidian_level7_exit_stall_20260904.md`
+- `android/ai tool plans/gameplay/obsidian_save_boss_hud_diagnosis_20260813.md`
+- `android/ai tool plans/gameplay/opaque_liquid_secret_areas.md`
+- `android/ai tool plans/gameplay/original_homing_behavior_20260714.md`
+- `android/ai tool plans/gameplay/plan_coop_duplicate_weapon_pickup_20260725.md`
+- `android/ai tool plans/gameplay/plan_coop_rewind_round5_log_analysis_20260729.md`
+- `android/ai tool plans/gameplay/plan_d1_in_d2_gameplay_semantics_detail_20260616.md`
+- `android/ai tool plans/gameplay/plan_d1_in_d2_remaining_semantics_audit_20260907.md`
+- `android/ai tool plans/gameplay/plan_d1_in_d2_weapon_behavior_and_projectile_art_20260907.md`
+- `android/ai tool plans/gameplay/plan_d2_hud_counts_pref_20260703.md`
+- `android/ai tool plans/gameplay/plan_flythrough_exit_metadata_guidebot_20260704.md`
+
+### GQ2-CHUNK-0601
+
+- `android/ai tool plans/gameplay/plan_full_options_presets_design_20260829.md`
+- `android/ai tool plans/gameplay/plan_guidebot_base_d2_trigger3_20260819.md`
+- `android/ai tool plans/gameplay/plan_guidebot_grate_secondary_autoselect_20260819.md`
+- `android/ai tool plans/gameplay/plan_guidebot_regression_20260819.md`
+- `android/ai tool plans/gameplay/plan_guidebot_spin_trace_20260819.md`
+- `android/ai tool plans/gameplay/plan_guidebot_switch_grate_trace_20260819.md`
+- `android/ai tool plans/gameplay/plan_indicator_line_fade_visibility_20260703.md`
+- `android/ai tool plans/gameplay/plan_kcxf2_guidebot_hidden_wall_20260709.md`
+- `android/ai tool plans/gameplay/plan_quick_save_load_investigation_20260821.md`
+- `android/ai tool plans/gameplay/remove_legacy_metadata_travel_calculation_20260710.md`
+- `android/ai tool plans/gameplay/route_activation_awareness_20260708.md`
+- `android/ai tool plans/gameplay/secret_level_robot_hud.md`
+- `android/ai tool plans/gameplay/settings-presets-20260916.md`
+- `android/ai tool plans/gameplay/uneasy4_timeout_and_liquid_regression_20260910.md`
+- `android/ai tool plans/github_actions_followup_20261002.md`
+- `android/ai tool plans/github_actions_repair_20261001.md`
+- `android/ai tool plans/github_actions_repair_20261003.md`
+- `android/ai tool plans/gradle_apk_packaging_failure.md`
+- `android/ai tool plans/graphics/2026-09-15-vertigo-transparent-merge-diagnosis.md`
+- `android/ai tool plans/graphics/adaptive_slowdown_flight_recorder_20260720.md`
+- `android/ai tool plans/graphics/d1-in-d2-destroyed-light-border.md`
+- `android/ai tool plans/graphics/d1-in-d2-reactor-and-lava.md`
+- `android/ai tool plans/graphics/merged_wall_experiment_test_compile_20260708.md`
+- `android/ai tool plans/graphics/merged_wall_stale_script_cleanup_20260708.md`
+- `android/ai tool plans/graphics/normal_renderer_performance_survey_20260719.md`
+- `android/ai tool plans/graphics/opengl_efficiency_opportunities_20260925.md`
+- `android/ai tool plans/graphics/render_gl_gequal_build_fix_20260708.md`
+- `android/ai tool plans/graphics/restore_merged_wall_two_pass_tests_20260708.md`
+- `android/ai tool plans/guidebot_info_overlay_20260919.md`
+- `android/ai tool plans/guidebot_warp_to_me_20260705.md`
+- `android/ai tool plans/guidebot/counterstrike_cross_level_route_regression_audit_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level10_key_robot_stall_20260902.md`
+- `android/ai tool plans/guidebot/counterstrike_level11_door_grate_stall_20260902.md`
+- `android/ai tool plans/guidebot/counterstrike_level12_post_gold_door_stall_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level17_blue_key_pickup_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level17_exit_door_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level20_post_blue_stall_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level23_post_keys_oscillation_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level4_boss_simulation_20260902.md`
+- `android/ai tool plans/guidebot/counterstrike_level4_route_running_timing_20260902.md`
+
+### GQ2-CHUNK-0602
+
+- `android/ai tool plans/guidebot/counterstrike_level6_blue_door_stall_20260903.md`
+- `android/ai tool plans/guidebot/counterstrike_level9_flythrough_trigger_20260902.md`
+- `android/ai tool plans/guidebot/counterstrike_level9_hidden_door_simulation_20260902.md`
+- `android/ai tool plans/guidebot/distance_scaled_simulation_timeout_20260903.md`
+- `android/ai tool plans/guidebot/guidebot_bundle_failure_20260902_222916.md`
+- `android/ai tool plans/guidebot/guidebot_corpus_write_timing_audit_20260902.md`
+- `android/ai tool plans/guidebot/guidebot_incremental_persistence_20260902.md`
+- `android/ai tool plans/guidebot/guidebot_optimization_and_modes_20260907.md`
+- `android/ai tool plans/guidebot/guidebot_second_pass_normal_speed_20260907.md`
+- `android/ai tool plans/guidebot/guidebot_simulation_door_opening_audit_20260902.md`
+- `android/ai tool plans/guidebot/guidebot_simulation_reliable_door_fallback_20260902.md`
+- `android/ai tool plans/guidebot/live_navigation_original_behavior_20260916.md`
+- `android/ai tool plans/guidebot/mission_assets_and_preview_objectives_20260917.md`
+- `android/ai tool plans/guidebot/objective_endpoint_motion_20260916.md`
+- `android/ai tool plans/guidebot/obsidian_level3_blastable_wall_20260903.md`
+- `android/ai tool plans/guidebot/obsidian_level3_narrow_portal_20260903.md`
+- `android/ai tool plans/guidebot/obsidian_level3_post_second_wall_oscillation_20260903.md`
+- `android/ai tool plans/guidebot/obsidian_level3_post_trigger8_frontier_stall_20260903.md`
+- `android/ai tool plans/guidebot/obsidian_level4_wall_bounce_20260903.md`
+- `android/ai tool plans/guidebot/routing_failure_review_20260923.md`
+- `android/ai tool plans/guidebot/routing_through_item3_20260923.md`
+- `android/ai tool plans/guidebot/simulation_bundle_diff_review_20260902.md`
+- `android/ai tool plans/guidebot/uneasy4_expected_timeout_20260920.md`
+- `android/ai tool plans/guidebot/vertigo_level6_blue_door_stall_20260903.md`
+- `android/ai tool plans/host_dialog_loading.md`
+- `android/ai tool plans/idle_screen_saver.md`
+- `android/ai tool plans/input demo, replay, determinism/d2_replay_routing_policy_20260926.md`
+- `android/ai tool plans/input demo, replay, determinism/demo-finalization-performance-20260921.md`
+- `android/ai tool plans/input demo, replay, determinism/input-demo-camera-wake-engine-fix-20260512.md`
+- `android/ai tool plans/input demo, replay, determinism/input-demo-d1-d2-parity-audit-20260512.md`
+- `android/ai tool plans/input demo, replay, determinism/input-demo-hard-coded-probe-cleanup-20260512.md`
+- `android/ai tool plans/input demo, replay, determinism/input-demo-level9-death-replay-20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/input-demo-level9-headlight-20260512.md`
+- `android/ai tool plans/input demo, replay, determinism/level14-20260920-divergence.md`
+- `android/ai tool plans/input demo, replay, determinism/level7-boss-slowdown-20260921.md`
+- `android/ai tool plans/input demo, replay, determinism/native-replay-loading-screen-20260924.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_awareness_probe_logging_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_awareness_source_instrumentation_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_collision_pose_logging_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_d1_level9_recreated_demo_instrumentation_20260617.md`
+
+### GQ2-CHUNK-0603
+
+- `android/ai tool plans/input demo, replay, determinism/plan_dem_to_json_and_desync_analysis_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_demo_134049_rng_regression_20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_demo_analysis.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_demo_log_sufficiency_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_demo_pref_key_cleanup_and_object_gate_20260505.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_demo_runner_crash_and_cleanup_20260505.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_engine_determinism_roadmap_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_enhanced_save_state_for_checkpoint_replay.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_export_rng_trace_from_advanced_page.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_first_divergent_object_detail_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_fresh_demo_desync_analysis_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_full_buddy_checkpoint_state_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_gauss_spawn_probe_20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_headless_console_demo_runner_20260430.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_headless_demo_regressions_20260714.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_headless_runner_ux_and_replay_logging_trim_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_host_replay_sandbox_guardrails.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_actual_result_sidecar_cleanup_20260504.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_base64_sha256_centralization_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_build_freshness_helper_20260504.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_classic_dem_sidecar_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_codec_dependency_swap_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_frame_events_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_header_result_and_checkpoint_compression_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_helper_extraction_survey_20260504.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_mid_level_start.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_per_frame_state_20260430.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_phase2_coalescer.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_phase2_controls_json.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_phase3_fixture_writer.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_phase4_replay_session.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_phase5_result_compare.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_playercfg_header_subset_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_replay_rng_trace_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_replay_state_compare_alignment_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_single_file_rework.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_input_demo_unrecorded_action_survey_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level6_demo_replay_analysis_20260508_123202.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level6_demo_replay_analysis_20260508_193201.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level7_demo_replay_analysis_20260508_233937.md`
+
+### GQ2-CHUNK-0604
+
+- `android/ai tool plans/input demo, replay, determinism/plan_level7_demo_replay_analysis_20260509_140807.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level8_demo_replay_analysis_20260509_173157.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level8_demo_replay_analysis_20260509_202642_202756_202946.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level9_demo_replay_analysis_20260510_102637_102738.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_level9_demo_replay_analysis_20260511_091552.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_long_demo_desync_d2_level2_20260503_203112.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_new_l2_demo_replay_analysis_20260430.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_next_demo_recording_logging_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_nonheadless_robot_disappear_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_object_list_order_detection_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_on_device_replay_and_forcefield_sync_20260505.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_optional_per_frame_state_tracking.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_player_drag_localization_20260501_141150.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_player_hit_logging_20260501_141150.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_player_motion_probe_20260501_141150.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_regression_demos_headless_20260430.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_analysis_20260509_level9_225113_level8_224859.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_debug_demo_20260428_141502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_debug_with_rngtrace_20260427.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_helper_cleanup_and_optional_logging_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_manual_step_controls_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_playercfg_audit_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260428_191632.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260428_195254.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260428_212524.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260428_220300.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260429_074558.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_probe_d2_20260429_124801.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_root_cause_ai_weapon_order_20260509.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_runner_build_guardrails_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_runner_render_profiles_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_replay_script_dedup_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rewind_support_research_20260516.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_code_local_notes_20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_discipline_frametime_math_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_discipline_survey_20260510.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_full_instrumentation_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_fx_revert_tracking_20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_omega_and_fireball_audit_20260511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_origin_compare_detail_20260510.md`
+
+### GQ2-CHUNK-0605
+
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_rendering_scrub_20260924.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_sim_vs_nonsim_split.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_rng_trace_sidecar_for_input_demos.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_robot_ai_state_logging_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_sim_determinism_render_decoupling_20260502.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_spreadfire_demo_playback_ogl_audit_20260429.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_strip_input_demo_frame_state_20260504.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_homing_desync_20260505.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260501_133242.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260501_141150.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260501_154249.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260501.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260502_223549.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260504_fresh_desyncs.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260506_135119.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260506_223956.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_temp_game_logs_replay_analysis_20260507_210511.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_terminal_exit_marker_20260506.md`
+- `android/ai tool plans/input demo, replay, determinism/plan_thief_checkpoint_state_audit_20260503.md`
+- `android/ai tool plans/input demo, replay, determinism/replay-trace-performance-20260926.md`
+- `android/ai tool plans/intro_movie_skip_overlay.md`
+- `android/ai tool plans/lan_discovery_diagnostics.md`
+- `android/ai tool plans/lan_discovery_reply_loss_20260929.md`
+- `android/ai tool plans/lan_lobby_latency_fix.md`
+- `android/ai tool plans/lan_nsd_discovery.md`
+- `android/ai tool plans/launcher admin/CONFIG_IMPORT_EXPORT_PLAN.md`
+- `android/ai tool plans/launcher admin/fix-home-button-crash.md`
+- `android/ai tool plans/launcher admin/fix-stuck-launcher-and-regressions.md`
+- `android/ai tool plans/launcher admin/in-progress-games-config-sharing-bugfixes.md`
+- `android/ai tool plans/launcher admin/pilot-file-management-and-advanced-tab.md`
+- `android/ai tool plans/launcher admin/plan_abort_autosave_slot_20260602.md`
+- `android/ai tool plans/launcher admin/plan_about_store_page_link.md`
+- `android/ai tool plans/launcher admin/plan_add_launcher_stale_file_debug_logging.md`
+- `android/ai tool plans/launcher admin/plan_advanced_tab_open_progress_20260621.md`
+- `android/ai tool plans/launcher admin/plan_android_autosave_resume_20260512.md`
+- `android/ai tool plans/launcher admin/plan_autosave_postlaunch_timeout_20260515.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_cmake_sdk_managed.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_dependency_coverage.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_github_fallback_and_pwsh.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_hard_lock_guard.md`
+
+### GQ2-CHUNK-0606
+
+- `android/ai tool plans/launcher admin/plan_check_updates_installed_versions.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_loading_and_jdk_sync_20260523.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_optional_tool_cleanup.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_powershell_host_drift.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_reload_conf_failure.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_stable_versions.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_unknowns_and_powershell.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_unknowns_and_pwsh.md`
+- `android/ai tool plans/launcher admin/plan_check_updates_unrar_sort_and_gradle_tracking.md`
+- `android/ai tool plans/launcher admin/plan_clear_all_game_data_20260521.md`
+- `android/ai tool plans/launcher admin/plan_demo_installer_launch_offers_20260525.md`
+- `android/ai tool plans/launcher admin/plan_engine_prefs_touch_launcher_qol.md`
+- `android/ai tool plans/launcher admin/plan_fix_launcher_gpgs_app_id_manifest_type.md`
+- `android/ai tool plans/launcher admin/plan_forget_selected_files_confirm_20260602.md`
+- `android/ai tool plans/launcher admin/plan_game_preferences_launcher_section_20260613.md`
+- `android/ai tool plans/launcher admin/plan_gamepad_admin_tray_consolidation.md`
+- `android/ai tool plans/launcher admin/plan_get_deps_linux_compatibility_20260524.md`
+- `android/ai tool plans/launcher admin/plan_launcher_icons_20260507.md`
+- `android/ai tool plans/launcher admin/plan_launcher_icons_tv_banner_fix_20260507.md`
+- `android/ai tool plans/launcher admin/plan_launcher_touch_highlight_flash_20260526.md`
+- `android/ai tool plans/launcher admin/plan_resume_recent_save_button_swap_20260526.md`
+- `android/ai tool plans/launcher admin/plan_resume_save_thumbnail_fullscreen_20260526.md`
+- `android/ai tool plans/launcher admin/plan_save_preview_thumbnail_2x_20260527.md`
+- `android/ai tool plans/launcher admin/plan_skip_every_launch_ui_and_pref_sync.md`
+- `android/ai tool plans/launcher admin/play-store-update-check.md`
+- `android/ai tool plans/launcher admin/TOUCH_EDITOR_FIXES_PLAN.md`
+- `android/ai tool plans/launcher admin/unified_launcher_game_scripting.md`
+- `android/ai tool plans/launcher automation, editor, scripting/autoselect_refactor_plan.md`
+- `android/ai tool plans/launcher automation, editor, scripting/button_based_launcher_automation.md`
+- `android/ai tool plans/launcher automation, editor, scripting/feature_c_autoselect_editor.md`
+- `android/ai tool plans/launcher automation, editor, scripting/plan_autoselect_newest_mismatch_20260604.md`
+- `android/ai tool plans/launcher automation, editor, scripting/plan_autoselect_save_condition_from_shown_order_20260604.md`
+- `android/ai tool plans/launcher automation, editor, scripting/plan_autoselect_save_only_mismatch_20260604.md`
+- `android/ai tool plans/launcher automation, editor, scripting/plan_tv_perf_test_autosetup_20260520.md`
+- `android/ai tool plans/launcher_text_contrast.md`
+- `android/ai tool plans/launcher/about_debug_build_marker_20260824.md`
+- `android/ai tool plans/launcher/diagnose_missing_save_launcher_ui_20260816.md`
+- `android/ai tool plans/launcher/metadata_route_step_layout_20260708.md`
+- `android/ai tool plans/launcher/mission_intent_metadata_classification_20260826.md`
+- `android/ai tool plans/launcher/plan_chaos_metadata_3d_preview_error_20260826.md`
+
+### GQ2-CHUNK-0607
+
+- `android/ai tool plans/launcher/plan_compute_faster_precompute_dialog_20260821.md`
+- `android/ai tool plans/launcher/plan_level_automap_preview_study_20260717.md`
+- `android/ai tool plans/launcher/plan_menu_reload_progress_20260703.md`
+- `android/ai tool plans/launcher/plan_metadata_browser_progress_20260704.md`
+- `android/ai tool plans/launcher/plan_multiplayer_callsign_selection_20260703.md`
+- `android/ai tool plans/launcher/plan_player_file_selectability_followup_20260703.md`
+- `android/ai tool plans/launcher/plan_report_20260620_launcher_dpad.md`
+- `android/ai tool plans/launcher/plan_report_20260620_next_failure.md`
+- `android/ai tool plans/launcher/plan_report_20260620_one_failure.md`
+- `android/ai tool plans/launcher/save_explorer_mission_prominence_20260827.md`
+- `android/ai tool plans/launcher/save_explorer_pop_open_20260708.md`
+- `android/ai tool plans/launcher/save_load_immediate_feedback_20260825.md`
+- `android/ai tool plans/log_export_snapshot_20260906.md`
+- `android/ai tool plans/lunar_series_revamped_zip_parse_20260612.md`
+- `android/ai tool plans/manual_apk_retroid_20261002.md`
+- `android/ai tool plans/manual_ip_engine_probe.md`
+- `android/ai tool plans/manual_universal_apk_20261002.md`
+- `android/ai tool plans/metadata_crash_context_20260705.md`
+- `android/ai tool plans/metadata_d2_level7_gold_key_20260705.md`
+- `android/ai tool plans/metadata_regeneration_timeout_20260911.md`
+- `android/ai tool plans/metadata_resume_invalid_station_type_20260705.md`
+- `android/ai tool plans/metadata/base_game_robot_browser_20260814.md`
+- `android/ai tool plans/metadata/coop_guidebot_route_request_20260815.md`
+- `android/ai tool plans/metadata/coop_route_precompute_stall_20260815.md`
+- `android/ai tool plans/metadata/d1_robot_count_correction_20260814.md`
+- `android/ai tool plans/metadata/d1_robot_source_names_20260814.md`
+- `android/ai tool plans/metadata/d2_robot_names_24_65_20260814.md`
+- `android/ai tool plans/metadata/estimated_level_progress_integer_percent_20260829.md`
+- `android/ai tool plans/metadata/exclude_replacements_from_mission_regressions_20260815.md`
+- `android/ai tool plans/metadata/kcxf2_7z_metadata_viewer_zip_fallback_20260813.md`
+- `android/ai tool plans/metadata/level_statistics_header_20260820.md`
+- `android/ai tool plans/metadata/metadata_batch_route_determinism_precompute_ui_20260815.md`
+- `android/ai tool plans/metadata/metadata_progress_bar_order_20260828.md`
+- `android/ai tool plans/metadata/metadata_replacement_groups_20260814.md`
+- `android/ai tool plans/metadata/metadata_viewer_reopen_mission_identity_20260813.md`
+- `android/ai tool plans/metadata/metadata_viewer_replacements_20260814.md`
+- `android/ai tool plans/metadata/mission_metadata_regression_audit_20260815.md`
+- `android/ai tool plans/metadata/mission-zip-normalized-json-argumentlist-failure.md`
+- `android/ai tool plans/metadata/obsidian_metadata_first_level_stall_20260813.md`
+- `android/ai tool plans/metadata/plan_kcxf2_chromaprint_names_and_background_progress_20260819.md`
+
+### GQ2-CHUNK-0608
+
+- `android/ai tool plans/metadata/robot_names_and_preview_plan_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_ai_attack_sandbox_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_animation_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_controls_aspect_sound_attack_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_firing_roles_and_orientation_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_homing_scale_20260815.md`
+- `android/ai tool plans/metadata/robot_preview_implementation_plan_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_investigation_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_list_density_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_projectile_navigation_scale_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_sound_mapping_real_projectiles_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_sustained_dps_20260814.md`
+- `android/ai tool plans/metadata/robot_preview_world_scale_20260815.md`
+- `android/ai tool plans/metadata/robot_preview_zoom_super_mech_20260814.md`
+- `android/ai tool plans/metadata/route_precompute_priority_and_fairness_20260815.md`
+- `android/ai tool plans/metadata/route_precompute_stall_log_review_20260815.md`
+- `android/ai tool plans/metadata/uneasy4_reopen_cache_and_restore_flash_20260813.md`
+- `android/ai tool plans/metadata/vertigo ham analysis failure.md`
+- `android/ai tool plans/mission metadata/castaway_l1_strict_route_regression_investigation_20260831.md`
+- `android/ai tool plans/mission metadata/castaway_ok_to_partial_investigation_20260901.md`
+- `android/ai tool plans/mission metadata/d2xxl_mission_archive_analysis_20260823.md`
+- `android/ai tool plans/mission metadata/mission_intent_output_unification_20260831.md`
+- `android/ai tool plans/mission metadata/obsidian_level10_route_regression_investigation_20260831.md`
+- `android/ai tool plans/mission metadata/obsidian_regeneration_data_loss_investigation_20260901.md`
+- `android/ai tool plans/mission metadata/plan_d2xxl_as_is_mission_import_20260823.md`
+- `android/ai tool plans/mission metadata/plan_d2xxl_extended_hog_diagnostic_20260823.md`
+- `android/ai tool plans/mission metadata/plan_d2xxl_incompatible_hog_user_experience_20260823.md`
+- `android/ai tool plans/mission metadata/plan_d2xxl_mission_archive_dedup_20260823.md`
+- `android/ai tool plans/mission metadata/plan_d2xxl_second_regression_archive_location_20260823.md`
+- `android/ai tool plans/mission metadata/plan_po2_engine_feature_compatibility_study_20260823.md`
+- `android/ai tool plans/mission metadata/plan_po2_phobos_readmes_and_nested_mod_assets_20260823.md`
+- `android/ai tool plans/mission metadata/protect-mission-metadata-from-failed-batch-20260823.md`
+- `android/ai tool plans/mission metadata/regression_regeneration_recovery_failure_diagnosis.md`
+- `android/ai tool plans/mission metadata/route_regression_trends_and_backlog_audit_20260831.md`
+- `android/ai tool plans/mission metadata/windows_native_mission_regeneration_parity_plan_20260901.md`
+- `android/ai tool plans/mission_json_name_regression_20260612.md`
+- `android/ai tool plans/mission_json_stale_level_name_diff_20260612.md`
+- `android/ai tool plans/mission_zip_batch_used_old_code_20260612.md`
+- `android/ai tool plans/mixed batch, umbrella/build-info-admin-api-cancel-overlay-clog.md`
+- `android/ai tool plans/mixed batch, umbrella/code_quality_and_test_lan_fix.md`
+
+### GQ2-CHUNK-0609
+
+- `android/ai tool plans/mixed batch, umbrella/coop_indicator_and_controls_diag.md`
+- `android/ai tool plans/mixed batch, umbrella/FIVE_FIXES_PLAN.md`
+- `android/ai tool plans/mixed batch, umbrella/gog-installer-redbook-regression.md`
+- `android/ai tool plans/mixed batch, umbrella/outstanding_bugs_triage_20260612.md`
+- `android/ai tool plans/mixed batch, umbrella/outstanding_bugs_workplan.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_11_items_batch.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_7_items_round2.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_audio_import_advanced_tab_lan_discovery.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_automap_translation_speed_20260604.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_axis_music_touch.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_blown02_settings_rename_readme.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_controls_overlay_graphics_followups_20260522.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_d1d2_diff_shrink_net_udp_next_20260519.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_d1d2_diff_shrink_net_udp_observer_followup_20260519.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_energy_center_count_20260608.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_four_bugs_study.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_game_menu_guidebot_followups_20260522b.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_header_guards_and_net_udp_cleanup_20260519.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_inf_abyss_import_refresh_texture_audit_20260522.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_linux_root_build_script_20260524.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_nice_to_haves.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_outstanding_bugs_import_fire_resume_pilot_20260520.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_parameterize_mod_loading_tests.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_redbook_textures_diagnostics.md`
+- `android/ai tool plans/mixed batch, umbrella/plan_shield_tv_launcher_followups.md`
+- `android/ai tool plans/mixed batch, umbrella/study_secret_area_autolabel_20260606.md`
+- `android/ai tool plans/mixed batch, umbrella/test_failures_20260612.md`
+- `android/ai tool plans/mixed batch, umbrella/test_failures_20260829_170300.md`
+- `android/ai tool plans/mixed batch, umbrella/test_failures_20260830_140405.md`
+- `android/ai tool plans/multiplayer-mine-flyouts.md`
+- `android/ai tool plans/multiplayer/2026-09-04-incompatible-coop-save-warning.md`
+- `android/ai tool plans/multiplayer/coop_join_black_screen_and_log_cap_20260815.md`
+- `android/ai tool plans/multiplayer/coop_join_failure_20260831.md`
+- `android/ai tool plans/multiplayer/coop_join_followup_20260831.md`
+- `android/ai tool plans/multiplayer/coop_launch_immediate_feedback_20260825.md`
+- `android/ai tool plans/multiplayer/device_adversarial_campaign_20261003.md`
+- `android/ai tool plans/multiplayer/device_adversarial_round2_20261003.md`
+- `android/ai tool plans/multiplayer/host_mission_ready_terminal_status_20260830.md`
+- `android/ai tool plans/multiplayer/join_during_transitions_study.md`
+- `android/ai tool plans/multiplayer/lan_bidirectional_liveness_20260830.md`
+
+### GQ2-CHUNK-0610
+
+- `android/ai tool plans/multiplayer/lan_ping_reconnect_grace_20260830.md`
+- `android/ai tool plans/multiplayer/lan_qr_join_design.md`
+- `android/ai tool plans/multiplayer/long_lived_lobby_stability_20260830.md`
+- `android/ai tool plans/multiplayer/mission_download_primary_button_20260830.md`
+- `android/ai tool plans/multiplayer/mission_download_status_speed_chat_followup_20260829.md`
+- `android/ai tool plans/multiplayer/mission_finalize_liveness_ready_20260830.md`
+- `android/ai tool plans/multiplayer/mission_import_copy_integrity_20260830.md`
+- `android/ai tool plans/multiplayer/mission_ready_terminal_status_20260830.md`
+- `android/ai tool plans/multiplayer/plan_reactor_pause_latency_20260822.md`
+- `android/ai tool plans/multiplayer/quick-save-load-multiplayer.md`
+- `android/ai tool plans/multiplayer/screen_off_lobby_liveness_20260830.md`
+- `android/ai tool plans/multiplayer/third_party_coop_mission_sync_20260829.md`
+- `android/ai tool plans/music/bundled-sc55.md`
+- `android/ai tool plans/music/bundled-soundfont-research.md`
+- `android/ai tool plans/music/castaway_labels_20260906.md`
+- `android/ai tool plans/music/compressed_audio_metadata_20260819.md`
+- `android/ai tool plans/music/d2-briefing-origin.md`
+- `android/ai tool plans/music/descent_maximum_zophar_20260912.md`
+- `android/ai tool plans/music/dos-level7-drum-parity.md`
+- `android/ai tool plans/music/dos-midi-capture-20260921.md`
+- `android/ai tool plans/music/dos-midi-playback-parity.md`
+- `android/ai tool plans/music/fix_br_0466_preserve_custom_audio.md`
+- `android/ai tool plans/music/fluidsynth-runtime-audit.md`
+- `android/ai tool plans/music/fluidsynth-soundfont-support.md`
+- `android/ai tool plans/music/fm-clean-default.md`
+- `android/ai tool plans/music/fm-driver-fidelity.md`
+- `android/ai tool plans/music/fm-library-feasibility.md`
+- `android/ai tool plans/music/fm-quality-listening-experiment.md`
+- `android/ai tool plans/music/fresh-install-midi-default.md`
+- `android/ai tool plans/music/game08-investigation.md`
+- `android/ai tool plans/music/game08-percussion.md`
+- `android/ai tool plans/music/launcher-media-controls-20260924.md`
+- `android/ai tool plans/music/measured-soundfont-eq.md`
+- `android/ai tool plans/music/midi_metadata_ui_and_hmp_inheritance_20260816.md`
+- `android/ai tool plans/music/midi-cd-loudness-20261005.md`
+- `android/ai tool plans/music/midi-gain-calibration.md`
+- `android/ai tool plans/music/midi-game-preferences.md`
+- `android/ai tool plans/music/music_info_stale_track_diagnosis_20260811.md`
+- `android/ai tool plans/music/music-editor-mission-sources.md`
+- `android/ai tool plans/music/music-playback-latency.md`
+
+### GQ2-CHUNK-0611
+
+- `android/ai tool plans/music/obsidian_level3_saved_game_midi_delay_20260812.md`
+- `android/ai tool plans/music/obsidian_saved_cd_picker_state_20260816.md`
+- `android/ai tool plans/music/opl3-spectral-comparison.md`
+- `android/ai tool plans/music/per_save_music_source_20260816.md`
+- `android/ai tool plans/music/plan_chromaprint_duplicate_status_20260821.md`
+- `android/ai tool plans/music/plan_chromaprint_precompute_waiting_after_routes_20260821.md`
+- `android/ai tool plans/music/plan_live_track_highlight_refresh_20260821.md`
+- `android/ai tool plans/music/plan_midi_preview_fast_approximate_seek_20260811.md`
+- `android/ai tool plans/music/plan_midi_preview_first_play_lag_diagnosis_20260811.md`
+- `android/ai tool plans/music/plan_music_editor_cd_source_visibility_20260821.md`
+- `android/ai tool plans/music/plan_trine2_embedded_soundtrack_investigation_20260609.md`
+- `android/ai tool plans/music/plan_zip_music_metadata_browser_study_20260609.md`
+- `android/ai tool plans/music/preview-fallback-and-settings.md`
+- `android/ai tool plans/music/profile-eq-popup.md`
+- `android/ai tool plans/music/remove_prerelease_music_compat_20260816.md`
+- `android/ai tool plans/music/sc55-fidelity-research.md`
+- `android/ai tool plans/music/sc55-source-validation.md`
+- `android/ai tool plans/music/soundfont-downloads.md`
+- `android/ai tool plans/music/soundfont-source-catalog.md`
+- `android/ai tool plans/music/spectral-comparison-and-parametric-eq.md`
+- `android/ai tool plans/networking/C4a_NAT_TRAVERSAL_TEST_PLAN.md`
+- `android/ai tool plans/networking/C5_GPGS_SIGN_IN_PLAN.md`
+- `android/ai tool plans/networking/cleanup_coop_files_move.md`
+- `android/ai tool plans/networking/cleanup_net_udp_extract.md`
+- `android/ai tool plans/networking/CLIENT_NETWORKING_PLAN.md`
+- `android/ai tool plans/networking/coop_autosave_restore_existing_protocol_fix_20260708.md`
+- `android/ai tool plans/networking/coop_briefing_palette_restore.md`
+- `android/ai tool plans/networking/coop_briefings_and_launch.md`
+- `android/ai tool plans/networking/coop_desync_logging_20260704.md`
+- `android/ai tool plans/networking/coop_empty_briefing.md`
+- `android/ai tool plans/networking/coop_endgame_presentation.md`
+- `android/ai tool plans/networking/coop_flyouts_20260919.md`
+- `android/ai tool plans/networking/coop_guidebot_rejoin_exit_fixes.md`
+- `android/ai tool plans/networking/coop_guidebot_releaser.md`
+- `android/ai tool plans/networking/coop_guidebot_spawn.md`
+- `android/ai tool plans/networking/coop_host_only_restore_fix_20260708.md`
+- `android/ai tool plans/networking/coop_hostage_hud.md`
+- `android/ai tool plans/networking/coop_indicator_and_save_bugs.md`
+- `android/ai tool plans/networking/coop_indicator_lines.md`
+- `android/ai tool plans/networking/coop_inventory_preservation.md`
+
+### GQ2-CHUNK-0612
+
+- `android/ai tool plans/networking/coop_player_testing_handoff.md`
+- `android/ai tool plans/networking/coop_process_exit_rejoin_20260906.md`
+- `android/ai tool plans/networking/coop_recovery_simplification_20260906.md`
+- `android/ai tool plans/networking/coop_respawn_spew_pickup_20260906.md`
+- `android/ai tool plans/networking/coop_restore_repeat_fire_fix.md`
+- `android/ai tool plans/networking/coop_restore_status_completion.md`
+- `android/ai tool plans/networking/coop_restore_wait_timing_and_banner_20260720.md`
+- `android/ai tool plans/networking/coop_robot_drop_rejoin_crashes_20260906.md`
+- `android/ai tool plans/networking/coop_saved_late_join_inventory.md`
+- `android/ai tool plans/networking/coop_secret_teleporters.md`
+- `android/ai tool plans/networking/coop_session_review_20260928.md`
+- `android/ai tool plans/networking/coop_spew_pickup_feedback_20260906.md`
+- `android/ai tool plans/networking/coop_spew_recovery_migration_20260906.md`
+- `android/ai tool plans/networking/coop_sync_investigation.md`
+- `android/ai tool plans/networking/coop_travel_disconnects.md`
+- `android/ai tool plans/networking/coop-autosave-lobby.md`
+- `android/ai tool plans/networking/coop-guidebot-and-host-migration.md`
+- `android/ai tool plans/networking/coop-hmig-phase9-diagnostics.md`
+- `android/ai tool plans/networking/coop-inventory-rejoin-research.md`
+- `android/ai tool plans/networking/coop-lobby-save-offer.md`
+- `android/ai tool plans/networking/coop-multi-slot-autosave.md`
+- `android/ai tool plans/networking/coop-peer-status-broadcast.md`
+- `android/ai tool plans/networking/coop-qol-features.md`
+- `android/ai tool plans/networking/coop-restore-diagnostics-round3.md`
+- `android/ai tool plans/networking/coop-trigger-notifications.md`
+- `android/ai tool plans/networking/disk-dem-lansave.md`
+- `android/ai tool plans/networking/fix_host_migration_pdata_loss.md`
+- `android/ai tool plans/networking/fix_isyou_address_collision.md`
+- `android/ai tool plans/networking/fix_mtu_truncation.md`
+- `android/ai tool plans/networking/fix_test_mp_phase8.md`
+- `android/ai tool plans/networking/fix-coop-invuln-faking.md`
+- `android/ai tool plans/networking/guidebot coop resume desync fix 20260526.md`
+- `android/ai tool plans/networking/guidebot coop resume desync investigation 20260526.md`
+- `android/ai tool plans/networking/guidebot-secret-following.md`
+- `android/ai tool plans/networking/host_migration_and_guidebot_summary.md`
+- `android/ai tool plans/networking/host_migration_pdata_conntype_diagnosis.md`
+- `android/ai tool plans/networking/host_migration_proxy_plan.md`
+- `android/ai tool plans/networking/HOST_MIGRATION_REJOIN_FIX.md`
+- `android/ai tool plans/networking/lan_only_multiplayer_release_20260708.md`
+- `android/ai tool plans/networking/maximum_coop_exit_20260916.md`
+
+### GQ2-CHUNK-0613
+
+- `android/ai tool plans/networking/midlevel_join_regression_20261002.md`
+- `android/ai tool plans/networking/MP_LOGGING_DEBUG_GUIDE.md`
+- `android/ai tool plans/networking/multiplayer_prefs_persistence_20260703.md`
+- `android/ai tool plans/networking/multiplayer-quick-resume-plan.md`
+- `android/ai tool plans/networking/net_udp_cleanup_candidates.md`
+- `android/ai tool plans/networking/NETWORKING_PLAN.md`
+- `android/ai tool plans/networking/persistent-guidebot-goal.md`
+- `android/ai tool plans/networking/PHASE_C1_MATCHMAKING_CLIENT_PLAN.md`
+- `android/ai tool plans/networking/PHASE_C2_C3_LOBBY_PLAN.md`
+- `android/ai tool plans/networking/PHASE_C7_MESSAGING_PLAN.md`
+- `android/ai tool plans/networking/PHASE2_3_REMAINING_PLAN.md`
+- `android/ai tool plans/networking/phase2.5-server-implementation.md`
+- `android/ai tool plans/networking/PHASE3_IDENTITY_ANTIABUSE_PLAN.md`
+- `android/ai tool plans/networking/PHASE3_POW_AUTH_PLAN.md`
+- `android/ai tool plans/networking/plan_5_mp_bugfixes.md`
+- `android/ai tool plans/networking/plan_956_lan_mp_fixes.md`
+- `android/ai tool plans/networking/plan_coop_level_2_3_log_analysis_20260619.md`
+- `android/ai tool plans/networking/plan_coop_rewind_save_load_20260701.md`
+- `android/ai tool plans/networking/plan_coop_saves_callsign_guidebot.md`
+- `android/ai tool plans/networking/plan_coop_start_fanout_clean_room_20260611.md`
+- `android/ai tool plans/networking/plan_desync_log_analysis_20260616.md`
+- `android/ai tool plans/networking/plan_desync_resume_sync_implementation_20260616.md`
+- `android/ai tool plans/networking/plan_fix_pdata_loss_after_host_migration.md`
+- `android/ai tool plans/networking/plan_fix_proxy_crash_and_logs.md`
+- `android/ai tool plans/networking/plan_guidebot_multiplayer.md`
+- `android/ai tool plans/networking/plan_ice_progress_ui.md`
+- `android/ai tool plans/networking/plan_lan_directconnect_and_logging.md`
+- `android/ai tool plans/networking/plan_lan_discovery_resume_self_heal_20260526.md`
+- `android/ai tool plans/networking/plan_lan_engine_selection_20260923.md`
+- `android/ai tool plans/networking/plan_lan_games_autoselect_layout_cleanup.md`
+- `android/ai tool plans/networking/plan_lan_mp_fixes.md`
+- `android/ai tool plans/networking/plan_lobby_unification.md`
+- `android/ai tool plans/networking/plan_mp_bugfixes_round2.md`
+- `android/ai tool plans/networking/plan_mp_bugfixes_round3.md`
+- `android/ai tool plans/networking/plan_mp_test_fixes.md`
+- `android/ai tool plans/networking/plan_multiplayer_100_spew_rate_20260527.md`
+- `android/ai tool plans/networking/plan_multiplayer_controller_focus_20260527.md`
+- `android/ai tool plans/networking/plan_multiplayer_resume_texture_palette_20260615.md`
+- `android/ai tool plans/networking/plan_net_failure_log_analysis_20260615.md`
+- `android/ai tool plans/networking/plan_networking_audit.md`
+
+### GQ2-CHUNK-0614
+
+- `android/ai tool plans/networking/plan_networking_round4.md`
+- `android/ai tool plans/networking/plan_player_spew_no_expire_20260616.md`
+- `android/ai tool plans/networking/plan_relay_limit_ip_privacy_netlog.md`
+- `android/ai tool plans/networking/plan_test_failures_20260619.md`
+- `android/ai tool plans/networking/plan_test_mp_phase8_fix.md`
+- `android/ai tool plans/networking/plan_thief_bot_multiplayer_drops_20260527.md`
+- `android/ai tool plans/networking/plan_thief_bot_multiplayer_movement_20260721.md`
+- `android/ai tool plans/networking/plan_uuid_player_identity.md`
+- `android/ai tool plans/networking/PLAN.BACKGROUND_RESUME_TEST.md`
+- `android/ai tool plans/networking/plan.C4_GAME_LAUNCH.md`
+- `android/ai tool plans/networking/PLAN.D1_D2_TOUCH_BINDINGS_FIXES.md`
+- `android/ai tool plans/networking/PLAN.D1_PILOT_SEPARATION_TOUCH_BLACKSCREEN.md`
+- `android/ai tool plans/networking/plan.ICE_STRATEGY_REWRITE.md`
+- `android/ai tool plans/networking/PLAN.KEYBOARD_VIEWPORT_OFFSET.md`
+- `android/ai tool plans/networking/plan.NAT_SIMULATOR.md`
+- `android/ai tool plans/networking/plan.NAT_TRAVERSAL_IMPL.md`
+- `android/ai tool plans/networking/rejoin-exit-diag-phase2.md`
+- `android/ai tool plans/networking/rejoin-sync-diagnostics-v4.md`
+- `android/ai tool plans/networking/rejoin-sync-fixes-build1115.md`
+- `android/ai tool plans/networking/rejoin-sync-log-analysis-build1112.md`
+- `android/ai tool plans/networking/relay-fix-plan.md`
+- `android/ai tool plans/networking/relay-removal-and-test-dedup.md`
+- `android/ai tool plans/networking/round4-mp-fixes.md`
+- `android/ai tool plans/networking/study_guidebot_multiplayer.md`
+- `android/ai tool plans/overlay, menu, etc/address-caching-overlay-fixes.md`
+- `android/ai tool plans/overlay, menu, etc/admin_tray_pause_overlay_fixes.md`
+- `android/ai tool plans/overlay, menu, etc/automap_show_secrets_label_20260814.md`
+- `android/ai tool plans/overlay, menu, etc/centralize-touch-active-highlight-bindings.md`
+- `android/ai tool plans/overlay, menu, etc/cockpit-hud-resolution-fix.md`
+- `android/ai tool plans/overlay, menu, etc/crash_investigation_menu_close.md`
+- `android/ai tool plans/overlay, menu, etc/darker-touch-active-highlight.md`
+- `android/ai tool plans/overlay, menu, etc/debug_overlays.md`
+- `android/ai tool plans/overlay, menu, etc/debug-logging-black-textures.md`
+- `android/ai tool plans/overlay, menu, etc/demo-recording-active-highlight-state.md`
+- `android/ai tool plans/overlay, menu, etc/design_boss_health_bar_20260802.md`
+- `android/ai tool plans/overlay, menu, etc/design_touch_multi_selector_20260808.md`
+- `android/ai tool plans/overlay, menu, etc/etc2comp_hud_labels.md`
+- `android/ai tool plans/overlay, menu, etc/first-run-graphics-chooser-20261005.md`
+- `android/ai tool plans/overlay, menu, etc/fix-multi-item-menu-keyboard-viewport.md`
+- `android/ai tool plans/overlay, menu, etc/fix-overlay-color-and-texture-issues.md`
+
+### GQ2-CHUNK-0615
+
+- `android/ai tool plans/overlay, menu, etc/font-rendering-deep-dive.md`
+- `android/ai tool plans/overlay, menu, etc/fov-cpu-visibility-20261002.md`
+- `android/ai tool plans/overlay, menu, etc/frame-bar-supertrans-graphics-settings.md`
+- `android/ai tool plans/overlay, menu, etc/graphics-page-msaa-af-persist.md`
+- `android/ai tool plans/overlay, menu, etc/graphics-settings-confirmation-20261001.md`
+- `android/ai tool plans/overlay, menu, etc/hires-texture-alpha-fix.md`
+- `android/ai tool plans/overlay, menu, etc/hires-texture-gap-analysis.md`
+- `android/ai tool plans/overlay, menu, etc/hires-transparency-perf-graphics.md`
+- `android/ai tool plans/overlay, menu, etc/implement_touch_overlay_music_menu_refactor_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/LEVEL_NAME_OVERLAY_PLAN.md`
+- `android/ai tool plans/overlay, menu, etc/menu_scale_ogl_plan_20260513.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_hires_premerge_fix.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_merge_clip_fix.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_plain_alpha_fix.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_post_merge_clip_followup.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_postfix_cleanup_and_debug_harness.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_prior_work.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_runtime_diagnostic.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_tranche4_shader_and_gl_state_audit.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_tranche6_two_pass_cull_cleanup.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_tranche8_two_pass_debug_depth_cleanup.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_tranche9_launcher_debug_controls.md`
+- `android/ai tool plans/overlay, menu, etc/metl154_visibility_backoff_and_occlusion_probe.md`
+- `android/ai tool plans/overlay, menu, etc/metl154-mipmap-alpha-fix.md`
+- `android/ai tool plans/overlay, menu, etc/mission_zip_soundtrack_unified_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_one_track_checkbox_snap_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_overlay_midi_to_mission_freeze_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_overlay_refresh_and_controls_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_overlay_source_dropdown_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_overlay_source_semantics_and_castaway_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music_overlay_testing_fixes_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/music-volume-drag-20261005.md`
+- `android/ai tool plans/overlay, menu, etc/net-stats-overlay-improvements.md`
+- `android/ai tool plans/overlay, menu, etc/objective_automap_overlay_plan_20260711.md`
+- `android/ai tool plans/overlay, menu, etc/ogl_merge_super_transparent.md`
+- `android/ai tool plans/overlay, menu, etc/ogl_render_resolution.md`
+- `android/ai tool plans/overlay, menu, etc/overlay_save_preview_supertransparency_research.md`
+- `android/ai tool plans/overlay, menu, etc/overlay_settings_close_unpause_20260823.md`
+- `android/ai tool plans/overlay, menu, etc/overlay-fixes-and-selective-filtering.md`
+- `android/ai tool plans/overlay, menu, etc/overlay-fixes-round2.md`
+
+### GQ2-CHUNK-0616
+
+- `android/ai tool plans/overlay, menu, etc/overlay-launcher-graphics-settings.md`
+- `android/ai tool plans/overlay, menu, etc/overlay-rendering-four-cases.md`
+- `android/ai tool plans/overlay, menu, etc/phase4_metl154_regression_followup.md`
+- `android/ai tool plans/overlay, menu, etc/phase5_metl154_new_angles_diagnosis.md`
+- `android/ai tool plans/overlay, menu, etc/phase5-network-events-overlay.md`
+- `android/ai tool plans/overlay, menu, etc/plan_afterburner_stick_highlight_fill_20260704.md`
+- `android/ai tool plans/overlay, menu, etc/plan_android_original_graphics_options_reuse_study.md`
+- `android/ai tool plans/overlay, menu, etc/plan_autosave_thumbnail_reliability_research_20260525.md`
+- `android/ai tool plans/overlay, menu, etc/plan_autoselect_dpad_reorder_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_broad_android_border_backing_20260610.md`
+- `android/ai tool plans/overlay, menu, etc/plan_controller_only_menu_buttons_overlay_20260703.md`
+- `android/ai tool plans/overlay, menu, etc/plan_controller_only_warp_accept_unbound_20260527.md`
+- `android/ai tool plans/overlay, menu, etc/plan_controls_bottom_row_and_drag_tap_20260823.md`
+- `android/ai tool plans/overlay, menu, etc/plan_controls_editor_device_logging_20260603.md`
+- `android/ai tool plans/overlay, menu, etc/plan_controls_editor_device_text_20260603.md`
+- `android/ai tool plans/overlay, menu, etc/plan_d1_difficulty_menu_tap_debug_20260619.md`
+- `android/ai tool plans/overlay, menu, etc/plan_d2_skip_title_screen.md`
+- `android/ai tool plans/overlay, menu, etc/plan_death_saying_keyboard_back_20260618.md`
+- `android/ai tool plans/overlay, menu, etc/plan_diagnose_black_3d_textures.md`
+- `android/ai tool plans/overlay, menu, etc/plan_door45_base_texture_pose_repro.md`
+- `android/ai tool plans/overlay, menu, etc/plan_door45_paged_out_buf_stale.md`
+- `android/ai tool plans/overlay, menu, etc/plan_dpad_text_input_nav_audit_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_etc2_to_ktx2_migration.md`
+- `android/ai tool plans/overlay, menu, etc/plan_exit_overlay_button_20260526.md`
+- `android/ai tool plans/overlay, menu, etc/plan_extract_reorder_helper_20260604.md`
+- `android/ai tool plans/overlay, menu, etc/plan_fix_host_build_blank_thumbnail_20260513.md`
+- `android/ai tool plans/overlay, menu, etc/plan_fix_msaa_missile_glitch.md`
+- `android/ai tool plans/overlay, menu, etc/plan_gles3_etc2_hires_textures.md`
+- `android/ai tool plans/overlay, menu, etc/plan_guidebot_d1_vs_d2_texture_feasibility_20260613.md`
+- `android/ai tool plans/overlay, menu, etc/plan_guidebot_locked_spawn_20260606.md`
+- `android/ai tool plans/overlay, menu, etc/plan_guidebot_nearest_point_navigation_20260611.md`
+- `android/ai tool plans/overlay, menu, etc/plan_guidebot_wheel_next_release_20260704.md`
+- `android/ai tool plans/overlay, menu, etc/plan_guidebot_wheel_unlock_next_goal_20260703.md`
+- `android/ai tool plans/overlay, menu, etc/plan_hidden_cover_focus_audit.md`
+- `android/ai tool plans/overlay, menu, etc/plan_hud_pip_rear_view_research_20260613.md`
+- `android/ai tool plans/overlay, menu, etc/plan_hud_strips_overlay_button.md`
+- `android/ai tool plans/overlay, menu, etc/plan_indicator_line_bold_warp_liberal_20260703.md`
+- `android/ai tool plans/overlay, menu, etc/plan_indicator_line_fixes.md`
+- `android/ai tool plans/overlay, menu, etc/plan_indicator_line_thickness_20260703.md`
+- `android/ai tool plans/overlay, menu, etc/plan_ingame_autoselect_long_press_drag_20260604.md`
+
+### GQ2-CHUNK-0617
+
+- `android/ai tool plans/overlay, menu, etc/plan_ingame_load_save_preview_highlight_20260605.md`
+- `android/ai tool plans/overlay, menu, etc/plan_intro_movie_loading_android.md`
+- `android/ai tool plans/overlay, menu, etc/plan_intro_skip_input_relaunch_fix.md`
+- `android/ai tool plans/overlay, menu, etc/plan_intro_timeout_batch_20260515.md`
+- `android/ai tool plans/overlay, menu, etc/plan_kotlin_menu_zoom_pan_back_overlay_20260823.md`
+- `android/ai tool plans/overlay, menu, etc/plan_landscape_portrait_ui_fixes.md`
+- `android/ai tool plans/overlay, menu, etc/plan_launcher_outline_menu_fixes_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_level_complete_stats_page_20260515.md`
+- `android/ai tool plans/overlay, menu, etc/plan_menu_loading_texture_filter_regression_20260508.md`
+- `android/ai tool plans/overlay, menu, etc/plan_merged_wall_texture_shift_diagnostic.md`
+- `android/ai tool plans/overlay, menu, etc/plan_mine_exit_movie_skip.md`
+- `android/ai tool plans/overlay, menu, etc/plan_minimize_save_thumbnails_20260514.md`
+- `android/ai tool plans/overlay, menu, etc/plan_modal_border_static_survey_20260610.md`
+- `android/ai tool plans/overlay, menu, etc/plan_multiplayer_abdicate_guidebot_settings_20260527.md`
+- `android/ai tool plans/overlay, menu, etc/plan_multiplayer_stats_overlay.md`
+- `android/ai tool plans/overlay, menu, etc/plan_overlay_menu_followups_20260522b.md`
+- `android/ai tool plans/overlay, menu, etc/plan_oversized_texture_fix.md`
+- `android/ai tool plans/overlay, menu, etc/plan_radiused_corner_hud_text_inset_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_relax_hires_texture_limits.md`
+- `android/ai tool plans/overlay, menu, etc/plan_robot_hostage_hud_counts_20260601.md`
+- `android/ai tool plans/overlay, menu, etc/plan_robot_total_runtime_spawns_20260603.md`
+- `android/ai tool plans/overlay, menu, etc/plan_rounded_corner_hud_text_inset_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_rounded_corner_hud_text_inset_tristate_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_save_name_selected_slot_20260823.md`
+- `android/ai tool plans/overlay, menu, etc/plan_save_pause_overlay_20260819.md`
+- `android/ai tool plans/overlay, menu, etc/plan_score_added_counter_stack_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_selective_android_frame_clear_20260610.md`
+- `android/ai tool plans/overlay, menu, etc/plan_shield_gap_brightness_and_perf_probe_20260520.md`
+- `android/ai tool plans/overlay, menu, etc/plan_shield_graphics_perf_20260521.md`
+- `android/ai tool plans/overlay, menu, etc/plan_shield_keyboard_gap_and_texture_load_20260520.md`
+- `android/ai tool plans/overlay, menu, etc/plan_shield_texture_log_analysis_20260520.md`
+- `android/ai tool plans/overlay, menu, etc/plan_skippable_intro_movies.md`
+- `android/ai tool plans/overlay, menu, etc/plan_stats_persistence_20260608.md`
+- `android/ai tool plans/overlay, menu, etc/plan_tex_naming_128_readme_mine_exit.md`
+- `android/ai tool plans/overlay, menu, etc/plan_texture_loading_diagnostics.md`
+- `android/ai tool plans/overlay, menu, etc/plan_texture_scan_netstats_debuglog_shader_warnings.md`
+- `android/ai tool plans/overlay, menu, etc/plan_three_autosave_categories_20260525.md`
+- `android/ai tool plans/overlay, menu, etc/plan_thumbnail_cleanup_20260514.md`
+- `android/ai tool plans/overlay, menu, etc/plan_touch_editor_dpad_navigation_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_touch_multi_selector_implementation_20260808.md`
+
+### GQ2-CHUNK-0618
+
+- `android/ai tool plans/overlay, menu, etc/plan_touch_pip_window_cycle_buttons_20260613.md`
+- `android/ai tool plans/overlay, menu, etc/plan_touch_selector_anchor_alignment_20260809.md`
+- `android/ai tool plans/overlay, menu, etc/plan_transparency_effects_menu_freeze_20260602.md`
+- `android/ai tool plans/overlay, menu, etc/plan_video_overlay_af_msaa_live_apply_research_20260524.md`
+- `android/ai tool plans/overlay, menu, etc/plan_video_overlay_brightness_20260523.md`
+- `android/ai tool plans/overlay, menu, etc/plan_video_overlay_height_scaling_20260524.md`
+- `android/ai tool plans/overlay, menu, etc/plan-cockpit-fix-overlay-consolidation-build-step.md`
+- `android/ai tool plans/overlay, menu, etc/plan-cutscene-death-overlays-mouse-mode-autoselect.md`
+- `android/ai tool plans/overlay, menu, etc/plan-etc2-black-texture-diagnostics.md`
+- `android/ai tool plans/overlay, menu, etc/plan-video-overlay-stats-etc2-hang.md`
+- `android/ai tool plans/overlay, menu, etc/quick_load_pause_horizontal_center_20260825.md`
+- `android/ai tool plans/overlay, menu, etc/retroid-clean-demo-launch-20261002.md`
+- `android/ai tool plans/overlay, menu, etc/retroid-demo-msaa-confirmation-20261002.md`
+- `android/ai tool plans/overlay, menu, etc/retroid-startup-brightness.md`
+- `android/ai tool plans/overlay, menu, etc/save_music_preferences_to_player_file_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/SKIP_BUTTON_PLAN.md`
+- `android/ai tool plans/overlay, menu, etc/strip-split-and-tmap2-labels.md`
+- `android/ai tool plans/overlay, menu, etc/study_cheats_menu_redesign_20260608.md`
+- `android/ai tool plans/overlay, menu, etc/study_touch_overlay_music_menu_refactor_20260612.md`
+- `android/ai tool plans/overlay, menu, etc/super_transparent_mask_fix.md`
+- `android/ai tool plans/overlay, menu, etc/supertransparent_threshold_docs_cleanup.md`
+- `android/ai tool plans/overlay, menu, etc/texture_visual_issues_investigation.md`
+- `android/ai tool plans/overlay, menu, etc/ui_cleanup_batch_2.md`
+- `android/ai tool plans/overlay, menu, etc/ui_cleanup_batch.md`
+- `android/ai tool plans/overlay, menu, etc/VIDEO_INFO_OVERLAY_PLAN.md`
+- `android/ai tool plans/performance/20260829_d2_final_boss_coop_slowdown.md`
+- `android/ai tool plans/performance/20260829_level_metadata_benchmark_regeneration.md`
+- `android/ai tool plans/performance/automap_objective_readiness_progress_plan_20260813.md`
+- `android/ai tool plans/performance/coop_slowdown_profiling_and_fixes.md`
+- `android/ai tool plans/performance/guidebot_async_route_stuck_fix_20260813.md`
+- `android/ai tool plans/performance/guidebot_live_calculation_benchmark_20260827.md`
+- `android/ai tool plans/performance/level_load_route_cache_log_review_20260812.md`
+- `android/ai tool plans/performance/level_metadata_analysis_benchmark_plan_20260813.md`
+- `android/ai tool plans/performance/level_metadata_replacement_radius_20260814.md`
+- `android/ai tool plans/performance/obsidian_next_level_precalculation_20260814.md`
+- `android/ai tool plans/performance/plan_launcher_resume_handoff_delay_20260819.md`
+- `android/ai tool plans/performance/route_metadata_background_precompute_implementation_20260812.md`
+- `android/ai tool plans/performance/route_metadata_background_precompute_study_20260812.md`
+- `android/ai tool plans/performance/route_metadata_priority_handoff_plan_20260813.md`
+- `android/ai tool plans/performance/texture_paging_regression_fix_20260812.md`
+
+### GQ2-CHUNK-0619
+
+- `android/ai tool plans/plan_check_updates_windows_linux.md`
+- `android/ai tool plans/plan_lan_restart_diagnostics_20260927.md`
+- `android/ai tool plans/plan_lan_save_version_discovery_20260927.md`
+- `android/ai tool plans/plan_mission_descriptor_file_details_20260605.md`
+- `android/ai tool plans/plan_mission_zip_readme_view_20260606.md`
+- `android/ai tool plans/plan_sectorgame_zip_mission_import_20260604.md`
+- `android/ai tool plans/plan_test_saf_archiver_report_20260523_232445.md`
+- `android/ai tool plans/plan_uneasy_mission_zip_ogg_music_20260606.md`
+- `android/ai tool plans/plan_uneasy_zip_hog_level_loading_20260605.md`
+- `android/ai tool plans/plan_uneasy_zip_hog_realpath_fix_20260605.md`
+- `android/ai tool plans/plan_zip_mod_file_button_clipping_20260605.md`
+- `android/ai tool plans/pr_engine_smoke_20261003.md`
+- `android/ai tool plans/regeneration_failures_20260918.md`
+- `android/ai tool plans/regression/d1_in_d2_guidebot_simulations_20260904.md`
+- `android/ai tool plans/regression/extract_failure_and_runner_exit_20260817.md`
+- `android/ai tool plans/regression/fingerprint_match_failure_20260817.md`
+- `android/ai tool plans/regression/fix_failures_20260818_183537.md`
+- `android/ai tool plans/regression/guidebot_exit_and_obsidian_l1_repair_20260901.md`
+- `android/ai tool plans/regression/guidebot_headless_single_console_20260901.md`
+- `android/ai tool plans/regression/guidebot_manual_windows_viewer_20260901.md`
+- `android/ai tool plans/regression/guidebot_route_door_flare_aiming_20260901.md`
+- `android/ai tool plans/regression/guidebot_simulation_compact_objectives_20260901.md`
+- `android/ai tool plans/regression/guidebot_simulation_regression_files_20260831.md`
+- `android/ai tool plans/regression/guidebot-stage-failures-20260925.md`
+- `android/ai tool plans/regression/investigate_generated_regression_changes_20260817.md`
+- `android/ai tool plans/regression/mission_intent_json_order_normalization_20260901.md`
+- `android/ai tool plans/regression/mission-files-physicsfs-regression-failures.md`
+- `android/ai tool plans/regression/parallel_headless_regeneration_20260904.md`
+- `android/ai tool plans/regression/pasted-regression-failure-followup.md`
+- `android/ai tool plans/regression/plan_d2xxl_downloads_mission_source_parity_20260826.md`
+- `android/ai tool plans/regression/plan_emulator_health_storage_recovery_failure_20260825.md`
+- `android/ai tool plans/regression/plan_mission_metadata_t_failure_20260826.md`
+- `android/ai tool plans/regression/plan_recent_generated_diff_audit_20260825.md`
+- `android/ai tool plans/regression/plan_regenerate_missing_mission_metadata_menu_20260825.md`
+- `android/ai tool plans/regression/plan_regression_data_failures_and_new_music_tracks_20260824.md`
+- `android/ai tool plans/regression/plan_track_fingerprint_whitespace_determinism_20260824.md`
+- `android/ai tool plans/regression/plan_ulterior_rebirth_variant_selection_20260825.md`
+- `android/ai tool plans/regression/proportional_45_minute_sampling_20260817.md`
+- `android/ai tool plans/regression/regeneration_failures_and_target_profile_20260817.md`
+- `android/ai tool plans/regression/regeneration_runner_resilience_menu_eta_20260815.md`
+
+### GQ2-CHUNK-0620
+
+- `android/ai tool plans/regression/routing_development_set_menu_20260904.md`
+- `android/ai tool plans/regression/run_all_tests_opening_menu_20260817.md`
+- `android/ai tool plans/regression/runtime_targeted_sampling_20260817.md`
+- `android/ai tool plans/regression/test_failure_20260818_233042.md`
+- `android/ai tool plans/regression/test_failures_20260817_210332.md`
+- `android/ai tool plans/regression/test_failures_20260818_081131.md`
+- `android/ai tool plans/regression/test_failures_20260818_183537.md`
+- `android/ai tool plans/regression/test_failures_20260818_212454.md`
+- `android/ai tool plans/regression/test_failures_and_hash_ring_sampling_20260818.md`
+- `android/ai tool plans/release_upload_build_stamp_20260603.md`
+- `android/ai tool plans/reticle_rendering_20260929.md`
+- `android/ai tool plans/reusable/demo-file-format-reference.md`
+- `android/ai tool plans/reusable/fp-determinism-survey-20260428-report.md`
+- `android/ai tool plans/reusable/fp-determinism-survey-20260428.md`
+- `android/ai tool plans/reusable/fp-determinism-test-notes-20260429.md`
+- `android/ai tool plans/reusable/plan_reusable_cleanup_instructions_20260517.md`
+- `android/ai tool plans/reusable/polling-not-timeouts.md`
+- `android/ai tool plans/self_healing_audit.md`
+- `android/ai tool plans/self_healing_fixes.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_cd_storage_pilot_delete_20260520.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_d1_level14_route_debug_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_door45_and_saf_archiver_triage_20260516.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_crash_repro_fix_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_implementation_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_native_safety_study_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_route_completion_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_scroll_ui_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_view_study_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_level_metadata_volume_travel_time_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_metadata_start_secret_diff_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_metadata_volume_display_precision_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_missing_reactor_travel_note_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_obsidian_trigger_wall_travel_20260608.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_plutonian_shores_unreachable_research_20260610.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_reactor_shootable_route_metadata_20260611.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_saf_archiver_wrapper_hang_20260516.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_saf_link_removal_and_cd_filter_20260507.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_save_explorer_base_save_visibility_20260606.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_save_explorer_detail_popover_20260607.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_save_explorer_most_recent_default_20260607.md`
+
+### GQ2-CHUNK-0621
+
+- `android/ai tool plans/storage, SAF, edge cases/plan_save_explorer_recent_dedup_20260606.md`
+- `android/ai tool plans/storage, SAF, edge cases/plan_unified_free_space_preflight_20260611.md`
+- `android/ai tool plans/storage, SAF, edge cases/storage_inspector_export_20260816.md`
+- `android/ai tool plans/storage, SAF, edge cases/study_level_metadata_volume_travel_time_20260608.md`
+- `android/ai tool plans/suite_endgame_isolation_20260918.md`
+- `android/ai tool plans/suite_failures_20260918.md`
+- `android/ai tool plans/suite_failures_20260927.md`
+- `android/ai tool plans/suite_storage_timeout_20260918.md`
+- `android/ai tool plans/test runner/fix_base_robot_preview_catalog_owner_20260816.md`
+- `android/ai tool plans/test runner/fix_catalog_startup_20260926.md`
+- `android/ai tool plans/test runner/fix_suite_failures_20260926.md`
+- `android/ai tool plans/test runner/plan_standalone_owner_catalog_regression_20260821.md`
+- `android/ai tool plans/test_runner_timeout_result_20260911.md`
+- `android/ai tool plans/testing/20260829_sample_test_failure_diagnosis.md`
+- `android/ai tool plans/testing/audit_powershell_cwd_leaks_20260707.md`
+- `android/ai tool plans/testing/auto-infra-test-suite.md`
+- `android/ai tool plans/testing/demo-regression-testing.md`
+- `android/ai tool plans/testing/disk-cleanup-20261005.output.txt`
+- `android/ai tool plans/testing/disk-cleanup-20261005.preview.txt`
+- `android/ai tool plans/testing/disk-space-20261005.inventory.json`
+- `android/ai tool plans/testing/disk-space-management-20261005.md`
+- `android/ai tool plans/testing/draft_copilot_instructions_additions.md`
+- `android/ai tool plans/testing/emulator_quiet_full_suite_20261001.md`
+- `android/ai tool plans/testing/fix_host_metadata_helper_cwd_20260707.md`
+- `android/ai tool plans/testing/fix_test_failures_20260329.md`
+- `android/ai tool plans/testing/fix-test-failures-20260328.md`
+- `android/ai tool plans/testing/fix-test-failures-20260406.md`
+- `android/ai tool plans/testing/fix-test-suite-failures.md`
+- `android/ai tool plans/testing/full_mission_metadata_regeneration_20260705.md`
+- `android/ai tool plans/testing/host_metadata_regeneration_implementation_20260705.md`
+- `android/ai tool plans/testing/host_metadata_regeneration_repair_20260705.md`
+- `android/ai tool plans/testing/host_mission_metadata_regeneration_design_20260705.md`
+- `android/ai tool plans/testing/level_metadata_json_normalization_plan_20260705.md`
+- `android/ai tool plans/testing/long-run-disk-retention.md`
+- `android/ai tool plans/testing/metadata_regeneration_script_docs_20260705.md`
+- `android/ai tool plans/testing/overnight-tests-20261005.partial.txt`
+- `android/ai tool plans/testing/overnight-tests-regeneration-20261005.md`
+- `android/ai tool plans/testing/plan_autosave_resume_test_triage_20260516b.md`
+- `android/ai tool plans/testing/plan_autosave_resume_timeout_20260621.md`
+- `android/ai tool plans/testing/plan_cleanup_report_quibbles_20260628_195417.md`
+
+### GQ2-CHUNK-0622
+
+- `android/ai tool plans/testing/plan_coop_start_metadata_20260609.md`
+- `android/ai tool plans/testing/plan_emulator_test_consolidation_survey_20260723.md`
+- `android/ai tool plans/testing/plan_engine_prefs_test_triage_20260516.md`
+- `android/ai tool plans/testing/plan_failure_fault_tolerance_20260621.md`
+- `android/ai tool plans/testing/plan_fault_tolerance_report_20260621_140747.md`
+- `android/ai tool plans/testing/plan_fire_primary_test_probe_20260516.md`
+- `android/ai tool plans/testing/plan_fix_test_failures_20260409_round2.md`
+- `android/ai tool plans/testing/plan_fix_test_failures_20260409.md`
+- `android/ai tool plans/testing/plan_full_suite_failures_20260821_164121.md`
+- `android/ai tool plans/testing/plan_full_suite_failures_20260821_180050.md`
+- `android/ai tool plans/testing/plan_full_suite_failures_20260821_193535.md`
+- `android/ai tool plans/testing/plan_full_suite_rerun_after_demo_cleanup_20260517.md`
+- `android/ai tool plans/testing/plan_game_data_index_canonicalization_20260526.md`
+- `android/ai tool plans/testing/plan_game_data_index_minimal_test_deps_20260526.md`
+- `android/ai tool plans/testing/plan_get_deps_helpers_reorg_20260526.md`
+- `android/ai tool plans/testing/plan_gog_regression_launch_timeout_cleanup_20260526.md`
+- `android/ai tool plans/testing/plan_intro_test_cleanup.md`
+- `android/ai tool plans/testing/plan_json_baseline_pretty_print_20260609.md`
+- `android/ai tool plans/testing/plan_json_output_normalization_in_tests_20260609.md`
+- `android/ai tool plans/testing/plan_levelcomplete_touch_skip_triage_20260516.md`
+- `android/ai tool plans/testing/plan_linux_data_recovery_helpers_20260526.md`
+- `android/ai tool plans/testing/plan_merge_conflict_cleanup_20260526.md`
+- `android/ai tool plans/testing/plan_merged_wall_next_failure_20260628.md`
+- `android/ai tool plans/testing/plan_merged_wall_two_pass_geometry_contract_20260624.md`
+- `android/ai tool plans/testing/plan_merged_wall_two_pass_probe_20260624.md`
+- `android/ai tool plans/testing/plan_mission_zip_batch_d1_d2_detection_20260609.md`
+- `android/ai tool plans/testing/plan_mission_zip_batch_emulator_recovery_and_crashes_20260609.md`
+- `android/ai tool plans/testing/plan_mission_zip_batch_manual_run_20260609.md`
+- `android/ai tool plans/testing/plan_mission_zip_batch_metadata_launch_20260608.md`
+- `android/ai tool plans/testing/plan_mission_zip_regression_gitignore_20260609.md`
+- `android/ai tool plans/testing/plan_mission_zip_regression_output_and_assets_20260609.md`
+- `android/ai tool plans/testing/plan_next_failure_transform_20260628.md`
+- `android/ai tool plans/testing/plan_next_remaining_failure_20260628.md`
+- `android/ai tool plans/testing/plan_pilot_long_hold_delete_hardening_20260624.md`
+- `android/ai tool plans/testing/plan_preexisting_test_fixes.md`
+- `android/ai tool plans/testing/plan_quick_record_sidecar_hardening_20260624.md`
+- `android/ai tool plans/testing/plan_quick_record_sidecar_install_hardening_20260624.md`
+- `android/ai tool plans/testing/plan_quick_tests_historical_seconds_20260701.md`
+- `android/ai tool plans/testing/plan_recent_test_report_fixes_20260612.md`
+- `android/ai tool plans/testing/plan_report_20260518_223317_fixes.md`
+
+### GQ2-CHUNK-0623
+
+- `android/ai tool plans/testing/plan_report_20260519_232520_fixes.md`
+- `android/ai tool plans/testing/plan_report_20260520_232305_triage.md`
+- `android/ai tool plans/testing/plan_report_20260526_144107_windows_compat.md`
+- `android/ai tool plans/testing/plan_report_20260528_115705_failures.md`
+- `android/ai tool plans/testing/plan_report_20260528_153202_axis_mapping.md`
+- `android/ai tool plans/testing/plan_report_20260528_201452_failures.md`
+- `android/ai tool plans/testing/plan_report_20260620_153831_state_cluster.md`
+- `android/ai tool plans/testing/plan_report_20260624_201136_hardening.md`
+- `android/ai tool plans/testing/plan_report_20260627_231136_hardening.md`
+- `android/ai tool plans/testing/plan_report_20260627_231136_remaining_hardening.md`
+- `android/ai tool plans/testing/plan_report_20260628_131121_followup.md`
+- `android/ai tool plans/testing/plan_report_20260628_151027_followup.md`
+- `android/ai tool plans/testing/plan_report_20260628_195417_audit.md`
+- `android/ai tool plans/testing/plan_report_20260628_222248_timeout_failure.md`
+- `android/ai tool plans/testing/plan_report_20260927_095226_failures.md`
+- `android/ai tool plans/testing/plan_report_triage_20260516.md`
+- `android/ai tool plans/testing/plan_resolution_test_triage_20260516.md`
+- `android/ai tool plans/testing/plan_reticle_options_test_triage_20260516.md`
+- `android/ai tool plans/testing/plan_reusable_level_metadata_zip_repro_20260608.md`
+- `android/ai tool plans/testing/plan_run_all_extract_subset_research_20260526.md`
+- `android/ai tool plans/testing/plan_run_all_tests_linux_20260525.md`
+- `android/ai tool plans/testing/plan_run_all_tests_linux_20260602.md`
+- `android/ai tool plans/testing/plan_run_all_tests_prereq_preflight_20260515.md`
+- `android/ai tool plans/testing/plan_run_quick_tests_20260519.md`
+- `android/ai tool plans/testing/plan_run_testmenu_mission_zip_batch_20260609.md`
+- `android/ai tool plans/testing/plan_saf_basic_test_triage_20260516.md`
+- `android/ai tool plans/testing/plan_test_abort_game_to_main_menu_d2_report_20260523_114346.md`
+- `android/ai tool plans/testing/plan_test_centralization_survey_20260525.md`
+- `android/ai tool plans/testing/plan_test_dpad_triggers_report_20260522_232545.md`
+- `android/ai tool plans/testing/plan_test_dpad_triggers_report_20260523_114346.md`
+- `android/ai tool plans/testing/plan_test_failure_robustness_20260628.md`
+- `android/ai tool plans/testing/plan_test_input_demo_runtime_smoke_20260523_110600.md`
+- `android/ai tool plans/testing/plan_test_parameterization.md`
+- `android/ai tool plans/testing/plan_test_report_fixes.md`
+- `android/ai tool plans/testing/plan_test_report_rt_pause.md`
+- `android/ai tool plans/testing/plan_test_runner_progress_and_combined_failures_20260723.md`
+- `android/ai tool plans/testing/plan_test_suite_cleanup_20260620.md`
+- `android/ai tool plans/testing/plan_test_suite_fixes.md`
+- `android/ai tool plans/testing/plan_test_suite_runtime_survey_20260620.md`
+- `android/ai tool plans/testing/plan.TEST_RELIABILITY.md`
+
+### GQ2-CHUNK-0624
+
+- `game_data/music/D2 midi mp3 opl3/chromaprint_info.json5`
+- `game_data/music/D2 midi mp3 sc55/chromaprint_info.json5`
+- `game_data/music/D2 MIDI mp3 SC88/chromaprint_info.json5`
+- `game_data/music/D2 MIDI mp3 SC88Pro/chromaprint_info.json5`
+- `game_data/music/D2 mp3/chromaprint_info.json5`
+- `game_data/music/D2 redbook mp3 rips/chromaprint_info.json5`
+- `game_data/music/D2 vampyro mp3/chromaprint_info.json5`
+- `game_data/music/D2 vertigo mp3/chromaprint_info.json5`
+- `game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - castaway_redux/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - cererian_1.3/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - ewithin-versions/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - KCXF2RMv11/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - nefarious/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - Trine1/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - trine2/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - U3AAH/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - ulterior_v1.0.6b/chromaprint_info.json5`
+- `game_data/music/Mission ZIP - Uneasy4/chromaprint_info.json5`
+
+### GQ2-CHUNK-0625
+
+- `android/android_controller_controls.svg`
+- `android/android_controls.svg`
+- `android/app/src/main/assets/known_albums.json5`
+- `android/app/src/main/assets/known_discs.json5`
+- `android/app/src/main/assets/known_versions.json5`
+- `android/game_scripts/profile_uneasy4_level_preview.json5`
+- `android/game_scripts/test_abort_game_to_main_menu_d2.json5`
+- `android/game_scripts/test_android_saveload_dispatch_unified.json5`
+- `android/game_scripts/test_autosave_resume_missing_pilot_unified.json5`
+- `android/game_scripts/test_autoselect_crash_unified.json5`
+- `android/game_scripts/test_axis_mapping.json5`
+- `android/game_scripts/test_boss_health_bar.json5`
+- `android/game_scripts/test_controller_compare_unified.json5`
+- `android/game_scripts/test_controls_readability_d2.json5`
+- `android/game_scripts/test_coop_guidebot_observer_host.json5`
+- `android/game_scripts/test_coop_guidebot_observer_joiner.json5`
+- `android/game_scripts/test_coop_guidebot_owner_host.json5`
+- `android/game_scripts/test_coop_guidebot_owner_joiner.json5`
+- `android/game_scripts/test_coop_guidebot_restore_remap_host.json5`
+- `android/game_scripts/test_coop_guidebot_restore_remap_joiner.json5`
+- `android/game_scripts/test_coop_guidebot_restore_save_host.json5`
+- `android/game_scripts/test_coop_guidebot_restore_save_joiner.json5`
+- `android/game_scripts/test_coop_host_migration_prepare_host.json5`
+- `android/game_scripts/test_coop_host_migration_prepare_joiner.json5`
+- `android/game_scripts/test_d2_level7_reactor_water_profile.json5`
+- `android/game_scripts/test_death.json5`
+- `android/game_scripts/test_debug_log_refresh_button.json5`
+- `android/game_scripts/test_engine_prefs_unified.json5`
+- `android/game_scripts/test_extract_regression_template.json5`
+- `android/game_scripts/test_gles3_shim_vbo_arrays.json5`
+- `android/game_scripts/test_gog_installer_d1_unified.json5`
+- `android/game_scripts/test_gog_installer_redbook_unified.json5`
+- `android/game_scripts/test_guidebot_unexplored_goal.json5`
+- `android/game_scripts/test_intro_skip_inputs_unified.json5`
+- `android/game_scripts/test_kcxf2_guidebot_route_next.json5`
+- `android/game_scripts/test_keyboard_manual.json5`
+- `android/game_scripts/test_launch_to_automap.json5`
+- `android/game_scripts/test_level_metadata_launcher_zip_reusable.json5`
+- `android/game_scripts/test_level_metadata_request_mount_scope.json5`
+- `android/game_scripts/test_levelcomplete_touch_skip.json5`
+
+### GQ2-CHUNK-0626
+
+- `android/game_scripts/test_lunar_series_revamped_metadata_only.json5`
+- `android/game_scripts/test_merged_wall_snapshot_regression.json5`
+- `android/game_scripts/test_merged_wall_two_pass_probe.json5`
+- `android/game_scripts/test_mission_zip_batch_import_metadata_launch.json5`
+- `android/game_scripts/test_mission_zip_batch_import_metadata.json5`
+- `android/game_scripts/test_mod_loading.json5`
+- `android/game_scripts/test_music_track_controls_unified.json5`
+- `android/game_scripts/test_newmenu_render_paths_unified.json5`
+- `android/game_scripts/test_obsidian_level1_objective_markers.json5`
+- `android/game_scripts/test_ogl_runtime_texture_options_unified.json5`
+- `android/game_scripts/test_pilot_long_hold_delete_unified.json5`
+- `android/game_scripts/test_quick_record_classic_sidecar.json5`
+- `android/game_scripts/test_random_level_preview.json5`
+- `android/game_scripts/test_readable_tiny_help_d2.json5`
+- `android/game_scripts/test_resolution_unified.json5`
+- `android/game_scripts/test_saf_basic.json5`
+- `android/game_scripts/test_saf_redbook.json5`
+- `android/game_scripts/test_secret_reveal_automap_d2.json5`
+- `android/game_scripts/test_skip_every_launch_button_manual_unified.json5`
+- `android/game_scripts/test_title_music_skip_pref_unified.json5`
+- `android/game_scripts/test_trine2_d1_in_d2_custom_textures.json5`
+- `android/helpers/process_lifetime.cs`
+- `android/tests/fm_feasibility/hmi_pitch_table.inc`
+- `android/tests/fm_quality/listen.html`
+- `android/tools/code-quality/format-text.mjs`
+- `game_data/CD images/d1 mac 2nd bin+cue/extract_regression.json5`
+- `game_data/CD images/d2 mac/extract_regression.json5`
+- `game_data/CD images/Descent - Anniversary Edition (Brazil) (Covermount)/extract_regression.json5`
+- `game_data/CD images/Descent - Anniversary Edition (USA)/extract_regression.json5`
+- `game_data/CD images/Descent - Destination Saturn (USA)/extract_regression.json5`
+- `game_data/CD images/Descent - Levels of the World (USA)/extract_regression.json5`
+- `game_data/CD images/Descent - Mac macplay/extract_regression.json5`
+- `game_data/CD images/Descent - Test Flight (USA)/extract_regression.json5`
+- `game_data/CD images/Descent (Europe) (Alt)/extract_regression.json5`
+- `game_data/CD images/Descent (Europe)/extract_regression.json5`
+- `game_data/CD images/Descent (USA)/extract_regression.json5`
+- `game_data/CD images/Descent Anniversary (ISO)/extract_regression.json5`
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 1)/extract_regression.json5`
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 2)/extract_regression.json5`
+- `game_data/CD images/Descent I and II - The Definitive Collection (Europe) (Disc 3)/extract_regression.json5`
+
+### GQ2-CHUNK-0627
+
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 1)/extract_regression.json5`
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 2)/extract_regression.json5`
+- `game_data/CD images/Descent I and II - The Definitive Collection (USA) (Disc 3)/extract_regression.json5`
+- `game_data/CD images/Descent II - Destination Quartzon (Europe)/extract_regression.json5`
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Diamond OEM)/extract_regression.json5`
+- `game_data/CD images/Descent II - Destination Quartzon (USA) (Logitech OEM)/extract_regression.json5`
+- `game_data/CD images/Descent II - Destination Quartzon (USA)/extract_regression.json5`
+- `game_data/CD images/Descent II - Destination Quartzon 3D (Europe)/extract_regression.json5`
+- `game_data/CD images/Descent II - The Vertigo Series (USA)/extract_regression.json5`
+- `game_data/CD images/Descent II (Europe) (v1.1)/extract_regression.json5`
+- `game_data/CD images/Descent II (Europe)/extract_regression.json5`
+- `game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/extract_regression.json5`
+- `game_data/CD images/Descent II (USA) (Alt)/extract_regression.json5`
+- `game_data/CD images/Descent II (USA) (Rerelease)/extract_regression.json5`
+- `game_data/CD images/Descent II (USA) (v1.1)/extract_regression.json5`
+- `game_data/CD images/Descent II (USA)/extract_regression.json5`
+- `game_data/CD images/Descent II Infinite Abyss/extract_regression.json5`
+- `game_data/CD images/Descent-II-Destination-Quartzon_Win_EN_ISO-Version/extract_regression.json5`
+- `game_data/CD images/Dimensions for Descent (USA)/extract_regression.json5`
+- `game_data/combined launches/Descent II plus Vertigo (USA)/combined_launch.json5`
+- `game_data/combined launches/Descent II plus Vertigo (USA)/extract_regression.json5`
+- `game_data/gog installers/descent_2_enUS_1_0_51877_regression.json5`
+- `game_data/gog installers/descent_enUS_1_0_35122_regression.json5`
+- `game_data/gog installers/setup_descent_1.4a_(16596)_regression.json5`
+- `game_data/gog installers/setup_descent_2_1.1_(16596)_regression.json5`
+- `game_data/mission_files/cd_level_metadata_sources.json5`
+- `game_data/music/D1 macplay mp3/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 ARACHNO/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 MU80/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 opl3/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 sc55/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 SC88/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3 SC88Pro/chromaprint_info.json5`
+- `game_data/music/D1 MIDI mp3/chromaprint_info.json5`
+- `game_data/music/D1 playstation mp3/chromaprint_info.json5`
+- `game_data/music/D1 sunspire remix/chromaprint_info.json5`
+- `game_data/music/D2 infinite abyss redbook mp3/chromaprint_info.json5`
+- `game_data/music/D2 macplay mp3/chromaprint_info.json5`
+- `game_data/music/D2 MIDI mp3 ARACHNO/chromaprint_info.json5`
+- `game_data/music/D2 MIDI mp3 MU80/chromaprint_info.json5`
+
+### First substantive GQ2 reviews, 2026-10-06
+
+- Completed GQ2-CHUNK-0001, 0155, 0156, 0170 and 0171 with immutable reports, exact base/head/diff fingerprints, paired context and original-file attribution
+- GQ2 queue: 5 DONE / 640 TODO, plus the separately recorded working-tree supplement. Parent GQ1 closure remains TODO
+- Current source confirms the existing GQR-0184 paired color-font consolidation: two identical 73-line bodies remain in inherited files; no duplicate finding or added savings claim
+- Preserve compact filename/PCX fixes, paired CPU projection split, release-only counter guard and D2 runtime indexed-color boundary. Existing BR-0007 and BR-0294 remain owned issues
+- Semantic sample comparisons, exact projection-body/paired-font comparisons and source-identity checks passed. No new product edit, build, device run or deferred security probe in these units
+- Next current-delta work should continue paired inherited scopes and necessary shared owners, alongside actual input-stall evidence. All 203 pending GQR fixes still require the campaign's live reconciliation and validation
+
+### Paired native current-delta groups, 2026-10-06
+
+- Completed GQ2-CHUNK-0160 and 0176: all changed hunks across 20 inherited AI/automap/asset/reactor/collision/config/credits paths, plus named shared and native owner context
+- GQ2 queue: 7 DONE / 638 TODO. GQ1 remains 818 DONE / 1 TODO; current delta and ordinary input-stall investigation remain open
+- Admitted GQF-0252/GQR-0237: move duplicated automap adoption eligibility into the existing shared updater and remove its unused player argument. Static model removes 21 inherited lines; implementation and actual paired eligibility/readiness coverage remain TODO
+- Existing GQR-0188 paired config policy remains current. Retain native asset formats, reactor state, D1/D2 distinctions and compact shared-feature hooks; D2 homing-bump helper is relocated and live, not deleted as dead code
+- Canonical totals: 252 findings; 237 remediations, comprising 32 DONE / 204 TODO / 1 DEFERRED. Exact scope/blob/diff/report identities imported; 822 terminal impact annotations and 237 remediation rankings reconciled
+- No product code changed or new runtime/build/security probe executed in these units. Concurrent graphics-chooser and effects-audio work remains outside this writer's scope and must be reconciled as working-tree delta at closure
+- Next: continue current inherited/shared-owner coverage and complete supported input-stall evidence, then implement and validate accepted live fixes. Do not treat the draft model or existing test source as execution evidence
+
+### Native interfaces and format corrections, 2026-10-06
+
+- Completed GQ2-CHUNK-0158, 0159, 0173, 0174 and 0175: all assigned changes across 18 inherited IFF/header/editor files plus necessary native/shared/test context
+- GQ2 queue: 12 DONE / 633 TODO. No new finding or remediation in these five units; all receive scoped CLEAN/RETAIN dispositions and zero new inherited saving
+- Mechanical reverse transforms prove the six writer seek changes per game preserve the old code except unconditional execution; D2 additionally retains its explicit BODY-end seek. Keep these native correctness changes
+- Retain the explicit trigger disk-size boundary, shared audio declaration include, typed model/projection/texture interfaces, non-OGL batching fallbacks and size_t include. ReadCmdArgs declarations have actual maintained default-test callers
+- Imported exact scopes, blobs, diff digests and current-context identities. Existing BR-0197 enhanced-model mipmaps and GQR-0185 textured batching remain separately owned; this header review neither duplicates nor closes them
+- No fresh product edits, build/runtime checks or deferred probes in these units. Review evidence uses current source and exact comparisons, with historical validation explicitly distinguished
+- Next: continue paired inherited implementation scopes and shared-owner reconciliation; ordinary input-stall evidence, remaining current delta and accepted fixes still prevent campaign closure
+
+### Paired platform and renderer reconciliation, 2026-10-06
+
+- Completed GQ2-CHUNK-0157 and 0172: all assigned changed hunks across 25 inherited platform, renderer and audio paths plus named shared/native/test context
+- GQ2 queue: 14 DONE / 631 TODO. Existing GQR-0178/0185/0186 candidates remain; completed gamepad, window-accessor, mixer-diagnostic, filename-capacity and 2D primitive consolidations remain preserved
+- Reopened existing BR-0256, with its historical resolution preserved, and admitted GQR-0238. Current per-unit bind skipping misses raw enhanced-model binds and texture-deletion invalidation; no duplicate GQF finding
+- Actual unchanged shared binding helpers compiled with MSVC /W4 /O2 /MD /DNDEBUG against a stateful GL stand-in reproduce requested 37 / actual 99 after a raw bind, and requested 37 / actual 0 after simulated deletion. Same-unit reuse, separate-unit bind and explicit-invalidation controls pass. No compiler warning; probe exit 0 confirms expected defect/controls
+- Maintained renderer contracts pass all 7 tests but only check source structure for this cache. Real GLES draws, pixels, driver name reuse and context lifecycle remain required fix validation; no such execution is claimed
+- Canonical totals: 252 findings; 238 remediations, 32 DONE / 205 TODO / 1 DEFERRED. Current-delta evidence imports include exact source/diff identities, full reproducer and concurrent mixer/diagnostic delta hashes
+- No product files changed. Concurrent effects-slider and graphics-chooser work is preserved for final working-tree reconciliation. Deferred security/resource-pressure probes were not run
+- Next: finish remaining inherited/shared current-delta coverage and supported input-stall evidence before accepted live fixes. Binding repair must reconcile every relevant mutation path rather than relying on the passing source-pattern test

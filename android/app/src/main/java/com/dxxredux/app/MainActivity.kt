@@ -890,6 +890,13 @@ class MainActivity :
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var keyboardInputView: KeyboardInputView
     private lateinit var touchOverlay: TouchOverlayView
+    private val touchInputCapture by lazy {
+        TouchInputCapture(
+            nowMs = { android.os.SystemClock.uptimeMillis() },
+            writeBatch = { DebugLog.logBatch(DebugLogCategory.TOUCH_INPUT, it, timestampEachLine = false) },
+            setNativeEnabled = { nativeSetDebugLogEnabled(DebugLogCategory.TOUCH_INPUT, it) },
+        )
+    }
     private lateinit var skipButton: SkipButtonView
     private lateinit var menuInteractionOverlay: MenuInteractionOverlayView
     private lateinit var startGameButton: StartGameButtonView
@@ -1336,6 +1343,9 @@ class MainActivity :
                 },
             )
         touchOverlay.inputMixer = inputMixer
+        if (DebugLog.isCategoryEnabled(this, DebugLogCategory.TOUCH_INPUT)) {
+            touchOverlay.inputCapture = touchInputCapture
+        }
         touchOverlay.axisCallback = { axis, value ->
             inputMixer.setAxis(axis, "touch", value)
         }
@@ -1873,6 +1883,7 @@ class MainActivity :
                     } catch (_: Exception) {
                         // Native side is dead or dying (e.g. Error() was called during init).
                         // Kill the process directly so the user isn't stuck on a frozen screen.
+                        touchInputCapture.finish("process_exit")
                         android.os.Process.killProcess(android.os.Process.myPid())
                     }
                 }
@@ -2303,6 +2314,7 @@ class MainActivity :
                         Intent.FLAG_ACTIVITY_SINGLE_TOP,
                 ).putExtra("graphics_recovery_message", message),
         )
+        touchInputCapture.finish("process_exit")
         android.os.Process.killProcess(android.os.Process.myPid())
     }
 
@@ -2516,7 +2528,14 @@ class MainActivity :
         super.onSaveInstanceState(outState)
     }
 
+    override fun finish() {
+        // Native shutdown kills the process immediately after finish() returns
+        touchInputCapture.finish("activity_finish")
+        super.finish()
+    }
+
     override fun onPause() {
+        touchInputCapture.finish("activity_pause")
         // Overlay polling must not reassert foreground state after graphics safety is paused
         isActivityResumed = false
         getSystemService(
@@ -2639,8 +2658,14 @@ class MainActivity :
     private fun syncDebugLogPrefs() {
         for (cat in 0 until DebugLogCategory.COUNT) {
             val enabled = DebugLog.isCategoryEnabled(this, cat)
+            if (cat == DebugLogCategory.TOUCH_INPUT && !enabled) touchInputCapture.finish("disabled")
             DebugLog.setCategoryEnabled(this, cat, enabled)
-            nativeSetDebugLogEnabled(cat, enabled)
+            if (cat == DebugLogCategory.TOUCH_INPUT) {
+                nativeSetDebugLogEnabled(cat, enabled && touchInputCapture.active)
+                if (::touchOverlay.isInitialized) touchOverlay.inputCapture = if (enabled) touchInputCapture else null
+            } else {
+                nativeSetDebugLogEnabled(cat, enabled)
+            }
         }
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
         nativeSetAutomaticSlowdownCapture(prefs.getBoolean(PREF_AUTOMATIC_SLOWDOWN_CAPTURE, false))
@@ -3430,6 +3455,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        touchInputCapture.finish("activity_destroy")
         idleScreenSaver?.dispose()
         idleScreenSaver = null
         lanJoinQr?.show(false)
@@ -4881,6 +4907,10 @@ class MainActivity :
         category: Int,
         message: String,
     ) {
+        if (category == DebugLogCategory.TOUCH_INPUT) {
+            touchInputCapture.record { message }
+            return
+        }
         DebugLog.log(category, message)
         if (category == DebugLogCategory.NETWORK) {
             com.dxxredux.app.multiplayer.MatchmakingStateHolder
