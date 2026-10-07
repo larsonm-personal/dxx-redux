@@ -117,7 +117,14 @@ internal class LobbyLatencyChecks(
                             true
                     }
                 announce.invoke(LobbyService)
-                check(discoveryPeers.isEmpty()) { "Expired discovery peer kept receiving announcements" }
+                // Other live peers can query this real UDP host while the fixture runs
+                check(!discoveryPeers.containsKey("127.0.0.2")) {
+                    "Expired discovery peer kept receiving announcements: peers=$discoveryPeers"
+                }
+                android.util.Log.i(
+                    "LobbyLatencyChecks",
+                    "Expired fixture peer removed; remaining peers=$discoveryPeers",
+                )
                 val players = field("_hostedLobbyPlayers").get(null) as MutableStateFlow<List<LanPlayer>>
                 players.value =
                     players.value.map {

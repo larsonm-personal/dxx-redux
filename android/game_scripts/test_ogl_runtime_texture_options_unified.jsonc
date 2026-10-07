@@ -2,10 +2,12 @@
 [
     {
         "_info": {
+            "_standalone": false,
+            "_owner": "test_ogl_runtime_texture_options_unified",
             "games": ["d1", "d2"],
             "vars": {
-                "d1": { "MISSION": "First Strike", "GAME_NUM": "1" },
-                "d2": { "MISSION": "Counterstrike", "GAME_NUM": "2" },
+                "d1": { "MISSION": "First Strike", "GAME_NUM": "1", "MSAA": "0" },
+                "d2": { "MISSION": "Counterstrike", "GAME_NUM": "2", "MSAA": "2" },
             },
             "_deps": [
                 {
@@ -35,6 +37,13 @@
     { "action": "enter_launcher" },
     { "action": "log", "message": "=== TEST: Shared OGL runtime texture options ===" },
     { "action": "reset_state" },
+    // Accepted graphics settings are shared across engines and survive reset_state
+    { "action": "setup_command", "command": "graphics_first_run_offered", "args": { "value": true } },
+    {
+        "action": "write_config",
+        "file": "graphics_safety.json",
+        "content": "{\"accepted\":{\"TexFilt\":1,\"AnisoLevel\":0,\"MsaaLevel\":${MSAA},\"MenuTexFilt\":1,\"HudTexFilt\":1,\"ResolutionX\":640,\"ResolutionY\":480,\"AspectX\":3,\"AspectY\":4,\"ColorDepth\":0},\"attempt\":null,\"pending\":{}}\n",
+    },
 
     // Verify button discovery and that tap_button auto-scrolls to Advanced
     // when game data makes it initially off-screen.
@@ -126,8 +135,20 @@
     { "action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000 },
     { "action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100 },
     { "action": "skip_briefing", "when": "d2", "timeout_ms": 10000, "post_delay_ms": 100 },
-    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
-    { "action": "assert", "expect": { "in_game": "true", "screen_mode": "game", "current_level_num": "1" } },
+    // Main-menu edits defer their safety challenge until gameplay is visible
+    // Disabling texture filtering also disables menu filtering
+    {
+        "action": "wait_for",
+        "field": "game_window_is_front",
+        "value": "true",
+        "timeout_ms": 10000,
+        "_confirm": "MenuTexFilt:0",
+    },
+    {
+        "action": "assert",
+        "expect": { "in_game": "true", "screen_mode": "game", "current_level_num": "1" },
+        "_probe_end": true,
+    },
     { "action": "wait_ms", "ms": 500, "when": "d2" },
     {
         "action": "assert",
@@ -152,23 +173,41 @@
     { "action": "introspect", "when": "d2" },
     { "action": "log", "message": "=== TEST: D2 MSAA FBO smoke -- PASS ===", "when": "d2" },
 
-    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:0", "post_delay_ms": 300 },
-    { "action": "set_debug", "field": "graphics_option", "value": "aniso_level:2", "post_delay_ms": 300 },
-    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:1", "post_delay_ms": 300 },
-    { "action": "set_debug", "field": "graphics_option", "value": "aniso_level:0", "post_delay_ms": 300 },
-    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:2", "post_delay_ms": 300 },
-    { "action": "set_debug", "field": "graphics_option", "value": "menu_tex_filt:0", "post_delay_ms": 200 },
-    { "action": "set_debug", "field": "graphics_option", "value": "hud_tex_filt:0", "post_delay_ms": 200 },
+    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:0", "_confirm": "TexFilt:0" },
+    {
+        "action": "set_debug",
+        "field": "graphics_option",
+        "value": "aniso_level:2",
+        "_confirm": "AnisoLevel:2",
+        "_requires_aniso": true,
+    },
+    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:1", "_confirm": "TexFilt:1" },
+    {
+        "action": "set_debug",
+        "field": "graphics_option",
+        "value": "aniso_level:0",
+        "_confirm": "AnisoLevel:0",
+        "_requires_aniso": true,
+    },
+    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:2", "_confirm": "TexFilt:2" },
+    { "action": "set_debug", "field": "graphics_option", "value": "menu_tex_filt:0", "_confirm": "MenuTexFilt:0" },
+    { "action": "set_debug", "field": "graphics_option", "value": "hud_tex_filt:0", "_confirm": "HudTexFilt:0" },
 
     { "action": "set_debug", "field": "android_game_request", "value": "pause", "post_delay_ms": 300 },
     { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000 },
     { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:0", "post_delay_ms": 500 },
     { "action": "key", "key": "escape", "post_delay_ms": 200 },
-    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000 },
+    {
+        "action": "wait_for",
+        "field": "game_window_is_front",
+        "value": "true",
+        "timeout_ms": 5000,
+        "_confirm": "TexFilt:0",
+    },
 
-    { "action": "set_debug", "field": "graphics_option", "value": "menu_tex_filt:1", "post_delay_ms": 100 },
-    { "action": "set_debug", "field": "graphics_option", "value": "hud_tex_filt:1", "post_delay_ms": 100 },
-    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:1", "post_delay_ms": 300 },
+    { "action": "set_debug", "field": "graphics_option", "value": "menu_tex_filt:1", "_confirm": "MenuTexFilt:1" },
+    { "action": "set_debug", "field": "graphics_option", "value": "hud_tex_filt:1", "_confirm": "HudTexFilt:1" },
+    { "action": "set_debug", "field": "graphics_option", "value": "tex_filt:1", "_confirm": "TexFilt:1" },
     { "action": "assert", "expect": { "in_game": "true", "screen_mode": "game", "game_window_is_front": "true" } },
 
     { "action": "enter_launcher" },

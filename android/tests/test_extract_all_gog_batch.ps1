@@ -41,11 +41,71 @@ function Test-ExtractionCompletionManifest { return $false }
 '@ | Set-Content -LiteralPath (Join-Path $helpersDir 'bounded_extraction.ps1') -NoNewline
 
     $powerShellPath = (Get-Process -Id $PID).Path
+    # Windows PowerShell wraps native stderr as errors even for expected failures
+    $ErrorActionPreference = 'Continue'
     $output = @(& $powerShellPath -NoProfile -NonInteractive `
             -File (Join-Path $gameDataDir 'extract_all_gog.ps1') -SkipBuild 2>&1)
-    Assert-True ($LASTEXITCODE -eq 1) 'Same-basename EXE and PKG installers should fail preflight'
+    $batchExit = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    Assert-True ($batchExit -eq 1) 'Same-basename EXE and PKG installers should fail preflight'
     Assert-True (($output -join "`n") -match 'ambiguous extensionless basenames.*same\.exe, same\.pkg') `
         'The collision failure should identify both ambiguous installers'
+
+    Remove-Item -LiteralPath (Join-Path $gogDir 'same.pkg')
+    @'
+function Test-ExtractionCompletionManifest { return $false }
+function Get-ExtractionPathIdentity { param($Path, $Name) return @{ name = $Name } }
+function New-ExtractionProvenance { param($Policy, $Sources, $Tools) return @{ policy = $Policy } }
+function Write-ExtractionCompletionManifest {
+    param($Directory, $Provenance)
+    Set-Content -LiteralPath (Join-Path $Directory '.extraction-complete.json') -Value '{}'
+}
+function Invoke-BoundedExtractor {
+    param($OutputDirectory, $FilePath, $ArgumentList)
+    if ($env:DXX_GOG_FIXTURE_MODE -eq 'nested') {
+        $nested = New-Item -ItemType Directory -Path (Join-Path $OutputDirectory '{app}/MISSIONS') -Force
+        Set-Content -LiteralPath (Join-Path $nested.FullName 'mission.hog') -Value 'nested mission payload' -NoNewline
+    }
+    return @{ Output = @('fixture extraction'); ExitCode = $(if ($env:DXX_GOG_FIXTURE_MODE -eq 'failed') { 7 } else { 0 }) }
+}
+function Publish-ExtractionDirectory {
+    param($StagingDirectory, $DestinationDirectory)
+    foreach ($file in Get-ChildItem -LiteralPath $StagingDirectory -File -Recurse) {
+        $relative = $file.FullName.Substring($StagingDirectory.Length).TrimStart('\', '/')
+        $target = Join-Path $DestinationDirectory $relative
+        New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
+        Copy-Item -LiteralPath $file.FullName -Destination $target
+    }
+}
+'@ | Set-Content -LiteralPath (Join-Path $helpersDir 'bounded_extraction.ps1') -NoNewline
+    $previousFixtureMode = $env:DXX_GOG_FIXTURE_MODE
+    try {
+        foreach ($mode in @('nested', 'empty', 'failed')) {
+            $env:DXX_GOG_FIXTURE_MODE = $mode
+            $ErrorActionPreference = 'Continue'
+            $output = @(& $powerShellPath -NoProfile -NonInteractive `
+                    -File (Join-Path $gameDataDir 'extract_all_gog.ps1') -SkipBuild -Force 2>&1)
+            $batchExit = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            $expectedExit = if ($mode -eq 'nested') { 0 } else { 1 }
+            Assert-True ($batchExit -eq $expectedExit) "$mode extraction returned the wrong batch exit code"
+            $resultsText = Get-Content -LiteralPath (Join-Path $gameDataDir 'gog_extraction_results.json') -Raw
+            Assert-True ($resultsText.TrimStart().StartsWith('[')) 'Extraction results must always be a JSON array'
+            $results = @($resultsText | ConvertFrom-Json)
+            if ($mode -eq 'nested') {
+                Assert-True ($results.Count -eq 1 -and $results[0].File -eq '{app}/MISSIONS/mission.hog') `
+                    'Nested extraction payload must be published and hashed with its relative path'
+                Assert-True ($results[0].SHA256 -eq (Get-FileHash -LiteralPath (Join-Path $gogDir 'same/extracted/{app}/MISSIONS/mission.hog')).Hash.ToLowerInvariant()) `
+                    'Nested extraction report hash does not match the published payload'
+            } else {
+                Assert-True (($output -join "`n") -match 'Errors:\s+1') 'Failed extraction must be included in the error summary'
+                Assert-True ((Get-Content -LiteralPath (Join-Path $gogDir 'same/extracted/{app}/MISSIONS/mission.hog') -Raw) -eq 'nested mission payload') `
+                    'Failed extraction must preserve the previous published payload'
+            }
+        }
+    } finally {
+        $env:DXX_GOG_FIXTURE_MODE = $previousFixtureMode
+    }
     Write-Host 'extract_all_gog batch tests passed' -ForegroundColor Green
 } finally {
     $producerLock.Dispose()

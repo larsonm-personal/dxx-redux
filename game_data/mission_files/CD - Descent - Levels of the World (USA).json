@@ -22409,7 +22409,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -22734,7 +22734,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -22959,7 +22959,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -23293,7 +23293,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -23520,7 +23520,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -23797,7 +23797,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -23990,7 +23990,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS7.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -24445,7 +24445,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -24915,7 +24915,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -25494,7 +25494,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -25966,7 +25966,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -26488,7 +26488,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -26926,7 +26926,7 @@
           "presentation": {
             "status": "present",
             "file": "LUPIS7.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

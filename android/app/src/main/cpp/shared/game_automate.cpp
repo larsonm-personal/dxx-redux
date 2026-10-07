@@ -4301,7 +4301,7 @@ extern "C" void game_automate_tick(void)
 #endif
 					result = android_graphics_set_option(name.c_str(), value, 0);
 				if (result != ANDROID_GRAPHICS_OPTION_OK) {
-					stop_script_fail("graphics_option: unknown option");
+					stop_script_fail(result == ANDROID_GRAPHICS_OPTION_UNKNOWN ? "graphics_option: unknown option" : "graphics_option: safety transaction or persistence rejected");
 					break;
 				}
 			} else if (s.field == "show_robot_hostage_counts") {

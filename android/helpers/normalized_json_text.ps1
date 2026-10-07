@@ -1,5 +1,34 @@
 . (Join-Path $PSScriptRoot 'test_host_platform.ps1')
 
+function Write-NormalizedJsoncFile {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][string]$Text,
+        [string]$ExistingPath = $Path
+    )
+
+    $formatted = ConvertTo-NormalizedJsonText -Text $Text -RepositoryJsonc
+    if ([IO.File]::Exists($ExistingPath)) {
+        $existing = [IO.File]::ReadAllText($ExistingPath)
+        $normalizedExisting = $null
+        try { $normalizedExisting = ConvertTo-NormalizedJsonText -Text $existing -RepositoryJsonc } catch {
+            # A valid regenerated document can replace a damaged prior sidecar
+        }
+        if ($normalizedExisting -ceq $formatted) {
+            # Directory publication replaces a staged album as a unit. Carry the
+            # unchanged sidecar's exact bytes and timestamp into that staging area
+            $comparison = if (Test-RegressionWindowsHost) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+            if (-not [string]::Equals([IO.Path]::GetFullPath($Path), [IO.Path]::GetFullPath($ExistingPath), $comparison)) {
+                [IO.File]::Copy($ExistingPath, $Path, $true)
+                [IO.File]::SetLastWriteTimeUtc($Path, [IO.File]::GetLastWriteTimeUtc($ExistingPath))
+            }
+            return
+        }
+    }
+    . (Join-Path $PSScriptRoot 'atomic_text_file.ps1')
+    Write-Utf8NoBomTextAtomically -Path $Path -Text $formatted
+}
+
 function ConvertTo-WindowsProcessArgument {
     param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Argument)
 
@@ -45,7 +74,8 @@ function Set-CompatibleProcessArguments {
 function ConvertTo-NormalizedJsonText {
     param(
         [Parameter(Mandatory = $true)][string]$Text,
-        [switch]$MissionMetadata
+        [switch]$MissionMetadata,
+        [switch]$RepositoryJsonc
     )
 
     $trimmed = $Text.Trim()
@@ -64,8 +94,19 @@ function ConvertTo-NormalizedJsonText {
         $arguments.Add("--mission-metadata")
     }
 
+    $executable = $python.Path
+    if ($RepositoryJsonc) {
+        if ($MissionMetadata) { throw 'RepositoryJsonc and MissionMetadata cannot be combined' }
+        . (Join-Path $PSScriptRoot 'code-quality-files.ps1')
+        $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+        $executable = Get-CodeQualityNode -RepoRoot $repoRoot
+        $arguments.Clear()
+        $arguments.Add((Join-Path $repoRoot 'android/tools/code-quality/format-text.mjs'))
+        $arguments.Add('--stdin-jsonc')
+    }
+
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $python.Path
+    $startInfo.FileName = $executable
     Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments $arguments
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true

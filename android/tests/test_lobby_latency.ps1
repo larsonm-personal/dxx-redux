@@ -14,6 +14,7 @@ try {
     if ($result -notmatch 'PASS: responsive discovery' -or
         $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') { throw 'Lobby latency instrumentation failed' }
 } finally {
+    Adb -AdbArgs @('logcat', '-b', 'all', '-d', '-s', 'LobbyLatencyChecks:I', 'LobbyService:D', 'AndroidRuntime:E') | Write-Output
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "drav01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -391,7 +391,7 @@
           "presentation": {
             "status": "present",
             "file": "drav02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -520,7 +520,7 @@
           "presentation": {
             "status": "present",
             "file": "drav03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -738,7 +738,7 @@
           "presentation": {
             "status": "present",
             "file": "drav04.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -885,7 +885,7 @@
           "presentation": {
             "status": "present",
             "file": "drav05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1053,7 +1053,7 @@
           "presentation": {
             "status": "present",
             "file": "drav06.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1196,7 +1196,7 @@
           "presentation": {
             "status": "present",
             "file": "drav07.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1366,7 +1366,7 @@
           "presentation": {
             "status": "present",
             "file": "drav08.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1513,7 +1513,7 @@
           "presentation": {
             "status": "present",
             "file": "drav09.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1656,7 +1656,7 @@
           "presentation": {
             "status": "present",
             "file": "drav10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1849,7 +1849,7 @@
           "presentation": {
             "status": "present",
             "file": "drav11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2092,7 +2092,7 @@
           "presentation": {
             "status": "present",
             "file": "drav12.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2239,7 +2239,7 @@
           "presentation": {
             "status": "present",
             "file": "drav13.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2382,7 +2382,7 @@
           "presentation": {
             "status": "present",
             "file": "drav14.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2550,7 +2550,7 @@
           "presentation": {
             "status": "present",
             "file": "drav15.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2693,7 +2693,7 @@
           "presentation": {
             "status": "present",
             "file": "drav16.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2839,7 +2839,7 @@
           "presentation": {
             "status": "present",
             "file": "drav17.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2979,7 +2979,7 @@
           "presentation": {
             "status": "present",
             "file": "drav18.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3122,7 +3122,7 @@
           "presentation": {
             "status": "present",
             "file": "drav19.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3265,7 +3265,7 @@
           "presentation": {
             "status": "present",
             "file": "drav20.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3412,7 +3412,7 @@
           "presentation": {
             "status": "present",
             "file": "drav21.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3552,7 +3552,7 @@
           "presentation": {
             "status": "present",
             "file": "drav22.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3720,7 +3720,7 @@
           "presentation": {
             "status": "present",
             "file": "drav23.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3888,7 +3888,7 @@
           "presentation": {
             "status": "present",
             "file": "drav24.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4062,7 +4062,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4162,7 +4162,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4302,7 +4302,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4403,7 +4403,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4884,7 +4884,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5049,7 +5049,7 @@
           "presentation": {
             "status": "present",
             "file": "dravs6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

@@ -2,7 +2,11 @@
 [
     { "_info": { "games": ["d1", "d2"] } },
     { "action": "enter_launcher" },
-    { "action": "tap_button", "text": "Game Preferences", "post_delay_ms": 500 },
+    { "action": "setup_command", "command": "music_preferences_reset", "args": { "preset": "DEFAULTS" } },
+    { "action": "wait_for", "field": "soundfont.renderer", "value": "sf2", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "soundfont.selected": "", "soundfont.renderer": "sf2" } },
+    { "action": "tap_button", "text": "Settings", "exact": true, "post_delay_ms": 500 },
+    { "action": "tap_button", "text": "MIDI", "exact": true, "post_delay_ms": 500 },
     { "action": "assert_button", "text": "Download soundfonts", "enabled": true, "timeout_ms": 10000 },
     { "action": "assert_button", "text": "Import SF2 soundfont", "enabled": true, "timeout_ms": 10000 },
     { "action": "assert_button", "text": "nitro-shoe SC-55-style 1.34 (bundled)", "enabled": true },
@@ -23,7 +27,7 @@
     { "action": "tap_button", "text": "TimGM6mb" },
     { "action": "assert_button", "text": "https://github.com/arbruijn/TimGM6mb", "enabled": true },
     { "action": "tap_button", "text": "Cancel", "exact": true },
-    { "action": "assert", "expect": { "soundfont.selected": "", "soundfont.renderer": "ymfm" } },
+    { "action": "assert", "expect": { "soundfont.selected": "", "soundfont.renderer": "sf2" } },
     { "action": "tap_button", "text": "< Back", "post_delay_ms": 250 },
     { "action": "log", "message": "Soundfont download catalog checks passed" },
 ]

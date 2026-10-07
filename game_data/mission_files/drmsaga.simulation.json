@@ -67,17 +67,17 @@
         },
         {
           "n": "blue key",
-          "s": 34
+          "s": 31
         },
         {
           "n": "fly-through 6",
-          "s": 35
+          "s": 32
         }
       ],
-      "total_frames": 6521,
+      "total_frames": 6343,
       "rng_end": {
-        "state": 3426333753,
-        "calls": 10760
+        "state": 1044861343,
+        "calls": 10314
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

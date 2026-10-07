@@ -342,7 +342,7 @@
           "presentation": {
             "status": "present",
             "file": "level01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -457,7 +457,7 @@
           "presentation": {
             "status": "present",
             "file": "level02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -572,7 +572,7 @@
           "presentation": {
             "status": "present",
             "file": "level05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -728,7 +728,7 @@
           "presentation": {
             "status": "present",
             "file": "level09.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -871,7 +871,7 @@
           "presentation": {
             "status": "present",
             "file": "level10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1014,7 +1014,7 @@
           "presentation": {
             "status": "present",
             "file": "level11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1154,7 +1154,7 @@
           "presentation": {
             "status": "present",
             "file": "level12.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1321,7 +1321,7 @@
           "presentation": {
             "status": "present",
             "file": "level15.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1450,7 +1450,7 @@
           "presentation": {
             "status": "present",
             "file": "level18.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1592,7 +1592,7 @@
           "presentation": {
             "status": "present",
             "file": "level20.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1732,7 +1732,7 @@
           "presentation": {
             "status": "present",
             "file": "level22.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1847,7 +1847,7 @@
           "presentation": {
             "status": "present",
             "file": "level23.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1976,7 +1976,7 @@
           "presentation": {
             "status": "present",
             "file": "level24.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2105,7 +2105,7 @@
           "presentation": {
             "status": "present",
             "file": "level25.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2224,7 +2224,7 @@
           "presentation": {
             "status": "present",
             "file": "level26.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2367,7 +2367,7 @@
           "presentation": {
             "status": "present",
             "file": "level30.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2535,7 +2535,7 @@
           "presentation": {
             "status": "present",
             "file": "level31.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2650,7 +2650,7 @@
           "presentation": {
             "status": "present",
             "file": "level33.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2805,7 +2805,7 @@
           "presentation": {
             "status": "present",
             "file": "level36.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2948,7 +2948,7 @@
           "presentation": {
             "status": "present",
             "file": "level37.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3091,7 +3091,7 @@
           "presentation": {
             "status": "present",
             "file": "level43.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3220,7 +3220,7 @@
           "presentation": {
             "status": "present",
             "file": "level44.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3349,7 +3349,7 @@
           "presentation": {
             "status": "present",
             "file": "level46.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3492,7 +3492,7 @@
           "presentation": {
             "status": "present",
             "file": "level49.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3635,7 +3635,7 @@
           "presentation": {
             "status": "present",
             "file": "level50.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3812,7 +3812,7 @@
           "presentation": {
             "status": "present",
             "file": "slevel.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3979,7 +3979,7 @@
           "presentation": {
             "status": "present",
             "file": "slevel2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

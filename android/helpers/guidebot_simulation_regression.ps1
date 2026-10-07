@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'normalized_json_text.ps1')
+
 $script:GuidebotSimulationSchema = 'dxx-guidebot-route-simulation-v1'
 $script:GuidebotSimulationGeneration = 4
 # Keep the fixed timestep and seed synchronized with route_confirmation.h
@@ -324,7 +326,7 @@ function New-GuidebotMissionSimulationRecord {
 function ConvertTo-GuidebotNormalizedJsonText {
     param([Parameter(Mandatory)][object]$Value)
 
-    return (($Value | ConvertTo-Json -Depth 30) -replace "`r`n", "`n") + "`n"
+    return ConvertTo-NormalizedJsonText -Text ($Value | ConvertTo-Json -Depth 30)
 }
 
 function Write-GuidebotSimulationJson {
@@ -333,13 +335,23 @@ function Write-GuidebotSimulationJson {
         [Parameter(Mandatory)][object]$Value
     )
 
+    $content = ConvertTo-GuidebotNormalizedJsonText -Value $Value
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        $existing = [IO.File]::ReadAllText($Path)
+        if ($existing -ceq $content) { return }
+        try {
+            if ((ConvertTo-NormalizedJsonText -Text $existing) -ceq $content) { return }
+        } catch {
+            # A complete regenerated record can replace malformed prior output
+        }
+    }
     $parent = Split-Path -Parent $Path
     if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
     $temporaryPath = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
     try {
         [IO.File]::WriteAllText(
             $temporaryPath,
-            (ConvertTo-GuidebotNormalizedJsonText -Value $Value),
+            $content,
             [Text.UTF8Encoding]::new($false)
         )
         Move-Item -LiteralPath $temporaryPath -Destination $Path -Force

@@ -200,7 +200,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -315,7 +315,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -444,7 +444,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -587,7 +587,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -730,7 +730,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -882,7 +882,7 @@
           "presentation": {
             "status": "present",
             "file": "lv1_6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1025,7 +1025,7 @@
           "presentation": {
             "status": "present",
             "file": "lvsecret.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

@@ -7,11 +7,12 @@ $helpersDir = Join-Path $scriptDir 'helpers'
 . "$helpersDir/test_suite_progress.ps1"
 . "$helpersDir/test_host_platform.ps1"
 . "$helpersDir/test_execution_evidence.ps1"
+. "$helpersDir/test_target.ps1"
 
 # Load the real runner functions without starting the full suite
 foreach ($source in @(
-        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'Save-SuiteTestEvidence', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery') },
-        @{ Path = "$helpersDir/test_helpers.ps1"; Names = @('Get-TestStatusFromExitCode') }
+        @{ Path = "$scriptDir/run_all_tests.ps1"; Names = @('Invoke-SingleTest', 'Save-SuiteTestEvidence', 'ConvertTo-ArgumentText', 'Get-PassingResultNotes', 'Add-ReportSidecarLog', 'Test-SingleEmulatorFailureNeedsRecovery', 'Recover-SingleEmulatorEnvironment', 'Recover-DualEmulatorEnvironment') },
+        @{ Path = "$helpersDir/test_helpers.ps1"; Names = @('Get-TestStatusFromExitCode', 'Install-ApkOnDevice') }
     )) {
     $ast = [Management.Automation.Language.Parser]::ParseFile($source.Path, [ref]$null, [ref]$null)
     foreach ($functionName in $source.Names) {
@@ -90,4 +91,50 @@ foreach ($test in $executionTests) {
         throw "Runner did not finalize execution evidence for $($test.Name)"
     }
 }
-Write-Host 'Runner result regression passed'
+# Recovery must return one false result when installation fails, not false plus true
+function Write-Status { param($Message, $Color) }
+function Test-PhysicalTestTarget { return $false }
+function Invoke-AutomaticStaleEmulatorCleanup { }
+function Reconnect-AdbDevice { }
+function Test-DeviceOnline { param($Serial) return $true }
+function Start-SecondEmulator { return $true }
+function Install-AppAndData { param($Serial) return $Serial -ne $script:failedInstallSerial }
+$helpersDir = $ReportDir
+[IO.File]::WriteAllText((Join-Path $helpersDir 'emu_health.ps1'), 'exit 0')
+$script:PRIMARY_EMULATOR_SERIAL = 'emulator-5554'
+$script:SECONDARY_EMULATOR_SERIAL = 'emulator-5556'
+$script:PRIMARY_AVD_NAME = 'fixture-primary'
+$script:SECONDARY_AVD_NAME = 'fixture-secondary'
+$script:autoServerProc = $null
+foreach ($failedSerial in @('emulator-5554', 'emulator-5556', '')) {
+    $script:failedInstallSerial = $failedSerial
+    $primary = 'original-primary'
+    $secondary = 'original-secondary'
+    $result = @(Recover-DualEmulatorEnvironment -PrimarySerialRef ([ref]$primary) -SecondarySerialRef ([ref]$secondary))
+    if ($result.Count -ne 1 -or $result[0] -ne (-not $failedSerial)) { throw 'Dual recovery reported success after failed provisioning' }
+    if ($failedSerial -and ($primary -ne 'original-primary' -or $secondary -ne 'original-secondary')) { throw 'Failed recovery published device state' }
+    $primary = 'original-primary'
+    $result = @(Recover-SingleEmulatorEnvironment -SerialRef ([ref]$primary))
+    if ($result.Count -ne 1 -or $result[0] -ne ($failedSerial -ne 'emulator-5554')) { throw 'Single recovery reported success after failed provisioning' }
+}
+
+$savedSuiteApk = $env:DXX_TEST_APK
+try {
+    $env:DXX_TEST_APK = $childScript
+    function Adb-Dev-Timeout {
+        param($Serial, $AdbArgs, $Seconds, [switch]$IncludeStandardError)
+        $script:installArguments = $AdbArgs
+        return $script:installResponse
+    }
+    $script:installResponse = 'Success'
+    foreach ($serial in @('emulator-5554', 'physical-fixture')) {
+        if (-not (Install-ApkOnDevice -Serial $serial)) { throw 'Saved suite APK installation failed' }
+        if (($script:installArguments -contains '-d') -ne ($serial -like 'emulator-*')) { throw 'APK downgrade allowance escaped emulator scope' }
+        if ($script:installArguments[-1] -ne $childScript) { throw 'Installer did not use the saved suite APK' }
+    }
+    $script:installResponse = 'Failure [INSTALL_FAILED_VERSION_DOWNGRADE]'
+    if (Install-ApkOnDevice -Serial 'emulator-5554') { throw 'Failed APK installation reported success' }
+} finally {
+    $env:DXX_TEST_APK = $savedSuiteApk
+}
+Write-Host 'Runner result and provisioning recovery regressions passed'

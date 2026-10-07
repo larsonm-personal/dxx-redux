@@ -261,7 +261,8 @@
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "idle",
-            "graphics_safety.renderer_failure.failure_reason": "msaa_configuration_unsupported",
+            // The diagnostic override clears the supported format, rejected before sample counts
+            "graphics_safety.renderer_failure.failure_reason": "msaa_window_format_changed",
             "graphics_safety.renderer_failure.attempt_phase": "3",
             "graphics_safety.renderer_failure.candidate.MsaaLevel": "2",
             "graphics_safety.renderer_failure.accepted.MsaaLevel": "0",
@@ -315,6 +316,8 @@
             "gpu_capabilities.msaa_max": "0",
             "gpu_capabilities.msaa_2": "0",
             "gpu_capabilities.msaa_4": "0",
+            "gpu_capabilities.color_format": "0",
+            "gpu_capabilities.msaa_reason": "MSAA is unavailable (diagnostic capability override)",
             "gpu_capabilities.query_error": "0",
         },
     },

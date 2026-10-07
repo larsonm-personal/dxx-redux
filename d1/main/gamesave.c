@@ -62,6 +62,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "makesig.h"
 #include "level_section_io.h"
 #include "secretarea.h"
+#ifdef __ANDROID__
+#include "android_level_preview.h"
+#endif
 
 #ifndef NDEBUG
 void dump_mine_info(void);
@@ -1305,7 +1308,8 @@ int load_level(const char * filename_passed)
 	#if !defined(NDEBUG) && !defined(COMPACT_SEGS)
 	if (check_segment_connections())
 #ifdef __ANDROID__
-		if (!GameArg.SysInputDemoNoRender)
+		/* Read-only previews have no gameplay UI to dismiss this debug warning */
+		if (!GameArg.SysInputDemoNoRender && !android_level_preview_request_path())
 #endif
 		nm_messagebox( "ERROR", 1, "Ok", 
 				"Connectivity errors detected in\n"

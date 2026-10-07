@@ -1,16 +1,15 @@
 # Merge regression on the disposable test emulator; requires local retail Vertigo files
-param([switch]$Install)
+param([switch]$Install, [string]$Serial)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$devices = @(& $ADB devices | Where-Object { $_ -match '^\S+\s+device$' })
-if ($devices.Count -ne 1 -or $devices[0] -notmatch '^emulator-') {
-    throw 'Requires exactly one connected device, the disposable test emulator'
-}
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+if ($Serial -notmatch '^emulator-\d+$') { throw 'Requires a disposable test emulator' }
+if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Emulator $Serial is not online" }
 if ($Install) {
-    & $ADB shell am force-stop com.dxxredux.app
-    & $ADB shell run-as com.dxxredux.app rm -rf files/d2x-redux/.mission_assets
-    & $ADB install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
+    & $ADB -s $Serial shell am force-stop com.dxxredux.app
+    & $ADB -s $Serial shell run-as com.dxxredux.app rm -rf files/d2x-redux/.mission_assets
+    & $ADB -s $Serial install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
     if ($LASTEXITCODE -ne 0) { throw 'APK installation failed' }
 }
 $source = Join-Path $repoRoot 'game_data/extracted/VERTIGO/MISSIONS'
@@ -24,16 +23,16 @@ try {
     $writer = [IO.StreamWriter]::new($zip.CreateEntry('d2x.mn2').Open())
     try { $writer.Write($descriptor) } finally { $writer.Dispose() }
 } finally { $zip.Dispose(); $stream.Dispose() }
-& $ADB push $fixture /data/local/tmp/vertigo-probe.zip
+& $ADB -s $Serial push $fixture /data/local/tmp/vertigo-probe.zip
 if ($LASTEXITCODE -ne 0) { throw 'Fixture push failed' }
-& $ADB shell run-as com.dxxredux.app mkdir -p files/imported/sets/default/.content/mods
-& $ADB shell run-as com.dxxredux.app cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
+& $ADB -s $Serial shell run-as com.dxxredux.app mkdir -p files/imported/sets/default/.content/mods
+& $ADB -s $Serial shell run-as com.dxxredux.app cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
 if ($LASTEXITCODE -ne 0) { throw 'Fixture staging failed' }
-& $ADB logcat -c
-& (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_vertigo_merge_creation.jsonc -Game d2 -TimeoutSeconds 240
+& $ADB -s $Serial logcat -c
+& (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_vertigo_merge_creation.jsonc -Game d2 -Serial $Serial -TimeoutSeconds 240
 $testResult = $LASTEXITCODE
 $logPath = Join-Path $repoRoot 'temp/vertigo-creation-logcat.txt'
-& $ADB logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
+& $ADB -s $Serial logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
 if ($testResult -ne 0) { throw "Automation failed; see $logPath" }
 $log = Get-Content -LiteralPath $logPath -Raw
 foreach ($stage in @('event=begin', 'stage=before_draw', 'stage=created', 'stage=after_mipmap', 'stage=tap_direct')) {

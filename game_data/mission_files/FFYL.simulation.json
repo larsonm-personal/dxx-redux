@@ -1233,33 +1233,33 @@
         },
         {
           "n": "gold key",
-          "s": 106
+          "s": 103
         },
         {
           "n": "red key",
-          "s": 139
+          "s": 136
         },
         {
           "n": "switch 17",
-          "s": 172
+          "s": 169
         },
         {
           "n": "boss",
-          "s": 219
+          "s": 216
         },
         {
           "n": "exit",
-          "s": 227
+          "s": 224
         }
       ],
-      "total_frames": 13620,
+      "total_frames": 13451,
       "rng_end": {
-        "state": 1343141719,
-        "calls": 17042
+        "state": 3821606058,
+        "calls": 16493
       },
       "reactor_escape": {
         "countdown_seconds": 40.0,
-        "simulated_seconds": 1.866669,
+        "simulated_seconds": 1.866653,
         "difficulty": 2
       }
     },

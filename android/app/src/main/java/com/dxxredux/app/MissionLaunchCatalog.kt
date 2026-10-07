@@ -160,8 +160,20 @@ internal fun missionLaunchPackage(
 
     fun key(set: MissionZip.MissionSet) =
         MissionLaunchKey(owner, stagedRelativePath(scan, set.mission.path), set.mission.game)
+    val referencedNames =
+        missionSets
+            .flatMap { it.mission.assetReferences.values }
+            .map { GameFileFormats.leafName(it).lowercase(Locale.US) }
+            .toSet()
     val resources =
         record.files.mapNotNull { file ->
+            // Documentation remains available in the imported package. Only text
+            // explicitly referenced by a mission belongs in its runtime view
+            if (GameFileFormats.missionZipRoleForFile(file.relativePath) == GameFileFormats.MISSION_ZIP_DOCUMENTATION &&
+                GameFileFormats.leafName(file.relativePath).lowercase(Locale.US) !in referencedNames
+            ) {
+                return@mapNotNull null
+            }
             val sourceOwners = missionResourceOwners(scan, file.sourceEntryPath)
             val owners =
                 missionSets

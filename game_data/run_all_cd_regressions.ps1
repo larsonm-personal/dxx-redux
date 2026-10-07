@@ -99,6 +99,11 @@ function Get-CdRegressionStages {
     )
     if ($RefreshOracle) {
         $stages += [pscustomobject]@{
+            Name = 'Refresh disc track catalog'
+            Script = Join-Path $RepoRoot 'game_data\hash_disc_tracks.ps1'
+            Arguments = @('-Force') + $(if ($SpecListPath) { @('-SpecListPath', $SpecListPath) } else { @() })
+        }
+        $stages += [pscustomobject]@{
             Name = 'Refresh regression specs'
             Script = Join-Path $RepoRoot 'game_data\generate_regression_specs.ps1'
             Arguments = @('-Force') + $(if ($SpecListPath) { @('-SpecListPath', $SpecListPath) } else { @() })

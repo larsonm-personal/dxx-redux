@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 9,
-    "timeout": 1
+    "ok": 10
   },
   "levels": [
     {
@@ -226,7 +225,7 @@
       "level_num": 6,
       "level_file": "alarlof.rdl",
       "route_input_sha256": "E633DF0F94404D23C181EBDAC1DA8D20422A2FE4FB9C3DA70451FB43CA4D6862",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -235,14 +234,34 @@
         {
           "n": "blue key",
           "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 74
+        },
+        {
+          "n": "red key",
+          "s": 144
+        },
+        {
+          "n": "reactor",
+          "s": 206
+        },
+        {
+          "n": "exit",
+          "s": 218
         }
       ],
-      "total_frames": 6253,
+      "total_frames": 13077,
       "rng_end": {
-        "state": 3261681064,
-        "calls": 7487
+        "state": 3002390420,
+        "calls": 20739
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 12.183334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,

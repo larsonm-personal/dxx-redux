@@ -27,6 +27,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
 . "$repoRoot\android\helpers\jsonc.ps1"
+. "$repoRoot\android\helpers\normalized_json_text.ps1"
 . "$repoRoot\android\helpers\mission_archive_sources.ps1"
 
 Add-Type -AssemblyName System.IO.Compression
@@ -744,7 +745,8 @@ function Write-ChromaprintInfo {
         [string]$SourceZip,
         [string]$SourceSha1,
         [string]$SourceSha256,
-        [array]$Tracks
+        [array]$Tracks,
+        [string]$ExistingPath = $Path
     )
     $lines = @()
     $lines += "// chromaprint_info.jsonc -- Fingerprint data for album: $AlbumName"
@@ -775,7 +777,7 @@ function Write-ChromaprintInfo {
     }
     $lines += "  ]"
     $lines += "}"
-    [System.IO.File]::WriteAllText($Path, ($lines -join "`n"), [System.Text.UTF8Encoding]::new($false))
+    Write-NormalizedJsoncFile -Path $Path -Text ($lines -join "`n") -ExistingPath $ExistingPath
 }
 
 function Test-MissionFingerprintCacheIdentity {
@@ -977,7 +979,7 @@ foreach ($zipFile in $zipFiles) {
         $tracks = Add-AcoustIdResults -Tracks $tracks -ExistingTracks $existingTracks `
             -TracklistLookup $tracklistLookup -RefreshAcoustId:$Force
         Write-ChromaprintInfo -Path $workInfoFile -AlbumName $albumName -SourceZip $zipFile.Name `
-            -SourceSha1 $sourceSha1 -SourceSha256 $sourceSha256 -Tracks $tracks
+            -SourceSha1 $sourceSha1 -SourceSha256 $sourceSha256 -Tracks $tracks -ExistingPath $infoFile
         Publish-ExtractionDirectory -StagingDirectory $workDir -DestinationDirectory $albumDir
         Write-Host "  Wrote $infoFile"
         $processed++

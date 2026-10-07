@@ -1323,6 +1323,14 @@ static json serialize_guidebot()
 		{ "ordinary_rng_calls", path_parity.ordinary_rng_calls },
 		{ "route_rng_calls", path_parity.route_rng_calls },
 		{ "rng_calls_match", path_parity.ordinary_rng_calls == path_parity.route_rng_calls },
+		{ "passability_difference_count", path_parity.passability_difference_count },
+		{ "first_passability_difference", {
+		                                      { "segment", path_parity.first_passability_segment },
+		                                      { "side", path_parity.first_passability_side },
+		                                      { "wall", path_parity.first_passability_wall },
+		                                      { "ordinary_passable", path_parity.first_ordinary_passable != 0 },
+		                                      { "route_passable", path_parity.first_route_passable != 0 },
+		                                  } },
 	};
 	result["unexplored_component_size"] = escort_get_unexplored_component_size();
 	result["unexplored_target_seg"] = escort_get_unexplored_target_seg();
@@ -2687,6 +2695,10 @@ extern "C" char *game_introspect_get_state(void)
 			{ "colormap_failed", (bool) d1_walls.colormap_failed }
 		};
 		trace["d1_compat"] = {
+			{ "native_assets", (bool) d1_in_d2_has_native_assets() },
+			{ "texture_count", d1_in_d2_has_native_assets() ? NumTextures : 0 },
+			{ "wall_anims_active", (bool) d1_compat.wall_anims_active },
+			{ "wall_anim_count", d1_compat.wall_anim_count },
 			{ "effects_active", (bool) d1_compat.effects_active },
 			{ "effects_loaded", (bool) d1_compat.effects_loaded },
 			{ "num_effects", d1_compat.num_effects },

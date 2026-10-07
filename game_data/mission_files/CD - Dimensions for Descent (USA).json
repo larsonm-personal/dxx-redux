@@ -14890,7 +14890,7 @@
           "presentation": {
             "status": "present",
             "file": "level01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

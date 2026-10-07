@@ -29,6 +29,7 @@ $RepoRoot = Split-Path $ScriptDir
 . "$RepoRoot\android\helpers\test_env.ps1"
 . "$RepoRoot\android\helpers\normalized_json_text.ps1"
 . "$RepoRoot\android\helpers\powershell_compat.ps1"
+. "$RepoRoot\android\helpers\acoustid_title_match.ps1"
 
 $SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir = Join-Path $RepoRoot "android\tests\build"
@@ -95,6 +96,16 @@ function Write-AtomicFingerprintManifest {
     try {
         $rawJson = ConvertTo-Json -InputObject @($Results) -Depth 10
         $json = (ConvertTo-NormalizedJsonText -Text $rawJson).TrimEnd([char[]]@("`r", "`n"))
+        if ([IO.File]::Exists($Path)) {
+            $existing = [IO.File]::ReadAllText($Path)
+            if ($existing -ceq $json) { return }
+            try {
+                $normalized = (ConvertTo-NormalizedJsonText -Text $existing).TrimEnd([char[]]@("`r", "`n"))
+                if ($normalized -ceq $json) { return }
+            } catch {
+                # Replace malformed prior output with the validated complete result
+            }
+        }
         [IO.File]::WriteAllText($tempPath, $json, [Text.UTF8Encoding]::new($false))
         if ([IO.File]::Exists($Path)) {
             [IO.File]::Replace($tempPath, $Path, $backupPath)
@@ -292,6 +303,29 @@ foreach ($folder in $folders) {
     try {
         $results = @($jsonLines | ForEach-Object { ($_ -replace "`r", "") | ConvertFrom-Json })
         Assert-DiscFingerprintResults -ExpectedTracks $expectedTracks -Results $results
+        # Keep successful identifications across forced/offline refreshes only
+        # when the same physical track still has the same audio fingerprint
+        $previousTracks = @{}
+        if (Test-Path -LiteralPath $fpFile) {
+            try {
+                foreach ($previous in @(Read-ValidatedDiscFingerprintManifest -Path $fpFile -ExpectedTracks $expectedTracks)) {
+                    $previousTracks[[int]$previous.track] = $previous
+                }
+            } catch {
+                Write-Warning "  Prior manifest cannot supply cached identifications: $($_.Exception.Message)"
+            }
+        }
+        foreach ($track in $results) {
+            if ($track.type -ne 'audio') { continue }
+            $previous = $previousTracks[[int]$track.track]
+            if (-not $previous -or $previous.duration_ms -ne $track.duration_ms) { continue }
+            $cached = Get-DxxReusableAcoustIdMetadata -Existing $previous -Chromaprint $track.chromaprint
+            if ($cached) {
+                foreach ($field in $cached.Keys) {
+                    $track | Add-Member -NotePropertyName $field -NotePropertyValue $cached[$field] -Force
+                }
+            }
+        }
         Write-AtomicFingerprintManifest -Path $fpFile -Results $results
         Write-Host "  Saved $($results.Count) track fingerprints" -ForegroundColor Green
         $successes += $name
@@ -340,9 +374,15 @@ if (-not $SkipAcoustId) {
             $durationSec = [math]::Round($t.duration_ms / 1000)
             $result = Invoke-AcoustIdLookup -Fingerprint $t.chromaprint -DurationSec $durationSec
             if ($result) {
+                # Optional cached review fields describe the previous lookup
+                foreach ($field in @('acoustid_score', 'acoustid_recording_id', 'name_source')) {
+                    $t.PSObject.Properties.Remove($field)
+                }
                 $t | Add-Member -NotePropertyName "acoustid_name" -NotePropertyValue $result.name -Force
                 if ($result.album) {
                     $t | Add-Member -NotePropertyName "acoustid_album" -NotePropertyValue $result.album -Force
+                } else {
+                    $t.PSObject.Properties.Remove('acoustid_album')
                 }
                 $updated = $true
                 $acoustNew++

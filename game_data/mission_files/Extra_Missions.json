@@ -2202,7 +2202,7 @@
           "presentation": {
             "status": "present",
             "file": "level01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2670,7 +2670,7 @@
           "presentation": {
             "status": "present",
             "file": "fbomega.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3070,7 +3070,7 @@
           "presentation": {
             "status": "present",
             "file": "humility.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6599,7 +6599,7 @@
           "presentation": {
             "status": "present",
             "file": "serenity.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7442,7 +7442,7 @@
           "presentation": {
             "status": "present",
             "file": "terminus.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7873,7 +7873,7 @@
           "presentation": {
             "status": "present",
             "file": "tranquil.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

@@ -267,13 +267,17 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
     # The header records when the regression oracle was generated. Callers
     # that update test evidence use the shared writer too, but those updates
     # must not churn the generation timestamp.
-    if ($semanticMatch -or -not $generated) {
+    # Compare normalized content before writing so a formatter change alone
+    # cannot rewrite an unchanged oracle or its timestamp
+    if ($semanticMatch) { return }
+    if (-not $generated) {
         $generated = $header.Generated
     }
     if (-not $generated) {
         $generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
     }
 
+    $json = (ConvertTo-NormalizedJsonText -Text $json -RepositoryJsonc).TrimEnd()
     $content = "// Auto-generated regression spec for: $sourceName`n// Generated: $generated`n$json`n"
     if ((Test-Path -LiteralPath $path -PathType Leaf) -and
         [System.IO.File]::ReadAllText($path) -ceq $content) {

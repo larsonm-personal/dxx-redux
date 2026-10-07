@@ -324,33 +324,28 @@ function Get-ExtractAutomationScriptText {
         [string]$LevelName,
         [string]$Game,
         [string]$TestSet,
-        [bool]$MissionSelectionRequired = $false
+        [bool]$MissionSelectionRequired = $false,
+        [string]$TemplatePath = (Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.jsonc')
     )
 
-    $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.jsonc'
-    $text = Get-Content -LiteralPath $templatePath -Raw
+    $text = Get-Content -LiteralPath $TemplatePath -Raw
     $missionSelectionText = if ($MissionSelectionRequired) { $MissionName } else { '' }
     $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$missionSelectionText) -Compress))
     $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
     $text = $text.Replace('"MISSION_OPTIONAL"', $(if ($MissionSelectionRequired) { 'false' } else { 'true' }))
-    $body = ($text -replace "`r`n", "`n").Trim()
-    $start = $body.IndexOf('[')
-    $end = $body.LastIndexOf(']')
-    if ($start -ge 0 -and $end -gt $start) {
-        $body = $body.Substring($start + 1, $end - $start - 1).Trim()
-    }
-    $body = [regex]::Replace($body, '(?m)^\s*\{"action":\s*"skip_intro"[^\r\n]*(?:\r?\n)?', '')
-    $bodyLines = foreach ($line in ($body -split "`n")) {
-        $whenMatch = [regex]::Match($line, '"when"\s*:\s*"([^"]+)"')
-        if ($whenMatch.Success -and $whenMatch.Groups[1].Value -cne $Game) {
-            continue
-        }
-        $line -replace ',\s*"when"\s*:\s*"[^"]+"', ''
-    }
-    $body = $bodyLines -join "`n"
+    # Resolve whole JSONC steps before serializing strict JSON for the native parser
+    $steps = @(foreach ($step in (ConvertFrom-JsoncText -Text $text -SourceName $templatePath | ConvertFrom-Json)) {
+            if ($step.PSObject.Properties['_info']) { continue }
+            $condition = $step.PSObject.Properties['when']
+            if ($condition -and $condition.Value -cne $Game) { continue }
+            $step.PSObject.Properties.Remove('when')
+            $step
+        })
+    $body = (ConvertTo-Json -InputObject $steps -Depth 30).Trim()
+    $body = $body.Substring(1, $body.Length - 2).Trim()
     $gameJson = ConvertTo-Json ([string]$Game) -Compress
     $setJson = ConvertTo-Json ([string]$TestSet) -Compress
-    return @"
+    return ConvertTo-NormalizedJsonText -Text @"
 [
     {"_info": {"_standalone": false}},
     {"action": "enter_launcher"},
@@ -360,7 +355,7 @@ function Get-ExtractAutomationScriptText {
     {"action": "enter_game", "game": $gameJson},
 $body
 ]
-"@ -replace "`r`n", "`n"
+"@
 }
 
 function Write-GameAutomationDiagnostics {

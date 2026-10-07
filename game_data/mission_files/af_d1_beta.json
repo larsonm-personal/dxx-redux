@@ -312,7 +312,7 @@
           "presentation": {
             "status": "present",
             "file": "sdg22.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -441,7 +441,7 @@
           "presentation": {
             "status": "present",
             "file": "esonapri.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -595,7 +595,7 @@
           "presentation": {
             "status": "present",
             "file": "sedurta.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -738,7 +738,7 @@
           "presentation": {
             "status": "present",
             "file": "chacshir.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -906,7 +906,7 @@
           "presentation": {
             "status": "present",
             "file": "tefalog.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1049,7 +1049,7 @@
           "presentation": {
             "status": "present",
             "file": "alarlof.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1192,7 +1192,7 @@
           "presentation": {
             "status": "present",
             "file": "cefispar.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1336,7 +1336,7 @@
           "presentation": {
             "status": "present",
             "file": "ganeshd.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1506,7 +1506,7 @@
           "presentation": {
             "status": "present",
             "file": "lakshmid.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1649,7 +1649,7 @@
           "presentation": {
             "status": "present",
             "file": "fbasin.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

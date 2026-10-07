@@ -1761,7 +1761,7 @@
           "presentation": {
             "status": "present",
             "file": "level01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2591,7 +2591,7 @@
           "presentation": {
             "status": "present",
             "file": "humility.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3907,7 +3907,7 @@
           "presentation": {
             "status": "present",
             "file": "MAG4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

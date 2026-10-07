@@ -172,7 +172,7 @@ foreach ($installer in $installers) {
                 }
             }
 
-            $stagedFiles = @(Get-ChildItem -LiteralPath $stagingDir -File)
+            $stagedFiles = @(Get-ChildItem -LiteralPath $stagingDir -File -Recurse)
             if ($exitCode -ne 0 -or $stagedFiles.Count -eq 0) {
                 Write-Host "  FAILED (exit code $exitCode)" -ForegroundColor Red
                 $totalErrors++
@@ -194,9 +194,9 @@ foreach ($installer in $installers) {
         continue
     }
 
-    $files = Get-ChildItem -Path $extractDir -File |
+    $files = Get-ChildItem -LiteralPath $extractDir -File -Recurse |
         Where-Object { $_.Name -ne ".extraction-complete.json" } |
-        Sort-Object Name
+        Sort-Object FullName
     Write-Host "  Extracted $($files.Count) files:" -ForegroundColor Green
 
     foreach ($f in $files) {
@@ -206,7 +206,7 @@ foreach ($installer in $installers) {
 
         $result = [PSCustomObject]@{
             Installer = $name
-            File      = $f.Name
+            File      = $f.FullName.Substring($extractDir.Length).TrimStart('\', '/').Replace('\', '/')
             Size      = $f.Length
             SHA256    = $hash
             Version   = if ($version) { $version } else { "UNKNOWN" }
@@ -242,5 +242,7 @@ if ($totalUnknown -gt 0) {
 # -- Write detailed results to JSON --------------------------------------------
 
 $outJson = Join-Path $ScriptDir "gog_extraction_results.json"
-[IO.File]::WriteAllText($outJson, ($allResults | ConvertTo-Json -Depth 5) + "`n", [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText($outJson, (ConvertTo-Json -InputObject @($allResults) -Depth 5) + "`n", [Text.UTF8Encoding]::new($false))
 Write-Host "`nResults saved to: $outJson"
+if ($totalErrors -gt 0) { exit 1 }
+exit 0

@@ -15,7 +15,8 @@ Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $androidDir = Join-Path $repoRoot "android"
-$apk = if ($ApkPath) { $ApkPath } else { Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk" }
+$useSuiteApk = -not $ApkPath -and [bool]$env:DXX_TEST_APK
+$apk = if ($ApkPath) { $ApkPath } elseif ($useSuiteApk) { $env:DXX_TEST_APK } else { Join-Path $androidDir "app\build\outputs\apk\debug\app-debug.apk" }
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $sdkRoot = Split-Path (Split-Path $adb)
@@ -41,7 +42,7 @@ function Get-CrashFiles {
 if ($Serial -notlike "emulator-*") {
     Fail "Refusing to signal-crash a non-emulator device"
 }
-if (-not $NoBuild) {
+if (-not $NoBuild -and -not $useSuiteApk) {
     Initialize-RegressionJavaEnvironment -RepoRoot $repoRoot
     & (Resolve-RegressionGradleWrapper -AndroidDir $androidDir) -p $androidDir :app:assembleDebug
     if ($LASTEXITCODE -ne 0) {

@@ -132,6 +132,7 @@ try {
     }
     $collectionLock = [IO.File]::Open((Join-Path $fixture 'android/temp/lock-collection/locked/producer.lock'), 'Open', 'Read', 'None')
     try {
+        Set-Content -LiteralPath (Join-Path $fixture 'android/temp/custom-emulator/avd/config.ini') -Value 'image.sysdir.1=system-images/android-34/google_apis/x86_64/'
         New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/marker-collection/locked/unknown.lock') -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/custom-emulator/avd/hardware-qemu.ini.lock') -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $fixture 'android/temp/custom-emulator/avd/snapshot.lock.lock') -Force | Out-Null
@@ -143,7 +144,8 @@ try {
         Assert-CleanupExists 'android/temp/marker-collection/locked/result.json'
         Assert-CleanupExists 'android/temp/lock-collection/disposable' $false
         Assert-CleanupExists 'android/temp/marker-collection/disposable' $false
-        Assert-CleanupExists 'android/temp/custom-emulator' $false
+        Assert-CleanupExists 'android/temp/custom-emulator/avd/config.ini'
+        Assert-CleanupExists 'android/temp/custom-emulator/avd/userdata.img' $false
         # Git protection within a locked owner must not cause descent past its lock
         & git -C $fixture add -f android/temp/lock-collection/locked/result.json
         New-CleanupFixtureFile 'android/temp/lock-collection/locked/ignored.bin'
@@ -295,7 +297,17 @@ try {
     if (@(Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Directory).Count -ne 3) {
         throw 'Native producer startup must retain exactly three prior hashes, even with timestamp ties'
     }
+    # An already-trimmed producer scope is a safe no-op even during another job
+    $state.Busy = $true
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Producer -BuildRoots (Join-Path $fixture 'android/app/.cxx') -KeepBuildGenerations 3 -BusyWaitSeconds 0
     New-CleanupFixtureFile 'android/app/.cxx/Debug/testnew0/arm64-v8a/output.o'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -BuildsOnly -Producer -BuildRoots (Join-Path $fixture 'android/app/.cxx') -KeepBuildGenerations 3 -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+        if (-not $blocked) { throw }
+    }
+    if (-not $blocked) { throw 'Producer cleanup must protect deletable generations during active jobs' }
+    $state.Busy = $false
     if (@(Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Directory).Count -ne 4) {
         throw 'Native production should leave four hashes'
     }

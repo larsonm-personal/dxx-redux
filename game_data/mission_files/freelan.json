@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "kokcol.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -407,7 +407,7 @@
           "presentation": {
             "status": "present",
             "file": "koklab.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -550,7 +550,7 @@
           "presentation": {
             "status": "present",
             "file": "kokout.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -693,7 +693,7 @@
           "presentation": {
             "status": "present",
             "file": "shipport.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -836,7 +836,7 @@
           "presentation": {
             "status": "present",
             "file": "abbase.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1005,7 +1005,7 @@
           "presentation": {
             "status": "present",
             "file": "gyres.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1198,7 +1198,7 @@
           "presentation": {
             "status": "present",
             "file": "headquar.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

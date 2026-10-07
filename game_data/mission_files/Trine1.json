@@ -207,7 +207,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -322,7 +322,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -451,7 +451,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -594,7 +594,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -737,7 +737,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -880,7 +880,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -979,7 +979,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m7.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1172,7 +1172,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m8.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1365,7 +1365,7 @@
           "presentation": {
             "status": "present",
             "file": "e1m9.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1530,30 +1530,27 @@
         "level_name": "Heptagonal",
         "level_file": "e1m10.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 11.884,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 11.884
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "e1m10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 7,
               "segment": 366,
               "side": 0,
-              "seconds": 11.884,
-              "status": "estimated",
-              "tunnel_units": 344.197,
+              "status": "present",
               "tunnel_segments": 17
             }
           ]

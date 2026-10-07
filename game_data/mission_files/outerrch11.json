@@ -327,7 +327,7 @@
           "presentation": {
             "status": "present",
             "file": "coldopen.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -442,7 +442,7 @@
           "presentation": {
             "status": "present",
             "file": "haimaul.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -598,7 +598,7 @@
           "presentation": {
             "status": "present",
             "file": "doom.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -727,7 +727,7 @@
           "presentation": {
             "status": "present",
             "file": "hangar18.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -962,7 +962,7 @@
           "presentation": {
             "status": "present",
             "file": "beneath.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1159,7 +1159,7 @@
           "presentation": {
             "status": "present",
             "file": "universe.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1306,7 +1306,7 @@
           "presentation": {
             "status": "present",
             "file": "infernal.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

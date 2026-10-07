@@ -385,7 +385,7 @@
           "presentation": {
             "status": "present",
             "file": "sirius1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -500,7 +500,7 @@
           "presentation": {
             "status": "present",
             "file": "sirius2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -643,7 +643,7 @@
           "presentation": {
             "status": "present",
             "file": "sirius3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "level01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -368,7 +368,7 @@
           "presentation": {
             "status": "present",
             "file": "level02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -537,7 +537,7 @@
           "presentation": {
             "status": "present",
             "file": "level03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -666,7 +666,7 @@
           "presentation": {
             "status": "present",
             "file": "level04.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -809,7 +809,7 @@
           "presentation": {
             "status": "present",
             "file": "level05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -952,7 +952,7 @@
           "presentation": {
             "status": "present",
             "file": "level06.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1149,7 +1149,7 @@
           "presentation": {
             "status": "present",
             "file": "level07.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1299,7 +1299,7 @@
           "presentation": {
             "status": "present",
             "file": "level01s.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

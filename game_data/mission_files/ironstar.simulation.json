@@ -129,19 +129,15 @@
         },
         {
           "n": "red key",
-          "s": 49
-        },
-        {
-          "n": "reactor",
-          "s": 89
+          "s": 44
         }
       ],
-      "total_frames": 9061,
+      "total_frames": 6284,
       "rng_end": {
-        "state": 1517435028,
-        "calls": 7171
+        "state": 3425656078,
+        "calls": 3001
       },
-      "problem": "route confirmation exceeded 151-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,

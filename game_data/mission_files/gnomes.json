@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "cometlab.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -419,7 +419,7 @@
           "presentation": {
             "status": "present",
             "file": "carbon.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -563,7 +563,7 @@
           "presentation": {
             "status": "present",
             "file": "warehos.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -756,7 +756,7 @@
           "presentation": {
             "status": "present",
             "file": "homecave.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

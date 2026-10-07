@@ -99,17 +99,27 @@ $scriptPath = if ([IO.Path]::IsPathRooted($ScriptName)) {
     Join-RegressionPath $scriptDir "game_scripts" $ScriptName
 }
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
+if ($Game) {
+    # Explicit -Game parameter overrides _info
+    $gameList = @($Game)
+} elseif (-not $gameList) {
+    # Fallback: legacy _d1_ filename heuristic
+    $gameList = if ($ScriptName -match '_d1_') { @('d1') } else { @('d2') }
+}
 $isStandaloneScript = Get-ScriptStandalone -ScriptPath $scriptPath
 
 if (-not $isStandaloneScript) {
     Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
     if ($Params.Count -eq 0) {
-        $rawScriptText = Get-Content -Path $scriptPath -Raw
-        $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
-        if ($rawPlaceholders.Count -gt 0) {
-            Write-Status "FAIL: support template has unresolved placeholders: $($rawPlaceholders -join ',')" "Red"
-            Write-Status "Run this template through its wrapper instead of launching it directly" "Yellow"
-            exit 1
+        foreach ($preflightGame in $gameList) {
+            $preflightPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $preflightGame
+            $rawScriptText = Get-Content -LiteralPath $preflightPath -Raw
+            $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
+            if ($rawPlaceholders.Count -gt 0) {
+                Write-Status "FAIL: support template has unresolved placeholders: $($rawPlaceholders -join ',')" "Red"
+                Write-Status "Run this template through its wrapper instead of launching it directly" "Yellow"
+                exit 1
+            }
         }
     }
 }
@@ -139,18 +149,6 @@ if ($Install) {
 if (-not (Get-TestScriptInfo -ScriptPath $scriptPath)._graphics_first_run) {
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'no_backup') | Out-Null
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'touch', 'no_backup/graphics-first-run-offered') | Out-Null
-}
-
-if ($Game) {
-    # Explicit -Game parameter overrides _info
-    $gameList = @($Game)
-} elseif (-not $gameList) {
-    # Fallback: legacy _d1_ filename heuristic
-    if ($ScriptName -match '_d1_') {
-        $gameList = @("d1")
-    } else {
-        $gameList = @("d2")
-    }
 }
 
 if ($gameList.Count -gt 1) {
@@ -418,6 +416,19 @@ try {
         }
 
         if (-not $passed) {
+            $failedGameState = Get-GameIntrospection -Serial $env:ANDROID_SERIAL
+            if ($failedGameState) {
+                Write-Status "--- game introspection at failure ---" "Yellow"
+                Write-Host ($failedGameState | ConvertTo-Json -Depth 10 -Compress)
+            }
+            # Preserve the state observed by the failing step before the next test replaces it
+            foreach ($introspectionFile in @('setup_introspect.json', 'introspect.json')) {
+                $failedState = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "files/$introspectionFile") -Seconds 3
+                if ($failedState) {
+                    Write-Status "--- cached $introspectionFile at failure ---" "Yellow"
+                    Write-Host $failedState
+                }
+            }
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
             exit 1

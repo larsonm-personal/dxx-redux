@@ -52,6 +52,7 @@ try {
         $request = [Text.Encoding]::UTF8.GetString($packet) | ConvertFrom-Json
     } while ($request.type -ne 'QUERY' -and [DateTime]::UtcNow -lt $deadline)
     if ($request.type -ne 'QUERY') { throw 'Client did not query the remembered host' }
+    Write-Output "Received discovery query from ${sender}: $($request | ConvertTo-Json -Compress)"
     $reply = [Text.Encoding]::UTF8.GetBytes('{
         "type":"ANNOUNCE", "protocol_version":2, "query_reply":true,
         "lobby_id":"query-only-fixture", "callsign":"QueryOnlyHost",
@@ -71,6 +72,8 @@ try {
     }
     Write-Host 'PASS: remembered host discovered through active query, without broadcast announcements or auto-join'
 } finally {
+    # Retain packet handling and discovery status before another test clears logcat
+    Adb -AdbArgs @('logcat', '-b', 'all', '-d', '-s', 'DXX-MP:I', 'LobbyService:D', 'AndroidRuntime:E') | Write-Output
     if ($probe) { $probe.Dispose() }
     if ($replySender) { $replySender.Dispose() }
     if ($redirectAdded) { Adb -AdbArgs @('emu', 'redir', 'del', 'udp:42490') | Out-Null }

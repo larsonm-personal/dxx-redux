@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "nemesis.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -407,7 +407,7 @@
           "presentation": {
             "status": "present",
             "file": "arkon01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -575,7 +575,7 @@
           "presentation": {
             "status": "present",
             "file": "hosthell.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -646,7 +646,7 @@
           "presentation": {
             "status": "present",
             "file": "arkon02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -843,7 +843,7 @@
           "presentation": {
             "status": "present",
             "file": "nemsup.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1039,7 +1039,7 @@
           "presentation": {
             "status": "present",
             "file": "arkon03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1263,7 +1263,7 @@
           "presentation": {
             "status": "present",
             "file": "ironbla2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1707,7 +1707,7 @@
           "presentation": {
             "status": "present",
             "file": "fadeout1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

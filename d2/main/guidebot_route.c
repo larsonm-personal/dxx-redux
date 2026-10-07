@@ -1263,6 +1263,9 @@ int escort_debug_compare_route_path(void)
 
 	memset(&Escort_path_parity_result, 0, sizeof(Escort_path_parity_result));
 	Escort_path_parity_result.first_mismatch = -1;
+	Escort_path_parity_result.first_passability_segment = -1;
+	Escort_path_parity_result.first_passability_side = -1;
+	Escort_path_parity_result.first_passability_wall = -1;
 	if (!Escort_route_goal.active || !escort_is_companion_object(Buddy_objnum) ||
 	    !escort_valid_segment(Escort_route_goal.target_seg) ||
 	    !d_rand_get_state(&rng_before))
@@ -1314,6 +1317,30 @@ int escort_debug_compare_route_path(void)
 	route_hide_index_after = aip->hide_index;
 	route_path_dir_after = aip->PATH_DIR;
 	route_goal_segment_after = ailp->goal_segment;
+
+	/* Android/host automation diagnostics: different traversable side sets can
+	 * consume different BFS random rolls even when the final path is identical */
+	Escort_route_goal.active = 0;
+	for (int segnum = 0; segnum <= Highest_segment_index; ++segnum) {
+		segment *segp = &Segments[segnum];
+		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			if (!IS_CHILD(segp->children[side]))
+				continue;
+			const int ordinary = !!((WALL_IS_DOORWAY(segp, side) & WID_FLY_FLAG) ||
+			    ai_door_is_openable(objp, segp, side));
+			const int route = !!level_metadata_guidebot_side_passable_current(segnum, side);
+			if (ordinary == route)
+				continue;
+			if (!Escort_path_parity_result.passability_difference_count) {
+				Escort_path_parity_result.first_passability_segment = segnum;
+				Escort_path_parity_result.first_passability_side = side;
+				Escort_path_parity_result.first_passability_wall = segp->sides[side].wall_num;
+				Escort_path_parity_result.first_ordinary_passable = ordinary;
+				Escort_path_parity_result.first_route_passable = route;
+			}
+			++Escort_path_parity_result.passability_difference_count;
+		}
+	}
 
 	d_rand_set_state(rng_before);
 	d_rand_set_call_count(rng_calls_before);

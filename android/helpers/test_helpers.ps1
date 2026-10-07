@@ -2791,7 +2791,11 @@ function Install-ApkOnDevice {
     }
     if (-not $Serial) { $Serial = Initialize-AndroidTestTarget }
     Write-Status "Installing test APK on $Serial..."
-    $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('install', '-r', $apk) -Seconds 180 -IncludeStandardError
+    $installArgs = @('install', '-r')
+    # Restore the suite's saved debug APK after tests that install newer builds
+    if ($Serial -like 'emulator-*') { $installArgs += '-d' }
+    $installArgs += $apk
+    $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs $installArgs -Seconds 180 -IncludeStandardError
     if (-not $result) {
         Write-Status "WARN: APK install timed out" "Yellow"
         return $false

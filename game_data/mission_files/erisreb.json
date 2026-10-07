@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0001.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -419,7 +419,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0002.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -562,7 +562,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0003.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -705,7 +705,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0004.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -848,7 +848,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0005.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -991,7 +991,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0006.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1134,7 +1134,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0007.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1279,7 +1279,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0008.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1422,7 +1422,7 @@
           "presentation": {
             "status": "present",
             "file": "eris0009.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

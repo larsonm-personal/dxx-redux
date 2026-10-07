@@ -33,6 +33,11 @@
 
     { "action": "enter_launcher" },
     { "action": "reset_state" },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "persist_guidebot_goal_message", "value": true },
+    },
     { "action": "clear_mods" },
     { "action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250 },
     { "action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250 },
@@ -203,7 +208,10 @@
             "guidebot.route_goal_aim_pos[0]": { "range": [-10000, 10000] },
             "guidebot.route_goal_guidance_mode_name": "reach_hidden_door",
             "guidebot.route_goal_path_endpoint_seg": { "gte": 0 },
-            "console.lines": { "contains": "GUIDE-BOT: Finding NEXT: follow me, then open the marked hidden door" },
+            "guidebot.persist_goal_message": "true",
+            "guidebot.persistent_goal_message": {
+                "contains": "Finding NEXT: follow me, then open the marked hidden door",
+            },
         },
     },
     { "action": "set_debug", "field": "guidebot_path_parity", "value": "true" },

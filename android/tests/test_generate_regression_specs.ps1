@@ -33,8 +33,9 @@ try {
 
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\generate_regression_specs.ps1') `
         -Destination (Join-Path $gameDataDir 'generate_regression_specs.ps1')
-    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\tests\extract_regression_spec_helpers.ps1') `
-        -Destination (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
+    # Use the real writer and pinned formatter while keeping source data isolated
+    $specHelper = (Join-Path $repoRoot 'android/tests/extract_regression_spec_helpers.ps1').Replace("'", "''")
+    [IO.File]::WriteAllText((Join-Path $testsDir 'extract_regression_spec_helpers.ps1'), ". '$specHelper'", [Text.UTF8Encoding]::new($false))
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\jsonc.ps1') `
         -Destination (Join-Path $helpersDir 'jsonc.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1') `
@@ -52,8 +53,12 @@ try {
         -Destination (Join-Path $gameDataDir 'extract_all_cds.ps1')
     [System.IO.File]::WriteAllText(
         (Join-Path $assetsDir 'known_discs.jsonc'),
-        '{"discs":[{"id":"descent-test-flight","game":"d1","tracks":' +
-        '[{"track":1,"type":"data","sha1":"test-flight-sha1"}]}]}',
+        '{"discs":[{"id":"descent-test-flight","label":"test-flight","game":"d1","tracks":' +
+        '[{"track":1,"type":"data","sha1":"test-flight-sha1"},{"track":2,"type":"audio","sha1":"audio-sha1"}]},' +
+        '{"id":"same-tracks-other-release","label":"other","game":"d1","tracks":' +
+        '[{"track":1,"type":"data","sha1":"test-flight-sha1"},{"track":2,"type":"audio","sha1":"audio-sha1"}]},' +
+        '{"id":"same-data-other-audio","game":"d1","tracks":' +
+        '[{"track":1,"type":"data","sha1":"test-flight-sha1"},{"track":2,"type":"audio","sha1":"different-audio"}]}]}',
         [System.Text.UTF8Encoding]::new($false)
     )
     [System.IO.File]::WriteAllText(
@@ -114,6 +119,7 @@ try {
     [System.IO.File]::WriteAllText(
         (Join-Path $testFlightDir 'data_tracks\.track_hashes.json'),
         '[{"track":1,"type":"data","sha1":"test-flight-sha1"},' +
+        '{"track":2,"type":"audio","sha1":"audio-sha1"},' +
         '{"sow":"descent1.sow","files_extracted":4}]',
         [System.Text.UTF8Encoding]::new($false)
     )
@@ -166,6 +172,8 @@ try {
         'A Vertigo-only disc should be a non-launchable file-only regression'
 
     $testFlightSpec = Read-JsoncFile (Join-Path $testFlightDir 'extract_regression.jsonc')
+    Assert-True ($testFlightSpec.disc_id -ceq 'descent-test-flight' -and $testFlightSpec.audio_tracks -eq 1) `
+        'Disc lookup should compare audio tracks and disambiguate identical releases by source label'
     Assert-True ($testFlightSpec.classification -eq 'd1_demo' -and
         $null -eq $testFlightSpec.expected_mission -and $null -eq $testFlightSpec.expected_level1) `
         'The unsupported Test Flight demo should be a non-launchable file-only regression'
@@ -181,6 +189,21 @@ try {
         @($combinedSpec.expected_files) -contains 'missions/d2x.hog' -and
         @($combinedSpec.expected_files) -contains 'groupa.pig') `
         'A combined regression should merge and deduplicate component extraction oracles'
+
+    $testFlightPath = Join-Path $testFlightDir 'extract_regression.jsonc'
+    $beforeLostIdentity = [IO.File]::ReadAllText($testFlightPath)
+    [IO.File]::WriteAllText((Join-Path $assetsDir 'known_discs.jsonc'), '{"discs":[]}')
+    $specList = Join-Path $tempRoot 'selected-spec.txt'
+    [IO.File]::WriteAllText($specList, $testFlightPath)
+    $savedPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $output = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -Force -SpecListPath $specList 2>&1)
+    $failedExit = $LASTEXITCODE
+    $ErrorActionPreference = $savedPreference
+    Assert-True ($failedExit -ne 0 -and ($output -join "`n") -match 'known disc identity was lost') `
+        'Regeneration must reject a lost known disc identity'
+    Assert-True ([IO.File]::ReadAllText($testFlightPath) -ceq $beforeLostIdentity) `
+        'A missing catalog identity must not downgrade the existing oracle'
 } finally {
     $producerLock.Dispose()
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue

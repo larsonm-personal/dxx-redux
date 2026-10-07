@@ -20,9 +20,13 @@ function Get-CueTrackDefinitions {
 function Get-ValidatedDiscTrackManifest {
     param(
         [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Manifest,
-        [Parameter(Mandatory)][string]$CuePath
+        [Parameter(Mandatory, ParameterSetName = 'Cue')][string]$CuePath,
+        [Parameter(Mandatory, ParameterSetName = 'Iso')][string]$IsoPath
     )
-    $tracks = @(Get-CueTrackDefinitions -Path $CuePath)
+    $tracks = @(if ($IsoPath) {
+            if (-not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) { throw "ISO source not found: $IsoPath" }
+            [pscustomobject]@{ track = 1; type = 'data' }
+        } else { Get-CueTrackDefinitions -Path $CuePath })
     if ($Manifest.Count -ne $tracks.Count) { throw "Expected $($tracks.Count) track hashes, got $($Manifest.Count)" }
     $expected = @{}
     foreach ($track in $tracks) { $expected[$track.track] = $track.type }

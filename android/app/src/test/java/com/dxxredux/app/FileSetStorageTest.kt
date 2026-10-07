@@ -13,6 +13,31 @@ class FileSetStorageTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun deletingAnUnregisteredSetRemovesItsContentBeforeRecreation() {
+        val filesDir = temporaryFolder.newFolder("files")
+        val importRoot = temporaryFolder.newFolder("import")
+        val manager = FileSetManager(filesDir, importRoot)
+        val defaultDir = manager.getSetDir(FileSetManager.DEFAULT_SET)
+        defaultDir.resolve("descent.hog").writeText("retained game data")
+        val customDir = manager.createSet("custom")
+        customDir.resolve("demos/old.dem").apply {
+            parentFile?.mkdirs()
+            writeText("old demo")
+        }
+        FileSetContentManager(customDir).reconcile()
+        assertEquals(1, FileSetContentManager(customDir).listEntries().size)
+
+        // Match the automation reset that clears the registry but retains imported content
+        assertTrue(filesDir.resolve("file_sets.json").delete())
+        manager.deleteSet("custom")
+
+        assertFalse(customDir.exists())
+        assertEquals("retained game data", defaultDir.resolve("descent.hog").readText())
+        val recreated = manager.createSet("custom")
+        assertTrue(FileSetContentManager(recreated).listEntries().isEmpty())
+    }
+
+    @Test
     fun currentSetsPersistAndPublishBothGamePathsUnderTheSelectedRoot() {
         val filesDir = temporaryFolder.newFolder("files")
         val importRoot = temporaryFolder.newFolder("import")

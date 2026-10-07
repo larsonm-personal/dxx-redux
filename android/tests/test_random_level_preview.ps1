@@ -36,6 +36,7 @@ $introspectionFile = "files/level_preview_introspect.json"
 $presentedProbeFile = "files/level_preview_presented_probe.json"
 $compositeProbeFile = "files/level_preview_composite_probe.json"
 $requestId = ""
+$previewPassed = $false
 
 function Read-AppJson {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -310,7 +311,21 @@ try {
         throw "SetupActivity resumed without preserving metadata state after the preview"
     }
     Write-Status "PASS: seeded random preview loaded, changed camera state, stayed alive, and returned without metadata refresh" "Green"
+    $previewPassed = $true
 } finally {
+    if (-not $previewPassed) {
+        # Capture live state before closing the preview overwrites its introspection
+        foreach ($path in @($selectionFile, $introspectionFile, $presentedProbeFile, $compositeProbeFile, 'files/automation_result.json')) {
+            try {
+                $state = Read-AppJson -Path $path
+                if ($state) {
+                    $destination = Join-Path (Split-Path -Parent $localScript) ([IO.Path]::GetFileName($path))
+                    $state | ConvertTo-Json -Depth 60 | Set-Content -LiteralPath $destination -Encoding utf8
+                    Write-Status "Preview failure state: $destination"
+                }
+            } catch { Write-Warning "Could not capture ${path}: $($_.Exception.Message)" }
+        }
+    }
     try {
         Adb-Timeout -AdbArgs @("logcat", "-d", "-v", "time") -Seconds 8 |
             Set-Content -LiteralPath (Join-Path (Split-Path -Parent $localScript) "logcat.txt") -Encoding utf8

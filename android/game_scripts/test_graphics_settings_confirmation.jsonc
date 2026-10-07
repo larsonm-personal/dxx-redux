@@ -349,8 +349,12 @@
         "value": "tex_filt:1",
     },
     {
-        "action": "wait_ms",
-        "ms": 1100,
+        // Queued edits settle after the shared 2.5-second debounce
+        "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "graphics_safety.current.TexFilt": "1",
+        },
     },
     {
         "action": "assert",
@@ -371,7 +375,7 @@
     },
     {
         "action": "wait_ms",
-        "ms": 1100,
+        "ms": 3000,
     },
     {
         "action": "assert",
@@ -395,14 +399,15 @@
     {
         "action": "set_debug",
         "field": "graphics_queue_option",
-        "value": "aniso_level:2",
+        // A second supported option exercises coalescing on drivers without anisotropy
+        "value": "menu_tex_filt:1",
     },
     {
         "action": "wait_for",
         "expect": {
             "graphics_safety.phase": "challenge",
             "graphics_safety.candidate.TexFilt": "2",
-            "graphics_safety.candidate.AnisoLevel": "2",
+            "graphics_safety.candidate.MenuTexFilt": "1",
         },
         "timeout_ms": 10000,
     },
@@ -457,7 +462,7 @@
         "expect": {
             "graphics_safety.phase": "idle",
             "graphics_safety.current.TexFilt": "1",
-            "graphics_safety.current.AnisoLevel": "0",
+            "graphics_safety.current.MenuTexFilt": "0",
         },
         "timeout_ms": 10000,
     },
@@ -469,7 +474,7 @@
         "action": "assert",
         "expect": {
             "graphics_safety.requested.TexFilt": "1",
-            "graphics_safety.requested.AnisoLevel": "0",
+            "graphics_safety.requested.MenuTexFilt": "0",
             "graphics_safety.requested.ResolutionX": "800",
             "graphics_safety.requested.ColorDepth": "1",
             "graphics_safety.accepted.ResolutionX": "640",

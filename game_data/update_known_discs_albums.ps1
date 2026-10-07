@@ -23,6 +23,7 @@ $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.jsonc"
 . "$repoRoot/android/helpers/fingerprint_config.ps1"
 . "$repoRoot/android/helpers/acoustid_title_match.ps1"
 . "$repoRoot/android/helpers/fingerprint_source_identity.ps1"
+. "$repoRoot/android/helpers/normalized_json_text.ps1"
 
 if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
     Write-Host "Album database already exists at $albumDbPath. Use -Force to regenerate"
@@ -495,9 +496,10 @@ if ($DryRun) {
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
 } else {
-    $content = ($output -join "`n") + "`n"
+    $content = ConvertTo-NormalizedJsonText -Text (($output -join "`n") + "`n") -RepositoryJsonc
     if ((Test-Path -LiteralPath $albumDbPath -PathType Leaf) -and
-        [IO.File]::ReadAllText($albumDbPath) -ceq $content) {
+        ([IO.File]::ReadAllText($albumDbPath) -ceq $content -or
+        (ConvertTo-NormalizedJsonText -Text ([IO.File]::ReadAllText($albumDbPath)) -RepositoryJsonc) -ceq $content)) {
         Write-Host "`nAlbum database unchanged: $albumDbPath"
     } else {
         [IO.File]::WriteAllText($albumDbPath, $content, [Text.UTF8Encoding]::new($false))

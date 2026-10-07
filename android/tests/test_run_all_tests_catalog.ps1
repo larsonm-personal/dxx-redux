@@ -18,7 +18,7 @@ try {
     foreach ($extended in @($false, $true)) {
         $execution = @{ Result = $null }
         $arguments = @('-NoProfile', '-NonInteractive', '-File', (Join-Path $repoRoot 'android/run_all_tests.ps1'), '-ListTests', '-ReportDir', $(if ($extended) { $fixtureRoot } else { $unusedReportDir }), '-HostOnly', '-Filter', 'matches_no_test')
-        if ($extended) { $arguments += '-ExtendedGraphics' }
+        if ($extended) { $arguments += @('-ExtendedGraphics', '-ExtendedMultiplayer') }
         $task = [pscustomobject]@{ FilePath = Get-RegressionCurrentPwshPath; Arguments = $arguments; WorkingDirectory = [IO.Path]::GetTempPath(); TimeoutSeconds = 45 }
         Invoke-HeadlessProcessPool -Tasks @($task) -MaxParallel 1 -OnCompleted {
             param($task, $result)
@@ -32,6 +32,11 @@ try {
         $catalog = $execution.Result.StandardOutput | ConvertFrom-Json
         if ($catalog.schema -ne 1 -or $catalog.extended_graphics -ne $extended) { throw 'Incorrect catalog schema or variant' }
         if (@($catalog.tests | Group-Object name | Where-Object Count -gt 1).Count) { throw 'Duplicate top-level entries' }
+        $multiplayer = @($catalog.tests | Where-Object name -eq 'test_mp')
+        $multiplayerTimeout = if ($extended) { 330 } else { 240 }
+        if ($multiplayer.Count -ne 1 -or $multiplayer[0].timeout_seconds -ne $multiplayerTimeout) {
+            throw 'Multiplayer soak must retain the normal setup/build timeout allowance'
+        }
         foreach ($test in $catalog.tests) {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }

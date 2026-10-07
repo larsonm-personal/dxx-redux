@@ -5,6 +5,27 @@ import prettier from "prettier";
 import xml from "@prettier/plugin-xml";
 
 const [manifestPath, mode] = process.argv.slice(2);
+async function formatSource(source, file, parser) {
+    return prettier.format(source, {
+        filepath: file,
+        parser,
+        plugins: [xml],
+        tabWidth: ["yaml", "markdown"].includes(parser) ? 2 : 4,
+        printWidth: 120,
+        proseWrap: "preserve",
+        embeddedLanguageFormatting: "off",
+        xmlWhitespaceSensitivity: "strict",
+        htmlWhitespaceSensitivity: "strict",
+        endOfLine: "lf",
+    });
+}
+if (manifestPath === "--stdin-jsonc") {
+    let source = "";
+    process.stdin.setEncoding("utf8");
+    for await (const chunk of process.stdin) source += chunk;
+    process.stdout.write(await formatSource(source, "regression.jsonc", "jsonc"));
+    process.exit(0);
+}
 const files = JSON.parse(await fs.readFile(manifestPath, "utf8"));
 let failures = 0;
 let changed = 0;
@@ -26,18 +47,7 @@ for (const file of files) {
             ".ts": "typescript",
             ".css": "css",
         }[extension];
-        const formatted = await prettier.format(source, {
-            filepath: file,
-            parser,
-            plugins: [xml],
-            tabWidth: ["yaml", "markdown"].includes(parser) ? 2 : 4,
-            printWidth: 120,
-            proseWrap: "preserve",
-            embeddedLanguageFormatting: "off",
-            xmlWhitespaceSensitivity: "strict",
-            htmlWhitespaceSensitivity: "strict",
-            endOfLine: "lf",
-        });
+        const formatted = await formatSource(source, file, parser);
         if (source !== formatted) {
             changed++;
             console.log(`${mode === "fix" ? "Formatted" : "Needs formatting"}: ${file}`);

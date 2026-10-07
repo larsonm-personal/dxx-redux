@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.app.Instrumentation
 import android.os.SystemClock
+import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -147,11 +148,28 @@ internal class NavigationRepeatChecks(
                         0,
                         InputDevice.SOURCE_GAMEPAD,
                     )
-                if (target != null) target.dispatchKeyEvent(event) else launcher.dispatchKeyEvent(event)
+                val handled = if (target != null) target.dispatchKeyEvent(event) else launcher.dispatchKeyEvent(event)
+                Log.i(
+                    "DXX-SliderTest",
+                    "edge key=$code down=$down repeat=$repeat handled=$handled " +
+                        "target=${target?.javaClass?.simpleName} window=${target?.let(System::identityHashCode)} " +
+                        "focused=${target?.hasWindowFocus()} row=$dialogFocused moves=$dialogMoves",
+                )
             }
         }
 
-        fun holdTime() = Thread.sleep(timing.initialDelayMs + 3 * timing.repeatIntervalMs + 50)
+        fun holdTime(ready: (() -> Boolean)? = null) {
+            val started = SystemClock.uptimeMillis()
+            // Keep the nominal observation window so duplicate timers still fail
+            Thread.sleep(timing.initialDelayMs + 3 * timing.repeatIntervalMs + 50)
+            if (ready != null) {
+                // Compose layout and emulator scheduling can postpone main-thread ticks
+                while (!onMain(ready) && SystemClock.uptimeMillis() - started < 3000) {
+                    Thread.sleep(20)
+                }
+                Log.i("DXX-SliderTest", "Held repeat observation elapsed_ms=${SystemClock.uptimeMillis() - started}")
+            }
+        }
 
         fun settle() = Thread.sleep(timing.repeatIntervalMs * 2 + 100)
 
@@ -163,7 +181,7 @@ internal class NavigationRepeatChecks(
         check(onMain { focused == 1 }) { "Initial launcher direction did not move once: $focused" }
         edge(KeyEvent.KEYCODE_DPAD_DOWN, true, repeat = 1)
         check(onMain { focused == 1 }) { "Hardware repeat bypassed shared timing" }
-        holdTime()
+        holdTime { focused >= 4 }
         edge(KeyEvent.KEYCODE_DPAD_DOWN, false)
         val stopped = onMain { focused }
         check(stopped >= 4) { "Held launcher direction did not scroll: $stopped" }
@@ -208,24 +226,28 @@ internal class NavigationRepeatChecks(
             }
         }
         hat(1f)
-        holdTime()
+        holdTime { focused >= 4 }
         hat(0f)
         check(onMain { focused >= 4 }) { "Held HAT direction did not repeat" }
 
         focus(sliderFocus)
         edge(KeyEvent.KEYCODE_DPAD_RIGHT, true)
-        holdTime()
+        holdTime { value >= 54f }
         edge(KeyEvent.KEYCODE_DPAD_RIGHT, false)
         val adjusted = onMain { value }
         check(adjusted >= 54f) { "Held right did not adjust the slider: $adjusted" }
         settle()
         check(onMain { value == adjusted }) { "Slider kept changing after release" }
         edge(KeyEvent.KEYCODE_DPAD_LEFT, true)
-        holdTime()
+        holdTime { value < adjusted - 2 }
         edge(KeyEvent.KEYCODE_DPAD_LEFT, false)
         check(onMain { value < adjusted - 2 }) { "Held left did not reverse slider adjustment" }
 
         for (kind in 1..3) {
+            Log.i(
+                "DXX-SliderTest",
+                "Dialog repeat case=$kind hold_ms=${timing.initialDelayMs + 3 * timing.repeatIntervalMs + 50}",
+            )
             // Losing window focus must cancel a pending launcher hold
             focus(rootFocus)
             edge(KeyEvent.KEYCODE_DPAD_DOWN, true)
@@ -234,7 +256,7 @@ internal class NavigationRepeatChecks(
             focus(dialogFocus)
             val target = onMain { checkNotNull(dialogView) }
             edge(KeyEvent.KEYCODE_DPAD_DOWN, true, target = target)
-            holdTime()
+            holdTime { dialogFocused >= 4 }
             edge(KeyEvent.KEYCODE_DPAD_DOWN, false, target = target)
             val selected = onMain { dialogFocused }
             check(selected >= 4) { "Dialog $kind did not repeat: $selected" }

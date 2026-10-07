@@ -262,30 +262,27 @@
         "level_name": "Liquid Containment Tubes",
         "level_file": "nefar01.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 19.08,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 19.08
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 4,
               "segment": 326,
               "side": 0,
-              "seconds": 19.08,
-              "status": "estimated",
-              "tunnel_units": 704.002,
+              "status": "present",
               "tunnel_segments": 35
             }
           ]
@@ -347,30 +344,27 @@
         "level_name": "Coralinus Reservoir",
         "level_file": "nefar02.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 12.2,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 12.2
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 1,
               "segment": 357,
               "side": 2,
-              "seconds": 12.2,
-              "status": "estimated",
-              "tunnel_units": 360.0,
+              "status": "present",
               "tunnel_segments": 18
             }
           ]
@@ -517,30 +511,27 @@
         "level_name": "Water Pumping Plant",
         "level_file": "nefar03.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 17.338,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 17.338
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 6,
               "segment": 373,
               "side": 2,
-              "seconds": 17.338,
-              "status": "estimated",
-              "tunnel_units": 616.882,
+              "status": "present",
               "tunnel_segments": 31
             }
           ]
@@ -714,30 +705,27 @@
         "level_name": "Base Dreena",
         "level_file": "nefar04.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 14.3,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 14.3
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar04.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 2,
               "segment": 330,
               "side": 5,
-              "seconds": 14.3,
-              "status": "estimated",
-              "tunnel_units": 464.991,
+              "status": "present",
               "tunnel_segments": 24
             }
           ]
@@ -872,7 +860,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1119,7 +1107,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar06.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1278,7 +1266,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar07.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1475,7 +1463,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar08.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1634,7 +1622,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar09.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1763,7 +1751,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1933,7 +1921,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2136,7 +2124,7 @@
           "presentation": {
             "status": "present",
             "file": "nefar12.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2291,30 +2279,27 @@
         "level_name": "High Security Complex Theta",
         "level_file": "nefar13.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 13.4,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 13.4
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar13.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 12,
               "segment": 305,
               "side": 0,
-              "seconds": 13.4,
-              "status": "estimated",
-              "tunnel_units": 419.999,
+              "status": "present",
               "tunnel_segments": 21
             }
           ]
@@ -2504,30 +2489,27 @@
         "level_name": "Iron Sulfur Corridor",
         "level_file": "nefar14.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 14.2,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 14.2
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar14.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 7,
               "segment": 534,
               "side": 3,
-              "seconds": 14.2,
-              "status": "estimated",
-              "tunnel_units": 459.999,
+              "status": "present",
               "tunnel_segments": 23
             }
           ]
@@ -2687,30 +2669,27 @@
         "level_name": "\"The Shadow Conduit\"",
         "level_file": "nefar15.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 17.5,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 17.5
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar15.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 2,
               "segment": 255,
               "side": 1,
-              "seconds": 17.5,
-              "status": "estimated",
-              "tunnel_units": 624.999,
+              "status": "present",
               "tunnel_segments": 29
             }
           ]
@@ -2758,30 +2737,27 @@
         "level_name": "Umbrin Nexus",
         "level_file": "nefar16.rdl",
         "flyout": {
-          "kind": "in_engine",
-          "seconds": 9.0,
-          "status": "estimated",
+          "kind": "none",
+          "seconds": null,
+          "status": "invalid_assets",
           "movie": {
             "status": "not_applicable_d1"
           },
           "exit_trigger": "present",
           "tunnel": {
-            "status": "present",
-            "seconds": 9.0
+            "status": "present"
           },
           "presentation": {
-            "status": "present",
+            "status": "invalid_assets",
             "file": "nefar16.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
               "trigger": 7,
               "segment": 54,
               "side": 4,
-              "seconds": 9.0,
-              "status": "estimated",
-              "tunnel_units": 200.0,
+              "status": "present",
               "tunnel_segments": 10
             }
           ]
@@ -2944,7 +2920,7 @@
           "presentation": {
             "status": "present",
             "file": "nefars1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3140,7 +3116,7 @@
           "presentation": {
             "status": "present",
             "file": "nefars2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3297,7 +3273,7 @@
           "presentation": {
             "status": "present",
             "file": "nefars3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

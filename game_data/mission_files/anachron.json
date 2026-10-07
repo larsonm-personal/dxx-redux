@@ -319,7 +319,7 @@
           "presentation": {
             "status": "present",
             "file": "redriver.end",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -448,7 +448,7 @@
           "presentation": {
             "status": "present",
             "file": "scktrnst.end",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -591,7 +591,7 @@
           "presentation": {
             "status": "present",
             "file": "appease.end",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

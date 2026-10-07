@@ -312,7 +312,7 @@
           "presentation": {
             "status": "present",
             "file": "meru.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -482,7 +482,7 @@
           "presentation": {
             "status": "present",
             "file": "dtest.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -626,7 +626,7 @@
           "presentation": {
             "status": "present",
             "file": "lunp.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -769,7 +769,7 @@
           "presentation": {
             "status": "present",
             "file": "marin.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -913,7 +913,7 @@
           "presentation": {
             "status": "present",
             "file": "irock.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1107,7 +1107,7 @@
           "presentation": {
             "status": "present",
             "file": "mimu.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1250,7 +1250,7 @@
           "presentation": {
             "status": "present",
             "file": "titi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1420,7 +1420,7 @@
           "presentation": {
             "status": "present",
             "file": "nes.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1565,7 +1565,7 @@
           "presentation": {
             "status": "present",
             "file": "palace.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1691,7 +1691,7 @@
           "presentation": {
             "status": "present",
             "file": "veswo.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

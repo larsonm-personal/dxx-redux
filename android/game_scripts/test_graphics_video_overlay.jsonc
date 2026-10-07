@@ -2,6 +2,8 @@
 [
     {
         "_info": {
+            "_standalone": false,
+            "_owner": "test_graphics_video_overlay",
             "games": ["d1", "d2"],
             "vars": {
                 "d1": {
@@ -334,6 +336,7 @@
         },
     },
     {
+        "_section": "coalesced",
         "action": "controller_input",
         "key": "A",
         "post_delay_ms": 50,
@@ -363,7 +366,7 @@
             "video_msaa": 0,
         },
     },
-    // More than 2.5 seconds since TexFilt changed, but AF restarted the shared cooldown
+    // More than 2.5 seconds since TexFilt changed, but the second option restarted the shared cooldown
     {
         "action": "wait_ms",
         "ms": 1500,
@@ -464,6 +467,7 @@
         },
     },
     {
+        "_section": "msaa",
         "action": "controller_input",
         "key": "DDOWN",
         "post_delay_ms": 50,
@@ -625,6 +629,7 @@
         },
     },
     {
+        "_section": "return",
         "action": "controller_input",
         "controller_keys": ["DUP", "DUP", "A", "A", "A"],
         "post_delay_ms": 50,

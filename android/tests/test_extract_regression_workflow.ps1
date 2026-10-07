@@ -19,7 +19,7 @@ $producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileM
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
     $automationTemplateSource = [System.IO.File]::ReadAllText($automationTemplatePath)
-    $automationTemplate = @(Read-JsoncFile $automationTemplatePath)
+    $automationTemplate = Read-JsoncFile $automationTemplatePath
     $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
     $runAllSource = [System.IO.File]::ReadAllText($runAllPath)
     if ($extractSource -notmatch "(?s)function Start-ExtractSetupActivity.*?'am', 'start', '-W', '-S'.*?'pidof'.*?Wait-SetupReady" -or
@@ -37,8 +37,27 @@ try {
     if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?"command": "write_music_prefs".*?"source": "midi".*?"action": "enter_game"') {
         throw 'Extraction launch automation no longer isolates itself from external CD-audio preferences'
     }
-    if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?\$whenMatch = \[regex\]::Match.*?Groups\[1\]\.Value -cne \$Game.*?\$line -replace.*?"when"') {
-        throw 'Extraction launch automation no longer resolves game-specific template steps'
+    $extractAst = [Management.Automation.Language.Parser]::ParseFile($extractPath, [ref]$null, [ref]$null)
+    $generator = $extractAst.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-ExtractAutomationScriptText' }, $true)
+    . ([scriptblock]::Create($generator.Extent.Text))
+    foreach ($game in @('d1', 'd2')) {
+        foreach ($required in @($false, $true)) {
+            $generated = Get-ExtractAutomationScriptText -MissionName 'Quoted "Mission"' -LevelName 'Level "One"' -Game $game -TestSet 'regression_test' -MissionSelectionRequired $required -TemplatePath $automationTemplatePath
+            # The normalizer uses a strict JSON parser, unlike PowerShell's permissive parser
+            $resolved = ConvertTo-NormalizedJsonText -Text $generated | ConvertFrom-Json
+            if (@($resolved | Where-Object { $_.PSObject.Properties['when'] }).Count) { throw 'Unresolved game condition in extraction script' }
+            $selection = @($resolved | Where-Object { $_.action -eq 'select_mission' })
+            $expectedMission = if ($required) { 'Quoted "Mission"' } else { '' }
+            if ($selection.Count -ne 1 -or $selection[0].text -cne $expectedMission -or $selection[0].optional -ne (-not $required)) {
+                throw 'Extraction mission selection changed during JSONC normalization'
+            }
+            $startLevel = @($resolved | Where-Object { $_.action -eq 'select' -and $_.text -ceq '1' })
+            if ($startLevel.Count -ne [int]($game -eq 'd1')) { throw 'Extraction script retained the wrong starting-level action' }
+            $levelCheck = @($resolved | Where-Object { $_.action -eq 'assert' -and $_.expect.'current_level_name' })
+            if ($levelCheck.Count -ne 1 -or $levelCheck[0].expect.'current_level_name' -cne 'Level "One"') {
+                throw 'Extraction level assertion changed during JSONC normalization'
+            }
+        }
     }
     if ($automationTemplateSource -notmatch '(?s)"text": "Multiplayer".*?"key": "esc".*?"text": "New game"') {
         throw 'Extraction launch automation no longer normalizes the multiplayer submenu before New Game'
@@ -121,6 +140,14 @@ try {
     if ($unchanged -cne $initial -or $unchanged -notmatch 'Generated: 2000-01-01 00:00:00') {
         throw 'Semantically unchanged spec was rewritten'
     }
+    $legacy = $initial.Replace('    ', "`t").Replace("`n", "`r`n")
+    [IO.File]::WriteAllText($stablePath, $legacy, [Text.UTF8Encoding]::new($false))
+    $oldWriteTime = ([datetime]'2001-01-01T00:00:00Z').ToUniversalTime()
+    [IO.File]::SetLastWriteTimeUtc($stablePath, $oldWriteTime)
+    Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2099-01-01 00:00:00'
+    if ([IO.File]::ReadAllText($stablePath) -cne $legacy -or [IO.File]::GetLastWriteTimeUtc($stablePath) -ne $oldWriteTime) {
+        throw 'Formatting-only regeneration changed file bytes or modification time'
+    }
 
     $spec.total_extracted = 2
     Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2099-01-01 00:00:00'
@@ -129,6 +156,8 @@ try {
         (Read-JsoncFile $stablePath).total_extracted -ne 2) {
         throw 'Semantic spec change was not written with the new generated time'
     }
+    $formatted = ConvertTo-NormalizedJsonText -Text $changed -RepositoryJsonc
+    if ($formatted -cne $changed) { throw 'Generated spec disagrees with the repository formatter' }
 
     if (-not (Test-ExtractRegressionInfrastructureFailure 'setup_timeout') -or
         -not (Test-ExtractRegressionInfrastructureFailure 'emulator_offline') -or

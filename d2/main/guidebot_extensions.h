@@ -36,6 +36,12 @@ typedef struct escort_path_parity_result {
 	unsigned int route_rng_state;
 	unsigned int ordinary_rng_calls;
 	unsigned int route_rng_calls;
+	int passability_difference_count;
+	int first_passability_segment;
+	int first_passability_side;
+	int first_passability_wall;
+	int first_ordinary_passable;
+	int first_route_passable;
 } escort_path_parity_result;
 #endif
 

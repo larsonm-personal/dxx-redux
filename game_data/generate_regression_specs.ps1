@@ -58,7 +58,7 @@ $sha1ToDisc = @{}
 foreach ($disc in $knownDiscs) {
     foreach ($track in $disc.tracks) {
         if ($track.type -eq 'data' -and $track.sha1) {
-            $sha1ToDisc[$track.sha1] = $disc
+            $sha1ToDisc[$track.sha1] = @($sha1ToDisc[$track.sha1]) + @($disc) | Where-Object { $null -ne $_ }
         }
     }
 }
@@ -275,7 +275,19 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
             if ($typeProperty -and $typeProperty.Value -eq 'data' -and $sha1Property -and $sha1Property.Value) {
                 $dataTrackSha1 = [string]$sha1Property.Value
                 if ($sha1ToDisc.ContainsKey($dataTrackSha1)) {
-                    $disc = $sha1ToDisc[$dataTrackSha1]
+                    # Releases can share a data track but have different audio
+                    # Match the longest physical-track prefix, then the source label
+                    $candidates = @($sha1ToDisc[$dataTrackSha1] | ForEach-Object {
+                            $candidate = $_
+                            $matchingTracks = 0
+                            foreach ($candidateTrack in @($candidate.tracks | Sort-Object track)) {
+                                $actual = @($tracks | Where-Object { $_.PSObject.Properties['track'] -and $_.PSObject.Properties['type'] -and $_.track -eq $candidateTrack.track -and $_.type -ceq $candidateTrack.type })
+                                if ($actual.Count -ne 1 -or $actual[0].sha1 -cne $candidateTrack.sha1) { break }
+                                $matchingTracks++
+                            }
+                            [pscustomobject]@{ Disc = $candidate; Matches = $matchingTracks; SourceLabel = [int]((Get-JsonPropertyValue $candidate 'label') -ceq $dir.Name) }
+                        } | Sort-Object @{ Expression = 'Matches'; Descending = $true }, @{ Expression = 'SourceLabel'; Descending = $true })
+                    $disc = $candidates[0].Disc
                     $discId = $disc.id
                     $game = $disc.game
                     $audioTracks = @($disc.tracks | Where-Object { $_.type -eq 'audio' }).Count
@@ -284,6 +296,9 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         }
     }
     if (-not $discId) {
+        if ((Test-Path -LiteralPath $specPath) -and (Get-JsonPropertyValue (Read-JsoncFile $specPath) 'disc_id')) {
+            throw "$($dir.Name): known disc identity was lost; refresh the track catalog before regenerating specs"
+        }
         Write-Host "  WARN $($dir.Name): not found in known_discs" -ForegroundColor Yellow
     }
 

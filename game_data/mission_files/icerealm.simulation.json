@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 8,
-    "timeout": 1
+    "ok": 9
   },
   "levels": [
     {
@@ -100,7 +99,7 @@
       "level_num": 3,
       "level_file": "towers.rdl",
       "route_input_sha256": "880316E9905588C0C9F970B93478D5F505BD5AE7DB7B190D86D676BD94FE2D80",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -109,14 +108,34 @@
         {
           "n": "blue key",
           "s": 2
+        },
+        {
+          "n": "gold key",
+          "s": 72
+        },
+        {
+          "n": "red key",
+          "s": 125
+        },
+        {
+          "n": "reactor",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 167
         }
       ],
-      "total_frames": 4915,
+      "total_frames": 10004,
       "rng_end": {
-        "state": 1946939785,
-        "calls": 1336
+        "state": 917813531,
+        "calls": 4078
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 28.233322,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,

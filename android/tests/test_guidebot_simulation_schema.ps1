@@ -230,7 +230,19 @@ foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotL
     . ([scriptblock]::Create($definition.Extent.Text))
 }
 $missionRoot = Join-Path $repoRoot "android\temp\empty_simulation_$([guid]::NewGuid().ToString('N'))"
+& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $missionRoot
 New-Item -ItemType Directory -Path $missionRoot | Out-Null
+$stablePath = Join-Path $missionRoot 'unchanged.simulation.json'
+$legacyText = $json1.Replace('  ', "`t").Replace("`n", "`r`n")
+[IO.File]::WriteAllText($stablePath, $legacyText, [Text.UTF8Encoding]::new($false))
+$originalWriteTime = ([datetime]'2001-01-01T00:00:00Z').ToUniversalTime()
+[IO.File]::SetLastWriteTimeUtc($stablePath, $originalWriteTime)
+Write-GuidebotSimulationJson -Path $stablePath -Value $record
+Assert-True ([IO.File]::ReadAllText($stablePath) -ceq $legacyText -and
+    [IO.File]::GetLastWriteTimeUtc($stablePath) -eq $originalWriteTime) 'Equivalent simulation output must preserve file bytes and modification time'
+Write-GuidebotSimulationJson -Path $stablePath -Value $partialRecord
+Assert-True ([IO.File]::ReadAllText($stablePath) -ceq (ConvertTo-GuidebotNormalizedJsonText $partialRecord)) `
+    'Changed simulation output must use the shared normalizer'
 $Mode = 'Headless'
 foreach ($arrayRoot in @($false, $true)) {
     $metadataPath = Join-Path $missionRoot "$arrayRoot.json"
@@ -239,7 +251,7 @@ foreach ($arrayRoot in @($false, $true)) {
     Write-GuidebotSimulationJson -Path $metadataPath -Value $value
     Write-GuidebotSimulationFile -MetadataFile (Get-Item -LiteralPath $metadataPath) `
         -ResultsByIdentity @{} -Destination $outputPath
-    $written = @(Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json)
+    $written = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $outputPath -Raw))
     Assert-True ($written.Count -eq $(if ($arrayRoot) { 2 } else { 1 })) 'finalization lost empty mission entries'
     foreach ($entry in $written) {
         Assert-True ($entry.status -eq 'failed' -and $entry.levels.Count -eq 0) 'finalization misreported empty metadata'
@@ -267,7 +279,7 @@ $updated.status = 'timeout'
 Write-GuidebotSimulationFile -MetadataFile (Get-Item $collectionMetadata) -Destination $collectionOutput `
     -ResultsByIdentity @{ 'collection.json|0|1|fixture-1.rl2' = $updated }
 Write-GuidebotSimulationFile -MetadataFile (Get-Item $collectionMetadata) -Destination $collectionOutput -ResultsByIdentity @{}
-$published = @(Get-Content $collectionOutput -Raw | ConvertFrom-Json)
+$published = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content $collectionOutput -Raw))
 Assert-True ($published.Count -eq 2 -and $published[0].levels[0].status -eq 'timeout') `
     'Repeated publication did not retain the latest collection result'
 Assert-True ((ConvertTo-GuidebotNormalizedJsonText $published[1]) -ceq $untouched) `

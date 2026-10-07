@@ -90,7 +90,7 @@
     },
     {
         "action": "write_config",
-        "file": "${GAME}x-redux/demos/controller-test.dem",
+        "file": "${GAME}x-redux/demos/000-controller-test.dem",
         "content": "controller menu deletion fixture\n",
     },
     {
@@ -294,6 +294,7 @@
         "axes": {
             "LS_Y": 1,
         },
+        "tap_axes": true,
     },
     {
         "action": "assert",
@@ -423,6 +424,7 @@
         "axes": {
             "LS_Y": 1,
         },
+        "tap_axes": true,
     },
     {
         "action": "controller_input",
@@ -487,6 +489,7 @@
         "axes": {
             "RS_Y": 1,
         },
+        "tap_axes": true,
     },
     {
         "action": "controller_input",
@@ -675,10 +678,14 @@
         "post_delay_ms": 200,
         "timeout_ms": 5000,
     },
+    // Select and verify the owned fixture before destructive controller shortcuts
+    { "action": "key", "key": "home", "post_delay_ms": 100 },
     {
         "action": "assert",
         "expect": {
             "menu.type": "listbox",
+            "menu.selected_index": 0,
+            "menu.items[0].text": { "contains": "000-controller-test" },
             "menu.title": {
                 "contains": "X: delete",
             },
@@ -745,7 +752,7 @@
         "action": "assert",
         "expect": {
             "menu.type": "listbox",
-            "menu.num_items": 0,
+            "menu.items": { "not_contains": "000-controller-test" },
         },
     },
     {
@@ -891,6 +898,9 @@
         "text": "${MISSION}",
         "post_delay_ms": 300,
         "timeout_ms": 10000,
+        // Hosting skips the picker when only the base mission is installed
+        // The next Load Preset action still requires the Game Setup screen
+        "optional": true,
     },
     {
         "action": "select",
@@ -1080,7 +1090,7 @@
     {
         "action": "assert",
         "expect": {
-            "raw_joy_axis[0]": {
+            "controller_commands.slide_lr": {
                 "gt": 0,
             },
         },
@@ -1205,6 +1215,7 @@
         "axes": {
             "RS_Y": 1,
         },
+        "tap_axes": true,
         "when": "d2",
     },
     {

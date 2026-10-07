@@ -276,7 +276,7 @@
           "presentation": {
             "status": "present",
             "file": "zoo.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -419,7 +419,7 @@
           "presentation": {
             "status": "present",
             "file": "deneb.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -565,7 +565,7 @@
           "presentation": {
             "status": "present",
             "file": "escape3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -684,7 +684,7 @@
           "presentation": {
             "status": "present",
             "file": "remors11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -816,7 +816,7 @@
           "presentation": {
             "status": "present",
             "file": "epsilon.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1037,7 +1037,7 @@
           "presentation": {
             "status": "present",
             "file": "chapel.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1235,7 +1235,7 @@
           "presentation": {
             "status": "present",
             "file": "alpha-h.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1460,7 +1460,7 @@
           "presentation": {
             "status": "present",
             "file": "zoo.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1704,7 +1704,7 @@
           "presentation": {
             "status": "present",
             "file": "dropshf8.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1918,7 +1918,7 @@
           "presentation": {
             "status": "present",
             "file": "badland.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2061,7 +2061,7 @@
           "presentation": {
             "status": "present",
             "file": "nowhere.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

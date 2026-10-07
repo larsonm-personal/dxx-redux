@@ -51,11 +51,14 @@
         "action": "assert",
         "expect": {
             "active_set": "automation-demo-group",
-            "content_entries[0].kind": "demo",
-            "content_entries[1].kind": "demo",
-            "content_entries[1].files[0]": "demos/automation_input.dem",
-            "content_entries[1].files[1]": "demos/automation_input.dximdemo",
-            "content_entries[1].files[2]": "demos/automation_input.dximdemo.rngtrace.jsonl",
+            "content_entries_by_id.d09a92ef2576e7555c480d19.kind": "demo",
+            "content_entries_by_id.d09a92ef2576e7555c480d19.files": ["demos/automation_classic.dem"],
+            "content_entries_by_id.71e5fc5e34122c947ec74900.kind": "demo",
+            "content_entries_by_id.71e5fc5e34122c947ec74900.files": [
+                "demos/automation_input.dem",
+                "demos/automation_input.dximdemo",
+                "demos/automation_input.dximdemo.rngtrace.jsonl",
+            ],
         },
     },
 

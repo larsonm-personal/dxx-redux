@@ -312,7 +312,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -427,7 +427,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -556,7 +556,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -708,7 +708,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_04.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -851,7 +851,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -994,7 +994,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_06.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1137,7 +1137,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_07.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1307,7 +1307,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_08.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1450,7 +1450,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_09.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1593,7 +1593,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1736,7 +1736,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1879,7 +1879,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_12.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2022,7 +2022,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_13.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2165,7 +2165,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_14.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2308,7 +2308,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_15.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2451,7 +2451,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_16.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2594,7 +2594,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_17.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2746,7 +2746,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_18.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2889,7 +2889,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_19.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3072,7 +3072,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_20.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3215,7 +3215,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_21.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3358,7 +3358,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_22.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3528,7 +3528,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3671,7 +3671,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -3814,7 +3814,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4593,7 +4593,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_01.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4708,7 +4708,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_02.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4837,7 +4837,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_03.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -4989,7 +4989,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_04.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5132,7 +5132,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_05.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5275,7 +5275,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_06.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5418,7 +5418,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_07.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5588,7 +5588,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_08.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5731,7 +5731,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_09.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -5874,7 +5874,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6017,7 +6017,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_11.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6160,7 +6160,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_12.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6303,7 +6303,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_13.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6446,7 +6446,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_14.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6589,7 +6589,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_15.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6732,7 +6732,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_16.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -6875,7 +6875,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_17.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7027,7 +7027,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_18.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7170,7 +7170,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_19.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7353,7 +7353,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_20.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7496,7 +7496,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_21.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7639,7 +7639,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_22.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7809,7 +7809,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -7952,7 +7952,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -8095,7 +8095,7 @@
           "presentation": {
             "status": "present",
             "file": "lv2_s3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

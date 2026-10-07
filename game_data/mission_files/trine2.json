@@ -214,7 +214,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m1.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -329,7 +329,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m2.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -458,7 +458,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m3.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -601,7 +601,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m4.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -771,7 +771,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m5.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -870,7 +870,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m6.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1013,7 +1013,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m7.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1156,7 +1156,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m8.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1325,7 +1325,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m9.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1458,7 +1458,7 @@
           "presentation": {
             "status": "present",
             "file": "e2m10.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

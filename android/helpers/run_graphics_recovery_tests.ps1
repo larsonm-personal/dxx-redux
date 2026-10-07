@@ -192,8 +192,11 @@ try {
             }
             $elapsed = [int]$timer.ElapsedMilliseconds
             $restoreElapsed = if ($restoreTimer) { [int]$restoreTimer.ElapsedMilliseconds } else { $null }
-            if ($faultName -eq 'rebuild_failure' -and ($restoreElapsed -lt 1800 -or $restoreElapsed -gt 4000)) {
-                throw "Repeated rebuilds postponed the three-second restore watchdog: $restoreElapsed ms"
+            $logs = Invoke-Device @('logcat', '-d')
+            $logs | Set-Content (Join-Path $outputDirectory "$caseName-logcat.txt") -Encoding utf8NoBOM
+            # Resolution rollback uses the ten-second context-rebuild watchdog in graphicsRestoreTimeoutMs
+            if ($faultName -eq 'rebuild_failure' -and ($restoreElapsed -lt 8800 -or $restoreElapsed -gt 11000)) {
+                throw "Repeated rebuilds did not honor the ten-second restore watchdog: $restoreElapsed ms"
             }
             if ($faultName -eq 'stall' -and ($elapsed -lt 6500 -or $elapsed -gt 11500)) {
                 throw "Stall recovery did not honor the five-second deadline plus three-second watchdog: $elapsed ms"
@@ -208,8 +211,6 @@ try {
                 Assert-MirroredConfig $restartExpected
             }
             $after | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $outputDirectory "$caseName-after.json") -Encoding utf8NoBOM
-            $logs = Invoke-Device @('logcat', '-d')
-            $logs | Set-Content (Join-Path $outputDirectory "$caseName-logcat.txt") -Encoding utf8NoBOM
             if ($faultName -eq 'activity_replaced') {
                 if ($logs -notmatch 'automation recreate activity=' -or $logs -notmatch 'changing_config=true' -or
                     $logs -notmatch 'restored=true') { throw 'Missing actual Activity replacement lifecycle evidence' }
@@ -295,6 +296,20 @@ try {
     }
     $results | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $outputDirectory 'results.json') -Encoding utf8NoBOM
     Write-Output "Graphics recovery tests passed; output: $outputDirectory"
+} catch {
+    $failure = $_
+    # Preserve restart failures too, before the outer runner releases the emulator
+    try {
+        Adb-Dev-Timeout -Serial $Serial -Seconds 15 -AdbArgs @('logcat', '-d') |
+            Set-Content (Join-Path $outputDirectory "$caseName-failure-logcat.txt") -Encoding utf8NoBOM
+        foreach ($name in @('introspect.json', 'setup_introspect.json', 'graphics_safety.json')) {
+            try {
+                Read-DeviceJson "files/$name" | ConvertTo-Json -Depth 60 |
+                    Set-Content (Join-Path $outputDirectory "$caseName-failure-$name") -Encoding utf8NoBOM
+            } catch { Write-Warning "Could not capture ${name}: $($_.Exception.Message)" }
+        }
+    } catch { Write-Warning "Could not capture recovery failure: $($_.Exception.Message)" }
+    throw $failure
 } finally {
     Restore-FaultPermissions
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }

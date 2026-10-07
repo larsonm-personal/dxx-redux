@@ -15,11 +15,13 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path "$scriptDir\..\..").Path
 $serverDir = Join-Path $repoRoot "server"
 $serverManifest = Join-Path $serverDir "Cargo.toml"
+# The suite may already serve clients from target/debug on Windows
+$testTarget = Join-Path $repoRoot "android/temp/server-integration-target"
 
 Write-Host "=== Server Integration Test ==="
 Write-Host "Building server..."
 
-$buildOut = cargo build --manifest-path $serverManifest 2>&1
+$buildOut = cargo build --manifest-path $serverManifest --target-dir $testTarget 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Server build failed:"
     $buildOut | ForEach-Object { Write-Host $_ }
@@ -31,7 +33,7 @@ Write-Host "Server build OK"
 # any module unit tests added later.
 Write-Host ""
 Write-Host "Running server tests..."
-$testOut = cargo test --manifest-path $serverManifest 2>&1
+$testOut = cargo test --manifest-path $serverManifest --target-dir $testTarget 2>&1
 $testExitCode = $LASTEXITCODE
 $testOut | ForEach-Object { Write-Host $_ }
 if ($testExitCode -ne 0) {

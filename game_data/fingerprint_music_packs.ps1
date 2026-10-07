@@ -27,7 +27,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
-. "$repoRoot\android\helpers\atomic_text_file.ps1"
+. "$repoRoot\android\helpers\normalized_json_text.ps1"
 . "$repoRoot\android\helpers\powershell_compat.ps1"
 . "$repoRoot\android\helpers\fingerprint_source_identity.ps1"
 
@@ -467,7 +467,7 @@ foreach ($archive in $archives) {
     $lines += "  ]"
     $lines += "}"
 
-    Write-Utf8NoBomTextAtomically -Path $infoFile -Text ($lines -join "`n")
+    Write-NormalizedJsoncFile -Path $infoFile -Text ($lines -join "`n")
     Write-Host "  Wrote $infoFile"
 }
 

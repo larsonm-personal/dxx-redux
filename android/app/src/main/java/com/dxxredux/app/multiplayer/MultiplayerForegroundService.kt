@@ -54,6 +54,7 @@ class MultiplayerForegroundService : Service() {
     @SuppressLint("WakelockTimeout")
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "Service created")
         wakeLock =
             getSystemService(PowerManager::class.java)
                 ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "$packageName:multiplayer")
@@ -73,6 +74,10 @@ class MultiplayerForegroundService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
+        Log.d(
+            TAG,
+            "Service command: action=${intent?.action} startId=$startId game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}",
+        )
         ensureChannel()
         when (intent?.action) {
             ACTION_START_GAME -> {
@@ -101,8 +106,9 @@ class MultiplayerForegroundService : Service() {
             }
         }
         if (!serviceLeases.active) {
-            removeForegroundNotification()
-            stopSelf()
+            Log.d(TAG, "Stopping idle service: startId=$startId")
+            // A newer queued start must keep both the service and notification
+            if (stopSelfResult(startId)) removeForegroundNotification()
             return START_NOT_STICKY
         }
         showForegroundNotification()
@@ -125,6 +131,7 @@ class MultiplayerForegroundService : Service() {
                 .setOngoing(true)
                 .build()
         startForeground(NOTIFICATION_ID, notification)
+        Log.d(TAG, "Foreground notification active: game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}")
     }
 
     private fun removeForegroundNotification() {
@@ -252,6 +259,7 @@ class MultiplayerForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "Service destroyed: game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}")
         deadline.foreground()
         cancelBackgroundAlarm()
         deadlineHandler.removeCallbacksAndMessages(null)
@@ -316,6 +324,7 @@ class MultiplayerForegroundService : Service() {
             context: Context,
             action: String,
         ) {
+            Log.d(TAG, "Request foreground service: action=$action")
             val intent = Intent(context, MultiplayerForegroundService::class.java).setAction(action)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -325,10 +334,12 @@ class MultiplayerForegroundService : Service() {
         }
 
         fun stop(context: Context) {
+            Log.d(TAG, "Request service stop: action=$ACTION_STOP_GAME")
             context.startService(Intent(context, MultiplayerForegroundService::class.java).setAction(ACTION_STOP_GAME))
         }
 
         fun stopLanSession(context: Context) {
+            Log.d(TAG, "Request service stop: action=$ACTION_STOP_LAN")
             context.startService(Intent(context, MultiplayerForegroundService::class.java).setAction(ACTION_STOP_LAN))
         }
     }

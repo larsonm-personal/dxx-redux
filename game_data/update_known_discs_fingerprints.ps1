@@ -8,13 +8,20 @@
 # The merge is done via text manipulation to preserve comments and formatting.
 #
 # Usage: .\update_known_discs_fingerprints.ps1 [-DryRun]
-param([switch]$DryRun)
+param(
+    [switch]$DryRun,
+    [string]$CdImageDir = (Join-Path $PSScriptRoot 'CD images'),
+    [string]$CatalogPath = (Join-Path $PSScriptRoot '../android/app/src/main/assets/known_discs.jsonc')
+)
 
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
-$CdImgDir = Join-Path $ScriptDir "CD images"
-$JsoncPath = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.jsonc"
+$CdImgDir = $CdImageDir
+$JsoncPath = $CatalogPath
+. (Join-Path $ScriptDir '../android/helpers/jsonc.ps1')
+. (Join-Path $ScriptDir '../android/helpers/normalized_json_text.ps1')
+. (Join-Path $ScriptDir '../android/helpers/atomic_text_file.ps1')
 
 if (-not (Test-Path $JsoncPath)) {
     Write-Error "known_discs.jsonc not found: $JsoncPath"
@@ -57,85 +64,63 @@ if ($fpBySha1.Count -eq 0) {
     exit 0
 }
 
-# -- Helper: build the fields string from a fingerprint entry ----------
-
-function Get-FpFieldsString {
-    param($fp)
-    $parts = @("`"chromaprint`": `"$($fp.chromaprint)`"", "`"duration_ms`": $($fp.duration_ms)")
-    if ($fp.acoustid_name) {
-        $escaped = $fp.acoustid_name -replace '"', '\"'
-        $parts += "`"acoustid_name`": `"$escaped`""
-    }
-    if ($fp.acoustid_album) {
-        $escaped = $fp.acoustid_album -replace '"', '\"'
-        $parts += "`"acoustid_album`": `"$escaped`""
-    }
-    return $parts -join ", "
-}
-
-# -- Process known_discs.jsonc line by line ----------------------------
-# For each audio track line that has a sha1 we have a fingerprint for,
-# add/update chromaprint, duration_ms, acoustid_name, acoustid_album.
-
-$content = Get-Content $JsoncPath -Raw -Encoding UTF8
-$lines = $content -split "`n"
-$modified = 0
-$alreadyPresent = 0
-$newLines = @()
-
-foreach ($line in $lines) {
-    # Match track lines: {"track": N, "type": "audio", "sha1": "..."}
-    # possibly with trailing name, chromaprint, etc
-    if ($line -match '"type"\s*:\s*"audio"' -and $line -match '"sha1"\s*:\s*"([0-9a-f]{40})"') {
-        $sha1 = $Matches[1]
-        if ($fpBySha1.ContainsKey($sha1)) {
-            $fp = $fpBySha1[$sha1]
-            $fieldsStr = Get-FpFieldsString $fp
-
-            # Strip existing fields we're about to re-add
-            $workLine = $line
-            $workLine = $workLine -replace ',\s*"chromaprint"\s*:\s*"[^"]*"', ''
-            $workLine = $workLine -replace ',\s*"duration_ms"\s*:\s*\d+', ''
-            $workLine = $workLine -replace ',\s*"acoustid_name"\s*:\s*"[^"]*"', ''
-            $workLine = $workLine -replace ',\s*"acoustid_album"\s*:\s*"[^"]*"', ''
-
-            # Insert new values before closing }
-            $trailingComma = ""
-            $trimmed = $workLine.TrimEnd()
-            if ($trimmed.EndsWith(",")) {
-                $trailingComma = ","
-                $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
+# Tokenize strings and comments before braces so embedded punctuation cannot
+# change object boundaries. Edit only track objects and preserve catalog comments
+$content = [IO.File]::ReadAllText($JsoncPath)
+$starts = [Collections.Generic.Stack[int]]::new()
+$edits = [Collections.Generic.List[object]]::new()
+$matched = 0
+$tokens = [regex]::Matches($content, '"(?:\\.|[^"\\])*"|//[^\r\n]*|/\*[\s\S]*?\*/|[{}]')
+foreach ($token in $tokens) {
+    if ($token.Value -eq '{') {
+        $starts.Push($token.Index)
+    } elseif ($token.Value -eq '}') {
+        if (-not $starts.Count) { throw 'Unbalanced catalog object' }
+        $start = $starts.Pop()
+        $length = $token.Index + 1 - $start
+        $objectText = $content.Substring($start, $length)
+        $record = ConvertFrom-JsoncText -Text $objectText | ConvertFrom-Json
+        if (-not $record.PSObject.Properties['track'] -or
+            -not $record.PSObject.Properties['type'] -or $record.type -cne 'audio' -or
+            -not $record.PSObject.Properties['sha1'] -or -not $fpBySha1.ContainsKey($record.sha1)) { continue }
+        $matched++
+        $fingerprint = $fpBySha1[$record.sha1]
+        $changed = $false
+        foreach ($name in @('chromaprint', 'duration_ms', 'acoustid_name', 'acoustid_album')) {
+            $property = $record.PSObject.Properties[$name]
+            if ($fingerprint.ContainsKey($name)) {
+                if (-not $property -or $property.Value -cne $fingerprint[$name]) {
+                    $record | Add-Member -NotePropertyName $name -NotePropertyValue $fingerprint[$name] -Force
+                    $changed = $true
+                }
+            } elseif ($property) {
+                $record.PSObject.Properties.Remove($name)
+                $changed = $true
             }
-            if ($trimmed.EndsWith("}")) {
-                $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
-            }
-
-            $newLine = "$trimmed, $fieldsStr}$trailingComma"
-            if ($newLine -ne $line) {
-                $modified++
-            } else {
-                $alreadyPresent++
-            }
-            $newLines += $newLine
-            continue
+        }
+        if ($changed) {
+            $replacement = $record | ConvertTo-Json -Depth 20
+            $comments = @([regex]::Matches($objectText, '"(?:\\.|[^"\\])*"|//[^\r\n]*|/\*[\s\S]*?\*/') |
+                    Where-Object { $_.Value.StartsWith('/') } | ForEach-Object { $_.Value })
+            if ($comments.Count) { $replacement = $replacement.Insert(1, "`n" + ($comments -join "`n") + "`n") }
+            $edits.Add([pscustomobject]@{ Start = $start; Length = $length; Text = $replacement })
         }
     }
-    $newLines += $line
 }
-
-Write-Host "Tracks updated: $modified"
-Write-Host "Already had chromaprint: $alreadyPresent"
-
-if ($modified -eq 0) {
-    Write-Host "Nothing to update"
+if ($starts.Count) { throw 'Unbalanced catalog object' }
+Write-Host "Matched audio tracks: $matched; changed: $($edits.Count)"
+if (-not $edits.Count) {
+    Write-Host 'Disc fingerprints unchanged'
     exit 0
 }
-
 if ($DryRun) {
-    Write-Host "(dry run -- no file written)"
+    Write-Host '(dry run -- no file written)'
     exit 0
 }
-
-$result = $newLines -join "`n"
-[IO.File]::WriteAllText($JsoncPath, $result, [Text.UTF8Encoding]::new($false))
+foreach ($edit in ($edits | Sort-Object Start -Descending)) {
+    $content = $content.Remove($edit.Start, $edit.Length).Insert($edit.Start, $edit.Text)
+}
+$content = ConvertTo-NormalizedJsonText -Text $content -RepositoryJsonc
+$null = ConvertFrom-JsoncText -Text $content | ConvertFrom-Json
+Write-Utf8NoBomTextAtomically -Path $JsoncPath -Text $content
 Write-Host "Wrote $JsoncPath"

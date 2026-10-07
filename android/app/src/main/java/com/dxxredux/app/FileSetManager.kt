@@ -136,7 +136,7 @@ class FileSetManager(
                         listSets().filter { it.name != name }.flatMap { trackedContentUrisForSet(it.name) } +
                             retainedTrackedUris
                     val config = loadConfig()
-                    val sets = config.optJSONArray("sets") ?: return@transaction removed to retained
+                    val sets = config.optJSONArray("sets") ?: JSONArray()
                     val newSets = JSONArray()
                     for (i in 0 until sets.length()) {
                         val obj = sets.getJSONObject(i)

@@ -1,6 +1,8 @@
 [
     {
         "_info": {
+            "_standalone": false,
+            "_owner": "test_launcher_media_controls",
             "description": "Real Android media-key routing for MIDI, CD and MP3 launcher previews",
             "games": ["d2"],
         },

@@ -770,14 +770,30 @@
           {
             "n": "switch 6",
             "s": 47
+          },
+          {
+            "n": "gold key",
+            "s": 80
+          },
+          {
+            "n": "switch 8",
+            "s": 150
+          },
+          {
+            "n": "red key",
+            "s": 213
+          },
+          {
+            "n": "reactor",
+            "s": 271
           }
         ],
-        "total_frames": 6511,
+        "total_frames": 18001,
         "rng_end": {
-          "state": 1114599401,
-          "calls": 6616
+          "state": 1253989076,
+          "calls": 23747
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 300-second simulation budget"
       },
       {
         "level_num": 7,
@@ -8870,17 +8886,17 @@
           },
           {
             "n": "blue key",
-            "s": 34
+            "s": 31
           },
           {
             "n": "fly-through 6",
-            "s": 35
+            "s": 32
           }
         ],
-        "total_frames": 6521,
+        "total_frames": 6343,
         "rng_end": {
-          "state": 3426333753,
-          "calls": 10760
+          "state": 1044861343,
+          "calls": 10314
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -14202,10 +14218,9 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "partial",
+    "status": "ok",
     "level_counts": {
-      "ok": 8,
-      "timeout": 1
+      "ok": 9
     },
     "levels": [
       {
@@ -14296,7 +14311,7 @@
         "level_num": 3,
         "level_file": "towers.rdl",
         "route_input_sha256": "322FA4B28BEE4C9079F7A04EF564974211912824AC13EDA7449399131349FE29",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -14305,14 +14320,34 @@
           {
             "n": "blue key",
             "s": 2
+          },
+          {
+            "n": "gold key",
+            "s": 72
+          },
+          {
+            "n": "red key",
+            "s": 125
+          },
+          {
+            "n": "reactor",
+            "s": 139
+          },
+          {
+            "n": "exit",
+            "s": 167
           }
         ],
-        "total_frames": 4915,
+        "total_frames": 10004,
         "rng_end": {
-          "state": 1946939785,
-          "calls": 1336
+          "state": 917813531,
+          "calls": 4078
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 40.0,
+          "simulated_seconds": 28.233322,
+          "difficulty": 2
+        }
       },
       {
         "level_num": 4,
@@ -15622,19 +15657,15 @@
           },
           {
             "n": "red key",
-            "s": 49
-          },
-          {
-            "n": "reactor",
-            "s": 89
+            "s": 44
           }
         ],
-        "total_frames": 9061,
+        "total_frames": 6284,
         "rng_end": {
-          "state": 1517435028,
-          "calls": 7171
+          "state": 3425656078,
+          "calls": 3001
         },
-        "problem": "route confirmation exceeded 151-second simulation budget"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 5,
@@ -19926,8 +19957,8 @@
         ],
         "total_frames": 10771,
         "rng_end": {
-          "state": 3282411513,
-          "calls": 15432
+          "state": 1842110189,
+          "calls": 13524
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -20058,8 +20089,8 @@
         ],
         "total_frames": 10771,
         "rng_end": {
-          "state": 3282411513,
-          "calls": 15432
+          "state": 1842110189,
+          "calls": 13524
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -20218,17 +20249,17 @@
           },
           {
             "n": "exit",
-            "s": 47
+            "s": 39
           }
         ],
-        "total_frames": 2804,
+        "total_frames": 2343,
         "rng_end": {
-          "state": 1338954136,
-          "calls": 4495
+          "state": 1607040903,
+          "calls": 2914
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 30.199997,
+          "simulated_seconds": 22.516663,
           "difficulty": 2
         }
       }
@@ -25971,8 +26002,8 @@
         "objectives": [],
         "total_frames": 4021,
         "rng_end": {
-          "state": 710314854,
-          "calls": 7745
+          "state": 3004463245,
+          "calls": 7732
         },
         "problem": "route confirmation exceeded 67-second simulation budget"
       }

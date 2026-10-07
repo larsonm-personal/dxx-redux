@@ -532,6 +532,8 @@ internal fun SetupActivity.writeControllerResponseFixture(game: String) {
                 defaultThresholds().toMutableMap().apply {
                     this["LS_X"] = 0
                     this["LS_Y"] = 30
+                    this["RS_X"] = 10
+                    this["RS_Y"] = 10
                     this["LT"] = 10
                     this["RT"] = 10
                 },

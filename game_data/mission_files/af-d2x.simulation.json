@@ -303,14 +303,30 @@
         {
           "n": "switch 6",
           "s": 47
+        },
+        {
+          "n": "gold key",
+          "s": 80
+        },
+        {
+          "n": "switch 8",
+          "s": 150
+        },
+        {
+          "n": "red key",
+          "s": 213
+        },
+        {
+          "n": "reactor",
+          "s": 271
         }
       ],
-      "total_frames": 6511,
+      "total_frames": 18001,
       "rng_end": {
-        "state": 1114599401,
-        "calls": 6616
+        "state": 1253989076,
+        "calls": 23747
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 300-second simulation budget"
     },
     {
       "level_num": 7,

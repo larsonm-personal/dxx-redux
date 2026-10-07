@@ -141,5 +141,10 @@ internal fun dispatchControllerAutomationInput(
         } finally {
             event.recycle()
         }
+        // Menu taps must release before returning to the frame-driven script
+        // Otherwise a slow frame can turn a single navigation check into a hold
+        if (step.optBoolean("tap_axes")) {
+            dispatchControllerAutomationInput(JSONObject().put("axes", JSONObject()), sendKey, sendMotion)
+        }
     }
 }

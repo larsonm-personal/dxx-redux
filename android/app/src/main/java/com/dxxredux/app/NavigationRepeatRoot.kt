@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.hardware.input.InputManager
 import android.os.SystemClock
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -60,8 +61,22 @@ internal fun Modifier.repeatDpadKeys(): Modifier =
             onDispose { inputs.unregisterInputDeviceListener(listener) }
         }
         DisposableEffect(view, windowFocused) {
+            if (BuildConfig.DEBUG) {
+                Log.d(
+                    "DXX-NavRepeat",
+                    "window=${System.identityHashCode(view)} focused=$windowFocused",
+                )
+            }
             if (!windowFocused) dispatcher.releaseAll()
-            onDispose { dispatcher.releaseAll() }
+            onDispose {
+                if (BuildConfig.DEBUG) {
+                    Log.d(
+                        "DXX-NavRepeat",
+                        "window=${System.identityHashCode(view)} dispose focused=$windowFocused",
+                    )
+                }
+                dispatcher.releaseAll()
+            }
         }
         this
             .pointerInput(dispatcher) {
@@ -76,6 +91,13 @@ internal fun Modifier.repeatDpadKeys(): Modifier =
                     if (native.action == KeyEvent.ACTION_DOWN) dispatcher.releaseAll()
                     return@onPreviewKeyEvent false
                 }
+                if (BuildConfig.DEBUG) {
+                    Log.d(
+                        "DXX-NavRepeat",
+                        "window=${System.identityHashCode(view)} action=${native.action} key=${native.keyCode} " +
+                            "repeat=${native.repeatCount} held=${dispatcher.heldKeyCodes()}",
+                    )
+                }
                 when (native.action) {
                     KeyEvent.ACTION_DOWN -> {
                         val duplicate = native.keyCode in dispatcher.heldKeyCodes() || native.repeatCount > 0
@@ -84,6 +106,13 @@ internal fun Modifier.repeatDpadKeys(): Modifier =
                             var repeatCount = 0
                             val send: (Boolean) -> Unit = { down ->
                                 if (down && repeatCount++ > 0) {
+                                    if (BuildConfig.DEBUG) {
+                                        Log.d(
+                                            "DXX-NavRepeat",
+                                            "window=${System.identityHashCode(view)} tick=$repeatCount " +
+                                                "attached=${view.isAttachedToWindow} focused=${view.hasWindowFocus()}",
+                                        )
+                                    }
                                     if (view.isAttachedToWindow && view.hasWindowFocus()) {
                                         redispatching = true
                                         try {

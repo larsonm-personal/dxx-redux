@@ -246,6 +246,13 @@ function Get-CleanupTreeInfo {
                 $stack.Push($child)
             }
         } else {
+            if ($AllowEmulatorLockMarkers -and $item.Name -eq 'config.ini' -and
+                (Select-String -LiteralPath $item.FullName -Pattern '^\s*image\.sysdir\.\d+\s*=' -Quiet)) {
+                # AVD registrations outside scratch still reference this small configuration
+                $errorRecord = [InvalidOperationException]::new("Preserving emulator configuration: $($item.FullName)")
+                $errorRecord.Data['CleanupProtectedFile'] = $item.FullName
+                throw $errorRecord
+            }
             $bytes += $item.Length
             $count++
         }
@@ -331,6 +338,7 @@ function Add-TemporaryCandidate {
             # A protected subtree must not strand unrelated siblings in a collection
             $lockedDirectory = $_.Exception.Data['CleanupProtectedDirectory']
             $descend = $Item.PSIsContainer -and ($_.Exception.Message -match 'containing a (link|nested repository)' -or
+                $_.Exception.Data['CleanupProtectedFile'] -or
                 ($lockedDirectory -and -not $Item.FullName.Equals($lockedDirectory, $comparison)))
         }
     }
@@ -510,7 +518,9 @@ if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($Repo
 }
 Write-Host 'Reading Git protection list'
 Update-ProtectedPaths
-if (-not $dryRun) { Assert-CleanupIdle }
+# Scoped producer discovery is read-only and may find nothing to delete
+# Every deletion below still requires idle processes and a fresh path check
+if (-not $dryRun -and -not $Producer) { Assert-CleanupIdle }
 if ($PayloadsOnly) { Find-RegressionPayloads }
 if (-not $BuildsOnly -and -not $PayloadsOnly) { Find-TemporaryFiles }
 $roots = [Collections.Generic.List[object]]::new()

@@ -208,7 +208,8 @@ Write-Host "Connected" -ForegroundColor Green
 $devToken = "dev-bot-$([guid]::NewGuid().ToString())"
 $authMsg = @{
     type = "AUTHENTICATE"
-    protocol_version = 1
+    # Keep in sync with server/src/protocol.rs and NetworkConstants.kt
+    protocol_version = 2
     client_version = "bot-0.1.0"
     play_games_token = $devToken
     callsign = $Callsign
@@ -265,7 +266,7 @@ switch ($Action) {
                 Write-Host "Lobbies ($($resp.lobbies.Count)):" -ForegroundColor Green
                 foreach ($lobby in $resp.lobbies) {
                     $joinable = if ($lobby.joinable) { "joinable" } else { "full" }
-                    Write-Host "  $($lobby.host_callsign) - $($lobby.mission) ($($lobby.mode)) [$($lobby.player_count)/$($lobby.max_players)] $joinable"
+                    Write-Host "  $($lobby.host_callsign) - $($lobby.game_info.mission) ($($lobby.game_info.mode)) [$($lobby.player_count)/$($lobby.max_players)] $joinable"
                 }
             }
         }
@@ -276,8 +277,7 @@ switch ($Action) {
         $createMsg = @{
             type = "CREATE_LOBBY"
             game = $Game
-            mission = $Mission
-            mode = "anarchy"
+            game_info = @{ mission = $Mission; mode = "anarchy" }
             max_players = 4
         }
         $resp = Send-AndReceive -Ws $ws -Msg $createMsg
@@ -286,11 +286,13 @@ switch ($Action) {
             Write-Host "Players: $($resp.players.Count)" -ForegroundColor Green
             # Verify our lobby appears in the lobby list
             $listResp = Send-AndReceive -Ws $ws -Msg @{ type = "LIST_LOBBIES" }
-            if ($listResp.type -eq "LOBBY_LIST" -and $listResp.lobbies.Count -gt 0) {
-                Write-Host "PASS: Lobby visible in list ($($listResp.lobbies.Count) lobbies)" -ForegroundColor Green
-            } else {
-                Write-Host "WARNING: Created lobby not visible in list" -ForegroundColor Yellow
+            $ownLobby = @($listResp.lobbies | Where-Object { $_.lobby_id -eq $resp.lobby_id })
+            if ($listResp.type -ne "LOBBY_LIST" -or $ownLobby.Count -ne 1 -or
+                $ownLobby[0].game -ne $Game -or $ownLobby[0].game_info.mission -ne $Mission -or
+                $ownLobby[0].game_info.mode -ne 'anarchy') {
+                throw 'Created lobby or its game configuration was not preserved in the lobby list'
             }
+            Write-Host "PASS: Lobby and game configuration visible in list" -ForegroundColor Green
         } elseif ($resp.type -eq "ERROR") {
             Write-Host "FAIL: Lobby creation failed: $($resp.code) - $($resp.message)" -ForegroundColor Red
             exit 1

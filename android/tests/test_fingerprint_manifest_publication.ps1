@@ -10,6 +10,7 @@ $powershellPath = (Get-Process -Id $PID).Path
 . (Join-Path $repoRoot 'android\helpers\jsonc.ps1')
 . (Join-Path $repoRoot 'android\helpers\atomic_text_file.ps1')
 . (Join-Path $repoRoot 'android\helpers\powershell_compat.ps1')
+. (Join-Path $repoRoot 'android\helpers\normalized_json_text.ps1')
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -34,12 +35,14 @@ function Invoke-Workflow {
 }
 
 function Invoke-MissionWorkflow {
-    param([string]$Mode)
+    param([string]$Mode, [switch]$Force)
 
     $env:DXX_FINGERPRINT_MANIFEST_TEST_MODE = $Mode
-    $output = & $powershellPath -NoProfile -File $missionWorkflow `
-        -SkipBuild -SkipAcoustId -MissionDir $missionRoot -OutputRoot $missionOutput `
-        -FingerprintExePath $fakeAudio 2>&1
+    $arguments = @('-NoProfile', '-File', $missionWorkflow,
+        '-SkipBuild', '-SkipAcoustId', '-MissionDir', $missionRoot,
+        '-OutputRoot', $missionOutput, '-FingerprintExePath', $fakeAudio)
+    if ($Force) { $arguments += '-Force' }
+    $output = & $powershellPath @arguments 2>&1
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0 -and $Mode -ne 'mission_partial') {
         $output | ForEach-Object { Write-Host $_ }
@@ -116,7 +119,8 @@ if ($mode -eq 'error_zero') {
     Write-Output "{`"track`":2,`"type`":`"audio`",`"sha1`":`"$sha1`",`"error`":`"failed`"}"
     exit 0
 }
-Write-Output "{`"track`":2,`"type`":`"audio`",`"sha1`":`"$sha1`",`"chromaprint`":`"fingerprint`",`"duration_ms`":120000}"
+$fingerprint = if ($mode -eq 'changed') { 'changed-fingerprint' } else { 'fingerprint' }
+Write-Output "{`"track`":2,`"type`":`"audio`",`"sha1`":`"$sha1`",`"chromaprint`":`"$fingerprint`",`"duration_ms`":120000}"
 exit 0
 '@
     [IO.File]::WriteAllText($fakeInner, $fakeBody, [Text.UTF8Encoding]::new($false))
@@ -141,6 +145,33 @@ exit 0
         'A complete result should publish every expected track'
     Assert-True (@(Get-ChildItem -LiteralPath $discDir -Filter '*.tmp').Count -eq 0) `
         'Atomic publication should not leave temporary files'
+
+    $published[1] | Add-Member -NotePropertyName acoustid_name -NotePropertyValue 'Preserved artist - track'
+    $published[1] | Add-Member -NotePropertyName acoustid_album -NotePropertyValue 'Preserved album'
+    $legacyText = (ConvertTo-Json -InputObject $published -Depth 10) -replace '(?m)^  ', "`t"
+    $legacyText = ($legacyText -replace "`r?`n", "`r`n") + "`r`n"
+    [IO.File]::WriteAllText($manifest, $legacyText, [Text.UTF8Encoding]::new($false))
+    $writeTime = ([datetime]'2024-01-02T03:04:05Z').ToUniversalTime()
+    [IO.File]::SetLastWriteTimeUtc($manifest, $writeTime)
+    Assert-True ((Invoke-Workflow -Mode 'success' -Force) -eq 0) `
+        'Forced offline regeneration should preserve successful matching identifications'
+    Assert-True ([IO.File]::ReadAllText($manifest) -ceq $legacyText -and
+        [IO.File]::GetLastWriteTimeUtc($manifest) -eq $writeTime) `
+        'Equivalent forced output must preserve cached labels, tabs/CRLF bytes and modification time'
+    $published[1].sha1 = '2' * 40
+    [IO.File]::WriteAllText($manifest, (ConvertTo-Json -InputObject $published -Depth 10), [Text.UTF8Encoding]::new($false))
+    Assert-True ((Invoke-Workflow -Mode 'success' -Force) -eq 0) `
+        'Corrected physical hashes should refresh successfully'
+    $corrected = @(ConvertFrom-CompatibleJsonItems -Json ([IO.File]::ReadAllText($manifest)))
+    Assert-True ($corrected[1].sha1 -eq ('1' * 40) -and
+        $corrected[1].acoustid_name -eq 'Preserved artist - track') `
+        'A corrected SHA-1 must retain identification for unchanged audio'
+    Assert-True ((Invoke-Workflow -Mode 'changed' -Force) -eq 0) `
+        'Changed audio should regenerate successfully'
+    $changed = @(ConvertFrom-CompatibleJsonItems -Json ([IO.File]::ReadAllText($manifest)))
+    Assert-True (-not $changed[1].PSObject.Properties['acoustid_name'] -and
+        -not $changed[1].PSObject.Properties['acoustid_album']) `
+        'Cached identifications must not cross a changed audio fingerprint'
 
     Assert-True ((Invoke-Workflow -Mode 'must_not_run') -eq 0) `
         'A complete existing manifest should be safely skipped'
@@ -223,6 +254,8 @@ exit 0
     Assert-True ($missionMetadata.complete -ceq $true -and @($missionMetadata.tracks).Count -eq 2) `
         'A complete mission batch should publish every track with a completeness marker'
     $missionText = [IO.File]::ReadAllText($missionInfo)
+    Assert-True ($missionText -ceq (ConvertTo-NormalizedJsonText -Text $missionText -RepositoryJsonc)) `
+        'New soundtrack sidecars must use the repository formatter during generation'
     Assert-True ($missionText.Contains("a's.ogg") -and -not $missionText.Contains('\u0027')) `
         'Mission manifest apostrophe escaping should be canonical across PowerShell hosts'
     $incompleteText = [IO.File]::ReadAllText($missionInfo).Replace('"complete": true', '"complete": false')
@@ -235,6 +268,23 @@ exit 0
         'A complete mission sidecar should be safely skipped'
     Assert-True (-not (Test-Path -LiteralPath $audioMarker)) `
         'Skipping a complete mission sidecar should not invoke the CLI'
+
+    $legacyMissionText = ([IO.File]::ReadAllText($missionInfo) -replace '(?m)^    ', "`t") -replace "`r?`n", "`r`n"
+    [IO.File]::WriteAllText($missionInfo, $legacyMissionText, [Text.UTF8Encoding]::new($false))
+    [IO.File]::SetLastWriteTimeUtc($missionInfo, $writeTime)
+    Assert-True ((Invoke-MissionWorkflow -Mode 'mission_success' -Force) -eq 0) `
+        'Forced soundtrack regeneration should succeed through directory publication'
+    Assert-True ([IO.File]::ReadAllText($missionInfo) -ceq $legacyMissionText -and
+        [IO.File]::GetLastWriteTimeUtc($missionInfo) -eq $writeTime) `
+        'Whole-album publication must preserve equivalent sidecar bytes and modification time'
+    Write-NormalizedJsoncFile -Path $missionInfo -Text $missionText
+    Assert-True ([IO.File]::ReadAllText($missionInfo) -ceq $legacyMissionText -and
+        [IO.File]::GetLastWriteTimeUtc($missionInfo) -eq $writeTime) `
+        'In-place soundtrack publication must also preserve equivalent sidecars'
+    [IO.File]::WriteAllText($missionInfo, '{broken', [Text.UTF8Encoding]::new($false))
+    Write-NormalizedJsoncFile -Path $missionInfo -Text $missionText
+    Assert-True ([IO.File]::ReadAllText($missionInfo) -ceq $missionText) `
+        'A damaged prior sidecar must not prevent publication of valid formatted output'
 
     Write-Host 'fingerprint manifest publication tests passed' -ForegroundColor Green
 } finally {

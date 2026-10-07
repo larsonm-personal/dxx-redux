@@ -8,6 +8,66 @@ import java.io.File
 
 class MissionLaunchCatalogTest {
     @Test
+    fun documentationStaysImportedWhileDeclaredBriefingRemainsLaunchable() {
+        val root = File("build/test-mission-launch/documentation").absoluteFile
+        root.deleteRecursively()
+        root.mkdirs()
+        try {
+            val descriptor =
+                GameFileFormats.parseMissionDescriptor(
+                    "missions/d2data/first.mn2",
+                    "name = First\nnum_levels = 1\nfirst.rl2\nbriefing = briefing.txt\n",
+                )
+            val contents =
+                linkedMapOf(
+                    descriptor.path to "descriptor",
+                    "missions/d2data/first.rl2" to "level",
+                    "missions/d2data/README.TXT" to "disc documentation",
+                    "missions/d2data/briefing.txt" to "mission briefing",
+                )
+            val constituents =
+                contents.map { (path, text) ->
+                    MissionZip.Constituent(
+                        path,
+                        File(path).name,
+                        GameFileFormats.missionZipRoleForFile(path),
+                        text.length.toLong(),
+                        null,
+                    )
+                }
+            val scan =
+                MissionZip.ScanResult(
+                    constituents,
+                    descriptor,
+                    listOf(MissionZip.MissionSet(descriptor, constituents)),
+                    game = "d2",
+                    totalSizeBytes = 0,
+                    importMode = "extracted_bundle",
+                    readmes = constituents.filter { it.name == "README.TXT" },
+                )
+            val files =
+                contents.map { (path, text) ->
+                    File(root, path).apply {
+                        parentFile?.mkdirs()
+                        writeText(text)
+                    }
+                    MissionZipExtractedFile(path, path, text.length.toLong(), missionLaunchHash(text))
+                }
+            val record = MissionZipExtractionRecord("disc", 0, 0, "revision", root, files)
+            val pack = requireNotNull(missionLaunchPackage("disc", scan, record, "d2", false))
+            val catalog = MissionLaunchCatalog(listOf(pack))
+            assertEquals(
+                listOf(descriptor.path, "missions/d2data/first.rl2", "missions/d2data/briefing.txt"),
+                catalog.resourcesFor(pack.missions.single().key).map { it.virtualPath },
+            )
+            assertEquals("disc documentation", File(root, scan.readmes.single().path).readText())
+            assertEquals(4, record.files.size)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
     fun identicalCaseVariantsWithTheSameOwnerPublishOnce() {
         val key = MissionLaunchKey("disc", "missions/first.mn2", "d2")
 

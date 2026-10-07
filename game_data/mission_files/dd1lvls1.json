@@ -289,7 +289,7 @@
           "presentation": {
             "status": "present",
             "file": "vosil.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -432,7 +432,7 @@
           "presentation": {
             "status": "present",
             "file": "piczirmi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -576,7 +576,7 @@
           "presentation": {
             "status": "present",
             "file": "toigol.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -743,7 +743,7 @@
           "presentation": {
             "status": "present",
             "file": "vosil.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -883,7 +883,7 @@
           "presentation": {
             "status": "present",
             "file": "palmi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1026,7 +1026,7 @@
           "presentation": {
             "status": "present",
             "file": "wutermi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1181,7 +1181,7 @@
           "presentation": {
             "status": "present",
             "file": "phytmi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1441,7 +1441,7 @@
           "presentation": {
             "status": "present",
             "file": "junine.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1584,7 +1584,7 @@
           "presentation": {
             "status": "present",
             "file": "atir.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1727,7 +1727,7 @@
           "presentation": {
             "status": "present",
             "file": "ilsilmi.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -1870,7 +1870,7 @@
           "presentation": {
             "status": "present",
             "file": "tokexfa.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {
@@ -2053,7 +2053,7 @@
           "presentation": {
             "status": "present",
             "file": "thortin.txb",
-            "asset_check": "presence_only"
+            "asset_check": "bitmap_validation_model_presence"
           },
           "routes": [
             {

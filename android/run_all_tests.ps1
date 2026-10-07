@@ -409,6 +409,9 @@ $testTimeouts = @{
     "test_graphics_recovery" = 7200
     "test_graphics_preview" = 600
     "test_graphics_first_run" = 3600
+    "test_graphics_video_overlay" = 900
+    "test_ogl_runtime_texture_options_unified" = 900
+    "test_launcher_media_controls" = 300
     "test_acoustid_config_packaging"      = 600
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
@@ -762,6 +765,8 @@ foreach ($t in $ps1Files) {
     } elseif ($name -eq "test_mp") {
         $soakSeconds = if ($ExtendedMultiplayer) { 90 } else { 0 }
         $entry.Arguments = @("-SoakSeconds", $soakSeconds.ToString())
+        # Keep the normal setup/build allowance when adding sustained gameplay
+        $entry.TimeoutSeconds += $soakSeconds
     }
     $allTests += $entry
 }
@@ -917,6 +922,11 @@ if ($ListTests) {
     $catalog | ConvertTo-Json -Depth 6
     exit 0
 }
+
+# Retire task-owned compiler daemons when the suite exits so inherited output
+# handles cannot hold an unattended parent at the tests-to-regeneration handoff
+. (Join-Path $helpersDir 'process_lifetime.ps1')
+Initialize-RegressionProcessLifetime
 
 # Preserve declarations for skipped observations after execution filters
 $evidenceTestsByName = @{}
@@ -1302,7 +1312,10 @@ function Recover-SingleEmulatorEnvironment {
         return $false
     }
 
-    Install-AppAndData -Serial $serial
+    if (-not (Install-AppAndData -Serial $serial)) {
+        Write-Status "Single-emulator recovery failed: app/data provisioning failed" "Red"
+        return $false
+    }
     $SerialRef.Value = $serial
     Write-Status "Single-emulator recovery complete" "Green"
     return $true
@@ -1348,8 +1361,11 @@ function Recover-DualEmulatorEnvironment {
         return $false
     }
 
-    Install-AppAndData -Serial $primarySerial
-    Install-AppAndData -Serial $secondarySerial
+    if (-not (Install-AppAndData -Serial $primarySerial) -or
+        -not (Install-AppAndData -Serial $secondarySerial)) {
+        Write-Status "Dual-emulator recovery failed: app/data provisioning failed" "Red"
+        return $false
+    }
 
     $PrimarySerialRef.Value = $primarySerial
     $SecondarySerialRef.Value = $secondarySerial

@@ -1,12 +1,12 @@
 [
-  {"track": 1, "type": "data", "sha1": "1ee705d8cfd6636dec3d55002927bde3fc9d980e", "files_extracted": 399},
-  {"track": 2, "type": "audio", "sha1": "9c0669a9495407536e440468764f0b6b3dac2269"},
-  {"track": 3, "type": "audio", "sha1": "5f12db79a989be1d943e5836fbf86ef3477bf22b"},
-  {"track": 4, "type": "audio", "sha1": "66555820ad01298554f84701ce32b5172dcd853d"},
-  {"track": 5, "type": "audio", "sha1": "55d9a77f0e843b246da4804ea84aae71211f8f0a"},
-  {"track": 6, "type": "audio", "sha1": "57ff56b7c46cc22b9bab75279f5ddbdcd97c297f"},
-  {"track": 7, "type": "audio", "sha1": "8154446835d16525ff3b2ea5dee5ec614d163bf1"},
-  {"track": 8, "type": "audio", "sha1": "0de82a7c3412223db93658710248664c42d76fec"},
-  {"track": 9, "type": "audio", "sha1": "24df677d84b3c063f904fd9b88c8f3ce1ee6e15f"},
+  {"track": 1, "type": "data", "sha1": "5962d77e2315b0c1d89853d6b2934cddeba01870", "files_extracted": 399},
+  {"track": 2, "type": "audio", "sha1": "f2a8b7f16137aed107ee07e8ff63291ab4467149"},
+  {"track": 3, "type": "audio", "sha1": "762a4996602a76707e751a1626b428b72378107f"},
+  {"track": 4, "type": "audio", "sha1": "43cc665289e73ad5c1c73274ae1cd0ec8717a7ad"},
+  {"track": 5, "type": "audio", "sha1": "d54133cefb91c1fc7846b79f358299e317a61d90"},
+  {"track": 6, "type": "audio", "sha1": "c1a651775a81c926ecf6cdcd15a3f1c43b6f51be"},
+  {"track": 7, "type": "audio", "sha1": "d4a81a456c5cc87159175c0418c51aafb1044539"},
+  {"track": 8, "type": "audio", "sha1": "c778332bcdb3c7d43fedbf7c613a4da033a444cd"},
+  {"track": 9, "type": "audio", "sha1": "5694409bb9f6e8689f9b1dcdad5821e27a27efba"},
   {"sow": "d2data/descent2.sow", "files_extracted": 34}
 ]

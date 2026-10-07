@@ -19,6 +19,7 @@ try {
         throw 'Controller slider navigation instrumentation failed'
     }
 } finally {
+    Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-SliderTest:I', 'DXX-NavRepeat:D', 'AndroidRuntime:E') | Write-Output
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

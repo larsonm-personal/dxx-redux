@@ -15,6 +15,7 @@ try {
     if ($result -notmatch 'PASS: migrated lobby adoption and former-host rejoin' -or
         $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') { throw 'Co-op session instrumentation failed' }
 } finally {
+    Adb -AdbArgs @('logcat', '-b', 'all', '-d', '-s', 'MultiplayerForeground:D', 'LobbyService:I', 'AndroidRuntime:E', 'ActivityManager:I') | Write-Output
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

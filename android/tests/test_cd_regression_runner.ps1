@@ -31,16 +31,18 @@ $fileOnlyStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -SkipLaunch)
 Assert-True ($fileOnlyStages[3].Arguments -contains '-SkipLaunch') 'Explicit file-only mode should skip game launches'
 
 $refreshStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -RefreshOracle)
-Assert-True ($refreshStages.Count -eq 5) 'Oracle refresh workflow should contain five stages'
-Assert-True ($refreshStages[2].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
-Assert-True ($refreshStages[2].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
+Assert-True ($refreshStages.Count -eq 6) 'Oracle refresh workflow should contain six stages'
+Assert-True ($refreshStages[2].Name -eq 'Refresh disc track catalog') 'Track catalog must refresh before generating specs'
+Assert-True ($refreshStages[3].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
+Assert-True ($refreshStages[3].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
 
 $sampleListPath = Join-Path $repoRoot 'android\temp\cd_sample_specs.txt'
 $sampleStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -RefreshOracle -SpecListPath $sampleListPath)
 Assert-True ($sampleStages[0].Arguments -contains $sampleListPath -and
     $sampleStages[1].Arguments -contains $sampleListPath -and
     $sampleStages[2].Arguments -contains $sampleListPath -and
-    $sampleStages[4].Arguments -contains $sampleListPath) `
+    $sampleStages[3].Arguments -contains $sampleListPath -and
+    $sampleStages[5].Arguments -contains $sampleListPath) `
     'Sampled CD workflow should use one spec list for extraction, oracle refresh, and tests'
 $sampledSpecs = @(New-CdRegressionSampleList -RepoRoot $repoRoot -Fraction 0.1 -Seed 123)
 $sampledTypes = @($sampledSpecs | ForEach-Object { (Read-JsoncFile $_).source_type } | Sort-Object -Unique)
@@ -62,6 +64,92 @@ New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 $producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 
 try {
+    $cdRoot = Join-Path $tempRoot 'CD images'
+    $discRoot = Join-Path $cdRoot 'Descent II (USA) (v1.1)'
+    New-Item -ItemType Directory -Path $discRoot -Force | Out-Null
+    $catalogPath = Join-Path $tempRoot 'known_discs.jsonc'
+    $oldDataHash = '1' * 40
+    $oldAudioHash = '2' * 40
+    $newDataHash = '3' * 40
+    $newAudioHash = '4' * 40
+    $catalog = @{
+        discs = @(@{
+                id = 'descent-ii-usa-v11'; label = 'Descent II (USA) (v1.1)'; game = 'd2'
+                track_mapping = @{ title = 2 }
+                tracks = @(
+                    @{ track = 1; type = 'data'; sha1 = $oldDataHash }
+                    @{ track = 2; type = 'audio'; sha1 = $oldAudioHash; name = 'Title'; chromaprint = 'fixture'; duration_ms = 1000 }
+                )
+            })
+    }
+    [IO.File]::WriteAllText($catalogPath, "// Preserve curated comments`n" + ($catalog | ConvertTo-Json -Depth 20))
+    [IO.File]::WriteAllText((Join-Path $discRoot 'disc.cue'), "FILE `"disc.bin`" BINARY`n TRACK 01 MODE1/2352`n TRACK 02 AUDIO`n")
+    $manifestPath = Join-Path $discRoot 'track_hashes.json'
+    $tracks = @(@{ track = 1; type = 'data'; sha1 = $newDataHash }, @{ track = 2; type = 'audio'; sha1 = $newAudioHash })
+    [IO.File]::WriteAllText($manifestPath, (ConvertTo-Json -InputObject @($tracks + @{ sow = 'descent2.sow'; files_extracted = 12 })))
+    $publisher = Join-Path $repoRoot 'game_data/hash_disc_tracks.ps1'
+    $pwsh = (Get-Process -Id $PID).Path
+    & $pwsh -NoProfile -File $publisher -Force -CdImageDir $cdRoot -CatalogPath $catalogPath
+    Assert-True ($LASTEXITCODE -eq 0) 'Catalog refresh should succeed'
+    $published = (Read-JsoncFile $catalogPath).discs[0]
+    Assert-True ($published.id -ceq 'descent-ii-usa-v11' -and $published.game -ceq 'd2') 'Refresh must preserve existing disc identity'
+    Assert-True ($published.tracks[0].sha1 -ceq $newDataHash -and $published.tracks[1].sha1 -ceq $newAudioHash) 'Refresh must update data and audio hashes'
+    Assert-True ($published.track_mapping.title -eq 2 -and $published.tracks[1].name -ceq 'Title' -and
+        $published.tracks[1].chromaprint -ceq 'fixture' -and $published.tracks[1].duration_ms -eq 1000) 'Refresh must preserve track metadata'
+    $publishedText = [IO.File]::ReadAllText($catalogPath)
+    Assert-True ($publishedText.Contains('// Preserve curated comments')) 'Refresh must preserve comments'
+    $writeTime = ([datetime]'2001-01-01T00:00:00Z').ToUniversalTime()
+    [IO.File]::SetLastWriteTimeUtc($catalogPath, $writeTime)
+    & $pwsh -NoProfile -File $publisher -Force -CdImageDir $cdRoot -CatalogPath $catalogPath
+    Assert-True ($LASTEXITCODE -eq 0 -and [IO.File]::ReadAllText($catalogPath) -ceq $publishedText -and
+        [IO.File]::GetLastWriteTimeUtc($catalogPath) -eq $writeTime) 'Unchanged catalog must not be written'
+    [IO.File]::WriteAllText($manifestPath, (ConvertTo-Json -InputObject @($tracks[0])))
+    $savedPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $pwsh -NoProfile -File $publisher -Force -CdImageDir $cdRoot -CatalogPath $catalogPath 2>&1 | Out-Null
+    $failedExit = $LASTEXITCODE
+    $ErrorActionPreference = $savedPreference
+    Assert-True ($failedExit -ne 0 -and [IO.File]::ReadAllText($catalogPath) -ceq $publishedText) 'Incomplete tracks must fail without changing the catalog'
+
+    $newDiscRoot = Join-Path $cdRoot 'D1 new disc'
+    New-Item -ItemType Directory -Path $newDiscRoot | Out-Null
+    [IO.File]::WriteAllText((Join-Path $newDiscRoot 'disc.iso'), 'standalone ISO fixture')
+    [IO.File]::WriteAllText((Join-Path $newDiscRoot 'track_hashes.json'), (ConvertTo-Json -InputObject @(@{ track = 1; type = 'data'; sha1 = ('5' * 40) })))
+    $selectedPath = Join-Path $tempRoot 'selected-specs.txt'
+    [IO.File]::WriteAllText($selectedPath, (Join-Path $newDiscRoot 'extract_regression.jsonc'))
+    & $pwsh -NoProfile -File $publisher -Force -CdImageDir $cdRoot -CatalogPath $catalogPath -SpecListPath $selectedPath
+    Assert-True ($LASTEXITCODE -eq 0) 'Selected catalog refresh should not read unselected incomplete manifests'
+    $addedCatalog = Read-JsoncFile $catalogPath
+    Assert-True ($addedCatalog.discs.Count -eq 2 -and $addedCatalog.discs[1].id -ceq 'd1-new-disc' -and
+        $addedCatalog.discs[1].game -ceq 'd1' -and $addedCatalog.discs[1].tracks.Count -eq 1) 'Catalog should append a valid new disc without replacing existing entries'
+
+    # The repository formatter expands track objects over multiple lines
+    $fingerprintPath = Join-Path $discRoot 'track_fingerprints.json'
+    $fingerprints = @(@{
+            track = 2
+            type = 'audio'
+            sha1 = $newAudioHash
+            chromaprint = 'new-fingerprint'
+            duration_ms = 2000
+            acoustid_name = 'Title { "quoted" }'
+            acoustid_album = 'Album // comment-like text'
+        })
+    [IO.File]::WriteAllText($fingerprintPath, (ConvertTo-Json -InputObject $fingerprints))
+    $merger = Join-Path $repoRoot 'game_data/update_known_discs_fingerprints.ps1'
+    & $pwsh -NoProfile -File $merger -CdImageDir $cdRoot -CatalogPath $catalogPath
+    Assert-True ($LASTEXITCODE -eq 0) 'Multiline fingerprint merge should succeed'
+    $merged = (Read-JsoncFile $catalogPath).discs[0]
+    Assert-True ($merged.tracks[1].chromaprint -ceq 'new-fingerprint' -and $merged.tracks[1].duration_ms -eq 2000 -and
+        $merged.tracks[1].acoustid_name -ceq 'Title { "quoted" }' -and $merged.tracks[1].acoustid_album -ceq 'Album // comment-like text') `
+        'Fingerprint merger must handle multiline objects and punctuation inside strings'
+    Assert-True ($merged.tracks[1].name -ceq 'Title' -and $merged.track_mapping.title -eq 2) 'Fingerprint merge must preserve curated metadata'
+    $mergedText = [IO.File]::ReadAllText($catalogPath)
+    Assert-True ($mergedText.Contains('// Preserve curated comments')) 'Fingerprint merge must preserve catalog comments'
+    [IO.File]::SetLastWriteTimeUtc($catalogPath, $writeTime)
+    & $pwsh -NoProfile -File $merger -CdImageDir $cdRoot -CatalogPath $catalogPath
+    Assert-True ($LASTEXITCODE -eq 0 -and [IO.File]::ReadAllText($catalogPath) -ceq $mergedText -and
+        [IO.File]::GetLastWriteTimeUtc($catalogPath) -eq $writeTime) 'Unchanged fingerprints must not rewrite the catalog'
+
     $logPath = Join-Path $tempRoot 'stages.log'
     $scripts = @()
     foreach ($definition in @(
