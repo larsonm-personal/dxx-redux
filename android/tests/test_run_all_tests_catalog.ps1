@@ -41,6 +41,13 @@ try {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
+        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication')) {
+            $entry = @($catalog.tests | Where-Object name -eq $name)
+            if ($entry.Count -ne 1 -or $entry[0].type -ne 'ps1' -or $entry[0].requires -ne 'none' -or
+                $name -notin (Get-TestSuiteCoveragePolicy).core) {
+                throw "Host-only extraction test must require no device infrastructure and retain core coverage: $name"
+            }
+        }
         foreach ($support in $catalog.support) {
             if ($support.owner -notin @($catalog.tests.base_name)) { throw "Support owner absent from catalog: $($support.name)" }
         }

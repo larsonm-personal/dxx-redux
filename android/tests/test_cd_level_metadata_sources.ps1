@@ -45,6 +45,34 @@ try {
     } | ConvertTo-Json -Depth 5
     [IO.File]::WriteAllText($manifestPath, $manifest, [Text.UTF8Encoding]::new($false))
 
+    $literalManifest = @'
+// Manifest comments and trailing commas are supported
+{
+    "sources": [],
+    "url": "https://example.invalid/cd//tracks?literal=,]",
+    "label": "comma ,} and ,] plus /* literal */ and // literal",
+    "escaped": "quote \" // still inside string; slash \\ and ,}",
+    /* Actual block comment */
+}
+'@
+    $literalPath = Join-Path $tempRoot 'literal-strings.jsonc'
+    [IO.File]::WriteAllText($literalPath, $literalManifest, [Text.UTF8Encoding]::new($false))
+    $literals = Read-CdLevelMetadataSourceManifest -Path $literalPath
+    Assert-True ($literals.url -ceq 'https://example.invalid/cd//tracks?literal=,]') `
+        'A quoted URL and comma/bracket sequence should remain unchanged'
+    Assert-True ($literals.label -ceq 'comma ,} and ,] plus /* literal */ and // literal') `
+        'Quoted comment markers and comma/bracket sequences should remain unchanged'
+    Assert-True ($literals.escaped -ceq 'quote " // still inside string; slash \ and ,}') `
+        'Escaped quotes and backslashes should preserve string boundaries'
+    Assert-True (@($literals.sources).Count -eq 0) 'The empty source array should remain empty'
+
+    $checkedInPath = Join-Path $repoRoot 'game_data/mission_files/cd_level_metadata_sources.jsonc'
+    $checkedIn = Read-CdLevelMetadataSourceManifest -Path $checkedInPath
+    $expectedCheckedIn = [IO.File]::ReadAllText($checkedInPath) | ConvertFrom-Json
+    Assert-True (($checkedIn | ConvertTo-Json -Depth 20 -Compress) -ceq
+        ($expectedCheckedIn | ConvertTo-Json -Depth 20 -Compress)) `
+        'The checked-in source manifest should retain every field and exclusion'
+
     $sources = @(Resolve-CdLevelMetadataSources -RepoRoot $tempRoot -ManifestPath $manifestPath -OutputDir $outputDir)
     Assert-True ($sources.Count -eq 2) 'Explicit and discovery CD metadata sources should resolve'
     Assert-True ($sources[0].Descriptor.Name -eq 'mission.mn2') 'The configured descriptor should resolve'

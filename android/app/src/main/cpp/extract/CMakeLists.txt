@@ -204,6 +204,7 @@ add_test(
     COMMAND
         ${CMAKE_COMMAND} -DTEST_SOW_DIRECT=$<TARGET_FILE:test_sow_direct>
         "-DRETAIL_SOW=${SOW_RETAIL_FIXTURE}" "-DSPLIT_SOW_DIR=${SOW_SPLIT_FIXTURE_DIR}"
+        "-DFLIGHT_SOW_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent - Test Flight (USA)/data_tracks"
         -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/sow_real_media_tests -P
         ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_real_media.cmake)
 set_tests_properties(sow_real_media_tests PROPERTIES SKIP_REGULAR_EXPRESSION
@@ -426,6 +427,7 @@ endif()
 # Chromaprint test data lives in the fetched source tree
 set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
 add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
+add_test(NAME fingerprint_assertion_tests COMMAND test_fingerprint --assertion-self-test)
 
 # FluidSynth unconditionally defines the Unix uninstall target; TagLib reuses an existing one
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
@@ -712,6 +714,7 @@ else()
     target_compile_options(test_music_name_table PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME music_name_table_tests COMMAND test_music_name_table)
+add_test(NAME music_name_table_schema_version_tests COMMAND test_music_name_table --schema-version)
 add_executable(test_input_demo_limits
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_input_demo_limits.c)
 target_include_directories(test_input_demo_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
@@ -767,6 +770,7 @@ else()
     target_compile_options(test_hog_midi_catalog PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME hog_midi_catalog_tests COMMAND test_hog_midi_catalog)
+add_test(NAME hog_midi_catalog_read_lifetime_tests COMMAND test_hog_midi_catalog --read-lifetime)
 add_executable(test_android_audio_format
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_android_audio_format.c)
 target_include_directories(test_android_audio_format PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)

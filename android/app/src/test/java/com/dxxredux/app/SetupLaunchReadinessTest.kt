@@ -121,7 +121,7 @@ class SetupLaunchReadinessTest {
     fun d1TestFlightSetIsNotLaunchReady() {
         val setDir = createTempDirectory("d1-test-flight").toFile()
         writeFile(setDir, "descent.hog", size = 1626232)
-        writeFile(setDir, "descent.pig", size = 28518)
+        writeFile(setDir, "descent.pig", size = 5092871)
 
         assertFalse(
             launchDataReadyForGame(

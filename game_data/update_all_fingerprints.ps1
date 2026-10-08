@@ -64,8 +64,8 @@ if ($SampleFraction -lt 1.0) {
     $missionItems = @($missionSources | ForEach-Object {
             Get-MissionArchiveSampleItems -Source $_
         })
-    $discNames = Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101) 'regenerate:fingerprints:discs'
-    $albumNames = Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202) 'regenerate:fingerprints:packs'
+    $discNames = @(Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101) 'regenerate:fingerprints:discs')
+    $albumNames = @(Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202) 'regenerate:fingerprints:packs')
     $missionZipNames = @($missionSources | ForEach-Object {
             $sourceItems = @(Get-MissionArchiveSampleItems -Source $_)
             Select-FingerprintSampleNames $sourceItems $SampleFraction ($SampleSeed -bxor 303) `
@@ -91,6 +91,11 @@ $runDiscs = $Step -eq "all" -or $Step -eq "discs"
 $runPacks = $Step -eq "all" -or $Step -eq "packs"
 $runMissionZips = $Step -eq "all" -or $Step -eq "mission-zips"
 $runMerge = $Step -eq "merge"
+if ($SampleFraction -lt 1.0) {
+    if ($discNames.Count -eq 0) { $runDiscs = $false }
+    if ($albumNames.Count -eq 0) { $runPacks = $false }
+    if ($missionZipNames.Count -eq 0) { $runMissionZips = $false }
+}
 
 # Step 1: Fingerprint CD disc tracks
 if ($runDiscs) {

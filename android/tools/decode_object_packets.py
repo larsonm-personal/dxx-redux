@@ -250,9 +250,9 @@ def extract_pktdump_lines(log_text):
     """Extract PKTDUMP lines from logcat output.
     Returns list of (direction, declared_len, hex_data) tuples."""
     # Match patterns like:
-    #   PKTDUMP TX len=1929 0b...
+    #   [PKTDUMP] TX len=1929 0b...
     #   [netlog] PKTDUMP TX len=1929 0b...
-    pattern = re.compile(r"PKTDUMP\s+(TX|RX)\s+len=(\d+)\s+([0-9a-fA-F]+)")
+    pattern = re.compile(r"(?:\[PKTDUMP\]|(?<![\w\[])PKTDUMP)\s+(TX|RX)\s+len=([0-9]+)\s+((?:[0-9a-fA-F]{2})+)\s*$")
     results = []
     for line in log_text.splitlines():
         m = pattern.search(line)
@@ -337,7 +337,7 @@ def main():
             sys.exit(1)
         pkt = decode_packet(sys.argv[2], "CLI")
         print(format_packet(pkt))
-        sys.exit(0)
+        sys.exit(int("error" in pkt or pkt["truncated"]))
 
     log_file = sys.argv[1]
     with open(log_file, "r", encoding="utf-8", errors="replace") as f:
@@ -373,13 +373,22 @@ def main():
                 print(f"  !! LENGTH MISMATCH: {pkt['declared_len_mismatch']}")
             print()
 
-    if diff_mode and tx_packets and rx_packets:
+    decode_failed = any(
+        "error" in p or p.get("truncated") or "declared_len_mismatch" in p for p in tx_packets + rx_packets
+    )
+    if diff_mode and not decode_failed and tx_packets and rx_packets:
         analyze_diff(tx_packets, rx_packets)
     elif diff_mode:
-        print("Need both TX and RX packets for diff mode")
+        print(
+            "Incomplete packet decode prevents comparison"
+            if decode_failed
+            else "Need both TX and RX packets for diff mode"
+        )
         # Still print what we have
         for pkt in tx_packets + rx_packets:
             print(format_packet(pkt))
+            if "declared_len_mismatch" in pkt:
+                print(f"  !! LENGTH MISMATCH: {pkt['declared_len_mismatch']}")
             print()
 
     # Summary
@@ -395,9 +404,10 @@ def main():
     rx_trunc = sum(1 for p in rx_packets if p.get("truncated"))
     print(f"TX objects: {tx_obj_count}")
     print(f"RX objects: {rx_obj_count} ({rx_trunc} packets truncated)")
-    if tx_obj_count > rx_obj_count:
+    if not decode_failed and tx_obj_count > rx_obj_count:
         print(f"LOST: {tx_obj_count - rx_obj_count} objects")
+    return int(decode_failed)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

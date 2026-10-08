@@ -685,8 +685,6 @@ object MissionZip {
     private fun isMissionArchiveRole(role: String): Boolean =
         role == GameFileFormats.MISSION_ZIP_HOG || role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE
 
-    private fun isMissionHog(constituent: Constituent): Boolean = constituent.role == GameFileFormats.MISSION_ZIP_HOG
-
     private fun isMissionHogName(path: String): Boolean =
         GameFileFormats.missionZipRoleForFile(leafName(path)) == GameFileFormats.MISSION_ZIP_HOG
 

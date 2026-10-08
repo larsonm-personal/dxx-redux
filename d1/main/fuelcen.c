@@ -644,7 +644,9 @@ void disable_matcens(void)
 {
 	int	i;
 
-	for (i=0; i<Num_robot_centers; i++) {
+	for (i=0; i<Num_fuelcenters; i++) {
+		if (Station[i].Type != SEGMENT_IS_ROBOTMAKER)
+			continue;
 		Station[i].Enabled = 0;
 		Station[i].Disable_time = 0;
 	}

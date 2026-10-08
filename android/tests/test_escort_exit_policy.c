@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include "escort_exit_policy.h"
 
 #include <assert.h>

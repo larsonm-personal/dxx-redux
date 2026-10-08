@@ -18,6 +18,7 @@ try {
     $sourceDir = New-Item -ItemType Directory -Force -Path (Join-Path $tempRoot 'game_data_to_copy_to_emulator')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data/hash_assets.ps1') -Destination $gameData.FullName
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android/helpers/atomic_text_file.ps1') -Destination $helperDir.FullName
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android/helpers/jsonc.ps1') -Destination $helperDir.FullName
 
     $foo = Join-Path $sourceDir.FullName 'foo.hog'
     $bar = Join-Path $sourceDir.FullName 'bar.pig'

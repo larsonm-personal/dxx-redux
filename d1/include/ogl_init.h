@@ -124,7 +124,7 @@ void ogl_invalidate_game_palette_textures(void);
 
 void ogl_urect(int left, int top, int right, int bot);
 bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scale);
-/* Batched bitmaps must share one texture. */
+/* Bounded batches flush at capacity and texture changes; size hints are ignored */
 void ogl_ubitmap_batch_begin(int max_bitmaps);
 void ogl_ubitmap_batch_end(void);
 bool ogl_ubitblt_i(int dw, int dh, int dx, int dy, int sw, int sh, int sx, int sy, grs_bitmap * src, grs_bitmap * dest, int texfilt);

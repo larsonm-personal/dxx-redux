@@ -5210,73 +5210,23 @@ private fun SetupScreen(
                                                             cleanupTmpDir(filesDir)
                                                             return@launch
                                                         }
-                                                        val archiveUri = android.net.Uri.fromFile(archiveFile)
-                                                        val result =
-                                                            if (demo.archiveName.endsWith(".sit", ignoreCase = true) ||
-                                                                demo.archiveName.endsWith(".hqx", ignoreCase = true)
-                                                            ) {
-                                                                extractStuffitContents(
+                                                        val imported =
+                                                            try {
+                                                                installDemoArchive(
                                                                     context,
-                                                                    archiveUri,
+                                                                    archiveFile,
+                                                                    demo.archiveName,
                                                                     tmpDir,
-                                                                    archiveName = demo.archiveName,
-                                                                ) { _, _, _ -> }
-                                                            } else {
-                                                                extractZipContents(
-                                                                    context,
-                                                                    archiveUri,
-                                                                    tmpDir,
-                                                                    budget = ExtractionBudget(),
-                                                                    archiveName = demo.archiveName,
-                                                                ) { _, _, _ -> }
+                                                                    setDir,
+                                                                )
+                                                            } catch (e: Exception) {
+                                                                demoDownloading = null
+                                                                demoDownloadErrorName = demo.name
+                                                                demoDownloadError =
+                                                                    e.message ?: "Demo installation failed"
+                                                                cleanupTmpDir(filesDir)
+                                                                return@launch
                                                             }
-                                                        if (result.files.isEmpty()) {
-                                                            demoDownloading = null
-                                                            demoDownloadErrorName = demo.name
-                                                            demoDownloadError =
-                                                                result.error ?: "No game files found in installer"
-                                                            cleanupTmpDir(filesDir)
-                                                            return@launch
-                                                        }
-                                                        var imported = 0
-                                                        hashingTotalFiles = result.files.size
-                                                        for ((i, ef) in result.files.withIndex()) {
-                                                            hashingFileIndex = i + 1
-                                                            hashingFile = ef.name
-                                                            hashingProgress = 0f
-                                                            val destFile = File(setDir, ef.name)
-                                                            val ok =
-                                                                withContext(Dispatchers.IO) {
-                                                                    try {
-                                                                        ImportStorageGuard.requireFreeSpace(
-                                                                            setDir,
-                                                                            ef.sizeBytes,
-                                                                            "install ${ef.name}",
-                                                                        )
-                                                                        LauncherFileCopy.copyFileToFile(
-                                                                            ef.tmpFile,
-                                                                            destFile,
-                                                                            ef.name,
-                                                                        ) { progress ->
-                                                                            mainHandler.post {
-                                                                                hashingProgress = progress.fraction
-                                                                            }
-                                                                        }
-                                                                        true
-                                                                    } catch (e: Exception) {
-                                                                        Log.e(
-                                                                            "DXX-Setup",
-                                                                            "Failed to move demo file ${ef.name}",
-                                                                            e,
-                                                                        )
-                                                                        false
-                                                                    }
-                                                                }
-                                                            if (ok) {
-                                                                imported++
-                                                                manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
-                                                            }
-                                                        }
                                                         hashingFile = null
                                                         cleanupTmpDir(filesDir)
                                                         selectedGame = demo.game

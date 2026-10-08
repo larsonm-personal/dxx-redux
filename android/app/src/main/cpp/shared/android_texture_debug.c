@@ -11,6 +11,7 @@
 #include "ogl_init.h"
 #include "piggy.h"
 #include "strutil.h"
+#include "textures.h"
 
 #include "android_texture_debug.h"
 
@@ -167,6 +168,37 @@ static void android_texture_debug_append_label(int sx, int sy,
 	strncpy(label->name, bitmapname, sizeof(label->name) - 1);
 	label->name[sizeof(label->name) - 1] = '\0';
 	g_debug_tex_label_count++;
+}
+
+/* Debug texture labels for texmerge'd faces. bm2==NULL means texmerge
+ * merged both textures into a 64x64 bitmap, so g3_draw_tmap can't label
+ * either (the merged bitmap isn't in GameBitmaps[]). Look up both
+ * originals for names, but always mark as non-hires since texmerge
+ * output is 64x64 regardless of whether originals have DXA replacements. */
+void android_texture_debug_add_merged_labels(const g3s_point *const *pointlist,
+                                             int nv, int tmap1, int tmap2)
+{
+	int sx_sum = 0, sy_sum = 0, projected = 0;
+	int sx, sy;
+	if (g_debug_tex_label_count + 1 >= DEBUG_TEX_MAX_LABELS || nv < 3)
+		return;
+	for (int i = 0; i < nv; i++) {
+		if (pointlist[i]->p3_flags & PF_PROJECTED) {
+			sx_sum += f2i(pointlist[i]->p3_sx);
+			sy_sum += f2i(pointlist[i]->p3_sy);
+			projected++;
+		}
+	}
+	if (projected == 0)
+		return;
+	sx = sx_sum / projected;
+	sy = sy_sum / projected;
+	if (sx < 0 || sx >= grd_curcanv->cv_bitmap.bm_w || sy < 0 || sy >= grd_curcanv->cv_bitmap.bm_h)
+		return;
+	android_texture_debug_append_label(sx, sy, NULL,
+	                                   piggy_game_bitmap_name(&GameBitmaps[Textures[tmap1].index]));
+	android_texture_debug_append_label(sx, sy + 10, NULL,
+	                                   piggy_game_bitmap_name(&GameBitmaps[Textures[tmap2 & 0x3FFF].index]));
 }
 
 void android_texture_debug_add_overlay_label(const g3s_point *const *pointlist,

@@ -334,71 +334,49 @@ internal suspend fun extractZipContents(
                 }
             }
             if (sowFiles.isNotEmpty()) {
-                val splitVolumes = demoPackage?.sowVolumes.orEmpty()
-                if (splitVolumes.isNotEmpty() && sowFiles.keys != splitVolumes.toSet()) {
-                    return@withContext failure("Installer has missing or unexpected SOW volumes")
+                val sowOutputDir = AtomicFilePublication.uniqueSibling(File(tmpDir, "sow-output"), "directory")
+                if (!sowOutputDir.mkdirs()) return@withContext failure("Could not stage SOW output")
+                attemptPaths.add(sowOutputDir)
+                val sowAttempt = budget.newDiscExtractionAttempt()
+                val count =
+                    DiscImportBridge.extractSowArchives(
+                        sowFiles.values.map { it.absolutePath },
+                        sowOutputDir.absolutePath,
+                        object : DiscImportBridge.ExtractProgress {
+                            override fun onProgress(
+                                currentFile: String,
+                                bytesDone: Long,
+                                bytesTotal: Long,
+                            ): Int = if (extractionContext.isActive) 0 else 1
+                        },
+                        attempt = sowAttempt,
+                    )
+                extractionContext.ensureActive()
+                if (count <
+                    0
+                ) {
+                    return@withContext failure("SOW volume assembly failed: incomplete or conflicting installer")
                 }
-                val volumeGroups =
-                    if (splitVolumes.isNotEmpty()) {
-                        listOf(splitVolumes.map { sowFiles.getValue(it) })
-                    } else {
-                        sowFiles.toSortedMap().values.map { listOf(it) }
+                budget.acceptDiscExtractionAttempt(sowAttempt)
+                Log.i("DXX-Setup", "Assembled $count entries from ${sowFiles.keys.joinToString()}")
+                val extractedFiles = sowOutputDir.listFiles()?.filter { it.isFile } ?: emptyList()
+                for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
+                    val lowerName = file.name.lowercase(Locale.ROOT)
+                    if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
+                    val prior = logicalSources.putIfAbsent(lowerName, "SOW:${file.name}")
+                    if (prior != null) {
+                        return@withContext failure("Nested SOW has colliding game-file output $lowerName with $prior")
                     }
-                for (volumes in volumeGroups) {
-                    // Assemble known split installers in one fresh staging directory
-                    val sowOutputDir = AtomicFilePublication.uniqueSibling(File(tmpDir, "sow-output"), "directory")
-                    if (!sowOutputDir.mkdirs()) {
-                        return@withContext failure("Could not stage SOW output")
-                    }
-                    attemptPaths.add(sowOutputDir)
-                    for (sowFile in volumes) {
-                        kotlinx.coroutines.withContext(Dispatchers.Main) {
-                            onProgress(sowFile.name, 0L, sowFile.length())
-                        }
-                        val sowAttempt = budget.newDiscExtractionAttempt()
-                        val count =
-                            DiscImportBridge.extractSowFiles(
-                                sowFile.absolutePath,
-                                sowOutputDir.absolutePath,
-                                object : DiscImportBridge.ExtractProgress {
-                                    override fun onProgress(
-                                        currentFile: String,
-                                        bytesDone: Long,
-                                        bytesTotal: Long,
-                                    ): Int = if (extractionContext.isActive) 0 else 1
-                                },
-                                appendExisting = splitVolumes.isNotEmpty(),
-                                attempt = sowAttempt,
-                            )
-                        extractionContext.ensureActive()
-                        if (count < 0) {
-                            return@withContext failure("SOW extraction failed for ${sowFile.name}")
-                        }
-                        budget.acceptDiscExtractionAttempt(sowAttempt)
-                        Log.i("DXX-Setup", "Extracted $count file(s) from nested SOW ${sowFile.name}")
-                    }
-                    val extractedFiles = sowOutputDir.listFiles()?.filter { it.isFile } ?: emptyList()
-                    for (file in extractedFiles.sortedBy { it.name.lowercase(Locale.ROOT) }) {
-                        val lowerName = file.name.lowercase(Locale.ROOT)
-                        if (!shouldKeepGameFile(lowerName) || file.length() <= 1L) continue
-                        val prior = logicalSources.putIfAbsent(lowerName, "${volumes.first().name}:${file.name}")
-                        if (prior != null) {
-                            return@withContext failure(
-                                "Nested SOW has colliding game-file output $lowerName with $prior",
-                            )
-                        }
-                        val sha256 = AssetManifest.computeSha256(file)
-                        if (sha256 != null) {
-                            results.add(ExtractedFile(lowerName, file, sha256, file.length()))
-                            Log.i(
-                                "DXX-Setup",
-                                "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=${sha256.take(
-                                    16,
-                                )}...)",
-                            )
-                        }
-                    }
+                    val sha256 = AssetManifest.computeSha256(file) ?: throw IOException("Could not hash $lowerName")
+                    results.add(ExtractedFile(lowerName, file, sha256, file.length()))
+                    Log.i("DXX-Setup", "Extracted from nested SOW: $lowerName (${file.length()} bytes, sha256=$sha256)")
                 }
+            }
+            val missing = expectedDemoFiles.orEmpty() - results.map { it.name }.toSet()
+            if (missing.isNotEmpty()) {
+                return@withContext failure(
+                    "Installer is missing required files: ${missing.joinToString()}",
+                )
             }
         } catch (e: CancellationException) {
             failure("ZIP extraction cancelled")
@@ -544,6 +522,15 @@ internal suspend fun extractStuffitContents(
             Log.e("DXX-Setup", "StuffIt extraction failed", e)
             ImportStorageGuard.recordFailure(context.filesDir, "StuffIt extraction failed", e)
             return@withContext ZipExtractionResult(results, false, "StuffIt extraction failed: ${e.message}")
+        }
+        val missing = expectedDemoFiles.orEmpty() - results.map { it.name }.toSet()
+        if (missing.isNotEmpty()) {
+            results.forEach { it.tmpFile.delete() }
+            return@withContext ZipExtractionResult(
+                emptyList(),
+                false,
+                "Installer is missing required files: ${missing.joinToString()}",
+            )
         }
         ZipExtractionResult(results, false)
     }
@@ -797,3 +784,42 @@ internal suspend fun copyUriToFileWithProgress(
         temporary.delete()
     }
 }
+
+/** Downloaded demos use this same extraction and publication path in device tests */
+internal suspend fun installDemoArchive(
+    context: Context,
+    archive: File,
+    archiveName: String,
+    tmpDir: File,
+    setDir: File,
+): Int =
+    kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val uri = Uri.fromFile(archive)
+        val result =
+            if (archiveName.endsWith(".sit", true) || archiveName.endsWith(".hqx", true)) {
+                extractStuffitContents(context, uri, tmpDir, archiveName) { _, _, _ -> }
+            } else {
+                extractZipContents(context, uri, tmpDir, ExtractionBudget(), archiveName) { _, _, _ -> }
+            }
+        check(result.error == null) { result.error ?: "Extraction failed" }
+        check(result.files.isNotEmpty()) { "No game files found in installer" }
+        val missing =
+            DemoInstallerPackages.matchByName(archiveName)?.expectedFiles.orEmpty() -
+                result.files.map { it.name }.toSet()
+        check(missing.isEmpty()) { "Installer is missing required files: ${missing.joinToString()}" }
+        val publication = AtomicFilePublication.uniqueSibling(File(tmpDir, "demo-publication"), "directory")
+        check(publication.mkdirs()) { "Could not stage demo publication" }
+        try {
+            val oldManifest = File(setDir, "assets.json")
+            if (oldManifest.isFile) LauncherFileCopy.copyFileToFile(oldManifest, File(publication, "assets.json"))
+            val manifest = AssetManifest(publication)
+            for (file in result.files) {
+                LauncherFileCopy.copyFileToFile(file.tmpFile, File(publication, file.name), file.name)
+                manifest.upsert(file.name, file.sha256, file.sizeBytes)
+            }
+            publishStagedArchiveFiles(publication, setDir)
+            result.files.size
+        } finally {
+            publication.deleteRecursively()
+        }
+    }

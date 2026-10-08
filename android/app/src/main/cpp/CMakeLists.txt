@@ -509,100 +509,106 @@ target_link_libraries(dxx-redux-d1 PRIVATE android log OpenSLES)
 if(OPENGL)
     target_link_libraries(dxx-redux-d1 PRIVATE EGL GLESv3)
 endif()
-target_sources(
-    dxx-redux-d1
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata_progress_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pilot_pref_transaction.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_engine_query.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
-            ${DXX_DISC_IMPORT_JNI_SOURCE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sha1.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_track_json.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_io_contract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_manifest_parser.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_menu_introspect_accessors.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pause.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_idle_saver.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_virtual_gamepad.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_touch_log.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_safety.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/mac_d1_audio.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
+set(DXX_ANDROID_GAME_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata_progress_policy.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/pilot_pref_transaction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_engine_query.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
+    ${DXX_DISC_IMPORT_JNI_SOURCE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sha1.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_track_json.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_io_contract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_manifest_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_menu_introspect_accessors.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pause.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_idle_saver.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_virtual_gamepad.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_touch_log.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_safety.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
+
+# Compile the common sources separately for each game and retain their source order
+set(_d1_android_game_sources ${DXX_ANDROID_GAME_SOURCES})
+list(FIND _d1_android_game_sources ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
+     _d1_midi_source_index)
+list(INSERT _d1_android_game_sources ${_d1_midi_source_index}
+     ${CMAKE_CURRENT_SOURCE_DIR}/shared/mac_d1_audio.c)
+target_sources(dxx-redux-d1 PRIVATE ${_d1_android_game_sources})
 if(OPENGL)
     target_sources(
         dxx-redux-d1
@@ -697,105 +703,22 @@ target_link_libraries(dxx-redux-d2 PRIVATE android log OpenSLES)
 if(OPENGL)
     target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv3)
 endif()
-target_sources(
-    dxx-redux-d2
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata_progress_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_autoselect.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/android_pilot_prefs.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pilot_pref_transaction.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_level_preview.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_level_metadata.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_resume_save.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_engine_query.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/cd_read_contract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/extract_attempt_budget.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/physical_output_file.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/stuffit_extract.c
-            ${DXX_DISC_IMPORT_JNI_SOURCE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/game_file_extensions.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/sha1.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_music_control.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_track_json.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/songs_android_shared.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_io_contract.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/saf_manifest_parser.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_direct_command_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_menu_introspect_accessors.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pause.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_idle_saver.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_axis_mailbox.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_virtual_gamepad.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_scale.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_menu_touch_log.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pilot_listbox_hold.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_meta.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_save_set.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_file_pair_transaction.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_options.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_graphics_safety.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
-            # Launcher preview bridges load dxx-redux-d2 explicitly. Keep their state and JNI
-            # symbols in one library so calls cannot split state.
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
+set(_d2_android_game_sources ${DXX_ANDROID_GAME_SOURCES})
+list(FIND _d2_android_game_sources ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+     _d2_fingerprint_source_index)
+list(INSERT _d2_android_game_sources ${_d2_fingerprint_source_index}
+     ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c)
+# Launcher preview bridges load dxx-redux-d2 explicitly. Keep their state and JNI symbols in one
+# library so calls cannot split state.
+list(FIND _d2_android_game_sources ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
+     _d2_midi_source_index)
+list(INSERT _d2_android_game_sources ${_d2_midi_source_index}
+     ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c)
+list(FIND _d2_android_game_sources ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c
+     _d2_png_source_index)
+list(INSERT _d2_android_game_sources ${_d2_png_source_index}
+     ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c)
+target_sources(dxx-redux-d2 PRIVATE ${_d2_android_game_sources})
 if(OPENGL)
     target_sources(
         dxx-redux-d2

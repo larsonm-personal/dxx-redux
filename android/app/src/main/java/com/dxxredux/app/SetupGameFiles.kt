@@ -238,9 +238,9 @@ internal fun d1InD2Readiness(
 private const val D1_TEST_FLIGHT_HOG_SHA256 =
     "40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a"
 private const val D1_TEST_FLIGHT_PIG_SHA256 =
-    "4a7b57482030ca18aa50accfaee6ee20ff24c077fb1b5adcffcf2fbb8dc91c21"
+    "2320393b99da2ea81405f60bb15d43b1123b5c8faed87b945335e66559261232"
 private const val D1_TEST_FLIGHT_HOG_SIZE = 1626232L
-private const val D1_TEST_FLIGHT_PIG_SIZE = 28518L
+private const val D1_TEST_FLIGHT_PIG_SIZE = 5092871L
 
 internal fun isD1TestFlightSet(
     setDir: File,

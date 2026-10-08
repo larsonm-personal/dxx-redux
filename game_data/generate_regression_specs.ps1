@@ -227,18 +227,76 @@ $cdDir = Join-Path $gameDataDir 'CD images'
 $gogDir = Join-Path $gameDataDir 'gog installers'
 $specCount = 0
 $skipped = 0
-$selectedSpecs = @(
-    if ($SpecListPath) {
-        Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
+$gogInstallers = @(
+    @{ file = 'setup_descent_1.4a_(16596).exe'; game = 'd1'; type = 'd1_full';
+        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
+        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
+    },
+    @{ file = 'setup_descent_2_1.1_(16596).exe'; game = 'd2'; type = 'd2_full';
+        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
+        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
+    },
+    @{ file = 'descent_enUS_1_0_35122.pkg'; game = 'd1'; type = 'd1_full';
+        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
+        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
+    },
+    @{ file = 'descent_2_enUS_1_0_51877.pkg'; game = 'd2'; type = 'd2_full';
+        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
+        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
     }
 )
 
+$hasSelection = $PSBoundParameters.ContainsKey('SpecListPath')
+$selectedSpecs = @()
+if ($hasSelection) {
+    if ([string]::IsNullOrWhiteSpace($SpecListPath)) { throw 'SpecListPath must name a selection list' }
+    foreach ($line in Get-Content -LiteralPath $SpecListPath) {
+        if ([string]::IsNullOrWhiteSpace($line)) { throw 'Regression spec selection contains a blank path' }
+        $path = [IO.Path]::GetFullPath($line.Trim())
+        if ($selectedSpecs -contains $path) { throw "Duplicate selected regression spec: $path" }
+        $selectedSpecs += $path
+    }
+    if ($selectedSpecs.Count -eq 0) { throw 'Regression spec selection is empty' }
+}
+$cdDirectories = @(Get-ChildItem $cdDir -Directory | Sort-Object Name)
+$combinedLaunchDir = Join-Path $gameDataDir 'combined launches'
+$combinedHelpers = @(
+    if (Test-Path -LiteralPath $combinedLaunchDir) {
+        Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.jsonc' -File | Sort-Object FullName
+    }
+)
+if ($hasSelection) {
+    $availableSpecs = @{}
+    foreach ($dir in $cdDirectories) { $availableSpecs[(Join-Path $dir.FullName 'extract_regression.jsonc')] = 'cd' }
+    foreach ($helper in $combinedHelpers) { $availableSpecs[(Join-Path $helper.Directory.FullName 'extract_regression.jsonc')] = 'combined' }
+    foreach ($gog in $gogInstallers) {
+        if (Test-Path -LiteralPath (Join-Path $gogDir $gog.file) -PathType Leaf) {
+            $availableSpecs[(Join-Path $gogDir "$([IO.Path]::GetFileNameWithoutExtension($gog.file))_regression.jsonc")] = 'gog'
+        }
+    }
+    foreach ($path in $selectedSpecs) {
+        if (-not $availableSpecs.ContainsKey($path)) { throw "Unknown or unavailable selected regression spec: $path" }
+        if ((Test-Path -LiteralPath $path) -and -not $Force) {
+            $existing = Read-JsoncFile $path
+            $expectedFiles = Get-JsonPropertyValue $existing 'expected_files'
+            if ((Get-JsonPropertyValue $existing 'source_type') -ne $availableSpecs[$path] -or
+                $expectedFiles -isnot [array] -or
+                @($expectedFiles | Where-Object { $_ -isnot [string] -or [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+                throw "Selected existing regression spec is invalid: $path"
+            }
+        }
+    }
+}
+$pendingSpecs = [Collections.Generic.List[object]]::new()
+$completedSpecs = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+
 Write-Host "=== Generating extract_regression.jsonc specs ===" -ForegroundColor Cyan
 
-foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
+foreach ($dir in $cdDirectories) {
     $specPath = Join-Path $dir.FullName 'extract_regression.jsonc'
-    if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
+    if ($hasSelection -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
+        $completedSpecs.Add([IO.Path]::GetFullPath($specPath)) | Out-Null
         $skipped++
         continue
     }
@@ -341,27 +399,26 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         $spec.last_test_result = $lastTestResult
     }
 
-    Write-CanonicalRegressionSpec `
-        -path $specPath `
-        -spec $spec `
-        -sourceName $dir.Name `
-        -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+    $pendingSpecs.Add(@{
+            path = $specPath; spec = $spec; sourceName = $dir.Name
+            generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+        })
     $specCount++
     $status = if ($classification.type -eq 'unknown') { 'UNKNOWN' } elseif (-not $classification.mission) { 'NO-LAUNCH' } else { 'OK' }
     Write-Host "  $status $($dir.Name) -> $($classification.type)" -ForegroundColor $(if ($status -eq 'OK') { 'Green' } elseif ($status -eq 'NO-LAUNCH') { 'DarkYellow' } else { 'Red' })
 }
 
 # --- Process combined launch fixtures ---
-$combinedLaunchDir = Join-Path $gameDataDir 'combined launches'
 if (Test-Path -LiteralPath $combinedLaunchDir) {
     Write-Host ""
     Write-Host "=== Combined launches ===" -ForegroundColor Cyan
 
-    foreach ($helperFile in (Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.jsonc' -File | Sort-Object FullName)) {
+    foreach ($helperFile in $combinedHelpers) {
         $dir = $helperFile.Directory
         $specPath = Join-Path $dir.FullName 'extract_regression.jsonc'
-        if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
+        if ($hasSelection -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
         if ((Test-Path -LiteralPath $specPath) -and -not $Force) {
+            $completedSpecs.Add([IO.Path]::GetFullPath($specPath)) | Out-Null
             $skipped++
             continue
         }
@@ -380,10 +437,11 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
         $expectedFiles = @()
         foreach ($relativeSourceSpec in $sourceSpecs) {
             $sourceSpecPath = [System.IO.Path]::GetFullPath((Join-Path $dir.FullName $relativeSourceSpec))
-            if (-not (Test-Path -LiteralPath $sourceSpecPath -PathType Leaf)) {
+            $pendingSource = $pendingSpecs | Where-Object { $_.path -eq $sourceSpecPath } | Select-Object -First 1
+            if (-not $pendingSource -and -not (Test-Path -LiteralPath $sourceSpecPath -PathType Leaf)) {
                 throw "$($helperFile.FullName): source spec not found: $relativeSourceSpec"
             }
-            $sourceSpec = Read-JsoncFile $sourceSpecPath
+            $sourceSpec = if ($pendingSource) { $pendingSource.spec } else { Read-JsoncFile $sourceSpecPath }
             if ($sourceSpec.game -ne $helper.game) {
                 throw "$($helperFile.FullName): source spec game '$($sourceSpec.game)' does not match '$($helper.game)': $relativeSourceSpec"
             }
@@ -423,11 +481,10 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
             $spec.last_test_result = $lastTestResult
         }
 
-        Write-CanonicalRegressionSpec `
-            -path $specPath `
-            -spec $spec `
-            -sourceName $dir.Name `
-            -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+        $pendingSpecs.Add(@{
+                path = $specPath; spec = $spec; sourceName = $dir.Name
+                generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+            })
         $specCount++
         Write-Host "  OK $($dir.Name) -> $($helper.classification)" -ForegroundColor Green
     }
@@ -436,25 +493,6 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
 # --- Process GOG installers ---
 Write-Host ""
 Write-Host "=== GOG installers ===" -ForegroundColor Cyan
-
-$gogInstallers = @(
-    @{ file = 'setup_descent_1.4a_(16596).exe'; game = 'd1'; type = 'd1_full';
-        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
-        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
-    },
-    @{ file = 'setup_descent_2_1.1_(16596).exe'; game = 'd2'; type = 'd2_full';
-        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
-        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
-    },
-    @{ file = 'descent_enUS_1_0_35122.pkg'; game = 'd1'; type = 'd1_full';
-        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
-        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
-    },
-    @{ file = 'descent_2_enUS_1_0_51877.pkg'; game = 'd2'; type = 'd2_full';
-        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
-        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
-    }
-)
 
 foreach ($gog in $gogInstallers) {
     $installerPath = Join-Path $gogDir $gog.file
@@ -465,8 +503,9 @@ foreach ($gog in $gogInstallers) {
 
     # Output spec goes next to the installer
     $specPath = Join-Path $gogDir "$([System.IO.Path]::GetFileNameWithoutExtension($gog.file))_regression.jsonc"
-    if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
+    if ($hasSelection -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
+        $completedSpecs.Add([IO.Path]::GetFullPath($specPath)) | Out-Null
         $skipped++
         continue
     }
@@ -518,14 +557,18 @@ foreach ($gog in $gogInstallers) {
         $spec.last_test_result = $lastTestResult
     }
 
-    Write-CanonicalRegressionSpec `
-        -path $specPath `
-        -spec $spec `
-        -sourceName $gog.file `
-        -generated (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+    $pendingSpecs.Add(@{
+            path = $specPath; spec = $spec; sourceName = $gog.file
+            generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+        })
     $specCount++
     Write-Host "  OK $($gog.file) -> $($gog.type)" -ForegroundColor Green
 }
 
 Write-Host ""
+foreach ($pending in $pendingSpecs) { $completedSpecs.Add([IO.Path]::GetFullPath($pending.path)) | Out-Null }
+if ($hasSelection -and -not $completedSpecs.SetEquals([string[]]$selectedSpecs)) {
+    throw 'Selected regression specs were not completely generated or validly skipped'
+}
+foreach ($pending in $pendingSpecs) { Write-CanonicalRegressionSpec @pending }
 Write-Host "Generated $specCount specs, skipped $skipped (use -Force to overwrite)" -ForegroundColor Cyan

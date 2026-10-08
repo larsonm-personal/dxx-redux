@@ -8,6 +8,11 @@
 #ifndef DXX_ANDROID_SHARED_NET_AUTO_NET_H
 #define DXX_ANDROID_SHARED_NET_AUTO_NET_H
 
+#ifdef ANDROID
+/* Keep the saved pilot for empty, coop autosave or transient current names */
+const char *auto_net_config_last_player(const char *current, const char *saved);
+#endif
+
 #ifdef __ANDROID__
 
 /* Maximum length for a host address string (IP or hostname). */

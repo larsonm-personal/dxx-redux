@@ -256,17 +256,7 @@ internal fun extractSowArchives(
     setDir: File,
     progress: DiscImportBridge.ExtractProgress? = null,
     attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
-): Int {
-    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return -1
-    var sowExtracted = 0
-    for (sow in sowFiles) {
-        val outputDir = File(sow).parentFile?.absolutePath ?: setDir.absolutePath
-        val extracted = DiscImportBridge.extractSowFiles(sow, outputDir, progress, attempt = attempt)
-        if (extracted < 0) return extracted
-        sowExtracted += extracted
-    }
-    return sowExtracted
-}
+): Int = DiscImportBridge.extractSowDirectory(setDir.absolutePath, progress, attempt)
 
 internal fun postProcessImportedDiscFiles(
     setDir: File,

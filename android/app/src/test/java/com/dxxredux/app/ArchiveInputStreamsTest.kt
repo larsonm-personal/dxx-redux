@@ -17,6 +17,31 @@ import java.util.zip.ZipOutputStream
 
 class ArchiveInputStreamsTest {
     @Test
+    fun acceptsLegacyNamesAndUtf8Names() {
+        for (charset in listOf(
+            java.nio.charset.Charset
+                .forName("IBM437"),
+            Charsets.UTF_8,
+        )) {
+            val bytes = ByteArrayOutputStream()
+            ZipOutputStream(bytes, charset).use { zip ->
+                zip.putNextEntry(ZipEntry("caf\u00e9/readme.txt"))
+                zip.write("readme".toByteArray())
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("descent.hog"))
+                zip.write("game data".toByteArray())
+                zip.closeEntry()
+            }
+            openZipInputStreamSkippingPreamble(ByteArrayInputStream(bytes.toByteArray())).use { zip ->
+                assertEquals("caf\u00e9/readme.txt", zip.nextEntry.name)
+                zip.closeEntry()
+                assertEquals("descent.hog", zip.nextEntry.name)
+                assertEquals("game data", zip.readBytes().toString(Charsets.UTF_8))
+            }
+        }
+    }
+
+    @Test
     fun acceptsPcDemoReservedLocalFlagForStoredAndDeflatedEntries() {
         for (method in listOf(ZipEntry.STORED, ZipEntry.DEFLATED)) {
             val archive = makeZip(method)

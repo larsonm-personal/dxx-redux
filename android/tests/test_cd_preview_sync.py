@@ -43,7 +43,7 @@ class CdPreviewSynchronizationTest(unittest.TestCase):
             self,
             body,
             "pthread_mutex_lock(&s_playback_mutex)",
-            "render_cd_frames(buf, CHUNK)",
+            "render_cd_frames(buf, CHUNK, &source_finished)",
             "pcm_ring_write(&s_rb, buf, got * 2)",
             "pthread_mutex_unlock(&s_playback_mutex)",
         )

@@ -24,6 +24,8 @@ int android_texture_debug_target_is_crosshair(void);
 int android_texture_debug_matches_target_name(const char *bitmapname);
 int android_texture_debug_get_label_anchor(const g3s_point *const *pointlist,
                                            int nv, int *sx, int *sy);
+void android_texture_debug_add_merged_labels(const g3s_point *const *pointlist,
+                                             int nv, int tmap1, int tmap2);
 void android_texture_debug_add_overlay_label(const g3s_point *const *pointlist,
                                              int nv, grs_bitmap *bm,
                                              int y_offset);

@@ -130,6 +130,9 @@ int android_merged_wall_cached_texmerge_render_to_texture(
     int texfilt_level, int aniso_level, float max_anisotropy,
     const struct android_ogl_texture_runtime_state *runtime_state,
     struct merged_wall_cached_texmerge_entry *probe_entry);
+grs_bitmap *android_merged_wall_cached_texmerge_get(
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient, int *out_slot,
+    const struct android_ogl_texture_runtime_state *runtime_state);
 int android_merged_wall_cached_texmerge_finalize_entry(
     struct merged_wall_cached_texmerge_entry *entry,
     grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,

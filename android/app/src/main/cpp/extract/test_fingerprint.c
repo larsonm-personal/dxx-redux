@@ -58,9 +58,11 @@ static int s_tests_failed = 0;
 
 #define ASSERT_EQ_INT(a, b, msg)                                  \
 	do {                                                          \
-		if ((a) != (b)) {                                         \
+		const int _expected = (a);                                \
+		const int _actual = (b);                                  \
+		if (_expected != _actual) {                               \
 			printf("FAIL: %s -- expected %d, got %d (line %d)\n", \
-			       (msg), (int) (a), (int) (b), __LINE__);        \
+			       (msg), _expected, _actual, __LINE__);          \
 			s_tests_failed++;                                     \
 			goto _test_cleanup;                                   \
 		}                                                         \
@@ -529,8 +531,30 @@ _test_cleanup:
 
 /* ── Main ─────────────────────────────────────────────────────────── */
 
+static int test_assertion_single_evaluation(void)
+{
+	int expected = 3;
+	int actual = 3;
+
+	ASSERT_EQ_INT(expected++, actual++, "single evaluation success");
+	if (expected != 4 || actual != 4 || s_tests_failed != 0)
+		return 1;
+	expected = 5;
+	actual = 9;
+	ASSERT_EQ_INT(expected++, actual++, "single evaluation failure");
+	return 1;
+
+_test_cleanup:
+	if (expected != 6 || actual != 10 || s_tests_failed != 1)
+		return 1;
+	printf("PASS: assertion operands evaluated once on success and failure\n");
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
+	if (argc == 2 && strcmp(argv[1], "--assertion-self-test") == 0)
+		return test_assertion_single_evaluation();
 	if (argc < 2) {
 		fprintf(stderr, "Usage: test_fingerprint <chromaprint-test-data-dir>\n");
 		fprintf(stderr, "  e.g.: test_fingerprint path/to/_deps/chromaprint-src/tests/data\n");

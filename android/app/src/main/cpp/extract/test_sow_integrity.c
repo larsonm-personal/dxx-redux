@@ -274,6 +274,69 @@ static int run_malformed_case(const char *name, const fixture_t *fixture)
 	return 0;
 }
 
+/* Exercise the production batch API, without caller-provided append policy */
+static fixture_t split_piece(const char *name, const char *bytes, unsigned int flags, unsigned int offset)
+{
+	fixture_t f = make_named_fixture(name, 0, (const unsigned char *) bytes, strlen(bytes),
+	                                 (const unsigned char *) bytes, strlen(bytes), 0);
+	if (flags & 8u) {
+		size_t at = f.basic_header_offset + 30u;
+		unsigned int length = f.data[2] | ((unsigned int) f.data[3] << 8);
+		memmove(f.data + at + 4u, f.data + at, f.size - at);
+		f.size += 4u;
+		f.payload_offset += 4u;
+		f.data[f.basic_header_offset] = 34;
+		put_u16(f.data + 2, length + 4u);
+		put_u32(f.data + at, offset);
+	}
+	f.data[f.basic_header_offset + 4u] = (unsigned char) flags;
+	refresh_basic_header_crc(&f);
+	return f;
+}
+
+static int production_volumes(void)
+{
+	const char *output = "sow_integrity_temp/output/crc_test.hog";
+	sow_file_list_t list;
+	dxx_extract_attempt_budget_t budget;
+	int failures = 0;
+	for (int scenario = 0; scenario < 9; ++scenario) {
+		fixture_t first = split_piece("crc_test.hog", "abc", 4, 0);
+		fixture_t last = split_piece("CRC_TEST.HOG", "def", 8, 3);
+		list.count = 2;
+		strcpy(list.paths[0], "sow_integrity_temp/z.sow");
+		strcpy(list.paths[1], "sow_integrity_temp/a.sow");
+		if (scenario == 1) list.count = 1;                                  /* Missing first */
+		if (scenario == 2) last = first;                                    /* Missing final / duplicate first */
+		if (scenario == 3) last = split_piece("crc_test.hog", "def", 8, 4); /* Gap */
+		if (scenario == 4) last = split_piece("crc_test.hog", "def", 8, 2); /* Overlap */
+		if (scenario == 5) {                                                /* Ordinary duplicates must not silently overwrite */
+			first = split_piece("crc_test.hog", "abc", 0, 0);
+			last = split_piece("CRC_TEST.HOG", "def", 0, 0);
+		}
+		if (scenario == 8) {
+			list.count = 1;
+			last = first;
+		} /* Missing final */
+		if (scenario == 6) last.data[last.payload_offset] ^= 1; /* CRC */
+		remove(output);
+		if (write_fixture(list.paths[0], &last) || write_fixture(list.paths[1], &first)) return 1;
+		dxx_extract_attempt_budget_init(&budget, NULL, NULL);
+		int callbacks = 0;
+		int result = sow_extract_archives(&list, "sow_integrity_temp/output", NULL,
+		                                  scenario == 7 ? cancel_progress : NULL, &callbacks, &budget);
+		if (scenario == 0 ? (result != 2 || !file_matches(output, (const unsigned char *) "abcdef", 6)) : (result >= 0 || (scenario != 6 && file_exists(output)))) {
+			fprintf(stderr, "production volume scenario %d failed: %d\n", scenario, result);
+			++failures;
+		}
+		if (budget.memory_bytes != 0) ++failures;
+	}
+	remove(output);
+	remove("sow_integrity_temp/z.sow");
+	remove("sow_integrity_temp/a.sow");
+	return failures;
+}
+
 int main(void)
 {
 	static const unsigned char stored[] = "stored payload";
@@ -286,6 +349,7 @@ int main(void)
 
 	make_dir("sow_integrity_temp");
 	make_dir("sow_integrity_temp/output");
+	failures += production_volumes();
 	make_dir("sow_integrity_temp/scan");
 	{
 		sow_file_list_t list;

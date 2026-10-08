@@ -251,16 +251,11 @@ int r_mask_draws = 0;
 int r_water_faces = 0;
 extern int r_mwall_cache_hits;
 extern int r_mwall_cache_misses;
-static GLuint ogl_last_bound_tex = 0;
-static GLuint ogl_bound_textures[ANDROID_OGL_TEXTURE_UNIT_COUNT];
-static int ogl_active_texture_unit = 0;
 static const struct android_ogl_bind_texture_state ogl_bind_texture_state = {
-	ogl_bound_textures, ANDROID_OGL_TEXTURE_UNIT_COUNT, &ogl_active_texture_unit,
 	&r_texbinds, &r_texbind_reuse
 };
 static const struct android_ogl_texture_runtime_state ogl_texture_runtime_state = {
-	{ ogl_bound_textures, ANDROID_OGL_TEXTURE_UNIT_COUNT, &ogl_active_texture_unit,
-	  &r_texbinds, &r_texbind_reuse },
+	{ &r_texbinds, &r_texbind_reuse },
 	&GL_TEXTURE_2D_enabled
 };
 #define OGL_BINDTEXTURE(a) android_ogl_bind_texture_2d(&ogl_bind_texture_state, (a))
@@ -276,7 +271,6 @@ int ogl_texture_list_cur;
 #ifdef ANDROID
 static struct android_ogl_texture_filter_state ogl_texture_filter_state = {
 	{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
-	&ogl_last_bound_tex,
 	&g_aniso_pending_apply,
 	&g_texfilt_pending_apply,
 	&ogl_aniso_level,
@@ -698,53 +692,6 @@ void ogl_invalidate_game_palette_textures(void)
 	}
 }
 
-#if defined(ANDROID) && defined(OGL_MERGE)
-static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbot,
-	grs_bitmap *bmovl, int orient, int *out_slot)
-{
-	struct merged_wall_cached_texmerge_entry *entry;
-	grs_bitmap *cached_bitmap;
-	int width, height;
-	int tex_flags;
-
-	if (out_slot)
-		*out_slot = -1;
-
-	if (!bmbot || !bmovl || !bmbot->gltexture || !bmovl->gltexture)
-		return NULL;
-	if (bmbot->gltexture->handle <= 0 || bmovl->gltexture->handle <= 0)
-		return NULL;
-
-	cached_bitmap = android_merged_wall_cached_texmerge_try_reuse_cache(bmbot, bmovl,
-		orient, out_slot);
-	if (cached_bitmap)
-		return cached_bitmap;
-
-	if (!android_merged_wall_cached_texmerge_choose_size(bmbot->gltexture,
-		bmovl->gltexture, ogl_max_texture_size, &width, &height))
-		return NULL;
-
-	entry = android_merged_wall_cached_texmerge_reserve_cache_entry(
-		ogl_freetexture);
-	if (!entry)
-		return NULL;
-
-	tex_flags = OGL_FLAG_ALPHA;
-	const int load_texfilt = android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level);
-	entry->texture = ogl_get_free_texture();
-	ogl_init_texture(entry->texture, width, height, tex_flags);
-	android_merged_wall_cached_texmerge_setup_output_texture(entry->texture,
-		width, height, tex_flags, load_texfilt, &ogl_texture_runtime_state);
-	tex_set_size(entry->texture);
-	r_texcount++;
-	if (!android_merged_wall_cached_texmerge_finalize_entry(entry, bmbot,
-		bmovl, orient, width, height, load_texfilt, ogl_aniso_level,
-		ogl_maxanisotropy, bmbot->bm_flags & (~BM_FLAG_RLE),
-		bmbot->avg_color, &ogl_texture_runtime_state, out_slot, ogl_freetexture))
-		return NULL;
-	return &entry->bitmap;
-}
-#endif
 void ogl_cache_polymodel_textures(int model_num)
 {
 	polymodel *po;
@@ -863,35 +810,7 @@ void ogl_cache_level_textures(void)
 	r_cachedtexcount = r_texcount;
 }
 
-static GLfloat *line_batch_vertices;
-static GLfloat *line_batch_colors;
-static int line_batch_capacity;
-static int line_batch_count = -1;
-
-void g3_start_line_batch(int max_lines)
-{
-	if (max_lines > line_batch_capacity) {
-		line_batch_vertices = d_realloc(line_batch_vertices, max_lines * 6 * sizeof(*line_batch_vertices));
-		line_batch_colors = d_realloc(line_batch_colors, max_lines * 8 * sizeof(*line_batch_colors));
-		line_batch_capacity = max_lines;
-	}
-	line_batch_count = 0;
-}
-
-void g3_end_line_batch(void)
-{
-	if (line_batch_count > 0) {
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-		OGL_DISABLE(TEXTURE_2D);
-		glVertexPointer(3, GL_FLOAT, 0, line_batch_vertices);
-		glColorPointer(4, GL_FLOAT, 0, line_batch_colors);
-		glDrawArrays(GL_LINES, 0, line_batch_count * 2);
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_COLOR_ARRAY);
-	}
-	line_batch_count = -1;
-}
+#include "../../../android/app/src/main/cpp/shared/ogl_batch_impl.h"
 
 bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 {
@@ -908,13 +827,8 @@ bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 	color_array[1] = color_array[5] = color_g;
 	color_array[2] = color_array[6] = color_b;
 	color_array[3] = color_array[7] = 1.0;
-	if (line_batch_count >= 0) {
-		Assert(line_batch_count < line_batch_capacity);
-		memcpy(&line_batch_vertices[line_batch_count * 6], vertex_array, sizeof(vertex_array));
-		memcpy(&line_batch_colors[line_batch_count * 8], color_array, sizeof(color_array));
-		line_batch_count++;
+	if (ogl_line_batch_append(vertex_array, color_array))
 		return 1;
-	}
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	OGL_DISABLE(TEXTURE_2D);
@@ -1503,8 +1417,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			merged_wall_tmap2_submit_ctx.route = "force_two_pass";
 		} else {
 			int merged_slot = -1;
-			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
-				bmovl, orient, &merged_slot);
+			grs_bitmap *merged = android_merged_wall_cached_texmerge_get(bmbot,
+				bmovl, orient, &merged_slot, &ogl_texture_runtime_state);
 			if (merged) {
 				android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
 					label_nv, bmbot, bmovl);
@@ -2235,7 +2149,7 @@ void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
 	int msaa_color_clear = 0;
-	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
+	r_texbinds=0;r_texbind_reuse=0;
 	android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
 	r_shader_switches=0;r_mask_draws=0;
 	r_water_faces=0;
@@ -3792,45 +3706,6 @@ void ogl_freebmtexture(grs_bitmap *bm){
 /*
  * Menu / gauges 
  */
-static GLfloat *ubitmap_batch_vertices;
-static GLfloat *ubitmap_batch_colors;
-static GLfloat *ubitmap_batch_texcoords;
-static int ubitmap_batch_capacity;
-static int ubitmap_batch_count = -1;
-static GLuint ubitmap_batch_texture;
-
-void ogl_ubitmap_batch_begin(int max_bitmaps)
-{
-	if (max_bitmaps > ubitmap_batch_capacity) {
-		ubitmap_batch_vertices = d_realloc(ubitmap_batch_vertices, max_bitmaps * 12 * sizeof(*ubitmap_batch_vertices));
-		ubitmap_batch_colors = d_realloc(ubitmap_batch_colors, max_bitmaps * 24 * sizeof(*ubitmap_batch_colors));
-		ubitmap_batch_texcoords = d_realloc(ubitmap_batch_texcoords, max_bitmaps * 12 * sizeof(*ubitmap_batch_texcoords));
-		ubitmap_batch_capacity = max_bitmaps;
-	}
-	ubitmap_batch_count = 0;
-	ubitmap_batch_texture = 0;
-}
-
-void ogl_ubitmap_batch_end(void)
-{
-	if (ubitmap_batch_count > 0) {
-		OGL_ENABLE(TEXTURE_2D);
-		OGL_BINDTEXTURE(ubitmap_batch_texture);
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glVertexPointer(2, GL_FLOAT, 0, ubitmap_batch_vertices);
-		glColorPointer(4, GL_FLOAT, 0, ubitmap_batch_colors);
-		glTexCoordPointer(2, GL_FLOAT, 0, ubitmap_batch_texcoords);
-		glDrawArrays(GL_TRIANGLES, 0, ubitmap_batch_count * 6);
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	}
-	ubitmap_batch_count = -1;
-	ubitmap_batch_texture = 0;
-}
-
 bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scale) // to scale bitmaps
 {
 	GLfloat xo,yo,xf,yf,u1,u2,v1,v2,color_r,color_g,color_b,h;
@@ -3934,20 +3809,8 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 	texcoord_array[6] = u1;
 	texcoord_array[7] = v2;
 
-	if (ubitmap_batch_count >= 0) {
-		static const int order[6] = { 0, 1, 2, 0, 2, 3 };
-		int i;
-		Assert(ubitmap_batch_count < ubitmap_batch_capacity);
-		Assert(!ubitmap_batch_texture || ubitmap_batch_texture == bm->gltexture->handle);
-		ubitmap_batch_texture = bm->gltexture->handle;
-		for (i = 0; i < 6; ++i) {
-			memcpy(&ubitmap_batch_vertices[ubitmap_batch_count * 12 + i * 2], &vertex_array[order[i] * 2], 2 * sizeof(GLfloat));
-			memcpy(&ubitmap_batch_colors[ubitmap_batch_count * 24 + i * 4], &color_array[order[i] * 4], 4 * sizeof(GLfloat));
-			memcpy(&ubitmap_batch_texcoords[ubitmap_batch_count * 12 + i * 2], &texcoord_array[order[i] * 2], 2 * sizeof(GLfloat));
-		}
-		ubitmap_batch_count++;
+	if (ogl_ubitmap_batch_append(bm->gltexture->handle, vertex_array, color_array, texcoord_array))
 		return 0;
-	}
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);

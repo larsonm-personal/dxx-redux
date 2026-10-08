@@ -40,3 +40,9 @@ Validation:
 
 Device evidence: `temp/d1-demo-device.log` and `temp/d1-demo-screen.png`.
 Build log: `android/temp/d1-demo-build-final.log`.
+
+## Follow-up
+
+The initial package volume declarations were superseded by the shared ARJ batch
+assembly and original-source launcher coverage in
+[import-production-coverage-20261007.md](import-production-coverage-20261007.md).

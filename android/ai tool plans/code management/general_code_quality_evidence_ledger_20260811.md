@@ -89369,3 +89369,5428 @@ Disposition: GQF-0205 FIXED; GQR-0192 DONE. Historical impact score 71 (12/35/7/
 </details>
 
 <!-- END IMPORT: GQR-0244 unused D1 frame entry remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0247 direct escort timeout remediation 20261007 SHA256:6659126fa8b8a53a8e26b1f243c11b8653d8140df1e3ddfe187f49e32b4007bc -->
+
+## GQR-0247 direct escort timeout remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0247-remediation.md`
+- Imported SHA-256: `6659126fa8b8a53a8e26b1f243c11b8653d8140df1e3ddfe187f49e32b4007bc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0247 direct escort timeout remediation 20261007
+
+- Revalidated GQF-0261 against live HEAD beea1341d1f624475397c805c1edda671d0695ec. lost_player_timeout remained an unnecessary branch-only temporary controlling an immediate return
+- Restored the original nested direct return. Exact whole-file comparison proves only that local restoration; the restored function prefix equals the original attribution baseline. Evaluation order, timeout priority, handwritten comments, Enhanced visible/nearby/clear-leg gate and all remaining native return rules are unchanged
+- Removed four inherited source lines net; original-baseline diff falls from +2918/-288 to +2913/-287, six changed lines removed. No replacement wrapper, API, test or abstraction
+- Existing maintained Original runner passes twice on D2 levels 1 and 11 before/after. It includes Redux return-cadence comparisons at exact four-second/one-second boundaries, current modes/path positions, native decisions/path behavior and save/replay mode handling
+- Existing maintained Enhanced runner passes grate detour, endpoint patrol, reactor arrival and Maximum Hostages twice each before/after. All ten serialized JSON results are byte-identical to their captured baselines, with both repeats identical
+- Full D2 Windows and all-three-ABI Android Debug native builds pass. Scoped quality invocation completes with No new files in scope: inherited escort.c is intentionally excluded from formatting. Exact source/style and git diff --check pass; no new compile warnings
+- Ordinary valid native mission fixtures only; no new emulator/network/audio campaign or deferred security-sensitive probes. Prior cleanup and concurrent launcher/installer work preserved; nothing staged or committed
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact direct-return restoration; remainder of escort.c unchanged; restored prefix equals original",
+  "source_net_lines_removed": 4,
+  "original_diff": {
+    "before": {
+      "added": 2918,
+      "deleted": 288
+    },
+    "after": {
+      "added": 2913,
+      "deleted": 287
+    }
+  },
+  "before_after_json_identical": {
+    "original": {
+      "level_11_1.json": "36e743a3b79638b8cb5a1fc9bbdd08fe769395bd4a1c8b12f32bd3802cb2337f",
+      "level_11_2.json": "36e743a3b79638b8cb5a1fc9bbdd08fe769395bd4a1c8b12f32bd3802cb2337f",
+      "level_1_1.json": "4fe1b67d453c74cc140e83fa143ec9a5ae86bd329290181077e8f0feb1c890d9",
+      "level_1_2.json": "4fe1b67d453c74cc140e83fa143ec9a5ae86bd329290181077e8f0feb1c890d9"
+    },
+    "enhanced": {
+      "counterstrike_grate_1.json": "971bb2ede8c9c3203887db5ec33339fd15e838bb63983b6b99401b80a5210a83",
+      "counterstrike_grate_2.json": "971bb2ede8c9c3203887db5ec33339fd15e838bb63983b6b99401b80a5210a83",
+      "counterstrike_reactor_1.json": "5965ef3b4d973e80ab330ee41cc96c2bf8391768c2e94e4c97b669fbc2a860a7",
+      "counterstrike_reactor_2.json": "5965ef3b4d973e80ab330ee41cc96c2bf8391768c2e94e4c97b669fbc2a860a7",
+      "maximum_hostages_1.json": "4163b3b4da5783295e2178217c11823571d8cefea50a4b026c615428a866728e",
+      "maximum_hostages_2.json": "4163b3b4da5783295e2178217c11823571d8cefea50a4b026c615428a866728e"
+    }
+  },
+  "escort_sha256": "63e7456878cc7235a951eabf356b90ba687bb95f53415e0814631872e8aafb2d"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0247-quality.log: SHA256 f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182
+- temp/general_cleanup_20261006/gqr0247-windows-build.log: SHA256 4862c7e246259487335a591ead8c3d90f9bbcfb4dece887af5cf42bf88aae2f0
+- temp/general_cleanup_20261006/gqr0247-android-build.log: SHA256 63c9e8f0bbbd3af457da2a4a84a31358183e32474b935b535d26375e9358fa59
+- temp/general_cleanup_20261006/gqr0247-original-before.log: SHA256 508ad2f0ddaeb2a8d2b72a83399eca7daaa6ad85b2b66cb4bfb911d1e8a6795f
+- temp/general_cleanup_20261006/gqr0247-enhanced-before.log: SHA256 8e23767bc067ac236246a8b0e38816870aeaa5f8eac3352d04e2393b9b3dcfe9
+- temp/general_cleanup_20261006/gqr0247-original-after.log: SHA256 792e5f62478f5cfe4830ca768f7f567108b87d8a7919f7dfbb51acb9dd193126
+- temp/general_cleanup_20261006/gqr0247-enhanced-after.log: SHA256 9e1b9b11d33da3b769545f9b06b47b8e1c99f57b36c8c3355e3b5b47055ae774
+- temp/general_cleanup_20261006/gqr0247-before-escort.c: SHA256 8005f297f11b1227263b77a0e3887d97e0736ee4ef58c03dce9807e45eca18a2
+- temp/general_cleanup_20261006/gqr0247-verification.json: SHA256 96a5a6054cc572a2a4f0a85ed8706c96c66d707a54d1a97ba1d039e81b8c1b24
+- temp/general_cleanup_20261006/apply_gqr0247.py: SHA256 01a70aaad44e0bf592e3b4767b578913e0b1b39e49035cbe3b2b66eec2d5f064
+- temp/general_cleanup_20261006/verify_gqr0247.py: SHA256 382f983a3c95eb1255173b8edcd68fa6b70d4863948fa84e9a53ddb109b02e71
+- android/tests/test_guidebot_original_navigation.cpp: SHA256 b9065eff1d766ae7c2049b797e16d54889acd5a7835f6262e0911b6a4200cba8
+- android/tests/test_guidebot_original_navigation.ps1: SHA256 cead80e344bcb82690fbb3fa354cf2f54e5c4d40639878753e68320b3d7697dd
+- android/tests/test_guidebot_live_navigation.cpp: SHA256 cc32c182c92a0f47266026d2a251121932ca681e54ced87aef55ed81d9feb839
+- android/tests/test_guidebot_live_navigation.ps1: SHA256 1626c9e0922a889ad7ea8e07f4b030493e7ffad74debdff364e337ad3b7e69fc
+
+</details>
+
+<!-- END IMPORT: GQR-0247 direct escort timeout remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0248 private Guidebot route state remediation 20261007 SHA256:76210f7652c6dc0ddf5b04db7bab442450afafef812419915c6ebd8f0fd14492 -->
+
+## GQR-0248 private Guidebot route state remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0248-remediation.md`
+- Imported SHA-256: `76210f7652c6dc0ddf5b04db7bab442450afafef812419915c6ebd8f0fd14492`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0248 private Guidebot route state remediation 20261007
+
+- Revalidated GQF-0262 against external HEAD 1ee56908299b870fef1852c3f0e7586844890652. Fresh complete tracked non-document/patch census still identifies exactly 52 owner-only variables and 13 actually shared exports. The external commit incorporated previous native cleanup; both route source/header snapshots equal the preceding beea1341d versions
+- Removed the 52 unused extern declarations and empty introspection guard from guidebot_route_internal.h. Made the existing 52 definitions static in guidebot_route.c; retained all 13 shared exports in their original order. No live state removed, new accessors or transfer to another owner
+- Moved cache_poll_time and logged_readiness definitions before their first uses within the same planner guard, preserving implicit zero and explicit -1 initialization. All 52 first-use, initializer and guard checks pass. Every remaining product byte equals the snapshots after only these exact transformations; serialization and diagnostic bodies remain unchanged
+- Post-change tracked reference census finds all 52 private names only in the owner. Existing save/checkpoint fields and diagnostic setters/getters still use the same state. Definitions retain independent compile-time variants and original conditional lifetime
+- Applied savings: 55 branch-added header lines removed; owner source net line count unchanged; zero inherited-file savings. Both files are absent from the original attribution baseline. This is interface ownership simplification, not deletion of live variables
+- Full D2 Windows build passes: desktop, headless replay, live and Original navigation, route-only, metadata-only and metadata worker variants build/link. All three Android Debug native ABI builds pass with existing introspection code. No new changed-source compiler warnings
+- Existing maintained Original Redux/save/replay navigation passes twice on D2 levels 1/11; Enhanced grate detour, endpoint patrol, reactor arrival and Maximum Hostages pass twice each. All ten JSON results match the immediately preceding pre-extraction navigation baselines byte-for-byte, including Redux return-cadence coverage
+- One scoped quality invocation completes with No new files in scope (native source exclusion); style preserved by exact transformations and owned git diff --check passes. No implementation-mirroring test or new test entry point
+- Prior cleanup and concurrent extract/import edits preserved. No staging/commit, physical device, live UDP/audio or deferred security-sensitive probes
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact 52 static additions, two definition moves and 55-line header deletion; every initializer, guard and remaining byte unchanged",
+  "private_definitions": 52,
+  "shared_exports_retained": 13,
+  "first_use_checks_passed": 52,
+  "guard_initializer_checks_passed": 52,
+  "header_lines_removed": 55,
+  "source_net_line_change": 0,
+  "inherited_savings": 0,
+  "sha256": {
+    "d2/main/guidebot_route.c": "336535dbc77b591c17a1afe504af62b136dc335cfb7efad4000b180ad30f52fe",
+    "d2/main/guidebot_route_internal.h": "8bc454a02a6eed7514771caa33c4683938418a020e84c9acebed94e5c0fe2bbf"
+  },
+  "baseline": "gqr0247-*-after: ten passing navigation results captured immediately before private-state extraction; intervening external commit incorporated same native changes",
+  "before_after_json_identical": {
+    "original": {
+      "level_11_1.json": "36e743a3b79638b8cb5a1fc9bbdd08fe769395bd4a1c8b12f32bd3802cb2337f",
+      "level_11_2.json": "36e743a3b79638b8cb5a1fc9bbdd08fe769395bd4a1c8b12f32bd3802cb2337f",
+      "level_1_1.json": "4fe1b67d453c74cc140e83fa143ec9a5ae86bd329290181077e8f0feb1c890d9",
+      "level_1_2.json": "4fe1b67d453c74cc140e83fa143ec9a5ae86bd329290181077e8f0feb1c890d9"
+    },
+    "enhanced": {
+      "counterstrike_grate_1.json": "971bb2ede8c9c3203887db5ec33339fd15e838bb63983b6b99401b80a5210a83",
+      "counterstrike_grate_2.json": "971bb2ede8c9c3203887db5ec33339fd15e838bb63983b6b99401b80a5210a83",
+      "counterstrike_reactor_1.json": "5965ef3b4d973e80ab330ee41cc96c2bf8391768c2e94e4c97b669fbc2a860a7",
+      "counterstrike_reactor_2.json": "5965ef3b4d973e80ab330ee41cc96c2bf8391768c2e94e4c97b669fbc2a860a7",
+      "maximum_hostages_1.json": "4163b3b4da5783295e2178217c11823571d8cefea50a4b026c615428a866728e",
+      "maximum_hostages_2.json": "4163b3b4da5783295e2178217c11823571d8cefea50a4b026c615428a866728e"
+    }
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0248-quality.log: SHA256 f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182
+- temp/general_cleanup_20261006/gqr0248-windows-build.log: SHA256 93a30370a2484e5f1ed4b9f12b5414fbba2bfc65d8b083d9ea71db6c4bd5c0be
+- temp/general_cleanup_20261006/gqr0248-android-build.log: SHA256 872ec7f2aca558579ddf5be73d22513bb95088d0e6cd10f438cb34aeda050812
+- temp/general_cleanup_20261006/gqr0248-original-after.log: SHA256 fabb48f17e2c6d759123a686bf8fb264092f10aafb93d8133d90adfa13205236
+- temp/general_cleanup_20261006/gqr0248-enhanced-after.log: SHA256 e161ef8748e465598dcb9189e19a2153b57dbc89e222927d2344c138adf05ec8
+- temp/general_cleanup_20261006/gqr0248-census.json: SHA256 2eaeb32057bec399448def9e0689b66c622ce861bdf909d1a764d60e286e5d55
+- temp/general_cleanup_20261006/gqr0248-reference-lines.txt: SHA256 2d79bfc259d0184136d35ecf61cc891364910ce924ca9c1afd214f70ece78d3d
+- temp/general_cleanup_20261006/gqr0248-source-verification.json: SHA256 70431fde17fcffba645fa2a0b948fa8361aae5d370e4b3a70fb1bcfa5cb7162a
+- temp/general_cleanup_20261006/gqr0248-verification.json: SHA256 060e219b7bf5b37013a866171c30a548ee241ede98341266b481b2ec0067a222
+- temp/general_cleanup_20261006/apply_gqr0248.py: SHA256 acc040af5db3757362ca65a8d28293d13918515ea4a50ac2df64cde479a33df6
+- temp/general_cleanup_20261006/verify_gqr0248.py: SHA256 7158fcbf8526411061d7da157db52c2f80ffcd3266fa8ce5a8707b3a55e044af
+- temp/general_cleanup_20261006/verify_gqr0248_runtime.py: SHA256 cb5f570bed6fffab7286a5e443490a76d2a40fc7972e93a94b35377651ff9609
+- temp/general_cleanup_20261006/gqr0247-original-after.log: SHA256 792e5f62478f5cfe4830ca768f7f567108b87d8a7919f7dfbb51acb9dd193126
+- temp/general_cleanup_20261006/gqr0247-enhanced-after.log: SHA256 9e1b9b11d33da3b769545f9b06b47b8e1c99f57b36c8c3355e3b5b47055ae774
+
+</details>
+
+<!-- END IMPORT: GQR-0248 private Guidebot route state remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0188 shared config policy remediation 20261007 SHA256:7d16298ee5b7fc527c94b19bcd5be3699206e4412f36c3ffa7467c6e99e57542 -->
+
+## GQR-0188 shared config policy remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0188-remediation.md`
+- Imported SHA-256: `7d16298ee5b7fc527c94b19bcd5be3699206e4412f36c3ffa7467c6e99e57542`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0188 shared config policy remediation 20261007
+
+- Revalidated GQF-0201 and DMR1-CHUNK-008 against live HEAD 1ee56908299b870fef1852c3f0e7586844890652 before extraction. Actual duplicated helper blocks were 17 lines per game and loaded graphics blocks 15 lines per game; historical estimates are superseded by applied metrics below
+- Existing auto_net.c/.h now owns explicit current/saved-name selection. Existing android_graphics_options.c/.h owns already-loaded filter/global/FOV synchronization. Native parsers, file keys/format, first-run controls/music defaults and graphics write-safety calls remain unchanged
+- Exact whole-native-file verification permits only helper deletion, shared calls, guarded include adjustment and adjacent redundant blank-line removal. Shared comparison preserves lexical tokens including comments/strings. Native coop_save.h is retained because the reader also uses its callsign constant
+- Removed 35 inherited config lines per game, 70 total; added 36 shared product lines, yielding 34 net product lines removed. Original-attribution diff additions shrink D1 161 -> 126 and D2 175 -> 140; deletions stay 12 each. Fixture/registration additions are separate test cost
+- Maintained actual-engine config I/O integration has 58 cases per game/platform, 232 total. All four post-extraction JSON traces are byte-identical to their pre-extraction baselines. Covers empty/coop/transient/case/ordinary current and saved names, loaded filter/FOV values, runtime globals, serialized adjacent preferences and missing-file startup including D2 disc-presence defaults
+- Both full Windows builds and all three Android Debug native ABI builds pass. Initial Android build exposed removal of coop_save.h needed by the unchanged parser; restoring it fixes compilation. Existing unrelated compiler warnings remain; changed product sources introduce none
+- Scoped mixed quality passed C/C++ and CMake checks; PowerShell initially rejected mixed line endings in concurrently edited catalog files. Preserving their current content and normalizing LF, the final scoped PowerShell quality pass succeeds. Automation catalog validation and catalog runner integration pass
+- Android fixture links the actual engine library and runs in isolated /data/local/tmp directories. It exercises native config I/O with no initialized graphics safety store; exact source checks preserve safety call boundaries. No live initialized-store locking, first-run chooser UI, renderer context, live UDP/audio, retail media or full gameplay replay is claimed
+- Fixture setup corrections before extraction included supported null Activity PhysFS initialization and native header/compiler conventions. These were harness setup issues, not new product findings. No deferred security-sensitive probes, staging or commit; concurrent extract/import/outstanding-bugs work preserved
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact native policy replacement only; shared insertion/include relocation only after preserving lexical tokens including comments and strings",
+  "original_diff": {
+    "d1/main/config.c": {
+      "before": {
+        "added": 161,
+        "deleted": 12
+      },
+      "after": {
+        "added": 126,
+        "deleted": 12
+      }
+    },
+    "d2/main/config.c": {
+      "before": {
+        "added": 175,
+        "deleted": 12
+      },
+      "after": {
+        "added": 140,
+        "deleted": 12
+      }
+    }
+  },
+  "net_lines_removed": {
+    "d1/main/config.c": 35,
+    "d2/main/config.c": 35,
+    "android/app/src/main/cpp/shared/net/auto_net.c": -16,
+    "android/app/src/main/cpp/shared/net/auto_net.h": -5,
+    "android/app/src/main/cpp/shared/android_graphics_options.c": -14,
+    "android/app/src/main/cpp/shared/android_graphics_options.h": -1
+  },
+  "product_sha256": {
+    "d1/main/config.c": "d37660846fea2c63d4cf311110bef4a62d443f70d3de4a114e8c03c0e2061d96",
+    "d2/main/config.c": "2978e46b6d79d6483274ce4ec344fac7772b8cfd082913d1dc526cf69d46777c",
+    "android/app/src/main/cpp/shared/net/auto_net.c": "af7f18dab52dc24b216ae521220d234fcc6487c3240479a866e6ed65da23336c",
+    "android/app/src/main/cpp/shared/net/auto_net.h": "20a7d0700c2bed235db40eee014a52e7ad68a56afd9778bed92841995dc7140e",
+    "android/app/src/main/cpp/shared/android_graphics_options.c": "020503bccd2379d0405ea2b3da354496ffe1b7d91371e73416c3d0fdf5c5dc4e",
+    "android/app/src/main/cpp/shared/android_graphics_options.h": "9c6e4a2cd335b8d863df210870d85643f0bda062599c29acfc3396e83d51253e"
+  },
+  "identical_before_after_traces": {
+    "desktop-d1": {
+      "cases": 58,
+      "sha256": "475ee4fc72da96fbbc455c65dbfe4afd83475bc110f8c582f35949f3f6f9db37"
+    },
+    "desktop-d2": {
+      "cases": 58,
+      "sha256": "2fda301ec2b598d477510f7f6163a4db529f5c0b3658106a8d1ad9e02cd19887"
+    },
+    "android-d1": {
+      "cases": 58,
+      "sha256": "b3ef1eed06c8c373b371e8139a3392b38fc0b1cd1c0c13b883497a5833d58944"
+    },
+    "android-d2": {
+      "cases": 58,
+      "sha256": "c7055583bd6ef984c50f2ba60f343ac6b8c02a59603461ec08b8fbd6fe3e7dd8"
+    }
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0188-windows-build.log: SHA256 df644b9f409fdf5dc1b7ca767142ec553006553f6fabd02d16422e7ab6b43bf0
+- temp/general_cleanup_20261006/gqr0188-android-build-final.log: SHA256 a86584bae87122dab6cc98a6d4a7dfb353abb3b41aee5c35b23246debf756576
+- temp/general_cleanup_20261006/gqr0188-d1-desktop-after.log: SHA256 659b36df7654e9028c2b78d5a9ff5fedcee113083c8eb86441959be96f53d0a6
+- temp/general_cleanup_20261006/gqr0188-d2-desktop-after.log: SHA256 2fcb340e5830ab8c94e90ccdbc205cbc6e5762ca814ccfeefdba96939069817d
+- temp/general_cleanup_20261006/gqr0188-android-after-run.log: SHA256 b01e6e2d04a274a85cb1eaf111619b162820d242a2b438270ef9e9a8ff274065
+- temp/general_cleanup_20261006/gqr0188-quality-ps-final.log: SHA256 de871a2b295a480099eb8b950009f77fc5d05dcfdf0d87653ec4f44e0e530bed
+- temp/general_cleanup_20261006/gqr0188-catalog-validate.log: SHA256 7693834d2309a120aec123e12658006cbec04a75d7be7828d99239b5dd91af8f
+- temp/general_cleanup_20261006/gqr0188-catalog-runner.log: SHA256 5068cbc69a97664b8ac06a01898efb66c74053fad87736b9b39f8d3448c2ee71
+- temp/general_cleanup_20261006/gqr0188-quality.log: SHA256 7f3951c9f1bd6fd220b0a79c23f037d7fda8733b7ada3f2fe03f50bf9c2f40b1
+- temp/general_cleanup_20261006/gqr0188-android-build.log: SHA256 9d3153a1ca9e1f874960ce8357158757266eb48014e044e34c6cab9960167b9e
+- temp/general_cleanup_20261006/gqr0188-source-verification.json: SHA256 2dbecbbbf40a03e6c903165e1e1eb2c3ac8227e9017d6c6a3915cab0b22e18ec
+- temp/general_cleanup_20261006/verify_gqr0188.py: SHA256 c1eeeb7900ea8a59fd070633f1249323063175e5c61bfb23100d3b54e35def7d
+- temp/general_cleanup_20261006/gqr0188-android-baseline-run.log: SHA256 d4b903c6bbe31db12c5377ce12b0e43b2bf91d8392c394342fe83eb307992bf6
+- temp/general_cleanup_20261006/gqr0188-d1-desktop-before.log: SHA256 9c308d2be0f959a201bd0ee059b66a401a357a3f1117ba4eb705610839bda880
+- temp/general_cleanup_20261006/gqr0188-d2-desktop-before.log: SHA256 376ddfe226473a262bacb0b0c20eb8aa265af3d8e9917d1c41f96978c232c8ac
+- android/tests/config_policy_fixture.hpp: SHA256 35ae17755b3ad23fffecc77aed103a84fc631099d3e4375bead1b1ea57c2fc16
+- android/tests/config_policy/main.cpp: SHA256 5ddf1e226173f45bc95cc0d161c18b4e0635895d32967221cb7df4a70c4077dd
+- android/tests/config_policy/CMakeLists.txt: SHA256 a2a09f6d806c87691073c69d3389862872b555b3853e6e7359514369a1480c42
+- android/tests/test_android_config_policy.ps1: SHA256 d4dcfc0402d6c398661a1476c88418f0c5adb1247b6c05b23fbb19b317203540
+
+</details>
+
+<!-- END IMPORT: GQR-0188 shared config policy remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0190 shared merged-texture labels remediation 20261008 SHA256:ef111eb9e49647dd6c31b887ccaf8cbacfd3544bb1e9e31248da75844f887b9f -->
+
+## GQR-0190 shared merged-texture labels remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0190-remediation.md`
+- Imported SHA-256: `ef111eb9e49647dd6c31b887ccaf8cbacfd3544bb1e9e31248da75844f887b9f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0190 shared merged-texture labels remediation 20261008
+
+- Revalidated GQF-0203 at live HEAD 1ee56908299b870fef1852c3f0e7586844890652. Both render_face implementations still contained identical 53-line Android/OGL merged-label blocks; retained complete pre-edit native/shared source snapshots and hashes
+- New android_texture_debug_add_merged_labels in the existing texture-debug owner preserves projected-screen arithmetic. It converts each projected fixed-point screen coordinate to integer pixels before averaging projected vertices only. Existing joined-label 3D centroid/projection behavior remains separate and unchanged
+- Native overlay/tmap2/bm2 admission remains in place. Shared policy retains two-free-slot admission, native texture-index mapping/mask, screen bounds, original names and second label at sy+10. Reuses unchanged append_label with null bitmap to retain non-hires, face metadata, name truncation, anchor fields and independent null-name rejection. No new state, subsystem or callback
+- Exact whole-native transformation and shared lexical-token comparison pass. Only the paired block/call/include replacements and shared helper/declaration/textures include are allowed. Every other runtime/render body, including single/dual path selection, stays unchanged
+- Applied product savings: 50 inherited lines removed per game, 100 total; shared implementation/header add 32+2 lines, 34 total; 66 net product lines removed. Original-attribution render diffs D1 +287/-46 -> +237/-46, D2 +450/-50 -> +400/-50. Maintained fixture and runner additions are separate test cost, not a whole-repository shrink claim
+- Maintained isolated Android fixture links each actual engine library, creates a real GLES3 offscreen surface, invokes native render_face, draws actual overlay text with a synthetic font and hashes exact 320x240 RGBA readbacks at source using the existing SHA-256 implementation. Captures label fields, scene/overlay hashes and textured polygon counts in stable pretty JSON
+- All 432 cases per game / 864 total match corrected pre-extraction traces byte-for-byte. Eighteen scenarios cover projected/unprojected/fractional vertices, zero/one/two free slots, independently blank names, screen edges, synthetic resident hires metadata and valid/invalid face context; crossed with native cached-merge/dual/single paths, four FOV settings and two EGL context generations. Both games also match each other, recreated-context results match initial context, all four FOV scene hashes differ, and ordinary merged overlay drawing changes pixels
+- Valid native texture mappings always return a name pointer, including blank strings. Runtime fixture exercises blank names without manufacturing invalid bitmap indices; exact unchanged appender/source verification preserves null-name rejection. Synthetic resident hires metadata tests non-hires merged labels, not DXA file decoding. EGL context recreation here is direct fixture ownership, not Activity/surface lifecycle automation
+- Before extraction, initial one-case fixture needed explicit EGL teardown to avoid emulator driver destruction order. Matrix analysis later identified fixture-owned native texture-state cache retained across direct EGL generations. Invalidating those caches makes context results identical. Corrected baseline was rerun against preserved pre-extraction engine libraries, with their exact SHA-256 identities retained; new library identities differ and final output matches. No product lifecycle workaround was added
+- Shared actual-engine library setup/runner is now reused by config and texture fixtures through native_engine_fixture.cmake and run_native_engine_fixture.ps1. Config runner revalidation passes both 58-case Android traces unchanged from GQR-0188; both desktop config CTests also pass. Registered new top-level texture test in graphics_scenarios and master timeout 600; config catalog entry moved to the same family
+- Full paired Windows and all three Android Debug native ABI builds pass. No changed-product or fixture compiler warning remains. Scoped mixed fixture quality, scoped product quality and final context-fixture quality pass. Automation catalog validation/integration and owned diff check pass. Native allocator reports three residual global allocations at standalone process exit both before/after; no leak-free engine teardown claim
+- Concurrent import/extract/outstanding-bugs work preserved. No staging/commit, retail media loading, live app state, UDP/audio, full gameplay replay or deferred security-sensitive probes
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact native block/call/include replacement; shared helper/include/declaration insertion only, existing appender unchanged including null rejection",
+  "original_diff": {
+    "d1/main/render.c": {
+      "before": {
+        "added": 287,
+        "deleted": 46
+      },
+      "after": {
+        "added": 237,
+        "deleted": 46
+      }
+    },
+    "d2/main/render.c": {
+      "before": {
+        "added": 450,
+        "deleted": 50
+      },
+      "after": {
+        "added": 400,
+        "deleted": 50
+      }
+    }
+  },
+  "net_lines_removed": {
+    "d1/main/render.c": 50,
+    "d2/main/render.c": 50,
+    "android/app/src/main/cpp/shared/android_texture_debug.c": -32,
+    "android/app/src/main/cpp/shared/android_texture_debug.h": -2
+  },
+  "product_sha256": {
+    "d1/main/render.c": "cc9db4913aa33da53fb7b6523af42c8351aa0fef09eb0eb9cb5ac22e4b61ba5b",
+    "d2/main/render.c": "e6e0f716877d5d19af69c77cf44c5f586bd774a7882f359faa5446f7465da1a7",
+    "android/app/src/main/cpp/shared/android_texture_debug.c": "b6a66207c4e03ad18ddd4664d722d770d9d9e34cbb0e9eb5050e1afe72160c5e",
+    "android/app/src/main/cpp/shared/android_texture_debug.h": "a857afb0edcf338003f97f1ee44f1a2e38365ef3bc5d8b52c87cce84b65ea57f"
+  },
+  "traces": {
+    "d1": {
+      "cases": 432,
+      "sha256": "43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1",
+      "recreated_context_identical": true,
+      "fov_scene_variants": 4
+    },
+    "d2": {
+      "cases": 432,
+      "sha256": "43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1",
+      "recreated_context_identical": true,
+      "fov_scene_variants": 4
+    }
+  },
+  "config_runner_revalidation": {
+    "d1": "b3ef1eed06c8c373b371e8139a3392b38fc0b1cd1c0c13b883497a5833d58944",
+    "d2": "c7055583bd6ef984c50f2ba60f343ac6b8c02a59603461ec08b8fbd6fe3e7dd8"
+  },
+  "current_library_sha256": {
+    "d1": "44eac9e18905f9bd376d525030f8ad268b8f7ae2fd91c27b6eede43a08a2b3cb",
+    "d2": "e866ddeef6b7c5a288662e04ec31a0bd06b1b2e5eeeba87e53d56b664f5e27e8"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0190-windows-build.log: SHA256 b00197df94aad888701473a93035b041098564c995ca2f86606901060c76c722
+- temp/general_cleanup_20261006/gqr0190-android-build.log: SHA256 fa1fd43f1cc93043fe09901311bc33191d4e38c84ea5b6b60aafd5446d361632
+- temp/general_cleanup_20261006/gqr0190-fixture-quality.log: SHA256 349f5521f8e5eb867e04d7eb3da3fea1741f33d6c461acafb8ad3127d412dae9
+- temp/general_cleanup_20261006/gqr0190-product-quality.log: SHA256 f22d7ad1b8dba9ce93133caf3e237b607acb682a3fc8f1b0987a3d95a53903f9
+- temp/general_cleanup_20261006/gqr0190-context-fixture-quality.log: SHA256 7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704
+- temp/general_cleanup_20261006/gqr0190-catalog-validate.log: SHA256 48ecf241afeb2fb386180cb2d1964a2c1e151812cf8d8321195827ab4552ef62
+- temp/general_cleanup_20261006/gqr0190-catalog-runner.log: SHA256 32128e455c2c14bb80b30e03153ca9ac5334d3f1c95aa5b07ec8f762413651b0
+- temp/general_cleanup_20261006/gqr0190-d1-baseline-final.log: SHA256 66084cc39d96e91d7f7e712467a90912f3d5319bd2eec5b70d43208a1156d627
+- temp/general_cleanup_20261006/gqr0190-d2-baseline-final.log: SHA256 66084cc39d96e91d7f7e712467a90912f3d5319bd2eec5b70d43208a1156d627
+- temp/general_cleanup_20261006/gqr0190-android-after-run.log: SHA256 36eb612b73f1157b605515a17b15a687e7e8fa21069916a680ef46b692c6acad
+- temp/general_cleanup_20261006/gqr0190-config-after-run.log: SHA256 b4681c721309a12a2f930d04c36d1616bc8522c7c7990dfdc065fcc3f4d44f97
+- temp/general_cleanup_20261006/gqr0190-config-d1-desktop.log: SHA256 2f4bd6e8a1442bf7264a91a9d0e35eb0f5df79f78e39ed830216a082a534aded
+- temp/general_cleanup_20261006/gqr0190-config-d2-desktop.log: SHA256 c8cca11aa9820f309060f78aa763fa6fa6e4b593ca104fa5f517212b41f15e7b
+- temp/general_cleanup_20261006/gqr0190-live-revalidation.json: SHA256 e39d8ee44585a32522c9b10fc86f05356ddfea2e2ab687d8cc5f5081979cfd0b
+- temp/general_cleanup_20261006/gqr0190-transformation.json: SHA256 73fa6d0beffda3062276817d37f228d3ea277ba1404b8d4da19dc231f0e3dc94
+- temp/general_cleanup_20261006/gqr0190-source-verification.json: SHA256 b5a9213f546289bbf3589cd36532979b8a1b5d5f8c35175cd1e067a220816c73
+- temp/general_cleanup_20261006/gqr0190-verification.json: SHA256 421c02414101db8d6e08a3f3fcd89fd7a908cd78e1226ef3642361b09134954b
+- temp/general_cleanup_20261006/gqr0190-frozen-baseline-libraries.log: SHA256 6e73b65912e037b6980ddde220e9e666ad4ad14353f2899375e7baecffb1fed0
+- temp/general_cleanup_20261006/gqr0190-android-before-run.log: SHA256 8077e97b637935e51bd2a08cd90b0cd4b1e8b21a63c4f238ced3586968d5ca8f
+- temp/general_cleanup_20261006/gqr0190-fixture-crash.log: SHA256 fc6627386d08b76a4d1ce1a6e36ec7350207c02d6b298e61a11bd27b5084588b
+- temp/general_cleanup_20261006/apply_gqr0190.py: SHA256 6ba7e7f9ef8440f66a37204c33560f7690b24c0faa4cfddd10b6fbe140093e2a
+- temp/general_cleanup_20261006/verify_gqr0190.py: SHA256 60c44273fc458f018dfaf34ec843fe07ae0bed13c696ac7a32b8e30cc2cc8540
+- temp/general_cleanup_20261006/verify_gqr0190_runtime.py: SHA256 a51a1152e6a6b9e419784dfa254f634eee6fb336777070ea986ce7f70db3c16f
+- android/tests/texture_labels/main.cpp: SHA256 9a1fd12233d6893b15a41df29700bce80dab744cdb53b8fba0517d263d832470
+- android/tests/texture_labels/CMakeLists.txt: SHA256 70ae1cac16a2c33829c89950ad76fa1a154de17aae1588a79f2053f8148700dd
+- android/tests/native_engine_fixture.cmake: SHA256 451cf956f92830f9a940d5e367394802208a61b777509bde31634521254e4f8a
+- android/helpers/run_native_engine_fixture.ps1: SHA256 2532c97910d56855927d0749e4d539b4c737114173bc815de2dd44bfa56b9ab7
+- android/tests/test_android_texture_labels.ps1: SHA256 077326eff6ec93ef033f0d4279035245a2e7c43286183bb24f57be254fdb7bf6
+- android/tests/test_android_config_policy.ps1: SHA256 2fc42ee05eb1a407ac2e7d0883f83e1c10faac5c73148a61e8dbe98d0c56642b
+- android/tests/config_policy/CMakeLists.txt: SHA256 08c52ee7b9d6ea1abb8f802caa21582ee5fb6c9eb52679791b69b7cf1484f555
+
+</details>
+
+<!-- END IMPORT: GQR-0190 shared merged-texture labels remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0185 bounded shared line glyph batching remediation 20261008 SHA256:48a8dfdfd23665fba780b9bf5edb2452b474dd30684aceea5f0b3e07286296db -->
+
+## GQR-0185 bounded shared line glyph batching remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0185-remediation.md`
+- Imported SHA-256: `48a8dfdfd23665fba780b9bf5edb2452b474dd30684aceea5f0b3e07286296db`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0185 bounded shared line glyph batching remediation 20261008
+
+- Revalidated GQR-0185 / GQF-0198 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652. Paired storage and append blocks still matched and directly published fallible realloc results. Complete pre-edit snapshots and preserved actual Android libraries establish the baseline
+- Shared ogl_batch_impl.h replaces dynamic line/glyph arrays with fixed 512-line and 256-glyph buffers, 77824 bytes per game. Compile through each existing native ogl.c to reuse private texture-binding/enable macros, counters and state without mirrored caches, callbacks or extra adapter exports. Legacy size-hint ABI remains; native fonts no longer compute string-sized hints
+- Capacity and texture transitions flush in submission order. Geometry, color, UV generation, immediate fallback and native GL flush statements are preserved. Exact six-file native transformation plus complete shared body/global token verification pass. Fixed batch storage has no allocation or fallible growth publication; this removes the reported batch allocation failure path structurally without allocation/resource-pressure fault probes
+- Applied savings: 168 inherited lines removed, 109 shared implementation lines and 18 Android diagnostic lines added, 41 net product lines removed. Actual Git original-attribution ogl.c additions D1 1989 -> 1905 and D2 2082 -> 1998; deletions unchanged at 76 each. Maintained tests/runner additions are separate cost; no whole-repository shrink claim
+- Actual GLES engine fixtures pass 42 cases per game, 84 total over two EGL context generations. Empty/control/color/underline/scaled/centered text and 255/256/257/513 glyphs; two-phase ordered native lines at 0/1/511/512/513/1025; overlapping base/overlay/base texture transition. Line batched pixels match native immediate rendering; transition compares with pre-fix immediate oracle
+- All 84 before/after RGBA SHA-256 and vertex/stream-growth results match. Sixteen boundary records have exactly the expected draw increases from bounded flushing, 1 -> 2 or 1 -> 3; remaining records are identical. Both games and recreated contexts agree. Measured CPU GL stream growth is zero after warmup; no general GPU/driver allocation guarantee
+- GLES shim diagnostics count successful submitted draws/vertices and successful CPU stream growth. Both baseline and post-fix libraries include the same diagnostic API. Fixture exit no longer reports the prior five batch allocations; no global engine leak-free claim
+- Revalidated 864 actual texture-label cases and 116 actual config cases byte-for-byte against preceding accepted results. Full paired Windows and all three Android Debug native ABI builds pass, scoped fixture/product quality and automation catalog validation/integration pass. New reusable batch runner registered in graphics_scenarios with 600-second timeout; common engine fixture runner supports validated batch modes and frozen-library selection
+- No staging/commit, live Activity lifecycle, full gameplay replay, retail media or deferred security-sensitive probes. Concurrent installer/import/outstanding-bugs edits preserved. Existing GL stream/setup fallible allocation remains separately owned
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact six-file native transformation; both GL flush bodies equal prior native GL blocks, all eight shared bodies and globals verified; no batch allocation calls",
+  "fixed_storage_bytes_per_game": 77824,
+  "inherited_lines_removed": 168,
+  "shared_implementation_lines": 109,
+  "android_diagnostic_lines_added": 18,
+  "original_diff": {
+    "d1/arch/ogl/ogl.c": {
+      "before": {
+        "added": 1989,
+        "deleted": 76
+      },
+      "after": {
+        "added": 1905,
+        "deleted": 76
+      }
+    },
+    "d1/2d/font.c": {
+      "before": {
+        "added": 135,
+        "deleted": 14
+      },
+      "after": {
+        "added": 135,
+        "deleted": 14
+      }
+    },
+    "d1/include/ogl_init.h": {
+      "before": {
+        "added": 32,
+        "deleted": 2
+      },
+      "after": {
+        "added": 32,
+        "deleted": 2
+      }
+    },
+    "d2/arch/ogl/ogl.c": {
+      "before": {
+        "added": 2082,
+        "deleted": 76
+      },
+      "after": {
+        "added": 1998,
+        "deleted": 76
+      }
+    },
+    "d2/2d/font.c": {
+      "before": {
+        "added": 135,
+        "deleted": 14
+      },
+      "after": {
+        "added": 135,
+        "deleted": 14
+      }
+    },
+    "d2/include/ogl_init.h": {
+      "before": {
+        "added": 32,
+        "deleted": 2
+      },
+      "after": {
+        "added": 32,
+        "deleted": 2
+      }
+    }
+  },
+  "product_sha256": {
+    "d1/arch/ogl/ogl.c": "e206b631a97943eda453a89c141d915b914851df56ec4f3598ea635aeb56a168",
+    "d1/2d/font.c": "b0259e65a7b90e836d539daf6347bdc1eb9e3bd1dcabe544a9ba61336fcec12c",
+    "d1/include/ogl_init.h": "415f29a2828392aa30a9e40f25699d1817363150929b201dc6da4dc094369d79",
+    "d2/arch/ogl/ogl.c": "89e88a2a6010c9842496fc8e4ea226f548ed9764e6c74fad4f184785c3fdfa0e",
+    "d2/2d/font.c": "65f77cec8c845d15605ba29843d7e2cf1a752fb58feb925d8e28226661428df3",
+    "d2/include/ogl_init.h": "9b8a4067bde985bee2205abf1a9cff20a71ac4a92f4de6161520631cf15841f1",
+    "android/app/src/main/cpp/shared/ogl_batch_impl.h": "caa7b1363d47242fd2ec44965bc576462b31e0311e495ec52886270c14ef866a",
+    "android/app/src/main/cpp/shared/gles3_shim.c": "5719d42ef2ba3738d300e2cacd314a52b5bf800c97bebfbd19e36d49c8262b59",
+    "android/app/src/main/cpp/shared/gles3_shim.h": "648658046967ac208791185b42c8c4c0c23b2584dbe69c24e35cd8c219a02519"
+  },
+  "net_product_lines_removed": 41,
+  "runtime": {
+    "batch_cases": 84,
+    "equal_pixels_vertices_and_stream_growth": 84,
+    "expected_capacity_draw_changes": [
+      {
+        "game": "d1",
+        "context": 0,
+        "draws": 2,
+        "kind": "glyph",
+        "scenario": 12,
+        "sha256": "ffe3b8063b7b8f816d5707a546638f7c28ea26e743b889a854e305340f5d7a40",
+        "stream_growth": 0,
+        "vertices": 1542,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 0,
+        "draws": 3,
+        "kind": "glyph",
+        "scenario": 13,
+        "sha256": "d68c0298a736e66d5f1cc567d67cfdb522948c8feefe50df883b555a1586ee70",
+        "stream_growth": 0,
+        "vertices": 3078,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 0,
+        "count": 513,
+        "draws": 2,
+        "kind": "line",
+        "sha256": "595baa77608f5759d194f7269a9cebace432557bc567c1d7e339ba36b9b0ffa3",
+        "stream_growth": 0,
+        "vertices": 1026,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 0,
+        "count": 1025,
+        "draws": 3,
+        "kind": "line",
+        "sha256": "163c16bae51bd099c94d52b95fac1e7356d1688f0bf4cb61cc5979b2e88fd948",
+        "stream_growth": 0,
+        "vertices": 2050,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 1,
+        "draws": 2,
+        "kind": "glyph",
+        "scenario": 12,
+        "sha256": "ffe3b8063b7b8f816d5707a546638f7c28ea26e743b889a854e305340f5d7a40",
+        "stream_growth": 0,
+        "vertices": 1542,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 1,
+        "draws": 3,
+        "kind": "glyph",
+        "scenario": 13,
+        "sha256": "d68c0298a736e66d5f1cc567d67cfdb522948c8feefe50df883b555a1586ee70",
+        "stream_growth": 0,
+        "vertices": 3078,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 1,
+        "count": 513,
+        "draws": 2,
+        "kind": "line",
+        "sha256": "595baa77608f5759d194f7269a9cebace432557bc567c1d7e339ba36b9b0ffa3",
+        "stream_growth": 0,
+        "vertices": 1026,
+        "previous_draws": 1
+      },
+      {
+        "game": "d1",
+        "context": 1,
+        "count": 1025,
+        "draws": 3,
+        "kind": "line",
+        "sha256": "163c16bae51bd099c94d52b95fac1e7356d1688f0bf4cb61cc5979b2e88fd948",
+        "stream_growth": 0,
+        "vertices": 2050,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 0,
+        "draws": 2,
+        "kind": "glyph",
+        "scenario": 12,
+        "sha256": "ffe3b8063b7b8f816d5707a546638f7c28ea26e743b889a854e305340f5d7a40",
+        "stream_growth": 0,
+        "vertices": 1542,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 0,
+        "draws": 3,
+        "kind": "glyph",
+        "scenario": 13,
+        "sha256": "d68c0298a736e66d5f1cc567d67cfdb522948c8feefe50df883b555a1586ee70",
+        "stream_growth": 0,
+        "vertices": 3078,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 0,
+        "count": 513,
+        "draws": 2,
+        "kind": "line",
+        "sha256": "595baa77608f5759d194f7269a9cebace432557bc567c1d7e339ba36b9b0ffa3",
+        "stream_growth": 0,
+        "vertices": 1026,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 0,
+        "count": 1025,
+        "draws": 3,
+        "kind": "line",
+        "sha256": "163c16bae51bd099c94d52b95fac1e7356d1688f0bf4cb61cc5979b2e88fd948",
+        "stream_growth": 0,
+        "vertices": 2050,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 1,
+        "draws": 2,
+        "kind": "glyph",
+        "scenario": 12,
+        "sha256": "ffe3b8063b7b8f816d5707a546638f7c28ea26e743b889a854e305340f5d7a40",
+        "stream_growth": 0,
+        "vertices": 1542,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 1,
+        "draws": 3,
+        "kind": "glyph",
+        "scenario": 13,
+        "sha256": "d68c0298a736e66d5f1cc567d67cfdb522948c8feefe50df883b555a1586ee70",
+        "stream_growth": 0,
+        "vertices": 3078,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 1,
+        "count": 513,
+        "draws": 2,
+        "kind": "line",
+        "sha256": "595baa77608f5759d194f7269a9cebace432557bc567c1d7e339ba36b9b0ffa3",
+        "stream_growth": 0,
+        "vertices": 1026,
+        "previous_draws": 1
+      },
+      {
+        "game": "d2",
+        "context": 1,
+        "count": 1025,
+        "draws": 3,
+        "kind": "line",
+        "sha256": "163c16bae51bd099c94d52b95fac1e7356d1688f0bf4cb61cc5979b2e88fd948",
+        "stream_growth": 0,
+        "vertices": 2050,
+        "previous_draws": 1
+      }
+    ],
+    "texture_label_cases_unchanged": 864,
+    "config_cases_unchanged": 116,
+    "paired_games_and_recreated_contexts_equal": true
+  },
+  "trace_sha256": {
+    "temp\\general_cleanup_20261006\\gqr0185-android-before\\d1.json": "bfeec8d0459eaf75afc4017136e827b5dfb6c27f6f489daf92df42c4c538472d",
+    "temp\\general_cleanup_20261006\\gqr0185-android-before\\d2.json": "bfeec8d0459eaf75afc4017136e827b5dfb6c27f6f489daf92df42c4c538472d",
+    "temp\\general_cleanup_20261006\\gqr0185-android-after\\d1.json": "c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7",
+    "temp\\general_cleanup_20261006\\gqr0185-android-after\\d2.json": "c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7",
+    "temp\\general_cleanup_20261006\\gqr0185-labels-after\\d1.json": "43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1",
+    "temp\\general_cleanup_20261006\\gqr0185-labels-after\\d2.json": "43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1",
+    "temp\\general_cleanup_20261006\\gqr0185-config-after\\d1.json": "b3ef1eed06c8c373b371e8139a3392b38fc0b1cd1c0c13b883497a5833d58944",
+    "temp\\general_cleanup_20261006\\gqr0185-config-after\\d2.json": "c7055583bd6ef984c50f2ba60f343ac6b8c02a59603461ec08b8fbd6fe3e7dd8"
+  },
+  "frozen_library_sha256": {
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libc++_shared.so": "7918ebd0b8074c312d0c610205d49760b98c008026e6b817cd92103a3e12241b",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libchromaprint.so": "11124f5e43f5c3732dae89a7ffdd0e945fa5aef04085dc53f52794d971c36afd",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libdxx-graphics-safety.so": "cc604dc161ebd958e74142fa57a49e14a6da4f8a1d91658e6a70f22f60307d08",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libdxx-redux-d1.so": "bfda91aa222c26565fa2cedfc4f4821a5b4d467b995eaca58fb94615657315ee",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libdxx-redux-d2.so": "17d7fc635ed3799c4db6015bb8c22fd76641bdc455360e25a953f13867cbf31b",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libdxx_fingerprint.so": "d9c90af06189958ce87f0492f8b4948dc3c2a838ab617cfd03f35e61332f553e",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libfluidsynth.so": "4063276cd4e6740549254943b8fd98697f2ee95b3752a304936d8d09ae970665",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\liblzma_sdk_c.so": "ee770c1ce5fd2a6dc7a5add59a6ec321760da884331dea31cba74b2418d63c01",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libphysfs.so": "bb6bbce96722fa35d1a5d09e01a6914141b3e94f12992fe2578239ec3ad6c5e5",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libSDL12.so": "1dc09a48e870458562661ddc6e22d25e7c67a93f468a74efb59cff1ade9bcf07",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libSDL_mixer.so": "c6c764dd6bf30b225c7254206856f297953f4787c6d8b20edcca348f3942b051",
+    "temp\\general_cleanup_20261006\\gqr0185-native-before\\libtsf.so": "29ff28d4e80b5d867ce140c7ef68ba49ca3d07b0e2ad08c24ba0be2430698e11"
+  }
+}
+```
+
+## Evidence identities
+
+- temp\general_cleanup_20261006\gqr0185-windows-build.log: SHA256 bf8615b8181a60915c67720dc38170ffcb0a2910f29ce837004732ff1f83b10a
+- temp\general_cleanup_20261006\gqr0185-android-build.log: SHA256 2b2cd813d3a7f4272b409be994a4b7d5e83bbbdac457124c1160c13bbf2ed493
+- temp\general_cleanup_20261006\gqr0185-fixture-quality.log: SHA256 b469305175135fc15ffb8fe0d72822a23d31872d9b527a4fac42903478a0eebd
+- temp\general_cleanup_20261006\gqr0185-product-quality.log: SHA256 7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704
+- temp\general_cleanup_20261006\gqr0185-catalog-validate.log: SHA256 08915d4f43b9325fbdcbe022e07f5010d79ced458fdfeb1fee9ac4f6cf9feb1d
+- temp\general_cleanup_20261006\gqr0185-catalog-runner.log: SHA256 d84180952e2dbeb12c4bdd4d06ced46703fbc18e8aea3707671378cd92df2bfb
+- temp\general_cleanup_20261006\gqr0185-android-before-run.log: SHA256 a7527491eaf85808ddb062b9d179c782fb31fe5e800babc7836d45cbdc61187c
+- temp\general_cleanup_20261006\gqr0185-android-after-run.log: SHA256 84faf43f9c1253ac3794f9ba1e151c2e5180499d1c40b1de0e14f668cd1a1284
+- temp\general_cleanup_20261006\gqr0185-labels-after-run.log: SHA256 5017495053fba8bb924cb4a2f12d59fb4bb88d6ab089b3f74c6576c54a0fc156
+- temp\general_cleanup_20261006\gqr0185-config-after-run.log: SHA256 1ce6bf95b4b469a610697aa7a0e36bb4d865a74fc8272d392ffbf2177d0ff31e
+- temp\general_cleanup_20261006\gqr0185-before.json: SHA256 887d1e78cb687efa19caea6c80dd81819d54b149c585e61d22a4131a695e3744
+- temp\general_cleanup_20261006\gqr0185-source-verification.json: SHA256 003fda2b0690f9fbba0204bd7d8797d0563668d75d685fd08c1f29aa29071944
+- temp\general_cleanup_20261006\gqr0185-verification.json: SHA256 f6774406e3642b64a56a93878ef60d82134352c7778a84191f59d48ba9120b9a
+- temp\general_cleanup_20261006\apply_gqr0185.py: SHA256 0b1d9e2fe4c7f53b23ab1e32a5a0913a9b3aaa62c50a71f05c64d27dbbb080fb
+- temp\general_cleanup_20261006\verify_gqr0185.py: SHA256 52b1272acf8062888d9eeb9b659f3e81675967aaac0a9b1651781b7a0d0f635a
+- temp\general_cleanup_20261006\verify_gqr0185_runtime.py: SHA256 f5fac14b1cc6ab3c10a3525460b5ad5fb57085b7790134a577e29cfdf33754fd
+- temp\general_cleanup_20261006\gqr0185-baseline-engine-build.log: SHA256 86900a110bcea883e327dbcbd869e0debed92d5f158e7e3b0c8a65cba74354ed
+- android/tests/ogl_batches_fixture.hpp: SHA256 3214bc238d937785a40c91de9296055cee6d544008fdf31b878e40c6fa0e89ca
+- android/tests/texture_labels/main.cpp: SHA256 c5127524308acae71ac19d85da2300c1b825ed7bda3b0ca58c39b5375b0b8c9e
+- android/tests/test_android_ogl_batches.ps1: SHA256 8638bd7d5065bffc4ef8e3c7f29846a391fedce574b949e8bf1118a1e099cbe3
+- android/helpers/run_native_engine_fixture.ps1: SHA256 d9748e9a9e247bbee6ea1036687b72a7876e3c5cced966d46d75afcfe2029134
+- android/tests/native_engine_fixture.cmake: SHA256 061f8326806d347b1369f378aab35ccc9fe429c38021462b335dcaa7a2b7ad46
+- android/helpers/test_suite_coverage.ps1: SHA256 f18e44dea463be71cddd0d271d8b411c344f1fdde2d1eb31d91498948e36da02
+- android/run_all_tests.ps1: SHA256 d678ac3ec3b665176569183ddf7f05ecf04546d00a6f530fb65d6f71a996c278
+
+</details>
+
+<!-- END IMPORT: GQR-0185 bounded shared line glyph batching remediation 20261008 -->
+<!-- BEGIN IMPORT: BR-0304 merged-wall source wrap ordering remediation 20261008 SHA256:63a463b182e75921b0ba3471535c5f7183b2ef882e7f2063f8abde45124f9da3 -->
+
+## BR-0304 merged-wall source wrap ordering remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/br0304-remediation.md`
+- Imported SHA-256: `63a463b182e75921b0ba3471535c5f7183b2ef882e7f2063f8abde45124f9da3`
+
+<details>
+<summary>Full worker report</summary>
+
+# BR-0304 merged-wall source wrap ordering remediation 20261008
+
+- Revalidated accepted BR-0304 while preparing live GQR-0178 at HEAD 1ee56908299b870fef1852c3f0e7586844890652. Current compositor still called bound-object-only wrap helper on both source metadata objects before selecting/binding them, then repeated the error during restore
+- Bind bottom on unit zero before clamping bottom; bind overlay on unit one before clamping overlay. Repeat each select/bind before restoring that source to GL_REPEAT. Explicitly select unit zero before output binding/filter finalization; existing final active-unit restoration stays unchanged. Reuse current runtime adapter; no new state, callback or cache
+- Exact whole-file source transformation verifies only these reorderings and ten added lines in existing shared Android owner. No inherited file changes. Shader, UV orientation, source filters, framebuffer transaction, cache policy, failure paths, diagnostic code and native wrappers remain unchanged
+- Added maintained actual GLES engine fixture with five dimension pairs: stock/stock 64x64, high/high 512x512, stock/high, high/stock and NPOT 45x63/127x95. Cross nearest/bilinear/trilinear, four orientations, existing cached runtime adapter/uncached binding and two EGL context generations. 240 cases per game, 480 total
+- Reference explicitly binds and applies actual GL_CLAMP_TO_EDGE to each intended source before invoking the compositor. This isolates the wrap-state defect while preserving identical shader/UV behavior; it is not an independent shader/compositing correctness oracle. Read back every composite RGBA pixel and record SHA-256 at source, count whole-image/border differences and query both live source wrap axes against metadata after both actual/reference passes
+- Baseline reproduces 48 pixel/border mismatches per game, 96 total, in filtered high/stock and NPOT cases; nearest controls and equal-size controls retain expected pixels. All 240 baseline cases per game fail combined wrap restoration because the explicitly clamped reference leaves overlay actually clamped while metadata says repeat
+- After repair all 480 cases equal the clamped reference exactly, all source wraps/metadata restore correctly, and all reference hashes remain unchanged from baseline. Paired games, cached/uncached adapters and recreated contexts agree. Assert framebuffer, viewport, active unit, blend/depth/cull enables and depth/color masks restore after each render
+- Preserved pre-fix actual libraries and exact source snapshot; recorded before/new library identities differ. Full paired Windows and all three Android Debug ABI builds pass. Scoped mixed fixture/product quality and final runner quality pass, catalog validation/integration pass, owned diff check passes
+- Existing 864 texture-label, 84 glyph/ordered-line and 116 config cases revalidate byte-identical after repair. These normal runners also verify automatic native-cache discovery now skips newer abandoned cache directories whose engine output libraries do not exist, rather than selecting an unusable directory. No new cache-discovery wrapper
+- Registered reusable test_android_merged_wrap in graphics_scenarios with 600-second timeout. Native fixture's validated mode set includes merged-wrap and baseline mode, reusing the same isolated engine/EGL runner
+- GQR-0178 remains TODO for native cache-creation consolidation and its cache reuse/eviction/accounting/failure cleanup evidence; GQR-0238 per-unit binding coherence remains TODO. This fixture controls its own consistent adapter and does not prove arbitrary external raw GL mutation coherence. No cache-entry failure injection, resource pressure, retail pack, padded NPOT visible-subrectangle, live Activity or full gameplay replay claim. Concurrent edits preserved; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "source_scope": "Exact reorder of clamp calls after source binding, bind before each repeat restore, select unit zero before output; all other product source unchanged",
+  "product_lines_added": 10,
+  "inherited_files_changed": 0,
+  "runtime": {
+    "d1": {
+      "cases": 240,
+      "baseline_pixel_and_border_failures": 48,
+      "baseline_wrap_restoration_failures": 240,
+      "post_fix_failures": 0,
+      "reference_hashes_preserved": true
+    },
+    "d2": {
+      "cases": 240,
+      "baseline_pixel_and_border_failures": 48,
+      "baseline_wrap_restoration_failures": 240,
+      "post_fix_failures": 0,
+      "reference_hashes_preserved": true
+    }
+  },
+  "matrix": "5 stock/hires/mixed/NPOT dimension pairs x 3 filters x 4 orientations x cached/uncached adapter x 2 contexts per game",
+  "product_sha256": "aa8d2d55b8379a83903f69e3087c1f5b2609a71986f415c7bf1429b3189dc3f3",
+  "frozen_library_sha256": {
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libc++_shared.so": "7918ebd0b8074c312d0c610205d49760b98c008026e6b817cd92103a3e12241b",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libchromaprint.so": "11124f5e43f5c3732dae89a7ffdd0e945fa5aef04085dc53f52794d971c36afd",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libdxx-graphics-safety.so": "cc604dc161ebd958e74142fa57a49e14a6da4f8a1d91658e6a70f22f60307d08",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libdxx-redux-d1.so": "40a74e1c91ffe3f225513a772bdf3c54087a95c4882fe5acc7e0aebee4087b88",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libdxx-redux-d2.so": "e7b1efc45126ea7acac91549aeaad1ba389b01189767f9100c5438f6d6d322f7",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libdxx_fingerprint.so": "d9c90af06189958ce87f0492f8b4948dc3c2a838ab617cfd03f35e61332f553e",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libfluidsynth.so": "4063276cd4e6740549254943b8fd98697f2ee95b3752a304936d8d09ae970665",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\liblzma_sdk_c.so": "ee770c1ce5fd2a6dc7a5add59a6ec321760da884331dea31cba74b2418d63c01",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libphysfs.so": "bb6bbce96722fa35d1a5d09e01a6914141b3e94f12992fe2578239ec3ad6c5e5",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libSDL12.so": "1dc09a48e870458562661ddc6e22d25e7c67a93f468a74efb59cff1ade9bcf07",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libSDL_mixer.so": "c6c764dd6bf30b225c7254206856f297953f4787c6d8b20edcca348f3942b051",
+    "temp\\general_cleanup_20261006\\br0304-native-before\\libtsf.so": "29ff28d4e80b5d867ce140c7ef68ba49ca3d07b0e2ad08c24ba0be2430698e11"
+  },
+  "new_engine_library_sha256": {
+    "d1": "4a7237cac71409d6658b055a5acc5ff908ef89e01802b33992d97887ba703a89",
+    "d2": "fefc4073735f5762a0f5eb621c5295c4c1e9c645af56c83dc62e4e5254e6f191"
+  }
+}
+```
+
+## Evidence identities
+
+- temp\general_cleanup_20261006\br0304-windows-build.log: SHA256 d2d9ab12d6aed38d8f113aafcd4b4b26a48c95c675a8965444aec8ab0f5d3088
+- temp\general_cleanup_20261006\br0304-android-build.log: SHA256 332a44ce3e91f745b51a754ad99eaea1b8b631840ef98e1e5b7d1e906bc89a9a
+- temp\general_cleanup_20261006\br0304-fixture-quality.log: SHA256 fe05803b2e1894e1206ce5003f163d62ff42daf8d010e74013542ddcac687f68
+- temp\general_cleanup_20261006\br0304-product-quality.log: SHA256 74aa625201e26a0c5bc44076ba7444981769311e32a109c960a5eb9e91abbcc0
+- temp\general_cleanup_20261006\br0304-runner-quality.log: SHA256 f99a9c7dfac731fbd1b19e29391fbd6578b8046a0629de10d7879e7a15f40a14
+- temp\general_cleanup_20261006\br0304-catalog-validate.log: SHA256 32b6af89b98e6591f3eaf26d51019281774f105d32aff6bf94e22399643dabf0
+- temp\general_cleanup_20261006\br0304-catalog-runner.log: SHA256 07bf24633a881dc4b35e6f6ef2a6237fc68477ee4a2ca9860c5957d7a6812cd0
+- temp\general_cleanup_20261006\br0304-android-before-run.log: SHA256 b2f6a6b19f0dc5bd3460e268e809b4b33e427e25c4362dfd9c7b037b35b64499
+- temp\general_cleanup_20261006\br0304-android-after-run.log: SHA256 3cfccaf284737178ec262ee17e029bbe730c4144d477ad3e9cd38c59fcab7ab7
+- temp\general_cleanup_20261006\br0304-labels-after-run.log: SHA256 dedb6dc19164c920e8c874f3f9b87aa3f9e73a31743c489b8cd1255d2443c9e0
+- temp\general_cleanup_20261006\br0304-batches-after-run.log: SHA256 76f92314c592e2bfbd3495376f97c3ac5635219bc228200f52387b99d9468b62
+- temp\general_cleanup_20261006\br0304-config-after-run.log: SHA256 8b72187665f9ee27479b94f8f252a445c46971382bd15f00f7aad638ba890d53
+- temp\general_cleanup_20261006\verify_br0304.py: SHA256 80bd1c92b6864883cb9991a999cf0f3f8b10d5ed048a8bd0e82b38b538f2bebf
+- temp\general_cleanup_20261006\br0304-verification.json: SHA256 15c4de1a30754522231775c87475e172a0e9b478d8b280944f054d7c3470ff67
+- temp\general_cleanup_20261006\br0304-before-merged_wall_debug.c: SHA256 b0195c14ba398942a42f8609c7998f5fe234018c80c254bb4024a8107f959a3b
+- temp\general_cleanup_20261006\gqr0178-live-revalidation.json: SHA256 a3c2aecf84d5904dd8d6a576459a4d755c36773709171c10fd41db1ecd1e3f4c
+- android/tests/merged_wrap_fixture.hpp: SHA256 eae1b09da86082249562f76446473ea4e48db69341e8bf85353a4aa587d1c062
+- android/tests/texture_labels/main.cpp: SHA256 845129145ae3fd14b07fc9237fac04cd085d65d2f196dc362fae2e098af7731a
+- android/tests/test_android_merged_wrap.ps1: SHA256 a2056046a2d668dad90894fd198c7120e7367898d8cd7f21bcf986175c095e28
+- android/helpers/run_native_engine_fixture.ps1: SHA256 354aa770f7ba2e67c090e27d4f1c22e885444ce7c993b1b2e7f809dcfb1cb582
+- android/helpers/test_suite_coverage.ps1: SHA256 2046ce41d4981bd28cdb1a7916ae3ae447866687582c838a99fac20b075f1b67
+- android/run_all_tests.ps1: SHA256 3ba56f9ec0791a315877cd9063da4b8a950239ad6ceaf1c77fa3c8004c693ede
+- temp\general_cleanup_20261006\br0304-android-before\d1.json: SHA256 1fe488d4417751c9439d6e8ff0a1603818cb0c089e7fed01711e9a355145248d
+- temp\general_cleanup_20261006\br0304-android-before\d2.json: SHA256 1fe488d4417751c9439d6e8ff0a1603818cb0c089e7fed01711e9a355145248d
+- temp\general_cleanup_20261006\br0304-android-after\d1.json: SHA256 e113482002160cd7d78225f5e08e04de4233cc90891ffd8d41c4ff2a147dc8e6
+- temp\general_cleanup_20261006\br0304-android-after\d2.json: SHA256 e113482002160cd7d78225f5e08e04de4233cc90891ffd8d41c4ff2a147dc8e6
+- temp\general_cleanup_20261006\br0304-labels-after\d1.json: SHA256 43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1
+- temp\general_cleanup_20261006\br0304-labels-after\d2.json: SHA256 43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1
+- temp\general_cleanup_20261006\br0304-batches-after\d1.json: SHA256 c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7
+- temp\general_cleanup_20261006\br0304-batches-after\d2.json: SHA256 c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7
+- temp\general_cleanup_20261006\br0304-config-after\d1.json: SHA256 b3ef1eed06c8c373b371e8139a3392b38fc0b1cd1c0c13b883497a5833d58944
+- temp\general_cleanup_20261006\br0304-config-after\d2.json: SHA256 c7055583bd6ef984c50f2ba60f343ac6b8c02a59603461ec08b8fbd6fe3e7dd8
+
+</details>
+
+<!-- END IMPORT: BR-0304 merged-wall source wrap ordering remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0178 shared cached-merge creation remediation 20261008 SHA256:a9f2e526113c359a363d401234265ac7fd0c829e51c8776dcf2c06b457d315c6 -->
+
+## GQR-0178 shared cached-merge creation remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0178-remediation.md`
+- Imported SHA-256: `a9f2e526113c359a363d401234265ac7fd0c829e51c8776dcf2c06b457d315c6`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0178 shared cached-merge creation remediation 20261008
+
+- Revalidated accepted GQR-0178 / GQF-0191 at current HEAD 1ee56908299b870fef1852c3f0e7586844890652. Paired native creation transactions remained identical except local declaration order. Repaired and archived overlapping BR-0304 before this extraction; its source binding/wrap fix is preserved byte-for-byte
+- Move transaction to existing separately per-game compiled merged_wall_debug.c/.h as android_merged_wall_cached_texmerge_get. Native call passes existing private texture runtime adapter. Reuse existing public per-game allocation/initialization/sizing/free functions and globals, adding only required shared declarations/config include. No new callback table, layout mirror, adapter export, cache, subsystem or CMake wiring
+- Preserve optional slot initialization, null/missing/nonpositive texture admission, reuse before size admission, max-size choice, reservation/eviction, effective filtering and anisotropy, native allocation/init/setup/byte sizing/count order, finalizer failure return, flags excluding RLE and average color. Every moved transaction token is retained except public name/runtime parameter substitution. Complete native transformation and remaining shared source/header byte comparison pass
+- Applied savings: 47 inherited lines per game, 94 total; 50 existing shared source lines and three header lines added, 53 total; 41 net product lines removed. Actual Git original-attribution ogl.c additions D1 1905 -> 1858 and D2 1998 -> 1951; deletions unchanged at 76 each. Maintained fixture/runner additions are separate cost; no whole-repository shrink claim
+- Maintained fixture invokes actual native g3_draw_tmap_2 so baseline and post-extraction rendering both enter the production cache transaction. Five dimension pairs (64/64, 512/512, stock/high, high/stock and NPOT 45x63/127x95), three filters and four orientations cover cold creation and reuse. Real RGBA resident textures have mipmaps; native binding/filtering, 3D geometry, FBO merge and scene draw run in actual engine libraries
+- Matrix asserts nonempty cold scene pixels equal reuse pixels, two cold submitted draws versus one reuse draw, one native texture allocation retained on reuse, cached bitmap dimensions/flags/average color, mipmap policy, native byte accounting and clear deletion/count restoration. Querying actual global cache also checks slot admission; query-added hit counters are accounted separately
+- Lifecycle sequence fills all 32 actual cache slots with distinct bitmap identities, then controls published entry ages for deterministic least-recent eviction of slot one and equal-age first-slot eviction of slot zero. Native texture count and bytes remain bounded and restore after clear. GL names may be reused immediately, so deletion check permits the replacement's legitimate same-name allocation while accounting verifies replacement rather than accumulation
+- Incomplete-FBO control reserves an actual global entry and native pool texture name without level-zero storage, increments the native allocation count as the transaction does, then invokes existing shared finalizer. Actual GLES rejects incomplete framebuffer, forwards one native free, resets entry/slot, deletes the texture and restores count/bytes. This validates the unchanged shared failure cleanup directly, not synthetic system allocation failure or a manufactured full native-getter resource-pressure failure
+- All 124 cases per game, 248 total over two EGL context generations, match complete pre-extraction normalized traces byte-for-byte. Matrix includes 240 cold/reuse cases, four full lifecycle sequences and four incomplete-FBO cleanup cases. Games and recreated contexts agree. No handles, timestamps or wall-clock ages are serialized
+- Baseline fixture corrections before final comparison: compositor changes clear color, so reset identical background explicitly before reuse draw; D2 point list uses its native const qualification. Added nonempty-pixel assertion to prevent equal empty frames. Final baseline reran against preserved pre-extraction libraries after this assertion; exact old/new library hashes differ and final test executable links the selected frozen/current engine libraries
+- Full paired Windows and all three Android Debug native ABI builds pass. Scoped mixed fixture/final pixel checks, product quality, automation catalog validation/integration and owned diff check pass. New reusable cache runner registered in graphics_scenarios with 600-second timeout and frozen-library override
+- Existing 480 compositor-wrap, 864 texture-label, 84 glyph/line batch and 116 config cases revalidate byte-identical, 1544 total. No new changed-source compiler warning identified. GQR-0238 arbitrary external GL binding coherence remains open; this fixture uses native frame binding reset and controlled resident inputs, not external raw-mutation compatibility
+- No full gameplay replay, live Activity, retail pack loading, resource pressure or deferred security-sensitive probes. Concurrent installer/import/outstanding-bugs changes preserved; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact native removal/call replacements, moved transaction tokens preserved except public name/runtime parameter, every other shared source/header byte unchanged",
+  "inherited_lines_removed": 94,
+  "shared_lines_added": 53,
+  "net_product_lines_removed": 41,
+  "original_diff": {
+    "d1/arch/ogl/ogl.c": {
+      "before": {
+        "added": 1905,
+        "deleted": 76
+      },
+      "after": {
+        "added": 1858,
+        "deleted": 76
+      }
+    },
+    "d2/arch/ogl/ogl.c": {
+      "before": {
+        "added": 1998,
+        "deleted": 76
+      },
+      "after": {
+        "added": 1951,
+        "deleted": 76
+      }
+    }
+  },
+  "product_sha256": {
+    "d1/arch/ogl/ogl.c": "3ac01c92b50a45bbfa018fc8f0e6fb8faec64c446d1e0c9bfe8f960049d0df74",
+    "d2/arch/ogl/ogl.c": "10c8d6e9c1e80f8972b5c4b9f679baba0aee34f499deb1ba5e7ede265de23a74",
+    "android/app/src/main/cpp/shared/merged_wall_debug.c": "28fe8f82565065dbdfc509d1fa7cd5c48dc8379eca97e3fe5fc4d907186045cf",
+    "android/app/src/main/cpp/shared/merged_wall_debug.h": "e3712388c1b642b222a9324c3c75633252ac3a819c92140036a0f75288500b0e"
+  },
+  "baseline_game_traces_equal": true,
+  "runtime": {
+    "before_after_identical_cases": 248,
+    "matrix_cases": 240,
+    "lifecycle_sequences": 4,
+    "incomplete_fbo_cleanup_cases": 4,
+    "games_and_contexts_identical": true,
+    "cold_and_reused_scene_pixels_equal_and_nonempty": true
+  },
+  "baseline_engine_library_sha256": {
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libc++_shared.so": "7918ebd0b8074c312d0c610205d49760b98c008026e6b817cd92103a3e12241b",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libchromaprint.so": "11124f5e43f5c3732dae89a7ffdd0e945fa5aef04085dc53f52794d971c36afd",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libdxx-graphics-safety.so": "cc604dc161ebd958e74142fa57a49e14a6da4f8a1d91658e6a70f22f60307d08",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libdxx-redux-d1.so": "4a7237cac71409d6658b055a5acc5ff908ef89e01802b33992d97887ba703a89",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libdxx-redux-d2.so": "fefc4073735f5762a0f5eb621c5295c4c1e9c645af56c83dc62e4e5254e6f191",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libdxx_fingerprint.so": "d9c90af06189958ce87f0492f8b4948dc3c2a838ab617cfd03f35e61332f553e",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libfluidsynth.so": "4063276cd4e6740549254943b8fd98697f2ee95b3752a304936d8d09ae970665",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\liblzma_sdk_c.so": "ee770c1ce5fd2a6dc7a5add59a6ec321760da884331dea31cba74b2418d63c01",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libphysfs.so": "bb6bbce96722fa35d1a5d09e01a6914141b3e94f12992fe2578239ec3ad6c5e5",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libSDL12.so": "1dc09a48e870458562661ddc6e22d25e7c67a93f468a74efb59cff1ade9bcf07",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libSDL_mixer.so": "c6c764dd6bf30b225c7254206856f297953f4787c6d8b20edcca348f3942b051",
+    "temp\\general_cleanup_20261006\\gqr0178-native-before\\libtsf.so": "29ff28d4e80b5d867ce140c7ef68ba49ca3d07b0e2ad08c24ba0be2430698e11"
+  },
+  "new_engine_library_sha256": {
+    "d1": "b882221d39ff4b1b529c7e2b5a670ab3b0bff9b76d5a7be5e13f3d5f10a3ca27",
+    "d2": "af679d1920c79c66ee4deb91757c49b21025125808dc072ee8e58e44a7a6b24b"
+  },
+  "trace_sha256": {
+    "temp\\general_cleanup_20261006\\gqr0178-android-before\\d1.json": "9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230",
+    "temp\\general_cleanup_20261006\\gqr0178-android-before\\d2.json": "9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230",
+    "temp\\general_cleanup_20261006\\gqr0178-android-after\\d1.json": "9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230",
+    "temp\\general_cleanup_20261006\\gqr0178-android-after\\d2.json": "9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230"
+  }
+}
+```
+
+## Evidence identities
+
+- temp\general_cleanup_20261006\gqr0178-windows-build.log: SHA256 8de3bb8d41fae78bbde70e87f4181e0dc62e7cfac570adfd5ca3fe17b564610e
+- temp\general_cleanup_20261006\gqr0178-android-build.log: SHA256 31ca2330b7e7f213cde770d159ab7e2bbc9aa61236b901c1d1db2e3b5bdcb15d
+- temp\general_cleanup_20261006\gqr0178-fixture-quality-final.log: SHA256 fe05803b2e1894e1206ce5003f163d62ff42daf8d010e74013542ddcac687f68
+- temp\general_cleanup_20261006\gqr0178-fixture-pixel-quality.log: SHA256 c9e71d0026ac6cfde751cc6ac087fbda68d1a103e358aff5b70d2e3f728db98e
+- temp\general_cleanup_20261006\gqr0178-product-quality.log: SHA256 f22d7ad1b8dba9ce93133caf3e237b607acb682a3fc8f1b0987a3d95a53903f9
+- temp\general_cleanup_20261006\gqr0178-catalog-validate.log: SHA256 07b656d5ce685c461c4b813e03ea4fb15aedf0801dbc2bb4d57c2f853e32f282
+- temp\general_cleanup_20261006\gqr0178-catalog-runner.log: SHA256 4bcdb7d52b4d12071fffca6889a9b46f9ecc7def2f2f1b8d78451f3b5a8db0ea
+- temp\general_cleanup_20261006\gqr0178-android-before-run.log: SHA256 b297c2c72c46eca23845f2fd2c0cd0648c5d8c5c945aa3875d25366a501f0d12
+- temp\general_cleanup_20261006\gqr0178-android-after-run.log: SHA256 5d82ee841310e0097e916f79672e06313e32b8b37f5e871392112d58ecee811e
+- temp\general_cleanup_20261006\gqr0178-wrap-after-run.log: SHA256 fe83609bef0cb6e3a9dbe60f10ad00659fb9d65f32d09cac7ca1ec901a6099d1
+- temp\general_cleanup_20261006\gqr0178-labels-after-run.log: SHA256 ac0f7378d6b0a4e6d7505fbe54f74cc3b0e29b41e62551d19b66e6f8ddedac29
+- temp\general_cleanup_20261006\gqr0178-batches-after-run.log: SHA256 41a9e06ee93b60cc0ddd2291f88d9fe4ecdc5227c69aff4302fb0141f9b9437b
+- temp\general_cleanup_20261006\gqr0178-config-after-run.log: SHA256 f11e5b0c151d3ccf934af5bb079314c130e14410b99fd1172ebdef9c86a39218
+- temp\general_cleanup_20261006\gqr0178-before.json: SHA256 f58e92a775138cd4dde60be410866706bee9d52bc3e867326f427651ac7902b1
+- temp\general_cleanup_20261006\gqr0178-transformation.json: SHA256 5f32edceb2ba472e66f3282b99639ec64a3fc9f5abcdd42659947ddb6c136d26
+- temp\general_cleanup_20261006\gqr0178-source-verification.json: SHA256 d3a43a2fb385bf371ada8ff489b6a9a1b857763e8ce75a87501cfbee24f0c1b6
+- temp\general_cleanup_20261006\gqr0178-verification.json: SHA256 c78faa57a19d39196ff1f869fecfb60e31d968a05646176442cdbe558974b62a
+- temp\general_cleanup_20261006\apply_gqr0178.py: SHA256 cd62b753603c24d49ced30ef8f5ace083554ba8d5c1d75a12003445c24a14386
+- temp\general_cleanup_20261006\verify_gqr0178.py: SHA256 b815db43720a4558f9d0380847013a568cde9ff07ddaa48b1a26f7a62686969c
+- temp\general_cleanup_20261006\verify_gqr0178_runtime.py: SHA256 e7f5e4ecb70c78a75cdc3c1829c49fedf345c06356af61826a5dbd0c22618917
+- android/tests/merge_cache_fixture.hpp: SHA256 ab477441a9ef44069d7dd8908036133b8948e7e11127f07642472b171c08b2d3
+- android/tests/texture_labels/main.cpp: SHA256 429c7c2011678faea4130cdde18952f96a61d8c68fa552ddc4404072106615b6
+- android/tests/test_android_merge_cache.ps1: SHA256 15fab05ed5ac2141598bce0c6c30567f921a3bdea35b32577631114c8ea3939d
+- android/helpers/run_native_engine_fixture.ps1: SHA256 1257d287ce434efd70e2f4ad3e0d95b3cd176514bb43628fa4b900e9ad245ddc
+- android/helpers/test_suite_coverage.ps1: SHA256 a20486ee81c4de37fa6ffc51db2224829322997ca41ce411bc450108478c08d2
+- android/run_all_tests.ps1: SHA256 83c5343b9f39558dfd8ddd0c1d4933366a9c96abfde1c6771bd5e2b71183c194
+- temp\general_cleanup_20261006\gqr0178-android-before\d1.json: SHA256 9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230
+- temp\general_cleanup_20261006\gqr0178-android-before\d2.json: SHA256 9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230
+- temp\general_cleanup_20261006\gqr0178-android-after\d1.json: SHA256 9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230
+- temp\general_cleanup_20261006\gqr0178-android-after\d2.json: SHA256 9ea27651da96d09a70e27a70db77b049031fe4ee721bdf42890862e9f8879230
+- temp\general_cleanup_20261006\gqr0178-wrap-after\d1.json: SHA256 e113482002160cd7d78225f5e08e04de4233cc90891ffd8d41c4ff2a147dc8e6
+- temp\general_cleanup_20261006\gqr0178-wrap-after\d2.json: SHA256 e113482002160cd7d78225f5e08e04de4233cc90891ffd8d41c4ff2a147dc8e6
+- temp\general_cleanup_20261006\gqr0178-labels-after\d1.json: SHA256 43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1
+- temp\general_cleanup_20261006\gqr0178-labels-after\d2.json: SHA256 43d2aec000e1f077c4e37badb089ad3028f69b71578ffecd427cf97482eabfa1
+- temp\general_cleanup_20261006\gqr0178-batches-after\d1.json: SHA256 c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7
+- temp\general_cleanup_20261006\gqr0178-batches-after\d2.json: SHA256 c07a947038178cfba81efbb02573b25b8d05ff747f832a26a4c24e1cf85f2af7
+- temp\general_cleanup_20261006\gqr0178-config-after\d1.json: SHA256 b3ef1eed06c8c373b371e8139a3392b38fc0b1cd1c0c13b883497a5833d58944
+- temp\general_cleanup_20261006\gqr0178-config-after\d2.json: SHA256 c7055583bd6ef984c50f2ba60f343ac6b8c02a59603461ec08b8fbd6fe3e7dd8
+
+</details>
+
+<!-- END IMPORT: GQR-0178 shared cached-merge creation remediation 20261008 -->
+<!-- BEGIN IMPORT: BR-0197 Android xmodel mipmap generation remediation 20261008 SHA256:982e660e37268fbf792be730ac4e99efd010a0edc080d07d7400c9359f929260 -->
+
+## BR-0197 Android xmodel mipmap generation remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/br0197-remediation.md`
+- Imported SHA-256: `982e660e37268fbf792be730ac4e99efd010a0edc080d07d7400c9359f929260`
+
+<details>
+<summary>Full worker report</summary>
+
+# BR-0197 Android xmodel mipmap generation remediation 20261008
+
+- Revalidated accepted BR-0197 against current paired xmodel sources at HEAD 1ee56908299b870fef1852c3f0e7586844890652. Android GLES3 uploads used removed GL_GENERATE_MIPMAP and skipped explicit generation while requesting mipmapped filtering
+- Changed exactly two preprocessor guards per game. Android skips the invalid legacy parameter and generates mipmaps after uploading level zero. Desktop and non-Android OGLES branches are unchanged. Zero net product lines; no new helper, cache, callback or abstraction
+- Maintained actual ASE/TGA enhanced-model fixture covers RGB/RGBA, 8x8 POT and 15x13 NPOT, base/team textures and two EGL context generations in each actual game library. All 32 old-library records have GL_INVALID_ENUM and wrong minified pixels; all 32 repaired records have GL_NO_ERROR and equal their nonempty uniform level-zero reference. Reference hashes are preserved and recreated contexts agree
+- Fixture correction: use explicit unpack alignment 1 for tightly packed generated RGB data, restoring the previous value. Default unpack alignment 4 exposes a separate native odd-width RGB upload defect; it remains open in the resume plan. This repair does not claim to fix that defect. Native-font interleaving fixture also now uses normalized native coordinates and asserts nonempty reference pixels; all 42 helper and eight enhanced/native binding failures per game remain independently reproduced after mipmap repair
+- Full paired Windows builds and all three Android Debug native ABI builds pass, as do scoped mixed quality, final fixture quality, catalog validation/integration and owned diff check. Existing 1676 cache/wrap/label/batch records remain unchanged
+- Maintained test_android_xmodel_mipmaps runner uses common isolated actual-engine fixture wiring, registered in graphics_scenarios with 600-second timeout. No Activity, retail media, allocation pressure, generation-failure fallback, malformed media or full gameplay replay claim. Preserve GQR-0178/0185 and BR-0304, concurrent installer/import/outstanding-bugs edits; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "source": {
+    "d1": {
+      "exact_two_guard_changes": true,
+      "net_lines": 0,
+      "before_sha256": "5506fbb98726d30ee1ce50384bb2b214149f980a00461f9109238a5ee6382898",
+      "after_sha256": "a18cbdd5a8618dcea6fb313b6c3d5e728f648e3ae57a7740b94949f3e63425fc",
+      "old_library_sha256": "b882221d39ff4b1b529c7e2b5a670ab3b0bff9b76d5a7be5e13f3d5f10a3ca27",
+      "new_library_sha256": "431b552c03be7fd31c53940929ef21b4f20ecb52b19f0b50efc0cf6f03286cb5"
+    },
+    "d2": {
+      "exact_two_guard_changes": true,
+      "net_lines": 0,
+      "before_sha256": "37a3d6098f053b99a6c24355a1c0107591c2e1efedaaaf7a05c856de079e7c24",
+      "after_sha256": "319fa28b34563b4136bd7442967669e826647b91d61e07b8890dfaedbdcf67ed",
+      "old_library_sha256": "af679d1920c79c66ee4deb91757c49b21025125808dc072ee8e58e44a7a6b24b",
+      "new_library_sha256": "39fe094aa90a95b8e7200823470f6678d13b2a9801d276574e87113f1b8a90f1"
+    }
+  },
+  "mipmaps": {
+    "d1": {
+      "cases": 16,
+      "baseline_failures": 16,
+      "post_fix_failures": 0,
+      "reference_hashes_preserved": true,
+      "contexts_equal": true
+    },
+    "d2": {
+      "cases": 16,
+      "baseline_failures": 16,
+      "post_fix_failures": 0,
+      "reference_hashes_preserved": true,
+      "contexts_equal": true
+    }
+  },
+  "bindings": {
+    "d1": {
+      "helper": 42,
+      "enhanced_native": 8
+    },
+    "d2": {
+      "helper": 42,
+      "enhanced_native": 8
+    }
+  },
+  "controls": {
+    "d1:br0197-cache-after": 124,
+    "d1:br0197-wrap-after": 240,
+    "d1:br0197-labels-after": 432,
+    "d1:br0197-batches-after": 42,
+    "d2:br0197-cache-after": 124,
+    "d2:br0197-wrap-after": 240,
+    "d2:br0197-labels-after": 432,
+    "d2:br0197-batches-after": 42
+  },
+  "logs": {
+    "br0197-android-build.log": "40d9c622ff1cc1f146e47681dfa84ffbaa73997a08887c52d3ac30854f2a5cf8",
+    "br0197-windows-build.log": "a08b84806826a158b4dc59934e45e7650264eea8bd60ceeabb73e300e0589125",
+    "br0197-quality.log": "a64f6a490d7f8e67bf3b0c2ced7cb734fdfc9e222c9d31693938fe4dfe41d166",
+    "br0197-final-quality.log": "7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704",
+    "br0197-catalog-runner.log": "e8b767728298088fac56e3d6783829310f5377383b5644df07b6e67021ffc83b"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/verify_br0197.py: SHA256 f063c91123fe34b53295b218fdddbfdd7edea2f9923066acce6ee4342dce5ff3
+- temp/general_cleanup_20261006/br0197-verification.json: SHA256 b322d4c1638c52f6d43897284799c052f82d6c415985b869b78fce0b468cb654
+- temp/general_cleanup_20261006/br0197-android-before-resume.log: SHA256 f1a99d8cb56231c77b14d8ee90e1b85eaa42aa13c4b32bab5c6ffdb647d76882
+- temp/general_cleanup_20261006/br0197-android-after-run.log: SHA256 9ac689cda988c73135de7be4c61a8277bcc4caa98b3bed15382b9b01b37f29de
+- temp/general_cleanup_20261006/br0197-bindings-after-run.log: SHA256 bc0efdb698a56a33f62079b6ab837b2cefd1f5c815219e33369a295629b5ffd9
+- temp/general_cleanup_20261006/br0197-catalog-validate.log: SHA256 c150f6910950fef0590c3df9f903d8c73bc8a134103a177554d3e9ef2b01ebc0
+- android/tests/texture_bindings_fixture.hpp: SHA256 6e5a14ef3a4c4a276e107c51d6da4dcfdb4e926b4e88b0d6083fbb00ca1a21f2
+- android/tests/test_android_xmodel_mipmaps.ps1: SHA256 39735ad2a4eb304cb758e2f6b30bb9ffad47bfb7a44ea9e11d8d726308087b18
+- temp/general_cleanup_20261006/br0197-cache-after-run.log: SHA256 8a483e59bdbcf5e2544871ce7e05b7b8ae8d3004dcb8904efaf9bd244d0b97f6
+- temp/general_cleanup_20261006/br0197-wrap-after-run.log: SHA256 0cf7b56537c347780986a14bd44e00a4ea57f5343581965b79c584dbf95e54e8
+- temp/general_cleanup_20261006/br0197-labels-after-run.log: SHA256 ee6bd0268070aaa6c6e6d92686acdc1e989e5cf7083c36d4064bb37b6d8b5e8f
+- temp/general_cleanup_20261006/br0197-batches-after-run.log: SHA256 24d732ebc6e32041a7013f968d07139e52fd442037ec636718d28ec4a65db636
+
+</details>
+
+<!-- END IMPORT: BR-0197 Android xmodel mipmap generation remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0238 coherent texture binding ownership remediation 20261008 SHA256:5363420b298d82560264e6819bf355d8ae16667d7db6fece9bb83a34bb636482 -->
+
+## GQR-0238 coherent texture binding ownership remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0238-remediation.md`
+- Imported SHA-256: `5363420b298d82560264e6819bf355d8ae16667d7db6fece9bb83a34bb636482`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0238 coherent texture binding ownership remediation 20261008
+
+- Revalidated accepted GQR-0238 / reopened BR-0256 at live HEAD 1ee56908299b870fef1852c3f0e7586844890652 after preserving BR-0197 mipmap repair and the completed GQR-0178/0185 and BR-0304 changes. Baseline uses actual engine GLES libraries, not the older GL stand-in
+- Existing GLES shim now owns three per-unit texture handles with separate known flags and actual active-unit tracking. Raw bind/active/delete redirects unconditionally execute GL and track transitions. Cached helpers reuse only known matching 2D bindings. Null adapters still bind unconditionally. Other valid units always bind; other texture targets do not overwrite 2D knowledge. Deletion invalidates all matching slots
+- Native adapters retain only existing bind/reuse counter pointers. Removed both private arrays, active-unit variables, obsolete scalar resets and scalar filter adapter fields. Frame resets invalidate binding knowledge without inventing active unit zero. Shim initialization queries actual active unit and valid unit range; shutdown invalidates tracking. Internal diagnostic probe uses tracked wrappers explicitly
+- Exact paired native transformation, shared remainder token checks and original-attribution metrics pass. Removed 12 inherited lines; original ogl.c additions D1 1858 -> 1852 and D2 1951 -> 1945, deletions unchanged at 76 each. Overall product grows 21 net lines to repair raw-transition tracking; this is not a net product deletion. Maintained fixture/structural-contract updates are separate test cost
+- Preserved post-BR-0197 baseline has 68 cases/game, including 42 helper binding failures and eight wrong native-font pixel interleavings/game. Final actual fixture has 80 cases/game, all correct. Native-font reference hashes remain unchanged and nonempty; upload/base/team/free interleavings now match them. Valid reuse/counters, null/second adapter, raw bind/unit changes, filters 0/1/2, deletion/reallocation and transient reset covered
+- Twelve added controls/game cover reset on unit two, cross-adapter reuse, deletion on all three tracked units, fourth-unit fallback, cube-map target isolation and actual initialization on nonzero unit two. Two actual recreated EGL contexts agree in both games. Deletion/reallocation uses actual generated names; no claim that the driver recycled the same numeric name
+- Preprocessed ten actual Android engine translation units spanning all seven raw caller files. Only the three shim wrapper bodies retain raw GL bind/active/delete calls after excluding GL declarations; enhanced models, compositor, filters and external diagnostics use the shared owner. Seven maintained renderer contracts pass after updating the stale structural assumptions
+- Full paired Windows builds and all three Android Debug native ABI builds pass. Scoped mixed and final lifecycle fixture quality, catalog validation/integration and owned diff checks pass. No changed-source warnings. All 1708 existing mipmap/cache/wrap/label/batch records remain byte-identical
+- Maintained test_android_texture_bindings runner registered in graphics_scenarios with 600-second timeout. Baseline was captured before the adapter ABI change; final fixture adds explicit owner/lifecycle controls. No arbitrary simultaneous contexts, live Activity lifecycle, invalid GL inputs, driver allocation pressure, malformed media or full gameplay replay claim. Separate default-alignment odd-width RGB upload issue remains open in resume plan. Concurrent installer/import/outstanding-bugs work preserved; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "source": {
+    "product": {
+      "d1/arch/ogl/ogl.c": {
+        "before_lines": 3742,
+        "after_lines": 3736,
+        "net_lines": -6,
+        "sha256": "fc59b1244967007d92243921ee54ead14b75887cdab5c518bc5e224adba12238"
+      },
+      "d2/arch/ogl/ogl.c": {
+        "before_lines": 3849,
+        "after_lines": 3843,
+        "net_lines": -6,
+        "sha256": "8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690"
+      },
+      "android/app/src/main/cpp/shared/ogl_texture_android.h": {
+        "before_lines": 92,
+        "after_lines": 84,
+        "net_lines": -8,
+        "sha256": "f7e181aefe3c14eb738d1c4e192946b806d4a4824780635f10c85986280b23f7"
+      },
+      "android/app/src/main/cpp/shared/ogl_texture_android.c": {
+        "before_lines": 471,
+        "after_lines": 445,
+        "net_lines": -26,
+        "sha256": "8ccc73c0fc0874356d93dad8de69ad256d6a87e74ae178976d8493fcc8944046"
+      },
+      "android/app/src/main/cpp/shared/gles3_shim.h": {
+        "before_lines": 197,
+        "after_lines": 208,
+        "net_lines": 11,
+        "sha256": "1d8e50a9425b7cbf5e4f2b1fe17dce876a986f92a905b38b940772ac9bffa9bf"
+      },
+      "android/app/src/main/cpp/shared/gles3_shim.c": {
+        "before_lines": 1075,
+        "after_lines": 1131,
+        "net_lines": 56,
+        "sha256": "fc1bb17dd51e4fff43b0a4b517caf32b60e092007d2ac37e463f5ddc6f90cf36"
+      }
+    },
+    "original_diff": {
+      "d1": {
+        "before_added_deleted": [
+          1858,
+          76
+        ],
+        "after_added_deleted": [
+          1852,
+          76
+        ]
+      },
+      "d2": {
+        "before_added_deleted": [
+          1951,
+          76
+        ],
+        "after_added_deleted": [
+          1945,
+          76
+        ]
+      }
+    },
+    "net_product_lines": 21,
+    "inherited_lines_removed": 12
+  },
+  "bindings": {
+    "d1": {
+      "before_cases": 68,
+      "before_helper_failures": 42,
+      "before_native_pixel_failures": 8,
+      "after_cases": 80,
+      "after_failures": 0,
+      "native_reference_hashes_preserved": true,
+      "owner_controls": 10,
+      "lifecycle_controls": 2,
+      "contexts_equal": true
+    },
+    "d2": {
+      "before_cases": 68,
+      "before_helper_failures": 42,
+      "before_native_pixel_failures": 8,
+      "after_cases": 80,
+      "after_failures": 0,
+      "native_reference_hashes_preserved": true,
+      "owner_controls": 10,
+      "lifecycle_controls": 2,
+      "contexts_equal": true
+    }
+  },
+  "controls": {
+    "d1:gqr0238-mipmaps-after": 16,
+    "d1:gqr0238-cache-after": 124,
+    "d1:gqr0238-wrap-after": 240,
+    "d1:gqr0238-labels-after": 432,
+    "d1:gqr0238-batches-after": 42,
+    "d2:gqr0238-mipmaps-after": 16,
+    "d2:gqr0238-cache-after": 124,
+    "d2:gqr0238-wrap-after": 240,
+    "d2:gqr0238-labels-after": 432,
+    "d2:gqr0238-batches-after": 42
+  },
+  "logs": {
+    "gqr0238-android-build.log": "938b2db335c04cd1b5ebad0bb1edd964724036df8ad7a4346c70164447d03d48",
+    "gqr0238-windows-build.log": "d8ad771e7f1e695c81fc48a480edc4d1db12111a4abe059db864fa729d366aa0",
+    "gqr0238-quality.log": "b85ca934aa64e339d0c0f9d99d2c1aa5e032a4180265ce39e76fd57c82097378",
+    "gqr0238-final-quality.log": "2cacc99bc268cc14c1974843f43eea70cb94f3134acc2c5e96a6d0d4ad690304",
+    "gqr0238-lifecycle-quality.log": "19dd2fe27d93974dc2f0b4a925908888e461a471fb622632eaaa1598c717d3e7",
+    "gqr0238-catalog-runner.log": "e8b767728298088fac56e3d6783829310f5377383b5644df07b6e67021ffc83b",
+    "gqr0238-renderer-contracts.log": "94f0cca4b053ff3cef600db365b43871f058c52f5989c2b6c821cf2fef885216"
+  },
+  "library_sha256": {
+    "d1": {
+      "before": "431b552c03be7fd31c53940929ef21b4f20ecb52b19f0b50efc0cf6f03286cb5",
+      "after": "3af1f4527c41dfbbd3e46f3b2556b95e944d5fe87249e67c4c41d25220bb825d"
+    },
+    "d2": {
+      "before": "39fe094aa90a95b8e7200823470f6678d13b2a9801d276574e87113f1b8a90f1",
+      "after": "2532fadc2d0f78103b1820e26cd6ed39e97c154926cb626a50332b9563e0e69f"
+    }
+  },
+  "caller_census": [
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/merged_wall_debug.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/ogl_texture_android.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/d1/arch/ogl/ogl.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/gles3_shim.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 1,
+        "glActiveTexture": 1,
+        "glDeleteTextures": 1
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/d1/xmodel/xmodel.cpp",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/merged_wall_debug.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/ogl_texture_android.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/d2/arch/ogl/ogl.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/android/app/src/main/cpp/shared/gles3_shim.c",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 1,
+        "glActiveTexture": 1,
+        "glDeleteTextures": 1
+      }
+    },
+    {
+      "source": "C:/local/dxx-redux/d2/xmodel/xmodel.cpp",
+      "direct_raw_call_counts_excluding_GL_declarations": {
+        "glBindTexture": 0,
+        "glActiveTexture": 0,
+        "glDeleteTextures": 0
+      }
+    }
+  ]
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/verify_gqr0238_source.py: SHA256 45e67e475b66e24546d27eefd57b4462d8ba2cc9dc86deaee519c146b8ce403b
+- temp/general_cleanup_20261006/verify_gqr0238_callers.py: SHA256 aea6134e82c70181f278ffbde48e20fedfffa878d27d071b8e6f69e2e4a53f25
+- temp/general_cleanup_20261006/verify_gqr0238_runtime.py: SHA256 ddc1d0ecf76308c0684d9165b618364172f3d20055d2f56c4271fe77de8a4c0a
+- temp/general_cleanup_20261006/gqr0238-source-verification.json: SHA256 1f263478b06983253f1b1375bade037060e8bfb392200c8c6a0c3d024f233dff
+- temp/general_cleanup_20261006/gqr0238-caller-census.json: SHA256 2c26becd16b880b4bfefc1752ee14868b7eadb9fe9b6142633e9d037ef6a557a
+- temp/general_cleanup_20261006/gqr0238-verification.json: SHA256 ac67a430ba7fb2e26fb64e485a556edf5839240b8775fd6d6910cc130c875886
+- temp/general_cleanup_20261006/br0197-bindings-after-run.log: SHA256 bc0efdb698a56a33f62079b6ab837b2cefd1f5c815219e33369a295629b5ffd9
+- temp/general_cleanup_20261006/gqr0238-android-after-run.log: SHA256 0fe34ed5eedc70a8492d379fd81f5c7f582920682053a33cdcc18019f7b15b11
+- temp/general_cleanup_20261006/gqr0238-catalog-validate.log: SHA256 c150f6910950fef0590c3df9f903d8c73bc8a134103a177554d3e9ef2b01ebc0
+- android/tests/texture_bindings_fixture.hpp: SHA256 6a4834f3d169c40b4b0a4363707faa3666259d52dda848d805dd277add629a73
+- android/tests/test_android_texture_bindings.ps1: SHA256 081d8f8484d3c279a44e9cf1239960a71cbfc060aaaeb962e2aeeb10ecc44348
+- android/tests/texture_labels/main.cpp: SHA256 79c1b9cec2fd93a17b7a9675f228d8b755a363e5c499e2b79eb2d05e6132866c
+- android/tests/merged_wrap_fixture.hpp: SHA256 23c4d729bd05049acd6c9eb2d35732699e2f769f8dfedd853b93a6797c25aa5b
+- android/tests/test_android_renderer_contracts.py: SHA256 b0de0fd3624a2c8d115b50603974d03663b506ccfd68398d9b207051ace7ac16
+- temp/general_cleanup_20261006/gqr0238-mipmaps-after-run.log: SHA256 5c906396e1e8282d5def556cd0480fdc68b68a30fca6116f9f7c12e44fcc92fc
+- temp/general_cleanup_20261006/gqr0238-cache-after-run.log: SHA256 7aec3d552fc9e961d804be461ca97d00674423c568b7121e2abe18369a637c71
+- temp/general_cleanup_20261006/gqr0238-wrap-after-run.log: SHA256 d694fd6460fa83a908f022529aa63735f24eaa6bc25a97f18ce90b843b30a68b
+- temp/general_cleanup_20261006/gqr0238-labels-after-run.log: SHA256 75811230efc60a935014443ac600b702e70ae9d1a296efc8932de98a66075a37
+- temp/general_cleanup_20261006/gqr0238-batches-after-run.log: SHA256 85e25d66addefc3ab61baa3658d9d06c5005f93bee1946d0389cbc00d6a7d219
+
+</details>
+
+<!-- END IMPORT: GQR-0238 coherent texture binding ownership remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0237 shared automap adoption eligibility remediation 20261008 SHA256:56bd75fcb11659c48d72e3783af34a208fd8f7e624a1ea91bafa534edb9cc39e -->
+
+## GQR-0237 shared automap adoption eligibility remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0237-remediation.md`
+- Imported SHA-256: `56bd75fcb11659c48d72e3783af34a208fd8f7e624a1ea91bafa534edb9cc39e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0237 shared automap adoption eligibility remediation 20261008
+
+- Revalidated GQR-0237/GQF-0252 at current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and current renderer-cleanup worktree. Both Android draw handlers still computed identical recorder/replay/network eligibility, while the existing shared updater discarded its player-object argument
+- Moved eligibility into existing per-game automap_metadata_overlay owner and removed both arguments. Preserve recorder/replay short-circuit query order before timer/progress/readiness, including those three queries in blocked states. Poll cadence, rewind-clock rule, displayed revision and refresh count are unchanged. Removed unused D1 recorder/replay and D2 replay includes; preserve D2 recorder marker uses and D1 initial route rescan
+- Exact whole native file transformation and shared token verification pass. Removed 21 inherited lines, added eight shared lines: 13 net product lines removed. Original automap.c additions D1 224 -> 212 and D2 425 -> 416; deletions unchanged at 22 and 29. Maintained fixtures/registration are separate test cost
+- New maintained fixture compiles the actual production updater with controlled recorder/replay, network mode, clock, progress/readiness, revision and publication seams. All 136 before/after query/adoption/revision traces are identical across paired games. Covers eight recording/replay/network combinations, first and boundary polls, suppressed repeated polls, exact rewind boundary, external revisions while blocked/calculating, resume and all 20 progress/readiness combinations
+- Another 136 post-change cases pass with NETWORK undefined; ordinary and multiplayer-bit-only states both adopt, preserving the original conditional network policy. These are production-source entry tests, not a live recorder/replay session or network transport test. They do not replace the following full-app checks
+- Fresh APK built for all three Android Debug native ABIs and installed only on emulator-5582. Paired live readiness script passes 21/21 D1 and 26/26 D2 steps. D1 initial rescan shows three objectives and two secret labels without requiring a later revision refresh; D2 retains the cold calculating/readiness phase and actual open-map route refresh, with zero publication-adoption failures. D1 lacks D2 route-cache introspection fields, so those assertions remain D2-only
+- Live D1 initially could not start because the emulator lacked descent.pig. Provisioned the existing ordinary local PC texture file matching installed retail HOG, SHA256 093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe, into the selected default asset set. No import/parser coverage claimed. Script corrected to use the existing D1 Enter/Rookie/briefing flow and game-specific introspection before final passing runs; superseded setup/script failures are retained separately
+- Full paired Windows builds, Android APK/all-ABI builds, scoped mixed/final fixture quality, final automation catalog validation and catalog integration pass. Reusable native Android runner registered in graphics_scenarios with 600-second timeout; existing readiness script now declares both games and 600-second master timeout
+- No new runtime callback, font-state mirror, subsystem or broad route rewrite. Deferred GQR-0184 allocation-fault probes remain excluded; no malformed media, resource pressure, full input replay or live multiplayer claim. Preserve completed rendering cleanup and concurrent installer/import/outstanding-bugs edits; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "product": {
+    "d1/main/automap.c": {
+      "before_lines": 1374,
+      "after_lines": 1362,
+      "net_lines": -12,
+      "sha256": "71fc7afb59d32b05af19f4570937babeb35ec8ca0c7146e003f4c1f789de9020"
+    },
+    "d2/main/automap.c": {
+      "before_lines": 1881,
+      "after_lines": 1872,
+      "net_lines": -9,
+      "sha256": "71a54b6c5a7e71a9f3d464de2e79a6c2d4cbd92cd6578fe710a05728cea35b86"
+    },
+    "android/app/src/main/cpp/shared/automap_metadata_overlay.c": {
+      "before_lines": 968,
+      "after_lines": 976,
+      "net_lines": 8,
+      "sha256": "5c90ee9bede1037d14a821aaf4c75ab5703f7d22718218be195eb8e1f868f9b4"
+    },
+    "android/app/src/main/cpp/shared/automap_metadata_overlay.h": {
+      "before_lines": 37,
+      "after_lines": 37,
+      "net_lines": 0,
+      "sha256": "48a734852a805922b0ddd3bc33be9ad3acc6883ed1594d7bfad066b991d127d0"
+    }
+  },
+  "original_diff": {
+    "d1": {
+      "before_added_deleted": [
+        224,
+        22
+      ],
+      "after_added_deleted": [
+        212,
+        22
+      ]
+    },
+    "d2": {
+      "before_added_deleted": [
+        425,
+        29
+      ],
+      "after_added_deleted": [
+        416,
+        29
+      ]
+    }
+  },
+  "inherited_lines_removed": 21,
+  "net_product_lines": -13,
+  "runtime": {
+    "d1": {
+      "cases": 68,
+      "all_traces_preserved": true,
+      "offline_cases": 68,
+      "readiness_result": {
+        "result": "PASS",
+        "run_id": "adb7c428a2554deca14a1827a3c213f6",
+        "steps_completed": 21,
+        "total_steps": 21,
+        "elapsed_ms": 6011
+      },
+      "live_map": {
+        "objectives": 3,
+        "objective_labels": 3,
+        "secret_labels": 2,
+        "route_refreshes": 0
+      }
+    },
+    "d2": {
+      "cases": 68,
+      "all_traces_preserved": true,
+      "offline_cases": 68,
+      "readiness_result": {
+        "result": "PASS",
+        "run_id": "204a9f0aa18f4c3e9e9ff56159cb6218",
+        "steps_completed": 26,
+        "total_steps": 26,
+        "elapsed_ms": 17875
+      },
+      "live_map": {
+        "objectives": 10,
+        "objective_labels": 12,
+        "secret_labels": 7,
+        "route_refreshes": 1,
+        "publication_adoption_failures": 0
+      }
+    }
+  },
+  "logs": {
+    "gqr0237-windows-build.log": "46647f0d7ac665045937dc47c158201a6a41046d140b288c25da96761c850dbd",
+    "gqr0237-android-apk-build.log": "40cabf1fe2a8ce8aea9d2637a41ba797992a0688f622bf6b0b10b700542a1de2",
+    "gqr0237-quality.log": "8b6a635dbb7376f3f8b935af3587ef993abbfc23c3707f7da7e5bd30d96554ec",
+    "gqr0237-final-fixture-quality.log": "e3a5e55575fc1717fd8bb4b429dd656ad6fa7de28460e88c22efc5accd73ac55",
+    "gqr0237-readiness-final-quality.log": "698936baa19645d81c5f731f12bf4c3e1a39282d17518bacafd7f8f0f7e39260",
+    "gqr0237-catalog-final-validate.log": "1e2d00b595315d766fe96136e4d1817d0ac68d234a3b8fe77c2c06d8c95f6009",
+    "gqr0237-catalog-runner.log": "5d703785af5b5dfb0c6e00bbb72bd2501a48776e51ffa583a364fb81921a813d"
+  },
+  "apk_sha256": "e2754e37629ef5c55eb2c8e6cedab11b6b265bc4af05c7765b6640b4eecc1a71"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/verify_gqr0237.py: SHA256 4c67ff9162da47dc80e913c67abc97f14553b465abea8de97e4f83bf9dffb694
+- temp/general_cleanup_20261006/verify_gqr0237_runtime.py: SHA256 0de6aca6a817866e4a8e8c71269e44fd8e895d76d6cb671c8e183494234a7697
+- temp/general_cleanup_20261006/gqr0237-source-verification.json: SHA256 cbf687dd9674e38e6b544715df7fabc501ff2c8d522db8d7acff2b060d0876e2
+- temp/general_cleanup_20261006/gqr0237-verification.json: SHA256 17861e6f73f2f24afb644f94ea3432abbf0e4c9404e903cf993c2598d8c30655
+- temp/general_cleanup_20261006/gqr0237-android-before-run.log: SHA256 4694cc725cea6f2758f6ec46378544210596f257f2a0f0f359aee36192ee25d0
+- temp/general_cleanup_20261006/gqr0237-android-after-run.log: SHA256 1a4ff482a4a98ded6c8c78a884e69a2db36fa961203e5b43b26787e2cb51fecd
+- temp/general_cleanup_20261006/gqr0237-offline-after-run.log: SHA256 b434f84624f0107a46bdcab13b0799d804c338dd9431e51e67748e294d0601ca
+- temp/general_cleanup_20261006/gqr0237-install.log: SHA256 c4aa470acafcf8576c15b0f0b5ae7e852d1ec5413372d0e6a9272e788e1306d3
+- android/tests/automap_route_policy/main.cpp: SHA256 1a6a4a405f994f3412ec61f4c51faeda6b0df1f9c18582dd282ba0887672008e
+- android/tests/automap_route_policy/CMakeLists.txt: SHA256 2577e9970f13eef3776a65895879b5e27ef1d09149fcaad6ccfebbdde0588c36
+- android/tests/test_android_automap_route_policy.ps1: SHA256 eab0c0247b73548c7f66db5ada363165a81acdc4b10e5f6f925d40d228c6ee3a
+- android/game_scripts/test_automap_objective_readiness_progress.jsonc: SHA256 3f3647a5d1095bcc94e23c09873c2cd0279fc5a3638b2fced956f3b023512d6c
+- temp/general_cleanup_20261006/gqr0237-readiness-d1.log: SHA256 94453825901e82f3342fa1da397e88183ef60df019e04743199f41f1d5bc0bd0
+- temp/general_cleanup_20261006/gqr0237-readiness-d1-result.json: SHA256 89792a7085afccc361091ccca3d08aa8c25a85e4cdf593b035d9dd941b7eacca
+- temp/general_cleanup_20261006/gqr0237-readiness-d2.log: SHA256 d4f3a141211d2470d85517f26a4008aad36396261a1649ee8282d73ebf4adab5
+- temp/general_cleanup_20261006/gqr0237-readiness-d2-result.json: SHA256 753410df52d6e9a2bf83bfc0180fdfe2f710ab3a0a131d4a3fabe1c9bcb60628
+
+</details>
+
+<!-- END IMPORT: GQR-0237 shared automap adoption eligibility remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0186 unused D1 polymodel cache remediation 20261008 SHA256:7c3cdeb2f3de93d67dcf37676a4e2c6c816bec8ba6256e7371716c317c0c8da9 -->
+
+## GQR-0186 unused D1 polymodel cache remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0186-remediation.md`
+- Imported SHA-256: `7c3cdeb2f3de93d67dcf37676a4e2c6c816bec8ba6256e7371716c317c0c8da9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0186 unused D1 polymodel cache remediation 20261008
+
+- Revalidated accepted GQR-0186/GQF-0199 at current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and current renderer-cleanup worktree. Complete tracked and current untracked production/build/test/script inventories find only the unused D1 definition and original D2 definition/declaration/two exit-model calls. Pre-deletion Android libraries export the unused D1 function on all three ABIs
+- Deleted only the thirteen-line D1 ogl_cache_polymodel_textures function and one separator. Exact whole-file byte verifier proves every other D1 byte unchanged; whole current D2 source hash is unchanged. No header, callback, wrapper, native model/asset behavior or replacement abstraction added
+- Original-attribution source has no D1 function and retains the D2 implementation. Removed 14 inherited/product lines. Original D1 ogl.c diff additions 1852 -> 1838, deletions unchanged at 76. D2 remains 1945 added/76 deleted. Preserved prior bounded batches, shared merge creation, coherent binding and wrap repairs
+- Both full Windows builds and all three Android Debug native ABI builds/link pass. Post-build D1 symbol is absent from the Windows native object and every Android library; D2 symbol remains in its Windows object/all Android ABIs, with both exit-model call sites retained. Full current/tracked source inventories contain exactly those four D2 references
+- Scoped quality invocation confirms inherited-only source exclusion; exact deletion/style preservation and owned diff check pass. No new implementation-mirroring test for unused-code deletion, no unrelated renderer replay or runtime-coverage claim. Concurrent installer/import/outstanding-bugs edits preserved; no staging or commit
+
+## Exact verification
+
+```json
+{
+  "source": {
+    "d1": {
+      "exact_scope": true,
+      "before_sha256": "fc59b1244967007d92243921ee54ead14b75887cdab5c518bc5e224adba12238",
+      "after_sha256": "7aa1f1c0467b4ae9733d06fe542110a96a45829e9451aca92ff7a3d69ac0139e",
+      "lines_removed": 14
+    },
+    "d2": {
+      "exact_scope": true,
+      "before_sha256": "8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690",
+      "after_sha256": "8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690",
+      "lines_removed": 0
+    }
+  },
+  "symbols": {
+    "d1": {
+      "arm64-v8a": [],
+      "armeabi-v7a": [],
+      "x86_64": [],
+      "windows_object": []
+    },
+    "d2": {
+      "arm64-v8a": [
+        "0000000000bc431c T ogl_cache_polymodel_textures"
+      ],
+      "armeabi-v7a": [
+        "007f8b38 T ogl_cache_polymodel_textures"
+      ],
+      "x86_64": [
+        "0000000000b3fd60 T ogl_cache_polymodel_textures"
+      ],
+      "windows_object": [
+        "00000000 T _ogl_cache_polymodel_textures"
+      ]
+    }
+  },
+  "original_diff": {
+    "d1": {
+      "before_added_deleted": [
+        1852,
+        76
+      ],
+      "after_added_deleted": [
+        1838,
+        76
+      ]
+    },
+    "d2": {
+      "before_added_deleted": [
+        1945,
+        76
+      ],
+      "after_added_deleted": [
+        1945,
+        76
+      ]
+    }
+  },
+  "tracked_census": [
+    "d2/arch/ogl/ogl.c:695:void ogl_cache_polymodel_textures(int model_num)",
+    "d2/main/bm.c:517:void ogl_cache_polymodel_textures(int model_num);",
+    "d2/main/bm.c:565:\t\togl_cache_polymodel_textures(exit_modelnum);",
+    "d2/main/bm.c:566:\t\togl_cache_polymodel_textures(destroyed_exit_modelnum);"
+  ],
+  "current_census": [
+    "d2\\main\\bm.c:517:void ogl_cache_polymodel_textures(int model_num);",
+    "d2\\main\\bm.c:565:\t\togl_cache_polymodel_textures(exit_modelnum);",
+    "d2\\main\\bm.c:566:\t\togl_cache_polymodel_textures(destroyed_exit_modelnum);",
+    "d2\\arch\\ogl\\ogl.c:695:void ogl_cache_polymodel_textures(int model_num)"
+  ],
+  "logs": {
+    "gqr0186-windows-build.log": "0fd01f70d7408dcfe53deb2761c140ff177420f2c251cf4f71adb69e9dda1e95",
+    "gqr0186-android-build.log": "6941850b6fb695d333d1863e3052072d6b6cea9805233753dd28603ca147793a",
+    "gqr0186-quality.log": "f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/verify_gqr0186.py: SHA256 fee5db6fcabb6383f9dba98d1c53926c4b4c3eef9b6901a890b41dc92bc23bf3
+- temp/general_cleanup_20261006/gqr0186-before.json: SHA256 8830fa5ffecb74cf30a306145f31277c0ae24998e1466e1977773c23362aa6ee
+- temp/general_cleanup_20261006/gqr0186-verification.json: SHA256 3242b0d5891b9c06bbeba76c5344cb19409dd5cc6d704b3988d322d07f10148d
+- temp/general_cleanup_20261006/gqr0186-before-d1-ogl.c: SHA256 fc59b1244967007d92243921ee54ead14b75887cdab5c518bc5e224adba12238
+- temp/general_cleanup_20261006/gqr0186-before-d2-ogl.c: SHA256 8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690
+
+</details>
+
+<!-- END IMPORT: GQR-0186 unused D1 polymodel cache remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0158 redundant inherited feature includes remediation 20261008 SHA256:6d7d47fd42bec687c7bfea0e61a8659db07fcee581c2a9cd503b5339cea2837b -->
+
+## GQR-0158 redundant inherited feature includes remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0158-remediation.md`
+- Imported SHA-256: `6d7d47fd42bec687c7bfea0e61a8659db07fcee581c2a9cd503b5339cea2837b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0158 redundant inherited feature includes remediation 20261008
+
+- Revalidated GQR-0158/GQF-0171 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and current worktree. Both game.c and input_demo_hooks.c owners do not consume either declaration in input_demo_fp_env.h. Startup calls retain their local includes in paired inferno.c; shared replay owner retains its include and call
+- Removed four unused FP includes and only the second adjacent d1_in_d2.h include from D2 newdemo.c. The retained header has an include guard; first include position, native codec, handmade comments and every other byte in all five files are unchanged
+- Actual attribution corrects the older five-inherited-line shorthand: three lines removed from original files (paired game.c and D2 newdemo.c), two from branch-added input_demo_hooks.c files under inherited directories. Five branch-added/product lines removed, no new abstraction or replacement code. Original-attribution deletions unchanged in every path
+- Both full Windows builds and all three Android Debug native ABI builds/link pass. All twelve existing focused input-demo CTest entries pass, six per game: RNG mode, controls, fixture, recorder, result and replay. No new tests for redundant include deletion; no full gameplay replay or Android runtime test claim
+- Android emits the pre-existing D2 SOUND_AFTERBURNER_IGNITE int-to-char warning, independently present in gqr0185-android-build.log. No new warning introduced. Scoped quality reports inherited-only exclusion (No new files in scope); exact source/style verifier and owned git diff check pass
+- Preserved previous renderer/automap cleanup and concurrent installer/import/outstanding-bugs work. No staging, commit, malformed-media or allocation-pressure probes
+
+## Exact source verification
+
+```json
+{
+  "d1/main/game.c": {
+    "before_sha256": "7d154a8c7a2a23cdebb0189449a60a12c6d5db92fd27447ccf71ac6f161e08b8",
+    "after_sha256": "5f0c9debd0e54ebdea08b3d4f07c5c80a5f0ce2ac65aae049bc833d03e7d53b1",
+    "original_file_exists": true,
+    "original_diff_before": [
+      391,
+      28
+    ],
+    "original_diff_after": [
+      390,
+      28
+    ],
+    "lines_removed": 1
+  },
+  "d2/main/game.c": {
+    "before_sha256": "7a2b05464a73f6ae00c8bc2a4052fbf5e6d22cba600070e0069ba5250c4616cc",
+    "after_sha256": "0d797097a37f65c4f27d48a75fee5be32fe40ec5592ddc744386fde752c1c0b7",
+    "original_file_exists": true,
+    "original_diff_before": [
+      500,
+      49
+    ],
+    "original_diff_after": [
+      499,
+      49
+    ],
+    "lines_removed": 1
+  },
+  "d1/main/input_demo_hooks.c": {
+    "before_sha256": "4935b39ccf9bd0054a00d12b5bd7516aa97b1d037f251e7329cbdb428693a1d0",
+    "after_sha256": "9698ff677e39059783736f59bf61242d87de376585c3a6e630e2993c8233bd24",
+    "original_file_exists": false,
+    "original_diff_before": [
+      1344,
+      0
+    ],
+    "original_diff_after": [
+      1343,
+      0
+    ],
+    "lines_removed": 1
+  },
+  "d2/main/input_demo_hooks.c": {
+    "before_sha256": "e9eb413a3ef7fcbc3b5f935b001a29aea09820656279a14044d425f847bd410c",
+    "after_sha256": "36fb8e95d40ef9c314e03484068bfc3716218190c5533c00182c1bb5e5ca04cf",
+    "original_file_exists": false,
+    "original_diff_before": [
+      7148,
+      0
+    ],
+    "original_diff_after": [
+      7147,
+      0
+    ],
+    "lines_removed": 1
+  },
+  "d2/main/newdemo.c": {
+    "before_sha256": "efce5cf5af454adfaee08dcf74a9b2a91a99aceff40dd97511b4303fea511bf1",
+    "after_sha256": "9ec651abda27b1bd3896b6639a7a0b2e4c64f16fef406a193c7a66781d386f45",
+    "original_file_exists": true,
+    "original_diff_before": [
+      1043,
+      77
+    ],
+    "original_diff_after": [
+      1042,
+      77
+    ],
+    "lines_removed": 1
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0158-before-d1_main_game.c: SHA256 7d154a8c7a2a23cdebb0189449a60a12c6d5db92fd27447ccf71ac6f161e08b8
+- temp/general_cleanup_20261006/gqr0158-before-d1_main_input_demo_hooks.c: SHA256 4935b39ccf9bd0054a00d12b5bd7516aa97b1d037f251e7329cbdb428693a1d0
+- temp/general_cleanup_20261006/gqr0158-before-d2_main_game.c: SHA256 7a2b05464a73f6ae00c8bc2a4052fbf5e6d22cba600070e0069ba5250c4616cc
+- temp/general_cleanup_20261006/gqr0158-before-d2_main_input_demo_hooks.c: SHA256 e9eb413a3ef7fcbc3b5f935b001a29aea09820656279a14044d425f847bd410c
+- temp/general_cleanup_20261006/gqr0158-before-d2_main_newdemo.c: SHA256 efce5cf5af454adfaee08dcf74a9b2a91a99aceff40dd97511b4303fea511bf1
+- temp/general_cleanup_20261006/gqr0158-source.json: SHA256 adf6fc1f35a0ff4d891b34cb8b038a7ee769748e8581e92bd8106f9199cd967c
+- temp/general_cleanup_20261006/verify_gqr0158.py: SHA256 c4f937cb29092af2da4bff29baae360c23b97c5061c9c260509101c43d11c7ab
+- temp/general_cleanup_20261006/gqr0158-windows-build.log: SHA256 900753b31e1622f1a5b8fa97f3fe29dde3228f8e4aa48eae16c6d80027dcc97f
+- temp/general_cleanup_20261006/gqr0158-android-build.log: SHA256 9e50040516ef7f2e21cf74ab8ef196fd175acfd0f53bf464f8f97eb583d2d0d1
+- temp/general_cleanup_20261006/gqr0158-quality.log: SHA256 f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182
+- temp/general_cleanup_20261006/gqr0158-input-demo-d1.log: SHA256 108f1415c96f6e9bc007b420825bea3629750ccfc42123b313b7547a3ef9f2d4
+- temp/general_cleanup_20261006/gqr0158-input-demo-d2.log: SHA256 f0ef06441351a01c47ac020c07d48cd7aedc6c085dc9e8fd0bc0ae8d9f0168af
+
+</details>
+
+<!-- END IMPORT: GQR-0158 redundant inherited feature includes remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0163 and GQR-0165 orphan JNI and ETC2 removal remediation 20261008 SHA256:ba3180872feb3bfeba61d73fbec4a1c63002f9de0555f10a967749786e9b29ce -->
+
+## GQR-0163 and GQR-0165 orphan JNI and ETC2 removal remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0163-0165-remediation.md`
+- Imported SHA-256: `ba3180872feb3bfeba61d73fbec4a1c63002f9de0555f10a967749786e9b29ce`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0163 and GQR-0165 orphan JNI and ETC2 removal remediation 20261008
+
+- Revalidated GQR-0163/GQF-0176 and GQR-0165/GQF-0178 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. Complete current/tracked product/build/test/script search finds no consumer of native-lib.cpp or software etc2_decode.c/.h. Before deletion the only decoder hits are definitions/declarations; JNI helloFromNative also has the live jni_main.c definition and Kotlin declaration
+- All three Android compile-command manifests and paired Windows Ninja inputs exclude the orphan files. Removed native-lib.cpp (16 lines), etc2_decode.c (357) and etc2_decode.h (17), 390 branch-added product lines total; none exists in original attribution. No inherited file or replacement abstraction changed
+- Live JNI owner, CMake registration, KTX loader pngfile.c, shared texture/shim and both native ogl.c GPU self-test owners are unchanged. Protected source SHA256 checks pass. All six Android native libraries are byte-identical to their pre-deletion snapshots, each retaining exactly one helloFromNative export and no orphan decoder export
+- Both full Windows builds and all three Android Debug native ABI builds/link pass. Seven maintained renderer contracts and all 160 actual GLES binding/helper/enhanced-native font cases pass across both games and two recreated contexts on emulator-5582. This verifies retained renderer behavior, not separate compressed-asset runtime coverage or a new JNI invocation
+- Scoped quality invocation rejects deleted paths (Code-quality path not found). No surviving product source was edited to format; exact deletion, source inventory, protected-byte verification and owned diff check provide the applicable checks. Do not report formatter/lint success. No implementation-mirroring tests added for uncompiled-file removal
+- Post-deletion full current/tracked search contains only the live JNI definition and Kotlin declaration. Historical plan/evidence mentions remain. Concurrent installer/import/outstanding-bugs edits and all previous cleanup preserved; no staging/commit or deferred media/resource-pressure probes
+
+## Verification
+
+```json
+{
+  "removed_lines": 390,
+  "preserved": {
+    "android/app/src/main/cpp/jni_main.c": "2d9733c20a7c6eea702c766f55347665a3d7ad245026965042eb5590d5a6a413",
+    "android/app/src/main/cpp/CMakeLists.txt": "b97ab31a3e2f7a18fcaa0dccbacde436edb1275ddebb2cb10b09a51eb2c5fb9e",
+    "android/app/src/main/cpp/shared/ogl_texture_android.c": "8ccc73c0fc0874356d93dad8de69ad256d6a87e74ae178976d8493fcc8944046",
+    "android/app/src/main/cpp/shared/gles3_shim.c": "fc1bb17dd51e4fff43b0a4b517caf32b60e092007d2ac37e463f5ddc6f90cf36",
+    "android/app/src/main/cpp/shared/pngfile.c": "f9d5c298c7e682fab4eb4b87b48c11ff5b78073acfa44e0a9cf70b3f2601566a",
+    "d1/arch/ogl/ogl.c": "7aa1f1c0467b4ae9733d06fe542110a96a45829e9451aca92ff7a3d69ac0139e",
+    "d2/arch/ogl/ogl.c": "8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690"
+  },
+  "current_census": [
+    ".\\android\\app\\src\\main\\cpp\\jni_main.c:277:Java_com_dxxredux_app_MainActivity_helloFromNative(JNIEnv *env, jobject thiz)",
+    ".\\android\\app\\src\\main\\java\\com\\dxxredux\\app\\MainActivity.kt:236:    external fun helloFromNative(): String"
+  ],
+  "tracked_census": [
+    "android/app/src/main/cpp/jni_main.c:277:Java_com_dxxredux_app_MainActivity_helloFromNative(JNIEnv *env, jobject thiz)",
+    "android/app/src/main/java/com/dxxredux/app/MainActivity.kt:236:    external fun helloFromNative(): String"
+  ],
+  "libraries": {
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\arm64-v8a\\libdxx-redux-d1.so": {
+      "byte_identical": true,
+      "sha256": "d2ad04f40f9e735e70f817bcfab8aeda9a515b1dc20f0f55bb00200940870dcf",
+      "jni_symbol": [
+        "000000000072860c T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    },
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\arm64-v8a\\libdxx-redux-d2.so": {
+      "byte_identical": true,
+      "sha256": "428a8208831b96ebd121ca52e458a845408a64d2f07af6ab8995821de692b8bd",
+      "jni_symbol": [
+        "00000000008ec28c T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    },
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\armeabi-v7a\\libdxx-redux-d1.so": {
+      "byte_identical": true,
+      "sha256": "9d1819806da3f6a2e5e57ea5e8e900eb2a541643db35e357094c88e0f2a9d64a",
+      "jni_symbol": [
+        "004b8e28 T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    },
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\armeabi-v7a\\libdxx-redux-d2.so": {
+      "byte_identical": true,
+      "sha256": "61d9e80090f5bbbb5f7ecdb244bed4093f090b9965097fdb72066157635e03f7",
+      "jni_symbol": [
+        "005fe5e0 T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    },
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\x86_64\\libdxx-redux-d1.so": {
+      "byte_identical": true,
+      "sha256": "b4134ab5639816a31fea05a7c5e5cbd53ecaa01c1a820c40ad8eecb2dd416e6f",
+      "jni_symbol": [
+        "00000000006d18b0 T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    },
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\x86_64\\libdxx-redux-d2.so": {
+      "byte_identical": true,
+      "sha256": "90de5efa5a1792300a9421c2ea2376b29329883e38c49785ea1a96084c193cda",
+      "jni_symbol": [
+        "0000000000880420 T Java_com_dxxredux_app_MainActivity_helloFromNative"
+      ]
+    }
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0163-0165-before-census.txt: SHA256 b536f2f2dc47d63aced85464743a5b88c2beb3f93e275e070fb0364b7f930fa7
+- temp/general_cleanup_20261006/gqr0163-0165-before-etc2_decode.c: SHA256 faa4bdfeef23c66c8ad37746c5649d9b8637874416f192e1eb8edb335acc0be8
+- temp/general_cleanup_20261006/gqr0163-0165-before-etc2_decode.h: SHA256 c7091532fa57a7d83086ac70f17dca837469c979fddb1bb7cced9ce267fbef0c
+- temp/general_cleanup_20261006/gqr0163-0165-before-native-lib.cpp: SHA256 e3d6f0d8fce73e7b9f951300d89fbc14b1a9bb8b6ddc3f92d73cec5a84d1ff65
+- temp/general_cleanup_20261006/gqr0163-0165-before.json: SHA256 332f7c9e782b79b587100af4cc98dae9618eaa38b39135cb8efa77fb15b6abb5
+- temp/general_cleanup_20261006/verify_gqr0163_0165.py: SHA256 038073b405f4ced9278db37401d9bb6cdd3751be58321b512dd08952509c24ea
+- temp/general_cleanup_20261006/gqr0163-0165-verification.json: SHA256 238c6d8dab40c5073d8fc4f5624457f57b90eccc483f1f00181477c4460b17e6
+- temp/general_cleanup_20261006/gqr0163-0165-windows-build.log: SHA256 13dda34a3325281de3bddd739f791f0959bf4e703641bcab925e06f1a8c84253
+- temp/general_cleanup_20261006/gqr0163-0165-android-build.log: SHA256 a246341635831812f808ae5d95e37fa98597b960fc7492d71617b68f4e4538e4
+- temp/general_cleanup_20261006/gqr0163-0165-quality.log: SHA256 db08acb2d3a9001ae0e07b7effdd7ce3f0bbe514c8da99860b304d4c87b44a1f
+- temp/general_cleanup_20261006/gqr0163-0165-renderer-contracts.log: SHA256 98ff75207054a203dd4b120265057ebce35bd206fb905f4b300526b7c88d4882
+- temp/general_cleanup_20261006/gqr0163-0165-bindings.log: SHA256 7c9aed50f5623d515b1f5f99870afeb636caa14a00c56d26787b93172d2d949a
+
+</details>
+
+<!-- END IMPORT: GQR-0163 and GQR-0165 orphan JNI and ETC2 removal remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0241 model-picture intermediate wrappers remediation 20261008 SHA256:1b53a7725ec102f67b40bce325f8a23881a24f4003a152b7c7c8fd58a93bee47 -->
+
+## GQR-0241 model-picture intermediate wrappers remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0241-remediation.md`
+- Imported SHA-256: `1b53a7725ec102f67b40bce325f8a23881a24f4003a152b7c7c8fd58a93bee47`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0241 model-picture intermediate wrappers remediation 20261008
+
+- Revalidated GQR-0241/GQF-0255 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. The two intermediate animated/animated_offset wrappers have no independent source caller. Both original draw_model_picture entries chain through them; Android animated preview already calls scene directly
+- Removed two wrapper definitions and declarations per game. Original entry forwards directly to draw_model_picture_animated_scene with the identical model/orientation and NULL animation, four zero offset/radius arguments, NULL callback/data. Existing scene body, native geometry, callback ordering, first public entry, original briefing consumers and Android preview source remain byte-identical
+- Exact four-file byte transformation and isolated original-attribution checks pass. Removed 24 inherited/product lines: ten source and two header lines per game. Original source additions D1 44 -> 34, D2 45 -> 35 (nine deletions unchanged each); headers D1 4 -> 2, D2 7 -> 5 (zero deletions unchanged). No new product owner, wrapper, callback or test hook
+- Temporary contract verifier compiles the actual production entry/wrapper bodies before and after against a controlled scene endpoint on Android x86_64. Four model values and three real orientation pointers produce 24 byte-identical forwarding traces, asserting one call and all defaults. This proves entry forwarding, not direct original-entry raster pixels. Exact preserved scene body separately proves unchanged render/callback transaction
+- Both full Windows builds and fresh full Android Debug APK/all three ABI builds/link pass. Original and scene entries remain in paired Windows native objects and all six Android libraries; removed wrappers disappear everywhere. Full current product/build/test/script token census finds no wrapper references. Seven maintained renderer contracts pass
+- Fresh APK installed only on emulator-5582. Existing base-game robot preview integration passes both games, including visible framebuffer with GL_NO_ERROR, animated joints/motion, aspect ratio, navigation, attack/projectile behavior, orientation-dependent shot, sound and Back/request cleanup. Durable introspection captured below. No new test runner or catalog changes; tests use ordinary installed retail data
+- Scoped quality reports inherited-only exclusion (No new files in scope), not lint coverage. Exact source/style and owned diff checks pass. Concurrent installer/import/outstanding-bugs work and previous cleanup preserved; no staging/commit, arbitrary invalid media, resource-pressure or full gameplay replay claim
+
+## Exact verification
+
+```json
+{
+  "source": {
+    "d1/main/polyobj.c": {
+      "exact_scope": true,
+      "lines_removed": 10,
+      "before_added_deleted": [
+        44,
+        9
+      ],
+      "after_added_deleted": [
+        34,
+        9
+      ],
+      "after_sha256": "af5729f35e20c2bf5c352d42ae479aa242420f0f51a6275aed4b76ca9abcf061"
+    },
+    "d1/main/polyobj.h": {
+      "exact_scope": true,
+      "lines_removed": 2,
+      "before_added_deleted": [
+        4,
+        0
+      ],
+      "after_added_deleted": [
+        2,
+        0
+      ],
+      "after_sha256": "ed056209c4ce3f31e570f15c7fa1ca9270b87c05d516e212ddc24faeb4024d68"
+    },
+    "d2/main/polyobj.c": {
+      "exact_scope": true,
+      "lines_removed": 10,
+      "before_added_deleted": [
+        45,
+        9
+      ],
+      "after_added_deleted": [
+        35,
+        9
+      ],
+      "after_sha256": "f9d2716320ab10054fe18809b3247592169f3a016a58ba49985abb30996f4a8e"
+    },
+    "d2/main/polyobj.h": {
+      "exact_scope": true,
+      "lines_removed": 2,
+      "before_added_deleted": [
+        7,
+        0
+      ],
+      "after_added_deleted": [
+        5,
+        0
+      ],
+      "after_sha256": "143f87f394117ebabc903cdac51419c2cd2c876a793d40003da6b681aa9ab46b"
+    }
+  },
+  "android_symbols": {
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\arm64-v8a\\libdxx-redux-d1.so": [
+      "00000000005b095c T draw_model_picture",
+      "00000000005b06e4 T draw_model_picture_animated_scene"
+    ],
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\arm64-v8a\\libdxx-redux-d2.so": [
+      "0000000000743648 T draw_model_picture",
+      "00000000007433d0 T draw_model_picture_animated_scene"
+    ],
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\armeabi-v7a\\libdxx-redux-d1.so": [
+      "003bf71c T draw_model_picture",
+      "003bf540 T draw_model_picture_animated_scene"
+    ],
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\armeabi-v7a\\libdxx-redux-d2.so": [
+      "004e1fa0 T draw_model_picture",
+      "004e1dc4 T draw_model_picture_animated_scene"
+    ],
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\x86_64\\libdxx-redux-d1.so": [
+      "000000000056ba50 T draw_model_picture",
+      "000000000056b840 T draw_model_picture_animated_scene"
+    ],
+    "android\\app\\build\\intermediates\\cxx\\Debug\\585cr1v5\\obj\\x86_64\\libdxx-redux-d2.so": [
+      "00000000006ed210 T draw_model_picture",
+      "00000000006ed000 T draw_model_picture_animated_scene"
+    ]
+  },
+  "windows_symbols": {
+    "buildd1/main/CMakeFiles/dxx-redux-d1.dir/polyobj.c.obj": [
+      "00000000 T _draw_model_picture",
+      "00000000 T _draw_model_picture_animated_scene"
+    ],
+    "buildd2/main/CMakeFiles/dxx-redux-d2.dir/polyobj.c.obj": [
+      "00000000 T _draw_model_picture",
+      "00000000 T _draw_model_picture_animated_scene"
+    ]
+  },
+  "production_forwarding_cases": 24,
+  "total_inherited_lines_removed": 24,
+  "net_product_lines_removed": 24
+}
+```
+
+## Live preview observations
+
+```json
+{
+  "d1": {
+    "frame_count": 83,
+    "animated_joint_count": 5,
+    "motion_updates": 67,
+    "visible_pixels": 40642,
+    "gl_error": 0
+  },
+  "d2": {
+    "frame_count": 142,
+    "animated_joint_count": 5,
+    "motion_updates": 62,
+    "visible_pixels": 38629,
+    "gl_error": 0
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0241-before-d1-forwarding: SHA256 09bf7a2849f58e50314e44fd2597ec0dff7da224dd588352a307937c5a00dd02
+- temp/general_cleanup_20261006/gqr0241-before-d1-forwarding.c: SHA256 b6528dd73340f19f20d20115e72738e6b7074c873324442210c3bf43fb52e822
+- temp/general_cleanup_20261006/gqr0241-before-d1-forwarding.txt: SHA256 2ae349e4e365f08f78640362d60a71b9786f9015bf96149d37315b0d2767914e
+- temp/general_cleanup_20261006/gqr0241-before-d1-polyobj.c: SHA256 53c725193ee5e4de06a250bbca6e692a090ef885640ca932e4f0607a0b702d68
+- temp/general_cleanup_20261006/gqr0241-before-d1-polyobj.h: SHA256 947a2678b66488ce0e34f47011265f02a490951aad8a463095905b4ba5cb09c8
+- temp/general_cleanup_20261006/gqr0241-before-d2-forwarding: SHA256 d619cda601182fd3c7bcd919abe0d9e227b34c9a6eac5d9c93fe5d8f8953e627
+- temp/general_cleanup_20261006/gqr0241-before-d2-forwarding.c: SHA256 b6528dd73340f19f20d20115e72738e6b7074c873324442210c3bf43fb52e822
+- temp/general_cleanup_20261006/gqr0241-before-d2-forwarding.txt: SHA256 2ae349e4e365f08f78640362d60a71b9786f9015bf96149d37315b0d2767914e
+- temp/general_cleanup_20261006/gqr0241-before-d2-polyobj.c: SHA256 046576de2281d5c0db1267a8e5bad0a829f4da42883eab3363e63615ba31f0aa
+- temp/general_cleanup_20261006/gqr0241-before-d2-polyobj.h: SHA256 a1927195a6961c37fa3e0ce5aba679ae1e9878d2c45c2943624a0053dc251c59
+- temp/general_cleanup_20261006/gqr0241-before.json: SHA256 6de649f27d0a344104ff3c4bfada99841956b3cd97fc689381af3a3627688fd3
+- temp/general_cleanup_20261006/gqr0241-after-d1-forwarding: SHA256 1843c22de79e2fb8f6811b67725956c96594bbd2f114cef7890b70b53bd4baca
+- temp/general_cleanup_20261006/gqr0241-after-d1-forwarding.c: SHA256 6b576274452cfcfa1bb4cfc91cc636ffc7745382c948f0f496d5ab110a19fbb0
+- temp/general_cleanup_20261006/gqr0241-after-d1-forwarding.txt: SHA256 2ae349e4e365f08f78640362d60a71b9786f9015bf96149d37315b0d2767914e
+- temp/general_cleanup_20261006/gqr0241-after-d2-forwarding: SHA256 9ca804e789969b50a5059ecc47853d63791b415e6a9a30308f8cde1f8168773d
+- temp/general_cleanup_20261006/gqr0241-after-d2-forwarding.c: SHA256 6b576274452cfcfa1bb4cfc91cc636ffc7745382c948f0f496d5ab110a19fbb0
+- temp/general_cleanup_20261006/gqr0241-after-d2-forwarding.txt: SHA256 2ae349e4e365f08f78640362d60a71b9786f9015bf96149d37315b0d2767914e
+- temp/general_cleanup_20261006/check_gqr0241_forwarding.py: SHA256 f59189ad2167e385fcbcd685fb02d3e536e6b23ef43044c8d24adeddbce5b768
+- temp/general_cleanup_20261006/verify_gqr0241.py: SHA256 32f634d178b1b7b3a4ed66517fa3909bfb102166412d4e5380b65ad58774897e
+- temp/general_cleanup_20261006/gqr0241-verification.json: SHA256 ec94fb1519ac42775f3d713a25b5af176dc660f76b8e6e7c76b7c8e44326aa4a
+- temp/general_cleanup_20261006/gqr0241-windows-build.log: SHA256 2a59325a09102628034c6c79cc34b5b01e710db1f897e0733322a8226bd8415d
+- temp/general_cleanup_20261006/gqr0241-android-apk.log: SHA256 66040cddc6fdf921dad5a0eebf070fc1ad9846bb9bdb55620c14e12dbb365646
+- temp/general_cleanup_20261006/gqr0241-install.log: SHA256 c4aa470acafcf8576c15b0f0b5ae7e852d1ec5413372d0e6a9272e788e1306d3
+- temp/general_cleanup_20261006/gqr0241-quality.log: SHA256 f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182
+- temp/general_cleanup_20261006/gqr0241-renderer-contracts.log: SHA256 aac8d2bb7cbffdd5f4ef5efdaee0ff548b68afa6ed548eaa8b2b074af47465dc
+- temp/general_cleanup_20261006/gqr0241-preview-d1.log: SHA256 bae7a4f054adde2b6807b67c8ddf41c169cad110a940a978f1b5077f356752b0
+- temp/general_cleanup_20261006/gqr0241-preview-d2.log: SHA256 57482665ebff193dc4203f4ab8c4ee87a27d477a14f482fb7d2e652020f0588a
+- temp/general_cleanup_20261006/gqr0241-preview-d1-introspection.json: SHA256 23c137b5e6bcd77dba5c4429932055dd6079d9d05a1376a570523891d0ca3666
+- temp/general_cleanup_20261006/gqr0241-preview-d2-introspection.json: SHA256 4c3418acab2f65a6c49f9b3cfb208e055b8bce4725ad306bc24eb47e4d4ab7aa
+
+</details>
+
+<!-- END IMPORT: GQR-0241 model-picture intermediate wrappers remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0221 unreachable Play artifact branch remediation 20261008 SHA256:d8cf333fe1ce25f096b08a4bb2e198a244014e89b060d6ff0f61c610ae26c690 -->
+
+## GQR-0221 unreachable Play artifact branch remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0221-remediation.md`
+- Imported SHA-256: `d8cf333fe1ce25f096b08a4bb2e198a244014e89b060d6ff0f61c610ae26c690`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0221 unreachable Play artifact branch remediation 20261008
+
+- Revalidated GQR-0221/GQF-0236 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. alreadyUploaded is assigned false once and never true; hard used-version rejection makes its old duplicated promotion arm unreachable
+- Deleted dead flag/else arm and flattened the unconditional live track/commit transaction. Exact whole-file byte verifier proves all other bytes unchanged apart from removing four spaces of obsolete enclosing indentation. Retained handmade live comments, exact AAB digest check, hard used-version rejection, draft fallback and separately reachable final draft promotion
+- Removed 73 branch-added product lines (420 -> 347); no inherited-engine change or inherited reduction credit, new release capability, compatibility alias or replacement abstraction
+- Eight controlled before/after production-tail transactions match byte-for-byte after scoped quality: success, used-version rejection, commit failure, draft fallback/promote success, draft promotion failure retaining draft, review-flag retry, track failure and digest mismatch before HTTP. Assertions independently check sequence, failure reason, uploaded bytes, version 42, final release status, completed/draft/completed transitions and changesNotSentForReview query
+- Stub fixture parses actual script and executes only from actual TryCommitEdit helper through upload/track/commit tail. Credential/bootstrap code is never evaluated. A scratch five-byte AAB and empty headers are supplied; Invoke-WebRequest/Invoke-RestMethod are shadowed controlled functions and reject unexpected operations. No credential read, external HTTP, Play edit/upload/commit or live deployment
+- Full PowerShell script parses in both phases. All five maintained deployment contracts pass. Scoped mixed quality and owned diff checks pass after terminal completion; final production-tail traces re-run after quality. No native build needed for one PowerShell dead-branch removal, no new tests/catalog or product API hook
+- Preserved concurrent installer/import/outstanding-bugs edits and previous cleanup. No staging/commit or deferred media/resource probes
+
+## Exact verification
+
+```json
+{
+  "before_sha256": "8042c75138b85474d6cb9197cfa701e88f0ddea4e4a945e5d0a9d92e2e126244",
+  "after_sha256": "4a7f537345045f9187d81ddf28fa3f13ccff6ac15122e49cbedd1d9f7f1d460f",
+  "before_lines": 420,
+  "after_lines": 347,
+  "net_product_lines_removed": 73,
+  "exact_scope": true,
+  "stubbed_transaction_cases": 8,
+  "inherited_files_changed": 0
+}
+```
+
+## Stubbed transaction traces
+
+```json
+[
+  {
+    "case": "success",
+    "failure": null,
+    "final_status": "completed",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      }
+    ]
+  },
+  {
+    "case": "used-version",
+    "failure": "Upload rejected because this version code has already been used. Remote bytes cannot be proven identical; build with a new version code. Details: version code has already been used",
+    "final_status": null,
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    ]
+  },
+  {
+    "case": "commit-failure",
+    "failure": "Commit failed: commit refused",
+    "final_status": "completed",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      }
+    ]
+  },
+  {
+    "case": "draft-fallback",
+    "failure": null,
+    "final_status": "completed",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "draft",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      },
+      {
+        "kind": "new-edit",
+        "path": "/edits"
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-promote/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-promote:commit"
+      }
+    ]
+  },
+  {
+    "case": "draft-promotion-failure",
+    "failure": null,
+    "final_status": "draft",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "draft",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      },
+      {
+        "kind": "new-edit",
+        "path": "/edits"
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-promote/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-promote:commit"
+      }
+    ]
+  },
+  {
+    "case": "review-flag",
+    "failure": null,
+    "final_status": "completed",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit"
+      },
+      {
+        "kind": "commit",
+        "path": "/edits/edit-1:commit?changesNotSentForReview=true"
+      }
+    ]
+  },
+  {
+    "case": "track-failure",
+    "failure": "Track update failed: track refused\ntrack refused",
+    "final_status": "completed",
+    "operations": [
+      {
+        "kind": "upload",
+        "method": "POST",
+        "bytes": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "kind": "track",
+        "path": "/edits/edit-1/tracks/internal",
+        "status": "completed",
+        "versions": [
+          42
+        ]
+      }
+    ]
+  },
+  {
+    "case": "digest-mismatch",
+    "failure": "AAB changed while it was being loaded; refusing deployment",
+    "final_status": null,
+    "operations": []
+  }
+]
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0221-before-deploy.ps1: SHA256 8042c75138b85474d6cb9197cfa701e88f0ddea4e4a945e5d0a9d92e2e126244
+- temp/general_cleanup_20261006/gqr0221-before.json: SHA256 7727c0a90d941abc965a550d1ec1bfc14674e135c9aa7dc5894e089b23342b65
+- temp/general_cleanup_20261006/check_gqr0221_traces.ps1: SHA256 ccf8735fdb234fcd250b06d2a33a1573359dfc44144dd7c276feee13b05d8478
+- temp/general_cleanup_20261006/verify_gqr0221.py: SHA256 ac9229e8832303e3f58e274a2832bc904408c86b43b8bf979f5e266c8feb15d5
+- temp/general_cleanup_20261006/gqr0221-before-traces.json: SHA256 bb9b9e0eef6d5125bac46a7178eb10c75f1de45898f7ce944ca5ed3f700d6c82
+- temp/general_cleanup_20261006/gqr0221-after-traces.json: SHA256 bb9b9e0eef6d5125bac46a7178eb10c75f1de45898f7ce944ca5ed3f700d6c82
+- temp/general_cleanup_20261006/gqr0221-verification.json: SHA256 4c5c2aff26295e19b73e837b757e5ce7c3bb22f902291db3dce8a6eeda2fa933
+- temp/general_cleanup_20261006/gqr0221-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0221-deployment-contracts.log: SHA256 970596b861026dd1013bc3c489ecb55817d0a390bf94da264efd5f67ba376fe0
+
+</details>
+
+<!-- END IMPORT: GQR-0221 unreachable Play artifact branch remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0224 dead host metadata helper remediation 20261008 SHA256:40b26ddfac62a1d68a499aa1da28f6b6444cc6ebf53592887b0a57f556ae298d -->
+
+## GQR-0224 dead host metadata helper remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0224-remediation.md`
+- Imported SHA-256: `40b26ddfac62a1d68a499aa1da28f6b6444cc6ebf53592887b0a57f556ae298d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0224 dead host metadata helper remediation 20261008
+
+- Revalidated GQR-0224/GQF-0239 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. PowerShell AST proves all twelve candidate function callers are inside the dead set; full current script/Python/Kotlin text census finds no external/dynamic consumer. Shared dependency names appear only in this runner
+- Removed unused ConvertTo-CheckedInMissionJson/LevelJson/MissionIntentJson, exclusive Get-StringProp/Get-FirstProp/Get-ArrayValue/Format-LevelMultiplier/Format-LevelTime/Add-IfString, Get-CleanMissionDescriptorValue, Invoke-HeadlessMetadataProcess, Get-HeadlessFailureSummary and exclusive invariantCulture assignment
+- Exact whole-file transformation removes only those function extents/separators and assignment, 292 branch-added product lines. All retained bytes/comments, live Get-Prop/Get-CheckedInMissionJson, descriptor/Kotlin projection/native persistent-worker protocols and output format unchanged. No replacement abstraction, compatibility reader, native or inherited-file change
+- Before/after actual host pipeline runs use existing trainng.zip (D1, nine levels) and mustfind.zip (D2, two levels), ordinary installed standard game data, one worker, NoBuild and NoRegressionCopy. Both archives pass in both phases; complete normalized mission JSON files are byte-identical, no timestamp exclusion needed. Checked-in mission JSON remains untouched
+- Existing paired native metadata worker integration passes initialization failure/recovery, invalid missing-level-name request rejection and repeated valid request reuse with equal metadata. Existing Windows host runner wiring test passes actual persistent Kotlin descriptor requests, stable worker process and clean shutdown
+- All three maintained Kotlin MissionMetadataProjectionTest cases pass (zero failures/errors); full PowerShell parses before/after, scoped mixed quality and owned diff check pass. No new tests for dead-helper removal, no maintained runner/catalog edits. Native worker binaries were current from prior successful paired builds; this change edits only PowerShell
+- Post-delete full current script/Python/Kotlin token census finds no removed helper names. Preserve prior cleanup and concurrent installer/import/outstanding-bugs work. No staging/commit, malformed-media, allocation/resource-pressure, Android import/storage or full metadata-corpus claim
+
+## Exact scope and caller evidence
+
+```json
+{
+  "removed_functions": [
+    "ConvertTo-CheckedInMissionJson",
+    "ConvertTo-CheckedInLevelJson",
+    "ConvertTo-CheckedInMissionIntentJson",
+    "Get-StringProp",
+    "Get-FirstProp",
+    "Get-ArrayValue",
+    "Format-LevelMultiplier",
+    "Format-LevelTime",
+    "Add-IfString",
+    "Get-CleanMissionDescriptorValue",
+    "Invoke-HeadlessMetadataProcess",
+    "Get-HeadlessFailureSummary"
+  ],
+  "internal_calls": [
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionIntentJson",
+      "line": 290
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionIntentJson",
+      "line": 291
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionIntentJson",
+      "line": 292
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionIntentJson",
+      "line": 293
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 335
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 336
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 338
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 339
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 340
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 341
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 347
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 348
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 354
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 355
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 356
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 357
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 358
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 359
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 360
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 361
+    },
+    {
+      "function": "Get-FirstProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 362
+    },
+    {
+      "function": "Format-LevelMultiplier",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 365
+    },
+    {
+      "function": "Format-LevelTime",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 368
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 375
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 377
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 377
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 378
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 378
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 379
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 379
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 380
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 380
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInLevelJson",
+      "line": 381
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 397
+    },
+    {
+      "function": "ConvertTo-CheckedInLevelJson",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 397
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 398
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 399
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 400
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 401
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 405
+    },
+    {
+      "function": "ConvertTo-CheckedInMissionIntentJson",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 409
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 410
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 410
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 411
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 414
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 420
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 424
+    },
+    {
+      "function": "Get-StringProp",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 425
+    },
+    {
+      "function": "Get-ArrayValue",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 438
+    },
+    {
+      "function": "Add-IfString",
+      "owner": "ConvertTo-CheckedInMissionJson",
+      "line": 440
+    }
+  ],
+  "removed_lines": 292,
+  "before_sha256": "9343235e23d947eccbd829fafe730f6aa035e989468c2c36b5d90921947b75cf",
+  "actual_sha256": "860890118ba822ea2ad36151f4d896f9f69aa19648561e6b8b7aec5f7c80d56a",
+  "exact_scope": true
+}
+```
+
+## Actual metadata comparisons
+
+```json
+{
+  "mustfind": {
+    "before_sha256": "dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b",
+    "after_sha256": "dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b",
+    "byte_identical": true
+  },
+  "trainng": {
+    "before_sha256": "bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e",
+    "after_sha256": "bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e",
+    "byte_identical": true
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0224-before-host.ps1: SHA256 9343235e23d947eccbd829fafe730f6aa035e989468c2c36b5d90921947b75cf
+- temp/general_cleanup_20261006/check_gqr0224_scope.ps1: SHA256 f8533a1622a22b6423fa030ac111dae3258f4c8e1dc7e9d00efca275f52938c1
+- temp/general_cleanup_20261006/gqr0224-scope.json: SHA256 c9cce90365412b653cf4ccedce993e6e57b1babf7c12b59d41116ffcea201ed4
+- temp/general_cleanup_20261006/gqr0224-before-census.txt: SHA256 4de54b185b7ec007186217906fd05e891a773d5d9893d8472c4102e4d3d9e7fc
+- temp/general_cleanup_20261006/gqr0224-after-census.txt: SHA256 04cf0a4cee3e61259b7e4e3866ca7783488e644b8be3af81b4880e9776f862f1
+- temp/general_cleanup_20261006/gqr0224-metadata-comparison.json: SHA256 ae9bec3e5ffaa30ba4f2ee5bddb7e46a673ef36f71b4fc5b88d3ebcaf8f9c7db
+- temp/general_cleanup_20261006/gqr0224-before-metadata.log: SHA256 9dc2cd17af62ffb5f3b2a369e3ca5c06727f2677bd5b4b14191415014603220c
+- temp/general_cleanup_20261006/gqr0224-after-metadata.log: SHA256 4862370e056bb1a924a7803aecfadf2f8dedaa94f24d531e89b7c71ae927cca6
+- temp/general_cleanup_20261006/gqr0224-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0224-kotlin-projection.log: SHA256 8d92ee313761566610177f7d34aa27ca72b1861f834fcd7735fa495fa66c31d1
+- temp/general_cleanup_20261006/gqr0224-kotlin-projection-results.xml: SHA256 23cd6a07f02c27f2fe1e75cef57ff02c042f54b671148fbada9e8ebd056ccb81
+- temp/general_cleanup_20261006/gqr0224-runner-wiring.log: SHA256 f8c657e3c6efebe9e0b79158bdad68da46a230173e878970b72310ee920344d9
+- temp/general_cleanup_20261006/gqr0224-native-d1.log: SHA256 14c54ae5756ddcbbef95aaacb06ea692b478e898d583281577f3540cccbc2946
+- temp/general_cleanup_20261006/gqr0224-native-d2.log: SHA256 672b4b686e9e9bdf5cdeec4a544913e25061a7f80c84f61d4720db80b57b436f
+- temp/general_cleanup_20261006/gqr0224-before-metadata/summary.jsonl: SHA256 0b6088561d0546aa2b9da32bc5e0f1d7bf5be21788c74f3302d32aa9bb8834d6
+- temp/general_cleanup_20261006/gqr0224-before-metadata/metadata/mustfind.json: SHA256 dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b
+- temp/general_cleanup_20261006/gqr0224-before-metadata/metadata/trainng.json: SHA256 bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e
+- temp/general_cleanup_20261006/gqr0224-after-metadata/summary.jsonl: SHA256 86ac432046f337d598959789bef9ab6fd5f67bcb823528b13207fdcbf086bc7c
+- temp/general_cleanup_20261006/gqr0224-after-metadata/metadata/mustfind.json: SHA256 dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b
+- temp/general_cleanup_20261006/gqr0224-after-metadata/metadata/trainng.json: SHA256 bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e
+
+</details>
+
+<!-- END IMPORT: GQR-0224 dead host metadata helper remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0015 prior crash-shim removal current-state validation 20261008 SHA256:2162cef3ad6ae1756c1cdd88b3ed14f8c5806366662c3a35a84103ee9769f407 -->
+
+## GQR-0015 prior crash-shim removal current-state validation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0015-remediation.md`
+- Imported SHA-256: `2162cef3ad6ae1756c1cdd88b3ed14f8c5806366662c3a35a84103ee9769f407`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0015 prior crash-shim removal current-state validation 20261008
+
+- Revalidated GQR-0015/GQF-0028 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. Finding is already resolved in ancestor commit 80af22443: its parent contains CrashLog.install/installed and both Activity calls, commit removes all four, current complete Kotlin/Java/native/script caller census confirms absence
+- Current DxxReduxApp Application retains XCrash initialization with Java/native/ANR callbacks; CrashLog.installNativeHandler remains called after System.loadLibrary in MainActivity/SetupActivity (and preview/metadata owners). Current crash/Application/MainActivity/SetupActivity source hashes unchanged throughout validation, preserving concurrent installer changes. No product edit, new code savings, native/inherited churn or replacement API
+- Existing maintained test_xcrash_native_report.ps1 passes with NoBuild/current full APK on emulator-5582 only. It installs APK, launches launcher, verifies extracted xCrash dumper, deliberately sends SIGSEGV to emulator app process and requires a fresh native tombstone with signal/backtrace, no dumper status 102, legal Windows filename and distribution/SDK/build-date header. Fresh raw tombstone captured and hashed
+- After crash report, ordinary actual D1/D2 game launch/open-map readiness integration passes 21/21 and 26/26 steps respectively. Durable passing automation results captured before reuse. This establishes healthy game launch after diagnostic crash; no intentional Java/ANR failure or every crash-export path claim
+- No formatter/native build needed: product sources unchanged and current APK from prior verified all-ABI build used. Exact owner hashes, prior removal history, complete caller census and owned ledger diff checks provide current-state proof. No staging/commit or physical-device crash, malformed-media/security/resource-pressure probe
+- GQR-0231 XFing removal remains open: its required maintained asset validation includes malformed/truncated PIG/HAM/HOG/RLE/level cases under earlier deferred-probe constraint. Source inspected only, no XFing product edit/test execution/partial closure or savings credit
+
+## Verification
+
+```json
+{
+  "source_unchanged": true,
+  "removed_shim_absent": true,
+  "prior_removal_commit": "80af22443",
+  "apk_sha256": "7d1a17f28d3800b6a7ed0d179ba46ff846f19653fedc71c91a2bc88aebc09242",
+  "emulator": "emulator-5582",
+  "fresh_native_report": "tombstone_00001791451868319852_1.1 (24400) dev (dev) dev Play Store built=2026-10-08T0215PDT minsdk=24 targetsdk=36__com.dxxredux.app.native.xcrash",
+  "report_sha256": "43bf0a58019af94ddae688ff549a571a05bcb0d9a283bd928c8511146de46ec5",
+  "signal": "SIGSEGV",
+  "backtrace": true,
+  "current_savings_claimed": 0,
+  "game_launch_steps": {
+    "d1": 21,
+    "d2": 26
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0015-before.json: SHA256 574a6c11ff2bd655cde07244970c2dd465e7f05373226e61396b144d06542f23
+- temp/general_cleanup_20261006/gqr0015-verification.json: SHA256 8c21031b8b624a7bd7a532e37b3b1533017f6b419b9bd23b498881aa74b2503d
+- temp/general_cleanup_20261006/gqr0015-xcrash-report.log: SHA256 425a59157222e51a18d3fc7ff127ab34b34b8d173ce0cb3dae6bf7341f3764d6
+- temp/general_cleanup_20261006/gqr0015-native-report.txt: SHA256 43bf0a58019af94ddae688ff549a571a05bcb0d9a283bd928c8511146de46ec5
+- temp/general_cleanup_20261006/gqr0015-launch-d1.log: SHA256 7af2979bf2cd653754d54e6ba92a58653b595fe68dbf799a5648d1f6825d21c2
+- temp/general_cleanup_20261006/gqr0015-launch-d2.log: SHA256 647449cbf16e662cb2212f15d0b9f760ab5db44be063ec32eaa802dc39f97090
+- temp/general_cleanup_20261006/gqr0015-launch-d1-result.json: SHA256 32706d409057ee1719c5c6dcd61ff1cc36cc5060578c6ca558baa2372c2f86bb
+- temp/general_cleanup_20261006/gqr0015-launch-d2-result.json: SHA256 2afe2ca0d89f333f99d23772aa3f95c143a5c796fdf777bdafb4216a6845d39f
+
+</details>
+
+<!-- END IMPORT: GQR-0015 prior crash-shim removal current-state validation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0154 ordered audio EOF and audible completion remediation 20261008 SHA256:7868e0a4e3b29ac1d0f63637ba3cfb7308625c74bf31b30dd1f466a0aa93a13d -->
+
+## GQR-0154 ordered audio EOF and audible completion remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0154-remediation.md`
+- Imported SHA-256: `7868e0a4e3b29ac1d0f63637ba3cfb7308625c74bf31b30dd1f466a0aa93a13d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0154 ordered audio EOF and audible completion remediation 20261008
+
+- Completed GQR-0154/GQF-0167 after revalidating current source and auditing all imported owner references, including GQ1-CHUNK-0153/0218/0262 Redbook and GQ1-CHUNK-0188 OBS-003 CD preview extensions. Required scope is TSF MIDI/HMP/PCM, in-game Redbook and launcher CD preview; narrower remediation-row wording was not used to omit backend work
+- Actual-production pre-fix MIDI/PCM barrier tests completed early and stranded 512/four samples. Valid Redbook baselines delivered none of 1174/11758 expected samples and left 8192 samples queued in the longer case, while dispatching completion. Valid one-sector preview baseline reported stopped with 1174 ring samples queued. Maintained pre-repair fixtures reject actual old behavior; no malformed-media or allocation-pressure input
+- digi_tsf_music.c render helpers return EOF locally. The actual producer writes all returned final samples before release-publishing source EOF. Desktop direct rendering and existing public API remain unchanged; callback drains before game-thread one-shot dispatch
+- rbaudio_bin.c uses request-tagged source EOF and audible completion. Producer publishes final samples before EOF and waits rather than rendering repeatedly after exhaustion. Callback continues draining; only an empty ring after current-generation EOF completes playback. Queue/apply/stop clear markers; game poll checks request generation before clearing and dispatching the hook. Explicit stop and I/O failure remain non-completing
+- cd_preview.c similarly publishes source EOF after the final ring write. OpenSL callback accounts for audio in both queued buffers; completion follows their consumption, not submission or ring empty. Public state remains playing through drain and paused until resume. Start/stop/seek reset markers and queue accounting. Producer stays usable for seek after source EOF and exits after audible completion. Existing control -> playback -> ring-reset lock order preserved; callback adds no playback lock or inversion
+- Three branch-added shared Android product owners only; no inherited-file edit or line-saving claim. Exact whole-file transformation checks preserve all other bytes. Net product growth is 63 lines (TSF five, Redbook 26, preview 32) for ordering, generation and device-queue correctness; no new product wrapper, callback table or transport abstraction
+- Maintained actual-source MIDI/HMP/PCM fixture passes 21 cases/game: tail/full/empty/two looping passes/pause/stop/replacement, with exact samples/zero padding, retained final stereo frame and exact one-shot game-thread completion. Real SDL worker/ring/lifecycle; deterministic synth output/publication barrier test-local. Replacement uses actual stop/join/start and fixture source setup, not public file decoding or soundfont synthesis
+- Maintained actual-source Redbook fixture passes ten cases/game: short/full chunk/equal ring/longer ring/pause/blocked-read stop/blocked-read replacement/completed-but-unpolled replacement/range/completed-but-unpolled stop. 262144/263018 sample cases drain exactly; old hooks never survive replacement or stop. Real valid sector reader/resampler/SDL worker/callback/public controls; only read/publication boundary and poll clock controlled
+- Maintained preview fixture passes eleven cases per game build: nine controlled OpenSL FIFO cases (short/full/equal ring/longer ring/pause/stop queued/replacement queued/seek after source EOF/seek after completion) and two real OpenSL cases using public cd_preview_start with valid BIN/CUE parsing and actual platform callbacks. Real output queues all 587/2048 expected frames and consumes each audio buffer before stopped state. Device resources/worker/files released by public stop
+- Combined 84 native cases: 80 controlled-endpoint cases plus four real OpenSL public-API cases. All paired traces byte-identical. Native queue-consumption tests are not a physical speaker recording, launcher Activity UI test or complete gameplay replay claim
+- Both full Windows builds and fresh full Debug APK/all three Android ABI builds pass, no new compiler warnings. Thirty structural contracts pass (nine lifecycle/eight tuning/three Redbook header/ten preview synchronization); final preview contracts rechecked after producer-exit adjustment. Scoped mixed/final fixture quality and catalog validation/integration pass. Three maintained top-level runners registered with 600-second timeouts
+- Existing SAF Redbook integration passes 69/69 steps on emulator-5582 with the post-TSF/Redbook APK: registration, real reads/mixer delivery, pause/resume, rapid replacement, stop and controlled source I/O error preserving error/non-completion. Durable result captured. Later preview-only changes leave both validated engine audio owner hashes unchanged; final full APK is separately identified below, and no claim is made that this exact final APK was installed or reran the SAF test
+- Separate BR-0276 preview position-clock issue remains open: this repair changes EOF/public completion state, not enqueue-based position accounting. Other deferred malformed-media/security/resource-pressure work remains untouched. No staging/commit; concurrent installer/import/outstanding-bugs changes preserved. The broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "status": "COMPLETE_GQR_0154_ONLY",
+  "sources": {
+    "digi_tsf_music.c": {
+      "sha256": "367fe39f2ac6a584357393d1a6bd5507ea761459e1b06e31dbfba1ab9bbd52d2",
+      "net_lines": 5
+    },
+    "rbaudio_bin.c": {
+      "sha256": "8ffa821f4e4de18004764586084156d9c76c00c66b20716c0e7c34434d702fbd",
+      "net_lines": 26
+    },
+    "cd_preview.c": {
+      "sha256": "c935b7097e96ab208260ffdfbdd33826d809d1151965e28b010ca5259fc3a1b7",
+      "net_lines": 32
+    }
+  },
+  "net_product_lines": 63,
+  "inherited_files_edited": 0,
+  "native_cases": 84,
+  "controlled_cases": 80,
+  "real_opensl_public_api_cases": 4,
+  "paired_traces_identical": true,
+  "saf_redbook_steps": 69,
+  "structural_contracts": 30,
+  "standalone_powershell_tests": 211,
+  "catalog_top_level_entries": 309,
+  "support_scripts": 373,
+  "current_full_apk_sha256": "321e4643021a24f81dd892d581995f79caec34041b7ea2497a665a219a8326ef",
+  "saf_test_apk_sha256": "60f606bbd432bdd3ace47797dfab9ee99c79d33298008c118fbeea2aa433a471",
+  "separate_BR_0276_position_clock": "OPEN"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0154-before-digi_tsf_music.c: SHA256 22d22a20a66c1f9763fec44f698c772e0584de5b57ee368a96359e64231e4816
+- temp/general_cleanup_20261006/gqr0154-before-rbaudio_bin.c: SHA256 35ae11cfb48a24dae2e947763e9ce0aa9e58d9fa65164ef75fb3943bdd58fc2e
+- temp/general_cleanup_20261006/gqr0154-before-cd_preview.c: SHA256 10048ebcf779f54c381b3e04b93af67967e4706c23a7fbdf67d83c1dfbd3aafd
+- temp/general_cleanup_20261006/gqr0154-before-prototype.log: SHA256 31e86335eaa6dbab0c50628eadc9566887011225c6bb224bbe5849d8db578527
+- temp/general_cleanup_20261006/gqr0154-after-prototype.log: SHA256 4e64f79f2091efc424740cb6d66c5375281669885ddb9d81f180f3c0b34397b3
+- temp/general_cleanup_20261006/gqr0154-maintained-baseline.log: SHA256 8e5088148105736df5327745c91d6ea49ae6ace6a5f993b135adb4fc7315ce5f
+- temp/general_cleanup_20261006/gqr0154-redbook-baseline.log: SHA256 67f317e6b19bf6c1128a3729653e2bd9216e7cd2c1793bb9f8eb4fb207f5d36a
+- temp/general_cleanup_20261006/gqr0154-redbook-before/d1.log: SHA256 5768f8f09e493be89b1365471653885ac10c7b335b3090c001ec08db5271fff5
+- temp/general_cleanup_20261006/gqr0154-preview-baseline.log: SHA256 38bc3f2f69001ff53e6dc5cc6622e06a54b75e125e8d39434cb4becad806e83b
+- temp/general_cleanup_20261006/gqr0154-preview-before/d1.log: SHA256 b421681f975e8ecd6d8d96e5474f92187390b0b1a2c836cd6f488dd02b423c6d
+- temp/general_cleanup_20261006/gqr0154-music-final/d1.json: SHA256 ee059151235b4a7f91df89fcce74a0b52ce26321ffe5b60c392224773ad098d9
+- temp/general_cleanup_20261006/gqr0154-music-final/d2.json: SHA256 ee059151235b4a7f91df89fcce74a0b52ce26321ffe5b60c392224773ad098d9
+- temp/general_cleanup_20261006/gqr0154-redbook-final/d1.json: SHA256 457f56c264091f21f3fa50e1a1f566561cad9a4b03e3fbca9240c6346dcb45c5
+- temp/general_cleanup_20261006/gqr0154-redbook-final/d2.json: SHA256 457f56c264091f21f3fa50e1a1f566561cad9a4b03e3fbca9240c6346dcb45c5
+- temp/general_cleanup_20261006/gqr0154-preview-final/d1.json: SHA256 e42f9a0094ed124bb5eb23dcedae06cf892fd6784844777b0844d7cf846d7767
+- temp/general_cleanup_20261006/gqr0154-preview-final/d2.json: SHA256 e42f9a0094ed124bb5eb23dcedae06cf892fd6784844777b0844d7cf846d7767
+- temp/general_cleanup_20261006/gqr0154-final-verification.json: SHA256 bcbead9de0106e51ea302bbddf39b9de35b482894e2d27fe9a31b7c6da0989ea
+- temp/general_cleanup_20261006/gqr0154-preview-verification.json: SHA256 9f781142aac2b72c64530dba95acc2191ea1afdff0ac66d96033a78a4dd82345
+- temp/general_cleanup_20261006/gqr0154-completion-verification.json: SHA256 19d6e8fdfc70743b2b6d7db3b4f08712668fc352be6323ddcb7954d2d25d72d8
+- temp/general_cleanup_20261006/gqr0154-final-fixtures.log: SHA256 cac9a60c26a9b58d3a1ec69a5bc80419fa7b7485845799fea76eaf788cca7f1d
+- temp/general_cleanup_20261006/gqr0154-preview-final.log: SHA256 130041c8df7a60dc1382489abc2f7ef4c7109f0edc7fc5da6a8b1fd9ae2c1b37
+- temp/general_cleanup_20261006/gqr0154-complete-quality.log: SHA256 cb2e1dfadddaf16289f82330c0dc5dcc40173bcb3806a528c2327b17d55ff984
+- temp/general_cleanup_20261006/gqr0154-maintained-quality.log: SHA256 12022e3f4933f9015669164eeb6c77598a0977f207ad2deaba9ab4e57dc8d2e9
+- temp/general_cleanup_20261006/gqr0154-redbook-product-quality.log: SHA256 46d08d6fcb07522a17865be378301eff27259d8196eadc335d6a6ec9196fc1d5
+- temp/general_cleanup_20261006/gqr0154-complete-windows-build.log: SHA256 dc152a8f4c26dc092322893d6aacbd81dff0856b6c080b801008be9a89ae2ead
+- temp/general_cleanup_20261006/gqr0154-final-apk-build.log: SHA256 1628a9bc9f7f1211c03b0925e8cd75cd7e5b90e9d541688a127e6bc5f77ebe5f
+- temp/general_cleanup_20261006/gqr0154-complete-contracts-catalog.log: SHA256 9bdfa1f09a3e409655651f8f1c972c62256dde46ca6cbd29eef021175dbc57a1
+- temp/general_cleanup_20261006/gqr0154-preview-final-contracts.log: SHA256 1cdcbef91ef85765b2d6be85d1236db6b7b72ae479d3e37349c2025ea114bfed
+- temp/general_cleanup_20261006/gqr0154-saf-redbook.log: SHA256 29fa6accf50c54c481b658f4cddf9a77bec073baca4dde6e244a4f685830ad5d
+- temp/general_cleanup_20261006/gqr0154-saf-redbook-result.json: SHA256 4ce85a98f7173eb3b2979af3296061ea028fae997153c3db8e5601baacec756e
+
+</details>
+
+<!-- END IMPORT: GQR-0154 ordered audio EOF and audible completion remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0101 unused mission HOG predicate remediation 20261008 SHA256:8ef34e38a633c3970ec2ca4817c2500e596c35be83c0ffd21bb12970c185c29c -->
+
+## GQR-0101 unused mission HOG predicate remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0101-remediation.md`
+- Imported SHA-256: `8ef34e38a633c3970ec2ca4817c2500e596c35be83c0ffd21bb12970c185c29c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0101 unused mission HOG predicate remediation 20261008
+
+- Revalidated GQR-0101/GQF-0114 against live HEAD 1ee56908299b870fef1852c3f0e7586844890652 and current worktree, plus imported GQ1-CHUNK-0057-OBS-004. Current full source and compiled class inventories find only the private declaration, no caller or compiled invocation. Historical migration from HOG-only to HOG/DXA admission remains reflected by live isMissionArchive/isMissionArchiveRole
+- Removed only unused MissionZip.isMissionHog expression and its separator, two branch-added lines. Exact whole-file byte verifier preserves every other byte, live isMissionHogName, HOG/DXA admission, descriptor handling, comments and source line endings. No inherited edit, replacement owner, compatibility alias or line-saving attribution to original files
+- Scoped Kotlin quality passes. Actual :app:compileDebugKotlin offline build passes. Before/after javap -p -c inspection proves the private method disappeared and all other compiled class instructions are identical after normalizing constant-pool indices; referenced method/field/string identities and instruction offsets remain compared
+- Post-removal current and tracked whole-repository product/test/script symbol inventories contain no exact isMissionHog token. Source and compiled live archive/name helper bodies remain unchanged. No new test for unreachable private code, native rebuild, emulator run, malformed-media/security/resource-pressure probe or runtime coverage claim
+- Existing accepted frozen observation explicitly requires Kotlin compilation, scoped quality and frozen/live caller search, and states no behavioral test is needed for the unreachable expression. The stronger current compiled-instruction comparison supplies focused preservation evidence without executing unrelated archive rejection cases
+- test_extract.ps1 still contains the GQR-0148 stale diagnostic, but overlaps concurrent installer/import work and was not edited. Concurrent installer/import/outstanding-bugs work and prior audio/renderer cleanup preserved; no staging/commit. Broader goal remains active
+
+## Verification
+
+```json
+{
+  "exact_whole_file_two_line_deletion": true,
+  "before_declaration_only": true,
+  "after_current_tracked_caller_census": 0,
+  "compiled_private_method_removed": true,
+  "other_compiled_instructions_identical_except_constant_pool_indices": true,
+  "kotlin_debug_compilation": "PASS",
+  "scoped_ktlint_quality": "PASS",
+  "branch_added_lines_removed": 2,
+  "inherited_lines_removed": 0,
+  "source_sha256": "29fe6b85ee7266830c68127ad70349819670bece1e20c963bd15a92d6398a8c5",
+  "before_bytecode_sha256": "3e6480b328e004dd399793533effa5bb8fdacce5f10e2c360f716a60c4ed668b",
+  "after_bytecode_sha256": "1454ce3d25ae34a9bce20eaac16e0349184ffd2b6b4dd4b1b89a0e56db041cd3"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0101-before-MissionZip.kt: SHA256 16de61828f0b5446c89532fc28451cfd1d1c9861e221267736161f9edb173467
+- temp/general_cleanup_20261006/gqr0101-before-bytecode.txt: SHA256 3e6480b328e004dd399793533effa5bb8fdacce5f10e2c360f716a60c4ed668b
+- temp/general_cleanup_20261006/gqr0101-after-bytecode.txt: SHA256 1454ce3d25ae34a9bce20eaac16e0349184ffd2b6b4dd4b1b89a0e56db041cd3
+- temp/general_cleanup_20261006/gqr0101-quality.log: SHA256 80da056082e52728606a8db27cf734e64301b5a1a6cffb942d7836948c707bd7
+- temp/general_cleanup_20261006/gqr0101-kotlin-build.log: SHA256 5fc214926ed689d8235fe8663d1e7ce5d5308d9b5eda661a651ee16cdd59987c
+- temp/general_cleanup_20261006/gqr0101-verification.json: SHA256 42d215e857568a595e8b91ef3ade392ee99d2acef1bdd9b4cd9defd1be871e7a
+
+</details>
+
+<!-- END IMPORT: GQR-0101 unused mission HOG predicate remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0251 unused runtime disc track mapping remediation 20261008 SHA256:bcd2e1af2d26964bb92a2113d8b45a3600d617f5bdf6d608b9a5ca3191a0279e -->
+
+## GQR-0251 unused runtime disc track mapping remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0251-remediation.md`
+- Imported SHA-256: `bcd2e1af2d26964bb92a2113d8b45a3600d617f5bdf6d608b9a5ca3191a0279e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0251 unused runtime disc track mapping remediation 20261008
+
+- Revalidated GQR-0251/GQF-0265 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and worktree. Full current/tracked runtime symbol census confirms no reader; all eight KnownDisc references belong to DiscIdentifier.kt with one constructor
+- Removed exactly six branch-added lines: unused KnownDisc.trackMapping field, parser map/traversal and constructor argument. Exact whole-file byte verification preserves all remaining source, ID/label/game/legacyDiscId/tracks and matching behavior. No inherited edit or original-file saving claim
+- Curated known_discs.jsonc track_mapping metadata, known_albums.jsonc and publication-preservation tests remain byte-identical to pre-edit hashes. No compatibility shim, replacement abstraction or new test
+- Scoped Kotlin quality and offline app/unit-test Kotlin compilation pass. Three existing valid-data JVM contracts pass: physicalParserAcceptsOnlyCompletePhysicalRecords, kcxf2AssetProjectsEveryCheckedInTracklistTitle and macPlayPhysicalFingerprintsProjectOnceWithUsefulNames. XML proves three tests with no failure/error/skip
+- Final verifier rerun successfully against current worktree on resume. No whole malformed-record/archive suite, native build, emulator or deferred malformed-media/security/allocation-pressure probe run for this Kotlin dead-state deletion
+- Concurrent installer/import/outstanding-bugs changes preserved; no staging or commit. Broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "exact_whole_file_six_line_deletion": true,
+  "remaining_source_bytes_unchanged": true,
+  "runtime_mapping_references": 0,
+  "known_disc_inventory_owner_paths": 1,
+  "known_disc_constructor_calls": 1,
+  "curated_assets_and_publication_test_hashes_unchanged": true,
+  "app_and_unit_test_kotlin_compilation": "PASS",
+  "focused_jvm_contracts": 3,
+  "failures_errors_skipped": 0,
+  "scoped_quality": "PASS",
+  "branch_added_lines_removed": 6,
+  "inherited_files_edited": 0,
+  "source_sha256": "160456539e26f38b9706299e0e25c09a75a7f953bdcb2eaca95314dd31dbe5b7",
+  "protected": {
+    "android/app/src/main/assets/known_discs.jsonc": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+    "android/app/src/main/assets/known_albums.jsonc": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+    "android/tests/test_cd_regression_runner.ps1": "ce66c1c3176b8bb24cf912f9b38dc12c3984da96a82276b928b14b8b1616ea7e",
+    "android/app/src/test/java/com/dxxredux/app/DiscDatabaseContractTest.kt": "3317434806b0f6e160f5fb975ae1b43d541bf2a732dbeb2538a3543cb58553fc"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0251-before-DiscIdentifier.kt: SHA256 4a677e0a23f5e77a372f5d0bfe2a3678bdc144267199234e522b2c9fb9c001b9
+- temp/general_cleanup_20261006/gqr0251-protected-before.json: SHA256 0f318a1bbb8aad612033e83d49af56d9cc17b7e1f5c45481e93f2bd7d2969a12
+- temp/general_cleanup_20261006/gqr0251-quality.log: SHA256 80da056082e52728606a8db27cf734e64301b5a1a6cffb942d7836948c707bd7
+- temp/general_cleanup_20261006/gqr0251-kotlin-tests.log: SHA256 fedbb5c771d49360116b53be443ca0e4a38d908faa48b39656e44504381949e1
+- temp/general_cleanup_20261006/gqr0251-disc-contracts.xml: SHA256 2a44ddc0dcc749b15c8508463b96d48db43d8b5e219c260d2eaf31e4059f6eba
+- temp/general_cleanup_20261006/gqr0251-known-disc-inventory.txt: SHA256 0f975b5c99df548ecbb27903f1ab2990979b4f116c6a0e96ad747635e585e253
+- temp/general_cleanup_20261006/gqr0251-verification.json: SHA256 f6e6ffbf67b5020bb56bfd508f6d0ed7a6a92bd87306565e69e2265192f2881e
+
+</details>
+
+<!-- END IMPORT: GQR-0251 unused runtime disc track mapping remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0153 exhaustive server configuration template remediation 20261008 SHA256:5753bdb560d2d377bee3b73cbea61d413a2037af71bc4b36450b9f579c9d412d -->
+
+## GQR-0153 exhaustive server configuration template remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0153-remediation.md`
+- Imported SHA-256: `5753bdb560d2d377bee3b73cbea61d413a2037af71bc4b36450b9f579c9d412d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0153 exhaustive server configuration template remediation 20261008
+
+- Revalidated GQR-0153/GQF-0166 and full imported GQ1-CHUNK-0141-OBS-007 against current HEAD 1ee56908299b870fef1852c3f0e7586844890652/worktree. Old json5 template was renamed server/server_config.template.jsonc; omission remains live: 22 accepted ConfigFile fields, 20 documented entries
+- Added max_connections: 500 with WebSocket limit/unlimited purpose and force_relay: false with relay diagnostic purpose. Corrected admin_http_listen_addr shown value to its effective empty default, retaining the separate-port example and handmade comments. No runtime owner/refactor or inherited edit/savings
+- Maintained Rust unit test compares all uncommented template keys against actual ConfigFile test-only serialization, rejects duplicates, parses every documented default as JSON and deserializes the whole object to check types. It asserts both new defaults and empty admin listener. Exact 22-key parity, no exclusion list or duplicated schema key list
+- Negative control ran same parity test against unchanged original template: fails on exactly missing force_relay/max_connections. Corrected template passes. Separate valid-data unit test calls actual ServerConfig::load in three fresh child test processes with isolated environments: empty object gives 500/false, explicit file gives 42/true, environment overrides file to 73/false. No shared process environment mutation or listeners/external network
+- Two focused library unit tests pass, 34 unrelated tests filtered out. Scoped mixed Rust/JSONC quality passes. Offline cargo build --lib --bins passes without new warnings. No broader malformed-config/security server suite, native game build or emulator claim
+- Source verifier removes only new test bodies/test-only Serialize attribute and proves all pre-existing Rust source unchanged after line-ending normalization. Exact three documented template transformations likewise verified. Existing server integration runner discovers module unit tests already; no new top-level runner/catalog registration needed
+- Concurrent installer/import/outstanding-bugs and prior cleanup work preserved; no staging/commit. Broader goal active
+
+## Verification
+
+```json
+{
+  "schema_and_template_keys": 22,
+  "exact_key_agreement": true,
+  "old_template_negative_control": "FAIL_EXPECTED_MISSING_TWO_KEYS",
+  "focused_rust_unit_tests": 2,
+  "isolated_loader_cases": [
+    "default:500:false",
+    "file:42:true",
+    "environment_over_file:73:false"
+  ],
+  "scoped_rust_jsonc_quality": "PASS",
+  "non_test_runtime_source_unchanged_ignoring_line_endings": true,
+  "exact_template_transform_ignoring_line_endings": true,
+  "inherited_files_edited": 0,
+  "source_sha256": "e6ddc0932a010424f6660b480aabccd41f8e85021697bd92f9da59f005f3057e",
+  "template_sha256": "bd612521ff7a760bba88d227473b435c5162378ba8645277d73454dbdda4bf20",
+  "server_library_and_binaries_offline_build": "PASS"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0153-before-config.rs: SHA256 65e197a4ed88c175811d157fd4422acafef43abc79ce13c6cd0b02927523b50a
+- temp/general_cleanup_20261006/gqr0153-before-template.jsonc: SHA256 56108ab8d7384bedb3023cd8201d34eabb1ad154ae998b4bc51165de488207b2
+- temp/general_cleanup_20261006/gqr0153-baseline.log: SHA256 a0f589ed4267d00fed2e920e23cadffed9d07c3e0835c97b26fa5f47465afd14
+- temp/general_cleanup_20261006/gqr0153-tests.log: SHA256 65ff26ab36932566dc8feb95741aa2dbb054e17f2ee230214b5f97fd857af826
+- temp/general_cleanup_20261006/gqr0153-quality.log: SHA256 65d67e65928555c587092b9856e6308e0d47b706ea85ec3c9479a3f37e6195cd
+- temp/general_cleanup_20261006/gqr0153-build.log: SHA256 9b2b152f8ffd6f65173a659c3aab360dfae5bdeae32ed96548f3bbe474d2abbb
+- temp/general_cleanup_20261006/gqr0153-verification.json: SHA256 2df2ee93735822db2b11d359ba7a1ff7c397b75c2e251a098a27bb946d291f34
+
+</details>
+
+<!-- END IMPORT: GQR-0153 exhaustive server configuration template remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0245 effective robot-frame homing coverage remediation 20261008 SHA256:f6381b225359e4b39c104b6e816bd2cbbb746cbb4b7ad262e5dd4a684efe565b -->
+
+## GQR-0245 effective robot-frame homing coverage remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0245-remediation.md`
+- Imported SHA-256: `f6381b225359e4b39c104b6e816bd2cbbb746cbb4b7ad262e5dd4a684efe565b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0245 effective robot-frame homing coverage remediation 20261008
+
+- Revalidated GQR-0245/GQF-0259 and imported GQ2-CHUNK-0211 full-frame finding against HEAD 1ee56908299b870fef1852c3f0e7586844890652/current source. Variant 6 still set the homing flag before common initialization cleared it. Fresh full paired Windows build and maintained baseline frame runner reproduced 126 intended homing cases exactly duplicating their ordinary controls, despite 1260-case equality
+- Moved variant-specific flag assignment after common weapon initialization and asserted the effective robot weapon flag. Added a deterministic first-public-frame assertion for AIB_NORMAL/AIS_FIRE/sight 1: visible player outside direct cone fires one homing shot, advances cooldown and enters recoil; ordinary weapon stays idle. No engine edit, private AI call, new runner or inherited saving
+- Final both-game full Windows builds and maintained android/helpers/test_d1_ai_frames.ps1 pass: 1260 scenarios and 5040 frames per engine, complete native/imported traces byte-identical. All 1134 non-homing cases remain identical to pre-fix. Fourteen homing cases change; remaining homing cases retain their existing behavior under other gates
+- Independent final trace oracle confirms selected ordinary case has zero shots, next_fire -1024, goal AIS_FIRE and zero simulation draws; homing case creates weapon 0 from robot parent 1, next_fire 8192, goal AIS_RECO, gun 0 and five simulation draws. Baseline homing case had zero shots. This establishes actual homing behavior, beyond scenario label/flag/count or paired equality alone
+- Scoped C++ quality passes after final assertion. Exact whole-file byte transformation permits only moved flag/new state assertion/off-cone behavior assertion and comment, six net added branch test lines. Prior mixed test edits and every other source byte including mixed line endings preserved
+- Existing maintained frame runner reused; no new top-level test/catalog addition. Only robot-frame CLI executed, not default upstream executable suite containing malformed assets. No Android native/APK/device coverage claim, deferred malformed-media/security/allocation-pressure probe, staging or commit
+- Concurrent installer/import/outstanding-bugs and prior cleanup work preserved. Broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "exact_whole_file_byte_transform": true,
+  "earlier_mixed_test_edits_and_line_endings_preserved": true,
+  "paired_windows_builds": "PASS",
+  "maintained_full_frame_runner": "PASS",
+  "cases": 1260,
+  "frames_per_engine": 5040,
+  "old_homing_cases_duplicating_controls": 126,
+  "ordinary_cases_unchanged": 1134,
+  "homing_cases_changed": 14,
+  "final_paired_traces_byte_identical": true,
+  "independent_off_cone_oracle": {
+    "0": {
+      "previous_visibility": 1,
+      "shots": [],
+      "next_fire": -1024,
+      "goal": 5,
+      "gun": 1,
+      "sim_draws": 0
+    },
+    "6": {
+      "previous_visibility": 1,
+      "shots": [
+        {
+          "id": 0,
+          "life": 655360,
+          "parent": 1,
+          "position": [
+            65536,
+            0,
+            32768
+          ],
+          "velocity": [
+            -15120,
+            9760,
+            2613920
+          ]
+        }
+      ],
+      "next_fire": 8192,
+      "goal": 6,
+      "gun": 0,
+      "sim_draws": 5
+    }
+  },
+  "scoped_quality": "PASS",
+  "new_test_lines_net": 6,
+  "inherited_files_edited": 0,
+  "source_sha256": "70d93b5004041f5d064fd63af526b2accb516c93dbda54df1917b1e127f964d1"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0245-before-test_upstream_compat.cpp: SHA256 68e0f078fac8074bbda690b7faee6e78de80154293cb5351651c2b25b6edbced
+- temp/general_cleanup_20261006/gqr0245-baseline-build.log: SHA256 4424ff229363d1de7833a21abd5433f147a2374c21b15a7b979fddff07beba1a
+- temp/general_cleanup_20261006/gqr0245-baseline-frames.log: SHA256 4ff9420cbff0af38ca841d08a70c27e0a944951bef2fe760b82dbcc93f112a5b
+- temp/general_cleanup_20261006/gqr0245-baseline-native.json: SHA256 abd7b7b26df039e125e53c083aba1e352c736257f1ecf2c9d5ce81ec9137f1c6
+- temp/general_cleanup_20261006/gqr0245-baseline-imported.json: SHA256 abd7b7b26df039e125e53c083aba1e352c736257f1ecf2c9d5ce81ec9137f1c6
+- temp/general_cleanup_20261006/gqr0245-final-quality.log: SHA256 7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704
+- temp/general_cleanup_20261006/gqr0245-final-build.log: SHA256 cd58b0920efd224c8c0f373a183e3d6ade33e5a1246c4501300dcd794a5e451c
+- temp/general_cleanup_20261006/gqr0245-final-frames.log: SHA256 4ff9420cbff0af38ca841d08a70c27e0a944951bef2fe760b82dbcc93f112a5b
+- temp/general_cleanup_20261006/gqr0245-final-native.json: SHA256 92ac49a292e716a2e7c1daa76d520246565efb618725972bd657f22787941083
+- temp/general_cleanup_20261006/gqr0245-final-imported.json: SHA256 92ac49a292e716a2e7c1daa76d520246565efb618725972bd657f22787941083
+- temp/general_cleanup_20261006/gqr0245-verification.json: SHA256 e01848318c4bb16420b5a96de4b16b5e2f9840fe15f6f1e0d4808c46f817fa4f
+
+</details>
+
+<!-- END IMPORT: GQR-0245 effective robot-frame homing coverage remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0003 and GQR-0004 optimized HUD and escort test oracle remediation 20261008 SHA256:2bb80681d16b55e6fc1a66b14cf2d68d3e3faeebe64b4a6c70bd817cbac9f381 -->
+
+## GQR-0003 and GQR-0004 optimized HUD and escort test oracle remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0003-0004-remediation.md`
+- Imported SHA-256: `2bb80681d16b55e6fc1a66b14cf2d68d3e3faeebe64b4a6c70bd817cbac9f381`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0003 and GQR-0004 optimized HUD and escort test oracle remediation 20261008
+
+- Revalidated both accepted findings against current HEAD 1ee56908299b870fef1852c3f0e7586844890652 and live sources/configuration. GQR-0003/GQF-0008 is stale: ancestor f8b4a2ff63 already adds NDEBUG undefinition before HUD assert.h. Current HUD bytes match HEAD and remain untouched. No duplicate change or saving credit
+- GQR-0004/GQF-0009 still reproduces in registered escort exit policy plus accepted goal-policy extension (imported escort review 20261007). Both use standard assert under normal RelWithDebInfo DNDEBUG flags. Existing escort owner policy uses always-active CHECK and needs no edit
+- Before repair, scratch copies of each maintained test with only its first ordinary expectation deliberately inverted were compiled MSVC C11 /W4 /O2 /MD /DNDEBUG. HUD correctly failed with assertion/exit 3; both escort copies falsely printed tests passed/exit 0. Expected old goal copy also warned that assertion-only next_allowed was unused, corroborating erased operands
+- Added only existing HUD three-line NDEBUG undefinition pattern at the start of both escort test files. Exact whole-file byte proof preserves all original expressions, comments and other bytes. Six net branch test lines, no engine/policy/inherited edit or saving claim
+- Repaired wrong-expectation escort copies compile without warnings under same /O2 /DNDEBUG, without UNDEBUG override, then both fail intentional assertions/exit 3 and never print PASS. Scratch wrapper only disables CRT crash dialogs/reporting so failures remain unattended console results; no runtime test assertion or production owner is replaced
+- Both full Windows RelWithDebInfo builds pass. Actual configured compile blocks retain /O2 /DNDEBUG for five focused registered targets. CTest --no-tests=error passes HUD in D1 and HUD/escort exit/goal/owner in D2, five total. Thus normal configured release targets retain the repaired oracles; explicit debug-only assertion enabling in a standalone probe is not the sole evidence
+- Scoped mixed C quality passes for two changed escort tests. HUD unchanged so no formatter mutation. Existing CTest registration reused, no new maintained test/runner/catalog entry. No whole upstream/malformed-asset suite, Android build/device, deferred media/security/allocation-pressure probe or engine behavior claim
+- Broader BR-0662 remains OPEN: these focused findings do not establish all registered native test oracles. Concurrent installer/import/outstanding-bugs and prior cleanup changes preserved; no staging/commit. Goal remains active
+
+## Verification
+
+```json
+{
+  "GQR_0003": "STALE_ALREADY_REPAIRED_ANCESTOR_f8b4a2ff63",
+  "hud_source_unchanged": true,
+  "GQR_0004": "REPAIRED_EXIT_AND_GOAL_ACCEPTED_EXTENSION",
+  "exact_three_line_prefix_per_escort_file": true,
+  "all_original_expressions_and_other_bytes_preserved": true,
+  "actual_relwithdebinfo_targets_defining_NDEBUG": 5,
+  "focused_registered_ctest_passes": 5,
+  "baseline_wrong_expectations": {
+    "hud_exit": 3,
+    "exit_policy_exit": 0,
+    "goal_policy_exit": 0
+  },
+  "final_wrong_expectations": {
+    "exit_policy_exit": 3,
+    "goal_policy_exit": 3
+  },
+  "wrong_controls_compiled_O2_DNDEBUG_without_UNDEBUG": true,
+  "scoped_quality": "PASS",
+  "paired_windows_builds": "PASS",
+  "new_test_lines_net": 6,
+  "inherited_files_edited": 0,
+  "broader_BR_0662": "REMAINS_OPEN",
+  "source_sha256": {
+    "android/tests/test_hud_layout.c": "1caeeba8fa3385c427e993ba44797b40e8c2dcc62a00b3ba6ebd8a896bfa26b8",
+    "android/tests/test_escort_exit_policy.c": "a5bd73fc9b1304343719f381871046325c00f48f956b1e6f10f242d3175f9896",
+    "android/tests/test_escort_goal_policy.c": "fe96fe880218aab3296b7ead74b1961af8e84e9d2578f897db08be63d9e20e64"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0003-0004-before-hud.c: SHA256 1caeeba8fa3385c427e993ba44797b40e8c2dcc62a00b3ba6ebd8a896bfa26b8
+- temp/general_cleanup_20261006/gqr0003-0004-before-exit.c: SHA256 a55fdb18ad6c4b69b29e66b456a0591208f31f0309ac1cf962bfaf447f5ffca4
+- temp/general_cleanup_20261006/gqr0003-0004-before-goal.c: SHA256 061284ba1a5cf07428ce773199fd890811e251ed66546ca21b324c189c87dbf6
+- temp/general_cleanup_20261006/gqr0003-0004-baseline-build.cmd: SHA256 1ea1a717e6133fb18719de19913d34c70cad61c21f99981b112dd7d53c8988a1
+- temp/general_cleanup_20261006/gqr0003-0004-baseline-build.log: SHA256 a7987fceb7d0741b2014ae502f08a869718eb93a4a09be16b41af57798c3366d
+- temp/general_cleanup_20261006/gqr0003-0004-baseline.json: SHA256 671be6c0e6726cf4656f198336ac7deade881b2e88e34f1e2ee13f70679b64e6
+- temp/general_cleanup_20261006/gqr0004-final-negative-build.cmd: SHA256 aa29d602ff0f9e693f879132c09483147b818d1fef0eaa7250bbaa64fefd5512
+- temp/general_cleanup_20261006/gqr0004-final-negative-build.log: SHA256 f076858d6805c3ac93075e89340d88da1829651eca25b341a2b480d6ec0e594f
+- temp/general_cleanup_20261006/gqr0004-final-negative.json: SHA256 e57f5981168c77665e5aec2d0ebd4b2c1a013d18ea0831ec38ce89cf0ccb6679
+- temp/general_cleanup_20261006/gqr0004-quality.log: SHA256 f22d7ad1b8dba9ce93133caf3e237b607acb682a3fc8f1b0987a3d95a53903f9
+- temp/general_cleanup_20261006/gqr0003-0004-release-build.log: SHA256 6f43307f276c293b90e704339b993624385ca25e9b288f19cf591c3c43200424
+- temp/general_cleanup_20261006/gqr0003-0004-ctest.log: SHA256 c2d51e879e996d5bf0a71a394a0163d8c8d89ea2dc5bb87e4ad53cf30b370615
+- temp/general_cleanup_20261006/gqr0003-0004-configured-targets.txt: SHA256 c38b3710c2b431440b3488a79884551e64051a48b73cf346c0fe561c57811e3e
+- temp/general_cleanup_20261006/gqr0003-0004-verification.json: SHA256 9777ba78f005aa14a73e4dd06c527b1b975193cea11c3cb0a682b6a15a672c98
+
+</details>
+
+<!-- END IMPORT: GQR-0003 and GQR-0004 optimized HUD and escort test oracle remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0203 common Android executable source inventory remediation 20261008 SHA256:99d6c07451e5f5cc52477390ed179f4ce102fcf677ea5f4386af8607639b8b75 -->
+
+## GQR-0203 common Android executable source inventory remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0203-remediation.md`
+- Imported SHA-256: `99d6c07451e5f5cc52477390ed179f4ce102fcf677ea5f4386af8607639b8b75`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0203 common Android executable source inventory remediation 20261008
+
+- Revalidated GQR-0203/GQF-0217 against HEAD 1ee56908299b870fef1852c3f0e7586844890652/current CMake and full imported GQ1-CHUNK-0383 observation. Historical 89-source identical premise changed: D1 has 92 direct entries, D2 95, with 91 common, newly D1-only mac_d1_audio.c and four D2-only preview producers. Initial strict historical-premise assertion failed before any edit; fresh census/positions governed implementation
+- Consolidated all 91 shared entries into one explicit DXX_ANDROID_GAME_SOURCES list in existing branch-owned Android CMake. Separate per-game list copies insert their exclusive producers at named source anchors, preserving complete original source order. Canonical DiscImport variable, D1 Mac audio, four D2 preview owners and retained handmade preview comment remain explicit. No object-library singleton, target factory, generated source registry, native policy edit or inherited reduction
+- Actual NDK x86_64 Debug before/after configuration covers both games and GLES/software modes. Complete raw SOURCES/definitions/options/includes/IPO/source-specific metadata match; generated compile_commands for every configured target are byte-identical. Full configured executable source counts: GLES D1 231/D2 265, software D1 223/D2 257
+- Only opaque CMake parent-directory IDs in LINK_LIBRARIES normalize (exactly one distinct ID per property, same scope grouping/order). Local installed CMake LINK_LIBRARIES help identifies directory-id as unspecified. Codemodel comparison excludes source-line/backtrace metadata and sorts dependency graph membership by stable target ID, while preserving exact resolved link command fragment order and all source/compile groups. These are representation differences, not ignored dependency or command changes
+- Verified each common source has one separate executable compilation per game in both modes, with D2 macro only on D2 and each game's native include paths. Strict-FP IPO FALSE, generated build-info includes and source-specific recorder metadata preserved. All 96 distinct direct native source hashes unchanged. Exact whole-file CMake proof permits only two source-inventory spans, retaining every other byte and game-specific fixup
+- Full offline Debug APK/all three ABI native builds pass. Six before/after dynamic symbol inventories, including names/types/order/addresses, are byte-identical. No missing preview JNI/export or shared executable state; actual current library identities retained
+- Existing maintained launcher media test extended with 12 lines for ordinary missing soundfont validation/missing BIN start rejection, stopped-state/seek rejection, followed by successful playback. No malformed media or resource-pressure input. Fresh APK d999c50b57dcca1335d9ace7b5f56d0168584aec9cc491ee99f824e2aa64a714 installed only on emulator-5582
+- Maintained test_launcher_media_controls passes durable 2/2 automation steps. Explicit logs prove rejected-request checks plus MIDI/CD/MP3 media controls: real native start/pause/paused seek/clamps/idempotent pause/resume/playing seek/toggle/stop/foreground gate and successful restart after rejected requests. Valid 45-second MIDI/BIN-CUE and existing ordinary MP3 used. Durable run ID/result captured; no speaker recording/full game replay claim
+- Existing 15 MIDI and 10 CD synchronization contracts pass. Final scoped mixed CMake/Kotlin quality and owned diff checks pass. Existing top-level runner/registration reused, no new catalog entry. Software mode configured/properties verified; no separate software APK/runtime build claim. No Windows/Linux/macOS or physical-device validation claimed for Android-only inventory edit
+- CMake removes 77 net branch-owned lines; maintained preview fixture adds 12, total 65 branch-owned lines removed. Zero inherited edits/savings. Concurrent installer/import/outstanding-bugs and all prior cleanup work preserved; no staging/commit or deferred malformed-media/security/allocation-pressure probes. Broader goal remains active
+
+## Verification
+
+```json
+{
+  "common_sources": 91,
+  "protected_native_source_hashes_unchanged": 96,
+  "configured_comparisons": [
+    "gles/d1",
+    "gles/d2",
+    "software/d1",
+    "software/d2"
+  ],
+  "actual_configured_source_counts": {
+    "gles/d1": 231,
+    "gles/d2": 265,
+    "software/d1": 223,
+    "software/d2": 257
+  },
+  "source_order_and_separate_game_compilation": "IDENTICAL",
+  "compile_commands_all_targets": "BYTE_IDENTICAL",
+  "link_commands_source_compile_groups": "IDENTICAL",
+  "normalizations": [
+    "unspecified CMake parent-directory ID only, exactly one distinct ID per link property",
+    "codemodel backtrace/source-line references",
+    "codemodel dependency graph membership sorted by target ID, actual link command order retained"
+  ],
+  "strict_FP_IPO_and_generated_build_info": "PRESERVED",
+  "full_all_ABI_debug_APK": "PASS",
+  "symbol_inventories_including_addresses_unchanged": 6,
+  "launcher_real_MIDI_CD_MP3_and_error_restart": "PASS",
+  "focused_structural_contracts": 25,
+  "mixed_scoped_quality": "PASS",
+  "CMake_branch_lines_removed_net": 77,
+  "maintained_preview_test_lines_added": 12,
+  "total_branch_lines_removed_net": 65,
+  "inherited_files_edited": 0,
+  "APK_identity": {
+    "apk_sha256": "d999c50b57dcca1335d9ace7b5f56d0168584aec9cc491ee99f824e2aa64a714",
+    "serial": "emulator-5582",
+    "result_sha256": "5e09890e2eafd5349f3e3856d9905bc415c50ed7cddc48487deeb4aaa9a97e1e"
+  },
+  "source_sha256": {
+    "android/app/src/main/cpp/CMakeLists.txt": "3a185b8da07fce6fd5fcc7e6dcb34cc9fafaaa06b1749bf3343f3f48dc0df92e",
+    "android/app/src/main/java/com/dxxredux/app/PreviewMediaIntegrationTest.kt": "59506864869a5db40a5a6d4842eaab3da8b4ae7656c95e1054ed78e68c64aef9"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0203-current-census.json: SHA256 58872e5bd1d828efdc7e215a5a6c7d0b39a78b7c0a706c8405420b7fe984a9d3
+- temp/general_cleanup_20261006/gqr0203-before-CMakeLists.txt: SHA256 b97ab31a3e2f7a18fcaa0dccbacde436edb1275ddebb2cb10b09a51eb2c5fb9e
+- temp/general_cleanup_20261006/gqr0203-before-PreviewMediaIntegrationTest.kt: SHA256 b96acfe7f126d200a5d7be6b19558ff0885a0a1a054f82044bc9b71302411fea
+- temp/general_cleanup_20261006/gqr0203-protected-source-hashes.json: SHA256 38e1ab749ebaea74356548ad5c43f5a3b8e51a35878c8ed665ace6014a86e99f
+- temp/general_cleanup_20261006/gqr0203-final-quality.log: SHA256 e661c49620006b02f25436b1628a4e8685f15c6fcae4bb6888fa4d75898f0b71
+- temp/general_cleanup_20261006/gqr0203-apk-build.log: SHA256 c95b1ebacadecfc485690e46b13565832fe3659ee9dfc0d2e3065bae16f4759a
+- temp/general_cleanup_20261006/gqr0203-midi-contracts.log: SHA256 160e0dd3377e1cc2429a0d565b54c4a4eeef1c602aa2f018f14ae76011443772
+- temp/general_cleanup_20261006/gqr0203-cd-contracts.log: SHA256 a4fad6c0826f9a277d12ba02cc76fb5faa802a36540b13a8aa1f7f7a06e29cc7
+- temp/general_cleanup_20261006/gqr0203-symbol-verification.json: SHA256 f07bd8542dcc5d32b54acf8745118e45fddf20fb23b946c95c80cd58caa19f37
+- temp/general_cleanup_20261006/gqr0203-launcher-preview.log: SHA256 a1b82a1529bd00ca48730030b55cc51cd6cc1cdc67c6847dc723540262d40d50
+- temp/general_cleanup_20261006/gqr0203-launcher-result.json: SHA256 5e09890e2eafd5349f3e3856d9905bc415c50ed7cddc48487deeb4aaa9a97e1e
+- temp/general_cleanup_20261006/gqr0203-launcher-checks.log: SHA256 73d47e54d9aea5a592e20340b806b6fbb89dd3797f6b5fe9ffcadabd6c745f86
+- temp/general_cleanup_20261006/gqr0203-apk-identity.json: SHA256 5104cbf935fe76616f474121e45de39586fda54df491fcd8f632a957399d4a69
+- temp/general_cleanup_20261006/gqr0203-verification.json: SHA256 c709cd099c4f50d36a8240d1335e20c939800e1196ae1006eafa2b79253835fa
+- temp/general_cleanup_20261006/gqr0203-before-gles/compile_commands.json: SHA256 fe2acb8c4928ae547ee131bf63f62978bb2281440204f6921372fecee7ec49a0
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-codemodel.json: SHA256 acef1b575bc39304d56fc59e7c3a4a330ebc0d318b79e82a42b006cb64eff3a2
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-COMPILE_DEFINITIONS.txt: SHA256 293ae032934d862a478045f089d6e2f67810508e8ef930c9da18221cc200c47c
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-INCLUDE_DIRECTORIES.txt: SHA256 d6da40d496f45249f553aa1f5396bbe60811038db9b617b13bfcb2f0ff029ad0
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-LINK_LIBRARIES.txt: SHA256 ccc228594162cf578b5b2e8c20e6fe1218ea7cd1bc9a8938346f6856587ef93b
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-source-properties.txt: SHA256 415acb029e8d73bd2f17b9dad9c71fa96ce9b027b29fa8a133e08e9a5cd1b033
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d1-SOURCES.txt: SHA256 ce8200fb1930d40b491d14ceed1cd29419c46691c55260b1ce18c6605eb97498
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-codemodel.json: SHA256 dc1f9983ac4f85e484194c83efbfa920f4c624df2e55296a0ecefdeb90435393
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-COMPILE_DEFINITIONS.txt: SHA256 8c4d5d63795cb2daff18f71f42edf9f5c74435d2117661abf5bebed7a0cbce2b
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-INCLUDE_DIRECTORIES.txt: SHA256 7a3eb1aa12033f4db452f37cab38ca129681ed9cfce9c168bb2af180b92aca0e
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-LINK_LIBRARIES.txt: SHA256 30e65e6a225a3367298d6bf50bcb5b4a9697434445fbd1b68eb66b4452987d0e
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-source-properties.txt: SHA256 70fd4c0588ba097e3f3873e5788b1bcac093cdcd91e1eaab51c0215b76efd44d
+- temp/general_cleanup_20261006/gqr0203-before-gles/dxx-redux-d2-SOURCES.txt: SHA256 72183c8a248ae19d11fdcbe8ede94a1b791bbe17faf2d130bcb4308428d40fd6
+- temp/general_cleanup_20261006/gqr0203-before-gles-configure.log: SHA256 be52438cd9f9cfa8e6732ddf672d6e88d5271cba7e99a458155a621de9131127
+- temp/general_cleanup_20261006/gqr0203-before-gles-command.json: SHA256 fd055bc081642146e0f0c8e0e59826df9e85f1157fdec590db9b6c39d4df1b63
+- temp/general_cleanup_20261006/gqr0203-before-software/compile_commands.json: SHA256 6e24dd24d29ea7f3adbe8b8749a88dab87d841941fee2b0625e5295df1698a08
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-codemodel.json: SHA256 ba89b45cd0d315a55b45a2af27247155f9d3998fa1271f2006bbbb0e0f72445e
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-COMPILE_DEFINITIONS.txt: SHA256 293ae032934d862a478045f089d6e2f67810508e8ef930c9da18221cc200c47c
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-INCLUDE_DIRECTORIES.txt: SHA256 719bd4ad45e67919228f053fc9cafa542d905bd3aeff4ff8f6c01400072d9c21
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-LINK_LIBRARIES.txt: SHA256 bf9bab7dbece83ba99ca2bd136caee6481ed05bab3544049a212dc8c3bd6cf6f
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-source-properties.txt: SHA256 b2210bb0bf6b18ee42680b6815592cefdbc9f468682f61136e08d3d717f5ce06
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d1-SOURCES.txt: SHA256 1ae2d507fbbaead7572e4b8e24a363e446a7fd86c8483d1845951ada4564448b
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-codemodel.json: SHA256 d17bcb3121370ef2e5ed3ebc9e97e5b8dc755d382f30e8479dd123118d97b10c
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-COMPILE_DEFINITIONS.txt: SHA256 8c4d5d63795cb2daff18f71f42edf9f5c74435d2117661abf5bebed7a0cbce2b
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-INCLUDE_DIRECTORIES.txt: SHA256 aa1eed4b35f3b1cd64ed8ce0f2666fb2f3d761122b63751a93edb1da5386aae1
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-LINK_LIBRARIES.txt: SHA256 957aca69d76c090204c620112fd073f955d3e36027b44a577c1427f3b18e6860
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-source-properties.txt: SHA256 a011ef7521313d88704ab5cf09bb3cc50de1fc5b9ef119a9e9f63f88728afffd
+- temp/general_cleanup_20261006/gqr0203-before-software/dxx-redux-d2-SOURCES.txt: SHA256 ebadcc219112ff83258aea9daea320ed4dfbc8bfa018a6eed87e25f282df7884
+- temp/general_cleanup_20261006/gqr0203-before-software-configure.log: SHA256 954b853d0e3e4b15eff90ce2024ba7f6d8e106c2f5949c54145904fd34df3272
+- temp/general_cleanup_20261006/gqr0203-before-software-command.json: SHA256 4c761bbe6bfde298b25b4ba475e69bc725741d9b05ac2ebe6678bd82da41a829
+- temp/general_cleanup_20261006/gqr0203-before-arm64-v8a-d1-symbols.txt: SHA256 49359acef00a2a51bc75af4d45fdc395090ede8203522370a82a1ce04fae65cf
+- temp/general_cleanup_20261006/gqr0203-before-arm64-v8a-d2-symbols.txt: SHA256 8e690b72032ba329cc19577ef82d66ee54d0efe0a3ee7b7c6143d35570554cfa
+- temp/general_cleanup_20261006/gqr0203-before-armeabi-v7a-d1-symbols.txt: SHA256 771ef5aac54c3dcf3b8be350dbc9decf5adbfd2293bbdca41bf16f4a7e2cc046
+- temp/general_cleanup_20261006/gqr0203-before-armeabi-v7a-d2-symbols.txt: SHA256 e1298d4a58725f40f9b7e1ac92f683fcf06d60a2f0cccfaeb7dcf70677637935
+- temp/general_cleanup_20261006/gqr0203-before-x86_64-d1-symbols.txt: SHA256 1c1a81c8d1f15e48a699c234a09e516b52aaa4a320733df0a198c157acadec59
+- temp/general_cleanup_20261006/gqr0203-before-x86_64-d2-symbols.txt: SHA256 ad2fb62635de92097fbf867a0f1c5eacc4e0758b508e103ac32b377c1c326817
+- temp/general_cleanup_20261006/gqr0203-after-gles/compile_commands.json: SHA256 fe2acb8c4928ae547ee131bf63f62978bb2281440204f6921372fecee7ec49a0
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-codemodel.json: SHA256 c01fd78dd532a07cfbb461221cdafc863e9d581b945aff8ec1dda855e5ff45a0
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-COMPILE_DEFINITIONS.txt: SHA256 293ae032934d862a478045f089d6e2f67810508e8ef930c9da18221cc200c47c
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-INCLUDE_DIRECTORIES.txt: SHA256 d6da40d496f45249f553aa1f5396bbe60811038db9b617b13bfcb2f0ff029ad0
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-LINK_LIBRARIES.txt: SHA256 88f59e897e6d597ed7837fe378504f3d165bfb388457ecfa98c658c4328e6f44
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-source-properties.txt: SHA256 415acb029e8d73bd2f17b9dad9c71fa96ce9b027b29fa8a133e08e9a5cd1b033
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d1-SOURCES.txt: SHA256 ce8200fb1930d40b491d14ceed1cd29419c46691c55260b1ce18c6605eb97498
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-codemodel.json: SHA256 dfa22f7253f45ece5c367eec5aab6086f9e2475d9a6e2cef94c5ee8ba9e98fc4
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-COMPILE_DEFINITIONS.txt: SHA256 8c4d5d63795cb2daff18f71f42edf9f5c74435d2117661abf5bebed7a0cbce2b
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-INCLUDE_DIRECTORIES.txt: SHA256 7a3eb1aa12033f4db452f37cab38ca129681ed9cfce9c168bb2af180b92aca0e
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-LINK_LIBRARIES.txt: SHA256 f655b3ee01c4c35e482f7b67737e953b73f101a07892e5f943a8dc8abfaf1705
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-source-properties.txt: SHA256 70fd4c0588ba097e3f3873e5788b1bcac093cdcd91e1eaab51c0215b76efd44d
+- temp/general_cleanup_20261006/gqr0203-after-gles/dxx-redux-d2-SOURCES.txt: SHA256 72183c8a248ae19d11fdcbe8ede94a1b791bbe17faf2d130bcb4308428d40fd6
+- temp/general_cleanup_20261006/gqr0203-after-gles-configure.log: SHA256 8d179a8cb641e97d5fcebe0f6ad3762d6c0eab7b8d27cd7bce6f389a1afb30b9
+- temp/general_cleanup_20261006/gqr0203-after-gles-command.json: SHA256 bfdb28b42eff56d4ef55af53dcd62eca3d0b674ea97d662b06b5b1691dd5ab35
+- temp/general_cleanup_20261006/gqr0203-after-software/compile_commands.json: SHA256 6e24dd24d29ea7f3adbe8b8749a88dab87d841941fee2b0625e5295df1698a08
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-codemodel.json: SHA256 a5e2315c7487af51e81c76f75366d1d0f3f13065e0bbdb05a407f0e38122f2f1
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-COMPILE_DEFINITIONS.txt: SHA256 293ae032934d862a478045f089d6e2f67810508e8ef930c9da18221cc200c47c
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-INCLUDE_DIRECTORIES.txt: SHA256 719bd4ad45e67919228f053fc9cafa542d905bd3aeff4ff8f6c01400072d9c21
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-LINK_LIBRARIES.txt: SHA256 9bd4e9a95ba690565e5a1fae844f3ef528ab16f5d7049c523646c64003bb10b3
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-source-properties.txt: SHA256 b2210bb0bf6b18ee42680b6815592cefdbc9f468682f61136e08d3d717f5ce06
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d1-SOURCES.txt: SHA256 1ae2d507fbbaead7572e4b8e24a363e446a7fd86c8483d1845951ada4564448b
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-codemodel.json: SHA256 82c0e05f6984a1865c104e900610bf409b0af450f8472150695e74986ab67d42
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-COMPILE_DEFINITIONS.txt: SHA256 8c4d5d63795cb2daff18f71f42edf9f5c74435d2117661abf5bebed7a0cbce2b
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-COMPILE_OPTIONS.txt: SHA256 f1b9831588ba3aca11027de76a0af917a3241ba242361f301b2a9e5c88cdc3b8
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-INCLUDE_DIRECTORIES.txt: SHA256 aa1eed4b35f3b1cd64ed8ce0f2666fb2f3d761122b63751a93edb1da5386aae1
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-INTERPROCEDURAL_OPTIMIZATION.txt: SHA256 ca1ae58eae43034212d9698ef266339f7ab6f24d6e5166a9f56b24a1b2ecd100
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-LINK_LIBRARIES.txt: SHA256 df3bf5fd5e703bc6893481c14392a9827d3537393ce10a4846287304b285dbaa
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-LINK_OPTIONS.txt: SHA256 a2bff861cbc9b0a47fd4f5d138cad45dafafb9f5f2c11197e30447ebb4dacc8c
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-source-properties.txt: SHA256 a011ef7521313d88704ab5cf09bb3cc50de1fc5b9ef119a9e9f63f88728afffd
+- temp/general_cleanup_20261006/gqr0203-after-software/dxx-redux-d2-SOURCES.txt: SHA256 ebadcc219112ff83258aea9daea320ed4dfbc8bfa018a6eed87e25f282df7884
+- temp/general_cleanup_20261006/gqr0203-after-software-configure.log: SHA256 ef12a0a71330ef941c5c484412a6d38a1f534b43c21cdfc35d7c0ed0e69f0765
+- temp/general_cleanup_20261006/gqr0203-after-software-command.json: SHA256 db95a746bd7fd4482a18ea18cafd6064d94b5b0e869abf9aac19c81fbe0ffbd3
+- temp/general_cleanup_20261006/gqr0203-after-arm64-v8a-d1-symbols.txt: SHA256 49359acef00a2a51bc75af4d45fdc395090ede8203522370a82a1ce04fae65cf
+- temp/general_cleanup_20261006/gqr0203-after-arm64-v8a-d2-symbols.txt: SHA256 8e690b72032ba329cc19577ef82d66ee54d0efe0a3ee7b7c6143d35570554cfa
+- temp/general_cleanup_20261006/gqr0203-after-armeabi-v7a-d1-symbols.txt: SHA256 771ef5aac54c3dcf3b8be350dbc9decf5adbfd2293bbdca41bf16f4a7e2cc046
+- temp/general_cleanup_20261006/gqr0203-after-armeabi-v7a-d2-symbols.txt: SHA256 e1298d4a58725f40f9b7e1ac92f683fcf06d60a2f0cccfaeb7dcf70677637935
+- temp/general_cleanup_20261006/gqr0203-after-x86_64-d1-symbols.txt: SHA256 1c1a81c8d1f15e48a699c234a09e516b52aaa4a320733df0a198c157acadec59
+- temp/general_cleanup_20261006/gqr0203-after-x86_64-d2-symbols.txt: SHA256 ad2fb62635de92097fbf867a0f1c5eacc4e0758b508e103ac32b377c1c326817
+
+</details>
+
+<!-- END IMPORT: GQR-0203 common Android executable source inventory remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0250 nonempty network campaign argument admission remediation 20261008 SHA256:2cc61ada20cf08d90ebf7c8399a36c1c4edeb7febb433665ffd865c476ac87c2 -->
+
+## GQR-0250 nonempty network campaign argument admission remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0250-remediation.md`
+- Imported SHA-256: `2cc61ada20cf08d90ebf7c8399a36c1c4edeb7febb433665ffd865c476ac87c2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0250 nonempty network campaign argument admission remediation 20261008
+
+- Revalidated GQR-0250/GQF-0264 and original GQ2-CHUNK-0252 accepted scope against current source. Actual original CLI repeats 0 and -1 each select one real baseline, create only manifest.json and exit zero with no case results. Nonexistent ADB proves no case/device execution; baseline retention removed nothing. Baseline manifests captured before exact-inventory cleanup
+- Added exactly two Python lines: reject repeat outside 1..100 after the existing read-only list return, before required-device/output admission, artifact retention/creation or Device construction. Existing physical wrapper range remains unchanged. Exact full-file transformation proves every other runner byte preserved; no inherited edit or savings
+- Maintained host fixture executes actual subprocess CLI for invalid 0/-1/101, requires argparse exit 2/reason and no output directory, and proves no retention/Device/Popen calls via actual main. Bounds 1/100 reach existing required-argument diagnostic. Actual baseline listing is byte-identical to original; selected listing and read-only listing for invalid/valid repeats remain unchanged
+- Eight maintained tests execute actual main and run_suite, canonical d1-baseline and actual command/result publication with controlled external Device/retention/child-process boundaries only. Each run covers 107 real suite dispatch attempts: exact repeats 1/100, reverse order, failure then remaining successful repeats, and stop-on-first-failure. Manifest, command, per-case and summary results, iteration counts, serial routing, collection counts and propagated child exit 7 checked. No replacement orchestration implementation, physical LAN/gameplay or live ADB claim
+- Registered new top-level PowerShell host runner in core coverage and no-infrastructure list. GUID scratch cleanup checks absolute descendant containment before recursive removal. Actual aggregate HostOnly filtered run selects exactly one test, executes all eight assertions and passes 1/1 with zero failures/timeouts/skips. Discovery confirms requires none, manual false and default 120-second timeout; physical campaign remains explicit
+- Scoped mixed Python/PowerShell quality passes under explicit pwsh. Both automation catalog validation and aggregate catalog integration pass. During final review restored exactly five damaged Tier separator comments from HEAD in run_all_tests.ps1; byte proof preserves every other current byte including concurrent registrations. Cause of prior encoding damage is not asserted
+- Product growth two branch-owned lines plus maintained host coverage; zero inherited edits or line-removal credit. No native build/device campaign required or claimed for host CLI admission. No malformed-media/security/resource-pressure probes, staging or commit. Concurrent installer/import/outstanding-bugs and prior cleanup work retained; general goal remains active
+
+## Verification
+
+```json
+{
+  "head": "1ee56908299b870fef1852c3f0e7586844890652",
+  "product_exact_two_line_addition": true,
+  "listing_byte_identical": true,
+  "baseline_zero_and_negative_false_success": true,
+  "maintained_host_tests": 8,
+  "real_main_and_run_suite_controlled_dispatches_per_test_run": 107,
+  "aggregate_host_runner": "PASS 1/1; eight fixture tests; no physical execution",
+  "catalog_entry": {
+    "name": "test_device_network_campaign_cli",
+    "base_name": "test_device_network_campaign_cli",
+    "type": "ps1",
+    "path": "android/tests/test_device_network_campaign_cli.ps1",
+    "requires": "none",
+    "manual": false,
+    "timeout_seconds": 120,
+    "run_mode": ""
+  },
+  "five_tier_comments_restored_all_other_current_bytes_preserved": true,
+  "scoped_quality_and_both_catalog_checks": "PASS",
+  "inherited_files_edited": 0,
+  "source_sha256": {
+    "android\\tests\\run_device_network_campaign.py": "281b3b3cc47df1c04ed93c78ed953167d230cfb50ee0d0c0670ccc892b82ab3a",
+    "android/tests/device_network_campaign_cli_fixture.py": "5fb54b3ed5ba8f81369c09647e9e295b1d423adf959d9f31688af8c3a75dfaf6",
+    "android/tests/test_device_network_campaign_cli.ps1": "28a33623926daba26c8d5257ecada6510dc0245ef574448ad12436917a58064e",
+    "android/helpers/test_suite_coverage.ps1": "110169f96a34c8ae4fbb1fbf198b5871e7ecb077ae03762288bba3108b7b15cf",
+    "android/run_all_tests.ps1": "2bde0f5b60eb82c80ca4f6fd33d2954f8a9d7eabeaf8e6d67092e7b69564ea75"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0250-aggregate.log: SHA256 bc45dfdf37c5c1e2c9ee20debcbdc30a64ffcadd1f163032ba6fd7be28b36fd8
+- temp/general_cleanup_20261006/gqr0250-baseline-0-manifest.json: SHA256 9c8a3a545ba37cfd0fd04ffca623bd599d86e89220259a2b068104a16a3423cf
+- temp/general_cleanup_20261006/gqr0250-baseline-1-manifest.json: SHA256 e0ba503843d4b635c79a3926fde5345fa9f99c5d161000ee1f7dd6b8b9c6666e
+- temp/general_cleanup_20261006/gqr0250-baseline.json: SHA256 80c27d7d373906efc2fedf811706bde0943011aaa44625c2081d03cc5f02d0b6
+- temp/general_cleanup_20261006/gqr0250-before-comment-repair.ps1: SHA256 40983ae4ae6bb0bbfb84d3e8fd1673154d1e17041e956ee7cb0eebcaf310b692
+- temp/general_cleanup_20261006/gqr0250-before-listing.json: SHA256 8a3416ee193d95237901f7192f45a2f135675fb55b1a5d904e236d63806e7991
+- temp/general_cleanup_20261006/gqr0250-before-runner.py: SHA256 b06595c3ead439d990bdc9ea5851296cba4e2391866cb33e659002b3339e799e
+- temp/general_cleanup_20261006/gqr0250-catalog-integration.log: SHA256 292ce074c75284c84bfe560d8539cacca2210e634640edf4c728e0ce2dbf8ecf
+- temp/general_cleanup_20261006/gqr0250-catalog-validation.log: SHA256 285e7bffdd792aadf99a0b943852d2842c9ee063629e2c8375cdc6a56dcf93d8
+- temp/general_cleanup_20261006/gqr0250-cli-tests.log: SHA256 26f9e311fbb26934b5a5de38bbc31032cb7c3e095cd0d1af5b8c298d2f1a75b0
+- temp/general_cleanup_20261006/gqr0250-discovered-catalog.json: SHA256 fad6b1a1176d4571099e1b4d77d3b549232dedb5a038dd6271f8386d7ee90492
+- temp/general_cleanup_20261006/gqr0250-final-quality.log: SHA256 1e336f781e80e00e60eff69b4ab75d1c4ef0b3fc9f3ed47962db52d9bd99b4f5
+- temp/general_cleanup_20261006/gqr0250-quality.log: SHA256 e28c796271a4dc9a5c273e7f85e07ea7ed78d0ab24518fc6790d7b063f915cd1
+- temp/general_cleanup_20261006/gqr0250-verification.json: SHA256 fd32d232817a2572da60dfa15331f84b42e91c1277b42f050b9d1cf3be98a5f4
+- temp/general_cleanup_20261006/gqr0250-aggregate/execution_evidence_windows_x64.json: SHA256 920dcff75cbe053e5340b4557f42d64c24d14dda199cf890a1a318d9ec463996
+- temp/general_cleanup_20261006/gqr0250-aggregate/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0250-aggregate/report_20261008_040729.md: SHA256 f76aa5d7c0df9e6ce6dc62137c96b29a981dfa40c21358d9ccf3a363d81376f4
+- temp/general_cleanup_20261006/gqr0250-aggregate/test_device_network_campaign_cli_20261008_040729.log: SHA256 689af932145e074d4a464596b4156cb5c101ac81c0a04e5dae774fc5443b61f9
+
+</details>
+
+<!-- END IMPORT: GQR-0250 nonempty network campaign argument admission remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0133 unused CUE test helper implementation pending runtime validation 20261008 SHA256:f421f4da6c9129509aac8d4f8cea720c080d81f3663360c22ceeccbf7d9bae3c -->
+
+## GQR-0133 unused CUE test helper implementation pending runtime validation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0133-implementation.md`
+- Imported SHA-256: `f421f4da6c9129509aac8d4f8cea720c080d81f3663360c22ceeccbf7d9bae3c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0133 unused CUE test helper implementation pending runtime validation 20261008
+
+- Fresh current source and repository caller census confirms write_test_cue/read_test_file only at their static definitions; assert.h has no assertion consumer. Original accepted GQ1-CHUNK-0100-OBS-002 scope re-read, including its isolated combined-suite runtime gate
+- Removed only both static helper bodies/separators and unused assertion include: exactly 30 branch-added test lines. Exact whole-file transformation retains every other byte, active fixture builder, test expression, group and main dispatch. No production parser, nested CMake or inherited change; no new helper/test runner
+- Actual existing configured CMake Release test_cue_iso target builds before and after. Baseline regenerates current extraction configuration; final target builds successfully. Existing final target warning D9025 reflects pre-existing DNDEBUG/UNDEBUG flags, no flag change made
+- Direct MSVC x64 C11 O2 W4 before/after compile passes. Twelve existing warning identities/messages unchanged, no new warnings. Attempt to obtain MSVC C4505 negative control did not diagnose unused helpers and is not counted as proof. Actual dumpbin disassembly is byte-identical after replacing only the object-file header path; no instruction, address, relocation or operand normalization
+- Scoped C quality and diff check pass. Combined CUE/ISO executable was NOT run: it includes malformed/security/resource-pressure probes deferred by earlier user instruction. Original runtime acceptance gate remains outstanding; GQR-0133 remains TODO and GQF-0146 OPEN, no partial closure or completed-remediation credit
+- Concurrent installer/import/outstanding-bugs work and all earlier cleanup retained. No staging/commit or deferred probes. Goal active; ledger totals remain 62 DONE /189 TODO /1 DEFERRED
+
+## Verification
+
+```json
+{
+  "exact_two_helpers_and_assertion_include_only": true,
+  "retained_test_labels": 79,
+  "removed_branch_test_lines": 30,
+  "inherited_edits": 0,
+  "actual_cmake_release_target_before_after": "PASS",
+  "actual_msvc_x64_O2_W4_translation_units": "PASS; 12 identical pre-existing warning identities",
+  "actual_disassembly_byte_identical_after_object_header_normalization": true,
+  "scoped_clang_quality": "PASS",
+  "combined_runtime_suite": "NOT RUN: original malformed/security/resource probes remain deferred",
+  "remediation_status": "TODO: implementation applied; original runtime gate outstanding",
+  "source_sha256": "10073f8546f78696217d691ea1fd596aabfb5b1a53cd1866e3f0a00949c57ff4"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0133-after-disasm.txt: SHA256 d22527279dc1ad25301ed6009cd3c3f97a94961cbda022aa0fd7f37dc21f4c7c
+- temp/general_cleanup_20261006/gqr0133-after-warning-compile.log: SHA256 6e0d883c31eac588a75de66e96ed80ea02004e1b1f1b80163e7994467f5d6384
+- temp/general_cleanup_20261006/gqr0133-after.obj: SHA256 922ddf138f89ba29e9bee2d55d4d2ce7f2dcae9778a60c639869c8109f55b616
+- temp/general_cleanup_20261006/gqr0133-baseline-build.log: SHA256 ea254283fbfe9e66b8f9bafcb05b0905315bdac9733a5c99ff398051b05c567c
+- temp/general_cleanup_20261006/gqr0133-before-disasm.txt: SHA256 a75e84765d973ecdd2913befe8e4660eb6f39c845f13493fa2459aecc472536c
+- temp/general_cleanup_20261006/gqr0133-before-test_cue_iso.c: SHA256 a793bd6a49f9fb1893f23f4f43f1575414d48b183ae2caca42e9ae48749c7170
+- temp/general_cleanup_20261006/gqr0133-before-warning-compile.log: SHA256 549508df0887d24a1bbc07feffb3f4f53fe80df1e2ee761cbdc989aec6c59d77
+- temp/general_cleanup_20261006/gqr0133-before.obj: SHA256 5cfd36f8c1ce39d67d1874bf57849e170873c4f41aeabbea3ae73de8e2f7fadf
+- temp/general_cleanup_20261006/gqr0133-current-census.txt: SHA256 c8126dfbd8c785cf6f949af14786eecf2b3aeb904913ff00de514d7ec70f042b
+- temp/general_cleanup_20261006/gqr0133-final-build.log: SHA256 de435dea04bc1c68e3b0f1a3e6489f20be4de00b84d66ad019759a6ca7163d3f
+- temp/general_cleanup_20261006/gqr0133-final-quality.log: SHA256 7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704
+- temp/general_cleanup_20261006/gqr0133-quality.log: SHA256 7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704
+- temp/general_cleanup_20261006/gqr0133-removed-helpers.txt: SHA256 3c744b559ff5bffae7bfcb3f6c1f9bd6ccf474156eb11f5b50db2e8523bf2a9a
+- temp/general_cleanup_20261006/gqr0133-verification.json: SHA256 975e79f86412ccb73a21062af0275cdafb4aa313da39f45d345ab45de7e04205
+- temp/general_cleanup_20261006/gqr0133-warning-compile.cmd: SHA256 9f43e58447b3c8325d21b6c8cb22e754c03444c0117c4db3c5798d758f8cd262
+
+</details>
+
+<!-- END IMPORT: GQR-0133 unused CUE test helper implementation pending runtime validation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0227 paired native packet-log decoder remediation 20261008 SHA256:386fa4697f5fd9597a3e6cb063959eccdab3d56f0ad48cab60e27bc450474c0d -->
+
+## GQR-0227 paired native packet-log decoder remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0227-remediation.md`
+- Imported SHA-256: `386fa4697f5fd9597a3e6cb063959eccdab3d56f0ad48cab60e27bc450474c0d`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0227 paired native packet-log decoder remediation 20261008
+
+- Revalidated GQR-0227/GQF-0242 and imported GQ1-CHUNK-0606 scope against current paired full decoders and native android_net_udp_mpdiag_pkt_dump producer. Producer emits [PKTDUMP] TX/RX len=N even contiguous hex. Actual original Python CLI rejects bracketed record exit 1; original PowerShell loses the empty collection, prints Count errors and falsely exits zero. Baseline stdout/stderr/status captured, no native/network/device execution
+- Both consumers now recognize bracketed native marker within normal logcat/netlog prefixes and preserve bare diagnostic marker support. Full-line even hex records required; partial hex prefixes, incomplete markers, wrong direction/negative length and trailing nonhex text do not become records. PowerShell case-sensitive match agrees with Python/native uppercase TX/RX. No wire layout, packet parser or native producer change
+- Coordinate existing BR-0608: PowerShell returns its actual ArrayList without pipeline unrolling for zero/one/many matches; object summaries count arrays rather than hashtable fields or missing null Count. Actual paired CLI tests require clean zero-record exit 1, single-TX/RX decoding and exact summary counts with normal/diff paths, raw decode, mixed nonmatches and multiple ordered records
+- Ordinary valid single-transfer diff uncovered another pre-existing PowerShell error: integer OrderedDictionary object IDs are interpreted as indexes, generating out-of-range errors. Two string-key casts fix object-ID lookup; meaningful complete single-token INIT/two-object/END transfer and missing-object controls now pass both tools without stderr. Preserve decoded numeric identities, existing aggregation/wire logic; no transfer partition redesign
+- Maintained nine-method host fixture performs 24 actual subprocess CLI invocations per run, both tools. Valid complete object body fields/length/token/IDs/type/segment/shields asserted; real bracketed TX/RX records with logcat/netlog prefixes, old bare marker and uppercase hex covered. Original source snapshots fail the same fixture with 19 failed subtests/zero test errors, proving tests reject old behavior. Final fixture passes all nine tests
+- New PowerShell host runner registered once in core coverage/no-infrastructure master lists. Absolute descendant containment verified before owned GUID scratch removal. Actual aggregate HostOnly filtered run selects/execututes exactly one test, passes 1/1 with nine internal tests and no failures/timeouts/skips; discovered default timeout 120 seconds
+- Final scoped mixed Python/PowerShell quality, both catalog validations, exact product/registration transform and git diff checks pass. Every other decoder byte retained after Python CRLF-to-LF normalization; all other current registration bytes retained. Native producer remains byte-identical to HEAD. Zero inherited edit/savings; no native/Android build or live physical capture claimed for host-only diagnostic fix
+- BR-0608 focused collection scope resolved; BR-0609 remains OPEN. Both diff tools still aggregate by local object ID without token/endpoint/session partition or INIT/END validation, so only single-transfer ordinary controls claimed. Signed-owner and partial-header scope GQR-0228 remains unchanged/open; fixture uses ordinary nonnegative owner and complete valid packet data
+- No malformed-media/security/resource-pressure probes, external deployments, staging or commit. Concurrent installer/import/outstanding-bugs and prior cleanup retained. General goal active; GQR-0133 implementation remains pending its deferred combined runtime gate
+
+## Verification
+
+```json
+{
+  "head": "1ee56908299b870fef1852c3f0e7586844890652",
+  "exact_product_transform": "paired full-record regex, Python example, PowerShell case-sensitive matching/collection shape/object summary counts/string dictionary keys only; Python CRLF normalized to LF",
+  "registration_exact_one_line_each": true,
+  "maintained_tests": 9,
+  "actual_cli_invocations_per_fixture_run": 24,
+  "original_negative_control": {
+    "tests": 9,
+    "failures": 19,
+    "errors": 0,
+    "original_rejected_by_maintained_fixture": true
+  },
+  "aggregate_host_run": "PASS 1/1; nine paired fixture tests",
+  "catalog_entry": {
+    "name": "test_object_packet_decoders",
+    "base_name": "test_object_packet_decoders",
+    "type": "ps1",
+    "path": "android/tests/test_object_packet_decoders.ps1",
+    "requires": "none",
+    "manual": false,
+    "timeout_seconds": 120,
+    "run_mode": ""
+  },
+  "native_producer_byte_identical_to_HEAD": true,
+  "native_producer_sha256": "0a6226ae653396f6941fd59c972e8dca742a047d4709d41170fa5d76d5bcc1e9",
+  "br0609_still_open_section_sha256": "8bfde20d8c65bc0449794a75b7920803ddc8929e9100faad4256b8342301f7f2",
+  "inherited_files_edited": 0,
+  "no_native_device_network_or_deferred_media_security_pressure_probe": true,
+  "source_sha256": {
+    "android/tools/decode_object_packets.py": "836f0f51524b793ad4da390e01ac685fbdcc05e79a21244377ab472c7093df52",
+    "android/tools/decode_object_packets.ps1": "ad9cafb182d2e1e8bebe46c439b67cffe0bd70579dec96b4045c69d982309c00",
+    "android/tests/object_packet_decoder_cli_fixture.py": "fa0130e481a458bbfeca36983f531a94450451f464d289c7a84f4e6277ab45bc",
+    "android/tests/test_object_packet_decoders.ps1": "c2d0216dee1910ed3b34d42a97b2fddf19152692fb7dd49255231d6670b3d7a0",
+    "android/helpers/test_suite_coverage.ps1": "22c88c9536575832ac0c9eebca526cc10c19bae8cd47bf6d5186890b1b2b65a0",
+    "android/run_all_tests.ps1": "484f0699d4df65ebccae9d626686f5a62fb27e46424aea899010932f6bac738a"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0227-aggregate.log: SHA256 8fd5ace872688dac9566300b8316a9be743f212f88ea959b0977b869d0ccbb68
+- temp/general_cleanup_20261006/gqr0227-baseline-input.log: SHA256 de5e807337fb951b4d7e5d5f8455d2679c868bcd587e052ffbc7863abfa6f804
+- temp/general_cleanup_20261006/gqr0227-baseline.json: SHA256 c14ae3c31496462cfb5f15f1772d7e9e8abf09295b968b9a836d9b944cee32d3
+- temp/general_cleanup_20261006/gqr0227-before-decode_object_packets.ps1: SHA256 013e6263d51d3a25a639c0a3f3a6b8a0a6348b6f725dc5da5a229757d12e48c9
+- temp/general_cleanup_20261006/gqr0227-before-decode_object_packets.py: SHA256 cd79b9268c9ef390a9509c8c1fe87a75a0670c39c0903600c2848a32963da6bf
+- temp/general_cleanup_20261006/gqr0227-before-run_all_tests.ps1: SHA256 2bde0f5b60eb82c80ca4f6fd33d2954f8a9d7eabeaf8e6d67092e7b69564ea75
+- temp/general_cleanup_20261006/gqr0227-before-test_suite_coverage.ps1: SHA256 110169f96a34c8ae4fbb1fbf198b5871e7ecb077ae03762288bba3108b7b15cf
+- temp/general_cleanup_20261006/gqr0227-catalog-integration.log: SHA256 e73a7ae58384a1b492026f8686ba686e3323b46f171c2716970c9baf0a9fac9e
+- temp/general_cleanup_20261006/gqr0227-catalog-validation.log: SHA256 3b00d60c5ac5b56cd8a6aebbf89cacc06b2bd0efff301ed64d53c53b490301b9
+- temp/general_cleanup_20261006/gqr0227-cli-tests.log: SHA256 5be8766aa1265b4bfbabd1001f54c2d7184aaf1e642e71b25c9fec9062513802
+- temp/general_cleanup_20261006/gqr0227-diff-failure.stderr: SHA256 07325c9ea9b078d2c960ebb19456e8ed15bad89dc38083fe714d5c5324022c83
+- temp/general_cleanup_20261006/gqr0227-diff-failure.stdout: SHA256 2c598082cc7b24c02f8e847db24cc18ddf97291179509cb8f05f0d7af21b0b1c
+- temp/general_cleanup_20261006/gqr0227-discovered-catalog.json: SHA256 b2edb49639348de44b7925220d05dad9b0422f8e84d7317a865e50117b3faa3d
+- temp/general_cleanup_20261006/gqr0227-final-cli-tests.log: SHA256 24b74d2375b152db975efc1f75f4955a29d157898e56ba450340ffd21dd1a956
+- temp/general_cleanup_20261006/gqr0227-final-quality.log: SHA256 c566dfa090cffdd209634f8161496a567ba404b2286d10379b93447b75858f5b
+- temp/general_cleanup_20261006/gqr0227-negative-verification.json: SHA256 0562c3ecd60dffd1a6fc9eae515f09a96b6f109b1f3bd8b0a8b0332a6c7c2c1a
+- temp/general_cleanup_20261006/gqr0227-original-negative-tests.log: SHA256 ddd57d77b7c339d60092ac3cde6f0ad1721aaa64a62031a6ef1f531c8b045fd5
+- temp/general_cleanup_20261006/gqr0227-quality.log: SHA256 219836c485574cffd599c28b53c158568cdf93bd8ab11ec5411acd7e811a6d74
+- temp/general_cleanup_20261006/gqr0227-valid-transfer.log: SHA256 f88508f4b947e2cbbd47e1c4a679d3c2f700b2173d4de76beb04777b7e196735
+- temp/general_cleanup_20261006/gqr0227-verification.json: SHA256 ef83fab655444bae48eb3ebb8ffd6fdd46e701cc0e19b4b1dcbf16982ab5f17e
+- temp/general_cleanup_20261006/gqr0227-aggregate/execution_evidence_windows_x64.json: SHA256 680173b813112dbbe216d2e117c9c5eb22f7f40c000c089424a5a24b387fc614
+- temp/general_cleanup_20261006/gqr0227-aggregate/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0227-aggregate/report_20261008_041753.md: SHA256 8e8f734d0247ba945e8d7f7cc45097c6110fb5a9396b689085529af93ab0f742
+- temp/general_cleanup_20261006/gqr0227-aggregate/test_object_packet_decoders_20261008_041753.log: SHA256 fb344faf864f86d621c08892dc1c647692de71356210e54acba75bf66601bde3
+
+</details>
+
+<!-- END IMPORT: GQR-0227 paired native packet-log decoder remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0228 signed packet owners and partial-header diagnostics remediation 20261008 SHA256:d5a018e6764da38957c8bb8227a02a89cbeb667ed661b5fcfa5c8ea701e1120f -->
+
+## GQR-0228 signed packet owners and partial-header diagnostics remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0228-remediation.md`
+- Imported SHA-256: `d5a018e6764da38957c8bb8227a02a89cbeb667ed661b5fcfa5c8ea701e1120f`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0228 signed packet owners and partial-header diagnostics remediation 20261008
+
+- Fresh GQR-0228/GQF-0243/0244 revalidation after0227 reproduces actual PowerShell raw CLI owner ff conversion errors/missing owner and short-header property errors, both false exit zero. Baseline paired raw CLI stdout/stderr/status captured against current sources. Re-read original GQ1-CHUNK-0607 observations and accepted combined scope; no stale source assumption
+- PowerShell now reads owner byte as integer and subtracts 256 for high-bit values, preserving exact signed wire range without checked byte-to-sbyte narrowing. Optional token/count header fields receive the same safe placeholder policy as Python before error formatting. No packet layout/native conversion or Python decoding change
+- Intentional raw packet errors/truncation and log decode errors/truncation/declared-length mismatch now return exit 1; complete valid decoding remains zero. Small Python main/entry changes align paired CLI status rather than leaving its old success-on-error behavior. Every Python non-CLI byte/function remains unchanged; no new grammar or protocol abstraction
+- Incomplete logged decodes retain partial fields, intentional errors, length mismatch and summary counts in normal/diff modes. Comparison is skipped and neither No objects lost nor LOST summary is emitted when any decoded packet is incomplete. Complete single-transfer comparison and missing-object controls remain live. Separate BR-0609 token/endpoint/session partition remains unchanged OPEN
+- Existing maintained host fixture extended from nine to thirteen methods, preserving all earlier method ASTs. Ninety actual subprocess CLI invocations per run cover signed -128/-1/0/127 in ordinary objects and INIT/END markers; complete signed log/diff transfers; valid raw/body fields; short packet header, wrong packet type, partial object header/body with and without sufficient fields, and declared log length mismatch. Fixed finite diagnostic records only, no network or hostile peer
+- Original pre0228 snapshots fail this same maintained fixture with 36 failed subtests and zero test errors across 90 CLI calls. Final current fixture passes all thirteen tests; actual aggregate HostOnly filtered existing runner passes 1/1 with thirteen internal tests in 18 seconds, zero failures/timeouts/skips. No new runner, registration or timeout change
+- Scoped mixed Python/PowerShell quality, both maintained catalog checks and exact source/diff proofs pass. PowerShell full-file transformation permits only signed interpretation, safe header formatting and explicit CLI status/diagnostic/comparison policy; Python complete decode/extract/format/diff function bytes unchanged. Existing registration/runner hashes unchanged from0227, native producer byte-identical to HEAD
+- Error status contract applies to accepted hexadecimal diagnostic packets and retained log records. No general malformed-hex argument parser redesign, media decoder/parser test, security/allocation/resource-pressure probe, native/Android build or device/network run claimed. No inherited edit/savings, staging or commit; concurrent installer/import/outstanding-bugs and prior cleanup retained
+- General goal active. GQR-0133 remains TODO pending its deferred combined runtime gate; BR-0609 cross-session comparison remains OPEN
+
+## Verification
+
+```json
+{
+  "powershell_exact_full_file_transform": true,
+  "python_all_non_cli_functions_and_bytes_preserved": true,
+  "all_previous_fixture_methods_ast_identical": true,
+  "test_methods": 13,
+  "actual_cli_calls_per_run": 90,
+  "baseline_negative": {
+    "tests": 13,
+    "failures": 36,
+    "errors": 0,
+    "actual_cli_invocations": 90,
+    "original_rejected_by_maintained_fixture": true
+  },
+  "aggregate": "PASS 1/1 with thirteen internal tests",
+  "registration_and_runner_bytes_unchanged": true,
+  "br0609_unchanged_open": true,
+  "native_producer_byte_identical_to_HEAD": true,
+  "no_native_device_network_or_deferred_media_security_pressure_probe": true,
+  "inherited_edits": 0,
+  "source_sha256": {
+    "android/tools/decode_object_packets.py": "294edf357c4c0d3f2e787758681d9290520b228168b2bb9f095fda08fec365f5",
+    "android/tools/decode_object_packets.ps1": "3050ce20ebeaf51ebf7b19ba0b808638c81da6c6b41d56a3e76ea020b85a4cb2",
+    "android/tests/object_packet_decoder_cli_fixture.py": "d17061acaedf0f218871babd4b61f96ca8fb1c1c518780b91a92a7823f322239"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0228-aggregate.log: SHA256 22652fa42ea6a1ce5d6e105c3bb8a1c199ac253700f062fcecb1fead6d7efcf2
+- temp/general_cleanup_20261006/gqr0228-baseline.json: SHA256 5db63ae5641d7abbfa9ad6a927dee6db72e2cfe93f2d844b9783f710a39d1ac9
+- temp/general_cleanup_20261006/gqr0228-before-decode_object_packets.ps1: SHA256 ad9cafb182d2e1e8bebe46c439b67cffe0bd70579dec96b4045c69d982309c00
+- temp/general_cleanup_20261006/gqr0228-before-decode_object_packets.py: SHA256 836f0f51524b793ad4da390e01ac685fbdcc05e79a21244377ab472c7093df52
+- temp/general_cleanup_20261006/gqr0228-before-object_packet_decoder_cli_fixture.py: SHA256 fa0130e481a458bbfeca36983f531a94450451f464d289c7a84f4e6277ab45bc
+- temp/general_cleanup_20261006/gqr0228-catalog-integration.log: SHA256 e73a7ae58384a1b492026f8686ba686e3323b46f171c2716970c9baf0a9fac9e
+- temp/general_cleanup_20261006/gqr0228-catalog-validation.log: SHA256 3b00d60c5ac5b56cd8a6aebbf89cacc06b2bd0efff301ed64d53c53b490301b9
+- temp/general_cleanup_20261006/gqr0228-cli-tests.log: SHA256 d0c0d20e0cdc5d7c8922773c8fbecfc269f79021b61080311bd4ca1258729521
+- temp/general_cleanup_20261006/gqr0228-negative-verification.json: SHA256 e09225a25dff2e83e7a97cc134ec4145bce60e1a80cea2018e134362c7382c76
+- temp/general_cleanup_20261006/gqr0228-original-negative-tests.log: SHA256 84e4f67fa648f5c9159fd7c8074d20c69befe358c0d5e490df8504ff711390d5
+- temp/general_cleanup_20261006/gqr0228-owned-decode_object_packets.ps1.diff: SHA256 1831b1dee711df455e744b204f6bbb690cd82089906dd138d83e6182f1e963fb
+- temp/general_cleanup_20261006/gqr0228-owned-decode_object_packets.py.diff: SHA256 f20b05eecdd34884cde123322de200aed35efd588259cd479eb1980bbf43ca88
+- temp/general_cleanup_20261006/gqr0228-quality.log: SHA256 4ff46f090916a32232ba6a1423c835298affe0dc75b5aa9834d653d1db4779b3
+- temp/general_cleanup_20261006/gqr0228-verification.json: SHA256 eb0354a2e2d2c9228d935ed8ce9379175c5a0d30ca4858677f737a7627ed045a
+- temp/general_cleanup_20261006/gqr0228-aggregate/execution_evidence_windows_x64.json: SHA256 ae81d58b0d84c559036129ec129465a0aa248aeeca37074916bad38a4f238ab4
+- temp/general_cleanup_20261006/gqr0228-aggregate/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0228-aggregate/report_20261008_042449.md: SHA256 36231aa0a1290c201edd1432b475264e998d79c545ad7b5cfeb9a4de75d89ecf
+- temp/general_cleanup_20261006/gqr0228-aggregate/test_object_packet_decoders_20261008_042449.log: SHA256 f6f51bb37c7aedd28441de797224f51817105542acaa3a7b00b550bf964e4a54
+
+</details>
+
+<!-- END IMPORT: GQR-0228 signed packet owners and partial-header diagnostics remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0225 canonical Git review path and coverage remediation 20261008 SHA256:1ae92ee14caa3dd457439e3315895945a17cb0580df00d7fe815def04ebe8ded -->
+
+## GQR-0225 canonical Git review path and coverage remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0225-remediation.md`
+- Imported SHA-256: `1ae92ee14caa3dd457439e3315895945a17cb0580df00d7fe815def04ebe8ded`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0225 canonical Git review path and coverage remediation 20261008
+
+- Revalidated GQR-0225/GQF-0240 against current source and original accepted GQ1-CHUNK-0604 scope. Ordinary rename/status/stat mismatch was already partly repaired during GQ2 preparation; preserve that fix and legacy eight-path fixture, no duplicate removal/savings credit. Remaining quoted-control-path hunk linkage, intact stream parsing, copy coverage, snapshot/gap validation and deterministic overwrite behavior required work
+- Git output now read intact through a disposable process with concurrent stdout/stderr draining and explicit UTF-8, rather than reconstructing NUL records from line-enumerated native output. NUL-delimited status/stat/tree inventories retain canonical case-sensitive path and origin identity. Matching rename/copy detection flags across inventories and patches; no implicit M fallback for unrecognized stat paths
+- Validate every scope path against head tree or deleted-source base tree, origin paths against base, unique status/stat sets and complete hunk/stat line counts before publication. Explicit native Git patch prefixes, no external diff/textconv, decode Git quoted path escapes including octal UTF-8 bytes. Deleted ranges name base-side old lines; copies receive complete target source coverage, including trailing blank lines
+- New reconstructible canonical JSON inventory retains actual UTF-8 paths, old identities, status/kind/risk/counts/hunks/scopes. Queue control names use reversible JSON escapes instead of splitting internal path/scope separators. Normal source classification/risk/chunk limits/bucket/packing policies remain byte-identical after LF normalization; preflight/sweep/packing block changes only mechanical batch path rendering
+- Preserve default overwrite refusal. Explicit overwrite compares normalized content excluding only generated timestamp, preserves original bytes/mtime/timestamp when content is unchanged. Real fixture deliberately supplies an older timestamp so same-second coincidence cannot satisfy this oracle
+- Existing maintained real-Git legacy fixture still passes eight changed paths (ordinary/edited renames, mode, Unicode/space, additions/deletions/modifications). Extended virtual Git tree/commit history covers thirteen exact paths, pure/edited renames, copies, text changes/deletion/addition, binary, executable mode and UTF-8/space/tab/newline filenames. Direct mktree/commit-tree objects support names Windows cannot represent in its index/worktree
+- Initial index-based attempt silently omitted Windows-invalid control paths and is not used for acceptance. Corrected tree-based fixture verifies all thirteen actual identities, exact modified hunk starts/counts and generated ranges, deleted base range, 32 copied source lines including trailing blanks, complete classification, deterministic rerun and refusal. Actual original helper on this tree fails nonzero with Found a diff hunk before its path header; durable original status/stderr/raw name-status captured
+- Final maintained focused and actual aggregate HostOnly filtered tests pass. Existing top-level core registration retained, missing no-infrastructure master classification added exactly one line, default 120-second timeout sufficient. Actual aggregate passes 1/1 with no failures/timeouts/skips. Both catalog validations and final scoped mixed Python/PowerShell quality pass
+- Exact legacy test transformation adds only two lines invoking the extended fixture. Exact master transformation adds only host classification, all concurrent registrations preserved. Seven existing helper functions unchanged; owned full helper diff retained. Frozen production campaign snapshots/import evidence not regenerated; only isolated fixture ledgers produced. No native/inherited edit or savings, native/Android build/device/network or deferred malformed-media/security/resource-pressure run
+- Scope is valid UTF-8 Git path identities; arbitrary non-UTF-8 path byte encodings and cross-locale generation were not tested. No broader unsupported-path compatibility claim. No staging/commit in working branch; isolated fixture commits are test inputs
+- Automatic approval review rejected direct recursive cleanup of two owned Git probe directories under android/temp with stated reason blocked by policy. Both retained as evidence; no permission request or alternative deletion attempted. Maintained tests perform their existing verified owned-root cleanup successfully
+- Concurrent installer/import/outstanding-bugs and all prior cleanup retained. General goal remains active; GQR-0133 runtime gate and broader pending accepted fixes remain open
+
+## Verification
+
+```json
+{
+  "head": "1ee56908299b870fef1852c3f0e7586844890652",
+  "ordinary_rename_prior_partial_fix_preserved": true,
+  "unchanged_functions_byte_identical_after_LF_normalization": [
+    "Add-SourcePack",
+    "Escape-MarkdownCell",
+    "Get-ChunkLimit",
+    "Get-ReviewBucket",
+    "Get-ReviewKind",
+    "Get-ReviewRisk",
+    "Resolve-GitCommit"
+  ],
+  "source_packing_preflight_sweeps_unchanged_except_display_path_batch_rendering": true,
+  "legacy_maintained_test_exact_two_line_extension": true,
+  "master_exact_one_host_classification_line": true,
+  "existing_core_registration_preserved": true,
+  "native_git_tree_fixture": {
+    "changed_paths": 13,
+    "tab_newline_utf8_space_paths": true,
+    "pure_and_edited_renames": true,
+    "copy_including_trailing_blank_lines": "32 full source lines",
+    "exact_modified_hunks_and_deleted_base_ranges": true,
+    "default_refusal_and_identical_overwrite_preserve_bytes_mtime": true
+  },
+  "original_control_path_generator_fails": 1,
+  "focused_legacy_and_virtual_tests": "PASS",
+  "aggregate_host": "PASS 1/1; existing runner, default120s",
+  "both_catalogs_and_quality": "PASS",
+  "inherited_edits": 0,
+  "frozen_campaign_regeneration": false,
+  "retained_probe_directories": "Two owned android/temp probes retained after automatic approval review rejected recursive cleanup: blocked by policy",
+  "source_sha256": {
+    "android/helpers/new_adversarial_review_ledger.ps1": "7f7fe59b59b7a185c7c2da64cd98e0bf5fadfcc46ab3f0f02eb5b70fd26004ef",
+    "android/tests/test_review_ledger_generation.ps1": "e1d8635831189eafaf056b5a902325b2d4914c9789fd3d14430a2ea6d2c8c88a",
+    "android/tests/review_ledger_git_paths_fixture.py": "cba43a39ab0ba380468df5cd583537a94570214b698da4f17c5b9eeceb3da689",
+    "android/run_all_tests.ps1": "c48a275b42d1608e42bc36bcd94dc6831019c8c4ca1792b858da3e77cb6d8d11"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0225-aggregate.log: SHA256 0d2747f3ad3545f53411ead51d470b6198ca8fe00e7fc55ba258e29452e9ef01
+- temp/general_cleanup_20261006/gqr0225-baseline-name-status.nul: SHA256 701a39a15d4a0858216bc9f79f189898d6b9bedacfd006fc766a93a59d28e314
+- temp/general_cleanup_20261006/gqr0225-baseline-tests.log: SHA256 d7bdb34c6d55430334934e9c9d77d04622521524087d123d2f78daef007ac286
+- temp/general_cleanup_20261006/gqr0225-baseline-virtual.json: SHA256 6266f41af9967057c268ad69b262aa883e2359c292e26050b7792e959b846967
+- temp/general_cleanup_20261006/gqr0225-before-new_adversarial_review_ledger.ps1: SHA256 33571cb60c4d165ac26d8b50d23833a940c71f864b4d74e020583263259e12e8
+- temp/general_cleanup_20261006/gqr0225-before-run_all_tests.ps1: SHA256 484f0699d4df65ebccae9d626686f5a62fb27e46424aea899010932f6bac738a
+- temp/general_cleanup_20261006/gqr0225-before-test_review_ledger_generation.ps1: SHA256 af0e1095b67b04f1dc77f17b79ff83c538047802f1fb3cb64999af1786ecb7a3
+- temp/general_cleanup_20261006/gqr0225-catalog-integration.log: SHA256 e73a7ae58384a1b492026f8686ba686e3323b46f171c2716970c9baf0a9fac9e
+- temp/general_cleanup_20261006/gqr0225-catalog-validation.log: SHA256 3b00d60c5ac5b56cd8a6aebbf89cacc06b2bd0efff301ed64d53c53b490301b9
+- temp/general_cleanup_20261006/gqr0225-current-probe-ledger.md: SHA256 7d286771a0c71773dde148e15b88cdc52a66b302d25f04ffb1a3f3219a342995
+- temp/general_cleanup_20261006/gqr0225-final-quality.log: SHA256 513e6210839f851900dbc0bad754380406f631c067be6e36a23d729403edef25
+- temp/general_cleanup_20261006/gqr0225-final-tests.log: SHA256 3da40a784926515d3032e973362f73fd4154cab8cf4f84166c2acc69ae926627
+- temp/general_cleanup_20261006/gqr0225-final-virtual-inventory.json: SHA256 b2dc9548d5c5f2a576e641a1918409385b020e04c085279ff3b15b25f2ef5b5b
+- temp/general_cleanup_20261006/gqr0225-final-virtual-ledger.md: SHA256 68bd2bf953f741d4edf2b568701b9b511aa715c7fb47790180a014214b25b68d
+- temp/general_cleanup_20261006/gqr0225-final-virtual-status.json: SHA256 840666a08b542b46c1d7a88ed9ab3df711bc05184c971a7a7879aa8765917292
+- temp/general_cleanup_20261006/gqr0225-functional-tests.log: SHA256 d3be9e46972a9ffb3c2dd334dc23888ed647ac7a70641dde01ba94d9c493476a
+- temp/general_cleanup_20261006/gqr0225-negative-root.txt: SHA256 5efb2c2fd061c80caadfc52a94480281b61c6e2fb72774a7c23239e23c308163
+- temp/general_cleanup_20261006/gqr0225-original-virtual-probe.json: SHA256 dd969828146501aed86c524792e4c35a547c39d9b2e1a3cde97ab408bdd7fb7e
+- temp/general_cleanup_20261006/gqr0225-owned-helper.diff: SHA256 e55a99ce86005f65b9951043034b98371b43c7a008147c95f6b6aaa34a4779ab
+- temp/general_cleanup_20261006/gqr0225-probe-root.txt: SHA256 16fa4afc190c6bf929114df817994a0866c48cdd00201518ec0c03815cfd5f16
+- temp/general_cleanup_20261006/gqr0225-quality.log: SHA256 1e7e5cac2beb09fb6924359a066c531858efb805df8d793faff584bbfd32bd69
+- temp/general_cleanup_20261006/gqr0225-verification.json: SHA256 a6fba2122481214b2f043e833566ddb706c320e8e3d153f550fd27914c4a8796
+- temp/general_cleanup_20261006/gqr0225-aggregate/execution_evidence_windows_x64.json: SHA256 9640bde0849fdb11e18fdd7dc190e4eeabe52449bdbf66570b91b3b74f401039
+- temp/general_cleanup_20261006/gqr0225-aggregate/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0225-aggregate/report_20261008_044017.md: SHA256 f60e8fcc48aaecd8b08865bb7e435ac4ea1cffbea30d85a847af20a64677f482
+- temp/general_cleanup_20261006/gqr0225-aggregate/report_20261008_044537.md: SHA256 bee9ec9c60b1121ff0c8d9af60d4bff1ef820e696ac7175fc0b3a92c98d3f621
+- temp/general_cleanup_20261006/gqr0225-aggregate/test_review_ledger_generation_20261008_044017.log: SHA256 be5d98d7373815d99c1549e01dccf32bec12d9ad606ac9ff9ef45bb9b79c9424
+- temp/general_cleanup_20261006/gqr0225-aggregate/test_review_ledger_generation_20261008_044537.log: SHA256 01a4d516f915121fe0ef385feee07753769c68e0e57d43357e6c1112566eab5f
+
+</details>
+
+<!-- END IMPORT: GQR-0225 canonical Git review path and coverage remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0225 original observation citation correction 20261008 SHA256:b972e9740652c6d4a42c599665fac0635471c206ac7f8feb182ec76ee91888c8 -->
+
+## GQR-0225 original observation citation correction 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0225-citation-correction.md`
+- Imported SHA-256: `b972e9740652c6d4a42c599665fac0635471c206ac7f8feb182ec76ee91888c8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0225 original observation citation correction 20261008
+
+- The frozen primary GQR-0225 remediation report names GQ1-CHUNK-0604 in its first bullet in error. The original accepted generator-path observation is GQ1-CHUNK-0603, frozen helper blob be0c29fae849939fda85c46047ee5096c35e1f59, scope SHA256 dbf2224def4da32d7990ecc571303bc28b04aef9a13d3a65c83010272a3a39cb
+- Verified directly against the existing canonical imported GQ1-CHUNK-0603 frozen survey and GQF-0240/GQR-0225 ownership. No code, test, scope, status, totals or validation conclusion changes
+- Preserve the primary immutable report/import SHA and historical evidence. This erratum corrects only its observation citation
+- Primary GQR-0225 remediation report SHA256: 1ae92ee14caa3dd457439e3315895945a17cb0580df00d7fe815def04ebe8ded
+
+</details>
+
+<!-- END IMPORT: GQR-0225 original observation citation correction 20261008 -->
+<!-- BEGIN IMPORT: GQR-0239 mixed station matcen shutdown remediation 20261008 SHA256:8c598392e4f307867f472f4fa6fb0f8e79af740f9b8e45282b5eba9c8b015cd0 -->
+
+## GQR-0239 mixed station matcen shutdown remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0239-remediation.md`
+- Imported SHA-256: `8c598392e4f307867f472f4fa6fb0f8e79af740f9b8e45282b5eba9c8b015cd0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0239 mixed station matcen shutdown remediation 20261008
+
+- Revalidated GQR-0239/GQF-0253 and original PRIMARY GQ2-CHUNK-0166 against current paired native owners. Native disable_matcens still cleared the first Num_robot_centers Station entries; valid interleaved fuel/robot/fuel/robot layout leaves active robot slot3 running and changes unrelated fuel slot0. Historical two-field stand-in is retained only as prior evidence
+- Minimal paired repair traverses Num_fuelcenters and skips station types other than SEGMENT_IS_ROBOTMAKER, matching adjacent existing initialization policy. No Android replacement registry or broad native deduplication. Exact whole-file byte proof permits only loop bound and two-line filter in each fuelcen.c; all other native bytes preserved. Native growth is four net inherited lines, no minimization savings claimed
+- Maintained fixture links actual D1/D2 engines and their native FuelCenter, Station, RobotCenters, policy and wrappers. All old/new mode combinations use mixed layout with active late-index robot. Compare entire station array, preserving unrelated stations and every retained robot field. Set preserves activation counts, restore applies nonzero3/4 counts, unused counts stay zero, default/one-round/paused activation gates remain correct
+- For each shutdown transition, actual fuelcen_update_all executes with unsuspended robots and nonzero frame time; stopped robot fields remain unchanged. Fuel stations start full so this oracle isolates matcen cessation without expected refueling mutations. This proves stopped native station processing, not an actual spawned robot or asset-complete combat simulation
+- Original current engines fail the maintained station invariant on actual Windows D1/D2 and Android D1. Final Windows passes27 cases per game (set/restore/co-op receiver); Android passes36 per game including native file-backed metadata restore. All27 common trace records match per game. Authenticated co-op state passes through real multi_do_matcen_mode and native player/master globals; no socket, two-device campaign or host-request transmission claim
+- Android metadata cases write/read actual native save trailers through PhysFS, apply actual state_android_restore_matcen_mode_from_meta, preserve nonzero activation counts and mixed-station shutdown. These helpers are Android-only; initial Windows link rejected the accidental test reference, corrected by confining this route to Android. No production desktop owner changed to accommodate tests
+- Maintained test_matcen_save_restore.jsonc is support owned by existing registered test_android_matcen_stations runner. Both games/base missions save each of one-round/paused/default via ordinary save menu, change current mode and restore via ordinary load menu. Complete durable PASS D1 65/65 and D2 68/68. This gameplay fixture uses ordinary zero-count base-level state; nonzero persistence is established separately by native file-backed cases
+- Initial D2 save fixture inherited an unrelated EGL wait after its background action was omitted. That incomplete draft correctly fails; removed the unrelated wait and complete maintained runner rerun passes both games. No product lifecycle compensation
+- Existing fresh-APK automap/UI lifecycle integration passes durable D1 62/62 and D2 95/95, including mode0/1/2/0. Initial D2 startup found emulator-5582 offline; explicit named Nexus5X_Light_1 recovery at port5582 and retry pass. Other emulator and physical device untouched
+- Paired full Windows build and all-three-ABI Android Debug/full APK build pass. Installed APK SHA256 6beb2c17a9b577d5d84768829cec95e00677805e14398613afd7fda05f2f99b9. Product native repair unchanged since that APK; final fixture-only changes compiled against current libraries
+- Final mixed scoped C++/PowerShell/JSONC quality and both catalogs pass:94 standalone JSON/374 support/214 standalone PowerShell,312 master entries. Existing coverage policy receives one runner registration and master600s build allowance. Native files excluded by quality configuration; exact native byte/scope proof is the evidence, no formatting claim
+- Actual runner serially executes native fixtures and both gameplay cases, launches run_test in child pwsh so its exit cannot short-circuit the owner, propagates failures and preserves durable results before next game. No new native production helper, no deferred malformed-media/security/resource-pressure probe, working-branch staging or commit. Concurrent installer/import and prior cleanup preserved. Broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "native_scope": {
+    "d1/main/fuelcen.c": {
+      "exact_scope": true,
+      "before_sha256": "f268620e4a211a475b8bdbf7ef6502369a91afef4919fca719b1f66ce1b5b324",
+      "after_sha256": "ae074f28a8ee6549dd9df49e758cebbcb287e57a89602204aa67e605a2a3e772"
+    },
+    "d2/main/fuelcen.c": {
+      "exact_scope": true,
+      "before_sha256": "a8b9cd2ba4ed538a9a0fc9bc532251e5e190d57595b36b5957b8c106c9b1b16e",
+      "after_sha256": "b1438fe89c80496015c31253fad162bba50f6fc712ae324c6b6467cab2e8ee7d"
+    },
+    "android/tests/CMakeLists.txt": {
+      "exact_scope": true,
+      "sha256": "fda210abe2fdcdbaa58bdb2f55f3ad2c6c98b870e94336080b9b192889896513"
+    },
+    "android/helpers/test_suite_coverage.ps1": {
+      "exact_scope": true,
+      "sha256": "c7c7d8c89237af703626a2d5b810b54a330e491140ba499ef0295ab48fa69d45"
+    },
+    "android/run_all_tests.ps1": {
+      "exact_scope": true,
+      "sha256": "c631b776756ef968d28b6ab32e243611b1ff5f71e3e8add42402a8d3ba2d33e4"
+    },
+    "android/helpers/run_native_engine_fixture.ps1": {
+      "exact_scope": true,
+      "sha256": "90a07974c6b236259311a3c201e1fc6ef13bc0bb95862de7902e28bd1f5cb665"
+    },
+    "android/tests/test_upstream_compat.cpp": {
+      "exact_scope": true,
+      "sha256": "60414b6f44790784d4e5470748eedad0861caaa9f8dfcfaeb5e10ad6a387b151"
+    }
+  },
+  "games": {
+    "d1": {
+      "windows_cases": 27,
+      "android_cases": 36,
+      "common_trace_parity": true,
+      "ordinary_save_restore": {
+        "result": "PASS",
+        "run_id": "895765cd7fef456a90043b7c289a6f31",
+        "steps_completed": 65,
+        "total_steps": 65,
+        "elapsed_ms": 9804
+      }
+    },
+    "d2": {
+      "windows_cases": 27,
+      "android_cases": 36,
+      "common_trace_parity": true,
+      "ordinary_save_restore": {
+        "result": "PASS",
+        "run_id": "0973dce9c6514123bd3db4a62399eebd",
+        "steps_completed": 68,
+        "total_steps": 68,
+        "elapsed_ms": 10525
+      }
+    }
+  },
+  "all_required_checks": "PASS"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0239-android-after-build.log: SHA256 5c9135a10b3bd14744bfcf5a4ddcc2af79a26dcf42a6b112b40a340352c74fbf
+- temp/general_cleanup_20261006/gqr0239-android-after.log: SHA256 3978981ee71a8683a848e5fb7dbd34bae4a7402c8a414bff1c201da86c32cc2c
+- temp/general_cleanup_20261006/gqr0239-android-before.log: SHA256 749e45e76da5ba8651653c318479529ff4029a08ee1ac1cd8a077a16d31a4626
+- temp/general_cleanup_20261006/gqr0239-catalog.log: SHA256 7af8003cbbbab3e103a54033951d7b31264f887e582afc3707b9ede80f754ff0
+- temp/general_cleanup_20261006/gqr0239-checkpoint.json: SHA256 9d89afcf50a457296f42087804894e74e8dc8f3ad35107929b33524457d6f072
+- temp/general_cleanup_20261006/gqr0239-dispatch-final.log: SHA256 3f6febc1b198d38c997b287f327dc95b01924aa5899223e31af72ea5f354f422
+- temp/general_cleanup_20261006/gqr0239-emulator-recovery.log: SHA256 92682b7d8cae9d3b812e3c2ee33202b599f98f81eb4a11443d97c5e44cf316d8
+- temp/general_cleanup_20261006/gqr0239-final-verification.json: SHA256 a5f0755a19b6407befb26c74740c8c1e9d901032d43cdce65b92bc8ea436d565
+- temp/general_cleanup_20261006/gqr0239-final-windows-d1-trace.json: SHA256 70821f3f88e5303017798ee2def66cfba995f9e20cbad4b81962a06ef7ff54ad
+- temp/general_cleanup_20261006/gqr0239-final-windows-d2-trace.json: SHA256 70821f3f88e5303017798ee2def66cfba995f9e20cbad4b81962a06ef7ff54ad
+- temp/general_cleanup_20261006/gqr0239-launch-parsed.json: SHA256 d1868bb359707dab591d40642b23284de9c412f67660da454cdd00f785372f38
+- temp/general_cleanup_20261006/gqr0239-master-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0239-quality.log: SHA256 f8d78aac1911fde0ad344782801e70c0035ed9f7644886855d2c5cfb1cd0a76e
+- temp/general_cleanup_20261006/gqr0239-runtime-catalog-automation-final.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0239-runtime-catalog-automation.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0239-runtime-catalog-master-final.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0239-runtime-catalog-master.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0239-runtime-final.log: SHA256 8bdedc71f3d3cbe8d42dfb15415efb4f20e90cfe48d3be1a36cdc89b91a4a0d9
+- temp/general_cleanup_20261006/gqr0239-runtime-quality-final.log: SHA256 b65b57b09bffd015800b214f1bf451b20869f9aa92c264932b42433ec1ffa13f
+- temp/general_cleanup_20261006/gqr0239-runtime-quality.log: SHA256 5cbdba6ef498253ef012ea975c1f9805d026aaeb3911cfae36ca38411189d29c
+- temp/general_cleanup_20261006/gqr0239-runtime-retry.log: SHA256 7a36cf20ab6418046d9f96a2fa4210d8b00005c3af39c25de605981470d5c045
+- temp/general_cleanup_20261006/gqr0239-runtime-windows-build-final.log: SHA256 7e9bcce66bd3fc0265bce04210bb42713b8e8beb7e40ab1a16a3435d1b3d890c
+- temp/general_cleanup_20261006/gqr0239-runtime-windows-build.log: SHA256 d3f104bc09824e3bd4c1dcf5575423fc3ba880a164bba2401831ada0563be31a
+- temp/general_cleanup_20261006/gqr0239-runtime-windows-d1.log: SHA256 1c94ae955af6b390259a0fff526a78aa157bca23d26a496e66bbdd5a54b2e2b5
+- temp/general_cleanup_20261006/gqr0239-runtime-windows-d2.log: SHA256 d509cddde73633817fcf22a3ca6394b0a3bcaa93e01d497b81d321669c4ecd49
+- temp/general_cleanup_20261006/gqr0239-save-script-final.jsonc: SHA256 a5c08e7827ff8b024cf1986a1f69bcc1c33936480441f2f372205acd8d93c7eb
+- temp/general_cleanup_20261006/gqr0239-scope.json: SHA256 fceb49679fbd46f062e67c95d0254c79f12ffec3a6c426f18adb251c97f7c687
+- temp/general_cleanup_20261006/gqr0239-trace-parity.json: SHA256 f088354fe6ed589160515f50cdd74a3ad3dcc55275fe8520c48f81a5015d6e97
+- temp/general_cleanup_20261006/gqr0239-ui-d1-result-current.json: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0239-ui-d1-result.json: SHA256 ba6fd6b9e343f0a78ed8b4de3ff7954364fb8aee8db30d620bca0e05c4df594e
+- temp/general_cleanup_20261006/gqr0239-ui-d1.log: SHA256 d38a9bc0fdb3904327f81df2475655c64bf147ad9a95a02c6b262830927f12f4
+- temp/general_cleanup_20261006/gqr0239-ui-d2-result.json: SHA256 f550177816904788e49981a467528a67880795d5a6258de63db04ddc141ce5b9
+- temp/general_cleanup_20261006/gqr0239-ui-d2-retry.log: SHA256 817819475c68a7caf70a3543e965f13098db3e923be936832591f3b2d51e0751
+- temp/general_cleanup_20261006/gqr0239-ui-d2.log: SHA256 0ef6144cc706ca157727ff0a979f35c04f5a36ae809a18e3846e16b6acb61f34
+- temp/general_cleanup_20261006/gqr0239-verify.py: SHA256 5defb432d9b33118a2962dc85fd98d8abe111f31f34fed6301b8b8dda7665fdd
+- temp/general_cleanup_20261006/gqr0239-windows-after-build.log: SHA256 381f096c00ed1f39b9b44264f811d4869ca711224bb47d269d4fd7ee5b350ebd
+- temp/general_cleanup_20261006/gqr0239-windows-before-build.log: SHA256 b658dcca2def9ed8ed862692631c6f40f710dda31e8e6f2f5e91ef17aaf9d392
+- temp/general_cleanup_20261006/gqr0239-windows-d1-after.log: SHA256 1ca163dca2d131a4ec1c2ea1e1b38ed86330f51b3ab39ba6ed1e0444469b31e8
+- temp/general_cleanup_20261006/gqr0239-windows-d1-before.log: SHA256 5fbf842d411fc64f4aa887404a2bb8881f0cdb51e7f80d89ef9c03adae32f6cb
+- temp/general_cleanup_20261006/gqr0239-windows-d1-final.log: SHA256 2be75b46a3421ea9cf027676ff90c1a2ff1c806fa0c374ccd539fe19d0142272
+- temp/general_cleanup_20261006/gqr0239-windows-d1-trace.json: SHA256 5ff9bf293b1c7fac788b40c1cd231c18806e304fb2bc3c62b8f258a6d2d34230
+- temp/general_cleanup_20261006/gqr0239-windows-d2-after.log: SHA256 d509cddde73633817fcf22a3ca6394b0a3bcaa93e01d497b81d321669c4ecd49
+- temp/general_cleanup_20261006/gqr0239-windows-d2-before.log: SHA256 55b026e9288cf13847db4e0de83ac98f4a3a4b84df4f00fd2316e94e3efc1f45
+- temp/general_cleanup_20261006/gqr0239-windows-d2-final.log: SHA256 a013543c3c0aa10e06f9cde05c82c02beae2598aebb00c73b6509ac276a4212b
+- temp/general_cleanup_20261006/gqr0239-windows-d2-trace.json: SHA256 5ff9bf293b1c7fac788b40c1cd231c18806e304fb2bc3c62b8f258a6d2d34230
+- temp/general_cleanup_20261006/gqr0239-before/android__helpers__run_native_engine_fixture.ps1: SHA256 f184e84e0f1c7ff007156a5069083040083a3bc4faa024512dbe729d56d777ba
+- temp/general_cleanup_20261006/gqr0239-before/android__helpers__test_suite_coverage.ps1: SHA256 22c88c9536575832ac0c9eebca526cc10c19bae8cd47bf6d5186890b1b2b65a0
+- temp/general_cleanup_20261006/gqr0239-before/android__run_all_tests.ps1: SHA256 c48a275b42d1608e42bc36bcd94dc6831019c8c4ca1792b858da3e77cb6d8d11
+- temp/general_cleanup_20261006/gqr0239-before/android__tests__CMakeLists.txt: SHA256 2d0a1c6e12f4d2c57fbe946678d357c83c7fec22fe74bd080f114cec6c289666
+- temp/general_cleanup_20261006/gqr0239-before/android__tests__test_upstream_compat.cpp: SHA256 70d93b5004041f5d064fd63af526b2accb516c93dbda54df1917b1e127f964d1
+- temp/general_cleanup_20261006/gqr0239-before/d1__main__fuelcen.c: SHA256 f268620e4a211a475b8bdbf7ef6502369a91afef4919fca719b1f66ce1b5b324
+- temp/general_cleanup_20261006/gqr0239-before/d2__main__fuelcen.c: SHA256 a8b9cd2ba4ed538a9a0fc9bc532251e5e190d57595b36b5957b8c106c9b1b16e
+- temp/general_cleanup_20261006/gqr0239-runtime-before/android__tests__matcen_stations__main.cpp: SHA256 a40f07a4afe489a0556d05b07401e61d44aea0f3ad67e33185c8179870ad126f
+- temp/general_cleanup_20261006/gqr0239-runtime-before/android__tests__matcen_stations_fixture.hpp: SHA256 bf3cc10eb7052190f6bbc103610f569c3b9e135c8f14b3b80dc32c5b7bc9c2c7
+- temp/general_cleanup_20261006/gqr0239-runtime-before/android__tests__test_android_matcen_stations.ps1: SHA256 09fc8a40b6ac6695214ad2ee2deb8909ad8d9a4d9e602dd1ecc62f323a20cc0e
+- temp/general_cleanup_20261006/gqr0239-runtime-before/android__tests__test_upstream_compat.cpp: SHA256 6db913968b8441478002675eaca84eb1049065ed7a2ecb754f67139b5528ca87
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d1-save-result.json: SHA256 4cfa72f6a6299eb5ffe2af7d3bdc3d296c81dd8d29510e77d350ff8eb2c83a18
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d1-save.log: SHA256 f023ea4a1ce57237f43103e67e4aef0ecd94803d309e45683e054dbd6f9cd199
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d1.json: SHA256 f184579574bbaa27abbd7bc36950e65a778642a9fba5e91beec9221ba4408672
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d1.log: SHA256 71273b433f5afdfebbb6604e0fc9c9d0e362f7f9d2b32c51e12a1b299638bfe9
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d2-save-result.json: SHA256 3070a8f8cc70b788e141d5fe564da34747295ebd71a2ec5c488aa9803666eabb
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d2-save.log: SHA256 f3cf173e3a79a6aaf16d494050052d0719894a2afa4fd583287252ee6b8623f4
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d2.json: SHA256 f184579574bbaa27abbd7bc36950e65a778642a9fba5e91beec9221ba4408672
+- temp/general_cleanup_20261006/gqr0239-runtime-retry/d2.log: SHA256 71273b433f5afdfebbb6604e0fc9c9d0e362f7f9d2b32c51e12a1b299638bfe9
+- temp/general_cleanup_20261006/gqr0239-dispatch-final/d1.json: SHA256 f184579574bbaa27abbd7bc36950e65a778642a9fba5e91beec9221ba4408672
+- temp/general_cleanup_20261006/gqr0239-dispatch-final/d1.log: SHA256 71273b433f5afdfebbb6604e0fc9c9d0e362f7f9d2b32c51e12a1b299638bfe9
+- temp/general_cleanup_20261006/gqr0239-dispatch-final/d2.json: SHA256 f184579574bbaa27abbd7bc36950e65a778642a9fba5e91beec9221ba4408672
+- temp/general_cleanup_20261006/gqr0239-dispatch-final/d2.log: SHA256 71273b433f5afdfebbb6604e0fc9c9d0e362f7f9d2b32c51e12a1b299638bfe9
+
+</details>
+
+<!-- END IMPORT: GQR-0239 mixed station matcen shutdown remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0138 fingerprint assertion single evaluation remediation 20261008 SHA256:1a7d0a23e7fca5c57d58619ee91a1705076e364ed9d3046e7da0a341d6c9717a -->
+
+## GQR-0138 fingerprint assertion single evaluation remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0138-remediation.md`
+- Imported SHA-256: `1a7d0a23e7fca5c57d58619ee91a1705076e364ed9d3046e7da0a341d6c9717a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0138 fingerprint assertion single evaluation remediation 20261008
+
+- Revalidated GQR-0138/GQF-0151 and original GQ1-CHUNK-0104-OBS-004 against current clean test_fingerprint.c. Failed ASSERT_EQ_INT operands are evaluated twice, including production calls, and printed values need not be those first compared
+- Capture expected/actual in block-local const int temporaries before comparison and print those stable values. Existing integer operands are int return codes/counts/durations and enum statuses; intended integer diagnostics retained. No generator/decoder/stream/PCM/native inherited policy change
+- Maintained --assertion-self-test mode exercises increment operands on successful equality and intentional inequality. Counter oracle verifies each evaluated once, unchanged failure accounting and goto cleanup, and nonzero return if assertion unexpectedly continues. It intentionally emits a FAIL diagnostic before overall PASS; this is not a failed media test
+- Same self-test compiled in actual configured CMake Release test_fingerprint executable with original macro exits1 and prints expected6/got10 after comparing5/9; fixed executable exits0 and prints first observed5/9, PASS single evaluation. Actual registered fingerprint_assertion_tests CTest passes1/1 with no skipped tests
+- An initial restore copied the fixed file's older timestamp; MSBuild did not recompile and the executable still correctly failed. Explicit source timestamp refresh forced actual compilation; final build/logs/self-test/CTest are authoritative. No stale executable success claim
+- Scoped mixed C/CMake quality passes. Fixed source restored byte-identical to formatted snapshot. Exact full source proof permits only integer macro span, isolated self-test function and CLI branch; every other source byte retained after formatter CRLF-to-LF normalization, all nine original media test labels retained. Concurrent dirty extraction CMake bytes preserved except one focused CTest registration, existing media registration unchanged
+- Build compiles actual existing fingerprint target and production dependencies. Existing MSVC D9025 flag override warnings observed, no new source compiler warning. No combined media suite, malformed-media/security/allocation/resource-pressure probe, Android/device/network run or inherited savings claim. No new top-level PowerShell/JSON runner or catalog registration required for this native CTest
+- Concurrent installer/import and prior cleanup preserved, no staging/commit. Broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "exact_test_scope_after_crlf_to_lf": true,
+  "exact_concurrent_cmake_scope": true,
+  "preserved_media_test_labels": [
+    "full_track_is_not_truncated",
+    "pcm_decode_result_contract",
+    "stereo_raw_matches_direct_api",
+    "mono_raw_matches_direct_api",
+    "duration_stereo",
+    "duration_mono",
+    "mp3_matches_fpcalc_reference",
+    "cd_sectors_use_complete_input",
+    "stereo_mono_differ"
+  ],
+  "quality_restored_bytes_identical": true,
+  "actual_original_macro": {
+    "exit": 1,
+    "diagnostic": "expected 6, got 10"
+  },
+  "actual_fixed_macro": {
+    "exit": 0,
+    "diagnostic": "expected 5, got 9"
+  },
+  "registered_ctest": "PASS 1/1 Release",
+  "sources": {
+    "android/app/src/main/cpp/extract/test_fingerprint.c": "006b431e63005f6bff0d95e313569e9b9b31d0dc65ff15c5a1f5ad52704cd0a0",
+    "android/app/src/main/cpp/extract/CMakeLists.txt": "5e2220db4eda2f60fd59f00b4d51b1510df8104d540074b59c21d5eb57be1749"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0138-after-build-final.log: SHA256 cb001ef6c138b00a0bfb1a03d207780b32e8bea7303b06621fd2eaa65fd83890
+- temp/general_cleanup_20261006/gqr0138-after-build.log: SHA256 3ab17eda5fb4aac44d887a4d947003dcded88a252bf31af53bc2e003a553b776
+- temp/general_cleanup_20261006/gqr0138-after-final.log: SHA256 09cbe6a6f663cb0ddb3d72843a007edaa0dae7e0a7820f2e9be37dc627b61cd9
+- temp/general_cleanup_20261006/gqr0138-after.log: SHA256 567cd955c0570dff8fb9da99e19ca7ec88b2da868ae645a9c771aa8ce011ad9f
+- temp/general_cleanup_20261006/gqr0138-before-build.log: SHA256 65c0822ced3d85383935cab08c25bda2f3639edd2c2bd091f923f4fcc5dcd4d1
+- temp/general_cleanup_20261006/gqr0138-before.log: SHA256 567cd955c0570dff8fb9da99e19ca7ec88b2da868ae645a9c771aa8ce011ad9f
+- temp/general_cleanup_20261006/gqr0138-ctest-final.log: SHA256 d83d65c6311db3ed81fe973190a585c641ff38fe7b283a386e14040966a91997
+- temp/general_cleanup_20261006/gqr0138-ctest.log: SHA256 2d07385d37896862acad724574d138c419da6fcaefa3faff5f5a85724e53e028
+- temp/general_cleanup_20261006/gqr0138-fixed.c: SHA256 006b431e63005f6bff0d95e313569e9b9b31d0dc65ff15c5a1f5ad52704cd0a0
+- temp/general_cleanup_20261006/gqr0138-quality.log: SHA256 328e6208ce255226050b41092ff0c15fd742b14a9997ba5b23a5857392b1467d
+- temp/general_cleanup_20261006/gqr0138-verification.json: SHA256 18d1037e2f36933bdcea8e0f693d82ed773294b44c34b49b11fe04177167baba
+
+</details>
+
+<!-- END IMPORT: GQR-0138 fingerprint assertion single evaluation remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0147 host extraction test classification validation 20261008 SHA256:233b1ccfb6353581409eaaab3fe1fd549ed38f7131817c1837a3adfc56c0d6b9 -->
+
+## GQR-0147 host extraction test classification validation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0147-remediation.md`
+- Imported SHA-256: `233b1ccfb6353581409eaaab3fe1fd549ed38f7131817c1837a3adfc56c0d6b9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0147 host extraction test classification validation 20261008
+
+- Revalidated GQR-0147/GQF-0160 and original GQ1-CHUNK-0132 scope against current master. Historical provenance/publication host classification gap was already repaired: both entries are in noInfraTests and core coverage. Preserve prior repair, no duplicate implementation or source/inherited savings credit
+- Maintained catalog integration now requires exactly one PS entry per owner, requires=none and core membership, in both normal and extended graphics/multiplayer catalog profiles. Exact whole-file proof permits only seven guard lines; all existing catalog checks retained
+- Actual HostOnly aggregate filtered to the two original real scripts passes2/2, zero failures/timeouts/skips/not-run. Durable execution observations prove both require no infrastructure, exit0, and exact source SHA identities. These run tiny host provenance/completion/publication lifecycle controls; no APK/device/native decoder/external installer prerequisite
+- Actual aggregate failure control prepends one deliberate throw to snapshotted publication script, runs that single HostOnly entry and observes FAIL/exit1, zero skipped/timeout/not-run. Finally restores exact original bytes before the complete positive pair. Temporary injection is not final code. Durable negative source SHA correctly differs from restored positive source SHA
+- Scoped PowerShell quality and maintained catalog integration pass312 top-level/374 support entries. No new top-level test/registration or timeout change. Master, coverage policy and both real scripts byte-identical to captured current state; all concurrent registrations preserved
+- No production/native change, Android build/emulator/physical device or deferred malformed-media/security/resource-pressure execution, staging or commit. Broader cleanup goal remains active
+
+## Verification
+
+```json
+{
+  "prior_repair_preserved": true,
+  "exact_catalog_guard_only": true,
+  "unchanged_sources": {
+    "android/tests/test_extraction_cache_provenance.ps1": "c183ec66dfc5d469f62c34e0dbcd2a74729ce574b561ad5375457a62ccb214a6",
+    "android/tests/test_extraction_publication.ps1": "c360fb1fe6e898e90245218f08fbcdc65b6f5b26e2e285272a77ea944ed3209d",
+    "android/run_all_tests.ps1": "c631b776756ef968d28b6ab32e243611b1ff5f71e3e8add42402a8d3ba2d33e4",
+    "android/helpers/test_suite_coverage.ps1": "c7c7d8c89237af703626a2d5b810b54a330e491140ba499ef0295ab48fa69d45"
+  },
+  "negative": {
+    "name": "test_extraction_publication",
+    "type": "ps1",
+    "requires": "none",
+    "status": "FAIL",
+    "started_utc": "2026-10-08T12:21:37.4998085Z",
+    "observed_utc": "2026-10-08T12:21:38.5564501Z",
+    "run_id": "1a683ffb97914653afbc2f524ee8af24",
+    "commit": "1ee56908299b870fef1852c3f0e7586844890652",
+    "dirty": true,
+    "runtime": "Microsoft Windows NT 10.0.26200.0; PowerShell 7.6.6",
+    "source": "android/tests/test_extraction_publication.ps1",
+    "source_sha256": "9cb9bcd545511494519f9aee0f61dd66efb30265051385a3aa7d2d744bf98af5",
+    "arguments": "null",
+    "exit_code": 1,
+    "elapsed": "00:01",
+    "reason": "",
+    "log": "temp\\general_cleanup_20261006\\gqr0147-negative\\test_extraction_publication_20261008_052119.log",
+    "report": "C:\\local\\dxx-redux\\temp\\general_cleanup_20261006\\gqr0147-negative\\report_20261008_052119.md"
+  },
+  "final": [
+    {
+      "name": "test_extraction_publication",
+      "type": "ps1",
+      "requires": "none",
+      "status": "PASS",
+      "started_utc": "2026-10-08T12:22:03.8538707Z",
+      "observed_utc": "2026-10-08T12:22:05.4942246Z",
+      "run_id": "0833789e6e164bda8885104161713504",
+      "commit": "1ee56908299b870fef1852c3f0e7586844890652",
+      "dirty": true,
+      "runtime": "Microsoft Windows NT 10.0.26200.0; PowerShell 7.6.6",
+      "source": "android/tests/test_extraction_publication.ps1",
+      "source_sha256": "c360fb1fe6e898e90245218f08fbcdc65b6f5b26e2e285272a77ea944ed3209d",
+      "arguments": "null",
+      "exit_code": 0,
+      "elapsed": "00:01",
+      "reason": "",
+      "log": "temp\\general_cleanup_20261006\\gqr0147-final\\test_extraction_publication_20261008_052147.log",
+      "report": "C:\\local\\dxx-redux\\temp\\general_cleanup_20261006\\gqr0147-final\\report_20261008_052147.md"
+    },
+    {
+      "name": "test_extraction_cache_provenance",
+      "type": "ps1",
+      "requires": "none",
+      "status": "PASS",
+      "started_utc": "2026-10-08T12:22:00.5175001Z",
+      "observed_utc": "2026-10-08T12:22:02.8701522Z",
+      "run_id": "0833789e6e164bda8885104161713504",
+      "commit": "1ee56908299b870fef1852c3f0e7586844890652",
+      "dirty": true,
+      "runtime": "Microsoft Windows NT 10.0.26200.0; PowerShell 7.6.6",
+      "source": "android/tests/test_extraction_cache_provenance.ps1",
+      "source_sha256": "c183ec66dfc5d469f62c34e0dbcd2a74729ce574b561ad5375457a62ccb214a6",
+      "arguments": "null",
+      "exit_code": 0,
+      "elapsed": "00:02",
+      "reason": "",
+      "log": "temp\\general_cleanup_20261006\\gqr0147-final\\test_extraction_cache_provenance_20261008_052147.log",
+      "report": "C:\\local\\dxx-redux\\temp\\general_cleanup_20261006\\gqr0147-final\\report_20261008_052147.md"
+    }
+  ],
+  "catalog_profiles": [
+    "normal",
+    "extended graphics and multiplayer"
+  ],
+  "quality": "PASS"
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0147-catalog.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0147-final.log: SHA256 c86a7272b7b2eb77c8ff92680031c00887d51cd3b086b2b34dfbef66200ed406
+- temp/general_cleanup_20261006/gqr0147-negative-exit.json: SHA256 1b2f5a083325c33035cb246dcb6ceb08b00a036dfd9bf30e39aa76843a88af4f
+- temp/general_cleanup_20261006/gqr0147-negative.log: SHA256 aaad7f06de36416b50b72c442cd16f6be9dc48f25d6b36d5f90c959f8c6c27e7
+- temp/general_cleanup_20261006/gqr0147-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0147-verification.json: SHA256 b2f5dd509fdbab460b17b4779224c3f9a29881f9221648785892b964d13cf761
+- temp/general_cleanup_20261006/gqr0147-before/android__helpers__test_suite_coverage.ps1: SHA256 c7c7d8c89237af703626a2d5b810b54a330e491140ba499ef0295ab48fa69d45
+- temp/general_cleanup_20261006/gqr0147-before/android__run_all_tests.ps1: SHA256 c631b776756ef968d28b6ab32e243611b1ff5f71e3e8add42402a8d3ba2d33e4
+- temp/general_cleanup_20261006/gqr0147-before/android__tests__test_extraction_cache_provenance.ps1: SHA256 c183ec66dfc5d469f62c34e0dbcd2a74729ce574b561ad5375457a62ccb214a6
+- temp/general_cleanup_20261006/gqr0147-before/android__tests__test_extraction_publication.ps1: SHA256 c360fb1fe6e898e90245218f08fbcdc65b6f5b26e2e285272a77ea944ed3209d
+- temp/general_cleanup_20261006/gqr0147-before/android__tests__test_run_all_tests_catalog.ps1: SHA256 71261c12f31620b9eaffc283096b7e19ba31538f65e223972d8c9e37c2c70ce9
+- temp/general_cleanup_20261006/gqr0147-negative/execution_evidence_windows_x64.json: SHA256 4065620bd1e9d09544f6c53cb3a864edf3d23497a6999d1102e4b6720bffe28d
+- temp/general_cleanup_20261006/gqr0147-negative/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0147-negative/report_20261008_052119.md: SHA256 b9026849c72ad0ebf1622819f509154032bdb617132d4b02c82ff99b3b035b1a
+- temp/general_cleanup_20261006/gqr0147-negative/test_extraction_publication_20261008_052119.log: SHA256 9648183a13952102a679d65724d95f5200e0ef3282e059cc74a8ad1764ec14ed
+- temp/general_cleanup_20261006/gqr0147-final/execution_evidence_windows_x64.json: SHA256 498e79643bb990c01fb73b328c8b4d2d132289ccb611603af90f89cf9cf08834
+- temp/general_cleanup_20261006/gqr0147-final/execution_evidence_windows_x64.json.lock: SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- temp/general_cleanup_20261006/gqr0147-final/report_20261008_052147.md: SHA256 62bf1f54110d815f504f70a299266ffdceda29cd487a7fa591d65e008e6c75e1
+- temp/general_cleanup_20261006/gqr0147-final/test_extraction_cache_provenance_20261008_052147.log: SHA256 501305c0cdf1b4d02de260b66a855ebdc5faa17e560bdb293899f06860a211d7
+- temp/general_cleanup_20261006/gqr0147-final/test_extraction_publication_20261008_052147.log: SHA256 3a9d23014bd19d39f193ed3f8e232d5ec37527a5361b98def531b7f3c9756ffb
+
+</details>
+
+<!-- END IMPORT: GQR-0147 host extraction test classification validation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0206 owned asset reader implementation pending runtime validation 20261008 SHA256:56ed22612e67ef2ea74697d6091d64e43c983f3bfea3e4f85b2182ac3e5e9681 -->
+
+## GQR-0206 owned asset reader implementation pending runtime validation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0206-partial.md`
+- Imported SHA-256: `56ed22612e67ef2ea74697d6091d64e43c983f3bfea3e4f85b2182ac3e5e9681`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0206 owned asset reader implementation pending runtime validation 20261008
+
+- Revalidated current FingerprintBridge.lookupTrackNames, DiscIdentifier.loadDatabase, KnownVersions.init and TouchLayoutRepository.loadAssetPreset against GQR-0206/GQF-0221
+- Exactly one readText line per owner replaced by existing structured use pattern. Whole-file byte comparison preserves every other byte, including prior DiscIdentifier cleanup; no parser/schema/matching/fallback/native change or new wrapper
+- Scoped Kotlin quality passes. Actual Android Debug APK assembly, all three native ABI build tasks, app/test Kotlin compilation and four selected ordinary JVM tests pass with zero failures/errors/skips
+- The selected tests cover physical-record admission, checked-in track-name projection, MacPlay fingerprint names and touch defaults/settings roundtrip. They do not call all four actual asset loaders and do not establish their runtime failure closure
+- Actual compiled method inspection confirms readText is followed by closeFinally on normal and Throwable paths, with parsing after closure in all four owners. This is compiled control-flow evidence, not injected runtime loader failure evidence
+- Accepted ordinary identity/version/lookup/preset and complete-read/read-failure/JSON-failure loader runtime gates remain outstanding. GQR-0206 TODO and GQF-0221 OPEN; no completion credit
+- No device installation, malformed-media/security/allocation/resource-pressure probe, inherited edit/savings, staging or commit. Broader goal active
+
+## Exact source and compiled control-flow verification
+
+```json
+{
+  "FingerprintBridge": {
+    "method": "lookupTrackNames",
+    "sha256": "df11dc8b4ba7409d331b4cb07fe2394a701d703af0dd1bd3053c9d5eb538bae8",
+    "exact_one_line_replacement": true,
+    "normal_and_throwable_close": true,
+    "parsing_after_close": true
+  },
+  "DiscIdentifier": {
+    "method": "loadDatabase",
+    "sha256": "1d629ea56218e32cab098cf34c91a9f69242c14816aec6c0358e0fe825b93deb",
+    "exact_one_line_replacement": true,
+    "normal_and_throwable_close": true,
+    "parsing_after_close": true
+  },
+  "KnownVersions": {
+    "method": "init",
+    "sha256": "e22507f4e3e1c2ccb762e061b447c72c364551862e9e6bb3948cf945f6fdb9c9",
+    "exact_one_line_replacement": true,
+    "normal_and_throwable_close": true,
+    "parsing_after_close": true
+  },
+  "TouchLayoutRepository": {
+    "method": "loadAssetPreset",
+    "sha256": "3bdd1a05c1c56ac6848488817a0f397726a583019b1ee2d1b2dbc0b7fc54c277",
+    "exact_one_line_replacement": true,
+    "normal_and_throwable_close": true,
+    "parsing_after_close": true
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0206-build-tests.log: SHA256 77f13ec1273afad5be8b0dda501327d61e1f8e45cb62cfe2e21c65a5f18dfe49
+- temp/general_cleanup_20261006/gqr0206-DiscIdentifier.javap.txt: SHA256 a7f8422b24a987141be9122ebbff18d64584a6712396a11b2a168d6b9604216b
+- temp/general_cleanup_20261006/gqr0206-FingerprintBridge.javap.txt: SHA256 a690208530e08201128a52db88d8f2cd8b520661749c57576af77cd97217fbff
+- temp/general_cleanup_20261006/gqr0206-KnownVersions.javap.txt: SHA256 5a6297ef74e563fc1a1f2697842d0697a1f9d6acf4fa99dcaff146f3ebed0947
+- temp/general_cleanup_20261006/gqr0206-quality.log: SHA256 2c94755b067008fe78aa7b9e7a05b2a67eec3ea762e4938ec063e791450942fc
+- temp/general_cleanup_20261006/gqr0206-TouchLayoutRepository.javap.txt: SHA256 b7d565e6020499a8a77ed2cba0b5ec79db3f13d6582cd3197e39be219af1dd58
+- temp/general_cleanup_20261006/gqr0206-verification.json: SHA256 64156912e6cd08283b65cfd0f8e0a0cda6250affb727d1c5b467bb9c8279b4fa
+
+</details>
+
+<!-- END IMPORT: GQR-0206 owned asset reader implementation pending runtime validation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0223 primary CD manifest reader remediation pending extended scopes 20261008 SHA256:bd629a8783f2228baeee75c99ecd331f564fc7010e949e021cf888c8c40d7bf8 -->
+
+## GQR-0223 primary CD manifest reader remediation pending extended scopes 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0223-primary.md`
+- Imported SHA-256: `bd629a8783f2228baeee75c99ecd331f564fc7010e949e021cf888c8c40d7bf8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0223 primary CD manifest reader remediation pending extended scopes 20261008
+
+- Revalidated original GQR-0223/GQF-0238 primary CD source reader against current clean helper. Independent line-comment and trailing-comma regexes corrupt quoted URLs and comma/bracket strings
+- Dot-source existing jsonc.ps1 and delegate Read-CdLevelMetadataSourceManifest to Read-JsoncFile. Exact whole-file byte proof preserves all required-field, discovery/exclusion, descriptor hashing and source/output containment bodies; no duplicate parser or native/inherited edit
+- Extend existing maintained CD source fixture by28 lines for valid quoted URL/comment/comma/bracket text, escaped quotes/backslashes, actual comments/trailing commas and complete checked-in manifest parity. Original reader fails actual fixture exit1 on valid URL; corrected registered HostOnly aggregate PASS1/1, zero failures/timeouts/skips/not-run with exact fixture SHA
+- Scoped PowerShell7.6.6 quality and git diff --check pass. No new top-level runner, catalog entry or timeout
+- Actual before/after host metadata pipelines pass D1 trainng nine levels, D2 mustfind two levels and Destination Saturn CD sixteen levels. Every complete generated mission JSON byte-identical, no timestamp normalization or exclusion. NoRegressionCopy preserves checked-in metadata
+- Both CD phases emit the same payload cleanup lock warning while producing passing metadata. No payload-cleanup success claim; after final pipeline no live metadata-worker process observed. Existing lifecycle warning remains separate from this parser repair
+- Initial CLI invocation supplied comma-separated ArchiveNames as one literal name and correctly failed requested-name admission; corrected actual array invocation supplies both names and passes. Initial quality CLI similarly supplied a literal combined path and failed before formatting; corrected PowerShell7 array invocation is authoritative
+- Full GQR-0223 includes later index/music/hash/album/AcoustID reader extensions and coordination with GQR-0222 comment token boundaries. Those remain pending; GQR-0223 TODO/GQF-0238 OPEN, totals68 DONE/183 TODO/1 DEFERRED unchanged
+- No full disc campaign, malformed-media/security/allocation/resource-pressure probe, Android/device run, inherited savings, staging or commit. Concurrent installer/import and all prior cleanup preserved; broader goal active
+
+## Verification
+
+```json
+{
+  "exact_primary_reader_scope": true,
+  "exact_fixture_insertion_lines": 28,
+  "original_reader_valid_url_failure": true,
+  "registered_host_aggregate": "PASS 1/1, no skips",
+  "metadata_byte_identical": {
+    "mustfind.json": "dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b",
+    "trainng.json": "bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e",
+    "CD - Descent - Destination Saturn (USA).json": "07df5a59c32b2a11771a39ce57bb2342d768cb7e6e7f3aa2e540a8f8d4e3437e"
+  },
+  "ordinary_archive_levels": 11,
+  "ordinary_cd_levels": 16,
+  "sources": {
+    "android/helpers/cd_level_metadata_sources.ps1": "38a67246cef04a2d7d81b1269d697790636b76900ec707175722497c6764b18f",
+    "android/tests/test_cd_level_metadata_sources.ps1": "b991ef1752aa27207be4123ba42cd271f7e6d7564f129669c114e49c535496c3"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0223-after-cd/logs/cd_descent-destination-saturn-usa.destsat.log: SHA256 e9e62c69e0d08e176c9a3f67f27cf07b616bf2508f2f9933df7565f9b45ce44e
+- temp/general_cleanup_20261006/gqr0223-after-cd/logs/cd_descent-destination-saturn-usa.destsat.log.checkpoint.json: SHA256 e4ff47543a8d25b70ccdc34752ec61e1d6688da03957ebc1060e9653d7469548
+- temp/general_cleanup_20261006/gqr0223-after-cd/metadata/CD - Descent - Destination Saturn (USA).json: SHA256 07df5a59c32b2a11771a39ce57bb2342d768cb7e6e7f3aa2e540a8f8d4e3437e
+- temp/general_cleanup_20261006/gqr0223-after-cd/raw/cd_descent-destination-saturn-usa.destsat.metadata.json: SHA256 236fffda8b1e299a1b2aa27cb92d839fe9ba5e8ad358b2eb362e0d785cc9805e
+- temp/general_cleanup_20261006/gqr0223-after-cd/summary.json: SHA256 791dc4aaa91ce032d690b4dd348ea09b4c70e0b8f60a5b8a417f1f24ec6bb2a7
+- temp/general_cleanup_20261006/gqr0223-after-cd.log: SHA256 ab2ea7e041596ece477be2c0b2f2a262f80a893d7336aba2342ddc1708d8d460
+- temp/general_cleanup_20261006/gqr0223-after-metadata/logs/mustfind.MUSTFIND.log: SHA256 b85b2b40bffc872570e3913c6a5d5c2a6b9b480df257ba70f0f9b915d3c7b961
+- temp/general_cleanup_20261006/gqr0223-after-metadata/logs/mustfind.MUSTFIND.log.checkpoint.json: SHA256 c233bfcef8f9d46b549d9e6a3c8138bfafb76f7b0c2c5464fda14d169d22c583
+- temp/general_cleanup_20261006/gqr0223-after-metadata/logs/trainng.trainng.log: SHA256 e9e62c69e0d08e176c9a3f67f27cf07b616bf2508f2f9933df7565f9b45ce44e
+- temp/general_cleanup_20261006/gqr0223-after-metadata/logs/trainng.trainng.log.checkpoint.json: SHA256 7818ab00cca310c765f2f314b2901b10191c323e9b98ece66ff81e41570a4f50
+- temp/general_cleanup_20261006/gqr0223-after-metadata/metadata/mustfind.json: SHA256 dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b
+- temp/general_cleanup_20261006/gqr0223-after-metadata/metadata/trainng.json: SHA256 bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e
+- temp/general_cleanup_20261006/gqr0223-after-metadata/raw/mustfind.MUSTFIND.metadata.json: SHA256 7667a987024fde57f39887e20561528ca4b0ddc7fbeb6a0825e7ef4cad26f956
+- temp/general_cleanup_20261006/gqr0223-after-metadata/raw/trainng.trainng.metadata.json: SHA256 44382e33588744323f534416052b14e5ccad677bf244fcd4b0f8dad28ef33959
+- temp/general_cleanup_20261006/gqr0223-after-metadata/summary.json: SHA256 400f99486e3f2bc8677279f44a5f81561a20f6845af6618308c832902afd4166
+- temp/general_cleanup_20261006/gqr0223-after-metadata.log: SHA256 0bfc176de8379bd3cf7417e60aa9cf02512f76866a9725e7310d292489a93f36
+- temp/general_cleanup_20261006/gqr0223-aggregate/execution_evidence_windows_x64.json: SHA256 366769a0bd5e8d9b8398c26501ba2afa875c0835d113676b5f17356eab773c87
+- temp/general_cleanup_20261006/gqr0223-aggregate/report_20261008_053233.md: SHA256 b600e0ff3410905fab9721810dd7ea4df6ad1ebbd7943a17d90fb548b3f8a4d6
+- temp/general_cleanup_20261006/gqr0223-aggregate/test_cd_level_metadata_sources_20261008_053233.log: SHA256 d50f6017925a4e69c2cc3b1fa715f13ec383eef29b566286ea0b513484568f0d
+- temp/general_cleanup_20261006/gqr0223-aggregate.log: SHA256 c669f821585a1c8f5f7ebeb71e29e6f4464a62ef7771f96dbf34069868608682
+- temp/general_cleanup_20261006/gqr0223-before/cd_level_metadata_sources.ps1: SHA256 b3aa5586201956710cf8c8aa26aa81875bcc60058f06a046ac886b328d4584f8
+- temp/general_cleanup_20261006/gqr0223-before/test_cd_level_metadata_sources.ps1: SHA256 aa521a0dd25729e60ec5c976c7bc5c09300861014d89d6159fa1bc87ea1e276e
+- temp/general_cleanup_20261006/gqr0223-before-cd/logs/cd_descent-destination-saturn-usa.destsat.log: SHA256 e9e62c69e0d08e176c9a3f67f27cf07b616bf2508f2f9933df7565f9b45ce44e
+- temp/general_cleanup_20261006/gqr0223-before-cd/logs/cd_descent-destination-saturn-usa.destsat.log.checkpoint.json: SHA256 7b7b285efcf63dbcc288dfb3707fe5b221c2e0af1320fae5ae292ec319105485
+- temp/general_cleanup_20261006/gqr0223-before-cd/metadata/CD - Descent - Destination Saturn (USA).json: SHA256 07df5a59c32b2a11771a39ce57bb2342d768cb7e6e7f3aa2e540a8f8d4e3437e
+- temp/general_cleanup_20261006/gqr0223-before-cd/raw/cd_descent-destination-saturn-usa.destsat.metadata.json: SHA256 f8b30c3d6a68f18d5f220c886b50608dcdcaa5b63cebedd41395121988b8c932
+- temp/general_cleanup_20261006/gqr0223-before-cd/summary.json: SHA256 65d80347b6aea46e200b908891fdf05a643fda55c2b46bd075e3f0a505be52ee
+- temp/general_cleanup_20261006/gqr0223-before-cd.log: SHA256 90878e4853c5c12a445ed00d96d553af2af601c12731e097656d6f196d08207f
+- temp/general_cleanup_20261006/gqr0223-before-metadata/logs/mustfind.MUSTFIND.log: SHA256 b85b2b40bffc872570e3913c6a5d5c2a6b9b480df257ba70f0f9b915d3c7b961
+- temp/general_cleanup_20261006/gqr0223-before-metadata/logs/mustfind.MUSTFIND.log.checkpoint.json: SHA256 ff0f4cbcea927797550b76201d22cf65e470e21d1240c8a775b842d5baf09f2f
+- temp/general_cleanup_20261006/gqr0223-before-metadata/logs/trainng.trainng.log: SHA256 e9e62c69e0d08e176c9a3f67f27cf07b616bf2508f2f9933df7565f9b45ce44e
+- temp/general_cleanup_20261006/gqr0223-before-metadata/logs/trainng.trainng.log.checkpoint.json: SHA256 f3f9a89e4e29cb1830a7df6774c3a8c372cd8ebbbd9d555af3d792f2d7885b06
+- temp/general_cleanup_20261006/gqr0223-before-metadata/metadata/mustfind.json: SHA256 dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b
+- temp/general_cleanup_20261006/gqr0223-before-metadata/metadata/trainng.json: SHA256 bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e
+- temp/general_cleanup_20261006/gqr0223-before-metadata/raw/mustfind.MUSTFIND.metadata.json: SHA256 378b40d95f17ed747c443e232e0df54697d309f9828b689626e6bfbff39a85a4
+- temp/general_cleanup_20261006/gqr0223-before-metadata/raw/trainng.trainng.metadata.json: SHA256 558ee1a218c7600a025f0ae29d06093d8178de9d4dd0aac245e1a785e096232d
+- temp/general_cleanup_20261006/gqr0223-before-metadata/summary.json: SHA256 11d0e96680a601179de1ce0d92ee02996a77d3393d14d1bd4ce7e8ebc91206d2
+- temp/general_cleanup_20261006/gqr0223-before-metadata.log: SHA256 ede7fce44e394b0e547a2b4e3d68b8a3da9af3f0417a5969a4961ed3b1edf0a8
+- temp/general_cleanup_20261006/gqr0223-negative.log: SHA256 09c0692ccfea8233b61f11be8ce075cbc8f0bee0ea49b31d6087b9d3cc4ae08d
+- temp/general_cleanup_20261006/gqr0223-quality.log: SHA256 f50ab475bc6409eeae2da518befedc0c76935188dd0b0f26b096d759e4a904a1
+- temp/general_cleanup_20261006/gqr0223-verification.json: SHA256 098592c62c03ef2e9824a32a49433801d6dbe1c7ba2750d481665161aedb6403
+
+</details>
+
+<!-- END IMPORT: GQR-0223 primary CD manifest reader remediation pending extended scopes 20261008 -->
+<!-- BEGIN IMPORT: GQR-0222 JSONC lexical token boundary remediation 20261008 SHA256:16ce4e51802b3a63943ee9b89ebc6eba39e2aaab94269bc3334a60b1b3587b1b -->
+
+## GQR-0222 JSONC lexical token boundary remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0222-remediation.md`
+- Imported SHA-256: `16ce4e51802b3a63943ee9b89ebc6eba39e2aaab94269bc3334a60b1b3587b1b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0222 JSONC lexical token boundary remediation 20261008
+
+- Revalidated GQR-0222/GQF-0237 and original GQ1-CHUNK-0594 against current clean shared parser and fingerprint config reader. Actual original Get-TestScriptInfo accepts four invalid split timeout numbers as12/1.2/100/100; actual config reader accepts four split fractions/exponents as0.65. Original maintained negative fixtures also expose joined integer and quoted URL parse failure
+- Insert one whitespace character at each recognized line/block comment boundary. Existing CR/LF copying, string/escape state, unterminated block diagnostic and trailing-comma pass otherwise byte-identical. No JSON5 expansion, replacement parser or native/inherited edit
+- Fingerprint config dot-sources existing shared owner and delegates to Read-JsoncFile inside existing error context. File-not-found and required numeric/finite/(0,1] fraction validation unchanged by exact whole-file comparison
+- Extend maintained parser fixture with split integer/fraction/exponent rejection through shared Read-JsoncFile and actual Get-TestScriptInfo, valid commented timeout, structural-token comments and CR/LF preservation. Existing quoted URL/comment/comma/escape/trailing-comma controls and all seven current strict tracklists pass
+- Extend existing threshold fixture with valid comments/trailing commas and quoted URL/comment/escape literals, plus four split fraction/exponent rejection cases. Actual existing native fingerprint_match CLI checks and ordinary checked-in fingerprint/unnamed-track admission pass; no media decoding or malformed-media test
+- Final actual registered HostOnly parser, threshold and CD source aggregate runs each PASS1/1, zero failures/timeouts/skips/not-run, exact current fixture SHA. Both maintained automation/master catalogs pass. Scoped PowerShell7.6.6 quality and git diff --check pass; exact four-owner source proof preserves every other byte
+- No new top-level tests, registration or timeout. Prior GQR-0223 primary shared reader repair passes its final fixture with new parser; later admitted reader extensions remain separately pending
+- No APK/device/network run, malformed-media/security/allocation/resource-pressure probe, inherited savings, staging or commit. Concurrent installer/import and previous cleanup preserved; broader goal active
+
+## Verification
+
+```json
+{
+  "exact_shared_parser_change": "two comment-boundary whitespace insertions",
+  "exact_configuration_change": "shared reader inclusion/delegation; validation unchanged",
+  "original_actual_consumer_admissions": [
+    {
+      "consumer": "Get-TestScriptInfo",
+      "input": "1/* gap */2",
+      "value": 12
+    },
+    {
+      "consumer": "Get-TestScriptInfo",
+      "input": "1/* gap */.2",
+      "value": 1.2
+    },
+    {
+      "consumer": "Get-TestScriptInfo",
+      "input": "1/* gap */e2",
+      "value": 100.0
+    },
+    {
+      "consumer": "Get-TestScriptInfo",
+      "input": "1e/* gap */2",
+      "value": 100.0
+    },
+    {
+      "consumer": "Get-DxxFingerprintMatchingConfig",
+      "input": "0/* gap */.65",
+      "value": 0.65
+    },
+    {
+      "consumer": "Get-DxxFingerprintMatchingConfig",
+      "input": "0.6/* gap */5",
+      "value": 0.65
+    },
+    {
+      "consumer": "Get-DxxFingerprintMatchingConfig",
+      "input": "6.5/* gap */e-1",
+      "value": 0.65
+    },
+    {
+      "consumer": "Get-DxxFingerprintMatchingConfig",
+      "input": "6.5e/* gap */-1",
+      "value": 0.65
+    }
+  ],
+  "registered_host_results": [
+    {
+      "name": "test_jsonc_and_tracklist_parsing",
+      "status": "PASS",
+      "source_sha256": "5cd5f5a750d56e103a679a5eb4a122497f8ba9b5aa326a3897405284705794f2",
+      "run_id": "3efe62f0f9684d3687cd65445b72ea7e"
+    },
+    {
+      "name": "test_fingerprint_threshold",
+      "status": "PASS",
+      "source_sha256": "459645dcc0e791daa38b9161a3d7d79dd0894b7c350e82c36ffd59de2a2d57cb",
+      "run_id": "84556fca4f5c44a1b81dbea0f57bbb7d"
+    },
+    {
+      "name": "test_cd_level_metadata_sources",
+      "status": "PASS",
+      "source_sha256": "b991ef1752aa27207be4123ba42cd271f7e6d7564f129669c114e49c535496c3",
+      "run_id": "c94a1f864cb04ce18868e304b4a6461d"
+    }
+  ],
+  "strict_tracklist_corpus": 7,
+  "catalogs": {
+    "automation-catalog": "Automation catalog valid: 94 standalone JSON tests, 374 support scripts, 214 standalone PowerShell tests",
+    "master-catalog": "Catalog integration passed: 312 top-level entries, 374 support scripts"
+  },
+  "sources": {
+    "android/helpers/jsonc.ps1": "c3e1eeef37bbeff465cd6ceee2721a84f852a790a0cd5e7ffa9ebafd264427d4",
+    "android/helpers/fingerprint_config.ps1": "4bd497dc82a840389c8f102232d76417ca04058a188dd075740070c41ce38614",
+    "android/tests/test_jsonc_and_tracklist_parsing.ps1": "5cd5f5a750d56e103a679a5eb4a122497f8ba9b5aa326a3897405284705794f2",
+    "android/tests/test_fingerprint_threshold.ps1": "459645dcc0e791daa38b9161a3d7d79dd0894b7c350e82c36ffd59de2a2d57cb"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0222-automation-catalog-final.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0222-before/fingerprint_config.ps1: SHA256 7b5f6838d3f87d38c8d9e5854a2164076f0b1d52c702cf461b3cfef4065402a7
+- temp/general_cleanup_20261006/gqr0222-before/jsonc.ps1: SHA256 dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4
+- temp/general_cleanup_20261006/gqr0222-before/test_fingerprint_threshold.ps1: SHA256 0a26ed353da0c7bac0d94b803a3bd708457a2dad6df5a5b499c77ef4793c1c4e
+- temp/general_cleanup_20261006/gqr0222-before/test_jsonc_and_tracklist_parsing.ps1: SHA256 bf0bd5b308b0b7face65f6fa54a6f464b4bc1f7444e81ff8da11ce1eca5236c3
+- temp/general_cleanup_20261006/gqr0222-cd-aggregate/execution_evidence_windows_x64.json: SHA256 352716f31a07d0b94c1a089c7e141654d636ae1dfa39115fd45ab3f704bda952
+- temp/general_cleanup_20261006/gqr0222-cd-aggregate/report_20261008_053644.md: SHA256 ed8c57d357c3e6f17274931209a105fd83e68113568ef2dce8c8e4d94f02bed8
+- temp/general_cleanup_20261006/gqr0222-cd-aggregate/test_cd_level_metadata_sources_20261008_053644.log: SHA256 d50f6017925a4e69c2cc3b1fa715f13ec383eef29b566286ea0b513484568f0d
+- temp/general_cleanup_20261006/gqr0222-cd-final.log: SHA256 6cfefa8d9598525a5b43103cea101e1a02a71aded4b8cdcef74f2f07a58f1c09
+- temp/general_cleanup_20261006/gqr0222-config-negative.log: SHA256 30d805e595f607a9002b59bcff51b96b595c51897cce9c9ba9be07ea322e5787
+- temp/general_cleanup_20261006/gqr0222-master-catalog-final.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0222-original-probes.json: SHA256 551f29cb46975e3f23bef28d388a4ff9de1a1257d9f8ca537561f0b6c8dea4a5
+- temp/general_cleanup_20261006/gqr0222-parser-aggregate/execution_evidence_windows_x64.json: SHA256 bf373b6f389a707e886987c4a2aaf8771ca1b07f0919e33419be2093be8815a8
+- temp/general_cleanup_20261006/gqr0222-parser-aggregate/report_20261008_053644.md: SHA256 a69fae51d5ab69b7969b8287b3af46dd28aad99a5421691f36d0ceab3300abb2
+- temp/general_cleanup_20261006/gqr0222-parser-aggregate/test_jsonc_and_tracklist_parsing_20261008_053644.log: SHA256 e26a5f33a264f955f127d0b2cdd8d67c65ae6ef94bf5e7e50c528e1b96dba517
+- temp/general_cleanup_20261006/gqr0222-parser-final.log: SHA256 5f2d5ca84cbd2d3a0087bdef50509f3cb1f8f17dfedd17c1d6d6acae2e7d81d1
+- temp/general_cleanup_20261006/gqr0222-parser-negative.log: SHA256 55e55df09501428558d5fe5b6e4ce88f5a945818157e339b79c6cc3ad6f9f2bd
+- temp/general_cleanup_20261006/gqr0222-quality.log: SHA256 937651246245e39dfc5b53007c56dfc9f7494ea2dfbef7a3fee30c6604f8c7d2
+- temp/general_cleanup_20261006/gqr0222-threshold-aggregate/execution_evidence_windows_x64.json: SHA256 0f81f4aca0367f0830ee2265dfd7e43e76476d9d4353d56218535574158ded50
+- temp/general_cleanup_20261006/gqr0222-threshold-aggregate/report_20261008_053644.md: SHA256 afb8522fc51a597f95c385e7dba787027176f9e585a46e114651f663c00b5fe4
+- temp/general_cleanup_20261006/gqr0222-threshold-aggregate/test_fingerprint_threshold_20261008_053644.log: SHA256 7d563e1a9159d0edc3cdadc8cabe513a9e8389294b88949fd00a7dff227512b7
+- temp/general_cleanup_20261006/gqr0222-threshold-final.log: SHA256 4085c4cd1087560eb1b1041f7908692d6a155caf8b238976e568923f3d295d58
+- temp/general_cleanup_20261006/gqr0222-verification.json: SHA256 9cbb3d155b585c67e4b1da7cb6ccf3147d43e18b1d1217f651d55f4eb0ece30d
+
+</details>
+
+<!-- END IMPORT: GQR-0222 JSONC lexical token boundary remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0223 shared JSONC reader consolidation remediation 20261008 SHA256:4b78d4ed01b1f084ab677fe813c003e5794b53a435c9252e6c9545c681f494ae -->
+
+## GQR-0223 shared JSONC reader consolidation remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0223-remediation.md`
+- Imported SHA-256: `4b78d4ed01b1f084ab677fe813c003e5794b53a435c9252e6c9545c681f494ae`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0223 shared JSONC reader consolidation remediation 20261008
+
+- Revalidated complete GQR-0223/GQF-0238 primary and extensions from original0600/0609/0610/0611/0614/0665/0668/0681/0683 against current code, including active Get-ScriptDeps and fingerprint fixture readers omitted from canonical row's allowed-path summary. Completed GQR-0222 shared lexical boundary repair retained
+- Primary CD manifest already repaired in prior slice. This slice routes index, music config/cache, version reader/writer validation, physical/album merger, disc AcoustID config, active dependencies and two fingerprint fixture readers through shared JSONC owner. Already repaired hash_disc_tracks remains byte-identical
+- Remove unused Get-JsoncObject and ConvertFrom-JsoncWithComments implementations after tracked/current caller census. No replacement wrapper/parser. Exactly39 net branch product lines removed this slice, one prior primary helper line removed; zero inherited edits or minimization savings
+- Actual snapshot reader probes show ten failures on valid quoted input: seven config/cache/catalog/album reader parse failures, version parse failure, lost index required hash and lost active dependency declaration. Maintained final actual reader assignment/function contracts preserve entire URL/comment/comma/bracket/escaped documents, reviewed AcoustID fields, complete versions and exact direct/parameter-option hash sets
+- Actual isolated full index generator publishes exactly three expected file/hash entries and excludes fourth unrequested file. Active dependency reader preserves direct/parameterized file/hash/target records. File read remains outside parse catch; parse via existing shared text parser retains original read-error propagation/full-document/Vars semantics, and separately owned parse-null policy is not claimed repaired
+- Existing forced hash script fixture runs actual partial/zero/full-source regeneration and retains last valid catalog on failed incomplete inputs. CD publication fixture runs actual physical hash/fingerprint publication, curated metadata/comments and unchanged-byte/mtime controls, with tiny metadata manifests and ordinary completion failures, no media decoding
+- Seven focused maintained host fixtures pass: parser/index/dependencies/versions, forced asset hashes, CD source, CD publication, AcoustID cached metadata, native matcher threshold/unnamed-track controls and music target build guard. Final actual registered HostOnly parser aggregate PASS1/1 with zero failures/timeouts/skips/not-run, current fixture SHA and actual index3/3 output
+- Both final catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries. Scoped mixed PowerShell7.6.6 quality plus focused follow-ups for recovered callers/integration pass; exact ten-owner source proofs preserve every other byte, handmade writer/output comments and matching/hash/schema/publication bodies. No new top-level test or registration/timeout
+- Prior primary CD/source fixture identities and complete before/after generated JSON identities revalidated. Original D1 archive9 plus D2 archive2 plus CD16 metadata levels passed and all three mission JSON files byte-identical. These27 levels were not rerun in this slice; their prior evidence is retained. Existing paired CD payload-cleanup lock warnings remain separate, no cleanup success claim
+- Full fpcalc/media/online AcoustID fixture not run; only its actual config assignment executes in maintained isolated reader contract. No external request, full corpus hash scan, malformed-media/security/allocation/resource-pressure probe, native/inherited build/edit, APK/device/network run, staging or commit
+- Prior GQR-0206 actual loader runtime gates and GQR-0133 deferred combined runtime gate remain open; concurrent installer/import and all previous cleanup preserved. Broader cleanup goal remains active
+
+## Exact scopes, negative controls and final verification
+
+```json
+{
+  "game_data/generate_game_data_index.ps1": {
+    "sha256": "114e162088fb505e5fcb3b1296925fe52e6254f6521248334648069d5b564455",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -9
+  },
+  "game_data/fingerprint_music_packs.ps1": {
+    "sha256": "1e2f319a6a94c2d6baf9631bbd0ddaf18be1a0e72d9746aa9fc64e9ba22ba2a9",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -4
+  },
+  "game_data/hash_assets.ps1": {
+    "sha256": "cc25aeb0accefba55f9602d767a0bdf7d53a7caee83374ee1be05151a2cbcc51",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -20
+  },
+  "game_data/update_known_discs_albums.ps1": {
+    "sha256": "c13861b4206dd44a00c52a38ee41c65e62c9348924822c485656f13b4c94a927",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -4
+  },
+  "game_data/fingerprint_disc_tracks.ps1": {
+    "sha256": "05b63d7beab51d323ced6525194772ed79265530ebd1e97475cbe45ca6346635",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -1
+  },
+  "android/helpers/test_helpers.ps1": {
+    "sha256": "a3c0b19899b62d138cec241b6c244973cf6d4a6a0496b66ac0b76d9ad944643d",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -1
+  },
+  "android/tests/test_jsonc_and_tracklist_parsing.ps1": {
+    "sha256": "6ee07c15f7cb3cc8df416a7b2a9276a0f7a3b9af8a6800044736e363e0511f09",
+    "exact_fixture_insertions": true,
+    "reader_assignments": 7,
+    "functions": [
+      "Get-DeclaredGameDataHash",
+      "Read-JsoncVersions",
+      "Get-ScriptDeps"
+    ],
+    "actual_isolated_index_entries": 3,
+    "unrequested_file_excluded": true
+  },
+  "android/tests/test_hash_assets_force_completeness.ps1": {
+    "sha256": "074f20d955084cb034846eb87afac2d70757aac36e261ca07e61d8a31682767d",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": 1
+  },
+  "android/tests/test_fingerprint_threshold.ps1": {
+    "sha256": "318fdd3d3ad5dfb941e5e09285242361c0a2aae3a69a460d9e55bd3540373dda",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -1
+  },
+  "android/tests/test_fpcalc_and_acoustid.ps1": {
+    "sha256": "17745340ce08ced1de7a5cdc6591ab5c986ea0677f22f5ecdbed83913fe2c1e9",
+    "exact_allowed_changes": true,
+    "line_delta_from_turn_snapshot": -1
+  },
+  "already_repaired_hash_disc_tracks_preserved": true,
+  "original_actual_reader_probes": [
+    {
+      "reader": "fingerprint_music_packs.ps1:cfg",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "fingerprint_music_packs.ps1:existing",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "update_known_discs_albums.ps1:db",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "update_known_discs_albums.ps1:sourceInfo",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "update_known_discs_albums.ps1:info",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "fingerprint_disc_tracks.ps1:cfg",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "android/tests/test_fpcalc_and_acoustid.ps1:cfg",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "Get-DeclaredGameDataHash",
+      "result": "lost required hash",
+      "actual_count": 0
+    },
+    {
+      "reader": "Read-JsoncVersions",
+      "result": "valid-input parse failure",
+      "error": "Conversion from JSON failed with error: After parsing a value an unexpected character was encountered: v. Path 'album', line 3, position 3."
+    },
+    {
+      "reader": "Get-ScriptDeps",
+      "result": "lost required dependency",
+      "actual": null
+    }
+  ],
+  "product_line_delta_this_slice": -39,
+  "final_registered_parser_aggregate": {
+    "name": "test_jsonc_and_tracklist_parsing",
+    "status": "PASS",
+    "source_sha256": "6ee07c15f7cb3cc8df416a7b2a9276a0f7a3b9af8a6800044736e363e0511f09",
+    "run_id": "bcfd9962205d489d9226c699ff65fd3c"
+  },
+  "prior_primary_cd_and_archive_metadata_evidence": {
+    "exact_primary_reader_scope": true,
+    "exact_fixture_insertion_lines": 28,
+    "original_reader_valid_url_failure": true,
+    "registered_host_aggregate": "PASS 1/1, no skips",
+    "metadata_byte_identical": {
+      "mustfind.json": "dd784e344d81bcacc569ddb23fb25bd1466bb2ad1e747df331e18d9f0b3ab57b",
+      "trainng.json": "bdb2dd96148d138e7e53853a66b805489e9c991af106f54371de5675c46b1e3e",
+      "CD - Descent - Destination Saturn (USA).json": "07df5a59c32b2a11771a39ce57bb2342d768cb7e6e7f3aa2e540a8f8d4e3437e"
+    },
+    "ordinary_archive_levels": 11,
+    "ordinary_cd_levels": 16,
+    "sources": {
+      "android/helpers/cd_level_metadata_sources.ps1": "38a67246cef04a2d7d81b1269d697790636b76900ec707175722497c6764b18f",
+      "android/tests/test_cd_level_metadata_sources.ps1": "b991ef1752aa27207be4123ba42cd271f7e6d7564f129669c114e49c535496c3"
+    }
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0223-final-acoustid-cache.log: SHA256 60efdaff9ec761e32be95b5a036cb62ad1ee512600b1c70ec1756b0ef8b4683e
+- temp/general_cleanup_20261006/gqr0223-final-automation-catalog.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0223-final-cd-publication.log: SHA256 c47db4eb28e42bdb7d23ee6b32165dee1c01b5b0b68943358d32ec8aebe46ab6
+- temp/general_cleanup_20261006/gqr0223-final-cd-source.log: SHA256 d50f6017925a4e69c2cc3b1fa715f13ec383eef29b566286ea0b513484568f0d
+- temp/general_cleanup_20261006/gqr0223-final-hash.log: SHA256 d938fa189912f8776c3deb31a6bec42f403f57b9c8e3ed936bdb076caf6bd61c
+- temp/general_cleanup_20261006/gqr0223-final-master-catalog.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0223-final-music-build.log: SHA256 7a994eadf390932c1d42c5b20c44af066aedf458e956d7652deff2b352841641
+- temp/general_cleanup_20261006/gqr0223-final-parser-aggregate.log: SHA256 0c4e7dc98c1dcebdd135afdee8240b806930395c72881334220f991f9ef5c2b4
+- temp/general_cleanup_20261006/gqr0223-final-parser.log: SHA256 1a55ab8fc2bf694661f5c2b81451a0066b5e4f5f46c175c5d2b5d831693909fc
+- temp/general_cleanup_20261006/gqr0223-final-quality.log: SHA256 02f1c32e21d9e4079179b33aca5a517f9c6f728dc4d0c766fa21b7ef90db9ded
+- temp/general_cleanup_20261006/gqr0223-final-threshold.log: SHA256 7d563e1a9159d0edc3cdadc8cabe513a9e8389294b88949fd00a7dff227512b7
+- temp/general_cleanup_20261006/gqr0223-config-fixture-quality.log: SHA256 f50ab475bc6409eeae2da518befedc0c76935188dd0b0f26b096d759e4a904a1
+- temp/general_cleanup_20261006/gqr0223-dependency-final-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0223-dependency-quality.log: SHA256 051e385feb5afa439f227c543b5fc82b1739b30904e38924eab4d85732604110
+- temp/general_cleanup_20261006/gqr0223-extended-quality.log: SHA256 bcd8be398d57f768164e1798b835f7bf789ba1947fe79721a7dbd382f433cd6d
+- temp/general_cleanup_20261006/gqr0223-final-quality.log: SHA256 02f1c32e21d9e4079179b33aca5a517f9c6f728dc4d0c766fa21b7ef90db9ded
+- temp/general_cleanup_20261006/gqr0223-index-fixture-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0223-threshold-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0223-original-reader-probes.json: SHA256 1649e9232d9b31371bbeb252ee8181d2bf55474f7a3f25f81a90ed793f06bc13
+- temp/general_cleanup_20261006/gqr0223-extended-negative.log: SHA256 94359ed01001a0f2f8f3370b3832157d214b12362b011e2aeaad314dac827083
+- temp/general_cleanup_20261006/gqr0223-extended-verification.json: SHA256 a554144424f41130aab34b0fc4ed3deae3b41823c2209d512eab28f90bb6476b
+- temp/general_cleanup_20261006/gqr0223-extended-before/fingerprint_disc_tracks.ps1: SHA256 9f2f4fb9077291eef0b548578d939b2560084f8b7a28332ce7fdd9d3be0fc8c6
+- temp/general_cleanup_20261006/gqr0223-extended-before/fingerprint_music_packs.ps1: SHA256 4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9
+- temp/general_cleanup_20261006/gqr0223-extended-before/generate_game_data_index.ps1: SHA256 e2fb1fa624f2bdf1fab0ac606888380a0007412ad6cd981c0aceb37ba8965966
+- temp/general_cleanup_20261006/gqr0223-extended-before/hash_assets.ps1: SHA256 f51053b555adf54e3b93fc0b6069e39618c77418bfaca8f6ecb92d955e5924e0
+- temp/general_cleanup_20261006/gqr0223-extended-before/hash_disc_tracks.ps1: SHA256 c2329a8d2d7fceddef04b777baedbf36a5c3a23e41486305f0d104bab11df2ee
+- temp/general_cleanup_20261006/gqr0223-extended-before/test_fingerprint_threshold.ps1: SHA256 459645dcc0e791daa38b9161a3d7d79dd0894b7c350e82c36ffd59de2a2d57cb
+- temp/general_cleanup_20261006/gqr0223-extended-before/test_fpcalc_and_acoustid.ps1: SHA256 db722b89b9f3d89fc3753a7d775ec60660cb3a31d2e34d01a9c41d4988254df5
+- temp/general_cleanup_20261006/gqr0223-extended-before/test_hash_assets_force_completeness.ps1: SHA256 9d6916d91951d6765f5a338c119d66cde716db32b519580d85f850ac841e5683
+- temp/general_cleanup_20261006/gqr0223-extended-before/test_helpers.ps1: SHA256 670ae77f3eec1b14704b6f3396b87001b2359d8f454cb2976707bcc8316eb602
+- temp/general_cleanup_20261006/gqr0223-extended-before/test_jsonc_and_tracklist_parsing.ps1: SHA256 5cd5f5a750d56e103a679a5eb4a122497f8ba9b5aa326a3897405284705794f2
+- temp/general_cleanup_20261006/gqr0223-extended-before/update_known_discs_albums.ps1: SHA256 186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a
+
+</details>
+
+<!-- END IMPORT: GQR-0223 shared JSONC reader consolidation remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0230 exact regression and fingerprint selection remediation 20261008 SHA256:d748100b2dfda9118cfbc888fc4b240d17ee2277c61668b9078ced2710ca8a53 -->
+
+## GQR-0230 exact regression and fingerprint selection remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0230-remediation.md`
+- Imported SHA-256: `d748100b2dfda9118cfbc888fc4b240d17ee2277c61668b9078ced2710ca8a53`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0230 exact regression and fingerprint selection remediation 20261008
+
+- Revalidated accepted GQR-0230/GQF-0246 and original GQ1-CHUNK-0612/0614 observations against current primary generator, disc fingerprint workflow and aggregate sampling caller. Preserve shared JSONC, extraction identity and canonical publication repairs
+- Regression generator distinguishes an omitted list from a bound empty/blank/missing list, rejects blank lines/canonical duplicates and unknown/unavailable requested paths, and minimally validates existing selected skips. Generated records remain in memory until the exact generated/valid-skip set is accounted; combined generation reads pending component records before publication
+- Existing classification/hash/schema/provenance and canonical writer bodies retained. All four supported GOG table records moved unchanged ahead of selection preflight. The single writer loop publishes only after generation validation; this is not crash-atomic multi-file publication or rollback on writer failure
+- Disc workflow discovers/adopts the complete requested set before build/tool resolution or AcoustID setup. Bound empty/blank/duplicate/unknown/mixed requests fail. Selected existing folders without CUE sources fail preflight. Omitted selection retains the ordinary sorted all-folder workflow. Descriptor ambiguity, full source/tool generation identity, raw fingerprint record schema and bounded lookup remain separately owned
+- Pipeline preserves empty disc/album sample arrays and suppresses empty selected stages plus dependent merges; positive one/many samples are forwarded intact. Explicit merge and default unsampled all-stage behavior retained. Sampling cursor/dry-run policy remains separate BR-0622
+- Baseline primary actual child fixture fails because an empty list with Force generates all five unselected specs. Baseline disc fixture fails the admission-before-tool-resolution control; baseline aggregate fixture dispatches an empty disc sample and dependent merge. Original logs retained, no broader baseline matrix claim
+- Final actual copied-repository generator fixture covers empty/blank/missing lists, unknown/mixed/duplicate/canonical paths, spaces, invalid existing selected skip, valid skip/Force, unchanged unselected bytes/mtime and late unavailable source after a stale valid oracle. The stale oracle stays unchanged on late failure, proving no earlier pending write
+- Tiny pre-extracted fixtures generate all four supported GOG records, preserve source identities/expected file sets and account four valid skips. Absent selector generates all nine CD/combined/GOG specs with unchanged equivalent output bytes/mtime. These are identity/completion fixtures, not actual installer decoding
+- Final actual disc child workflow controls cover zero/one/many, unknown/mixed/duplicate/blank/no-CUE requests, spaces, exact success counts and unselected manifest bytes/mtime. Real child wrapper transports bound empty arrays; native CLI is the maintained recording/synthetic fixture, no media decoding or external lookup
+- Actual copied aggregate pipeline uses unchanged real discovery/sampling helpers and recording child stage scripts. Empty disc/pack samples dispatch no fingerprint or dependent merge; all-stage request with empty disc/pack samples dispatches only mission+album merge. Explicit merge remains two stages. Positive fractions forward one/two distinct available identities per source, default omits selectors and retains five stages. Required mission inventory is nonempty; no zero-mission sampling runtime claim
+- Final maintained HostOnly generator and publication aggregates each PASS1/1, zero failures/timeouts/skips/not-run, current fixture SHA. Both catalogs pass94 standalone JSON/374 support/214 standalone PowerShell and312 master entries. Scoped mixed/follow-up PowerShell quality and diff checks pass
+- Exact five-owner reconstruction proves only intended product changes, two fixture insertions and intentional fixture directory names changed. Existing publication/error/cache and original generator regression bodies retained. Product lines added: generator43, disc15, aggregate5; no line-removal or inherited-diff savings claim
+- No new top-level test, registration/timeout, native/inherited edit/build, APK/device/network/external request, actual media extraction, deferred malformed-media/security/resource-pressure probe, staging or commit. Concurrent installer/import and earlier cleanup preserved. GQR-0206 actual loader runtime and GQR-0133 deferred combined runtime gates remain open; broader goal active
+
+## Exact scopes and final observations
+
+```json
+{
+  "game_data/generate_regression_specs.ps1": {
+    "sha256": "a3b53599dab436176ea92c64073b12d68fe2f41c3f028af191da8eb96280357e",
+    "exact_owned_scope": true,
+    "line_delta": 43
+  },
+  "game_data/fingerprint_disc_tracks.ps1": {
+    "sha256": "6218239c327106c62feb5a9994d46668303fb106d98c3affbd8cb0287265b47f",
+    "exact_owned_scope": true,
+    "line_delta": 15
+  },
+  "game_data/update_all_fingerprints.ps1": {
+    "sha256": "6f3a86f89f7b73c08ccebefcc6b2a62527fb42621ba80d891c955d278fe1e018",
+    "exact_owned_scope": true,
+    "line_delta": 5
+  },
+  "android/tests/test_generate_regression_specs.ps1": {
+    "sha256": "b9fa9b1af509219436119a73e367b08582b62b05bce145c01cd017a0de74eb64",
+    "exact_owned_scope": true,
+    "line_delta": 147
+  },
+  "android/tests/test_fingerprint_manifest_publication.ps1": {
+    "sha256": "3a8d6dc8e87d943b019e7d36e9f6c06f0e22aa79165c9d539f24149ab754cbd8",
+    "exact_owned_scope": true,
+    "line_delta": 118
+  },
+  "publication_aggregate": {
+    "status": "PASS",
+    "exit_code": 0,
+    "source_sha256": "3a8d6dc8e87d943b019e7d36e9f6c06f0e22aa79165c9d539f24149ab754cbd8",
+    "run_id": "55f26a22240842a9a02e0adf98fd72c8",
+    "observed_utc": "2026-10-08T13:18:27.1534864Z"
+  },
+  "generator_aggregate": {
+    "status": "PASS",
+    "exit_code": 0,
+    "source_sha256": "b9fa9b1af509219436119a73e367b08582b62b05bce145c01cd017a0de74eb64",
+    "run_id": "d7714af24e2c48b393533f244c48c402",
+    "observed_utc": "2026-10-08T13:15:28.1128985Z"
+  },
+  "inherited_edits_or_savings": 0,
+  "no_crash_atomic_batch_claim": true
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0230-automation-catalog.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0230-disc-final.log: SHA256 5c91ba4858fae0484645b002b5c956c0e92e4710e818bfc58f68a6c224692c45
+- temp/general_cleanup_20261006/gqr0230-disc-negative.log: SHA256 3bc9179e7437d049c9288ab2580693b30db8e0d35d2b0334258b785f4d2f1723
+- temp/general_cleanup_20261006/gqr0230-disc-quality.log: SHA256 f50ab475bc6409eeae2da518befedc0c76935188dd0b0f26b096d759e4a904a1
+- temp/general_cleanup_20261006/gqr0230-extended-quality.log: SHA256 4d3f315569dd5d0b5e9b3235b0d3bcbaa564229f66fc8230eb1a328fc3c8f71a
+- temp/general_cleanup_20261006/gqr0230-final-automation-catalog.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0230-final-extended-quality.log: SHA256 4d3f315569dd5d0b5e9b3235b0d3bcbaa564229f66fc8230eb1a328fc3c8f71a
+- temp/general_cleanup_20261006/gqr0230-final-generator-aggregate.log: SHA256 03d20db76b55a1e50f3a0179a9fd2702ff5ae0cae59651b84902f030a30bc154
+- temp/general_cleanup_20261006/gqr0230-final-master-catalog.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0230-final-publication-aggregate.log: SHA256 d866e0190f6177519f9d5a07b1cbb07f70236172cc18ee5bc6a8bb97d1355896
+- temp/general_cleanup_20261006/gqr0230-final-quality.log: SHA256 f50ab475bc6409eeae2da518befedc0c76935188dd0b0f26b096d759e4a904a1
+- temp/general_cleanup_20261006/gqr0230-fixture-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0230-gog-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0230-master-catalog.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0230-negative.log: SHA256 cdc5aceaeb1672822d88aa31decdc0213395127de1500a80ae3927029f32a89f
+- temp/general_cleanup_20261006/gqr0230-one-disc-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0230-pipeline-negative.log: SHA256 4f6a78b60e8258f4e6ec194bea1fef77b58559e206804fe090465669386d7fed
+- temp/general_cleanup_20261006/gqr0230-primary-aggregate.log: SHA256 a7ac519f17793828b4bcd23e2f72b052eddfc806e807cc2f10871629875c3a84
+- temp/general_cleanup_20261006/gqr0230-quality.log: SHA256 1eec599c0260d3c4e1d7193df58aa0a44b3b21c9fb3f37fd376c918bfbac380e
+- temp/general_cleanup_20261006/gqr0230-report-retention.log: SHA256 5315367b04d5a1aa1b547e8d1cbb1a2bc25cae328479a5887464fcc55beef4fc
+- temp/general_cleanup_20261006/gqr0230-staging-quality.log: SHA256 5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43
+- temp/general_cleanup_20261006/gqr0230-verification.json: SHA256 0e32baf6eb3093376db48e03486a6c8644512824d600e5e0e374982d73425f11
+- temp/general_cleanup_20261006/gqr0230-before/generate_regression_specs.ps1: SHA256 720226dac6367234fa6868be1fe508128e0524480d2bbc85783815f81874d33f
+- temp/general_cleanup_20261006/gqr0230-before/test_generate_regression_specs.ps1: SHA256 c419cb830d4c1adca8432ba4f76c1b5ca477425d73bd1e4efa5e543a0089e65d
+- temp/general_cleanup_20261006/gqr0230-extended-before/fingerprint_disc_tracks.ps1: SHA256 05b63d7beab51d323ced6525194772ed79265530ebd1e97475cbe45ca6346635
+- temp/general_cleanup_20261006/gqr0230-extended-before/test_fingerprint_manifest_publication.ps1: SHA256 d8bbddf81c807b1a13d698543790378b45428c42eb7197bc8165dcd7796011ad
+- temp/general_cleanup_20261006/gqr0230-extended-before/update_all_fingerprints.ps1: SHA256 40ce70776a623f52aafb03a51d8d8169ab378ee3d3c7bbbfd4d8b72b94f111d7
+
+</details>
+
+<!-- END IMPORT: GQR-0230 exact regression and fingerprint selection remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0187 original D1 text domain implementation pending final runtime gates 20261008 SHA256:072cb07318e51d27145558926bb38ce5b954a3b85b289309a08cfba121fbc43e -->
+
+## GQR-0187 original D1 text domain implementation pending final runtime gates 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0187-partial.md`
+- Imported SHA-256: `072cb07318e51d27145558926bb38ce5b954a3b85b289309a08cfba121fbc43e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0187 original D1 text domain implementation pending final runtime gates 20261008
+
+- Revalidated current GQR-0187/GQF-0200 and original accepted text-count observation. D1 adds ordinal621 with N_TEXT_STRINGS622 despite unchanged107-element fallback table for514..620
+- Exactly two D1 header lines changed: restore original N_TEXT_STRINGS621, use native literal style for branch-added duplicate callsign message. Every other header byte, original D1 loader, paired D2 header/loader and previously dirty shared engine fixture preserved exactly. No fallback table expansion or replacement loader
+- Against original review base, D1 header delta drops one added and one removed line because the original count definition is restored. No net source line removal, paired extraction or broader minimization claim
+- Eight actual compiled native header/message controls pass both games, desktop/Android defines and normal/built-in text modes with a null text bank. Actual NET_DUMP_STRINGS(DUMP_DUPNAME) returns Duplicate callsign without loading a table. Original D1 count control fails at compile time; no baseline out-of-bounds runtime probe
+- Actual unchanged d1/main/text.c compiled under MSVC x86 AddressSanitizer and run against ten ordinary TXB payloads: synthetic514 with final newline,600 and621 with/without final newline, and five distinct production payloads from Mac, Europe, Brazil Anniversary, Destination Saturn and Test Flight HOG assets. All621 resulting pointers and string reads plus duplicate literal checked. Real PhysFS library handles reads; isolated adapter supplies openRead, error and case comparison boundaries. This is actual loader coverage, not complete game startup or rendered rejection coverage
+- Initial scratch harness compile errors (/TC treating a library as source; missing shared include) corrected. Matching WIN32 build define removes existing strutil declaration warning; final standalone control compiles without warnings. No product loader changes made to accommodate the harness
+- Minimum514 without final newline was not run: static original loader also subtracts one from its fallback index at that boundary, a pre-existing root outside the new count extension. This remaining newline gate needs explicit assessment before closure, not credit from the514 newline control
+- Paired full Windows build and actual Android Debug APK/all-three-ABI tasks pass. Scoped quality intentionally excludes inherited headers (No new files in scope); exact byte scope and git diff check establish style preservation. Existing Windows warnings outside edited header remain unchanged ownership
+- GQR-0187 stays TODO/GQF-0200 OPEN pending remaining minimum newline, actual duplicate-callsign rejection rendering and maintained loader integration gates. Header expression controls do not claim packet reception, a messagebox or network/device execution
+- GQR-0092 song-token contract was revalidated live but not edited; coordinated byte/physical-line/archive identity scope remains open. No malformed-media/security/resource-pressure reproduction, APK install, staging or commit. Concurrent installer/import and prior cleanup preserved; broader goal active
+
+## Exact source and runtime evidence
+
+```json
+{
+  "d1_header_sha256": "f3a32c66b5516aedbc0615fc626352f2dff2374cc76fb206b255a1e0beaf4e6c",
+  "exact_two_line_change": true,
+  "preserved_owners": {
+    "d1/main/text.c": "ee4fd4000bc6594bee92e0788202b1e4f0cf04a1a5d77800698bb9d0ff188e18",
+    "d2/main/text.h": "a1cf6b6020d1f660c6e754e3c64bf28a7f2221484efaf33b5b6457553bdd9d5e",
+    "d2/main/text.c": "aa34c2dbfd2270e0b67d566d98409bec3db199b336cf2add93af8601315c5709",
+    "android/tests/test_upstream_compat.cpp": "60414b6f44790784d4e5470748eedad0861caaa9f8dfcfaeb5e10ad6a387b151"
+  },
+  "inherited_delta_before": {
+    "added": 7,
+    "removed": 1
+  },
+  "inherited_delta_after": {
+    "added": 6,
+    "removed": 0
+  },
+  "header_controls": [
+    {
+      "android": false,
+      "exit_code": 0,
+      "count": 621,
+      "game": "d1",
+      "message": "Duplicate callsign",
+      "builtin": false
+    },
+    {
+      "android": false,
+      "exit_code": 0,
+      "count": 621,
+      "game": "d1",
+      "message": "Duplicate callsign",
+      "builtin": true
+    },
+    {
+      "android": true,
+      "exit_code": 0,
+      "count": 621,
+      "game": "d1",
+      "message": "Duplicate callsign",
+      "builtin": false
+    },
+    {
+      "android": true,
+      "exit_code": 0,
+      "count": 621,
+      "game": "d1",
+      "message": "Duplicate callsign",
+      "builtin": true
+    },
+    {
+      "android": false,
+      "exit_code": 0,
+      "count": 649,
+      "game": "d2",
+      "message": "Duplicate callsign",
+      "builtin": false
+    },
+    {
+      "android": false,
+      "exit_code": 0,
+      "count": 649,
+      "game": "d2",
+      "message": "Duplicate callsign",
+      "builtin": true
+    },
+    {
+      "android": true,
+      "exit_code": 0,
+      "count": 649,
+      "game": "d2",
+      "message": "Duplicate callsign",
+      "builtin": false
+    },
+    {
+      "android": true,
+      "exit_code": 0,
+      "count": 649,
+      "game": "d2",
+      "message": "Duplicate callsign",
+      "builtin": true
+    }
+  ],
+  "actual_loader_asan_results": [
+    {
+      "sha256": "4a304244be764c6d49324423fc7d03b80cbf52da9f4f5decad9122bc0c738e88",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "exit_code": 0,
+      "name": "synthetic-514-newline1"
+    },
+    {
+      "sha256": "93823337970fd52e85fdbe57a3f4dea8c8cbc5f7d62181fdb56fc4587a1f39a3",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "exit_code": 0,
+      "name": "synthetic-600-newline0"
+    },
+    {
+      "sha256": "1bbd1dda755ac98e1192bc7d14f6bda4b0f97b4a688c5c3ea96ea3b8b8c9c9e2",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "exit_code": 0,
+      "name": "synthetic-600-newline1"
+    },
+    {
+      "sha256": "f2fe2820e0cbf32b9a680d5f4ba859beac7cd4c89c26397ac17d8ae62a671183",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "exit_code": 0,
+      "name": "synthetic-621-newline0"
+    },
+    {
+      "sha256": "fbbce49fb3876daf64b3fba5a851d1f3c2fed7af83fd35b8e443224afe7c606d",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "exit_code": 0,
+      "name": "synthetic-621-newline1"
+    },
+    {
+      "sha256": "9c04503f717fb544b9757293138aac4ef104944fe93cf8d0fda68c22b651bc55",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "exit_code": 0,
+      "name": "production-9c04503f717f"
+    },
+    {
+      "sha256": "6f57a7e8ea98ed826ca202ae6d22e06d37b8b23697d254f8b3487d46201f63a8",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "exit_code": 0,
+      "name": "production-6f57a7e8ea98"
+    },
+    {
+      "sha256": "21ee279bceb05d93802388f7029b4af0684de75efe18d38a9b949cf68e5046f5",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "exit_code": 0,
+      "name": "production-21ee279bceb0"
+    },
+    {
+      "sha256": "96fc4312e957363e00c0ae251b34f53b0a60e4732fd161da82e6ee93c572abd1",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "exit_code": 0,
+      "name": "production-96fc4312e957"
+    },
+    {
+      "sha256": "e6ba7e448377c27ca12ca117434684e7faaa5517d73569d28ef0c0eb2a5f2584",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "exit_code": 0,
+      "name": "production-e6ba7e448377"
+    }
+  ],
+  "remaining_gates": [
+    "Minimum514 without final newline",
+    "Actual duplicate rejection rendering",
+    "Maintained loader integration coverage"
+  ]
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0187-android-build.log: SHA256 c8976312d59f77f7abebcd940f73be3e607a4a85668adee95b22fe3aa30a75b3
+- temp/general_cleanup_20261006/gqr0187-baseline-compile.log: SHA256 46af1ee8ab8ea9c66415697d8625167b4a6c4dd3d0705ff2f336dc06e3fd9e0e
+- temp/general_cleanup_20261006/gqr0187-d1-header-control.cpp: SHA256 442834210d9b357d9a76af6a037faf3774dafd1cb3bdf42ca351225ecce0821d
+- temp/general_cleanup_20261006/gqr0187-d2-header-control.cpp: SHA256 442834210d9b357d9a76af6a037faf3774dafd1cb3bdf42ca351225ecce0821d
+- temp/general_cleanup_20261006/gqr0187-header-controls.json: SHA256 c3ed7ccc185075b1d0bf70952563518db7211330bb0780b95664341daa14c58a
+- temp/general_cleanup_20261006/gqr0187-header-controls.log: SHA256 e79e96f95aac175aea8a3cb5f5fd96b65069138b7bbffbcfb4ea16ac25991b4b
+- temp/general_cleanup_20261006/gqr0187-loader-assets.json: SHA256 7094ea601a37447efa1a0ce471fa46d6c28de3be91e89cfe12d03d95b223a0de
+- temp/general_cleanup_20261006/gqr0187-loader-control.c: SHA256 97f854b2b585ecd4c77eb9ccc67d8a6aa77da6ccd0300a72b84ee4fbbbdc92f2
+- temp/general_cleanup_20261006/gqr0187-loader-results.json: SHA256 39911a7b3d79e49ad582e7de06b004bfc67ed1b9f8572a5c9b53e4b556401e57
+- temp/general_cleanup_20261006/gqr0187-loader.log: SHA256 10b281527547c9a8bc54544efa72e4159b0863aeb4f4ecb4a284ab0ff7ce0d56
+- temp/general_cleanup_20261006/gqr0187-quality.log: SHA256 f1dd03bb0eac82f261777f01b74470cb734c8f93bc93ef0dafef6029822a7182
+- temp/general_cleanup_20261006/gqr0187-report-retention.log: SHA256 5315367b04d5a1aa1b547e8d1cbb1a2bc25cae328479a5887464fcc55beef4fc
+- temp/general_cleanup_20261006/gqr0187-retention.log: SHA256 5315367b04d5a1aa1b547e8d1cbb1a2bc25cae328479a5887464fcc55beef4fc
+- temp/general_cleanup_20261006/gqr0187-verification.json: SHA256 02831957176dcc03a70ca7b2cec76b7f471db63c89590dd5d8b776aaf9445634
+- temp/general_cleanup_20261006/gqr0187-windows-build.log: SHA256 e6630cf25e63f15b2370b533cc81b1fdad42d548a43a36069847800f5f700359
+
+</details>
+
+<!-- END IMPORT: GQR-0187 original D1 text domain implementation pending final runtime gates 20261008 -->
+<!-- BEGIN IMPORT: GQR-0232 parsed automation template value resolution remediation 20261008 SHA256:50b922a2efdb9aa2b05d6deddb9a14968306f0bcd03002a885edee476240fcb8 -->
+
+## GQR-0232 parsed automation template value resolution remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0232-remediation.md`
+- Imported SHA-256: `50b922a2efdb9aa2b05d6deddb9a14968306f0bcd03002a885edee476240fcb8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0232 parsed automation template value resolution remediation 20261008
+
+- Revalidated GQR-0232/GQF-0248 and original GQ1-CHUNK-0669 against the current resolver. Prior shared JSONC/Get-ScriptDeps migration preserved. Current original function replaces variables in serialized JSON, corrupting ordinary quoted/backslash/newline text
+- Resolve only parsed string values recursively before serialization. Original game variable selection and per-option parameter merges retained. Property names are never substituted; replacement strings cannot become JSON records/steps. Numeric/bool/null values and nested/empty/singleton arrays retain their JSON type/shape
+- Resolve when strings before filtering, retaining original matching/removal behavior. Only evaluated when/retained string values require definitions; excluded step values are not evaluated. Referenced values recursively resolve with deterministic undefined-name and active-stack cycle rejection; literal dollar text remains literal. Hashtable variable lookup and cycle names are case-insensitive
+- Serialize the root step array once, with explicit InputObject and sufficient depth; serialization-depth warnings and final strict JSON parse errors fail before touching the prior output. Existing missing-source/parse-failed source return policy and final writer body preserved as separate ownership, no atomic multi-file or schema/provenance claim
+- Maintained existing parser/tracklist fixture executes the actual resolver. Original extended fixture fails strict parsing after ordinary quote/backslash/newline replacement. Final exact string tests cover Unicode/dollar text, recursive variables, literal property names, numeric/bool/null fields, arrays of arrays/nulls, parameter selection itself and option override of game filtering
+- Final zero/one/many filtered-step controls retain array roots. Missing variable, direct/indirect cycle and missing when variable fail before prior resolved-file bytes/mtime change. An excluded step with undefined value remains excluded without evaluation. Existing seven strict tracklists, ten migrated reader/index/dependency controls and actual index3/3 fixture retained
+- Isolated before/after resolver corpus examines380 current JSONC sources over563 declared-game/parameter-option cases. All551 ordinary resolvable cases have complete parsed-output equivalence. Twelve deliberately unmaterialized support cases (six templates, both games) now reject unresolved required wrapper values; original results contained those placeholders. Their robot/random-preview, graphics-preview and mission-batch wrappers fill values before direct use and do not use this resolver for those raw templates. No device execution or claim those builders' independent escaping is repaired
+- Final registered HostOnly parser aggregate PASS1/1, zero failures/timeouts/skips/not-run and exact current fixture SHA. Both catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries. Actual managed-emulator mocks, process-wait and master regeneration contract fixtures pass; no real emulator/device/server action
+- Final scoped PowerShell quality and exact whole-file scope/diff checks pass. Initial analyzer operation error and strict fixture missing-property setup were corrected/rechecked; final authoritative runs pass. No new top-level test/registration/timeout, inherited edit or minimization savings
+- No native/APK build, media decoding, external request, malformed-media/security/resource-pressure probe, staging or commit. Concurrent installer/import and prior cleanup retained. GQR-0187 text-domain runtime checkpoint and other accepted owners remain open; broader cleanup goal active
+
+## Exact scopes and authoritative observations
+
+```json
+{
+  "product_sha256": "84ed2a0e0ed751248662f5adb6d4378d3240b3162e3af261faa306b5fa13420e",
+  "fixture_sha256": "b68d6602af1cf3de4f95dae8a786cb7dea7350a8964abc47f564e6d2537b333f",
+  "all_other_helper_and_fixture_bytes_preserved": true,
+  "product_line_delta": 25,
+  "fixture_lines_added": 80,
+  "inherited_edit_or_savings": 0,
+  "registered_parser_aggregate": {
+    "status": "PASS",
+    "exit_code": 0,
+    "source_sha256": "b68d6602af1cf3de4f95dae8a786cb7dea7350a8964abc47f564e6d2537b333f",
+    "run_id": "1d1ce75da5794bf29deee3552910d11a",
+    "observed_utc": "2026-10-08T13:37:31.0482486Z"
+  },
+  "corpus": {
+    "source_files": 380,
+    "game_param_cases": 563,
+    "equivalent": 551,
+    "unmaterialized_support_cases": [
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: GAME\"",
+        "params": {},
+        "file": "test_base_robot_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: GAME\"",
+        "params": {},
+        "file": "test_base_robot_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: PREVIEW_ACTION\"",
+        "params": {},
+        "file": "test_graphics_preview_eligibility.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: PREVIEW_ACTION\"",
+        "params": {},
+        "file": "test_graphics_preview_eligibility.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: ZIP_FILE\"",
+        "params": {},
+        "file": "test_mission_zip_batch_import_metadata_launch.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: ZIP_FILE\"",
+        "params": {},
+        "file": "test_mission_zip_batch_import_metadata_launch.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: ZIP_FILE\"",
+        "params": {},
+        "file": "test_mission_zip_batch_import_metadata.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: ZIP_FILE\"",
+        "params": {},
+        "file": "test_mission_zip_batch_import_metadata.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: MISSION_ZIP\"",
+        "params": {},
+        "file": "test_random_level_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: MISSION_ZIP\"",
+        "params": {},
+        "file": "test_random_level_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: MISSION_ZIP\"",
+        "params": {},
+        "file": "test_robot_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d1"
+      },
+      {
+        "error": "Exception calling \"Replace\" with \"3\" argument(s): \"Unresolved template variable: MISSION_ZIP\"",
+        "params": {},
+        "file": "test_robot_preview.jsonc",
+        "status": "requires-wrapper-values",
+        "game": "d2"
+      }
+    ]
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0232-automation-catalog.log: SHA256 826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161
+- temp/general_cleanup_20261006/gqr0232-complete-quality.log: SHA256 051e385feb5afa439f227c543b5fc82b1739b30904e38924eab4d85732604110
+- temp/general_cleanup_20261006/gqr0232-corpus-results.json: SHA256 f026d07eeba1a6813705bd06350554c09083efbddec8b2b6a17a28d3d12428d7
+- temp/general_cleanup_20261006/gqr0232-corpus-sources.json: SHA256 f53dae358eea49b201f2631b10f18aab746f60439124aab3c0911e4e992468a1
+- temp/general_cleanup_20261006/gqr0232-corpus.log: SHA256 bef635e6e5e12ee19141109c0e789a5619bb8a1dc08debf787796d2e1a43149a
+- temp/general_cleanup_20261006/gqr0232-final-parser.log: SHA256 1a55ab8fc2bf694661f5c2b81451a0066b5e4f5f46c175c5d2b5d831693909fc
+- temp/general_cleanup_20261006/gqr0232-final-quality.log: SHA256 051e385feb5afa439f227c543b5fc82b1739b30904e38924eab4d85732604110
+- temp/general_cleanup_20261006/gqr0232-managed-runner.log: SHA256 b1c58d44f5b4583788b6f3fc96b851feb11f67f44d17f7a64a6d43fc10421f10
+- temp/general_cleanup_20261006/gqr0232-master-catalog.log: SHA256 2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753
+- temp/general_cleanup_20261006/gqr0232-negative.log: SHA256 fbead7257ce3d4b8e56bc837cf12bcb12cd74efe748ca4552f90b9a5fb9f4ec6
+- temp/general_cleanup_20261006/gqr0232-parser-aggregate.log: SHA256 0a3fbc62f56e31f114caf68dba4a9939a0bfd14717e38e9918e9165bbe52fcaa
+- temp/general_cleanup_20261006/gqr0232-parser.log: SHA256 2cce8e047dbcb9fd0cce6e3938cc0404668810d85c640159b7479e59d4681b8e
+- temp/general_cleanup_20261006/gqr0232-process-wait.log: SHA256 f06df3ddd1399d3f4cc275c73664045d1996e901b4eb1b13253985c8e0ae1a39
+- temp/general_cleanup_20261006/gqr0232-quality.log: SHA256 21da69580c76d4bf890c0ffa396cc733bfdf26bc20039c84c8c52bd846e154bc
+- temp/general_cleanup_20261006/gqr0232-regeneration-contract.log: SHA256 37b3e29e94f600b09e97de9f211f9564f7b64e5a47f48499cd38fc6e38c75e25
+- temp/general_cleanup_20261006/gqr0232-report-retention.log: SHA256 5315367b04d5a1aa1b547e8d1cbb1a2bc25cae328479a5887464fcc55beef4fc
+- temp/general_cleanup_20261006/gqr0232-verification.json: SHA256 fe76af87374ee6d46d964259acadc3e00e330fd62ecedbfdf58a8778208b82d8
+- temp/general_cleanup_20261006/gqr0232-before/test_helpers.ps1: SHA256 a3c0b19899b62d138cec241b6c244973cf6d4a6a0496b66ac0b76d9ad944643d
+- temp/general_cleanup_20261006/gqr0232-before/test_jsonc_and_tracklist_parsing.ps1: SHA256 6ee07c15f7cb3cc8df416a7b2a9276a0f7a3b9af8a6800044736e363e0511f09
+
+</details>
+
+<!-- END IMPORT: GQR-0232 parsed automation template value resolution remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0166 exact music sidecar schema version remediation 20261008 SHA256:3cad429d007fea9ed0ad6574afccef5af3609821845a4ed66d5f4bfcf634f482 -->
+
+## GQR-0166 exact music sidecar schema version remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0166-remediation.md`
+- Imported SHA-256: `3cad429d007fea9ed0ad6574afccef5af3609821845a4ed66d5f4bfcf634f482`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0166 exact music sidecar schema version remediation 20261008
+
+- Revalidated current loader against original GQ1-CHUNK-0197/GQF-0179 evidence. The narrowing root.value("version", 0) remained live. Require integer type and JSON equality to1, with no numeric conversion. Preserve every other parser, lookup, budget and swap-after-validation statement
+- Extend existing native fixture with focused --schema-version mode, registered as music_name_table_schema_version_tests. Both production mission/jukebox loaders accept supported integer1, reject15 unsupported numeric/type values plus missing version, retain prior lookup after every rejection, and allow supported empty table to replace prior data
+- Controls include1.0,1.5,1e0,zero/two/negative,4294967297,signed64 min/max,unsigned64 max,bool/null/string/array/object. All are tiny JSON metadata controls; no media decoding, malformed UTF8, duplicate-key or count-budget/resource-pressure suite executed
+- Original loader fails on exactly representable1.0 before later extreme cases, in both actual CMake Release and explicit NDEBUG compilation. Corrected focused CTest PASS1/1. Separate /DNDEBUG /O2 /W4 /WX build with forced compile-time NDEBUG guard passes both-table contract; no source compiler warning. First explicit NDEBUG attempt exposed legacy assert-only helper unused warning; positive mission setup now calls that helper, final warning-as-error build passes
+- Actual Android assembleDebug succeeds, paired D1/D2 native tasks across arm64-v8a/armeabi-v7a/x86_64. APK built, not installed. Existing CMake Release /DNDEBUG versus /UNDEBUG override and Gradle deprecation warnings retained; explicit NDEBUG control independently proves release oracle
+- Scoped mixed C++/CMake quality and scoped git diff check pass. Exact normalized-byte reconstruction proves only version check, focused fixture/CLI and one CTest registration; all prior test bodies and concurrent extraction CMake changes preserved
+- Original local acceptance requires numeric/extreme/fraction and prior-table production controls, release-safe oracle, extraction test and Android targets. Focused registered extraction test exercises those requirements completely. Full existing fixture includes separately deferred probes and remains unrun; broader assert-test and table-affinity owners remain open
+- No inherited edit or diff-minimization saving, security/resource-pressure probe, external request, device action, staging or commit. Broader cleanup goal active
+
+## Exact scopes and observations
+
+```json
+{
+  "source_sha256": {
+    "product": "4b0b2db93ba8fe6c22ea8cb2bf5ccd031fef2d1ac2681477e9f8e3dcebd40d31",
+    "fixture": "1998e11df49ea6ca7b76330c410cdc8e99296e148c00387ae7787330f8fed526",
+    "cmake": "5260d1a0cd79fb5c55242b3caeede9956b86e1a71d63331f90d2e1177eed4ab0"
+  },
+  "scope_proof": "Only root version check, focused fixture addition/CLI, and one CTest registration; all other normalized bytes preserved",
+  "inherited_changes": 0,
+  "android_objects": [
+    {
+      "abi": "arm64-v8a",
+      "game": "d1",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\arm64-v8a\\d1\\main\\CMakeFiles\\dxx-redux-d1.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467155.5707972
+    },
+    {
+      "abi": "arm64-v8a",
+      "game": "d2",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\arm64-v8a\\d2\\main\\CMakeFiles\\dxx-redux-d2.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467155.5677972
+    },
+    {
+      "abi": "armeabi-v7a",
+      "game": "d1",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\armeabi-v7a\\d1\\main\\CMakeFiles\\dxx-redux-d1.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467160.6259372
+    },
+    {
+      "abi": "armeabi-v7a",
+      "game": "d2",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\armeabi-v7a\\d2\\main\\CMakeFiles\\dxx-redux-d2.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467160.5756402
+    },
+    {
+      "abi": "x86_64",
+      "game": "d1",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\x86_64\\d1\\main\\CMakeFiles\\dxx-redux-d1.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467164.236503
+    },
+    {
+      "abi": "x86_64",
+      "game": "d2",
+      "path": "android\\app\\.cxx\\Debug\\585cr1v5\\x86_64\\d2\\main\\CMakeFiles\\dxx-redux-d2.dir\\C_\\local\\dxx-redux\\android\\app\\src\\main\\cpp\\shared\\music_name_table.cpp.o",
+      "mtime": 1791467164.238501
+    }
+  ],
+  "log_sha256": {
+    "gqr0166-quality.log": "55f7596b1f292a8564452556b33cd43f1ce8f6fb3209aa99f119450bfa4cafa9",
+    "gqr0166-ctest.log": "1d7d19dc84c8fdda354716569eaf324ef9575462d09823d96d6d366ef530ad46",
+    "gqr0166-ndebug.log": "fb4a5fdaf508a15626178c6f06369cf2e5def40c57e0bad6bcadc147ee27e2a6",
+    "gqr0166-android-build.log": "d195ab9f76b49254a443c260763efc332fc91b95231c06c7ed1ad739db97353a"
+  }
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0166 exact music sidecar schema version remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0168 HOG payload read lifetime remediation 20261008 SHA256:e448d7c023744b9b928e7461f9c5865062ecd214fa3e00deba60d361767627d7 -->
+
+## GQR-0168 HOG payload read lifetime remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0168-remediation.md`
+- Imported SHA-256: `e448d7c023744b9b928e7461f9c5865062ecd214fa3e00deba60d361767627d7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0168 HOG payload read lifetime remediation 20261008
+
+- Revalidated original GQ1-CHUNK-0201/GQF-0181 against current shared header. fread/ferror/fclose short-circuit leak remained live. Store read/error result, unconditionally close, then aggregate before publishing output. Every other production statement and caller interface preserved
+- Extend maintained fixture with --read-lifetime, register focused extraction CTest. Test translation unit interposes real stdio calls only within production header, retaining real file open/read/close. A valid one-track HOG supplies three expected bytes; controlled short read, read error and close failure model ordinary I/O failures without malformed media or allocation/resource pressure
+- Each of four cases checks one open/one close and actual OS descriptor invalidity: Windows GetHandleInformation(ERROR_INVALID_HANDLE), Linux fcntl(EBADF). Success publishes exact three bytes; all failures leave NULL/zero outputs after sentinel initialization. Close-error adapter really closes before reporting failure
+- Original helper passes success then fails short read with opens1/closes0 and real descriptor still open. Fixture immediately closes the leaked file before exit; no repeated leak/stress run. Corrected actual focused registered extraction CTest PASS1/1, all four mode observations recorded
+- Independent /DNDEBUG /O2 /W4 /WX Windows C11 compilation and GNU11 -DNDEBUG -O2 -Wall -Wextra -Werror Linux compilation both pass. Baseline/current use identical fixture bytes and original/current production headers; forced compile-time NDEBUG guard confirms oracle independence. Both compiler runs warning-free
+- Actual Android assembleDebug/paired D1/D2/all-three-ABI native builds pass. APK built, not installed. Existing CMake /DNDEBUG versus /UNDEBUG override and Gradle deprecation warnings retained
+- Scoped C/CMake quality and scoped diff checks pass. Exact normalized-byte reconstruction proves only read/close aggregation, focused fixture/CLI and one CTest registration. Concurrent extraction CMake, all original fixture bodies and handmade comments preserved. Product net+2 branch lines, zero inherited edit/savings
+- Full original HOG fixture contains deferred malformed/count-budget controls and remains unrun. Local accepted production fault/descriptor/output, registered extraction and Android gates are covered by focused suite; no broad media, allocator, security/resource-pressure, source-generation identity or caller-affinity closure claim
+- No device action, external request, staging or commit. Broader cleanup goal remains active
+
+## Exact scope and authoritative logs
+
+```json
+{
+  "source_sha256": {
+    "product": "2172a9040a9dee5202d23d1db79d75090367c37eee046a54195dc900c925e7b8",
+    "fixture": "cbf2e43295a647f2c6072e9077fc15c6768e0030d68ef3a179fa6e191b0109b9",
+    "cmake": "6409fadebc7861310c90e47b19eb9f87b22e0bb2b884e185b860f903b7b5dfc1"
+  },
+  "normalized_scope_proof": true,
+  "legacy_fixture_bodies_preserved": true,
+  "inherited_edits_or_savings": 0,
+  "product_net_lines_added": 2,
+  "log_sha256": {
+    "gqr0168-quality.log": "55f7596b1f292a8564452556b33cd43f1ce8f6fb3209aa99f119450bfa4cafa9",
+    "gqr0168-ctest.log": "4c65efdcf35ca7fe0f9e07e3ffb073db56d629d042eda353afea5f2af2e61478",
+    "gqr0168-ndebug.log": "85f77f7dc1b2d7d513b5b78fc29e6e376527cafda8dcdd579a7bbccb63c9fc52",
+    "gqr0168-linux.log": "d2e6f53f6e855d681e2a0f56038ed18d0759fb9d767b910613091938913a5510",
+    "gqr0168-android-build.log": "9d83d01b4e6d764e68179f497171217b60b4b6c70d649f2ffa4655d7c7438559"
+  }
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0168 HOG payload read lifetime remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0234 complete RNG trace admission remediation 20261008 SHA256:0600a00de4149f5f7f27f075789f940017899202e601a1b1a097e176d9279cbd -->
+
+## GQR-0234 complete RNG trace admission remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0234-remediation.md`
+- Imported SHA-256: `0600a00de4149f5f7f27f075789f940017899202e601a1b1a097e176d9279cbd`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0234 complete RNG trace admission remediation 20261008
+
+- Revalidated original0696/GQF-0250 against current native version1 writer and current comparer. Actual original extended CLI fixture fails because two empty inputs return PASS/exit0
+- Validate every raw record before any equality shortcut or supplemental filtering. Require exactly one first meta header, supported integer version1, nonnegative native count matching actual raw event inventory and boolean truncated=false. Complete zero-event traces and valid supplemental-only traces remain valid
+- Strict System.Text.Json parsing rejects malformed/comment/trailing-comma JSON, duplicate decoded property names, unknown or case-alias members, non-object/non-scalar records and unsupported event kinds. Explicit PowerShell7 requirement uses the already installed host runtime; Windows PowerShell5 execution is not claimed. Framework JSON reader fallback was investigated and rejected because it admits trailing commas; no weaker fallback added
+- Required event fields follow actual native writer: seq/frame/gt/call_count/line/file/func plus rand result or srand seed. Validate native uint64/uint32/int64/int32 domains and string/bool types; optional stream uint8, context boolean, object int32 triplet and uint32 states. No invented required flags or game-specific value limits. Whole-file storage budget remains GQR-0176
+- Preserve non-SIM/false-context exclusions, source-line/sequence diagnostic exclusions and existing mismatch origin/context output. Stable ordinal field ordering enables semantic member-order equality; all retained fields compare case-sensitively. Formatting-only matches do not mask later source-line notes. No replay divergence compensation
+- Maintained actual child CLI exercises invalid matching pairs plus independently invalid expected/actual inputs for empty/missing/duplicate/midstream header, JSON/type/range/count/completeness/record faults and invalid supplemental events. Positive controls include ordinary match/result mismatch diagnostics, zero-event and supplemental-only traces, diagnostic shifts, semantic case mismatch, srand, reordered records and supported native integer bounds
+- Final actual registered HostOnly aggregate PASS1/1, zero failures/timeouts/skips/not-run and current fixture SHA. Both catalogs pass94 JSON/374 support/214 PS and312 master entries; adjacent state comparer actual child CLI passes. First direct adjacent invocation inherited its intentional mismatch LASTEXITCODE; separate pwsh CLI is authoritative PASS/exit0
+- Actual existing paired native test_rng_seed_trace and libc targets build current (Ninja no work). All four production RNG/writer fixtures execute successfully; regenerated D1/D2 LCG and libc traces each contain16 validated raw events and8 comparable SIM events. Final paired comparisons PASS2/2, with8 FX events excluded only after validation. Native trace source and executable hashes recorded; not a full gameplay/device replay
+- Final scoped PowerShell quality and diff checks pass. Exact normalized reconstruction preserves all comparer code outside validation/canonicalization/diagnostic integration and all fixture code outside child CLI/new controls. No new runner/catalog/timeout; zero inherited source edit or minimization saving
+- Tiny trace metadata only; no media decoding, resource-pressure, security or allocation-fault probes, native product change, APK/device/server/network action, staging or commit. Concurrent installer/import and earlier cleanup retained; broader goal active
+
+## Exact scopes and authoritative evidence
+
+```json
+{
+  "product_sha256": "9c1a538bf9be5503e8eb79604ab048f10a71c19b69820e4fcb9eb0c224898bc6",
+  "fixture_sha256": "e3c9a546e5cdbaf43785371fb711a57202b424d7df5d32bdcf295a1be81d048d",
+  "exact_normalized_scope_proof": true,
+  "named_cli_checks": 134,
+  "hostonly": {
+    "name": "test_input_demo_rng_trace_compare",
+    "type": "ps1",
+    "requires": "none",
+    "status": "PASS",
+    "started_utc": "2026-10-08T14:04:28.1639677Z",
+    "observed_utc": "2026-10-08T14:05:12.9266871Z",
+    "run_id": "b29187d0acc547ae99f0d624c6bc74a4",
+    "commit": "1ee56908299b870fef1852c3f0e7586844890652",
+    "dirty": true,
+    "runtime": "Microsoft Windows NT 10.0.26200.0; PowerShell 7.6.6",
+    "source": "android/tests/test_input_demo_rng_trace_compare.ps1",
+    "source_sha256": "e3c9a546e5cdbaf43785371fb711a57202b424d7df5d32bdcf295a1be81d048d",
+    "arguments": "null",
+    "exit_code": 0,
+    "elapsed": "00:44",
+    "reason": "",
+    "log": "C:\\local\\dxx-redux\\temp\\test_reports\\test_input_demo_rng_trace_compare_20261008_070415.log",
+    "report": "C:\\local\\dxx-redux\\temp\\test_reports\\report_20261008_070415.md"
+  },
+  "native": [
+    {
+      "game": "d1",
+      "backend": "lcg",
+      "trace_sha256": "4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9",
+      "exe_sha256": "b0265723b4a07e6c5d950267f9534863030a1867902c948db0578d93982eb503",
+      "events": 16,
+      "comparable": 8,
+      "supplemental": 8
+    },
+    {
+      "game": "d1",
+      "backend": "libc",
+      "trace_sha256": "f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a",
+      "exe_sha256": "99d65422e04cbbda897f1bed16ed9e9d6ff1349d7f9c3e9b52e1d6e37a919bb9",
+      "events": 16,
+      "comparable": 8,
+      "supplemental": 8
+    },
+    {
+      "game": "d2",
+      "backend": "lcg",
+      "trace_sha256": "4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9",
+      "exe_sha256": "81d1f4682a9228d43c63759ab2f6483fbb722af0cbb3f8e72e752ccec2e72b19",
+      "events": 16,
+      "comparable": 8,
+      "supplemental": 8
+    },
+    {
+      "game": "d2",
+      "backend": "libc",
+      "trace_sha256": "f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a",
+      "exe_sha256": "64815fd4f641233d249830f9dd3545cf8dffb930928dc50537795119a1fcc3ed",
+      "events": 16,
+      "comparable": 8,
+      "supplemental": 8
+    }
+  ],
+  "native_source_sha256": {
+    "android\\app\\src\\main\\cpp\\shared\\input_demo_rng_trace.c": "2304e59927bbec88b55d825041ea9db56fd5dd1bb5d4ee4cc404c9e1e01e8aec",
+    "android\\tests\\test_rng_seed_trace.cpp": "712049f7f781424517f4210dd45608c6baa029c08356975c1907a93b93afbffa",
+    "d1\\maths\\rand.c": "4e590cfd2764c4b568e530733f5a46f97c2bb7894fa7af1a6fdca8363343b3f3",
+    "d2\\maths\\rand.c": "996be8dd92ba383cb54d3a55dd26b24dd1ccbb3a8acf22103fbd0db1b6dff875"
+  },
+  "log_sha256": {
+    "gqr0234-quality.log": "f50ab475bc6409eeae2da518befedc0c76935188dd0b0f26b096d759e4a904a1",
+    "gqr0234-hostonly.log": "93806cee1cb6726659189820773eaae8baae722f2b23a1877c851ab312d75e81",
+    "gqr0234-native-final.log": "edcd4b98ee4e2f2af2323db81cded73265b2705a5fa6fa4d29f5cda7c0dc0746",
+    "gqr0234-catalog.log": "826577611e784751db77196a3b266bf386d6f1962003f65daf98589a5a8fd161",
+    "gqr0234-master-catalog.log": "2495cc40fdb46a680c68a644d8682c59787bceb954d044ead0de665a274c8753",
+    "gqr0234-state-compare.log": "d938fa189912f8776c3deb31a6bec42f403f57b9c8e3ed936bdb076caf6bd61c"
+  },
+  "inherited_edits_or_savings": 0
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0234 complete RNG trace admission remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0217 secret origin admission implementation pending native runtime gates 20261008 SHA256:94f190e042508846be6b0ca720a37ca2acaca3a80aa29ee726ee495ab0d42188 -->
+
+## GQR-0217 secret origin admission implementation pending native runtime gates 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0217-checkpoint.md`
+- Imported SHA-256: `94f190e042508846be6b0ca720a37ca2acaca3a80aa29ee726ee495ab0d42188`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0217 secret origin admission implementation pending native runtime gates 20261008
+
+- Revalidated original0503/GQF-0232 against current policy and traced GameFileFormats, MissionZip validity filter and ModManager before-publication admission. mapNotNull still drops invalid declared origin tokens and promotes a later valid token
+- Preserve every token position with invalid zero sentinel, already rejected by existing1..level-count validation. Remove now-redundant empty-list check. Valid first/multiple-origin behavior remains; no engine/format/consumer-interface change
+- Actual original shared policy focused Gradle/JUnit negative fails on D1 empty first token followed by2: descriptor accepted. Retained XML proves assertion and actual failing test, rather than setup/build failure
+- Maintained shared parser and GameFileFormats projection exercise both D1/MSN/RDL and D2/MN2/RL2.64 invalid combinations per boundary: blank/bad/positive-negative overflow/wrap alias/zero/negative/out-of-range, alone/first/later/middle. Invalid secret rows never publish name/origin; valid first/multiple/whitespace controls preserve first declared origin
+- Maintained actual MissionZip file/stream controls use independently constructed structurally complete tiny HOG catalog plus descriptor. Eight valid controls retain first origin;64 invalid origin descriptors reject on both routes and actual ModManager replacement attempt. Existing prior.zip owner, registered mod list, complete owned archive/manifest bytes and mtimes remain equal after every failure; source archive bytes/mtime also retained, registry reload preserves prior owner
+- These are tiny descriptor/ordinary valid ZIP-HOG catalog controls, not media/level decoding. Payload fixtures do not establish loadable engine levels; that separate owner and native runtime acceptance are not claimed
+- Final Gradle actual selected JUnit6/6, zero skipped/failures/errors: four shared-policy methods including original two, one projection method and one archive/registration method. Actual Android assembleDebug passes with paired/all-ABI native tasks current/up-to-date. APK built, not installed; existing Gradle deprecation warnings retained
+- Scoped Kotlin quality and diff checks pass. Exact normalized-byte reconstruction proves only two production lines and inserted maintained fixture methods/import; all original fixture bodies preserved. Existing broader malformed/media/resource-pressure methods unrun. No new top-level runner/registration/timeout
+- GQR-0217 remains TODO/GQF-0232 OPEN. Paired native mission secret lists and relevant Android runtime integration remain required before closure. Shared/JVM controls and APK build do not substitute for those gates; totals unchanged75 DONE/176 TODO/1 DEFERRED
+- No inherited source edit/minimization saving, device/native product action, security/resource-pressure probe, staging or commit. Concurrent installer/import and prior cleanup preserved, broader goal active
+
+## Exact scope and authoritative evidence
+
+```json
+{
+  "source_sha256": {
+    "android\\mission-metadata-core\\src\\main\\kotlin\\com\\dxxredux\\app\\MissionDescriptorPolicy.kt": "ab16555fc5bddf21d91c93dedab45755bb679bac5d74922562fcaeef6ef94f83",
+    "android\\mission-metadata-core\\src\\test\\kotlin\\com\\dxxredux\\app\\MissionDescriptorPolicyTest.kt": "eb9958fa0d6d5d901461d63a4faa984b2f6a5839508799459768198b1f08db5a",
+    "android\\app\\src\\test\\java\\com\\dxxredux\\app\\GameFileFormatsTest.kt": "3db2957c49b7f815f37af8158df365099ffe6eb2d49596583f6eeb86cdb0f123",
+    "android\\app\\src\\test\\java\\com\\dxxredux\\app\\MissionZipTest.kt": "43be488a2bbd4fa1d61ae7f90d18be3c86882acd040a897e3f402265eb7a807c"
+  },
+  "normalized_scope_proof": true,
+  "original_fixture_bodies_preserved": true,
+  "junit": [
+    {
+      "file": "gqr0217-policy.xml",
+      "sha256": "0d9a54fcbbe87fc8296bc3fc15fd3e1b06d4ed533dcd40adca517f5facbedb37",
+      "tests": 4,
+      "testcases": [
+        "preservesFirstValidSecretOriginIncludingMultipleOrigins",
+        "parsesLevelsSecretsModesAndEnhancedName",
+        "parsesD2xNameWithoutOrdinaryName",
+        "rejectsInvalidSecretOriginTokensWithoutPromotingLaterOnes"
+      ]
+    },
+    {
+      "file": "gqr0217-game-formats.xml",
+      "sha256": "067d8252c2afc98146d5072199cbf6a0b5b741e982fa1da692af68c6e56d4634",
+      "tests": 1,
+      "testcases": [
+        "preservesExactSecretOriginsAcrossMetadataProjection"
+      ]
+    },
+    {
+      "file": "gqr0217-archive.xml",
+      "sha256": "70b2061715d4d8d08b33b67fd83798396c99aeddc2f38729e2a395d0275a5876",
+      "tests": 1,
+      "testcases": [
+        "secretOriginAdmissionPreservesRegisteredOwner"
+      ]
+    }
+  ],
+  "invalid_origin_controls_per_boundary": 64,
+  "valid_module_origin_controls": 10,
+  "valid_projection_origin_controls": 8,
+  "valid_archive_origin_controls": 8,
+  "archive_admission_routes": [
+    "file",
+    "stream"
+  ],
+  "actual_import_owner_controls": 64,
+  "inherited_edits_or_savings": 0,
+  "product_net_line_delta": 0,
+  "log_sha256": {
+    "gqr0217-baseline.log": "e2d2d63f645d9b46fea4c92a8b95ed6691796a8c1ae66c76543ad73d241f204b",
+    "gqr0217-baseline.xml": "d7201f34410ed63579f6546a01c4b3a5bc441943be5037a922966a0cdacad47a",
+    "gqr0217-quality.log": "2c94755b067008fe78aa7b9e7a05b2a67eec3ea762e4938ec063e791450942fc",
+    "gqr0217-tests-build.log": "98cb38b3c9f4068585c84827b46286a53304ef62d04cce87c5ae8c4df865c192"
+  },
+  "remaining": [
+    "paired actual native mission secret-list loading",
+    "relevant Android runtime integration"
+  ]
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0217 secret origin admission implementation pending native runtime gates 20261008 -->

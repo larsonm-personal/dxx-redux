@@ -346,9 +346,22 @@ object DiscImportBridge {
         sowPath: String,
         outputDir: String,
         progress: ExtractProgress? = null,
-        appendExisting: Boolean = false,
         attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
-    ): Int = nativeExtractSowFiles(sowPath, outputDir, progress, appendExisting, attempt.state)
+    ): Int = extractSowArchives(listOf(sowPath), outputDir, progress, attempt)
+
+    /** Assemble complete volumes using their native continuation metadata */
+    fun extractSowArchives(
+        paths: List<String>,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
+    ): Int = nativeExtractSowArchives(paths.toTypedArray(), outputDir, progress, attempt.state)
+
+    fun extractSowDirectory(
+        directory: String,
+        progress: ExtractProgress? = null,
+        attempt: DiscExtractionAttempt = DiscExtractionAttempt(),
+    ): Int = nativeExtractSowArchives(null, directory, progress, attempt.state)
 
     // ── Native methods ────────────────────────────────────────────
 
@@ -402,11 +415,10 @@ object DiscImportBridge {
 
     private external fun nativeScanSowFiles(dirPath: String): Array<String>?
 
-    private external fun nativeExtractSowFiles(
-        sowPath: String,
+    private external fun nativeExtractSowArchives(
+        paths: Array<String>?,
         outputDir: String,
         progress: ExtractProgress?,
-        appendExisting: Boolean,
         attemptState: LongArray,
     ): Int
 }

@@ -56,6 +56,22 @@ try {
         }
     }
 
+    $commentedConfig = @'
+{
+    "match_threshold": /* complete value */ 0.65,
+    "duration_tolerance": 0.10,
+    "note": "https://example.invalid/a//b,} /* literal */ quote \" and slash \\",
+}
+'@
+    $commented = Get-DxxFingerprintMatchingConfig -Path (Write-Config -Name 'comments.jsonc' -Content $commentedConfig)
+    if ($commented.MatchThreshold -ne 0.65 -or $commented.DurationTolerance -ne 0.10) {
+        throw 'Valid comments and quoted comment markers changed fingerprint matching values'
+    }
+    foreach ($splitFraction in @('0/* gap */.65', '0.6/* gap */5', '6.5/* gap */e-1', '6.5e/* gap */-1')) {
+        Assert-ConfigRejected -Name 'split_fraction.jsonc' `
+            -Content ('{"match_threshold":' + $splitFraction + ',"duration_tolerance":0.10}')
+    }
+
     $missingRejected = $false
     try {
         Get-DxxFingerprintMatchingConfig -Path (Join-Path $testRoot 'missing.json') | Out-Null
@@ -99,8 +115,7 @@ try {
     }
 
     $discDbPath = Join-Path $repoRoot 'android\app\src\main\assets\known_discs.jsonc'
-    $discDbText = Get-Content -LiteralPath $discDbPath -Raw
-    $discDb = ($discDbText -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
+    $discDb = Read-JsoncFile -Path $discDbPath
     $fixtureTrack = $discDb.discs.tracks | Where-Object {
         $_.type -eq 'audio' -and $_.chromaprint -and $_.duration_ms
     } | Select-Object -First 1

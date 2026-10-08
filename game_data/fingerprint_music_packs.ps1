@@ -30,6 +30,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\normalized_json_text.ps1"
 . "$repoRoot\android\helpers\powershell_compat.ps1"
 . "$repoRoot\android\helpers\fingerprint_source_identity.ps1"
+. "$repoRoot\android\helpers\jsonc.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
 
@@ -72,11 +73,8 @@ $acoustIdKey = $null
 if (-not $SkipAcoustId) {
     $configPath = "$repoRoot/android/acoustid_config.jsonc"
     if (Test-Path $configPath) {
-        $raw = Get-Content $configPath -Raw
-        # Strip JSONC comments
-        $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
         try {
-            $cfg = $stripped | ConvertFrom-Json
+            $cfg = Read-JsoncFile -Path $configPath
             $acoustIdKey = $cfg.api_key
         } catch {
             Write-Warning "Failed to parse acoustid_config.jsonc: $_"
@@ -324,10 +322,8 @@ foreach ($archive in $archives) {
     # failures cannot erase a previously reviewed result.
     $existingTracks = @{}
     if (Test-Path $infoFile) {
-        $raw = Get-Content $infoFile -Raw
-        $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
         try {
-            $existing = $stripped | ConvertFrom-Json
+            $existing = Read-JsoncFile -Path $infoFile
             foreach ($t in $existing.tracks) {
                 $existingTracks[$t.filename] = $t
             }

@@ -10,6 +10,32 @@ import java.io.File
 
 class GameFileFormatsTest {
     @Test
+    fun preservesExactSecretOriginsAcrossMetadataProjection() {
+        for ((descriptor, level) in listOf("msn" to "rdl", "mn2" to "rl2")) {
+            for ((origins, first) in listOf("1" to 1, "2" to 2, "1,2" to 1, "2,1" to 2)) {
+                val parsed =
+                    GameFileFormats.parseMissionDescriptor(
+                        "sample.$descriptor",
+                        "name = Sample\nnum_levels = 2\none.$level\ntwo.$level\nnum_secrets = 1\nsecret.$level,$origins\n",
+                    )
+                assertTrue(parsed.valid)
+                assertEquals(listOf(first), parsed.secretLevelOrigins)
+            }
+            for (token in listOf("", "bad", "2147483648", "-2147483649", "4294967297", "0", "-1", "3")) {
+                for (origins in listOf(token, "$token,2", "1,$token", "1,$token,2")) {
+                    val parsed =
+                        GameFileFormats.parseMissionDescriptor(
+                            "sample.$descriptor",
+                            "name = Sample\nnum_levels = 2\none.$level\ntwo.$level\nnum_secrets = 1\nsecret.$level,$origins\n",
+                        )
+                    assertFalse("$descriptor origins '$origins'", parsed.valid)
+                    assertTrue(parsed.secretLevelOrigins.isEmpty())
+                }
+            }
+        }
+    }
+
+    @Test
     fun normalizesDxaSuffixesAndLabelsFiles() {
         assertEquals("dxa", GameFileFormats.extensionOf("uud1sp.dxa (1)"))
         assertTrue(GameFileFormats.isDxa("uud1sp.dxa (1)"))

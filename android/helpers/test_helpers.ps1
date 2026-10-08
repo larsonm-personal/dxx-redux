@@ -1073,10 +1073,9 @@ function Get-ScriptDeps {
     )
     if (-not (Test-Path $ScriptPath)) { return $null }
     $raw = Get-Content $ScriptPath -Raw
-    $raw = [regex]::Replace($raw, '//.*', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
     try {
-        $arr = $raw | ConvertFrom-Json
+        $arr = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath |
+            ConvertFrom-Json -ErrorAction Stop
         if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info._deps) {
             $deps = @($arr[0]._info._deps)
             if ($Vars.Count -gt 0) {
@@ -2246,29 +2245,54 @@ function Resolve-TestScript {
         }
     }
 
-    # Filter by "when" and remove _info elements
+    function Resolve-TemplateString {
+        param([string]$Text, [string[]]$Stack = @())
+
+        return [regex]::Replace($Text, '\$\{([^{}]+)\}', {
+                param($match)
+                $name = $match.Groups[1].Value
+                if (-not $vars.ContainsKey($name)) { throw "Unresolved template variable: $name" }
+                if ($Stack -contains $name) { throw "Cyclic template variable: $($Stack -join ' -> ') -> $name" }
+                Resolve-TemplateString -Text ([string]$vars[$name]) -Stack @($Stack + $name)
+            })
+    }
+
+    function Resolve-TemplateValue {
+        param([AllowNull()]$Value)
+
+        if ($Value -is [string]) { return Resolve-TemplateString -Text $Value }
+        if ($Value -is [array]) {
+            $items = [object[]]::new($Value.Count)
+            for ($i = 0; $i -lt $Value.Count; $i++) {
+                $items[$i] = Resolve-TemplateValue -Value $Value[$i]
+            }
+            return , $items
+        }
+        if ($Value -is [PSCustomObject]) {
+            foreach ($property in $Value.PSObject.Properties) {
+                $property.Value = Resolve-TemplateValue -Value $property.Value
+            }
+        }
+        return , $Value
+    }
+
+    # Resolve filtering first; excluded step values need no variables for this game
     $filtered = @()
     foreach ($step in $arr) {
         if ($step._info) { continue }
         $whenVal = $step.when
-        if ($whenVal -is [string] -and $vars.Count -gt 0) {
-            foreach ($k in $vars.Keys) {
-                $whenVal = $whenVal.Replace("`${$k}", $vars[$k])
-            }
-        }
+        if ($whenVal -is [string]) { $whenVal = Resolve-TemplateString -Text $whenVal }
         if ($whenVal -and $whenVal -ne $GameId) { continue }
         # Remove the "when" property from output
         if ($whenVal) {
             $step.PSObject.Properties.Remove('when')
         }
-        $filtered += $step
+        $filtered += Resolve-TemplateValue -Value $step
     }
 
-    # Serialize to JSON and do variable substitution
-    $jsonOut = ConvertTo-Json $filtered -Depth 10 -Compress
-    foreach ($k in $vars.Keys) {
-        $jsonOut = $jsonOut.Replace("`${$k}", $vars[$k])
-    }
+    # Escape resolved values once and validate before touching the prior output
+    $jsonOut = ConvertTo-Json -InputObject $filtered -Depth 100 -Compress -WarningAction Stop
+    $jsonOut | ConvertFrom-Json -ErrorAction Stop | Out-Null
 
     # Write to temp file
     $tempDir = Join-Path (Split-Path $ScriptPath) ".resolved"

@@ -63,6 +63,8 @@ try {
     if ($ledger.Contains(' => ')) { throw 'Review scope contains abbreviated rename notation' }
     if ($ledger -notmatch 'whole diff') { throw 'No-hunk changes lost their review scope' }
     Write-Host 'Review ledger rename, edited rename, mode, Unicode, add/delete and modified-file generation: PASS'
+    & python (Join-Path $PSScriptRoot 'review_ledger_git_paths_fixture.py') $fixture (Join-Path $repoRoot $helper)
+    if ($LASTEXITCODE -ne 0) { throw 'Canonical Git path fixture failed' }
 } finally {
     $resolved = [IO.Path]::GetFullPath($fixture)
     $expectedParent = [IO.Path]::GetFullPath((Join-Path $repoRoot 'android/temp')) + [IO.Path]::DirectorySeparatorChar

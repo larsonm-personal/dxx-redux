@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+#requires -Version 7.0
 param(
     [Parameter(Mandatory = $true)]
     [string]$ExpectedPath,
@@ -63,76 +64,123 @@ function Get-LineSummary {
     return $parts -join ' '
 }
 
+function Assert-TraceInteger {
+    param([hashtable]$Record, [string]$Key, [decimal]$Minimum, [decimal]$Maximum)
+
+    $value = $Record[$Key]
+    if (($value -isnot [long] -and $value -isnot [ulong]) -or
+        [decimal]$value -lt $Minimum -or [decimal]$value -gt $Maximum) {
+        throw "Invalid integer field '$Key'"
+    }
+}
+
 function Convert-JsonLineToRecord {
     param([string]$Line)
 
-    if ([string]::IsNullOrWhiteSpace($Line)) {
-        return $null
-    }
+    # Strict native JSON, including member identity, before any comparison or filtering
+    $document = [System.Text.Json.JsonDocument]::Parse($Line)
     try {
-        return ConvertFrom-CompatibleJsonHashtable -Json $Line
-    } catch {
-        return $null
-    }
-}
-
-function Test-IsFalseLike {
-    param([object]$Value)
-
-    if ($Value -is [bool]) {
-        return -not $Value
-    }
-    if ($null -eq $Value) {
-        return $false
-    }
-    return @('0', 'false') -contains $Value.ToString().ToLowerInvariant()
-}
-
-function Test-IsMetaLine {
-    param([string]$Line)
-
-    return (Get-LineSummary -Line $Line) -eq 'type=meta'
+        if ($document.RootElement.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) {
+            throw 'Record must be a JSON object'
+        }
+        $record = @{}
+        foreach ($property in $document.RootElement.EnumerateObject()) {
+            if ($record.ContainsKey($property.Name)) { throw "Duplicate field '$($property.Name)'" }
+            $value = $property.Value
+            switch ($value.ValueKind.ToString()) {
+                String { $record[$property.Name] = $value.GetString() }
+                True { $record[$property.Name] = $true }
+                False { $record[$property.Name] = $false }
+                Number {
+                    $signed = [long]0
+                    $unsigned = [ulong]0
+                    if ($value.TryGetInt64([ref]$signed)) { $record[$property.Name] = $signed }
+                    elseif ($value.TryGetUInt64([ref]$unsigned)) { $record[$property.Name] = $unsigned }
+                    else { throw "Invalid integer field '$($property.Name)'" }
+                }
+                default { throw "Invalid scalar field '$($property.Name)'" }
+            }
+        }
+        if ($record.type -isnot [string] -or $record.type -cnotin @('meta', 'rand', 'srand')) {
+            throw 'Unsupported record type'
+        }
+        if ($record.type -ceq 'meta') {
+            $allowed = @('type', 'version', 'events', 'truncated')
+            Assert-TraceInteger $record 'version' 1 1
+            Assert-TraceInteger $record 'events' 0 '18446744073709551615'
+            if ($record.truncated -isnot [bool] -or $record.truncated) { throw 'Trace is truncated or lacks a boolean completeness flag' }
+        } else {
+            $allowed = @('type', 'seq', 'frame', 'gt', 'call_count', 'stream', 'has_context',
+                'ctx_obj', 'ctx_sig', 'ctx_id', 'state_before', 'state_after', 'line', 'file', 'func')
+            Assert-TraceInteger $record 'seq' 0 '18446744073709551615'
+            Assert-TraceInteger $record 'frame' 0 4294967295
+            Assert-TraceInteger $record 'gt' '-9223372036854775808' '9223372036854775807'
+            Assert-TraceInteger $record 'call_count' 0 4294967295
+            Assert-TraceInteger $record 'line' -2147483648 2147483647
+            foreach ($key in @('file', 'func')) {
+                if ($record[$key] -isnot [string]) { throw "Invalid string field '$key'" }
+            }
+            foreach ($key in @('state_before', 'state_after')) {
+                if ($record.ContainsKey($key)) { Assert-TraceInteger $record $key 0 4294967295 }
+            }
+            if ($record.ContainsKey('stream')) { Assert-TraceInteger $record 'stream' 0 255 }
+            if ($record.ContainsKey('has_context') -and $record.has_context -isnot [bool]) {
+                throw 'Invalid boolean context flag'
+            }
+            $objectFields = @('ctx_obj', 'ctx_sig', 'ctx_id')
+            $present = @($objectFields | Where-Object { $record.ContainsKey($_) })
+            if ($present.Count -ne 0 -and $present.Count -ne 3) { throw 'Incomplete object context' }
+            foreach ($key in $present) { Assert-TraceInteger $record $key -2147483648 2147483647 }
+            if ($record.type -ceq 'rand') {
+                $allowed += 'result'
+                Assert-TraceInteger $record 'result' -2147483648 2147483647
+            } else {
+                $allowed += 'seed'
+                Assert-TraceInteger $record 'seed' 0 4294967295
+            }
+        }
+        foreach ($key in $record.Keys) {
+            if ($allowed -cnotcontains $key) { throw "Unsupported field '$key'" }
+        }
+        return $record
+    } finally { $document.Dispose() }
 }
 
 function Test-IsSupplementalEvent {
-    param([string]$Line)
+    param([hashtable]$Record)
 
-    $record = Convert-JsonLineToRecord -Line $Line
-    if (-not $record) {
-        return $false
-    }
-    if ($record.ContainsKey('type') -and $record.type -eq 'meta') {
-        return $false
-    }
-    if ($record.ContainsKey('stream') -and [int]$record.stream -ne 0) {
-        return $true
-    }
-    if ($record.ContainsKey('has_context') -and (Test-IsFalseLike -Value $record.has_context)) {
-        return $true
-    }
-    return $false
+    return ($Record.ContainsKey('stream') -and $Record.stream -ne 0) -or
+    ($Record.ContainsKey('has_context') -and -not $Record.has_context)
 }
 
 function Get-ComparableTrace {
-    param([string[]]$Lines)
+    param([AllowEmptyCollection()][string[]]$Lines, [string]$Label)
 
+    if ($Lines.Count -eq 0) { throw "Invalid RNG trace ${Label}: missing meta header" }
     $eventLines = New-Object System.Collections.Generic.List[string]
     $metaLine = $null
     $skippedCount = 0
-
     for ($index = 0; $index -lt $Lines.Length; $index++) {
         $line = $Lines[$index]
-        if ($index -eq 0 -and (Test-IsMetaLine -Line $line)) {
-            $metaLine = $line
-            continue
+        try {
+            $record = Convert-JsonLineToRecord -Line $line
+            if ($index -eq 0) {
+                if ($record.type -cne 'meta') { throw 'First record must be the meta header' }
+                $metaLine = $line
+                $eventCount = $record.events
+                continue
+            }
+            if ($record.type -ceq 'meta') { throw 'Duplicate or midstream meta header' }
+            if (Test-IsSupplementalEvent -Record $record) { $skippedCount++ }
+            else { $eventLines.Add($line) }
+        } catch {
+            throw "Invalid RNG trace $Label at line $($index + 1): $_"
         }
-        if (Test-IsSupplementalEvent -Line $line) {
-            $skippedCount++
-            continue
-        }
-        $eventLines.Add($line)
     }
-
+    # Count every raw event before documented stream/context exclusions, including zero-event traces
+    if ($eventCount -ne ($Lines.Length - 1)) {
+        throw "Invalid RNG trace ${Label}: declared $eventCount events, found $($Lines.Length - 1)"
+    }
     return [ordered]@{
         MetaLine = $metaLine
         EventLines = $eventLines.ToArray()
@@ -143,7 +191,11 @@ function Get-ComparableTrace {
 function ConvertTo-ComparableJson {
     param([hashtable]$Record)
 
-    return ($Record | ConvertTo-Json -Compress -Depth 10)
+    $ordered = [ordered]@{}
+    [string[]]$keys = @($Record.Keys)
+    [Array]::Sort($keys, [StringComparer]::Ordinal)
+    foreach ($key in $keys) { $ordered[$key] = $Record[$key] }
+    return ConvertTo-Json -InputObject $ordered -Compress -Depth 10
 }
 
 function Test-MetaMismatch {
@@ -174,7 +226,7 @@ function Test-MetaMismatch {
     if ($actualRecord.ContainsKey('events')) {
         $null = $actualRecord.Remove('events')
     }
-    if ((ConvertTo-ComparableJson -Record $expectedRecord) -eq (ConvertTo-ComparableJson -Record $actualRecord)) {
+    if ((ConvertTo-ComparableJson -Record $expectedRecord) -ceq (ConvertTo-ComparableJson -Record $actualRecord)) {
         return $null
     }
     return [ordered]@{
@@ -218,10 +270,7 @@ function Test-IgnorableMismatch {
         $null = $actualRecord.Remove('seq')
     }
 
-    if (-not $lineChanged -and -not $seqChanged) {
-        return $null
-    }
-    if ((ConvertTo-ComparableJson -Record $expectedRecord) -ne (ConvertTo-ComparableJson -Record $actualRecord)) {
+    if ((ConvertTo-ComparableJson -Record $expectedRecord) -cne (ConvertTo-ComparableJson -Record $actualRecord)) {
         return $null
     }
 
@@ -258,8 +307,14 @@ $resolvedExpectedPath = (Resolve-Path -LiteralPath $ExpectedPath).Path
 $resolvedActualPath = (Resolve-Path -LiteralPath $ActualPath).Path
 $expectedRawLines = [System.IO.File]::ReadAllLines($resolvedExpectedPath)
 $actualRawLines = [System.IO.File]::ReadAllLines($resolvedActualPath)
-$expectedTrace = Get-ComparableTrace -Lines $expectedRawLines
-$actualTrace = Get-ComparableTrace -Lines $actualRawLines
+try {
+    $expectedTrace = Get-ComparableTrace -Lines $expectedRawLines -Label $resolvedExpectedPath
+    $actualTrace = Get-ComparableTrace -Lines $actualRawLines -Label $resolvedActualPath
+} catch {
+    Write-Host 'RESULT: FAIL'
+    Write-Host $_
+    exit 1
+}
 $expectedLines = $expectedTrace.EventLines
 $actualLines = $actualTrace.EventLines
 $metaMismatch = Test-MetaMismatch -ExpectedLine $expectedTrace.MetaLine -ActualLine $actualTrace.MetaLine
@@ -272,7 +327,7 @@ for ($index = 0; $index -lt $sharedCount; $index++) {
     if ($expectedLines[$index] -cne $actualLines[$index]) {
         $ignorableDetail = Test-IgnorableMismatch -ExpectedLine $expectedLines[$index] -ActualLine $actualLines[$index]
         if ($ignorableDetail) {
-            if (-not $ignorableMismatch) {
+            if (-not $ignorableMismatch -and ($ignorableDetail.LineChanged -or $ignorableDetail.SeqChanged)) {
                 $ignorableMismatch = [ordered]@{
                     LineNumber = $index + 1
                     LineChanged = $ignorableDetail.LineChanged

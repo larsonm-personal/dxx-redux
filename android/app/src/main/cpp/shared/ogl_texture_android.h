@@ -9,17 +9,12 @@
 #include "ogl_init.h"
 #include "pngfile.h"
 
-#define ANDROID_OGL_TEXTURE_UNIT_COUNT 3
-
 struct android_ogl_texture_list_state {
 	ogl_texture *texture_list;
 	int texture_list_size;
 };
 
 struct android_ogl_bind_texture_state {
-	GLuint *bound_textures;
-	int bound_texture_count;
-	int *active_texture_unit;
 	int *texbinds;
 	int *texbind_reuse;
 };
@@ -31,14 +26,12 @@ struct android_ogl_texture_runtime_state {
 
 struct android_ogl_texture_anisotropy_state {
 	struct android_ogl_texture_list_state texture_list_state;
-	GLuint *last_bound_tex;
 	GLfloat maxanisotropy;
 	int aniso_level;
 };
 
 struct android_ogl_texture_texfilt_state {
 	struct android_ogl_texture_list_state texture_list_state;
-	GLuint *last_bound_tex;
 	volatile int *pending_apply;
 	int *requested_texfilt_level;
 	int *applied_texfilt_level;
@@ -46,7 +39,6 @@ struct android_ogl_texture_texfilt_state {
 
 struct android_ogl_texture_filter_state {
 	struct android_ogl_texture_list_state texture_list_state;
-	GLuint *last_bound_tex;
 	volatile int *aniso_pending_apply;
 	volatile int *texfilt_pending_apply;
 	int *aniso_level;

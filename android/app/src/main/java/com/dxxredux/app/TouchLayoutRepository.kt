@@ -101,7 +101,7 @@ object TouchLayoutRepository {
                 context.assets
                     .open("$BUNDLED_DIR/$filename")
                     .bufferedReader()
-                    .readText()
+                    .use { it.readText() }
             val result = HumanReadableConfig.humanJsonToTouchLayout(JSONObject(text))
             if (result.warnings.isNotEmpty()) {
                 Log.w(TAG, "Warnings loading $filename: ${result.warnings}")

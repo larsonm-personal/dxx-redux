@@ -60,6 +60,8 @@ static int s_playing = 0;
 static int s_paused = 0;
 static int s_output_enabled = 0;
 static int s_output_failed = 0;
+static int s_source_finished = 0;
+static int s_audibly_finished = 0;
 static pthread_mutex_t s_control_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_playback_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t s_ring_reset_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -96,6 +98,7 @@ static SLPlayItf s_player_play = NULL;
 static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
+static int s_buffer_has_audio[NUM_BUFFERS];
 
 /* ── BIN/CUE helpers ─────────────────────────────────────────────────── */
 
@@ -175,7 +178,7 @@ static int refill_pcm(void)
 	return frames_read;
 }
 
-static int render_cd_frames(short *out, int max_frames)
+static int render_cd_frames(short *out, int max_frames, int *source_finished)
 {
 	const double ratio = (double) CD_SAMPLE_RATE / (double) s_output_rate;
 	int written = 0;
@@ -183,7 +186,7 @@ static int render_cd_frames(short *out, int max_frames)
 	while (written < max_frames && s_playing) {
 		if (s_pcm_pos >= s_pcm_len - 1) {
 			if (refill_pcm() == 0 && s_pcm_pos >= s_pcm_len - 1) {
-				s_playing = 0;
+				*source_finished = 1;
 				break;
 			}
 		}
@@ -235,17 +238,25 @@ static void *render_thread_func(void *data)
 			s_playing = 0;
 			s_paused = 0;
 			stop = 1;
-		} else if (!s_playing || s_paused) {
+		} else if (__atomic_load_n(&s_audibly_finished, __ATOMIC_ACQUIRE)) {
+			s_playing = 0;
+			s_paused = 0;
+			stop = 1;
+		} else if (!s_playing || s_paused ||
+		           __atomic_load_n(&s_source_finished, __ATOMIC_ACQUIRE)) {
 			sleep_usec = 20000;
 		} else {
 			unsigned int space = PCM_RING_SAMPLES - pcm_ring_available(&s_rb);
 			if (space < CHUNK * 2u) {
 				sleep_usec = 5000;
 			} else {
-				int got = render_cd_frames(buf, CHUNK);
+				int source_finished = 0;
+				int got = render_cd_frames(buf, CHUNK, &source_finished);
 				if (got > 0)
 					pcm_ring_write(&s_rb, buf, got * 2);
-				stop = !s_playing;
+				/* Source EOF follows the final ring publication */
+				if (source_finished)
+					__atomic_store_n(&s_source_finished, 1, __ATOMIC_RELEASE);
 			}
 		}
 		pthread_mutex_unlock(&s_playback_mutex);
@@ -290,6 +301,8 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 
 	if (pthread_mutex_trylock(&s_ring_reset_mutex) != 0)
 		return;
+	/* This callback means the oldest queued buffer has been consumed */
+	s_buffer_has_audio[s_next_buf] = 0;
 	buf = s_play_bufs[s_next_buf];
 	memset(buf, 0, needed * sizeof(short));
 
@@ -311,6 +324,14 @@ static void osl_callback(SLAndroidSimpleBufferQueueItf bq, void *ctx)
 		__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 		__atomic_store_n(&s_output_failed, 1, __ATOMIC_RELEASE);
 	}
+	s_buffer_has_audio[s_next_buf] = got > 0 && r == SL_RESULT_SUCCESS;
+	int pending_audio = 0;
+	for (int i = 0; i < NUM_BUFFERS; ++i)
+		pending_audio |= s_buffer_has_audio[i];
+	if (__atomic_load_n(&s_output_enabled, __ATOMIC_ACQUIRE) &&
+	    __atomic_load_n(&s_source_finished, __ATOMIC_ACQUIRE) &&
+	    pcm_ring_available(&s_rb) == 0 && !pending_audio)
+		__atomic_store_n(&s_audibly_finished, 1, __ATOMIC_RELEASE);
 	s_next_buf = (s_next_buf + 1) % NUM_BUFFERS;
 	pthread_mutex_unlock(&s_ring_reset_mutex);
 }
@@ -331,6 +352,7 @@ static int osl_reprime_queue_locked(void)
 		LOGE("Clear preview queue: %d", (int) r);
 		return 0;
 	}
+	memset(s_buffer_has_audio, 0, sizeof(s_buffer_has_audio));
 	for (i = 0; i < NUM_BUFFERS; i++) {
 		memset(s_play_bufs[i], 0, sizeof(s_play_bufs[i]));
 		r = (*s_player_bq)->Enqueue(s_player_bq, s_play_bufs[i], sizeof(s_play_bufs[i]));
@@ -431,6 +453,7 @@ static int osl_init(int sample_rate)
 	}
 
 	/* Pre-enqueue silence to start the callback chain */
+	memset(s_buffer_has_audio, 0, sizeof(s_buffer_has_audio));
 	for (i = 0; i < NUM_BUFFERS; i++) {
 		memset(s_play_bufs[i], 0, sizeof(s_play_bufs[i]));
 		r = (*player_bq)->Enqueue(player_bq, s_play_bufs[i], BUF_FRAMES * 2 * sizeof(short));
@@ -579,6 +602,8 @@ static int cd_preview_start_common(const char *cue_path,
 	s_output_frames = 0;
 	s_paused = 0;
 	s_playing = 1;
+	__atomic_store_n(&s_source_finished, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_audibly_finished, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_failed, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_output_enabled, 0, __ATOMIC_RELEASE);
 	pthread_mutex_lock(&s_ring_reset_mutex);
@@ -731,6 +756,9 @@ static void cd_preview_stop_internal(void)
 	pthread_mutex_lock(&s_playback_mutex);
 	close_bin_files();
 	pcm_ring_reset(&s_rb);
+	__atomic_store_n(&s_source_finished, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_audibly_finished, 0, __ATOMIC_RELEASE);
+	memset(s_buffer_has_audio, 0, sizeof(s_buffer_has_audio));
 	pthread_mutex_unlock(&s_playback_mutex);
 }
 
@@ -768,7 +796,8 @@ int cd_preview_seek(float fraction)
 
 	pthread_mutex_lock(&s_control_mutex);
 	pthread_mutex_lock(&s_playback_mutex);
-	if (!s_playing && !s_paused) goto done;
+	if ((!s_playing && !s_paused) ||
+	    __atomic_load_n(&s_audibly_finished, __ATOMIC_ACQUIRE)) goto done;
 	if (fraction < 0.0f) fraction = 0.0f;
 	if (fraction > 1.0f) fraction = 1.0f;
 
@@ -784,6 +813,8 @@ int cd_preview_seek(float fraction)
 	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
 	pcm_ring_reset(&s_rb);
+	__atomic_store_n(&s_source_finished, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_audibly_finished, 0, __ATOMIC_RELEASE);
 
 	/* Update output frame counter to reflect seek position */
 	{
@@ -827,9 +858,10 @@ int cd_preview_get_state(int *out_position_ms, int *out_duration_ms)
 	if (out_position_ms) *out_position_ms = position_ms;
 	if (out_duration_ms) *out_duration_ms = duration_ms;
 
-	if (s_playing && !s_paused)
+	int finished = __atomic_load_n(&s_audibly_finished, __ATOMIC_ACQUIRE);
+	if (s_playing && !s_paused && !finished)
 		state = CDP_PLAYING;
-	else if (s_paused)
+	else if (s_paused && !finished)
 		state = CDP_PAUSED;
 	else
 		state = CDP_STOPPED;

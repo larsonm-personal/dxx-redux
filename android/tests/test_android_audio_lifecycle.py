@@ -142,8 +142,19 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
         pcm_start = MUSIC.index("size_t idx = (size_t) g_pcm_pos")
         pcm_end = MUSIC[pcm_start : MUSIC.index("/* ══", pcm_start)]
         for region in (midi_end, pcm_end):
-            self.assertIn("tsf_atomic_store_int(&g_source_finished, 1);", region)
+            self.assertIn("*source_finished = 1;", region)
+            self.assertNotIn("tsf_atomic_store_int(&g_source_finished, 1);", region)
             self.assertNotIn("tsf_atomic_store_int(&g_playing, 0);", region)
+
+        producer = function_body(MUSIC, "render_thread_func")
+        require_order(
+            self,
+            producer,
+            "int source_finished = 0;",
+            "pcm_ring_write(&g_rb, buf, got * 2);",
+            "if (source_finished)",
+            "tsf_atomic_store_int(&g_source_finished, 1);",
+        )
 
         callback_start = MUSIC.index("static void tsf_music_callback(void *udata, Uint8 *stream, int len)")
         callback = MUSIC[callback_start : MUSIC.index("#else /* !ANDROID", callback_start)]

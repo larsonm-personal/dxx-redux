@@ -768,19 +768,9 @@ void draw_model_picture_animated_scene(int mn,vms_angvec *orient_angles,vms_angv
 	g3_end_frame();
 }
 
-void draw_model_picture_animated_offset(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles,fix offset_x,fix offset_y,fix distance_offset)
-{
-	draw_model_picture_animated_scene(mn,orient_angles,anim_angles,offset_x,offset_y,distance_offset,0,NULL,NULL);
-}
-
-void draw_model_picture_animated(int mn,vms_angvec *orient_angles,vms_angvec *anim_angles)
-{
-	draw_model_picture_animated_offset(mn,orient_angles,anim_angles,0,0,0);
-}
-
 void draw_model_picture(int mn,vms_angvec *orient_angles)
 {
-	draw_model_picture_animated(mn,orient_angles,NULL);
+	draw_model_picture_animated_scene(mn,orient_angles,NULL,0,0,0,0,NULL,NULL);
 }
 
 /*

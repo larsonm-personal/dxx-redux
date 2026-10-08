@@ -33,6 +33,20 @@ static int clamp_texfilt(int value)
 	return value;
 }
 
+/* android port: sync loaded config graphics values to runtime OGL globals */
+void android_graphics_apply_loaded_config(void)
+{
+	extern int ogl_aniso_level;
+	extern int ogl_msaa_samples;
+	extern int g_texfilt_level;
+	GameCfg.TexFilt = clamp_texfilt(GameCfg.TexFilt);
+	ogl_aniso_level = GameCfg.AnisoLevel;
+	ogl_msaa_samples = GameCfg.MsaaLevel;
+	g_texfilt_level = GameCfg.TexFilt;
+	android_render_set_main_view_fov(GameCfg.MainViewFov);
+	GameCfg.MainViewFov = android_render_get_main_view_fov();
+}
+
 static int clamp_gamma(int value)
 {
 	if (value < 0)

@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "3d.h"
+#include "config.h"
 #include "effects.h"
 #include "fvi.h"
 #ifdef DXX_BUILD_DESCENT_II
@@ -39,6 +40,8 @@ void ogl_prog_set_tex2_current_matrix(const GLfloat *matrix, int super);
 void ogl_prog_set_tex2_debug_mode(int mode);
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 void ogl_freetexture(struct _ogl_texture *texture);
+void tex_set_size(ogl_texture *texture);
+extern int r_texcount;
 
 #define MERGED_WALL_LOG_PT_COUNT            16
 #define MERGED_WALL_TRACKED_FACE_MAX        32
@@ -979,18 +982,18 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	android_merged_wall_cached_texmerge_wrap_texture(bottom_bmp->gltexture,
-	                                                 GL_CLAMP_TO_EDGE);
-	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
-	                                                 GL_CLAMP_TO_EDGE);
 	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
 	                           GL_TEXTURE0);
 	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
 	                            bottom_bmp->gltexture->handle);
+	android_merged_wall_cached_texmerge_wrap_texture(bottom_bmp->gltexture,
+	                                                 GL_CLAMP_TO_EDGE);
 	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
 	                           GL_TEXTURE1);
 	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
 	                            overlay_bmp->gltexture->handle);
+	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
+	                                                 GL_CLAMP_TO_EDGE);
 	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
 	                           GL_TEXTURE0);
 	gles3_shim_use_external(ogl_prog_tex2);
@@ -1018,13 +1021,23 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE0);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            bottom_bmp->gltexture->handle);
 	android_merged_wall_cached_texmerge_wrap_texture(bottom_bmp->gltexture,
 	                                                 GL_REPEAT);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE1);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            overlay_bmp->gltexture->handle);
 	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
 	                                                 GL_REPEAT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
 	glDeleteFramebuffers(1, &fbo);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE0);
 	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
 	                            output_tex->handle);
 	android_merged_wall_cached_texmerge_finalize_filters(output_tex,
@@ -1047,6 +1060,53 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
 	                           (GLenum) old_active_tex);
 	return 1;
+}
+
+grs_bitmap *android_merged_wall_cached_texmerge_get(grs_bitmap *bmbot,
+                                                    grs_bitmap *bmovl, int orient, int *out_slot,
+                                                    const struct android_ogl_texture_runtime_state *runtime_state)
+{
+	struct merged_wall_cached_texmerge_entry *entry;
+	grs_bitmap *cached_bitmap;
+	int tex_flags;
+	int width, height;
+
+	if (out_slot)
+		*out_slot = -1;
+
+	if (!bmbot || !bmovl || !bmbot->gltexture || !bmovl->gltexture)
+		return NULL;
+	if (bmbot->gltexture->handle <= 0 || bmovl->gltexture->handle <= 0)
+		return NULL;
+
+	cached_bitmap = android_merged_wall_cached_texmerge_try_reuse_cache(bmbot, bmovl,
+	                                                                    orient, out_slot);
+	if (cached_bitmap)
+		return cached_bitmap;
+
+	if (!android_merged_wall_cached_texmerge_choose_size(bmbot->gltexture,
+	                                                     bmovl->gltexture, ogl_max_texture_size, &width, &height))
+		return NULL;
+
+	entry = android_merged_wall_cached_texmerge_reserve_cache_entry(
+	    ogl_freetexture);
+	if (!entry)
+		return NULL;
+
+	tex_flags = OGL_FLAG_ALPHA;
+	const int load_texfilt = android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level);
+	entry->texture = ogl_get_free_texture();
+	ogl_init_texture(entry->texture, width, height, tex_flags);
+	android_merged_wall_cached_texmerge_setup_output_texture(entry->texture,
+	                                                         width, height, tex_flags, load_texfilt, runtime_state);
+	tex_set_size(entry->texture);
+	r_texcount++;
+	if (!android_merged_wall_cached_texmerge_finalize_entry(entry, bmbot,
+	                                                        bmovl, orient, width, height, load_texfilt, ogl_aniso_level,
+	                                                        ogl_maxanisotropy, bmbot->bm_flags & (~BM_FLAG_RLE),
+	                                                        bmbot->avg_color, runtime_state, out_slot, ogl_freetexture))
+		return NULL;
+	return &entry->bitmap;
 }
 
 int android_merged_wall_cached_texmerge_finalize_entry(

@@ -710,7 +710,7 @@ int ogl_internal_string(int x, int y, const char *s )
 	int underline;
 
 	next_row = s;
-	ogl_ubitmap_batch_begin((int)strlen(s));
+	ogl_ubitmap_batch_begin(0);
 
 	yy = y;
 

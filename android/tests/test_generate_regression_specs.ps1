@@ -17,7 +17,7 @@ $producerLock = [IO.File]::Open((Join-Path $tempRoot 'producer.lock'), [IO.FileM
 
 try {
     $gameDataDir = Join-Path $tempRoot 'game_data'
-    $discDir = Join-Path $gameDataDir 'CD images\iso-with-fingerprint-cue'
+    $discDir = Join-Path $gameDataDir 'CD images\iso with fingerprint cue'
     $vertigoDir = Join-Path $gameDataDir 'CD images\vertigo-expansion-only'
     $baseD2Dir = Join-Path $gameDataDir 'CD images\d2-base'
     $testFlightDir = Join-Path $gameDataDir 'CD images\test-flight'
@@ -189,6 +189,153 @@ try {
         @($combinedSpec.expected_files) -contains 'missions/d2x.hog' -and
         @($combinedSpec.expected_files) -contains 'groupa.pig') `
         'A combined regression should merge and deduplicate component extraction oracles'
+
+    $specPaths = @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir) |
+        ForEach-Object { Join-Path $_ 'extract_regression.jsonc' }
+    function Get-SpecSnapshots {
+        $snapshots = @{}
+        foreach ($path in $specPaths) {
+            $snapshots[$path] = @((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash,
+                [IO.File]::GetLastWriteTimeUtc($path))
+        }
+        return $snapshots
+    }
+    function Assert-SpecSnapshots($Before, $Except = '') {
+        $after = Get-SpecSnapshots
+        foreach ($path in $Before.Keys) {
+            if ($path -eq $Except) { continue }
+            Assert-True ($Before[$path][0] -ceq $after[$path][0] -and $Before[$path][1] -eq $after[$path][1]) `
+                "Unselected or rejected spec changed bytes or modification time: $path"
+        }
+    }
+    function Invoke-SelectedGenerator([string]$Selector, [switch]$Force) {
+        $arguments = @('-NoProfile', '-NonInteractive', '-File', $scriptPath, '-SpecListPath', $Selector)
+        if ($Force) { $arguments += '-Force' }
+        $savedPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $output = @(& $powerShellPath @arguments 2>&1)
+            return @{ Exit = $LASTEXITCODE; Text = $output -join "`n" }
+        } finally { $ErrorActionPreference = $savedPreference }
+    }
+
+    $discSpecPath = Join-Path $discDir 'extract_regression.jsonc'
+    $combinedSpecPath = Join-Path $combinedDir 'extract_regression.jsonc'
+    $selectionPath = Join-Path $tempRoot 'selection.txt'
+    $unknownPath = Join-Path $tempRoot 'unknown/extract_regression.jsonc'
+    foreach ($contents in @('', '   ', "$discSpecPath`n$unknownPath", "$unknownPath`n$discSpecPath",
+            $unknownPath, "$discSpecPath`n$discSpecPath", "$discSpecPath`n`n",
+            ($discSpecPath + "`n" + (Join-Path $discDir '../iso with fingerprint cue/extract_regression.jsonc')),
+            (Join-Path $gameDataDir 'gog installers/setup_descent_2_1.1_(16596)_regression.jsonc'))) {
+        [IO.File]::WriteAllText($selectionPath, $contents, [Text.UTF8Encoding]::new($false))
+        $before = Get-SpecSnapshots
+        $result = Invoke-SelectedGenerator -Selector $selectionPath -Force
+        Assert-True ($result.Exit -ne 0) "Invalid selection should fail before publication: $($result.Text)"
+        Assert-SpecSnapshots $before
+    }
+    foreach ($selector in @('', '   ', (Join-Path $tempRoot 'missing-list.txt'))) {
+        $before = Get-SpecSnapshots
+        $result = Invoke-SelectedGenerator -Selector $selector -Force
+        Assert-True ($result.Exit -ne 0) 'Blank or missing selection-list paths should fail'
+        Assert-SpecSnapshots $before
+    }
+    [IO.File]::WriteAllText($selectionPath, (Join-Path $discDir './extract_regression.jsonc'))
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath
+    Assert-True ($result.Exit -eq 0 -and $result.Text -match 'Generated 0 specs, skipped 1') `
+        'A normalized selected existing spec should count exactly one valid skip'
+    Assert-SpecSnapshots $before
+
+    $validSelectedText = [IO.File]::ReadAllText($discSpecPath)
+    $validSelectedTime = [IO.File]::GetLastWriteTimeUtc($discSpecPath)
+    foreach ($invalidSelectedText in @('{broken', '{"source_type":"cd","expected_files":"not an array"}')) {
+        try {
+            [IO.File]::WriteAllText($discSpecPath, $invalidSelectedText)
+            $before = Get-SpecSnapshots
+            $result = Invoke-SelectedGenerator -Selector $selectionPath
+            Assert-True ($result.Exit -ne 0) 'An invalid selected existing spec must not count as a valid skip'
+            Assert-SpecSnapshots $before
+        } finally {
+            [IO.File]::WriteAllText($discSpecPath, $validSelectedText, [Text.UTF8Encoding]::new($false))
+            [IO.File]::SetLastWriteTimeUtc($discSpecPath, $validSelectedTime)
+        }
+    }
+
+    $stale = Read-JsoncFile $discSpecPath
+    $stale.expected_files = @('stale.hog')
+    [IO.File]::WriteAllText($discSpecPath, ($stale | ConvertTo-Json -Depth 20))
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath -Force
+    Assert-True ($result.Exit -eq 0 -and $result.Text -match 'Generated 1 specs, skipped 0' -and
+        (Read-JsoncFile $discSpecPath).expected_files -notcontains 'stale.hog') `
+        'Selected Force should regenerate exactly the requested spec'
+    Assert-SpecSnapshots $before -Except $discSpecPath
+    [IO.File]::WriteAllText($selectionPath, "$discSpecPath`n$combinedSpecPath")
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath -Force
+    Assert-True ($result.Exit -eq 0 -and $result.Text -match 'Generated 2 specs, skipped 0') `
+        'A multi-source selection should account exactly its two requested specs'
+    Assert-SpecSnapshots $before
+
+    $unavailableDir = Join-Path $gameDataDir 'CD images/unavailable source'
+    New-Item -ItemType Directory -Path $unavailableDir | Out-Null
+    $stale = Read-JsoncFile $discSpecPath
+    $stale.expected_files = @('must-not-publish.hog')
+    [IO.File]::WriteAllText($discSpecPath, ($stale | ConvertTo-Json -Depth 20))
+    [IO.File]::WriteAllText($selectionPath, ($discSpecPath + "`n" + (Join-Path $unavailableDir 'extract_regression.jsonc')))
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath -Force
+    Assert-True ($result.Exit -ne 0) 'An unavailable source mixed with a valid request should fail'
+    Assert-SpecSnapshots $before
+
+    # Tiny pre-extracted installer fixtures exercise every supported GOG record
+    Remove-Item -LiteralPath $unavailableDir
+    $gogDir = Join-Path $gameDataDir 'gog installers'
+    $gogTool = Join-Path $gameDataDir 'extract_all_gog.ps1'
+    [IO.File]::WriteAllText($gogTool, '# fixture extraction identity')
+    $gogToolIdentity = Get-ExtractionPathIdentity -Path $gogTool -Name 'extract_all_gog.ps1'
+    $gogFixtures = @(
+        @{ File = 'setup_descent_1.4a_(16596).exe'; Game = 'd1'; Files = @('DESCENT.HOG', 'DESCENT.PIG') },
+        @{ File = 'setup_descent_2_1.1_(16596).exe'; Game = 'd2'; Files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG') },
+        @{ File = 'descent_enUS_1_0_35122.pkg'; Game = 'd1'; Files = @('DESCENT.HOG', 'DESCENT.PIG') },
+        @{ File = 'descent_2_enUS_1_0_51877.pkg'; Game = 'd2'; Files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG') }
+    )
+    $gogPaths = @()
+    foreach ($fixture in $gogFixtures) {
+        $base = [IO.Path]::GetFileNameWithoutExtension($fixture.File)
+        $extracted = Join-Path $gogDir "$base/extracted"
+        New-Item -ItemType Directory -Path $extracted -Force | Out-Null
+        $installer = Join-Path $gogDir $fixture.File
+        [IO.File]::WriteAllText($installer, 'installer identity only')
+        foreach ($file in $fixture.Files) { [IO.File]::WriteAllText((Join-Path $extracted $file), 'fixture') }
+        $provenance = New-ExtractionProvenance -Policy 'extract-all-gog-v1' `
+            -Sources @((Get-ExtractionPathIdentity -Path $installer -Name $fixture.File)) -Tools @($gogToolIdentity)
+        Write-ExtractionCompletionManifest -Directory $extracted -Provenance $provenance
+        $gogPaths += Join-Path $gogDir "${base}_regression.jsonc"
+    }
+    [IO.File]::WriteAllText($selectionPath, ($gogPaths -join "`n"))
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath -Force
+    Assert-True ($result.Exit -eq 0 -and $result.Text -match 'Generated 4 specs, skipped 0') `
+        'All four selected GOG records must be generated without touching CD/combined outputs'
+    Assert-SpecSnapshots $before
+    for ($i = 0; $i -lt $gogPaths.Count; $i++) {
+        $gogSpec = Read-JsoncFile $gogPaths[$i]
+        Assert-True ($gogSpec.source_type -eq 'gog' -and $gogSpec.game -eq $gogFixtures[$i].Game -and
+            (@($gogSpec.expected_files) -join ',') -ceq (@(Get-OrdinalSortedUniqueStrings $gogFixtures[$i].Files) -join ',') -and
+            @($gogSpec.source_files).Count -eq 1 -and $gogSpec.source_files[0].name -ceq $gogFixtures[$i].File) `
+            'GOG output must retain the existing source identity and extraction oracle'
+    }
+    $specPaths += $gogPaths
+    $before = Get-SpecSnapshots
+    $result = Invoke-SelectedGenerator -Selector $selectionPath
+    Assert-True ($result.Exit -eq 0 -and $result.Text -match 'Generated 0 specs, skipped 4') `
+        'Selected existing GOG specs must be accounted as valid skips'
+    Assert-SpecSnapshots $before
+    $output = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -Force 2>&1)
+    Assert-True ($LASTEXITCODE -eq 0 -and ($output -join "`n") -match 'Generated 9 specs, skipped 0') `
+        'Absent selector must retain ordinary CD, combined and GOG generation'
+    Assert-SpecSnapshots $before -Except $discSpecPath
 
     $testFlightPath = Join-Path $testFlightDir 'extract_regression.jsonc'
     $beforeLostIdentity = [IO.File]::ReadAllText($testFlightPath)

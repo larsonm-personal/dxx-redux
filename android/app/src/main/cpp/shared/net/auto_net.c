@@ -3,18 +3,34 @@
  * The actual networking logic lives in net_udp Android shared helpers.
  */
 
+#include "auto_net.h"
+
+#if defined(ANDROID) || defined(__ANDROID__)
+#include <string.h>
+#include "coop_save.h"
+#endif
+
+#ifdef ANDROID
+const char *auto_net_config_last_player(const char *current, const char *saved)
+{
+	int keep_saved = !current[0] || !strcmp(current, COOP_AUTOSAVE_CALLSIGN);
+#ifdef __ANDROID__
+	keep_saved = keep_saved || auto_net_is_transient_callsign(current);
+#endif
+	if (!keep_saved)
+		return current;
+	return saved[0] && strcmp(saved, COOP_AUTOSAVE_CALLSIGN) ? saved : "";
+}
+#endif
+
 #ifdef __ANDROID__
 
 #include <limits.h>
-#include <string.h>
-
-#include "auto_net.h"
 
 #include "android_log.h"
 #include "args.h"
 #include "config.h"
 #include "console.h"
-#include "coop_save.h"
 #include "kconfig.h"
 #include "physfsx.h"
 #include "player.h"

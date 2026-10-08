@@ -64,7 +64,7 @@ class TsfRenderThreadTuningTest(unittest.TestCase):
             "tsf_apply_pending_tuning()",
             "__atomic_load_n(&g_render_running",
             "tsf_atomic_load_int(&g_paused)",
-            "render_frames(buf, frames)",
+            "render_frames(buf, frames, &source_finished)",
         )
 
     def test_live_setters_only_submit_commands(self) -> None:

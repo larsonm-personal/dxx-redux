@@ -472,51 +472,55 @@ Java_com_dxxredux_app_DiscImportBridge_nativeScanSowFiles(
 /* ── SOW (ARJ) archive extraction ────────────────────────────────────── */
 
 /*
- * Extract game files from a .sow (ARJ) archive.
+ * Assemble game files from complete .sow (ARJ) volumes.
  *
- * sowPath    : filesystem path to the .sow file
+ * paths      : archive paths, or null to scan outputDir by parent directory
  * outputDir  : directory to extract files into
  * progress   : optional ExtractProgress callback (may be null)
  *
  * Returns number of files extracted, or -1 on error.
  */
 JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
-    JNIEnv *env, jclass clazz,
-    jstring sowPath, jstring outputDir, jobject progress,
-    jboolean appendExisting, jlongArray attemptState)
+Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowArchives(
+    JNIEnv *env, jclass clazz, jobjectArray paths, jstring outputDir,
+    jobject progress, jlongArray attemptState)
 {
 	dxx_extract_attempt_budget_t budget;
-	char *sow;
-	char *out_dir;
-	if (!dxx_jni_string_to_utf8(env, sowPath, &sow)) return -1;
-	if (!init_attempt_budget(env, attemptState, &budget)) {
-		free(sow);
-		return -1;
-	}
-
-	if (!dxx_jni_string_to_utf8(env, outputDir, &out_dir)) {
-		free(sow);
-		return -1;
-	}
-
-	/* Set up progress callback */
 	extract_ctx_t ctx;
+	sow_file_list_t archives;
+	char *out_dir;
+	int extracted = -1;
+	if (!init_attempt_budget(env, attemptState, &budget) ||
+	    !dxx_jni_string_to_utf8(env, outputDir, &out_dir)) return -1;
 	if (!init_extract_ctx(env, progress, &budget, &ctx)) {
-		free(sow);
 		free(out_dir);
 		return -1;
 	}
-
-	int extracted = sow_extract_with_budget(sow, out_dir, NULL,
-	                                        progress ? extract_progress_cb : NULL,
-	                                        &ctx, appendExisting == JNI_TRUE,
-	                                        &budget);
+	if (paths) {
+		archives.count = (*env)->GetArrayLength(env, paths);
+		if (archives.count > SOW_MAX_FILES) goto finish;
+		for (int i = 0; i < archives.count; ++i) {
+			jstring value = (jstring) (*env)->GetObjectArrayElement(env, paths, i);
+			char *path = NULL;
+			int valid = value && dxx_jni_string_to_utf8(env, value, &path);
+			if (value) (*env)->DeleteLocalRef(env, value);
+			if (!valid) goto finish;
+			if (strlen(path) >= SOW_PATH_LEN) {
+				free(path);
+				goto finish;
+			}
+			strcpy(archives.paths[i], path);
+			free(path);
+		}
+		extracted = sow_extract_archives(&archives, out_dir, NULL,
+		                                 progress ? extract_progress_cb : NULL, &ctx, &budget);
+	} else {
+		extracted = sow_extract_directory(out_dir, NULL,
+		                                  progress ? extract_progress_cb : NULL, &ctx, &budget);
+	}
+finish:
 	store_attempt_budget(env, attemptState, &budget);
-	LOGI("SOW extracted %d files from %s (append=%s)", extracted, sow,
-	     appendExisting == JNI_TRUE ? "true" : "false");
-
-	free(sow);
+	LOGI("SOW volume assembly extracted %d entries", extracted);
 	free(out_dir);
 	return extracted;
 }

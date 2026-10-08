@@ -73,6 +73,7 @@ int g_replay_robot_labels_enabled = 0;
 #endif
 #endif
 #ifdef ANDROID
+#include "android_texture_debug.h"
 #include "debug_tex_overlay.h"
 #include "escort.h"
 #include "merged_wall_debug.h"
@@ -440,59 +441,8 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		}
 
 #if defined(ANDROID) && defined(OGL)
-	/* Debug texture labels for texmerge'd faces. bm2==NULL means texmerge
-	 * merged both textures into a 64x64 bitmap, so g3_draw_tmap can't label
-	 * either (the merged bitmap isn't in GameBitmaps[]). Look up both
-	 * originals for names, but always mark as non-hires since texmerge
-	 * output is 64x64 regardless of whether originals have DXA replacements. */
-	if (g_debug_tex_overlay_active && tmap2 != 0 && bm2 == NULL
-	    && g_debug_tex_label_count + 1 < DEBUG_TEX_MAX_LABELS && nv >= 3)
-	{
-		int sx_sum = 0, sy_sum = 0, projected = 0;
-		for (i = 0; i < nv; i++) {
-			if (pointlist[i]->p3_flags & PF_PROJECTED) {
-				sx_sum += f2i(pointlist[i]->p3_sx);
-				sy_sum += f2i(pointlist[i]->p3_sy);
-				projected++;
-			}
-		}
-		if (projected > 0) {
-			int sx = sx_sum / projected;
-			int sy = sy_sum / projected;
-			int sw = grd_curcanv->cv_bitmap.bm_w;
-			int sh = grd_curcanv->cv_bitmap.bm_h;
-			if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
-				grs_bitmap *bm1_orig = &GameBitmaps[Textures[tmap1].index];
-				const char *name1 = piggy_game_bitmap_name(bm1_orig);
-				if (name1) {
-					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
-					lbl->sx = sx;
-					lbl->sy = sy;
-					lbl->is_hires = 0; /* texmerge always 64x64 */
-					lbl->anchor_group = 0;
-					lbl->anchor_samples = 1;
-					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
-					strncpy(lbl->name, name1, sizeof(lbl->name) - 1);
-					lbl->name[sizeof(lbl->name) - 1] = '\0';
-					g_debug_tex_label_count++;
-				}
-				grs_bitmap *bm2_orig = &GameBitmaps[Textures[tmap2 & 0x3FFF].index];
-				const char *name2 = piggy_game_bitmap_name(bm2_orig);
-				if (name2 && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS) {
-					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
-					lbl->sx = sx;
-					lbl->sy = sy + 10;
-					lbl->is_hires = 0; /* texmerge always 64x64 */
-					lbl->anchor_group = 0;
-					lbl->anchor_samples = 1;
-					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
-					strncpy(lbl->name, name2, sizeof(lbl->name) - 1);
-					lbl->name[sizeof(lbl->name) - 1] = '\0';
-					g_debug_tex_label_count++;
-				}
-			}
-		}
-	}
+	if (g_debug_tex_overlay_active && tmap2 != 0 && bm2 == NULL)
+		android_texture_debug_add_merged_labels((const g3s_point *const *)pointlist, nv, tmap1, tmap2);
 #endif
 
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal

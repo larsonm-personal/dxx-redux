@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.22)
+project(android_automap_route_policy LANGUAGES C CXX)
+include(../native_engine_fixture.cmake)
+target_sources(${FIXTURE_TARGET}
+               PRIVATE "${REPO_ROOT}/android/app/src/main/cpp/shared/automap_metadata_overlay.c")
+option(AUTOMAP_ROUTE_POLICY_NETWORK "Exercise multiplayer admission" ON)
+if(AUTOMAP_ROUTE_POLICY_NETWORK)
+    target_compile_definitions(${FIXTURE_TARGET} PRIVATE NETWORK)
+else()
+    target_compile_options(${FIXTURE_TARGET} PRIVATE -UNETWORK)
+endif()
+target_compile_options(${FIXTURE_TARGET} PRIVATE -ffunction-sections -fdata-sections)
+target_link_options(${FIXTURE_TARGET} PRIVATE -Wl,--gc-sections)

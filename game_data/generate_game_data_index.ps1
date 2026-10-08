@@ -17,6 +17,7 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot = [System.IO.Path]::GetFullPath((Split-Path $ScriptDir))
 $OutFile = Join-Path $ScriptDir "game_data_index.txt"
 . (Join-Path $RepoRoot "android/helpers/powershell_compat.ps1")
+. (Join-Path $RepoRoot "android/helpers/jsonc.ps1")
 
 $GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".zip", ".7z", ".rar", ".gog", ".inst", ".exe", ".pkg", ".dxa")
 
@@ -44,21 +45,11 @@ function Add-RequiredHash {
     }
 }
 
-function Get-JsoncObject {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    $raw = Get-Content -LiteralPath $Path -Raw
-    $raw = [regex]::Replace($raw, '(?s)/\*.*?\*/', '')
-    $raw = [regex]::Replace($raw, '(?m)//.*$', '')
-    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
-    return $raw | ConvertFrom-Json
-}
-
 function Get-DeclaredGameDataHash {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     try {
-        $document = Get-JsoncObject -Path $Path
+        $document = Read-JsoncFile -Path $Path
     } catch {
         return @()
     }

@@ -1,10 +1,9 @@
+. (Join-Path $PSScriptRoot 'jsonc.ps1')
+
 function Read-CdLevelMetadataSourceManifest {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    $text = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
-    $text = [regex]::Replace($text, '(?m)//.*$', '')
-    $text = [regex]::Replace($text, ',\s*([}\]])', '$1')
-    return $text | ConvertFrom-Json
+    return Read-JsoncFile -Path $Path
 }
 
 function Resolve-CdLevelMetadataSources {

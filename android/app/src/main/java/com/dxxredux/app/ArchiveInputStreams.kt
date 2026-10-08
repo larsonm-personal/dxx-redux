@@ -4,6 +4,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.io.RandomAccessFile
+import java.nio.charset.Charset
 import java.util.zip.ZipException
 import java.util.zip.ZipInputStream
 
@@ -213,10 +214,11 @@ private fun RandomAccessFile.readU16(): Int {
 
 private fun RandomAccessFile.readU32(): Long = readU16().toLong() or (readU16().toLong() shl 16)
 
+// Legacy ZIP names use CP437; ZipInputStream still honors the per-entry UTF-8 flag
 private class StagedZipInputStream(
     input: FileInputStream,
     private val staged: File,
-) : ZipInputStream(input) {
+) : ZipInputStream(input, Charset.forName("IBM437")) {
     override fun close() {
         try {
             super.close()

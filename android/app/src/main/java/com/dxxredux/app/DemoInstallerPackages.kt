@@ -8,7 +8,6 @@ object DemoInstallerPackages {
         val game: String,
         val extraction: String,
         val expectedFiles: List<String>,
-        val sowVolumes: List<String> = emptyList(),
     )
 
     val knownPackages =
@@ -20,7 +19,6 @@ object DemoInstallerPackages {
                 game = "d1",
                 extraction = "self-extracting ZIP with SOW archives",
                 expectedFiles = listOf("descent.hog", "descent.pig"),
-                sowVolumes = listOf("descent1.sow", "descent2.sow"),
             ),
             PackageInfo(
                 filename = "descent 1 demo 1-4.zip",
@@ -29,7 +27,6 @@ object DemoInstallerPackages {
                 game = "d1",
                 extraction = "ZIP with SOW archives",
                 expectedFiles = listOf("descent.hog", "descent.pig"),
-                sowVolumes = listOf("descent1.sow", "descent2.sow"),
             ),
             PackageInfo(
                 filename = "descent 1 demo mac.zip",
@@ -70,7 +67,6 @@ object DemoInstallerPackages {
                 game = "d2",
                 extraction = "ZIP with SOW archives",
                 expectedFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "d2demo.dem"),
-                sowVolumes = listOf("d2_1.sow", "d2_2.sow", "d2_3.sow"),
             ),
             PackageInfo(
                 filename = "d2demo10.zip",
@@ -79,7 +75,6 @@ object DemoInstallerPackages {
                 game = "d2",
                 extraction = "ZIP with SOW archives",
                 expectedFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig", "d2demo.dem"),
-                sowVolumes = listOf("d2_1.sow", "d2_2.sow", "d2_3.sow"),
             ),
             PackageInfo(
                 filename = "Descent II Preview.sit",

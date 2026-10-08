@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include "escort_goal_policy.h"
 
 #include <assert.h>

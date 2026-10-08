@@ -65,7 +65,6 @@ $hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or
 ($null -ne $ArchiveNames -and $ArchiveNames.Count -gt 0) -or
 ($null -ne $ArchivePaths -and $ArchivePaths.Count -gt 0)
 $missionVariantDirectoryMaskPrecedence = @()
-$invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $d1DataCandidates = @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game d1)
 $d2DataCandidates = @(Get-StandardGameDataCandidates -RepoRoot $repoRoot -Game d2)
 
@@ -223,223 +222,6 @@ function Get-Prop {
     $prop = $Object.PSObject.Properties[$Name]
     if ($prop) { return $prop.Value }
     return $Default
-}
-
-function Get-StringProp {
-    param($Object, [string]$Name, [string]$Default = "")
-
-    $value = Get-Prop $Object $Name $Default
-    if ($null -eq $value) { return $Default }
-    return [string]$value
-}
-
-function Get-FirstProp {
-    param($Object, [string[]]$Names, $Default = $null)
-    foreach ($name in $Names) {
-        $property = if ($null -ne $Object) { $Object.PSObject.Properties[$name] } else { $null }
-        if ($property) { return $property.Value }
-    }
-    return $Default
-}
-
-function Get-ArrayValue {
-    param($Value)
-
-    if ($null -eq $Value) { return @() }
-    if ($Value -is [System.Array]) { return @($Value) }
-    return @($Value)
-}
-
-function Format-LevelMultiplier {
-    param([double]$Value)
-
-    if ($Value -le 0.0) { return "" }
-    if ($Value -ge 10.0) {
-        $scale = [Math]::Pow(10.0, [Math]::Floor([Math]::Log10($Value)) - 1.0)
-        $display = [Math]::Floor($Value / $scale + 0.5) * $scale
-        return ($display.ToString("0", $invariantCulture) + "x")
-    }
-    $format = if ($Value -ge 1.0) { "0.0" } else { "0.00" }
-    return ($Value.ToString($format, $invariantCulture) + "x")
-}
-
-function Format-LevelTime {
-    param([int]$Seconds)
-
-    if ($Seconds -lt 0) { $Seconds = 0 }
-    $minutes = [Math]::Floor($Seconds / 60)
-    $remaining = $Seconds % 60
-    return ("{0}M:{1:d2}S" -f $minutes, $remaining)
-}
-
-function Add-IfString {
-    param(
-        [Parameter(Mandatory = $true)][System.Collections.Specialized.OrderedDictionary]$Target,
-        [Parameter(Mandatory = $true)][string]$Name,
-        [string]$Value
-    )
-
-    if ($Value) {
-        $Target[$Name] = $Value
-    }
-}
-
-function ConvertTo-CheckedInMissionIntentJson {
-    param($Intent)
-
-    $classification = Get-StringProp $Intent "classification"
-    $rule = Get-StringProp $Intent "rule"
-    $confidence = Get-StringProp $Intent "confidence"
-    $reason = Get-StringProp $Intent "reason"
-    if (-not $classification -or -not $rule -or -not $confidence -or -not $reason) {
-        throw "Headless metadata mission_intent is missing its structured classification evidence. Rebuild the host metadata executables before regenerating regression files."
-    }
-    $declarations = Get-Prop $Intent "declarations" $null
-    return [ordered]@{
-        classification = $classification
-        rule = $rule
-        confidence = $confidence
-        reason = $reason
-        declarations = [ordered]@{
-            anarchy_only = [bool](Get-Prop $declarations "anarchy_only" $false)
-            normal = [bool](Get-Prop $declarations "normal" $false)
-            coop = [bool](Get-Prop $declarations "coop" $false)
-            anarchy = [bool](Get-Prop $declarations "anarchy" $false)
-            robo_anarchy = [bool](Get-Prop $declarations "robo_anarchy" $false)
-            capture_flag = [bool](Get-Prop $declarations "capture_flag" $false)
-            hoard = [bool](Get-Prop $declarations "hoard" $false)
-        }
-        normal_levels = [int](Get-Prop $Intent "normal_levels" 0)
-        campaign_actor_levels = [int](Get-Prop $Intent "campaign_actor_levels" 0)
-        arena_like_levels = [int](Get-Prop $Intent "arena_like_levels" 0)
-        solo_like_levels = [int](Get-Prop $Intent "solo_like_levels" 0)
-        player_start_min = [int](Get-Prop $Intent "player_start_min" 0)
-        player_start_max = [int](Get-Prop $Intent "player_start_max" 0)
-        coop_start_min = [int](Get-Prop $Intent "coop_start_min" 0)
-        coop_start_max = [int](Get-Prop $Intent "coop_start_max" 0)
-        robots = [int](Get-Prop $Intent "robots" 0)
-        hostages = [int](Get-Prop $Intent "hostages" 0)
-        matcens = [int](Get-Prop $Intent "matcens" 0)
-        guidebots = [int](Get-Prop $Intent "guidebots" 0)
-        powerups = [int](Get-Prop $Intent "powerups" 0)
-        reactors = [int](Get-Prop $Intent "reactors" 0)
-    }
-}
-
-function ConvertTo-CheckedInLevelJson {
-    param($Level)
-
-    $levelNum = [int](Get-Prop $Level "level_num" 0)
-    $mineVolumeNormalized = [double](Get-Prop $Level "mine_volume_normalized" 0.0)
-    $travelTimeSeconds = [int](Get-Prop $Level "travel_time_seconds" 0)
-    $routeStatus = Get-StringProp $Level "route_status" "failed"
-    $rowStatus = Get-StringProp $Level "status" "ok"
-    $notes = @(
-        Get-ArrayValue (Get-Prop $Level "notes" @())
-        Get-StringProp $Level "route_note"
-        Get-StringProp $Level "guidebot_placement_note"
-        Get-StringProp $Level "guidebot_note"
-    ) | Where-Object { $_ } | Select-Object -Unique
-
-    $row = [ordered]@{
-        level_num = $levelNum
-        secret = [bool](Get-Prop $Level "secret" ($levelNum -lt 0))
-        level_name = Get-StringProp $Level "level_name"
-        level_file = Get-StringProp $Level "level_file"
-        segment_count = [int](Get-Prop $Level "segment_count" 0)
-        wall_count = [int](Get-Prop $Level "wall_count" 0)
-        trigger_count = [int](Get-Prop $Level "trigger_count" 0)
-        object_count = [int](Get-Prop $Level "object_count" 0)
-        texture_count = [int](Get-Prop $Level "texture_count" 0)
-        player_starts = [int](Get-FirstProp $Level @("player_starts", "player_start_count") 0)
-        coop_only_starts = [int](Get-FirstProp $Level @("coop_only_starts", "coop_only_start_count") 0)
-        powerups = [int](Get-FirstProp $Level @("powerups", "powerup_count") 0)
-        reactors = [int](Get-FirstProp $Level @("reactors", "reactor_count") 0)
-        robots = [int](Get-FirstProp $Level @("robots", "robot_count") 0)
-        hostages = [int](Get-FirstProp $Level @("hostages", "hostage_count") 0)
-        secrets = [int](Get-FirstProp $Level @("secrets", "secret_count") 0)
-        matcens = [int](Get-FirstProp $Level @("matcens", "matcen_count") 0)
-        energy_centers = [int](Get-FirstProp $Level @("energy_centers", "energy_center_count") 0)
-        mine_volume = [double](Get-Prop $Level "mine_volume" 0.0)
-        mine_volume_normalized = $mineVolumeNormalized
-        mine_volume_text = Format-LevelMultiplier -Value $mineVolumeNormalized
-        travel_distance = [double](Get-Prop $Level "travel_distance" 0.0)
-        travel_time_seconds = $travelTimeSeconds
-        travel_time_text = Format-LevelTime -Seconds $travelTimeSeconds
-        guidebot_count = [int](Get-Prop $Level "guidebot_count" 0)
-        guidebot_placed = [bool](Get-Prop $Level "guidebot_placed" $false)
-        guidebot_accessible = [bool](Get-Prop $Level "guidebot_accessible" $false)
-        route_status = $routeStatus
-        route_required_key_mask = [int](Get-Prop $Level "route_required_key_mask" 0)
-        route_completing_key_mask_set = [int](Get-Prop $Level "route_completing_key_mask_set" 0)
-        route_steps = @(Get-ArrayValue (Get-Prop $Level "route_steps" @()))
-    }
-    Add-IfString -Target $row -Name "guidebot_placement_note" -Value (Get-StringProp $Level "guidebot_placement_note")
-    Add-IfString -Target $row -Name "guidebot_note" -Value (Get-StringProp $Level "guidebot_note")
-    Add-IfString -Target $row -Name "route_problem" -Value (Get-StringProp $Level "route_problem")
-    Add-IfString -Target $row -Name "route_note" -Value (Get-StringProp $Level "route_note")
-    $problems = @(Get-ArrayValue (Get-Prop $Level "problems" @())) | Where-Object { $_ }
-    if ($problems.Count -gt 0) { $row["problems"] = $problems }
-    if ($notes.Count -gt 0) { $row["notes"] = @($notes) }
-    if ($rowStatus -ne "ok") { $row["status"] = $rowStatus }
-    return $row
-}
-
-function ConvertTo-CheckedInMissionJson {
-    param(
-        $Raw,
-        [int]$TargetIndex,
-        [string]$SourceName = "",
-        [string]$MissionFilename = "",
-        [string]$MissionPath = ""
-    )
-
-    $levels = @(Get-ArrayValue (Get-Prop $Raw "levels" @()) | ForEach-Object { ConvertTo-CheckedInLevelJson -Level $_ })
-    $missionName = Get-StringProp $Raw "mission_name"
-    $source = if ($SourceName) { $SourceName } elseif ($missionName) { $missionName } else { Get-StringProp $Raw "mission_filename" }
-    $filename = if ($MissionFilename) { $MissionFilename } else { Get-StringProp $Raw "mission_filename" }
-    $status = Get-StringProp $Raw "status" "ok"
-    $result = [ordered]@{
-        status = $status
-        source = $source
-        game = Get-StringProp $Raw "game"
-        mission_name = $missionName
-        mission_filename = $filename
-    }
-    $result["mission_intent"] = ConvertTo-CheckedInMissionIntentJson -Intent (Get-Prop $Raw "mission_intent" $null)
-    Add-IfString -Target $result -Name "coop_starts" -Value (Get-StringProp $Raw "coop_starts")
-    $musicTracks = @(Get-ArrayValue (Get-Prop $Raw "music_tracks" @()))
-    if ($musicTracks.Count -gt 0) {
-        $result["track_names"] = @($musicTracks | ForEach-Object {
-                $resolvedName = Get-StringProp $_ "resolved_name"
-                if ([string]::IsNullOrWhiteSpace($resolvedName)) {
-                    $slotIndex = [int](Get-Prop $_ "slot_index" 0)
-                    throw "Headless metadata track $slotIndex has no resolved_name. Rebuild the host metadata executables before regenerating regression files."
-                }
-                $durationMs = [int](Get-Prop $_ "duration_ms" 0)
-                $parseStatus = Get-StringProp $_ "parse_status"
-                $trackName = [ordered]@{
-                    track = [int](Get-Prop $_ "slot_index" 0)
-                    name = $resolvedName
-                    filename = Get-StringProp $_ "filename"
-                    format = Get-StringProp $_ "format"
-                    length_s = if ($durationMs -gt 0) { [int][Math]::Floor(($durationMs + 500) / 1000) } else { 0 }
-                }
-                if ($parseStatus -notin @("ok", "no_tags")) {
-                    $trackName["parse_status"] = $parseStatus
-                } elseif ($durationMs -le 0) {
-                    $trackName["parse_status"] = "duration_unavailable"
-                }
-                $trackName
-            })
-    }
-    $result["level_count"] = $levels.Count
-    $result["levels"] = $levels
-    $problems = @(Get-ArrayValue (Get-Prop $Raw "problems" @())) | Where-Object { $_ }
-    if ($problems.Count -gt 0) { $result["problems"] = $problems }
-    Add-IfString -Target $result -Name "mission_path" -Value $MissionPath
-    $result["target_index"] = $TargetIndex
-    return $result
 }
 
 function Get-CheckedInMissionJson {
@@ -664,37 +446,6 @@ function Copy-CdMissionFileSet {
     }
 }
 
-function Get-HeadlessFailureSummary {
-    param(
-        [Parameter(Mandatory = $true)][string]$Mission,
-        [Parameter(Mandatory = $true)][string]$LogPath
-    )
-
-    if (-not (Test-Path -LiteralPath $LogPath -PathType Leaf)) {
-        return "headless metadata failed for ${Mission}; log was not written"
-    }
-
-    $lines = @(Get-Content -LiteralPath $LogPath)
-    $failLines = @($lines | Where-Object { $_ -like "SECRET-AREA-DUMP FAIL*" } | Select-Object -First 3)
-    if ($failLines.Count -gt 0) {
-        return "headless metadata failed for ${Mission}: $($failLines -join '; '); log=$LogPath"
-    }
-
-    $missingLevels = @(
-        $lines |
-            Where-Object { $_ -like "SECRET-AREA-DUMP WARN level missing *" } |
-            ForEach-Object { $_ -replace '^SECRET-AREA-DUMP WARN level missing ', '' } |
-            Select-Object -First 8
-    )
-    if ($missingLevels.Count -gt 0) {
-        $suffix = if ($missingLevels.Count -ge 8) { ", ..." } else { "" }
-        return "headless metadata failed for ${Mission}: missing required level files $($missingLevels -join ', ')$suffix; check that the mission HOG and descriptor were staged together; log=$LogPath"
-    }
-
-    $tail = ($lines | Select-Object -Last 8) -join " "
-    return "headless metadata failed for ${Mission}: $tail; log=$LogPath"
-}
-
 function Expand-MissionArchive {
     param(
         [Parameter(Mandatory = $true)][System.IO.FileInfo]$Archive,
@@ -730,13 +481,6 @@ function Get-MissionDescriptor {
             Where-Object { $_.Extension.ToLowerInvariant() -in @(".msn", ".mn2") } |
             Sort-Object Name
     )
-}
-
-function Get-CleanMissionDescriptorValue {
-    param([string]$Value)
-
-    if ($null -eq $Value) { return "" }
-    return $Value.Split(";")[0].Trim()
 }
 
 function Get-MissionDescriptorInfo {
@@ -786,42 +530,6 @@ function Invoke-MetadataKotlinWorker {
         if ($line.StartsWith("DXXKOTLIN`t", [StringComparison]::Ordinal)) {
             return $line.Substring(10) | ConvertFrom-Json
         }
-    }
-}
-
-function Invoke-HeadlessMetadataProcess {
-    param(
-        [Parameter(Mandatory = $true)][string]$Executable,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [Parameter(Mandatory = $true)][string]$LogPath,
-        [int]$TimeoutSeconds = 120
-    )
-
-    $startInfo = [Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $Executable
-    Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments $Arguments
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-    $process = [Diagnostics.Process]::Start($startInfo)
-    try {
-        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-        $stderrTask = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
-            try { $process.Kill($true) } catch { try { $process.Kill() } catch {} }
-            $process.WaitForExit()
-            $stdout = $stdoutTask.GetAwaiter().GetResult()
-            $stderr = $stderrTask.GetAwaiter().GetResult()
-            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
-            throw "headless metadata timed out after $TimeoutSeconds seconds; log=$LogPath"
-        }
-        $stdout = $stdoutTask.GetAwaiter().GetResult()
-        $stderr = $stderrTask.GetAwaiter().GetResult()
-        Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($stdout + "`n" + $stderr).Trim() + "`n")
-        return $process.ExitCode
-    } finally {
-        $process.Dispose()
     }
 }
 

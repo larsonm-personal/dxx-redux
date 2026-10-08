@@ -1729,6 +1729,8 @@ def main():
     if args.list:
         print(json.dumps(selected, indent=2))
         return 0
+    if not 1 <= args.repeat <= 100:
+        parser.error("--repeat must be between 1 and 100")
     if not args.host or not args.client or args.host == args.client or not args.output:
         parser.error("distinct --host and --client plus --output are required")
     if not selected:

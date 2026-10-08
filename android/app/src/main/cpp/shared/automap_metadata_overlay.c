@@ -21,6 +21,9 @@
 #include "powerup.h"
 #include "secretarea.h"
 #include "timer.h"
+#include "game.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 
 #define K_SECRET_LABEL_UNFOUND_COLOR      BM_XRGB(31, 0, 0)
 #define K_SECRET_LABEL_FOUND_COLOR        BM_XRGB(0, 31, 0)
@@ -81,13 +84,18 @@ void automap_metadata_begin(void)
 	readiness_text[0] = '\0';
 }
 
-void automap_metadata_update_route(int player_objnum, int allow_adoption)
+void automap_metadata_update_route(void)
 {
 	unsigned int revision;
+	int allow_adoption = !input_demo_recorder_is_active() &&
+	                     !input_demo_replay_is_loaded();
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI)
+		allow_adoption = 0;
+#endif
 	const fix64 now = timer_query();
 	const int progress_state = automap_metadata_progress_state();
 	const int readiness = level_metadata_get_route_readiness();
-	(void) player_objnum;
 
 	if (!allow_adoption)
 		return;

@@ -72,10 +72,10 @@ object MissionDescriptorPolicy {
                 remainingSecrets--
                 val secretLine = cleanListLine(line)
                 val secret = secretLine.substringBefore(',').trim()
-                val origins = secretLine.substringAfter(',', "").split(',').mapNotNull { it.trim().toIntOrNull() }
+                val origins = secretLine.substringAfter(',', "").split(',').map { it.trim().toIntOrNull() ?: 0 }
                 if (line.isBlank() || line.startsWith(";") || line.startsWith("#") ||
                     '=' in line || ',' !in secretLine || secret.isBlank() || secret.length > 12 ||
-                    origins.isEmpty() || origins.any { it !in 1..levels.size }
+                    origins.any { it !in 1..levels.size }
                 ) {
                     problem = problem ?: "Invalid secret level list"
                 } else {

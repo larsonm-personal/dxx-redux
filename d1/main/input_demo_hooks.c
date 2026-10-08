@@ -13,7 +13,6 @@
 #include "input_demo_control_info.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_direct_command_policy.h"
-#include "input_demo_fp_env.h"
 #include "input_demo_result.h"
 #include "input_demo_state_trace.h"
 #include "input_demo_hooks.h"

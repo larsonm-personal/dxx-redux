@@ -30,6 +30,7 @@ $RepoRoot = Split-Path $ScriptDir
 . "$RepoRoot\android\helpers\normalized_json_text.ps1"
 . "$RepoRoot\android\helpers\powershell_compat.ps1"
 . "$RepoRoot\android\helpers\acoustid_title_match.ps1"
+. "$RepoRoot\android\helpers\jsonc.ps1"
 
 $SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir = Join-Path $RepoRoot "android\tests\build"
@@ -117,6 +118,28 @@ function Write-AtomicFingerprintManifest {
     }
 }
 
+# Resolve the exact request before building tools or looking up track names
+if (-not (Test-Path -LiteralPath $CdImgDir -PathType Container)) {
+    throw "CD images directory not found: $CdImgDir"
+}
+$folders = @(Get-ChildItem -LiteralPath $CdImgDir -Directory | Sort-Object Name)
+if ($PSBoundParameters.ContainsKey('FolderNames')) {
+    if ($FolderNames.Count -eq 0) { throw 'Invalid disc selection: no folder names' }
+    $requested = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($name in $FolderNames) {
+        if ([string]::IsNullOrWhiteSpace($name) -or -not $requested.Add($name)) {
+            throw "Invalid disc selection: blank or duplicate folder name '$name'"
+        }
+        if ($name -notin $folders.Name) { throw "Invalid disc selection: unknown folder '$name'" }
+    }
+    $folders = @($folders | Where-Object { $requested.Contains($_.Name) })
+    foreach ($folder in $folders) {
+        if (@(Get-ChildItem -LiteralPath $folder.FullName -Filter '*.cue' -File).Count -eq 0) {
+            throw "Invalid disc selection: no CUE source in '$($folder.Name)'"
+        }
+    }
+}
+
 # -- Build ------------------------------------------------------------
 
 if (-not $SkipBuild) {
@@ -147,10 +170,8 @@ $acoustIdKey = $null
 if (-not $SkipAcoustId) {
     $configPath = "$RepoRoot/android/acoustid_config.jsonc"
     if (Test-Path $configPath) {
-        $raw = Get-Content $configPath -Raw
-        $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
         try {
-            $cfg = $stripped | ConvertFrom-Json
+            $cfg = Read-JsoncFile -Path $configPath
             $acoustIdKey = $cfg.api_key
         } catch {
             Write-Warning "Failed to parse acoustid_config.jsonc: $_"
@@ -234,13 +255,6 @@ function Invoke-AcoustIdLookup {
 
 # -- Process CD images ------------------------------------------------
 
-if (-not (Test-Path $CdImgDir)) {
-    Write-Error "CD images directory not found: $CdImgDir"
-    exit 1
-}
-
-$folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
-if ($FolderNames) { $folders = @($folders | Where-Object Name -in $FolderNames) }
 $successes = @()
 $failures = @()
 $skipped = @()

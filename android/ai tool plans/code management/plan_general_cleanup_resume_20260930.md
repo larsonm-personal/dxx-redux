@@ -4415,3 +4415,837 @@ The initial narrow ignore-rule report missed active BR-0607 corpus provenance ow
 - Revalidated GQR-0247 / GQF-0261: current lost_player_timeout temporary remains unnecessary. Restore original nested direct return with identical comparison/evaluation order and priority, retaining the Enhanced nearby/visible/clear-leg gate and all other native return rules/comments
 - Fresh maintained baselines pass: Original Redux comparisons and native save modes twice on D2 levels 1/11; Enhanced grate detour, endpoint patrol, reactor arrival and Maximum Hostages twice each. Snapshot ten stable JSON results before editing
 - Verify exact source change and original attribution, before/after navigation JSON, D2 Windows and all-ABI Android builds and scoped quality. No new test for the trivial control flow, no unrelated source edits, staging or commit
+
+### Direct escort timeout restoration completed, 2026-10-07
+
+- Completed GQR-0247 / GQF-0261. Restored original nested direct return; exact whole-file verifier preserves the Enhanced gate, timeout priority, evaluation order, remaining rules and comments. Restored prefix equals original attribution source
+- Four net inherited lines removed; original-baseline escort.c diff +2918/-288 -> +2913/-287, six changed lines removed. No new test, wrapper or API
+- Maintained Original Redux/save/replay checks pass twice on D2 levels 1/11; Enhanced grate, endpoint patrol, reactor and Maximum hostage navigation pass twice each. All ten JSON results match before/after byte-for-byte, including Redux return-cadence boundary coverage
+- D2 full Windows and all three Android Debug native ABI builds pass, no new compile warning. Scoped quality invocation confirms inherited-only file exclusion; exact style/source and diff check pass. Ordinary valid mission runs, no deferred security-sensitive probes
+- Immutable evidence imported as GQR-0247 direct escort timeout remediation 20261007. Totals: 266 findings, 252 remediations (38 DONE / 213 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup and concurrent launcher/installer work preserved; no staging or commit. Next: revalidate GQR-0248 owner-only Guidebot route state against current references/guards before applying its accepted private-linkage cleanup
+
+### Owner-only Guidebot route state in progress, 2026-10-07
+
+- External HEAD advanced to 1ee56908299b870fef1852c3f0e7586844890652, incorporating prior cleanup code. Fresh complete tracked non-document/patch reference census still identifies exactly 52 owner-only variables among 65 header exports; retain the other 13
+- Delete the 52 unused externs and resulting empty introspection guard; make their existing definitions static, preserving every initializer/guard and all runtime/serialization/diagnostic bodies. Move cache_poll_time and logged_readiness before first use within their existing planner guard
+- Verify exact source transformation, all 52 first-use/guard/reference checks, builds for desktop replay/live/route-only/metadata variants and Android ABIs, ordinary maintained navigation and unchanged JSON baselines. Zero inherited-file savings; preserve current concurrent extract/import work and prior cleanup records
+
+### Owner-only Guidebot route state completed, 2026-10-07
+
+- Completed GQR-0248 / GQF-0262 after live reference census at external HEAD 1ee569082. Exactly 52 definitions are now private to guidebot_route.c; 13 actually shared exports remain in original header order. No live state or accessor removed
+- Exact source verification proves only static linkage changes, two early definition moves and removal of 52 externs/empty guard. All 52 initializer, compiler-guard and first-use checks pass; serialization/runtime/diagnostic bodies remain unchanged. Both pre-extraction files equal the preceding beea1341d source despite intervening external commit
+- Removed 55 branch-added header lines, unchanged owner source net line count; zero inherited-file savings. Post-change complete tracked census finds private names only in their owner
+- Full D2 Windows desktop/headless/live/Original/route-only/metadata variants and all three Android Debug native ABI builds pass, no new changed-source warnings. Scoped quality invocation confirms native exclusion; exact style/source and diff check pass
+- Existing Original Redux/save/replay navigation passes twice on D2 levels 1/11; Enhanced grate/endpoint/reactor/Maximum hostage cases pass twice each. All ten JSON results remain byte-identical to the immediately preceding pre-extraction baselines, including Redux return-cadence boundary checks
+- Immutable evidence imported as GQR-0248 private Guidebot route state remediation 20261007. Totals: 266 findings, 252 remediations (39 DONE / 212 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup is now externally committed; current concurrent extract/import/outstanding-bugs edits preserved. No staging or commit by this cleanup worker, physical-device campaign or deferred security-sensitive probes. Next: revalidate higher-impact paired Android config policy GQR-0188 against current graphics/first-run behavior, or another accepted live-source cleanup
+
+### Paired Android config policy in progress, 2026-10-07
+
+- Revalidated GQR-0188 / GQF-0201 at live 1ee569082. Identical last-player retention helpers and loaded-graphics blocks remain. Recent first-run chooser and graphics write-safety boundaries stay native and unchanged
+- Added maintained actual config I/O fixture shared by desktop CTest and an isolated Android executable linked to each actual engine library. All four 58-case baselines pass: current/saved empty, coop, transient/case and ordinary names; filter/FOV values; first-run pilot and D2 disc-presence defaults; native serialized config. Android PhysFS uses its supported null Activity initialization; no app state or retail media is loaded
+- Move only selection into existing auto_net owner and loaded graphics into existing android_graphics_options owner. Preserve ANDROID-only non-NDK compilation, transient current versus saved-name distinction, native parser/format, first-run music/controls and graphics write locking
+- Compare all 232 before/after results, verify exact product scope and policy bodies, paired Windows/Android builds, scoped quality and automation catalog registration. New native Android runner operates only in its isolated /data/local/tmp directory; concurrent extract/import/outstanding-bugs work stays outside this cleanup
+
+### Shared Android config policy completed, 2026-10-07
+
+- Completed GQR-0188 / GQF-0201 and its reactivated DMR1-CHUNK-008 scope after live-source reconciliation. Existing auto_net owns current/saved pilot selection; existing android_graphics_options owns loaded filter/global/FOV synchronization. Native first-run defaults, parser/format and graphics write-safety boundaries remain unchanged
+- Exact product-source verification passes. Removed 70 inherited lines, added 36 shared product lines: 34 net product lines removed. Original-attribution config diff additions shrink D1 161 -> 126 and D2 175 -> 140, with deletions unchanged. Historical estimates are superseded by applied metrics; maintained test additions are separate cost
+- All four actual-engine config I/O traces, 58 cases each / 232 total across D1/D2 Windows and Android, match their pre-extraction baselines byte-for-byte. Covers current/saved names, filter/FOV/runtime globals, serialized adjacent preferences and missing-file/D2 disc defaults
+- Full paired Windows builds and all three Android Debug native ABI builds pass. Restored coop_save.h after initial Android compile identified its separate native-reader use. Scoped C/C++/CMake checks and final PowerShell checks pass; mixed catalog line endings were normalized preserving concurrent edits. Automation catalog validation/integration and owned diff check pass
+- Imported immutable GQR-0188 shared config policy remediation 20261007. Totals: 266 findings, 252 remediations (40 DONE / 211 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Android fixture uses actual engine libraries in isolated native processes with no initialized graphics safety store. No live initialized-store locking, chooser UI, rendered pixels, live UDP/audio or full gameplay replay claim; exact source checks preserve native safety calls. No staging/commit or deferred security-sensitive probes; concurrent import/extract/outstanding-bugs changes preserved
+- Next: revalidate GQR-0190 paired merged-texture label production against current source and its distinct projected-screen arithmetic before extraction. Keep fixes-first sequencing
+
+### Paired merged-texture label revalidation, 2026-10-07
+
+- GQR-0190 / GQF-0203 remains live at HEAD 1ee569082. Fresh exact comparison finds identical 53-line production blocks in both render_face implementations, guarded by ANDROID and OGL. Current source hashes and pre-edit native snapshots are retained in temp/general_cleanup_20261006/gqr0190-live-revalidation.json and gqr0190-before-*-render.c
+- Existing android_texture_debug_add_joined_labels is not equivalent: it computes a 3D centroid and projects it, whereas this block converts each already-projected vertex to integer pixels before averaging only projected vertices. Do not substitute the existing helper or change two-slot admission when only one name is present
+- Intended extraction: one function in existing android_texture_debug.c/.h accepting the current point list, vertex count and native texture IDs. Keep bm2/tmap2 path selection native, and move the identical projected-screen/name/label policy intact. Preserve original bitmap names, non-hires flag, independent missing names, original plus-ten second-label placement, screen edges and current face metadata
+- Before product editing, extend maintained actual render-face/overlay integration to obtain baseline label data and rendered pixels/counters for both games. Cover projected/unprojected vertices, zero/one/two remaining capacity, independently missing names, screen edges, hires originals, native single/dual texture paths and FOV/context variants. Existing merged-wall scripts exercise D2 routes but do not expose overlay label data or cover all of this contract; mere script success is insufficient
+- Then extract, compare actual before/after results, verify exact native/shared scope and actual savings, build both desktop games/all Android ABIs and run scoped quality/catalog gates for any new maintained runner. No GQR-0190 product edit or completion claim yet; coverage and totals remain unchanged
+
+### Shared merged-texture labels completed, 2026-10-08
+
+- Completed GQR-0190 / GQF-0203 after live-source reconciliation. Both native render_face calls now use existing android_texture_debug owner for projected-screen merged-label production; existing 3D joined-label anchor remains separate and unchanged
+- Existing appender supplies unchanged face metadata, truncation, anchor fields and null-name rejection. Null bitmap preserves non-hires output. Retain integer conversion before projected-only averaging, two-slot admission, independent names, screen bounds and original plus-ten second-label placement; native single/dual path and overlay/tmap2/bm2 gates remain unchanged
+- Exact native/shared source verification passes. Removed 100 inherited lines, added 34 shared product lines: 66 net product lines removed. Original-attribution render additions D1 287 -> 237 and D2 450 -> 400, deletions unchanged. Maintained fixture/registration additions are separate test cost
+- All 864 actual Android render-face/overlay cases match pre-extraction label fields, polygon counts and scene/overlay RGBA SHA-256 traces byte-for-byte. Eighteen scenarios cross three native texture paths, four FOV values and two EGL context generations. Games and recreated contexts agree; four FOV scene variants and overlay pixel changes are verified
+- Fixture baseline correction: standalone EGL teardown is explicit and direct-context native texture-state caches are invalidated. Corrected baseline reran against preserved pre-extraction libraries with recorded identities, then compared with new libraries. No product lifecycle workaround. Valid mappings always return name pointers, so runtime covers blank names while unchanged appender/source proves null rejection; synthetic hires metadata is not DXA decoding
+- Native engine fixture setup and runner are shared with config integration. Refactored config runner preserves both 58-case Android traces exactly; paired desktop config CTests pass. Texture runner registered in graphics_scenarios with 600-second timeout; config entry now uses that family too
+- Full paired Windows/all-ABI Android builds, scoped fixture/product quality, catalog validation/integration and owned diff check pass, no new compiler warnings. Standalone engine reports three residual global allocations at exit in both versions; no leak-free engine shutdown, live Activity lifecycle, retail data, full replay or deferred security-sensitive probe claim
+- Imported immutable GQR-0190 shared merged-texture labels remediation 20261008. Totals: 266 findings, 252 remediations (41 DONE / 210 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Concurrent import/extract/outstanding-bugs changes preserved; no staging or commit. Continue fixes-first with current-source revalidation of another accepted cleanup, retaining deferred probe boundaries
+
+### Next accepted fix: bounded line/glyph batching, 2026-10-08
+
+- Fresh source check confirms GQR-0185 / GQF-0198 remains live: both ogl.c owners still directly publish fallible realloc results/capacity, and glyph/line appends rely on assertions. Line start/end and append bodies remain paired; glyph start/end/append are also still present. This is the highest-ranked remaining inherited cleanup
+- Existing shared ogl_2d_batch.c/.h is already separately compiled into both native OGL targets and supplies bounded untextured 2D storage. Revalidate its seam for shared bounded 3D line/textured glyph storage without changing its existing line/fan behavior or introducing duplicate private texture-binding state
+- Reuse the now-maintained native engine/EGL fixture wiring for actual ordinary glyph and ordered line pixel/count baselines, including empty/control/scaled/color/centered text and ordinary bounded flush/texture transitions. Preserve caller ordering and per-game counters/binding/client state. Deferred allocation/resource-pressure probes remain excluded; prefer a design that removes fallible string-sized batch allocation altogether and document that structural proof separately
+- No GQR-0185 product edit, new coverage credit or closure yet. Current totals stay 41 DONE / 210 TODO / 1 DEFERRED
+
+### Bounded line/glyph batching in progress, 2026-10-08
+
+- Revalidated GQR-0185 / GQF-0198 against live 1ee569082; complete paired storage/append blocks are identical. Baseline actual-engine fixtures pass 42 cases per game using preserved pre-fix libraries
+- Replace fallible string/edge-sized arrays with 512-line and 256-glyph fixed buffers and ordered capacity/texture-transition flushes. Keep legacy size-hint ABI, but remove native font strlen sizing. Compile shared ogl_batch_impl.h through each native ogl.c so flushes use existing private binding macros, counters and enable state directly; avoids mirrored cache state, callbacks and extra adapter exports. Existing ogl_2d_batch behavior stays unchanged
+- Maintained GLES diagnostic counters measure actual submitted draws/vertices and successful CPU stream growth. Ordinary glyph cases cover empty/control/color/underline/scale/center/long strings; line cases compare two-phase batched pixels with native unbatched output; new texture-transition batching compares against pre-fix unbatched oracle. Test counts include two explicit EGL context generations
+- Shared native rendering fixture gains a batches mode and frozen-library directory selection for reproducible before/after runs. New test_android_ogl_batches runner registered with master timeout 600. Fixture and product scoped quality pass; paired Windows/all-ABI Android builds and post-fix fixtures next
+- No allocation/resource-pressure failure probe: fixed-storage source proof will account for removal of those batch failure paths. Existing graphics setup/stream allocation remains separately owned. No GQR-0185 closure or new coverage credit yet; concurrent import/extract/outstanding-bugs changes preserved
+
+### Bounded shared line/glyph batching completed, 2026-10-08
+
+- Completed GQR-0185 / GQF-0198 after live-source reconciliation. Shared implementation compiled through existing native ogl.c owners uses fixed 512-line / 256-glyph storage, 77824 bytes per game, preserving private binding/enable state and legacy ABI. Capacity/texture changes flush in order; removes fallible string/edge-sized batch allocation structurally
+- Exact six-file native transformation and full shared token/body checks pass. Removed 168 inherited lines, added 109 shared implementation and 18 Android diagnostic lines, 41 net product lines removed. Actual original-attribution ogl.c additions D1 1989 -> 1905 and D2 2082 -> 1998, deletions unchanged. Tests/runner cost recorded separately
+- All 84 actual GLES batch pixel/vertex traces match pre-fix results across both games and two contexts. Sixteen capacity-boundary records have expected 1 -> 2 or 1 -> 3 draws; others identical. Ordinary line pixels equal immediate rendering and texture transition equals pre-fix immediate oracle. Zero measured CPU GL stream growth after warmup; no general driver allocation or engine shutdown guarantee
+- Both full Windows builds, all three Android Debug ABI builds, scoped quality and catalog validation/integration pass. Existing 864 texture-label and 116 config cases revalidated byte-identical. Maintained batch runner registered with 600-second timeout and frozen-library support in common engine fixture runner
+- Immutable evidence imported as GQR-0185 bounded shared line glyph batching remediation 20261008. Totals: 266 findings, 252 remediations (42 DONE / 209 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Concurrent installer/import/outstanding-bugs changes preserved; no staging/commit or deferred security-sensitive probes. Next: current-source revalidation of GQR-0178 paired merged-wall cache creation, including overlapping BR-0304 and existing shared ownership before any extraction
+
+### Merged-wall cache creation revalidation, 2026-10-08
+
+- GQR-0178 remains live: private creation functions in D1/D2 match except local declaration order at current HEAD 1ee569082. Existing merged_wall_debug owns reuse/reservation/FBO/finalization, with native allocation/initialization/accounting seam still duplicated. Exact bodies and six owner hashes saved in gqr0178-live-revalidation.json
+- BR-0304 remains live in the shared compositor: bound-object-only wrap mutations precede selecting/binding each source, including restore. GQR-0238 coherent binding ownership remains independently open; keep the current runtime adapter and avoid adding a competing cache
+- First add a maintained isolated actual GLES clamp-reference fixture, reusing native engine/context runner. Cover stock/hires/mixed and NPOT extents, nearest/bilinear/trilinear, all orientations, paired games/context generations and current runtime adapter versus uncached binding. Reproduce ordinary edge-pixel divergence before fixing ordering; assert source metadata/live wraps and restoration after repair
+- Then repair BR-0304 with binding before each wrap mutation, validate actual pixels/state and builds, and import its evidence before GQR-0178 extraction. Cache reuse/create/eviction/accounting and failure cleanup remain required for GQR-0178; compositor fixture alone cannot close that item. No deferred media/resource-pressure probes
+
+### Merged-wall wrap prerequisite completed, 2026-10-08
+
+- Fixed and archived existing BR-0304 before GQR-0178 extraction. Source selection/binding now precedes each clamp/repeat mutation; select unit zero before output filtering. Exact whole-file verifier proves only reorderings plus ten shared Android lines, no inherited edits or new state/cache
+- Maintained actual GLES fixture covers stock/hires/mixed and NPOT dimension pairs, nearest/bilinear/trilinear, four orientations, cached/uncached runtime adapter and two contexts, 240 cases per game. Baseline reproduces 48 pixel/border mismatches per game; combined actual/reference wrap restoration fails all baseline cases
+- All 480 repaired composites match explicitly bound/clamped reference pixels exactly, source wraps match metadata and viewport/framebuffer/unit/enables/masks restore. Reference hashes remain unchanged; games, contexts and binding adapters agree. Reference isolates wrap policy, not an independent shader oracle
+- Both Windows builds/all three Android Debug native ABIs, scoped mixed quality/final runner quality, catalog gates and diff check pass. Existing 864 texture-label, 84 batch and 116 config traces remain byte-identical. Common fixture cache discovery skips abandoned caches without actual engine libraries; normal runner revalidation exercises this path
+- Imported immutable BR-0304 merged-wall source wrap ordering remediation 20261008. General totals unchanged: 266 findings, 252 remediations (42 DONE / 209 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- GQR-0178 still requires shared native creation ownership plus cache reuse/eviction/accounting/failure cleanup proof; GQR-0238 external GL binding coherence remains independently open. No deferred resource/media probes, live Activity, padded NPOT visible-subrectangle or full replay claim. Concurrent work preserved; no staging or commit
+
+### Cache creation extraction integration baseline, 2026-10-08
+
+- Revalidated current native wrappers and BR-0304 shared repair. Move only paired private transaction into existing merged_wall_debug owner, using existing per-game allocation functions/globals and current texture runtime adapter. No new callback table, layout mirror or subsystem; native call passes existing runtime state
+- Before product edits, add maintained actual native g3_draw_tmap_2 cache fixture. Five dimension pairs x three filters x four orientations exercise cold/reused scene pixels, native draw/count/byte accounting and bitmap flags/color. Fill actual 32-slot cache, control published ages for deterministic LRU/tie eviction, clear and verify native frees. Real texture without level-zero storage tests shared finalizer incomplete-FBO cleanup without resource-pressure injection
+- Record paired/two-context normalized baselines, then extract with exact whole-file/native-body verification and actual original-attribution savings. Build both Windows engines/all Android ABIs, run fixture and existing compositor/label controls, scoped quality and catalog gates. GQR-0178 remains open until these pass; concurrent changes preserved
+
+### Shared cached-merge creation completed, 2026-10-08
+
+- Completed GQR-0178 / GQF-0191 after current-source reconciliation and BR-0304 prerequisite repair. Existing per-game merged_wall_debug owner now contains native creation transaction; native calls pass current private runtime adapter. Reuse existing allocation/sizing/accounting globals/functions, no new callback table/layout mirror/cache/CMake owner
+- Exact native transformation and shared body/rest-of-file verification pass. Removed 94 inherited lines, added 53 shared source/header lines, 41 net product lines removed. Actual original-attribution ogl.c additions D1 1905 -> 1858 and D2 1998 -> 1951, deletions unchanged. Test additions recorded separately
+- All 248 actual native GLES cache records match preserved pre-extraction libraries byte-for-byte across both games and two contexts. Matrix verifies nonempty cold/reused pixels, 2 -> 1 draws, allocation/byte and bitmap metadata policy. Actual 32-slot cache checks controlled-age LRU/tie eviction and full clear; actual incomplete-FBO finalizer checks one native free/reset and accounting restoration
+- Failure control directly exercises unchanged shared finalizer using a texture name without storage, not system allocation/resource-pressure failure. Native admission/order and all other product bodies are exact. Fixture clear-color and D2 qualification corrections were completed before final frozen-library baseline; games/contexts agree
+- Both full Windows and all three Android Debug ABI builds, scoped fixture/product quality, catalog validation/integration and owned diff check pass. Existing 480 wrap, 864 label, 84 batch and 116 config cases remain byte-identical. Maintained cache runner registered with 600-second timeout and frozen-library override
+- Imported immutable GQR-0178 shared cached-merge creation remediation 20261008. Totals: 266 findings, 252 remediations (43 DONE / 208 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- GQR-0238 external GL binding coherence remains open; preserve this extraction and BR-0304 while revalidating its actual cached bind, raw mutation, delete/reuse, filtering and context owners. No staging/commit, full gameplay replay, live Activity or deferred security-sensitive probes; concurrent installer/import/outstanding-bugs changes preserved
+
+### Texture binding ownership revalidation, 2026-10-08
+
+- GQR-0238 / reopened BR-0256 remains live. Native helper trusts per-unit arrays while paired xmodel upload/draw/delete, shared bulk filters and diagnostic raw GL calls bypass them. Legacy last_bound_tex scalar resets do not invalidate the real per-unit cache
+- Consolidate tracking in existing GLES shim, following its buffer-binding interception precedent. Redirect bind/active/delete for all existing users; move binding state out of native adapters rather than adding a second cache. Preserve valid reuse/counters and fallback binds beyond tracked game units, reset on shim/context lifecycle, and remove obsolete scalar filter adapter plumbing
+- First maintain actual GLES helper mutation controls and valid ASE/PNG enhanced-model upload/draw/team/free interleaving with native font pixels, both engines and two contexts. Reproduce stale binds before product edits. Then repair, reconcile structural contracts/fixture adapter shapes, and verify exact caller coverage, deletion/reallocation, filters, lifecycle and existing render/cache regressions
+- Build paired Windows/all Android ABIs, scoped quality/catalog gates and original/inherited/net metrics. Preserve completed GQR-0178/0185 and BR-0304. No allocation/resource-pressure or malformed-media probes; generated model/texture fixtures are valid ordinary inputs
+
+
+### Binding baseline correction and mipmap prerequisite, 2026-10-08
+
+- Resumed from current source, with no binding-owner product edit yet. Baseline helper controls reproduce 42 stale-bind cases per game. Native font controls initially used pixel coordinates for normalized native glyph geometry; correct the projection to match ogl_end_frame and require a nonempty reference before relying on interleaving comparisons
+- Generated enhanced-model assets are valid ASE/TGA, correcting the earlier planned PNG description. Existing Android enhanced-model loader uses TGA on this path
+- Reproduced existing BR-0197 independently: all 16 mipmap cases per game report GL_INVALID_ENUM and differ from the ordinary base-level reference across RGB/RGBA and POT/NPOT textures. Repair the paired preprocessor guards so Android generates mipmaps explicitly without the GLES1 legacy parameter; preserve desktop and other OGLES behavior
+- Freeze current libraries and paired xmodel sources before product editing. Run paired actual mipmap fixtures, both Windows builds, all Android ABIs, scoped quality and catalog checks before archiving BR-0197. Then resume GQR-0238 with corrected nonempty font baselines; existing completed extractions and concurrent installer/import changes remain intact
+
+- Corrected nonempty font baseline now reproduces all eight enhanced/native interleaving failures per game, alongside 42 helper failures. This supersedes the earlier empty-font equality result
+- Mipmap integration uncovered a separate ordinary RGB upload alignment issue at width 15: with default unpack alignment 4, the tightly packed TGA rows produce nonuniform source data. The mipmap-only fixture explicitly selects alignment 1 and restores it afterward, retaining 15x13 NPOT coverage. Keep the raw default-alignment upload defect open for independent revalidation/repair rather than claiming it fixed by mipmap generation
+
+
+### Android enhanced-model mipmap prerequisite completed, 2026-10-08
+
+- Fixed and archived existing BR-0197 after fresh reproduction. Exactly two guard substitutions per xmodel.cpp select explicit mipmap generation on Android and exclude the removed legacy parameter. Desktop/non-Android OGLES behavior and every other product byte remain unchanged; zero net product lines
+- All 32 actual minified RGB/RGBA, 8x8 POT/15x13 NPOT, base/team texture records pass with GL_NO_ERROR in both games and two contexts. Preserved libraries reproduce all 32 failures with GL_INVALID_ENUM under the final fixture. Nonempty level-zero reference hashes remain unchanged; recreated contexts agree
+- Fixture isolates mipmap generation by explicitly selecting unpack alignment 1 and restoring the incoming value. The separate default-alignment odd-width RGB upload issue remains open for independent repair; no generation-failure fallback/resource-pressure claim
+- Corrected nonempty normalized-coordinate native-font baseline reproduces all eight enhanced/native interleaving failures per game. After mipmap repair, these and all 42 helper binding failures per game remain, providing independent GQR-0238/BR-0256 controls
+- Both Windows builds/all three Android Debug native ABI builds, scoped mixed/final fixture quality and catalog validation/integration pass. All 1676 existing cache/wrap/label/batch records remain byte-identical. Immutable evidence imported as BR-0197 Android xmodel mipmap generation remediation 20261008
+- General totals unchanged: 266 findings, 252 remediations (43 DONE / 208 TODO / 1 DEFERRED). Next resume GQR-0238 coherent binding ownership using these corrected baselines and preserved libraries. Completed extractions and concurrent installer/import/outstanding-bugs changes preserved; no staging/commit
+
+
+### Coherent texture-binding owner integration, 2026-10-08
+
+- Applied GQR-0238 repair after preserving post-BR-0197 libraries and verifying six current product snapshots. Existing GLES shim owns active unit and three known binding slots, with distinct known flags; out-of-range valid units always bind. Raw bind/active/delete calls are redirected, and shim diagnostic probe uses tracked wrappers explicitly
+- Removed paired native binding arrays/unit state/obsolete scalar, reduced binding adapters to existing counters, and removed unused scalar filter adapter plumbing. Frame reset invalidates binding knowledge while preserving actual tracked active unit; shim init queries actual active unit and shutdown invalidates state
+- First repaired actual-engine fixture passes 78 cases/game, fixing all 42 helper and eight native-font interleaving failures/game. Added actual owner controls for cross-adapter reuse, reset on unit two, deletion across all three units, valid fourth-unit fallback and unrelated cube-map binds
+- Final fixture additionally starts shim initialization on actual unit two and verifies independent unknown/reused slots after context initialization, 80 cases/game. Final run and existing renderer regressions are in progress; do not close GQR-0238 until all finish
+- Preprocessed all ten Android engine translation units spanning seven raw caller files with actual compile flags. Only shim wrapper bodies retain raw GL bind/active/delete calls; native xmodel, compositor, filtering and diagnostics resolve through the owner. Both Windows/all Android ABI builds and scoped quality pass. No live Activity, arbitrary simultaneous contexts, deferred media or allocation-pressure claim
+
+
+### Coherent texture-binding ownership completed, 2026-10-08
+
+- Completed GQR-0238 and fixed/archived reopened BR-0256. Existing GLES shim owns tracked bind/active/delete transitions; native adapters retain counters only. Removed both private arrays/unit variables and obsolete scalar filter state. Known flags avoid sentinel aliases, other valid units bind unconditionally, frame invalidation preserves actual active unit, init queries it and shutdown invalidates
+- Exact paired native transformation and shared remainder token checks pass. Removed 12 inherited lines; original ogl.c additions D1 1858 -> 1852 and D2 1951 -> 1945, deletions unchanged. Overall product grows 21 net lines for complete raw-transition ownership; test changes recorded separately
+- All 100 previously failing actual helper/native-font cases repaired. Final 160 binding cases pass, including valid reuse/counters, raw active/bind, null/second adapters, filters 0/1/2, actual deletion/reallocation, three-unit deletion, fourth-unit fallback, cube-map isolation, reset on unit two and initialization on actual unit two. Nonempty native font references preserved; both games and recreated EGL contexts agree
+- Actual preprocessing of ten engine translation units spanning all seven raw caller files proves only shim wrappers retain direct GL calls. Both full Windows builds/all three Android Debug ABI builds, scoped quality/final lifecycle quality, seven renderer contracts and catalog validation/integration pass. All 1708 existing mipmap/cache/wrap/label/batch records remain byte-identical
+- Imported immutable GQR-0238 coherent texture binding ownership remediation 20261008. Totals: 266 findings, 252 remediations (44 DONE / 207 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Separate default-alignment odd-width RGB upload defect remains open in this plan. No numeric-name recycling, simultaneous contexts, live Activity, arbitrary invalid GL inputs, allocation pressure, malformed media or full replay claim. Completed GQR-0178/0185 and BR-0304/0197, concurrent installer/import/outstanding-bugs changes preserved; no staging/commit. Continue fixes-first with current-source revalidation of another accepted remediation
+
+
+### Automap route-adoption eligibility revalidation, 2026-10-08
+
+- Revalidated GQR-0237/GQF-0252 against live HEAD 1ee569082 and current renderer-cleanup worktree. Both Android draw handlers still compute recorder/replay/network eligibility and pass an unused player object number to the existing shared owner. D1 recorder/replay includes and D2 replay include become unused; D2 recorder remains required for markers
+- Preserve recorder/replay short-circuit order before timer/progress/readiness queries, including those queries in blocked states. Keep poll cadence, rewind-clock handling, displayed revision and refresh accounting unchanged. Move eligibility into existing per-game shared updater and remove both arguments; do not change D1 begin/rescan or D2 marker recording
+- Before product editing, maintain a paired production-source entry fixture with controlled recorder/replay/network, progress/readiness, timer, revision and cache-publication seams. Cover ordinary/recording/replay/multiplayer eligibility, blocked-state non-adoption, resume, exact poll boundary and backwards clock, plus complete/failed readiness. Record baselines then compare after extraction. Pair real open-map readiness integration with desktop/Android builds, scoped quality/catalog and exact source/inherited metrics
+- Higher-ranked GQR-0184 remains live but its required raw/scaled allocation-fault probes remain deferred; no partial closure or probe authorization inferred. No font product change. GQR-0237 fixture uses ordinary controlled state and no media/resource-pressure probes; concurrent installer/import/outstanding-bugs changes remain preserved
+
+
+### Shared automap adoption eligibility completed, 2026-10-08
+
+- Completed GQR-0237/GQF-0252 after live revalidation. Existing automap_metadata_overlay owner computes recorder/replay/network eligibility; both arguments and unused D1 recorder/replay/D2 replay includes removed. Preserve short-circuit query order before timer/progress/readiness, blocked-state queries/non-adoption, poll cadence, rewind-clock boundary and revision accounting. D1 initial rescan and D2 marker recorder code remain exact
+- Exact whole native file and shared token verification pass. Removed 21 inherited lines, added eight shared lines: 13 net product lines removed. Original automap additions D1 224 -> 212 and D2 425 -> 416, deletions unchanged. Test additions recorded separately
+- All 136 production-source updater before/after traces match byte-for-byte across eight ordinary/recording/replay/network states, cadence/clock/revision/resume controls and 20 progress/readiness combinations. Another 136 post-change cases pass with NETWORK undefined. Controlled subsystem seams, no full recorder/replay/UDP claim
+- Fresh all-ABI APK installed only on emulator-5582. Live D1 readiness passes 21/21 steps with three objectives/two secret labels; D2 passes 26/26 with cold calculating phase, actual open-map route refresh and zero publication failures. D1 initial rescan can make objectives ready immediately; D2-only route-cache introspection checks remain D2-only
+- Emulator D1 texture was missing; provisioned ordinary existing local retail descent.pig, SHA256 093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe, matching installed HOG. No import coverage claim. D1 menu/briefing and game-specific assertion corrections completed before final passing scripts; failed setup/script attempts retained separately
+- Both Windows/all three Android ABI APK builds, scoped mixed/final fixture quality, final catalog validation and catalog integration pass. Native fixture runner registered with 600-second timeout; existing readiness script declares both games and 600-second master timeout. No broad route rewrite or new product owner
+- Imported immutable GQR-0237 shared automap adoption eligibility remediation 20261008. Totals: 266 findings, 252 remediations (45 DONE / 206 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO. Continue fixes-first current-source revalidation; GQR-0184 allocation-fault probes and separate RGB upload alignment remain open
+- Completed renderer work and concurrent installer/import/outstanding-bugs changes preserved. No malformed media, allocation pressure, full gameplay replay, live multiplayer, staging or commit
+
+
+### Unused D1 polymodel cache removal in progress, 2026-10-08
+
+- Revalidated GQR-0186/GQF-0199 against live 1ee569082 and current renderer worktree. Complete tracked product/build/test/script census finds only the D1 definition, original D2 definition, D2 declaration and two D2 exit-model calls. D1 has no declaration or consumer; actual Android libraries export the unused function in every ABI
+- Snapshot both current ogl.c owners and pre-deletion symbols for all three ABIs. Delete only the thirteen-line D1 copied function and separator; preserve every other D1 byte and the entire current D2 source, including all completed renderer fixes
+- Verify exact deletion, original attribution/inherited numstat, full source/dynamic caller census and post-build D1 symbol absence/D2 presence across ABIs. Build paired Windows and Android native targets and run scoped quality/diff checks. No new implementation-mirroring test for dead-code removal, no unrelated probes or staging/commit
+
+
+### Unused D1 polymodel cache completed, 2026-10-08
+
+- Completed GQR-0186/GQF-0199 after current tracked/untracked production/build/test/script and pre-build export census. D1 copied ogl_cache_polymodel_textures had no declaration or caller; D2 original definition/declaration/two exit-model calls remain used
+- Exact whole-file byte verifier proves only the thirteen-line D1 function and separator removed. Every other D1 byte and entire current D2 source unchanged. Removed 14 inherited/product lines; original D1 ogl.c additions 1852 -> 1838, deletions unchanged at 76. D2 stays 1945 added/76 deleted
+- Both full Windows/all three Android Debug native ABI builds/link pass. D1 symbol absent from Windows object/all Android libraries; D2 symbol present in each. Post-deletion full current/tracked inventories contain exactly four D2 references. No new wrapper, callback, header or test for unused-code removal
+- Scoped quality invocation confirms inherited-only exclusion; exact style/source and owned diff checks pass. Immutable evidence imported as GQR-0186 unused D1 polymodel cache remediation 20261008. Totals: 266 findings, 252 remediations (46 DONE / 205 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior renderer and automap extractions and concurrent installer/import/outstanding-bugs changes preserved; no staging/commit or unrelated/deferred probes. Continue fixes-first with fresh-source revalidation; redundant inherited includes GQR-0158 remain an eligible accepted cleanup
+
+
+### Redundant feature includes completed, 2026-10-08
+
+- Completed GQR-0158/GQF-0171 after current declaration/use census. Removed four unconsumed input_demo_fp_env.h includes from paired game.c/input_demo_hooks.c and second adjacent guarded d1_in_d2.h include from D2 newdemo.c. Required startup/shared replay includes and calls remain at their current owners
+- Exact whole-file verifier proves only five include lines removed, preserving mixed line endings, first D2 include position, codec/comments and every other byte. Attribution corrects historical five-inherited-line shorthand: three original-file lines plus two branch-added hook-file lines under inherited directories; five product lines removed. Original-attribution deletions unchanged
+- Both full Windows/all three Android Debug native ABI builds/link and all twelve focused input-demo CTest entries pass. Existing D2 afterburner int-to-char warning was already present in prior GQR-0185 build evidence. Scoped quality confirms inherited-only exclusion; exact style/source and owned diff checks pass. No new tests for redundant include deletion or unrelated runtime replay claim
+- Immutable GQR-0158 redundant inherited feature includes remediation 20261008 imported. Totals: 266 findings, 252 remediations (47 DONE / 204 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Completed renderer/automap cleanup and concurrent installer/import/outstanding-bugs work preserved. No staging/commit, deferred media or allocation-pressure probes. Continue fixes-first with current-source revalidation of accepted remaining work, including orphan JNI/ETC2 and the separate RGB upload alignment defect
+
+
+### Orphan JNI and software ETC2 removal revalidation, 2026-10-08
+
+- GQR-0163/GQF-0176 and GQR-0165/GQF-0178 still apply. Full current source search finds only orphan JNI/live JNI/Kotlin declaration and decoder definitions/declarations. All three Android compile-command manifests and paired Windows Ninja inputs exclude the three orphan files
+- Snapshot exact sources, live JNI/KTX/shim/build owners and all six Android libraries before deletion. Remove only native-lib.cpp (16 lines) and etc2_decode.c/.h (374 lines). No inherited-file change; preserve production helloFromNative, KTX decoding and GPU self-test
+- Verify post-delete caller/build census, byte-identical protected owners, one live JNI export and no decoder exports per game/ABI. Build both Windows/all Android native ABIs, run existing renderer contracts and actual GLES binding fixture on emulator-5582, scoped quality/diff checks. No new tests for unused files or deferred media/resource probes
+
+
+### Orphan JNI and software ETC2 removals completed, 2026-10-08
+
+- Completed GQR-0163/GQF-0176 and GQR-0165/GQF-0178 after fresh current/tracked product/build/test/script and generated build census. Deleted unused native-lib.cpp (16 lines) and etc2_decode.c/.h (374), 390 branch-added lines total. No original/inherited file edited
+- Both game targets retain production JNI owner; KTX loader/shared texture/shim and paired native GPU self-test sources remain unchanged. All six Android libraries byte-identical before/after, with exactly one live helloFromNative export each and no decoder exports. Post-delete inventories find only live JNI definition/Kotlin declaration; historical evidence mentions preserved
+- Both Windows/all three Android Debug native ABI builds/link, seven renderer contracts and 160 actual GLES binding/enhanced-native cases pass on emulator-5582. No new JNI invocation, compressed-asset runtime or full gameplay replay claim
+- Scoped quality rejects nonexistent deleted paths; no surviving product file to format. Exact removal, protected-owner byte checks and owned diff checks pass. No formatter/lint success claim or new implementation-mirroring tests
+- Imported immutable GQR-0163 and GQR-0165 orphan JNI and ETC2 removal remediation 20261008. Totals: 266 findings, 252 remediations (49 DONE / 202 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup and concurrent installer/import/outstanding-bugs work preserved; no staging/commit or deferred media/allocation-pressure probes. Continue current-source fixes-first revalidation; separate odd-width RGB upload alignment remains open
+
+
+### Model-picture wrapper revalidation, 2026-10-08
+
+- GQR-0241/GQF-0255 remains live: current full source census finds no independent caller of animated/animated_offset; original draw_model_picture chains through both while Android preview calls scene directly. Preserve scene, callbacks/geometry, original entry and all caller files
+- Snapshot paired source/header plus original/preview consumers. Verify production wrapper argument-forwarding traces before/after with the real extracted entry bodies and controlled scene endpoint; this tests forwarding, not native pixels. Remove only intermediate definitions/declarations and forward original entry directly with identical defaults
+- Require exact full-file/source transformation and inherited metrics, paired Windows/all Android ABI APK builds, before/after exports, scoped quality/diff checks and live base robot preview for both games with native visible framebuffer/animation/navigation/cleanup assertions. No new product test hook or unrelated deferred probes
+- GQR-0055 registration finding is stale in part: current host aggregate and coverage group already contain test_fingerprint_audio_enumeration. Do not close without seeded behavior proof; existing runner includes capacity/invalid-audio probes outside this round's deferred scope
+
+
+### Intermediate model-picture wrappers completed, 2026-10-08
+
+- Completed GQR-0241/GQF-0255 after current caller/export revalidation. Removed paired animated/animated_offset definitions/declarations; original draw_model_picture directly forwards identical model/orientation/defaults to scene. Exact four-file transformation preserves all other bytes, scene/callback geometry, original briefing consumers and Android preview source
+- Removed 24 inherited/product lines (ten source/two header per game). Original source additions D1 44 -> 34/D2 45 -> 35, deletions nine unchanged each; headers D1 4 -> 2/D2 7 -> 5, zero deletions unchanged. No new product wrapper/callback/test hook
+- All 24 actual production-body entry forwarding cases match before/after byte-for-byte with controlled scene endpoint. This isolates forwarding and does not claim original-entry raster-pixel coverage; unchanged scene body separately preserves native rendering/callback transaction
+- Both full Windows/fresh full Android Debug APK/all three ABI builds/link pass. Removed symbols absent from Windows objects/six Android libraries, original/scene exports retained. Full current token census contains no intermediate references; seven renderer contracts pass. Scoped quality excludes inherited paths; exact style/source and owned diff checks pass
+- Fresh APK installed only on emulator-5582. Both live base robot preview tests pass: GL_NO_ERROR/nonempty framebuffer (D1 40,642 and D2 38,629 visible pixels in captured snapshots), five animated joints/game, motion, aspect, navigation, attack/projectiles, rotation-dependent shot, sound and Back/request cleanup. No new runners/catalog edits, full replay or arbitrary model-input claim
+- Imported immutable GQR-0241 model-picture intermediate wrappers remediation 20261008. Totals: 266 findings, 252 remediations (50 DONE / 201 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup/concurrent installer/import/outstanding-bugs work preserved; no staging/commit or deferred media/allocation-pressure probes. Separate odd-width RGB upload defect remains open; GQR-0055 registration already exists in current aggregate but requires remaining seeded behavior proof before closure
+
+
+### Unreachable Play upload branch revalidation, 2026-10-08
+
+- GQR-0221/GQF-0236 remains live: alreadyUploaded is assigned false exactly once, never assigned true, so its duplicated else promotion path is unreachable after hard used-version rejection
+- Snapshot source. Before editing, run extracted actual upload/track/commit tail with controlled HTTP command functions and a scratch AAB, never credential/bootstrap code or external APIs. Capture success, used-version, commit failure, draft fallback/promotion, review-flag retry, track failure and digest mismatch outcomes; repeat after deletion and require identical traces
+- Remove only dead flag/else and redundant enclosing if; retain live track/commit/draft fallback and separately reachable final draft promotion, exact AAB digest and used-version rejection. Preserve handmade retained comments. Validate whole-file intended transformation, PowerShell parse, maintained deployment contracts, scoped quality and diff checks; no native churn or inherited reduction claim
+
+
+### Unreachable Play upload branch completed, 2026-10-08
+
+- Completed GQR-0221/GQF-0236 after current assignment/control-flow revalidation. Removed permanently false alreadyUploaded flag and unreachable duplicated else arm; flattened live track/commit sequence. Exact whole-file byte verification permits only removal and four-space unindent, retaining handmade comments, digest/hard used-version rejection, draft fallback and final draft promotion
+- Removed 73 branch-added product lines, 420 -> 347. No native/inherited file edit or inherited reduction credit, replacement abstraction or new deployment capability
+- Eight actual production-tail before/after traces identical after quality: success, used-version, commit failure, draft fallback/promote success, failed promotion retaining draft, review-flag retry, track failure and pre-HTTP digest mismatch. Independent sequence/reason/version/status checks pass
+- Stub fixture executes only parsed helper/upload/track/commit tail with scratch five-byte AAB, empty headers and shadowed HTTP commands. Credential/bootstrap code never evaluated; no external HTTP or live Play edit/upload/commit
+- Full PowerShell parse, five maintained deployment contracts, scoped mixed quality and owned diff check pass. Quality terminal before final traces. No new maintained runner/catalog change or native build needed for dead PowerShell control flow
+- Imported immutable GQR-0221 unreachable Play artifact branch remediation 20261008. Totals: 266 findings, 252 remediations (51 DONE / 200 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup and concurrent installer/import/outstanding-bugs changes preserved; no staging/commit or deferred probes. Continue fixes-first current-source revalidation across remaining accepted work
+
+
+### Dead host metadata helpers revalidation, 2026-10-08
+
+- GQR-0224/GQF-0239 still applies. Twelve local candidate functions have no static callers outside their own dead set; textual/dynamic caller census and AST proof precede deletion. Preserve live Get-Prop, Kotlin projection/descriptor workers, native persistent protocols, retained handmade comments and output format
+- Snapshot source; run representative existing trainng.zip (D1) and mustfind.zip (D2) through actual native/Kotlin host pipeline before/after with NoRegressionCopy, NoBuild and one worker. Keep results in existing cleanup scratch, compare semantic normalized mission outputs without timestamps; no checked-in regeneration
+- Remove only candidate bodies/separators and exclusive invariantCulture assignment. Verify exact whole-file transformation and post-delete census, Kotlin projection tests, existing host runner wiring/persistent protocol, scoped PowerShell quality and diff checks. No replacement owner, native churn or deferred malformed media/resource probes
+
+
+### Dead host metadata helpers completed, 2026-10-08
+
+- Completed GQR-0224/GQF-0239 after fresh AST and full current script/Python/Kotlin caller census. Removed twelve unused projection/dependency/legacy scanner functions and exclusive invariantCulture assignment, exactly 292 branch-added product lines
+- Exact whole-file extent/separator deletion preserves all other bytes, handmade retained comments, live Get-Prop/Get-CheckedInMissionJson, persistent Kotlin projection/descriptor and native worker protocols. No native/inherited edit, replacement abstraction or compatibility reader
+- Actual before/after host regeneration for existing trainng.zip (D1, nine levels) and mustfind.zip (D2, two levels) passes with ordinary standard data, one worker, NoBuild/NoRegressionCopy. Complete mission JSON outputs byte-identical; checked-in mission JSON unchanged. No timestamp exclusion or full-corpus/Android import claim
+- Paired native metadata worker tests pass missing-base recovery, request rejection and healthy repeated valid reuse. Existing Windows runner wiring/persistent Kotlin descriptor requests and clean shutdown pass. Three Kotlin projection tests pass with zero failures/errors
+- Full PowerShell parses, scoped mixed quality and owned diff check pass; post-delete full caller token census contains no removed names. No new implementation-mirroring tests, runner/catalog edits or native build needed for dead PowerShell functions
+- Imported immutable GQR-0224 dead host metadata helper remediation 20261008. Totals: 266 findings, 252 remediations (52 DONE / 199 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior cleanup/concurrent installer/import/outstanding-bugs work preserved; no staging/commit or deferred malformed-media/allocation-pressure probes. Continue fixes-first current-source revalidation
+
+
+### XFing deferral and resolved crash-shim revalidation, 2026-10-08
+
+- GQR-0231 four-helper removal remains TODO. Maintained test_xfing_asset_validation.ps1 includes malformed/truncated PIG/HAM/HOG/RLE/level probes; do not run it or partially close the accepted full validation scope under the earlier user execution constraint. No XFing product edit
+- GQR-0015/GQF-0028 no longer reproduces: commit 80af22443 already removed CrashLog.install/installed and both Activity no-op calls. Current complete caller census confirms no shim; Application XCrash initialization and post-load native handlers remain live. No duplicate code removal or invented line savings
+- Snapshot current crash/Application/Activity owners and current full APK identity. Run existing xCrash emulator-only native report test with NoBuild/current APK on emulator-5582, verify launch/report signal/backtrace/build-header contract, collect exact result and fresh tombstone. Preserve product source bytes and record current-state closure only if required checks pass. No deferred malformed media/resource-pressure or physical-device crash
+
+
+### Prior crash-shim removal revalidated, 2026-10-08
+
+- Closed stale GQR-0015/GQF-0028 after proving ancestor commit 80af22443 already removed CrashLog.install/installed and both Activity calls. Parent/commit/current full caller census agrees; current Application XCrash Java/native/ANR callback and post-load native handler owners remain live
+- Current CrashLog/DxxReduxApp/MainActivity/SetupActivity hashes unchanged throughout validation, preserving concurrent installer edits. No product change, new removal, native/inherited churn or duplicate savings claimed
+- Maintained test_xcrash_native_report passes on emulator-5582 with current previously built full APK: installs/launches app, finds extracted dumper, intentionally signal-crashes emulator process, verifies fresh SIGSEGV/backtrace tombstone, no dumper status 102 and distribution/SDK/build header. Raw report captured and hashed; no physical device or deliberate Java/ANR failure
+- Subsequent normal D1/D2 launch/open-map readiness tests pass 21/21 and 26/26 steps with durable results captured. Product source unchanged, no formatter/native rebuild needed; existing all-ABI APK and exact current owner hashes used
+- Imported immutable GQR-0015 prior crash-shim removal current-state validation 20261008. Totals: 266 findings, 252 remediations (53 DONE / 198 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- GQR-0231 remains TODO, no partial removal/closure: required maintained XFing validation includes malformed/truncated asset probes under earlier user execution constraint. No XFing product edit or probe. Prior cleanup/concurrent work preserved; no staging/commit or deferred security/resource-pressure work
+
+
+### Final audio publication race revalidation, 2026-10-08
+
+- GQR-0154/GQF-0167 still reproduces in source: MIDI, HMP and PCM render helpers release-publish g_source_finished before render_thread_func publishes returned samples to pcm_ring. Callback can observe EOF/empty and stop playing before the final ring write
+- Snapshot current owner. Establish barrier-controlled baseline using actual production producer/render/callback/dispatch bodies with real ring and SDL worker, controlled valid MIDI event/PCM samples and deterministic synth output. Pause immediately before ring publication, drain callback/poll, then release producer and measure exact tail samples/one-shot completion
+- Repair by returning EOF to producer locally and publishing it only after final ring write; preserve desktop behavior and existing loop/render/tuning/lifecycle ownership. Require MIDI/HMP/PCM EOF, empty/final/full chunks, one-shot completion, stop/replacement and ordinary loop/pause controls, maintained structural contracts, paired builds/all Android ABIs and scoped quality/catalog checks before closure
+- No malformed audio, resource-pressure or broad subsystem rewrite. Item remains TODO until complete behavior/integration evidence; no partial closure
+
+
+### Audio completion checkpoint: TSF verified, Redbook extension open, 2026-10-08
+
+- GQR-0154/GQF-0167 remain TODO/OPEN. TSF repair is applied: MIDI/HMP/PCM helpers return EOF locally; producer publishes it after final ring write. Exact whole-file verifier passes; no inherited edit or line-saving claim
+- Actual baseline stranded 512 MIDI/four PCM samples; repaired prototype delivers all with one hook. Maintained actual-production SDL/ring fixture passes 42 cases across both games: tail/full/empty/two looping passes/pause/stop/replacement. Exact tail/padding/final-frame/one-shot and stop-join/source-free checks pass; paired traces byte-identical. Maintained fixture rejects saved pre-fix source at blocked MIDI publication boundary
+- Both Windows/all three Android Debug native ABI builds, nine lifecycle/eight tuning contracts, mixed scoped quality/final fixture quality and catalog validation/integration pass. New test_android_music_completion registered with 600-second timeout. Replacement covers actual stop/start and fixture source setup, not public file decoding or real audio hardware
+- Before closure, rediscovered accepted GQ1-CHUNK-0153-OBS-001 extension: Redbook belongs to GQF-0167 too. Current actual-production valid CD baseline confirms defect. One sector: 1174 expected samples, zero delivered, one hook. Ten sectors: 11758 expected, zero delivered, 8192 stranded, one hook. Final render chunk is discarded after source helper clears playing; callback cannot drain previous data
+- Redbook source is unchanged and snapshotted. Next implement maintained short/equal/long-ring sentinel-tail and stop/replacement/pause/range coverage, then ordered producer EOF and generation-safe audible completion in existing rbaudio_bin owner. Rebuild/revalidate before any closure; do not treat narrower remediation-row wording as removing the imported extension
+- Evidence: temp/general_cleanup_20261006/gqr0154-tsf-checkpoint.md and gqr0154-tsf-verification.json; actual Redbook baseline/log and source snapshots retained in same scratch. No immutable final remediation import yet. Totals unchanged: 266 findings / 252 remediations (53 DONE / 198 TODO / 1 DEFERRED); GQ1 818 DONE / 1 TODO, GQ2 142 DONE / 503 TODO
+- Concurrent installer/import/outstanding-bugs edits preserved; no staging/commit, malformed media, allocation pressure or security probes. Goal remains active
+
+
+### Audio completion checkpoint: Redbook verified, CD preview extension open, 2026-10-08
+
+- GQR-0154/GQF-0167 remain TODO/OPEN. Existing rbaudio_bin owner now publishes final ring write before request-tagged EOF; callback drains before request-tagged completion. Queue/apply/stop clear markers, poll generation-checks one-shot hook, producer waits at EOF. Existing I/O-error path remains non-completing. Exact whole-file transformation and unchanged TSF source hash pass; no inherited edit or savings claim (26 net Redbook product lines added)
+- New maintained Redbook fixture passes 20 paired actual-production cases: short/full render chunk/equal ring/longer ring/pause/blocked-read stop/blocked-read replacement/completed-but-unpolled replacement/track range/completed-but-unpolled stop. Ring-sized 262144 and longer 263018 samples delivered exactly. Last stereo frame retained before completion; one-shot/current-generation hooks, zero padding and no tail stranding pass. Pre-fix fixture fails at missing final publication, corroborating exact earlier valid-audio loss baseline
+- TSF final fixture passes 42 cases again against fresh libraries; combined 62 native cases and byte-identical game traces. Both Windows/fresh full APK/all three Android ABI builds, 30 structural contracts, mixed/final fixture quality and catalog validation/integration pass. Redbook runner registered with 600-second timeout
+- Fresh APK SHA256 60f606bbd432bdd3ace47797dfab9ee99c79d33298008c118fbeea2aa433a471 installed only on emulator-5582. Existing SAF Redbook integration passes 69/69 steps with real reads/mixer delivery, pause/resume, rapid replacements, stop and controlled I/O failure preserving error/non-completion. Durable result saved
+- Full GQF-0167 imported-reference audit identifies final accepted CD preview extension in GQ1-CHUNK-0188 OBS-003. Actual valid one-sector CD preview producer/public-state baseline reports stopped with 1174 queued samples, position 0ms and duration 13ms. cd_preview.c unchanged and snapshotted. Do not close after only TSF/Redbook; BR-0276 position-clock ownership remains separate
+- Next maintain actual-source CD preview producer/OpenSL queue/callback tests, then repair EOF/state. Completion must wait for audio queued to OpenSL to be consumed, not merely for the ring to empty. Preserve control -> playback -> ring-reset order (callback cannot lock playback while holding ring-reset); reset EOF and pending-output state on seek/start/stop, and keep producer usable for seek after source EOF. Cover valid short/full/ring-duration audio, pause, stop/replacement and seek; rebuild/integrate before closure
+- Evidence: temp/general_cleanup_20261006/gqr0154-redbook-checkpoint.md, gqr0154-final-verification.json, exact source snapshots, paired traces, SAF durable result and preview baseline. No immutable final remediation report imported yet. Totals remain 266 findings /252 remediations: 53 DONE /198 TODO /1 DEFERRED; coverage GQ1 818 DONE /1 TODO, GQ2 142 DONE /503 TODO
+- All handles terminal; native runners clean task-owned remote directories. No staging/commit, malformed media/security/resource-pressure probe; concurrent installer/import/outstanding-bugs work preserved. Goal remains active
+
+
+### Ordered audio EOF and audible completion completed, 2026-10-08
+
+- Completed GQR-0154/GQF-0167 after fresh-source and all imported owner-reference audit. Full accepted scope includes TSF MIDI/HMP/PCM, in-game Redbook and launcher CD preview (GQ1-CHUNK-0153/0188/0218/0262 extensions). Three branch-added shared owners only; no inherited edit or line-saving claim. Exact whole-file transforms pass; 63 net product lines added for ordering/generation/device-queue correctness
+- TSF returns EOF locally and publishes after final ring write. Redbook publishes request-tagged EOF after samples, drains before request-tagged completion, clears markers on queue/apply/stop and generation-checks one-shot poll. Explicit stop/I/O errors remain non-completing. Producer waits at source EOF rather than spinning
+- Preview publishes source EOF after samples, tracks audio in both OpenSL buffers and completes only after consumption. Public state stays active through queued output and paused until resume. Start/stop/seek reset flags/accounting; producer remains seekable during EOF drain and exits after audible completion. Existing lock order preserved, no callback/playback-lock inversion. Separate BR-0276 position clock is still open
+- Maintained paired native fixtures pass 84 cases: 42 TSF, 20 Redbook, 22 preview. Of these, 80 use controlled synth/device/IO boundaries with real production workers/ring/callback/public lifecycle and four use public preview BIN/CUE parsing with real platform OpenSL. Exact final stereo-frame, zero padding, one-shot hooks, stop/replacement/loop/pause/seek and equal/longer-ring traces pass; both game traces byte-identical
+- Valid pre-fix baselines reproduce MIDI/PCM stranding, Redbook dropped/queued tails and preview stopped state with 1174 samples queued. Maintained pre-repair fixtures reject old behavior. No malformed-media/security/resource-pressure probes or physical speaker-recording/full replay claim; TSF replacement tests use fixture source setup with real stop/start, not public file decoding
+- Both Windows/fresh full Debug APK/all three ABI builds, 30 structural contracts, final mixed/fixture quality and catalog validation/integration pass. Three new top-level native runners registered with 600-second master timeouts. Final APK SHA256 321e4643021a24f81dd892d581995f79caec34041b7ea2497a665a219a8326ef built; no claim it was installed
+- Existing SAF Redbook integration passed 69/69 steps with post-TSF/Redbook APK 60f606bbd432bdd3ace47797dfab9ee99c79d33298008c118fbeea2aa433a471 on emulator-5582: real reads/mixer delivery, pause/resume, rapid replacement, stop and controlled I/O-error non-completion. Durable result captured. Later preview-only changes preserve both validated engine audio owner hashes
+- Imported immutable GQR-0154 ordered audio EOF and audible completion remediation 20261008. Totals: 266 findings /252 remediations, 54 DONE /197 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO. All work remains uncommitted; concurrent installer/import/outstanding-bugs edits preserved
+- Goal remains active. Continue fixes-first current-source revalidation across accepted pending work. Separate odd-width RGB upload alignment and BR-0276 preview position-clock issues remain open; deferred malformed-media/allocation-pressure work remains deferred
+
+
+### Unused mission HOG predicate completed, 2026-10-08
+
+- Completed GQR-0101/GQF-0114 after current source/compiled reachability census and imported GQ1-CHUNK-0057-OBS-004 scope review. Private MissionZip.isMissionHog has no caller or compiled invocation; live admission uses isMissionArchive/isMissionArchiveRole and isMissionHogName
+- Exact whole-file byte proof permits only unused expression and separator deletion, two branch-added lines. Every other source byte, live HOG/DXA/name policy, comments and line endings preserved. No inherited change, replacement abstraction or original-file savings claim
+- Scoped Kotlin quality and actual offline :app:compileDebugKotlin pass. Before/after javap proves the private method gone and every other compiled instruction unchanged after normalizing constant-pool indices; resolved referenced identities and instruction offsets compared. Current/tracked product/test/script census finds no exact token
+- Imported observation explicitly needs compilation/quality/reachability and no behavioral test for unreachable private expression. No new tests, native build, emulator run, runtime behavior or malformed-media/security/resource-pressure claim
+- Imported immutable GQR-0101 unused mission HOG predicate remediation 20261008. Totals: 266 findings /252 remediations, 55 DONE /196 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO, GQ2 142 DONE /503 TODO
+- GQR-0148 stale test_extract diagnostic remains live but its file overlaps concurrent installer/import work; left untouched. Prior audio/renderer cleanup and concurrent installer/import/outstanding-bugs edits preserved, no staging/commit. Goal remains active; continue current-source accepted-fix revalidation
+
+
+### Unused runtime disc track mapping completed, 2026-10-08
+
+- Completed GQR-0251/GQF-0265 after full current/tracked runtime reader and KnownDisc constructor census. Removed exactly six branch-added lines: unused field, map parsing/traversal and constructor argument; all remaining source bytes preserved
+- Curated known_discs.jsonc track_mapping metadata, known_albums.jsonc and publication-preservation tests remain byte-identical. ID/label/game/legacyDiscId/tracks and matching behavior preserved; no replacement abstraction or compatibility shim
+- Scoped Kotlin quality, offline app/test Kotlin compilation and three existing valid physical-record/checked-in tracklist/fingerprint-name contracts pass with no failures/errors/skips. Final verifier rerun on resume passes. No whole malformed-record/archive suite or deferred malformed-media/security/allocation-pressure probe
+- Imported immutable GQR-0251 unused runtime disc track mapping remediation 20261008. Totals: 266 findings /252 remediations, 56 DONE /195 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO
+- Zero inherited edits/savings. Concurrent installer/import/outstanding-bugs work preserved; no staging/commit. GQR-0013 migration scope remains live beyond earlier removed layout migration, including pilot/graphics/touch settings; do not close based on stale old test absence. Goal remains active
+
+
+### Server configuration template revalidation, 2026-10-08
+
+- GQR-0153/GQF-0166 remains live in renamed server_config.template.jsonc: ConfigFile accepts 22 keys but template documents 20, missing max_connections (500) and force_relay (false). Current admin_http_listen_addr example is not its effective empty default
+- Add missing documented defaults/purpose and correct admin listener default while retaining its separate-port example. Maintain test-only schema serialization for exact key parity and duplicate/type checks of uncommented entries. Validate actual ServerConfig::load default/file/environment precedence in isolated child test processes, with no shared environment mutation or network listener
+- Run only valid-data template/precedence unit tests, scoped mixed Rust/JSONC quality and focused build/diff checks. Do not run broader malformed-config/security server tests. No inherited edit or saving claim; preserve concurrent installer/import work
+
+
+### Exhaustive server configuration template completed, 2026-10-08
+
+- Completed GQR-0153/GQF-0166 after current-source revalidation and full GQ1-CHUNK-0141-OBS-007 scope review. Renamed server_config.template.jsonc still omitted max_connections/force_relay. Added 500/false defaults and purposes, corrected admin listener to its empty default while retaining separate-port example
+- Maintained unit guard compares actual ConfigFile test-only serialization keys to all uncommented template entries: exact 22 keys, duplicate/type/default checks. Original template negative control fails on exactly two missing keys; corrected template passes
+- Actual ServerConfig::load validates default 500/false, file 42/true and environment-over-file 73/false in isolated child test processes. No shared environment mutation/network listener. Two focused library unit tests pass; 34 unrelated tests excluded. No malformed-config/security suite
+- Scoped mixed Rust/JSONC quality and offline server library/binaries build pass. Exact source proof preserves all pre-existing Rust except normalized line endings; only test bodies/test-only derive added. Existing server runner already discovers unit tests; no catalog additions
+- Imported immutable GQR-0153 exhaustive server configuration template remediation 20261008. Totals: 266 findings /252 remediations, 57 DONE /194 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO
+- No inherited edits/savings, staging/commit or deferred probes. Concurrent installer/import/outstanding-bugs and prior cleanup work preserved; goal remains active
+
+
+### Robot-frame homing scenario revalidation, 2026-10-08
+
+- GQR-0245/GQF-0259 remains live: variant-6 homing flag is cleared by later common weapon initialization. Fresh paired full Windows builds and maintained test_d1_ai_frames baseline pass 1260 cases/5040 frames but all 126 intended homing cases exactly duplicate ordinary variant-0 controls in both engines
+- Snapshot current mixed test source and baseline traces. Move variant-specific weapon flag after initialization, assert effective robot weapon state, then rebuild both targets and rerun maintained public-frame comparison. Add deterministic native/imported homing behavior oracle based on existing public-frame fixture; ordinary controls must remain byte-identical
+- Test-only fix, no engine edit or inherited saving. Scoped quality and exact whole-file transformation proof preserve earlier unrelated test/source work. Do not run default upstream executable suite containing deferred malformed assets
+
+
+### Effective robot-frame homing coverage completed, 2026-10-08
+
+- Completed GQR-0245/GQF-0259 after fresh paired build/baseline confirmed all 126 intended homing cases duplicated ordinary controls. Moved variant flag after weapon initialization, asserted effective weapon state, added maintained first-public-frame off-cone firing oracle for both ordinary and homing controls
+- Final paired Windows builds and maintained test_d1_ai_frames pass 1260 scenarios/5040 frames per engine. Complete native/imported traces byte-identical, all 1134 ordinary cases unchanged, 14 homing cases change. Selected visible/off-cone homing shot advances clock/recoil while ordinary weapon creates no shot; baseline intended homing case had none
+- Scoped C++ quality and exact whole-file byte transformation pass. Earlier mixed test changes and line endings preserved; six net branch-test lines added. No engine/inherited edit, saving claim, private AI entry point, new runner/catalog or default malformed-asset suite
+- Imported immutable GQR-0245 effective robot-frame homing coverage remediation 20261008. Totals: 266 findings /252 remediations, 58 DONE /193 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO
+- Concurrent installer/import/outstanding-bugs and prior cleanup changes preserved; no staging/commit or deferred malformed-media/security/allocation-pressure probes. All own tool sessions terminal, goal active. Continue fixes-first current-source scope reconciliation; GQR-0013 live migration extensions and GQR-0148 overlapping installer test remain untouched, GQR-0184/0231 validation remains deferred under earlier user constraint
+
+
+### Optimized HUD/escort test oracle revalidation, 2026-10-08
+
+- GQR-0003/GQF-0008 is stale in source: ancestor f8b4a2ff63 already undefines NDEBUG before HUD assert inclusion. Preserve current HUD test bytes; require paired actual RelWithDebInfo target/CTest runs and deliberately wrong ordinary expectation under DNDEBUG to prove active failure
+- GQR-0004/GQF-0009 remains live in escort exit and accepted goal-policy extension: registered optimized target flags define NDEBUG and neither source disables it. Owner policy already uses explicit CHECK. Snapshot current sources, compile wrong-expectation scratch controls, then use same existing HUD assertion-admission pattern in both escort test files
+- Run focused registered tests only (HUD both games, exit/goal/owner D2), optimized wrong-expectation controls and scoped C quality. Preserve every original test expression and all other bytes; no broad BR-0662 closure, native policy change, malformed-media/security/allocation-pressure probe or inherited saving
+
+
+### Optimized HUD and escort test oracles completed, 2026-10-08
+
+- Closed stale GQR-0003/GQF-0008 after ancestor f8b4a2ff63/current-byte proof: HUD already undefines NDEBUG before assert.h. HUD unchanged; wrong ordinary expectation compiled MSVC O2/DNDEBUG correctly fails assertion/exit 3, both registered release HUD targets pass. No duplicate edit or saving credit
+- Completed GQR-0004/GQF-0009 plus accepted goal-policy extension: original exit/goal wrong-expectation controls compile O2/DNDEBUG and falsely print PASS/exit 0. Add existing HUD assertion-admission pattern to both escort tests, exactly six net branch test lines. Repaired controls fail assertions/exit 3 without UNDEBUG override and compile without warnings
+- Full paired Windows RelWithDebInfo builds pass. Five actual configured target blocks retain O2/DNDEBUG; focused CTest passes D1 HUD and D2 HUD/exit/goal/owner, no-tests=error. Scoped C quality and exact original-source byte preservation pass. Owner policy explicit CHECK remains unchanged
+- Imported immutable GQR-0003 and GQR-0004 optimized HUD and escort test oracle remediation 20261008. Totals: 266 findings /252 remediations, 60 DONE /191 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO
+- Broader BR-0662 remains open; focused closure is not all-native-test coverage. No engine/inherited edit, savings, new runner/catalog, malformed-assets/security/allocation-pressure probes, staging or commit. Concurrent installer/import/outstanding-bugs and prior cleanup work preserved. Goal active
+
+
+### Next candidate: Android source inventory changed since review, 2026-10-08
+
+- GQR-0203/GQF-0217 duplication remains live in clean branch-owned parent CMake, but historical exact-common-list premise changed. Fresh comment-aware census: D1 92 entries, D2 95, 91 common in identical relative order, four D2-only preview producers and newly D1-only shared/mac_d1_audio.c at index 87. Initial mechanical all-D1-in-D2 assertion correctly failed; no product edit applied
+- Current census/SHA: temp/general_cleanup_20261006/gqr0203-current-census.json. Do not reuse historical 89-source draft or add Mac D1 audio to D2. Before editing capture actual configured source/definition/option/include/link properties for both games/software/GLES modes. Adapt common list with explicit D1-only placement preserving its exact source order, four explicit D2 preview producers and canonical DiscImport variable; retain per-game compilation and strict-FP/generated-info flags
+- Full accepted gates remain actual before/after configured equivalence, all-ABI build and launcher MIDI/CD preview success/error lifecycle. Textual census is preparation only. Nested extraction CMake/sources overlap concurrent installer work and remain untouched
+- Goal active, 60 DONE /191 TODO /1 DEFERRED. All own processes terminal; no staging/commit, new CMake product edit or deferred probes
+
+
+### Android common source list implementation started, 2026-10-08
+
+- GQR-0203 fresh actual x86_64 NDK Debug configure snapshots complete for both GLES/software modes and both games. Captured raw SOURCES/definitions/options/includes/link/IPO, source-specific metadata and generated compile commands/codemodel before edit in existing cleanup scratch
+- Applied one explicit common list of all 91 shared source entries in existing Android CMake owner. Separate per-game list copies insert Mac D1 audio and four D2 preview producers at their original positions via named source anchors, preserving exact source order and canonical DiscImport variable. No target factory/object singleton or engine source edit
+- Snapshot all 96 distinct direct source hashes and six existing all-ABI/game dynamic symbol inventories before build. Next wait scoped CMake quality, run after-configure snapshots and require exact properties/compile command preservation (codemodel backtrace line changes excluded only). All-ABI APK and real launcher preview success/error lifecycle gates remain required before closure
+
+
+### Common Android executable source inventory completed, 2026-10-08
+
+- Completed GQR-0203/GQF-0217 after current-source/all imported scope revalidation. Historical identical 89-token premise changed: 91 common current sources, one D1 Mac audio and four D2 preview producers. One explicit common list, separate per-game copies and named-anchor insertions preserve all original source order and canonical DiscImport variable; no object singleton/target factory/native policy edit
+- Actual NDK x86_64 Debug before/after configure covers both games/GLES/software. Raw sources/definitions/options/includes/IPO/source-specific metadata and all generated compiler commands preserved. Link property compares only unspecified opaque directory IDs; codemodel excludes backtrace lines and compares dependency graph membership independently of list ordering, retaining actual link command order. Strict FP, native game headers/macros, separate compilation and generated build info proven unchanged
+- All 96 direct native source hashes unchanged; exact whole-file CMake scope proof permits only two inventory spans. All three ABI Debug native/full APK builds pass, six full dynamic symbol inventories including addresses byte-identical. Zero inherited edit/saving
+- Maintained launcher media fixture extended 12 lines for ordinary missing font/BIN rejection and stopped seeks before successful playback. Fresh APK d999c50b57dcca1335d9ace7b5f56d0168584aec9cc491ee99f824e2aa64a714 installed only on emulator-5582. Durable automation PASS 2/2 and explicit rejected requests/MIDI/CD/MP3 logs prove real native playback, media keys, pause/seek/resume/stop/foreground gate and restart after error
+- Existing 25 MIDI/CD structural contracts, scoped mixed CMake/Kotlin quality and owned diff checks pass. Existing runner/catalog reused. Software configure/property coverage only, no software APK/runtime or speaker-recording claim; no deferred malformed-media/security/allocation-pressure probes
+- Imported immutable GQR-0203 common Android executable source inventory remediation 20261008. CMake net -77, maintained fixture +12, total 65 branch lines removed; no inherited savings. Totals: 266 findings /252 remediations, 61 DONE /190 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO
+- Concurrent installer/import/outstanding-bugs and prior cleanup work preserved; no staging/commit. All own processes terminal, goal active. Continue fixes-first current-source revalidation; GQR-0013 migration extensions/GQR-0148 overlapping installer test and deferred GQR-0184/0231 remain untouched
+
+
+### Empty successful network campaign revalidation, 2026-10-08
+
+- GQR-0250/GQF-0264 still live. Fresh actual Python CLI with repeat 0/-1 and one selected real baseline creates only manifest.json and exits zero; nonexistent ADB path proves no case/device execution. Owned tiny baseline outputs captured in existing cleanup scratch and removed after exact inventory validation
+- Add 1..100 guard after existing list-mode return, before required-device/output admission and all retention/filesystem/device effects, matching accepted original draft and preserving unrestricted read-only listing. Keep PowerShell physical campaign wrapper untouched
+- Maintain registered host-only CLI fixture: actual child CLI invalid/valid/list controls, real main/run_suite orchestration with controlled external device/process boundaries, durable manifest/results and nonempty exact repeats, reverse order and failure/stop propagation. No physical campaign/gameplay claim; no authorized two-device pair available under current session constraints
+- New top-level host runner needs explicit coverage and no-infrastructure classification, scoped mixed Python/PowerShell quality and both catalog checks. Existing physical campaign remains explicit. No native/inherited edit or deferred media/security/resource-pressure probes
+
+
+### Nonempty network campaign admission completed, 2026-10-08
+
+- Completed GQR-0250/GQF-0264 after original actual CLI repeat 0/-1 falsely exited zero with one selected baseline, manifest only and no case result. Add exact two-line Python 1..100 admission after read-only listing, before retention/output/device work; all other runner bytes and physical wrapper preserved
+- Eight maintained host tests pass actual invalid CLI/no-output/no-ADB admission, lower/upper bounds and unchanged listing. Actual main/run_suite uses canonical baseline and controlled external device/process boundaries for 107 dispatch attempts per run, checking exact repeats, reverse order, durable commands/results, continued failure and stop propagation. No physical LAN/gameplay execution claim
+- Actual registered aggregate HostOnly filtered run passes 1/1 with all eight fixture tests, no failures/timeouts/skips. Core/no-infrastructure discovery/default timeout, both catalogs, explicit-pwsh mixed quality and exact source/listing/scope proofs pass. Restore five damaged Tier comments from HEAD, preserving every other current aggregate byte and concurrent registrations; encoding cause unproven
+- Imported immutable GQR-0250 nonempty network campaign argument admission remediation 20261008. Totals: 266 findings /252 remediations, 62 DONE /189 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO. Product +2 branch lines plus maintained host coverage, zero inherited edits/savings
+- Concurrent installer/import/outstanding-bugs and prior cleanup work preserved; no staging/commit or deferred malformed-media/security/resource-pressure probes. All owned processes terminal; goal active. Continue fresh accepted-fix source revalidation; live migration extensions, overlapping installer tests and deferred font/XFing scopes remain open
+
+
+### Unused CUE test helper revalidation, 2026-10-08
+
+- GQR-0133/GQF-0146 still applies in current clean test_cue_iso.c: write_test_cue/read_test_file occur only at definitions and assert.h has no assertion consumer. Snapshot exact current source and perform full current/tracked caller census before removal
+- Remove only two unused static helper bodies/separators and unused assertion include. Preserve every active test/group and fixture builder byte; no production/parser/inherited edit or new abstraction
+- Build actual configured host test target before/after without executing the combined suite, which includes deferred malformed/security/resource probes. Verify exact deletion, source reachability, retained test inventory and scoped C quality. Nested extraction CMake and concurrent installer owners remain untouched
+
+### Unused CUE helper implementation, runtime gate outstanding, 2026-10-08
+
+- Applied GQR-0133/GQF-0146 removal after fresh current-source caller census: write_test_cue/read_test_file and unused assert.h, exactly 30 branch test lines. Exact byte proof preserves every other source byte and active test label; no parser/nested CMake/inherited edit
+- Actual configured CMake Release target and direct MSVC x64 O2/W4 before/after translation units pass. Twelve pre-existing warning identities unchanged; actual disassembly identical after only object-file header path replacement. Scoped C quality and diff checks pass
+- Original GQ1-CHUNK-0100-OBS-002 combined CUE/ISO runtime gate remains outstanding because it includes deferred malformed/security/resource-pressure probes. No suite execution or completed remediation credit; GQR-0133 TODO/GQF-0146 OPEN. Imported immutable GQR-0133 unused CUE test helper implementation pending runtime validation 20261008
+- Totals remain 62 DONE /189 TODO /1 DEFERRED. No staging/commit or deferred probe, all owned processes terminal. Concurrent installer/import/outstanding-bugs and earlier cleanup preserved; goal active
+
+
+### Paired packet decoder grammar revalidation, 2026-10-08
+
+- GQR-0227/GQF-0242 remains live in clean paired Python/PowerShell decoders. Current native producer emits [PKTDUMP] TX/RX len=N followed by contiguous even hex. Actual Python CLI rejects a valid bracketed capture exit 1; actual PowerShell emits zero-count property errors then false success exit 0 because no match loses collection identity
+- Match bracketed marker within logcat/netlog prefixes and retain bare diagnostic marker support, require full even hexadecimal record. Keep wire decoding unchanged. Correct PowerShell collection shape at extraction/object-summary seams for zero/one/many CLI counts; coordinate BR-0608 and leave separate BR-0609 transfer partition open
+- Maintain paired actual CLI tests for zero/one/many records, both directions/normal/diff/raw paths, ordinary log nonmatches and exact summaries. Register host runner core/no-infrastructure, scoped mixed quality and both catalogs; no native/device/network or malformed-media/security/resource-pressure probes
+
+
+### Paired packet-log decoder remediation completed, 2026-10-08
+
+- Completed GQR-0227/GQF-0242 after actual original CLIs reproduce native bracketed marker rejection and PowerShell empty-collection false success. Both match bracketed/bare full even-hex records in logcat/netlog prefixes; keep native producer/wire/parser unchanged
+- Resolve coordinated BR-0608 by preserving actual PowerShell ArrayList identity and exact zero/one/many object summary array counts. Ordinary valid diff uncovered numeric OrderedDictionary index errors; two string-key casts restore object-ID lookup. Separate BR-0609 token/endpoint/session aggregation and GQR-0228 signed/partial fields remain open
+- Nine maintained paired host tests/24 actual CLI invocations per run pass normal/diff/raw paths, exact packet/object counts, full valid fields, malformed log nonmatches, complete one-transfer controls and missing-object report. Original snapshots fail 19 subtests. Actual aggregate HostOnly filtered runner passes 1/1 with nine fixture tests and no failures/timeouts/skips
+- Core/no-infrastructure registration, both catalogs, mixed Python/PowerShell quality and exact product/registration proof pass. Native producer byte-identical to HEAD; retained decoder bytes exact after Python CRLF-to-LF normalization. No native/Android/device/network or deferred media/security/pressure execution, zero inherited edit/savings
+- Imported immutable GQR-0227 paired native packet-log decoder remediation 20261008. Totals: 266 findings /252 remediations, 63 DONE /188 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO. GQR-0133 remains TODO pending deferred combined runtime gate
+- Concurrent installer/import/outstanding-bugs and prior cleanup retained, no staging/commit. All owned processes terminal; goal active, continue fresh accepted-fix revalidation
+
+
+### Signed packet owners and partial-header diagnostics revalidation, 2026-10-08
+
+- GQR-0228/GQF-0243/0244 remains live after0227. Actual current PowerShell raw CLI owner ff emits conversion error then exit0/missing owner; short header emits property errors before intended diagnostic. Baselines and exact current paired product/fixture snapshots captured
+- Reinterpret unsigned byte as signed int without narrowing conversion, format optional header fields safely. Intentional packet error/truncation/declared-length mismatch returns nonzero with diagnostics, valid decoding remains zero. Extend Python CLI exit status only to maintain the same truthful paired contract; its signed decoding/partial formatting stay byte-identical
+- Preserve useful partial output and suppress lost-object comparison if packet decoding is incomplete, retaining counts/summary and existing single-transfer behavior. BR-0609 session identity remains separate/open. Reuse maintained paired CLI host fixture/runner for signed boundaries -128/-1/0/127, INIT/END/ordinary objects, short/wrong type, partial header/body and valid controls through raw/log/diff paths
+- Fixed small diagnostic records only; no network/device/native, malformed-media/security/resource-pressure probes. Scoped mixed quality, meaningful baseline-negative/final tests, both catalogs and actual aggregate host execution; no new runner/registration or inherited edit
+
+
+### Signed packet owners and partial diagnostics completed, 2026-10-08
+
+- Completed GQR-0228/GQF-0243/0244 after fresh actual CLI conversion/partial-header failures. PowerShell reinterprets signed owner via high-bit subtraction and formats optional header values safely; no native/wire layout or Python decode/format change
+- Paired valid-hex diagnostic CLI contract now returns failure for packet errors/truncation/log length mismatch, preserves partial/error output and counts, suppresses loss comparison/summary when decoding is incomplete. Small Python main/entry status alignment necessary for parity; no general malformed-hex parser claim
+- Thirteen maintained tests/90 actual CLI calls per run pass signed -128/-1/0/127 objects/INIT/END, valid controls, short/wrong header, partial header/body and log mismatch normal/diff paths. Existing nine methods unchanged; original snapshots fail 36 subtests, zero test errors. Actual aggregate HostOnly runner passes 1/1 with thirteen internal tests, no failures/timeouts/skips
+- Scoped mixed quality, both catalogs, full PowerShell transformation/Python non-CLI byte preservation and diff proofs pass. Runner/registration unchanged, native producer byte-identical to HEAD. BR-0609 cross-session token/endpoint partition remains unchanged OPEN
+- Imported immutable GQR-0228 signed packet owners and partial-header diagnostics remediation 20261008. Totals: 266 findings /252 remediations, 64 DONE /187 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO. Zero inherited edit/savings; GQR-0133 stays TODO pending deferred combined runtime gate
+- No native/Android/device/network or deferred malformed-media/security/resource-pressure run, staging or commit. Concurrent installer/import/outstanding-bugs and prior cleanup retained; all owned processes terminal, goal active
+
+
+### Canonical review Git path revalidation, 2026-10-08
+
+- GQR-0225/GQF-0240 ordinary rename root was partially repaired during GQ2 preparation. Preserve that maintained fixture and existing frozen campaigns/import SHA records. Remaining reader joins line-enumerated native output, quoted patch headers are treated literally, copy recognition/tree-gap validation/control-path representation and deterministic overwrite acceptance remain incomplete
+- Capture current helper/test/master bytes. Extend existing isolated Git integration with virtual index/tree histories so tab/newline filenames are tested on Windows without creating unsupported filesystem names. Cover pure/edited renames, copies, ordinary add/modify/delete, binary, space/Unicode/tab/newline paths; require canonical inventories, classification, exact hunk linkage, tree validation and deterministic overwrite/refusal
+- Read Git output intact via UTF-8 process streams; use NUL-delimited canonical status/stat/tree identities and explicit Git quoted-header decoding. Keep canonical path inventory reconstructible and render control characters without losing identity. Fail unexplained coverage gaps instead of default classification
+- Reuse existing registered host test, add missing no-infrastructure classification if needed. Scoped mixed quality, baseline-negative/final maintained tests, both catalogs and aggregate host validation. No production campaign regeneration, native/device/network or deferred media/security/resource-pressure probes
+
+
+### Canonical Git review path coverage completed, 2026-10-08
+
+- Completed GQR-0225/GQF-0240 after current-source revalidation found ordinary renames already partly fixed during GQ2 preparation. Preserve legacy eight-path fixture and prior repair; address remaining intact UTF-8 NUL identities, quoted path/hunk linkage, copy coverage and explicit tree/stat/hunk inventory validation
+- New reversible canonical JSON path inventory and escaped queue control names preserve source identity. Deleted-source scopes use base ranges; copied sources receive all 32 fixture lines including trailing blanks. Existing classification/risk/chunk/bucket/packing policies preserved; deterministic explicit overwrite preserves prior bytes/mtime/generated timestamp, default overwrite refuses
+- Maintained real-Git legacy and thirteen-path virtual tree histories pass pure/edited renames, copy, add/modify/delete, binary/mode and UTF-8/space/tab/newline names with exact source coordinates. Git for Windows index silently omits control names, so corrected direct tree/commit objects are authoritative. Original helper fails on quoted control-path hunks; raw status/stderr captured
+- Final scoped mixed quality, focused tests, both catalogs and actual aggregate HostOnly 1/1 pass. Existing core registration retained; master host classification adds exactly one line, every other current master byte preserved. Seven original functions unchanged, full owned helper diff recorded. No native/inherited edit/savings, frozen campaign regeneration, native/device/network or deferred media/security/resource-pressure execution
+- Imported immutable GQR-0225 canonical Git review path and coverage remediation 20261008. Totals: 266 findings /252 remediations, 65 DONE /186 TODO /1 DEFERRED. Coverage unchanged: GQ1 818 DONE /1 TODO; GQ2 142 DONE /503 TODO. Valid UTF-8 path scope only, no arbitrary invalid-encoding or cross-locale claim
+- Automatic approval review rejected direct recursive cleanup of two owned android/temp probes with reason blocked by policy. Retain both as evidence; no alternate deletion or permission request. Maintained fixture owned-root cleanup succeeds. Concurrent installer/import/outstanding-bugs and prior cleanup retained; no working-branch staging/commit, all owned processes terminal, goal active
+- GQR-0012 quick catalog remains live, but full quick suite invokes deferred CUE/ISO probes; untouched this turn. GQR-0133 stays TODO pending that deferred runtime gate. Continue accepted fixes with fresh source revalidation
+
+- Citation erratum imported: the original GQR-0225 observation is GQ1-CHUNK-0603 (not0604 as frozen primary report stated). Primary import SHA preserved; code/tests/scope/status unchanged. See immutable GQR-0225 original observation citation correction 20261008
+
+
+### Mixed station matcen shutdown revalidation, 2026-10-08
+
+- GQR-0239/GQF-0253 still applies to both native fuelcen.c owners: disable_matcens clears a prefix of Station instead of robot station entries. Existing init_all_matcens already traverses Num_fuelcenters with a robot-type filter
+- Snapshot paired clean native owners and dirty fixture/registration owners before edits. Add maintained paired actual-engine mixed fuel/robot/fuel/robot station coverage for all set/restore mode transitions, late-index shutdown, full unrelated station byte preservation and activation count semantics; reproduce against unchanged engines first
+- Reuse shared fixture body in Windows upstream integration and an isolated Android native runner. Apply minimal paired type-filtered traversal only after negative control. Run scoped mixed quality, registered focused native tests, paired desktop/Android builds and catalogs. Ordinary save/restore and applicable UI/co-op boundary validation remain gates before closure
+- Preserve concurrent installer/import work and previous cleanup. No staging/commit or deferred malformed-media/security/resource-pressure probes
+
+
+### Mixed station matcen shutdown implementation validated, 2026-10-08
+
+- GQR-0239/GQF-0253 remains TODO/OPEN pending remaining accepted runtime gates. Applied exact paired native repair: traverse Num_fuelcenters and skip non-robot entries. Only three added/one removed lines per fuelcen.c, four net inherited lines added; no diff-minimization saving claim or new registry
+- Maintained shared fixture uses actual engine FuelCenter/Station/RobotCenters and mode wrappers. All 18 set/restore transitions check mixed fuel/robot/fuel/robot layout, late-index active center, entire unrelated station byte preservation, mode and activation count semantics. Unchanged actual Windows D1/D2 and Android D1 fail intended station invariant; corrected paired Windows and Android runs pass, platform traces identical per game. No actual spawned-robot claim
+- Full paired Windows and all-three-ABI Android Debug APK builds pass. Scoped mixed quality and both catalog checks pass (94 standalone JSON/373 support/214 standalone PS;312 master entries). Inherited sources excluded by quality; exact whole-file byte proof preserves all other native bytes and all pre-existing fixture/registration owner bytes. Maintained Android runner registered with600s build allowance
+- Fresh APK SHA256 6beb2c17a9b577d5d84768829cec95e00677805e14398613afd7fda05f2f99b9 installed only on emulator-5582. Existing automap/UI lifecycle fixture passes durable D1 62/62 and D2 95/95, including mode0/1/2/0. Initial D2 SetupActivity startup failed with emulator offline; identified existing Nexus5X_Light_1 process, recovered only port5582 via maintained helper and retry passes. Other emulator/physical device untouched
+- Remaining before closure: maintained ordinary save-file restoration coverage for modes/counts, applicable co-op boundary validation, final evidence import and ledger closure. Native wrapper restore coverage is not full save-file roundtrip evidence. Checkpoint/snapshots/logs/traces/scope verifier: temp/general_cleanup_20261006/gqr0239-*
+- Totals unchanged:266 findings/252 remediations,65 DONE/186 TODO/1 DEFERRED; coverage unchanged. No deferred malformed-media/security/resource-pressure probes, staging or commit. Concurrent installer/import and earlier cleanup preserved; goal active
+
+
+### Matcen restore runtime gates resumed, 2026-10-08
+
+- Preserve exact paired native repair and prior before/after evidence. Extend existing shared engine fixture with authenticated co-op state receiver transitions through multi_do_matcen_mode, real native player/master globals and ordinary valid packet state; no sockets or two-device claim
+- Maintain parameterized gameplay script owned by existing test_android_matcen_stations runner: save each mode through ordinary save menu, change current mode, restore through ordinary load menu and assert restored policy. Use both games/base missions and existing launcher preamble; native mixed-layout fixture remains station/count oracle
+- Runner must preserve durable results per game and propagate all failures. Run scoped mixed quality, paired focused native rebuild/tests, actual emulator-5582 integration and both catalogs. Save UI mode roundtrip does not prove nonzero activation counts; retain explicit native count evidence and assess actual metadata persistence separately before closure
+
+
+### Mixed station matcen shutdown completed, 2026-10-08
+
+- Completed GQR-0239/GQF-0253 after current-source and original GQ2-CHUNK-0166 scope revalidation. Paired native traversal/filter changes only three added/one removed lines per owner, four net inherited lines added; no minimization savings or replacement station registry. Exact source proof preserves every other native byte and pre-existing fixture/registration owners
+- Actual original Windows D1/D2 and Android D1 fail maintained mixed-station invariant. Final Windows27/Android36 cases per game cover all set/restore mode combinations, native co-op state receiver, late-index active shutdown, full unrelated station preservation, count and activation policy. Actual unsuspended fuelcen_update_all leaves stopped centers inert. All27 common platform trace records match per game
+- Android-only native metadata cases write/read actual PhysFS trailers and apply real state_android_restore_matcen_mode_from_meta with nonzero3/4 counts. Ordinary gameplay save/load for each mode after conflicting current state passes durable D1 65/65 and D2 68/68 through maintained owned script/runner. Existing automap/UI lifecycle passes D1 62/62 and D2 95/95. Native fixtures do not claim an actual spawned robot; co-op receiver coverage does not claim network transmission or two devices
+- Initial test integration errors were exposed and corrected: Windows cannot link Android-only metadata owners; route now Android-only. D2 save draft retained unrelated EGL wait; removed and complete owner rerun passes both games. Earlier emulator-5582 startup outage recovered only named Nexus5X_Light_1/port5582; other devices untouched
+- Full paired Windows and all-three-ABI Android APK builds, final mixed quality, exact scopes and both catalogs pass. Catalog94 standalone JSON/374 support/214 standalone PS,312 master entries. Fresh installed APK6beb2c17a9b577d5d84768829cec95e00677805e14398613afd7fda05f2f99b9 product repair unchanged. Inherited files excluded by formatter; byte proof rather than formatting claim
+- Imported immutable GQR-0239 mixed station matcen shutdown remediation 20261008, SHA recorded in evidence ledger. Totals:266 findings/252 remediations,66 DONE/185 TODO/1 DEFERRED. Coverage unchanged:GQ1 818 DONE/1 TODO;GQ2 142 DONE/503 TODO. Evidence/snapshots/current verifier in temp/general_cleanup_20261006/gqr0239-*
+- All owned processes terminal; no deferred malformed-media/security/resource-pressure probes, staging or commit. Concurrent installer/import and earlier cleanup preserved. GQR-0133 still TODO pending deferred combined runtime gate; broader cleanup goal active, continue accepted fixes after fresh source revalidation
+
+
+### Fingerprint assertion single evaluation revalidation, 2026-10-08
+
+- GQR-0138/GQF-0151 remains live in test_fingerprint.c ASSERT_EQ_INT: failed expected/actual expressions are evaluated again for diagnostics. Original GQ1-CHUNK-0104-OBS-004 requires stable type-appropriate values and counter oracle on success/failure
+- Snapshot clean test and concurrently dirty extraction CMake owner. Add integer locals, preserving cleanup/failure accounting and existing nine media tests. Add dedicated assertion self-test CLI/CTest entry that exercises ordinary increment operands on success and intentional failure, verifies exact counters and goto cleanup, and exits nonzero on oracle failure
+- Build actual configured test_fingerprint target, run maintained self-test and capture exact first observed diagnostic values. Prove original macro fails the same self-test. Scoped mixed C/CMake quality and exact pre-existing-byte scope proof; no production/native inherited edit or combined deferred malformed-media/security/resource-pressure suite
+
+
+### Fingerprint assertion single evaluation completed, 2026-10-08
+
+- Completed GQR-0138/GQF-0151 after current-source and original GQ1-CHUNK-0104-OBS-004 revalidation. Capture expected/actual integer operands once, retain first observed diagnostics and existing failure-count/goto cleanup semantics. Test-only scope, no production or inherited changes/savings
+- Maintained isolated assertion CLI/CTest mode tests increment operands on success/failure and verifies cleanup and exact counters. Actual original Release macro fails exit1, printing6/10 after comparison5/9; corrected recompiled executable passes exit0 and prints5/9. Registered focused CTest passes1/1, no skipped test. Intentional FAIL diagnostic is expected within passing self-test
+- Initial source restore preserved older timestamp and MSBuild reused baseline executable, correctly failing again. Explicit timestamp refresh forced compilation; final rebuild/self-test/CTest are authoritative. Existing MSVC flag-override warnings retained, no new source compiler warning
+- Scoped mixed C/CMake quality passes. Exact source proof permits only integer macro, isolated self-test function and CLI branch after formatter CRLF-to-LF normalization; nine existing media bodies/labels retained. Dirty extraction CMake owner exact-byte preserved except one registration, no concurrent installer change overwritten
+- Imported immutable GQR-0138 fingerprint assertion single evaluation remediation 20261008. Totals266 findings/252 remediations:67 DONE/184 TODO/1 DEFERRED. GQ1/GQ2 coverage unchanged. Snapshots, negative/final logs and verifier:temp/general_cleanup_20261006/gqr0138-* and verify_report_gqr0138.py
+- No combined media suite or deferred malformed-media/security/allocation/resource-pressure probes, Android/device/network run, staging or commit. All owned processes terminal; broader cleanup goal active. Concurrent installer/import and earlier cleanup retained; GQR-0133 still TODO pending deferred combined runtime gate
+
+
+### Host extraction test tier revalidation, 2026-10-08
+
+- GQR-0147/GQF-0160 original missing host classification is already repaired in current master: provenance/publication names are in noInfraTests and core coverage. Preserve that prior repair and all concurrent registrations; no duplicate source/savings credit
+- Extend maintained catalog contract to require exactly one PS entry per owner, requires=none and core membership in normal/extended profiles. Run actual HostOnly filtered aggregate for both ordinary tiny-file lifecycle scripts, with no APK/ADB/emulator prerequisite
+- Prove actual failure propagation by temporarily prepending one deliberate throw to snapshotted publication script, run only that aggregate entry, restore exact original bytes in finally, then final actual pair must pass. Keep temporary injection out of final source. Scoped PS quality, catalog validation, exact owned-byte proofs and immutable evidence/closure only after all gates
+- These fixtures exercise tiny host identity/publication files and ordinary completion changes, not media decoding or deferred malformed-media/security/resource-pressure probes. No product/native edit, device or working-branch staging/commit
+
+
+### Host extraction test tier validation completed, 2026-10-08
+
+- Completed GQR-0147/GQF-0160 after current-source/original GQ1-CHUNK-0132 revalidation found prior master repair already present. Both extraction provenance/publication tests classified no infrastructure with core coverage. Preserve that repair; no duplicate product edit or inherited/source savings credit
+- Seven-line maintained catalog guard requires one PS entry per owner, requires=none and core membership in both normal/extended profiles. Actual HostOnly filtered original pair PASS2/2 with zero failures/timeouts/skips/not-run and exact source SHA evidence. No APK/emulator prerequisite
+- Actual negative aggregate injects deliberate throw in snapshotted publication owner, observes FAIL/exit1, then finally restores exact original bytes. Full positive pair runs after restoration. Negative source SHA differs as expected; failure log contains deliberate diagnostic
+- Scoped PS quality and maintained catalog integration pass312 top-level/374 support entries. Exact byte proof preserves master, coverage policy, both real scripts and all other catalog test bytes. No new runner/registration/timeout or production/native edit
+- Imported immutable GQR-0147 host extraction test classification validation 20261008. Totals266 findings/252 remediations:68 DONE/183 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Evidence/snapshots/logs/report:temp/general_cleanup_20261006/gqr0147-* and verify_report_gqr0147.py
+- No device/native build or deferred malformed-media/security/resource-pressure probe, staging or commit. Concurrent installer/import and earlier cleanup retained; all owned processes terminal, broader goal active
+
+
+### Owned asset reader closure revalidation, 2026-10-08
+
+- GQR-0206/GQF-0221 remains live in FingerprintBridge.lookupTrackNames, DiscIdentifier.loadDatabase, KnownVersions.init and TouchLayoutRepository.loadAssetPreset: bufferedReader.readText has no structured close. Other bridge reads already use reader.use
+- Snapshot each current owner, preserving previous DiscIdentifier cleanup and concurrent changes. Replace exactly one unowned readText per owner with existing use pattern; no schema, parsing, matching, preset or fallback change, no replacement wrapper
+- Scoped Kotlin quality, actual app/unit Kotlin build and selected ordinary existing disc/title contracts. Inspect actual JVM closeFinally success/Throwable paths and unchanged parsing/lookup control flow. Accepted closure/read-failure/JSON-failure runtime validation remains explicit; do not claim helper tests are actual asset-loader fault coverage or mark DONE without sufficient evidence
+- No native/inherited edit or savings, malformed-media/security/resource-pressure probe, staging or commit. Goal remains active
+
+
+### Owned asset reader implementation checkpoint, 2026-10-08
+
+- GQR-0206 four exact owned reader use replacements pass whole-file byte proof, scoped Kotlin quality, actual Debug APK/all-three-ABI tasks and four selected ordinary JVM tests
+- Actual compiled methods each have normal and Throwable closeFinally paths, parsing after closure. This does not prove actual loader runtime complete-read/read-failure/JSON-failure gates; keep GQR-0206 TODO/GQF-0221 OPEN
+- Imported immutable GQR-0206 owned asset reader implementation pending runtime validation 20261008; evidence under temp/general_cleanup_20261006/gqr0206-*. Totals remain68 DONE/183 TODO/1 DEFERRED, no inherited edit or staging/commit
+
+### Shared CD manifest JSONC reader revalidation, 2026-10-08
+
+- GQR-0223 primary CD source reader still duplicates string-unaware line-comment and trailing-comma regexes; current shared Read-JsoncFile already owns string state and UTF-8 reads
+- Snapshot current primary helper and maintained CD source fixture. Replace primary reader body with shared Read-JsoncFile and dot-source its owner; preserve required fields, discovery/exclusions, descriptor hash and containment bodies exactly
+- Extend maintained fixture with valid quoted URLs/comment markers, escaped quotes, comma/bracket strings, actual comment/trailing-comma document and checked-in manifest parity. Reproduce against original reader, scoped PS quality and run final fixture/host aggregate plus ordinary metadata integration
+- GQR-0223 includes later admitted index/music/hash/album/AcoustID reader extensions. This primary slice cannot close the full owner; preserve TODO until those scopes and GQR-0222 lexical coordination are validated. No duplicate parser, malformed-media/security/resource-pressure probe or native edit
+
+
+### Shared primary CD manifest reader implemented, 2026-10-08
+
+- GQR-0223 primary reader now delegates to shared Read-JsoncFile; independent line-comment/trailing-comma regexes removed. Exact whole-file proof preserves every source resolver/hash/discovery/exclusion/containment byte
+- Maintained28-line fixture extension proves quoted URLs/comment/comma/bracket text, escaped quotes/backslashes, actual comments/trailing commas and full checked-in manifest parity. Original helper fails valid URL input; final registered HostOnly aggregate PASS1/1, zero failures/timeouts/skips/not-run with current source SHA
+- Actual before/after host metadata D1 trainng9, D2 mustfind2 and Destination Saturn CD16 levels pass; all three complete mission JSON files byte-identical. Both CD phases have payload-cleanup lock warnings; no cleanup success claim. Final native metadata workers terminal
+- Scoped PowerShell7.6.6 quality, exact source scopes and diff checks pass. Initial literal comma CLI parameter errors corrected by actual array invocation; authoritative final runs pass
+- Imported immutable GQR-0223 primary CD manifest reader remediation pending extended scopes 20261008. Full owner stays TODO/GQF-0238 OPEN for admitted index/music/hash/album/AcoustID reader extensions and GQR-0222 lexical coordination. Totals68 DONE/183 TODO/1 DEFERRED unchanged, coverage unchanged
+- Evidence/verifier:temp/general_cleanup_20261006/gqr0223-* and checkpoint_gqr0223.py. No inherited edit/savings, device run, deferred malformed-media/security/resource-pressure probes, staging or commit. Concurrent installer/import and prior cleanup preserved; broader goal active
+
+
+### Shared JSONC lexical boundary revalidation, 2026-10-08
+
+- GQR-0222/GQF-0237 remains live in current shared block-comment stripping and duplicate fingerprint configuration regex reader. Original GQ1-CHUNK-0594 actual metadata extractor is Get-TestScriptInfo, not a native engine parser
+- Snapshot both clean product helpers and maintained parser/threshold fixtures. Insert whitespace at recognized comment boundaries while preserving CR/LF; route fingerprint configuration through shared Read-JsoncFile without changing numeric fraction validation or error context
+- Maintain rejection controls for split integer/fraction/exponent tokens through Read-JsoncFile and actual Get-TestScriptInfo; preserve valid comments, quoted literals/escapes/trailing commas and checked-in strict tracklist corpus. Extend actual config fixture with valid quoted URL/comment markers, comments/trailing commas and split fractional/exponent rejection
+- Reproduce original behavior before product changes, scoped mixed PowerShell quality, maintained parser/threshold/CD fixtures and both catalogs. Existing matcher fixture exercises ordinary checked-in fingerprints and simple missing-file diagnostics; no media decoding or deferred malformed-media/security/resource-pressure probe
+- No native/inherited edit, replacement parser or JSON5 grammar expansion. Preserve prior partial GQR-0223 and all concurrent installer/import owners; no staging/commit
+
+
+### Shared JSONC lexical boundary completed, 2026-10-08
+
+- Completed GQR-0222/GQF-0237 after original GQ1-CHUNK-0594/current-source revalidation. Shared parser emits whitespace at both recognized comment boundaries; fingerprint configuration delegates to existing Read-JsoncFile. Exact whole-file proofs preserve every other product byte, including CR/LF/string/escape/trailing-comma handling and numeric fraction validation
+- Actual original Get-TestScriptInfo admits split numbers as12/1.2/100/100; original config admits four split fractions/exponents as0.65 and fails valid quoted URL. Final maintained parser/actual metadata/config rejection and positive controls pass, including valid commented timeout, CR/LF pairs, quoted URL/comment/comma/escapes and all seven current strict tracklists
+- Actual registered HostOnly parser, threshold and CD source aggregates each PASS1/1, zero failures/timeouts/skips/not-run, exact current source SHA. Existing actual native matcher CLI controls and ordinary unnamed-track fingerprint admission pass, no media decoding. Both catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries
+- Scoped PowerShell7.6.6 quality and diff checks pass; no new runner/registration/timeout, native/inherited edit/savings, APK/device/network or deferred malformed-media/security/resource-pressure probe. Prior GQR-0223 shared CD reader passes; remaining index/music/hash/album/AcoustID extensions remain open
+- Imported immutable GQR-0222 JSONC lexical token boundary remediation 20261008. Totals266 findings/252 remediations:69 DONE/182 TODO/1 DEFERRED. GQ1/GQ2 coverage unchanged. Snapshots/original probes/final logs/verifier:temp/general_cleanup_20261006/gqr0222-* and verify_report_gqr0222.py
+- All owned processes terminal, no staging/commit. Concurrent installer/import and previous cleanup preserved; broader goal active. GQR-0206 actual loader runtime gates and GQR-0133 deferred combined runtime gate remain open
+
+
+### Extended shared JSONC reader migration revalidation, 2026-10-08
+
+- GQR-0223 admitted extensions remain live in index, music pack config/cache, asset version read/write validation, physical/album merger and disc AcoustID config. hash_disc_tracks already uses shared reader; preserve prior repair with validation rather than duplicate edits
+- Snapshot six current clean product owners and existing parser/hash fixtures. Route remaining reader blocks to shared Read-JsoncFile/ConvertFrom-JsoncText, remove exclusively used duplicate parser helpers, preserve all hash/schema/matching/cache/writer/publication bodies and handmade output comments
+- Extend maintained parser fixture to execute actual AST reader assignments/functions in isolation from build/network/publication side effects, checking entire quoted URL/comment/comma/bracket/escape documents, complete version records and exact direct/parameter-dependent hash sets. Reproduce against original reader blocks before product edits
+- Existing forced hash regeneration fixture must copy shared helper into its isolated repository; run complete partial/zero/full-source policy fixture. Run parser/CD/matcher/music build guard/AcoustID cache and CD publication contracts plus both catalogs, scoped mixed PS quality, exact byte/scope proof
+- Retain prior primary CD27-level metadata byte-equivalence and completed GQR-0222 lexical boundary evidence. Full GQR-0223 closure requires all admitted reader scopes validated, not just primary manifest. No external AcoustID request, media decoding or deferred malformed-media/security/resource-pressure probe, native/inherited edit, staging or commit
+
+### Active dependency reader extension recovered, 2026-10-08
+
+- Closure audit recovered original0665/0668 evidence extending GQR-0223 to Get-ScriptDeps in test_helpers.ps1, omitted from the canonical allowed-path summary. Current clean helper still strips quoted URLs with regex and returns null
+- Snapshot current helper; replace only Get-ScriptDeps reader prelude with shared Read-JsoncFile in existing try. Preserve full-document parsing, optional Vars substitution and current failure policy under separate BR-0169; do not change dependency transport/admission or template semantics
+- Extend maintained parser fixture to call actual Get-ScriptDeps with quoted metadata, direct and parameterized hashes/file names, exact records and target values. Include this actual reader before closing full GQR-0223
+
+- Original0683 also extends GQR-0223 to the threshold fixture's known-disc regex reader; route that existing fixture through shared Read-JsoncFile and validate its actual native matcher path. Add full isolated actual index CLI coverage for exact three dependent hashes and exclusion of a fourth unrequested file
+
+- Same0683 fixture scope exposes the identical live AcoustID configuration regex in test_fpcalc_and_acoustid.ps1. Include its reader-only delegation and actual AST assignment contract; preserve the full media/online test and do not run it or count a missing-media skip as validation
+
+- Final Get-ScriptDeps review preserves the original file read outside its parse catch and uses shared ConvertFrom-JsoncText inside, matching existing metadata extractor pattern. This retains read-error propagation while removing both regexes; final actual dependency/parser checks must follow this adjustment
+
+
+### Shared JSONC reader consolidation completed, 2026-10-08
+
+- Completed GQR-0223/GQF-0238 after original0600/0609/0610/0611/0614/0665/0668/0681/0683 and current-source revalidation. Prior primary CD helper repair retained; extended index/music config/cache/version/physical-album/disc/dependency/fingerprint-fixture readers use existing shared owner. Already repaired hash_disc_tracks byte-identical, no duplicate credit
+- Recovered original active Get-ScriptDeps and fixture reader extensions omitted from row summary. Preserve Get-ScriptDeps file read outside its parse catch, full-document behavior and Vars/file/hash/target semantics; shared text parser removes regex corruption. Separate parse-null/complete admission/publication/provenance and typed writer roots remain open
+- Remove Get-JsoncObject and ConvertFrom-JsoncWithComments after tracked/current caller census. Exact ten-owner proofs preserve every other byte, schema/hash/matching/cache/writer/publication bodies and handmade output comments. Net39 branch product lines removed this slice, prior primary1; zero inherited edit or minimization saving
+- Actual original snapshot probes reproduce ten valid quoted-input failures/lost dependency identities. Final maintained seven reader assignments and three real functions preserve complete quoted URL/comment/comma/bracket/escape records, reviewed AcoustID values, complete versions and exact direct/option hash sets. Actual isolated full index publishes3/3 requested identities and excludes fourth file
+- Seven focused maintained fixtures pass parser/index/dependencies/versions, actual forced hash partial/zero/full policy, CD source, actual CD hash/fingerprint publication with curated comment/mtime preservation, cached AcoustID fallback, native matcher threshold/unnamed-track and music target build guard. Final registered HostOnly parser PASS1/1 with zero failures/timeouts/skips/not-run and current source SHA
+- Final both catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries. Scoped PowerShell7.6.6 mixed/follow-up quality and diff checks pass. Prior primary D1 archive9/D2 archive2/CD16 metadata evidence revalidated with all three JSON files byte-identical; not rerun this slice. Existing CD payload lock warnings remain separate, no cleanup success claim
+- Imported immutable GQR-0223 shared JSONC reader consolidation remediation 20261008. Totals266 findings/252 remediations:70 DONE/181 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Snapshots/original probes/final logs/report/verifier:temp/general_cleanup_20261006/gqr0223-* and verify_report_gqr0223_extended.py
+- No full corpus scan, full fpcalc/media/online fixture, external request, deferred malformed-media/security/resource-pressure probe, native/inherited build/edit, device run, staging or commit. All owned processes terminal; concurrent installer/import and previous cleanup preserved. GQR-0206 actual loader runtime and GQR-0133 deferred combined runtime gates remain open; broader goal active
+
+
+### Exact regression spec selection revalidation, 2026-10-08
+
+- GQR-0230/GQF-0246 primary remains live: empty SpecListPath content selects all, unknown paths can exit zero and mixed requests can publish valid subset. Snapshot clean generator and maintained copied-repository fixture
+- Distinguish bound selector from absence, reject blank/empty/missing list, blank lines and canonical duplicates. Discover actual CD/combined/GOG candidate paths and reject unknown/unavailable requests before generation; validate selected existing JSONC skips
+- Stage generated spec records in memory using unchanged existing classification/hash/provenance/schema bodies, account exact requested generated/valid-skip paths, then call existing canonical writer only after validation. Ordinary default all-source outputs must remain equivalent; this is pre-publication validation, not crash-atomic multi-file publication
+- Extend maintained actual child CLI copied-repository controls for empty/blank, unknown/missing/duplicate/mixed paths, canonical normalization/spaces, existing skips and Force, unavailable source and untouched unselected bytes/mtime. Reproduce current behavior before product edit, scoped PS quality and actual generator/catalog checks
+- Full owner also includes fingerprint_disc_tracks/update_all_fingerprints selection routing and publication fixture extensions; keep GQR-0230 TODO until those admitted scopes are repaired/validated. No native/inherited edit, actual extraction/media decoding/external lookup or deferred malformed-media/security/resource-pressure probes, staging or commit
+
+
+### Fingerprint selector extensions resumed, 2026-10-08
+
+- Primary GQR-0230 generator aggregate has completed PASS1/1 with zero skips and current fixture SHA; both catalogs pass. Final primary scope proof and immutable evidence remain pending
+- Snapshot current disc workflow, pipeline and maintained publication fixture, preserving previous JSONC migration. Move folder discovery/admission before native build/tool resolution and AcoustID setup; distinguish absent from bound empty, reject blank/duplicate/unknown/mixed requests before work
+- Maintain real child PowerShell invocation with array selectors through a fixture launcher, ordinary fake native CLI and exact selected/unselected manifest byte/mtime checks. Prove invalid admission before tool resolution with a missing executable and no build; positive one/many/default controls retain existing publication behavior
+- Preserve sampled arrays in pipeline and skip empty selected stages plus their dependent merges. Exercise actual copied pipeline and actual sampling helpers with recording child stage boundaries, including absent sampling, zero disc/pack samples and positive one/many samples. No media decoding/network or deferred malformed-media/security/resource-pressure probes
+- Scoped PowerShell quality, maintained publication/generator and catalog checks; full owner stays TODO until all accepted scopes and evidence gates are complete. No inherited edit, staging or commit
+
+
+### Exact generation and fingerprint selection completed, 2026-10-08
+
+- Completed GQR-0230/GQF-0246 after original0612/0614 and current-source revalidation. Generator distinguishes absent/bound empty, rejects invalid/unknown/unavailable/canonical duplicate paths, validates selected skips and stages exact records before publication. Combined specs read pending components. Existing writer/classification/hash/provenance/schema bodies preserved; no crash-atomic multi-file claim
+- Disc selector preflights bound empty/blank/duplicate/unknown/mixed/no-CUE requests before native build/tool resolution or lookup. Pipeline retains empty sampled arrays and skips empty fingerprint stages plus dependent merges; explicit merge/default workflow unchanged. Broader source/tool/schema/publication/cursor/lookup owners remain separate
+- Actual baseline generator empty Force expands to five specs; disc baseline fails admission-before-tool control; aggregate baseline dispatches empty disc work/merge. Final actual child controls prove invalid admission, one/many/default and unselected bytes/mtime. Stale valid oracle remains unchanged when a later selected source fails
+- Tiny identity/completion fixtures generate all four supported GOG records, account four valid skips and preserve nine ordinary CD/combined/GOG outputs. Actual disc child count/bytes controls and copied aggregate actual discovery/sampling with recording child stage boundaries pass zero disc/pack, one/many/default and explicit merge routing. No actual media decoding/lookup or zero-mission runtime claim
+- Final maintained HostOnly generator/publication aggregates each PASS1/1 with zero failures/timeouts/skips/not-run and current SHA. Both catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries. Scoped mixed/follow-up PS quality, diff checks and exact five-owner reconstruction pass; no new runner/registration/timeout
+- Imported immutable GQR-0230 exact regression and fingerprint selection remediation 20261008. Totals266 findings/252 remediations:71 DONE/180 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Evidence/snapshots/logs/report/verifiers:temp/general_cleanup_20261006/gqr0230-* and verify_gqr0230.py/report_gqr0230.py
+- This correctness repair adds63 net product lines; no inherited edit or minimization savings. No deferred malformed-media/security/resource-pressure probe, native build, APK/device/network, staging or commit. Concurrent installer/import and earlier cleanup preserved; all owned processes terminal. GQR-0206 actual loader runtime and GQR-0133 deferred combined runtime gates remain open; broader goal active
+
+
+### D1 duplicate callsign text domain revalidation, 2026-10-08
+
+- GQR-0092 current Kotlin full-token versus paired fifteen-byte engine mismatch remains live. Preserve that coordinated byte/physical-line/archive identity owner; no partial parser or capacity change made
+- GQR-0187/GQF-0200 current D1 text header still adds ordinal621 and raises original count621 to622, while untouched fallback array has107 entries for514..620. Original accepted review explicitly favors a narrow literal over expanding inherited text format
+- Snapshot current paired text headers/loaders and dirty shared native fixture. Replace only D1 duplicate callsign definition with existing literal style and restore N_TEXT_STRINGS621. Preserve original loader bytes, all other D1 text definitions and all D2 bytes; no compatibility migration or fallback table expansion
+- Scoped quality and paired Windows/Android builds. Prove compiled duplicate callsign expression is independent of the original text table with an ordinary null-bank native header control. Full actual-loader production minimum/legacy/full assets, newline variants, rejection rendering and sanitizer gates remain required before marking DONE; build/header evidence alone cannot close GQR-0187
+- No baseline out-of-bounds runtime probe or deferred malformed-media/security/resource-pressure work, staging or commit. Preserve concurrent installer/import and earlier cleanup; broader goal active
+
+
+### Original D1 text domain implementation checkpoint, 2026-10-08
+
+- GQR-0187/GQF-0200 current-source/original accepted observation revalidated: D1 branch-only duplicate callsign index621 expands legacy domain beyond107 fallback entries. Exactly two header lines restore original count621 and make the branch message a native literal; no loader/table expansion
+- Exact byte proof preserves all other D1 header bytes, both original loaders, D2 header and dirty shared engine fixture. Relative to review base, restored count removes one added and one removed inherited diff line; no net source line removal
+- Eight actual native header/NET_DUMP_STRINGS expression controls pass D1/D2, desktop/Android defines and normal/built-in text modes with null bank. Original count compile control fails safely; no baseline out-of-bounds runtime reproduction
+- Actual unchanged D1 loader under MSVC x86 ASAN passes10 ordinary TXB cases:514 with final newline,600/621 with and without newline, five distinct production HOG text payloads (Mac/Europe/Brazil Anniversary/Destination Saturn/Test Flight). All621 pointer/string reads and literal checked. Actual PhysFS with isolated I/O/error/comparison adapter; not complete game startup or rendered network rejection
+- Paired Windows full build and actual Android Debug APK/all-three-ABI tasks pass. Scoped quality excludes inherited header by policy; exact byte scope and diff checks pass. Initial scratch harness compile setup fixed; final standalone compile warning-free
+- Minimum514 without final newline remains unrun: original loader has pre-existing fallback subtraction at that boundary, outside count-extension root. Actual rejection rendering and maintained loader integration also pending. GQR-0187 TODO/GQF-0200 OPEN; immutable evidence: GQR-0187 original D1 text domain implementation pending final runtime gates 20261008
+- Totals unchanged266 findings/252 remediations:71 DONE/180 TODO/1 DEFERRED; coverage unchanged. Evidence/snapshots/probes/logs:temp/general_cleanup_20261006/gqr0187-* and checkpoint_gqr0187.py. GQR-0092 byte/line/archive identity contract revalidated live but unedited
+- No malformed-media/security/resource-pressure reproduction, APK installation, staging or commit. Concurrent installer/import and previous cleanup retained; all owned processes terminal. Broader goal active
+
+
+### Parsed automation template value resolution, 2026-10-08
+
+- Revalidated GQR-0232/GQF-0248 and original GQ1-CHUNK-0669: current Resolve-TestScript still replaces placeholders in serialized JSON. Preserve prior Get-ScriptDeps JSONC migration and all other helper bytes
+- Snapshot helper and maintained parser/tracklist fixture. Resolve only parsed string values recursively before serialization, using the existing selected game/param variables; never rewrite property names or expand replacement text into JSON records
+- Resolve when strings before filtering, preserve original selected param override semantics, exact numeric/bool/null/object/array shapes and zero/one/many root steps. Reject unresolved/cyclic placeholders in evaluated values/when deterministically; excluded step values are not evaluated. Validate complete strict JSON before publication; preserve existing missing/parse-failed source return policy as a separate owner
+- Extend maintained fixture with actual resolver quote/backslash/newline/Unicode/dollar controls, nested/empty/singleton arrays, recursive variables, literal property names, all filter counts and failed-request preservation of prior bytes/mtime. Reproduce against original before product edit
+- Resolve actual ordinary checked-in templates in isolated copies for both declared games and param options/defaults, compare valid old/new parsed outputs and record pre-existing missing-template cases separately. Scoped PS quality, registered host parser aggregate, relevant metadata/managed-runner and both catalog checks. No new top-level runner or native/device/media/security/resource-pressure probe, staging or commit
+
+
+### Parsed automation template resolution completed, 2026-10-08
+
+- Completed GQR-0232/GQF-0248 after original0669 and current-source revalidation. Resolve-TestScript substitutes parsed string values recursively before one JSON serialization; original selected game/parameter/when behavior retained. Names/types/nested/empty/singleton/null arrays preserved; replacements cannot become JSON steps
+- Deterministic unresolved/active-stack cyclic rejection applies to evaluated when and retained string values; excluded step values remain unevaluated. Final strict JSON/depth validation happens before prior output publication. Existing missing/parse-failed source return policy, original writer and separate wrapper ownership retained
+- Actual original resolver extended fixture corrupts JSON with ordinary quotes/backslashes/newline text. Final maintained fixture covers exact Unicode/dollar/escape values, recursive vars, literal property names, parameter itself/option filtering overrides, all scalar/array shapes, zero/one/many filtered steps and missing/direct-indirect cyclic/when rejection with prior output bytes/mtime preserved
+- Isolated actual baseline/current corpus examines380 current JSONC files over563 game/parameter-option cases.551 complete parsed ordinary outputs equivalent. Twelve unmaterialized support cases from six preview/batch templates require existing wrappers, which replace values before direct use and do not call this resolver for those raw templates; no device or independent wrapper escaping repair claim
+- Final registered HostOnly parser aggregate PASS1/1, zero failures/timeouts/skips/not-run/current fixture SHA. Both catalogs pass94 standalone JSON/374 support/214 standalone PS and312 master entries. Actual managed emulator mocks, process-wait and master regeneration contract fixtures pass. Final scoped PS quality and exact helper/fixture scope/diff checks pass
+- Imported immutable GQR-0232 parsed automation template value resolution remediation 20261008. Totals266 findings/252 remediations:72 DONE/179 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Evidence/snapshots/corpus identities/logs/report/verifier:temp/general_cleanup_20261006/gqr0232-* and verify_report_gqr0232.py
+- No new runner/registration/timeout, inherited edit/savings, native/APK/device/server/network run, media decoding or deferred malformed-media/security/resource-pressure probe, staging or commit. Concurrent installer/import and previous cleanup preserved. All owned processes terminal; GQR-0187 remaining text-domain validation and broader goal remain open
+
+
+### Exact music sidecar version validation resumed, 2026-10-08
+
+- Revalidate GQR-0166/GQF-0179 against current native loader: root.value("version", 0) still narrows numeric values. Require integer type and exact JSON value1 without narrowing, preserving all other parsing, lookup and swap-after-validation behavior
+- Snapshot production loader, existing fixture and concurrently dirty extraction CMake. Extend maintained fixture with a release-safe focused schema-version mode for both mission/jukebox tables, exact supported integer, unsupported numeric types/ranges, and prior-table preservation. Register focused CTest; preserve every existing fixture body
+- Use tiny JSON metadata controls only, no media decoding, malformed UTF8/duplicate-key/count-budget/resource-pressure suite. Baseline negative stops on exactly representable1.0 before extreme-number cases. Run final focused Release CTest and Android native/app targets, scoped quality and exact scope proof
+- Keep full existing music-name suite unrun because it contains deferred probes; if original acceptance requires that suite, retain TODO and document completed focused evidence rather than treating partial gates as closure. No inherited edit/savings, staging or commit; preserve concurrent installer/import work
+
+
+### Exact music sidecar schema version completed, 2026-10-08
+
+- Completed GQR-0166/GQF-0179 after original0197/current-source revalidation. Integer type and exact JSON equality replace narrowing; every other production parser/lookup/swap statement preserved
+- Maintained focused mode covers both production mission/jukebox tables: supported integer1,15 unsupported numeric/type values and missing version; prior lookup retained after each rejection and supported empty table replaces. Signed/unsigned extremes and fractional controls use tiny metadata only
+- Actual original safely fails first on exactly representable1.0. Final registered extraction CTest PASS1/1. Separate forced NDEBUG /O2 /W4 /WX compile and runtime pass, independent of host CMake's existing /UNDEBUG override. Initial legacy helper unused warning resolved by using it for positive mission setup; final explicit compile warning-free
+- Actual Android assembleDebug and paired games/all-three-ABI native tasks pass; APK not installed. Scoped C++/CMake quality, diff check and exact normalized-byte reconstruction pass; original fixture bodies and concurrent extraction CMake preserved
+- Original local acceptance is covered by focused production numeric/preservation controls, release-safe oracle, registered extraction test and Android targets. Full existing fixture containing deferred UTF8/duplicate/count-budget probes remains unrun; no broad suite or assert/affinity closure claim
+- Imported immutable GQR-0166 exact music sidecar schema version remediation 20261008. Totals266 findings/252 remediations:73 DONE/178 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Scratch evidence/snapshots/logs/report/verifier:temp/general_cleanup_20261006/gqr0166-* and verify_report_gqr0166.py
+- Zero inherited edit/minimization saving, media decoding, security/resource-pressure probe, external request, device action, staging or commit. Concurrent installer/import and prior cleanup preserved. All owned processes terminal; broader goal active, GQR-0187/GQR-0206 partial validation remains open
+
+
+### HOG payload read lifetime resumed, 2026-10-08
+
+- GQR-0168/GQF-0181 original0201/current source confirms fread/ferror/fclose short-circuit leaks read handles. Snapshot shared header, maintained fixture and dirty extraction CMake
+- Keep read/error result and unconditional close result separate, then aggregate before output publication. Preserve allocation, identity, catalog and caller contracts
+- Extend existing fixture with focused --read-lifetime mode and registered CTest. Wrap only production header stdio calls in test translation unit; real valid tiny HOG/read/close remains underneath. Inject ordinary short read, read error and close failure; verify opens/closes, actual OS descriptor closure and outputs. Baseline short-read negative cleans leaked handle immediately, no repeated leak/resource-pressure probe
+- Run focused registered extraction test, explicit NDEBUG warning-as-error build and paired Android/all-ABI APK, scoped quality and exact normalized-byte scope proof. Preserve existing malformed/count-budget suite bodies without executing them. Record evidence/closure only after accepted gates; zero inherited edit, staging or commit
+
+
+### HOG payload read lifetime completed, 2026-10-08
+
+- Completed GQR-0168/GQF-0181 after original0201/current-source revalidation. Separate read/error and unconditional close results before aggregation; allocation, identity, parsing, output and caller contracts retained
+- Maintained --read-lifetime fixture interposes real stdio in production header over a valid tiny one-track HOG. Success/short read/read error/close error all prove one open/one close and actual OS descriptor invalidity; success publishes exact three bytes, failures leave NULL/zero outputs
+- Actual original short-read failure shows opens1/closes0/descriptor_closed0 on Windows and Linux, followed by immediate fixture cleanup. Final registered extraction CTest PASS1/1. Independent enforced NDEBUG Windows C11 and Linux GNU11 warning-as-error controls pass all four modes, warning-free
+- Actual Android assembleDebug/paired games/all-three-ABI native tasks pass; APK not installed. Scoped C/CMake quality/diff and exact normalized-byte reconstruction pass; original fixture bodies and concurrent extraction CMake preserved
+- Full original malformed/count-budget fixture remains unrun under existing deferral. Local production fault/descriptor/output, registered extraction and Android gates completely covered by focused suite; no caller affinity/source-generation or broad media/security/allocator closure claim
+- Imported immutable GQR-0168 HOG payload read lifetime remediation 20261008. Totals266 findings/252 remediations:74 DONE/177 TODO/1 DEFERRED; coverage unchanged. Evidence/snapshots/logs/report/verifier:temp/general_cleanup_20261006/gqr0168-* and verify_report_gqr0168.py
+- Product net+2 branch lines, zero inherited edit/minimization saving. No resource-pressure run, device action, external request, staging or commit. Concurrent installer/import and prior cleanup preserved; all owned processes terminal, broader goal active
+
+
+### Complete RNG trace admission resumed, 2026-10-08
+
+- Revalidate GQR-0234/GQF-0250 original0696/current comparer and actual native writer contract. Matching empty/invalid/count-mismatched/truncated inputs still bypass validation. Snapshot comparer and maintained fixture; only these owners plus canonical ledgers
+- Require strict version1 meta first/exactly once, exact raw event inventory and non-truncated evidence. Validate every event before supplemental filtering: supported kind, complete required scalar fields and native integer domains, optional stream/context/object/state fields with complete object triplet, exact rand-result versus srand-seed ownership. Reject duplicate/unknown/ambiguous members and wrong types
+- Preserve complete zero-event trace policy, non-SIM/false-context exclusions and source-line/sequence-only diagnostics. Canonicalize flat records for exact case-sensitive semantic comparison, preserving numeric/path/function/context/state differences; no replay compensation or new native format
+- Extend maintained real child CLI fixture for both input sides, empty/missing/duplicate/midstream meta, JSON/type/range/count/truncation faults and filtered invalid records, semantic case differences, zero-event/supplemental/diagnostic and ordinary matching/mismatch controls. Tiny metadata only, no media/security/resource-pressure probe. Existing whole-file budget remains GQR-0176
+- Run scoped PowerShell quality, actual HostOnly registered fixture and both catalogs; actual existing paired native RNG seed trace producers and compare their generated outputs. Keep closure pending until admitted gates complete; no inherited edit, staging or commit
+
+
+### Complete RNG trace admission completed, 2026-10-08
+
+- Completed GQR-0234/GQF-0250 after original0696/current native version1 writer/current comparer revalidation. Every raw record validates before equality/filtering: unique first meta, exact native types/domains/field identity/raw count and complete evidence. Unknown/duplicate/ambiguous/invalid records cannot be matching PASS
+- Complete zero-event and supplemental-only policy retained. Non-SIM/false-context and source-line/sequence exclusions remain; remaining semantic fields compare ordinal/case-sensitive with stable member ordering. Formatting-only matches preserve later diagnostic notes; no replay compensation or native format change
+- Actual original extended CLI fixture fails on empty pair false-PASS. Final maintained134 named child CLI controls plus original match/mismatch cover independently invalid sides, matching invalid pairs, envelope/event faults and positive bounds/seed/zero/filter/order/case/diagnostics
+- Final actual HostOnly aggregate PASS1/1 with zero failures/timeouts/skips/not-run/current SHA. Both catalogs pass94 standalone JSON/374 support/214 PS and312 master entries. Adjacent state comparer child CLI PASS; direct-call stale intentional mismatch LASTEXITCODE distinguished from authoritative CLI result
+- Actual current paired native LCG/libc producer targets build with no work needed; four production RNG/writer fixtures execute and regenerate16 raw events each. Final paired comparisons PASS2/2, all16 admitted before8 FX exclusions and8 SIM comparisons. Source/executable/trace hashes recorded; not full gameplay/device replay
+- Strict parser explicitly requires existing PowerShell7 runtime; no PowerShell5 execution claim or weaker framework fallback. Existing whole-file budget stays GQR-0176. Scoped PS quality/diff and exact normalized source reconstruction pass; only comparer validation/canonicalization/diagnostic and maintained fixture/child CLI change
+- Imported immutable GQR-0234 complete RNG trace admission remediation 20261008. Totals266 findings/252 remediations:75 DONE/176 TODO/1 DEFERRED; coverage unchanged. Evidence/snapshots/logs/report/verifier:temp/general_cleanup_20261006/gqr0234-* and verify_report_gqr0234.py
+- Zero inherited edit/minimization saving, native product/APK/device/server/network action, media/security/resource-pressure/allocation probe, staging or commit. Concurrent installer/import and prior cleanup preserved; all owned processes terminal, broader goal active
+
+
+### Exact secret origin admission resumed, 2026-10-08
+
+- GQR-0217/GQF-0232 original0503/current source confirms mapNotNull still drops invalid tokens and promotes a later origin. Preserve all declared positions using an invalid zero sentinel already rejected by existing1..level-count admission; never publish a secret row containing invalid first or later origin
+- Snapshot shared policy and existing module/GameFileFormats/MissionZip fixtures. Extend production parser/consumer tests for both games, blank/bad/overflow/zero/negative/out-of-range tokens at first/later positions and valid first/multiple-origin policy. Tiny descriptor controls only
+- Exercise valid ZIP file/stream admission with independently constructed complete HOG catalog. Actual ModManager rejected import must preserve existing mod ownership, source/manifest bytes and mtimes; no decoder or malformed-media/security/resource-pressure suite
+- Reproduce current shared-policy failure before production edit. Scoped Kotlin quality, focused actual module/JVM methods and Android Debug APK/all-ABI tasks, exact normalized scope proof and immutable checkpoint. Existing broader fixture suites contain deferred probes: do not blindly run them
+- Paired native mission secret-list and relevant Android integration remain required for full closure. Keep GQR-0217 TODO until proved, without claiming launcher/JVM checks establish native/runtime acceptance. No native format change, inherited edit/savings, staging or commit; preserve concurrent installer/import and previous cleanup
+
+
+### Exact secret origin implementation checkpoint, 2026-10-08
+
+- Revalidated GQR-0217/GQF-0232 original0503/current shared policy and actual GameFileFormats/MissionZip/ModManager validity/publication boundaries. Two production lines preserve all declared origin positions with rejected zero sentinel; valid first/multiple policy retained and redundant empty-list condition removed
+- Actual original Gradle/JUnit negative fails on D1 empty first origin followed by2 being accepted. Final maintained shared/projection/archive fixtures cover64 invalid combinations per boundary across both games, first/later/middle positions, ordinary valid first/multiple/whitespace controls and exact metadata origin identity
+- Actual ZIP file/stream admission rejects invalid descriptor with independent valid tiny HOG catalog.64 actual ModManager replacement rejections preserve prior owner/list, owned archive/manifest bytes/mtimes, source bytes/mtime and reload ownership. Tiny catalog payload is not a loadable-engine-level claim
+- Final actual selected JUnit6/6 zero failures/errors/skips and Android assembleDebug pass; native paired/all-ABI tasks current/up-to-date. APK not installed. Scoped Kotlin quality/diff and exact normalized reconstruction pass; original test bodies/importer changes preserved
+- Paired actual native secret-list and relevant Android runtime integration remain unproven. GQR-0217 TODO/GQF-0232 OPEN; imported immutable GQR-0217 secret origin admission implementation pending native runtime gates 20261008. Totals unchanged75 DONE/176 TODO/1 DEFERRED, coverage unchanged
+- Evidence/snapshots/XML/logs/report/verifier:temp/general_cleanup_20261006/gqr0217-* and checkpoint_gqr0217.py. No new top-level runner, inherited edit/minimization saving, media decoding, deferred malformed-media/security/resource-pressure probe, device action, staging or commit. All owned processes terminal; broader goal active
+
+### Secret origin native runtime gates resumed, 2026-10-08
+
+- Revalidated actual D1/D2 load_mission_from_current_dir and first-origin atoi handling; preserve inherited parsers. Add a maintained shared fixture invoking actual loaders with ordinary two-level mission descriptors, single/multiple origins and tiny empty/bad/zero/negative/out-of-range origin metadata controls. No native overflow probes or level/media decoding
+- D1 checks MSN; D2 checks both MN2 and MSN. Initialize actual D2 property registry using pinned valid HAM/S22; use pinned D1 HOG. Snapshot dirty host harness, native runner, coverage and master before targeted edits
+- Extend host harness with focused CLI mode and Android native fixture project. Add generic optional asset transport to existing native runner and a registered top-level runner resolving pinned assets. Execute paired Windows and actual Android native processes on emulator-5582 only, scoped mixed quality and catalog checks
+- This proves native mission secret-list behavior, not full level startup or launcher UI. Keep GQR-0217 open if relevant launcher runtime acceptance remains unproven. Preserve concurrent importer work, no staging or commit

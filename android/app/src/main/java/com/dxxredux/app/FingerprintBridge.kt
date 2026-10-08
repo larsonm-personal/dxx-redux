@@ -211,7 +211,7 @@ object FingerprintBridge {
                 context.assets
                     .open("known_discs.jsonc")
                     .bufferedReader()
-                    .readText()
+                    .use { it.readText() }
             val root = JSONObject(Jsonc.strip(raw))
             val discs = root.getJSONArray("discs")
             for (i in 0 until discs.length()) {

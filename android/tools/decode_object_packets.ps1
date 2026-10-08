@@ -155,7 +155,8 @@ function Decode-Packet {
         }
 
         $localObjnum = Get-LEInt32 $Data $loc; $loc += 4
-        $owner = [sbyte]$Data[$loc]; $loc += 1
+        $owner = [int]$Data[$loc]; $loc += 1
+        if ($owner -ge 128) { $owner -= 256 }
         $remoteObjnum = Get-LEInt32 $Data $loc; $loc += 4
 
         $entry = [ordered]@{ EntryIdx = $i }
@@ -236,7 +237,9 @@ function Format-ObjectEntry {
 function Format-Packet {
     param($Pkt)
     $lines = [System.Collections.ArrayList]::new()
-    [void]$lines.Add("--- $($Pkt.Label) ---  len=$($Pkt.RawLen)  token=$($Pkt.Token)  nobj=$($Pkt.NObjDeclared)")
+    $token = if ($Pkt.Contains("Token")) { $Pkt.Token } else { "0x00000000" }
+    $nobj = if ($Pkt.Contains("NObjDeclared")) { $Pkt.NObjDeclared } else { "?" }
+    [void]$lines.Add("--- $($Pkt.Label) ---  len=$($Pkt.RawLen)  token=$token  nobj=$nobj")
     if ($Pkt.Contains("Error")) {
         [void]$lines.Add("  ERROR: $($Pkt.Error)")
         return $lines -join "`n"
@@ -252,10 +255,10 @@ function Format-Packet {
 
 function Get-PktDumpLines {
     param([string]$LogText)
-    $pattern = 'PKTDUMP\s+(TX|RX)\s+len=(\d+)\s+([0-9a-fA-F]+)'
+    $pattern = '(?:\[PKTDUMP\]|(?<![\w\[])PKTDUMP)\s+(TX|RX)\s+len=([0-9]+)\s+((?:[0-9a-fA-F]{2})+)\s*$'
     $results = [System.Collections.ArrayList]::new()
     foreach ($line in $LogText -split "`n") {
-        if ($line -match $pattern) {
+        if ($line -cmatch $pattern) {
             [void]$results.Add(@{
                     Direction   = $Matches[1]
                     DeclaredLen = [int]$Matches[2]
@@ -263,7 +266,7 @@ function Get-PktDumpLines {
                 })
         }
     }
-    return $results
+    return , $results
 }
 
 function Show-Diff {
@@ -278,7 +281,7 @@ function Show-Diff {
                 if ($obj.Marker -eq "END") { $txEnd = $obj }
                 continue
             }
-            $txObjects[$obj.LocalObjnum] = $obj
+            $txObjects[[string]$obj.LocalObjnum] = $obj
         }
     }
     # Collect RX objects
@@ -291,7 +294,7 @@ function Show-Diff {
                 $rxTruncCount++
                 continue
             }
-            $rxObjects[$obj.LocalObjnum] = $obj
+            $rxObjects[[string]$obj.LocalObjnum] = $obj
         }
     }
 
@@ -330,7 +333,7 @@ if ($Hex) {
     $data = ConvertFrom-HexBytes $Hex
     $pkt = Decode-Packet $data "CLI"
     Write-Host (Format-Packet $pkt)
-    exit 0
+    exit ([int]($pkt.Contains("Error") -or $pkt.Truncated))
 }
 
 if (-not $LogFile) {
@@ -360,6 +363,7 @@ Write-Host "Found $($entries.Count) PKTDUMP lines`n"
 
 $txPackets = [System.Collections.ArrayList]::new()
 $rxPackets = [System.Collections.ArrayList]::new()
+$decodeFailed = $false
 
 for ($idx = 0; $idx -lt $entries.Count; $idx++) {
     $e = $entries[$idx]
@@ -370,6 +374,9 @@ for ($idx = 0; $idx -lt $entries.Count; $idx++) {
 
     if ($e.DeclaredLen -ne $actualBytes) {
         $pkt.LenMismatch = "declared=$($e.DeclaredLen) actual_hex=$actualBytes"
+    }
+    if ($pkt.Contains("Error") -or $pkt.Truncated -or $pkt.Contains("LenMismatch")) {
+        $decodeFailed = $true
     }
 
     if ($e.Direction -eq "TX") {
@@ -387,12 +394,15 @@ for ($idx = 0; $idx -lt $entries.Count; $idx++) {
     }
 }
 
-if ($Diff -and $txPackets.Count -gt 0 -and $rxPackets.Count -gt 0) {
+if ($Diff -and -not $decodeFailed -and $txPackets.Count -gt 0 -and $rxPackets.Count -gt 0) {
     Show-Diff $txPackets $rxPackets
 } elseif ($Diff) {
-    Write-Host "Need both TX and RX packets for diff mode"
+    Write-Host $(if ($decodeFailed) { "Incomplete packet decode prevents comparison" } else { "Need both TX and RX packets for diff mode" })
     foreach ($pkt in ($txPackets + $rxPackets)) {
         Write-Host (Format-Packet $pkt)
+        if ($pkt.Contains("LenMismatch")) {
+            Write-Host "  !! LENGTH MISMATCH: $($pkt.LenMismatch)" -ForegroundColor Red
+        }
         Write-Host ""
     }
 }
@@ -402,14 +412,15 @@ Write-Host "`n=== Summary ===" -ForegroundColor Cyan
 Write-Host "TX packets: $($txPackets.Count)"
 Write-Host "RX packets: $($rxPackets.Count)"
 $txObjCount = ($txPackets | ForEach-Object {
-        ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
+        @($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
     } | Measure-Object -Sum).Sum
 $rxObjCount = ($rxPackets | ForEach-Object {
-        ($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
+        @($_.Objects | Where-Object { -not $_.Contains("Marker") -and -not ($_.Contains("BodyTruncated") -and $_.BodyTruncated) }).Count
     } | Measure-Object -Sum).Sum
 $rxTrunc = @($rxPackets | Where-Object { $_.Truncated }).Count
 Write-Host "TX objects: $txObjCount"
 Write-Host "RX objects: $rxObjCount ($rxTrunc packets truncated)"
-if ($txObjCount -gt $rxObjCount) {
+if (-not $decodeFailed -and $txObjCount -gt $rxObjCount) {
     Write-Host "LOST: $($txObjCount - $rxObjCount) objects" -ForegroundColor Red
 }
+exit ([int]$decodeFailed)

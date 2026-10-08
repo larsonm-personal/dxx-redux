@@ -82,7 +82,7 @@ try {
 
     $cdRoot = Join-Path $testRoot 'CD images'
     $discDir = Join-Path $cdRoot 'fixture'
-    $singleDir = Join-Path $cdRoot 'single'
+    $singleDir = Join-Path $cdRoot 'single disc'
     $fakeCli = Join-Path $testRoot $(if (Test-RegressionWindowsHost) { 'fake_fingerprint_cd.cmd' } else { 'fake_fingerprint_cd' })
     $fakeInner = Join-Path $testRoot 'fake_fingerprint_cd.ps1'
     $invocationMarker = Join-Path $testRoot 'invoked.txt'
@@ -145,6 +145,56 @@ exit 0
         'A complete result should publish every expected track'
     Assert-True (@(Get-ChildItem -LiteralPath $discDir -Filter '*.tmp').Count -eq 0) `
         'Atomic publication should not leave temporary files'
+
+    # A real child wrapper preserves bound empty arrays that -File cannot express
+    $selectorLauncher = Join-Path $testRoot 'selected_disc_workflow.ps1'
+    $selectorFile = Join-Path $testRoot 'selection.json'
+    [IO.File]::WriteAllText($selectorLauncher, @'
+param([string]$Workflow, [string]$Selection, [string]$CdRoot, [string]$Exe)
+$ErrorActionPreference = 'Stop'
+$names = @(Get-Content -LiteralPath $Selection -Raw | ConvertFrom-Json)
+& $Workflow -FolderNames $names -CdImageDir $CdRoot -FingerprintExePath $Exe -SkipBuild -SkipAcoustId -Force
+exit $LASTEXITCODE
+'@, [Text.UTF8Encoding]::new($false))
+    function Invoke-SelectedDiscWorkflow {
+        param([string[]]$Names, [string]$Exe = $fakeCli)
+        [IO.File]::WriteAllText($selectorFile, (ConvertTo-Json -InputObject @($Names)), [Text.UTF8Encoding]::new($false))
+        $output = & $powershellPath -NoProfile -File $selectorLauncher -Workflow $workflow `
+            -Selection $selectorFile -CdRoot $cdRoot -Exe $Exe 2>&1
+        return @{ Code = $LASTEXITCODE; Output = ($output -join "`n") }
+    }
+    $selectionPaths = @($manifest, $singleManifest)
+    $selectionSnapshots = @($selectionPaths | ForEach-Object {
+            @{ Text = [IO.File]::ReadAllText($_); Time = [IO.File]::GetLastWriteTimeUtc($_) }
+        })
+    $unavailableDir = Join-Path $cdRoot 'unavailable'
+    New-Item -ItemType Directory -Path $unavailableDir | Out-Null
+    foreach ($names in @(@(), @(''), @(' '), @('unknown'), @('fixture', 'unknown'),
+            @('unknown', 'fixture'), @('fixture', 'FIXTURE'), @('fixture', 'unavailable'))) {
+        $result = Invoke-SelectedDiscWorkflow -Names $names -Exe (Join-Path $testRoot 'missing-cli')
+        Assert-True ($result.Code -ne 0 -and $result.Output -match 'Invalid disc selection') `
+            "Invalid selection must fail before native tool resolution: $($names -join ',')"
+        for ($i = 0; $i -lt $selectionPaths.Count; $i++) {
+            Assert-True ([IO.File]::ReadAllText($selectionPaths[$i]) -ceq $selectionSnapshots[$i].Text -and
+                [IO.File]::GetLastWriteTimeUtc($selectionPaths[$i]) -eq $selectionSnapshots[$i].Time) `
+                'Invalid selection must preserve all manifest bytes and modification times'
+        }
+    }
+    Remove-Item -LiteralPath $unavailableDir
+    $env:DXX_FINGERPRINT_MANIFEST_TEST_MODE = 'changed'
+    $result = Invoke-SelectedDiscWorkflow -Names @('fixture')
+    Assert-True ($result.Code -eq 0 -and $result.Output -match 'OK:\s+1') 'Exactly one selected disc should succeed'
+    Assert-True ([IO.File]::ReadAllText($singleManifest) -ceq $selectionSnapshots[1].Text -and
+        [IO.File]::GetLastWriteTimeUtc($singleManifest) -eq $selectionSnapshots[1].Time) `
+        'One selected disc must preserve the unselected manifest bytes and time'
+    Assert-True ((@(ConvertFrom-CompatibleJsonItems -Json ([IO.File]::ReadAllText($manifest))))[1].chromaprint -eq 'changed-fingerprint') `
+        'One selected disc must actually regenerate the requested manifest'
+    $env:DXX_FINGERPRINT_MANIFEST_TEST_MODE = 'success'
+    $result = Invoke-SelectedDiscWorkflow -Names @('fixture', 'single disc')
+    Assert-True ($result.Code -eq 0 -and $result.Output -match 'OK:\s+2') `
+        'Many selected discs must process exactly the requested set'
+    Assert-True ([IO.File]::ReadAllText($manifest) -ceq $selectionSnapshots[0].Text) `
+        'Selected regeneration must preserve the ordinary canonical result'
 
     $published[1] | Add-Member -NotePropertyName acoustid_name -NotePropertyValue 'Preserved artist - track'
     $published[1] | Add-Member -NotePropertyName acoustid_album -NotePropertyValue 'Preserved album'
@@ -285,6 +335,74 @@ exit 0
     Write-NormalizedJsoncFile -Path $missionInfo -Text $missionText
     Assert-True ([IO.File]::ReadAllText($missionInfo) -ceq $missionText) `
         'A damaged prior sidecar must not prevent publication of valid formatted output'
+
+    # Exercise real pipeline sampling and routing with recording child stages
+    $pipelineRoot = Join-Path $testRoot 'pipeline repo'
+    $pipelineData = Join-Path $pipelineRoot 'game_data'
+    $pipelineHelpers = Join-Path $pipelineRoot 'android/helpers'
+    $pipelineDiscs = Join-Path $pipelineData 'CD images'
+    $pipelineMusic = Join-Path $pipelineData 'music'
+    $pipelineMissions = Join-Path $pipelineData 'mission_files'
+    New-Item -ItemType Directory -Path $pipelineHelpers, $pipelineDiscs, $pipelineMusic, $pipelineMissions -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data/update_all_fingerprints.ps1') -Destination $pipelineData
+    foreach ($helper in @('runtime_targeted_sampling.ps1', 'powershell_compat.ps1', 'mission_archive_sources.ps1')) {
+        Copy-Item -LiteralPath (Join-Path $repoRoot "android/helpers/$helper") -Destination $pipelineHelpers
+    }
+    $stageBody = @'
+param([string[]]$FolderNames, [string[]]$Albums, [string[]]$Zips, [switch]$Force, [switch]$SkipAcoustId, [switch]$DryRun)
+$record = @{ stage = [IO.Path]::GetFileNameWithoutExtension($PSCommandPath); parameters = $PSBoundParameters }
+[IO.File]::AppendAllText((Join-Path $PSScriptRoot 'calls.jsonl'), ($record | ConvertTo-Json -Depth 5 -Compress) + "`n")
+$global:LASTEXITCODE = 0
+'@
+    foreach ($stage in @('fingerprint_disc_tracks', 'fingerprint_music_packs', 'fingerprint_mission_zip_music',
+            'update_known_discs_fingerprints', 'update_known_discs_albums')) {
+        [IO.File]::WriteAllText((Join-Path $pipelineData "$stage.ps1"), $stageBody, [Text.UTF8Encoding]::new($false))
+    }
+    $pipelineCalls = Join-Path $pipelineData 'calls.jsonl'
+    function Invoke-FingerprintPipeline {
+        param([string]$Step = 'all', [double]$Fraction = 1)
+        [IO.File]::WriteAllText($pipelineCalls, '')
+        $output = & $powershellPath -NoProfile -File (Join-Path $pipelineData 'update_all_fingerprints.ps1') `
+            -Step $Step -SampleFraction $Fraction -SampleSeed 123 -SkipAcoustId -Force 2>&1
+        Assert-True ($LASTEXITCODE -eq 0) "Copied fingerprint pipeline failed: $($output -join ' ')"
+        return @(Get-Content -LiteralPath $pipelineCalls | ForEach-Object { $_ | ConvertFrom-Json })
+    }
+    # Sampling inventories names only; these files are never decoded
+    [IO.File]::WriteAllText((Join-Path $pipelineMissions 'one.zip'), 'inventory only')
+    foreach ($step in @('discs', 'packs')) {
+        $calls = @(Invoke-FingerprintPipeline -Step $step -Fraction 0.1)
+        Assert-True ($calls.Count -eq 0) "An empty $step sample must skip fingerprinting and dependent merge"
+    }
+    $calls = @(Invoke-FingerprintPipeline -Fraction 0.1)
+    Assert-True ($calls.Count -eq 2 -and $calls[0].stage -eq 'fingerprint_mission_zip_music' -and
+        $calls[1].stage -eq 'update_known_discs_albums') 'Empty disc/pack samples must not broaden the all-stage request'
+    $calls = @(Invoke-FingerprintPipeline -Step merge -Fraction 0.1)
+    Assert-True ($calls.Count -eq 2 -and $calls[0].stage -eq 'update_known_discs_fingerprints' -and
+        $calls[1].stage -eq 'update_known_discs_albums') 'Explicit merge must remain available with empty input samples'
+    foreach ($name in @('one', 'two', 'three')) {
+        New-Item -ItemType Directory -Path (Join-Path $pipelineDiscs $name) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $pipelineMusic "$name.zip"), 'inventory only')
+        [IO.File]::WriteAllText((Join-Path $pipelineMissions "$name.zip"), 'inventory only')
+    }
+    foreach ($fraction in @(0.1, 0.5, 1.0)) {
+        $calls = @(Invoke-FingerprintPipeline -Fraction $fraction)
+        Assert-True ($calls.Count -eq 5) 'Nonempty/default pipeline must retain all five stages'
+        foreach ($control in @(@{ Index = 0; Key = 'FolderNames'; Names = @('one', 'two', 'three') },
+                @{ Index = 2; Key = 'Albums'; Names = @('one', 'two', 'three') },
+                @{ Index = 3; Key = 'Zips'; Names = @('mission_files/one.zip', 'mission_files/two.zip', 'mission_files/three.zip') })) {
+            $property = $calls[$control.Index].parameters.PSObject.Properties[$control.Key]
+            if ($fraction -eq 1) {
+                Assert-True ($null -eq $property) 'Default unsampled pipeline must omit selectors'
+            } else {
+                $names = @($property.Value)
+                $expectedCount = if ($fraction -eq 0.1) { 1 } else { 2 }
+                Assert-True ($names.Count -eq $expectedCount -and
+                    @($names | Select-Object -Unique).Count -eq $expectedCount -and
+                    @($names | Where-Object { $_ -notin $control.Names }).Count -eq 0) `
+                    'Sampled pipeline must forward exactly one/many distinct available identities'
+            }
+        }
+    }
 
     Write-Host 'fingerprint manifest publication tests passed' -ForegroundColor Green
 } finally {

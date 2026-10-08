@@ -12,6 +12,7 @@
 #define GLES3_SHIM_H
 
 #include <GLES3/gl3.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,23 @@ extern "C" {
 /* ---------- lifecycle ---------- */
 void gles3_shim_init(void);
 void gles3_shim_shutdown(void);
+
+/* Android diagnostics: cumulative successful draw submissions and CPU stream growth */
+struct gles3_shim_draw_stats {
+	uint64_t calls, line_vertices, triangle_vertices, stream_allocations;
+};
+struct gles3_shim_draw_stats gles3_shim_get_draw_stats(void);
+
+/* Track the three game texture units; other valid units always bind */
+#define GLES3_SHIM_TEXTURE_UNIT_COUNT 3
+void gles3_shim_bind_texture(GLenum target, GLuint texture);
+void gles3_shim_active_texture(GLenum texture);
+void gles3_shim_delete_textures(GLsizei count, const GLuint *textures);
+int gles3_shim_bind_texture_2d_cached(GLuint texture);
+void gles3_shim_reset_texture_bindings(void);
+#define glBindTexture    gles3_shim_bind_texture
+#define glActiveTexture  gles3_shim_active_texture
+#define glDeleteTextures gles3_shim_delete_textures
 
 /* ---------- matrix stack ---------- */
 void gles3_shim_matrix_mode(GLenum mode);

@@ -309,7 +309,7 @@ static const struct midi_seek_timeline_ops hmp_timeline_ops = {
 	hmp_event_time, hmp_event_next, hmp_dispatch, hmp_render
 };
 
-static int render_frames(short *out, int frames)
+static int render_frames(short *out, int frames, int *source_finished)
 {
 	double rate = (double) g_output_rate;
 	int rendered = 0;
@@ -317,7 +317,7 @@ static int render_frames(short *out, int frames)
 		rendered = midi_seek_timeline_render(&g_hmp_timeline, out, frames);
 		g_playback_msec = midi_seek_timeline_position_ms(&g_hmp_timeline);
 		if (rendered < frames)
-			tsf_atomic_store_int(&g_source_finished, 1);
+			*source_finished = 1;
 		return rendered;
 	}
 
@@ -412,7 +412,7 @@ static int render_frames(short *out, int frames)
 			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
 			                       tsf_output_gain_db());
 		} else {
-			tsf_atomic_store_int(&g_source_finished, 1);
+			*source_finished = 1;
 			music_synth_reset(g_tsf);
 			music_synth_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate,
 			                       tsf_output_gain_db());
@@ -424,7 +424,7 @@ static int render_frames(short *out, int frames)
 
 /* ── PCM render: resample decoded audio into stereo output buffer ───── */
 
-static int pcm_render_frames(short *out, int frames)
+static int pcm_render_frames(short *out, int frames, int *source_finished)
 {
 	if (!g_pcm_buf || g_pcm_total == 0) return 0;
 
@@ -438,7 +438,7 @@ static int pcm_render_frames(short *out, int frames)
 				g_pcm_pos = 0.0;
 				idx = 0;
 			} else {
-				tsf_atomic_store_int(&g_source_finished, 1);
+				*source_finished = 1;
 				break;
 			}
 		}
@@ -667,8 +667,9 @@ static int render_thread_func(void *data)
 		}
 
 		int frames = CHUNK;
-		int got = g_is_pcm ? pcm_render_frames(buf, frames)
-		                   : render_frames(buf, frames);
+		int source_finished = 0;
+		int got = g_is_pcm ? pcm_render_frames(buf, frames, &source_finished)
+		                   : render_frames(buf, frames, &source_finished);
 
 		/* Track peak active voices (MIDI only) */
 		if (!g_is_pcm && g_tsf) {
@@ -679,6 +680,9 @@ static int render_thread_func(void *data)
 
 		if (got > 0)
 			pcm_ring_write(&g_rb, buf, got * 2);
+		/* Publish EOF only after the final samples are visible to the callback */
+		if (source_finished)
+			tsf_atomic_store_int(&g_source_finished, 1);
 	}
 
 	tsf_finish_tuning_ownership();
@@ -830,8 +834,9 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	int frames = len / (2 * (int) sizeof(short));
 	short *out = (short *) stream;
 
-	int got = g_is_pcm ? pcm_render_frames(out, frames)
-	                   : render_frames(out, frames);
+	int source_finished = 0;
+	int got = g_is_pcm ? pcm_render_frames(out, frames, &source_finished)
+	                   : render_frames(out, frames, &source_finished);
 
 	/* Zero-fill remainder */
 	if (got < frames)

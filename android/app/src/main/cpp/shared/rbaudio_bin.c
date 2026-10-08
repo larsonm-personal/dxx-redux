@@ -322,7 +322,8 @@ static int s_test_source_failure_operation = RBA_IO_NONE;
 #endif
 
 static void (*s_finished_hook)(void) = NULL;
-static volatile int s_song_finished = 0;
+static unsigned int s_source_finished_generation = 0;
+static unsigned int s_finished_generation = 0;
 
 /* ── PCM input buffer (raw CD audio before resampling) ───────────────── */
 
@@ -1191,7 +1192,8 @@ static int refill_pcm(unsigned int request_generation)
 /* ── Resampling render (44100 → output rate) ─────────────────────────── */
 
 /* Render up to max_frames stereo output frames.  Returns actual count. */
-static int render_cd_frames(short *out, int max_frames, unsigned int request_generation)
+static int render_cd_frames(short *out, int max_frames, unsigned int request_generation,
+                            int *source_finished)
 {
 	const double ratio = (double) CD_SAMPLE_RATE / (double) s_output_rate;
 	int written = 0;
@@ -1206,11 +1208,11 @@ static int render_cd_frames(short *out, int max_frames, unsigned int request_gen
 					break;
 				pthread_mutex_lock(&s_background_mutex);
 				if (request_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE)) {
-					s_playing = 0;
-					s_paused = 0;
 					if (refill_result == 0) {
-						__atomic_store_n(&s_terminal_state, RBA_TERMINAL_COMPLETE, __ATOMIC_RELEASE);
-						s_song_finished = 1;
+						*source_finished = 1;
+					} else {
+						s_playing = 0;
+						s_paused = 0;
 					}
 				}
 				pthread_mutex_unlock(&s_background_mutex);
@@ -1276,7 +1278,8 @@ static int apply_pending_request(void)
 	s_read_sector = s_tracks[request.first - 1].start_sector;
 	s_track_end = s_read_sector + s_tracks[request.first - 1].num_sectors;
 	s_finished_hook = request.finished_hook;
-	s_song_finished = 0;
+	__atomic_store_n(&s_source_finished_generation, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_finished_generation, 0, __ATOMIC_RELEASE);
 	s_rb_underruns = 0;
 	s_rb_cb_count = 0;
 	playback_diagnostics_begin(request.first);
@@ -1312,6 +1315,7 @@ static int render_thread_func(void *data)
 	while (__atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST)) {
 		unsigned int render_generation;
 		int got;
+		int source_finished = 0;
 		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_REDBOOK_PRODUCER_WAKE);
 		pthread_mutex_lock(&s_background_mutex);
 		if (__atomic_load_n(&s_bg_paused, __ATOMIC_ACQUIRE)) {
@@ -1326,7 +1330,8 @@ static int render_thread_func(void *data)
 		}
 		if (apply_pending_request())
 			first_buffer = 1;
-		if (!s_playing || s_paused) {
+		if (!s_playing || s_paused ||
+		    __atomic_load_n(&s_source_finished_generation, __ATOMIC_ACQUIRE) == s_applied_request_generation) {
 			s_background_waiting = 1;
 			pthread_cond_broadcast(&s_background_cond);
 			pthread_cond_wait(&s_background_cond, &s_background_mutex);
@@ -1343,13 +1348,17 @@ static int render_thread_func(void *data)
 			continue;
 		}
 
-		got = render_cd_frames(buf, CHUNK, render_generation);
-		if (got > 0) {
+		got = render_cd_frames(buf, CHUNK, render_generation, &source_finished);
+		if (got > 0 || source_finished) {
 			pthread_mutex_lock(&s_background_mutex);
 			if (render_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE) &&
 			    render_generation == s_applied_request_generation && s_playing) {
-				pcm_ring_write(&s_rb, buf, got * 2);
-			} else {
+				if (got > 0)
+					pcm_ring_write(&s_rb, buf, got * 2);
+				/* EOF belongs to this request and follows its final samples */
+				if (source_finished)
+					__atomic_store_n(&s_source_finished_generation, render_generation, __ATOMIC_RELEASE);
+			} else if (got > 0) {
 				__atomic_add_fetch(&s_stale_render_chunks_total, 1, __ATOMIC_RELAXED);
 				got = 0;
 			}
@@ -1480,6 +1489,17 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 	/* Diagnostic stem before SDL_mixer adds effects, matching the MIDI/file tap */
 	androidaud_capture_music(stream, len);
 #endif
+	/* Source EOF remains playable until the callback drains its final frame */
+	unsigned int finished_generation =
+	    __atomic_load_n(&s_source_finished_generation, __ATOMIC_ACQUIRE);
+	if (finished_generation != 0 &&
+	    finished_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE) &&
+	    pcm_ring_available(&s_rb) == 0) {
+		s_playing = 0;
+		s_paused = 0;
+		__atomic_store_n(&s_terminal_state, RBA_TERMINAL_COMPLETE, __ATOMIC_RELEASE);
+		__atomic_store_n(&s_finished_generation, finished_generation, __ATOMIC_RELEASE);
+	}
 }
 
 /* ── Public RBA API ──────────────────────────────────────────────────── */
@@ -1714,7 +1734,8 @@ static int queue_playback_request(int first, int last, void (*hook_finished)(voi
 	s_logical_track = first;
 	s_playing = 1;
 	s_paused = 0;
-	s_song_finished = 0;
+	__atomic_store_n(&s_source_finished_generation, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_finished_generation, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_NONE, __ATOMIC_RELEASE);
 	pcm_ring_discard(&s_rb);
 	pthread_cond_broadcast(&s_background_cond);
@@ -1802,7 +1823,8 @@ void RBAStop(void)
 	pthread_mutex_unlock(&s_background_mutex);
 	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
 	s_finished_hook = NULL;
-	s_song_finished = 0;
+	__atomic_store_n(&s_source_finished_generation, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_finished_generation, 0, __ATOMIC_RELEASE);
 	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_STOPPED, __ATOMIC_RELEASE);
 #ifdef INTROSPECT_ON
 	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
@@ -1917,9 +1939,13 @@ void RBACheckFinishedHook(void)
 	if (!s_initialised) return;
 
 	if ((timer_query() - last_check) >= F2_0) {
-		if (s_song_finished && s_finished_hook) {
+		unsigned int finished_generation =
+		    __atomic_load_n(&s_finished_generation, __ATOMIC_ACQUIRE);
+		if (finished_generation != 0 &&
+		    finished_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE) &&
+		    s_finished_hook) {
 			void (*hook)(void) = s_finished_hook;
-			s_song_finished = 0;
+			__atomic_store_n(&s_finished_generation, 0, __ATOMIC_RELEASE);
 			s_finished_hook = NULL;
 			RBA_LOG("Song finished — calling hook");
 			hook();

@@ -6,6 +6,10 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    add_test(NAME test_matcen_stations COMMAND test_upstream_compat --matcen-stations
+                                               matcen-stations.json)
+    add_test(NAME test_config_policy COMMAND test_upstream_compat --config-policy
+                                             config-policy.json)
     add_test(NAME test_coop_pickup_rewards COMMAND test_upstream_compat --coop-pickup-rewards
                                                    coop-pickup-rewards.json)
     if(DXX_TEST_GAME STREQUAL "d2")

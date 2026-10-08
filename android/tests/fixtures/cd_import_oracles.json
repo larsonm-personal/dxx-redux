@@ -1,0 +1,40 @@
+{
+    "oracle_source": "Complete ARJ continuation chains, reviewed against source offsets and CRCs; D2 Preview hashes also pinned by native real-media test",
+    "discs": [
+        {
+            "disc_id": "descent-ii-usa-3-level-interactive-preview",
+            "files": [
+                {
+                    "file": "d2demo.ham",
+                    "size": 1961015,
+                    "sha256": "747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6"
+                },
+                {
+                    "file": "d2demo.hog",
+                    "size": 2292749,
+                    "sha256": "ccdf88722d90ea4a7ebb40f75fddb71b4c6a68b2a0bee10e82b4fcf887973478"
+                },
+                {
+                    "file": "d2demo.pig",
+                    "size": 2800295,
+                    "sha256": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
+                }
+            ]
+        },
+        {
+            "disc_id": "descent-test-flight-usa",
+            "files": [
+                {
+                    "file": "descent.hog",
+                    "size": 1626232,
+                    "sha256": "40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a"
+                },
+                {
+                    "file": "descent.pig",
+                    "size": 5092871,
+                    "sha256": "2320393b99da2ea81405f60bb15d43b1123b5c8faed87b945335e66559261232"
+                }
+            ]
+        }
+    ]
+}

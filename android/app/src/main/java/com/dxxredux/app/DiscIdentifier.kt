@@ -41,7 +41,6 @@ class DiscIdentifier(
         val label: String,
         val game: String, // "d1" or "d2"
         val legacyDiscId: String?, // e.g. "0x7d0ff809"
-        val trackMapping: Map<String, Int>, // title, credits, first_level
         val tracks: List<KnownTrack>,
     )
 
@@ -76,7 +75,7 @@ class DiscIdentifier(
                 context.assets
                     .open("known_discs.jsonc")
                     .bufferedReader()
-                    .readText()
+                    .use { it.readText() }
             parseDatabase(raw)
         } catch (e: Exception) {
             Log.e("DiscIdentifier", "Invalid physical-disc database", e)
@@ -170,16 +169,11 @@ class DiscIdentifier(
                             )
                         }
                     require(tracks.map { it.track }.distinct().size == tracks.size) { "duplicate track number" }
-                    val mapping = mutableMapOf<String, Int>()
-                    disc.optJSONObject("track_mapping")?.let { trackMapping ->
-                        trackMapping.keys().forEach { key -> mapping[key] = trackMapping.getInt(key) }
-                    }
                     KnownDisc(
                         id = id,
                         label = label,
                         game = game,
                         legacyDiscId = disc.optString("legacy_disc_id").takeIf { it.isNotEmpty() },
-                        trackMapping = mapping,
                         tracks = tracks,
                     )
                 } catch (e: Exception) {

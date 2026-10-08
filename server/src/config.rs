@@ -61,6 +61,7 @@ pub struct ServerConfig {
 
 /// JSONC config file schema. All fields optional; env vars override file values.
 #[derive(Deserialize, Default)]
+#[cfg_attr(test, derive(serde::Serialize))]
 #[serde(default)]
 struct ConfigFile {
     ws_listen_addr: Option<String>,
@@ -281,6 +282,93 @@ fn strip_jsonc_comments(input: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::{strip_jsonc_comments, ConfigFile};
+
+    #[test]
+    fn configuration_template_matches_schema() {
+        let mut entries = serde_json::Map::new();
+        for line in include_str!("../server_config.template.jsonc").lines() {
+            let Some((key, value)) = line
+                .trim()
+                .strip_prefix("// ")
+                .and_then(|s| s.split_once(':'))
+            else {
+                continue;
+            };
+            if !key.bytes().all(|b| b.is_ascii_lowercase() || b == b'_') {
+                continue;
+            }
+            let clean = strip_jsonc_comments(value).expect("valid template entry");
+            let value = serde_json::from_str(clean.trim().trim_end_matches(','))
+                .expect("template defaults must be valid JSON");
+            assert!(
+                entries.insert(key.to_owned(), value).is_none(),
+                "duplicate template key: {key}"
+            );
+        }
+        let schema = serde_json::to_value(ConfigFile::default()).unwrap();
+        assert_eq!(
+            entries.keys().collect::<Vec<_>>(),
+            schema.as_object().unwrap().keys().collect::<Vec<_>>()
+        );
+        let config: ConfigFile =
+            serde_json::from_value(entries.into()).expect("template field types");
+        assert_eq!(config.max_connections, Some(500));
+        assert_eq!(config.force_relay, Some(false));
+        assert_eq!(config.admin_http_listen_addr.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn configuration_file_precedence() {
+        // Re-enter this test in a child so environment overrides cannot race other tests.
+        const EXPECTED: &str = "DXX_TEST_CONFIG_EXPECTED";
+        if let Ok(expected) = std::env::var(EXPECTED) {
+            let config = super::ServerConfig::load();
+            assert_eq!(
+                format!("{}:{}", config.max_connections, config.force_relay),
+                expected
+            );
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("server_config.jsonc");
+        for (contents, overrides, expected) in [
+            ("{}", None, "500:false"),
+            (
+                r#"{"max_connections":42,"force_relay":true}"#,
+                None,
+                "42:true",
+            ),
+            (
+                r#"{"max_connections":42,"force_relay":true}"#,
+                Some(("73", "false")),
+                "73:false",
+            ),
+        ] {
+            std::fs::write(&path, contents).unwrap();
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            command
+                .args([
+                    "--exact",
+                    "config::tests::configuration_file_precedence",
+                    "--nocapture",
+                ])
+                .env_clear()
+                .env("CONFIG_FILE", &path)
+                .env(EXPECTED, expected);
+            if let Some((max, relay)) = overrides {
+                command
+                    .env("MAX_CONNECTIONS", max)
+                    .env("FORCE_RELAY", relay);
+            }
+            let output = command.output().expect("run isolated config loader");
+            assert!(
+                output.status.success(),
+                "{}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+    }
 
     #[test]
     fn jsonc_comments_preserve_string_contents() {

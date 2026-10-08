@@ -74,7 +74,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "android_meta_actions.h"
 #include "escort.h"
-#include "input_demo_replay.h"
 #endif
 
 #ifdef OGL
@@ -1094,15 +1093,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 		{
 			static int draw_log_count = 0;
 		#ifdef __ANDROID__
-			int allow_route_adoption =
-				!input_demo_recorder_is_active() &&
-				!input_demo_replay_is_loaded();
-		#ifdef NETWORK
-			if (Game_mode & GM_MULTI)
-				allow_route_adoption = 0;
-		#endif
-			automap_metadata_update_route(
-				Players[Player_num].objnum, allow_route_adoption);
+			automap_metadata_update_route();
 		#endif
 			if (draw_log_count < 3) {
 				AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_DRAW #%d", draw_log_count);

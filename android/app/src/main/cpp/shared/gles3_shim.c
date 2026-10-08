@@ -17,6 +17,9 @@
 #undef glDisable
 #undef glBindBuffer
 #undef glDeleteBuffers
+#undef glBindTexture
+#undef glActiveTexture
+#undef glDeleteTextures
 
 #include <string.h>
 #include <math.h>
@@ -62,6 +65,52 @@ void gles3_shim_delete_buffers(GLsizei count, const GLuint *buffers)
 	for (GLsizei i = 0; i < count; ++i)
 		if (buffers[i] == current_array_buffer)
 			current_array_buffer = 0;
+}
+
+/* One texture-binding owner for native draws, enhanced models and diagnostics */
+static GLuint bound_textures[GLES3_SHIM_TEXTURE_UNIT_COUNT];
+static unsigned char texture_binding_known[GLES3_SHIM_TEXTURE_UNIT_COUNT];
+static int active_texture_unit = -1;
+static GLint max_texture_units;
+
+void gles3_shim_reset_texture_bindings(void)
+{
+	memset(texture_binding_known, 0, sizeof(texture_binding_known));
+}
+
+void gles3_shim_active_texture(GLenum texture)
+{
+	glActiveTexture(texture);
+	if (texture >= GL_TEXTURE0 && texture - GL_TEXTURE0 < (GLuint) max_texture_units)
+		active_texture_unit = (int) (texture - GL_TEXTURE0);
+}
+
+void gles3_shim_bind_texture(GLenum target, GLuint texture)
+{
+	glBindTexture(target, texture);
+	if (target == GL_TEXTURE_2D && active_texture_unit >= 0 &&
+	    active_texture_unit < GLES3_SHIM_TEXTURE_UNIT_COUNT) {
+		bound_textures[active_texture_unit] = texture;
+		texture_binding_known[active_texture_unit] = 1;
+	}
+}
+
+int gles3_shim_bind_texture_2d_cached(GLuint texture)
+{
+	if (active_texture_unit >= 0 && active_texture_unit < GLES3_SHIM_TEXTURE_UNIT_COUNT &&
+	    texture_binding_known[active_texture_unit] && bound_textures[active_texture_unit] == texture)
+		return 1;
+	gles3_shim_bind_texture(GL_TEXTURE_2D, texture);
+	return 0;
+}
+
+void gles3_shim_delete_textures(GLsizei count, const GLuint *textures)
+{
+	glDeleteTextures(count, textures);
+	for (GLsizei i = 0; i < count; ++i)
+		for (int unit = 0; unit < GLES3_SHIM_TEXTURE_UNIT_COUNT; ++unit)
+			if (textures[i] && bound_textures[unit] == textures[i])
+				texture_binding_known[unit] = 0;
 }
 
 static void mat4_identity(float *dst)
@@ -258,6 +307,13 @@ static int gl_type_size(GLenum type)
 	}
 }
 
+static struct gles3_shim_draw_stats draw_stats;
+
+struct gles3_shim_draw_stats gles3_shim_get_draw_stats(void)
+{
+	return draw_stats;
+}
+
 static void gles3_shim_reserve_stream_data(int bytes)
 {
 	if (bytes > shim_stream_capacity) {
@@ -266,6 +322,7 @@ static void gles3_shim_reserve_stream_data(int bytes)
 			abort();
 		shim_stream_data = new_data;
 		shim_stream_capacity = bytes;
+		draw_stats.stream_allocations++;
 	}
 }
 
@@ -284,6 +341,10 @@ void gles3_shim_bind_program(GLuint prog)
 void gles3_shim_init(void)
 {
 	GLint binding;
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_texture_units);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &binding);
+	active_texture_unit = binding - GL_TEXTURE0;
+	gles3_shim_reset_texture_bindings();
 	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &binding);
 	current_array_buffer = (GLuint) binding;
 	mv_stack.top = 0;
@@ -371,6 +432,9 @@ void gles3_shim_init(void)
 
 void gles3_shim_shutdown(void)
 {
+	gles3_shim_reset_texture_bindings();
+	active_texture_unit = -1;
+	max_texture_units = 0;
 	free(shim_stream_data);
 	shim_stream_data = NULL;
 	shim_stream_capacity = 0;
@@ -779,7 +843,7 @@ int gles3_shim_probe_vbo_arrays(void)
 	previous_scissor = glIsEnabled(GL_SCISSOR_TEST);
 
 	glGenTextures(1, &probe_texture);
-	glBindTexture(GL_TEXTURE_2D, probe_texture);
+	gles3_shim_bind_texture(GL_TEXTURE_2D, probe_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8, 8, 0, GL_RGBA,
 	             GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -871,8 +935,8 @@ int gles3_shim_probe_vbo_arrays(void)
 	gles3_shim_bind_buffer(GL_COPY_READ_BUFFER, (GLuint) previous_copy_read_buffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) previous_framebuffer);
 	glDeleteFramebuffers(1, &probe_framebuffer);
-	glBindTexture(GL_TEXTURE_2D, (GLuint) previous_texture);
-	glDeleteTextures(1, &probe_texture);
+	gles3_shim_bind_texture(GL_TEXTURE_2D, (GLuint) previous_texture);
+	gles3_shim_delete_textures(1, &probe_texture);
 	glViewport(previous_viewport[0], previous_viewport[1],
 	           previous_viewport[2], previous_viewport[3]);
 	glClearColor(previous_clear_color[0], previous_clear_color[1],
@@ -911,6 +975,9 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		LOGE("Rejected draw with mixed client arrays or array-buffer bindings");
 		return;
 	}
+	draw_stats.calls++;
+	if (mode == GL_LINES) draw_stats.line_vertices += count;
+	if (mode == GL_TRIANGLES || mode == GL_TRIANGLE_FAN) draw_stats.triangle_vertices += count;
 
 	if (!external_prog)
 		gles3_shim_flush_state();

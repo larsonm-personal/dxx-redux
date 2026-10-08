@@ -400,6 +400,21 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_automap_objective_readiness_progress" = 600
+    "test_android_automap_route_policy" = 600
+    "test_android_config_policy" = 600
+    "test_android_secret_origins" = 600
+    "test_android_matcen_stations" = 600
+    "test_android_music_completion" = 600
+    "test_android_redbook_completion" = 600
+    "test_android_cd_preview_completion" = 600
+    "test_android_texture_labels" = 600
+    "test_android_ogl_batches" = 600
+    "test_android_merged_wrap" = 600
+    "test_android_merge_cache" = 600
+    "test_android_texture_bindings" = 600
+    "test_android_xmodel_mipmaps" = 600
+    "test_demo_import" = 900
     "test_android_pause_state" = 360
     "test_audio_mix" = 900
     "test_macplay_audio" = 600
@@ -587,6 +602,9 @@ $noInfraTests = @(
     "test_clean_workspace",
     "test_clean_old_artifacts",
     "test_dep_platform",
+    "test_device_network_campaign_cli",
+    "test_object_packet_decoders",
+    "test_review_ledger_generation",
     "test_run_all_tests_catalog",
     "test_dependency_install",
     "test_get_deps_runtime_updates",
@@ -1727,7 +1745,7 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
-$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
+$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_demo_import', 'test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
     if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red

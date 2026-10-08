@@ -17,6 +17,65 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipTest {
     @Test
+    fun secretOriginAdmissionPreservesRegisteredOwner() {
+        File("build").mkdirs()
+        val filesDir =
+            java.nio.file.Files
+                .createTempDirectory(File("build").toPath(), "secret-origins-")
+                .toFile()
+        try {
+            for ((descriptor, level) in listOf("msn" to "rdl", "mn2" to "rl2")) {
+                fun archiveFor(origins: String): File {
+                    val file = File.createTempFile("secret-origin-", ".zip", filesDir)
+                    ZipOutputStream(file.outputStream()).use { zip ->
+                        zip.putNextEntry(ZipEntry("sample.$descriptor"))
+                        zip.write(
+                            "name = Sample\nnum_levels = 2\none.$level\ntwo.$level\nnum_secrets = 1\nsecret.$level,$origins\n"
+                                .toByteArray(),
+                        )
+                        zip.closeEntry()
+                        zip.putNextEntry(ZipEntry("sample.hog"))
+                        zip.write(hogBytes("one.$level", "two.$level", "secret.$level"))
+                        zip.closeEntry()
+                    }
+                    return file
+                }
+                for ((origins, first) in listOf("1" to 1, "2" to 2, "1,2" to 1, "2,1" to 2)) {
+                    val archive = archiveFor(origins)
+                    assertEquals(listOf(first), requireNotNull(MissionZip.inspect(archive)).mission.secretLevelOrigins)
+                    archive.inputStream().use {
+                        assertEquals(listOf(first), requireNotNull(MissionZip.inspect(it)).mission.secretLevelOrigins)
+                    }
+                }
+                val manager = ModManager(File(filesDir, descriptor))
+                requireNotNull(manager.importMissionZipFile(archiveFor("2,1"), "prior.zip"))
+                val prior = manager.listMods()
+
+                fun ownedFiles() =
+                    manager.importDirectory().walkTopDown().filter { it.isFile }.associate {
+                        it.relativeTo(manager.importDirectory()).path to (it.readBytes().toList() to it.lastModified())
+                    }
+                val ownedBefore = ownedFiles()
+                for (token in listOf("", "bad", "2147483648", "-2147483649", "4294967297", "0", "-1", "3")) {
+                    for (origins in listOf(token, "$token,2", "1,$token", "1,$token,2")) {
+                        val archive = archiveFor(origins)
+                        val sourceBefore = archive.readBytes().toList() to archive.lastModified()
+                        assertNull("$descriptor origins '$origins'", MissionZip.inspect(archive))
+                        archive.inputStream().use { assertNull(MissionZip.inspect(it)) }
+                        assertNull(manager.importMissionZipFile(archive, "prior.zip"))
+                        assertEquals(prior, manager.listMods())
+                        assertEquals(ownedBefore, ownedFiles())
+                        assertEquals(sourceBefore, archive.readBytes().toList() to archive.lastModified())
+                    }
+                }
+                assertEquals(prior, ModManager(File(filesDir, descriptor)).listMods())
+            }
+        } finally {
+            filesDir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun centralizesMissionVariantMaskPrecedence() {
         assertEquals(
             listOf("rebirth", "dos", "d2x", "d2xxl"),

@@ -1,10 +1,16 @@
-// TEST: Keep an automap open while cold route metadata becomes usable
+// TEST: Paired automap readiness, including cold open-map adoption in D2
+// D1 retains its initial route rescan; it can be ready before the map opens
 [
     {
         "_info": {
             "description": "Verify objective readiness progress, independent secret labels, and open-map route refresh",
-            "games": ["d2"],
+            "games": ["d1", "d2"],
+            "vars": {
+                "d1": { "GAME": "d1", "MISSION": "First Strike", "LEVEL": "1" },
+                "d2": { "GAME": "d2", "MISSION": "Counterstrike", "LEVEL": "2" },
+            },
             "_deps": [
+                { "file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052" },
                 {
                     "file": "descent2.hog",
                     "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
@@ -29,24 +35,28 @@
     { "action": "enter_launcher" },
     { "action": "reset_state" },
     { "action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250 },
-    { "action": "enter_game", "game": "d2" },
+    { "action": "enter_game", "game": "${GAME}" },
     { "action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200 },
     { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
     { "action": "select", "text": "Ok", "optional": true },
     { "action": "select", "text": "New game", "timeout_ms": 10000 },
-    { "action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000 },
-    { "action": "wait_ms", "ms": 300 },
-    { "action": "key", "key": "backspace" },
-    { "action": "key", "key": "2" },
-    { "action": "select", "text": "Ok", "timeout_ms": 5000 },
-    { "action": "select", "text": "Trainee", "optional": true },
-    { "action": "skip_briefing", "timeout_ms": 60000 },
+    { "action": "select_mission", "text": "${MISSION}", "timeout_ms": 10000 },
+    { "action": "wait_ms", "ms": 300, "when": "d2" },
+    { "action": "key", "key": "backspace", "when": "d2" },
+    { "action": "key", "key": "${LEVEL}", "when": "d2" },
+    { "action": "select", "text": "Ok", "timeout_ms": 5000, "when": "d2" },
+    { "action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100 },
+    { "action": "select", "text": "Rookie", "when": "d1", "timeout_ms": 10000 },
+    { "action": "select", "text": "Trainee", "when": "d2", "optional": true },
+    { "action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100 },
+    { "action": "skip_briefing", "timeout_ms": 60000, "when": "d2" },
     { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
     { "action": "key", "key": "tab", "post_delay_ms": 100 },
     { "action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000 },
     { "action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100 },
     {
         "action": "wait_for",
+        "when": "d2",
         "timeout_ms": 30000,
         "expect": {
             "automap.objective_readiness_note_visible": "true",
@@ -71,8 +81,15 @@
         "expect": {
             "automap.objective_visible_step_count": { "gt": 0 },
             "automap.objective_label_candidate_count": { "gt": 0 },
+        },
+    },
+    {
+        "action": "assert",
+        "when": "d2",
+        "expect": {
             "automap.route_refresh_count": { "gt": 0 },
             "level_metadata_route.analysis_cache.publication_adoption_failures": "0",
+            "level_metadata_route.estimated_progress_permille": { "lte": 1000 },
         },
     },
     {
@@ -80,7 +97,6 @@
         "expect": {
             "automap_active": "true",
             "automap.objective_overlay_mode_name": "all",
-            "level_metadata_route.estimated_progress_permille": { "lte": 1000 },
         },
     },
     { "action": "log", "message": "=== TEST: automap objective readiness progress -- PASS ===" },

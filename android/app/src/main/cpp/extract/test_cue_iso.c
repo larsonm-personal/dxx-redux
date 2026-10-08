@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <limits.h>
 #include <sys/stat.h>
 
@@ -1076,35 +1075,6 @@ static void write_test_bin(const char *filename,
 	}
 
 	fclose(f);
-}
-
-static void write_test_cue(const char *filename, const char *content)
-{
-	char path[512];
-	snprintf(path, sizeof(path), "%s/%s", TEST_DIR, filename);
-	FILE *f = fopen(path, "w");
-	if (!f) {
-		fprintf(stderr, "Cannot create %s\n", path);
-		return;
-	}
-	fputs(content, f);
-	fclose(f);
-}
-
-static char *read_test_file(const char *filename)
-{
-	char path[512];
-	snprintf(path, sizeof(path), "%s/%s", TEST_DIR, filename);
-	FILE *f = fopen(path, "r");
-	if (!f) return NULL;
-	fseek(f, 0, SEEK_END);
-	long len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	char *buf = (char *) malloc(len + 1);
-	fread(buf, 1, len, f);
-	buf[len] = '\0';
-	fclose(f);
-	return buf;
 }
 
 /* Read a CUE file from the test/data/ directory relative to cwd.

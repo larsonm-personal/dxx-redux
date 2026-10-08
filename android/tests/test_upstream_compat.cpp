@@ -2733,7 +2733,6 @@ static void write_robot_frame_trace(const char *filename)
 						robot.orient.fvec = { F1_0, 0, 0 };
 						robot.orient.rvec = { 0, 0, -F1_0 };
 					}
-					if (variant == 6) Weapon_info[0].homing_flag = 1;
 					if (variant == 5 || variant == 9) {
 						vms_vector position = { 0, 0, 10 * F1_0 };
 						const int laser = obj_create(OBJ_WEAPON, 0, 0, &position, &vmd_identity_matrix, F1_0 / 8, CT_WEAPON, MT_PHYSICS, RT_NONE);
@@ -2762,6 +2761,8 @@ static void write_robot_frame_trace(const char *filename)
 						Weapon_info[weapon].children = -1;
 #endif
 					}
+					Weapon_info[0].homing_flag = variant == 6;
+					require(Weapon_info[info.weapon_type].homing_flag == (variant == 6), "full-frame fixture preserves the selected homing weapon");
 					if (behavior == 0x82 || behavior == 0x84 || behavior == AIB_RUN_FROM)
 						install_test_robot_path(robot);
 					aip.CURRENT_STATE = aip.GOAL_STATE = state;
@@ -2794,6 +2795,11 @@ static void write_robot_frame_trace(const char *filename)
 								const object &shot = Objects[i];
 								shots.push_back({ { "id", shot.id }, { "parent", shot.ctype.laser_info.parent_num }, { "position", vector(shot.pos) }, { "velocity", vector(shot.mtype.phys_info.velocity) }, { "life", shot.lifeleft } });
 							}
+						// A visible player outside the direct-fire cone admits only homing fire
+						if (frame == 0 && behavior == AIB_NORMAL && state == AIS_FIRE && sight == 1 && (variant == 0 || variant == 6))
+							require(local.previous_visibility == 1 && shots.size() == (variant == 6 ? 1u : 0u) &&
+							            (local.next_fire > 0) == (variant == 6) && aip.GOAL_STATE == (variant == 6 ? AIS_RECO : AIS_FIRE),
+							        "public frame fires an off-cone homing shot while the ordinary weapon stays idle");
 						frames.push_back({ { "mode", local.mode }, { "behavior", +aip.behavior }, { "state", +aip.CURRENT_STATE }, { "goal", +aip.GOAL_STATE }, { "gun", +aip.CURRENT_GUN }, { "skip", +aip.SKIP_AI_COUNT }, { "submode", +aip.flags[4] }, { "position", vector(robot.pos) }, { "segment", +robot.segnum }, { "velocity", vector(robot.mtype.phys_info.velocity) }, { "forward", vector(robot.orient.fvec) }, { "right", vector(robot.orient.rvec) }, { "up", vector(robot.orient.uvec) }, { "rotvel", vector(robot.mtype.phys_info.rotvel) }, { "next_fire", local.next_fire }, { "burst", local.rapidfire_count }, { "danger_laser", +aip.danger_laser_num }, { "cloak_belief", vector(Ai_cloak_info[&robot - Objects].last_position) }, { "cloak_time", Ai_cloak_info[&robot - Objects].last_time }, { "previous_visibility", local.previous_visibility }, { "last_seen", local.time_player_seen }, { "awareness", local.player_awareness_type }, { "awareness_time", local.player_awareness_time }, { "processed_time", local.time_since_processed }, { "path_index", +aip.cur_path_index }, { "path_direction", +aip.PATH_DIR }, { "path", path }, { "shots", shots }, { "events", Num_awareness_events }, { "agitation", Overall_agitation }, { "sim_draws", d_rand_get_call_count() - sim }, { "fx_draws", d_rand_get_stream_call_count(D_RNG_FX) - fx } });
 						GameTime64 += FrameTime;
 						++d_tick_count;
@@ -10428,6 +10434,16 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 
 #include "pickup_autoselect_fixture.hpp"
 #include "coop_pickup_reward_fixture.hpp"
+#include "config_policy_fixture.hpp"
+#include "secret_origins_fixture.hpp"
+extern "C" {
+#include "matcen_mode.h"
+#include "multi.h"
+#include "multi_gameplay_options.h"
+#include "state_android_shared.h"
+#include "game.h"
+}
+#include "matcen_stations_fixture.hpp"
 #include "weapon_order_profile_fixture.hpp"
 #include "classic_trigger_demo_fixture.hpp"
 #include "classic_asset_demo_fixture.hpp"
@@ -10894,8 +10910,23 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 3 && std::strcmp(argv[1], "--secret-origins") == 0) {
+		test_secret_origins(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--coop-pickup-rewards") == 0) {
 		test_coop_pickup_rewards(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
+	if (argc == 3 && std::strcmp(argv[1], "--matcen-stations") == 0) {
+		test_matcen_stations(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
+	if (argc == 3 && std::strcmp(argv[1], "--config-policy") == 0) {
+		test_config_policy(argv[2]);
 		PHYSFS_deinit();
 		return 0;
 	}

@@ -82,48 +82,29 @@ static void apply_bound_min_mag_filter(ogl_texture *texture, GLenum min_filter,
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle)
 {
-	GLuint *bound_texture = NULL;
-
-	if (state && state->bound_textures && state->active_texture_unit &&
-	    *state->active_texture_unit >= 0 &&
-	    *state->active_texture_unit < state->bound_texture_count)
-		bound_texture = &state->bound_textures[*state->active_texture_unit];
-	if (bound_texture && *bound_texture == handle) {
-		if (state->texbind_reuse)
-			(*state->texbind_reuse)++;
+	if (!state) {
+		glBindTexture(GL_TEXTURE_2D, handle);
 		return;
 	}
-	glBindTexture(GL_TEXTURE_2D, handle);
-	if (state) {
-		if (bound_texture)
-			*bound_texture = handle;
-		if (state->texbinds)
-			(*state->texbinds)++;
+	if (gles3_shim_bind_texture_2d_cached(handle)) {
+		if (state->texbind_reuse)
+			(*state->texbind_reuse)++;
+	} else if (state->texbinds) {
+		(*state->texbinds)++;
 	}
 }
 
 void android_ogl_active_texture(const struct android_ogl_bind_texture_state *state,
                                 GLenum texture)
 {
+	(void) state;
 	glActiveTexture(texture);
-	if (!state || !state->active_texture_unit)
-		return;
-	if (texture >= GL_TEXTURE0 &&
-	    texture < GL_TEXTURE0 + state->bound_texture_count)
-		*state->active_texture_unit = (int) (texture - GL_TEXTURE0);
-	else
-		*state->active_texture_unit = -1;
 }
 
 void android_ogl_reset_texture_bindings(const struct android_ogl_bind_texture_state *state)
 {
-	if (!state)
-		return;
-	if (state->bound_textures && state->bound_texture_count > 0)
-		memset(state->bound_textures, 0xff,
-		       sizeof(*state->bound_textures) * state->bound_texture_count);
-	if (state->active_texture_unit)
-		*state->active_texture_unit = 0;
+	(void) state;
+	gles3_shim_reset_texture_bindings();
 }
 
 void android_ogl_enable_texture_2d(int *texture_2d_enabled)
@@ -204,7 +185,7 @@ void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_stat
 	GLfloat level = 1.0f;
 
 	if (!state || !state->texture_list_state.texture_list ||
-	    state->texture_list_state.texture_list_size <= 0 || !state->last_bound_tex ||
+	    state->texture_list_state.texture_list_size <= 0 ||
 	    state->maxanisotropy <= 1.0f)
 		return;
 
@@ -222,7 +203,6 @@ void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_stat
 		if (texture->handle > 0)
 			total++;
 	}
-	*state->last_bound_tex = 0;
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	                    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
 	debug_log(DLOG_GRAPHICS,
@@ -267,8 +247,6 @@ static int apply_texture_filters_all(struct android_ogl_texture_filter_state *st
 	for (i = 0; i < state->texture_list_state.texture_list_size; i++)
 		updated += apply_texture_filter(&state->texture_list_state.texture_list[i],
 		                                texfilt, generated);
-	if (updated && state->last_bound_tex)
-		*state->last_bound_tex = 0;
 	return updated;
 }
 
@@ -315,8 +293,6 @@ void android_ogl_apply_texfilt_all(struct android_ogl_texture_texfilt_state *sta
 		}
 		updated++;
 	}
-	if (state->last_bound_tex)
-		*state->last_bound_tex = 0;
 	if (updated)
 		con_printf(CON_DEBUG,
 		           "texfilt: updated %d textures in-place (TexFilt=%d)",
@@ -351,7 +327,6 @@ void android_ogl_apply_pending_texture_options(
 		          effective_texfilt, filter_updated, generated);
 
 		anisotropy_state.texture_list_state = state->texture_list_state;
-		anisotropy_state.last_bound_tex = state->last_bound_tex;
 		anisotropy_state.maxanisotropy = *state->maxanisotropy;
 		anisotropy_state.aniso_level = *state->aniso_level;
 		android_ogl_apply_anisotropy_all(&anisotropy_state);
@@ -362,7 +337,6 @@ void android_ogl_apply_pending_texture_options(
 		int effective_texfilt;
 		struct android_ogl_texture_texfilt_state texfilt_state = {
 			state->texture_list_state,
-			state->last_bound_tex,
 			state->texfilt_pending_apply,
 			state->requested_texfilt_level,
 			state->applied_texfilt_level

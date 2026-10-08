@@ -24,14 +24,86 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
+function Invoke-GitText {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+
+    $start = [Diagnostics.ProcessStartInfo]::new('git')
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
+    foreach ($argument in (@('-C', $repoRoot) + $Arguments)) { $start.ArgumentList.Add($argument) }
+    $process = [Diagnostics.Process]::Start($start)
+    try {
+        $stdout = $process.StandardOutput.ReadToEndAsync()
+        $stderr = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $result = $stdout.GetAwaiter().GetResult()
+        $errorText = $stderr.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+            throw "git $($Arguments -join ' ') failed: $errorText"
+        }
+        return $result
+    } finally {
+        $process.Dispose()
+    }
+}
+
 function Invoke-GitLines {
     param([Parameter(Mandatory)][string[]]$Arguments)
 
-    $result = @(& git -C $repoRoot @Arguments)
-    if ($LASTEXITCODE -ne 0) {
-        throw "git $($Arguments -join ' ') failed with exit code $LASTEXITCODE"
+    $text = Invoke-GitText -Arguments $Arguments
+    if ($text.Length -gt 0) { return $text.TrimEnd("`n", "`r") -split "`r?`n" }
+}
+
+function ConvertFrom-GitPath {
+    param([Parameter(Mandatory)][string]$Value)
+
+    if (-not $Value.StartsWith('"')) { return $Value }
+    if (-not $Value.EndsWith('"')) { throw "Unterminated Git path: $Value" }
+    $bytes = [Collections.Generic.List[byte]]::new()
+    $escapes = @{ a = 7; b = 8; t = 9; n = 10; v = 11; f = 12; r = 13; '"' = 34; '\' = 92 }
+    $utf8 = [Text.UTF8Encoding]::new($false, $true)
+    for ($index = 1; $index -lt $Value.Length - 1; $index++) {
+        if ($Value[$index] -ne '\') {
+            $start = $index
+            while ($index + 1 -lt $Value.Length - 1 -and $Value[$index + 1] -ne '\') { $index++ }
+            $bytes.AddRange($utf8.GetBytes($Value.Substring($start, $index - $start + 1)))
+            continue
+        }
+        $index++
+        if ($index -ge $Value.Length - 1) { throw "Incomplete Git path escape: $Value" }
+        $escape = [string]$Value[$index]
+        if ($escapes.ContainsKey($escape)) {
+            $bytes.Add([byte]$escapes[$escape])
+        } elseif ($index + 2 -lt $Value.Length - 1 -and $Value.Substring($index, 3) -match '^[0-7]{3}$') {
+            $bytes.Add([Convert]::ToByte($Value.Substring($index, 3), 8))
+            $index += 2
+        } else {
+            throw "Unsupported Git path escape: $Value"
+        }
     }
-    return $result
+    return $utf8.GetString($bytes.ToArray())
+}
+
+function ConvertTo-ReviewPath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    if ($Path -match '[\x00-\x1f`|]') {
+        return (ConvertTo-Json -InputObject $Path -Compress).Replace('`', '\u0060').Replace('|', '\u007c')
+    }
+    return $Path
+}
+
+function Get-GitTreePaths {
+    param([Parameter(Mandatory)][string]$Commit)
+
+    $paths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($record in (Invoke-GitText -Arguments @('ls-tree', '-r', '-z', '--name-only', $Commit)) -split "`0") {
+        if ($record) { [void]$paths.Add($record) }
+    }
+    return , $paths
 }
 
 function Resolve-GitCommit {
@@ -204,9 +276,10 @@ function Get-AllDiffHunks {
 
     $diff = @(Invoke-GitLines -Arguments @(
             "-c", "core.quotePath=false", "diff", "--unified=0", "--no-color",
-            "--diff-filter=MDRC", $BaseCommit, $HeadCommit, "--"
+            "--find-renames", "--find-copies-harder", "--no-ext-diff", "--no-textconv",
+            "--src-prefix=a/", "--dst-prefix=b/", "--diff-filter=MDRC", $BaseCommit, $HeadCommit, "--"
         ))
-    $hunksByPath = @{}
+    $hunksByPath = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
     $currentPath = ""
     $ordinal = 0
     foreach ($line in $diff) {
@@ -215,15 +288,19 @@ function Get-AllDiffHunks {
             $ordinal = 0
             continue
         }
-        if ($line -match '^\+\+\+ b/(?<Path>.+)$') {
-            $currentPath = $Matches["Path"]
+        if ($line.StartsWith('+++ ') -and $line -ne '+++ /dev/null') {
+            $headerPath = ConvertFrom-GitPath -Value $line.Substring(4).TrimEnd("`t")
+            if (-not $headerPath.StartsWith('b/')) { throw "Unexpected new path: $headerPath" }
+            $currentPath = $headerPath.Substring(2)
             if (-not $hunksByPath.ContainsKey($currentPath)) {
                 $hunksByPath[$currentPath] = [Collections.Generic.List[object]]::new()
             }
             continue
         }
-        if ($line -match '^--- a/(?<Path>.+)$' -and -not $currentPath) {
-            $currentPath = $Matches["Path"]
+        if ($line.StartsWith('--- ') -and $line -ne '--- /dev/null' -and -not $currentPath) {
+            $headerPath = ConvertFrom-GitPath -Value $line.Substring(4).TrimEnd("`t")
+            if (-not $headerPath.StartsWith('a/')) { throw "Unexpected old path: $headerPath" }
+            $currentPath = $headerPath.Substring(2)
             if (-not $hunksByPath.ContainsKey($currentPath)) {
                 $hunksByPath[$currentPath] = [Collections.Generic.List[object]]::new()
             }
@@ -261,7 +338,8 @@ function Get-AllDiffHunks {
 function Get-ModifiedFileChunks {
     param(
         [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Hunks,
-        [Parameter(Mandatory)][int]$Limit
+        [Parameter(Mandatory)][int]$Limit,
+        [switch]$Deleted
     )
 
     if ($Hunks.Count -eq 0) {
@@ -287,12 +365,14 @@ function Get-ModifiedFileChunks {
     return @($groups | ForEach-Object {
             $first = $_.Hunks[0]
             $last = $_.Hunks[-1]
-            $newStarts = @($_.Hunks | ForEach-Object { [Math]::Max(1, $_.NewStart) })
-            $newEnds = @($_.Hunks | ForEach-Object {
-                    [Math]::Max(1, $_.NewStart + [Math]::Max(1, $_.NewCount) - 1)
+            $rangeStarts = @($_.Hunks | ForEach-Object { [Math]::Max(1, $(if ($Deleted) { $_.OldStart } else { $_.NewStart })) })
+            $rangeEnds = @($_.Hunks | ForEach-Object {
+                    if ($Deleted) { [Math]::Max(1, $_.OldStart + [Math]::Max(1, $_.OldCount) - 1) }
+                    else { [Math]::Max(1, $_.NewStart + [Math]::Max(1, $_.NewCount) - 1) }
                 })
+            $side = if ($Deleted) { 'old' } else { 'new' }
             [pscustomobject]@{
-                Scope  = "diff hunks $($first.Ordinal)-$($last.Ordinal), new L$(($newStarts | Measure-Object -Minimum).Minimum)-L$(($newEnds | Measure-Object -Maximum).Maximum)"
+                Scope  = "diff hunks $($first.Ordinal)-$($last.Ordinal), $side L$(($rangeStarts | Measure-Object -Minimum).Minimum)-L$(($rangeEnds | Measure-Object -Maximum).Maximum)"
                 Weight = $_.Weight
                 Order  = $first.Ordinal
             }
@@ -313,11 +393,11 @@ if ($mergeBaseLines.Count -ne 1) {
 }
 $reviewBase = $mergeBaseLines[0]
 
-$statusByPath = @{}
-$oldPathByPath = @{}
-$statusRecords = ((Invoke-GitLines -Arguments @(
-            "diff", "--name-status", "-z", "--find-renames", $reviewBase, $headCommit, "--"
-        )) -join "`n") -split "`0"
+$statusByPath = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
+$oldPathByPath = [Collections.Generic.Dictionary[string, object]]::new([StringComparer]::Ordinal)
+$statusRecords = (Invoke-GitText -Arguments @(
+        "diff", "--name-status", "-z", "--find-renames", "--find-copies-harder", $reviewBase, $headCommit, "--"
+    )) -split "`0"
 for ($index = 0; $index -lt $statusRecords.Count - 1; $index++) {
     $status = $statusRecords[$index]
     $path = $statusRecords[++$index]
@@ -326,21 +406,23 @@ for ($index = 0; $index -lt $statusRecords.Count - 1; $index++) {
         $oldPath = $path
         $path = $statusRecords[++$index]
     }
-    $statusByPath[$path] = $status
+    if (-not $path -or $statusByPath.ContainsKey($path)) { throw "Duplicate or missing Git status path: $path" }
+    $statusByPath.Add($path, $status)
     if ($oldPath) {
         $oldPathByPath[$path] = $oldPath
     }
 }
 
 $files = [Collections.Generic.List[object]]::new()
-$numstatRecords = ((Invoke-GitLines -Arguments @(
-            "diff", "--numstat", "-z", "--find-renames", $reviewBase, $headCommit, "--"
-        )) -join "`n") -split "`0"
+$numstatRecords = (Invoke-GitText -Arguments @(
+        "diff", "--numstat", "-z", "--find-renames", "--find-copies-harder", $reviewBase, $headCommit, "--"
+    )) -split "`0"
+$statPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$basePaths = Get-GitTreePaths -Commit $reviewBase
+$headPaths = Get-GitTreePaths -Commit $headCommit
 for ($index = 0; $index -lt $numstatRecords.Count - 1; $index++) {
     $parts = $numstatRecords[$index] -split "`t", 3
-    if ($parts.Count -lt 3) {
-        continue
-    }
+    if ($parts.Count -ne 3) { throw 'Invalid Git numstat record' }
     $path = $parts[2]
     if (-not $path) {
         # NUL-delimited rename records contain separate old and new paths
@@ -351,7 +433,14 @@ for ($index = 0; $index -lt $numstatRecords.Count - 1; $index++) {
     $added = if ($isBinary) { 0 } else { [int64]$parts[0] }
     $deleted = if ($isBinary) { 0 } else { [int64]$parts[1] }
     $kind = Get-ReviewKind -Path $path -IsBinary $isBinary
-    $status = if ($statusByPath.ContainsKey($path)) { $statusByPath[$path] } else { "M" }
+    if (-not $statusByPath.ContainsKey($path) -or -not $statPaths.Add($path)) { throw "Unmatched Git stat path: $path" }
+    $status = $statusByPath[$path]
+    $snapshotPaths = $headPaths
+    if ($status -eq 'D') { $snapshotPaths = $basePaths }
+    if (-not $snapshotPaths.Contains($path)) { throw "Review path missing from snapshot: $path" }
+    if ($oldPathByPath.ContainsKey($path) -and -not $basePaths.Contains($oldPathByPath[$path])) {
+        throw "Review origin missing from base snapshot: $path"
+    }
     $files.Add([pscustomobject]@{
             Path     = $path
             OldPath  = if ($oldPathByPath.ContainsKey($path)) { $oldPathByPath[$path] } else { "" }
@@ -363,6 +452,7 @@ for ($index = 0; $index -lt $numstatRecords.Count - 1; $index++) {
             Risk     = Get-ReviewRisk -Path $path -Kind $kind
         })
 }
+if ($statPaths.Count -ne $statusByPath.Count) { throw 'Git status/stat inventory coverage differs' }
 
 $lineReviewKinds = @("authored-source", "test-source", "build-script", "authored-config", "documentation")
 $chunks = [Collections.Generic.List[object]]::new()
@@ -371,19 +461,23 @@ $allDiffHunks = Get-AllDiffHunks -BaseCommit $reviewBase -HeadCommit $headCommit
 $lineReviewFiles = @($files | Where-Object { $_.Kind -in $lineReviewKinds } | Sort-Object Path)
 foreach ($file in $lineReviewFiles) {
     $limit = Get-ChunkLimit -Kind $file.Kind -Risk $file.Risk
-    $bucket = Get-ReviewBucket -Path $file.Path
-    if ($file.Status -match '^A') {
-        $lineCount = [Math]::Max(1, $file.Added)
+    $bucket = ConvertTo-ReviewPath -Path (Get-ReviewBucket -Path $file.Path)
+    $displayPath = ConvertTo-ReviewPath -Path $file.Path
+    if ($file.Status -match '^[AC]') {
+        $lineCount = if ($file.Status -match '^C') {
+            $content = Invoke-GitText -Arguments @('show', "${headCommit}:$($file.Path)")
+            [Math]::Max(1, ($content -split "`n").Count - [int]$content.EndsWith("`n"))
+        } else { [Math]::Max(1, $file.Added) }
         for ($start = 1; $start -le $lineCount; $start += $limit) {
             $end = [Math]::Min($lineCount, $start + $limit - 1)
             $rawSourceChunks.Add([pscustomobject]@{
                     Phase   = "source"
                     Risk    = $file.Risk
                     Kind    = $file.Kind
-                    Path    = $file.Path
+                    Path    = $displayPath
                     Scope   = "L$start-L$end"
                     Weight  = $end - $start + 1
-                    Details = ""
+                    Details = if ($file.OldPath) { "copied from $(ConvertTo-ReviewPath -Path $file.OldPath)" } else { "" }
                     Bucket  = $bucket
                     Limit   = $limit
                     Order   = $start
@@ -393,14 +487,21 @@ foreach ($file in $lineReviewFiles) {
     }
 
     $fileHunks = @(if ($allDiffHunks.ContainsKey($file.Path)) { $allDiffHunks[$file.Path] })
-    $fileChunks = @(Get-ModifiedFileChunks -Hunks $fileHunks -Limit $limit)
+    $oldTotal = 0
+    $newTotal = 0
+    foreach ($hunk in $fileHunks) {
+        $oldTotal += $hunk.OldCount
+        $newTotal += $hunk.NewCount
+    }
+    if ($oldTotal -ne $file.Deleted -or $newTotal -ne $file.Added) { throw "Git hunk/stat coverage differs: $($file.Path)" }
+    $fileChunks = @(Get-ModifiedFileChunks -Hunks $fileHunks -Limit $limit -Deleted:($file.Status -eq 'D'))
     foreach ($fileChunk in $fileChunks) {
-        $details = if ($file.OldPath) { "renamed from $($file.OldPath)" } else { "" }
+        $details = if ($file.OldPath) { "renamed from $(ConvertTo-ReviewPath -Path $file.OldPath)" } else { "" }
         $rawSourceChunks.Add([pscustomobject]@{
                 Phase   = "source"
                 Risk    = $file.Risk
                 Kind    = $file.Kind
-                Path    = $file.Path
+                Path    = $displayPath
                 Scope   = $fileChunk.Scope
                 Weight  = $fileChunk.Weight
                 Details = $details
@@ -456,7 +557,7 @@ foreach ($group in $mechanicalGroups) {
                 Path    = "$($batch.Count) paths"
                 Scope   = "batch $([int]($offset / $BatchPathsPerChunk) + 1)"
                 Weight  = ($batch | Measure-Object Added -Sum).Sum + ($batch | Measure-Object Deleted -Sum).Sum
-                Details = ($batch.Path -join "`n")
+                Details = (@($batch | ForEach-Object { ConvertTo-ReviewPath -Path $_.Path }) -join "`n")
                 Bucket  = $group.Name
                 Order   = $offset
             })
@@ -559,6 +660,22 @@ foreach ($chunk in $numberedChunks | Where-Object { $_.Details }) {
 $shortBase = $reviewBase.Substring(0, 12)
 $shortHead = $headCommit.Substring(0, 12)
 $generatedUtc = [DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+$canonicalInventory = @($files | Sort-Object -CaseSensitive Path | ForEach-Object {
+        $file = $_
+        $displayPath = ConvertTo-ReviewPath -Path $file.Path
+        [ordered]@{
+            path = $file.Path
+            old_path = $file.OldPath
+            status = $file.Status
+            kind = $file.Kind
+            risk = $file.Risk
+            added = $file.Added
+            deleted = $file.Deleted
+            hunks = @($(if ($allDiffHunks.ContainsKey($file.Path)) { $allDiffHunks[$file.Path] }))
+            scopes = @($rawSourceChunks | Where-Object { $_.Path -ceq $displayPath } | ForEach-Object Scope)
+        }
+    })
+$canonicalInventoryJson = ConvertTo-Json -InputObject $canonicalInventory -Depth 8
 $totalAdded = if ($files.Count -gt 0) { ($files | Measure-Object Added -Sum).Sum } else { 0 }
 $totalDeleted = if ($files.Count -gt 0) { ($files | Measure-Object Deleted -Sum).Sum } else { 0 }
 $ledger = @"
@@ -597,6 +714,14 @@ Only one call may edit this file at a time. Replace the state in place and put f
 |---|---:|---:|---:|
 $($kindSummary -join "`n")
 
+## Canonical path inventory
+
+Paths below retain their exact UTF-8 identities. Control characters in queue labels use JSON escapes; deleted-source ranges refer to the base snapshot
+
+${tick}${tick}${tick}json
+$canonicalInventoryJson
+${tick}${tick}${tick}
+
 ## Review queue
 
 | ID | State | Phase | Risk | Kind | Path | Assigned scope | Result |
@@ -631,7 +756,16 @@ Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a
 "@
 
 $utf8NoBom = [Text.UTF8Encoding]::new($false)
-[IO.File]::WriteAllText($outputFullPath, $ledger.Replace("`r`n", "`n") + "`n", $utf8NoBom)
+$outputText = $ledger.Replace("`r`n", "`n") + "`n"
+if (Test-Path -LiteralPath $outputFullPath) {
+    $existing = [IO.File]::ReadAllText($outputFullPath)
+    $withoutTime = '(?m)^- Generated: [^\r\n]+'
+    if (($existing -replace $withoutTime, '') -ceq ($outputText -replace $withoutTime, '')) {
+        Write-Host "Review ledger unchanged: $outputFullPath"
+        return
+    }
+}
+[IO.File]::WriteAllText($outputFullPath, $outputText, $utf8NoBom)
 
 Write-Host "Created adversarial review ledger"
 Write-Host "  Output: $outputFullPath"

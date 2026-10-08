@@ -28,7 +28,7 @@ object KnownVersions {
                 context.assets
                     .open("known_versions.jsonc")
                     .bufferedReader()
-                    .readText()
+                    .use { it.readText() }
             val json = JSONObject(Jsonc.strip(raw))
             val arr = json.getJSONArray("versions")
             val t = mutableMapOf<String, MutableList<VersionEntry>>()

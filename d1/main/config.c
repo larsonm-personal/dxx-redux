@@ -41,10 +41,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define GRAPHICS_CONFIG_VALUE(key, value) android_graphics_safety_config_write_value(key, value)
 #include "playsave.h"
 #include "coop_save.h"
-#include "render.h"
-#ifdef __ANDROID__
+#include "android_graphics_options.h"
 #include "auto_net.h"
-#endif
 #endif
 
 struct Cfg GameCfg;
@@ -103,24 +101,6 @@ static void android_apply_initial_defaults(void)
 	/* Enable free-flight automap so that pinch-to-thrust on the touch
 	 * screen translates through the level instead of just zooming */
 	PlayerCfg.AutomapFreeFlight = 1;
-}
-
-static const char *android_saved_last_player(void)
-{
-	if (!GameCfg.LastPlayer[0] || !strcmp(GameCfg.LastPlayer, COOP_AUTOSAVE_CALLSIGN))
-		return "";
-	return GameCfg.LastPlayer;
-}
-
-static int android_should_keep_saved_last_player(const char *last_player)
-{
-	if (!last_player[0] || !strcmp(last_player, COOP_AUTOSAVE_CALLSIGN))
-		return 1;
-#ifdef __ANDROID__
-	if (auto_net_is_transient_callsign(last_player))
-		return 1;
-#endif
-	return 0;
 }
 #endif
 
@@ -348,21 +328,7 @@ int ReadConfigFile()
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
 
 #ifdef ANDROID
-	/* android port: sync config graphics values to runtime OGL globals */
-	{
-		extern int ogl_aniso_level;
-		extern int ogl_msaa_samples;
-		extern int g_texfilt_level;
-		if (GameCfg.TexFilt < 0)
-			GameCfg.TexFilt = 0;
-		if (GameCfg.TexFilt > 2)
-			GameCfg.TexFilt = 2;
-		ogl_aniso_level = GameCfg.AnisoLevel;
-		ogl_msaa_samples = GameCfg.MsaaLevel;
-		g_texfilt_level = GameCfg.TexFilt;
-		android_render_set_main_view_fov(GameCfg.MainViewFov);
-		GameCfg.MainViewFov = android_render_get_main_view_fov();
-	}
+	android_graphics_apply_loaded_config();
 #endif
 
 	return 0;
@@ -376,8 +342,7 @@ int WriteConfigFile()
 	GameCfg.GammaLevel = gr_palette_get_gamma();
 	last_player = Players[Player_num].callsign;
 #ifdef ANDROID
-	if (android_should_keep_saved_last_player(last_player))
-		last_player = android_saved_last_player();
+	last_player = auto_net_config_last_player(last_player, GameCfg.LastPlayer);
 #endif
 
 	#ifdef ANDROID

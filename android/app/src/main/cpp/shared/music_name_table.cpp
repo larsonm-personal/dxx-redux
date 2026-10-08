@@ -73,7 +73,8 @@ table parse_table(const char *text, const std::size_t length)
 		return true;
 	};
 	const auto root = nlohmann::json::parse(text, text + length, reject_duplicate_keys, true, false);
-	if (!root.is_object() || root.value("version", 0) != 1 || !root.contains("records") ||
+	if (!root.is_object() || !root.contains("version") || !root["version"].is_number_integer() ||
+	    root["version"] != 1 || !root.contains("records") ||
 	    !root["records"].is_array() || root["records"].size() > max_records)
 		throw std::runtime_error("invalid sidecar root");
 	for (auto field = root.begin(); field != root.end(); ++field) {

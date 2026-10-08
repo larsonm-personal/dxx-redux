@@ -20,6 +20,7 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_host_platform.ps1")
+. (Join-Path $repoRoot 'android/helpers/jsonc.ps1')
 
 function Resolve-RepoPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -191,10 +192,8 @@ if (-not $SkipAcoustId) {
     $configPath = Resolve-RepoPath "android/acoustid_config.jsonc"
     $apiKey = $null
     if (Test-Path $configPath) {
-        $raw = Get-Content -LiteralPath $configPath -Raw
-        $cleaned = $raw -replace '//[^\n]*' -replace '/\*[\s\S]*?\*/'
         try {
-            $cfg = $cleaned | ConvertFrom-Json
+            $cfg = Read-JsoncFile -Path $configPath
             $apiKey = $cfg.api_key
         } catch {
             Write-Warning "Failed to parse acoustid config: $_"

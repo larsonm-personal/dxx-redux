@@ -31,6 +31,7 @@ function ConvertFrom-JsoncText {
         if ($current -eq '/' -and $index + 1 -lt $Text.Length) {
             $next = $Text[$index + 1]
             if ($next -eq '/') {
+                [void]$withoutComments.Append(' ')
                 $index += 2
                 while ($index -lt $Text.Length -and $Text[$index] -notin @("`r", "`n")) {
                     $index++
@@ -38,6 +39,7 @@ function ConvertFrom-JsoncText {
                 continue
             }
             if ($next -eq '*') {
+                [void]$withoutComments.Append(' ')
                 $index += 2
                 $closed = $false
                 while ($index -lt $Text.Length) {

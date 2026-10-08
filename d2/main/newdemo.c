@@ -97,7 +97,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamemine.h"
 #include "switch.h"
 #include "d1_in_d2/d1_in_d2.h"
-#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_levels.h"
 
 #if defined(__ANDROID__)

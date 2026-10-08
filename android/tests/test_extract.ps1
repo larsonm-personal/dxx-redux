@@ -1459,6 +1459,21 @@ if ($missingFiles.Count -gt 0) {
 Write-Status "All $($expectedFiles.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
 $script:testFilesVerified = $expectedFiles.Count
 
+# Verify independently pinned contents where a format regression previously escaped filename checks
+$contentOracles = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixtures/cd_import_oracles.json') -Raw | ConvertFrom-Json
+$contentOracle = $contentOracles.discs | Where-Object disc_id -EQ $spec.disc_id
+foreach ($entry in $contentOracle.files) {
+    $remotePath = "$SETS_ROOT/$TEST_SET/$($entry.file)"
+    $hashOutput = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $remotePath)
+    $sizeOutput = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $remotePath)
+    if ($hashOutput -notmatch '^([0-9a-f]{64})' -or $Matches[1] -ne $entry.sha256 -or
+        "$sizeOutput".Trim() -ne "$($entry.size)") {
+        Write-Status "FAIL: Incorrect installed contents: $($entry.file)" 'Red'
+        Exit-Test 1 'fail' 'file_content_mismatch'
+    }
+    Write-Status "Verified size and SHA-256: $($entry.file)" 'Green'
+}
+
 # -- Step 6: Anti-demo-set canary -- verify file identity ------
 # Hash signature game files on device and compare against demo set hashes.
 # If they match (and this isn't the same version), we've been fooled.

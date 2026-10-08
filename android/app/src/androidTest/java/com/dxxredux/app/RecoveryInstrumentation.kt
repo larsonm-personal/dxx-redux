@@ -50,6 +50,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var lanQrOnly = false
     private var sliderNavigationOnly = false
     private var graphicsCapabilitiesOnly = false
+    private var demoImportOnly = false
     private var controllerOverlayOnly = false
 
     override fun onCreate(arguments: Bundle?) {
@@ -61,6 +62,7 @@ class RecoveryInstrumentation : Instrumentation() {
         lanQrOnly = arguments?.getString("suite") == "lan_qr"
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
+        demoImportOnly = arguments?.getString("suite") == "demo_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
@@ -71,6 +73,15 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (demoImportOnly) {
+                DemoImportChecks(this).run()
+                result.putString(
+                    "stream",
+                    "PASS: demo corpus import, bytes, publication, readiness and failed-import preservation\n",
+                )
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (controllerOverlayOnly) {
                 ControllerOverlayChecks(this).run()
                 result.putString(

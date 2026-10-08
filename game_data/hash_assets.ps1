@@ -23,6 +23,7 @@ $CdImgDir = Join-Path $ScriptDir "CD images"
 $DemoDir = Join-Path $ScriptDir "demo installers"
 $GogDir = Join-Path $RepoRoot "game_data_to_copy_to_emulator"
 . (Join-Path $RepoRoot "android\helpers\atomic_text_file.ps1")
+. (Join-Path $RepoRoot "android\helpers\jsonc.ps1")
 
 $GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".msn", ".dem", ".gog", ".inst")
 $MinFileSize = 2  # Skip 1-byte extraction stubs
@@ -100,30 +101,9 @@ function Get-GogVersion([string]$filename) {
 
 # -- JSONC helpers ----------------------------------------------------
 
-function ConvertFrom-JsoncWithComments([string]$text) {
-    $sb = [System.Text.StringBuilder]::new($text.Length)
-    $i = 0
-    while ($i -lt $text.Length) {
-        if ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i + 1] -eq '/') {
-            $i += 2
-            while ($i -lt $text.Length -and $text[$i] -ne "`n") { $i++ }
-        } elseif ($i + 1 -lt $text.Length -and $text[$i] -eq '/' -and $text[$i + 1] -eq '*') {
-            $i += 2
-            while ($i + 1 -lt $text.Length -and -not ($text[$i] -eq '*' -and $text[$i + 1] -eq '/')) { $i++ }
-            $i += 2
-        } else {
-            [void]$sb.Append($text[$i])
-            $i++
-        }
-    }
-    return $sb.ToString()
-}
-
 function Read-JsoncVersions([string]$path) {
     if (-not (Test-Path $path)) { return @() }
-    $raw = Get-Content -Raw $path
-    $clean = ConvertFrom-JsoncWithComments $raw
-    $obj = $clean | ConvertFrom-Json
+    $obj = Read-JsoncFile -Path $path
     return @($obj.versions)
 }
 
@@ -161,7 +141,7 @@ function Write-JsoncVersions([string]$path, $versions) {
     $lines += "  ]"
     $lines += "}"
     $text = $lines -join "`n"
-    $null = (ConvertFrom-JsoncWithComments $text | ConvertFrom-Json -ErrorAction Stop)
+    $null = (ConvertFrom-JsoncText -Text $text | ConvertFrom-Json -ErrorAction Stop)
     Write-Utf8NoBomTextAtomically -Path $path -Text $text
 }
 

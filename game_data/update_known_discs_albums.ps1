@@ -24,6 +24,7 @@ $configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.jsonc"
 . "$repoRoot/android/helpers/acoustid_title_match.ps1"
 . "$repoRoot/android/helpers/fingerprint_source_identity.ps1"
 . "$repoRoot/android/helpers/normalized_json_text.ps1"
+. "$repoRoot/android/helpers/jsonc.ps1"
 
 if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
     Write-Host "Album database already exists at $albumDbPath. Use -Force to regenerate"
@@ -88,9 +89,7 @@ if (-not (Test-Path $matchExe)) {
 # Load existing known_discs.jsonc
 
 Write-Host "Loading $dbPath"
-$dbRaw = Get-Content $dbPath -Raw
-$dbStripped = $dbRaw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
-$db = $dbStripped | ConvertFrom-Json
+$db = Read-JsoncFile -Path $dbPath
 
 # Build lookup of existing CD track fingerprints
 $cdFingerprints = @()
@@ -133,8 +132,7 @@ $physicalSources = @($db.discs | Where-Object { $_.type -ne 'album' } | ForEach-
         [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
     })
 $albumSources = @($albumFiles | ForEach-Object {
-        $sourceRaw = Get-Content $_.FullName -Raw
-        $sourceInfo = ($sourceRaw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
+        $sourceInfo = Read-JsoncFile -Path $_.FullName
         [PSCustomObject]@{
             Id = ConvertTo-DxxFingerprintSourceId -Name ([string]$sourceInfo.album)
             Label = [string]$sourceInfo.album
@@ -156,9 +154,7 @@ foreach ($cd in $cdFingerprints) {
 # Load album tracks and collect them for the flat JSON + later output
 $albumInfos = @()
 foreach ($file in $albumFiles) {
-    $raw = Get-Content $file.FullName -Raw
-    $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
-    $info = $stripped | ConvertFrom-Json
+    $info = Read-JsoncFile -Path $file.FullName
     $albumName = $info.album
     $albumId = ConvertTo-DxxFingerprintSourceId -Name $albumName
 

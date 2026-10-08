@@ -133,7 +133,6 @@ extern int g_gpu_time_us;
 #include "input_demo_recorder.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_rng_trace.h"
-#include "input_demo_fp_env.h"
 #include "input_demo_debug_logging.h"
 
 #ifdef OGL

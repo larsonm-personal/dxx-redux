@@ -7,6 +7,8 @@
     // ws_listen_addr: "0.0.0.0:9000",
     // http_listen_addr: "0.0.0.0:8080",
     // relay_listen_addr: "0.0.0.0:9001",
+    // Maximum concurrent WebSocket connections (0 = unlimited)
+    // max_connections: 500,
     // Database
     // db_path: "dxx_matchmaking.db",
     // Google Play Games Services (GPGS) OAuth2
@@ -17,7 +19,8 @@
     // Optional separate listen address for admin-only HTTP endpoints.
     // When set, admin routes (ban, unban, motd) move to this port and
     // the main http_listen_addr serves only public routes.
-    // admin_http_listen_addr: "127.0.0.1:8081",
+    // Empty = admin routes stay on the main port; e.g. "127.0.0.1:8081" to separate them
+    // admin_http_listen_addr: "",
     // Message of the day (shown to clients on connect)
     // motd: "",
     // URL shown when rejecting old clients
@@ -36,6 +39,8 @@
     // Logging
     // log_dir: "",             // empty = stdout only; set path for daily JSON log rotation
     // Dev/test mode
+    // Force game connections through the UDP relay, ignoring connectivity checks
+    // force_relay: false,
     // skip_gpgs_verify: false, // true = accept any token as identity (dev only!)
     // Proof-of-work difficulty (leading zero bits for keypair registration)
     // pow_difficulty: 20,

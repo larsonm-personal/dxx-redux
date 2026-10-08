@@ -8,19 +8,6 @@ import org.junit.Test
 
 class DemoInstallerPackagesTest {
     @Test
-    fun pcDemoPackagesDeclareOrderedSplitVolumes() {
-        // PIG data spans D1 volumes; HAM and PIG data span D2 volumes
-        for (filename in listOf("desc14sw.exe", "descent 1 demo 1-4.zip")) {
-            val pkg = checkNotNull(DemoInstallerPackages.matchByName(filename))
-            assertEquals(filename, listOf("descent1.sow", "descent2.sow"), pkg.sowVolumes)
-        }
-        for (filename in listOf("d2demo10.zip", "descent 2 demo 1-0.zip")) {
-            val pkg = checkNotNull(DemoInstallerPackages.matchByName(filename))
-            assertEquals(filename, listOf("d2_1.sow", "d2_2.sow", "d2_3.sow"), pkg.sowVolumes)
-        }
-    }
-
-    @Test
     fun recognizesKnownDemoArchivesByName() {
         assertTrue(DemoInstallerPackages.isKnownArchiveName("DESC14SW.EXE"))
         assertTrue(DemoInstallerPackages.isKnownArchiveName("Descent Shareware.sit"))

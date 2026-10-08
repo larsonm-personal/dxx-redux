@@ -169,8 +169,9 @@ internal object BinHexDecoder {
         length: Int,
     ): Int {
         var crc = 0
-        repeat(length + 2) { index ->
-            val value = if (index < length) bytes[offset + index].toInt() and 0xff else 0
+        // The high-byte XOR recurrence already includes the polynomial augmentation
+        repeat(length) { index ->
+            val value = bytes[offset + index].toInt() and 0xff
             crc = crc xor (value shl 8)
             repeat(8) {
                 crc = if (crc and 0x8000 != 0) (crc shl 1) xor 0x1021 else crc shl 1

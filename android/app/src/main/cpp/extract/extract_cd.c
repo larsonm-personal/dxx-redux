@@ -488,45 +488,13 @@ int main(int argc, char *argv[])
 
 	/* ── Post-ISO: scan for and extract .sow archives ────────────── */
 	if (data_tracks_extracted > 0) {
-		sow_file_list_t sow_list;
-		int nsow = sow_scan_dir(out_dir, &sow_list);
-		if (nsow > 0) {
-			fprintf(stderr, "\nFound %d .sow archive(s), extracting...\n", nsow);
-			for (int si = 0; si < sow_list.count; si++) {
-				/* Extract to the directory containing the .sow file */
-				char sow_dir[1024];
-				path_dir(sow_list.paths[si], sow_dir, sizeof(sow_dir));
-
-				/* Relative path for JSON output (forward slashes for valid JSON) */
-				const char *rel = sow_list.paths[si];
-				if (strncmp(rel, out_dir, strlen(out_dir)) == 0)
-					rel += strlen(out_dir) + 1; /* skip out_dir + separator */
-				char rel_json[1024];
-				snprintf(rel_json, sizeof(rel_json), "%s", rel);
-				for (char *p = rel_json; *p; p++)
-					if (*p == '\\') *p = '/';
-
-				fprintf(stderr, "  Extracting %s...\n", rel);
-				int sow_count = sow_extract_with_budget(
-				    sow_list.paths[si], sow_dir, NULL, progress_cb, NULL, 0,
-				    &attempt_budget);
-				if (sow_count >= 0) {
-					printf("{\"sow\": ");
-					json_write_string(stdout, rel_json);
-					printf(", \"files_extracted\": %d}\n", sow_count);
-					total_files_extracted += sow_count;
-					fprintf(stderr, "  Extracted %d files from %s\n",
-					        sow_count, rel);
-				} else {
-					printf("{\"sow\": ");
-					json_write_string(stdout, rel_json);
-					printf(", \"error\": \"extraction failed\"}\n");
-					errors++;
-				}
-			}
-		} else if (nsow < 0) {
-			fprintf(stderr, "Failed to scan extracted data for .sow archives\n");
+		int sow_count = sow_extract_directory(out_dir, NULL, progress_cb, NULL, &attempt_budget);
+		if (sow_count < 0) {
+			printf("{\"sow\": \"staged disc\", \"error\": \"extraction failed\"}\n");
 			errors++;
+		} else if (sow_count > 0) {
+			printf("{\"sow\": \"staged disc\", \"files_extracted\": %d}\n", sow_count);
+			total_files_extracted += sow_count;
 		}
 	}
 

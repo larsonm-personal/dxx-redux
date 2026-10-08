@@ -150,6 +150,18 @@ internal suspend fun testPreviewMediaControls(
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, key))
         delay(250)
     }
+    // Rejected ordinary requests leave the native bridges ready for the successful starts below
+    val missingFont = File(scratch, "absent-preview-font.sf2")
+    val missingBin = File(scratch, "absent-preview-track.bin")
+    check(!missingFont.exists() && !missingBin.exists())
+    check(!MidiPreviewBridge.validateSoundfont(missingFont.path))
+    check(MidiPreviewBridge.getState().state == MidiPreviewBridge.STATE_STOPPED)
+    check(!MidiPreviewBridge.seek(0.5f))
+    check(!CdPreviewBridge.start(missingBin.path, cue.path, 1, CdPreviewBridge.getNativeSampleRate(context)))
+    check(CdPreviewBridge.getState().state == CdPreviewBridge.STATE_STOPPED)
+    check(!CdPreviewBridge.seek(0.5f))
+    LauncherDebugLog.log("preview-media-test PASS rejected requests")
+
     for ((name, player) in players) {
         val media = LauncherPreviewMediaSession(context, "Test $name") { player }
 

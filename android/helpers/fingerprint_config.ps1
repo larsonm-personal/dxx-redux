@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot 'jsonc.ps1')
+
 function Get-DxxFingerprintMatchingConfig {
     param(
         [Parameter(Mandatory = $true)][string]$Path
@@ -6,10 +8,8 @@ function Get-DxxFingerprintMatchingConfig {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Fingerprint configuration not found: $Path"
     }
-    $raw = Get-Content -LiteralPath $Path -Raw
-    $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
     try {
-        $config = $stripped | ConvertFrom-Json -ErrorAction Stop
+        $config = Read-JsoncFile -Path $Path
     } catch {
         throw "Invalid fingerprint configuration ${Path}: $($_.Exception.Message)"
     }

@@ -13381,23 +13381,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional validation (R1-CHUNK-0248): In paired D1 and D2 direct and proxy tests, disconnect the current host while another admitted peer sends P2P pings claiming itself, the host, another survivor, and invalid boundary slots. Require only an address- or authenticated-route-bound host packet to refresh host liveness; forged host claims must not change any `LastPacketTime`, route, loss, or connection state and must not delay the bounded timeout, deterministic master election, or explicit host-loss exit. Repeat after migration with a nonzero master slot and with observer-host mode.
 - Resolution: Pending
 
-### BR-0197: P2 - Generate mipmaps for Android xmodel textures
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: graphics/compatibility
-- Found by: R1-CHUNK-0102, R1-CHUNK-0255
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/gles3_shim.h:L121-L123,L158-L160` in the legacy mipmap compatibility policy
-- Related: `d1/xmodel/xmodel.cpp:L54-L75`, `d2/xmodel/xmodel.cpp:L54-L75`, and `android/app/src/main/cpp/shared/ogl_texture_android.c:L139-L158,L199-L216`
-- Evidence: The shim defines the removed `GL_GENERATE_MIPMAP` token for GLES 3 and documents that it is not supported, with explicit `glGenerateMipmap` calls expected instead. Both xmodel loaders do the opposite on `OGLES`: after uploading only level zero they call `glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)`, skip their `glGenerateMipmap` call under `#ifndef OGLES`, and select `GL_LINEAR_MIPMAP_LINEAR`. GLES 3 rejects the legacy parameter, and the texture has no complete mip chain for the selected minification filter. The Android ordinary texture path already demonstrates the required explicit generation call, but xmodel does not use it.
-- Trigger: Load and render any enhanced D1 or D2 xmodel texture on Android after resolving the VBO draw failure in BR-0196, especially when the model is minified
-- Impact: Custom models can sample an incomplete texture and appear black, untextured, or driver-dependent, while an avoidable GL error contaminates later graphics diagnostics.
-- Expected: Every xmodel texture using a mipmapped filter has a complete generated mip chain on GLES 3, with no deprecated texture parameter or GL error.
-- Suggested fix: Make the paired xmodel loaders call `glGenerateMipmap(GL_TEXTURE_2D)` after each successful level-zero upload on Android, remove the legacy parameter call there, and select a non-mipmapped filter when generation fails or mipmaps are intentionally disabled. Prefer the shared Android texture policy so this special loader cannot drift again.
-- Validation: Load RGB and RGBA xmodel textures at power-of-two and non-power-of-two sizes on Android, check `glGetError` after upload, inspect all required mip levels or render a minified sampling fixture, and verify custom D1 and D2 models retain correct textures across context recreation.
-- Resolution: Pending
-
 ### BR-0201: P2 - Restore the replay floating-point environment on every platform
 
 - [ ] OPEN
@@ -14146,31 +14129,6 @@ Append findings here in numeric order using the exact template in the process do
 - Validation: Add paired D1 and D2 startup-resume tests that inject disappearance after selection plus open, early-read, late-read, truncation, replacement, and close failures. Assert no config write occurs, no default or partial `PlayerCfg` escapes, the log never reports `source=player_file` or ready, and the chosen abort or fallback leaves callsign, controls, progression, macros, and persisted configuration coherent. Retain coverage for successful matching-pilot load and the intentional no-matching-pilot save-header fallback.
 - Resolution: Pending
 
-### BR-0256: P1 - Track texture bindings per active texture unit
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/graphics-state
-- Found by: R1-CHUNK-0143
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/ogl_texture_android.c:L13-L28` in `android_ogl_bind_texture_2d`
-- Related: `android/app/src/main/cpp/shared/ogl_texture_android.h:L13-L23`, `d1/arch/ogl/ogl.c:L246-L253,L1404-L1442`, `d2/arch/ogl/ogl.c:L249-L256,L1413-L1451`, and `android/app/src/main/cpp/shared/merged_wall_debug.c:L787-L888`
-- Evidence: OpenGL ES maintains an independent `GL_TEXTURE_BINDING_2D` for every active texture unit, but the assigned helper accepts one shared `last_bound_tex` scalar and skips `glBindTexture` whenever the requested handle equals that scalar. Paired D1 and D2 inline the same cache policy. Their merged-wall renderer binds the bottom texture on unit 0, switches to unit 1 for the overlay and sometimes unit 2 for a mask, then returns to unit 0 without invalidating or partitioning the cache. After a non-super draw with bottom A and overlay B, unit 0 still contains A, unit 1 contains B, and the scalar contains B. If the next wall uses B as its bottom, the unit-0 bind is skipped even though unit 0 does not contain B; the shader samples stale A. The cached GPU texmerge path also calls the assigned helper on units 0 and 1 through the same scalar, so equal or repeated handles can produce the same false reuse there. Per-frame reset does not repair incorrect binds within the frame, and the reuse counter reports the skipped operation as an optimization.
-- Trigger: Render two merged-wall faces in one frame where a texture used as the first face's overlay is used as the next face's bottom, or render a cached texmerge whose unit transition requests a handle equal to the one most recently cached for another unit
-- Impact: Walls, doors, signs, transparency overlays, or cached merged surfaces can sample a previously bound texture instead of the requested one. This produces scene-order-dependent wrong or flickering geometry in both games and can hide or replace gameplay-relevant wall and door visuals while diagnostics falsely report a successful cached bind reuse.
-- Expected: A bind is skipped only when the requested target is already bound on the currently active texture unit; transitions among units cannot borrow another unit's cache entry.
-- Suggested fix: Replace the scalar with binding state indexed by texture unit, and route every engine and shared-helper bind plus each raw bind or deletion through one cache-aware API. Either pass the intended unit explicitly or query and validate `GL_ACTIVE_TEXTURE` at state-transition boundaries; invalidate all affected entries after bulk filter updates, texture deletion, context recreation, and external diagnostic binds. If the small optimization cannot be made complete, issue `glBindTexture` unconditionally in multitexture paths.
-- Validation: Add a GLES state test with distinct sentinel textures A, B, and C. Bind A on unit 0 and B on unit 1, return to unit 0, request B, and assert `GL_TEXTURE_BINDING_2D` becomes B rather than remaining A; repeat across unit 2, equal bottom/overlay handles, deletion, recreation, direct diagnostic binds, and cached texmerge. Render paired D1/D2 adjacent merged walls whose first overlay is the second bottom and compare captured pixels under multiple draw orders, requiring identical correct textures and per-unit reuse counters that advance only for true same-unit reuse.
-- Historical resolution: Fixed on 2026-08-11. Android's shared and paired inline bind paths no longer treat one scalar as authoritative across texture units: they bind every requested handle and retain the scalar only as a diagnostic of the most recent request. This deliberately disables the unsafe skip optimization, guaranteeing each active unit receives the requested binding without a broad GL-state rewrite. The paired contract regression, scoped quality checks, and all three Android ABI native builds pass.
-- Historical disposition: fixed; moved from the active ledger on 2026-08-11 after unit-transition contract coverage and arm64-v8a/armeabi-v7a/x86_64 builds passed.
-- Reopened 2026-10-06 (GQ2-CHUNK-0157/0172): current per-unit skip cache is not coherent with paired xmodel_show raw binds or native texture deletion. The old unconditional-bind repair remains historical evidence, not current behavior. Existing ID reused as owner; GQR-0238 is the accepted current remediation
-- Current evidence: unchanged production binding helpers and exact state struct compiled with MSVC against a stateful GL stand-in. Bind 37 through helper, raw-bind 99, request 37 again: actual stays 99 and reuse increments. Explicit invalidation restores 37; simulated deletion then request 37 leaves actual 0. Same-unit reuse and separate-unit controls pass. Maintained renderer source contracts still pass 7/7 because they do not execute those mutations
-- Evidence identity: GQ2-CHUNK-0157 platform renderer and audio review 20261006 in general_code_quality_evidence_ledger_20260811.md contains source/diff/harness hashes, exact harness and results. Paired 0172 references the same run. The mutation sequence is ordinary rendering state; no real driver, screenshot, full game draw or security probe ran
-- Current implementation boundary: GQR-0238 covers cached binds, paired enhanced-model/raw callers, deletion, filtering, diagnostics and context resets through one coherent owner. Remove obsolete scalar adapter plumbing where proven unused. Preserve per-unit reuse only when valid and coordinate independent BR-0304 wrap ordering and GQR-0178/0185 extraction
-- Current validation required: actual production mutation controls and paired GLES binding/pixel tests for enhanced/native interleaving, unit transitions, deletion/name reuse, bulk options, context recovery and merged walls, plus desktop/Android builds and maintained regression registration. Source-pattern tests alone are insufficient
-- Resolution: Pending current regression repair and validation
-
-
 ### BR-0257: P2 - Consume auto-host requests after terminal setup failures
 
 - [ ] OPEN
@@ -14829,23 +14787,6 @@ Append findings here in numeric order using the exact template in the process do
 - Expected: Internal planning considers every candidate admitted by the shared snapshot, or rejects candidate overflow explicitly before publishing any route; reordering equivalent objects or segments cannot change solvability.
 - Suggested fix: Remove `LEVEL_METADATA_MAX_TARGETS` from internal C++ discovery and retain all candidates in the existing dynamic vectors. If a bounded target representation is exposed later, separate that projection limit from planning, detect overflow, and return an explicit status rather than truncating. Apply deterministic candidate tie-breaks after complete discovery.
 - Validation: Add paired synthetic route snapshots with 511, 512, 513, and 1,000 same-color key targets plus 511, 512, 513, and more exit sides, placing the sole reachable target first, at the boundary, and last and reversing enumeration order. Require identical successful route semantics for every ordering within engine limits, explicit failure for any separately documented projection overflow, and matching automap, Guide-Bot, preview, headless, JNI, introspection, and automation output.
-- Resolution: Pending
-
-### BR-0304: P2 - Bind each merged-wall source before changing its wrap state
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/graphics
-- Found by: R1-CHUNK-0192
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/merged_wall_debug.c:L761-L889` in cached merged-wall FBO composition
-- Related: `android/app/src/main/cpp/shared/merged_wall_debug.c:L582-L591`, `d1/arch/ogl/ogl.c:L619-L628,L1405-L1452`, `d2/arch/ogl/ogl.c:L630-L639,L1414-L1461`, `android/ai tool plans/overlay, menu, etc/overlay-rendering-four-cases.md:L18-L26`, and `android/game_scripts/test_merged_wall_snapshot_regression.json5:L53-L82`
-- Evidence: The shared wrap helper has the same contract as paired `ogl_texwrap`: it issues `glTexParameteri` against the currently bound texture and does not bind the object passed to it. The paired cached-merge caller enters with texture unit zero active, bottom bound on unit zero, overlay bound on unit one, and both source wrap states set to `GL_REPEAT`. The compositor then calls the helper for bottom and overlay consecutively before its first `glActiveTexture`; both GL calls therefore affect the bottom texture on unit zero. Nevertheless the second call writes `overlay_bmp->gltexture->wrapstate = GL_CLAMP_TO_EDGE`, so metadata claims the overlay changed while its real unit-one state remains `GL_REPEAT` throughout the offscreen draw. The later restore repeats the same object-versus-binding mistake before marking both metadata objects as repeat. This matters in the explicitly supported partial-pack cases where one wall source is 64x64 and the other is high resolution: the output uses the larger dimension, so with bilinear or trilinear filtering, samples of the smaller source at the first and last output pixels do not land on its edge texel centers. Repeat blends across opposite edges while the requested clamp would retain the nearest edge, changing cached color and alpha at the composite boundary. The maintained route test checks only metadata and route selection, not wrap state or rendered pixels.
-- Trigger: Enable bilinear or trilinear world filtering and render a plain transparent merged wall whose bottom and overlay GL textures have different visible dimensions, such as a partial high-resolution texture pack replacing only one member of the pair
-- Impact: The cached composite can contain color or transparency bleeding from the opposite edge of the smaller source. That incorrect border is mipmapped, cached, and reused for every wall with the same texture pair and orientation, producing seams or wrong edge pixels in both D1 and D2.
-- Expected: Each source has the intended wrap parameters applied to its own GL object before FBO sampling, and its cached `wrapstate` always describes the actual object state.
-- Suggested fix: Select and bind bottom on unit zero before changing bottom wrap, then select and bind overlay on unit one before changing overlay wrap; restore each object while its own unit is active. Integrate this ordering with the per-unit binding-state fix from BR-0256, or use a helper that accepts the intended unit and performs a cache-aware bind before `glTexParameteri`.
-- Validation: Add a GLES test using bottom and overlay sentinel textures with distinct first and last edge colors at 64x64 versus 512x512. Under nearest, bilinear, and trilinear settings and all four orientations, query both source objects' wrap parameters, render the cached composite, and compare its border pixels against an independently clamped reference. Repeat with stock/stock, high-resolution/high-resolution, high-resolution/stock, stock/high-resolution, NPOT visible extents, cache reuse, and failure cleanup in paired D1 and D2; require metadata and live GL state to agree and no opposite-edge bleed.
 - Resolution: Pending
 
 ### BR-0305: P2 - Reset merged-wall diagnostics when the selected texture changes
@@ -19078,23 +19019,6 @@ Append findings here in numeric order using the exact template in the process do
 - Additional location (R1-CHUNK-0588): the 50 assigned historical input-demo, replay, determinism and launcher-administration plans, which collectively name 18 distinct `.dximdemo` inputs
 - Additional evidence (R1-CHUNK-0588): All 18 named inputs are absent from the frozen tree and covered by the regression-demo ignore policy; 11 identities are new relative to R1-CHUNK-0586 and R1-CHUNK-0587, bringing these three historical-plan batches to 72 unique missing demos. The plans use them for D2 levels 2, 3, 4, 6 and 9 replay, RNG, homing, simulation/render and state conclusions, and 14 dated analyses additionally depend on unavailable local game logs. These historical validations therefore extend the same private-corpus dependency already recorded by BR-0607.
 - Additional validation (R1-CHUNK-0588): Add the 11 net-new identities and seven repeated roles to BR-0607's corpus manifest audit. Require each retained identity to have a pinned size, SHA-256, game, level, source generation and test role, and make every historical replay, RNG, homing, rendering and state claim reproducible through the same clean-checkout acquisition and replay path. Retire conclusions whose fixtures or temporary logs cannot be provisioned and verified.
-- Resolution: Pending
-
-### BR-0608: P2 - Preserve one PKTDUMP match as a packet collection
-
-- [ ] OPEN
-- Type: defect
-- Confidence: high
-- Category: correctness/tooling
-- Found by: R1-CHUNK-0498
-- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/tools/decode_object_packets.ps1:L253-L267,L351-L379` in log-match return and iteration
-- Related: `android/tools/decode_object_packets.py:L228-L243,L322-L349`; `android/app/src/main/cpp/shared/net/net_udp_android.c:L17-L29`
-- Evidence: `Get-PktDumpLines` builds an `ArrayList` but returns it through the ordinary PowerShell pipeline. With exactly one matching log line, enumeration removes the list wrapper and assigns its sole hashtable entry directly to `$entries`. Main then reads that hashtable's field count as the packet count and indexes it with integer zero, which is not a key, before dereferencing `$e.HexData` under strict mode. An in-memory probe of the exact return shape produced `System.Collections.Hashtable`, count 3, and a null index zero. Zero matches take the explicit error path and two or more matches form an indexable object array, so the most focused one-packet capture uniquely crashes instead of decoding. The Python counterpart always returns a list and does not share this defect.
-- Trigger: Save a log containing exactly one valid `PKTDUMP TX` or `PKTDUMP RX` line and invoke the documented PowerShell `-LogFile` mode, with or without `-Diff`
-- Impact: A developer isolating the single suspect object-sync datagram receives a strict-mode property/index failure rather than its decoded header, objects, truncation state, or length mismatch, blocking the smallest diagnostic workflow and making behavior depend unexpectedly on unrelated extra log lines
-- Expected: Match collection retains an array identity for zero, one, and many packets, and each valid single entry follows the same decode and summary path as an entry within a larger log
-- Suggested fix: Return the collection with unary comma or consume it with an explicit array wrapper such as `$entries = @(Get-PktDumpLines ...)`; define a typed packet record if practical and keep the zero-match check separate from collection shape
-- Validation: Run empty, one-TX, one-RX, two-entry, and many-entry logs plus malformed and mixed nonmatching lines in normal and diff modes. Require stable array shape, exact entry counts and order, one decode per match, no null indexing, and parity with the Python extractor.
 - Resolution: Pending
 
 ### BR-0609: P2 - Compare object packets only within one rejoin session

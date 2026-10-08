@@ -186,6 +186,7 @@ static inline int hog_midi_catalog_read(const char *path,
 	FILE *file;
 	unsigned char *buffer;
 	long current_size;
+	int read_failed, close_failed;
 
 	if (!path || !catalog || index >= catalog->count || !data || !length)
 		return 0;
@@ -207,8 +208,9 @@ static inline int hog_midi_catalog_read(const char *path,
 		fclose(file);
 		return 0;
 	}
-	if (fread(buffer, 1, entry->size, file) != entry->size || ferror(file) ||
-	    fclose(file)) {
+	read_failed = fread(buffer, 1, entry->size, file) != entry->size || ferror(file);
+	close_failed = fclose(file);
+	if (read_failed || close_failed) {
 		free(buffer);
 		return 0;
 	}

@@ -101,6 +101,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_d2xxl_tga_layout'
             'test_d2xxl_tga_pixels'
             'test_dep_platform'
+            'test_device_network_campaign_cli'
+            'test_object_packet_decoders'
             'test_run_all_tests_catalog'
             'test_dependency_install'
             'test_host_process_cleanup'
@@ -233,6 +235,18 @@ function Get-TestSuiteCoveragePolicy {
             'test_quick_record_classic_sidecar'
         )
         graphics_scenarios = @(
+            'test_android_automap_route_policy'
+            'test_android_config_policy'
+            'test_android_matcen_stations'
+            'test_android_music_completion'
+            'test_android_redbook_completion'
+            'test_android_cd_preview_completion'
+            'test_android_texture_labels'
+            'test_android_ogl_batches'
+            'test_android_merged_wrap'
+            'test_android_merge_cache'
+            'test_android_texture_bindings'
+            'test_android_xmodel_mipmaps'
             'test_fov_cpu_visibility'
             'test_mac_d2_demo_graphics'
             'test_msaa_render_and_menu'
@@ -289,6 +303,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_touch_layout_format'
         )
         launcher = @(
+            'test_demo_import'
             'test_graphics_preview'
             'test_graphics_first_run'
             'test_host_dialog_loading'
@@ -298,6 +313,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_robot_preview'
         )
         metadata_lifecycle = @(
+            'test_android_secret_origins'
             'test_compressed_music_metadata'
             'test_level_metadata_hxm_worker_reuse'
             'test_level_metadata_interactive_preemption'

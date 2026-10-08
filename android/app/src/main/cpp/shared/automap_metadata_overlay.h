@@ -15,7 +15,7 @@ void automap_metadata_draw_next_objectives(
 void automap_metadata_draw_readiness(
     int x, int level_label_y, int objective_count);
 void automap_metadata_begin(void);
-void automap_metadata_update_route(int player_objnum, int allow_adoption);
+void automap_metadata_update_route(void);
 int automap_metadata_get_next_objective_x(void);
 int automap_metadata_get_next_objective_y(void);
 int automap_metadata_get_level_label_y(void);

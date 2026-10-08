@@ -1073,6 +1073,171 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 	return extracted;
 }
 
+typedef struct {
+	arj_entry_t entry;
+	int archive_index;
+} sow_chunk_t;
+
+static int sow_name_compare(const char *a, const char *b)
+{
+#ifdef _WIN32
+	return _stricmp(a, b);
+#else
+	return strcasecmp(a, b);
+#endif
+}
+
+static int sow_chunk_compare(const void *left, const void *right)
+{
+	const sow_chunk_t *a = (const sow_chunk_t *) left;
+	const sow_chunk_t *b = (const sow_chunk_t *) right;
+	int name = sow_name_compare(a->entry.filename, b->entry.filename);
+	if (name) return name;
+	return a->entry.volume_offset < b->entry.volume_offset ? -1 : a->entry.volume_offset > b->entry.volume_offset ? 1
+	                                                                                                              : 0;
+}
+
+int sow_extract_archives(const sow_file_list_t *archives, const char *output_dir,
+                         const char **extensions, sow_progress_fn progress,
+                         void *user_data, dxx_extract_attempt_budget_t *budget)
+{
+	sow_chunk_t *chunks;
+	FILE *input = NULL;
+	size_t count = 0;
+	uint64_t total_bytes = 0, done = 0;
+	const uint64_t catalog_bytes = DXX_EXTRACT_MAX_ENTRIES * sizeof(sow_chunk_t);
+	int result = -1;
+	if (!archives || !output_dir || !budget || archives->count < 0 ||
+	    archives->count > SOW_MAX_FILES) return -1;
+	if (!archives->count) return 0;
+	if (dxx_extract_attempt_reserve_memory(budget, catalog_bytes) < 0) return -1;
+	chunks = (sow_chunk_t *) calloc(DXX_EXTRACT_MAX_ENTRIES, sizeof(*chunks));
+	if (!chunks) goto finish;
+
+	/* Inspect all pieces before modifying staged output */
+	for (int i = 0; i < archives->count; ++i) {
+		long length;
+		input = fopen(archives->paths[i], "rb");
+		if (!input || fseek(input, 0, SEEK_END) != 0) goto finish;
+		length = ftell(input);
+		if (length < 0 || fseek(input, 0, SEEK_SET) != 0) goto finish;
+		for (;;) {
+			arj_entry_t entry;
+			int read_result;
+			if (dxx_extract_attempt_cancelled(budget)) {
+				result = DXX_EXTRACT_CANCELLED;
+				goto finish;
+			}
+			read_result = arj_read_entry(input, &entry, length);
+			if (read_result < 0) goto finish;
+			if (!read_result) break;
+			if (entry.file_type == ARJ_TYPE_BINARY && entry.filename[0] &&
+			    ext_matches(entry.filename, extensions)) {
+				const char *leaf = basename_of(entry.filename);
+				if (!*leaf || !strcmp(leaf, ".") || !strcmp(leaf, "..") ||
+				    count >= DXX_EXTRACT_MAX_ENTRIES || count >= budget->max_entries ||
+				    (entry.method == ARJ_METHOD_STORED && entry.comp_size != entry.orig_size) ||
+				    !dxx_extract_entry_allowed(entry.orig_size, entry.comp_size) ||
+				    !dxx_extract_memory_allowed(entry.comp_size,
+				                                entry.method == ARJ_METHOD_STORED ? 0 : entry.orig_size) ||
+				    dxx_extract_add_bytes(&total_bytes, entry.orig_size, budget->max_output_bytes) < 0)
+					goto finish;
+				memmove(entry.filename, leaf, strlen(leaf) + 1);
+				chunks[count].entry = entry;
+				chunks[count++].archive_index = i;
+			}
+			if (fseek(input, entry.data_offset + entry.comp_size, SEEK_SET) != 0) goto finish;
+		}
+		fclose(input);
+		input = NULL;
+	}
+	qsort(chunks, count, sizeof(*chunks), sow_chunk_compare);
+	for (size_t i = 0; i < count;) {
+		uint64_t assembled_size = 0;
+		size_t first = i;
+		int continues = 0;
+		do {
+			arj_entry_t *entry = &chunks[i].entry;
+			/* ARJ VOLUME_FLAG=0x04, EXTFILE_FLAG=0x08; extended offset at byte 30 */
+			if ((i == first && (entry->flags & 0x08u)) ||
+			    (i != first && (!(entry->flags & 0x08u) || !continues)) ||
+			    entry->volume_offset != assembled_size ||
+			    dxx_extract_add_bytes(&assembled_size, entry->orig_size,
+			                          DXX_EXTRACT_MAX_ENTRY_BYTES) < 0) {
+				fprintf(stderr, "sow_extract: conflicting or missing continuation for '%s'\n", entry->filename);
+				goto finish;
+			}
+			continues = (entry->flags & 0x04u) != 0;
+			/* Use one spelling on case-sensitive and case-insensitive filesystems */
+			if (i != first) strcpy(entry->filename, chunks[first].entry.filename);
+			++i;
+		} while (i < count && !sow_name_compare(chunks[first].entry.filename, chunks[i].entry.filename));
+		if (continues) {
+			fprintf(stderr, "sow_extract: missing final volume for '%s'\n", chunks[first].entry.filename);
+			goto finish;
+		}
+	}
+	result = dxx_extract_attempt_reserve_output(budget, output_dir, total_bytes, count);
+	if (result < 0) goto finish;
+	result = -1;
+	mkdirs(output_dir);
+	for (size_t i = 0; i < count; ++i) {
+		const arj_entry_t *entry = &chunks[i].entry;
+		char output[SOW_PATH_LEN];
+		int written = snprintf(output, sizeof(output), "%s%c%s", output_dir, PATH_SEP, entry->filename);
+		if (written < 0 || (size_t) written >= sizeof(output)) goto finish;
+		if (dxx_extract_attempt_cancelled(budget) ||
+		    (progress && progress(entry->filename, (long long) done, (long long) total_bytes, user_data))) {
+			result = DXX_EXTRACT_CANCELLED;
+			goto finish;
+		}
+		input = fopen(archives->paths[chunks[i].archive_index], "rb");
+		if (!input || sow_extract_entry(input, entry, output, (entry->flags & 0x08u) != 0, budget) < 0)
+			goto finish;
+		fclose(input);
+		input = NULL;
+		done += entry->orig_size;
+	}
+	result = (int) count;
+finish:
+	if (input) fclose(input);
+	free(chunks);
+	dxx_extract_attempt_release_memory(budget, catalog_bytes);
+	return result;
+}
+
+int sow_extract_directory(const char *directory, const char **extensions,
+                          sow_progress_fn progress, void *user_data,
+                          dxx_extract_attempt_budget_t *budget)
+{
+	sow_file_list_t all, group;
+	int consumed[SOW_MAX_FILES] = { 0 };
+	int total = 0;
+	if (sow_scan_dir(directory, &all) < 0) return -1;
+	for (int i = 0; i < all.count; ++i) {
+		char parent[SOW_PATH_LEN];
+		size_t prefix = (size_t) (basename_of(all.paths[i]) - all.paths[i]);
+		int count;
+		if (consumed[i]) continue;
+		if (!prefix) return -1;
+		memcpy(parent, all.paths[i], prefix);
+		parent[prefix - 1] = '\0';
+		group.count = 0;
+		for (int j = i; j < all.count; ++j) {
+			if (!consumed[j] &&
+			    (size_t) (basename_of(all.paths[j]) - all.paths[j]) == prefix &&
+			    !strncmp(all.paths[i], all.paths[j], prefix)) {
+				strcpy(group.paths[group.count++], all.paths[j]);
+				consumed[j] = 1;
+			}
+		}
+		count = sow_extract_archives(&group, parent, extensions, progress, user_data, budget);
+		if (count < 0) return count;
+		total += count;
+	}
+	return total;
+}
+
 int sow_extract(const char *sow_path, const char *output_dir,
                 const char **extensions,
                 sow_progress_fn progress, void *user_data)
