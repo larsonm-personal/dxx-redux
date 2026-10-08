@@ -39,6 +39,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_dos_midi_parity'
             'test_sound_trace'
             'test_audio_mix'
+            'test_macplay_audio'
             'test_soundfont_download_catalog'
             'test_music_track_controls_unified'
             'test_launcher_media_controls'

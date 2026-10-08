@@ -32,6 +32,7 @@
 #include "hfs_reader.h"
 #include "mac_hfs_extract.h"
 #include "sti2_extract.h"
+#include "../shared/mac_d1_sound_resource.h"
 
 #define PRIMARY_CUE_PATH   "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue"
 #define PRIMARY_OUTPUT_DIR "../../../../../../game_data/CD images/Descent - Mac macplay/data_tracks"
@@ -885,7 +886,8 @@ static int run_real_native_mac_extract_test(void)
 		"descent.hog",
 		"descent.pig",
 		"watchme.dem",
-		"yep9.dem"
+		"yep9.dem",
+		MAC_D1_RESOURCE_FILE
 	};
 	const char *output_dir = "test_sti2_native_extract";
 	const char *hfs_extensions[] = { "__none__", NULL };
@@ -929,6 +931,40 @@ static int run_real_native_mac_extract_test(void)
 		char expected_path[1024];
 
 		path_join(actual_path, sizeof(actual_path), output_dir, expected_names[i]);
+		if (!strcmp(expected_names[i], MAC_D1_RESOURCE_FILE)) {
+			unsigned char *bank = NULL;
+			size_t bank_size = 0;
+			struct mac_d1_sample samples[MAC_D1_SOUND_COUNT];
+			int valid = read_binary_file(actual_path, &bank, &bank_size) == 0 &&
+			            mac_d1_parse_sound_resource(bank, bank_size, samples);
+			uint64_t hash = UINT64_C(14695981039346656037);
+			for (size_t j = 0; j < bank_size; ++j) hash = (hash ^ bank[j]) * UINT64_C(1099511628211);
+			valid = valid && hash == UINT64_C(0x2074fb62a32c8dec) &&
+			        samples[0].length == 3651 && samples[15].length == 30562;
+			if (valid) {
+				const size_t sound_header = (size_t) (samples[0].data - bank) - 22;
+				/* Unsupported sample encodings/rates must not be interpreted as raw PCM */
+				bank[sound_header + 20] = 0xff;
+				valid = !mac_d1_parse_sound_resource(bank, bank_size, samples);
+				bank[sound_header + 20] = 0;
+				bank[sound_header + 8] ^= 1;
+				valid = valid && !mac_d1_parse_sound_resource(bank, bank_size, samples);
+				bank[sound_header + 8] ^= 1;
+				valid = valid && mac_d1_parse_sound_resource(bank, bank_size, samples);
+				/* A truncated fork or a corrupt map must never register partial sounds */
+				valid = valid && !mac_d1_parse_sound_resource(bank, bank_size - 1, samples);
+				bank[4] = 0xff;
+				valid = valid && !mac_d1_parse_sound_resource(bank, bank_size, samples);
+			}
+			free(bank);
+			if (!valid) {
+				cleanup_test_output_dir(output_dir, expected_names,
+				                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+				FAIL("MacPlay resource fork or sound decoding mismatch");
+				return 0;
+			}
+			continue;
+		}
 		path_join(expected_path, sizeof(expected_path), PRIMARY_OUTPUT_DIR, expected_names[i]);
 		if (!file_exists(actual_path) || !files_match_exact(actual_path, expected_path)) {
 			cleanup_test_output_dir(output_dir, expected_names,

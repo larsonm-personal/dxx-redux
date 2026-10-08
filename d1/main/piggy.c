@@ -549,6 +549,15 @@ void piggy_read_sounds(int pc_shareware)
 
 	if (MacPig)
 	{
+#ifdef __ANDROID__
+		/* Preserve legacy RAW sound packs; retail MacPlay imports carry the resource fork */
+		if (PHYSFSX_fsize(DEFAULT_PIGFILE_REGISTERED) == D1_MAC_PIGSIZE &&
+		    !PHYSFSX_exists("Sounds/SND0000.raw", 1)) {
+			extern int android_load_mac_d1_sounds(void);
+			android_load_mac_d1_sounds();
+			return;
+		}
+#endif
 		// Read Mac sounds converted to RAW format (too messy to read them directly from the resource fork code-wise)
 		char soundfile[32] = "Sounds/sounds.array";
 		extern int ds_load(int skip, char * filename );

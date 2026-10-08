@@ -1,10 +1,45 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
 
 #include "boss_health_shared.h"
 #include "boss_hud.h"
 #include "font_control_shared.h"
 #include "hud_layout_shared.h"
+#include "hud_score_shared.h"
+
+static void test_score_fallbacks(void)
+{
+	char text[64];
+	assert(hud_score_format_fallback(text, sizeof(text), 123456, 1));
+	assert(strcmp(text, "123456") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), 123456, 2));
+	assert(strcmp(text, "123k") == 0);
+	assert(!hud_score_format_fallback(text, sizeof(text), 123456, 3));
+	assert(hud_score_format_fallback(text, sizeof(text), 1234567, 2));
+	assert(strcmp(text, "1.2M") == 0);
+	assert(!hud_score_format_fallback(text, sizeof(text), 1234567, 3));
+	assert(hud_score_format_fallback(text, sizeof(text), 0, 1));
+	assert(strcmp(text, "0") == 0);
+	assert(!hud_score_format_fallback(text, sizeof(text), 999, 2));
+	assert(hud_score_format_fallback(text, sizeof(text), 1000, 2));
+	assert(strcmp(text, "1k") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), 999999, 2));
+	assert(strcmp(text, "999k") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), 1000000, 2));
+	assert(strcmp(text, "1.0M") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), 1000001, 2));
+	assert(strcmp(text, "1.0M") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), 1123000, 2));
+	assert(strcmp(text, "1.1M") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), INT_MIN, 2));
+	assert(strcmp(text, "-2147.4M") == 0);
+	assert(hud_score_format_fallback(text, sizeof(text), INT_MAX, 2));
+	assert(strcmp(text, "2147.4M") == 0);
+}
 
 static int visible_character_count(const char *text)
 {
@@ -134,6 +169,7 @@ static void test_d2_thief_and_guidebot_health(void)
 
 int main(void)
 {
+	test_score_fallbacks();
 	test_embedded_font_controls_are_not_visible();
 	test_overlap();
 	test_touching_edges_do_not_overlap();

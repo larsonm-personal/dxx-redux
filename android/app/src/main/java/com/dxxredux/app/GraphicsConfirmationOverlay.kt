@@ -70,7 +70,6 @@ internal class GraphicsConfirmationOverlay(
     private var restoreStarted = 0L
     private var restoreTimeoutMs = 3000L
     private var selectedOk = false
-    private var axesReady = false
     private var axisX = 0
     private var axisY = 0
     private var armPosted = false
@@ -83,7 +82,6 @@ internal class GraphicsConfirmationOverlay(
         mapOf(
             "graphics_open" to active,
             "graphics_selected_ok" to selectedOk,
-            "graphics_axes_ready" to axesReady,
             "graphics_restoring" to restoring,
             "graphics_cancel_text" to cancel.text.toString(),
             "graphics_first_draw_cancel_text" to firstDrawCancelText,
@@ -210,6 +208,7 @@ internal class GraphicsConfirmationOverlay(
 
     fun update(stateText: String) {
         val state = JSONObject(stateText)
+        val previousPhase = phase
         phase = state.optString("phase")
         latestState = state
         if (phase == "live") {
@@ -232,10 +231,7 @@ internal class GraphicsConfirmationOverlay(
         val id = state.getLong("trial_id")
         if (!active || id != trialId) {
             trialId = id
-            selectedOk = false
-            axesReady = false
-            axisX = 0
-            axisY = 0
+            selectedOk = state.optBoolean("first_run_trial")
             armPosted = false
             previewPosted = false
             previewSelection = 0
@@ -250,6 +246,7 @@ internal class GraphicsConfirmationOverlay(
             updateSelection()
         }
         preparing = phase == "preparing"
+        if (preparing && previousPhase != phase && state.optBoolean("first_run_trial")) selectedOk = true
         restoring = phase == "restoring"
         val editing = phase == "editing" || phase == "offering"
         panel.visibility = if (phase == "settling") View.INVISIBLE else View.VISIBLE
@@ -457,8 +454,6 @@ internal class GraphicsConfirmationOverlay(
     }
 
     fun handleMotion(event: MotionEvent): Boolean {
-        if (!active) return false
-
         fun direction(value: Float) =
             when {
                 value < -0.5f -> -1
@@ -471,9 +466,11 @@ internal class GraphicsConfirmationOverlay(
         val y =
             direction(event.getAxisValue(MotionEvent.AXIS_HAT_Y)).takeIf { it != 0 }
                 ?: direction(event.getAxisValue(MotionEvent.AXIS_Y))
-        if (!axesReady) {
-            axesReady = x == 0 && y == 0
-            return true
+        // Observe directions before opening too, so only already-held input is suppressed
+        if (!active) {
+            axisX = x
+            axisY = y
+            return false
         }
         if ((x != axisX && x != 0) || (y != axisY && y != 0)) {
             if (phase == "editing") {

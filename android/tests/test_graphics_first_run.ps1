@@ -110,13 +110,17 @@ foreach ($engine in $games) {
                 }
                 if ($case -eq 'Back') { $steps.Add(@{ action = 'controller_input'; key = 'B'; post_delay_ms = 60 }) }
                 else { $steps.Add((New-TouchStep 'ok')) }
-                $steps.Add(@{ action = 'wait_ms'; ms = 1500 })
-                $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'settling'; 'time_paused' = 'true' }))
                 if ($case -ne 'Unchanged') {
-                    $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'challenge'; 'graphics_safety.candidate_ready' = 'true'; 'time_paused' = 'true' }))
-                    if ($case -in @('Accept', 'Unsupported')) { $steps.Add(@{ action = 'controller_input'; controller_keys = @('DLEFT', 'A'); post_delay_ms = 60 }) }
+                    $steps.Add(@{ action = 'wait_for'; timeout_ms = 1000; expect = @{ 'graphics_safety.phase' = 'challenge'; 'graphics_safety.candidate_ready' = 'true'; 'time_paused' = 'true' } })
+                    $steps.Add(@{ action = 'controller_input'; expect_ui = @{ graphics_selected_ok = $true } })
+                    if ($case -in @('Accept', 'Unsupported')) { $steps.Add(@{ action = 'controller_input'; key = 'A'; post_delay_ms = 60 }) }
                     elseif ($case -in @('Cancel', 'Back', 'Rearm')) { $steps.Add(@{ action = 'controller_input'; key = 'B'; post_delay_ms = 60 }) }
                 }
+            }
+            if ($case -in @('Cancel', 'Back', 'Timeout', 'Rearm', 'Stall')) {
+                $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '0'; 'graphics_safety.candidate_ready' = 'true'; 'time_paused' = 'true' }))
+                $steps.Add(@{ action = 'controller_input'; expect_ui = @{ graphics_chooser_open = $true } })
+                $steps.Add((New-TouchStep 'cancel'))
             }
             $accepted = if ($case -in @('Accept', 'Unsupported')) { '1' } else { '0' }
             $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'idle'; 'graphics_safety.current.TexFilt' = $accepted; 'graphics_safety.accepted.TexFilt' = $accepted; 'graphics_safety.requested.TexFilt' = $accepted; 'time_paused' = 'false'; 'graphics_safety.first_run_pending' = 'false' }))

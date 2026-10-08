@@ -13,6 +13,7 @@
 #include "hfs_reader.h"
 #include "mac_hfs_extract.h"
 #include "sti2_extract.h"
+#include "../shared/mac_d1_sound_resource.h"
 
 static const char *path_basename(const char *path)
 {
@@ -179,6 +180,40 @@ static int hfs_sti2_entry_allowed(uint64_t data_size)
 	return 0;
 }
 
+/* First supported edition: MacPlay retail D1 with its application sound bank */
+static int extract_macplay_d1_sounds(const mapped_file_t *archive,
+                                     const char *output_dir, const char **extensions,
+                                     dxx_extract_attempt_budget_t *budget)
+{
+	sti2_entry_list_t entries;
+	if (!ext_matches("descent.pig", extensions)) return 0;
+	if (sti2_list_entries(archive->data, archive->size, &entries) < 0) return -1;
+	const int pig = sti2_find_entry_index(&entries, "descent.pig");
+	/* Size matches D1_MAC_PIGSIZE in d1/main/piggy.h */
+	if (pig < 0 || entries.entries[pig].uncompressed_size != 3975533) return 0;
+	const int app = sti2_find_entry_index(&entries, "Descent");
+	if (app < 0 || entries.entries[app].file_type != 0x4150504cu ||
+	    !entries.entries[app].resource_uncompressed_size ||
+	    entries.entries[app].resource_uncompressed_size > MAC_D1_RESOURCE_MAX_BYTES) return -1;
+	char path[1024];
+	int path_length = snprintf(path, sizeof(path), "%s/%s", output_dir, MAC_D1_RESOURCE_FILE);
+	if (path_length < 0 || (size_t) path_length >= sizeof(path)) return -1;
+	int result = sti2_extract_resource_with_budget(archive->data, archive->size,
+	                                               &entries.entries[app], path, budget);
+	if (result < 0) return result;
+	mapped_file_t resource = { 0 };
+	struct mac_d1_sample samples[MAC_D1_SOUND_COUNT];
+	int valid = map_file_read_only(path, &resource) == 0 &&
+	            mac_d1_parse_sound_resource(resource.data, resource.size, samples);
+	unmap_file(&resource);
+	if (!valid) {
+		remove(path);
+		fprintf(stderr, "mac_hfs_extract: unsupported MacPlay D1 sound resource bank\n");
+		return -1;
+	}
+	return 1;
+}
+
 static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
                                  const char *output_dir, const char **extensions,
                                  extract_progress_fn progress, void *user_data,
@@ -239,6 +274,10 @@ static int extract_sti2_from_hfs(hfs_catalog_t *catalog,
 	extracted = sti2_extract_matching_with_budget(
 	    archive.data, archive.size, extensions, output_dir,
 	    progress, user_data, budget);
+	if (extracted >= 0) {
+		const int sounds = extract_macplay_d1_sounds(&archive, output_dir, extensions, budget);
+		extracted = sounds < 0 ? sounds : extracted + sounds;
+	}
 	dxx_extract_attempt_release_memory(budget, archive.size);
 	unmap_file(&archive);
 	remove(archive_path);

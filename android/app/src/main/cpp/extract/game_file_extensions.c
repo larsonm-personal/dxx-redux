@@ -16,7 +16,7 @@
  * full filename or path.
  */
 const char *dxx_android_game_file_extensions[] = {
-	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
+	".hog", ".pig", ".ham", ".s11", ".s22", ".dem", ".rsrc",
 	".mvl", ".msn", ".mn2", ".gog", ".inst",
 	NULL
 };
@@ -28,7 +28,7 @@ const char *dxx_android_game_file_extensions[] = {
  * the raw extension text after the dot.
  */
 const char *dxx_android_disc_extract_extensions[] = {
-	"hog", "pig", "ham", "s11", "s22", "dem",
+	"hog", "pig", "ham", "s11", "s22", "dem", "rsrc",
 	"mvl", "msn", "mn2", "rdl", "rl2", "sdl", "sl2",
 	"sow", "dxa", "pog", "hxm", "dtx",
 	"txt", "tex", "txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "256", "vham",
@@ -54,7 +54,7 @@ const char *dxx_android_disc_companion_extensions[] = {
  */
 const char *dxx_android_mac_disc_extract_extensions[] = {
 	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow",
-	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
+	"dxa", "cfg", "txt", "256", "msn", "dem", "rsrc", NULL
 };
 
 int dxx_has_any_extension_ci(const char *path, const char *const *extensions)

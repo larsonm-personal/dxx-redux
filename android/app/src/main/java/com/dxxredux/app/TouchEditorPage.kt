@@ -2652,6 +2652,25 @@ private fun StickPropertiesPanel(
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
     }
     if (stick.mouseMode) {
+        LabeledToggle("Mouse Acceleration", stick.mouseExponential) {
+            onUpdate(stick.copy(mouseExponential = it))
+        }
+        if (stick.mouseExponential) {
+            LabeledSlider(
+                "Max Acceleration (x)",
+                stick.mouseExponentialMax,
+                1f,
+                10f,
+                Modifier.fillMaxWidth(),
+            ) {
+                onUpdate(stick.copy(mouseExponentialMax = it))
+            }
+        }
+        Text(
+            "Boosts faster drags. The game's turn-rate cap still applies.",
+            fontSize = 11.sp,
+            color = Color.Gray,
+        )
         LabeledToggle("Edge Continuous Movement", stick.mouseEdgeContinuousMovement) {
             onUpdate(stick.copy(mouseEdgeContinuousMovement = it))
         }

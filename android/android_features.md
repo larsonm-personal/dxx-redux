@@ -11,6 +11,7 @@
 - Archive support for a few other types of file like dos installer files and some mac ones, but the most important are the windows offline installers from gog, or CD images
 - Allows importing game files (.hog,.pig, etc.) and either copying them or leaving them in place
 - Allows importing game files from bin+cue disc images (scans the data tracks, finds assets, finds .sow and extracts as needed)
+  - Initial MacPlay D1 disc support includes its 98 sound effects; reimport older HOG/PIG-only sets to add the sound resource bank
   - Extra stuff like the extra missions included in the anniversary edition CD will be imported to an entry in the mods/levels list so it can be optionally used
 - Allows keeping multiple base file sets (mostly for testing, most users will just import their best files and be done)
 - On import, attempts to label the files using a list of known file hashes so users know which descent version’s assets they’re playing with
@@ -27,7 +28,7 @@
 - A new special cheat that highlights and labels secret areas on the automap. When this cheat is active, guidebot can navigate to a secret as a task. Secret area classification isn’t perfect because the actual areas aren’t labeled by the map maker (like they are in doom), so the game is using some hints based on map geometry
 - Boss health bar (optional)
 - FoV slider for 90-100-110-120 degrees. when playing in landscape mode on a phone I find that 110-120 is best just so the up/down field of view works out. this is locked to the original 90 for competitive multiplayer
-  * the reason FoV is so weird in this game is that it refers to the *vertical* FoV, and vertical size changes a lot from the hud to the full screen view. the hud view actually gives something like 110 degrees horizontal view, and the full screen a lot less. when in full screen, the natural FoV setting is more like 110
+  - the reason FoV is so weird in this game is that it refers to the _vertical_ FoV, and vertical size changes a lot from the hud to the full screen view. the hud view actually gives something like 110 degrees horizontal view, and the full screen a lot less. when in full screen, the natural FoV setting is more like 110
 - D1 missions played within D2 have support for their textures etc. so they look right, plus an attempt to get weapon and robot behavior to match (with a sort of emulation layer). This gives the advantages of D2 (basically: hud cameras, and can spawn guidebot if desired). I recommend playing D1 this way. Long-term, there should be a unification of the game engines like d2xxl has done and rebirth has partially done and I've laid the groundwork for that
 
 # LAN play quality-of-life

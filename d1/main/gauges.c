@@ -36,6 +36,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "gamefont.h"
 #include "hud_counts_shared.h"
+#include "hud_score_shared.h"
 #include "hostage.h"
 #include "bm.h"
 #include "text.h"
@@ -755,25 +756,33 @@ static int hud_corner_text_right_inset(int y, int h)
 
 void hud_show_score()
 {
-	char	score_str[20];
+	char	score_str[64];
 	int	w, h;
 	int x, y;
+	int format = 0;
+	const int competitive = (Game_mode & GM_MULTI) &&
+		!((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS));
 
 	int pnum = get_pnum_for_hud();
 
 	gr_set_curfont( GAME_FONT );
 
-	if ( (Game_mode & GM_MULTI) && !((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS)) ) {
-		sprintf(score_str, "%s: %5d", TXT_KILLS, Players[pnum].net_kills_total);
+	if (competitive) {
+		snprintf(score_str, sizeof(score_str), "%s: %5d", TXT_KILLS, Players[pnum].net_kills_total);
 	} else {
-		sprintf(score_str, "%s: %5d", TXT_SCORE, Players[pnum].score);
+		snprintf(score_str, sizeof(score_str), "%s: %5d", TXT_SCORE, Players[pnum].score);
 	}
 
-	gr_get_string_drawn_size(score_str, &w, &h);
 	y = FSPACY(1);
-	x = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(y, h) - w - FSPACX(1);
-	if (HUD_message_area_intersects(x, y, w, h))
-		return;
+	for (;;) {
+		gr_get_string_drawn_size(score_str, &w, &h);
+		x = grd_curcanv->cv_bitmap.bm_w - hud_corner_text_right_inset(y, h) - w - FSPACX(1);
+		if (x >= 0 && !HUD_message_area_intersects(x, y, w, h))
+			break;
+		if (competitive || !hud_score_format_fallback(score_str, sizeof(score_str),
+			Players[pnum].score, ++format))
+			return;
+	}
 
 	if (Color_0_31_0 == -1)
 		Color_0_31_0 = BM_XRGB(0,31,0);

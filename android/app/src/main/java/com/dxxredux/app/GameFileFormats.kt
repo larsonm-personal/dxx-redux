@@ -97,6 +97,16 @@ object GameFileFormats {
                     setGameData = true,
                     baseReplacement = true,
                 ),
+            "rsrc" to
+                FormatInfo(
+                    "Mac sound resources",
+                    roleLabel = "Sound effects",
+                    gameHint = GAME_D1,
+                    gameImport = true,
+                    discExtract = true,
+                    setGameData = true,
+                    baseReplacement = true,
+                ),
             "ham" to
                 FormatInfo(
                     "Robot and weapon data",
@@ -300,7 +310,7 @@ object GameFileFormats {
      * intentionally does not use the generic ISO data-track allowlist.
      */
     val macDiscExtractExtensions: Set<String> =
-        setOf("hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow", "dxa", "cfg", "txt", "256", "msn", "dem")
+        setOf("hog", "ham", "pig", "s11", "s22", "mn2", "mvl", "sow", "dxa", "cfg", "txt", "256", "msn", "dem", "rsrc")
 
     private val savedGameExtensions =
         buildSet {

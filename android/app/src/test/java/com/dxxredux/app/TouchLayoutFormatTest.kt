@@ -1,10 +1,48 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class TouchLayoutFormatTest {
+    @Test
+    fun shippedMouseAccelerationDefaultsAndEditedSettingsRoundTrip() {
+        val json = JSONObject(File("src/main/assets/configs/touch/touch_default.json").readText())
+        val sticks = json.getJSONArray("sticks")
+        val mouseSticks =
+            (0 until sticks.length()).map { sticks.getJSONObject(it) }.filter {
+                it.optBoolean("mouseMode", false)
+            }
+        assertTrue(mouseSticks.isNotEmpty())
+        mouseSticks.forEach {
+            assertTrue(it.getBoolean("mouseExponential"))
+            assertEquals(3.0, it.getDouble("mouseExponentialMax"), 0.0)
+        }
+        // Exercise the shipped sticks without menu key-name parsing, which requires Android
+        val stickLayout =
+            HumanReadableConfig
+                .touchLayoutToHumanJson(TouchLayout(name = json.getString("name")))
+                .put("version", json.getInt("version"))
+                .put("sticks", sticks)
+        val parsed = HumanReadableConfig.humanJsonToTouchLayout(stickLayout)
+        assertEquals(emptyList<String>(), parsed.warnings)
+        val starter = requireNotNull(parsed.value)
+        assertRoundTrips(starter)
+        for (enabled in listOf(false, true)) {
+            assertRoundTrips(
+                starter.copy(
+                    sticks =
+                        starter.sticks.map {
+                            if (it.mouseMode) it.copy(mouseExponential = enabled, mouseExponentialMax = 4.25f) else it
+                        },
+                ),
+            )
+        }
+    }
+
     @Test
     fun controllerVisibilitySettingRoundTripsInLayoutsAndSlots() {
         assertRoundTrips(TouchLayout(hideControllerBoundControls = true))

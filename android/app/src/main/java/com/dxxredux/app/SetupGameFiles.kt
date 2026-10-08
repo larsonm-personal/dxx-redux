@@ -434,6 +434,8 @@ internal val D1_FILES =
     listOf(
         GameFileInfo("descent.hog", "D1 game data", required = true),
         GameFileInfo("descent.pig", "D1 textures", required = true),
+        // Filename matches MAC_D1_RESOURCE_FILE in shared/mac_d1_sound_resource.h
+        GameFileInfo("descent.rsrc", "Mac D1 sound effects", required = false),
     )
 
 internal data class RecommendedMod(

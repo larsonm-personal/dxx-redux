@@ -4783,6 +4783,85 @@ private fun SetupScreen(
                 // -- Shared composable blocks --
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
+                    Button(
+                        onClick = {
+                            com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
+                                it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN)
+                            }
+                            showMultiplayerPage = true
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(40.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            ),
+                    ) {
+                        Text("Multiplayer", fontSize = 14.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (gameRunning) {
+                        Button(
+                            onClick = { onLaunchGame(selectedGame, null) },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                        ) {
+                            Text("Return to Game", fontSize = 18.sp)
+                        }
+                    } else {
+                        var blockedLaunch by remember { mutableStateOf<Pair<String, String>?>(null) }
+                        blockedLaunch?.let { (title, message) ->
+                            AlertDialog(
+                                onDismissRequest = { blockedLaunch = null },
+                                title = { Text(title) },
+                                text = { Text(message, modifier = Modifier.verticalScroll(rememberScrollState())) },
+                                confirmButton = { TextButton(onClick = { blockedLaunch = null }) { Text("OK") } },
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            GameLaunchTarget.launcherChoices.forEach { target ->
+                                val ready = target.filesReady(d1RequiredOk, d2RequiredOk)
+                                Button(
+                                    onClick = {
+                                        val blockers = launchDataBlockers(target.id, setDir, manifest, safManifest)
+                                        if (blockers != null) {
+                                            blockedLaunch = "${target.displayName} files not ready" to blockers
+                                        } else {
+                                            selectedGame = target.id
+                                            gamePrefs.edit().putString("selected_game", target.id).apply()
+                                            onLaunchGame(target.id, null)
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                    enabled = !isHashing,
+                                    colors =
+                                        ButtonDefaults.buttonColors(
+                                            containerColor =
+                                                if (ready) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                },
+                                            contentColor =
+                                                if (ready) {
+                                                    MaterialTheme.colorScheme.onPrimary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                },
+                                        ),
+                                ) {
+                                    Text("Launch ${target.displayName}", fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // -- Stale temp cleanup notification --------
                     if (cleanedTmpFiles.isNotEmpty()) {
                         Row(
@@ -5859,85 +5938,6 @@ private fun SetupScreen(
                         onEnginePreferences = { showEnginePrefsPage = true },
                         onEditAutoselect = { showAutoselectPage = true },
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
-                                it.copy(nav = com.dxxredux.app.multiplayer.MultiplayerNav.LAN)
-                            }
-                            showMultiplayerPage = true
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(40.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ),
-                    ) {
-                        Text("Multiplayer", fontSize = 14.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (gameRunning) {
-                        Button(
-                            onClick = { onLaunchGame(selectedGame, null) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                        ) {
-                            Text("Return to Game", fontSize = 18.sp)
-                        }
-                    } else {
-                        var blockedLaunch by remember { mutableStateOf<Pair<String, String>?>(null) }
-                        blockedLaunch?.let { (title, message) ->
-                            AlertDialog(
-                                onDismissRequest = { blockedLaunch = null },
-                                title = { Text(title) },
-                                text = { Text(message, modifier = Modifier.verticalScroll(rememberScrollState())) },
-                                confirmButton = { TextButton(onClick = { blockedLaunch = null }) { Text("OK") } },
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            GameLaunchTarget.launcherChoices.forEach { target ->
-                                val ready = target.filesReady(d1RequiredOk, d2RequiredOk)
-                                Button(
-                                    onClick = {
-                                        val blockers = launchDataBlockers(target.id, setDir, manifest, safManifest)
-                                        if (blockers != null) {
-                                            blockedLaunch = "${target.displayName} files not ready" to blockers
-                                        } else {
-                                            selectedGame = target.id
-                                            gamePrefs.edit().putString("selected_game", target.id).apply()
-                                            onLaunchGame(target.id, null)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                                    enabled = !isHashing,
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor =
-                                                if (ready) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.surfaceVariant
-                                                },
-                                            contentColor =
-                                                if (ready) {
-                                                    MaterialTheme.colorScheme.onPrimary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                },
-                                        ),
-                                ) {
-                                    Text("Launch ${target.displayName}", fontSize = 16.sp)
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // -- Layout: landscape = side-by-side, portrait = stacked --

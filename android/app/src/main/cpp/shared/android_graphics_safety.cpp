@@ -65,6 +65,7 @@ preview_phase preview = preview_none;
 std::string first_run_marker;
 bool first_run_pending = false;
 bool first_run_trial = false;
+bool retry_first_run = false;
 json preview_capabilities;
 uint64_t candidate_revision = 0, applied_revision = 0;
 uint64_t preview_apply_deadline = 0;
@@ -443,7 +444,8 @@ extern "C" int android_graphics_safety_preview_done(uint64_t id)
 	std::lock_guard<std::mutex> lock(mutex);
 	if (!initialized || id != active_id || preview != preview_editing || restore_pending) return 0;
 	preview = preview_settling;
-	quiet_until = now_ms() + option_debounce_ms;
+	// Done is an explicit boundary; only live Video Info edits need a quiet period
+	quiet_until = 0;
 	return 1;
 }
 
@@ -551,6 +553,12 @@ extern "C" int android_graphics_safety_decide(uint64_t id, int accept, const cha
 			armed = false;
 			preparing = false;
 		} else if (result == 2 || result == -1) {
+			if (!restore_pending) {
+				const bool leaving_picker = preview == preview_editing && reason &&
+				                            (!std::strcmp(reason, "cancel") || !std::strcmp(reason, "keep_previous"));
+				retry_first_run = first_run_trial && !leaving_picker && reason &&
+				                  std::strcmp(reason, "unchanged_preview") && std::strcmp(reason, "background");
+			}
 			restore_pending = true;
 			preparing = false;
 			armed = false;
@@ -674,6 +682,21 @@ extern "C" void android_graphics_safety_event_tick(void)
 				first_run_trial = false;
 				observed_current = target;
 				current_known = true;
+				if (retry_first_run && ui_foreground && eligible()) {
+					const uint64_t id = now_ms() * 1000 + (++serial % 1000);
+					if (graphics_safety_preview(files_root.c_str(), &target, id, getpid(), 0)) {
+						active_id = id;
+						pending_candidate = target;
+						first_run_trial = true;
+						preview = preview_editing;
+						deadline = quiet_until = 0;
+						candidate_ready = false;
+						candidate_revision = applied_revision = 0;
+						preview_apply_deadline = now_ms() + overlay_prepare_timeout_ms;
+						debug_log_force(DLOG_GRAPHICS, "Graphics first-run picker reopened after rollback");
+					} else storage_failure = "preview_retry_persist_failed";
+				}
+				retry_first_run = false;
 			}
 			notify();
 		}

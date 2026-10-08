@@ -598,6 +598,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/mac_d1_audio.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c

@@ -67,6 +67,13 @@ int sti2_extract_entry_with_budget(const unsigned char *archive_data,
                                    const char *output_path,
                                    dxx_extract_attempt_budget_t *budget);
 
+/* Extract the resource fork using the same decoder, CRC and atomic output path */
+int sti2_extract_resource_with_budget(const unsigned char *archive_data,
+                                      size_t archive_size,
+                                      const sti2_entry_t *entry,
+                                      const char *output_path,
+                                      dxx_extract_attempt_budget_t *budget);
+
 int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size,
                           const char **extensions, const char *output_dir,
                           sti2_progress_fn progress, void *user_data);

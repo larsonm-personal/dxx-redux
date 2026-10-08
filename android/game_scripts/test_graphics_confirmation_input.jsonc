@@ -516,8 +516,7 @@
             "HAT_X": -1.0,
         },
         "expect_ui": {
-            "graphics_selected_ok": false,
-            "graphics_axes_ready": false,
+            "graphics_selected_ok": true,
         },
     },
     {
@@ -526,7 +525,7 @@
             "HAT_X": 0.0,
         },
         "expect_ui": {
-            "graphics_axes_ready": true,
+            "graphics_selected_ok": true,
         },
     },
     {
@@ -755,6 +754,11 @@
             },
         },
     },
+    // A direction already held before opening must still require release
+    {
+        "action": "controller_input",
+        "axes": { "LS_Y": -1.0 },
+    },
     {
         "action": "set_debug",
         "field": "graphics_queue_option",
@@ -776,6 +780,15 @@
             "graphics_selected_ok": false,
             "graphics_first_draw_cancel_text": "Cancel (5)",
         },
+    },
+    {
+        "action": "controller_input",
+        "axes": { "LS_Y": -1.0 },
+        "expect_ui": { "graphics_selected_ok": false },
+    },
+    {
+        "action": "controller_input",
+        "axes": { "LS_Y": 0.0 },
     },
     {
         "action": "controller_input",

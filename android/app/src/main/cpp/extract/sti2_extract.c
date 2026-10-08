@@ -2470,6 +2470,29 @@ int sti2_extract_entry_with_budget(const unsigned char *archive_data,
 	return (int) size;
 }
 
+int sti2_extract_resource_with_budget(const unsigned char *archive_data,
+                                      size_t archive_size,
+                                      const sti2_entry_t *entry,
+                                      const char *output_path,
+                                      dxx_extract_attempt_budget_t *budget)
+{
+	sti2_entry_t fork;
+	if (!entry || !budget) return -1;
+	fork = *entry;
+	fork.data_offset = entry->resource_offset;
+	fork.compressed_size = entry->resource_compressed_size;
+	fork.uncompressed_size = entry->resource_uncompressed_size;
+	fork.data_crc = entry->resource_crc;
+	fork.data_crc_present = entry->resource_crc_present;
+	fork.data_method = entry->resource_method;
+	fork.data_encrypted = entry->resource_encrypted;
+	int result = dxx_extract_attempt_reserve_output(budget, output_path,
+	                                                fork.uncompressed_size, 1);
+	if (result < 0) return result;
+	return sti2_extract_entry_with_budget(archive_data, archive_size, &fork,
+	                                      output_path, budget);
+}
+
 int sti2_extract_matching(const unsigned char *archive_data, size_t archive_size,
                           const char **extensions, const char *output_dir,
                           sti2_progress_fn progress, void *user_data)

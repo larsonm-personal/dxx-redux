@@ -32,7 +32,7 @@ $deviceCue = "$providerDir/macplay.cue"
 $deviceBin = "$providerDir/macplay.bin"
 $tmpCue = Join-Path $repoRoot "android\temp\mac_extract_saf.cue"
 # Disc publication retains runtime assets and manages the mission bundle separately
-$expectedFiles = @("CHAOS.HOG", "CHAOS.MSN", "descent.hog", "descent.pig")
+$expectedFiles = @("CHAOS.HOG", "CHAOS.MSN", "descent.hog", "descent.pig", "descent.rsrc")
 
 function Invoke-SetupCommand {
     param([Parameter(Mandatory)][string]$Command, [string]$Name = "")
