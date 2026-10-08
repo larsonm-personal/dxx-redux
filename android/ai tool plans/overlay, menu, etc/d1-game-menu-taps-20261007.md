@@ -9,7 +9,7 @@
 ## Notes
 
 - Existing pause and overlay edits belong to separate work and are outside this fix
-- Use emulator-5590 to avoid other running emulator tests
+- Retired the temporary emulator after the user supplied the Retroid; used emulator-5586 for regression tests after the other run completed
 
 ## Findings
 
@@ -28,3 +28,5 @@
 - Actual coordinate taps also opened Graphics Options, Save Game, and Select Game to Restore; a repeated Options tap passed
 - Added coordinate-tap regression coverage to the existing D1/D2 pause integration runner, starting with Abort Game highlighted
 - Scoped PowerShell code quality and both automation catalog checks passed
+- An initial emulator run failed in the pre-existing save handoff before reaching the new tap check (stale pause request); the complete rerun passed D1 and D2 including the coordinate tap and all remaining pause/presentation checks (temp/game-menu-verification/integration-retry.log)
+- Restored the saved level, reopened Game Menu on the Retroid, and restored the Game Logs preference to disabled
