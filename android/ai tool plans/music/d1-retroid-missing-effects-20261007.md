@@ -94,3 +94,25 @@ locally owned initial MacPlay CUE/BIN and a current debug installation. On a
 physical device it uses the isolated diagnostic package and a test-owned set.
 Artifacts and build/test logs remain under temp/d1-retroid-audio. The original
 release APK remains backed up there; the fixed debug build is currently installed.
+
+## Remaining Mac disc verification
+
+- [x] Import the secondary D1 Mac CUE/BIN into an isolated test set and verify effects-only playback
+- [x] Import the D2 Mac CUE/BIN into an isolated test set and verify effects-only playback
+- [x] Compare imported sound assets against the known banks and record results
+
+Use the Retroid diagnostic package and the existing 45-step MacPlay integration
+flow, with the disc and game selected per run. Capture at effects volume 8 with
+music muted, and require non-silent PCM plus actual mixer sample starts.
+Artifacts: temp/mac-disc-audio-checks-20261007.
+
+Both exact CUE/BIN fixtures passed all 45 automation steps on Retroid
+JYPR42510121028 using com.dxxredux.app.nsdtest. Each reached level 1, exercised
+effects volume 8/4/0/8, and captured laser/explosion playback with music muted.
+Secondary D1 produced effects peak 3475 PCM and music peak zero. Its imported
+descent.rsrc has the same SHA-256 as the primary MacPlay bank; HOG/PIG also match
+the existing extracted fixture. D2's imported S11/S22, HAM/HOG and GROUPA.PIG
+match its own extracted fixture. Both passes require actual mixer sample starts
+and at least three seconds of non-silent effects capture. Neither disc required
+new implementation. Exact file hashes and PCM peaks are recorded in each
+variant's report.json under the artifact directory.

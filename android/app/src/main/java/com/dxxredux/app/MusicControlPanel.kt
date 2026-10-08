@@ -587,7 +587,7 @@ class MusicControlPanel(
         val py = event.y
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                if (sourceDropdownOpen && sourceDropdownHitRect().contains(px, py)) {
+                if (sourceDropdownOpen) {
                     sourceTouchActive = true
                     return true
                 }
@@ -661,6 +661,18 @@ class MusicControlPanel(
         px: Float,
         py: Float,
     ) {
+        // The dropdown is drawn over the controls, so it owns taps while open
+        if (sourceDropdownOpen) {
+            sourceOptionRects.forEachIndexed { i, rect ->
+                if (rect.contains(px, py)) {
+                    sourceDropdownIndex = i
+                    chooseSourceDropdownOption()
+                    return
+                }
+            }
+            closeSourceDropdown()
+            return
+        }
         when {
             closeRect.contains(px, py) || !panelRect.contains(px, py) -> {
                 onDismiss()
@@ -675,25 +687,10 @@ class MusicControlPanel(
             }
 
             sourceRect.contains(px, py) -> {
-                if (sourceDropdownOpen) closeSourceDropdown() else openSourceDropdown()
+                openSourceDropdown()
             }
 
             else -> {
-                if (sourceDropdownOpen && sourceDropdownHitRect().contains(px, py)) {
-                    sourceOptionRects.forEachIndexed { i, rect ->
-                        if (rect.contains(px, py)) {
-                            sourceDropdownIndex = i
-                            chooseSourceDropdownOption()
-                            return
-                        }
-                    }
-                    closeSourceDropdown()
-                    return
-                }
-                if (sourceDropdownOpen) {
-                    closeSourceDropdown()
-                    return
-                }
                 if (trackListRect.contains(px, py)) {
                     val idx = ((py - trackListRect.top + scrollOffset) / rowHeight).toInt()
                     state.tracks.getOrNull(idx)?.let {
@@ -872,12 +869,6 @@ class MusicControlPanel(
     private fun sourceOptions(): List<MusicOverlaySourceOption> = sourceOptionsCache
 
     private fun volumeHitRect(): RectF = RectF(volumeLaneRect)
-
-    private fun sourceDropdownHitRect(): RectF {
-        val bounds = RectF(sourceRect)
-        sourceOptionRects.forEach { bounds.union(it) }
-        return bounds
-    }
 
     private fun trimToWidth(
         text: String,

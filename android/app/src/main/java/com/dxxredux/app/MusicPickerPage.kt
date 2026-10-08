@@ -881,40 +881,47 @@ private fun CdAudioSection(
                 onDismissRequest = { infoSource = null },
                 title = { Text("Source Info", fontSize = 16.sp) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
-                        Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
-                        if (hasSafLinkedCdContent(src)) {
-                            Text("Source: SAF reference (not copied)", fontSize = 12.sp)
-                            Text("CUE: ${src.cuePath} (local copy)", fontSize = 12.sp)
-                            Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
-                        } else {
-                            val localBinContentUris = src.binContentUris.filter(::isLocalCdContentPath)
-                            val binPaths =
-                                localBinContentUris
-                                    .takeIf { it.isNotEmpty() }
-                                    ?: src.binPaths.map { resolveCdAudioSourceFile(filesDir, it).absolutePath }
-                            Text(
-                                "CUE: ${resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath}",
-                                fontSize = 12.sp,
-                            )
-                            Text(
-                                "BIN: ${binPaths.joinToString(", ")}",
-                                fontSize = 12.sp,
-                            )
+                    val infoScroll = rememberScrollState()
+                    Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                        Column(
+                            modifier = Modifier.verticalScroll(infoScroll),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
+                            Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
+                            if (hasSafLinkedCdContent(src)) {
+                                Text("Source: SAF reference (not copied)", fontSize = 12.sp)
+                                Text("CUE: ${src.cuePath} (local copy)", fontSize = 12.sp)
+                                Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
+                            } else {
+                                val localBinContentUris = src.binContentUris.filter(::isLocalCdContentPath)
+                                val binPaths =
+                                    localBinContentUris
+                                        .takeIf { it.isNotEmpty() }
+                                        ?: src.binPaths.map { resolveCdAudioSourceFile(filesDir, it).absolutePath }
+                                Text(
+                                    "CUE: ${resolveCdAudioSourceFile(filesDir, src.cuePath).absolutePath}",
+                                    fontSize = 12.sp,
+                                )
+                                Text(
+                                    "BIN: ${binPaths.joinToString(", ")}",
+                                    fontSize = 12.sp,
+                                )
+                            }
+                            if (src.discId != "unknown") {
+                                Text("Disc ID: ${src.discId}", fontSize = 12.sp)
+                            }
+                            val matched = src.trackNames.count { (_, v) -> v != "[unknown] - [untitled]" }
+                            if (matched > 0) {
+                                Text(
+                                    "$matched/${src.audioTrackCount} tracks identified",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
-                        if (src.discId != "unknown") {
-                            Text("Disc ID: ${src.discId}", fontSize = 12.sp)
-                        }
-                        val matched = src.trackNames.count { (_, v) -> v != "[unknown] - [untitled]" }
-                        if (matched > 0) {
-                            Text(
-                                "$matched/${src.audioTrackCount} tracks identified",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
+                        ScrollArrows(infoScroll)
                     }
                 },
                 confirmButton = {
@@ -1344,12 +1351,17 @@ private fun TrackPreviewDialog(
             val dialogScroll = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.verticalScroll(dialogScroll)) {
+                    Text(
+                        "Tap a track to open playback controls",
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
                     tracks.forEachIndexed { i, row ->
                         Row(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 1.dp)
+                                    .heightIn(min = 48.dp)
                                     .then(
                                         when {
                                             row.cdInfo != null -> {
@@ -1371,7 +1383,7 @@ private fun TrackPreviewDialog(
                                                 Modifier
                                             }
                                         },
-                                    ),
+                                    ).padding(vertical = 6.dp),
                         ) {
                             Text(
                                 "${i + 1}.",
@@ -1379,17 +1391,18 @@ private fun TrackPreviewDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.width(28.dp),
                             )
-                            Text(
-                                row.display,
-                                fontSize = 11.sp,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (row.sourceLabel.isNotEmpty()) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    row.sourceLabel,
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    row.display,
+                                    fontSize = 14.sp,
                                 )
+                                if (row.sourceLabel.isNotEmpty()) {
+                                    Text(
+                                        row.sourceLabel,
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }

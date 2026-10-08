@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Log
@@ -8,6 +10,7 @@ import android.view.MotionEvent
 
 /** Real panel gestures with the asynchronous native command queue replaced by a recording callback */
 internal fun checkMusicVolumeTouches(context: Context) {
+    checkMusicSourceTouches(context)
     for ((width, height) in listOf(1000 to 600, 600 to 1000)) {
         val queued = mutableListOf<Int>()
         var refreshes = 0
@@ -96,5 +99,68 @@ internal fun checkMusicVolumeTouches(context: Context) {
         check(displayedVolume() == 7) { "Rejected native command changed the displayed volume" }
         check(refreshes == queued.size)
         Log.i("DXX-MusicVolumeTest", "PASS: ${width}x$height tap, drag, clamping, release, cancel and queue rejection")
+    }
+}
+
+private fun checkMusicSourceTouches(context: Context) {
+    for ((width, height) in listOf(1000 to 600, 600 to 1000)) {
+        var dismissed = false
+        val panel =
+            MusicControlPanel(context, { dismissed = true }, {}) {
+                error("Open source dropdown passed a tap to the volume control")
+            }
+
+        fun field(name: String) = MusicControlPanel::class.java.getDeclaredField(name).apply { isAccessible = true }
+        field("sourceOptionsCache").set(
+            panel,
+            listOf(MusicOverlaySourceOption("cd", "CD"), MusicOverlaySourceOption("midi", "Base game MIDI")),
+        )
+        panel.layout(0, 0, width, height)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        try {
+            panel.draw(Canvas(bitmap))
+            val source = field("sourceRect").get(panel) as RectF
+            val underlying = field("oneTrackRect").get(panel) as RectF
+
+            @Suppress("UNCHECKED_CAST")
+            val options = field("sourceOptionRects").get(panel) as List<RectF>
+
+            fun tap(rect: RectF) {
+                val now = SystemClock.uptimeMillis()
+                for (action in listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP)) {
+                    val event = MotionEvent.obtain(now, now, action, rect.centerX(), rect.centerY(), 0)
+                    try {
+                        check(panel.dispatchTouchEvent(event))
+                    } finally {
+                        event.recycle()
+                    }
+                }
+            }
+            for ((index, option) in options.withIndex()) {
+                tap(source)
+                check(field("sourceDropdownOpen").getBoolean(panel))
+                Log.i(
+                    "DXX-MusicSourceTest",
+                    "${width}x$height option=$index bounds=$option overlaps_one_track=${RectF.intersects(
+                        option,
+                        underlying,
+                    )}",
+                )
+                tap(option)
+                check(!field("sourceDropdownOpen").getBoolean(panel)) {
+                    "Source option $index tap was intercepted by an underlying control"
+                }
+                check(field("sourceDropdownIndex").getInt(panel) == index)
+            }
+            for (name in listOf("volumeLaneRect", "closeRect", "sourceRect")) {
+                tap(source)
+                check(field("sourceDropdownOpen").getBoolean(panel))
+                tap(field(name).get(panel) as RectF)
+                check(!field("sourceDropdownOpen").getBoolean(panel) && !dismissed)
+            }
+            Log.i("DXX-MusicSourceTest", "PASS: ${width}x$height source selection and outside dismissal")
+        } finally {
+            bitmap.recycle()
+        }
     }
 }
