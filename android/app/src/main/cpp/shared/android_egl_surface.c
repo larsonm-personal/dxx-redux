@@ -347,6 +347,9 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)
 	int trace_swap;
 	struct android_ogl_msaa_diagnostics msaa = { 0 };
 
+	/* EVENT_WINDOW_DRAW may skip the mine while the Android confirmation is preparing */
+	if (!android_graphics_safety_allow_present()) return;
+
 	state->swap_count++;
 	trace_swap = state->swap_count <= 20 || (state->swap_count % 60) == 0;
 	if (trace_swap)

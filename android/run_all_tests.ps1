@@ -400,6 +400,7 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_android_pause_state" = 360
     "test_audio_mix" = 900
     "test_store_asset_pipeline" = 7200
     # Run controller response checks in both engines with a 180s child timeout each

@@ -34,6 +34,7 @@ extern "C" {
 #include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_pause.h"
 #include "android_idle_saver.h"
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
@@ -1707,6 +1708,11 @@ extern "C" char *game_introspect_get_state(void)
 	}
 	j["game_mode"] = Game_mode;
 	j["time_paused"] = game_is_time_paused() != 0;
+#ifdef ANDROID
+	android_pause_snapshot pause;
+	android_pause_get_snapshot(&pause);
+	j["pause"] = { { "revision", pause.revision }, { "session", pause.session }, { "ui_owner", pause.ui_owner }, { "ui_revision", pause.ui_revision }, { "request", pause.request }, { "result", pause.result }, { "repairs", pause.repairs }, { "reasons", pause.reasons }, { "simulation_paused", pause.simulation_paused != 0 }, { "input_allowed", pause.input_allowed != 0 }, { "can_resume", pause.can_resume != 0 }, { "legacy_depth", pause.legacy_depth } };
+#endif
 #ifdef ANDROID
 	j["idle_saver"] = {
 		{ "state", android_idle_saver_state() },

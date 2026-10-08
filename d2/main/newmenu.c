@@ -2239,6 +2239,11 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 		case EVENT_MOUSE_BUTTON_UP:
 		{
 			int button = event_mouse_get_button(event);
+#ifdef ANDROID
+			/* A release from the previous screen is not a tap in this menu */
+			if (button == MBTN_LEFT && event->type == EVENT_MOUSE_BUTTON_UP && !menu->mouse_state)
+				return 1;
+#endif
 			menu->mouse_state = event->type == EVENT_MOUSE_BUTTON_DOWN;
 #ifdef ANDROID
 			if (button == MBTN_LEFT) {

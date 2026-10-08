@@ -85,6 +85,7 @@
 - Chromaprint web lookups (off by default) for unrecognized tracks using acoust-id
 - Preference for CD audio vs. midi vs. discrete files is saved in save games, so it can be preserved when playing different level packs (these sometimes come with midi audio, sometimes discrete, sometimes none)
 - launcher music preview to play with midi soundfont options, explore bundled mission music, etc.
+- tested and normalized mp3/redbook/midi/effects volume, it should be at a good starting point for most devices with most sources
 
 # Touch interfaces
 

@@ -18,6 +18,7 @@
 #include "game.h"
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
+#include "android_pause.h"
 #include "coop/coop_endgame.h"
 #include "coop/coop_briefing.h"
 #include "android_lifecycle_actions.h"
@@ -224,6 +225,9 @@ void event_process(void)
 	d_event event;
 	window *wind = window_get_front();
 
+#ifdef ANDROID
+	android_pause_tick();
+#endif
 #if defined(ANDROID) && defined(OGL)
 	android_lifecycle_diagnostics_game_tick(Screen_mode == SCREEN_MENU,
 	                                        Screen_mode == SCREEN_GAME,
@@ -251,6 +255,9 @@ void event_process(void)
 #endif
 
 	event_poll();	// send input events first
+#ifdef ANDROID
+	android_pause_publish();
+#endif
 
 	// Doing this prevents problems when a draw event can create a newmenu,
 	// such as some network menus when they report a problem

@@ -140,6 +140,8 @@ class TouchOverlayView
         private var gyroActiveInGame = false
         private var demoRecordingActive = false
         private var gamePaused = false
+        private var pauseCanResume = false
+        private var pauseHint = ""
         private var pauseResumePointerId = -1
         private var pauseResumeRect = RectF()
 
@@ -149,9 +151,15 @@ class TouchOverlayView
             invalidate()
         }
 
-        fun updateGamePausedState(paused: Boolean) {
-            if (gamePaused == paused) return
+        fun updateGamePausedState(
+            paused: Boolean,
+            canResume: Boolean = paused,
+            hint: String = "Tap to resume",
+        ) {
+            if (gamePaused == paused && pauseCanResume == canResume && pauseHint == hint) return
             gamePaused = paused
+            pauseCanResume = canResume
+            pauseHint = hint
             if (!paused) pauseResumePointerId = -1
             invalidate()
         }
@@ -1951,7 +1959,7 @@ class TouchOverlayView
             canvas.drawRoundRect(pauseResumeRect, corner, corner, background)
             canvas.drawRoundRect(pauseResumeRect, corner, corner, border)
             canvas.drawText("PAUSED", pauseResumeRect.centerX(), top + bannerH * 0.48f, title)
-            canvas.drawText("Tap to resume", pauseResumeRect.centerX(), top + bannerH * 0.78f, hint)
+            canvas.drawText(pauseHint, pauseResumeRect.centerX(), top + bannerH * 0.78f, hint)
         }
 
         private fun drawStick(
@@ -2897,7 +2905,7 @@ class TouchOverlayView
             }
             if (!isActive) return false
 
-            if (gamePaused && handlePausedIndicatorTouch(event)) return true
+            if (gamePaused && pauseCanResume && handlePausedIndicatorTouch(event)) return true
 
             // When admin tray panel is open, a visible settings button may close it;
             // otherwise the tray consumes all touches.

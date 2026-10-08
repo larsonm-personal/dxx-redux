@@ -29,6 +29,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "console.h"
 #include "inferno.h"
 #include "game.h"
+#ifdef __ANDROID__
+#include "android_pause.h"
+#endif
 #include "player.h"
 #include "key.h"
 #ifdef ANDROID
@@ -1457,6 +1460,19 @@ void ReadControlsReplayPostFrame(void)
 
 int ReadControls(d_event *event)
 {
+#ifdef __ANDROID__
+	if (!android_pause_input_allowed()) {
+		if (event->type == EVENT_IDLE) {
+			android_music_control_apply_pending();
+			if (!(android_pause_reasons() & (ANDROID_PAUSE_OPERATION | ANDROID_PAUSE_COOP | ANDROID_PAUSE_BACKGROUND | ANDROID_PAUSE_GRAPHICS)))
+				android_handle_ingame_saveload_request();
+		} else if (event->type == EVENT_KEY_COMMAND) {
+			const int key = event_key_get(event);
+			if (key == KEY_ESC || key == KEY_PAUSE) HandleSystemKey(key);
+		}
+		return 1;
+	}
+#endif
 	int key;
 	static ubyte exploding_flag=0;
 

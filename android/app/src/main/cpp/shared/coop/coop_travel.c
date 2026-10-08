@@ -375,7 +375,9 @@ int coop_travel_blocks_state_actions(void)
 
 void coop_travel_reset(void)
 {
+#ifndef ANDROID
 	if (pause_owned) start_time();
+#endif
 	armed = known = pause_owned = pumping = 0;
 	world_changed = applied = committed = restored = normal_taken = release_needed = 0;
 	normal_granted = release_acked = revision = 0;
@@ -1510,7 +1512,9 @@ int coop_travel_frame(void)
 		return -1;
 	}
 	if (coop_travel_blocks_gameplay() && !pause_owned) {
+#ifndef ANDROID
 		stop_time();
+#endif
 		pause_owned = 1;
 		game_flush_inputs();
 	}
@@ -1628,7 +1632,9 @@ int coop_travel_frame(void)
 		}
 #endif
 		game_flush_inputs();
+#ifndef ANDROID
 		if (pause_owned) start_time();
+#endif
 		pause_owned = 0;
 	}
 	pumping = 0;

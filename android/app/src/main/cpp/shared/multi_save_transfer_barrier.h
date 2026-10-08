@@ -6,7 +6,8 @@ enum { RESTORE_LOADING = 1,
 	   RESTORE_RELEASING,
 	   RESTORE_RUNNING,
 	   RESTORE_DONE,
-	   RESTORE_FAILED };
+	   RESTORE_FAILED,
+	   RESTORE_STARTING };
 enum { RESTORE_LOADED = 3,
 	   RESTORE_RELEASE,
 	   RESTORE_RELEASE_ACK,
@@ -26,7 +27,7 @@ static const char *Restore_failure_reason;
 
 const char *multi_save_transfer_barrier_status(int *local_loaded, uint64_t *visit)
 {
-	static const char *const names[] = { "idle", "loading", "releasing", "running", "done", "failed" };
+	static const char *const names[] = { "idle", "loading", "releasing", "running", "done", "failed", "starting" };
 	*local_loaded = Restore_barrier.local_loaded;
 	*visit = Restore_barrier.visit;
 	return names[Restore_barrier.phase];
@@ -41,7 +42,7 @@ static int restore_barrier_kind(int kind)
 int multi_save_transfer_paused(void)
 {
 	return Restore_barrier.phase == RESTORE_LOADING || Restore_barrier.phase == RESTORE_RELEASING ||
-	       Restore_barrier.phase == RESTORE_FAILED;
+	       Restore_barrier.phase == RESTORE_FAILED || Restore_barrier.phase == RESTORE_STARTING;
 }
 
 static int restore_barrier_busy(void)
@@ -63,7 +64,9 @@ static void restore_barrier_unpause(void)
 		restore_pause_test_release();
 		Restore_barrier.pause_owned = 0;
 		game_flush_inputs();
+#ifndef ANDROID
 		start_time();
+#endif
 		reset_time();
 	}
 }
@@ -109,7 +112,9 @@ static void restore_barrier_fail(const char *reason)
 	else restore_barrier_packet(RESTORE_ERROR, Restore_barrier.host);
 	Restore_barrier.phase = RESTORE_FAILED;
 	if (!Restore_barrier.pause_owned) {
+#ifndef ANDROID
 		stop_time();
+#endif
 		Restore_barrier.pause_owned = 1;
 	}
 	multi_quit_game = 1;
@@ -153,7 +158,9 @@ static int restore_barrier_begin(int kind, int id, uint64_t visit, unsigned chun
 	for (int i = 0; i < N_players; ++i)
 		if (Players[i].connected == CONNECT_PLAYING) Restore_barrier.required |= 1u << i;
 	Restore_barrier.required |= (1u << Player_num) | (1u << Restore_barrier.host);
+#ifndef ANDROID
 	stop_time();
+#endif
 	Restore_barrier.pause_owned = 1;
 	game_flush_inputs();
 	restore_pause_test_begin();
@@ -203,9 +210,9 @@ static void restore_barrier_receive(const ubyte *buf, int sender)
 			Restore_barrier.phase = RESTORE_RELEASING;
 			restore_barrier_packet(RESTORE_RELEASE_ACK, sender);
 		} else if (phase == RESTORE_RUN && (Restore_barrier.phase == RESTORE_RELEASING || Restore_barrier.phase == RESTORE_DONE)) {
-			Restore_barrier.phase = RESTORE_DONE;
 			restore_barrier_packet(RESTORE_RUN_ACK, sender);
 			restore_barrier_unpause();
+			Restore_barrier.phase = RESTORE_DONE;
 		}
 	}
 }
@@ -232,7 +239,7 @@ static void restore_barrier_tick(void)
 			Restore_barrier.next_send = 0;
 		}
 		if (Restore_barrier.phase == RESTORE_RELEASING && Restore_barrier.acknowledged == Restore_barrier.required) {
-			Restore_barrier.phase = RESTORE_RUNNING;
+			Restore_barrier.phase = RESTORE_STARTING;
 			Restore_barrier.running = 1u << Player_num;
 			Restore_barrier.next_send = 0;
 		}
@@ -249,9 +256,11 @@ static void restore_barrier_tick(void)
 		if (Restore_barrier.local_loaded)
 			restore_barrier_packet(Restore_barrier.phase == RESTORE_LOADING ? RESTORE_LOADED : RESTORE_RELEASE_ACK, Restore_barrier.host);
 	} else if (Restore_barrier.phase == RESTORE_RELEASING) restore_barrier_broadcast(RESTORE_RELEASE);
-	else if (Restore_barrier.phase == RESTORE_RUNNING) {
+	else if (Restore_barrier.phase == RESTORE_STARTING || Restore_barrier.phase == RESTORE_RUNNING) {
+		/* The world stays frozen until the first RUN is sent and local release completes */
 		restore_barrier_broadcast(RESTORE_RUN);
 		restore_barrier_unpause();
+		Restore_barrier.phase = RESTORE_RUNNING;
 	}
 }
 

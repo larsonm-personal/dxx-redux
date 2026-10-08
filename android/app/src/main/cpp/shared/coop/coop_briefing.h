@@ -27,6 +27,7 @@ void coop_briefing_disarm_for_rejoin(void);
 void coop_briefing_join_run(void (*pump)(void), int (*cancelled)(void));
 void coop_briefing_run(void (*present)(int), int level);
 int coop_briefing_active(void);
+int coop_briefing_running(void);
 int coop_briefing_suppressed_for_restore(void);
 unsigned coop_briefing_presentations_started(void);
 int coop_briefing_palette_changed(void);

@@ -1890,11 +1890,13 @@ function Watch-AutomationResult {
             }
         }
 
+        # Read all matching records: -t limits unfiltered records, so noisy phones
+        # can hide automation markers emitted while a background cycle is running
         # Fallback: check logcat (include launcher/setup tags for launcher tests)
         $logArgs = if ($IsLauncherScript) {
-            @("logcat", "-d", "-t", "400", "-s", "DXX-Automate:*", "DXX-LauncherScript:*", "DXX-Setup:*")
+            @("logcat", "-d", "-s", "DXX-Automate:*", "DXX-LauncherScript:*", "DXX-Setup:*")
         } else {
-            @("logcat", "-d", "-t", "400", "-s", "DXX-Automate:*")
+            @("logcat", "-d", "-s", "DXX-Automate:*")
         }
         $log = Adb-Timeout -AdbArgs $logArgs -Seconds 5
         if ($null -eq $log) {

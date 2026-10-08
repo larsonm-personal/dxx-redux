@@ -368,6 +368,11 @@ int coop_briefing_request_launch(uint64_t generation)
 	return accepted;
 }
 
+int coop_briefing_running(void)
+{
+	return running;
+}
+
 int coop_briefing_active(void)
 {
 	return armed && (!have_state || policy.phase != COOP_PHASE_SETTLED ||
@@ -553,7 +558,9 @@ void coop_briefing_join_run(void (*pump)(void), int (*cancelled)(void))
 	skipped = unavailable = 0;
 	++presentations_started;
 	gameplay_palette_hash = palette_hash();
+#ifndef ANDROID
 	stop_time();
+#endif
 	set_screen_mode(SCREEN_MENU);
 	level_present(destination);
 	presenting = running = 0;
@@ -562,7 +569,9 @@ void coop_briefing_join_run(void (*pump)(void), int (*cancelled)(void))
 	skipped = 0;
 	restore_game_palette();
 	game_flush_inputs();
+#ifndef ANDROID
 	start_time();
+#endif
 }
 
 static void acknowledge_local(void)
@@ -703,7 +712,9 @@ void coop_briefing_run(void (*present)(int), int level)
 	gameplay_palette_hash = palette_hash();
 	last_host_packet = now_ms();
 	window_set_visible(Game_wind, 0);
+#ifndef ANDROID
 	stop_time();
+#endif
 	set_screen_mode(SCREEN_MENU);
 	waiting = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, waiting_handler, NULL);
 	if (!waiting) {
@@ -757,7 +768,9 @@ void coop_briefing_run(void (*present)(int), int level)
 	running = presenting = planning = 0;
 	update_ui();
 	game_flush_inputs();
+#ifndef ANDROID
 	start_time();
+#endif
 	if (multi_quit_game) {
 		armed = 0;
 		if (Game_wind) window_close(Game_wind);

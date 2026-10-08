@@ -97,6 +97,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_pause.h"
 #include "android_music_control.h"
 #include "android_idle_saver.h"
 #include "android_profile.h"
@@ -410,8 +411,17 @@ void start_time()
 
 int game_is_time_paused(void)
 {
+#ifdef __ANDROID__
+	return android_pause_simulation_paused();
+#else
 	return time_paused != 0;
+#endif
 }
+
+#ifdef __ANDROID__
+int android_pause_legacy_depth(void) { return time_paused; }
+void android_pause_clear_legacy(void) { time_paused = 0; reset_time(); }
+#endif
 
 void game_flush_inputs()
 {
@@ -1330,12 +1340,9 @@ int game_handler(window *wind, d_event *event, void *data)
 			key_toggle_repeat(0);
 			game_flush_inputs();
 
-			if (time_paused
-#ifdef __ANDROID__
-			    && !coop_travel_blocks_gameplay() && !multi_save_transfer_paused()
+#ifndef __ANDROID__
+			if (time_paused) start_time();
 #endif
-			)
-				start_time();
 
 			if (!((Game_mode & GM_MULTI) && (Newdemo_state != ND_STATE_PLAYBACK)))
 				digi_resume_digi_sounds();
@@ -1347,8 +1354,10 @@ int game_handler(window *wind, d_event *event, void *data)
 			break;
 
 		case EVENT_WINDOW_DEACTIVATED:
+#ifndef __ANDROID__
 			if (!(((Game_mode & GM_MULTI) && (Newdemo_state != ND_STATE_PLAYBACK)) && (!Endlevel_sequence)) )
 				stop_time();
+#endif
 
 			if (!((Game_mode & GM_MULTI) && (Newdemo_state != ND_STATE_PLAYBACK)))
 				digi_pause_digi_sounds();
@@ -1458,7 +1467,7 @@ int game_handler(window *wind, d_event *event, void *data)
 				#ifdef __ANDROID__
 				android_profile_bucket_end(ANDROID_PROFILE_BUCKET_WAIT);
 				#endif
-				if (!time_paused)
+				if (!game_is_time_paused())
 				{
 					#ifdef __ANDROID__
 					android_rewind_maybe_capture_frame();
@@ -1546,6 +1555,9 @@ int game_handler(window *wind, d_event *event, void *data)
 				restore_game_menus();
 #endif
 			Game_wind = NULL;
+#ifdef __ANDROID__
+			android_pause_new_session();
+#endif
 			event_toggle_focus(0);
 			key_toggle_repeat(1);
 			break;
@@ -1575,6 +1587,9 @@ void game()
 {
 	hide_menus();
 	Game_wind = game_setup();
+#ifdef __ANDROID__
+	android_pause_new_session();
+#endif
 }
 
 //called at the end of the program

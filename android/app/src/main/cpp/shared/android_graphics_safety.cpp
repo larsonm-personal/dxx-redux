@@ -50,8 +50,7 @@ json renderer_failure;
 bool failure_notified = false;
 bool ui_foreground = true;
 bool ui_blocked = false;
-bool applying = false;    // Game-thread only; suppress recursive trial creation during restore
-bool pause_owned = false; // Game-thread only
+bool applying = false; // Game-thread only; suppress recursive trial creation during restore
 bool restore_pending = false;
 bool accepted_pending = false;
 bool preparing = false;
@@ -72,6 +71,9 @@ uint64_t preview_apply_deadline = 0;
 uint64_t preview_presented_frames = 0;
 // Game-thread frame tag; a menu/failed/recreated-surface swap cannot consume a gameplay frame
 bool main_view_rendered = false;
+bool main_view_skipped = false;
+uint64_t incomplete_presentations = 0;
+uint64_t withheld_presentations = 0;
 uint64_t rendered_generation = 0, rendered_revision = 0;
 EGLContext rendered_context = EGL_NO_CONTEXT;
 #ifdef INTROSPECT_ON
@@ -177,6 +179,8 @@ std::string state_json_locked()
 	state["first_run_trial"] = first_run_trial;
 	state["candidate_ready"] = candidate_ready;
 	state["preview_presented_frames"] = preview_presented_frames;
+	state["incomplete_presentations"] = incomplete_presentations;
+	state["withheld_presentations"] = withheld_presentations;
 	if (first_run_trial) state["capabilities"] = preview_capabilities;
 	if (first_run_trial || preview == preview_live) {
 		state["candidate_revision"] = candidate_revision;
@@ -269,14 +273,14 @@ bool apply_snapshot(const graphics_safety_snapshot &snapshot, bool persist)
 	return good;
 }
 
-void release_pause()
-{
-	if (pause_owned) {
-		start_time();
-		pause_owned = false;
-	}
-}
 } // namespace
+
+extern "C" int android_graphics_safety_blocks_simulation(void)
+{
+	std::lock_guard<std::mutex> guard(mutex);
+	return initialized && (preparing || armed || restore_pending || accepted_pending ||
+	                       (preview != preview_none && preview != preview_live));
+}
 
 extern "C" int android_graphics_safety_initialize(const char *root)
 {
@@ -316,8 +320,27 @@ extern "C" void android_graphics_safety_main_view_rendered(void)
 	rendered_revision = applied_revision;
 }
 
+extern "C" int android_graphics_safety_allow_present(void)
+{
+	if (!main_view_skipped) return 1;
+	main_view_skipped = false;
+	main_view_rendered = false;
+	std::lock_guard<std::mutex> lock(mutex);
+	++withheld_presentations;
+	debug_log(DLOG_GRAPHICS, "Graphics safety retained completed frame: trial=%llu count=%llu",
+	          (unsigned long long) active_id, (unsigned long long) withheld_presentations);
+	return 0;
+}
+
 extern "C" void android_graphics_safety_presented(int success, uint64_t generation)
 {
+	if (main_view_skipped && success) {
+		std::lock_guard<std::mutex> lock(mutex);
+		++incomplete_presentations;
+		debug_log_force(DLOG_GRAPHICS, "Graphics safety presented a skipped main view: trial=%llu preparing=%d armed=%d count=%llu",
+		                (unsigned long long) active_id, preparing, armed, (unsigned long long) incomplete_presentations);
+	}
+	main_view_skipped = false;
 	const bool gameplay = main_view_rendered && success && generation == rendered_generation &&
 	                      rendered_context != EGL_NO_CONTEXT && rendered_context == eglGetCurrentContext();
 	main_view_rendered = false;
@@ -364,10 +387,6 @@ extern "C" void android_graphics_safety_presented(int success, uint64_t generati
 		offer = true;
 	}
 	if (offer) {
-		if (!pause_owned) {
-			stop_time();
-			pause_owned = true;
-		}
 		notify();
 	}
 }
@@ -642,7 +661,6 @@ extern "C" void android_graphics_safety_event_tick(void)
 		return;
 	}
 	if (accepted) {
-		release_pause();
 		notify();
 	}
 	if (restore) {
@@ -650,7 +668,6 @@ extern "C" void android_graphics_safety_event_tick(void)
 		const bool durable = graphics_safety_decide(files_root.c_str(), restore_id, 0, now_ms(), "restore_retry") == 2;
 		const bool good = durable && apply_snapshot(target, false) && graphics_safety_complete_restore(files_root.c_str(), restore_id);
 		if (good) {
-			release_pause();
 			{
 				std::lock_guard<std::mutex> lock(mutex);
 				restore_pending = false;
@@ -663,10 +680,10 @@ extern "C" void android_graphics_safety_event_tick(void)
 	}
 }
 
-extern "C" int android_graphics_safety_before_main_view(void)
+static int prepare_main_view(void)
 {
 	graphics_safety_snapshot candidate;
-	bool apply = false, persist = false, show = false, trial_active = false, live_started = false, pause_trial = false;
+	bool apply = false, persist = false, show = false, trial_active = false, live_started = false;
 	uint64_t revision = 0, unchanged_preview = 0;
 	{
 		std::lock_guard<std::mutex> lock(mutex);
@@ -763,7 +780,6 @@ extern "C" int android_graphics_safety_before_main_view(void)
 			}
 			std::memset(queued, 0, sizeof(queued));
 		}
-		pause_trial = trial_active && preview != preview_live;
 	}
 	// Start the independent UI watchdog before a renderer call can stall
 	if (live_started) notify();
@@ -774,10 +790,6 @@ extern "C" int android_graphics_safety_before_main_view(void)
 	if (show) {
 		notify();
 		return 0;
-	}
-	if (pause_trial && !pause_owned && !(Game_mode & GM_MULTI)) {
-		stop_time();
-		pause_owned = true;
 	}
 	if ((apply || persist) && !apply_snapshot(candidate, persist)) {
 		android_graphics_safety_renderer_failed("apply_or_persist_failed");
@@ -810,6 +822,13 @@ extern "C" int android_graphics_safety_before_main_view(void)
 	}
 #endif
 	return 1;
+}
+
+extern "C" int android_graphics_safety_before_main_view(void)
+{
+	const int render = prepare_main_view();
+	main_view_skipped = !render;
+	return render;
 }
 
 #ifdef INTROSPECT_ON

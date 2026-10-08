@@ -62,6 +62,9 @@
         "expect": {
             "in_game": "true",
             "egl_window_generation": { "gte": 4 },
+            "pause.simulation_paused": "true",
+            "pause.input_allowed": "false",
+            "pause.reasons": "2",
             "android_lifecycle.observed_visibility": "foreground",
             "android_lifecycle.checkpoint_state": "committed",
             "android_lifecycle.suspend_state": "running",
@@ -78,6 +81,9 @@
         "expect": {
             "in_game": "true",
             "egl_window_generation": { "gte": 6 },
+            "pause.simulation_paused": "true",
+            "pause.input_allowed": "false",
+            "pause.reasons": "2",
             "android_lifecycle.observed_visibility": "foreground",
             "android_lifecycle.checkpoint_state": "committed",
             "android_lifecycle.suspend_state": "running",

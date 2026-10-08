@@ -564,6 +564,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pause.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_idle_saver.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp
@@ -750,6 +751,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_window_introspect_accessors.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_lifecycle_diagnostics.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_pause.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_idle_saver.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate_weapon_art.cpp

@@ -59,7 +59,9 @@ static void put64(unsigned char *p, uint64_t v)
 
 void coop_endgame_reset(void)
 {
+#ifndef ANDROID
 	if (pause_owned) start_time();
+#endif
 	initialized = active = released = phase = pumping = pause_owned = 0;
 	participants = ready = acknowledged = 0;
 	last_send = 0;
@@ -237,7 +239,9 @@ void coop_endgame_begin(void)
 	active = 1;
 	if (phase == RELEASED) released = 1;
 	window_set_visible(Game_wind, 0);
+#ifndef ANDROID
 	stop_time();
+#endif
 	pause_owned = 1;
 	put32(results[Player_num], (uint32_t) Players[Player_num].score);
 	put32(results[Player_num] + 4, (uint32_t) Players[Player_num].net_killed_total);

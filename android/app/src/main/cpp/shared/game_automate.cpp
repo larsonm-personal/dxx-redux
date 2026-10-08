@@ -55,6 +55,7 @@ extern "C" {
 #include "graphics_config_transaction.h"
 #ifdef ANDROID
 #include "android_graphics_safety.h"
+#include "android_pause.h"
 #include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
 #include "android_egl_surface.h"
@@ -6096,7 +6097,7 @@ extern "C" void game_automate_tick(void)
 				} else if (s.value == "quick_load") {
 					meta_action_dispatch(META_QUICK_LOAD, 1);
 				} else if (s.value == "game_menu") {
-					g_android_open_game_menu = 1;
+					android_pause_queue_action(ANDROID_PAUSE_OPEN_MENU);
 
 #ifdef NETWORK
 				} else if (s.value == "netgame_info") {
@@ -6104,6 +6105,32 @@ extern "C" void game_automate_tick(void)
 #endif
 				} else if (s.value == "pause") {
 					do_game_pause();
+				} else if (s.value == "resume") {
+					android_pause_queue_action(ANDROID_PAUSE_RESUME);
+				} else if (s.value == "orphan_pause") {
+					stop_time();
+					stop_time();
+				} else if (s.value == "pause_operation_probe") {
+					stop_time();
+					android_pause_queue_action(ANDROID_PAUSE_RESUME);
+					android_pause_tick();
+					android_pause_snapshot state;
+					android_pause_get_snapshot(&state);
+					const bool protected_operation = state.result == ANDROID_PAUSE_REJECTED && state.legacy_depth == 1;
+					start_time();
+					if (!protected_operation) {
+						stop_script_fail("Resume cleared a live operation");
+						break;
+					}
+				} else if (s.value == "pause_stale_probe") {
+					android_pause_snapshot state;
+					android_pause_get_snapshot(&state);
+					if (android_pause_publish_ui(state.ui_owner + 1, state.session, state.ui_revision + 1, 1) ||
+					    android_pause_publish_ui(state.ui_owner, state.session + 1, state.ui_revision + 1, 1) ||
+					    android_pause_request(state.ui_owner, state.session + 1, state.ui_revision + 1, 0, ANDROID_PAUSE_RESUME)) {
+						stop_script_fail("Pause accepted stale activity/session state");
+						break;
+					}
 				} else if (s.value == "overlay_pause") {
 					if (!android_open_overlay_pause_if_safe()) {
 						stop_script_fail("android_game_request: overlay pause rejected");

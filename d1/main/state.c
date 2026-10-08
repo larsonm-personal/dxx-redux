@@ -65,6 +65,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ai.h"
 #include "state.h"
 #include "android_crash_handler.h"
+#ifdef __ANDROID__
+#include "android_pause.h"
+#endif
 #include "collide.h"
 #include "multi.h"
 #include "gr.h"
@@ -2202,6 +2205,7 @@ int state_restore_all_sub(char *filename)
 		debug_log_force(DLOG_COOP_DESYNC, "restore menu request armed: level=%d mode=%x window=%p", Current_level_num, Game_mode, (void *) Game_wind);
 	}
 	android_restore_finished(result, Game_wind && window_is_visible(Game_wind));
+	if (result) android_pause_new_session();
 	return result;
 }
 static int state_restore_all_sub_impl(char *filename, int *world_changed)

@@ -151,7 +151,6 @@ internal class GraphicsConfirmationOverlay(
         scroll.isScrollbarFadingEnabled = false
         panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
         footer.apply {
-            text = "Change later in Settings > Video Info or the launcher's Graphics page"
             textSize = 14f
             setTextColor(PauseOverlayStyle.SECONDARY_TEXT_COLOR)
             setPadding(0, 0, 0, dp(4))
@@ -264,7 +263,11 @@ internal class GraphicsConfirmationOverlay(
             },
         )
         choices.visibility = if (editing) View.VISIBLE else View.GONE
-        footer.visibility = if (editing) View.VISIBLE else View.GONE
+        footer.visibility = if (editing || preparing || phase == "challenge") View.VISIBLE else View.GONE
+        footer.textSize = if (editing) 14f else 18f
+        footer.typeface = if (editing) Typeface.DEFAULT else Typeface.DEFAULT_BOLD
+        footer.gravity = if (editing) Gravity.START else Gravity.CENTER
+        if (editing) footer.text = "Change later in Settings > Video Info or the launcher's Graphics page"
         choices.update(state, previewSelection)
         ok.text = if (editing) "Done" else "OK"
         if (editing) {
@@ -278,6 +281,7 @@ internal class GraphicsConfirmationOverlay(
             details.text = changedSettings(state)
         }
         deadline = state.optLong("deadline_ms")
+        if (preparing || phase == "challenge") updateCountdown()
         ok.isEnabled = phase == "editing" || (phase == "challenge" && state.optBoolean("candidate_ready", true))
         cancel.isEnabled = !restoring
         updateSelection()
@@ -340,7 +344,6 @@ internal class GraphicsConfirmationOverlay(
                 }
                 if (!restoring && deadline > 0L) {
                     val remaining = deadline - now
-                    cancel.text = "Cancel (${ceil(remaining.coerceAtLeast(0L) / 1000.0).toInt()})"
                     if (remaining <= 0L) choose(false, "timeout")
                 }
                 if (restoring && now - restoreStarted >= restoreTimeoutMs) {
@@ -352,6 +355,13 @@ internal class GraphicsConfirmationOverlay(
                 }
             }
         }
+
+    private fun updateCountdown() {
+        val seconds =
+            if (preparing) 5 else ceil((deadline - SystemClock.elapsedRealtime()).coerceAtLeast(0L) / 1000.0).toInt()
+        cancel.text = "Cancel ($seconds)"
+        footer.text = "Reverting in $seconds ${if (seconds == 1) "second" else "seconds"}"
+    }
 
     private fun choose(
         accept: Boolean,

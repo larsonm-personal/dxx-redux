@@ -6,10 +6,13 @@
 extern "C" {
 #endif
 int android_graphics_safety_initialize(const char *root);
+int android_graphics_safety_blocks_simulation(void);
 void android_graphics_safety_shutdown(void);
 void android_graphics_safety_first_run_marker(const char *path);
 /* Game-thread completed main view, consumed by its EGL presentation */
 void android_graphics_safety_main_view_rendered(void);
+/* Game-thread swap gate; retain the last complete frame when the main draw was skipped */
+int android_graphics_safety_allow_present(void);
 void android_graphics_safety_presented(int success, uint64_t generation);
 int android_graphics_safety_preview_ready(uint64_t id);
 int android_graphics_safety_preview_option(uint64_t id, const char *name, int value);

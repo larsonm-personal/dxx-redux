@@ -58,6 +58,9 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "inferno.h"
 #include "dxxerror.h"
 #include "game.h"
+#ifdef __ANDROID__
+#include "android_pause.h"
+#endif
 #include "segment.h"		//for Side_to_verts
 #include "u_mem.h"
 #include "screens.h"
@@ -672,8 +675,13 @@ game_event_loop:
 	       && !route_confirmation_desktop_should_exit()
 #endif
 	)
+	{
+#ifdef __ANDROID__
+		android_pause_outer_tick();
+#endif
 		// Send events to windows and the default handler
 		event_process();
+	}
 	
 	// Tidy up - avoids a crash on exit
 	{

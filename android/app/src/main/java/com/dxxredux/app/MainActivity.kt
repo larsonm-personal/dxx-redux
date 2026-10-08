@@ -654,21 +654,26 @@ class MainActivity :
 
     external fun nativeSetDifficulty(difficulty: Int): Boolean
 
-    external fun nativeOpenSinglePlayerPauseIfSafe(): Boolean
+    external fun nativeAttachPauseUi(): Long
 
-    external fun nativeOpenOverlayPauseIfSafe(): Boolean
+    external fun nativeDetachPauseUi(owner: Long)
 
-    external fun nativeCloseOverlayPauseIfOwned(): Boolean
+    external fun nativePublishPauseUi(
+        owner: Long,
+        session: Long,
+        revision: Long,
+        modals: Int,
+    ): Boolean
 
-    external fun nativeClosePauseIfFront(): Boolean
+    external fun nativeRequestPauseAction(
+        owner: Long,
+        session: Long,
+        revision: Long,
+        modals: Int,
+        action: Int,
+    ): Long
 
-    external fun nativeIsGamePaused(): Boolean
-
-    external fun nativeOpenSaveMenuIfSafe(): Boolean
-
-    external fun nativeOpenLoadMenuIfSafe(): Boolean
-
-    external fun nativeOpenGameMenuIfSafe(): Boolean
+    external fun nativeGetPauseState(): LongArray
 
     // â”€â”€ Music track control (android_music_control.c) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     external fun nativeNextTrack(): Int
@@ -929,7 +934,13 @@ class MainActivity :
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
-    private var adminTrayPausedGame = false
+    private var pauseState = PauseState()
+    private var pauseUiOwner = 0L
+    private var pauseUiSession = -1L
+    private var pauseUiRevision = 0L
+    private var pauseUiModals = -1
+    private var pauseUiTransition = false
+    private var pauseRequest = 0L
     private var adminTrayCloseGraceUntilMs = 0L
     private var isMultiplayerGame = false
     private var mainViewFovLockedToBase = false
@@ -1392,8 +1403,8 @@ class MainActivity :
         touchOverlay.cheatCodeCallback = { code ->
             for (ch in code) nativeTextInput(ch.code)
         }
-        touchOverlay.adminTrayOpenedCallback = { syncAdminTrayPause(open = true) }
-        touchOverlay.adminTrayClosedCallback = { syncAdminTrayPause(open = false) }
+        touchOverlay.adminTrayOpenedCallback = { publishPauseUi() }
+        touchOverlay.adminTrayClosedCallback = { publishPauseUi() }
         touchOverlay.pauseResumeCallback = { resumePausedGameFromOverlay() }
         touchOverlay.adminTrayBrightnessProvider = {
             try {
@@ -2814,48 +2825,76 @@ class MainActivity :
         }
     }
 
-    private fun syncAdminTrayPause(open: Boolean) {
-        val shouldPause =
-            open ||
-                shouldKeepOverlayPause(
-                    adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-                    musicPanelVisible = musicPanel != null,
-                    quickLoadPromptVisible = quickLoadDialog != null,
-                )
-        if (shouldPause) {
-            adminTrayCloseGraceUntilMs = 0L
-            if (adminTrayPausedGame) return
-            adminTrayPausedGame =
-                try {
-                    nativeOpenOverlayPauseIfSafe()
-                } catch (_: Exception) {
-                    false
-                }
-            return
-        }
+    private fun currentPauseModals(): Int =
+        (if (touchOverlay.isAdminTrayOpen()) PauseState.TRAY else 0) or
+            (if (musicPanel != null) PauseState.MUSIC else 0) or
+            (if (quickLoadDialog != null) PauseState.QUICK_LOAD_PROMPT else 0)
 
-        if (!adminTrayPausedGame) return
-        try {
-            nativeCloseOverlayPauseIfOwned()
-        } catch (_: Exception) {
+    private fun publishPauseUi() {
+        if (!gameStarted || pauseUiTransition || pauseUiOwner == 0L || pauseUiSession < 0) return
+        val modals = currentPauseModals()
+        if (modals != pauseUiModals) {
+            if (modals == 0) {
+                adminTrayCloseGraceUntilMs = android.os.SystemClock.uptimeMillis() + ADMIN_TRAY_CLOSE_GRACE_MS
+            } else {
+                adminTrayCloseGraceUntilMs = 0L
+            }
+            pauseUiModals = modals
+            pauseUiRevision++
         }
-        adminTrayPausedGame = false
-        adminTrayCloseGraceUntilMs = android.os.SystemClock.uptimeMillis() + ADMIN_TRAY_CLOSE_GRACE_MS
+        nativePublishPauseUi(pauseUiOwner, pauseUiSession, pauseUiRevision, modals)
+    }
+
+    private fun readPauseState(): PauseState {
+        if (pauseUiOwner == 0L) pauseUiOwner = nativeAttachPauseUi()
+        val state = PauseState.fromNative(nativeGetPauseState())
+        if (state.session != pauseUiSession) {
+            pauseUiTransition = true
+            try {
+                if (pauseUiSession >= 0) {
+                    quickLoadDialog?.dismiss()
+                    closeControllerSettingsStack()
+                    touchOverlay.closeAdminTray()
+                }
+                pauseUiSession = state.session
+                pauseUiRevision = 0L
+                pauseUiModals = -1
+            } finally {
+                pauseUiTransition = false
+            }
+        }
+        pauseState = state
+        // Full-state reconciliation repairs missed close callbacks without owning a counter
+        publishPauseUi()
+        return state
+    }
+
+    private fun requestPauseAction(action: Int): Boolean {
+        if (!gameStarted || pauseUiOwner == 0L || pauseUiSession < 0) return false
+        pauseUiTransition = true
+        try {
+            quickLoadDialog?.dismiss()
+            closeControllerSettingsStack()
+            touchOverlay.closeAdminTray()
+            pauseUiModals = currentPauseModals()
+            pauseUiRevision++
+            // Publish the final UI state and the native action in one mailbox transaction
+            pauseRequest =
+                nativeRequestPauseAction(
+                    pauseUiOwner,
+                    pauseUiSession,
+                    pauseUiRevision,
+                    pauseUiModals,
+                    action,
+                )
+            return pauseRequest != 0L
+        } finally {
+            pauseUiTransition = false
+        }
     }
 
     private fun resumePausedGameFromOverlay() {
-        if (touchOverlay.isAdminTrayOpen()) {
-            touchOverlay.closeAdminTray()
-            return
-        }
-        try {
-            if (nativeCloseOverlayPauseIfOwned()) {
-                adminTrayPausedGame = false
-                return
-            }
-            nativeClosePauseIfFront()
-        } catch (_: Exception) {
-        }
+        requestPauseAction(PauseState.RESUME)
     }
 
     private fun isAdminTrayCloseGraceActive(nowMs: Long = android.os.SystemClock.uptimeMillis()): Boolean =
@@ -2889,13 +2928,7 @@ class MainActivity :
     }
 
     private fun openSaveLoadMenu(openSave: Boolean) {
-        val opened =
-            try {
-                if (openSave) nativeOpenSaveMenuIfSafe() else nativeOpenLoadMenuIfSafe()
-            } catch (_: Exception) {
-                false
-            }
-        if (opened) adminTrayPausedGame = false
+        requestPauseAction(if (openSave) PauseState.OPEN_SAVE else PauseState.OPEN_LOAD)
     }
 
     private fun requestQuickSave() {
@@ -2904,14 +2937,7 @@ class MainActivity :
 
     private fun showQuickLoadPrompt() {
         if (quickLoadDialog?.isShowing == true) return
-        val alreadyPaused =
-            try {
-                nativeIsGamePaused()
-            } catch (_: Exception) {
-                false
-            }
-        if (!alreadyPaused) syncAdminTrayPause(open = true)
-        if (!alreadyPaused && !adminTrayPausedGame) return
+        if (!pauseState.hasGame) return
 
         val density = resources.displayMetrics.density
         val card =
@@ -2997,14 +3023,16 @@ class MainActivity :
         dialog.setCanceledOnTouchOutside(true)
         no.setOnClickListener { dialog.dismiss() }
         yes.setOnClickListener {
-            NativeMetaActions.nativeMetaAction(TouchBindings.META_QUICK_LOAD, 1)
-            dialog.dismiss()
+            requestPauseAction(PauseState.QUICK_LOAD)
         }
         dialog.setOnDismissListener {
-            if (quickLoadDialog === dialog) quickLoadDialog = null
-            syncAdminTrayPause(open = false)
+            if (quickLoadDialog === dialog) {
+                quickLoadDialog = null
+                publishPauseUi()
+            }
         }
         quickLoadDialog = dialog
+        publishPauseUi()
         dialog.show()
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -3028,37 +3056,10 @@ class MainActivity :
     }
 
     private fun openGameMenuFromControllerSettings() {
-        val pauseWindowOwnedByTray = adminTrayPausedGame
-        if (pauseWindowOwnedByTray) adminTrayPausedGame = false
-        closeControllerSettingsStack()
-        if (!openGameMenuSafely() && pauseWindowOwnedByTray) {
-            try {
-                nativeCloseOverlayPauseIfOwned()
-            } catch (_: Exception) {
-            }
-        }
+        openGameMenuSafely()
     }
 
-    private fun openGameMenuSafely(): Boolean {
-        if (adminTrayPausedGame) {
-            try {
-                nativeCloseOverlayPauseIfOwned()
-            } catch (_: Exception) {
-            }
-            adminTrayPausedGame = false
-        }
-        val opened =
-            try {
-                nativeOpenGameMenuIfSafe()
-            } catch (_: Exception) {
-                false
-            }
-        if (opened) return true
-
-        nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
-        nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
-        return false
-    }
+    private fun openGameMenuSafely(): Boolean = requestPauseAction(PauseState.OPEN_MENU)
 
     private fun startOverlayPolling() {
         overlayPoller.removeCallbacksAndMessages(null)
@@ -3079,7 +3080,8 @@ class MainActivity :
                                     musicPanel != null ||
                                     gameSurfaceView.keyboardActive,
                             )
-                            val inGame = nativeIsInGame()
+                            val pause = readPauseState()
+                            val inGame = pause.gameFront
                             profileInGame = inGame
                             val automap =
                                 try {
@@ -3128,12 +3130,7 @@ class MainActivity :
                             menuInteractionOverlay.showBack = menuOverlayActive
                             menuInteractionOverlay.keyboardActive = gameSurfaceView.keyboardActive
                             menuInteractionOverlay.bottomInsetPx = sampleVisibleKeyboardHeightPx()
-                            val gamePaused =
-                                try {
-                                    nativeIsGamePaused()
-                                } catch (_: Exception) {
-                                    false
-                                }
+                            val gamePaused = pause.simulationPaused
                             val demoRecording =
                                 try {
                                     nativeIsDemoRecordingActive()
@@ -3144,7 +3141,7 @@ class MainActivity :
                             val settingsTrayVisible =
                                 settingsTrayVisibleForOverlay(
                                     adminTrayOpen = touchOverlay.isAdminTrayOpen(),
-                                    adminTrayPausedGame = adminTrayPausedGame,
+                                    adminTrayPausedGame = pause.reasons and PauseState.UI != 0,
                                     adminTrayCloseGraceActive = isAdminTrayCloseGraceActive(nowMs),
                                 )
                             val controllerMenuOpen = touchOverlay.isControllerMenuOpen()
@@ -3164,7 +3161,7 @@ class MainActivity :
                                     gamePaused = gamePaused,
                                 )
                             val wasActive = touchOverlay.isActive
-                            touchOverlay.updateGamePausedState(gamePaused)
+                            touchOverlay.updateGamePausedState(gamePaused, pause.canResume, pause.hint)
                             touchOverlay.enhancedGuidebotRouting = nativeGuidebotRoutingIsEnhanced()
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
@@ -3329,7 +3326,22 @@ class MainActivity :
                         .put("skip_button_label", skipButton.label)
                         .put("controller_menu_open", touchOverlay.isControllerMenuOpen())
                         .put("admin_tray_open", touchOverlay.isAdminTrayOpen())
-                        .put("graphics_confirmation_shown", graphicsConfirmationOverlay?.isShown == true)
+                        .put("music_panel_open", musicPanel != null)
+                        .put(
+                            "pause",
+                            JSONObject()
+                                .put("session", pauseState.session)
+                                .put("reasons", pauseState.reasons)
+                                .put("simulation_paused", pauseState.simulationPaused)
+                                .put("input_allowed", pauseState.inputAllowed)
+                                .put("can_resume", pauseState.canResume)
+                                .put("ui_owner", pauseUiOwner)
+                                .put("ui_revision", pauseUiRevision)
+                                .put("ui_modals", currentPauseModals())
+                                .put("request", pauseRequest)
+                                .put("ack_request", pauseState.request)
+                                .put("ack_result", pauseState.result),
+                        ).put("graphics_confirmation_shown", graphicsConfirmationOverlay?.isShown == true)
                         .put("graphics_confirmation_attached", graphicsConfirmationOverlay?.isAttachedToWindow == true)
                         .put("guidebot_enhanced_routing", touchOverlay.enhancedGuidebotRouting)
                         .put("guidebot_goal_bindings", org.json.JSONArray(touchOverlay.visibleRadialBindings("Guide")))
@@ -3388,6 +3400,55 @@ class MainActivity :
                 if (!gameStarted) return
                 val cmd = intent.getStringExtra("command") ?: return
                 when (cmd) {
+                    "pause_ui" -> {
+                        when (intent.getStringExtra("value")) {
+                            "tray_open" -> {
+                                touchOverlay.openAdminTray()
+                            }
+
+                            "tray_close" -> {
+                                touchOverlay.closeAdminTray()
+                            }
+
+                            "music_open" -> {
+                                showMusicPanel()
+                            }
+
+                            "music_close" -> {
+                                dismissMusicPanel()
+                            }
+
+                            "quick_load_open" -> {
+                                showQuickLoadPrompt()
+                            }
+
+                            "quick_load_close" -> {
+                                quickLoadDialog?.dismiss()
+                            }
+
+                            "resume" -> {
+                                resumePausedGameFromOverlay()
+                            }
+
+                            "menu" -> {
+                                requestPauseAction(PauseState.OPEN_MENU)
+                            }
+
+                            "save" -> {
+                                requestPauseAction(PauseState.OPEN_SAVE)
+                            }
+
+                            "load" -> {
+                                requestPauseAction(PauseState.OPEN_LOAD)
+                            }
+
+                            "missed_music_close" -> {
+                                musicPanel?.let { (gameSurfaceView.parent as? FrameLayout)?.removeView(it) }
+                                musicPanel = null // Deliberately omit publication; polling must reconcile
+                            }
+                        }
+                    }
+
                     "recreate_activity" -> {
                         Log.i(
                             "DXX-Lifecycle",
@@ -3475,12 +3536,9 @@ class MainActivity :
         quickLoadDialog?.setOnDismissListener(null)
         quickLoadDialog?.dismiss()
         quickLoadDialog = null
-        if (adminTrayPausedGame) {
-            try {
-                nativeCloseOverlayPauseIfOwned()
-            } catch (_: Exception) {
-            }
-            adminTrayPausedGame = false
+        if (pauseUiOwner != 0L) {
+            nativeDetachPauseUi(pauseUiOwner)
+            pauseUiOwner = 0L
         }
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
         routeMetadataJob?.cancel()
@@ -4746,18 +4804,18 @@ class MainActivity :
     private fun showMusicPanel() {
         videoInfoOverlay?.hide()
         if (musicPanel != null) return // already showing
-        syncAdminTrayPause(true)
         val panel =
             MusicControlPanel(this, {
                 musicPanel?.let { mp ->
                     (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
                 }
                 musicPanel = null
-                syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
+                publishPauseUi()
             }, {
                 scheduleMusicStateRefresh()
             })
         musicPanel = panel
+        publishPauseUi()
         val frame = gameSurfaceView.parent as? FrameLayout ?: return
         frame.addView(
             panel,
@@ -4798,7 +4856,7 @@ class MainActivity :
             (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
         }
         musicPanel = null
-        syncAdminTrayPause(touchOverlay.isAdminTrayOpen())
+        publishPauseUi()
     }
 
     // â”€â”€ Overlay toast lines (multi-line, each fades independently) â”€â”€

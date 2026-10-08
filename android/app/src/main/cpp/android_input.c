@@ -24,6 +24,7 @@
 #include "android_lifecycle_actions.h"
 #include "android_idle_saver.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_pause.h"
 #include "android_menu_scale.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
@@ -155,7 +156,6 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint action, jint androidKeyCode,
                                                   jint unicodeChar);
-static void inject_key_tap(SDLKey sym);
 static int android_cutscene_tap_suppressed(void);
 static int android_any_joy_button_down(void);
 static void android_update_cutscene_release_gate(void);
@@ -963,65 +963,15 @@ extern void android_surface_resume(void);
 extern int (*window_get_callback(window *wind))(window *, d_event *, void *);
 extern int pause_handler(window *wind, d_event *event, char *msg);
 
-static void inject_key_tap(SDLKey sym)
-{
-	SDL_Event ev;
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_KEYDOWN;
-	ev.key.state = SDL_PRESSED;
-	ev.key.keysym.sym = sym;
-	ev.key.keysym.mod = KMOD_NONE;
-	ev.key.keysym.unicode = 0;
-	SDL_PushEvent(&ev);
-
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_KEYUP;
-	ev.key.state = SDL_RELEASED;
-	ev.key.keysym.sym = sym;
-	ev.key.keysym.mod = KMOD_NONE;
-	ev.key.keysym.unicode = 0;
-	SDL_PushEvent(&ev);
-}
-
-static int is_pause_window_front(void)
-{
-	window *front;
-	int (*callback)(window *, d_event *, void *);
-
-	front = window_get_front();
-	if (!front || front == Game_wind)
-		return 0;
-
-	callback = window_get_callback(front);
-	return callback == (int (*)(window *, d_event *, void *)) pause_handler;
-}
-
-static volatile int g_android_overlay_time_paused = 0;
-
+/* Automation invokes the same engine-thread action dispatcher as the UI */
 int android_queue_saveload_request(int save_request)
 {
-	window *front;
+	return android_pause_queue_action(save_request ? ANDROID_PAUSE_OPEN_SAVE : ANDROID_PAUSE_OPEN_LOAD);
+}
 
-	if (!Game_wind) {
-		LOGI("nativeOpen%sMenuIfSafe: not in gameplay", save_request ? "Save" : "Load");
-		return 0;
-	}
-
-	front = window_get_front();
-	if (front != Game_wind && !is_pause_window_front()) {
-		LOGI("nativeOpen%sMenuIfSafe: unsupported front window", save_request ? "Save" : "Load");
-		return 0;
-	}
-
-	g_android_open_save_menu = save_request ? 1 : 0;
-	g_android_open_load_menu = save_request ? 0 : 1;
-	/* The save/load menu owns its own engine pause; transfer the Kotlin
-	 * overlay's pause instead of leaving an unmatched stop_time() behind */
-	if (g_android_overlay_time_paused) {
-		start_time();
-		g_android_overlay_time_paused = 0;
-	}
-	return 1;
+int android_open_overlay_pause_if_safe(void)
+{
+	return android_pause_debug_overlay();
 }
 
 static void android_log_autosave_gate(const char *event)
@@ -1065,6 +1015,7 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	LOGI("nativeOnPause - background requested");
 }
 
+static uint64_t g_android_resume_menu_session;
 static int g_android_multiplayer_dormancy_timeout_requested;
 static int g_android_multiplayer_dormancy_disconnect_pending;
 static int g_android_multiplayer_session_started;
@@ -1172,6 +1123,13 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			return;
 
 		if (visibility == ANDROID_LIFECYCLE_VISIBILITY_FOREGROUND) {
+			if (g_android_resume_menu_session) {
+				struct android_pause_snapshot state;
+				android_pause_get_snapshot(&state);
+				if (state.session == g_android_resume_menu_session)
+					android_pause_queue_action(ANDROID_PAUSE_OPEN_MENU);
+				g_android_resume_menu_session = 0;
+			}
 			/* Launcher edits must reach the running engine, not only Kotlin input maps */
 			extern int android_reload_live_gamepad_config(void);
 			if (has_game_window && android_reload_live_gamepad_config())
@@ -1203,8 +1161,10 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			               ? ANDROID_LIFECYCLE_CHECKPOINT_SKIPPED
 			               : ANDROID_LIFECYCLE_CHECKPOINT_FAILED));
 			if (game_window_is_front) {
-				android_log_autosave_gate("pause-inject-escape");
-				inject_key_tap(SDLK_ESCAPE);
+				struct android_pause_snapshot state;
+				android_pause_get_snapshot(&state);
+				g_android_resume_menu_session = state.session;
+				android_log_autosave_gate("pause-schedule-menu");
 			} else {
 				android_log_autosave_gate("pause-window-already-open");
 			}
@@ -1226,15 +1186,15 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			return;
 		}
 
-		stop_time();
+		android_pause_publish();
 		if (android_lifecycle_diagnostics_park_until_wake(generation) ==
 		    ANDROID_LIFECYCLE_WAKE_EXTERNAL) {
-			start_time();
+			android_pause_publish();
 			android_lifecycle_diagnostics_set_suspend_state(
 			    ANDROID_LIFECYCLE_SUSPEND_RUNNING);
 			return;
 		}
-		start_time();
+		android_pause_publish();
 	}
 }
 
@@ -1264,110 +1224,45 @@ Java_com_dxxredux_app_MainActivity_nativeInitializeDormancyDiagnostics(
 	    ANDROID_LIFECYCLE_REASON_ACTIVITY_RESUME);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeOpenSinglePlayerPauseIfSafe(JNIEnv *env, jobject thiz)
+JNIEXPORT jlong JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAttachPauseUi(JNIEnv *env, jobject thiz)
 {
-	if (!Game_wind || Screen_mode != SCREEN_GAME) {
-		LOGI("nativeOpenSinglePlayerPauseIfSafe: not in live gameplay");
-		return JNI_FALSE;
-	}
-	if (Game_mode & GM_MULTI) {
-		LOGI("nativeOpenSinglePlayerPauseIfSafe: multiplayer active");
-		return JNI_FALSE;
-	}
-	if (window_get_front() != Game_wind) {
-		LOGI("nativeOpenSinglePlayerPauseIfSafe: menu already open");
-		return JNI_FALSE;
-	}
-	inject_key_tap(SDLK_PAUSE);
-	return JNI_TRUE;
+	return (jlong) android_pause_attach_ui();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeDetachPauseUi(JNIEnv *env, jobject thiz, jlong owner)
+{
+	android_pause_detach_ui((uint64_t) owner);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeOpenOverlayPauseIfSafe(JNIEnv *env, jobject thiz)
+Java_com_dxxredux_app_MainActivity_nativePublishPauseUi(JNIEnv *env, jobject thiz,
+                                                        jlong owner, jlong session, jlong revision, jint modals)
 {
-	(void) env;
-	(void) thiz;
-	return android_open_overlay_pause_if_safe() ? JNI_TRUE : JNI_FALSE;
+	return android_pause_publish_ui(owner, session, revision, modals) ? JNI_TRUE : JNI_FALSE;
 }
 
-int android_open_overlay_pause_if_safe(void)
+JNIEXPORT jlong JNICALL
+Java_com_dxxredux_app_MainActivity_nativeRequestPauseAction(JNIEnv *env, jobject thiz,
+                                                            jlong owner, jlong session, jlong revision, jint modals, jint action)
 {
-	if (g_android_overlay_time_paused)
-		return 1;
-	if (!Game_wind || Screen_mode != SCREEN_GAME) {
-		LOGI("nativeOpenOverlayPauseIfSafe: not in live gameplay");
-		return 0;
-	}
-	if (Game_mode & GM_MULTI) {
-		LOGI("nativeOpenOverlayPauseIfSafe: multiplayer active");
-		return 0;
-	}
-	if (window_get_front() != Game_wind) {
-		LOGI("nativeOpenOverlayPauseIfSafe: menu already open");
-		return 0;
-	}
-	stop_time();
-	g_android_overlay_time_paused = 1;
-	return 1;
+	return (jlong) android_pause_request(owner, session, revision, modals, action);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeCloseOverlayPauseIfOwned(JNIEnv *env, jobject thiz)
+JNIEXPORT jlongArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetPauseState(JNIEnv *env, jobject thiz)
 {
-	if (!g_android_overlay_time_paused)
-		return JNI_FALSE;
-	start_time();
-	g_android_overlay_time_paused = 0;
-	return JNI_TRUE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeClosePauseIfFront(JNIEnv *env, jobject thiz)
-{
-	if (!Game_wind || (Game_mode & GM_MULTI) || !is_pause_window_front())
-		return JNI_FALSE;
-
-	inject_key_tap(SDLK_PAUSE);
-	return JNI_TRUE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeIsGamePaused(JNIEnv *env, jobject thiz)
-{
-	(void) env;
-	(void) thiz;
-	if (!Game_wind || (Game_mode & GM_MULTI))
-		return JNI_FALSE;
-	return (g_android_overlay_time_paused || is_pause_window_front()) ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeOpenSaveMenuIfSafe(JNIEnv *env, jobject thiz)
-{
-	return android_queue_saveload_request(1) ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeOpenLoadMenuIfSafe(JNIEnv *env, jobject thiz)
-{
-	return android_queue_saveload_request(0) ? JNI_TRUE : JNI_FALSE;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_dxxredux_app_MainActivity_nativeOpenGameMenuIfSafe(JNIEnv *env, jobject thiz)
-{
-	window *front;
-
-	if (!Game_wind || Screen_mode != SCREEN_GAME)
-		return JNI_FALSE;
-
-	front = window_get_front();
-	if (front != Game_wind && !is_pause_window_front())
-		return JNI_FALSE;
-
-	g_android_open_game_menu = 1;
-	return JNI_TRUE;
+	struct android_pause_snapshot state;
+	android_pause_get_snapshot(&state);
+	/* Keep this layout synchronized with PauseState.kt */
+	jlong values[] = { state.revision, state.session, state.ui_owner, state.ui_revision,
+		               state.request, state.repairs, state.reasons, state.simulation_paused,
+		               state.input_allowed, state.can_resume, state.has_game, state.game_front,
+		               state.result, state.legacy_depth };
+	jlongArray result = (*env)->NewLongArray(env, sizeof(values) / sizeof(values[0]));
+	if (result) (*env)->SetLongArrayRegion(env, result, 0, sizeof(values) / sizeof(values[0]), values);
+	return result;
 }
 
 /* ── In-game query ──────────────────────────────────────────
@@ -1384,7 +1279,9 @@ Java_com_dxxredux_app_MainActivity_nativeOpenGameMenuIfSafe(JNIEnv *env, jobject
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsInGame(JNIEnv *env, jobject thiz)
 {
-	return (Game_wind != NULL && Screen_mode == SCREEN_GAME && Game_wind == window_get_front()) ? JNI_TRUE : JNI_FALSE;
+	struct android_pause_snapshot state;
+	android_pause_get_snapshot(&state);
+	return state.game_front ? JNI_TRUE : JNI_FALSE;
 }
 
 /* Preserve automap flight controls, but reserve navigation in menus covering it */
