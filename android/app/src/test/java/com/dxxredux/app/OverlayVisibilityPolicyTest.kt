@@ -6,6 +6,79 @@ import org.junit.Test
 
 class OverlayVisibilityPolicyTest {
     @Test
+    fun transientScreensOverrideEveryOverlayVisibilitySource() {
+        assertFalse(
+            shouldShowTouchOverlay(
+                inGame = true,
+                overlayEnabled = true,
+                transientScreen = true,
+                automap = true,
+                controllerMenuOpen = true,
+                settingsTrayVisible = true,
+                gamePaused = true,
+            ),
+        )
+        assertFalse(
+            shouldShowPausedWarning(
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.UI),
+                transientScreen = true,
+                automap = false,
+            ),
+        )
+    }
+
+    @Test
+    fun automapKeepsNavigationWithoutPausedWarning() {
+        val warning =
+            shouldShowPausedWarning(
+                PauseState(simulationPaused = true, reasons = PauseState.MENU or PauseState.OPERATION),
+                transientScreen = false,
+                automap = true,
+            )
+        assertFalse(warning)
+        assertTrue(
+            shouldShowTouchOverlay(
+                inGame = false,
+                overlayEnabled = false,
+                transientScreen = false,
+                automap = true,
+                controllerMenuOpen = false,
+                settingsTrayVisible = false,
+                gamePaused = warning,
+            ),
+        )
+    }
+
+    @Test
+    fun nativeMenusAndOtherModalPresentationsDoNotShowGameplayPauseWarning() {
+        val states =
+            listOf(
+                PauseState(simulationPaused = true, reasons = PauseState.MENU),
+                PauseState(simulationPaused = true, reasons = PauseState.MENU or PauseState.OPERATION),
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.GRAPHICS),
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.BACKGROUND),
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.COOP),
+                PauseState(simulationPaused = false, gameFront = true),
+            )
+        for (pause in states) {
+            assertFalse(pause.toString(), shouldShowPausedWarning(pause, transientScreen = false, automap = false))
+        }
+    }
+
+    @Test
+    fun explicitUserPausesStillShowWarning() {
+        val states =
+            listOf(
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.UI),
+                PauseState(simulationPaused = true, reasons = PauseState.USER),
+                PauseState(simulationPaused = true, gameFront = true, reasons = PauseState.OPERATION),
+            )
+        for (pause in states) {
+            assertTrue(pause.toString(), shouldShowPausedWarning(pause, transientScreen = false, automap = false))
+        }
+    }
+
+    @Test
     fun trayVisibilityIncludesCloseGraceWhilePauseIsUnwinding() {
         assertTrue(
             settingsTrayVisibleForOverlay(
@@ -111,8 +184,7 @@ class OverlayVisibilityPolicyTest {
             shouldShowTouchOverlay(
                 inGame = false,
                 overlayEnabled = true,
-                playerDead = false,
-                endlevel = false,
+                transientScreen = false,
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = true,
@@ -127,8 +199,7 @@ class OverlayVisibilityPolicyTest {
             shouldShowTouchOverlay(
                 inGame = true,
                 overlayEnabled = false,
-                playerDead = false,
-                endlevel = false,
+                transientScreen = false,
                 automap = false,
                 controllerMenuOpen = true,
                 settingsTrayVisible = false,
@@ -143,8 +214,7 @@ class OverlayVisibilityPolicyTest {
             shouldShowTouchOverlay(
                 inGame = false,
                 overlayEnabled = false,
-                playerDead = false,
-                endlevel = false,
+                transientScreen = false,
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = true,
@@ -159,8 +229,7 @@ class OverlayVisibilityPolicyTest {
             shouldShowTouchOverlay(
                 inGame = false,
                 overlayEnabled = true,
-                playerDead = false,
-                endlevel = false,
+                transientScreen = false,
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = false,
@@ -175,8 +244,7 @@ class OverlayVisibilityPolicyTest {
             shouldShowTouchOverlay(
                 inGame = false,
                 overlayEnabled = false,
-                playerDead = false,
-                endlevel = false,
+                transientScreen = false,
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = false,

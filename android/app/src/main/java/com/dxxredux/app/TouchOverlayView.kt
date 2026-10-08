@@ -140,6 +140,8 @@ class TouchOverlayView
         private var gyroActiveInGame = false
         private var demoRecordingActive = false
         private var gamePaused = false
+        val isPausedWarningShown: Boolean
+            get() = isActive && isShown && gamePaused
         private var pauseCanResume = false
         private var pauseHint = ""
         private var pauseResumePointerId = -1

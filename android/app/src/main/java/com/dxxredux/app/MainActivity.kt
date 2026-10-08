@@ -65,18 +65,27 @@ internal const val EXTRA_TRANSIENT_LAUNCH_TOKEN = "transient_launch_token"
 internal fun shouldShowTouchOverlay(
     inGame: Boolean,
     overlayEnabled: Boolean,
-    playerDead: Boolean,
-    endlevel: Boolean,
+    transientScreen: Boolean,
     automap: Boolean,
     controllerMenuOpen: Boolean,
     settingsTrayVisible: Boolean,
     gamePaused: Boolean,
 ): Boolean {
-    val gameplayOverlayVisible = overlayEnabled && !playerDead && !endlevel && inGame
+    if (transientScreen) return false
+    val gameplayOverlayVisible = overlayEnabled && inGame
     val controllerOwnedOverlayVisible = controllerMenuOpen || settingsTrayVisible
     val gameplayOverlay = gameplayOverlayVisible || controllerOwnedOverlayVisible
     return gameplayOverlay || automap || gamePaused
 }
+
+internal fun shouldShowPausedWarning(
+    pause: PauseState,
+    transientScreen: Boolean,
+    automap: Boolean,
+): Boolean =
+    pause.simulationPaused && !transientScreen && !automap &&
+        (pause.gameFront || pause.reasons and PauseState.USER != 0) &&
+        pause.reasons and (PauseState.GRAPHICS or PauseState.BACKGROUND or PauseState.COOP) == 0
 
 internal const val DEFAULT_TOUCH_OVERLAY_ENABLED = true
 
@@ -3107,7 +3116,7 @@ class MainActivity :
                                     false
                                 }
                             val playerDead = screenAdvanceKind == SCREEN_ADVANCE_DEATH
-                            val endlevel = screenAdvanceKind == SCREEN_ADVANCE_ENDLEVEL
+                            val transientScreen = screenAdvanceKind != SCREEN_ADVANCE_NONE || introActive
                             val menuOverlayState =
                                 try {
                                     nativeGetMenuOverlayState()
@@ -3130,7 +3139,8 @@ class MainActivity :
                             menuInteractionOverlay.showBack = menuOverlayActive
                             menuInteractionOverlay.keyboardActive = gameSurfaceView.keyboardActive
                             menuInteractionOverlay.bottomInsetPx = sampleVisibleKeyboardHeightPx()
-                            val gamePaused = pause.simulationPaused
+                            // Simulation also pauses for presentations and native modal screens
+                            val gamePaused = shouldShowPausedWarning(pause, transientScreen, automap)
                             val demoRecording =
                                 try {
                                     nativeIsDemoRecordingActive()
@@ -3153,8 +3163,7 @@ class MainActivity :
                                 shouldShowTouchOverlay(
                                     inGame = inGame,
                                     overlayEnabled = overlayEnabled,
-                                    playerDead = playerDead,
-                                    endlevel = endlevel,
+                                    transientScreen = transientScreen,
                                     automap = automap,
                                     controllerMenuOpen = controllerMenuOpen,
                                     settingsTrayVisible = settingsTrayVisible,
@@ -3320,6 +3329,7 @@ class MainActivity :
                                 .put("width", gameSurfaceView.width)
                                 .put("height", gameSurfaceView.height),
                         ).put("touch_overlay_active", touchOverlay.isActive)
+                        .put("paused_warning_shown", touchOverlay.isPausedWarningShown)
                         .put("touch_overlay_shown", touchOverlay.isShown)
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
                         .put("skip_button_shown", skipButton.isShown)

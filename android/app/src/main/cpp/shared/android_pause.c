@@ -136,7 +136,7 @@ void android_pause_publish(void)
 	struct android_pause_snapshot next = { 0 };
 	next.reasons = android_pause_reasons();
 	next.has_game = Game_wind != NULL;
-	next.game_front = Game_wind && window_get_front() == Game_wind;
+	next.game_front = Game_wind && window_get_front() == Game_wind && Screen_mode == SCREEN_GAME;
 	next.simulation_paused = next.has_game && android_pause_simulation_paused();
 	next.input_allowed = android_pause_input_allowed();
 	next.can_resume = next.has_game &&

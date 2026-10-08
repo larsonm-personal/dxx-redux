@@ -76,6 +76,11 @@ function Paused {
     Wait-State { param($s) $s.native.pause.simulation_paused -and $s.ui.pause.simulation_paused -and
         -not $s.native.pause.input_allowed -and -not $s.ui.pause.input_allowed } 'game and overlay agree on paused state'
 }
+function Presentation {
+    param([string]$Kind)
+    Wait-State { param($s) $s.native.screen_advance_kind -eq $Kind -and
+        -not $s.ui.touch_overlay_active -and -not $s.ui.paused_warning_shown -and $s.ui.skip_button_shown } "$Kind hides gameplay controls and pause warning, preserving Skip/Continue"
+}
 try {
     foreach ($gameId in $games) {
         Device @('logcat', '-c') | Out-Null
@@ -88,6 +93,7 @@ try {
         Ui 'tray_open'
         $paused = Paused
         if (-not $paused.ui.pause.can_resume) { throw 'User overlay pause must be resumable' }
+        Wait-State { param($s) $s.ui.paused_warning_shown } 'settings pause warning remains visible' | Out-Null
         $time = $paused.native.idle_saver.game_time
         Start-Sleep -Milliseconds 500
         $later = State
@@ -105,6 +111,7 @@ try {
         Automate @(@{ action = 'set_debug'; field = 'android_game_request'; value = 'pause'; post_delay_ms = 200 })
         $paused = Paused
         if (-not $paused.ui.pause.can_resume -or ($paused.native.pause.reasons -band 4) -eq 0) { throw 'Native user pause missing from overlay' }
+        Wait-State { param($s) $s.ui.paused_warning_shown } 'native user pause warning remains visible' | Out-Null
         Ui 'resume'
         $running = Running
         if ($running.ui.pause.request -eq 0 -or $running.native.pause.result -ne 1) { throw 'Resume was not acknowledged' }
@@ -113,11 +120,36 @@ try {
         Ui 'tray_open'
         Paused | Out-Null
         Ui 'save'
-        Wait-State { param($s) $s.native.menu.subtitle -eq 'Save Game' -and -not $s.ui.pause.can_resume } 'UI-to-native save menu handoff' | Out-Null
+        Wait-State { param($s) $s.native.menu.subtitle -eq 'Save Game' -and -not $s.ui.pause.can_resume -and
+            -not $s.ui.paused_warning_shown -and -not $s.ui.touch_overlay_active } 'UI-to-native save menu handoff without gameplay overlay' | Out-Null
         Automate @(
             @{ action = 'key'; key = 'escape'; post_delay_ms = 150 },
             @{ action = 'key'; key = 'escape'; post_delay_ms = 200 }
         )
+        Running | Out-Null
+        # Tap actual screen coordinates: keyboard selection would miss an overlay
+        # swallowing Options and injecting Enter on the highlighted Abort Game row
+        Automate @(@{ action = 'key'; key = 'escape'; post_delay_ms = 300 })
+        $gameMenu = Wait-State { param($s) $s.native.menu.subtitle -eq 'Game Menu' -and
+            -not $s.ui.touch_overlay_active -and -not $s.ui.paused_warning_shown } 'game menu passes taps to native rows'
+        if ($gameMenu.native.menu.selected_index -ne 0) { throw 'Game menu must initially highlight Abort Game' }
+        $options = @($gameMenu.native.menu.items | Where-Object { $_.text -eq 'Options...' })
+        if ($options.Count -ne 1) { throw 'Game menu Options row missing' }
+        $tapX = $options[0].x + $options[0].w / 2
+        $tapY = $options[0].y + $options[0].h / 2
+        $scale = $gameMenu.native.menu_scale
+        if ($scale.active) {
+            $tapX = $scale.dst.x + ($tapX - $scale.src.x) * $scale.dst.w / $scale.src.w
+            $tapY = $scale.dst.y + ($tapY - $scale.src.y) * $scale.dst.h / $scale.src.h
+        }
+        $surface = $gameMenu.ui.game_surface
+        $tapX = [int][Math]::Round($surface.x + $tapX * $surface.width / $gameMenu.native.resolution.render_width)
+        $tapY = [int][Math]::Round($surface.y + $tapY * $surface.height / $gameMenu.native.resolution.render_height)
+        Device @('shell', 'input', 'tap', "$tapX", "$tapY") | Out-Null
+        Wait-State { param($s) $s.native.current_level_num -gt 0 -and
+            ($s.native.menu.items.text -contains 'Graphics Options...') -and
+            -not $s.ui.touch_overlay_active } 'Options tap opens options while retaining the level' | Out-Null
+        Automate @(@{ action = 'key'; key = 'escape'; post_delay_ms = 200 })
         Running | Out-Null
         $before = State
         Automate @(
@@ -134,6 +166,7 @@ try {
         )
         $graphics = Paused
         if (($graphics.native.pause.reasons -band 8) -eq 0 -or $graphics.ui.pause.can_resume) { throw 'Graphics confirmation must block Resume' }
+        Wait-State { param($s) -not $s.ui.paused_warning_shown } 'graphics confirmation suppresses redundant pause warning' | Out-Null
         Ui 'resume'
         Wait-State { param($s) $s.native.pause.result -eq 2 -and $s.native.pause.simulation_paused } 'Resume rejected during graphics confirmation' | Out-Null
         Automate @(
@@ -141,6 +174,33 @@ try {
             @{ action = 'controller_input'; key = 'B'; pressed = $false; post_delay_ms = 300 }
         )
         Running | Out-Null
+        Automate @(@{ action = 'key'; key = 'tab'; post_delay_ms = 300 })
+        Wait-State { param($s) $s.native.automap_active -and $s.native.pause.simulation_paused -and
+            $s.ui.touch_overlay_active -and -not $s.ui.paused_warning_shown } 'single-player automap retains controls without pause warning' | Out-Null
+        Automate @(@{ action = 'key'; key = 'escape'; post_delay_ms = 300 })
+        Running | Out-Null
+        Automate @(@{ action = 'trigger_postlevel' })
+        Presentation 'postlevel' | Out-Null
+        Automate @(
+            @{ action = 'wait_for'; field = 'screen_advance_can_activate'; value = 'true'; timeout_ms = 5000 },
+            @{ action = 'request_screen_advance'; generation = 'current'; post_delay_ms = 300 }
+        )
+        Running | Out-Null
+        Automate @(@{ action = 'trigger_endlevel' })
+        Presentation 'endlevel' | Out-Null
+        Automate @(
+            @{ action = 'wait_for'; field = 'screen_advance_can_activate'; value = 'true'; timeout_ms = 5000 },
+            @{ action = 'request_screen_advance'; generation = 'current'; post_delay_ms = 300 }
+        )
+        Presentation 'levelcomplete' | Out-Null
+        Automate @(
+            @{ action = 'wait_for'; field = 'screen_advance_can_activate'; value = 'true'; timeout_ms = 5000 },
+            @{ action = 'request_screen_advance'; generation = 'current'; post_delay_ms = 300 }
+        )
+        Presentation 'briefing' | Out-Null
+        Automate @(@{ action = 'skip_briefing'; timeout_ms = 20000 })
+        Running | Out-Null
+        Wait-State { param($s) $s.ui.touch_overlay_active -and -not $s.ui.paused_warning_shown } 'gameplay overlay restored after level transition' | Out-Null
         $results += @{ game = $gameId; result = 'PASS' }
         Device @('logcat', '-d') | Set-Content (Join-Path $outputDirectory "$gameId-logcat.txt") -Encoding utf8NoBOM
         Write-Host "$gameId pause state PASS"
