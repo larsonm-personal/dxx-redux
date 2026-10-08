@@ -698,6 +698,8 @@ typedef struct {
 	unsigned int comp_size;
 	unsigned int orig_size;
 	unsigned int original_crc;
+	unsigned int volume_offset;
+	unsigned int flags;
 	int method;       /* 0=stored, 1-3=compressed */
 	int file_type;    /* 0=binary, 2=archive header */
 	long data_offset; /* offset of compressed data in the file */
@@ -747,6 +749,7 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 	if (first_hdr_size < 30 || first_hdr_size > header_size)
 		return -1;
 
+	entry->flags = read_u8(hdr + 4);
 	entry->method = read_u8(hdr + 5);
 	entry->file_type = read_u8(hdr + 6);
 
@@ -760,6 +763,10 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 		entry->comp_size = read_u32(hdr + 12);
 		entry->orig_size = read_u32(hdr + 16);
 		entry->original_crc = read_u32(hdr + 20);
+		if (entry->flags & 0x08u) {
+			if (first_hdr_size < 34) return -1;
+			entry->volume_offset = read_u32(hdr + 30);
+		}
 	}
 
 	/* Extract the required null-terminated filename and comment strings */
@@ -833,6 +840,95 @@ static int arj_read_entry(FILE *fp, arj_entry_t *entry, long file_size)
 }
 
 /* ── Main extraction function ──────────────────────────────────────── */
+
+/* Shared payload decoder for single archives and validated volume sets */
+static int sow_extract_entry(FILE *fp, const arj_entry_t *e,
+                             const char *out_path, int append_existing,
+                             dxx_extract_attempt_budget_t *budget)
+{
+	const char *filename = basename_of(e->filename);
+	uint64_t memory_bytes;
+	/* Read compressed data */
+	memory_bytes = e->comp_size;
+	if (e->method != ARJ_METHOD_STORED &&
+	    dxx_extract_add_bytes(&memory_bytes, e->orig_size,
+	                          budget->max_memory_bytes) < 0) {
+		return -1;
+	}
+	if (dxx_extract_attempt_reserve_memory(budget, memory_bytes) < 0) {
+		return -1;
+	}
+	unsigned char *comp_data = (unsigned char *) malloc(e->comp_size);
+	if (!comp_data) {
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+	if (fseek(fp, e->data_offset, SEEK_SET) != 0) {
+		free(comp_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+	if (fread(comp_data, 1, e->comp_size, fp) != e->comp_size) {
+		free(comp_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+
+	unsigned char *out_data = NULL;
+	unsigned int out_size = 0;
+
+	if (e->method == ARJ_METHOD_STORED) {
+		out_data = comp_data;
+		out_size = e->comp_size;
+		comp_data = NULL; /* don't free — out_data owns it */
+	} else if (e->method >= 1 && e->method <= 3) {
+		out_data = arj_decompress(comp_data, e->comp_size, e->orig_size);
+		out_size = e->orig_size;
+		free(comp_data);
+		comp_data = NULL;
+	} else {
+		fprintf(stderr, "sow_extract: unsupported method %d for '%s'\n",
+		        e->method, filename);
+		free(comp_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+
+	if (!out_data) {
+		fprintf(stderr, "sow_extract: decompression failed for '%s'\n",
+		        filename);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+	if (arj_crc32(out_data, out_size) != e->original_crc) {
+		fprintf(stderr, "sow_extract: payload CRC mismatch for '%s'\n",
+		        filename);
+		free(out_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+
+	/* Write output file */
+	FILE *outf = fopen(out_path, append_existing ? "ab" : "wb");
+	if (outf) {
+		int write_ok = fwrite(out_data, 1, out_size, outf) == out_size;
+		int close_ok = fclose(outf) == 0;
+		if (!write_ok || !close_ok) {
+			remove(out_path);
+			free(out_data);
+			dxx_extract_attempt_release_memory(budget, memory_bytes);
+			return -1;
+		}
+	} else {
+		fprintf(stderr, "sow_extract: cannot create '%s'\n", out_path);
+		free(out_data);
+		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		return -1;
+	}
+	free(out_data);
+	dxx_extract_attempt_release_memory(budget, memory_bytes);
+	return 0;
+}
 
 static int sow_extract_impl(const char *sow_path, const char *output_dir,
                             const char **extensions,
@@ -920,7 +1016,6 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 	arj_entry_t e;
 
 	while (1) {
-		uint64_t memory_bytes;
 		int r = arj_read_entry(fp, &e, file_size);
 		if (r < 0) {
 			fclose(fp);
@@ -966,97 +1061,12 @@ static int sow_extract_impl(const char *sow_path, const char *output_dir,
 		snprintf(out_path, sizeof(out_path), "%s%c%s",
 		         output_dir, PATH_SEP, filename);
 
-		/* Read compressed data */
-		memory_bytes = e.comp_size;
-		if (e.method != ARJ_METHOD_STORED &&
-		    dxx_extract_add_bytes(&memory_bytes, e.orig_size,
-		                          budget->max_memory_bytes) < 0) {
+		if (sow_extract_entry(fp, &e, out_path, append_existing, budget) < 0) {
 			fclose(fp);
 			return -1;
 		}
-		if (dxx_extract_attempt_reserve_memory(budget, memory_bytes) < 0) {
-			fclose(fp);
-			return -1;
-		}
-		unsigned char *comp_data = (unsigned char *) malloc(e.comp_size);
-		if (!comp_data) {
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-		if (fseek(fp, e.data_offset, SEEK_SET) != 0) {
-			free(comp_data);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-		if (fread(comp_data, 1, e.comp_size, fp) != e.comp_size) {
-			free(comp_data);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-
-		unsigned char *out_data = NULL;
-		unsigned int out_size = 0;
-
-		if (e.method == ARJ_METHOD_STORED) {
-			out_data = comp_data;
-			out_size = e.comp_size;
-			comp_data = NULL; /* don't free — out_data owns it */
-		} else if (e.method >= 1 && e.method <= 3) {
-			out_data = arj_decompress(comp_data, e.comp_size, e.orig_size);
-			out_size = e.orig_size;
-			free(comp_data);
-			comp_data = NULL;
-		} else {
-			fprintf(stderr, "sow_extract: unsupported method %d for '%s'\n",
-			        e.method, filename);
-			free(comp_data);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-
-		if (!out_data) {
-			fprintf(stderr, "sow_extract: decompression failed for '%s'\n",
-			        filename);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-		if (arj_crc32(out_data, out_size) != e.original_crc) {
-			fprintf(stderr, "sow_extract: payload CRC mismatch for '%s'\n",
-			        filename);
-			free(out_data);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-
-		/* Write output file */
-		FILE *outf = fopen(out_path, append_existing ? "ab" : "wb");
-		if (outf) {
-			int write_ok = fwrite(out_data, 1, out_size, outf) == out_size;
-			int close_ok = fclose(outf) == 0;
-			if (!write_ok || !close_ok) {
-				remove(out_path);
-				free(out_data);
-				dxx_extract_attempt_release_memory(budget, memory_bytes);
-				fclose(fp);
-				return -1;
-			}
-			extracted++;
-			bytes_done += out_size;
-		} else {
-			fprintf(stderr, "sow_extract: cannot create '%s'\n", out_path);
-			free(out_data);
-			dxx_extract_attempt_release_memory(budget, memory_bytes);
-			fclose(fp);
-			return -1;
-		}
-		free(out_data);
-		dxx_extract_attempt_release_memory(budget, memory_bytes);
+		extracted++;
+		bytes_done += e.orig_size;
 	}
 
 	fclose(fp);

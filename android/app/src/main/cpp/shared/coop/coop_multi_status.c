@@ -16,6 +16,59 @@
 #include "coop_gameplay_runtime.h"
 #endif
 
+static int all_coop_players_have_primary(int weapon_index)
+{
+	int i;
+	unsigned int flag = 1u << weapon_index;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    !(Players[i].primary_weapon_flags & flag))
+			return 0;
+
+	return 1;
+}
+
+int duplicate_primary_uses_single_player_reward(int weapon_index)
+{
+	return !(Game_mode & GM_MULTI) ||
+	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
+}
+
+int duplicate_laser_gives_energy(int laser_level)
+{
+	int i;
+
+	if (!(Game_mode & GM_MULTI))
+		return 1;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return 0;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    Players[i].laser_level < laser_level)
+			return 0;
+
+	return 1;
+}
+
+int duplicate_flag_gives_energy(int flag)
+{
+	int i;
+
+	if (!(Game_mode & GM_MULTI))
+		return 1;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return 0;
+
+	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
+		if (Players[i].connected != CONNECT_DISCONNECTED &&
+		    !(Players[i].flags & flag))
+			return 0;
+
+	return 1;
+}
+
 // -- Coop kill stats (android port: coop QoL overlay) --
 
 coop_player_kill_stats Coop_kill_stats[MAX_PLAYERS];

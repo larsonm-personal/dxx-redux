@@ -10427,6 +10427,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 }
 
 #include "pickup_autoselect_fixture.hpp"
+#include "coop_pickup_reward_fixture.hpp"
 #include "weapon_order_profile_fixture.hpp"
 #include "classic_trigger_demo_fixture.hpp"
 #include "classic_asset_demo_fixture.hpp"
@@ -10893,7 +10894,21 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 3 && std::strcmp(argv[1], "--coop-pickup-rewards") == 0) {
+		test_coop_pickup_rewards(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
 #ifdef DXX_BUILD_DESCENT_II
+	if (argc == 2 && std::strcmp(argv[1], "--d1-bitmap-replacements") == 0) {
+		GameArg.SndNoSound = GameArg.SndNoMusic = 1;
+		digi_select_system(SDLAUDIO_SYSTEM);
+		test_robot_reload();
+		test_d1_monitors();
+		PHYSFS_deinit();
+		std::puts("D1 bitmap replacement and exit asset tests passed");
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--classic-trigger-demo") == 0) {
 		test_classic_trigger_demo();
 		return 0;

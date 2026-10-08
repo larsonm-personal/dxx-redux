@@ -234,59 +234,6 @@ int pick_up_energy(void)
 	return used;
 }
 
-static int all_coop_players_have_primary(int weapon_index)
-{
-	int i;
-	ubyte flag = 1 << weapon_index;
-
-	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
-		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    !(Players[i].primary_weapon_flags & flag))
-			return 0;
-
-	return 1;
-}
-
-static int duplicate_primary_uses_single_player_reward(int weapon_index)
-{
-	return !(Game_mode & GM_MULTI) ||
-	       ((Game_mode & GM_MULTI_COOP) && all_coop_players_have_primary(weapon_index));
-}
-
-static int duplicate_laser_gives_energy(int laser_level)
-{
-	int i;
-
-	if (!(Game_mode & GM_MULTI))
-		return 1;
-	if (!(Game_mode & GM_MULTI_COOP))
-		return 0;
-
-	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
-		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    Players[i].laser_level < laser_level)
-			return 0;
-
-	return 1;
-}
-
-static int duplicate_flag_gives_energy(int flag)
-{
-	int i;
-
-	if (!(Game_mode & GM_MULTI))
-		return 1;
-	if (!(Game_mode & GM_MULTI_COOP))
-		return 0;
-
-	for (i = Netgame.host_is_obs ? 1 : 0; i < N_players; i++)
-		if (Players[i].connected != CONNECT_DISCONNECTED &&
-		    !(Players[i].flags & flag))
-			return 0;
-
-	return 1;
-}
-
 static int pick_up_vulcan_ammo(int amount)
 {
 	int	used=0;

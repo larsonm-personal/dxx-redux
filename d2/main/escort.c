@@ -2053,15 +2053,11 @@ fix64	Buddy_last_seen_player = 0, Buddy_last_player_path_created;
 //	-----------------------------------------------------------------------------
 int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 {
-	int lost_player_timeout = 0;
-
 	//	Note: This one has highest priority because, even if already going towards player,
 	//	might be necessary to create a new path, as player can move.
 	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY)
 		if (GameTime64 - Buddy_last_player_path_created > F1_0)
-			lost_player_timeout = 1;
-	if (lost_player_timeout)
-		return 1;
+			return 1;
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* A nearby visible player is already following the objective route */

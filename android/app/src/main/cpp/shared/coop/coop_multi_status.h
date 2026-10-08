@@ -4,6 +4,10 @@
 #include "player.h"
 #include "pstypes.h"
 
+int duplicate_primary_uses_single_player_reward(int weapon_index);
+int duplicate_laser_gives_energy(int laser_level);
+int duplicate_flag_gives_energy(int flag);
+
 // -- Coop kill stats (android port: coop QoL overlay) --
 // Per-player robot kill tracking for coop score overlay
 typedef struct coop_player_kill_stats {

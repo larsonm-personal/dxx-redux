@@ -89212,3 +89212,160 @@ Disposition: GQF-0205 FIXED; GQR-0192 DONE. Historical impact score 71 (12/35/7/
 </details>
 
 <!-- END IMPORT: GQR-0192 shared RNG ownership remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0189 shared pickup reward remediation 20261007 SHA256:38db729eab5a7d92cd5d4e46a6cbb3731503ee7f19c05dab295555fc45ffafad -->
+
+## GQR-0189 shared pickup reward remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0189-remediation.md`
+- Imported SHA-256: `38db729eab5a7d92cd5d4e46a6cbb3731503ee7f19c05dab295555fc45ffafad`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0189 shared pickup reward remediation 20261007
+
+- Revalidated GQF-0202 against live HEAD beea1341d1f624475397c805c1edda671d0695ec before editing. Four paired helpers still differ only in ubyte/ushort primary mask storage
+- Moved the predicates into existing cross-platform coop/coop_multi_status.c/.h. Existing multi.h includes and common CMake registrations already expose the owner in both games; no additional inherited include or build registration
+- Exact source verifier proves both native powerup.c files equal their snapshots minus the 53-line helper block. Shared source/header equal their snapshots plus exactly the moved block and three declarations. The only body change is unsigned int flag = 1u << weapon_index; valid primary domains are D1 0..4 and D2 0..9, preserving all admission tests without truncation
+- Actual do_powerup integration: 672 D1 and 1848 D2/translated-D1 cases pass. Before/after serialized results are byte-identical within each engine: consumption result, energy, ammo, remaining pickup ammo, score, flags, weapons and laser level. SIM and FX RNG counters remain unchanged
+- Coverage includes single/competitive/coop, all/missing inventory, observer-host exclusion, ordinary peers and all seven connection phases, primary/ammo weapons, regular/super lasers, quad/full-map flags, D2 upper weapon bit and D1-in-D2 behavior. Initial D2 fixture setup needed InitWeaponOrdering; final paired baselines pass before product extraction
+- Sound and transport are disabled in this in-memory fixture. Consumption evidence is the native used return and remaining ammo, not physical collision deletion. Exact unchanged native action/call-site bodies preserve sound/network/removal dispatch structure; no live UDP/audio or full gameplay replay claim
+- Both full Windows builds and Android Debug native builds for arm64-v8a, armeabi-v7a and x86_64 pass. Focused maintained CTest test_coop_pickup_rewards passes separately for both games. One scoped mixed quality invocation and owned-path diff check pass; no new warnings in changed source
+- Savings: 106 inherited lines removed, 57 shared source/header lines added, 49 net product lines removed. Original-baseline two-file changed-line count 464 -> 358, reduction 106. Maintained test additions are separate coverage cost; no net whole-repository shrink claim
+- Unrelated launcher/installer changes preserved. No staging, commit, device execution or deferred security-sensitive probes
+
+## Exact verification
+
+```json
+{
+  "source_checks": "Exact native block removal and exact shared insertion, no other product edits",
+  "inherited_lines_removed": 106,
+  "shared_lines_added": 57,
+  "original_diff": {
+    "d1/main/powerup.c": {
+      "before": {
+        "added": 142,
+        "deleted": 34
+      },
+      "after": {
+        "added": 89,
+        "deleted": 34
+      }
+    },
+    "d2/main/powerup.c": {
+      "before": {
+        "added": 217,
+        "deleted": 71
+      },
+      "after": {
+        "added": 164,
+        "deleted": 71
+      }
+    }
+  },
+  "traces": {
+    "d1": {
+      "cases": 672,
+      "sha256": "92cd5a7470117b1b31ca240d5dcdffb242df018fe7ae710b0839adde81947e47",
+      "bytes_identical": true
+    },
+    "d2": {
+      "cases": 1848,
+      "sha256": "11d36d3f1b7e60f873f482dd355863784ae75d266b49ec3f350df260abe5d9cf",
+      "bytes_identical": true
+    }
+  },
+  "product_sha256": {
+    "d1/main/powerup.c": "c2c2b0d1982ef45be47911cbeefa7bb005cd3ea31abc428246325e8bc8d337cb",
+    "d2/main/powerup.c": "6b7f611cde9f47ae55f46b695a530f8bea923c9e5e61e48fe086f12e0d4ad9c4",
+    "android/app/src/main/cpp/shared/coop/coop_multi_status.c": "e0b1aeea37cf8b32b9f38d295e5d28294c5d5223b34dbd07855eb1f54ae5eb7f",
+    "android/app/src/main/cpp/shared/coop/coop_multi_status.h": "06e234cb6edeeed7b91596fc07a41954caa11fb7ffa4507764d024fa57c13feb"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0189-quality.log: SHA256 94a65a7d8ba55fed7fbfe9a601c550458880be2a59865ce1ca6e2c8e27504b4f
+- temp/general_cleanup_20261006/gqr0189-after-windows-build.log: SHA256 6b7a20f4c17b6a08f6eb04203733b8c24b3712ec5975bca9ca33c5626acb2096
+- temp/general_cleanup_20261006/gqr0189-after-android-build.log: SHA256 8aa3363e06ab4946a8029ef7d5a7083b440fd0ff2d86f8c67ed15fad33e30bba
+- temp/general_cleanup_20261006/gqr0189-d1-after.log: SHA256 5a443360086326bb177b34c13c55b5214e00e0fa144c782c59d8af93bed38bf6
+- temp/general_cleanup_20261006/gqr0189-d2-after.log: SHA256 98315f2c0db45f2ae6c49b724660f14311b7409b88ae7ba1fd4990a09ba68156
+- temp/general_cleanup_20261006/gqr0189-d1-before.json: SHA256 92cd5a7470117b1b31ca240d5dcdffb242df018fe7ae710b0839adde81947e47
+- temp/general_cleanup_20261006/gqr0189-d2-before.json: SHA256 11d36d3f1b7e60f873f482dd355863784ae75d266b49ec3f350df260abe5d9cf
+- temp/general_cleanup_20261006/gqr0189-verification.json: SHA256 b73f115f4a59d4e4c43d6f66bfc164db7fb53e39c07c409e1800ec1f99107eea
+- temp/general_cleanup_20261006/apply_gqr0189.py: SHA256 1351746a81f10339328b6f94505e9e50c6de7d693c36bcb6eb19b3b70fc4bc31
+- temp/general_cleanup_20261006/verify_gqr0189.py: SHA256 b5b47b33cc38828fba091cff2f29d4d371e5e93d6a0f93a3edb73b6618d9f348
+- android/tests/coop_pickup_reward_fixture.hpp: SHA256 e73a83a442f0397485c0fd1a187cc3d80a1ba1d3671ca77bc9591698b5f3c1e2
+- android/tests/test_upstream_compat.cpp: SHA256 ff463118574f23bd76a3d74d43bcf317b7596412f088b9b7ce718efd479f97af
+- android/tests/CMakeLists.txt: SHA256 e1b4a37a51f2b77be608006066f1110c53d5466c5839bdf7c177ef216a48edb1
+
+</details>
+
+<!-- END IMPORT: GQR-0189 shared pickup reward remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0244 unused D1 frame entry remediation 20261007 SHA256:41b3fa272dc0952872efd550c0bafba42e98979e82be28da8f79a3deaef708dc -->
+
+## GQR-0244 unused D1 frame entry remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0244-remediation.md`
+- Imported SHA-256: `41b3fa272dc0952872efd550c0bafba42e98979e82be28da8f79a3deaef708dc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0244 unused D1 frame entry remediation 20261007
+
+- Revalidated GQF-0258 against live HEAD beea1341d1f624475397c805c1edda671d0695ec and current working sources. Complete tracked non-document/patch search finds only the function definition and declaration; no build/export/caller/address-taking reference. Untracked current source search agrees
+- Deleted load_d1_bitmap_frame from d2/main/d1_in_d2/d1_in_d2_bitmaps.c and its declaration from d2/main/piggy.h. Post-change complete tracked search returns no references. No replacement wrapper, new API or compatibility path
+- Exact whole-file verifier proves both product files equal their captured current snapshots minus only the definition/separators and declaration. Every active bitmap_read_d1, load_d1_bitmap_replacements, read_extra_bitmap_d1_pig, exit-model fallback and replacement arena body remains unchanged
+- Actual savings: 74 lines removed from branch-added source (72-line function plus two separator lines), one inherited header line removed, 75 product lines removed. Original baseline has no D1-in-D2 bitmap file; do not count branch-added source as 1996 inherited savings. piggy.h original-baseline diff shrinks from 24 additions to 23, zero deletions
+- Exposed existing test_robot_reload and test_d1_monitors through --d1-bitmap-replacements and registered test_d1_bitmap_replacements for D2. No copied fixture or new implementation-mirroring test. Fresh pre-deletion baseline and post-deletion focused CTest pass
+- Ordinary fixture verifies three mission HAM/V-HAM/HXM reload cycles and exit asset loads, ordinary missing exit-image recovery, preserved object/network/runtime state, monitor protection, ordinary wall/animation cloning, raw/RLE light color and transparency, and replacement arena paging restoration/newer-image preservation
+- Focused invocation returns before the broad upstream suite and does not execute its malformed media or adversarial cases. Sound disabled; no device, full gameplay replay, live network/audio, retail corpus or deferred security-sensitive probe claim
+- Full D2 Windows build and Android Debug native builds for all three ABIs pass. D1 compatibility test target also compiled before deletion (D1 product sources unchanged). One scoped mixed quality invocation and owned-path diff check pass; no new changed-source warnings
+- Prior pickup cleanup and unrelated launcher/installer edits preserved; nothing staged or committed. Maintained CLI/CTest lines are separate test coverage cost
+
+## Exact verification
+
+```json
+{
+  "source_check": "Exact definition and declaration deletion, no other product edits",
+  "references_after": [],
+  "branch_added_source_lines_removed": 74,
+  "inherited_header_lines_removed": 1,
+  "product_lines_removed": 75,
+  "original_header_diff": {
+    "before": {
+      "added": 24,
+      "deleted": 0
+    },
+    "after": {
+      "added": 23,
+      "deleted": 0
+    }
+  },
+  "product_sha256": {
+    "d2/main/d1_in_d2/d1_in_d2_bitmaps.c": "673f71f47dee3045e15ebf314b9187fdab01ac3309376c7498dd21c6ca191558",
+    "d2/main/piggy.h": "c28f7a820c3fe1b11587e6c23314aa55982f7b609822a5fad9e5ef297302c7a0"
+  }
+}
+```
+
+## Evidence identities
+
+- temp/general_cleanup_20261006/gqr0244-quality.log: SHA256 19f79e1690d1a10aee9efc04313460b96fb51f5e0b7fe43a74a04df22f37af57
+- temp/general_cleanup_20261006/gqr0244-windows-build.log: SHA256 b0005d4f1803ff3dccd8192489aae76d381973bf115eb61e722ec0c4e18e96cb
+- temp/general_cleanup_20261006/gqr0244-android-build.log: SHA256 1a1db83395e4aa5e3abb872b7fecc7e31f2b6755ae22c5297d18b99dcedf9a19
+- temp/general_cleanup_20261006/gqr0244-baseline-test.log: SHA256 e40f2b22b4d4b03540e8c66faf98ad3e1bac7df77318451dd29c8702745d84dd
+- temp/general_cleanup_20261006/gqr0244-after-test.log: SHA256 35b2497179c62ea30a93bd5fe601126fa0a3b9c418dfb188e4c33a4bad6de7f2
+- temp/general_cleanup_20261006/gqr0244-baseline-build.log: SHA256 eb24dc73edaacc6ec393645b8969edc3e77f6e80071a87725676ea3d3b1d31c7
+- temp/general_cleanup_20261006/gqr0244-before.json: SHA256 ab55cdd6b9e63aba71144b98285461c3806955c8d7cea5c4f5e9262b19ea7599
+- temp/general_cleanup_20261006/gqr0244-verification.json: SHA256 71f32a91eca7796550e036927d5eb0f4bd06715c6453e1b7aa576997912656b0
+- temp/general_cleanup_20261006/apply_gqr0244.py: SHA256 de4ff962a589ed8da3bcc3e1175777c6d6faa2ba5f52d3776c209f9136098099
+- temp/general_cleanup_20261006/verify_gqr0244.py: SHA256 8bc839ca441365e8f796f53d1a31ee853f49524e2690f5d6cf83e78f948a54ac
+- android/tests/test_upstream_compat.cpp: SHA256 f087e279aca43a52ac8cf03e3ea9d11d045c3831529721e856890e32855f3ccd
+- android/tests/CMakeLists.txt: SHA256 491a55555db16fe6b41a8cedf3b0ab191fa8952f7948e2c22c8c5d3bc7999098
+
+</details>
+
+<!-- END IMPORT: GQR-0244 unused D1 frame entry remediation 20261007 -->

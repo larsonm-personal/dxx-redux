@@ -46,6 +46,21 @@ typedef int (*sow_progress_fn)(const char *current_file,
  */
 int sow_scan_dir(const char *dir_path, sow_file_list_t *out);
 
+/* Production import: validate and assemble a complete set of volumes using ARJ
+ * continuation flags and offsets, independent of caller order or archive names
+ * Output is flattened into an isolated staging directory owned by the caller
+ * Missing pieces and conflicting output names fail before any payload is written
+ * On a later decoding/I/O failure the caller must discard the staging directory
+ * Returns the number of decoded entries (including continuation pieces) */
+int sow_extract_archives(const sow_file_list_t *archives, const char *output_dir,
+                         const char **extensions, sow_progress_fn progress,
+                         void *user_data, dxx_extract_attempt_budget_t *budget);
+
+/* Scan a staged disc and assemble each directory's SOW files together */
+int sow_extract_directory(const char *directory, const char **extensions,
+                          sow_progress_fn progress, void *user_data,
+                          dxx_extract_attempt_budget_t *budget);
+
 /*
  * Extract files from a .sow (ARJ) archive to an output directory.
  *

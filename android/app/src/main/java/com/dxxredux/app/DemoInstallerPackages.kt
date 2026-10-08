@@ -20,6 +20,7 @@ object DemoInstallerPackages {
                 game = "d1",
                 extraction = "self-extracting ZIP with SOW archives",
                 expectedFiles = listOf("descent.hog", "descent.pig"),
+                sowVolumes = listOf("descent1.sow", "descent2.sow"),
             ),
             PackageInfo(
                 filename = "descent 1 demo 1-4.zip",
@@ -28,6 +29,7 @@ object DemoInstallerPackages {
                 game = "d1",
                 extraction = "ZIP with SOW archives",
                 expectedFiles = listOf("descent.hog", "descent.pig"),
+                sowVolumes = listOf("descent1.sow", "descent2.sow"),
             ),
             PackageInfo(
                 filename = "descent 1 demo mac.zip",

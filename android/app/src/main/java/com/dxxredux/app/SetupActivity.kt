@@ -4862,6 +4862,89 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // -- Import files button --
+                    if (showImportChooser) {
+                        val importChoiceFocus = remember(androidTvDevice) { FocusRequester() }
+                        LaunchedEffect(showImportChooser, androidTvDevice) {
+                            if (showImportChooser) {
+                                importChoiceFocus.requestFocus()
+                            }
+                        }
+                        AlertDialog(
+                            onDismissRequest = { showImportChooser = false },
+                            confirmButton = {},
+                            title = { Text("Import Files") },
+                            text = {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        importChooserConfig.helpText,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Button(
+                                        onClick = {
+                                            showImportChooser = false
+                                            filePickerLauncher.launch(
+                                                arrayOf("application/octet-stream", "application/zip", "*/*"),
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth().focusRequester(importChoiceFocus),
+                                    ) {
+                                        Text(importChooserConfig.directPickLabel)
+                                    }
+                                    OutlinedButton(
+                                        onClick = {
+                                            showImportChooser = false
+                                            dirPickerLauncher.launch(null)
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("Pick Folder")
+                                    }
+                                    TextButton(
+                                        onClick = { showImportChooser = false },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            },
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            showImportChooser = true
+                        },
+                        enabled = !scanning && !isHashing && !zipExtracting && !missionArchiveImporting,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                            ),
+                    ) {
+                        Text(
+                            text =
+                                if (scanning || zipExtracting || missionArchiveImporting) {
+                                    "Importing\u2026"
+                                } else {
+                                    "\uD83D\uDCC2 Select Game Files or Archive to Import"
+                                },
+                            fontSize = 11.sp,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text =
+                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, " +
+                                ".zip/.7z/.rar archives, .cue disc images with .bin/.img tracks, " +
+                                ".sow archives, and GOG installers.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     // -- Stale temp cleanup notification --------
                     if (cleanedTmpFiles.isNotEmpty()) {
                         Row(
@@ -5276,89 +5359,6 @@ private fun SetupScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-
-                    // -- Import files button --
-                    if (showImportChooser) {
-                        val importChoiceFocus = remember(androidTvDevice) { FocusRequester() }
-                        LaunchedEffect(showImportChooser, androidTvDevice) {
-                            if (showImportChooser) {
-                                importChoiceFocus.requestFocus()
-                            }
-                        }
-                        AlertDialog(
-                            onDismissRequest = { showImportChooser = false },
-                            confirmButton = {},
-                            title = { Text("Import Files") },
-                            text = {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Text(
-                                        importChooserConfig.helpText,
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Button(
-                                        onClick = {
-                                            showImportChooser = false
-                                            filePickerLauncher.launch(
-                                                arrayOf("application/octet-stream", "application/zip", "*/*"),
-                                            )
-                                        },
-                                        modifier = Modifier.fillMaxWidth().focusRequester(importChoiceFocus),
-                                    ) {
-                                        Text(importChooserConfig.directPickLabel)
-                                    }
-                                    OutlinedButton(
-                                        onClick = {
-                                            showImportChooser = false
-                                            dirPickerLauncher.launch(null)
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Text("Pick Folder")
-                                    }
-                                    TextButton(
-                                        onClick = { showImportChooser = false },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Text("Cancel")
-                                    }
-                                }
-                            },
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            showImportChooser = true
-                        },
-                        enabled = !scanning && !isHashing && !zipExtracting && !missionArchiveImporting,
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                            ),
-                    ) {
-                        Text(
-                            text =
-                                if (scanning || zipExtracting || missionArchiveImporting) {
-                                    "Importing\u2026"
-                                } else {
-                                    "\uD83D\uDCC2 Select Game Files or Archive to Import"
-                                },
-                            fontSize = 11.sp,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text =
-                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, " +
-                                ".zip/.7z/.rar archives, .cue disc images with .bin/.img tracks, " +
-                                ".sow archives, and GOG installers.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     // -- Scan results / import card --------------
                     if (scanResults != null) {

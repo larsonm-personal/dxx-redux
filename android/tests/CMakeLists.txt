@@ -5,6 +5,15 @@ endif()
 set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
+if(TARGET test_upstream_compat)
+    add_test(NAME test_coop_pickup_rewards COMMAND test_upstream_compat --coop-pickup-rewards
+                                                   coop-pickup-rewards.json)
+    if(DXX_TEST_GAME STREQUAL "d2")
+        add_test(NAME test_d1_bitmap_replacements COMMAND test_upstream_compat
+                                                          --d1-bitmap-replacements)
+    endif()
+endif()
+
 include_directories("${DXX_TEST_GAME_SOURCE_DIR}/include"
                     "${DXX_TEST_GAME_SOURCE_DIR}/arch/include" "${DXX_TEST_GAME_SOURCE_DIR}/main")
 

@@ -4377,3 +4377,41 @@ The initial narrow ignore-rule report missed active BR-0607 corpus provenance ow
 - Ten maintained CTests, both full Windows builds, all three Android native ABI builds, scoped quality and diff check pass. Existing unrelated build warnings remain. No full gameplay replay, live UDP or deferred security-sensitive probe is claimed
 - Immutable evidence imported as GQR-0192 shared RNG ownership remediation 20261007. Totals: 266 findings, 252 remediations (35 DONE / 216 TODO / 1 DEFERRED). Coverage remains GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
 - Concurrent graphics and save/load changes remain outside the cleanup ownership boundary. No staging or commit. Next: revalidate another accepted paired gameplay cleanup, such as GQR-0189 cooperative pickup rewards, while retaining the user-directed fixes-first sequence
+
+### Cooperative pickup reward extraction in progress, 2026-10-07
+
+- Live HEAD advanced externally to beea1341d1f624475397c805c1edda671d0695ec; prior cleanup work is committed. Revalidated GQR-0189: four paired helpers remain identical apart from D1 ubyte / D2 ushort weapon-mask storage
+- Move the predicates to existing cross-platform coop_multi_status.c/.h, leaving every native pickup action/call site in place. Use an unsigned mask covering the public per-game primary-weapon domain and retain observer-host and all nondisconnected-peer admission
+- Add a focused actual do_powerup engine fixture for native D1, D2 and D1-in-D2 policy; capture consumed result, energy, ammo, remaining object ammo, score, inventory and RNG across single/competitive/coop, all/missing item, host-observer and peer phase cases. Disable transport and sound in this in-memory fixture; unchanged native call-site/body checks cover their dispatch preservation without claiming live UDP/audio playback
+- Obtain a current baseline before applying the move, compare normalized before/after traces, run paired builds and focused CTests, scoped quality and isolated original/inherited metrics. Preserve unrelated launcher work; do not stage or commit
+
+### Cooperative pickup reward ownership completed, 2026-10-07
+
+- Completed GQR-0189 / GQF-0202 after revalidating current HEAD beea1341d. Four predicates now have one implementation in existing cross-platform coop_multi_status.c/.h; native pickup actions/call sites and build registrations are unchanged
+- Exact product-source verification passes: each powerup.c loses only its 53-line helper block; shared files receive only that block (unsigned mask and public linkage) plus three declarations. Both valid weapon domains retain their prior mask semantics
+- Applied savings: 106 inherited lines removed, 57 shared source/header lines added, 49 net product lines removed. Maintained fixture/registration additions are separate test cost, not product savings
+- All 672 D1 and 1848 D2/translated-D1 actual pickup results match their pre-extraction traces byte-for-byte. Consumption result, energy, ammo/remaining ammo, score, inventory and laser state are preserved; SIM/FX RNG counters stay unchanged. Four focused CTests pass across both engines, including existing duplication tests
+- Both full Windows builds and all three Android Debug native ABI builds pass, as do scoped quality, exact source checks and owned diff check. Sound/transport are disabled in the fixture; consumption is the native used result rather than physical collision deletion. Native dispatch bodies remain exact; no live UDP/audio or full gameplay replay claim
+- Imported immutable GQR-0189 shared pickup reward remediation 20261007. Totals: 266 findings, 252 remediations (36 DONE / 215 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Concurrent launcher/installer work preserved. No staging or commit, no deferred security-sensitive probes. Next: current-source revalidation and removal of unused D1 frame entry GQR-0244, or another accepted inherited-code cleanup; fixes-first sequencing remains active
+
+### Unused D1 frame entry removal in progress, 2026-10-07
+
+- Revalidated GQR-0244 / GQF-0258 against live beea1341d and the current worktree. load_d1_bitmap_frame still has only its definition in the branch-added D1-in-D2 bitmap owner and declaration in inherited piggy.h
+- Expose existing ordinary monitor replacement and mission/exit asset integration tests through a focused D2 CLI/CTest entry. Obtain a passing baseline, then delete the unused entry without touching bitmap_read_d1, bulk replacement, extra exit bitmap fallback or replacement arena ownership
+- Verify exact source deletion, full tracked/export reference census, D2 desktop and all-ABI Android builds, the focused integration test and scoped mixed quality. Distinguish branch-added source savings from the single inherited-header line; preserve concurrent launcher work and prior pickup cleanup
+
+### Unused D1 frame entry completed, 2026-10-07
+
+- Completed GQR-0244 / GQF-0258 after fresh complete tracked/export reference census. load_d1_bitmap_frame had only its definition and declaration; both are now removed and no non-document/patch reference remains
+- Exact source verifier proves only those deletions. Active bulk/native bitmap readers, extra exit-image fallback and arena ownership remain byte-for-byte unchanged. Removed 74 branch-added source lines (72-line function plus separators) and one inherited header line, 75 product lines total; original piggy.h diff shrinks 24 -> 23 added lines
+- Added a focused CLI/CTest entry invoking existing mission/exit reload and monitor replacement integration fixtures. Pre-deletion baseline and post-deletion run pass, covering ordinary assets, missing exit-image recovery, monitor protection, raw/RLE remapping/transparency and arena cleanup. Broad malformed-media suite was not run
+- D2 full Windows build and all three Android Debug native ABI builds pass; D1 test target also compiled before deletion. Scoped mixed quality, exact source/reference checks and owned-path diff check pass, no new changed-source warnings
+- Immutable evidence imported as GQR-0244 unused D1 frame entry remediation 20261007. Totals: 266 findings, 252 remediations (37 DONE / 214 TODO / 1 DEFERRED). Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Prior pickup cleanup and unrelated launcher/installer work preserved; no staging, commit, live device or deferred security-sensitive probes. Next: GQR-0247 direct escort timeout restoration, whose current temporary and ordinary Redux cadence fixture remain present, or another accepted live-source cleanup
+
+### Direct escort timeout restoration in progress, 2026-10-07
+
+- Revalidated GQR-0247 / GQF-0261: current lost_player_timeout temporary remains unnecessary. Restore original nested direct return with identical comparison/evaluation order and priority, retaining the Enhanced nearby/visible/clear-leg gate and all other native return rules/comments
+- Fresh maintained baselines pass: Original Redux comparisons and native save modes twice on D2 levels 1/11; Enhanced grate detour, endpoint patrol, reactor arrival and Maximum Hostages twice each. Snapshot ten stable JSON results before editing
+- Verify exact source change and original attribution, before/after navigation JSON, D2 Windows and all-ABI Android builds and scoped quality. No new test for the trivial control flow, no unrelated source edits, staging or commit
