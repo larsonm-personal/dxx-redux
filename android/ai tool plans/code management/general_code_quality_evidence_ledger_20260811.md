@@ -81561,3 +81561,7654 @@ No product/test edits or fresh native/device/media execution. Source directories
 </details>
 
 <!-- END IMPORT: GQ2-CHUNK-0288 regression and CD source metadata review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0289 music fingerprint source review 20261007 SHA256:61e3996d3d024225d9eb6b5b03ffc651dee9e8aa12c25f8cce97b6885fa201eb -->
+
+## GQ2-CHUNK-0289 music fingerprint source review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0289.md`
+- Imported SHA-256: `61e3996d3d024225d9eb6b5b03ffc651dee9e8aa12c25f8cce97b6885fa201eb`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0289 music fingerprint source review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0289 | [ ] TODO | source | medium | authored-config | `3 related paths` | 646 review lines under game_data/music | - |
+- Scope fingerprint `f4a937f98070d9785f637fc4cbd520622c9342badb0f7edc42f5ba757588389d` hashes ordered table data rows with final LF
+- Full assigned LF-normalized lines; base JSON5 paths recorded where applicable
+
+| Path/scope | Attribution | Base blob and path | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `game_data/music/D1 MIDI mp3 sc55/chromaprint_info.jsonc` L1-L362 | branch-added | `0c7b5a164b33a0a20b51166b050ba1fa02ca1186` (game_data/music/D1 MIDI mp3 sc55/chromaprint_info.json5) | `e710b1e2ba379d668928fa1e8ac96edef4387d07` | `eb703f31dbcfa18de721056671052d4cdffe8d3f1031f6fe8d41c04cfc14bde9` |
+| `game_data/music/D1 MIDI mp3 SC88/chromaprint_info.jsonc` L1-L142 | branch-added | `a49a44d8d9f39e9732b54e5488aacb14e81dd1b8` (game_data/music/D1 MIDI mp3 SC88/chromaprint_info.json5) | `3ecaee281f61cc26f28f0a3ec5c0190824dc16e0` | `2a2b525c3d2cefcd37bbb5cd84f79483409805761e2548e02d2b0dd27f89d591` |
+| `game_data/music/D1 MIDI mp3 SC88Pro/chromaprint_info.jsonc` L1-L142 | branch-added | `16b0b005a0fc6443f20787fee8672b8912f44ffe` (game_data/music/D1 MIDI mp3 SC88Pro/chromaprint_info.json5) | `f870872807970c8338a984edad8e19d40a3b5c39` | `a08f354ac49cd749a8c37080d3b41b54481ac708c6ab1e7edaea0f021e8a59b6` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Three complete SC55/SC88/SC88Pro D1 manifests, 646 lines and 107 tracks. Preserve 53 mixed MP3/OGG SC55 entries and separate renderings; SC88 game07 references a physical-disc omission. Actual title policy removes only the SC55 Escape versus End Level Theme label while retaining its track
+
+Reviewed every field and both generator comments in all 24 assigned files through a complete line-indexed semantic projection. Root shapes are album/tracks only; filenames are unique case-insensitively within each source, positive durations are integral milliseconds, optional scores are within 0..1 and recording IDs have the expected textual shape. All 418 named local audio files exist. Existence and schema checks do not authenticate or decode their payloads
+
+The manifests contain 2,227,005 encoded fingerprint characters. These strings were compared exactly with published payloads and hashed for complete source projections, not visually interpreted or natively decoded. All 313 published tracks retain their exact source-derived track number, basename, duration, fingerprint and every published optional field. Every one of the other 105 source records has one current catalog explanation: 101 physical-disc duplicate references resolve to existing fingerprinted audio tracks, and four ambiguity references resolve to corresponding source tracks with compatible durations. The four encoded ambiguity pairs are not byte-equal; their stored native score of 1 was not recomputed. Physical duplicate labels describe prior approximate-match decisions, not fresh byte-equality evidence
+
+Actual shared PowerShell JSONC parsing agrees with the independent projection for all 418 filenames, durations and fingerprint hashes. Actual Test-DxxAcoustIdTitleMatch evaluates all 97 source labels: 96 accepted, one rejected. For every retained track its result matches the packaged label policy. The sole rejected pair is D1 SC55 04 Escape.mp3 versus the cached End Level Theme label; the track remains published without that label. The source producer permits fingerprint-stable legacy cache metadata, while the album publisher applies maintained-title policy. Preserve this distinction; source and packaged optional fields need not be identical
+
+Inspected fingerprint_music_packs.ps1 extraction reuse/flattening, source enumeration, complete native result assertion, fingerprint-stable cached metadata reuse, lookup branching and normalized sidecar publication. Inspected update_known_discs_albums.ps1 source-ID/ordered-file projection, maintained-title filtering, exact-encoded collision augmentation, physical-disc priority and optional-field output. Full generator/native matcher bodies did not run. Source discovery includes MP3/OGG/FLAC despite folder labels containing mp3, and SC55 has deliberate MP3 plus OGG entries. The two SC55 directory labels differ from embedded names only in case; IDs use normalized album text. An initial checker assumption of exact directory spelling was corrected, as was its assumption that every source AcoustID field must be republished; these were harness assumptions, not data defects
+
+Retain branch-owned source manifests, comments, optional reviewed metadata, historical names/typos, ordering and distinct renderings. All assigned sources equal frozen head and are absent from the original inherited tree. Hand-minification, filename correction or source-track removal would obscure provenance without shrinking inherited engine changes. Even an album currently filtered to zero published tracks remains meaningful input to a future producer run
+
+Existing GQF-0030/GQR-0017 remains open: these roots carry no source inventory/digests or decoder/native/tool/Chromaprint/algorithm/schema/policy generation identity. A current consistent projection does not establish freshness. Existing GQR-0046 lossless ranking, GQR-0047 symmetric duration policy, GQR-0207 distinct-identity projection, GQR-0223 string-aware JSONC readers and BR-0612 typed serialization remain separately owned. No new finding or additive inherited-file saving is admitted
+
+Fresh checks are read-only metadata operations with scratch outputs. No media payload hash, audio decode, fingerprint generation/matching, AcoustID/network lookup, corpus regeneration, JVM/full build/device execution or deferred adversarial/security/malformed-media/resource-pressure probe ran. Earlier actual-asset JVM and album-catalog checks remain historical context only. Concurrent audio/input work and outstanding_bugs.md remain untouched
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0017; rationale: existing source-generation freshness owner, reference only, zero inherited saving
+
+## Shared host evidence identities
+
+Fresh commands: python temp/general_cleanup_20261006/check_gq2_music_sources.py; pwsh -NoProfile -File temp/general_cleanup_20261006/check_gq2_music_policy.ps1. Both exit zero. The policy probe was repeated after correcting only its summary display; final log has no serialization warning. Shared execution is not credited per report
+
+```json
+{
+  "check_gq2_music_sources.py": "486950d4c03d383d3cb72b11c71fdafaaaba1bc5a16353238186a320d59a7c9f",
+  "check_gq2_album_catalog.py": "57e9dccc69c98cb00ed51320d12fa2ab020a55d40d3fe46b2d0b2ec2f50d26bf",
+  "music-source-checks.json": "5a95dd403ab91aa1f533e59c7ab9e8ed0c10e055a90ef1d319c5a0392565f901",
+  "music-source-projection.txt": "82604d86ad5ae8b0379e958dc2ec2058bbed575e6909a7316c6b4e5b021cdd1a",
+  "check_gq2_music_policy.ps1": "11b0d6d07b819718dfd56b0f4e02c87b925b464a02ec52c7c8cc1acb306e922b",
+  "music-policy-checks.json": "d5e6f90d740387f52546f81121fd4dd3230446117d6bab6976b8d1c1abe53da3",
+  "music-policy-checks.log": "34b196eaa35c2375df749df2eff461789463a90b2ffbef06e4323012ba17cdb0"
+}
+```
+
+Shared summary:
+
+```json
+{
+  "files": 24,
+  "lines": 2644,
+  "tracks": 418,
+  "fingerprint_chars": 2227005,
+  "published": 313,
+  "duplicates": 101,
+  "ambiguous": 4,
+  "acoustid_records": 97,
+  "local_audio_present": 418,
+  "asset_sha256": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+  "native_decode_or_matching": false,
+  "disc_asset_sha256": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+  "source_payload_hashes": false,
+  "authoritative_files_written": false
+}
+```
+
+Complete assigned field/comment projections, with opaque fingerprints represented by exact length and SHA-256:
+
+```json
+[
+  {
+    "unit": "GQ2-CHUNK-0289",
+    "path": "game_data/music/D1 MIDI mp3 sc55/chromaprint_info.jsonc",
+    "lines": 362,
+    "source_sha256": "eb703f31dbcfa18de721056671052d4cdffe8d3f1031f6fe8d41c04cfc14bde9",
+    "album": "D1 MIDI mp3 SC55",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 SC55"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Descent.mp3",
+        "duration_ms": 230254,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Descent",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99864846,
+        "acoustid_recording_id": "368a7450-b8c5-4ea7-b4f7-a17b116b0e05",
+        "fingerprint_chars": 6434,
+        "fingerprint_sha256": "93ad06bb204c11aa7288a361c59b3e17abf221df683d1f13f203e5c5fa52daeb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Briefing.mp3",
+        "duration_ms": 175118,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Briefing",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99864554,
+        "acoustid_recording_id": "3f803a96-8dff-4dfc-b78b-fa252df1247b",
+        "fingerprint_chars": 4220,
+        "fingerprint_sha256": "b2daebec0200673b17fa2ed15a229af9c34fb02bedb8c75c2a6241b247ea440e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Credits.mp3",
+        "duration_ms": 131585,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Credits",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9999011,
+        "acoustid_recording_id": "423506e0-5a7a-4122-ac31-92392c40af43",
+        "fingerprint_chars": 3671,
+        "fingerprint_sha256": "d565bc8563ba365aa3cde8927b87139c8953652642c27656ffc18e74a0c9f1ab",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 4,
+        "line": 34,
+        "filename": "04 Escape.mp3",
+        "duration_ms": 20221,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - End Level Theme",
+        "acoustid_album": "Descent",
+        "fingerprint_chars": 524,
+        "fingerprint_sha256": "442a8f551b43c05982ce01d0e7f630f3dd26e89411610a4a1b408a8e5228f649",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 41,
+        "filename": "05 Ending.mp3",
+        "duration_ms": 127983,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Ending",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99914294,
+        "acoustid_recording_id": "f09d797a-dad1-47c8-a486-aaac10d026e0",
+        "fingerprint_chars": 3888,
+        "fingerprint_sha256": "aa47058e57b435abb77c7da1b9556f513bef53377139f4c270d12a95e67133e6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 6,
+        "line": 50,
+        "filename": "06 (Level 1) Lunar Outpost.mp3",
+        "duration_ms": 199376,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Lunar Outpost",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9985965,
+        "acoustid_recording_id": "a3f8aa8c-6dd0-4273-9c2c-4cee917e8269",
+        "fingerprint_chars": 5071,
+        "fingerprint_sha256": "6bc48be011c9709cd0c49984ff25739fb69d241b329ca062ebaa3fb2d51baf96",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 7,
+        "line": 59,
+        "filename": "07 (Level 2) Lunar Scilab.mp3",
+        "duration_ms": 223753,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Lunar Scilab",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99874735,
+        "acoustid_recording_id": "a8dd6a48-ed8e-41b4-8f82-f71c74c4640e",
+        "fingerprint_chars": 6552,
+        "fingerprint_sha256": "d2b5119e14c619c8365165fe335b4c2c4b52597e41b0319990cc80b1d3f6c953",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 8,
+        "line": 68,
+        "filename": "08 (Level 3) Lunar Military Base.mp3",
+        "duration_ms": 211129,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Lunar Military Base",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9992748,
+        "acoustid_recording_id": "30a73ddd-a393-44ae-ae2a-9aaca7abd7f9",
+        "fingerprint_chars": 5678,
+        "fingerprint_sha256": "32f9a94c345bc9c40febb9f8d42b6f1c57415e6ccd1519c678f225c6dc3cc912",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 9,
+        "line": 77,
+        "filename": "09 (Level 4) Venus Atmospheric Lab.mp3",
+        "duration_ms": 149983,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Venus Atmospheric Lab",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99897814,
+        "acoustid_recording_id": "51d79723-2e4b-4494-bb2d-f31928399964",
+        "fingerprint_chars": 4455,
+        "fingerprint_sha256": "ea91186dff961f01cdc3dbbe8795cea8bbffc2d69960f903fd29c86990782b80",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 10,
+        "line": 86,
+        "filename": "10 (Level 5) Venus Nickel-Iron Mine.mp3",
+        "duration_ms": 186196,
+        "fingerprint_chars": 5538,
+        "fingerprint_sha256": "bdbae7e46784ac5560f4bd6787bf8803cfe486961f0e3da2fb1e4670cb306ca1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 91,
+        "filename": "11 (Level 6) Mercury Solar Lab.mp3",
+        "duration_ms": 157312,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Mercury Solar Lab",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9990111,
+        "acoustid_recording_id": "fa17f5c4-7fc1-4c6b-a77b-1374dbe4f17a",
+        "fingerprint_chars": 4615,
+        "fingerprint_sha256": "23a5a6a5aee4030155e2efaa89537c318e7fefa8f4c81564c7e67a4beccc6f6e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 12,
+        "line": 100,
+        "filename": "12 (Level 7) Mercury Core.mp3",
+        "duration_ms": 178260,
+        "fingerprint_chars": 5162,
+        "fingerprint_sha256": "cc6c38ca10ae5bcf218192ae6e640cff2ac0b4a26a23ba5100b1a3a4f2fb307e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 105,
+        "filename": "13 (Level 8) Mars Processing Station.mp3",
+        "duration_ms": 173770,
+        "acoustid_name": "Allister Brimble - [Level 8: Mars Processing Station]",
+        "acoustid_album": "Descent In-Game Soundtrack",
+        "acoustid_score": 1,
+        "acoustid_recording_id": "82ade2e9-84fe-4f87-9138-c2fa113f7898",
+        "fingerprint_chars": 5343,
+        "fingerprint_sha256": "ac038a44e1f77a30e67dcedd76486f0025369b4f182eaf277dfd80e8f0133904",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 14,
+        "line": 114,
+        "filename": "14 (Level 9) Mars Military Dig.mp3",
+        "duration_ms": 212696,
+        "fingerprint_chars": 6528,
+        "fingerprint_sha256": "9ef3260017caaf538a0c99607cbb61be828c1a37283a268726aae08772e77c6f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 119,
+        "filename": "15 (Level 10) Mars Military Base.mp3",
+        "duration_ms": 300589,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Mars Military Base",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9980551,
+        "acoustid_recording_id": "8bf046da-d054-4694-852e-e32c980b5bed",
+        "fingerprint_chars": 7636,
+        "fingerprint_sha256": "146338bb6950ff1c377ad89fe65eadc7910bfc25ef5600d0d003fbaff124229e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 16,
+        "line": 128,
+        "filename": "16 (Level 11) Io Sulfur Mine.mp3",
+        "duration_ms": 177749,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Io Sulfur Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99818695,
+        "acoustid_recording_id": "80cfa9ce-bbdb-4ce3-a2f2-229768c40121",
+        "fingerprint_chars": 5208,
+        "fingerprint_sha256": "8a3e585b8712d92aa8801b2d0d221e216863274fa59cc5247648966a2c6d4e08",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 17,
+        "line": 137,
+        "filename": "17 (Level 12) Callisto Tower Colony.mp3",
+        "duration_ms": 179970,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Callisto Tower Colony",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9988133,
+        "acoustid_recording_id": "6513ef23-6d8d-44aa-b9c6-bf6a4dc54e40",
+        "fingerprint_chars": 5123,
+        "fingerprint_sha256": "46e55dffdb8f06f88fecb08e1ac3a6c9422088703cb5e4f69dc81557cf676ba7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 18,
+        "line": 146,
+        "filename": "18 (Level 13) Europa Mining Colony.mp3",
+        "duration_ms": 201256,
+        "acoustid_name": "Allister Brimble - [Level 13: Europa Mining Colony]",
+        "acoustid_album": "Descent In-Game Soundtrack",
+        "acoustid_score": 0.99996704,
+        "acoustid_recording_id": "0a182839-1d8a-4ee2-9cb3-cbf62a4efe12",
+        "fingerprint_chars": 5790,
+        "fingerprint_sha256": "edd9d47481113e5e8c7bd93cebd5229a408009dd60998193a9717563f772f6b9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 19,
+        "line": 155,
+        "filename": "19 (Level 14) Europa CO2 Mine.mp3",
+        "duration_ms": 231648,
+        "acoustid_name": "Allister Brimble - [Level 14: Europa CO2 Mine]",
+        "acoustid_album": "Descent In-Game Soundtrack",
+        "acoustid_score": 1,
+        "acoustid_recording_id": "cf98dfd5-08b8-4165-90d4-505271695eb3",
+        "fingerprint_chars": 7190,
+        "fingerprint_sha256": "4a3b23a136c3887841bcd8cf71d9f74b77e3e0bd494701e89a91dcf63a668217",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 20,
+        "line": 164,
+        "filename": "20 (Level 15) Titan Mine.mp3",
+        "duration_ms": 187585,
+        "acoustid_name": "Allister Brimble - [Level 15: Titan Mine]",
+        "acoustid_album": "Descent In-Game Soundtrack",
+        "acoustid_score": 1,
+        "acoustid_recording_id": "246613fe-4621-4bed-a447-9e50b97fdb90",
+        "fingerprint_chars": 5950,
+        "fingerprint_sha256": "378bfd2ba54f4a82f9122ada8c02a1c1c47b7114b70c497d3beeb7f5f612f5ae",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 21,
+        "line": 173,
+        "filename": "21 (Level 16) Hyperion Methane Mine.mp3",
+        "duration_ms": 189830,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Hyperion Methane Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9997693,
+        "acoustid_recording_id": "840073b6-0ccc-4831-99db-3d31933e97e7",
+        "fingerprint_chars": 5316,
+        "fingerprint_sha256": "4e7d6ef2a04b06b58c871dc551174c604d075fb0bdbd6dd7792ac833665f2ef8",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 22,
+        "line": 182,
+        "filename": "22 (Level 17) Tethys H2O Mine.mp3",
+        "duration_ms": 190835,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Tethys H2O Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99897814,
+        "acoustid_recording_id": "c2ebf4fc-93f7-46f9-a314-7e1dc293efbc",
+        "fingerprint_chars": 5967,
+        "fingerprint_sha256": "a1a711329ce368861848b563b6e8a57bfa6820053d1c0960a94c48a0fc58c5a4",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 23,
+        "line": 191,
+        "filename": "23 (Level 18) Miranda Mine.mp3",
+        "duration_ms": 236536,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Miranda Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.9992885,
+        "acoustid_recording_id": "a05b9d27-29ee-40e0-b1a0-9f14122dfd70",
+        "fingerprint_chars": 6342,
+        "fingerprint_sha256": "31ccc2a55bafa3e0ef78e01272c1c5d968a69cd85846e71eda3ba5880925df18",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 24,
+        "line": 200,
+        "filename": "24 (Level 19) Oberon Mine.mp3",
+        "duration_ms": 164318,
+        "fingerprint_chars": 4987,
+        "fingerprint_sha256": "6599ce9488c497620742834ab6f8d32e3f47f8cb5cdcc22125113387b28531fd",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 205,
+        "filename": "25 (Level 20) Oberon Iron Mine.mp3",
+        "duration_ms": 191930,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Oberon Iron Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.99986815,
+        "acoustid_recording_id": "7d20e48e-f79e-414d-a627-432e3388bb84",
+        "fingerprint_chars": 5632,
+        "fingerprint_sha256": "c15be57483e24c2965a24a8d26adb02f060976af8bd4336fcc3eb0c9aca7400e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 26,
+        "line": 214,
+        "filename": "26 (Level 21) Oberon Platinum Mine.mp3",
+        "duration_ms": 180589,
+        "acoustid_name": "Ken Allen, Brian Luzietti, Larry Peacock, Leslie Spitzer, Jim Torres, Tim Wiles - Oberon Platinum Mine",
+        "acoustid_album": "Descent: Reworked MIDI Soundtrack",
+        "acoustid_score": 0.999077,
+        "acoustid_recording_id": "7c3c8ddd-348f-4d50-b994-dc1955853bf2",
+        "fingerprint_chars": 5060,
+        "fingerprint_sha256": "a0e2d3e85714c5fe1b9e4b68fc91ebf301f435e4b74082e23fe7bd0a2a9ec7cf",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 27,
+        "line": 223,
+        "filename": "27 (Level 22) Neptune Storage Depot.mp3",
+        "duration_ms": 171192,
+        "acoustid_name": "Allister Brimble - [Level 22: Neptune Storage Depot]",
+        "acoustid_album": "Descent In-Game Soundtrack",
+        "acoustid_score": 1,
+        "acoustid_recording_id": "eed73b49-ae8a-4fae-b1bb-6a7ce41292a8",
+        "fingerprint_chars": 4979,
+        "fingerprint_sha256": "9d9890622964763275749cc24134597e226829ca867fca7e375347932e0db4da",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 28,
+        "line": 232,
+        "filename": "briefing.ogg",
+        "duration_ms": 175763,
+        "fingerprint_chars": 4738,
+        "fingerprint_sha256": "e8cf1fc32ecb53fea58ff7d58ffdddceed1193f06be736e0f1a417c58b506e88",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 29,
+        "line": 237,
+        "filename": "credits.ogg",
+        "duration_ms": 128062,
+        "fingerprint_chars": 3520,
+        "fingerprint_sha256": "a51b9dd3efab93f2e38be7afeb12cda0a77721b234fbd165492cb7c98d63a394",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 30,
+        "line": 242,
+        "filename": "descent.ogg",
+        "duration_ms": 226986,
+        "fingerprint_chars": 6431,
+        "fingerprint_sha256": "d504bfdcd4d92978da128365318cd9ae1632f0effbd6f5bce35240cb14e03f61",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 31,
+        "line": 247,
+        "filename": "endgame.ogg",
+        "duration_ms": 128743,
+        "fingerprint_chars": 3907,
+        "fingerprint_sha256": "bd9a8a8413fbf6dbdb3be7917b7ab15e22eae371b290b43ae3123113e7b332aa",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 32,
+        "line": 252,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19702,
+        "fingerprint_chars": 523,
+        "fingerprint_sha256": "5b171bde114defe9d9daa797d7e28933f0068510ce0c73480571a446565a9214",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 33,
+        "line": 257,
+        "filename": "game01.ogg",
+        "duration_ms": 200260,
+        "fingerprint_chars": 5408,
+        "fingerprint_sha256": "2719494ddaa56d5b987eb528c748f1a4dad036e6002861c6bb3aa1e4855ee935",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 34,
+        "line": 262,
+        "filename": "game02.ogg",
+        "duration_ms": 224815,
+        "fingerprint_chars": 6762,
+        "fingerprint_sha256": "ea3ac747096000a64272394e08bb315919640fa012bfa4d30e18e1d6aa582e35",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 35,
+        "line": 267,
+        "filename": "game03.ogg",
+        "duration_ms": 212144,
+        "fingerprint_chars": 5927,
+        "fingerprint_sha256": "d4f787c2fcfc6156fd5ed109ad84e27d90b6ed876df59926ba1c9c7b42dd6e94",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 36,
+        "line": 272,
+        "filename": "game04.ogg",
+        "duration_ms": 150981,
+        "fingerprint_chars": 4420,
+        "fingerprint_sha256": "0f050acdbf628c332318448ce6e9d9442b618c4e65836e2b2ab42fa8a1f14491",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 37,
+        "line": 277,
+        "filename": "game05.ogg",
+        "duration_ms": 184233,
+        "fingerprint_chars": 5492,
+        "fingerprint_sha256": "b38097250b2b695fdc496f5ae3a469cd2a411ff9786ab2682f73d29d5fecdbb5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 38,
+        "line": 282,
+        "filename": "game06.ogg",
+        "duration_ms": 158139,
+        "fingerprint_chars": 4674,
+        "fingerprint_sha256": "9bc01476c0e7bf6c76eb5cd6ce06d7bf61776497a15ce5e6ce8a1ca7b36050d7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 39,
+        "line": 287,
+        "filename": "game07.ogg",
+        "duration_ms": 178480,
+        "fingerprint_chars": 5359,
+        "fingerprint_sha256": "ee274fe238d446e582d68a82f4efef5edaf92d64fb14d268058c85e2ed290a3a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 40,
+        "line": 292,
+        "filename": "game08.ogg",
+        "duration_ms": 175124,
+        "fingerprint_chars": 5334,
+        "fingerprint_sha256": "3a9949849b524869eb3e97fb8a42ae7fdc566194fba4728ca63b762746240b54",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 41,
+        "line": 297,
+        "filename": "game09.ogg",
+        "duration_ms": 211905,
+        "fingerprint_chars": 6675,
+        "fingerprint_sha256": "a38597314620980d3fe95344fef0ea84c4ba8323b924a1999df359bec4ee0a1c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 42,
+        "line": 302,
+        "filename": "game10.ogg",
+        "duration_ms": 295851,
+        "fingerprint_chars": 8164,
+        "fingerprint_sha256": "24a6e0f580a27f919f34d1002b6d32cd158458817efd7e77c4f70f241e433629",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 43,
+        "line": 307,
+        "filename": "game11.ogg",
+        "duration_ms": 178967,
+        "fingerprint_chars": 5331,
+        "fingerprint_sha256": "22b90dd8001db3bff51f2c97f4655a2836cd2ac681a2dda0e597277a733f3494",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 44,
+        "line": 312,
+        "filename": "game12.ogg",
+        "duration_ms": 181371,
+        "fingerprint_chars": 5286,
+        "fingerprint_sha256": "00d408e9e43032f21191abce00359d365f43f6449794f8adb4aa533c64b93dbb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 45,
+        "line": 317,
+        "filename": "game13.ogg",
+        "duration_ms": 202269,
+        "fingerprint_chars": 5795,
+        "fingerprint_sha256": "458fdc852fbc96e752dffd2798c29007db7cb1d5907e9343f511e8e493a47d22",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 46,
+        "line": 322,
+        "filename": "game15.ogg",
+        "duration_ms": 188395,
+        "fingerprint_chars": 5894,
+        "fingerprint_sha256": "ca2f16be40487678264c1dc674ad9d26dcf07736f7b3ba63fcbf70af1a703c21",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 47,
+        "line": 327,
+        "filename": "game16.ogg",
+        "duration_ms": 188424,
+        "fingerprint_chars": 5047,
+        "fingerprint_sha256": "c3e09a911c96bcc14b5d345a29addb7f21a9111493d9dea98a17fea2a4c9b620",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 48,
+        "line": 332,
+        "filename": "game17.ogg",
+        "duration_ms": 191896,
+        "fingerprint_chars": 5790,
+        "fingerprint_sha256": "440f96ec6a39c80041fa1ab5bc2359202a97aa79eb7b8d635631d9fa67c379bc",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 49,
+        "line": 337,
+        "filename": "game18.ogg",
+        "duration_ms": 237065,
+        "fingerprint_chars": 6335,
+        "fingerprint_sha256": "8687a82dded833b0b77f95dd97fd7d58ecc6de4f2b03367189aa1b61f2466f15",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 50,
+        "line": 342,
+        "filename": "game19.ogg",
+        "duration_ms": 164386,
+        "fingerprint_chars": 4996,
+        "fingerprint_sha256": "5333605f9b17bcf9020b473eac1520821a512e443d5b43be7f74fefefa09d22d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 51,
+        "line": 347,
+        "filename": "game20.ogg",
+        "duration_ms": 192783,
+        "fingerprint_chars": 5706,
+        "fingerprint_sha256": "1aaea886016b0e88c38e4e7a2a9fb3a2d6478c1048183058bbeb7cc409e708da",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 52,
+        "line": 352,
+        "filename": "game21.ogg",
+        "duration_ms": 181774,
+        "fingerprint_chars": 5139,
+        "fingerprint_sha256": "5c663be2acea11238837050c80a3587ad40d10beff715d086dac7beb14c478a6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 53,
+        "line": 357,
+        "filename": "game22.ogg",
+        "duration_ms": 169838,
+        "fingerprint_chars": 4963,
+        "fingerprint_sha256": "9fd26c4273c81a2e5673d80951ad0f4eb39d12e9cc59f4b9a1b8cf1433452994",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0289",
+    "path": "game_data/music/D1 MIDI mp3 SC88/chromaprint_info.jsonc",
+    "lines": 142,
+    "source_sha256": "2a2b525c3d2cefcd37bbb5cd84f79483409805761e2548e02d2b0dd27f89d591",
+    "album": "D1 MIDI mp3 SC88",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 SC88"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 175817,
+        "fingerprint_chars": 4431,
+        "fingerprint_sha256": "aa3a3a2d7bc798fca0a8952ee4287dbf9f2e4051554f9ec87c0aae4c2c01ddda",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 131670,
+        "fingerprint_chars": 3624,
+        "fingerprint_sha256": "abcea0d68cd00eb7c8885309020802d4d1a80d153bf134e44bfd23e3cf97a58e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent.ogg",
+        "duration_ms": 227202,
+        "fingerprint_chars": 6167,
+        "fingerprint_sha256": "f7f575957e63efc7a6fbfb056d9e6b82e2460019115ef84754b2df9798646fc3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129416,
+        "fingerprint_chars": 3770,
+        "fingerprint_sha256": "37d0ff3e8ea35f986a6c24eca162187d835932341d09e79c11e4bf48cdbd8d35",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 20143,
+        "fingerprint_chars": 524,
+        "fingerprint_sha256": "293ac204a55062a919b2ccd180cbaaf965dca512ac72c34985c1dc83993eeff2",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 200446,
+        "fingerprint_chars": 5186,
+        "fingerprint_sha256": "aaad076b2f656714d10d63a1dddda45d95f6451e4dba3e83d38482138c6fe393",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 225372,
+        "fingerprint_chars": 6527,
+        "fingerprint_sha256": "0d3aa4a9c5297a76e30aaec0490acdf50844fa6f51ae6ea8b75e339423f59792",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 212659,
+        "fingerprint_chars": 5668,
+        "fingerprint_sha256": "75ac19f58e6b57ea45dbc60d6338ac8b35f2a7387066d34e13eaae08f88de305",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 151823,
+        "fingerprint_chars": 4446,
+        "fingerprint_sha256": "1d2a1efb7a3c38eabf8689039a7c869e4c413ac9418b218b47fa5022c041d036",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "game05.ogg",
+        "duration_ms": 185620,
+        "fingerprint_chars": 5519,
+        "fingerprint_sha256": "6dc8d054b2f5c39cf4ad6304d70202ed8a09d58fa578240f069f3ce88aa446b8",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "game06.ogg",
+        "duration_ms": 159242,
+        "fingerprint_chars": 4766,
+        "fingerprint_sha256": "e910ea0123f9079264a03becc744c76dc6379491f3da1f6e9d8802c1515fbe15",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "game07.ogg",
+        "duration_ms": 179102,
+        "fingerprint_chars": 4564,
+        "fingerprint_sha256": "9afe434824c80cfba68a1ae1861ad5d545226c8edf11b3dc7e762270c19ca2cb",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (game07.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "game08.ogg",
+        "duration_ms": 175847,
+        "fingerprint_chars": 5447,
+        "fingerprint_sha256": "3e1ad666702720d3950febff46aac45de0360325c5599ebc2b46c372a73013ad",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "game09.ogg",
+        "duration_ms": 211487,
+        "fingerprint_chars": 6519,
+        "fingerprint_sha256": "c123e01999858ea0e3d9ffa4f19efb4c59485f997d2b4b903e6c04c64c1479ee",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "game10.ogg",
+        "duration_ms": 296739,
+        "fingerprint_chars": 8203,
+        "fingerprint_sha256": "54dbcdbb34616e4392fec51b93358370c87d55ccf66442deaacdcac852d0cbce",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "game11.ogg",
+        "duration_ms": 179641,
+        "fingerprint_chars": 5248,
+        "fingerprint_sha256": "48a89050898131c01a8329c1a80d1228bca6042d5787bf1e7f67dd5ac6769150",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "game12.ogg",
+        "duration_ms": 181521,
+        "fingerprint_chars": 5083,
+        "fingerprint_sha256": "8cf0dda0850e6a960a862f54e38ff4871c1deb80681dbeec80066f6bb8734ea1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "game13.ogg",
+        "duration_ms": 202419,
+        "fingerprint_chars": 5930,
+        "fingerprint_sha256": "e68c3a035ab0d309809e44c0053855c94d9cd55957ed63b371bdef680199b696",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "game14.ogg",
+        "duration_ms": 232245,
+        "fingerprint_chars": 7114,
+        "fingerprint_sha256": "f5a193b6af40a853f01cd7a7c8ad9e0c17eda6a33cdbec68d3b662a82d611cc7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "game15.ogg",
+        "duration_ms": 189207,
+        "fingerprint_chars": 5894,
+        "fingerprint_sha256": "28260a7c6fc940652244b926612fcd3e056906d6038bf317a61a6404d362c3b6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "game16.ogg",
+        "duration_ms": 189095,
+        "fingerprint_chars": 5291,
+        "fingerprint_sha256": "a2b8b2e31422d63660e10122cffbddbcc510963100fab41cea9cd96123a64f07",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "game17.ogg",
+        "duration_ms": 192369,
+        "fingerprint_chars": 5852,
+        "fingerprint_sha256": "87471b205a6289ac77c6f76f7d309fd58fc066be7485370ffdaa50444b35d4f1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "game18.ogg",
+        "duration_ms": 237387,
+        "fingerprint_chars": 6164,
+        "fingerprint_sha256": "ad490d18ca500a80b53b6136c7a467ff800b38dfa560712b2989541e8229ae8d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "game19.ogg",
+        "duration_ms": 164329,
+        "fingerprint_chars": 4736,
+        "fingerprint_sha256": "cdd2f3328d684560b00b51433154a023b49308f6837834f58411638a4bab8e59",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "game20.ogg",
+        "duration_ms": 193117,
+        "fingerprint_chars": 5590,
+        "fingerprint_sha256": "96056a078e0fc6a4d8acfe18cbdfb6fdc8797766cc92806da7b7ca0bcfc1b883",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "game21.ogg",
+        "duration_ms": 182323,
+        "fingerprint_chars": 5056,
+        "fingerprint_sha256": "aec1ca1090ca4c05b8cd108956f3a145475c4b61c3416c6b5d189d03bc52bc78",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "game22.ogg",
+        "duration_ms": 170306,
+        "fingerprint_chars": 4962,
+        "fingerprint_sha256": "a7c49b2a9502e957701b6f8b0ce0909e7cd1ec4771a4b8a1fb8951721b1b1cbb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0289",
+    "path": "game_data/music/D1 MIDI mp3 SC88Pro/chromaprint_info.jsonc",
+    "lines": 142,
+    "source_sha256": "a08f354ac49cd749a8c37080d3b41b54481ac708c6ab1e7edaea0f021e8a59b6",
+    "album": "D1 MIDI mp3 SC88Pro",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 SC88Pro"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 175949,
+        "fingerprint_chars": 4614,
+        "fingerprint_sha256": "afdd3b62e1f701bbd957d6ee8b1f1523fa11756135de95b99ac4706a9c813fff",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 132435,
+        "fingerprint_chars": 3659,
+        "fingerprint_sha256": "bc53e13e6735b530577dda9d2f0f230fa6058dc40c05474f182d086e87fe8a57",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent.ogg",
+        "duration_ms": 227276,
+        "fingerprint_chars": 6126,
+        "fingerprint_sha256": "5a12fd3a28a52e388a06b1cb3c79f15964b1ea2462514be1ff556cf83e4f5c27",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129242,
+        "fingerprint_chars": 3784,
+        "fingerprint_sha256": "e82acbdf98eca546288a1582d181999099f37e68c613ac819ef8403f56301e09",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19992,
+        "fingerprint_chars": 531,
+        "fingerprint_sha256": "1e20326f79446614843c5ec20b8b289cb95820f44fde92c67f184f8078af1aac",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 200132,
+        "fingerprint_chars": 5112,
+        "fingerprint_sha256": "dfbd056a3d7a154cd9ee7cdced74cb55619316a9408d9107565846bd2af4cb02",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 225024,
+        "fingerprint_chars": 6424,
+        "fingerprint_sha256": "5ced6319abde74ff37e42c3eef5e51a9cb64ac38d265a6732f05fca2343e84a7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 212404,
+        "fingerprint_chars": 5671,
+        "fingerprint_sha256": "dec51f07bc85fc6c793b16c359e0c891f4dc06ca042d88f1355f8e4a2c6dd84a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 151637,
+        "fingerprint_chars": 4566,
+        "fingerprint_sha256": "c57cc275e3fc8218a02f9bff839b610cc2215e52a4fa6c4c0c73dd5a917a556d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "game05.ogg",
+        "duration_ms": 185376,
+        "fingerprint_chars": 5468,
+        "fingerprint_sha256": "34893e46c392673b6ea53fe6e7461e9447250f9236692d16ce9784f71587b2f2",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "game06.ogg",
+        "duration_ms": 159033,
+        "fingerprint_chars": 4884,
+        "fingerprint_sha256": "4a86f11455ac19e329113a14c1aec2e92f3906f8f23fc8dd562c278071bfef64",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "game07.ogg",
+        "duration_ms": 179049,
+        "fingerprint_chars": 4791,
+        "fingerprint_sha256": "951270e1e86203baf9569172ba207dfa8c67929f419b9a00c2f57b047e28f4e6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "game08.ogg",
+        "duration_ms": 175566,
+        "fingerprint_chars": 5346,
+        "fingerprint_sha256": "c8643b17f526118f18edaa81aee69d052d66978d2bd2b355be184de97c1425ad",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "game09.ogg",
+        "duration_ms": 211487,
+        "fingerprint_chars": 6590,
+        "fingerprint_sha256": "81ecc5623b8c9e936ca3f805e206c2e895c5ecb3b6f06516f8b3f5aeb30f8671",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "game10.ogg",
+        "duration_ms": 296600,
+        "fingerprint_chars": 8266,
+        "fingerprint_sha256": "aa67140c726bd7c77cbcd24b6b94fa0df7b05245bf2b45f4e36470c9a29dc4c5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "game11.ogg",
+        "duration_ms": 179687,
+        "fingerprint_chars": 5372,
+        "fingerprint_sha256": "c9c367dc96590a664a391d2e9fceb7b98d5fa4d13b782fa1b7cf3c00b20ed4f7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "game12.ogg",
+        "duration_ms": 181858,
+        "fingerprint_chars": 5084,
+        "fingerprint_sha256": "442c973465b96e8b523301098dcb6be2dff07174cb4ab7fb25bc7fb9d1abf4e9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "game13.ogg",
+        "duration_ms": 203000,
+        "fingerprint_chars": 5892,
+        "fingerprint_sha256": "f7aee6ca82c86407ab01cd69f8c1614b2240549a4c00b692d4f32922fa751f27",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "game14.ogg",
+        "duration_ms": 232420,
+        "fingerprint_chars": 7182,
+        "fingerprint_sha256": "1eaa7c6c47f276d02cadc456a3066b6b8b38d9b32cf9d7429e2d32ad34a28f5f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "game15.ogg",
+        "duration_ms": 189138,
+        "fingerprint_chars": 5910,
+        "fingerprint_sha256": "706edba3ec16239fb7bcfdb55e62ed6729449a4c3e6ff9994606a24253dce0b9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "game16.ogg",
+        "duration_ms": 189033,
+        "fingerprint_chars": 5204,
+        "fingerprint_sha256": "e7425aa285626b24fdbee9ceafb45780182050a66efad73650ab0ba2290ff9f0",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "game17.ogg",
+        "duration_ms": 192632,
+        "fingerprint_chars": 5786,
+        "fingerprint_sha256": "4c002540c5daf3784d961ef3af03c73d4592b967a12d31255a97965414057bcd",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "game18.ogg",
+        "duration_ms": 237841,
+        "fingerprint_chars": 6179,
+        "fingerprint_sha256": "e99ff3787b091e24bdc390a3f00ff58febcb998ae51bb06bb55bfe7c80bed8ea",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "game19.ogg",
+        "duration_ms": 164501,
+        "fingerprint_chars": 4664,
+        "fingerprint_sha256": "684527b3b6cc7656e937c5eb1e34c2c4d1d196cf1139414fcb6f4de81a7c9c63",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "game20.ogg",
+        "duration_ms": 193561,
+        "fingerprint_chars": 5570,
+        "fingerprint_sha256": "1fb9c10542c4fdf4f5876b822c8b0ef4fcd451447b40201c88004df53b97363e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "game21.ogg",
+        "duration_ms": 182497,
+        "fingerprint_chars": 5128,
+        "fingerprint_sha256": "817db53bd8249389a49976c4b443567b9bf43903175b2cf5eb70f8553b8fb27f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "game22.ogg",
+        "duration_ms": 170225,
+        "fingerprint_chars": 4996,
+        "fingerprint_sha256": "79710bb305b5ad740f376534f54aac942b69bf7456447ca56887046e068e6afa",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  }
+]
+```
+
+## Named context identities
+
+Only described boundaries inspected; whole-file context hashes grant no additional coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `game_data/fingerprint_music_packs.ps1` | `4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9` | equal |
+| `game_data/update_known_discs_albums.ps1` | `186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a` | equal |
+| `android/helpers/acoustid_title_match.ps1` | `8a46cb71f47a14833677857909cb857c4295e721c7941f7959aa6f9f5a99b50f` | equal |
+| `android/helpers/jsonc.ps1` | `dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4` | equal |
+| `android/app/src/main/assets/known_albums.jsonc` | `93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517` | equal |
+| `android/app/src/main/assets/known_discs.jsonc` | `99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785` | equal |
+
+## Continuation
+
+No new finding/remediation or product change. Remaining delta coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Deferred probes remain follow-up under the existing constraint
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0289 music fingerprint source review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0290 music fingerprint source review 20261007 SHA256:807c7f515877c6d98ec2b9e9fc95a6b8f2a46b5aa7addebf7ef8ee8e1551b6bd -->
+
+## GQ2-CHUNK-0290 music fingerprint source review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0290.md`
+- Imported SHA-256: `807c7f515877c6d98ec2b9e9fc95a6b8f2a46b5aa7addebf7ef8ee8e1551b6bd`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0290 music fingerprint source review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0290 | [ ] TODO | source | medium | authored-config | `4 related paths` | 566 review lines under game_data/music | - |
+- Scope fingerprint `b3cf8e1aa7146e0841164575a9eff5d0cb6838b5b741dc3202daaaecae668f3c` hashes ordered table data rows with final LF
+- Full assigned LF-normalized lines; base JSON5 paths recorded where applicable
+
+| Path/scope | Attribution | Base blob and path | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `game_data/music/D1 macplay mp3/chromaprint_info.jsonc` L1-L120 | branch-added | `4c8027d347092b5f0c3568c8f04d54ef05f41884` (game_data/music/D1 macplay mp3/chromaprint_info.json5) | `9889b4cc33a96ffb39e3e702667a0bd817713a16` | `67983ec5ab58bd81a81de39d8fed2c144878a7e29e411168d5bca445bbdf6503` |
+| `game_data/music/D1 MIDI mp3 ARACHNO/chromaprint_info.jsonc` L1-L142 | branch-added | `a89a99c88d77fafc8f93311f5bffccf467bc023d` (game_data/music/D1 MIDI mp3 ARACHNO/chromaprint_info.json5) | `d70bfe396b48801976e1e1e0e5b7a9578a6685c7` | `f8cace45cda57e703a0d14dc5c12f44e0241d94a61478a223c961dc3fd772c0e` |
+| `game_data/music/D1 MIDI mp3 MU80/chromaprint_info.jsonc` L1-L142 | branch-added | `707f36fb43f9eb28eb413213901c7e43f69d2882` (game_data/music/D1 MIDI mp3 MU80/chromaprint_info.json5) | `7d1d778d0c7ff89b7ada1f8302fa185f458ff058` | `1f123e2fd3eb62f369094ed9c0e1929d10cb38e3ca7fa24a291685e522c83021` |
+| `game_data/music/D1 MIDI mp3 opl3/chromaprint_info.jsonc` L1-L162 | branch-added | `714bff091a0da233f61c972577b18b0fecb5e79b` (game_data/music/D1 MIDI mp3 opl3/chromaprint_info.json5) | `213a121772c70f03023dbc8bdec9ba8d6995ae69` | `6180135508fd1c5b76cb30ef3c46f1ecdd1566dff8f9f66a0d8a4c99ad626fc7` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Four complete MacPlay/ARACHNO/MU80/OPL3 D1 manifests, 566 lines and 98 tracks. Retain four MacPlay physical-disc omissions, all MIDI variants and four OPL3 shareware versions; filename spelling and durations remain original source metadata
+
+Reviewed every field and both generator comments in all 24 assigned files through a complete line-indexed semantic projection. Root shapes are album/tracks only; filenames are unique case-insensitively within each source, positive durations are integral milliseconds, optional scores are within 0..1 and recording IDs have the expected textual shape. All 418 named local audio files exist. Existence and schema checks do not authenticate or decode their payloads
+
+The manifests contain 2,227,005 encoded fingerprint characters. These strings were compared exactly with published payloads and hashed for complete source projections, not visually interpreted or natively decoded. All 313 published tracks retain their exact source-derived track number, basename, duration, fingerprint and every published optional field. Every one of the other 105 source records has one current catalog explanation: 101 physical-disc duplicate references resolve to existing fingerprinted audio tracks, and four ambiguity references resolve to corresponding source tracks with compatible durations. The four encoded ambiguity pairs are not byte-equal; their stored native score of 1 was not recomputed. Physical duplicate labels describe prior approximate-match decisions, not fresh byte-equality evidence
+
+Actual shared PowerShell JSONC parsing agrees with the independent projection for all 418 filenames, durations and fingerprint hashes. Actual Test-DxxAcoustIdTitleMatch evaluates all 97 source labels: 96 accepted, one rejected. For every retained track its result matches the packaged label policy. The sole rejected pair is D1 SC55 04 Escape.mp3 versus the cached End Level Theme label; the track remains published without that label. The source producer permits fingerprint-stable legacy cache metadata, while the album publisher applies maintained-title policy. Preserve this distinction; source and packaged optional fields need not be identical
+
+Inspected fingerprint_music_packs.ps1 extraction reuse/flattening, source enumeration, complete native result assertion, fingerprint-stable cached metadata reuse, lookup branching and normalized sidecar publication. Inspected update_known_discs_albums.ps1 source-ID/ordered-file projection, maintained-title filtering, exact-encoded collision augmentation, physical-disc priority and optional-field output. Full generator/native matcher bodies did not run. Source discovery includes MP3/OGG/FLAC despite folder labels containing mp3, and SC55 has deliberate MP3 plus OGG entries. The two SC55 directory labels differ from embedded names only in case; IDs use normalized album text. An initial checker assumption of exact directory spelling was corrected, as was its assumption that every source AcoustID field must be republished; these were harness assumptions, not data defects
+
+Retain branch-owned source manifests, comments, optional reviewed metadata, historical names/typos, ordering and distinct renderings. All assigned sources equal frozen head and are absent from the original inherited tree. Hand-minification, filename correction or source-track removal would obscure provenance without shrinking inherited engine changes. Even an album currently filtered to zero published tracks remains meaningful input to a future producer run
+
+Existing GQF-0030/GQR-0017 remains open: these roots carry no source inventory/digests or decoder/native/tool/Chromaprint/algorithm/schema/policy generation identity. A current consistent projection does not establish freshness. Existing GQR-0046 lossless ranking, GQR-0047 symmetric duration policy, GQR-0207 distinct-identity projection, GQR-0223 string-aware JSONC readers and BR-0612 typed serialization remain separately owned. No new finding or additive inherited-file saving is admitted
+
+Fresh checks are read-only metadata operations with scratch outputs. No media payload hash, audio decode, fingerprint generation/matching, AcoustID/network lookup, corpus regeneration, JVM/full build/device execution or deferred adversarial/security/malformed-media/resource-pressure probe ran. Earlier actual-asset JVM and album-catalog checks remain historical context only. Concurrent audio/input work and outstanding_bugs.md remain untouched
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0017; rationale: existing source-generation freshness owner, reference only, zero inherited saving
+
+## Shared host evidence identities
+
+Fresh commands: python temp/general_cleanup_20261006/check_gq2_music_sources.py; pwsh -NoProfile -File temp/general_cleanup_20261006/check_gq2_music_policy.ps1. Both exit zero. The policy probe was repeated after correcting only its summary display; final log has no serialization warning. Shared execution is not credited per report
+
+```json
+{
+  "check_gq2_music_sources.py": "486950d4c03d383d3cb72b11c71fdafaaaba1bc5a16353238186a320d59a7c9f",
+  "check_gq2_album_catalog.py": "57e9dccc69c98cb00ed51320d12fa2ab020a55d40d3fe46b2d0b2ec2f50d26bf",
+  "music-source-checks.json": "5a95dd403ab91aa1f533e59c7ab9e8ed0c10e055a90ef1d319c5a0392565f901",
+  "music-source-projection.txt": "82604d86ad5ae8b0379e958dc2ec2058bbed575e6909a7316c6b4e5b021cdd1a",
+  "check_gq2_music_policy.ps1": "11b0d6d07b819718dfd56b0f4e02c87b925b464a02ec52c7c8cc1acb306e922b",
+  "music-policy-checks.json": "d5e6f90d740387f52546f81121fd4dd3230446117d6bab6976b8d1c1abe53da3",
+  "music-policy-checks.log": "34b196eaa35c2375df749df2eff461789463a90b2ffbef06e4323012ba17cdb0"
+}
+```
+
+Shared summary:
+
+```json
+{
+  "files": 24,
+  "lines": 2644,
+  "tracks": 418,
+  "fingerprint_chars": 2227005,
+  "published": 313,
+  "duplicates": 101,
+  "ambiguous": 4,
+  "acoustid_records": 97,
+  "local_audio_present": 418,
+  "asset_sha256": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+  "native_decode_or_matching": false,
+  "disc_asset_sha256": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+  "source_payload_hashes": false,
+  "authoritative_files_written": false
+}
+```
+
+Complete assigned field/comment projections, with opaque fingerprints represented by exact length and SHA-256:
+
+```json
+[
+  {
+    "unit": "GQ2-CHUNK-0290",
+    "path": "game_data/music/D1 macplay mp3/chromaprint_info.jsonc",
+    "lines": 120,
+    "source_sha256": "67983ec5ab58bd81a81de39d8fed2c144878a7e29e411168d5bca445bbdf6503",
+    "album": "D1 macplay mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 macplay mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Primitive Rage.mp3",
+        "duration_ms": 368466,
+        "fingerprint_chars": 10794,
+        "fingerprint_sha256": "8f12db12863467e3cb9f8ef9623bc0a002bdbc1ee165d0ada25852c6cfc49db3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Outerlimits.mp3",
+        "duration_ms": 155600,
+        "acoustid_name": "Allister Brimble - Outerlimits",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9155459,
+        "acoustid_recording_id": "bdf33f88-9245-48c4-b787-221a8fbd7b7a",
+        "fingerprint_chars": 3922,
+        "fingerprint_sha256": "763dc62bc45c9383d1bbfb2185e0bcb4a45ad52dc55a486945e93861578fb8a5",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Outerlimits.mp3) matches d1-mac-2nd-bincue track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 21,
+        "filename": "03 The Escape.mp3",
+        "duration_ms": 20573,
+        "acoustid_name": "Allister Brimble - The Escape",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99935347,
+        "acoustid_recording_id": "7569b0d6-bfbe-4351-854c-8ab12bed3bf4",
+        "fingerprint_chars": 527,
+        "fingerprint_sha256": "94d2596e60c4b132b0dc783d948e48da79c5aaf802061a23b4f11afd23acf795",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 4,
+        "line": 30,
+        "filename": "04 Ether in the Air.mp3",
+        "duration_ms": 157053,
+        "acoustid_name": "Allister Brimble - Ether in the Air",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9837157,
+        "acoustid_recording_id": "5c08503c-6633-4c53-9776-5504cb534ff5",
+        "fingerprint_chars": 4095,
+        "fingerprint_sha256": "79473a0109e1aa058023674dbf038ff77b3b2788288482e3bd59c0b2f268c721",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 5,
+        "line": 39,
+        "filename": "05 Robotic Menace.mp3",
+        "duration_ms": 400360,
+        "acoustid_name": "Allister Brimble - Robotic Menace",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99841416,
+        "acoustid_recording_id": "6f3fff9b-ac14-49a9-aeb4-c8ee104c6c74",
+        "fingerprint_chars": 11883,
+        "fingerprint_sha256": "f0e7d9bcc56723a4d4fd955900830f107a5b4964e71b1989a9b96be4b1a2e6e6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 6,
+        "line": 48,
+        "filename": "06 Virtual Tension.mp3",
+        "duration_ms": 275280,
+        "acoustid_name": "Allister Brimble - Virtual Tension",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9785733,
+        "acoustid_recording_id": "7a7122d7-38fc-49dc-9364-3506e16b22d5",
+        "fingerprint_chars": 7742,
+        "fingerprint_sha256": "70bd7eecfd86e154da6db2ac08bd78f48f9c3ad3da4da9826b0eaa567d00da62",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Virtual Tension.mp3) matches descent-mac-macplay track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Time for the Big Guns.mp3",
+        "duration_ms": 176600,
+        "acoustid_name": "Allister Brimble - Time for the Big Guns",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.98384756,
+        "acoustid_recording_id": "758e1008-2502-428c-8bfb-b8183e6e9295",
+        "fingerprint_chars": 5068,
+        "fingerprint_sha256": "55904df6a0dcc22211365e9f5c351c96d9402fb5234bc3b40ec06efe49b8e849",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 8,
+        "line": 66,
+        "filename": "08 Mystery Metal.mp3",
+        "duration_ms": 420920,
+        "acoustid_name": "Allister Brimble - Mystery Metal",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.98366565,
+        "acoustid_recording_id": "f8d7abf0-1553-474e-9d32-2e540c9109bf",
+        "fingerprint_chars": 11796,
+        "fingerprint_sha256": "20ef0acd26da86d40663d41a26fc6496af9dcf65bc2789a35b5b93d24e461222",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 9,
+        "line": 75,
+        "filename": "09 Hydraulic Pressure.mp3",
+        "duration_ms": 454573,
+        "acoustid_name": "Allister Brimble - Hydraulic Pressure",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99010855,
+        "acoustid_recording_id": "6249d373-b460-48f8-a267-50acc1c50e3d",
+        "fingerprint_chars": 12658,
+        "fingerprint_sha256": "7abd4c078847a6b78c7ea2abff70dc1457462a05947cccd379f82a568e7ec3bf",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 10,
+        "line": 84,
+        "filename": "10 Not That Button!.mp3",
+        "duration_ms": 364853,
+        "acoustid_name": "Allister Brimble - Not That Button!",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.98628694,
+        "acoustid_recording_id": "b847d66b-69f5-493f-a80f-cd09257228b3",
+        "fingerprint_chars": 10611,
+        "fingerprint_sha256": "24abb523adb1b4f3e8d7458141d80150527eba81f2efb851b1cc56811a9715ba",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 11,
+        "line": 93,
+        "filename": "11 Industrial Accident.mp3",
+        "duration_ms": 269586,
+        "acoustid_name": "Allister Brimble - Industrial Accident",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9905393,
+        "acoustid_recording_id": "79089ef1-29f5-4f90-806f-a6954191866a",
+        "fingerprint_chars": 7968,
+        "fingerprint_sha256": "0c1717d5509b9b9a1e469ea1f902a75fdc6705dfba6e4db457f9f99a386d4ff1",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11 Industrial Accident.mp3) matches d1-mac-2nd-bincue track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 102,
+        "filename": "12 Overdrive.mp3",
+        "duration_ms": 187773,
+        "acoustid_name": "Allister Brimble - Overdrive",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.998511,
+        "acoustid_recording_id": "f3cbd069-5336-4330-b6bc-9f7ed0715471",
+        "fingerprint_chars": 5640,
+        "fingerprint_sha256": "13d196c25e192fbe3cce7cf1079bd9899969856586072ed949281bfa74358c6a",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12 Overdrive.mp3) matches descent-mac-macplay track 13 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 111,
+        "filename": "13 A Big Problem.mp3",
+        "duration_ms": 423280,
+        "acoustid_name": "Allister Brimble - A Big Problem",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.98074895,
+        "acoustid_recording_id": "11d88e66-f436-4e39-9862-de46efa13ba7",
+        "fingerprint_chars": 12702,
+        "fingerprint_sha256": "9985f492226f9e18fbf91b3eacc69e880a99310739b526526dbffcca1e09b8a3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0290",
+    "path": "game_data/music/D1 MIDI mp3 ARACHNO/chromaprint_info.jsonc",
+    "lines": 142,
+    "source_sha256": "f8cace45cda57e703a0d14dc5c12f44e0241d94a61478a223c961dc3fd772c0e",
+    "album": "D1 MIDI mp3 ARACHNO",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 ARACHNO"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 175366,
+        "fingerprint_chars": 4214,
+        "fingerprint_sha256": "73a03b486fc95ed2aba521081c2e01389118dbf7d3a058a6636ab1ee8acfac5e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 126675,
+        "fingerprint_chars": 3514,
+        "fingerprint_sha256": "ff053d838459a0ef07b512391f1802ab9dd859a04c7650e1f06a14bd30c123be",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent.ogg",
+        "duration_ms": 226600,
+        "fingerprint_chars": 6394,
+        "fingerprint_sha256": "3dc0e200cf0cddc6686142c9942754d18cff57a7b58924a097afd201b19928cc",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 128407,
+        "fingerprint_chars": 3739,
+        "fingerprint_sha256": "bc0ece4b739ff666abfc2490da4ae9075ab7b6ab59e156879a183c741028324d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19248,
+        "fingerprint_chars": 506,
+        "fingerprint_sha256": "cb3ca57cc061bd30b4345b9fd68a8f0b508becd5bffd178c10153a0aa9fc481b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 199515,
+        "fingerprint_chars": 5791,
+        "fingerprint_sha256": "0e6b05d3b4c8f33f6fb6c6647319644c7204a4cf9120e6bcf11f9a067bb76dbb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 224317,
+        "fingerprint_chars": 6682,
+        "fingerprint_sha256": "200c39c9e9144b3eef3c26c3e6013f893339cb1f7b1fe5ec83bf4a199c9e50ba",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 211793,
+        "fingerprint_chars": 5580,
+        "fingerprint_sha256": "263780345a51aff0c212d4e2f66b767fb6f2078fe3e07d179e7b76b56b48f10f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 150745,
+        "fingerprint_chars": 4320,
+        "fingerprint_sha256": "5d27a806a4a33a008a6a5b4defb9c68d01ffd403a1ca078848809a7318928878",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "game05.ogg",
+        "duration_ms": 184042,
+        "fingerprint_chars": 5511,
+        "fingerprint_sha256": "9d8ac620bbead2031c9b9608c5d0b58417f5f4b841da9dd8998e61ad8b36dcf7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "game06.ogg",
+        "duration_ms": 158041,
+        "fingerprint_chars": 4592,
+        "fingerprint_sha256": "5d48980fb47a1d1363c25845a6253ac446427fea8ccd9d5d8575d3dfe537d3d3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "game07.ogg",
+        "duration_ms": 178049,
+        "fingerprint_chars": 5156,
+        "fingerprint_sha256": "51ae3c9e266d9207fa16f54c3805b8fdbb265a0902238b5abdb283ab3a67ed8f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "game08.ogg",
+        "duration_ms": 174707,
+        "fingerprint_chars": 5208,
+        "fingerprint_sha256": "476f99f3da9455e9296a112617958beb35c50206e539f1fba71457b7871753fa",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "game09.ogg",
+        "duration_ms": 210956,
+        "fingerprint_chars": 6272,
+        "fingerprint_sha256": "06a7dc1ff952c0bc3539b42632ad8dcfd69f524afb74f67afde51a8947eda7b8",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "game10.ogg",
+        "duration_ms": 295929,
+        "fingerprint_chars": 6744,
+        "fingerprint_sha256": "663397277be7df363543aa1d6b5b0ff51f11a1d64335f4ea90002c2b5d8d42fb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "game11.ogg",
+        "duration_ms": 178016,
+        "fingerprint_chars": 5287,
+        "fingerprint_sha256": "eb45c02c9137ec06b3efb1ea7459bb084caedd8144b3b270bb63eefb5b385ab5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "game12.ogg",
+        "duration_ms": 180669,
+        "fingerprint_chars": 4955,
+        "fingerprint_sha256": "86bbe1e6738b3985d2798a8a5c8e4dd235d34900edd516f01ea5cb67a133af16",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "game13.ogg",
+        "duration_ms": 201583,
+        "fingerprint_chars": 5324,
+        "fingerprint_sha256": "ed0ab01a372555e14d66693fb1a20a1996630400336c413530e045509c9ebb3c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "game14.ogg",
+        "duration_ms": 231828,
+        "fingerprint_chars": 7120,
+        "fingerprint_sha256": "57780a2af6b1e3ec234277825c00e6035c1a93431ca0d2a7927f7e5b4e712078",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "game15.ogg",
+        "duration_ms": 187982,
+        "fingerprint_chars": 5879,
+        "fingerprint_sha256": "7511998461c39a9d3aac188851d2f659ad9c03e85cb424d861eb411fb4a80c03",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "game16.ogg",
+        "duration_ms": 188424,
+        "fingerprint_chars": 5144,
+        "fingerprint_sha256": "bed226cda2080b3ecd45b2ef1f1cb751120bdc8c99d0a3c54dca490395c0688b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "game17.ogg",
+        "duration_ms": 191463,
+        "fingerprint_chars": 5606,
+        "fingerprint_sha256": "c76fd3e0d294948cc13d2a664197243c68d5fab7c31bb708b963ecc0efc54007",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "game18.ogg",
+        "duration_ms": 237159,
+        "fingerprint_chars": 6340,
+        "fingerprint_sha256": "fc21cf7c750ff774482bd0db7bb80d1bdc3a99e55fff6b8fed3f325b34b39614",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "game19.ogg",
+        "duration_ms": 163436,
+        "fingerprint_chars": 4734,
+        "fingerprint_sha256": "04e0154b5bd1d1b90c889db800a08a5b7778f2b02d8baa7e9c3223b5e524391f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "game20.ogg",
+        "duration_ms": 192478,
+        "fingerprint_chars": 5276,
+        "fingerprint_sha256": "5269703fcaef07a7740f906ae87ad9e246817a7e9776619f4c4c72406e54fe6a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "game21.ogg",
+        "duration_ms": 181365,
+        "fingerprint_chars": 5039,
+        "fingerprint_sha256": "76c8d1013f90decf7ba3089587ff80bea616f4824a7c2b8cc8f0799faf501542",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "game22.ogg",
+        "duration_ms": 169089,
+        "fingerprint_chars": 4987,
+        "fingerprint_sha256": "7bf6db0e6f88fd638b1c6b527c38e752e0ef026643ea360635ff45cb99da9158",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0290",
+    "path": "game_data/music/D1 MIDI mp3 MU80/chromaprint_info.jsonc",
+    "lines": 142,
+    "source_sha256": "1f123e2fd3eb62f369094ed9c0e1929d10cb38e3ca7fa24a291685e522c83021",
+    "album": "D1 MIDI mp3 MU80",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 MU80"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 176032,
+        "fingerprint_chars": 4330,
+        "fingerprint_sha256": "8e6fca11e60649bc43e35034bc07c3eee5f805d2a460ca86a5a34e0ffa5ed625",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 128224,
+        "fingerprint_chars": 3580,
+        "fingerprint_sha256": "0ad589891b9dd3e072b6dc06f3e7e16093b64f943f856b3bfc2fa9c9aad8fcc9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent.ogg",
+        "duration_ms": 227297,
+        "fingerprint_chars": 6208,
+        "fingerprint_sha256": "a99491cdc205768a4bd96dc84db159b36c496f35715e325acfd8542d41cd4322",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129532,
+        "fingerprint_chars": 3883,
+        "fingerprint_sha256": "812d65facc20f99208deec9853586291d735e20c1e17672748e7b2406ece7fe6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 20208,
+        "fingerprint_chars": 544,
+        "fingerprint_sha256": "06782b3b1727c005e0f387bd84af9a47daf980a779711890689d5aa432b3175e",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 200341,
+        "fingerprint_chars": 5468,
+        "fingerprint_sha256": "0f5fb0e35ea7561228ff80f9f02f8eae579b459032d5cd7c2d2278f50a07c888",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 225047,
+        "fingerprint_chars": 6540,
+        "fingerprint_sha256": "a9f684e7ce4d407e05592fe7840a50ac21fd52192e906da5c1b87b9a8f551650",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 212462,
+        "fingerprint_chars": 5823,
+        "fingerprint_sha256": "98135cd8bf632949cfe904f1158644b605593b31d15e938d124c6b68ef445845",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 151452,
+        "fingerprint_chars": 4331,
+        "fingerprint_sha256": "bbc779aa68372a43fab41d907508352107073ad5a2685059cabb9409d1427662",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "game05.ogg",
+        "duration_ms": 184645,
+        "fingerprint_chars": 5514,
+        "fingerprint_sha256": "58f9f2acbe2fd8fa91d748859aa25d50b0e7ebcc0a91039778a3ac3bc3ff553b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "game06.ogg",
+        "duration_ms": 158731,
+        "fingerprint_chars": 4582,
+        "fingerprint_sha256": "e319cf57ab9131c0fdd4b0f7fe7105eb304c2a131cd4ca22b6dc7df2b5f78493",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "game07.ogg",
+        "duration_ms": 178619,
+        "fingerprint_chars": 5058,
+        "fingerprint_sha256": "64b65a4c140dfa4d325b0683e691bc012d11c7effb0a13b82ec90ddbe0b7769f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "game08.ogg",
+        "duration_ms": 175287,
+        "fingerprint_chars": 5400,
+        "fingerprint_sha256": "e757ec0e463f15ac86f9c323a1ddf51bd5f991e3f8953529511537a59233699a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "game09.ogg",
+        "duration_ms": 211231,
+        "fingerprint_chars": 6382,
+        "fingerprint_sha256": "29db6f1298339667e2f5cc2858d5ab00c4ff6741001881b3ed1f10031c5f3421",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "game10.ogg",
+        "duration_ms": 296054,
+        "fingerprint_chars": 8540,
+        "fingerprint_sha256": "6338f92cec97d1aab632c9e6365baf30d74025d65544d90263f85a9d68e35bb9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "game11.ogg",
+        "duration_ms": 179492,
+        "fingerprint_chars": 5172,
+        "fingerprint_sha256": "8ce3136a96d009a5ccf0a686d0bccd718caf6d22359c5f2ef53864ed6ffda8a0",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "game12.ogg",
+        "duration_ms": 181446,
+        "fingerprint_chars": 5232,
+        "fingerprint_sha256": "c4915205589e27d60c0667d46b3bd00cdcc19df4c4f6b1ffb87c742307488a21",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "game13.ogg",
+        "duration_ms": 202626,
+        "fingerprint_chars": 5735,
+        "fingerprint_sha256": "b5877608de90e0952d49ce5f79037acb54bb2c378696b15c8460f181f5bbd3b4",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "game14.ogg",
+        "duration_ms": 232262,
+        "fingerprint_chars": 7155,
+        "fingerprint_sha256": "f15f5adf99892f9f892e3e872e3df055761752cc4976d03de53835e531ddc5f7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "game15.ogg",
+        "duration_ms": 188900,
+        "fingerprint_chars": 6032,
+        "fingerprint_sha256": "3b3f205b069130e3e6f26e9b676423bfb20e3550ad57f4b2bc896c6ae871efa8",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "game16.ogg",
+        "duration_ms": 188429,
+        "fingerprint_chars": 5170,
+        "fingerprint_sha256": "2f67d0d9223edb7f3c9a5bd4679a3c7dc466ac6fe0b8a785b715848421bb4aec",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "game17.ogg",
+        "duration_ms": 192319,
+        "fingerprint_chars": 5758,
+        "fingerprint_sha256": "ce16f701475707c5ad96d23d4cc5f04d97a4dec76d16ab963b7c1c84afdecfd9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "game18.ogg",
+        "duration_ms": 237412,
+        "fingerprint_chars": 6544,
+        "fingerprint_sha256": "98cc630d2b553f7bb4ad4e74d3e8b1189e5abf23e7f482ab4538849f955c7ed0",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "game19.ogg",
+        "duration_ms": 164173,
+        "fingerprint_chars": 4734,
+        "fingerprint_sha256": "57428510ed2d89a831103a4d7cfd5cbb5bc91641922041fb535133932aa9a801",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "game20.ogg",
+        "duration_ms": 192948,
+        "fingerprint_chars": 5504,
+        "fingerprint_sha256": "84a7e9769c2698d55eb3a6fa4ab8c5fb478c950e8811cbcad017a6d20020d053",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "game21.ogg",
+        "duration_ms": 182218,
+        "fingerprint_chars": 5266,
+        "fingerprint_sha256": "b3a81441013316387665ba316c52584dc54b97915d20137ff83ce03720347ed3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "game22.ogg",
+        "duration_ms": 170051,
+        "fingerprint_chars": 5152,
+        "fingerprint_sha256": "2799fa7c433e8ce9480d7466cac61bcca900d5fbf82deab2428a8bb2f27fa34f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0290",
+    "path": "game_data/music/D1 MIDI mp3 opl3/chromaprint_info.jsonc",
+    "lines": 162,
+    "source_sha256": "6180135508fd1c5b76cb30ef3c46f1ecdd1566dff8f9f66a0d8a4c99ad626fc7",
+    "album": "D1 MIDI mp3 opl3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3 opl3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Descent.mp3",
+        "duration_ms": 213480,
+        "fingerprint_chars": 5567,
+        "fingerprint_sha256": "00fae952b4fbe5e930d3a65832f0f72e1b35a42ef62944ee945c2afdd4e74ea9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Briefing.mp3",
+        "duration_ms": 175872,
+        "fingerprint_chars": 4071,
+        "fingerprint_sha256": "033a995791525bf0f3ec987f31e6b95ed72c05de2e5b9d636c646c0b61667f07",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "03 Credits.mp3",
+        "duration_ms": 118440,
+        "fingerprint_chars": 3054,
+        "fingerprint_sha256": "006edf5552d0b92d754e36a990e0a071cb22c7f14ff4cb4fe17ce057255cac42",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "04 Escape.mp3",
+        "duration_ms": 21048,
+        "fingerprint_chars": 543,
+        "fingerprint_sha256": "14635976feebeb3e8c10a81e663fc26ba765fce1c774c0aa734def08e0b7e36f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "05 Ending.mp3",
+        "duration_ms": 127944,
+        "fingerprint_chars": 3780,
+        "fingerprint_sha256": "60e62bbca4384a72bd884dca39bf80f5091e1821039bba5ee0c2befaa42a4ec7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "06 (Level 1) Lunar Outpost.mp3",
+        "duration_ms": 197496,
+        "fingerprint_chars": 5562,
+        "fingerprint_sha256": "1e5395e5f38d0b0a36e9d74e87892b65a7730798af73326f3f6c8de63daeafd1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "07 (Level 2) Lunar Scilab.mp3",
+        "duration_ms": 227544,
+        "fingerprint_chars": 6812,
+        "fingerprint_sha256": "091ab83e46dd0cc65717526054a0304b956cdbd510f98e6a73d7ccf1fad0fd8c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "08 (Level 3) Lunar Military Base.mp3",
+        "duration_ms": 213024,
+        "fingerprint_chars": 5843,
+        "fingerprint_sha256": "b5dcf8a5cd474095d0017c988b54a31d7a50fa92936dcccec35f36aad4a9845f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "09 (Level 4) Venus Atmospheric Lab.mp3",
+        "duration_ms": 150744,
+        "fingerprint_chars": 4270,
+        "fingerprint_sha256": "7e2ef542a87587f3509ff2aac88312637265ec31808d842da05dbd39f42a511b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "10 (Level 5) Venus Nickel-Iron Mine.mp3",
+        "duration_ms": 185184,
+        "fingerprint_chars": 5444,
+        "fingerprint_sha256": "93027d2e82ebbd615d7b23dffe2a091b88bf9fc91c2eee6c327042aebb7d1f5c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "11 (Level 6) Mercury Solar Lab.mp3",
+        "duration_ms": 159096,
+        "fingerprint_chars": 4440,
+        "fingerprint_sha256": "b9cff23ceed5d49417c92c9bb4fcc955777dc4eee3b5a288929662a08568d1d3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "12 (Level 7) Mercury Core.mp3",
+        "duration_ms": 179232,
+        "fingerprint_chars": 5178,
+        "fingerprint_sha256": "54b96221253419d2af1753c024012fea885e2c0fe484d381b97024c064e2bb35",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "13 (Level 8) Mars Processing Station.mp3",
+        "duration_ms": 174912,
+        "fingerprint_chars": 5302,
+        "fingerprint_sha256": "0015b895a8aeb5cc902dfc629619342830006c510ad18a8e53d50abc042f147f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "14 (Level 9) Mars Military Dig.mp3",
+        "duration_ms": 212184,
+        "fingerprint_chars": 6484,
+        "fingerprint_sha256": "ccb86f72ecfcf90da4fef7d4f7718edee6bf84eebae353eaefd16ca6ded13f53",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "15 (Level 10) Mars Military Base.mp3",
+        "duration_ms": 298032,
+        "fingerprint_chars": 8518,
+        "fingerprint_sha256": "d3c7b49f3d6ee2cd7a8c12067c7355a0385be80398c654ecacf0608f3857bc32",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "16 (Level 11) Io Sulfur Mine.mp3",
+        "duration_ms": 178344,
+        "fingerprint_chars": 4760,
+        "fingerprint_sha256": "3dbee61de584d07392495b6113e6b97829630be55fb58b177625bd3e21bf0949",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "17 (Level 12) Callisto Tower Colony.mp3",
+        "duration_ms": 181176,
+        "fingerprint_chars": 5012,
+        "fingerprint_sha256": "ed4f92bd585dfc9bc7f80e4247490eaac704aa5d8c44f3bad3349d72300a8923",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "18 (Level 13) Europa Mining Colony.mp3",
+        "duration_ms": 200856,
+        "fingerprint_chars": 5976,
+        "fingerprint_sha256": "022925324598d3d26fb8f2c2e58a524b8075c67db1bf86df5afed302bf70e4a6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "19 (Level 14) Europa CO2 Mine.mp3",
+        "duration_ms": 232368,
+        "fingerprint_chars": 6224,
+        "fingerprint_sha256": "bc7789bad6ce460761a15a3055cea4c066bb4c586250a455f6d529047ee535dd",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "20 (Level 15) Titan Mine.mp3",
+        "duration_ms": 188040,
+        "fingerprint_chars": 5644,
+        "fingerprint_sha256": "f435babcf9267422ee5c99c86bfd1ec42dafbdc5a65ce9f8f0a413cd04bf3242",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "21 (Level 16) Hyperion Methane Mine.mp3",
+        "duration_ms": 188472,
+        "fingerprint_chars": 4678,
+        "fingerprint_sha256": "1fd4e387c2dbe39615d7e30f7d65125917638153b13ecf4a5c96c3f997064291",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "22 (Level 17) Tethys H20 Mine.mp3",
+        "duration_ms": 191544,
+        "fingerprint_chars": 5492,
+        "fingerprint_sha256": "02d926cf455e68f03707b5f36939aed34780b05a8f43b8b48fee347f1c86b71c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "23 (Level 18) Miranda Mine.mp3",
+        "duration_ms": 277416,
+        "fingerprint_chars": 7576,
+        "fingerprint_sha256": "6dcfbc20475238506810069860bc805e9f4cac729c0019499ba39b9f7ab9fd3a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "24 (Level 19) Oberon Mine.mp3",
+        "duration_ms": 165384,
+        "fingerprint_chars": 4844,
+        "fingerprint_sha256": "02037e6280b4a5c5b9607a9200d2609db34b1bcacf5a196d210ec4a1a6d7db3a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "25 (Level 20) Oberon Iron Mine.mp3",
+        "duration_ms": 193032,
+        "fingerprint_chars": 5112,
+        "fingerprint_sha256": "86d8ad498150a88c0304641031553cc1e27448428d559c6137c243e41ac3e591",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "26 (Level 21) - Oberon Platinum Mine.mp3",
+        "duration_ms": 175584,
+        "fingerprint_chars": 4670,
+        "fingerprint_sha256": "c7f7fa2a397c10019b09d049a6689ec9b4f717f36b5e61c986d400691196f352",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "27 (Level 22) - Neptune Storage Depot.mp3",
+        "duration_ms": 171744,
+        "fingerprint_chars": 5148,
+        "fingerprint_sha256": "f4c07768ae7741013f84aa8d5252176ebab90e646e8c5f4cd96b2b6752675bad",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 28,
+        "line": 142,
+        "filename": "28 Descent (Shareware Version).mp3",
+        "duration_ms": 230448,
+        "fingerprint_chars": 6596,
+        "fingerprint_sha256": "83dce88e5bfee64261423c321e103f58f5cdb1d133d73e20acb7fbf343a1997c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 29,
+        "line": 147,
+        "filename": "29 Lunar Outpost (Shareware Version).mp3",
+        "duration_ms": 201240,
+        "fingerprint_chars": 5531,
+        "fingerprint_sha256": "ffa3f3f912646f42e967d623d58abd3d8ece509b2e6a07e9cfecd9b446301b0c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 30,
+        "line": 152,
+        "filename": "30 Lunar Scilab (Shareware Version).mp3",
+        "duration_ms": 225696,
+        "fingerprint_chars": 6982,
+        "fingerprint_sha256": "dd5e04541facb9215bb8e354f23c61fb18c2c0c30517869ce9063cf5a82a108f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 31,
+        "line": 157,
+        "filename": "31 Lunar Military Base (Shareware Version).mp3",
+        "duration_ms": 211680,
+        "fingerprint_chars": 6002,
+        "fingerprint_sha256": "fcf009f0a934ee0b781798cd47dd2222117cb6b22288e6aee1f9133fc2faaa59",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  }
+]
+```
+
+## Named context identities
+
+Only described boundaries inspected; whole-file context hashes grant no additional coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `game_data/fingerprint_music_packs.ps1` | `4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9` | equal |
+| `game_data/update_known_discs_albums.ps1` | `186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a` | equal |
+| `android/helpers/acoustid_title_match.ps1` | `8a46cb71f47a14833677857909cb857c4295e721c7941f7959aa6f9f5a99b50f` | equal |
+| `android/helpers/jsonc.ps1` | `dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4` | equal |
+| `android/app/src/main/assets/known_albums.jsonc` | `93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517` | equal |
+| `android/app/src/main/assets/known_discs.jsonc` | `99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785` | equal |
+
+## Continuation
+
+No new finding/remediation or product change. Remaining delta coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Deferred probes remain follow-up under the existing constraint
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0290 music fingerprint source review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0291 music fingerprint source review 20261007 SHA256:4423b52f6ec391c17d9b451f94369dd115738d11f3553dc80f29355b886ab339 -->
+
+## GQ2-CHUNK-0291 music fingerprint source review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0291.md`
+- Imported SHA-256: `4423b52f6ec391c17d9b451f94369dd115738d11f3553dc80f29355b886ab339`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0291 music fingerprint source review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0291 | [ ] TODO | source | medium | authored-config | `8 related paths` | 654 review lines under game_data/music | - |
+- Scope fingerprint `eeaf6ca7866c05d5d369cd6cc3915233b4f339db5d706ded451df7ddc1c7b3a5` hashes ordered table data rows with final LF
+- Full assigned LF-normalized lines; base JSON5 paths recorded where applicable
+
+| Path/scope | Attribution | Base blob and path | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `game_data/music/D1 MIDI mp3/chromaprint_info.jsonc` L1-L142 | branch-added | `7fc83eea279e6e5cb81e7ab48c5dc42416383ece` (game_data/music/D1 MIDI mp3/chromaprint_info.json5) | `6dae1958a5df1351bed76624ebb591c4003aed12` | `fb052fd5b8e826a0182f05a7888d05e0c9c48c82dd9b5aeeb4124190db15d18a` |
+| `game_data/music/D1 playstation mp3/chromaprint_info.jsonc` L1-L156 | branch-added | `6731b808817788f7ee693e706420b4a42f132034` (game_data/music/D1 playstation mp3/chromaprint_info.json5) | `c1710e333dd47f4f66408c072c6863ec404f8cac` | `48b65b128f762f97bdeece039faf0ae0d51a661db9b2e09586a75d330b93ecee` |
+| `game_data/music/D1 sunspire remix/chromaprint_info.jsonc` L1-L17 | branch-added | `eb7d88cce3b61461a32ce463d12c6521ca6deba3` (game_data/music/D1 sunspire remix/chromaprint_info.json5) | `8cd6f76f0ecc7cf4e6f7f8da9007b64a64a2197f` | `3adaf3c401398b9ce8993013b525bd7e5c9edff1936b3cdb4c92cd9b6d0e083d` |
+| `game_data/music/D2 infinite abyss redbook mp3/chromaprint_info.jsonc` L1-L75 | branch-added | `4792b18a93bfbfc494868d34049cd1775f4e3af1` (game_data/music/D2 infinite abyss redbook mp3/chromaprint_info.json5) | `36341f2c7519b492e0ff579894dbba6ecc86b542` | `c1484ae77d939a09a439c260107341fdb635c34434b807e6931a1993cde4c76b` |
+| `game_data/music/D2 macplay mp3/chromaprint_info.jsonc` L1-L118 | branch-added | `dd5e60cd0c59361f9e7a1f8e66fe0e5170b2745b` (game_data/music/D2 macplay mp3/chromaprint_info.json5) | `f3d2ed8dccc8e7a3a4049030b38595e1e280cbe0` | `d829bcc43f6306dcfebcf9f0917c18b0b1fee78120ad002963e41b21ebbd5191` |
+| `game_data/music/D2 MIDI mp3 ARACHNO/chromaprint_info.jsonc` L1-L52 | branch-added | `2e645ee3f97d5497dc56cb3ab4157295d51a4bdb` (game_data/music/D2 MIDI mp3 ARACHNO/chromaprint_info.json5) | `f7a8ffff1b83865fcfbd9ffc9252f03251f269bc` | `e4f0c66e801dbdd39f96f076a86d4239f98d11655031c66eca4f069eb5e5d8a3` |
+| `game_data/music/D2 MIDI mp3 MU80/chromaprint_info.jsonc` L1-L52 | branch-added | `f096d0089793a9d7839ad758c6a93ae461931b3a` (game_data/music/D2 MIDI mp3 MU80/chromaprint_info.json5) | `9d86be7e212d20897b861ff283d6e20a5cb3b5c4` | `5d26727d6100638f5ee9985a7df065af02f75a38d85eac4a527bd9f638422875` |
+| `game_data/music/D2 midi mp3 opl3/chromaprint_info.jsonc` L1-L42 | branch-added | `adabec2d37e2f21ecaea31942e7e45053c70dadd` (game_data/music/D2 midi mp3 opl3/chromaprint_info.json5) | `979920e5002d95dc57aa9a59f0fac5a8f9456fec` | `c25bfae6845cc6ee40dfc3c54de39413582a8bb041f79fed8792ed43fad4efe9` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Eight complete D1/D2 MIDI, PlayStation, SunSpire, Infinite Abyss and MacPlay manifests, 654 lines and 94 tracks. Preserve source metadata even when the packaged Infinite Abyss/MacPlay albums have no retained tracks; D1 briefing remains a recorded approximate ambiguity
+
+Reviewed every field and both generator comments in all 24 assigned files through a complete line-indexed semantic projection. Root shapes are album/tracks only; filenames are unique case-insensitively within each source, positive durations are integral milliseconds, optional scores are within 0..1 and recording IDs have the expected textual shape. All 418 named local audio files exist. Existence and schema checks do not authenticate or decode their payloads
+
+The manifests contain 2,227,005 encoded fingerprint characters. These strings were compared exactly with published payloads and hashed for complete source projections, not visually interpreted or natively decoded. All 313 published tracks retain their exact source-derived track number, basename, duration, fingerprint and every published optional field. Every one of the other 105 source records has one current catalog explanation: 101 physical-disc duplicate references resolve to existing fingerprinted audio tracks, and four ambiguity references resolve to corresponding source tracks with compatible durations. The four encoded ambiguity pairs are not byte-equal; their stored native score of 1 was not recomputed. Physical duplicate labels describe prior approximate-match decisions, not fresh byte-equality evidence
+
+Actual shared PowerShell JSONC parsing agrees with the independent projection for all 418 filenames, durations and fingerprint hashes. Actual Test-DxxAcoustIdTitleMatch evaluates all 97 source labels: 96 accepted, one rejected. For every retained track its result matches the packaged label policy. The sole rejected pair is D1 SC55 04 Escape.mp3 versus the cached End Level Theme label; the track remains published without that label. The source producer permits fingerprint-stable legacy cache metadata, while the album publisher applies maintained-title policy. Preserve this distinction; source and packaged optional fields need not be identical
+
+Inspected fingerprint_music_packs.ps1 extraction reuse/flattening, source enumeration, complete native result assertion, fingerprint-stable cached metadata reuse, lookup branching and normalized sidecar publication. Inspected update_known_discs_albums.ps1 source-ID/ordered-file projection, maintained-title filtering, exact-encoded collision augmentation, physical-disc priority and optional-field output. Full generator/native matcher bodies did not run. Source discovery includes MP3/OGG/FLAC despite folder labels containing mp3, and SC55 has deliberate MP3 plus OGG entries. The two SC55 directory labels differ from embedded names only in case; IDs use normalized album text. An initial checker assumption of exact directory spelling was corrected, as was its assumption that every source AcoustID field must be republished; these were harness assumptions, not data defects
+
+Retain branch-owned source manifests, comments, optional reviewed metadata, historical names/typos, ordering and distinct renderings. All assigned sources equal frozen head and are absent from the original inherited tree. Hand-minification, filename correction or source-track removal would obscure provenance without shrinking inherited engine changes. Even an album currently filtered to zero published tracks remains meaningful input to a future producer run
+
+Existing GQF-0030/GQR-0017 remains open: these roots carry no source inventory/digests or decoder/native/tool/Chromaprint/algorithm/schema/policy generation identity. A current consistent projection does not establish freshness. Existing GQR-0046 lossless ranking, GQR-0047 symmetric duration policy, GQR-0207 distinct-identity projection, GQR-0223 string-aware JSONC readers and BR-0612 typed serialization remain separately owned. No new finding or additive inherited-file saving is admitted
+
+Fresh checks are read-only metadata operations with scratch outputs. No media payload hash, audio decode, fingerprint generation/matching, AcoustID/network lookup, corpus regeneration, JVM/full build/device execution or deferred adversarial/security/malformed-media/resource-pressure probe ran. Earlier actual-asset JVM and album-catalog checks remain historical context only. Concurrent audio/input work and outstanding_bugs.md remain untouched
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0017; rationale: existing source-generation freshness owner, reference only, zero inherited saving
+
+## Shared host evidence identities
+
+Fresh commands: python temp/general_cleanup_20261006/check_gq2_music_sources.py; pwsh -NoProfile -File temp/general_cleanup_20261006/check_gq2_music_policy.ps1. Both exit zero. The policy probe was repeated after correcting only its summary display; final log has no serialization warning. Shared execution is not credited per report
+
+```json
+{
+  "check_gq2_music_sources.py": "486950d4c03d383d3cb72b11c71fdafaaaba1bc5a16353238186a320d59a7c9f",
+  "check_gq2_album_catalog.py": "57e9dccc69c98cb00ed51320d12fa2ab020a55d40d3fe46b2d0b2ec2f50d26bf",
+  "music-source-checks.json": "5a95dd403ab91aa1f533e59c7ab9e8ed0c10e055a90ef1d319c5a0392565f901",
+  "music-source-projection.txt": "82604d86ad5ae8b0379e958dc2ec2058bbed575e6909a7316c6b4e5b021cdd1a",
+  "check_gq2_music_policy.ps1": "11b0d6d07b819718dfd56b0f4e02c87b925b464a02ec52c7c8cc1acb306e922b",
+  "music-policy-checks.json": "d5e6f90d740387f52546f81121fd4dd3230446117d6bab6976b8d1c1abe53da3",
+  "music-policy-checks.log": "34b196eaa35c2375df749df2eff461789463a90b2ffbef06e4323012ba17cdb0"
+}
+```
+
+Shared summary:
+
+```json
+{
+  "files": 24,
+  "lines": 2644,
+  "tracks": 418,
+  "fingerprint_chars": 2227005,
+  "published": 313,
+  "duplicates": 101,
+  "ambiguous": 4,
+  "acoustid_records": 97,
+  "local_audio_present": 418,
+  "asset_sha256": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+  "native_decode_or_matching": false,
+  "disc_asset_sha256": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+  "source_payload_hashes": false,
+  "authoritative_files_written": false
+}
+```
+
+Complete assigned field/comment projections, with opaque fingerprints represented by exact length and SHA-256:
+
+```json
+[
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D1 MIDI mp3/chromaprint_info.jsonc",
+    "lines": 142,
+    "source_sha256": "fb052fd5b8e826a0182f05a7888d05e0c9c48c82dd9b5aeeb4124190db15d18a",
+    "album": "D1 MIDI mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 MIDI mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 236878,
+        "fingerprint_chars": 6339,
+        "fingerprint_sha256": "5054478d2fa0b08763875510f74deb6ad27c485a990379c8c6fe0783b64f0414",
+        "local_audio_exists": true,
+        "disposition": "// ambiguous: track 1 (briefing) conflicts with d2-mp3 track 17 (briefing) at score 1",
+        "exact_ambiguity_payload": false,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 129071,
+        "fingerprint_chars": 3563,
+        "fingerprint_sha256": "069a62f1c0157fd55be22f6d6aef3f7a4736baead1a178aff0046182c5f94054",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "endgame.ogg",
+        "duration_ms": 127944,
+        "fingerprint_chars": 3783,
+        "fingerprint_sha256": "9cee78c1552a8e680dabdbf96fea6106a5920f9ca17bd4270b1a0543ec6f7ce1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "exit.ogg",
+        "duration_ms": 20166,
+        "fingerprint_chars": 528,
+        "fingerprint_sha256": "14f3dec5478b985c067872247c083e4d348066c6d20ef4aa00456a06ed602d32",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "level01.ogg",
+        "duration_ms": 201769,
+        "fingerprint_chars": 5807,
+        "fingerprint_sha256": "0f97bdf1586a64bbede56c09f7431a70e65c0cb912684ba1f6f3da08eb378cee",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "level02.ogg",
+        "duration_ms": 183066,
+        "fingerprint_chars": 5258,
+        "fingerprint_sha256": "93a2531b67f698b1701143bd44add60992564de4bd4c18059061fb1250a61c82",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "level03.ogg",
+        "duration_ms": 217155,
+        "fingerprint_chars": 6267,
+        "fingerprint_sha256": "8f76ef35cb29e1938f8e8108c06312b961abaede99c1dd87e7c2686b6060bfca",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "level04.ogg",
+        "duration_ms": 152450,
+        "fingerprint_chars": 4452,
+        "fingerprint_sha256": "08588fcb1e1f5f9d49b036167be80ddc3f44ee9d36bec7ba34c09d5781de40f6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "level05.ogg",
+        "duration_ms": 190145,
+        "fingerprint_chars": 5738,
+        "fingerprint_sha256": "9102c9ea773fc1cc0033ba4aff63ddff991434a0c9528afea7434b0aca4fb574",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "level06.ogg",
+        "duration_ms": 161959,
+        "fingerprint_chars": 4816,
+        "fingerprint_sha256": "c93553274d782ad6d96c5a6da7651802cca86eaf3df14fdca90e53c171a031de",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "level07.ogg",
+        "duration_ms": 178233,
+        "fingerprint_chars": 4679,
+        "fingerprint_sha256": "f790cdc3c506c8d794bc65aaae35fcc7508b753ba5962307dd9515d4417ad094",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "level08.ogg",
+        "duration_ms": 199157,
+        "fingerprint_chars": 6206,
+        "fingerprint_sha256": "2a00caaacbbd2c244dbf97be21ea77393b71cfbb85f536ae5f7142bb0a883d8d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "level09.ogg",
+        "duration_ms": 212009,
+        "fingerprint_chars": 6510,
+        "fingerprint_sha256": "80959240f2b15f166e4d2fc0cd61911d3eda37054d1d543a150e1ceeacb799da",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "level10.ogg",
+        "duration_ms": 298083,
+        "fingerprint_chars": 8547,
+        "fingerprint_sha256": "253017d0c6186d50564400aa8fd8bfe142de5e266815ab0a88a14ccdeca64aeb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "level11.ogg",
+        "duration_ms": 179461,
+        "fingerprint_chars": 5407,
+        "fingerprint_sha256": "7db9c5577cad35327d0db85fe5ae208f30e7a45c9f200fea19160f1a6a3b17a8",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "level12.ogg",
+        "duration_ms": 181942,
+        "fingerprint_chars": 5247,
+        "fingerprint_sha256": "06d598b4db06b699c31a13b7adf62d3b60679d13a2655507ff7fccddbe25e282",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "level13.ogg",
+        "duration_ms": 201874,
+        "fingerprint_chars": 5959,
+        "fingerprint_sha256": "315ac797fc580719b5bce8b14165286f1a6e781d6e26b99c5bd369eea63096fa",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "level14.ogg",
+        "duration_ms": 231183,
+        "fingerprint_chars": 7131,
+        "fingerprint_sha256": "72e2a985cd51234454abf117df841f763b3d6bfb862056f8de752d2108e44449",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "level15.ogg",
+        "duration_ms": 190093,
+        "fingerprint_chars": 5820,
+        "fingerprint_sha256": "228c9555f40cc31b35c9d8df4d6bdd5f70d755bee76de564865cb01fc751f191",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "level16.ogg",
+        "duration_ms": 190484,
+        "fingerprint_chars": 4824,
+        "fingerprint_sha256": "3443272c2e2c1d278a2fd36c017f94d19fd2651099884dddf3d548be4abb3277",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 107,
+        "filename": "level17.ogg",
+        "duration_ms": 194507,
+        "fingerprint_chars": 5555,
+        "fingerprint_sha256": "fcba9a9ed8b033054b00b18cec183932646ec6c8cca8c883a190ce416bc90446",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 112,
+        "filename": "level18.ogg",
+        "duration_ms": 242834,
+        "fingerprint_chars": 6939,
+        "fingerprint_sha256": "072d0f21df5169631cb14da78e0a27fc7b3c503cb65b78181b205d5f306a783b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 117,
+        "filename": "level19.ogg",
+        "duration_ms": 165459,
+        "fingerprint_chars": 4919,
+        "fingerprint_sha256": "adf1f8372db3e9cb8dd810f6b91ab88470ac05b3606637c9dd51a287424a8295",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 24,
+        "line": 122,
+        "filename": "level20.ogg",
+        "duration_ms": 224574,
+        "fingerprint_chars": 6691,
+        "fingerprint_sha256": "6a56d2fe81dea934c1ce9d838fefa764b2971f615ef744db03a7c4176b490948",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 25,
+        "line": 127,
+        "filename": "level21.ogg",
+        "duration_ms": 194925,
+        "fingerprint_chars": 5779,
+        "fingerprint_sha256": "0ed5916c8ac68d0855c350a304c7ee8b64ffe79ddc69b7a4121e1e3c93f9fc61",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 26,
+        "line": 132,
+        "filename": "level22.ogg",
+        "duration_ms": 170997,
+        "fingerprint_chars": 5264,
+        "fingerprint_sha256": "f290d137a69f4314327c750d01a7184099b85ac5374310f53946c4e44e9b0eec",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 27,
+        "line": 137,
+        "filename": "title.ogg",
+        "duration_ms": 213480,
+        "fingerprint_chars": 5619,
+        "fingerprint_sha256": "a3e82b7745c9732da25f89169096dfd6446ffa941d483b4b67032c5f0ba777f9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D1 playstation mp3/chromaprint_info.jsonc",
+    "lines": 156,
+    "source_sha256": "48b65b128f762f97bdeece039faf0ae0d51a661db9b2e09586a75d330b93ecee",
+    "album": "D1 playstation mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 playstation mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Descent Playstation Intro.mp3",
+        "duration_ms": 163733,
+        "acoustid_name": "Mark Morgan - Descent Playstation Intro",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9990111,
+        "acoustid_recording_id": "3511ff75-6faa-4a7b-8e73-43a2e29af71d",
+        "fingerprint_chars": 5154,
+        "fingerprint_sha256": "5824094a64d9e9fce973ffc3e464e5f39ca61f6dc863411e16d3c275e411f4b7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Virtual Tension (PSX Mix).mp3",
+        "duration_ms": 288800,
+        "acoustid_name": "Allister Brimble - Virtual Tension",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9790348,
+        "acoustid_recording_id": "583ea54a-f6b4-4831-ad83-45fba79e73be",
+        "fingerprint_chars": 8434,
+        "fingerprint_sha256": "9a6ac66c0f88004ecb62452378293e4d80dc73444e1cb1ff2ed279685c71520c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Virtual Tension (PSX Mix).mp3) matches descent-mac-macplay track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Hydraulic Pressurce (PSX Mix).mp3",
+        "duration_ms": 238293,
+        "fingerprint_chars": 6619,
+        "fingerprint_sha256": "5b4406bc298fd123148aa308e2fa8bfa65db7a0d5b27244aa1219b9383787520",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Hydraulic Pressurce (PSX Mix).mp3) matches descent-mac-macplay track 10 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 30,
+        "filename": "04 Time for the Big Guns (PSX Mix).mp3",
+        "duration_ms": 244053,
+        "acoustid_name": "Allister Brimble - Time for the Big Guns",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.97692513,
+        "acoustid_recording_id": "98cdbd37-5263-49e2-b899-41a8f3b99f4d",
+        "fingerprint_chars": 7215,
+        "fingerprint_sha256": "82d3de5836ad71366381597f4545872eb2d4c34a46139c2b655bf1c20fc104ca",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Time for the Big Guns (PSX Mix).mp3) matches descent-mac-macplay track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 39,
+        "filename": "05 Not That Button! (PSX Mix).mp3",
+        "duration_ms": 254880,
+        "acoustid_name": "Allister Brimble - Not That Button!",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9752439,
+        "acoustid_recording_id": "1193158b-7468-4c4e-bfbd-52854438aaa3",
+        "fingerprint_chars": 7426,
+        "fingerprint_sha256": "62f467e9289c41bdd4ce77a05dc858e2a7ced007e40ddea0b949e57668b3037c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 Not That Button! (PSX Mix).mp3) matches descent-mac-macplay track 11 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 48,
+        "filename": "06 A Big Problem (PSX Mix).mp3",
+        "duration_ms": 237973,
+        "acoustid_name": "Allister Brimble - A Big Problem",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.97596914,
+        "acoustid_recording_id": "215ced92-ae84-4998-84b7-5a28b4785d85",
+        "fingerprint_chars": 7055,
+        "fingerprint_sha256": "048858f64f196f424f93e5424dd1bb4a3d02820e61f9a039bd50be7d6392272e",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 A Big Problem (PSX Mix).mp3) matches descent-mac-macplay track 14 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Primitive Rage (PSX Mix).mp3",
+        "duration_ms": 229866,
+        "acoustid_name": "Allister Brimble - Primitive Rage",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.97432095,
+        "acoustid_recording_id": "1d7edc38-9196-4520-b7b1-053860ca4778",
+        "fingerprint_chars": 6772,
+        "fingerprint_sha256": "2081666d194e2d731387ca3c3ef33606ad8a565e1d4caf849077a23ae2f11f6c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Primitive Rage (PSX Mix).mp3) matches descent-mac-macplay track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 66,
+        "filename": "08 Industrial Accident.mp3",
+        "duration_ms": 263893,
+        "acoustid_name": "Allister Brimble - Industrial Accident",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9740902,
+        "acoustid_recording_id": "6efe1f37-1290-4ee1-abcc-7b31ca54b83e",
+        "fingerprint_chars": 8059,
+        "fingerprint_sha256": "d41d7580e4a148767205f17a26b53de5ea90d435291d3f09fd52f33356d01bb7",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08 Industrial Accident.mp3) matches descent-mac-macplay track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 75,
+        "filename": "09 Haunted (PSX Mix).mp3",
+        "duration_ms": 265333,
+        "acoustid_name": "Type O Negative - Haunted",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99884623,
+        "acoustid_recording_id": "aaa1de9a-7b44-4e84-960e-208301ffc43d",
+        "fingerprint_chars": 7496,
+        "fingerprint_sha256": "9c0158c7a1a36c35999eb2f7a841b6ba7064755e94bd434e3c08aed877b6596b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 10,
+        "line": 84,
+        "filename": "10 Rusty (PSX Mix).mp3",
+        "duration_ms": 225013,
+        "acoustid_name": "Mark Walk, Ogre - Rusty",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9974947,
+        "acoustid_recording_id": "fb02ea08-321c-4055-b71e-ed492b49dc89",
+        "fingerprint_chars": 5504,
+        "fingerprint_sha256": "2ce28aebbbdb8da95f826faf5b343879b653a296f71b14f046fb41ca803821e3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 11,
+        "line": 93,
+        "filename": "11 Mystery Metal (PSX Mix).mp3",
+        "duration_ms": 258400,
+        "acoustid_name": "Allister Brimble - Mystery Metal",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.997231,
+        "acoustid_recording_id": "657ebc7d-255b-44df-a49c-47930dc7f3f5",
+        "fingerprint_chars": 7255,
+        "fingerprint_sha256": "bbe48bea05344cabe15eb388a13b3daa9bdf72d41061948bf921fbabdd72f0af",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11 Mystery Metal (PSX Mix).mp3) matches descent-mac-macplay track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 102,
+        "filename": "12 Robotic Menace (PSX Mix).mp3",
+        "duration_ms": 289973,
+        "acoustid_name": "Allister Brimble - Robotic Menace",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9748484,
+        "acoustid_recording_id": "0003daa9-c348-4cbe-b5dd-ca355b26ccd2",
+        "fingerprint_chars": 8370,
+        "fingerprint_sha256": "cc80d28d3f5b5f81cc9ff50072f88f207bb7eb015361acddb2add2e03896af05",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12 Robotic Menace (PSX Mix).mp3) matches descent-mac-macplay track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 111,
+        "filename": "13 Glut (PSX Mix).mp3",
+        "duration_ms": 290400,
+        "acoustid_name": "Mark Walk, Ogre - Glut",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99854356,
+        "acoustid_recording_id": "20c58b60-8ed3-4100-a854-a0aa8598a0a2",
+        "fingerprint_chars": 9123,
+        "fingerprint_sha256": "b8532c174870117446c25ac69986fe9a60a223389016851360dedbd60b97e11b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 14,
+        "line": 120,
+        "filename": "14 Ratzez (PSX Mix).mp3",
+        "duration_ms": 238773,
+        "acoustid_name": "Mark Walk, Ogre - Ratzez",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.9647785,
+        "acoustid_recording_id": "af8460fd-e285-4f70-b51d-8d4b88da0acc",
+        "fingerprint_chars": 7540,
+        "fingerprint_sha256": "fb776d3a5a8959fc7c5e396ad9c3e21a30d2831aa58bf24f6e07bd169040fb76",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      },
+      {
+        "number": 15,
+        "line": 129,
+        "filename": "15 Outerlimits.mp3",
+        "duration_ms": 153280,
+        "acoustid_name": "Allister Brimble - Outerlimits",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99874735,
+        "acoustid_recording_id": "bdf33f88-9245-48c4-b787-221a8fbd7b7a",
+        "fingerprint_chars": 3895,
+        "fingerprint_sha256": "765279083d90628528bfac2aed4fee4af0b54dab55a7a0183bc7121851735deb",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 15 (15 Outerlimits.mp3) matches descent-mac-macplay track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 138,
+        "filename": "16 Ether in the Air (PSX Mix).mp3",
+        "duration_ms": 288746,
+        "acoustid_name": "Allister Brimble - Ether in the Air",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.97429883,
+        "acoustid_recording_id": "777fabf1-6616-4745-ada5-62c81a55d1c4",
+        "fingerprint_chars": 7754,
+        "fingerprint_sha256": "9d6179215ce8b93827a1f14b51d33de29ed70f4c48822789ff49047756e2cf38",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 16 (16 Ether in the Air (PSX Mix).mp3) matches descent-mac-macplay track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 147,
+        "filename": "17 Descent Playstation Ending.mp3",
+        "duration_ms": 103520,
+        "acoustid_name": "Mark Morgan - Descent Playstation Ending",
+        "acoustid_album": "Descent",
+        "acoustid_score": 0.99838954,
+        "acoustid_recording_id": "d2a5ace5-7379-4350-a2c8-b11f047223fd",
+        "fingerprint_chars": 3187,
+        "fingerprint_sha256": "5006488e2a0f9a975be3b39dbce887aaa4e8e333bc030290f1cafdc7cf7c34f6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": true
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D1 sunspire remix/chromaprint_info.jsonc",
+    "lines": 17,
+    "source_sha256": "3adaf3c401398b9ce8993013b525bd7e5c9edff1936b3cdb4c92cd9b6d0e083d",
+    "album": "D1 sunspire remix",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D1 sunspire remix"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 (Level 1) Lunar Outpost (SunSpire Remix).mp3",
+        "duration_ms": 234318,
+        "fingerprint_chars": 6478,
+        "fingerprint_sha256": "0b4d1d39f359f1a797dbb1de9f59f1ae9cd361e7ecc44ae2f896a4d48061bbeb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 (Level 2) Lunar Scilab (SunSpire Remix).mp3",
+        "duration_ms": 231718,
+        "fingerprint_chars": 6824,
+        "fingerprint_sha256": "a483a47b1d1d8730c28dac5701fc371285c4d61ec5ab8dfc42b805ffb7992e43",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D2 infinite abyss redbook mp3/chromaprint_info.jsonc",
+    "lines": 75,
+    "source_sha256": "c1484ae77d939a09a439c260107341fdb635c34434b807e6931a1993cde4c76b",
+    "album": "D2 infinite abyss redbook mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 infinite abyss redbook mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Title.mp3",
+        "duration_ms": 46000,
+        "acoustid_name": "Brian Luzietti - Title",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.99848217,
+        "acoustid_recording_id": "d185339f-f39d-4fd3-b685-2cc570c8f6ad",
+        "fingerprint_chars": 1180,
+        "fingerprint_sha256": "d76b8f04ec0bd2905f0cfd8a3e4a11b2b727225f801c80ed1474da2ad3e859dc",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 1 (01 Title.mp3) matches descent-ii-europe-v11 track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Cold Reality (Extended Remix).mp3",
+        "duration_ms": 301000,
+        "acoustid_name": "Larry Peacock, Brad Cross, Leslie Spitzer - Cold Reality (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.99874735,
+        "acoustid_recording_id": "1945233d-97e0-4639-87ac-831e58b2aabd",
+        "fingerprint_chars": 8688,
+        "fingerprint_sha256": "33f377518f8d367fcbdbee3db0c46f87a4d3a984af7be6abc25c92c38f19d90b",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Cold Reality (Extended Remix).mp3) matches descent-ii-europe-v11 track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Crawl (Extended Remix).mp3",
+        "duration_ms": 222000,
+        "acoustid_name": "Brian Luzietti - Crawl (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9751121,
+        "acoustid_recording_id": "69de78f6-952a-4b9c-852b-bf6ef3282c62",
+        "fingerprint_chars": 6212,
+        "fingerprint_sha256": "40e2b5438138c7e55cce70442e535e9e835995ffa391685b4e7364df72079f78",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Crawl (Extended Remix).mp3) matches descent-ii-europe-v11 track 4 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 34,
+        "filename": "04 Gunner Down (Extended Remix).mp3",
+        "duration_ms": 215000,
+        "acoustid_name": "Brian Luzietti - Gunner Down (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9877835,
+        "acoustid_recording_id": "1276e8e8-34cd-481a-9ca6-0972b04170a2",
+        "fingerprint_chars": 5932,
+        "fingerprint_sha256": "2f7b43ffc35c692e8f4be91feb8810bb2cdca87ff960b4163f8e60d5d92639b7",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Gunner Down (Extended Remix).mp3) matches descent-ii-europe-v11 track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 43,
+        "filename": "05 Ratzez (Short Remix).mp3",
+        "duration_ms": 140000,
+        "fingerprint_chars": 4278,
+        "fingerprint_sha256": "6244d4a29e6242b49069351ab99072083c01778d7982707cc9680e211cd2ef82",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 Ratzez (Short Remix).mp3) matches descent-ii-europe-v11 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 48,
+        "filename": "06 Techno Industry (Extended Remix).mp3",
+        "duration_ms": 267000,
+        "acoustid_name": "Johann Langlie - Techno Industry (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9847706,
+        "acoustid_recording_id": "cb5486a1-85c8-4df8-8ac9-7f6d00c6fe3a",
+        "fingerprint_chars": 7288,
+        "fingerprint_sha256": "38850e9d8e4af885bc608256c65dc4cb4b5bff1152a6f1fd6ecb07595ec96a1e",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Techno Industry (Extended Remix).mp3) matches descent-ii-europe-v11 track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Are You Descent (Extended Remix).mp3",
+        "duration_ms": 221000,
+        "acoustid_name": "Ron Valdez - Are You Descent? (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9978244,
+        "acoustid_recording_id": "c087e78b-a1c7-4f3b-aebc-19f10c25a964",
+        "fingerprint_chars": 5788,
+        "fingerprint_sha256": "2bdbbaefa99b554b6bc4bf641b09745051c6b2dfd256de67f05861a39e4ad7ad",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Are You Descent (Extended Remix).mp3) matches descent-ii-europe-v11 track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 66,
+        "filename": "08 Robot Jungle (Extended Remix).mp3",
+        "duration_ms": 271000,
+        "acoustid_name": "Johann Langlie - Robot Jungle (extended remix)",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.99818695,
+        "acoustid_recording_id": "2b58bd56-f93f-4f87-a276-93219881654e",
+        "fingerprint_chars": 7254,
+        "fingerprint_sha256": "49d01a70777bd49230665b152fe79ec34a91f809b5251b770df5b09b4d95ebc7",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08 Robot Jungle (Extended Remix).mp3) matches descent-ii-europe-v11 track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D2 macplay mp3/chromaprint_info.jsonc",
+    "lines": 118,
+    "source_sha256": "d829bcc43f6306dcfebcf9f0917c18b0b1fee78120ad002963e41b21ebbd5191",
+    "album": "D2 macplay mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 macplay mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Title.mp3",
+        "duration_ms": 41613,
+        "acoustid_name": "Brian Luzietti - Title",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.99890876,
+        "acoustid_recording_id": "c16cb37c-e5c4-4a4a-8fba-6d980256ff67",
+        "fingerprint_chars": 1168,
+        "fingerprint_sha256": "9ac352f658e52871529b898b11ef7cfa825570c8d16a42259333348a2e117693",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 1 (01 Title.mp3) matches descent-ii-usa-v11 track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Crawl (Extended Remix).mp3",
+        "duration_ms": 217466,
+        "acoustid_name": "Brian Luzietti - Crawl (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9772218,
+        "acoustid_recording_id": "69de78f6-952a-4b9c-852b-bf6ef3282c62",
+        "fingerprint_chars": 6162,
+        "fingerprint_sha256": "5f21a441c6ab075dc4e04c7ec3c1865fb915ecb97eae7dac3f7f28af7867557b",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Crawl (Extended Remix).mp3) matches descent-ii-usa-v11 track 4 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Glut (Extended Remix).mp3",
+        "duration_ms": 129826,
+        "acoustid_name": "Ogre, Mark Walk - Glut (extended remix)",
+        "acoustid_album": "Descent II: The Definitive Collection",
+        "acoustid_score": 0.99947256,
+        "acoustid_recording_id": "116423a8-5daf-4d21-9595-235eeb3f55fe",
+        "fingerprint_chars": 4000,
+        "fingerprint_sha256": "d017bd077f27a8e3efc4fd843409a70729337c8373860b66331ef1f661815ab8",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Glut (Extended Remix).mp3) matches descent-ii-the-vertigo-series-usa track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 34,
+        "filename": "04 Gunner Down (Extended Remix).mp3",
+        "duration_ms": 208360,
+        "acoustid_name": "Brian Luzietti - Gunner Down (extended remix)",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9849354,
+        "acoustid_recording_id": "1276e8e8-34cd-481a-9ca6-0972b04170a2",
+        "fingerprint_chars": 5864,
+        "fingerprint_sha256": "2535afa925560069428d3a890616dae69357379ca011eed111ba403c81ae6d70",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Gunner Down (Extended Remix).mp3) matches d2-mac track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 43,
+        "filename": "05 Cold Reality (MacPlay Mix).mp3",
+        "duration_ms": 212533,
+        "acoustid_name": "Larry Peacock, Brad Cross, Leslie Spitzer - Cold Reality",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.999077,
+        "acoustid_recording_id": "169d19d1-f6a8-4ed2-a1c8-2246d13eb432",
+        "fingerprint_chars": 6204,
+        "fingerprint_sha256": "f35a3923bc59b5491ce4dea13288e735d6479933c30ffdb2b20d284d648dad63",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 Cold Reality (MacPlay Mix).mp3) matches d2-mac track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 52,
+        "filename": "06 Ratzez (Short Remix).mp3",
+        "duration_ms": 136306,
+        "fingerprint_chars": 4256,
+        "fingerprint_sha256": "a0d470517770a934196b45816e0e8105d0a9298bb5030c6a1c6666fbc67f7149",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Ratzez (Short Remix).mp3) matches descent-ii-usa-v11 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Crush.mp3",
+        "duration_ms": 201320,
+        "acoustid_name": "Brian Luzietti - Crush",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.99831885,
+        "acoustid_recording_id": "4b22ab7b-e07c-49f2-8cd1-bac197595a57",
+        "fingerprint_chars": 5791,
+        "fingerprint_sha256": "c1c99fb09de98498829330c9a6c070d36910dc98e7e568670bc7447dee860f70",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Crush.mp3) matches d2-mac track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 66,
+        "filename": "08 The Well (Mark 2) (MacPlay Mix).mp3",
+        "duration_ms": 181760,
+        "fingerprint_chars": 5162,
+        "fingerprint_sha256": "4cf9fad35f7e182ccd8164eb058f048b7a01985f9491c33d64995d67662e6e00",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08 The Well (Mark 2) (MacPlay Mix).mp3) matches d2-mac track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 71,
+        "filename": "09 Haunted (MacPlay Mix).mp3",
+        "duration_ms": 199226,
+        "fingerprint_chars": 5576,
+        "fingerprint_sha256": "8def29c866f86315debca0b6ee03b903ef702c1a5cd78583511fe16b83bf2992",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 9 (09 Haunted (MacPlay Mix).mp3) matches d2-mac track 10 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 76,
+        "filename": "10 Are You Descent (MacPlay Mix).mp3",
+        "duration_ms": 197920,
+        "acoustid_name": "Ron Valdez - Are You Descent?",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9983848,
+        "acoustid_recording_id": "9eee3cee-b7be-41ab-a762-0febf04f5de1",
+        "fingerprint_chars": 5224,
+        "fingerprint_sha256": "56f545412968b88edc86eb61607d7610ac1cb546d27da87e72d99b48eff3698c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 10 (10 Are You Descent (MacPlay Mix).mp3) matches d2-mac track 11 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 85,
+        "filename": "11 Techno Industry (MacPlay Mix).mp3",
+        "duration_ms": 213533,
+        "acoustid_name": "Johann Langlie - Techno Industry",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9985496,
+        "acoustid_recording_id": "103ca67a-af2c-477d-884d-866839c6307e",
+        "fingerprint_chars": 5967,
+        "fingerprint_sha256": "e4d29861b30b0c45f40acba361a513b39816089425325306437a24ba9892d254",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11 Techno Industry (MacPlay Mix).mp3) matches d2-mac track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 94,
+        "filename": "12 Robot Jungle (MacPlay Mix).mp3",
+        "duration_ms": 190133,
+        "acoustid_name": "Johann Langlie - Robot Jungle",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9983848,
+        "acoustid_recording_id": "49107d01-a3b3-467a-9c20-820c302e6b18",
+        "fingerprint_chars": 4999,
+        "fingerprint_sha256": "2b687bced39f08d3a803195a8dfd1eb605fe42866e18b995e86ecac5b2b28252",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12 Robot Jungle (MacPlay Mix).mp3) matches d2-mac track 13 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 103,
+        "filename": "13 Pain (Short Remix).mp3",
+        "duration_ms": 200120,
+        "fingerprint_chars": 4987,
+        "fingerprint_sha256": "05ce607ec4f2312509bfe37cdb79c0e85778638060fa5ad8b3f09e00e19ebdf6",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 13 (13 Pain (Short Remix).mp3) matches d2-mac track 14 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 108,
+        "filename": "14 Transmode Containment 2112 (Mark 1) (Short Remix).mp3",
+        "duration_ms": 200533,
+        "fingerprint_chars": 5850,
+        "fingerprint_sha256": "87d688a345642811e5b1e33a94dab57debc30b2b7e24e2eac33760b2be5f1500",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 14 (14 Transmode Containment 2112 (Mark 1) (Short Remix).mp3) matches d2-mac track 15 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 113,
+        "filename": "15 Rusty (MacPlay Mix).mp3",
+        "duration_ms": 141906,
+        "fingerprint_chars": 3172,
+        "fingerprint_sha256": "09b8a176c1f5123f968be81b8e28a9eedbeb876ec1bdd9aa72b4974de9a3eaf5",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 15 (15 Rusty (MacPlay Mix).mp3) matches d2-mac track 16 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D2 MIDI mp3 ARACHNO/chromaprint_info.jsonc",
+    "lines": 52,
+    "source_sha256": "e4f0c66e801dbdd39f96f076a86d4239f98d11655031c66eca4f069eb5e5d8a3",
+    "album": "D2 MIDI mp3 ARACHNO",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 MIDI mp3 ARACHNO"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 94272,
+        "fingerprint_chars": 2536,
+        "fingerprint_sha256": "0d7680d6f18d14da66aaaad58fd510bdf7be066ad9e88798fb0a790b0af99db5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 141754,
+        "fingerprint_chars": 4356,
+        "fingerprint_sha256": "d93d0854e367ef600d51bdd9804a8f2cfafafc6c82cf4ee1bd82707559e7d976",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent2.ogg",
+        "duration_ms": 180481,
+        "fingerprint_chars": 5348,
+        "fingerprint_sha256": "ac536817c3bec377633b91f3bfff8dd26ef36c42c1143cc27a214180d7121803",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129062,
+        "fingerprint_chars": 3748,
+        "fingerprint_sha256": "42d6de1f92fff26e981a9def60cfd3c7dd121c4e8c158cca5ce7fec01ee9032f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19575,
+        "fingerprint_chars": 508,
+        "fingerprint_sha256": "a2e78d7db598a65ed4d053ca0d2dcd05d9dce8c3f4ea996af62ff08127e10f45",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 156279,
+        "fingerprint_chars": 4791,
+        "fingerprint_sha256": "0d5d4ebf788121d2f3c8ad0b0a16d539edc0f1fb5d8389cce7651d2b96052fc4",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 278401,
+        "fingerprint_chars": 8342,
+        "fingerprint_sha256": "fe46d0c2402498dc991a96077563ed52c97c9b818378b32d5c12db2358081efb",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 276809,
+        "fingerprint_chars": 7816,
+        "fingerprint_sha256": "5f2e47eb12a60aee1206240c526a06f642dd86e3cd2f49dc45b41efb2b0b8a7f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 188576,
+        "fingerprint_chars": 6006,
+        "fingerprint_sha256": "d971bb5a1615446d65f459a92bb4774dd59bf2c70d9cbebd6421f0a4f0393f70",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D2 MIDI mp3 MU80/chromaprint_info.jsonc",
+    "lines": 52,
+    "source_sha256": "5d26727d6100638f5ee9985a7df065af02f75a38d85eac4a527bd9f638422875",
+    "album": "D2 MIDI mp3 MU80",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 MIDI mp3 MU80"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 94098,
+        "fingerprint_chars": 2667,
+        "fingerprint_sha256": "23a8cfc40d7c7f381a276a24c7c08dfd8ca812dcf0a573906e0888afcc6fc618",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 141014,
+        "fingerprint_chars": 4318,
+        "fingerprint_sha256": "2f6b1e9df355d349c1a7d4bd87824a0b5edf8089d830d74f9d6af16fbad83c7f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent2.ogg",
+        "duration_ms": 180198,
+        "fingerprint_chars": 5192,
+        "fingerprint_sha256": "80dfe4599a874de0ae8ceff31755a108739bf5ae6e502bddc871ef5d24da8941",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129335,
+        "fingerprint_chars": 3896,
+        "fingerprint_sha256": "a853a2bb77fd142cd4cee0320f5012d18ac0c4dd7bf344e4835c4f8e4101f949",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19736,
+        "fingerprint_chars": 510,
+        "fingerprint_sha256": "47f3956db2689336614cbb580427b0843e6ee3342d31005c584d0349ba61e7fc",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 156258,
+        "fingerprint_chars": 4374,
+        "fingerprint_sha256": "c516ee674b404a0e819f5b2e35a45f347ff2af76d90a21304fa8382cfb4de908",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 277640,
+        "fingerprint_chars": 8044,
+        "fingerprint_sha256": "d1128f40946d859e3f1c281c667e0c740b1e71c59a3a459ed7e313607f7996e2",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 276491,
+        "fingerprint_chars": 7623,
+        "fingerprint_sha256": "2fea6576e956299d833c953b56451b8ce055bb0cb7e1abf435307a1a58107515",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 188406,
+        "fingerprint_chars": 5706,
+        "fingerprint_sha256": "0fab0610cc0a4b2b977b44d2ea42aafee109ac70f0a48ac5bff9e0eeb94d90cd",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0291",
+    "path": "game_data/music/D2 midi mp3 opl3/chromaprint_info.jsonc",
+    "lines": 42,
+    "source_sha256": "c25bfae6845cc6ee40dfc3c54de39413582a8bb041f79fed8792ed43fad4efe9",
+    "album": "D2 midi mp3 opl3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 midi mp3 opl3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Descent II.mp3",
+        "duration_ms": 181560,
+        "fingerprint_chars": 5447,
+        "fingerprint_sha256": "e7398c3c9b50fa6bbb31ef1e27861ba8bb511e1e9456d3cc8950da89a5667fe4",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Briefing.mp3",
+        "duration_ms": 93158,
+        "fingerprint_chars": 2318,
+        "fingerprint_sha256": "949eb2458e0413750e0801839d4e3c05482ff30d23069513fdfa14900207a527",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "03 Credits.mp3",
+        "duration_ms": 140832,
+        "fingerprint_chars": 4152,
+        "fingerprint_sha256": "55811b6539c2141ba23ed45f995563983b38d0b20dc42e7b81a1765b3a99a321",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "04 Game 1.mp3",
+        "duration_ms": 155400,
+        "fingerprint_chars": 4839,
+        "fingerprint_sha256": "7a90dbfaddadcdc59a77a74dabb1e8a0e10dafd659c1558e644ed1a7ae7b4d63",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "05 Game 2.mp3",
+        "duration_ms": 264600,
+        "fingerprint_chars": 7599,
+        "fingerprint_sha256": "4ec0ec48c11afb393e700d9388a56fbe5fc82693cd06ebe788257a5ab989d054",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "06 Game 3.mp3",
+        "duration_ms": 281016,
+        "fingerprint_chars": 7240,
+        "fingerprint_sha256": "03261d935452a3f6e38c5b6ee7fa39a294a93ae1c981b43562c490b9917ddc45",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "07 Game 4.mp3",
+        "duration_ms": 187344,
+        "fingerprint_chars": 5888,
+        "fingerprint_sha256": "80bb0738be024ce6190c7279a9d544f5d4fd9996f37130322577b13954f17207",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  }
+]
+```
+
+## Named context identities
+
+Only described boundaries inspected; whole-file context hashes grant no additional coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `game_data/fingerprint_music_packs.ps1` | `4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9` | equal |
+| `game_data/update_known_discs_albums.ps1` | `186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a` | equal |
+| `android/helpers/acoustid_title_match.ps1` | `8a46cb71f47a14833677857909cb857c4295e721c7941f7959aa6f9f5a99b50f` | equal |
+| `android/helpers/jsonc.ps1` | `dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4` | equal |
+| `android/app/src/main/assets/known_albums.jsonc` | `93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517` | equal |
+| `android/app/src/main/assets/known_discs.jsonc` | `99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785` | equal |
+
+## Continuation
+
+No new finding/remediation or product change. Remaining delta coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Deferred probes remain follow-up under the existing constraint
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0291 music fingerprint source review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0292 music fingerprint source review 20261007 SHA256:3efd5c85a8407acc45ea94b1fba1597d8979ab8ff5d4f288c1d8ea0bc0386c81 -->
+
+## GQ2-CHUNK-0292 music fingerprint source review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0292.md`
+- Imported SHA-256: `3efd5c85a8407acc45ea94b1fba1597d8979ab8ff5d4f288c1d8ea0bc0386c81`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0292 music fingerprint source review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0292 | [ ] TODO | source | medium | authored-config | `8 related paths` | 664 review lines under game_data/music | - |
+- Scope fingerprint `5fa1f6bd154b9f39ff11b5a2ae0e7379070af514f980ac291071723613ade77d` hashes ordered table data rows with final LF
+- Full assigned LF-normalized lines; base JSON5 paths recorded where applicable
+
+| Path/scope | Attribution | Base blob and path | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `game_data/music/D2 midi mp3 sc55/chromaprint_info.jsonc` L1-L102 | branch-added | `5f551f43f6504e210df2fb4c7cb87e3e2891e006` (game_data/music/D2 midi mp3 sc55/chromaprint_info.json5) | `4b81f7c97714ec1bfe980686e501d543a7dc0a17` | `1b3602c9749a51ef3d9830359ed08ff7d1f276f1dcd26e5890e92c95ca104fe1` |
+| `game_data/music/D2 MIDI mp3 SC88/chromaprint_info.jsonc` L1-L52 | branch-added | `293a23a45d4441f5a52d7f236c022fea055969fa` (game_data/music/D2 MIDI mp3 SC88/chromaprint_info.json5) | `15f9337e3cb231e1ee616a2adfca3e995f1f5afa` | `039ef6759ed386f6b236191a3e6ba89584521e7e6c8939b245dac4725946cdbc` |
+| `game_data/music/D2 MIDI mp3 SC88Pro/chromaprint_info.jsonc` L1-L52 | branch-added | `32a9acf3d71ad4a1435039736993a5e1d2127f82` (game_data/music/D2 MIDI mp3 SC88Pro/chromaprint_info.json5) | `3c74db2a001cbda84fcd61f3d15c685ec25d5f4e` | `7873e95e690be596046f5c7fe03c6c9ac600336910eaf3f1f4d67aa69a626281` |
+| `game_data/music/D2 mp3/chromaprint_info.jsonc` L1-L134 | branch-added | `21dc923d8c7a26665287e903b74c7de75d1373c7` (game_data/music/D2 mp3/chromaprint_info.json5) | `bed721a99779ab1011c0fb19b7c9ed7693399333` | `d95fed0121dd00235406483497bc4c89083e76cd3a2baad37ad579e90015b90a` |
+| `game_data/music/D2 redbook mp3 rips/chromaprint_info.jsonc` L1-L125 | branch-added | `78af970bb5db37d993acbe5c90a9b258b8a675c0` (game_data/music/D2 redbook mp3 rips/chromaprint_info.json5) | `0c11b678f260d19f3658f4f6a3e686a288a57cf2` | `ba5cb83a10ce64c765edf89ba8e4e252d4807a70b5ac1a63a70c0a1e4dcacf71` |
+| `game_data/music/D2 vampyro mp3/chromaprint_info.jsonc` L1-L22 | branch-added | `ab704eb30d9dda59143753c1ba15551a288e5806` (game_data/music/D2 vampyro mp3/chromaprint_info.json5) | `a854cd219532724d18f123a9db446b02e906ddbe` | `d42841a94bf259ced8717f3100d9e5f179138150e3c8484445d8bb83780d01a3` |
+| `game_data/music/D2 vertigo mp3/chromaprint_info.jsonc` L1-L70 | branch-added | `95de4a86e8164a6c52d9a466e876df74f1fad7bc` (game_data/music/D2 vertigo mp3/chromaprint_info.json5) | `d218b6e40d2e4eacd3cbbc1921d62c93f2bd6a3f` | `ef9c4206f89ac6917429aacefbd9450b21e7c5b1bfc4a35fcf3fd1a8fd929df3` |
+| `game_data/music/Descent Maximum (MP3)/chromaprint_info.jsonc` L1-L107 | branch-added | `absent` (game_data/music/Descent Maximum (MP3)/chromaprint_info.json5) | `43045df07101df8bf06181b0b8decf9d7a6623d5` | `481f67dd25ad74f64cb6c2f0ea8689be441300d5b4ff7e94324b410016974744` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Eight complete D2 and Maximum manifests, 664 lines and 104 tracks. Preserve two SC55 ambiguity entries, D2 briefing ambiguity, bonus/remastered tracks and Maximum movie tracks. Physical-match priority and ambiguity matching remain existing producer policy, not a reason to delete source records
+
+Reviewed every field and both generator comments in all 24 assigned files through a complete line-indexed semantic projection. Root shapes are album/tracks only; filenames are unique case-insensitively within each source, positive durations are integral milliseconds, optional scores are within 0..1 and recording IDs have the expected textual shape. All 418 named local audio files exist. Existence and schema checks do not authenticate or decode their payloads
+
+The manifests contain 2,227,005 encoded fingerprint characters. These strings were compared exactly with published payloads and hashed for complete source projections, not visually interpreted or natively decoded. All 313 published tracks retain their exact source-derived track number, basename, duration, fingerprint and every published optional field. Every one of the other 105 source records has one current catalog explanation: 101 physical-disc duplicate references resolve to existing fingerprinted audio tracks, and four ambiguity references resolve to corresponding source tracks with compatible durations. The four encoded ambiguity pairs are not byte-equal; their stored native score of 1 was not recomputed. Physical duplicate labels describe prior approximate-match decisions, not fresh byte-equality evidence
+
+Actual shared PowerShell JSONC parsing agrees with the independent projection for all 418 filenames, durations and fingerprint hashes. Actual Test-DxxAcoustIdTitleMatch evaluates all 97 source labels: 96 accepted, one rejected. For every retained track its result matches the packaged label policy. The sole rejected pair is D1 SC55 04 Escape.mp3 versus the cached End Level Theme label; the track remains published without that label. The source producer permits fingerprint-stable legacy cache metadata, while the album publisher applies maintained-title policy. Preserve this distinction; source and packaged optional fields need not be identical
+
+Inspected fingerprint_music_packs.ps1 extraction reuse/flattening, source enumeration, complete native result assertion, fingerprint-stable cached metadata reuse, lookup branching and normalized sidecar publication. Inspected update_known_discs_albums.ps1 source-ID/ordered-file projection, maintained-title filtering, exact-encoded collision augmentation, physical-disc priority and optional-field output. Full generator/native matcher bodies did not run. Source discovery includes MP3/OGG/FLAC despite folder labels containing mp3, and SC55 has deliberate MP3 plus OGG entries. The two SC55 directory labels differ from embedded names only in case; IDs use normalized album text. An initial checker assumption of exact directory spelling was corrected, as was its assumption that every source AcoustID field must be republished; these were harness assumptions, not data defects
+
+Retain branch-owned source manifests, comments, optional reviewed metadata, historical names/typos, ordering and distinct renderings. All assigned sources equal frozen head and are absent from the original inherited tree. Hand-minification, filename correction or source-track removal would obscure provenance without shrinking inherited engine changes. Even an album currently filtered to zero published tracks remains meaningful input to a future producer run
+
+Existing GQF-0030/GQR-0017 remains open: these roots carry no source inventory/digests or decoder/native/tool/Chromaprint/algorithm/schema/policy generation identity. A current consistent projection does not establish freshness. Existing GQR-0046 lossless ranking, GQR-0047 symmetric duration policy, GQR-0207 distinct-identity projection, GQR-0223 string-aware JSONC readers and BR-0612 typed serialization remain separately owned. No new finding or additive inherited-file saving is admitted
+
+Fresh checks are read-only metadata operations with scratch outputs. No media payload hash, audio decode, fingerprint generation/matching, AcoustID/network lookup, corpus regeneration, JVM/full build/device execution or deferred adversarial/security/malformed-media/resource-pressure probe ran. Earlier actual-asset JVM and album-catalog checks remain historical context only. Concurrent audio/input work and outstanding_bugs.md remain untouched
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0017; rationale: existing source-generation freshness owner, reference only, zero inherited saving
+
+## Shared host evidence identities
+
+Fresh commands: python temp/general_cleanup_20261006/check_gq2_music_sources.py; pwsh -NoProfile -File temp/general_cleanup_20261006/check_gq2_music_policy.ps1. Both exit zero. The policy probe was repeated after correcting only its summary display; final log has no serialization warning. Shared execution is not credited per report
+
+```json
+{
+  "check_gq2_music_sources.py": "486950d4c03d383d3cb72b11c71fdafaaaba1bc5a16353238186a320d59a7c9f",
+  "check_gq2_album_catalog.py": "57e9dccc69c98cb00ed51320d12fa2ab020a55d40d3fe46b2d0b2ec2f50d26bf",
+  "music-source-checks.json": "5a95dd403ab91aa1f533e59c7ab9e8ed0c10e055a90ef1d319c5a0392565f901",
+  "music-source-projection.txt": "82604d86ad5ae8b0379e958dc2ec2058bbed575e6909a7316c6b4e5b021cdd1a",
+  "check_gq2_music_policy.ps1": "11b0d6d07b819718dfd56b0f4e02c87b925b464a02ec52c7c8cc1acb306e922b",
+  "music-policy-checks.json": "d5e6f90d740387f52546f81121fd4dd3230446117d6bab6976b8d1c1abe53da3",
+  "music-policy-checks.log": "34b196eaa35c2375df749df2eff461789463a90b2ffbef06e4323012ba17cdb0"
+}
+```
+
+Shared summary:
+
+```json
+{
+  "files": 24,
+  "lines": 2644,
+  "tracks": 418,
+  "fingerprint_chars": 2227005,
+  "published": 313,
+  "duplicates": 101,
+  "ambiguous": 4,
+  "acoustid_records": 97,
+  "local_audio_present": 418,
+  "asset_sha256": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+  "native_decode_or_matching": false,
+  "disc_asset_sha256": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+  "source_payload_hashes": false,
+  "authoritative_files_written": false
+}
+```
+
+Complete assigned field/comment projections, with opaque fingerprints represented by exact length and SHA-256:
+
+```json
+[
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 midi mp3 sc55/chromaprint_info.jsonc",
+    "lines": 102,
+    "source_sha256": "1b3602c9749a51ef3d9830359ed08ff7d1f276f1dcd26e5890e92c95ca104fe1",
+    "album": "D2 MIDI mp3 SC55",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 MIDI mp3 SC55"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Descent II.mp3",
+        "duration_ms": 180689,
+        "fingerprint_chars": 5414,
+        "fingerprint_sha256": "fac82e1dab5a4b5eb114d764250debac39dbfa76b880496e6bd38dd448ac934c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Briefing.mp3",
+        "duration_ms": 93211,
+        "fingerprint_chars": 2519,
+        "fingerprint_sha256": "19374e51d2e299e36fe988131c0dada737df48a9d3e9dd6c161017718797070a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "03 Credits.mp3",
+        "duration_ms": 140311,
+        "fingerprint_chars": 4331,
+        "fingerprint_sha256": "7f45d813cebb78c17e2701e728beed464bd4624c4d274932133699019485eb16",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "04 Game 1.mp3",
+        "duration_ms": 154991,
+        "fingerprint_chars": 4702,
+        "fingerprint_sha256": "edd46efd14f20b9f907576af406fbf74de86d5ec9f97b0562d4baddea6533b6d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "05 Game 2.mp3",
+        "duration_ms": 277244,
+        "fingerprint_chars": 8519,
+        "fingerprint_sha256": "ae486d6658004f60c7911a0bbecab2ca6783f9d33f0c90c2f044246f477fa4fa",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "06 Game 3.mp3",
+        "duration_ms": 275148,
+        "fingerprint_chars": 7999,
+        "fingerprint_sha256": "6fd0d52bbca924ffce87994e95f0bc984a775ab8042591e3e2d1eca42bd7a3e4",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "07 Game 4.mp3",
+        "duration_ms": 186880,
+        "fingerprint_chars": 5843,
+        "fingerprint_sha256": "cb61c9d895cfc3f45b9e2c1845b7265b73fd472cba064342188c63b192112272",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "08 Descent II Title Redux (Bonus).mp3",
+        "duration_ms": 182857,
+        "fingerprint_chars": 5595,
+        "fingerprint_sha256": "7b6534439b243f0385cbe2da185c4bf3bd3f285f3f697076c2b19ad2cd8841e7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "09 Vampyro (Bonus).mp3",
+        "duration_ms": 158106,
+        "fingerprint_chars": 4416,
+        "fingerprint_sha256": "4371dd2680c01d5c9bb9ef1bd7c1ed11cc0a5f8d70cce98a4296f824637a9d2f",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "D2-SC55.ogg",
+        "duration_ms": 153885,
+        "fingerprint_chars": 4666,
+        "fingerprint_sha256": "c8ec505e3db10b494a3d32b9dd0ed88d98f78d494eaa1f48b6f7807f647e6ab4",
+        "local_audio_exists": true,
+        "disposition": "// ambiguous: track 10 (D2-SC55) conflicts with d2-midi-mp3-sc55 track 16 (game01) at score 1",
+        "exact_ambiguity_payload": false,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "briefing.ogg",
+        "duration_ms": 94122,
+        "fingerprint_chars": 2630,
+        "fingerprint_sha256": "e38791469d98ef75e1e054418160232e982e71e5657b905554f4505e393c7c81",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "credits.ogg",
+        "duration_ms": 141026,
+        "fingerprint_chars": 4371,
+        "fingerprint_sha256": "3165094fd37bfab1aa766c1958db25b66ac17a2b16774cfd6fe9476cbd9e5cce",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "descent2.ogg",
+        "duration_ms": 179919,
+        "fingerprint_chars": 5500,
+        "fingerprint_sha256": "3dfb2ccf8863dc001e4e6d8dd329a792be86ba8fbd861825c7458adb9a3d81a5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "endgame.ogg",
+        "duration_ms": 128719,
+        "fingerprint_chars": 3890,
+        "fingerprint_sha256": "7cceff9459060ee0583e523e5299c34dccd5373fd2f81aefc6845a5c18de661a",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "endlevel.ogg",
+        "duration_ms": 19458,
+        "fingerprint_chars": 523,
+        "fingerprint_sha256": "07f22d387e508f6a54813c62464bee872d3316cb8158ef9bc005f6de5db03eba",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "game01.ogg",
+        "duration_ms": 155805,
+        "fingerprint_chars": 4723,
+        "fingerprint_sha256": "5571e560caf383af0b989ec53e90ce33d90c25f52545f439af89be4bb7223ca4",
+        "local_audio_exists": true,
+        "disposition": "// ambiguous: track 16 (game01) conflicts with d2-midi-mp3-sc55 track 10 (D2-SC55) at score 1",
+        "exact_ambiguity_payload": false,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "game02.ogg",
+        "duration_ms": 277780,
+        "fingerprint_chars": 8410,
+        "fingerprint_sha256": "ac843cc8c6d88614e16fe5b557aad70bbde3e0d84a3a0d2161e9d4679d5b5049",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "game03.ogg",
+        "duration_ms": 276096,
+        "fingerprint_chars": 8180,
+        "fingerprint_sha256": "c8a96442ca977b6c32d7d131562629759fbae42e0ada66438aec8d9f4e1fc9d7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "game04.ogg",
+        "duration_ms": 188151,
+        "fingerprint_chars": 6011,
+        "fingerprint_sha256": "b0c7ae43077632da4806f5c311960d03a9fcce34bf83112f289e00846c7ed247",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 MIDI mp3 SC88/chromaprint_info.jsonc",
+    "lines": 52,
+    "source_sha256": "039ef6759ed386f6b236191a3e6ba89584521e7e6c8939b245dac4725946cdbc",
+    "album": "D2 MIDI mp3 SC88",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 MIDI mp3 SC88"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 94601,
+        "fingerprint_chars": 2646,
+        "fingerprint_sha256": "1d153d5f96934a4b25ec2e6820f06f412442799f4161f9bf8cfbf061347ed766",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 141540,
+        "fingerprint_chars": 4324,
+        "fingerprint_sha256": "10eec88e3718ce12ce5b57df2621633bb67045496f4ff6f680aeaedb058cd6f1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent2.ogg",
+        "duration_ms": 180758,
+        "fingerprint_chars": 5359,
+        "fingerprint_sha256": "d3d8145367f7ef377bf0fdc946f900b1194b65c680b47d0c975ec9c8a301f365",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129454,
+        "fingerprint_chars": 3742,
+        "fingerprint_sha256": "15cddcdae75153d2d7071ac810ec881450ffd3eeb7212a425df2af8449197835",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 20052,
+        "fingerprint_chars": 516,
+        "fingerprint_sha256": "3fa02c6040314fd289c793857f7527667fa8f8938c49cf46e125971f5094c3a5",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 156432,
+        "fingerprint_chars": 4476,
+        "fingerprint_sha256": "1ac18909ea7f038b18f2d1e978188aeb5f73e47b17eb99e079585d4df2609be6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 278058,
+        "fingerprint_chars": 8206,
+        "fingerprint_sha256": "f4e52405e16f606e55c90993fb5db0f34bbda6dd4594329a6176b2d5f493141d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 276735,
+        "fingerprint_chars": 7779,
+        "fingerprint_sha256": "d832c4a81cfd7c196b89670c4176db1c65f3dd5e243208e740da535a04dff4e6",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 188151,
+        "fingerprint_chars": 5866,
+        "fingerprint_sha256": "bde400cf919cfad6d14fb52c2fd9c125f12e83bbeabc1385b634c08a4b466dc0",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 MIDI mp3 SC88Pro/chromaprint_info.jsonc",
+    "lines": 52,
+    "source_sha256": "7873e95e690be596046f5c7fe03c6c9ac600336910eaf3f1f4d67aa69a626281",
+    "album": "D2 MIDI mp3 SC88Pro",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 MIDI mp3 SC88Pro"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "briefing.ogg",
+        "duration_ms": 94598,
+        "fingerprint_chars": 2660,
+        "fingerprint_sha256": "8d604f9266948ddb7b670bcb892cbc09347f3e97dded89c659c1983ac9c7d6a1",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "credits.ogg",
+        "duration_ms": 141421,
+        "fingerprint_chars": 4359,
+        "fingerprint_sha256": "72a39decb699f8de693f85c4b0f903c88d297669d06c91a15ddaa31f8bc5abd7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "descent2.ogg",
+        "duration_ms": 180604,
+        "fingerprint_chars": 5378,
+        "fingerprint_sha256": "d2eb1481a6b9b9487cd77fcf0489a91184f1190b1ebd271e72b69104ca33fd60",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "endgame.ogg",
+        "duration_ms": 129416,
+        "fingerprint_chars": 3820,
+        "fingerprint_sha256": "6fa730adf1afddc7f3018dfca5ec651afeb6ed2aa184ced020243e6f9f7500f9",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "endlevel.ogg",
+        "duration_ms": 20154,
+        "fingerprint_chars": 542,
+        "fingerprint_sha256": "7e2351c5cdc30716ce9d2e2ca5e5cea1a6a68747c69f4c8e852d6097490c9790",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "game01.ogg",
+        "duration_ms": 156456,
+        "fingerprint_chars": 4594,
+        "fingerprint_sha256": "d0a110ea8bd8da49d24f8d4d44ce8c211a45b4ea5b9ecb2eb861f32ac3938351",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "game02.ogg",
+        "duration_ms": 278384,
+        "fingerprint_chars": 8232,
+        "fingerprint_sha256": "c9e2317eb1bed7625c091343801d1a6770cd9ba9ec43c3d710b7f7e2bf92c842",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "game03.ogg",
+        "duration_ms": 277246,
+        "fingerprint_chars": 7934,
+        "fingerprint_sha256": "16ed497dfefacfa99f2fa44a0de5f243a82524749e38aaee5a72c39429de798b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "game04.ogg",
+        "duration_ms": 188952,
+        "fingerprint_chars": 5920,
+        "fingerprint_sha256": "71ade853ce854de70d52893a2aa4fdf9bf262b26cf5dcb0f21b4039c6b89cff3",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 mp3/chromaprint_info.jsonc",
+    "lines": 134,
+    "source_sha256": "d95fed0121dd00235406483497bc4c89083e76cd3a2baad37ad579e90015b90a",
+    "album": "D2 mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01_intro_crawl.ogg",
+        "duration_ms": 252083,
+        "fingerprint_chars": 7236,
+        "fingerprint_sha256": "45ed16d161bf7b0fb843e3bbdc2d39de1819e31b173585d5589e529ff5f76a8d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02_crush.ogg",
+        "duration_ms": 274731,
+        "fingerprint_chars": 7930,
+        "fingerprint_sha256": "f5360b3cb347f664bf33db29aed67e3448ca168df8828f9033ab52147fb7383d",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02_crush.ogg) matches descent-ii-the-vertigo-series-usa track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "03_mark2.ogg",
+        "duration_ms": 230270,
+        "fingerprint_chars": 6470,
+        "fingerprint_sha256": "25c3d5b7adc2c3d62ca0e278ef15796cf690efff88c19e3dac1c051d129df041",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03_mark2.ogg) matches descent-ii-the-vertigo-series-usa track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "04_coldreal.ogg",
+        "duration_ms": 296151,
+        "fingerprint_chars": 8622,
+        "fingerprint_sha256": "b75396989d84da5f42468a9e1044ffcbf97f947c128661055c858be4b5ed3881",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04_coldreal.ogg) matches descent-ii-usa-v11 track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "05_techno.ogg",
+        "duration_ms": 268409,
+        "fingerprint_chars": 7214,
+        "fingerprint_sha256": "478a6060754525a9f7098fa44030468b3c507b7b510d303bd63183a732bfe2db",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05_techno.ogg) matches descent-ii-usa-v11 track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "06_glut.ogg",
+        "duration_ms": 128341,
+        "fingerprint_chars": 3944,
+        "fingerprint_sha256": "1449c29fc1fb39eb5fd734eb43904aad50f1755eed8f445e333c3b4223412f0f",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06_glut.ogg) matches descent-ii-the-vertigo-series-usa track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "07_gunner.ogg",
+        "duration_ms": 209686,
+        "fingerprint_chars": 5888,
+        "fingerprint_sha256": "a7816cc21d0f8ddd391af7ae8a34c97fd611d742748129c6bec778b5290d58ae",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07_gunner.ogg) matches descent-ii-usa-v11 track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "08_mark1.ogg",
+        "duration_ms": 217418,
+        "fingerprint_chars": 6311,
+        "fingerprint_sha256": "bd89e65ef8880478d1c26ce7732f5349bb01dd2a6180010c10dbf9163b07be13",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08_mark1.ogg) matches descent-ii-the-vertigo-series-usa track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "09_pain.ogg",
+        "duration_ms": 257908,
+        "acoustid_name": "Larry Peacock - Pain",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.964201,
+        "acoustid_recording_id": "925578ef-6201-4011-9bdb-a7e74d569f39",
+        "fingerprint_chars": 6472,
+        "fingerprint_sha256": "038f3241d0d41a57d74118b9cc993fdafa6deea3216b2d2acdf8097a692c7672",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 9 (09_pain.ogg) matches descent-ii-the-vertigo-series-usa track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 56,
+        "filename": "10_robot.ogg",
+        "duration_ms": 261670,
+        "fingerprint_chars": 7320,
+        "fingerprint_sha256": "7d1242b9afc54e5f4c96ecf5331ff6bc4bdf1dcd07c76d75512124dab0e370e7",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 10 (10_robot.ogg) matches descent-ii-usa-v11 track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 61,
+        "filename": "11_ratzez.ogg",
+        "duration_ms": 134819,
+        "acoustid_name": "Ogre, Mark Walk - Ratzez",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9715849,
+        "acoustid_recording_id": "b2ec666b-e1e4-4f6f-beb5-bd4e594e5400",
+        "fingerprint_chars": 4210,
+        "fingerprint_sha256": "b633423f447822a560014eb18768d98380b9a1ddbf7dec7347970ba698fd2d57",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11_ratzez.ogg) matches descent-ii-usa-v11 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 70,
+        "filename": "12_haunted.ogg",
+        "duration_ms": 293461,
+        "fingerprint_chars": 8210,
+        "fingerprint_sha256": "f927ff4f2e5a4ff3a2da74f2f286437e93108b2f0c0b690fe51012423824c982",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12_haunted.ogg) matches descent-ii-the-vertigo-series-usa track 4 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 75,
+        "filename": "13_rudescnt.ogg",
+        "duration_ms": 216243,
+        "fingerprint_chars": 5758,
+        "fingerprint_sha256": "f9733fcd4d995043a89c5e5b24f72e334106eb366e5b6abe74fd2a84ec0f4d36",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 13 (13_rudescnt.ogg) matches descent-ii-usa-v11 track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 80,
+        "filename": "14_rusty.ogg",
+        "duration_ms": 195188,
+        "acoustid_name": "Ogre, Mark Walk - Rusty",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.96528876,
+        "acoustid_recording_id": "7d073643-581f-4d14-9615-55be9042c777",
+        "fingerprint_chars": 4323,
+        "fingerprint_sha256": "346e55463283490df649da9f624fdefaff48ed1dfe1d2ce41ecc8146787b985d",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 14 (14_rusty.ogg) matches descent-ii-the-vertigo-series-usa track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 89,
+        "filename": "15_base_return.ogg",
+        "duration_ms": 213291,
+        "fingerprint_chars": 5820,
+        "fingerprint_sha256": "a5ec1db9847751a9a2565e5b861aaa7c1938b17d7680a4b5d410f3616272ce93",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 94,
+        "filename": "16_final_mission.ogg",
+        "duration_ms": 149630,
+        "fingerprint_chars": 4018,
+        "fingerprint_sha256": "d3e09c37d2bf9f890b60f53361c33f2b452ea2cae4195d3f8311c593625efbdf",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 99,
+        "filename": "briefing.ogg",
+        "duration_ms": 236878,
+        "fingerprint_chars": 6339,
+        "fingerprint_sha256": "bb34cfb3047f2349c0535fce0408e74d59224f3343fba1eb4b5292d67862053f",
+        "local_audio_exists": true,
+        "disposition": "// ambiguous: track 17 (briefing) conflicts with d1-midi-mp3 track 1 (briefing) at score 1",
+        "exact_ambiguity_payload": false,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 104,
+        "filename": "credits.ogg",
+        "duration_ms": 141374,
+        "fingerprint_chars": 4443,
+        "fingerprint_sha256": "d0ccf1157073a5d8bb4f47174daedcb521b3fb1130ef4892c0aeb1169a0dc10c",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 109,
+        "filename": "d2_01.ogg",
+        "duration_ms": 156135,
+        "fingerprint_chars": 5011,
+        "fingerprint_sha256": "0ca0e00706c82499291f94c0b3204cb5b50cdb15d17fb629459833cbe0812b6d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 114,
+        "filename": "d2_02.ogg",
+        "duration_ms": 281131,
+        "fingerprint_chars": 8923,
+        "fingerprint_sha256": "d6e0be5a695d45fcdef78076358b4f0e968ed79561ae1215952c8cc10d56669d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 21,
+        "line": 119,
+        "filename": "d2_03.ogg",
+        "duration_ms": 277082,
+        "fingerprint_chars": 7879,
+        "fingerprint_sha256": "2f31166a6ef8689bb86e2c82aa7d4a2e166a66e0d1d88750b792b1d6c5b27678",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 22,
+        "line": 124,
+        "filename": "d2_04.ogg",
+        "duration_ms": 189572,
+        "fingerprint_chars": 5823,
+        "fingerprint_sha256": "0a9fd65798c481497e3768c6547acec9105e3db4103697493008735d7f259678",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 23,
+        "line": 129,
+        "filename": "title.ogg",
+        "duration_ms": 180688,
+        "fingerprint_chars": 5522,
+        "fingerprint_sha256": "ad80cf56062b92095d5b7a2ada7bf71b72d4b02e2f6833125e08088e806121c7",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 redbook mp3 rips/chromaprint_info.jsonc",
+    "lines": 125,
+    "source_sha256": "ba5cb83a10ce64c765edf89ba8e4e252d4807a70b5ac1a63a70c0a1e4dcacf71",
+    "album": "D2 redbook mp3 rips",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 redbook mp3 rips"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Base Return.mp3",
+        "duration_ms": 213253,
+        "fingerprint_chars": 5831,
+        "fingerprint_sha256": "638d17845f296f5730a603b3331ce4966f3a2430f6d75d6e8044f66ddea3cf18",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Title.mp3",
+        "duration_ms": 42733,
+        "acoustid_name": "Brian Luzietti - Title",
+        "acoustid_album": "Descent 2",
+        "acoustid_score": 0.9792631,
+        "acoustid_recording_id": "d185339f-f39d-4fd3-b685-2cc570c8f6ad",
+        "fingerprint_chars": 1154,
+        "fingerprint_sha256": "65bac0dc223f933cc057b44f73c04f8b326407880799bd44e601a297a60e8dc2",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Title.mp3) matches descent-ii-usa track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 21,
+        "filename": "03 Crawl.mp3",
+        "duration_ms": 158640,
+        "acoustid_name": "Brian Luzietti - Crawl",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9849354,
+        "acoustid_recording_id": "0524e99e-f9a1-4f04-b39e-fe5c46e012a3",
+        "fingerprint_chars": 4387,
+        "fingerprint_sha256": "1668ee75e59d01db8466cd4069acca08c73d3305354e340cc0d9fbb9c4231eb1",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Crawl.mp3) matches descent-ii-usa track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 30,
+        "filename": "04 Glut.mp3",
+        "duration_ms": 117293,
+        "acoustid_name": "Ogre, Mark Walk - Glut",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.98064494,
+        "acoustid_recording_id": "eff478c9-16ae-4d5e-a12d-6c5b974f1bf5",
+        "fingerprint_chars": 3528,
+        "fingerprint_sha256": "2d13cdc963cd1b9ecf43a5cd9374586a0a5404e1df020dc4c11186b2fd2a4fd6",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Glut.mp3) matches descent-ii-usa track 4 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 39,
+        "filename": "05 Gunner Down.mp3",
+        "duration_ms": 151626,
+        "acoustid_name": "Brian Luzietti - Gunner Down",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9829905,
+        "acoustid_recording_id": "49699ff7-14ea-4a7f-9987-52647a12266e",
+        "fingerprint_chars": 4158,
+        "fingerprint_sha256": "acbe3799b169ae5813c6c8688416f6fe1cfbd321fb3b85d6b9fa3ba54ad8cb17",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 Gunner Down.mp3) matches descent-ii-usa track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 48,
+        "filename": "06 Cold Reality.mp3",
+        "duration_ms": 184773,
+        "acoustid_name": "Larry Peacock, Brad Cross, Leslie Spitzer - Cold Reality",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.97554064,
+        "acoustid_recording_id": "169d19d1-f6a8-4ed2-a1c8-2246d13eb432",
+        "fingerprint_chars": 5316,
+        "fingerprint_sha256": "ab2bf5b2d0aa961923c77e6d4d1beeb749735764f70eff700586bcaa2460df2f",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Cold Reality.mp3) matches descent-ii-europe track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Ratzez.mp3",
+        "duration_ms": 150493,
+        "acoustid_name": "Ogre, Mark Walk - Ratzez",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9961762,
+        "acoustid_recording_id": "b2ec666b-e1e4-4f6f-beb5-bd4e594e5400",
+        "fingerprint_chars": 4683,
+        "fingerprint_sha256": "d47ff1afed0548213f24d9920aed2a536283d4210b5aec77b1be2de0ce79fe06",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Ratzez.mp3) matches descent-ii-usa track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 66,
+        "filename": "08 Crush.mp3",
+        "duration_ms": 205426,
+        "acoustid_name": "Brian Luzietti - Crush",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.98635286,
+        "acoustid_recording_id": "4b22ab7b-e07c-49f2-8cd1-bac197595a57",
+        "fingerprint_chars": 5802,
+        "fingerprint_sha256": "f1c2f6a114c678182690f9a0f7f7b958f6920918bb57a22f30ef8c937fc2da23",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08 Crush.mp3) matches descent-ii-usa track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 75,
+        "filename": "09 The Well (Mark 2).mp3",
+        "duration_ms": 172240,
+        "acoustid_name": "Mark Morgan - The Well (Mark 2)",
+        "acoustid_album": "Descent II: Destination Quartzon",
+        "acoustid_score": 0.9790348,
+        "acoustid_recording_id": "4f11b793-c9bc-4afc-8579-f8e795bae5ba",
+        "fingerprint_chars": 4592,
+        "fingerprint_sha256": "7620176165b2d3f8182cf81dc31a084cccfb000061cc0ac7d2b3f74d4e290564",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 9 (09 The Well (Mark 2).mp3) matches descent-ii-usa track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 84,
+        "filename": "10 Haunted (Instrumental Remix).mp3",
+        "duration_ms": 167533,
+        "acoustid_name": "Type O Negative - Haunted (instrumental remix)",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9855947,
+        "acoustid_recording_id": "f16eff29-f0e5-4690-a911-67a6b46b9248",
+        "fingerprint_chars": 4650,
+        "fingerprint_sha256": "fc626ecd8f410c11161cfd446cb44c97d3449f7bd5dc1b4ac466ff59e319964a",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 10 (10 Haunted (Instrumental Remix).mp3) matches descent-ii-usa track 10 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 93,
+        "filename": "11 Are You Descent.mp3",
+        "duration_ms": 164640,
+        "acoustid_name": "Ron Valdez - Are You Descent?",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9841443,
+        "acoustid_recording_id": "9eee3cee-b7be-41ab-a762-0febf04f5de1",
+        "fingerprint_chars": 4323,
+        "fingerprint_sha256": "4acf5448189cade2d049e17564b78034d73aa63651b80e16e212b06c398f117d",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11 Are You Descent.mp3) matches descent-ii-usa track 11 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 102,
+        "filename": "12 Techno Industry.mp3",
+        "duration_ms": 140080,
+        "acoustid_name": "Johann Langlie - Techno Industry",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.98546284,
+        "acoustid_recording_id": "103ca67a-af2c-477d-884d-866839c6307e",
+        "fingerprint_chars": 3879,
+        "fingerprint_sha256": "6d89b40db0a77e489984f9e70e5f092a0c10232c2818ff766d0ddf78e96ca307",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12 Techno Industry.mp3) matches descent-ii-usa track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 111,
+        "filename": "13 Robot Jungle.mp3",
+        "duration_ms": 173693,
+        "acoustid_name": "Johann Langlie - Robot Jungle",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.979727,
+        "acoustid_recording_id": "49107d01-a3b3-467a-9c20-820c302e6b18",
+        "fingerprint_chars": 4620,
+        "fingerprint_sha256": "ed395d6095f6e03af392d20f5d4e8a72c2f682e4a9a22ca2b3872a3536b32d73",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 13 (13 Robot Jungle.mp3) matches descent-ii-europe track 13 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 120,
+        "filename": "14 Final Mission.mp3",
+        "duration_ms": 149600,
+        "fingerprint_chars": 4019,
+        "fingerprint_sha256": "641ab83da572331819a756783e058046b0b8647e1427473262b9baa517f99689",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 vampyro mp3/chromaprint_info.jsonc",
+    "lines": 22,
+    "source_sha256": "d42841a94bf259ced8717f3100d9e5f179138150e3c8484445d8bb83780d01a3",
+    "album": "D2 vampyro mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 vampyro mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Vampyro Briefing (Remastered).mp3",
+        "duration_ms": 120144,
+        "fingerprint_chars": 3600,
+        "fingerprint_sha256": "7b150359fa6e43ce55966ad87e09dbaac5ba75b556a626b852fbe9d525c0a302",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "02 Vampyro Title (Remastered).mp3",
+        "duration_ms": 159120,
+        "fingerprint_chars": 4784,
+        "fingerprint_sha256": "c3240f92e41e6694206ff1f5681a5498ed92e30d199059d415d84b7370563d3b",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "03 Vampyro Credits (Remastered).mp3",
+        "duration_ms": 84240,
+        "fingerprint_chars": 2198,
+        "fingerprint_sha256": "fdaa729208b68ed8b990badab353dc02b49e07c83c3f14b86ba036815a8938ff",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/D2 vertigo mp3/chromaprint_info.jsonc",
+    "lines": 70,
+    "source_sha256": "ef9c4206f89ac6917429aacefbd9450b21e7c5b1bfc4a35fcf3fd1a8fd929df3",
+    "album": "D2 vertigo mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: D2 vertigo mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Crush (Extended Remix).mp3",
+        "duration_ms": 279000,
+        "acoustid_name": "Brian Luzietti - Crush (extended remix)",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.9767932,
+        "acoustid_recording_id": "62c3ea8c-b619-4095-8412-a97e9b9bddf5",
+        "fingerprint_chars": 7916,
+        "fingerprint_sha256": "84fce88c4d42ca0b4e12bed39ff651bec0121b430f0a1bb31470af2cf95fc662",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 1 (01 Crush (Extended Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Glut (Extended Remix).mp3",
+        "duration_ms": 132000,
+        "acoustid_name": "Ogre, Mark Walk - Glut (extended remix)",
+        "acoustid_album": "Descent II: The Definitive Collection",
+        "acoustid_score": 0.98846257,
+        "acoustid_recording_id": "116423a8-5daf-4d21-9595-235eeb3f55fe",
+        "fingerprint_chars": 4003,
+        "fingerprint_sha256": "69aa83e86810d324b27c867604eabada15225c6349907c892c2eec70afc147e4",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Glut (Extended Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Haunted (Instrumental Re-Remix).mp3",
+        "duration_ms": 297000,
+        "acoustid_name": "Type O Negative - Haunted (instrumental re-remix)",
+        "acoustid_album": "DESCENT II RED BOOK",
+        "acoustid_score": 0.9816719,
+        "acoustid_recording_id": "e10ee499-4c0d-4c02-a81b-fff15e98a5b4",
+        "fingerprint_chars": 8286,
+        "fingerprint_sha256": "92c6333dc59fa4f1e484ae38d8fe8dcd74186fb49633bcd094592196e1e6d1b8",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Haunted (Instrumental Re-Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 4 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 34,
+        "filename": "04 Transmode Containment 2112 (Mark 1).mp3",
+        "duration_ms": 221000,
+        "acoustid_name": "Mark Morgan - Transmode Containment 2112 (Mark 1)",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.9993407,
+        "acoustid_recording_id": "7c6ec1f1-5ef6-4d22-938a-15807f6a155a",
+        "fingerprint_chars": 6367,
+        "fingerprint_sha256": "719e540b06b9bf12e9021b1c6158cf6fddf88ad4bcd0ad081819c829c2f52664",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Transmode Containment 2112 (Mark 1).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 43,
+        "filename": "05 The Well (Extended Remix) (Mark 2).mp3",
+        "duration_ms": 234000,
+        "acoustid_name": "Mark Morgan - The Well (Extended Remix) (Mark 2)",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.98028743,
+        "acoustid_recording_id": "44e6835d-9eec-4ebf-aa29-b71210da4451",
+        "fingerprint_chars": 6459,
+        "fingerprint_sha256": "c6a81025524de77481bf560101e042721c4af2bf4b9def69524804ea3ec64b96",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 The Well (Extended Remix) (Mark 2).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 52,
+        "filename": "06 Pain.mp3",
+        "duration_ms": 262000,
+        "acoustid_name": "Larry Peacock - Pain",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.9888581,
+        "acoustid_recording_id": "925578ef-6201-4011-9bdb-a7e74d569f39",
+        "fingerprint_chars": 6490,
+        "fingerprint_sha256": "a5bc4e2dbc7c122188f37fc90be86427dd550ecfb70cd6201a5d71df5e8c3376",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Pain.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 7 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 61,
+        "filename": "07 Rusty.mp3",
+        "duration_ms": 199000,
+        "acoustid_name": "Ogre, Mark Walk - Rusty",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.9984507,
+        "acoustid_recording_id": "7d073643-581f-4d14-9615-55be9042c777",
+        "fingerprint_chars": 4359,
+        "fingerprint_sha256": "45544656335ec7af42d3437e9f2e128b5d8c140f03324c9ddf0ac50057089704",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Rusty.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  },
+  {
+    "unit": "GQ2-CHUNK-0292",
+    "path": "game_data/music/Descent Maximum (MP3)/chromaprint_info.jsonc",
+    "lines": 107,
+    "source_sha256": "481f67dd25ad74f64cb6c2f0ea8689be441300d5b4ff7e94324b410016974744",
+    "album": "Descent Maximum (MP3)",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: Descent Maximum (MP3)"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "(mov) END.mp3",
+        "duration_ms": 150660,
+        "fingerprint_chars": 4227,
+        "fingerprint_sha256": "bab3726f5261783ebfb68456991ca5200d80d865f9ce037a5123a9d2534e87f0",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 12,
+        "filename": "(mov) ESA.mp3",
+        "duration_ms": 16958,
+        "fingerprint_chars": 435,
+        "fingerprint_sha256": "5d6f098b18849d2c548ca8e9abb8c4ee07e9a78a7312fb410a90b9f8715b6611",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 17,
+        "filename": "(mov) INTRO.mp3",
+        "duration_ms": 209703,
+        "fingerprint_chars": 6214,
+        "fingerprint_sha256": "3a3fe609988ce55cbcaea1305fe29d2d4dc74f22aeec438fb7aeab769e289a6d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 22,
+        "filename": "(mov) PLA.mp3",
+        "duration_ms": 13693,
+        "fingerprint_chars": 311,
+        "fingerprint_sha256": "eb98fb4ad0bcaf5792be01697a3b7cdfd42b67519c896cee1a570f2472434231",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 27,
+        "filename": "(mov) PLG.mp3",
+        "duration_ms": 21536,
+        "fingerprint_chars": 554,
+        "fingerprint_sha256": "49403a479326342a07cab58377040e156da457bae9e76a2d8f90b052618d958d",
+        "local_audio_exists": true,
+        "disposition": "published",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 32,
+        "filename": "TESTA_1 ~ Title.mp3",
+        "duration_ms": 39564,
+        "fingerprint_chars": 1119,
+        "fingerprint_sha256": "00ea3ead42f1b3427130a8f6d14d6733d5db171ce9a9eaf605e6967838c54da3",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (TESTA_1 ~ Title.mp3) matches descent-ii-usa-v11 track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 37,
+        "filename": "TESTA_2 ~ Glut.mp3",
+        "duration_ms": 127783,
+        "fingerprint_chars": 3935,
+        "fingerprint_sha256": "b940bb01cc1fd067cae101dc13fbae11a51bd8796c8597e56d2ec5d91c17e91c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (TESTA_2 ~ Glut.mp3) matches descent-ii-the-vertigo-series-usa track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 42,
+        "filename": "TESTA_3 ~ Ratzetz.mp3",
+        "duration_ms": 133756,
+        "fingerprint_chars": 4163,
+        "fingerprint_sha256": "84af156b64c07ddce43226aefac3959d9ef92c111dec0665d4ea69a66000a360",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (TESTA_3 ~ Ratzetz.mp3) matches descent-ii-usa-v11 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 47,
+        "filename": "TESTA_4 ~ Techno Industry.mp3",
+        "duration_ms": 136790,
+        "fingerprint_chars": 3776,
+        "fingerprint_sha256": "8a40890d70cb59771eba49eafae2722a5414e06ae1766a0de0d16fae346e070f",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 9 (TESTA_4 ~ Techno Industry.mp3) matches descent-ii-europe track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 52,
+        "filename": "TESTA_5 ~ Gunner Down.mp3",
+        "duration_ms": 146556,
+        "fingerprint_chars": 4136,
+        "fingerprint_sha256": "94e5b738931ea41e7b2ede3a849c0610fe461aa2a0d42c62a66493910dc841fc",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 10 (TESTA_5 ~ Gunner Down.mp3) matches descent-ii-europe track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 57,
+        "filename": "TESTA_6 ~ Are You Descent.mp3",
+        "duration_ms": 162715,
+        "fingerprint_chars": 4307,
+        "fingerprint_sha256": "10d4134bd91011da37fcea44a3ec1abbc516c55dc356f7fd1f0d184b0836c935",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (TESTA_6 ~ Are You Descent.mp3) matches descent-ii-europe track 11 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 62,
+        "filename": "TESTA_7 ~ Crawl (Credits).mp3",
+        "duration_ms": 159993,
+        "fingerprint_chars": 4524,
+        "fingerprint_sha256": "1e216a9d2c505181583be1c18cc2e12e8b975571f48c5b9b6f5256e16a2f945f",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (TESTA_7 ~ Crawl (Credits).mp3) matches descent-ii-europe track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 67,
+        "filename": "TESTA_8 ~ Haunted (Intrumental Remix).mp3",
+        "duration_ms": 163406,
+        "fingerprint_chars": 4550,
+        "fingerprint_sha256": "0fe3409094d33ae5a8d4930b1471ec02e6aff21fede439ff0f55fbf920861365",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 13 (TESTA_8 ~ Haunted (Intrumental Remix).mp3) matches descent-ii-europe track 10 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 72,
+        "filename": "TESTB_1 ~ Untitled.mp3",
+        "duration_ms": 163460,
+        "fingerprint_chars": 4550,
+        "fingerprint_sha256": "5456d7c30833b130e74b804c284251d968b4c817d5d8c958931fb029bde151a1",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 14 (TESTB_1 ~ Untitled.mp3) matches descent-ii-europe track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 77,
+        "filename": "TESTB_2 ~ Cold Reality.mp3",
+        "duration_ms": 180635,
+        "fingerprint_chars": 5266,
+        "fingerprint_sha256": "6f3ab0f7dc395fd10643068e26550dce6054d55d479f369bbba98c631e9391dc",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 15 (TESTB_2 ~ Cold Reality.mp3) matches descent-ii-europe track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 16,
+        "line": 82,
+        "filename": "TESTB_3 ~ Robot Jungle.mp3",
+        "duration_ms": 182288,
+        "fingerprint_chars": 4776,
+        "fingerprint_sha256": "0ae86f3cffc316a194983dfcf841a1c7b23943f00a929dd9de146ca784e42f59",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 16 (TESTB_3 ~ Robot Jungle.mp3) matches descent-ii-europe track 13 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 17,
+        "line": 87,
+        "filename": "TESTB_4 ~ Crush.mp3",
+        "duration_ms": 188586,
+        "fingerprint_chars": 5448,
+        "fingerprint_sha256": "088d73594ec2a706d393986c5f7eb72637ec6831273faba8f6c0be6574efc747",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 17 (TESTB_4 ~ Crush.mp3) matches d2-mac track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 18,
+        "line": 92,
+        "filename": "TESTB_5.mp3",
+        "duration_ms": 156796,
+        "fingerprint_chars": 3526,
+        "fingerprint_sha256": "0afef52a3204cdd2a132f43b843f09b1c0c00d37424b8dbf4e089ec0dd07de4c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 18 (TESTB_5.mp3) matches d2-mac track 16 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 19,
+        "line": 97,
+        "filename": "TESTB_6.mp3",
+        "duration_ms": 198013,
+        "fingerprint_chars": 4968,
+        "fingerprint_sha256": "fb62b5f5fccad9b4ebe1065940d2295e80c7c96b86ea44b2a94f16c28b8d37fa",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 19 (TESTB_6.mp3) matches d2-mac track 14 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 20,
+        "line": 102,
+        "filename": "TESTB_7.mp3",
+        "duration_ms": 198501,
+        "fingerprint_chars": 5799,
+        "fingerprint_sha256": "ec39f12bbc42d374807793a45ef39a0263666df52e11ef70dafcf1e38066f217",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 20 (TESTB_7.mp3) matches d2-mac track 15 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  }
+]
+```
+
+## Named context identities
+
+Only described boundaries inspected; whole-file context hashes grant no additional coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `game_data/fingerprint_music_packs.ps1` | `4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9` | equal |
+| `game_data/update_known_discs_albums.ps1` | `186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a` | equal |
+| `android/helpers/acoustid_title_match.ps1` | `8a46cb71f47a14833677857909cb857c4295e721c7941f7959aa6f9f5a99b50f` | equal |
+| `android/helpers/jsonc.ps1` | `dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4` | equal |
+| `android/app/src/main/assets/known_albums.jsonc` | `93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517` | equal |
+| `android/app/src/main/assets/known_discs.jsonc` | `99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785` | equal |
+
+## Continuation
+
+No new finding/remediation or product change. Remaining delta coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Deferred probes remain follow-up under the existing constraint
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0292 music fingerprint source review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0293 music fingerprint source review 20261007 SHA256:5824830d180721d218121429f128be4d866fccd1c4709e6550dfe4d1dcc0ad4a -->
+
+## GQ2-CHUNK-0293 music fingerprint source review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0293.md`
+- Imported SHA-256: `5824830d180721d218121429f128be4d866fccd1c4709e6550dfe4d1dcc0ad4a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0293 music fingerprint source review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0293 | [ ] TODO | source | medium | authored-config | `game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.jsonc` | L1-L114 | - |
+- Scope fingerprint `bd1dfff95956af068b77c2f1d4ec7ee2c7a9a679ff425e34ead477320bcb56d8` hashes ordered table data rows with final LF
+- Full assigned LF-normalized lines; base JSON5 paths recorded where applicable
+
+| Path/scope | Attribution | Base blob and path | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.jsonc` L1-L114 | branch-added | `053d80fbbe9f41f575590b09bef01cda38404362` (game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.json5) | `4dc693751592fbfea9877005486167492eb4b40b` | `71b0e68354bb009619003ad0f2e05749121aac2bbf678fc1d8d7859bddf8274e` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Complete 114-line Maximum PS1 manifest, fifteen source tracks and fifteen physical-disc omission records. Preserve cached labels, source filenames and complete source inventory despite empty published album; no raw payload or native match revalidation
+
+Reviewed every field and both generator comments in all 24 assigned files through a complete line-indexed semantic projection. Root shapes are album/tracks only; filenames are unique case-insensitively within each source, positive durations are integral milliseconds, optional scores are within 0..1 and recording IDs have the expected textual shape. All 418 named local audio files exist. Existence and schema checks do not authenticate or decode their payloads
+
+The manifests contain 2,227,005 encoded fingerprint characters. These strings were compared exactly with published payloads and hashed for complete source projections, not visually interpreted or natively decoded. All 313 published tracks retain their exact source-derived track number, basename, duration, fingerprint and every published optional field. Every one of the other 105 source records has one current catalog explanation: 101 physical-disc duplicate references resolve to existing fingerprinted audio tracks, and four ambiguity references resolve to corresponding source tracks with compatible durations. The four encoded ambiguity pairs are not byte-equal; their stored native score of 1 was not recomputed. Physical duplicate labels describe prior approximate-match decisions, not fresh byte-equality evidence
+
+Actual shared PowerShell JSONC parsing agrees with the independent projection for all 418 filenames, durations and fingerprint hashes. Actual Test-DxxAcoustIdTitleMatch evaluates all 97 source labels: 96 accepted, one rejected. For every retained track its result matches the packaged label policy. The sole rejected pair is D1 SC55 04 Escape.mp3 versus the cached End Level Theme label; the track remains published without that label. The source producer permits fingerprint-stable legacy cache metadata, while the album publisher applies maintained-title policy. Preserve this distinction; source and packaged optional fields need not be identical
+
+Inspected fingerprint_music_packs.ps1 extraction reuse/flattening, source enumeration, complete native result assertion, fingerprint-stable cached metadata reuse, lookup branching and normalized sidecar publication. Inspected update_known_discs_albums.ps1 source-ID/ordered-file projection, maintained-title filtering, exact-encoded collision augmentation, physical-disc priority and optional-field output. Full generator/native matcher bodies did not run. Source discovery includes MP3/OGG/FLAC despite folder labels containing mp3, and SC55 has deliberate MP3 plus OGG entries. The two SC55 directory labels differ from embedded names only in case; IDs use normalized album text. An initial checker assumption of exact directory spelling was corrected, as was its assumption that every source AcoustID field must be republished; these were harness assumptions, not data defects
+
+Retain branch-owned source manifests, comments, optional reviewed metadata, historical names/typos, ordering and distinct renderings. All assigned sources equal frozen head and are absent from the original inherited tree. Hand-minification, filename correction or source-track removal would obscure provenance without shrinking inherited engine changes. Even an album currently filtered to zero published tracks remains meaningful input to a future producer run
+
+Existing GQF-0030/GQR-0017 remains open: these roots carry no source inventory/digests or decoder/native/tool/Chromaprint/algorithm/schema/policy generation identity. A current consistent projection does not establish freshness. Existing GQR-0046 lossless ranking, GQR-0047 symmetric duration policy, GQR-0207 distinct-identity projection, GQR-0223 string-aware JSONC readers and BR-0612 typed serialization remain separately owned. No new finding or additive inherited-file saving is admitted
+
+Fresh checks are read-only metadata operations with scratch outputs. No media payload hash, audio decode, fingerprint generation/matching, AcoustID/network lookup, corpus regeneration, JVM/full build/device execution or deferred adversarial/security/malformed-media/resource-pressure probe ran. Earlier actual-asset JVM and album-catalog checks remain historical context only. Concurrent audio/input work and outstanding_bugs.md remain untouched
+
+Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: GQR-0017; rationale: existing source-generation freshness owner, reference only, zero inherited saving
+
+## Shared host evidence identities
+
+Fresh commands: python temp/general_cleanup_20261006/check_gq2_music_sources.py; pwsh -NoProfile -File temp/general_cleanup_20261006/check_gq2_music_policy.ps1. Both exit zero. The policy probe was repeated after correcting only its summary display; final log has no serialization warning. Shared execution is not credited per report
+
+```json
+{
+  "check_gq2_music_sources.py": "486950d4c03d383d3cb72b11c71fdafaaaba1bc5a16353238186a320d59a7c9f",
+  "check_gq2_album_catalog.py": "57e9dccc69c98cb00ed51320d12fa2ab020a55d40d3fe46b2d0b2ec2f50d26bf",
+  "music-source-checks.json": "5a95dd403ab91aa1f533e59c7ab9e8ed0c10e055a90ef1d319c5a0392565f901",
+  "music-source-projection.txt": "82604d86ad5ae8b0379e958dc2ec2058bbed575e6909a7316c6b4e5b021cdd1a",
+  "check_gq2_music_policy.ps1": "11b0d6d07b819718dfd56b0f4e02c87b925b464a02ec52c7c8cc1acb306e922b",
+  "music-policy-checks.json": "d5e6f90d740387f52546f81121fd4dd3230446117d6bab6976b8d1c1abe53da3",
+  "music-policy-checks.log": "34b196eaa35c2375df749df2eff461789463a90b2ffbef06e4323012ba17cdb0"
+}
+```
+
+Shared summary:
+
+```json
+{
+  "files": 24,
+  "lines": 2644,
+  "tracks": 418,
+  "fingerprint_chars": 2227005,
+  "published": 313,
+  "duplicates": 101,
+  "ambiguous": 4,
+  "acoustid_records": 97,
+  "local_audio_present": 418,
+  "asset_sha256": "93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517",
+  "native_decode_or_matching": false,
+  "disc_asset_sha256": "99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785",
+  "source_payload_hashes": false,
+  "authoritative_files_written": false
+}
+```
+
+Complete assigned field/comment projections, with opaque fingerprints represented by exact length and SHA-256:
+
+```json
+[
+  {
+    "unit": "GQ2-CHUNK-0293",
+    "path": "game_data/music/Descent Maximum (ps1) mp3/chromaprint_info.jsonc",
+    "lines": 114,
+    "source_sha256": "71b0e68354bb009619003ad0f2e05749121aac2bbf678fc1d8d7859bddf8274e",
+    "album": "Descent Maximum (ps1) mp3",
+    "comments": [
+      {
+        "line": 1,
+        "text": "// chromaprint_info.jsonc -- Fingerprint data for album: Descent Maximum (ps1) mp3"
+      },
+      {
+        "line": 2,
+        "text": "// Generated by fingerprint_music_packs.ps1"
+      }
+    ],
+    "tracks": [
+      {
+        "number": 1,
+        "line": 7,
+        "filename": "01 Title.mp3",
+        "duration_ms": 39104,
+        "acoustid_name": "Brian Luzietti - Title",
+        "acoustid_album": "Descent II: The Infinite Abyss",
+        "acoustid_score": 0.97821003,
+        "acoustid_recording_id": "c16cb37c-e5c4-4a4a-8fba-6d980256ff67",
+        "fingerprint_chars": 1107,
+        "fingerprint_sha256": "a43fcde4c4a1c66163551c4d32f25387b0d424833086b782987dc0a5338e804a",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 1 (01 Title.mp3) matches descent-ii-usa-v11 track 2 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 2,
+        "line": 16,
+        "filename": "02 Glut (Extended Remix).mp3",
+        "duration_ms": 132074,
+        "acoustid_name": "Ogre, Mark Walk - Glut (extended remix)",
+        "acoustid_album": "Descent II: The Definitive Collection",
+        "acoustid_score": 0.97547466,
+        "acoustid_recording_id": "116423a8-5daf-4d21-9595-235eeb3f55fe",
+        "fingerprint_chars": 4027,
+        "fingerprint_sha256": "502e947335d7affd3c6156e815179de14e98315ad68575add314673e1cb64915",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 2 (02 Glut (Extended Remix).mp3) matches descent-ii-the-vertigo-series-usa track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 3,
+        "line": 25,
+        "filename": "03 Ratzez (Short Remix).mp3",
+        "duration_ms": 140069,
+        "fingerprint_chars": 4260,
+        "fingerprint_sha256": "bbe3673300e5cf4edad88f1f48949c0bd6b95f44a172d597a2c54515b29288d2",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 3 (03 Ratzez (Short Remix).mp3) matches descent-ii-usa-v11 track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 4,
+        "line": 30,
+        "filename": "04 Techno Industry.mp3",
+        "duration_ms": 136542,
+        "acoustid_name": "Johann Langlie - Techno Industry",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9130435,
+        "acoustid_recording_id": "103ca67a-af2c-477d-884d-866839c6307e",
+        "fingerprint_chars": 3775,
+        "fingerprint_sha256": "76f49ec9ff5eec9df7b86b48bf4e4cb7e433580d88a7c31532edbf553893215c",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 4 (04 Techno Industry.mp3) matches descent-ii-europe track 12 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 5,
+        "line": 39,
+        "filename": "05 Gunner Down.mp3",
+        "duration_ms": 146939,
+        "acoustid_name": "Brian Luzietti - Gunner Down",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.93858784,
+        "acoustid_recording_id": "49699ff7-14ea-4a7f-9987-52647a12266e",
+        "fingerprint_chars": 4151,
+        "fingerprint_sha256": "a0d58eafbda059bfdb312f91b7ac8df55bbb103fef1861b10ef8d3dbc4366634",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 5 (05 Gunner Down.mp3) matches descent-ii-europe track 5 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 6,
+        "line": 48,
+        "filename": "06 Are You Descent.mp3",
+        "duration_ms": 161015,
+        "acoustid_name": "Ron Valdez - Are You Descent?",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9731672,
+        "acoustid_recording_id": "9eee3cee-b7be-41ab-a762-0febf04f5de1",
+        "fingerprint_chars": 4255,
+        "fingerprint_sha256": "ab5f325cb6501b1345cc81aab6c8c94d05819bd84ddde662c6e02f4a6e7e5f70",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 6 (06 Are You Descent.mp3) matches descent-ii-europe track 11 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 7,
+        "line": 57,
+        "filename": "07 Crawl (PSX Maximum Remix).mp3",
+        "duration_ms": 159996,
+        "fingerprint_chars": 4523,
+        "fingerprint_sha256": "ac749960b4f599d2ae59329d2b6411fdce9de89c0a1272e028ea89562a00c05d",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 7 (07 Crawl (PSX Maximum Remix).mp3) matches descent-ii-europe track 3 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 8,
+        "line": 62,
+        "filename": "08 Haunted (Instrumental Remix).mp3",
+        "duration_ms": 163891,
+        "acoustid_name": "Type O Negative - Haunted (instrumental remix)",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.97976005,
+        "acoustid_recording_id": "f16eff29-f0e5-4690-a911-67a6b46b9248",
+        "fingerprint_chars": 4571,
+        "fingerprint_sha256": "7cd3784a4f9bcf8e416eb489789a26289c66bb0ead0845c4372873a7b2043b7a",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 8 (08 Haunted (Instrumental Remix).mp3) matches descent-ii-europe track 10 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 9,
+        "line": 71,
+        "filename": "09 The Well (Mark 2).mp3",
+        "duration_ms": 162607,
+        "fingerprint_chars": 4523,
+        "fingerprint_sha256": "673b999e3fa3ef157d59fbf97981135476de51bb42f96521167ccd6bcc5d1232",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 9 (09 The Well (Mark 2).mp3) matches descent-ii-europe track 9 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 10,
+        "line": 76,
+        "filename": "10 Cold Reality.mp3",
+        "duration_ms": 179696,
+        "acoustid_name": "Larry Peacock, Brad Cross, Leslie Spitzer - Cold Reality",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.9386208,
+        "acoustid_recording_id": "169d19d1-f6a8-4ed2-a1c8-2246d13eb432",
+        "fingerprint_chars": 5252,
+        "fingerprint_sha256": "8c1b9dd0dcb9b1f4489676358aa920aa2b4af14e1cab1bec07dabc8853839908",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 10 (10 Cold Reality.mp3) matches descent-ii-europe track 6 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 11,
+        "line": 85,
+        "filename": "11 Robot Jungle (PSX Maximum Remix).mp3",
+        "duration_ms": 182495,
+        "acoustid_name": "Johann Langlie - Robot Jungle",
+        "acoustid_album": "Descent II",
+        "acoustid_score": 0.87348366,
+        "acoustid_recording_id": "49107d01-a3b3-467a-9c20-820c302e6b18",
+        "fingerprint_chars": 4776,
+        "fingerprint_sha256": "d81a1d446b3659f29cc9b19fcf45635e113cec8340a7c2fb8f63c3e8695dc9f8",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 11 (11 Robot Jungle (PSX Maximum Remix).mp3) matches descent-ii-europe track 13 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 12,
+        "line": 94,
+        "filename": "12 Crush (PSX Maximum Remix).mp3",
+        "duration_ms": 190026,
+        "fingerprint_chars": 5490,
+        "fingerprint_sha256": "7b4fa865b50a284e5cd7d0433ca99d46a213469d80069aba8f8fbeee04836af3",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 12 (12 Crush (PSX Maximum Remix).mp3) matches d2-mac track 8 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 13,
+        "line": 99,
+        "filename": "13 Rusty (PSX Maximum Remix).mp3",
+        "duration_ms": 156906,
+        "fingerprint_chars": 3530,
+        "fingerprint_sha256": "576d18559c0c23379f65d68fbe0c335b669aeb86fb75f8117b0701c46ab6cfd9",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 13 (13 Rusty (PSX Maximum Remix).mp3) matches d2-mac track 16 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 14,
+        "line": 104,
+        "filename": "14 Pain (Short Remix).mp3",
+        "duration_ms": 198133,
+        "fingerprint_chars": 4962,
+        "fingerprint_sha256": "2141e66b796d224e0bda274a38e6aa16707606b33a1f4ca3da5828ad13bdf7e6",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 14 (14 Pain (Short Remix).mp3) matches d2-mac track 14 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      },
+      {
+        "number": 15,
+        "line": 109,
+        "filename": "15 Transmode Containment 2012 (Mark 1) (Short Remix).mp3",
+        "duration_ms": 200053,
+        "fingerprint_chars": 5834,
+        "fingerprint_sha256": "365a8dc38932eb2d6af05084ba0e53248d611506c81b2c317d074143ac93691e",
+        "local_audio_exists": true,
+        "disposition": "// duplicate: track 15 (15 Transmode Containment 2012 (Mark 1) (Short Remix).mp3) matches d2-mac track 15 ()",
+        "exact_ambiguity_payload": null,
+        "published_acoustid": false
+      }
+    ]
+  }
+]
+```
+
+## Named context identities
+
+Only described boundaries inspected; whole-file context hashes grant no additional coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `game_data/fingerprint_music_packs.ps1` | `4905cb00585650db43c21cd0ca4abe128f3d74782b13f3e77ce0837f2e2a80a9` | equal |
+| `game_data/update_known_discs_albums.ps1` | `186b348acfddd6bb879ef30a1be16446e2b3841ba8238a90d7323cd384ad746a` | equal |
+| `android/helpers/acoustid_title_match.ps1` | `8a46cb71f47a14833677857909cb857c4295e721c7941f7959aa6f9f5a99b50f` | equal |
+| `android/helpers/jsonc.ps1` | `dde966fe4f0a2fe84a18e8689cddba00e7c3f7f5287abf4f69859088b39696c4` | equal |
+| `android/app/src/main/assets/known_albums.jsonc` | `93352d2802d9d574eae88b35698924c91e1e3590ee73ff6f55db3308a3f23517` | equal |
+| `android/app/src/main/assets/known_discs.jsonc` | `99d996307cfb4814cf9069aeff98c86d672dd5fad21c947bcc02114d332d4785` | equal |
+
+## Continuation
+
+No new finding/remediation or product change. Remaining delta coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Deferred probes remain follow-up under the existing constraint
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0293 music fingerprint source review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0294 workflow and Gradle settings review 20261007 SHA256:6d173562d8bee3aaecc94e6dc1f4129e73ea4cd123a6d3d13de56d75e3bc20e8 -->
+
+## GQ2-CHUNK-0294 workflow and Gradle settings review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0294.md`
+- Imported SHA-256: `6d173562d8bee3aaecc94e6dc1f4129e73ea4cd123a6d3d13de56d75e3bc20e8`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0294 workflow and Gradle settings review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0294 | [ ] TODO | source | medium | authored-source | `9 related paths` | 532 review lines under .github/workflows | - |
+- Scope fingerprint `ceaa8fff7e759dc5d9df48392e3bc173f97675fb7b676892424e8e1954c0ee25` hashes ordered table data rows with final LF
+- Selected zero-context hunks include all @@ bodies; complete ranges include all LF-normalized lines
+- Actual review lines 532; changed hunks 49
+
+| Path/scope | Attribution | Base blob | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `.github/workflows/android-tooling.yml` L1-L75 | branch-added | `absent` | `f89464ea42ecd126a5c3f73bb896c4bf420adb1f` | `91a54de714b9c7e3845cab498291252fa5f3cda40122b641ae93086d32feadd1` |
+| `.github/workflows/engine-smoke.yml` L1-L71 | branch-added | `absent` | `603c035c26e734f89fc12bfc9179c068b9ac05e8` | `8750fad9b6931e86d028273c619ea798ea3960a104008e476b16feb2fbe1eeeb` |
+| `.github/workflows/package-android.yml` L1-L164 | branch-added | `absent` | `484b746ea865791b31f651206cabad49f1c206ff` | `b7ba216fccd417e257f527664e9c336404892ccdd63de96b55ca434bb8f29377` |
+| `.github/workflows/package-all.yml` hunks 1-6 | base-existing workflow | `9d2bf170c087a4ff213a3c8dadb6a283848cdcef` | `98e2ed5903cd88bf35cb7c5fbcd0348d35f275c9` | `0dc820d672d9cd6a579f8915596b6abde68bb741819dfee9f0cadd687f116fb2` |
+| `.github/workflows/package-linux.yml` hunks 1-6 | base-existing workflow | `4cdc32667aa23232124d9c68758999d8e2dd98f2` | `75edd4f0b1acb9a90cbbf1d86902a916a8a940ab` | `574b84fa1fbfe54a604da8c328f7d30a93d4984a99399919e3efc399c104e7f0` |
+| `.github/workflows/package-macos-arm.yml` hunks 1-7 | base-existing workflow | `4490185968666f349b1bb1bdfb057895ec0ae57a` | `ce78dd41c98d0fc53f2fc1d5cd0289ced10ac7ad` | `9c95ee1e4cd1101f46378c647be6b71b4dd85140b0f5cb023768020181a34df7` |
+| `.github/workflows/package-macos.yml` hunks 1-7 | base-existing workflow | `7fc6912aa8e670ae317411eba7f5f95369d8dd8b` | `3fcfa4820f1cf97a0a4f7918652c844a04434fac` | `ce696b1ba7385fca3f0325f6a24fdd690d1e3f58b326ec19734b39d5ea51ad97` |
+| `.github/workflows/package-msvc.yml` hunks 1-15 | base-existing workflow | `b7d228702801fb3e36b8498f37788ea0308a12b9` | `395d43f077fceb70d14617b5b397be2352b6360c` | `200a05718ecfa62d9c60f1013f9b7a31569862e244572cf22c2381cfc01d020f` |
+| `.github/workflows/package-windows.yml` hunks 1-8 | base-existing workflow | `2667b0543888507178e87d7e81eeae5a858322b7` | `e7bf31b883ea946ff75b2a5344bcf9e00bffeea2` | `33b937acd2ff5b18fa331cab83b0c3c2052bbde16f342688e259672695735893` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+Three whole workflows plus all 49 assigned desktop/orchestrator hunks. Retain paired host coverage, platform-specific packaging and isolated universal CI APK. Nine YAML documents, five reusable calls, 23 immutable-shaped action references and 55 shell bodies checked locally. Existing GQR-0145 registration now exists; reconcile remaining aggregate validation rather than duplicate its implementation
+
+Read all 75 tooling, 71 engine-smoke and 164 Android packaging lines plus every assigned hunk in six existing workflows. The repository baseline contains the older desktop workflows; they are not 1996 engine implementation files. Preserve platform-specific commands rather than introduce a shared wrapper solely to reduce YAML. No measured original-engine reduction is available
+
+Tooling covers Linux/Windows, explicit 15-minute job limits, bounded diagnostic retention and a pinned actionlint download/hash declaration. The local Prettier YAML parser accepts every complete assigned workflow without duplicate mapping keys; all five package-all relative workflow targets exist and declare workflow_call. All 23 external action references have full 40-hex identities. This proves local shape and graph consistency, not remote action availability, executable identity, runner-image capabilities or hosted CI success. No actionlint binary was available locally, and none was downloaded
+
+Engine smoke separately configures D1/D2 Debug, SDL dummy devices, explicit native features and all targets. CTest runs serially, with per-test timeout and --no-tests=error, and uploads diagnostics even after failure. Desktop packaging calls paired RelWithDebInfo builds/tests before producing platform artifacts; artifacts fail when missing. Both top-level CMake files include CTest outside Android and register shared native tests. Existing GQF-0009/GQR-0004 remains: the registered escort exit policy still uses four assert calls that optimized builds can disable; Debug smoke is useful but does not repair that independent release-test oracle
+
+MSVC passes its x64/x86 developer environment and matching VCPKG_TARGET_TRIPLET. The x86-release preset name is not proof of an x64 defect: its architecture strategy is external and the invoked environment chooses cl.exe. The explicit command-line configuration overrides preset Release with RelWithDebInfo. Retain per-architecture vcpkg file cache and separate symbol artifacts. MinGW uses clang/lld, and paired current CMake branches request CodeView and PDB output; the PDB artifact requirement is deliberate. Linux/macOS package scripts and distinct Intel/ARM runner labels remain platform boundaries. Platform execution, symbol contents and package deployment were not validated here
+
+Android packaging is manually dispatched, uses a separate com.dxxredux.app.ci application ID, and builds release-mode direct-install sources with all three ABIs. Current app/build.gradle maps ciApk to githubRelease, excludes normal release signing configuration for this variant, declares arm32/arm64/x86_64 and keeps release minification disabled. Workflow code checks package/debuggable state, verifies the selected signing mode, checks ELF magic/machine for both engines and runtime libraries, excludes Play SDK string prefixes and emits APK hashes. Test-key/default-branch selection and secret handling were read statically only; no secret value, keystore or auth file was read and no signing/release operation ran. Existing dependency bootstrap owners BR-0558/0563/0610 retain their independent tool-selection/provenance obligations
+
+Fresh shell checks parse 44 bash/MSYS bodies using Git Bash -n and eleven PowerShell bodies using the PS7 AST parser. GitHub expressions are replaced by inert workflow_value before parsing; GitHub expression semantics and Windows PowerShell 5.1 execution are not established. The embedded Python APK inspector passes ast.parse/compile without executing it or reading any APK. Actual JDK21 Properties.load resolves all five Gradle settings, including android.nonTransitiveRClass=false. These checks perform no workflow command bodies, child tools, install or build
+
+Current-source reconciliation of GQF-0158/GQR-0145: android-tooling invokes run_tooling_smoke.ps1 -IncludeBoundedRuntime; that adds test_bounded_python_runtime, whose lines 162-163 execute test_run_bounded_extractor.py through the admitted repository runtime and throw on nonzero exit. The smoke collector records exit/timeouts, checks exact task count and fails on non-PASS. Registration is implemented; the old statement that no maintained runner exists is stale. Keep the existing owner for required aggregate pass/fail/not-run evidence on Windows and POSIX, and update its description to avoid reimplementing the repaired chain. The Python supervisor suite and aggregate include resource/security probes and were not executed under the current constraint. This is source registration evidence, not fresh acceptance or complete closure
+
+Retain all reviewed workflow behavior. No new finding, no product change and no inherited-engine savings. Existing GQR-0145 is referenced at its canonical score; GQR-0004 is separately open. Broad tooling/engine smoke, distribution builds, external downloads, CI dispatch, device operations and deferred adversarial/security/malformed-media/resource-pressure probes remain unexecuted
+
+Provisional impact rating: 50 (H/M/B/C/R = 23/0/7/10/10); proposed owner: GQR-0145; rationale: existing registration acceptance owner or retained configuration, no new inherited saving
+
+## Shared host evidence identities
+
+Read-only checks: node check_gq2_workflows.mjs, pwsh check_gq2_workflow_scripts.ps1, python check_gq2_workflow_scripts.py and JDK21 java ReadToolProperties.java android/gradle.properties; all exit zero
+
+```json
+{
+  "check_gq2_workflows.mjs": "81a819b691ed890d9facd40fbcd3d2f6b419b92453cad856fba1ac1f935b1d99",
+  "workflow-source-checks.json": "a09325fdfed25e7b6c665d60351e6778adc413564442d47cc4b39708923c0c04",
+  "check_gq2_workflow_scripts.ps1": "73aba0aa7dbf99985f032d0a01d8fed5f7662045ae11325a89a11f2ea77ef221",
+  "check_gq2_workflow_scripts.py": "252e2fe57519f5fbd6f184c2aaf62eb3de7ac4ea9aa550e670e63e9f6d509041",
+  "workflow-powershell-checks.json": "3bf0dd3b661470c2fd89acc37b39bf44f974972d7b1c0d43559711ecefa9aaf1",
+  "workflow-script-checks.json": "1ea604d3206a84c235e8d173439bb2b55424d236df602f954ecedf45cc484c5d",
+  "ReadToolProperties.java": "38f70ba2d374d53643d4b17ecf6a6334e468006a433252bd4c8da7ad22216e76",
+  "gradle-properties-check.log": "19f654ab3efb8d1577151d5090888c5e147cebd9837f0130a7a10459a7e5eea1"
+}
+```
+
+Shell check results:
+
+```json
+{
+  "bash_steps": 44,
+  "powershell_steps": 11,
+  "total_steps": 55,
+  "embedded_python": "AST/compile PASS; no execution",
+  "bash": [
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    }
+  ],
+  "powershell": [
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-3.ps1",
+      "workflow": ".github/workflows/android-tooling.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-4.ps1",
+      "workflow": ".github/workflows/android-tooling.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-2.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-4.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-5.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-6.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-7.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-8.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-9.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-10.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-11.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    }
+  ],
+  "github_expressions": "Replaced with inert workflow_value before shell parsing; expression evaluation not validated",
+  "actions_or_shell_bodies_executed": false
+}
+```
+
+## Named context identities
+
+Only described boundaries inspected; complete context hashes grant no additional source coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `android/tests/run_tooling_smoke.ps1` | `43cf6aa4be68e21fb3fdcce51ddef5b7b3ee1f87b262f2ca08c34e087a9a6706` | equal |
+| `android/tests/test_bounded_python_runtime.ps1` | `747ae8479c2896f23d72c88d70336e9f71a7f167d3ba3589d176deb213bd0ba9` | equal |
+| `android/tests/test_bounded_extraction.ps1` | `15fb0971fe333277c2cda82d7763eeb926f16532b61ab7e930247aef66ee0f4a` | equal |
+| `android/tests/test_escort_exit_policy.c` | `a55fdb18ad6c4b69b29e66b456a0591208f31f0309ac1cf962bfaf447f5ffca4` | equal |
+| `android/tests/CMakeLists.txt` | `baae67afdb74ac21ce78d69b9c34e6fc0e0a625981426590fd62316b86c52849` | equal |
+| `d1/CMakeLists.txt` | `3434152496f3c17ec33ffc05e102f8b683294d4c0f39165f196c6ec8e67ca404` | equal |
+| `d2/CMakeLists.txt` | `bafca6b0b48219dde1c4d0b2a9d5bb6368f06afbd2de359ded874505ae0a8bed` | equal |
+| `d1/CMakePresets.json` | `fd9d60bae3b0005542b42b4f9a7a0ff224d5798fd65504dbe0c4269f609ccb71` | equal |
+| `d2/CMakePresets.json` | `fd9d60bae3b0005542b42b4f9a7a0ff224d5798fd65504dbe0c4269f609ccb71` | equal |
+| `cmake/vcpkg-auto.cmake` | `c4aef92ae3bf1b7155fc3218c9dae46021ad9e4282c164cb7d940d29442d9e83` | equal |
+| `android/app/build.gradle` | `1111ed7abe962f38d62b6610addba3de409a6c1be320399d1640ded477df7c07` | equal |
+| `android/tests/test_android_distributions.ps1` | `50ac3f463234af122c04596d01f4e9f72feb5ea41201d710f3ca3fc11520c99b` | equal |
+
+## Continuation
+
+No new finding/remediation. Reconcile GQF-0158/GQR-0145 as implemented registration with acceptance remaining, preserving its canonical owner. Remaining coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Only campaign documents change; outstanding_bugs.md and all product files remain untouched
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0294 workflow and Gradle settings review 20261007 -->
+<!-- BEGIN IMPORT: GQ2-CHUNK-0295 workflow and Gradle settings review 20261007 SHA256:61c9394fba36d8797264b9088f1f57dda318e1015a64128e2e770ba147cb7f83 -->
+
+## GQ2-CHUNK-0295 workflow and Gradle settings review 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0295.md`
+- Imported SHA-256: `61c9394fba36d8797264b9088f1f57dda318e1015a64128e2e770ba147cb7f83`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0295 workflow and Gradle settings review 20261007
+
+## Assignment and provenance
+
+- Frozen base 7877ad30d05887b8e19869ed4c50075e41e2f88e; head b4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; original attribution fb555eec75e1ed12c8348805ab335afb4c721b06
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; all assigned current files equal frozen head
+- Exact queue: | GQ2-CHUNK-0295 | [ ] TODO | source | medium | authored-source | `android/gradle.properties` | diff hunks 1-1, new L3-L7 | - |
+- Scope fingerprint `4ff25a0f364edad4ea8998b638ecf4b6120ce10882e9dfe8192703a00246b0fc` hashes ordered table data rows with final LF
+- Selected zero-context hunks include all @@ bodies; complete ranges include all LF-normalized lines
+- Actual review lines 5; changed hunks 1
+
+| Path/scope | Attribution | Base blob | Head blob | Assigned SHA-256 |
+| --- | --- | --- | --- | --- |
+| `android/gradle.properties` hunks 1-1 | branch-added | `119c92626f25f9fde2db14734206dc117784b881` | `359cb6ecd685361eda454effa9dfc020549de4f0` | `a6b81e23c949920a46b6b2c05405ee0e86318e8301ffecb0027eeb453b193db4` |
+
+## Diff-minimization assessment and evidence
+
+Disposition: RETAIN
+
+All five added Gradle property/comment lines in one hunk. Preserve documented startup-runtime dependency-R workaround and current renderer/heap/parallel settings. Actual JDK21 Properties reader resolves nonTransitiveRClass=false; no fresh APK startup or workaround-removal evidence
+
+Read the one five-line addition and complete current twelve-line Gradle property file. The explanatory comment records why startup-runtime must retain its dependency R class before Application.onCreate, and android.nonTransitiveRClass=false preserves that workaround. No current APK/startup reproduction supports removing it. The previous GQ1 review retained the same rationale; this pass does not elevate the comment to fresh runtime proof
+
+Actual JDK21 Properties.load reads the current file and returns android.nonTransitiveRClass=false, android.useAndroidX=true, org.gradle.jvmargs=-Xmx2048m, org.gradle.parallel=true and useOpenGL=true. Current app/build.gradle consumes the renderer setting and retains its managed/native build ownership. The property is branch-owned configuration, absent from the original tree; moving it into engine files would add coupling without reducing their diff
+
+Retain the property and handmade explanation. No new defect, compatibility shim, build-policy abstraction or inherited saving. No Gradle task, APK inspection/startup, device operation or deferred probe ran. The four-distribution maintained integration runner was inspected as context, not executed; it builds full debug packages and does not independently prove this release startup rationale
+
+Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: existing registration acceptance owner or retained configuration, no new inherited saving
+
+## Shared host evidence identities
+
+Read-only checks: node check_gq2_workflows.mjs, pwsh check_gq2_workflow_scripts.ps1, python check_gq2_workflow_scripts.py and JDK21 java ReadToolProperties.java android/gradle.properties; all exit zero
+
+```json
+{
+  "check_gq2_workflows.mjs": "81a819b691ed890d9facd40fbcd3d2f6b419b92453cad856fba1ac1f935b1d99",
+  "workflow-source-checks.json": "a09325fdfed25e7b6c665d60351e6778adc413564442d47cc4b39708923c0c04",
+  "check_gq2_workflow_scripts.ps1": "73aba0aa7dbf99985f032d0a01d8fed5f7662045ae11325a89a11f2ea77ef221",
+  "check_gq2_workflow_scripts.py": "252e2fe57519f5fbd6f184c2aaf62eb3de7ac4ea9aa550e670e63e9f6d509041",
+  "workflow-powershell-checks.json": "3bf0dd3b661470c2fd89acc37b39bf44f974972d7b1c0d43559711ecefa9aaf1",
+  "workflow-script-checks.json": "1ea604d3206a84c235e8d173439bb2b55424d236df602f954ecedf45cc484c5d",
+  "ReadToolProperties.java": "38f70ba2d374d53643d4b17ecf6a6334e468006a433252bd4c8da7ad22216e76",
+  "gradle-properties-check.log": "19f654ab3efb8d1577151d5090888c5e147cebd9837f0130a7a10459a7e5eea1"
+}
+```
+
+Shell check results:
+
+```json
+{
+  "bash_steps": 44,
+  "powershell_steps": 11,
+  "total_steps": 55,
+  "embedded_python": "AST/compile PASS; no execution",
+  "bash": [
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-engine-smoke-engine-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-android-apk-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-linux-linux-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-arm-macos-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-1.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-macos-macos-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-2.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-3.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-4.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-5.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-6.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-7.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-8.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-windows-windows-9.sh",
+      "parser": "Git Bash -n",
+      "exit_code": 0,
+      "stderr": ""
+    }
+  ],
+  "powershell": [
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-3.ps1",
+      "workflow": ".github/workflows/android-tooling.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-android-tooling-tooling-4.ps1",
+      "workflow": ".github/workflows/android-tooling.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-2.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-4.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-5.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-6.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-7.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-8.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-9.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-10.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    },
+    {
+      "path": "temp/general_cleanup_20261006/workflow-package-msvc-msvc-11.ps1",
+      "workflow": ".github/workflows/package-msvc.yml",
+      "parser": "PowerShell 7 AST",
+      "errors": 0
+    }
+  ],
+  "github_expressions": "Replaced with inert workflow_value before shell parsing; expression evaluation not validated",
+  "actions_or_shell_bodies_executed": false
+}
+```
+
+## Named context identities
+
+Only described boundaries inspected; complete context hashes grant no additional source coverage
+
+| Context | LF-normalized SHA-256 | Frozen comparison |
+| --- | --- | --- |
+| `android/tests/run_tooling_smoke.ps1` | `43cf6aa4be68e21fb3fdcce51ddef5b7b3ee1f87b262f2ca08c34e087a9a6706` | equal |
+| `android/tests/test_bounded_python_runtime.ps1` | `747ae8479c2896f23d72c88d70336e9f71a7f167d3ba3589d176deb213bd0ba9` | equal |
+| `android/tests/test_bounded_extraction.ps1` | `15fb0971fe333277c2cda82d7763eeb926f16532b61ab7e930247aef66ee0f4a` | equal |
+| `android/tests/test_escort_exit_policy.c` | `a55fdb18ad6c4b69b29e66b456a0591208f31f0309ac1cf962bfaf447f5ffca4` | equal |
+| `android/tests/CMakeLists.txt` | `baae67afdb74ac21ce78d69b9c34e6fc0e0a625981426590fd62316b86c52849` | equal |
+| `d1/CMakeLists.txt` | `3434152496f3c17ec33ffc05e102f8b683294d4c0f39165f196c6ec8e67ca404` | equal |
+| `d2/CMakeLists.txt` | `bafca6b0b48219dde1c4d0b2a9d5bb6368f06afbd2de359ded874505ae0a8bed` | equal |
+| `d1/CMakePresets.json` | `fd9d60bae3b0005542b42b4f9a7a0ff224d5798fd65504dbe0c4269f609ccb71` | equal |
+| `d2/CMakePresets.json` | `fd9d60bae3b0005542b42b4f9a7a0ff224d5798fd65504dbe0c4269f609ccb71` | equal |
+| `cmake/vcpkg-auto.cmake` | `c4aef92ae3bf1b7155fc3218c9dae46021ad9e4282c164cb7d940d29442d9e83` | equal |
+| `android/app/build.gradle` | `1111ed7abe962f38d62b6610addba3de409a6c1be320399d1640ded477df7c07` | equal |
+| `android/tests/test_android_distributions.ps1` | `50ac3f463234af122c04596d01f4e9f72feb5ea41201d710f3ca3fc11520c99b` | equal |
+
+## Continuation
+
+No new finding/remediation. Reconcile GQF-0158/GQR-0145 as implemented registration with acceptance remaining, preserving its canonical owner. Remaining coverage, ordinary GQI-0005/GQI-0008 evidence and final live reconciliation precede accepted fixes. Only campaign documents change; outstanding_bugs.md and all product files remain untouched
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0295 workflow and Gradle settings review 20261007 -->
+<!-- BEGIN IMPORT: GQR-0243 shared gameplay options remediation 20261007 SHA256:728100992db50e9f3c9f2388a8bdd9f585a322aa5065f3ef3ec238433e2ddcbc -->
+
+## GQR-0243 shared gameplay options remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr-0243-remediation.md`
+- Imported SHA-256: `728100992db50e9f3c9f2388a8bdd9f585a322aa5065f3ef3ec238433e2ddcbc`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0243 shared gameplay options remediation 20261007
+
+## Current-source reconciliation and implementation
+
+- Live HEAD: e833b7b337b9f216f5d3f98b6af43ec55bb93f07
+- Revalidated GQF-0257 against both current multi.c files before editing; identical 139-line feature block remained present
+- Shared multi_gameplay_options.c owns the nine functions and four constants. Only the two receive entries lose static linkage; the other public declarations remain in native multi.h and private helpers stay static
+- Final exact-text check passes for the moved body after those two linkage substitutions. Both final multi.c files equal HEAD with only the block removed and one header include inserted
+- Native IDs, length tables, dispatch ordering, endlevel gates, callers, protocol payloads, priority, recipients, countdown validation, HUD strings and matcen activation state remain unchanged
+- Both common CMake source lists include the shared implementation, covering desktop, Android and headless native targets
+- Applied savings: 138 net lines per multi.c, 276 combined. The two source-list additions make 274 net lines removed across the four inherited files. This is not a total-repository shrink claim: shared code and meaningful regression coverage were added
+- Native matcen station shutdown GQR-0239 is a separate open issue
+
+## Validation and limitations
+
+- run-windows-build.ps1 -Target both -MaxParallel 8: final exit 0, both Windows builds complete
+- Android JDK21 :app:externalNativeBuildDebug --offline --max-workers=2 --console=plain: exit 0, both engines for arm64-v8a, armeabi-v7a and x86_64
+- One scoped run-code-quality.ps1 -Fix invocation on all eight product/test/build paths: exit 0, All checks passed. Existing engine files were excluded by the maintained formatter policy; new C/H and branch-added CMake files were formatted/linted
+- CTest test_multi_gameplay_options passes for D1 and D2. Actual shared packet functions and actual matcen state implementation exercise client request bytes, host response, peer state restoration, HUD text, priority/recipient, join catchup and ordinary inactive modes through captured transport calls. CHECK remains active in optimized builds
+- Existing native test_matcen_mode executables pass for both games
+- The same packet fixture compiles with the Android NDK and actual engine/Android headers under -Wall -Wextra -Werror and the existing production -Wno-macro-redefined setting. Both game-layout executables run successfully on emulator-5582, with exact PASS output. Unique owned device scratch files were removed
+- The initial D2 fixture declaration incorrectly used the D1 Players array bound; corrected before successful final builds. Initial Android scratch compile omitted platform definitions, then inherited macro-warning suppression; final harness matches production flags and passes without warnings. Earlier logs remain separate
+- Existing unrelated engine/vendor and Gradle warnings remain. No new shared-source compiler warning was observed
+- These are packet-boundary integration tests, not a live two-process UDP game, full APK UI run, or proof of native reactor timing/matcen shutdown behavior. Exact body/caller preservation plus paired builds and actual-platform fixture execution support this nonsemantic extraction
+- No security-sensitive, adversarial, malformed-media or resource-pressure probe ran. No staging or commit
+
+## Final source identities
+
+| Path | SHA-256 (file bytes) |
+| --- | --- |
+| `d1/main/multi.c` | `b55202ef74ed68cd1ec15cf4eb667c3a50388255cf5046dc40b7e5699d61853f` |
+| `d2/main/multi.c` | `d34102547cf86c3867451789125cbc2aef5b4ffd875a177dc64290788d77dc27` |
+| `d1/main/CMakeLists.txt` | `f0b3821cb16921fb90c1e4f2c7fb445fe3729acda75f92806e6cb5a988e378f6` |
+| `d2/main/CMakeLists.txt` | `fecdafb7d3048652a44d97089f5c60102b6c506438491495adf351ab3697e5f7` |
+| `android/app/src/main/cpp/shared/multi_gameplay_options.c` | `3aa8dbf73b247af3ab6ad1145d311c0f2fd6675ad7dc256115d654552c95657d` |
+| `android/app/src/main/cpp/shared/multi_gameplay_options.h` | `e159dd251b403282bb0bb92327d3798656692eede29c17056ec93d1228fc09ce` |
+| `android/tests/test_multi_gameplay_options.c` | `34a9c332522f7c8f17c149c9fc6cac98018a739fa4efc0315e447bb8499e4f88` |
+| `android/tests/CMakeLists.txt` | `1d70c4b187518583acb26ed067cc5598978aa5e5b1b3c5823a67e739d068c6ef` |
+
+## Validation artifact identities
+
+| Scratch artifact | SHA-256 (file bytes) |
+| --- | --- |
+| `gqr-0243-before.json` | `39a19a4b8e2348f9880c2c6c1a709fabae702dfd058553f7f0ae4779366c05d7` |
+| `gqr-0243-original-block.c.txt` | `fdb77168f278c9e87fca5394184ebcf7d1ece1760031cf41952e8ee74d2e7072` |
+| `gqr-0243-windows-final.log` | `83909ce5e5b6d2c2754d9bae73f09d23b6af45f69cb54ed8f0cb204c72ae539b` |
+| `gqr-0243-android-build.log` | `ec47d4e74d61947dfdf933873c6f90084891268f1e18f68a77aaf1bedaf623d2` |
+| `gqr-0243-quality.log` | `1415242cd7c0aba9c3792b08877f42adb8a3b694debd74441bbecbb5d1610bde` |
+| `gqr-0243-d1-ctest.log` | `02e9de60d31f59fc303f77826cfdabf8013f71cc7f21bf58e5bfcc5eaf58e4d5` |
+| `gqr-0243-d2-ctest.log` | `ec2078b397667b01cbcf45078c54cd3eb42af428939a6fb5984e7db6474d3c73` |
+| `gqr-0243-d1-matcen.log` | `ce63b231b31de4a8acb5963d17fbc2c565450daf502f4de0e52c3faf70327b72` |
+| `gqr-0243-d2-matcen.log` | `ce63b231b31de4a8acb5963d17fbc2c565450daf502f4de0e52c3faf70327b72` |
+| `gqr-0243-android-fixture-verified.log` | `8f12be197306ba3ba3326f5c9f3ed2772ff16f67668631c4ba960485bbebf3c9` |
+| `run_gqr0243_android_fixture.ps1` | `29562bf6dbccfc763c97499f2c5a2a5d00e7414cccf93a49babfdc2d761b8339` |
+
+Disposition: GQF-0257 FIXED; GQR-0243 DONE. Impact score remains 71 (12/35/7/10/7) for historical comparison. Remaining campaign coverage and other fixes stay open
+
+</details>
+
+<!-- END IMPORT: GQR-0243 shared gameplay options remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0249 shared codec deployment remediation 20261007 SHA256:44cf0767d37d2088862aebccf0677043d72c4d0f95b8d82362a9893488464bb7 -->
+
+## GQR-0249 shared codec deployment remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr-0249-remediation.md`
+- Imported SHA-256: `44cf0767d37d2088862aebccf0677043d72c4d0f95b8d82362a9893488464bb7`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0249 shared codec deployment remediation 20261007
+
+## Reconciliation and implementation
+
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07; GQF-0263 still applies. Both current final 13-line codec-deployment blocks match exactly after only game-target substitution
+- Work sequenced after GQR-0243. Its earlier source-list addition remains intact; only the final deployment blocks change. Before snapshots capture that combined state
+- New cmake/dxx-sdl-mixer-runtime.cmake holds the shared policy. Both game files include it and call dxx_copy_sdl_mixer_runtime with their existing executable targets
+- Preserve SDLMIXER/MSVC/vcpkg condition, configure-time release DLL existence predicate, Debug-versus-other configuration source directory, six-library order, POST_BUILD copy_if_different, target-directory destinations and install destination. Handmade dynamic-loading comment is preserved
+- Function scope keeps VCPKG_PREFIX and MUSIC_DLL_DIR local. Their original definitions were at the end of each native directory and have no other consumers in the native/CMake sources
+- A build COMMENT was added to satisfy C0113 after the first scoped quality invocation failed. This changes diagnostic text only. The corrected scoped invocation passes formatting and lint; original engine files were not broadly formatted
+- Exact final source check: each native file equals its pre-fix snapshot with only its final block replaced. Shared body matches the original after target substitution, whitespace normalization outside quoted strings and removal of the added build COMMENT
+- Applied reduction: 22 inherited build-file lines removed; the new formatted helper has 18 lines, so this fix removes four net repository lines. These are build-file savings, separate from GQR-0243's original gameplay-source savings
+
+## Validation
+
+- Six fresh MSVC/Ninja configure fixtures use the exact original blocks and the actual final helper. Debug and Release each produce identical ordered twelve-copy/twelve-install source/destination rules across the two targets. Mixer-disabled produces zero codec rules in both versions
+- Four isolated actual native game builds succeed: D1 Debug, D1 Release, D2 Debug and D2 Release. CMake x86-release preset, explicit build type, x86 MSVC environment, existing per-game vcpkg install, VCPKG_MANIFEST_INSTALL=OFF, BUILD_TESTING=OFF; only each game executable target built. Existing host build caches are unchanged
+- Each game's generated main-directory install script executes successfully with CMAKE_INSTALL_LOCAL_ONLY=ON and its corresponding build configuration. All four installed executables match their built executable SHA-256 values
+- All six real codec DLLs per game/configuration are present both alongside the built executable and in the staged install directory. All 24 copies and 24 installed files hash exactly to their configuration-specific vcpkg source DLLs; each source has a PE MZ signature
+- First scratch command used forward slashes for a cmd.exe batch path and did not run; corrected to a Windows path. Initial unrestricted install descended into an unrelated, unbuilt TagLib library and failed before game/codec install rules. Final targeted directory install uses the generated script's own CMAKE_INSTALL_LOCAL_ONLY guard and passes. This does not claim a full dependency SDK or distribution archive install
+- Android JDK21 :app:externalNativeBuildDebug --offline --max-workers=2 --console=plain succeeds for both games and all three ABIs. All three native compile_commands.json byte hashes are unchanged after this CMake-only extraction, consistent with its inactive MSVC condition
+- Existing Debug /Zi-versus-/ZI, native/vendor warnings and Gradle notices remain unrelated. No new helper warning remains after the explicit build COMMENT
+- Scoped git diff --check passes. No playback, full installer/archive packaging, live UDP, new emulator operation or deferred security-sensitive probe is claimed. No staging or commit
+
+## Final product identities
+
+| Path | SHA-256 (file bytes) |
+| --- | --- |
+| `d1/main/CMakeLists.txt` | `06d9fd9a9c9151f808455dfb410d09f272059ac007c5f39d2a30001bf63dadc1` |
+| `d2/main/CMakeLists.txt` | `b80f6b1d9904db61bc14e3de4d273802f22b4a04beb2cae7180f081a2a04928a` |
+| `cmake/dxx-sdl-mixer-runtime.cmake` | `3a6a8f5209d0cc115fb78ed1452a72efc7c70e7192de8940b3f8f89d54c1c995` |
+
+## Actual deployed codecs
+
+| Game | Config | Codec | Source | SHA-256 (source, copy and install) |
+| --- | --- | --- | --- | --- |
+| d1 | debug | mpg123 | `buildd1/vcpkg_installed/x86-windows/debug/bin/mpg123.dll` | `cdcf49b4c41d9d40eb091dfa99c012326212847293d52aeaac0d5d2365be7cc1` |
+| d1 | debug | FLAC | `buildd1/vcpkg_installed/x86-windows/debug/bin/FLAC.dll` | `17fcbf58ba0413418da0b64499d4a531e9ffcb2f278fc51885e8be114d23825c` |
+| d1 | debug | mikmod | `buildd1/vcpkg_installed/x86-windows/debug/bin/mikmod.dll` | `46779b1ede4fdc413043eac8c53c587f3c027ce3aef36b12c9289b15f1f5b9eb` |
+| d1 | debug | ogg | `buildd1/vcpkg_installed/x86-windows/debug/bin/ogg.dll` | `30b7600bdd6c1ea4e492d92e9d760c0b50e39c1bcf3d82e54d37037de65315ed` |
+| d1 | debug | vorbis | `buildd1/vcpkg_installed/x86-windows/debug/bin/vorbis.dll` | `69c866f639e9ca9457581f397ea8f491e673b9326caf1ea94e9c48b615c09873` |
+| d1 | debug | vorbisfile | `buildd1/vcpkg_installed/x86-windows/debug/bin/vorbisfile.dll` | `f09ae24c3999c5892661339f37113f1bbd76b831af7e0f07551b88f8c2faa437` |
+| d1 | release | mpg123 | `buildd1/vcpkg_installed/x86-windows/bin/mpg123.dll` | `33265c4202c2dff77eded298180e3e79e1bfe1b1dfb6bac0d75c7a5f3867d40d` |
+| d1 | release | FLAC | `buildd1/vcpkg_installed/x86-windows/bin/FLAC.dll` | `3d36014592983cda1f74603319d4a2292dbb97f144554f3610c81e95d54f9883` |
+| d1 | release | mikmod | `buildd1/vcpkg_installed/x86-windows/bin/mikmod.dll` | `74d9c40139169f0b4bd0d81a38b1f9d9eae4d453130a8a177d13448fe5863391` |
+| d1 | release | ogg | `buildd1/vcpkg_installed/x86-windows/bin/ogg.dll` | `bcdb7ced87d9104ce7b59832654638fd206f4121a626d5b56f654a3e71b88e53` |
+| d1 | release | vorbis | `buildd1/vcpkg_installed/x86-windows/bin/vorbis.dll` | `2615d373dbdbbc6e07890622e5ca9e720a9b069bf95397c0a65d414a5686e972` |
+| d1 | release | vorbisfile | `buildd1/vcpkg_installed/x86-windows/bin/vorbisfile.dll` | `34d0413387963c2feafd06bdcd729267aafe4c837c94760386773a5c0f25c2a2` |
+| d2 | debug | mpg123 | `buildd2/vcpkg_installed/x86-windows/debug/bin/mpg123.dll` | `cdcf49b4c41d9d40eb091dfa99c012326212847293d52aeaac0d5d2365be7cc1` |
+| d2 | debug | FLAC | `buildd2/vcpkg_installed/x86-windows/debug/bin/FLAC.dll` | `17fcbf58ba0413418da0b64499d4a531e9ffcb2f278fc51885e8be114d23825c` |
+| d2 | debug | mikmod | `buildd2/vcpkg_installed/x86-windows/debug/bin/mikmod.dll` | `46779b1ede4fdc413043eac8c53c587f3c027ce3aef36b12c9289b15f1f5b9eb` |
+| d2 | debug | ogg | `buildd2/vcpkg_installed/x86-windows/debug/bin/ogg.dll` | `30b7600bdd6c1ea4e492d92e9d760c0b50e39c1bcf3d82e54d37037de65315ed` |
+| d2 | debug | vorbis | `buildd2/vcpkg_installed/x86-windows/debug/bin/vorbis.dll` | `69c866f639e9ca9457581f397ea8f491e673b9326caf1ea94e9c48b615c09873` |
+| d2 | debug | vorbisfile | `buildd2/vcpkg_installed/x86-windows/debug/bin/vorbisfile.dll` | `f09ae24c3999c5892661339f37113f1bbd76b831af7e0f07551b88f8c2faa437` |
+| d2 | release | mpg123 | `buildd2/vcpkg_installed/x86-windows/bin/mpg123.dll` | `33265c4202c2dff77eded298180e3e79e1bfe1b1dfb6bac0d75c7a5f3867d40d` |
+| d2 | release | FLAC | `buildd2/vcpkg_installed/x86-windows/bin/FLAC.dll` | `3d36014592983cda1f74603319d4a2292dbb97f144554f3610c81e95d54f9883` |
+| d2 | release | mikmod | `buildd2/vcpkg_installed/x86-windows/bin/mikmod.dll` | `74d9c40139169f0b4bd0d81a38b1f9d9eae4d453130a8a177d13448fe5863391` |
+| d2 | release | ogg | `buildd2/vcpkg_installed/x86-windows/bin/ogg.dll` | `bcdb7ced87d9104ce7b59832654638fd206f4121a626d5b56f654a3e71b88e53` |
+| d2 | release | vorbis | `buildd2/vcpkg_installed/x86-windows/bin/vorbis.dll` | `2615d373dbdbbc6e07890622e5ca9e720a9b069bf95397c0a65d414a5686e972` |
+| d2 | release | vorbisfile | `buildd2/vcpkg_installed/x86-windows/bin/vorbisfile.dll` | `34d0413387963c2feafd06bdcd729267aafe4c837c94760386773a5c0f25c2a2` |
+
+## Validation artifact identities
+
+| Scratch artifact | SHA-256 (file bytes) |
+| --- | --- |
+| `gqr-0249-before.json` | `0d1f42ee14d10efca17db2e2c255fa74214582873eb83e48ca6dc9ad892b95d4` |
+| `gqr-0249-d1-before.cmake` | `f0b3821cb16921fb90c1e4f2c7fb445fe3729acda75f92806e6cb5a988e378f6` |
+| `gqr-0249-d2-before.cmake` | `fecdafb7d3048652a44d97089f5c60102b6c506438491495adf351ab3697e5f7` |
+| `apply_gqr0249.py` | `9800aebc2537701dae311233aced6b79a243bc3c60da86a6bfbac10764ae813a` |
+| `prepare_gqr0249_builds.py` | `c889e3da03cb0929e6bf9df2966f3da3c8121b8c1cd167f8fbc93403f9df0c57` |
+| `build_gqr0249.cmd` | `d1bcf4b24c3902d6319eceb0cac13b7e251a7140b1a7005e82e1726fc2a656cc` |
+| `gqr-0249-windows-build-verified.log` | `5510313d7f37758de2d8489214a355916bacaaa9f95279bcf76bcab5ee2cc9be` |
+| `prepare_gqr0249_parity.py` | `18cfdcbc16f96a45ed8014c959fc6f605c5312dc5eef3bfad0d26c0be66542e4` |
+| `configure_gqr0249_parity.cmd` | `3cfcb115fc60c80adbcdd3c6d32f594e1baac35f8ba7c61d77bceaabf730c2c7` |
+| `gqr-0249-configure-parity.log` | `6d861b5a1d8f50bc9d5739ad3658d6aa306ee3dcd7160929d14f332f52d7ef3a` |
+| `gqr-0249-quality.log` | `9ae73039a7cae8e6b190d4b0c1cd0cbe8584629e65470526b174f9a666cb9030` |
+| `gqr-0249-quality-final.log` | `46928dfca26c067a79cc7aefd33b27b753e544afac38a8eb10735e2f87197190` |
+| `gqr-0249-android-before.json` | `557f9e6d1dd60c119249989fbd208834c9fc132f5e7793601eabbe2791e4b0ab` |
+| `gqr-0249-android-build.log` | `5ff95f0aa9e519d306099756986059e12c3789bb444bca490e3e473ea0f89ff2` |
+| `verify_gqr0249.py` | `138a9cefa8c77d311bc32679ffed75768d15f91864eec547a52e117bfbea39cd` |
+| `gqr-0249-verification.json` | `e74d6ead226b7287ff0acfca1365d736cf04b5402955ea389ae5c70272f82f32` |
+
+Disposition: GQF-0263 FIXED; GQR-0249 DONE. Historical impact score 48 (12/12/7/10/7) retained. Other campaign fixes and coverage remain open
+
+</details>
+
+<!-- END IMPORT: GQR-0249 shared codec deployment remediation 20261007 -->
+<!-- BEGIN IMPORT: BR-0361 RNG reseed observation remediation 20261007 SHA256:a771d82899ad55fbcd3f0ae14985bbfb16ca3c567a438e0e7ca62dd63cac5157 -->
+
+## BR-0361 RNG reseed observation remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/br0361-remediation.md`
+- Imported SHA-256: `a771d82899ad55fbcd3f0ae14985bbfb16ca3c567a438e0e7ca62dd63cac5157`
+
+<details>
+<summary>Full worker report</summary>
+
+# BR-0361 RNG reseed observation remediation 20261007
+
+## Revalidated finding and fix
+
+- Live HEAD e833b7b337b9f216f5d3f98b6af43ec55bb93f07. GQR-0192 shared RNG ownership remains open; its referenced BR-0361 prerequisite still exists in both current native RNG files
+- Existing d_srand_annotated passed a getter that writes state_after and a read of state_after as separate arguments of one trace call. Argument evaluation order allowed the read to observe initialized zero instead of the newly seeded state
+- New maintained test runs actual native RNG and shared trace serialization, writes JSONL, parses it with the existing nlohmann_json dependency, and checks SIM/FX reseeds and following draws for zero, one, high-bit and maximum valid unsigned seeds
+- Before the fix, both MSVC Debug layouts fail event 4: expected state_after=1, got 0. Both optimized layouts pass. Thus the baseline reproduces the compiler/optimization-dependent diagnostic defect without claiming gameplay-state divergence
+- Each native fix adds a local has_state_after, assigns it and the post-state in a full expression after seeding, then passes the local to the recorder. Exact enclosing-file comparison proves these are the only native changes; all RNG state transitions, draw records, counters, stream selection, libc behavior and D2-specific diagnostics stay unchanged
+- This correctness prerequisite adds two net lines per inherited file. It is not an extraction or diff reduction, and no GQR-0192 completion credit is claimed
+- Added maintained CTest targets test_rng_seed_trace and test_rng_seed_trace_libc for both game layouts. Normal target uses the actual maths library; libc target compiles actual native rand.c and shared trace writer with NO_WATCOM_RAND
+- Test checks event count, serialized stream, retained/incremented call counts, before/after state presence and values, seed/result fields, frame/time/source context and exact event count. Failure checks remain active in optimized builds
+
+## Validation
+
+- Eight fresh MSVC /W4 /WX builds/runs: D1/D2 times /Od and /O2 /DNDEBUG times LCG and libc. All pass. Existing production CRT-deprecation definition is set for the shared fopen-based trace writer
+- Eight Android NDK Clang/Clang++ builds/runs: same game/optimization/backend matrix, actual C RNG and trace writer linked with C++ fixture and static C++ runtime. -Wall -Wextra -Werror plus the existing production macro-redefinition suppression. All execute successfully on emulator-5582, return exact PASS and yield parsed JSONL traces; unique owned remote executables/traces are removed
+- All eight LCG trace files are byte-identical across games, compilers/platforms and optimization levels. All libc traces omit state fields and are byte-identical within each platform across games/optimizations; libc sequences are not required to match between MSVC and Android
+- Before/after ordinary rand records are identical for every Windows baseline, and the already-correct optimized traces remain byte-identical. Only the defective Debug reseed observation changes
+- Maintained CTest runs match three tests per game: existing seed resume, new seed trace and new libc seed trace. All six pass
+- Full run-windows-build.ps1 -Target both -MaxParallel 8 succeeds. Android JDK21 :app:externalNativeBuildDebug --offline --max-workers=2 --console=plain succeeds for both games across all three configured ABIs
+- One scoped mixed quality invocation on four paths passes; native inherited files are not broadly formatted. Final diff check passes (Git only notes its existing CRLF normalization policy)
+- These tests validate actual RNG-to-JSONL behavior and state restoration, not a full gameplay/demo replay campaign. No adversarial, malformed-media, resource-pressure or security-sensitive probe ran. No staging or commit
+
+## Product identities
+
+| Path | SHA-256 (file bytes) |
+| --- | --- |
+| `d1/maths/rand.c` | `d82226d88bae9bc332bab2fa6b6b734c825e2a77e16f1f35093068ee1b686f3b` |
+| `d2/maths/rand.c` | `53c0edf8481e1c4de1dc35fd4bec86b8646e016687ff12b8fa014164818d4a69` |
+| `android/tests/test_rng_seed_trace.cpp` | `712049f7f781424517f4210dd45608c6baa029c08356975c1907a93b93afbffa` |
+| `android/tests/CMakeLists.txt` | `c46394850d2029d9890095c4ed611a6e3b1975e1638124738e738e129b8f3127` |
+
+## Trace identities
+
+| Platform | Game | Optimization | Backend | SHA-256 (complete JSONL) |
+| --- | --- | --- | --- | --- |
+| windows | d1 | debug | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| windows | d1 | debug | libc | `f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a` |
+| windows | d1 | optimized | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| windows | d1 | optimized | libc | `f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a` |
+| windows | d2 | debug | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| windows | d2 | debug | libc | `f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a` |
+| windows | d2 | optimized | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| windows | d2 | optimized | libc | `f11ff18275b70e58807a536ea8f12379d16563720a6792429db81553a3367a9a` |
+| android | d1 | debug | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| android | d1 | debug | libc | `3359efe4dbf8e09051d1e9d066758f5919fb6fe482bee7c91a5233d88b116584` |
+| android | d1 | optimized | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| android | d1 | optimized | libc | `3359efe4dbf8e09051d1e9d066758f5919fb6fe482bee7c91a5233d88b116584` |
+| android | d2 | debug | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| android | d2 | debug | libc | `3359efe4dbf8e09051d1e9d066758f5919fb6fe482bee7c91a5233d88b116584` |
+| android | d2 | optimized | lcg | `4e61b03184e74b3fb99647fc627ac633eea3090a8a72b4dd56445f6b9495e3f9` |
+| android | d2 | optimized | libc | `3359efe4dbf8e09051d1e9d066758f5919fb6fe482bee7c91a5233d88b116584` |
+
+## Validation artifact identities
+
+| Scratch artifact | SHA-256 (file bytes) |
+| --- | --- |
+| `prepare_br0361_windows.py` | `2bf3fa024b9a6a92f13c3ab71fedf6ac2c461dbcc758074f676953f9d84eda85` |
+| `build_br0361_before.cmd` | `24d162a28e7120dafb21f5db0fa96d1b5b3a1289c09d0199aa9ed5d1f261bc80` |
+| `build_br0361_after.cmd` | `c8a976bb4d4e8afc495efee86bb5ce98f6e97098babee9cceccf71497462b188` |
+| `run_br0361_android.ps1` | `afd933cdfd7e0183f3f2d799f2703c7dab00b8b6f71bebb1ecc34242c77f69d8` |
+| `br0361-windows-before-verified.log` | `5b6dbfd100b7edb429606c44c4ada7333a0f93ba2aa4efcead8124ce71d43855` |
+| `br0361-windows-after.log` | `d25ec2f4fbe38f436985f873f19e669b2173c9a2259cc3624f85fa705cca8125` |
+| `br0361-android-fixtures.log` | `17ef29c3a53dc56135051b26c8bbef65798590879c489937e382aae1cfca0e5d` |
+| `br0361-windows-build.log` | `265bb1e3d5184a5fa4801a3c0a6bc22d30e5e4440f707cdd38d77169b9a99c5e` |
+| `br0361-android-build.log` | `2799fc25a0075efaf5aee9bccf877538d80fb9770bf2e4491af0a3e973577df2` |
+| `br0361-d1-ctest.log` | `06b39931b34756354142a8fee30245c2f6200959bfdbe23aecb65dc0d846248a` |
+| `br0361-d2-ctest.log` | `356254e6f10d99926955b5a8591417c3bc25eb7d5b95f253b743f7b1988a8069` |
+| `br0361-quality.log` | `19f79e1690d1a10aee9efc04313460b96fb51f5e0b7fe43a74a04df22f37af57` |
+| `verify_br0361.py` | `736c0c2ac532fa5cbd82c95ba8348a659e0490b80c4087ac50c83beb91113dc6` |
+| `br0361-verification.json` | `371030b5eafb0e69efdcd13d35fe47b59876fea3328e9e68275606632fcb053a` |
+
+Disposition: BR-0361 FIXED, archive complete finding and disposition. GQF-0205 OPEN / GQR-0192 TODO with this prerequisite complete; general campaign counts and coverage remain unchanged
+
+</details>
+
+<!-- END IMPORT: BR-0361 RNG reseed observation remediation 20261007 -->
+<!-- BEGIN IMPORT: GQR-0192 shared RNG ownership remediation 20261007 SHA256:1587cec82ccb3b8304db93024ef044f995f399d8ae01ed8935de170961e7e584 -->
+
+## GQR-0192 shared RNG ownership remediation 20261007 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0192-remediation.md`
+- Imported SHA-256: `1587cec82ccb3b8304db93024ef044f995f399d8ae01ed8935de170961e7e584`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0192 shared RNG ownership remediation 20261007
+
+## Current-source reconciliation and design
+
+- Live HEAD at edit and verification: e833b7b337b9f216f5d3f98b6af43ec55bb93f07. Revalidated GQF-0205 against both current RNG sources and identical branch-added declarations/annotation macros in maths.h
+- Earlier BR-0361 repair and its complete trace baselines are prerequisites. The explicitly sequenced reseed observation is preserved, and all sixteen resulting runtime traces remain byte-identical after extraction
+- New rng_shared_impl.h contains the single implementation, compiled through each existing native rand.c. D2 alone defines DXX_RNG_TRACE_GAPS to select its existing diagnostic state/guard; D1 does not enable it. Native comments and CMake source entries remain intact
+- This intentionally replaces the old separate-C-file sketch: keeping d_rand and d_rand_stream in their original translation unit preserves possible inlining and the _ReturnAddress/noinline diagnostic boundary without introducing cross-file adapters or new exported helper functions
+- Each maths library still compiles its own native rand.c, retaining independent static stream states and call counters. Android D1/D2 compilation/link ownership remains unchanged
+- New rng_shared.h owns the branch replay constants, stream enum, new declarations and annotation/default/opt-out macros. Original D_RAND_MAX and legacy d_rand/d_srand declarations/comments remain in both inherited maths.h files, followed by one shared include
+- Removed only the redundant, already-guarded function-local second maths.h include from D2's libc branch while moving it. Before/after preprocessing proves it had no emitted effect. Retained the substantive native RNG and diagnostic comments
+- No RNG algorithm, state/count ABI, reseed counter retention, libc global-sequence behavior, invalid-selector handling, trace field, caller macro, default stream, opt-out semantics or diagnostic activation change
+- Concurrent graphics and save/load edits, including game.c changes and Android sources/scripts, are excluded from this remediation. No staging or commit
+
+## Applied metrics
+
+Original attribution baseline: fb555eec75e1ed12c8348805ab335afb4c721b06. Counts below compare the current pre-extraction files, including BR-0361, with the final files
+
+| Inherited file | Before lines | After lines | Net removed | Original diff before (+/-) | Original diff after (+/-) |
+| --- | ---: | ---: | ---: | --- | --- |
+| `d1/maths/rand.c` | 213 | 4 | 209 | +193/-7 | +1/-24 |
+| `d2/maths/rand.c` | 244 | 10 | 234 | +214/-7 | +2/-29 |
+| `d1/include/maths.h` | 163 | 123 | 40 | +42/-0 | +2/-0 |
+| `d2/include/maths.h` | 159 | 119 | 40 | +42/-0 | +2/-0 |
+
+- 523 net inherited lines removed; 299 new shared-header lines added; 224 net repository code lines removed for this extraction
+- Original-baseline changed lines fall from 505 to 60, a 445-line diff reduction across the four files. This metric includes deletions of moved original statements rather than presenting physical line removal as identical to diff reduction
+- No build-file additions or new test code are required for this extraction; the prerequisite's maintained trace tests remain in use
+
+## Validation
+
+- Forty before/after compiler comparisons pass: sixteen complete implementation-token comparisons across D1/D2, LCG/libc, headless/normal and MSVC/Android Clang; twenty-four C/C++ SIM-default, FX-default and annotation-opt-out expansion comparisons. Quoted literals remain intact during tokenization
+- Forty-eight actual caller compilations pass with MSVC and Android Clang, using C and C++ modes and all three macro policies
+- Eight actual MSVC diagnostic executables cover before/after, D1/D2 and Debug/optimized builds. Inactive SIM, active FX and annotated SIM produce no gap; D2 alone emits its two expected active raw-SIM/legacy-call diagnostics. Counts and recorded event total match. Only process-specific hexadecimal return addresses are normalized when comparing logs; exact preprocessed intrinsic/noinline bodies also match
+- Sixteen actual serialized-trace runs pass across D1/D2, Debug/optimized, Windows/Android and LCG/libc. Every complete JSONL file matches the corresponding BR-0361 baseline hash, including seed-state observations, ordinary draws and counters. Android executables run on emulator-5582 in a unique owned directory; remote binaries/traces are removed
+- Ten maintained CTests pass: both games' test_rng_seed_resume, test_rng_seed_trace, test_rng_seed_trace_libc, test_deterministic_math and test_multi_gameplay_options
+- Full run-windows-build.ps1 -Target both -MaxParallel 8 passes. Android JDK21 :app:externalNativeBuildDebug --offline --max-workers=2 --console=plain passes for both games and all three ABIs. Existing unrelated native/vendor/Gradle warnings remain; scoped new-header matrix compiles under warnings-as-errors
+- One scoped mixed quality pass on all six changed code/header files succeeds. Inherited files are excluded from broad formatting by repository policy. Final diff check is clean
+- No full gameplay replay, live UDP game or deferred security-sensitive probe is claimed. This nonsemantic ownership move is supported by exact compiler-body/caller parity, unchanged real traces, focused runtime diagnostics and paired platform builds
+
+## Final source identities
+
+| Path | SHA-256 (file bytes) |
+| --- | --- |
+| `d1/maths/rand.c` | `4e590cfd2764c4b568e530733f5a46f97c2bb7894fa7af1a6fdca8363343b3f3` |
+| `d2/maths/rand.c` | `996be8dd92ba383cb54d3a55dd26b24dd1ccbb3a8acf22103fbd0db1b6dff875` |
+| `d1/include/maths.h` | `9e2d6df47cdb9b4061f04b4b3b443f2fcf718ebaed64fbe8048dd8804b094b9c` |
+| `d2/include/maths.h` | `023b683ddb4c4513292f81ad60e7a197169a43c35e5759da8a749b87908a93c7` |
+| `android/app/src/main/cpp/shared/rng_shared.h` | `410cfec7756baac1b3cfdaea9d6d68fb6c1a1f78a5811e1d28b441c1355b0782` |
+| `android/app/src/main/cpp/shared/rng_shared_impl.h` | `9df292fbbb58103aa7002e831e893d666e52eb526345554916fb9ed505b7d6e0` |
+
+## Validation artifact identities
+
+| Scratch artifact | SHA-256 (file bytes) |
+| --- | --- |
+| `gqr-0192-before.json` | `0091397041a3d51f310d8611faa9c975eccffcc1284e717d90ca1778c40e7c8f` |
+| `apply_gqr0192.py` | `d758c18e85c91c2becbfc513361fb12d72277b5bf489d54ded0e63357fe35d56` |
+| `prepare_gqr0192_windows.py` | `d1e6e56774a4b41091efdeaee0369ac6815a2a7e1ab1d6b410c9e50cdbb6f830` |
+| `build_gqr0192_after.cmd` | `d9207e2584d9c2ac36237dc17cacbd52be6b16c9784a2ec2a96cf21fee369ebe` |
+| `run_gqr0192_android.ps1` | `7ae84a3c93c594635481af16c56261a1045bb5dca89646ed0380038a486af712` |
+| `gqr0192-windows-after.log` | `d25ec2f4fbe38f436985f873f19e669b2173c9a2259cc3624f85fa705cca8125` |
+| `gqr0192-android-fixtures.log` | `24279c72c1d041804d834d3aeadca39fb8504c9c7411fc7793ed1b686835d390` |
+| `prepare_gqr0192_contracts.py` | `c8d8c6bd0b72c77659b1a4d23b2585df156bc982da56b85a5da1bcf4d9b68e77` |
+| `preprocess_gqr0192.cmd` | `1b1a0b612fd709f6fd6e45433277eec17b0e1873384ca3655a970a35ff530de7` |
+| `gqr0192-preprocess-msvc.log` | `10da81ef64567d2f2bf6ec8f4e779c1dd834fcdb73f16b0636364ad4335b2c62` |
+| `check_gqr0192_contracts.py` | `c27b3bc6ea820c585971e2de91f9b7f28a2fc31f2c7ffa13ffc4671555d0535c` |
+| `gqr0192-contract-parity.json` | `d40bcff7d1f6d5bfb877e3ffa4cafd2a751f52127bb5e22a50b17c94af0374aa` |
+| `prepare_gqr0192_gap_probe.py` | `fdb3c7854be1527591881063b3493fbddbce4b33dd1a77e33a291b2774f2987d` |
+| `run_gqr0192_gap_probe.cmd` | `5c9a71e4ce02a241f154ac208bdd1c3f01a2fe37322ffd47e23c33b656f64a52` |
+| `gqr0192-gap-probe.log` | `fd67e6b1544b13771087313c7b5875ec18fda1921bb545cd6597970761f3fb97` |
+| `gqr0192-windows-build.log` | `362158cc8a4f090a88c6b30e00f7cf9a18aae7062710d35b9ea0b312b388f49f` |
+| `gqr0192-android-build.log` | `a0a5c786ae6a4a412db623bdbf4f50f98bf968ac7aa1239def95d192235a8596` |
+| `gqr0192-d1-ctest.log` | `7f750948acf4c664793b3af6b293c75a31aa4cbc7577f00acf42e7782892e533` |
+| `gqr0192-d2-ctest.log` | `978c4c47dce3662dbdf8eac50a41af7bf6d4d63b732118553d62f918dd8666aa` |
+| `gqr-0192-quality.log` | `f22d7ad1b8dba9ce93133caf3e237b607acb682a3fc8f1b0987a3d95a53903f9` |
+| `verify_gqr0192.py` | `13709a6a0991c0d8e576d2ae9ad0d5e3730eee02c50cb3a1a2c31ff02e9e6809` |
+| `gqr0192-verification.json` | `562694892b600d608199cc1e7137a008e06f72f5fc2a47d198d2b648ab47c896` |
+
+Disposition: GQF-0205 FIXED; GQR-0192 DONE. Historical impact score 71 (12/35/7/10/7) retained. Other campaign fixes and coverage remain open
+
+</details>
+
+<!-- END IMPORT: GQR-0192 shared RNG ownership remediation 20261007 -->

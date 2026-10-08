@@ -27,7 +27,7 @@ void android_graphics_safety_renderer_failed(const char *reason);
 int android_graphics_safety_restoring_mode(void);
 void android_graphics_safety_state_json(char *buffer, size_t size);
 #ifdef INTROSPECT_ON
-/* Game-thread-only integration fault; consumed after the trial is armed */
+/* Game-thread-only integration fault; consumed during preview or armed rendering */
 void android_graphics_safety_debug_stall_once(int milliseconds);
 void android_graphics_safety_debug_black_once(void);
 int android_graphics_safety_debug_black_active(void);

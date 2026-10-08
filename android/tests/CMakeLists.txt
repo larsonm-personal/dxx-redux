@@ -31,6 +31,34 @@ target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOUR
 target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
+add_executable(test_rng_seed_trace test_rng_seed_trace.cpp)
+target_link_libraries(test_rng_seed_trace PRIVATE ${DXX_TARGET_PREFIX}maths
+                                                  nlohmann_json::nlohmann_json)
+target_include_directories(test_rng_seed_trace PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+target_compile_features(test_rng_seed_trace PRIVATE cxx_std_17)
+add_test(NAME test_rng_seed_trace COMMAND test_rng_seed_trace rng-seed-trace-lcg.jsonl)
+
+add_executable(
+    test_rng_seed_trace_libc test_rng_seed_trace.cpp "${DXX_TEST_GAME_SOURCE_DIR}/maths/rand.c"
+                             "${DXX_TEST_SHARED_SOURCE_DIR}/input_demo_rng_trace.c")
+target_compile_definitions(test_rng_seed_trace_libc PRIVATE NO_WATCOM_RAND=1)
+target_include_directories(test_rng_seed_trace_libc PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                                            ${SDL_INCLUDE_DIR})
+target_link_libraries(test_rng_seed_trace_libc PRIVATE nlohmann_json::nlohmann_json)
+target_compile_features(test_rng_seed_trace_libc PRIVATE cxx_std_17)
+add_test(NAME test_rng_seed_trace_libc COMMAND test_rng_seed_trace_libc rng-seed-trace-libc.jsonl)
+
+add_executable(
+    test_multi_gameplay_options
+    test_multi_gameplay_options.c "${DXX_TEST_SHARED_SOURCE_DIR}/multi_gameplay_options.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/matcen_mode.c")
+target_include_directories(
+    test_multi_gameplay_options PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}" ${PHYSFS_INCLUDE_DIR}
+                                        ${SDL_INCLUDE_DIR})
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_multi_gameplay_options PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+add_test(NAME test_multi_gameplay_options COMMAND test_multi_gameplay_options)
 add_executable(test_sound_trace_fingerprint test_sound_trace_fingerprint.c)
 target_include_directories(test_sound_trace_fingerprint PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 

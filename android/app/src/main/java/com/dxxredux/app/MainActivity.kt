@@ -2521,7 +2521,7 @@ class MainActivity :
 
     private fun hasPendingGraphicsConfirmation(): Boolean =
         gameStarted && JSONObject(nativeGraphicsSafetyState()).optString("phase") in
-            setOf("offering", "editing", "settling", "preparing", "challenge", "restoring")
+            setOf("offering", "editing", "settling", "live", "preparing", "challenge", "restoring")
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("graphics_trial_interrupted", graphicsTrialInterrupted || hasPendingGraphicsConfirmation())

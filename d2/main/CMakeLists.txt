@@ -128,6 +128,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/difficulty_runtime_shared.c
     ../../android/app/src/main/cpp/shared/effect_runtime_shared.c
     ../../android/app/src/main/cpp/shared/matcen_mode.c
+    ../../android/app/src/main/cpp/shared/multi_gameplay_options.c
     ../../android/app/src/main/cpp/shared/coop_start_positions.c
     ../../android/app/src/main/cpp/shared/startup_resume_shared.c
     )
@@ -408,16 +409,5 @@ endif()
 
 install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)
 
-if(SDLMIXER AND MSVC AND VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
-    set(VCPKG_PREFIX "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
-    # SDL_mixer loads these codecs dynamically, so vcpkg's import scan misses them
-    set(MUSIC_DLL_DIR "${VCPKG_PREFIX}/$<IF:$<CONFIG:Debug>,debug/bin,bin>")
-    foreach(lib mpg123 FLAC mikmod ogg vorbis vorbisfile)
-        if(EXISTS "${VCPKG_PREFIX}/bin/${lib}.dll")
-            add_custom_command(TARGET dxx-redux-d2 POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${MUSIC_DLL_DIR}/${lib}.dll" $<TARGET_FILE_DIR:dxx-redux-d2>)
-            install(FILES "${MUSIC_DLL_DIR}/${lib}.dll" DESTINATION .)
-        endif()
-    endforeach()
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/dxx-sdl-mixer-runtime.cmake)
+dxx_copy_sdl_mixer_runtime(dxx-redux-d2)

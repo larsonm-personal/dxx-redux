@@ -148,11 +148,9 @@
             "current_level_num": "1",
         },
     },
-    { "action": "log", "message": "=== TEST: Shared Android save/load dispatch -- COMPLETE ===" },
     { "action": "introspect" },
 
-    // Keep the direct restore at the end: rebuilding the game window during a restore
-    // invalidates some automation-only window introspection until the next frame loop.
+    // Wait for the next frame after rebuilding the game window during a restore
     { "action": "set_debug", "field": "android_game_request", "value": "quick_save", "post_delay_ms": 1000 },
     { "action": "set_debug", "field": "android_game_request", "value": "difficulty:3", "post_delay_ms": 300 },
     { "action": "wait_for", "field": "difficulty", "value": "3", "timeout_ms": 5000 },
@@ -168,4 +166,42 @@
             "guidebot.route_metadata_rescan_count": { "gte": 1 },
         },
     },
+    // Leaving a mine and restoring from the main menu must release every pause
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "select", "text": "Abort Game", "post_delay_ms": 500 },
+    { "action": "wait_for", "field": "in_game", "value": "false", "timeout_ms": 5000 },
+    { "action": "select", "text": "Load Game", "post_delay_ms": 200 },
+    { "action": "select", "text": "[auto] best L1", "post_delay_ms": 1000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "in_game": "true", "time_paused": "false" } },
+    // Startup resume has no hidden main menu to restore when the mine closes
+    { "action": "enter_launcher" },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": { "key": "show_resume_offer", "value": true },
+        "post_delay_ms": 250,
+    },
+    { "action": "tap_button", "text": "Load Last Save", "launches_game": true },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "time_paused": "false" } },
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "select", "text": "Abort Game", "post_delay_ms": 500 },
+    { "action": "wait_for", "field": "in_game", "value": "false", "timeout_ms": 5000 },
+    { "action": "select", "text": "Load Game", "post_delay_ms": 200 },
+    { "action": "select", "text": "[auto] best L1", "post_delay_ms": 1000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "in_game": "true", "time_paused": "false" } },
+    // Repeat the abort/reload cycle and verify gameplay, not just rendering
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "select", "text": "Abort Game", "post_delay_ms": 500 },
+    { "action": "wait_for", "field": "in_game", "value": "false", "timeout_ms": 5000 },
+    { "action": "select", "text": "Load Game", "post_delay_ms": 200 },
+    { "action": "select", "text": "[auto] best L1", "post_delay_ms": 1000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "time_paused": "false", "player.energy": { "range": [100, 100] } } },
+    { "action": "send_button", "button": 100, "held": 1 },
+    { "action": "wait_for", "expect": { "player.energy": { "lt": 100 } }, "timeout_ms": 5000 },
+    { "action": "send_button", "button": 100, "pressed": 0 },
+    { "action": "log", "message": "=== TEST: Shared Android save/load dispatch -- COMPLETE ===" },
 ]

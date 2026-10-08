@@ -128,7 +128,10 @@ try {
             $timer = [Diagnostics.Stopwatch]::StartNew()
             $restoreTimer = $null
             Invoke-Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.AUTOMATE', '--es', 'script', $trigger) | Out-Null
-            if ($faultName -notin @('publication_blocked', 'rebuild_failure', 'menu_abandoned', 'normal_exit')) {
+            if ($faultName -eq 'stall') {
+                Wait-RecoveryCondition { (Read-DeviceJson 'files/graphics_safety.json').attempt.phase -eq 5 } 'Live preview protected before confirmation'
+            }
+            if ($faultName -notin @('stall', 'publication_blocked', 'rebuild_failure', 'menu_abandoned', 'normal_exit')) {
                 Wait-RecoveryCondition { (Read-DeviceJson 'files/graphics_safety.json').attempt.phase -eq 3 } 'Armed challenge'
             }
             if ($faultName -eq 'activity_replaced') {
@@ -223,7 +226,9 @@ try {
                 Assert-MirroredConfig $expected
             }
             if ($faultName -eq 'stall') {
-                if ($logs -notmatch 'armed render-thread stall') { throw 'No evidence the render thread stalled after arming' }
+                if ($logs -notmatch 'trial render-thread stall' -or $logs -notmatch 'reason=preview_apply_timeout') {
+                    throw 'No evidence the UI watchdog rejected an immediate edit stalled before confirmation'
+                }
                 Assert-MirroredConfig $expected
             }
             if ($faultName -eq 'accept_publication_blocked') {

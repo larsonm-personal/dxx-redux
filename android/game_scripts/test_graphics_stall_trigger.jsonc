@@ -1,4 +1,4 @@
-// TEST: Inject an armed render-thread stall outside both graphics locks
+// TEST: Inject an immediate live-edit render-thread stall before confirmation
 [
     {
         "_info": {

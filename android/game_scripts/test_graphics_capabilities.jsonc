@@ -263,7 +263,7 @@
             "graphics_safety.phase": "idle",
             // The diagnostic override clears the supported format, rejected before sample counts
             "graphics_safety.renderer_failure.failure_reason": "msaa_window_format_changed",
-            "graphics_safety.renderer_failure.attempt_phase": "3",
+            "graphics_safety.renderer_failure.attempt_phase": "5",
             "graphics_safety.renderer_failure.candidate.MsaaLevel": "2",
             "graphics_safety.renderer_failure.accepted.MsaaLevel": "0",
             "graphics_safety.renderer_failure.accepted.TexFilt": "1",

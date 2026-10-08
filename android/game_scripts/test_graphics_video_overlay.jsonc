@@ -342,14 +342,26 @@
         "post_delay_ms": 50,
     },
     {
+        "action": "wait_for",
+        "timeout_ms": 1000,
+        "expect": {
+            "graphics_safety.phase": "live",
+            "graphics_safety.current.TexFilt": "2",
+            "graphics_safety.candidate_ready": "true",
+            "graphics_safety.accepted.TexFilt": "1",
+        },
+    },
+    {
         "action": "wait_ms",
-        "ms": 1500,
+        "ms": 500,
     },
     {
         "action": "assert",
         "expect": {
-            "graphics_safety.phase": "idle",
-            "graphics_safety.queued.TexFilt": "2",
+            "graphics_safety.phase": "live",
+            "graphics_safety.candidate_ready": "true",
+            "graphics_safety.current.TexFilt": "2",
+            "graphics_safety.accepted.TexFilt": "1",
         },
     },
     {
@@ -366,17 +378,20 @@
             "video_msaa": 0,
         },
     },
-    // More than 2.5 seconds since TexFilt changed, but the second option restarted the shared cooldown
+    // The second option restarts the shared confirmation cooldown while both edits are already visible
     {
         "action": "wait_ms",
-        "ms": 1500,
+        "ms": 500,
     },
     {
         "action": "assert",
         "expect": {
-            "graphics_safety.phase": "idle",
-            "graphics_safety.queued.TexFilt": "2",
-            "graphics_safety.queued.AnisoLevel": "2",
+            "graphics_safety.phase": "live",
+            "graphics_safety.candidate_ready": "true",
+            "graphics_safety.current.TexFilt": "2",
+            "graphics_safety.accepted.TexFilt": "1",
+            "graphics_safety.current.AnisoLevel": "2",
+            "graphics_safety.accepted.AnisoLevel": "0",
         },
     },
     {
@@ -479,6 +494,16 @@
     },
     {
         "action": "wait_for",
+        "timeout_ms": 1000,
+        "expect": {
+            "graphics_safety.phase": "live",
+            "graphics_safety.candidate_ready": "true",
+            "graphics_safety.current.MsaaLevel": "2",
+            "graphics_safety.accepted.MsaaLevel": "0",
+        },
+    },
+    {
+        "action": "wait_for",
         "timeout_ms": 10000,
         "expect": {
             "graphics_safety.phase": "challenge",
@@ -554,6 +579,16 @@
         "action": "controller_input",
         "key": "A",
         "post_delay_ms": 50,
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 1000,
+        "expect": {
+            "graphics_safety.phase": "live",
+            "graphics_safety.candidate_ready": "true",
+            "graphics_safety.current.MsaaLevel": "2",
+            "graphics_safety.accepted.MsaaLevel": "0",
+        },
     },
     {
         "action": "wait_for",

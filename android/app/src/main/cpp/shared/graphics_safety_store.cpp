@@ -465,6 +465,20 @@ try {
 	return 0;
 }
 
+extern "C" int graphics_safety_finish_safe_preview(const char *root, uint64_t trial_id, int owner_pid)
+try {
+	guard lock(root);
+	graphics_safety_record record;
+	if (!lock || !read_record(root, record) || record.phase != GRAPHICS_SAFE_PREVIEW ||
+	    record.trial_id != trial_id || record.owner_pid != owner_pid ||
+	    record.owner_session != process_session(owner_pid) ||
+	    (!graphics_safety_equal(&record.candidate, &record.accepted) && !graphics_safety_all_off(&record.candidate))) return 0;
+	record.phase = GRAPHICS_SAFE_IDLE;
+	return write_record(root, record);
+} catch (...) {
+	return 0;
+}
+
 extern "C" int graphics_safety_arm(const char *root, uint64_t trial_id, uint64_t now_ms)
 try {
 	guard lock(root);

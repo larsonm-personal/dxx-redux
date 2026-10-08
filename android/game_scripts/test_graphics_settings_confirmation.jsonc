@@ -349,10 +349,11 @@
         "value": "tex_filt:1",
     },
     {
-        // Queued edits settle after the shared 2.5-second debounce
+        // The setting applies immediately; wait for the unchanged preview to settle
         "action": "wait_for",
         "timeout_ms": 5000,
         "expect": {
+            "graphics_safety.phase": "idle",
             "graphics_safety.current.TexFilt": "1",
         },
     },

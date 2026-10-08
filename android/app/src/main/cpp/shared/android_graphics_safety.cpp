@@ -60,6 +60,7 @@ bool candidate_ready = false;
 enum preview_phase { preview_none,
 	                 preview_offering,
 	                 preview_editing,
+	                 preview_live,
 	                 preview_settling };
 preview_phase preview = preview_none;
 std::string first_run_marker;
@@ -168,6 +169,7 @@ std::string state_json_locked()
 	                                                : armed                       ? "challenge"
 	                                                : preview == preview_offering ? "offering"
 	                                                : preview == preview_editing  ? "editing"
+	                                                : preview == preview_live     ? "live"
 	                                                : preview == preview_settling ? "settling"
 	                                                                              : "idle";
 	json state = { { "phase", phase }, { "trial_id", active_id }, { "deadline_ms", deadline }, { "accepted", snapshot_json(record.accepted) }, { "candidate", snapshot_json(pending_candidate) }, { "requested", snapshot_json(requested) }, { "current", current_known ? snapshot_json(observed_current) : json(nullptr) }, { "queued", queued_options }, { "staged_generation", staged_generation }, { "reason", record.reason }, { "renderer_failure", renderer_failure } };
@@ -175,8 +177,8 @@ std::string state_json_locked()
 	state["first_run_trial"] = first_run_trial;
 	state["candidate_ready"] = candidate_ready;
 	state["preview_presented_frames"] = preview_presented_frames;
-	if (first_run_trial) {
-		state["capabilities"] = preview_capabilities;
+	if (first_run_trial) state["capabilities"] = preview_capabilities;
+	if (first_run_trial || preview == preview_live) {
 		state["candidate_revision"] = candidate_revision;
 		state["applied_revision"] = applied_revision;
 		state["apply_deadline_ms"] = preview_apply_deadline;
@@ -325,7 +327,7 @@ extern "C" void android_graphics_safety_presented(int success, uint64_t generati
 		std::lock_guard<std::mutex> lock(mutex);
 		if (!initialized || !storage_failure.empty() || restore_pending) return;
 		if (first_run_trial) ++preview_presented_frames;
-		if (first_run_trial && preview != preview_offering && rendered_revision == candidate_revision) {
+		if ((first_run_trial || preview == preview_live) && preview != preview_offering && rendered_revision == candidate_revision) {
 			candidate_ready = true;
 			preview_apply_deadline = 0;
 		}
@@ -431,7 +433,8 @@ extern "C" int android_graphics_safety_queue_option(const char *name, int value,
 	const int index = field(name);
 	if (index < 0) return ANDROID_GRAPHICS_OPTION_UNKNOWN;
 	std::lock_guard<std::mutex> lock(mutex);
-	if (!initialized || !storage_failure.empty() || preparing || armed || restore_pending || preview != preview_none) return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
+	if (!initialized || !storage_failure.empty() || preparing || armed || restore_pending ||
+	    (preview != preview_none && preview != preview_live)) return ANDROID_GRAPHICS_OPTION_PERSIST_FAILED;
 	graphics_safety_snapshot normalized;
 	graphics_safety_defaults(&normalized);
 	normalized.values[index] = value;
@@ -447,6 +450,8 @@ extern "C" int android_graphics_safety_queue_option(const char *name, int value,
 	queued_values[index] = value;
 	queued_persist |= persist != 0;
 	if (!unchanged) quiet_until = now_ms() + (debounce ? option_debounce_ms : 0);
+	debug_log_force(DLOG_GRAPHICS, "Graphics live option %s=%d debounce=%d quiet_until_ms=%llu now_ms=%llu", name, value, debounce,
+	                (unsigned long long) quiet_until, (unsigned long long) now_ms());
 	return ANDROID_GRAPHICS_OPTION_OK;
 }
 
@@ -661,7 +666,7 @@ extern "C" void android_graphics_safety_event_tick(void)
 extern "C" int android_graphics_safety_before_main_view(void)
 {
 	graphics_safety_snapshot candidate;
-	bool apply = false, persist = false, show = false, trial_active = false;
+	bool apply = false, persist = false, show = false, trial_active = false, live_started = false, pause_trial = false;
 	uint64_t revision = 0, unchanged_preview = 0;
 	{
 		std::lock_guard<std::mutex> lock(mutex);
@@ -672,17 +677,54 @@ extern "C" int android_graphics_safety_before_main_view(void)
 		if (!graphics_safety_normalize(&current)) return 0;
 		observed_current = current;
 		current_known = true;
+		// Record each live candidate before touching GL; debounce only the confirmation
+		if ((preview == preview_none || preview == preview_live) && !armed && ui_foreground && !ui_blocked) {
+			candidate = current;
+			bool has_queued = false;
+			for (int i = 0; i < 5; ++i)
+				if (queued[i]) {
+					candidate.values[i] = queued_values[i];
+					has_queued = true;
+				}
+			if (has_queued && (preview == preview_live || !graphics_safety_equal(&candidate, &current))) {
+				const uint64_t id = preview == preview_live ? active_id : now_ms() * 1000 + (++serial % 1000);
+				if (!graphics_safety_preview(files_root.c_str(), &candidate, id, getpid(), 0)) {
+					storage_failure = "live_preview_persist_failed";
+					return 0;
+				}
+				live_started = preview != preview_live;
+				active_id = id;
+				pending_candidate = candidate;
+				preview = preview_live;
+				deadline = 0;
+				++candidate_revision;
+				candidate_ready = false;
+				if (!preview_apply_deadline) preview_apply_deadline = now_ms() + overlay_prepare_timeout_ms;
+				std::memset(queued, 0, sizeof(queued));
+			}
+		}
 		trial_active = armed || preview != preview_none;
 		if (preview == preview_offering) return 1;
-		if (preview == preview_editing || preview == preview_settling) {
+		if (preview == preview_editing || preview == preview_settling || preview == preview_live) {
 			candidate = pending_candidate;
 			revision = candidate_revision;
 			apply = !graphics_safety_equal(&candidate, &current);
-			if (preview == preview_settling && candidate_ready && now_ms() >= quiet_until) {
+			if ((preview == preview_settling || preview == preview_live) && candidate_ready && now_ms() >= quiet_until && !ui_blocked) {
 				graphics_safety_record record;
 				if (!graphics_safety_read_record(files_root.c_str(), &record)) return 0;
-				if (graphics_safety_equal(&candidate, &record.accepted)) unchanged_preview = active_id;
+				if (preview == preview_live && (graphics_safety_equal(&candidate, &record.accepted) || graphics_safety_all_off(&candidate))) {
+					if (!graphics_safety_finish_safe_preview(files_root.c_str(), active_id, getpid())) {
+						storage_failure = "live_preview_finish_failed";
+						return 0;
+					}
+					preview = preview_none;
+					persist = queued_persist;
+					queued_persist = false;
+					trial_active = false;
+				} else if (graphics_safety_equal(&candidate, &record.accepted)) unchanged_preview = active_id;
 				else if (graphics_safety_preview(files_root.c_str(), &candidate, active_id, getpid(), 1)) {
+					debug_log_force(DLOG_GRAPHICS, "Graphics preview confirmation quiet_until_ms=%llu now_ms=%llu",
+					                (unsigned long long) quiet_until, (unsigned long long) now_ms());
 					preview = preview_none;
 					preparing = true;
 					prepared_at = now_ms();
@@ -721,7 +763,10 @@ extern "C" int android_graphics_safety_before_main_view(void)
 			}
 			std::memset(queued, 0, sizeof(queued));
 		}
+		pause_trial = trial_active && preview != preview_live;
 	}
+	// Start the independent UI watchdog before a renderer call can stall
+	if (live_started) notify();
 	if (unchanged_preview) {
 		android_graphics_safety_decide(unchanged_preview, 0, "unchanged_preview");
 		return 0;
@@ -730,7 +775,7 @@ extern "C" int android_graphics_safety_before_main_view(void)
 		notify();
 		return 0;
 	}
-	if (trial_active && !pause_owned && !(Game_mode & GM_MULTI)) {
+	if (pause_trial && !pause_owned && !(Game_mode & GM_MULTI)) {
 		stop_time();
 		pause_owned = true;
 	}
@@ -758,7 +803,7 @@ extern "C" int android_graphics_safety_before_main_view(void)
 	if (trial_active && debug_stall_ms) {
 		const int milliseconds = debug_stall_ms;
 		debug_stall_ms = 0;
-		debug_log_force(DLOG_GRAPHICS, "Graphics safety fault: armed render-thread stall for %d ms", milliseconds);
+		debug_log_force(DLOG_GRAPHICS, "Graphics safety fault: trial render-thread stall for %d ms", milliseconds);
 		struct timespec remaining = { milliseconds / 1000, (milliseconds % 1000) * 1000000L };
 		// Deliberately outside both graphics locks so the Android deadline can win
 		while (nanosleep(&remaining, &remaining) && errno == EINTR) {}

@@ -4295,3 +4295,85 @@ The initial narrow ignore-rule report missed active BR-0607 corpus provenance ow
 - Totals: 266 findings, 252 remediations (32 DONE / 219 TODO / 1 DEFERRED), 950 terminal impact annotations. Exact scopes, source/context identities and fresh host checks imported; all assigned sources equal frozen head
 - No product/test edits, full native/Android build, device operation or deferred adversarial/security/malformed-media/resource-pressure probes. Concurrent input/audio changes and six historical quoted-patch whitespace warnings remain untouched
 - Next: GQ2-0289 music fingerprint sources onward, ordinary GQI-0005/GQI-0008 evidence and final post-frozen/worktree reconciliation before accepted live fixes
+
+### Music fingerprint source reconciliation, 2026-10-07
+
+- Completed GQ2-CHUNK-0289 through 0293: all 2,644 assigned lines across 24 source manifests. GQ2 now 140 DONE / 505 TODO; GQ1 remains 818 DONE / 1 TODO
+- Complete line-indexed field/comment projections cover 418 tracks and 2,227,005 opaque encoded fingerprint characters. All source files equal frozen head; all named local audio files exist. No audio payload was read, hashed or decoded
+- All 313 published tracks preserve source-derived number, name, duration, exact encoded fingerprint and every published optional field. Accounted for the other 105 records: 101 references to existing fingerprinted physical-disc tracks and four recorded approximate ambiguities. The four ambiguity strings differ; prior native score-1 evidence was not recomputed
+- Actual shared PowerShell JSONC parsing agrees on all 418 track names/durations/fingerprint hashes. Actual title policy accepts 96 of 97 source AcoustID labels and matches every retained track projection. D1 SC55 Escape retains its track while its cached End Level Theme label is correctly filtered. Directory case, mixed MP3/OGG variants, empty published albums and historical source spellings remain intact
+- Existing GQR-0017 source/tool/algorithm generation identity stays open, as do separately owned ranking/duration/projection/parser/serialization issues. No new finding or inherited savings: 266 findings, 252 remediations (32 DONE / 219 TODO / 1 DEFERRED), 955 terminal impact annotations
+- Exact report/range/source/context/check identities imported and verified. The metadata checker corrected two overstrict harness assumptions (directory-label case and optional-label publication); the policy summary display was corrected before its final successful run. No product changes
+- No native fingerprint/matching/media execution, AcoustID/network lookup, corpus generation, JVM/full build/device operation or deferred adversarial/security/malformed-media/resource-pressure probes. Concurrent audio/input changes and six historical quoted-patch whitespace warnings remain untouched
+- Next: GQ2-0294 workflow configuration, remaining coverage, ordinary GQI-0005/GQI-0008 evidence and final post-frozen/worktree reconciliation before accepted live fixes
+
+- Baseline reconciliation: concurrent commits advanced live HEAD to e833b7b337b9f216f5d3f98b6af43ec55bb93f07 while this batch was prepared; all five reports recorded that actual HEAD. Audio/input changes and earlier cleanup records are now committed externally. Assigned source/canonical asset hashes and previous 0281-0288 imports remain intact; only the three campaign documents are dirty. Current scoped git diff --check is clean; the six old quoted-patch warnings are part of committed history, not new warnings
+
+### Workflow and Gradle settings reconciliation, 2026-10-07
+
+- Completed GQ2-CHUNK-0294 and 0295: three complete workflows, all 49 assigned existing-workflow hunks and the five-line Gradle addition. GQ2 now 142 DONE / 503 TODO; GQ1 remains 818 DONE / 1 TODO
+- Actual local YAML parser accepts all nine workflows with unique keys; five local reusable-workflow calls resolve and 23 external action references have full immutable-shaped IDs. Git Bash -n accepts 44 step bodies, PS7 AST accepts eleven, and embedded APK Python passes parse/compile. Expressions were replaced by inert values; no action, shell body, hosted CI or package operation executed
+- Retain paired platform-specific desktop tests/packages, explicit external MSVC architecture selection, MinGW PDB production and separate three-ABI release-mode CI APK. Existing GQR-0004 optimized escort assertions and independent tool/bootstrap owners remain open. No speculative extraction of YAML into generic wrappers or original-engine saving
+- Reconcile GQF-0158/GQR-0145: maintained workflow/smoke/runtime chain now invokes the Python supervisor regression and propagates its exit code. Registration is implemented; update the stale missing-runner description. Remaining Windows/POSIX aggregate pass/fail/not-run validation is follow-up, including deferred supervisor/resource/security probes; no acceptance or closure is claimed
+- Actual JDK21 Properties.load returns nonTransitiveRClass=false and the other four current settings. Retain the documented startup R-class workaround; no APK startup evidence supports removing it. No Gradle task, build, install or signing operation
+- No new findings/remediations: 266 findings, 252 remediations (32 DONE / 219 TODO / 1 DEFERRED), 957 terminal impact annotations. Exact scopes, original/base/head attribution, current context and host parser identities imported; all assigned sources equal frozen head
+- Only the three campaign documents changed. Current live HEAD remains e833b7b337b9f216f5d3f98b6af43ec55bb93f07; scoped diff check is clean. No media/native/device/network execution or deferred adversarial/security/malformed-media/resource-pressure probes
+- Next: GQ2-0296 Android instrumentation checks onward, ordinary GQI-0005/GQI-0008 evidence and final post-frozen/worktree reconciliation before accepted live fixes
+
+### Switch to current-source fixes, 2026-10-07
+
+- Updated user objective supersedes coverage-first sequencing: work on accepted fixes now, revalidating old findings against current sources before editing
+- Remaining GQ2 coverage stays open; no additional survey is a prerequisite for fixing already processed code
+- Start GQR-0243: current paired reactor-pause/matcen-mode blocks still match exactly at 139 lines each. Share the implementation, keep native IDs/lengths/dispatch and desktop/Android behavior, add an ordinary actual-packet host integration check, validate paired builds and focused gameplay coverage
+- Preserve completed external repairs, concurrent changes and existing deferred-probe follow-up. Do not stage or commit
+
+### Shared gameplay options fix, 2026-10-07
+
+- Completed GQR-0243 / GQF-0257 after live-source revalidation at e833b7b337b9f216f5d3f98b6af43ec55bb93f07. Exact 139-line bodies still matched; shared implementation preserves every statement, with only the two receive functions exported to their existing callers
+- Applied reduction: 276 net lines in the two inherited multi.c files, 274 including the two inherited CMake registrations. New shared implementation/header and maintained packet integration fixture are included; no total-repository reduction claim
+- Both Windows game builds and Android native debug builds for all three ABIs pass. D1/D2 packet fixtures pass under Windows CTest and as actual Android executables; existing matcen state fixtures pass. Scoped quality and final diff check pass
+- Validation uses actual shared packet/matcen functions with captured network transport and engine adapters. No live UDP game, full APK UI test or native station-shutdown fix is claimed. Existing security-sensitive probe deferrals remain
+- Detailed immutable evidence imported as GQR-0243 shared gameplay options remediation 20261007. Canonical totals: 266 findings; 252 remediations, 33 DONE / 218 TODO / 1 DEFERRED. Coverage remains GQ1 818 DONE / 1 TODO and GQ2 142 DONE / 503 TODO
+- Next fix candidate: GQR-0249 shared paired codec deployment policy, rechecking live CMake blocks and actual build/install outputs. Remaining survey work is not a prerequisite for accepted fixes. Work remains unstaged and uncommitted
+
+### Shared codec deployment fix, 2026-10-07
+
+- Completed GQR-0249 / GQF-0263 after revalidating both live final 13-line native CMake blocks. New shared helper preserves the handmade loader comment, predicates, Debug path, six codecs, post-build copy and install destinations; a build COMMENT satisfies lint
+- Applied savings: 22 inherited build-file lines and four net repository lines after formatting. Combined with GQR-0243, the two fixes remove 296 net lines across the two inherited multi.c files and their CMake lists, including shared-source registrations. Gameplay-source savings remain 276; do not count the CMake reduction as 1996 gameplay code
+- Fresh original-versus-final Debug/Release/disabled CMake fixtures preserve every generated copy/install rule. Four actual D1/D2 Debug/Release game builds and their generated local install rules pass; all 24 copied and 24 installed codec DLLs hash to their configuration-specific vcpkg source
+- Android all-ABI native build passes and all three compile-command manifests remain byte-identical. Scoped formatting/lint and git diff --check pass. Initial general install reached an unrelated unbuilt TagLib SDK library; final validation intentionally covers generated game-directory runtime install rules, not a full dependency SDK or archive package
+- Imported immutable GQR-0249 shared codec deployment remediation 20261007. Canonical totals: 266 findings; 252 remediations, 34 DONE / 217 TODO / 1 DEFERRED. Coverage unchanged: GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Next: revalidate another accepted inherited-code cleanup against live source, considering paired RNG ownership GQR-0192 or prepared unused-reader/escort changes. Do not resume coverage-first sequencing. Deferred security-sensitive probes remain follow-up; no staging or commit
+
+### RNG prerequisite fix in progress, 2026-10-07
+
+- Current paired RNG implementation/annotation duplication GQR-0192 remains present. Revalidated its existing prerequisite BR-0361: d_srand_annotated still reads and updates state_after in separate arguments of one call
+- Actual new serialized-trace fixture reproduces state_after=0 after seed=1 in both native MSVC Debug layouts; optimized builds pass, confirming compiler/optimization-dependent observation rather than gameplay state divergence
+- First sequence the state getter before the trace call in both native files. Add maintained SIM/FX reseed/draw JSONL coverage for zero, one, high-bit and maximum valid seeds, retained counters and libc no-state behavior. Validate Debug/optimized Windows and Android outputs, paired builds and scoped quality before closing BR-0361
+- Keep GQR-0192 open for shared implementation/contract extraction after this prerequisite. Existing gameplay/codec fixes and all unrelated work remain intact
+
+### RNG reseed observation prerequisite completed, 2026-10-07
+
+- Fixed and archived existing BR-0361 before GQR-0192 consolidation. Reproduced both native MSVC Debug failures (seed 1 reported state_after 0); optimized baselines already passed. Each native wrapper now sequences the state getter before the trace call, adding two net inherited lines per game
+- New maintained actual RNG/trace JSONL integration test is registered for normal maths-library and libc builds. SIM/FX valid seeds 0, 1, high-bit and maximum preserve counters and correctly serialize before/after state; libc omits state fields
+- Six registered CTests and sixteen Windows/Android game/optimization/backend runs pass. All eight LCG traces match byte-for-byte across MSVC and Android Clang, D1/D2 and Debug/optimized builds. Libc traces agree within each platform; before/after ordinary draw events are unchanged
+- Both full Windows builds, all-ABI Android native builds, scoped quality and exact native edit-scope comparison pass. No full gameplay replay or deferred security-sensitive probe was run. Imported immutable evidence: BR-0361 RNG reseed observation remediation 20261007
+- GQF-0205 remains OPEN and GQR-0192 remains TODO for shared implementation/annotation ownership. This completed prerequisite does not close the consolidation or add a duplicate finding. General totals remain 266 findings and 252 remediations (34 DONE / 217 TODO / 1 DEFERRED); coverage unchanged
+- Resume GQR-0192 with the current native repair and maintained trace tests in place. Preserve per-game state, native legacy entry points, LCG/libc ABI, macro/default/opt-out expansion and D2-only diagnostic policy while reducing duplicated branch code. No staging or commit
+
+### Shared RNG implementation in progress, 2026-10-07
+
+- Revalidated current paired RNG files after BR-0361. Move their common implementation and branch annotation declarations to rng_shared_impl.h and rng_shared.h under the existing shared native directory
+- Keep native rand.c compilation entries and comments; D2 alone opts into its existing diagnostic code. An implementation header preserves d_rand/d_rand_stream inlining and return-address boundaries, independent per-game storage and original build wiring without extra adapter exports. This replaces the earlier separately compiled C-file sketch for a concrete compiler-behavior reason
+- Keep original D_RAND_MAX and legacy d_rand/d_srand declarations in each maths.h, with one shared contract include. Preserve BR-0361 sequencing and every existing backend/stream/counter behavior
+- Validate before/after preprocessed function bodies and C/C++ macro contracts, MSVC/Android Debug/optimized LCG/libc traces, maintained native tests, paired builds, scoped quality and actual inherited/net savings. Concurrent graphics and save/load work is outside this change
+
+### Shared RNG ownership completed, 2026-10-07
+
+- Completed GQR-0192 / GQF-0205 after current-source reconciliation and BR-0361 prerequisite repair. One shared implementation header is compiled through the existing native rand.c entries; D2 alone enables its prior diagnostic policy. Shared contract header owns new declarations/macros while original legacy declarations/comments remain native
+- Compiler-boundary decision: implementation inclusion keeps d_rand and d_rand_stream in one translation unit, preserving possible inlining and return-address/noinline behavior. No extra adapter exports, CMake registrations or new state sharing between games
+- Applied savings against the post-BR-0361 pre-extraction state: 523 inherited lines removed, 299 shared-header lines added, 224 net repository code lines removed. Four-file diff against the original attribution baseline shrinks from 505 to 60 changed lines, a 445-line reduction
+- Forty before/after compiler-body/caller-expansion comparisons and forty-eight actual C/C++ caller compilations pass. Eight actual MSVC diagnostic runs retain D2-only active unannotated SIM reports, and all sixteen Windows/Android Debug/optimized LCG/libc traces remain byte-identical to the validated prerequisite baselines
+- Ten maintained CTests, both full Windows builds, all three Android native ABI builds, scoped quality and diff check pass. Existing unrelated build warnings remain. No full gameplay replay, live UDP or deferred security-sensitive probe is claimed
+- Immutable evidence imported as GQR-0192 shared RNG ownership remediation 20261007. Totals: 266 findings, 252 remediations (35 DONE / 216 TODO / 1 DEFERRED). Coverage remains GQ1 818 DONE / 1 TODO; GQ2 142 DONE / 503 TODO
+- Concurrent graphics and save/load changes remain outside the cleanup ownership boundary. No staging or commit. Next: revalidate another accepted paired gameplay cleanup, such as GQR-0189 cooperative pickup rewards, while retaining the user-directed fixes-first sequence

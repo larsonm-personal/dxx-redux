@@ -1539,10 +1539,12 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (GameArg.GameLogSplit)
 				con_switch_log(NULL); // switch back to default log
 #endif
+#ifndef __ANDROID__
 #ifdef EDITOR
 			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
 #endif
 				restore_game_menus();
+#endif
 			Game_wind = NULL;
 			event_toggle_focus(0);
 			key_toggle_repeat(1);
@@ -1554,6 +1556,9 @@ int game_handler(window *wind, d_event *event, void *data)
 #endif
 			#ifdef __ANDROID__
 			coop_travel_reset();
+			/* Startup resume has no hidden menu; creating one before the old
+			 * window is unlinked would deactivate it twice and leak a pause */
+			restore_game_menus();
 			#endif
 			longjmp(LeaveEvents, 0);
 			break;

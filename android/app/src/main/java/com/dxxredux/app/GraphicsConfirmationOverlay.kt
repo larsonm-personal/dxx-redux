@@ -213,6 +213,15 @@ internal class GraphicsConfirmationOverlay(
         val state = JSONObject(stateText)
         phase = state.optString("phase")
         latestState = state
+        if (phase == "live") {
+            // Monitor immediate Video Info edits without taking its input or showing a modal
+            deadline = 0L
+            if (!tickScheduled) {
+                tickScheduled = true
+                handler.postDelayed(tick, 50L)
+            }
+            return
+        }
         if (phase == "failed" || (phase == "disabled" && active)) {
             recoverProcess("Could not save or recover graphics settings. Return to the launcher to retry recovery")
             return
@@ -317,14 +326,17 @@ internal class GraphicsConfirmationOverlay(
         object : Runnable {
             override fun run() {
                 tickScheduled = false
-                if (!active) return
+                if (!active && phase != "live") return
                 // Lifecycle transitions can delay this tick after the engine has already restored
                 update(readState())
-                if (!active) return
+                if (!active && phase != "live") return
                 val now = SystemClock.elapsedRealtime()
                 val applyDeadline = latestState.optLong("apply_deadline_ms")
-                if (phase in setOf("offering", "editing", "settling") && applyDeadline > 0 && now >= applyDeadline) {
-                    choose(false, "preview_apply_timeout")
+                if (phase in setOf("offering", "editing", "settling", "live") && applyDeadline > 0 &&
+                    now >= applyDeadline
+                ) {
+                    decide(latestState.getLong("trial_id"), false, "preview_apply_timeout")
+                    update(readState())
                 }
                 if (!restoring && deadline > 0L) {
                     val remaining = deadline - now

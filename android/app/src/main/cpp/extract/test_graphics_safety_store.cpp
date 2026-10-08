@@ -235,6 +235,18 @@ int main()
 	assert(graphics_safety_complete_restore(root, 103));
 	assert(accepted_is(baseline));
 
+	assert(graphics_safety_preview(root, &rejected, 105, current_pid(), 0));
+	assert(!graphics_safety_finish_safe_preview(root, 105, current_pid()));
+	assert(graphics_safety_preview(root, &baseline, 105, current_pid(), 0));
+	assert(!graphics_safety_finish_safe_preview(root, 106, current_pid()));
+	assert(graphics_safety_finish_safe_preview(root, 105, current_pid()));
+	assert(record().phase == GRAPHICS_SAFE_IDLE && accepted_is(baseline));
+	auto all_off = baseline;
+	for (int i = 0; i < 5; ++i) all_off.values[i] = 0;
+	assert(graphics_safety_preview(root, &all_off, 106, current_pid(), 0));
+	assert(graphics_safety_finish_safe_preview(root, 106, current_pid()));
+	assert(record().phase == GRAPHICS_SAFE_IDLE && accepted_is(baseline));
+
 	/* An abandoned editor rolls back just like an abandoned confirmation */
 	assert(graphics_safety_preview(root, &rejected, 104, current_pid(), 0));
 	auto abandoned_preview = nlohmann::json::parse(read("graphics_safety.json"));
