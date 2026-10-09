@@ -1,0 +1,66 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+def toolVersions = new Properties()
+toolVersions.load(new FileInputStream(rootProject.file('get_deps/tool_versions.conf')))
+
+kotlin {
+    jvmToolchain(21)
+}
+
+// Compile the actual proxy with only Android logging replaced by host test sinks
+sourceSets.test.kotlin {
+    srcDir '../app/src/main/java'
+    include 'com/dxxredux/app/multiplayer/LocalhostProxy.kt'
+    include 'com/dxxredux/app/multiplayer/ProxyDiagnostics.kt'
+    include 'com/dxxredux/app/multiplayer/NetworkConstants.kt'
+    include '**/ProxyFailureTest.kt'
+    include '**/NetLog.kt'
+    include '**/Log.kt'
+    include '**/HistoricalLocalhostProxy.kt'
+    exclude { it.file == rootProject.file('app/src/main/java/com/dxxredux/app/multiplayer/NetLog.kt') }
+}
+
+def historicalDir = layout.buildDirectory.dir('generated/historical')
+def compareHistory = providers.gradleProperty('compareProxyHistory').getOrElse('false').toBoolean()
+if (compareHistory) sourceSets.test.kotlin.srcDir historicalDir
+tasks.register('prepareHistoricalProxy') {
+    outputs.dir historicalDir
+    doLast {
+        def output = providers.exec {
+            workingDir rootProject.projectDir.parentFile
+            commandLine 'git', 'show', 'b2e5c617b42df337d4d6d678a4fff935a5593b56:android/app/src/main/java/com/dxxredux/app/multiplayer/LocalhostProxy.kt'
+        }.standardOutput.asText.get()
+        // Only change package/imports; retain historical exception and coroutine behavior
+        def source = output.replace(
+            'package com.dxxredux.app.multiplayer',
+            'package com.dxxredux.app.multiplayer.historical\nimport com.dxxredux.app.multiplayer.NetworkConstants'
+        )
+        source += '''
+// Test entry point outside the historical implementation
+fun createHistoricalProxy(scope: CoroutineScope, socket: DatagramSocket, localPort: Int, remotePort: Int): AutoCloseable {
+    val proxy = LocalhostProxy(scope, socket)
+    proxy.addPeer(PeerProxyConfig(0, localPort, InetSocketAddress("127.0.0.1", remotePort), false))
+    return AutoCloseable { proxy.shutdown() }
+}
+'''
+        def target = historicalDir.get().file('HistoricalLocalhostProxy.kt').asFile
+        target.parentFile.mkdirs()
+        target.setText(source, 'UTF-8')
+    }
+}
+if (compareHistory) tasks.named('compileTestKotlin') { dependsOn 'prepareHistoricalProxy' }
+
+dependencies {
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
+    testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
+}
+
+tasks.withType(Test).configureEach {
+    useJUnit()
+    maxParallelForks = 1
+    systemProperty 'dxx.compareProxyHistory', compareHistory
+    timeout = java.time.Duration.ofMinutes(2)
+    testLogging { events 'passed', 'failed'; showStandardStreams = true }
+}

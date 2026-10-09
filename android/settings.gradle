@@ -37,3 +37,4 @@ rootProject.name = "dxx-redux"
 include ':app'
 include ':mission-metadata-core'
 include ':mission-metadata-cli'
+include ':proxy-tests'

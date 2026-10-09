@@ -13,5 +13,5 @@ $ErrorActionPreference = 'Stop'
 
 $androidDir = Split-Path $PSScriptRoot
 $gradleScript = Resolve-RegressionGradleWrapper -AndroidDir $androidDir
-& $gradleScript -p $androidDir :app:testDebugUnitTest --console=plain --no-daemon
+& $gradleScript -p $androidDir :app:testDebugUnitTest :proxy-tests:test --console=plain --no-daemon
 exit $LASTEXITCODE

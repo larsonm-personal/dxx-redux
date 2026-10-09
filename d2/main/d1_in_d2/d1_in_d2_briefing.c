@@ -342,7 +342,7 @@ static int check_text_pos(briefing *br)
 	if (br->text_x > br->screen->text_ulx + br->screen->text_width)
 	{
 		br->text_x = br->screen->text_ulx;
-		br->text_y += br->screen->text_uly;
+		br->text_y += FSPACY(5)+FSPACY(5)*3/5;
 	}
 
 	if (br->text_y > br->screen->text_uly + br->screen->text_height)
@@ -1056,6 +1056,8 @@ static int briefing_handler(window *wind, d_event *event, briefing *br)
 #endif
 
 		case EVENT_WINDOW_DRAW:
+		{
+			const briefing_font_scale saved_font = briefing_begin_text(window_get_canvas(wind));
 			gr_set_current_canvas(NULL);
 			gr_clear_canvas(BM_XRGB(0,0,0));
 			gr_set_current_canvas(window_get_canvas(wind));
@@ -1070,6 +1072,7 @@ static int briefing_handler(window *wind, d_event *event, briefing *br)
 						break;
 				}
 			if (br->failed) {
+				briefing_end_text(saved_font);
 				window_close(wind);
 				return 1;
 			}
@@ -1094,7 +1097,9 @@ static int briefing_handler(window *wind, d_event *event, briefing *br)
 				flash_cursor(br, br->flashing_cursor);
 			else if (br->flashing_cursor)
 				gr_printf(br->text_x, br->text_y, "_");
+			briefing_end_text(saved_font);
 			break;
+		}
 
 		case EVENT_WINDOW_CLOSE:
 			gr_set_current_canvas(NULL);

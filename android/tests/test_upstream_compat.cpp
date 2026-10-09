@@ -9520,6 +9520,7 @@ static struct {
 	int pages;
 	bool complete;
 	bool visited;
+	bool text_geometry = false;
 	int expected_x = 0, expected_y = 0, expected_width = 640, expected_height = 480;
 	nlohmann::json frames = nlohmann::json::array();
 } Briefing_trace;
@@ -9545,13 +9546,47 @@ static int briefing_trace_event(d_event *event)
 		window_send_event(wind, reinterpret_cast<d_event *>(&key));
 		for (int frame = 0; frame < 3; ++frame) {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			const float saved_font_x = FNTScaleX, saved_font_y = FNTScaleY;
 			window_send_event(wind, &draw);
+			require(FNTScaleX == saved_font_x && FNTScaleY == saved_font_y, "briefing restores menu and HUD font scaling after drawing");
 			require(window_exists(wind), "valid briefing remains open while drawing");
 			bytes pixels(SWIDTH * SHEIGHT * 3);
 			glPixelStorei(GL_PACK_ALIGNMENT, 1);
 			glReadBuffer(GL_BACK);
 			glReadPixels(0, 0, SWIDTH, SHEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 			require(glGetError() == GL_NO_ERROR, "briefing draws with valid graphics resources");
+			if (Briefing_trace.text_geometry) {
+				int min_x = SWIDTH, max_x = -1;
+				std::vector<int> row_starts;
+				bool previous_row = false;
+				for (int y = 0; y < SHEIGHT; ++y) {
+					bool row = false;
+					for (int x = 0; x < SWIDTH; ++x) {
+						const auto offset = ((SHEIGHT - 1 - y) * SWIDTH + x) * 3;
+						if (!(pixels[offset] || pixels[offset + 1] || pixels[offset + 2])) continue;
+						row = true;
+						min_x = (std::min) (min_x, x);
+						max_x = (std::max) (max_x, x);
+					}
+					if (row && !previous_row) row_starts.push_back(y);
+					previous_row = row;
+				}
+				// Ten M glyphs on each of two lines, over a solid black backdrop
+				const int glyph_width = GAME_FONT->ft_widths['M' - GAME_FONT->ft_minchar];
+				const float scale_x = canvas.bm_w / (320.0f * (GAME_FONT->ft_w / 7));
+				const auto *glyph = GAME_FONT->ft_chars['M' - GAME_FONT->ft_minchar];
+				int ink_left = glyph_width, ink_right = -1;
+				for (int y = 0; y < GAME_FONT->ft_h; ++y)
+					for (int x = 0; x < glyph_width; ++x)
+						if (glyph[y * ((glyph_width + 7) / 8) + x / 8] & (0x80 >> (x % 8))) {
+							ink_left = (std::min) (ink_left, x);
+							ink_right = (std::max) (ink_right, x);
+						}
+				const int expected_width = 9 * static_cast<int>(glyph_width * scale_x) + static_cast<int>((ink_right - ink_left + 1) * scale_x);
+				require(std::abs(max_x - min_x + 1 - expected_width) <= 2, "briefing glyphs follow canvas width, including fractional and non-square pixels");
+				require(row_starts.size() == 2 && std::abs(row_starts[1] - row_starts[0] - canvas.bm_h / 30) <= 1,
+				        "briefing line spacing follows canvas height");
+			}
 			for (int y = 0; y < SHEIGHT; ++y)
 				for (int x = 0; x < SWIDTH; ++x) {
 					const int top_y = SHEIGHT - 1 - y;
@@ -9723,12 +9758,33 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 	set_default_handler(briefing_trace_event);
 #endif
 	run("after-failures", "owned.tex", 2, 1, false);
+	const std::string wrap_script = "$S15\n$C2\n" + std::string(160, 'M') + "\n$S99\n";
+	write_fixture("wrap.tex", bytes(wrap_script.begin(), wrap_script.end()));
+	run("overflow", "wrap.tex", 9, 1, true);
+	// Text geometry is checked independently of native/imported pixel parity
+	const std::string metrics_script = "$S6\n$C2\nMMMMMMMMMM\nMMMMMMMMMM\n$S99\n";
+	write_fixture("metrics.tex", bytes(metrics_script.begin(), metrics_script.end()));
+	require(pcx_read_bitmap("moon01.pcx", &background, BM_LINEAR, palette) == PCX_ERROR_NONE, "read backdrop for text geometry");
+	int black = -1;
+	for (int i = 0; i < 256; ++i)
+		if (!(palette[i * 3] || palette[i * 3 + 1] || palette[i * 3 + 2])) {
+			black = i;
+			break;
+		}
+	require(black >= 0, "briefing palette contains black");
+	std::memset(background.bm_data, black, background.bm_rowsize * background.bm_h);
+	require(pcx_write_bitmap("moon01.pcx", &background, palette) == PCX_ERROR_NONE, "write black text geometry backdrop");
+	Briefing_trace.text_geometry = true;
+	run("text-standard", "metrics.tex", 2, 1, true);
 	// Exercise the actual backdrop, text and polygon robot on different displays
 	struct aspect_case {
 		const char *name;
 		int width, height, aspect_x, aspect_y, x, y, canvas_width, canvas_height;
 	};
 	for (const auto &test : {
+	         aspect_case{ "stretched-buffer", 640, 480, 9, 16, 80, 0, 480, 480 },
+	         aspect_case{ "phone-buffer", 640, 480, 9, 20, 128, 0, 384, 480 },
+	         aspect_case{ "full-hd", 1920, 1080, 9, 16, 240, 0, 1440, 1080 },
 	         aspect_case{ "wide", 1280, 720, 9, 16, 160, 0, 960, 720 },
 	         aspect_case{ "tall", 720, 1280, 16, 9, 0, 370, 720, 540 },
 	         aspect_case{ "non-square-pixels", 1280, 720, 3, 4, 0, 0, 1280, 720 } }) {
@@ -9740,11 +9796,46 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 		Briefing_trace.expected_y = test.y;
 		Briefing_trace.expected_width = test.canvas_width;
 		Briefing_trace.expected_height = test.canvas_height;
+		Briefing_trace.text_geometry = false;
+		require(PHYSFS_delete("moon01.pcx"), "restore authored backdrop for aspect coverage");
 		run(test.name, "owned.tex", 2, 2, false);
+		Briefing_trace.text_geometry = true;
+		require(pcx_write_bitmap("moon01.pcx", &background, palette) == PCX_ERROR_NONE, "restore black text geometry backdrop");
+		const std::string text_name = std::string("text-") + test.name;
+		run(text_name.c_str(), "metrics.tex", 2, 1, true);
 	}
-	set_default_handler(nullptr);
 	const std::string result = Briefing_trace.frames.dump(2) + "\n";
 	write_fixture("briefing.json", bytes(result.begin(), result.end()));
+#ifdef DXX_BUILD_DESCENT_II
+	if (d2_directory) {
+		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
+		require(PHYSFS_mount(d2_hog.c_str(), nullptr, 0), "mount ordinary D2 briefing resources");
+		GameArg.GfxHiresFNTAvailable = 1;
+		char d2_mission[] = "d2";
+		require(load_mission_by_name(d2_mission) && !d1_in_d2_use_d1_gameplay(), "select ordinary D2 briefing control");
+		require(GAME_FONT->ft_h == 10, "D2 briefing control uses high-resolution font");
+		const std::string d2_script = "$S2\n$D0 moon01.pcx 2 2 10 10 300 170\n$Zmoon01.pcx\n$C2\nMMMMMMMMMM\nMMMMMMMMMM\n$S99\n";
+		write_fixture("metrics-d2.tex", bytes(d2_script.begin(), d2_script.end()));
+		for (const auto &test : {
+		         aspect_case{ "d2-text-standard", 640, 480, 3, 4, 0, 0, 640, 480 },
+		         aspect_case{ "d2-text-phone-buffer", 640, 480, 9, 20, 128, 0, 384, 480 },
+		         aspect_case{ "d2-text-full-hd", 1920, 1080, 9, 16, 240, 0, 1440, 1080 } }) {
+			GameCfg.AspectX = test.aspect_x;
+			GameCfg.AspectY = test.aspect_y;
+			Game_screen_mode = SM(test.width, test.height);
+			require(gr_set_mode(Game_screen_mode) == 0, "resize ordinary D2 briefing display");
+			Briefing_trace.expected_x = test.x;
+			Briefing_trace.expected_y = test.y;
+			Briefing_trace.expected_width = test.canvas_width;
+			Briefing_trace.expected_height = test.canvas_height;
+			run(test.name, "metrics-d2.tex", 2, 1, true);
+		}
+	}
+#endif
+	Briefing_trace.text_geometry = false;
+	require(PHYSFS_delete("moon01.pcx"), "remove text geometry backdrop");
+	gr_free_bitmap_data(&background);
+	set_default_handler(nullptr);
 	std::puts("Native briefing render/window trace passed");
 }
 

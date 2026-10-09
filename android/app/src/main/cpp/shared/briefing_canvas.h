@@ -2,10 +2,39 @@
 #define DXX_BRIEFING_CANVAS_H
 
 #include "gr.h"
+#include "gamefont.h"
 #include "android_log.h"
 #ifdef ANDROID
 #include "android_surface_lifecycle.h"
 #endif
+
+typedef struct briefing_font_scale {
+	float x, y;
+} briefing_font_scale;
+
+static inline briefing_font_scale briefing_begin_text(const grs_canvas *canvas)
+{
+	const briefing_font_scale saved = { FNTScaleX, FNTScaleY };
+#if defined(OGL) || defined(ANDROID)
+	const int font_x = GAME_FONT->ft_w >= 7 ? GAME_FONT->ft_w / 7 : 1;
+	const int font_y = GAME_FONT->ft_h >= 5 ? GAME_FONT->ft_h / 5 : 1;
+	/* Preserve the 640x480 presentation: 2x low-res or 1x high-res fonts
+	 * Scale each axis with the canvas to include its physical pixel correction
+	 * Use the same font units as FSPACX/FSPACY for tabs and line spacing */
+	FNTScaleX = (float) canvas->cv_bitmap.bm_w / (320 * font_x);
+	FNTScaleY = (float) canvas->cv_bitmap.bm_h / (240 * font_y);
+#else
+	/* The desktop software font renderer does not support scaling */
+	(void) canvas;
+#endif
+	return saved;
+}
+
+static inline void briefing_end_text(briefing_font_scale saved)
+{
+	FNTScaleX = saved.x;
+	FNTScaleY = saved.y;
+}
 
 static inline fix briefing_pixel_aspect(void)
 {

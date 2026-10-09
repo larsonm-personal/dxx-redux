@@ -60,6 +60,8 @@ class LocalhostProxy(
     private val allowDynamicPeers: Boolean = false,
     private val onFailure: (String) -> Unit = {},
 ) {
+    private val diagnosticId = ProxyDiagnostics.nextId()
+    private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId")
     private val peerProxies = mutableListOf<PeerProxy>()
     private val jobs = mutableListOf<Job>()
     private val stopped = AtomicBoolean(false)
@@ -79,6 +81,9 @@ class LocalhostProxy(
     private val lateJoinProbeActive = AtomicBoolean(false)
 
     init {
+        diagnostics.event(
+            "created dynamic=$allowDynamicPeers shared=[${sharedRealSocket?.let(ProxyDiagnostics::socketState)}]",
+        )
         if (sharedRealSocket != null) {
             launchWorker("shared receiver") { sharedReceiveLoop() }
         }
@@ -88,6 +93,7 @@ class LocalhostProxy(
     fun start() {
         check(!stopped.get()) { "Proxy is closed" }
         started = true
+        diagnostics.event("started peers=${peerProxies.size}")
         jobs.forEach { it.start() }
     }
 
@@ -105,6 +111,7 @@ class LocalhostProxy(
                     throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "Proxy $name failed", e)
+                    diagnostics.failure("worker $name", sharedRealSocket, e)
                     if (!stopped.get() && failureReported.compareAndSet(false, true)) {
                         shutdown()
                         onFailure("Network forwarding stopped: ${e.message ?: name}. Return to the lobby and retry.")
@@ -130,7 +137,7 @@ class LocalhostProxy(
 
         val proxy =
             try {
-                PeerProxy(peerConfig, realSocket, ownsRealSocket)
+                PeerProxy(peerConfig, realSocket, ownsRealSocket, diagnosticId)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to bind port ${peerConfig.localPort} for slot ${peerConfig.peerSlot}: ${e.message}")
                 if (ownsRealSocket) realSocket.close()
@@ -176,7 +183,7 @@ class LocalhostProxy(
             )
         val proxy =
             try {
-                PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false)
+                PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false, diagnosticId = diagnosticId)
             } catch (e: java.net.BindException) {
                 Log.e(TAG, "Host-mode: failed to bind port $localPort for dynamic peer $realAddr: ${e.message}")
                 throw e
@@ -202,7 +209,7 @@ class LocalhostProxy(
 
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
-                socket.receive(pkt)
+                diagnostics.receive("shared-network-receive", socket, pkt)
                 val senderKey = "${pkt.address.hostAddress}:${pkt.port}"
 
                 // Direct peer: match by source address
@@ -239,7 +246,7 @@ class LocalhostProxy(
                             rb.putShort(PROBE_FLAG_RESPONSE)
                             val dest = InetSocketAddress(pkt.address, pkt.port)
                             try {
-                                socket.send(DatagramPacket(resp, PROBE_SIZE, dest))
+                                diagnostics.send("probe-response-send", socket, DatagramPacket(resp, PROBE_SIZE, dest))
                             } catch (_: Exception) {
                             }
                             continue
@@ -304,7 +311,7 @@ class LocalhostProxy(
                     bb.putInt(token)
                     bb.putShort(0) // seq
                     bb.putShort(PROBE_FLAG_REQUEST) // flags
-                    socket.send(DatagramPacket(buf, PROBE_SIZE, addr))
+                    diagnostics.send("probe-send", socket, DatagramPacket(buf, PROBE_SIZE, addr))
                 } catch (e: Exception) {
                     Log.w(TAG, "Late-join blind probe failed to $addrStr: ${e.message}")
                 }
@@ -318,8 +325,10 @@ class LocalhostProxy(
         if (stopped.getAndSet(true)) return
         val trace = Throwable("shutdown caller").stackTraceToString()
         Log.w(TAG, "Proxy shutdown called, peers=${peerProxies.size} jobs=${jobs.size}\n$trace")
+        diagnostics.event("shutdown peers=${peerProxies.size} jobs=${jobs.size}\n$trace")
+        sharedRealSocket?.let { diagnostics.closing("proxy shutdown", it) }
         // C10: close sockets first to unblock receive() calls, then cancel jobs
-        for (proxy in peerProxies) proxy.close()
+        for (proxy in peerProxies) proxy.close("proxy shutdown")
         sharedRealSocket?.close()
         for (job in jobs) job.cancel()
         jobs.clear()
@@ -327,6 +336,7 @@ class LocalhostProxy(
         directPeersByAddr.clear()
         relayPeersBySlot.clear()
         Log.i(TAG, "Proxy shutdown complete")
+        diagnostics.event("shutdown complete")
     }
 }
 
@@ -352,9 +362,20 @@ private class PeerProxy(
     private val config: PeerProxyConfig,
     private val realSocket: DatagramSocket,
     private val ownsRealSocket: Boolean,
+    diagnosticId: Long,
 ) {
     private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
     private val localSocket = DatagramSocket(config.localPort, loopback)
+    private val diagnostics = ProxyDiagnostics("proxy=$diagnosticId peer=${config.peerSlot} remote=${config.realAddr}")
+
+    init {
+        diagnostics.event(
+            "peer created relay=${config.isRelay} owns_real=$ownsRealSocket " +
+                "engine=[${ProxyDiagnostics.socketState(
+                    localSocket,
+                )}] network=[${ProxyDiagnostics.socketState(realSocket)}]",
+        )
+    }
 
     @Volatile
     var packetsSent: Long = 0L
@@ -378,23 +399,31 @@ private class PeerProxy(
 
     suspend fun run() {
         kotlinx.coroutines.coroutineScope {
-            suspend fun forward(block: suspend () -> Unit) {
+            suspend fun forward(
+                name: String,
+                block: suspend () -> Unit,
+            ) {
                 try {
                     block()
                     throw IOException("Peer ${config.peerSlot} forwarding loop stopped")
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    diagnostics.failure("worker $name", realSocket, e)
+                    throw e
                 } finally {
                     // Unblock sibling receivers before coroutineScope waits for them
-                    close()
+                    close("worker $name finished")
                 }
             }
             // local -> real: engine sends to our local port, we forward to peer
-            launch { forward { forwardLocalToReal() } }
+            launch { forward("local-to-real") { forwardLocalToReal() } }
             // real -> local: only when we own the socket (non-shared mode)
             if (ownsRealSocket) {
-                launch { forward { forwardRealToLocal() } }
+                launch { forward("real-to-local") { forwardRealToLocal() } }
             }
             // NAT keepalive (direct and relay)
-            launch { forward { keepalive() } }
+            launch { forward("keepalive") { keepalive() } }
         }
     }
 
@@ -406,6 +435,7 @@ private class PeerProxy(
         data: ByteArray,
         length: Int,
     ) {
+        diagnostics.received()
         try {
             val payload: ByteArray
             val payloadLen: Int
@@ -417,7 +447,11 @@ private class PeerProxy(
                 payloadLen = length
                 payload = data.copyOfRange(0, length)
             }
-            localSocket.send(DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)))
+            diagnostics.send(
+                "engine-delivery-send",
+                localSocket,
+                DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)),
+            )
             packetsReceived++
             bytesReceived += payloadLen
             if (payloadLen > 0) {
@@ -450,7 +484,7 @@ private class PeerProxy(
         val pkt = DatagramPacket(buf, buf.size)
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
-                localSocket.receive(pkt)
+                diagnostics.receive("engine-receive", localSocket, pkt)
                 packetsSent++
                 bytesSent += pkt.length
                 if (packetsSent <= 5 || (packetsSent <= 100 && packetsSent % 20 == 0L) || packetsSent % 500 == 0L) {
@@ -470,9 +504,13 @@ private class PeerProxy(
                                 put(config.relayDestSlot.toByte())
                                 put(pkt.data, 0, pkt.length)
                             }.array()
-                    realSocket.send(DatagramPacket(wrapped, wrapped.size, config.realAddr))
+                    diagnostics.send(
+                        "gameplay-send",
+                        realSocket,
+                        DatagramPacket(wrapped, wrapped.size, config.realAddr),
+                    )
                 } else {
-                    realSocket.send(DatagramPacket(pkt.data, pkt.length, config.realAddr))
+                    diagnostics.send("gameplay-send", realSocket, DatagramPacket(pkt.data, pkt.length, config.realAddr))
                 }
             } catch (e: java.net.SocketException) {
                 val msg = e.message ?: ""
@@ -494,7 +532,7 @@ private class PeerProxy(
         val engineAddr = InetSocketAddress(loopback, ENGINE_PORT)
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
-                realSocket.receive(pkt)
+                diagnostics.receive("network-receive", realSocket, pkt)
                 val payload: ByteArray
                 val payloadLen: Int
                 if (config.isRelay) {
@@ -506,7 +544,7 @@ private class PeerProxy(
                     payloadLen = pkt.length
                     payload = pkt.data.copyOfRange(0, pkt.length)
                 }
-                localSocket.send(DatagramPacket(payload, payloadLen, engineAddr))
+                diagnostics.send("engine-delivery-send", localSocket, DatagramPacket(payload, payloadLen, engineAddr))
                 packetsReceived++
                 bytesReceived += payloadLen
                 // Log UPID breakdown periodically to diagnose selective forwarding issues
@@ -551,7 +589,7 @@ private class PeerProxy(
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
-                realSocket.send(DatagramPacket(ping, ping.size, config.realAddr))
+                diagnostics.send("keepalive-send", realSocket, DatagramPacket(ping, ping.size, config.realAddr))
                 keepaliveCount++
                 Log.i(TAG, "keepalive slot=${config.peerSlot} #$keepaliveCount sent=$packetsSent recv=$packetsReceived")
             } catch (e: java.net.SocketException) {
@@ -566,7 +604,8 @@ private class PeerProxy(
         Log.w(TAG, "keepalive loop EXITED slot=${config.peerSlot} count=$keepaliveCount")
     }
 
-    fun close() {
+    fun close(reason: String) {
+        diagnostics.closing(reason, localSocket, realSocket)
         localSocket.close()
         if (ownsRealSocket) {
             realSocket.close()
