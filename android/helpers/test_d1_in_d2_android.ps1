@@ -5,6 +5,7 @@ param(
     [switch]$Reticles,
     [switch]$LauncherButtons,
     [switch]$SoundCheck,
+    [switch]$SharewareSmoke,
     [switch]$WeaponArt,
     [switch]$Guidebot,
     [switch]$EditionAdmission,
@@ -196,6 +197,23 @@ foreach ($dataFile in $dataFiles) {
 }
 $steps = @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json |
         Where-Object { -not $_._info })
+if ($SharewareSmoke) {
+    if ($GameLog -or $Reticles -or $LauncherButtons -or $SoundCheck -or $WeaponArt -or $Guidebot -or $EditionAdmission -or $Metadata -or $RewindSourceCase -or $NativeD1) {
+        throw 'SharewareSmoke requires its own gameplay run'
+    }
+    # Stop before the registered campaign's fixture-specific route
+    $firstTravelStep = 0
+    while ($firstTravelStep -lt $steps.Count -and $steps[$firstTravelStep].action -ne 'pose_view') { $firstTravelStep++ }
+    $steps = @($steps[0..($firstTravelStep - 1)])
+    foreach ($step in $steps) {
+        if ($step.expect -and $step.expect.PSObject.Properties['asset_trace.d1_compat.sound_files']) {
+            $step.expect.'asset_trace.d1_compat.sound_files' = 70
+            $step.expect.'asset_trace.d1_compat.robot_models' = @{ gt = 0 }
+        }
+    }
+    $steps += @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_shareware_restore.jsonc') -Raw | ConvertFrom-Json |
+            Where-Object { -not $_._info })
+}
 if ($Reticles) {
     # Exercise every reticle and grow/shrink the Circle/Dot caches in one game session
     $steps = @($steps[0..11])
@@ -337,12 +355,12 @@ try {
         Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', $deviceFile, "files/imported/sets/default/$($name.ToLowerInvariant())") | Out-Null
         Invoke-Device -Arguments @('shell', 'rm', $deviceFile) | Out-Null
     }
-    if ($GameLog -or $Guidebot) {
+    if ($GameLog -or $Guidebot -or $SharewareSmoke) {
         # DebugLogCategory and EnginePreferencesPage keys in the fresh installation only
         $preferences = Join-Path $outputDirectory 'dxx_prefs.xml'
         $preferenceLines = @('<?xml version="1.0" encoding="utf-8"?>', '<map>')
         if ($GameLog) { $preferenceLines += '<boolean name="dlog_game logs_enabled" value="true" />' }
-        if ($Guidebot) {
+        if ($Guidebot -or $SharewareSmoke) {
             $preferenceLines += '<boolean name="rewind_support_enabled" value="true" />'
             $preferenceLines += '<int name="rewind_target_seconds" value="10" />'
         }
@@ -485,6 +503,7 @@ try {
     elseif ($SoundCheck) { Write-Output "$testLabel Android First Strike sound conversion checks passed" }
     elseif ($RewindSourceCase) { Write-Output "Android rewind source recovery evidence: $outputDirectory" }
     elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore, memory rewind and D1/D2/D1 lifecycle' }
+    elseif ($SharewareSmoke) { Write-Output 'PASS: Android PC shareware startup, movement, laser firing, sound playback, file restore and memory rewind in D2' }
     elseif ($Metadata) { Write-Output "$testLabel imported-D1 route-cache publication and adoption passed" }
     elseif ($LauncherButtons) { Write-Output "Launcher buttons, missing-file dialogs, music source visibility and D1-only D2 gameplay passed" }
     else { Write-Output "$testLabel Android First Strike interaction and level-transition checks passed" }

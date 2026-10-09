@@ -165,9 +165,7 @@ internal fun isDirectoryImportCandidateName(
     allGameFileNames: Set<String>,
 ): Boolean {
     val lowercaseName = name.lowercase()
-    return lowercaseName.endsWith(".zip") ||
-        lowercaseName.endsWith(".7z") ||
-        lowercaseName.endsWith(".rar") ||
+    return GameFileFormats.isImportArchive(name) ||
         lowercaseName.endsWith(".cue") ||
         lowercaseName.endsWith(".iso") ||
         lowercaseName.endsWith(".bin") ||

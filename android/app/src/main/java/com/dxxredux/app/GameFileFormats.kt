@@ -334,6 +334,8 @@ object GameFileFormats {
 
     fun isDxa(filename: String): Boolean = extensionOf(filename) == "dxa"
 
+    fun isImportArchive(filename: String): Boolean = extensionOf(filename) in setOf("zip", "7z", "rar", "sit", "hqx")
+
     fun stripDxaSuffix(filename: String): String {
         val dotIndex = filename.lastIndexOf('.')
         return if (dotIndex >= 0 && isDxa(filename)) filename.substring(0, dotIndex) else filename

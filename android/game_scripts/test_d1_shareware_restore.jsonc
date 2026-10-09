@@ -1,0 +1,43 @@
+[
+    {
+        "_info": {
+            "games": ["d2"],
+            "_standalone": false,
+            "_owner": "test_d1_in_d2_standalone",
+            "description": "PC shareware file restore and natural memory rewind after gameplay",
+        },
+    },
+    { "action": "set_debug", "field": "clear_robots", "value": "true" },
+    { "action": "pose_view", "segment": 0, "x": 0, "y": 0, "z": 0 },
+    { "action": "wait_ms", "ms": 1000 },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_save", "post_delay_ms": 750 },
+    { "action": "pose_view", "segment": 0, "x": 0, "y": 0, "z": 10 },
+    { "action": "assert", "expect": { "position.z": { "gt": 9 } } },
+    { "action": "set_debug", "field": "android_game_request", "value": "quick_load" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": { "position.z": { "lt": 1 }, "game_window_is_front": true, "time_paused": false },
+    },
+    { "action": "wait_ms", "ms": 15000 },
+    { "action": "pose_view", "segment": 0, "x": 0, "y": 0, "z": 10 },
+    { "action": "assert", "expect": { "position.z": { "gt": 9 } } },
+    { "action": "meta_action", "id": 1035 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": { "position.z": { "lt": 1 }, "game_window_is_front": true, "time_paused": false },
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "current_level_num": 1,
+            "player_dead": false,
+            "asset_trace.mode": "d1-in-d2",
+            "asset_trace.d1_compat.sound_files": 70,
+            "asset_trace.d1_compat.sounds_active": true,
+            "asset_trace.d1_compat.robot_assets_active": true,
+        },
+    },
+    { "action": "introspect" },
+]

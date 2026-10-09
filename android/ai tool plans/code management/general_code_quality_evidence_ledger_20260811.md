@@ -95224,3 +95224,165 @@ Disposition: GQF-0205 FIXED; GQR-0192 DONE. Historical impact score 71 (12/35/7/
 </details>
 
 <!-- END IMPORT: GQR-0128 graphics rollback original ownership remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0148 extraction failure diagnostic remediation 20261008 SHA256:47d43b4bf3dcbc6b5f1398f6a51dbd2c824919c3cbe8ab20023a318bb597d3c4 -->
+
+## GQR-0148 extraction failure diagnostic remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0148-report.md`
+- Imported SHA-256: `47d43b4bf3dcbc6b5f1398f6a51dbd2c824919c3cbe8ab20023a318bb597d3c4`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0148 extraction failure diagnostic remediation 20261008
+
+- Fresh canonical/current-source revalidation: navigation loop removed but final not-in-game diagnostic still interpolated undefined maxNav. Under strict mode this masks primary failure; ordinary mode reports invented empty navigation context
+- Replace exactly one diagnostic line with current launch game and exact expected level after automation. Existing actual observed screen/in_game/menu/subtitle/items diagnostics and Exit-Test1/fail/menu_timeout/files/classification evidence remain byte-identical. No change to existing success or level-mismatch acceptance
+- Extend existing registered host extraction workflow fixture, selecting the actual production post-automation IfStatementAst uniquely. Execute its full exact source extent under Latest strict mode in isolated scope; stub only diagnostic and exit sinks. No copied conditional logic or fabricated device/game result claim
+- Actual original runner baseline fails precisely on undefined maxNav before intended exit. Final complete existing maintained workflow fixture exits0, with8 distinct actual branch traces: both games, absent/empty/populated menu failures and ordinary in-game success. Failure checks verify exact primary exit/status/step/files/classification, current game/expected level/observed state and full populated-menu diagnostics; success checks retain normal PASS without failure exit
+- Complete existing fixture also executes its prior ordinary metadata/automation generation, transport classification and provenance/update controls; all pass. Tiny source-name/spec controls do not decode media. No deferred malformed-media/security/resource-pressure suite or device failure injection
+- Scoped PowerShell fix/check quality and exact normalized source reconstruction pass: only one product diagnostic line and one fixture insertion. Two formatter-introduced trailing spaces removed, complete fixture rerun and final check passes. Every other prior runner/fixture byte preserved, including concurrent installer/import changes. User independently advanced HEAD during work to643e4cdd; current snapshots rather than old HEAD diff establish scope
+- Both automation/master catalog fixtures pass with existing test registration; no new runner/registration or timeout. No native/Kotlin changes require rebuilding games/APK. No device, external service, staging or commit action; zero inherited engine edits/minimization saving
+- GQR-0148 DONE/GQF-0161 FIXED; totals79 DONE/172 TODO/1 DEFERRED. Broad cleanup remains active
+
+## Exact source and authoritative evidence
+
+```json
+{
+  "head_at_recording": "643e4cdd882bedacd198c3b997dbcb39b62ec08a",
+  "source_sha256": {
+    "android\\tests\\test_extract.ps1": "75da2b142365b3e07811f9dddc3e258b156c94c4c502459214dce0671da20d9b",
+    "android\\tests\\test_extract_regression_workflow.ps1": "3a5f3ebd4dda640d260017fc2a22117af43d56b4e940c8ad7484b3ef3510a2e3"
+  },
+  "before_sha256": {
+    "test_extract.ps1": "ad8938917689caa962e523dc8dced6e7545b460d25654abf2d4aa8fb26e5c645",
+    "test_extract_regression_workflow.ps1": "8764f8175480a171e273755ef2d404ec99977a2d03e27b1fbc09d59c30f2187e"
+  },
+  "logs_sha256": {
+    "gqr0148-baseline.log": "2be81e066b8d6d1c717e15a28db18631540fc782c6a71b9dba453de83b5ed5e6",
+    "gqr0148-workflow-final.log": "c3f28b4b2b2b1d1828a0b5b497c0e35195a01e8f2d54d1bd582ae3567fa0f8d4",
+    "gqr0148-quality.log": "175d41ab04bba3ec5b83e1a2f10b26acbf6f8b3979ab75b16d55ba9e1b2a2d61",
+    "gqr0148-quality-check.log": "5d3600509236736f7ecce6b0548ca7eb4f4c68974c2d8fef5e7ddf975ab3c70e",
+    "gqr0148-automation-catalog.log": "7b3b1a34fac5a45223d7507ecb39267ee588a034cf390c40ddfa5888dbb36d23",
+    "gqr0148-master-catalog.log": "59dbc2c1a8983ec8fd45414f7c8ebd15e0f1b4e86bbcb2db0525c388468f47b5"
+  },
+  "exact_normalized_scope_proof": true,
+  "actual_strict_branch_cases": [
+    [
+      "d1",
+      "absent"
+    ],
+    [
+      "d1",
+      "empty"
+    ],
+    [
+      "d1",
+      "populated"
+    ],
+    [
+      "d1",
+      "in_game"
+    ],
+    [
+      "d2",
+      "absent"
+    ],
+    [
+      "d2",
+      "empty"
+    ],
+    [
+      "d2",
+      "populated"
+    ],
+    [
+      "d2",
+      "in_game"
+    ]
+  ],
+  "device_execution_claim": false,
+  "inherited_edits_or_savings": 0
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0148 extraction failure diagnostic remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0213 shared archive admission implementation pending Android routing 20261008 SHA256:55443f84cdbea992b4369e6141c8897d2608554b9eb4ce833608739c5d83524c -->
+
+## GQR-0213 shared archive admission implementation pending Android routing 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0213-report.md`
+- Imported SHA-256: `55443f84cdbea992b4369e6141c8897d2608554b9eb4ce833608739c5d83524c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0213 shared archive admission implementation pending Android routing 20261008
+
+- Revalidated GQR-0213/GQF-0228 against current actual scanner, format owner and direct processPickedUris. Folder omitted SIT/HQX while direct handled them. Current direct flow has ZIP mission probing,7z/RAR mission routing and general SIT/HQX extraction; preserve this newer ownership rather than restoring frozen broad routing
+- One GameFileFormats.isImportArchive filename predicate admits ZIP/7z/RAR/StuffIt/BinHex with canonical extension/case handling. Folder uses it instead of its three-name list; direct general-archive branch uses it after earlier special ZIP/7z/RAR branches. Exact normalized reconstruction proves every other production byte unchanged, including provider-name validation, scan budgets, all other import/disc/installer/DXA/exact-game/GOG-audio rules and specialized routes/decoders
+- Actual original folder baseline runs new ordinary maintained finite-tree fixture and fails: expected10 archive identities, actual first6 ZIP/7z/RAR only; SIT/HQX lowercase/uppercase4 omitted. Baseline XML/log preserved and child Gradle exits1, not a setup/compile failure
+- Final selected maintained JUnit8/8 pass, zero failures/errors/skips. New finite BFS visits root/subdirectory, admits all10 archive rows, scans11 files/skips one text. Shared predicate and folder tables include lower/upper/mixed supported names and ordinary unsupported filenames; explicit existing disc/installer/SOW/DXA/HOG/GOG-audio exceptions retained
+- Selected previous ordinary fixtures cover direct mission filenames, CD/GOG/SOW/audio/DXA classification, configured exact game names, warning policy and finite breadth-first traversal. Original cycle/limit/cancellation and provider-name/security fixtures remain unchanged and unrun; no full-class/suite claim, malformed media decode or resource-pressure probe
+- Scoped mixed Kotlin quality and exact normalized scope pass: three small production edits and explicit insertions into two existing fixtures, all other previous fixture bytes preserved. Net production line count0, zero inherited engine edit or diff-minimization saving
+- Android Debug APK and paired/all-three-ABI native task build succeed; APK not installed. No on-device provider/folder scan, direct versus folder dispatcher or actual archive import validation performed. JVM candidate/traversal and compilation do not establish those named gates
+- GQR-0213 TODO/GQF-0228 OPEN pending actual Android folder/direct provider and dispatch validation. Totals remain79 DONE/172 TODO/1 DEFERRED. No new runner/catalog registration, device action, external request, staging or commit. Concurrent D1-shareware and prior cleanup changes preserved; broad goal remains active
+
+## Exact source and authoritative artifacts
+
+```json
+{
+  "source_sha256": {
+    "android\\app\\src\\main\\java\\com\\dxxredux\\app\\GameFileFormats.kt": "557200ec1759ae68da500f90b48b39e0007675844e939f14bfa7be4978129bfd",
+    "android\\app\\src\\main\\java\\com\\dxxredux\\app\\ImportTreeScanner.kt": "1b3938724439309d80c3e15ed3b3cfa7a0af8a92bf5b44f7b6ac37b40bc2d26c",
+    "android\\app\\src\\main\\java\\com\\dxxredux\\app\\SetupActivity.kt": "553b24ed39dd6b423b7663176b1604575dfaee80c625353e7c0316a4291fd097",
+    "android\\app\\src\\test\\java\\com\\dxxredux\\app\\ImportTreeScannerTest.kt": "ef047514da4cafa3a5019728d8c6cbc1e764bd0a4e9731bd5770f943cc884806",
+    "android\\app\\src\\test\\java\\com\\dxxredux\\app\\GameFileFormatsTest.kt": "dcac8ff4d480f992cb45533b1d19d2b23fd076dfb0790dcd61a96c0896b84321"
+  },
+  "before_sha256": {
+    "GameFileFormats.kt": "556b8f54b533d92fa7d0c8b945c99442ac307885709d4c99e6189445686edc08",
+    "ImportTreeScanner.kt": "35754bc8621c1cb432dc27300c0442f850fd9256b063e51aa874e20219c51be5",
+    "SetupActivity.kt": "26ae3c49fd2c557609f9e376e0cccba8336d7aaa78fb7d54663fc9c7bfa243ac",
+    "ImportTreeScannerTest.kt": "8d2eb0e8f8f3d6efec143b75c5642809a44972bea0a8fb359a36533a04db1a89",
+    "GameFileFormatsTest.kt": "3db2957c49b7f815f37af8158df365099ffe6eb2d49596583f6eeb86cdb0f123"
+  },
+  "artifact_sha256": {
+    "gqr0213-final-ImportTreeScannerTest.xml": "bc2fac34c35e7fc3b6c5696530abd58a12934820fad99fcb80ae8ac1f519909f",
+    "gqr0213-final-GameFileFormatsTest.xml": "e0094e70b9d09054dfefc92c49692b2e2cad0e00a3ef38b959d3ec74e486cb29",
+    "gqr0213-baseline.xml": "5d13f98ab734c91869cacc37d872d89a8d5cd081ef687032b0665ac441d7a239",
+    "gqr0213-baseline.log": "e23f0e81933bf5d05ef9882a32d262514174a2eb5b8ce630ae93803bb6a32c4a",
+    "gqr0213-final.log": "561eee52c6729c7a28ef60fb2dc14fc6337f469ccbf10b0ab3e3c5e47d745758",
+    "gqr0213-quality.log": "639e567ffb5cc21d6148fc5ee0b6a09bbeea25cbd9c2f2faf8374a7f2fa1828f"
+  },
+  "baseline_missing_names": [
+    "bundle.sit",
+    "BUNDLE.SIT",
+    "bundle.hqx",
+    "BUNDLE.HQX"
+  ],
+  "selected_junit_methods": {
+    "ImportTreeScannerTest": [
+      "acceptsArbitraryDirectMissionDataFilenames",
+      "archiveCandidatesShareSupportedAdmission",
+      "classifiesCueBinIsoGogSowAndAudioRows",
+      "keepsConfiguredExactGameNamesWithoutCommonImportExtensions",
+      "traversesAllSupportedArchiveNames",
+      "traversesFiniteTreeBreadthFirstAndClassifiesFiles",
+      "warnsOnlyWhenDirectoryScanCrossesThreshold"
+    ],
+    "GameFileFormatsTest": [
+      "admitsSupportedImportArchiveNames"
+    ]
+  },
+  "exact_normalized_scope": true,
+  "android_provider_dispatch_gate": "unproven",
+  "net_product_lines": 0,
+  "inherited_edits_or_savings": 0
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0213 shared archive admission implementation pending Android routing 20261008 -->

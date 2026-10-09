@@ -10,6 +10,31 @@ import java.io.File
 
 class GameFileFormatsTest {
     @Test
+    fun admitsSupportedImportArchiveNames() {
+        for (extension in listOf("zip", "7z", "rar", "sit", "hqx")) {
+            for (suffix in listOf(
+                extension,
+                extension.uppercase(java.util.Locale.ROOT),
+                extension.replaceFirstChar(Char::uppercase),
+            )) {
+                assertTrue("bundle.$suffix", GameFileFormats.isImportArchive("bundle.$suffix"))
+            }
+        }
+        for (name in listOf(
+            "bundle.tar",
+            "bundle.gz",
+            "bundle.zip.txt",
+            "bundle.sitx",
+            "bundle.hqx2",
+            "notes.txt",
+            "bundle",
+            "mod.dxa",
+        )) {
+            assertFalse(name, GameFileFormats.isImportArchive(name))
+        }
+    }
+
+    @Test
     fun preservesExactSecretOriginsAcrossMetadataProjection() {
         for ((descriptor, level) in listOf("msn" to "rdl", "mn2" to "rl2")) {
             for ((origins, first) in listOf("1" to 1, "2" to 2, "1,2" to 1, "2,1" to 2)) {

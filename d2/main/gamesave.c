@@ -184,6 +184,8 @@ void verify_robot_object(object *obj)
 
 	// Make sure model number & size are correct...
 	if ( obj->render_type == RT_POLYOBJ ) {
+        if (EMULATING_D1 && Robot_info[obj->id].model_num < 0)
+            Error("Robot %d is unavailable in the selected D1 edition", obj->id);
 		Assert(Robot_info[obj->id].model_num != -1);
 			//if you fail this assert, it means that a robot in this level
 			//hasn't been loaded, possibly because he's marked as

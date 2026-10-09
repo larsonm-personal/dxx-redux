@@ -38,6 +38,71 @@ try {
         throw 'Extraction launch automation no longer isolates itself from external CD-audio preferences'
     }
     $extractAst = [Management.Automation.Language.Parser]::ParseFile($extractPath, [ref]$null, [ref]$null)
+    $launchObservation = @($extractAst.FindAll({
+                param($node)
+                $node -is [Management.Automation.Language.IfStatementAst] -and
+                $node.Clauses[0].Item1.Extent.Text -ceq '$inGame'
+            }, $true))
+    if ($launchObservation.Count -ne 1) { throw 'Expected one actual post-automation launch observation branch' }
+    $launchObservationScript = [scriptblock]::Create($launchObservation[0].Extent.Text)
+    foreach ($game in @('d1', 'd2')) {
+        foreach ($menuKind in @('absent', 'empty', 'populated', 'in_game')) {
+            & {
+                param($Observation, $Game, $MenuKind)
+                Set-StrictMode -Version Latest
+                $messages = [Collections.Generic.List[string]]::new()
+                $exits = [Collections.Generic.List[object]]::new()
+                function Write-Status {
+                    param([string]$Message, [string]$Color)
+                    $messages.Add($Message)
+                }
+                function Exit-Test {
+                    param([int]$Code, [string]$Status, [string]$FailureStep,
+                        [int]$FilesVerified, [bool]$ClassConfirmed)
+                    $exits.Add(@{ code = $Code; status = $Status; step = $FailureStep;
+                            files = $FilesVerified; classified = $ClassConfirmed
+                        })
+                }
+                $launchGame = $Game
+                $spec = [pscustomobject]@{ expected_level1 = 'Lunar Outpost' }
+                $expectedFiles = @('descent.hog', 'descent.pig')
+                $filesToPush = @([pscustomobject]@{ Extension = '.gog' }, [pscustomobject]@{ Extension = '.inst' })
+                $inGame = $MenuKind -eq 'in_game'
+                $menu = if ($MenuKind -eq 'absent') { $null } else {
+                    [pscustomobject]@{ title = 'Main Menu'; subtitle = ''; items = @() }
+                }
+                if ($MenuKind -eq 'populated') {
+                    $menu.subtitle = 'Choose game'
+                    $menu.items = @([pscustomobject]@{ index = 0; type = 0; text = 'New game' })
+                }
+                $gi = [pscustomobject]@{ in_game = $inGame; screen_mode = 0;
+                    current_level_name = 'Lunar Outpost'; menu = $menu; redbook = $null; movie = $null
+                }
+                . $Observation
+                if ($inGame) {
+                    if ($exits.Count -ne 0 -or $messages[0] -cne "PASS: In-game, level='Lunar Outpost' matches expected") {
+                        throw 'Successful actual launch observation changed'
+                    }
+                } else {
+                    if ($exits.Count -ne 1 -or $exits[0].code -ne 1 -or $exits[0].status -cne 'fail' -or
+                        $exits[0].step -cne 'menu_timeout' -or $exits[0].files -ne 2 -or -not $exits[0].classified) {
+                        throw 'Actual not-in-game branch lost its primary failure or evidence'
+                    }
+                    if ($messages[0] -cne "FAIL: Game not in-game state after automation (game=$Game, expected level='Lunar Outpost')" -or
+                        $messages[1] -cne '  screen_mode=0, in_game=False') {
+                        throw 'Actual failure diagnostic lost current game, expected level or observed state'
+                    }
+                    if ($MenuKind -eq 'populated' -and
+                        (-not $messages.Contains("  menu title='Main Menu'") -or
+                        -not $messages.Contains("  subtitle='Choose game'") -or
+                        -not $messages.Contains("    [0] type=0 text='New game'"))) {
+                        throw 'Actual failure diagnostic lost menu context'
+                    }
+                }
+                Write-Host "PASS: actual launch observation $Game/$MenuKind under strict mode"
+            } $launchObservationScript $game $menuKind
+        }
+    }
     $generator = $extractAst.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-ExtractAutomationScriptText' }, $true)
     . ([scriptblock]::Create($generator.Extent.Text))
     foreach ($game in @('d1', 'd2')) {

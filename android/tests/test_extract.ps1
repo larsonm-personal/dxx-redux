@@ -1639,7 +1639,7 @@ if ($inGame) {
         Write-Status "  Movie: last='$($gi.movie.last_name)' result=$($gi.movie.last_result)" 'Cyan'
     }
 } else {
-    Write-Status "FAIL: Game not in-game state after $maxNav navigation attempts" 'Red'
+    Write-Status "FAIL: Game not in-game state after automation (game=$launchGame, expected level='$($spec.expected_level1)')" 'Red'
     Write-Status "  screen_mode=$($gi.screen_mode), in_game=$($gi.in_game)" 'Yellow'
     if ($gi.menu) {
         Write-Status "  menu title='$($gi.menu.title)'" 'Yellow'

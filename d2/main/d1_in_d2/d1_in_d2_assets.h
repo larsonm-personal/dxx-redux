@@ -45,6 +45,8 @@ typedef struct d1_sound_generation {
 
 /* Plain audio backends need samples at the output rate; zero retains source
  * rates for a mixer. Preparation validates before replacing the owned arena */
+int d1_in_d2_read_sound_bank(PHYSFS_file *fp, int pigsize,
+ const ubyte maps[2][D1_MAX_PIG_SOUNDS], d1_sound_generation *bank, const char **error);
 int d1_in_d2_prepare_sound_output(d1_sound_generation *bank, int target_rate);
 
 typedef struct d1_asset_generation {
@@ -85,7 +87,9 @@ typedef struct d1_asset_generation {
 	ushort obj_bitmap_ptrs[D1_MAX_OBJ_BITMAPS];
 	player_ship ship;
 	reactor control_center;
-	int num_robot_types;
+	ubyte excluded_effects[D1_MAX_EFFECTS];
+ ubyte unavailable_robots[D1_MAX_ROBOT_TYPES];
+ int num_robot_types;
 	int num_robot_joints;
 	int num_weapon_types;
 	int num_vclips;
@@ -93,6 +97,8 @@ typedef struct d1_asset_generation {
 	int num_polygon_models;
 	int pigsize;
 } d1_asset_generation;
+
+int d1_in_d2_read_shareware_definitions(d1_asset_generation *generation, const char **error);
 
 /* Optional D2 content is read from explicit paths into unpublished storage
  * No source is inferred from live tables or the current gameplay profile */

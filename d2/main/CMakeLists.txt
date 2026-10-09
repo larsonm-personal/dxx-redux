@@ -14,6 +14,7 @@ set(D2X_MAIN_SOURCES
     d1_in_d2/d1_in_d2.c
     d1_in_d2/d1_in_d2_ai.c
     d1_in_d2/d1_in_d2_ai_path.c
+    d1_in_d2/d1_in_d2_shareware.cpp
     d1_in_d2/d1_in_d2_assets.c
     d1_in_d2/d1_in_d2_asset_identity.cpp
     d1_in_d2/d1_in_d2_bitmaps.c

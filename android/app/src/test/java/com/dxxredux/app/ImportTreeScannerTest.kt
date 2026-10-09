@@ -13,6 +13,77 @@ import org.junit.Test
 
 class ImportTreeScannerTest {
     @Test
+    fun archiveCandidatesShareSupportedAdmission() {
+        for (extension in listOf("zip", "7z", "rar", "sit", "hqx")) {
+            for (suffix in listOf(
+                extension,
+                extension.uppercase(java.util.Locale.ROOT),
+                extension.replaceFirstChar(Char::uppercase),
+            )) {
+                val name = "bundle.$suffix"
+                assertTrue(name, GameFileFormats.isImportArchive(name))
+                assertTrue(name, isDirectoryImportCandidateName(name, emptySet()))
+            }
+        }
+        for (name in listOf(
+            "bundle.tar",
+            "bundle.gz",
+            "bundle.zip.txt",
+            "bundle.sitx",
+            "bundle.hqx2",
+            "notes.txt",
+            "bundle",
+        )) {
+            assertEquals(name, false, GameFileFormats.isImportArchive(name))
+            assertEquals(name, false, isDirectoryImportCandidateName(name, emptySet()))
+        }
+        for (name in listOf(
+            "disc.cue",
+            "disc.iso",
+            "disc.bin",
+            "setup.exe",
+            "setup.pkg",
+            "disc.sow",
+            "mod.dxa (1)",
+            "descent.hog",
+            "disc.gog",
+            "disc.inst",
+        )) {
+            assertEquals(name, false, GameFileFormats.isImportArchive(name))
+            assertTrue(name, isDirectoryImportCandidateName(name, emptySet()))
+        }
+    }
+
+    @Test
+    fun traversesAllSupportedArchiveNames() =
+        runBlocking {
+            val names =
+                listOf("bundle.zip", "bundle.7z", "bundle.rar", "bundle.sit", "bundle.hqx")
+                    .flatMap { listOf(it, it.uppercase(java.util.Locale.ROOT)) }
+            val rows =
+                names.mapIndexed {
+                    index,
+                    name,
+                    ->
+                    ImportTreeRow("archive-$index", name, "application/octet-stream")
+                }
+            val queried = mutableListOf<String>()
+            val result =
+                traverseImportTree("root", emptySet()) { documentId, _ ->
+                    queried.add(documentId)
+                    if (documentId == "root") {
+                        listOf(ImportTreeRow("archives", "archives", DocumentsContract.Document.MIME_TYPE_DIR))
+                    } else {
+                        rows + ImportTreeRow("notes", "notes.txt", "text/plain")
+                    }
+                }
+            assertEquals(listOf("root", "archives"), queried)
+            assertEquals(rows.map { it.documentId }, result.importableDocumentIds)
+            assertEquals(11, result.scannedFileCount)
+            assertEquals(1, result.skippedUnknownFileCount)
+        }
+
+    @Test
     fun acceptsArbitraryDirectMissionDataFilenames() {
         assertEquals(true, isDirectGameDataImportName("D2X.MN2", emptySet()))
         assertEquals(true, isDirectGameDataImportName("PANIC.HOG", emptySet()))

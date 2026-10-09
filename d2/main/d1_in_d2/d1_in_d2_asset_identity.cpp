@@ -9,6 +9,7 @@ extern "C" {
 #include "d1_in_d2_levels.h"
 #include "d1_in_d2_net.h"
 #include "console.h"
+#include "piggy.h"
 #include "mission.h"
 }
 
@@ -56,6 +57,9 @@ int d1_in_d2_hash_base_source(const char *pig, const char *palette, ubyte digest
 	const char schema[] = "d1-base-sources-v1";
 	hash.process(schema, schema + sizeof(schema) - 1);
 	if (!hash_source(hash, pig) || !hash_source(hash, palette)) return 0;
+ const int size = PHYSFSX_fsize(pig);
+ if ((size == D1_SHARE_BIG_PIGSIZE || size == D1_SHARE_10_PIGSIZE || size == D1_SHARE_PIGSIZE) &&
+     !hash_source(hash, "descent.hog")) return 0;
 	hash.finish();
 	hash.get_hash_bytes(digest, digest + 32);
 	return 1;

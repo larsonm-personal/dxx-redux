@@ -60,6 +60,9 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #include "level_metadata_replacements.hpp"
+extern "C" {
+#include "d1_in_d2/d1_in_d2.h"
+}
 static level_metadata_base_definitions Level_metadata_base_definitions = {};
 #endif
 extern "C" void gameseq_init_network_players(void);
@@ -268,10 +271,9 @@ static int init_headless_metadata_runtime(int argc, char *argv[], char *error, s
 	}
 #ifdef DXX_BUILD_DESCENT_II
 	trace_dump_init("contfile_d2");
-	if (!PHYSFSX_contfile_init("descent2.hog", 1) &&
-	    !PHYSFSX_contfile_init("d2demo.hog", 1)) {
+	if (!d1_in_d2_init_base_resources(0)) {
 		snprintf(error, error_size, "%s",
-		         "could not find descent2.hog or d2demo.hog; pass -hogdir <dir> with Descent 2 data files");
+		         "could not find supported Descent assets; pass -hogdir <dir> with game data");
 		return 0;
 	}
 #else
@@ -302,9 +304,8 @@ static int init_headless_metadata_runtime(int argc, char *argv[], char *error, s
 	texmerge_init(10);
 #ifdef DXX_BUILD_DESCENT_II
 	{
-		char groupa_pig[] = "groupa.pig";
 		trace_dump_init("piggy_init_pigfile");
-		piggy_init_pigfile(groupa_pig);
+		d1_in_d2_init_startup_bitmaps();
 	}
 #endif
 	trace_dump_init("screen");
@@ -334,6 +335,12 @@ static int load_base_mission(const char *requested_mission, char *error, size_t 
 		return 0;
 	}
 #ifdef DXX_BUILD_DESCENT_II
+ if (d1_in_d2_use_d1_gameplay()) {
+  char d1_mission[] = D1_MISSION_FILENAME;
+  if (load_mission_by_name(d1_mission)) return 1;
+  snprintf(error, error_size, "%s", "could not load built-in D1 mission");
+  return 0;
+ }
 	char d2_mission[] = "d2";
 	char d2_demo_mission[] = "d2demo";
 

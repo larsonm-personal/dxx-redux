@@ -134,7 +134,6 @@ internal fun launchDataReadyForGame(
 ): Boolean {
     val target = GameLaunchTarget.fromId(game)
     val content = target.content
-    if (content == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) return false
     val fileList = if (content == "d1") D1_FILES else detectD2FileList(setDir, safManifest)
     return checkFiles(setDir, fileList, manifest, safManifest)
         .filter { it.info.required }
@@ -175,9 +174,7 @@ internal fun launchDataBlockers(
                 val names = (listOf(it.info.filename) + it.info.alternatives).joinToString(" or ")
                 add("Missing: $names (${it.info.description})")
             }
-            if (target.content == "d1" && isD1TestFlightSet(setDir, manifest, safManifest)) {
-                add("descent.hog and descent.pig: the Test Flight edition is unsupported")
-            } else if (target == GameLaunchTarget.D1_IN_D2) {
+            if (target == GameLaunchTarget.D1_IN_D2) {
                 d1InD2EditionError(setDir, safManifest, d1EditionError)?.let { add("descent.pig: $it") }
             }
         }
@@ -232,32 +229,6 @@ internal fun d1InD2Readiness(
         d1AssetStatuses = checkFiles(setDir, D1_FILES, manifest, safManifest),
         unsupportedReason = unsupportedReason,
     )
-}
-
-// Duplicates known_versions.jsonc so readiness can reject this old demo before native launch.
-private const val D1_TEST_FLIGHT_HOG_SHA256 =
-    "40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a"
-private const val D1_TEST_FLIGHT_PIG_SHA256 =
-    "2320393b99da2ea81405f60bb15d43b1123b5c8faed87b945335e66559261232"
-private const val D1_TEST_FLIGHT_HOG_SIZE = 1626232L
-private const val D1_TEST_FLIGHT_PIG_SIZE = 5092871L
-
-internal fun isD1TestFlightSet(
-    setDir: File,
-    manifest: AssetManifest,
-    safManifest: SafManifest,
-): Boolean {
-    val hogEntry = manifest.getEntry("descent.hog")
-    val pigEntry = manifest.getEntry("descent.pig")
-    if (hogEntry?.sha256 == D1_TEST_FLIGHT_HOG_SHA256 &&
-        pigEntry?.sha256 == D1_TEST_FLIGHT_PIG_SHA256
-    ) {
-        return true
-    }
-
-    val safEntries = safManifest.read()
-    return fileSizeForLaunchCheck(setDir, safEntries, "descent.hog") == D1_TEST_FLIGHT_HOG_SIZE &&
-        fileSizeForLaunchCheck(setDir, safEntries, "descent.pig") == D1_TEST_FLIGHT_PIG_SIZE
 }
 
 private fun fileSizeForLaunchCheck(

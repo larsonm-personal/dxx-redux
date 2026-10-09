@@ -52,6 +52,15 @@ target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOUR
 target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
+add_executable(test_d1_shareware_table test_d1_shareware_table.c)
+target_include_directories(test_d1_shareware_table PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+add_test(NAME test_d1_shareware_table COMMAND test_d1_shareware_table)
+add_executable(test_d1_shareware_model test_d1_shareware_model.c)
+target_include_directories(test_d1_shareware_model PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+add_test(NAME test_d1_shareware_model COMMAND test_d1_shareware_model)
+add_executable(test_d1_shareware_sound test_d1_shareware_sound.c)
+target_include_directories(test_d1_shareware_sound PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+add_test(NAME test_d1_shareware_sound COMMAND test_d1_shareware_sound)
 add_executable(test_rng_seed_trace test_rng_seed_trace.cpp)
 target_link_libraries(test_rng_seed_trace PRIVATE ${DXX_TARGET_PREFIX}maths
                                                   nlohmann_json::nlohmann_json)

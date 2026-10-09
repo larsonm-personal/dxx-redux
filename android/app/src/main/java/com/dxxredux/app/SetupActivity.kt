@@ -3811,7 +3811,7 @@ private fun SetupScreen(
                             missionZipImportUris.add(name to uri)
                         }
 
-                        ext in setOf("sit", "hqx") -> {
+                        GameFileFormats.isImportArchive(name) -> {
                             zipUris.add(name to uri)
                         }
 

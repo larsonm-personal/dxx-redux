@@ -42,6 +42,7 @@
 #include "d1_custom.h"
 #include "d1_in_d2_assets.h"
 #include "d1_pig_validation.h"
+#include "d1_shareware_sound.h"
 #include "laser.h"
 #include "weapon.h"
 #include "android_log.h"
@@ -114,9 +115,6 @@ void d1_in_d2_get_stats(d1_in_d2_asset_stats *stats)
 const char *d1_in_d2_source_edition_error(int64_t pig_size)
 {
 	switch (pig_size) {
-		case D1_SHARE_BIG_PIGSIZE:
-		case D1_SHARE_10_PIGSIZE:
-		case D1_SHARE_PIGSIZE:
 		case D1_10_BIG_PIGSIZE:
 		case D1_10_PIGSIZE:
 		case D1_MAC_PIGSIZE:
@@ -222,11 +220,18 @@ static int read_d1_reactor_definition(PHYSFS_file *fp, int pigsize, int num_mode
 static int validate_d1_robot_references(const robot_info *robots, int num_robot_types,
                                         const polymodel *models, int num_polygon_models,
                                         const vclip *vclips, int num_vclips,
-                                        int num_weapon_types, int num_robot_joints)
+                                        int num_weapon_types, int num_robot_joints, const ubyte *unavailable)
 {
 	int i, gun, state;
 	for (i = 0; i < num_robot_types; i++) {
 		const robot_info *robot = &robots[i];
+  if (unavailable && unavailable[i]) {
+   if (robot->model_num != -1 || robot->n_guns != 0) return 0;
+   for (gun = 0; gun < MAX_GUNS + 1; ++gun)
+    for (state = 0; state < N_ANIM_STATES; ++state)
+     if (robot->anim_states[gun][state].n_joints != 0) return 0;
+   continue;
+  }
 		if (!d1_pig_valid_model_index(robot->model_num, num_polygon_models) ||
 		    robot->n_guns < 0 || robot->n_guns > MAX_GUNS ||
 		    robot->weapon_type < 0 || robot->weapon_type >= num_weapon_types ||
@@ -491,7 +496,7 @@ static int validate_d1_robot_assets(PHYSFS_file *fp, int pigsize, int property_e
 		if (generation->obj_bitmap_ptrs[i] >= D1_MAX_OBJ_BITMAPS)
 			goto done;
 	if (!validate_d1_robot_references(robots, num_robot_types, models, num_polygon_models,
-	                                  vclips, num_vclips, num_weapon_types, num_robot_joints))
+	                                  vclips, num_vclips, num_weapon_types, num_robot_joints, NULL))
 		goto done;
 	for (i = 0; i < num_weapon_types; i++) {
 		weapon_info *weapon = &weapons[i];
@@ -548,6 +553,8 @@ static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)
 		case D1_SHARE_BIG_PIGSIZE:
 		case D1_SHARE_10_PIGSIZE:
 		case D1_SHARE_PIGSIZE:
+			*pig_data_start = 0;
+			return 1;
 		case D1_10_BIG_PIGSIZE:
 		case D1_10_PIGSIZE:
 		case D1_MAC_PIGSIZE:
@@ -561,7 +568,7 @@ static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)
 	}
 }
 
-static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,
+int d1_in_d2_read_sound_bank(PHYSFS_file *fp, int pigsize,
                               const ubyte maps[2][D1_MAX_PIG_SOUNDS],
                               d1_sound_generation *bank, const char **error)
 {
@@ -571,6 +578,7 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,
 	PHYSFS_sint64 header_size, sound_header_start, sound_data_start, sound_bytes;
 	PHYSFS_sint64 file_len;
 	int pig_data_start, num_bitmaps, num_sounds, i;
+ int shareware = pigsize == D1_SHARE_BIG_PIGSIZE || pigsize == D1_SHARE_10_PIGSIZE || pigsize == D1_SHARE_PIGSIZE;
 
 	file_len = PHYSFS_fileLength(fp);
 	*error = "sound table header";
@@ -615,7 +623,8 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,
 		data_length = PHYSFSX_readInt(fp);
 		offset = PHYSFSX_readInt(fp);
 		if (length < 0 || data_length < 0 || offset < 0 ||
-		    !d1_pig_validate_span(file_len, sound_data_start + offset, length) ||
+		    !d1_pig_validate_span(file_len, sound_data_start + offset, shareware ? data_length : length) ||
+            (shareware && data_length != length / 2 + length % 2) ||
 		    sound_bytes > 0x7fffffff - length) {
 			goto failed;
 		}
@@ -646,10 +655,19 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,
 		data_length = PHYSFSX_readInt(fp);
 		(void)data_length;
 		offset = PHYSFSX_readInt(fp);
-		if (PHYSFSX_fseek(fp, (long)(sound_data_start + offset), SEEK_SET) ||
-		    PHYSFS_read(fp, staged_bits + sound_bytes, 1, length) != length) {
-			goto failed;
-		}
+        if (PHYSFSX_fseek(fp, (long)(sound_data_start + offset), SEEK_SET))
+            goto failed;
+        if (shareware) {
+            ubyte *encoded = d_malloc((size_t)data_length + 1);
+            int valid;
+            if (!encoded) goto failed;
+            valid = PHYSFS_read(fp, encoded, 1, data_length) == data_length &&
+                d1_shareware_sound_decode(encoded, data_length, staged_bits + sound_bytes, length);
+            d_free(encoded);
+            if (!valid) goto failed;
+        } else if (PHYSFS_read(fp, staged_bits + sound_bytes, 1, length) != length) {
+            goto failed;
+        }
 		staged_sounds[i].bits = 8;
 		staged_sounds[i].freq = 11025;
 		staged_sounds[i].length = length;
@@ -679,16 +697,62 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 {
 	int i, frame;
 
+	*error = "definition counts";
+	if (!generation || !generation->bitmap_data || !generation->models ||
+	    generation->num_textures < 0 || generation->num_textures > D1_MAX_PIG_TEXTURES ||
+	    generation->num_vclips < 0 || generation->num_vclips > D1_VCLIP_MAXNUM ||
+	    generation->num_effects < 0 || generation->num_effects > D1_MAX_EFFECTS ||
+	    generation->num_wall_anims < 0 || generation->num_wall_anims > D1_MAX_WALL_ANIMS ||
+	    generation->num_gauges < 0 || generation->num_gauges > D1_MAX_GAUGE_BMS_MAC ||
+	    generation->num_cockpits < 0 || generation->num_cockpits > D1_N_COCKPIT_BITMAPS ||
+	    generation->num_polygon_models <= 0 || generation->num_polygon_models > D1_MAX_POLYGON_MODELS ||
+	    generation->num_robot_types < 0 || generation->num_robot_types > D1_MAX_ROBOT_TYPES ||
+	    generation->num_robot_joints < 0 || generation->num_robot_joints > D1_MAX_ROBOT_JOINTS ||
+	    generation->num_weapon_types < 0 || generation->num_weapon_types > D1_MAX_WEAPON_TYPES ||
+	    generation->num_powerups < 0 || generation->num_powerups > D1_MAX_POWERUP_TYPES)
+		return 0;
+	*error = "ship, reactor and exit references";
+	if (!d1_pig_valid_model_index(generation->ship.model_num, generation->num_polygon_models) ||
+	    !d1_vclip_reference_valid(generation->vclips, generation->num_vclips, generation->ship.expl_vclip_num, 0) ||
+	    !d1_pig_valid_optional_model_index(generation->control_center.model_num, generation->num_polygon_models) ||
+	    generation->control_center.n_guns < 0 || generation->control_center.n_guns > D1_MAX_CONTROLCEN_GUNS ||
+	    !d1_pig_valid_optional_model_index(generation->exit_model, generation->num_polygon_models) ||
+	    !d1_pig_valid_optional_model_index(generation->destroyed_exit_model, generation->num_polygon_models))
+		return 0;
+	*error = "weapon definition references";
+	for (i = 0; i < generation->num_weapon_types; ++i) {
+		const weapon_info *weapon = &generation->weapons[i];
+		if (weapon->render_type < WEAPON_RENDER_NONE || weapon->render_type > WEAPON_RENDER_VCLIP ||
+		    (weapon->render_type == WEAPON_RENDER_POLYMODEL &&
+		     (!d1_pig_valid_model_index(weapon->model_num, generation->num_polygon_models) ||
+		      !d1_pig_valid_optional_model_index(weapon->model_num_inner, generation->num_polygon_models))) ||
+		    !d1_vclip_reference_valid(generation->vclips, generation->num_vclips, weapon->flash_vclip, 1) ||
+		    !d1_vclip_reference_valid(generation->vclips, generation->num_vclips, weapon->robot_hit_vclip, 1) ||
+		    !d1_vclip_reference_valid(generation->vclips, generation->num_vclips, weapon->wall_hit_vclip, 1) ||
+		    !d1_vclip_reference_valid(generation->vclips, generation->num_vclips, weapon->weapon_vclip, 1) ||
+		    weapon->flash_sound < -1 || weapon->flash_sound >= D1_MAX_PIG_SOUNDS ||
+		    weapon->robot_hit_sound < -1 || weapon->robot_hit_sound >= D1_MAX_PIG_SOUNDS ||
+		    weapon->wall_hit_sound < -1 || weapon->wall_hit_sound >= D1_MAX_PIG_SOUNDS)
+			return 0;
+	}
+	*error = "powerup definition references";
+	for (i = 0; i < generation->num_powerups; ++i)
+		if (!d1_vclip_reference_valid(generation->vclips, generation->num_vclips, generation->powerups[i].vclip_num, 0) ||
+		    generation->powerups[i].hit_sound < -1 || generation->powerups[i].hit_sound >= D1_MAX_PIG_SOUNDS)
+			return 0;
 	*error = "texture bitmap references";
 	for (i = 0; i < generation->num_textures; i++)
 		if (!d1_bitmap_reference_valid(generation, generation->textures[i].index) ||
 		    generation->texture_info[i].eclip_num >= generation->num_effects)
 			return 0;
 	*error = "vclip bitmap references";
-	for (i = 0; i < generation->num_vclips; i++)
+	for (i = 0; i < generation->num_vclips; i++) {
+		if (generation->vclips[i].num_frames < -1 || generation->vclips[i].num_frames > VCLIP_MAX_FRAMES)
+			return 0;
 		for (frame = 0; frame < generation->vclips[i].num_frames; frame++)
 			if (!d1_bitmap_reference_valid(generation, generation->vclips[i].frames[frame].index))
 				return 0;
+	}
 	*error = "effect bitmap references";
 	for (i = 0; i < generation->num_effects; i++) {
 		const vclip *clip = &generation->effects[i].vc;
@@ -697,7 +761,7 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 		     !d1_pig_validate_timed_clip(clip->num_frames, VCLIP_MAX_FRAMES, clip->play_time, clip->frame_time)))
 			return 0;
 		for (frame = 0; frame < clip->num_frames; frame++)
-			if (clip->frames[frame].index <= 0 ||
+			if ((!generation->excluded_effects[i] && clip->frames[frame].index <= 0) ||
 			    !d1_bitmap_reference_valid(generation, clip->frames[frame].index))
 				return 0;
 	}
@@ -724,7 +788,8 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 			return 0;
 	*error = "object bitmap references";
 	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
-		if (!d1_bitmap_reference_valid(generation, generation->obj_bitmaps[i].index))
+		if (!d1_bitmap_reference_valid(generation, generation->obj_bitmaps[i].index) ||
+		    generation->obj_bitmap_ptrs[i] >= D1_MAX_OBJ_BITMAPS)
 			return 0;
 	*error = "model definitions";
 	for (i = 0; i < generation->num_polygon_models; i++) {
@@ -753,7 +818,7 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 	if (!validate_d1_robot_references(generation->robots, generation->num_robot_types,
 	                                  generation->models, generation->num_polygon_models,
 	                                  generation->vclips, generation->num_vclips,
-	                                  generation->num_weapon_types, generation->num_robot_joints))
+	                                  generation->num_weapon_types, generation->num_robot_joints, generation->unavailable_robots))
 		return 0;
 	/* A model/joint replacement also changes animation users which were not
 	 * themselves replaced in the HX1 */
@@ -781,6 +846,44 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 	return 1;
 }
 
+static d1_asset_generation *read_shareware_assets(const char *pig_name, const char *palette_name, const char **error)
+{
+ d1_asset_generation *generation = d_malloc(sizeof(*generation));
+ PHYSFS_file *fp = NULL;
+ const char *custom[3] = { NULL, NULL, NULL };
+ const char *local_error = NULL;
+ if (!error) error = &local_error;
+ if (!generation) { *error = "shareware allocation"; return NULL; }
+ memset(generation, 0, sizeof(*generation));
+ generation->models = d_malloc(D1_MAX_POLYGON_MODELS * sizeof(polymodel));
+ if (!generation->models) { *error = "shareware model allocation"; goto failed; }
+ memset(generation->models, 0, D1_MAX_POLYGON_MODELS * sizeof(polymodel));
+ memset(generation->sound_maps, 255, sizeof(generation->sound_maps));
+ fp = PHYSFSX_openReadBuffered(pig_name);
+ if (!fp) { *error = "shareware PIG"; goto failed; }
+ generation->pigsize = (int)PHYSFS_fileLength(fp);
+ generation->bitmap_data = d1_in_d2_read_bitmaps(pig_name, palette_name);
+ if (!generation->bitmap_data) { *error = "shareware bitmaps"; goto failed; }
+ generation->bitmap_data->bitmaps[0].bm_w = generation->bitmap_data->bitmaps[0].bm_h = 64;
+ generation->bitmap_data->bitmaps[0].bm_rowsize = 64;
+ if (!d1_in_d2_read_sound_bank(fp, generation->pigsize, generation->sound_maps, &generation->sound_bank, error) ||
+     !d1_in_d2_read_shareware_definitions(generation, error) ||
+     !d1_in_d2_validate_asset_references(generation, error)) goto failed;
+ *error = "shareware sound map references";
+ if (!d1_pig_validate_sound_map(generation->sound_maps[0], D1_MAX_PIG_SOUNDS, generation->sound_bank.count) ||
+     !d1_pig_validate_sound_map(generation->sound_maps[1], D1_MAX_PIG_SOUNDS, D1_MAX_PIG_SOUNDS)) goto failed;
+ if (!d1_in_d2_hash_base_source(pig_name, palette_name, generation->base_identity) ||
+     !d1_in_d2_hash_custom_sources(generation->base_identity, custom, generation->definition_identity)) {
+  *error = "shareware source identity"; goto failed;
+ }
+ PHYSFS_close(fp);
+ return generation;
+failed:
+ if (fp) PHYSFS_close(fp);
+ d1_in_d2_free_assets(generation);
+ return NULL;
+}
+
 d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *palette_name, const char **error)
 {
 	d1_asset_generation *generation = NULL;
@@ -788,6 +891,12 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 	PHYSFS_sint64 file_size;
 	int property_end;
 	const char *stage = "registered D1 PIG";
+
+ if (pig_name && palette_name) {
+  int size = PHYSFSX_fsize(pig_name);
+  if (size == D1_SHARE_BIG_PIGSIZE || size == D1_SHARE_10_PIGSIZE || size == D1_SHARE_PIGSIZE)
+   return read_shareware_assets(pig_name, palette_name, error);
+ }
 
 	if (!pig_name || !palette_name || !(fp = open_d1_registered_pig(pig_name, &stage)))
 		goto failed;
@@ -813,7 +922,7 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 	stage = "bitmap collection or palette";
 	generation->bitmap_data = d1_in_d2_read_bitmaps(pig_name, palette_name);
 	if (!generation->bitmap_data || !d1_in_d2_validate_asset_references(generation, &stage) ||
-	    !read_d1_sound_bank(fp, (int)file_size, generation->sound_maps, &generation->sound_bank, &stage))
+	    !d1_in_d2_read_sound_bank(fp, (int)file_size, generation->sound_maps, &generation->sound_bank, &stage))
 		goto failed;
 	stage = "base source identity";
 	{

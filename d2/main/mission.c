@@ -121,6 +121,7 @@ int load_mission_d1(void)
 			strcpy(Ending_text_filename,BIMD1_ENDING_FILE_SHARE);
 	
 			break;
+		case D1_TEST_FLIGHT_MISSION_HOGSIZE:
 		case D1_MAC_SHARE_MISSION_HOGSIZE:
 		case D1_MAC_SHARE_MISSION_HOGSIZE2:
 			N_secret_levels = 0;
@@ -465,6 +466,7 @@ void add_d1_builtin_mission_to_list(mle *mission)
 #endif
 
 	switch (size) {
+	case D1_TEST_FLIGHT_MISSION_HOGSIZE:
 	case D1_SHAREWARE_MISSION_HOGSIZE:
 	case D1_SHAREWARE_10_MISSION_HOGSIZE:
 	case D1_MAC_SHARE_MISSION_HOGSIZE:

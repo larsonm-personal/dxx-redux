@@ -40,6 +40,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rle.h"
 #include "screens.h"
 #include "snddecom.h"
+#include "d1_shareware_sound.h"
 #include "console.h"
 #include "piggy.h"
 #include "texmerge.h"
@@ -626,7 +627,13 @@ void piggy_read_sounds(int pc_shareware)
 #else
 					PHYSFS_read( Piggy_fp, lastbuf, SoundCompressed[i], 1 );
 #endif
-					sound_decompress( lastbuf, SoundCompressed[i], snd->data );
+					if (!d1_shareware_sound_decode(lastbuf, SoundCompressed[i], snd->data,
+#ifdef ALLEGRO
+                        snd->len
+#else
+                        snd->length
+#endif
+                    )) Error("Invalid shareware sound length");
 				}
 				else
 #ifdef ALLEGRO

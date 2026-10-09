@@ -717,3 +717,26 @@ The initial full-diff survey assigns the live surface as follows. `DMR1-AUDIT-00
 - Scoped mixed C/CMake quality, exact normalized source/header/dirty-CMake/prior-fixture scope and diff checks pass. All product edits branch-owned Android/shared; zero inherited D1/D2 edit or minimization saving. Concurrent installer/import/preview and prior cleanup preserved
 - Imported immutable GQR-0128 graphics rollback original ownership remediation 20261008. Totals266 findings/252 remediations:78 DONE/173 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Evidence/snapshots/logs/report/verifiers:temp/general_cleanup_20261006/gqr0128-* and verify_gqr0128.py
 - No deliberate malformed-media/security/resource-pressure/allocation probe, device execution/external request, staging or commit. All owned processes terminal; broader cleanup remains active
+
+
+### Extraction failure diagnostic completed, 2026-10-08
+
+- Completed GQR-0148/GQF-0161 after fresh actual-source revalidation. One stale maxNav diagnostic line now identifies current launch game and exact expected level after automation. All observed state/menu diagnostics and exit1/fail/menu_timeout/files/classification evidence preserved, as are existing success/level-mismatch behavior
+- Actual original baseline executes production AST branch under strict mode and fails specifically on undefined maxNav. Existing registered workflow fixture now executes same full branch with only status/exit sinks stubbed,8 controls across D1/D2 and absent/empty/populated menus plus successful in-game state. Exact primary failure/evidence and menu detail checked; no actual device/game-start claim
+- Complete maintained extraction workflow fixture passes, including previous automation/metadata/update/transport controls. Both catalogs pass94 standalone JSON/374 support/215 standalone PowerShell and313 master entries; existing registration reused
+- Scoped PS fix/check quality and exact normalized source proof pass. Formatter-introduced two trailing spaces trimmed, full fixture rerun, final diff clean. Product exactly one line replacement; every other runner/previous fixture byte preserved except explicit new branch controls
+- Independent user commit advanced HEAD to643e4cdd during work and included prior cleanup/import edits. Snapshot-based scope proof preserves those changes; no checkout/staging/commit performed. Zero native/Kotlin/inherited edits or diff-minimization saving; no new runner, device action or native rebuild needed
+- Imported immutable GQR-0148 extraction failure diagnostic remediation 20261008. Totals266 findings/252 remediations:79 DONE/172 TODO/1 DEFERRED; GQ1/GQ2 coverage unchanged. Evidence/snapshots/logs/report/scope verifier:temp/general_cleanup_20261006/gqr0148-* and record_gqr0148.py
+- No malformed-media/security/resource-pressure probe, external request, staging or commit. All owned processes terminal; broader cleanup remains active
+
+
+### Shared archive admission implementation checkpoint, 2026-10-08
+
+- GQR-0213/GQF-0228 freshly revalidated: folder omitted SIT/HQX despite direct support. One GameFileFormats filename predicate now shared by folder candidate classifier and direct general-archive admission. Preserve newer ZIP mission probing and7z/RAR mission routing precedence; no decoder/routing-owner rewrite
+- Exact normalized reconstruction proves every other production byte unchanged, including all disc/installer/SOW/DXA/game/exact-name/GOG-audio exceptions and traversal/provider-name checks. Product net0 branch lines; zero inherited edit/minimization saving
+- Actual original finite-tree maintained fixture fails10 expected archive identities versus6 admitted, omitting lower/upper SIT/HQX4. Original XML and terminal Gradle failure preserved, not a compilation/setup failure
+- Final selected ordinary maintained JUnit8/8 pass, zero failures/errors/skips: supported lower/upper/mixed case/unknown-name tables, finite root/subdirectory archive scan/accounting, prior direct mission/data/disc/audio/DXA/configured-name/warning/finite-BFS controls. Prior cycle/budget/cancellation/provider-name security fixtures unchanged and unrun; no full-suite claim
+- Scoped mixed Kotlin quality and exact five-owner production/fixture insertion scope/diff pass. Final Android Debug APK/paired games/all-three-ABI native build succeeds, APK not installed. Concurrent D1-shareware engine/header/test additions and prior cleanup preserved
+- Actual on-device folder/direct provider and dispatch/import acceptance remains unproven. JVM predicate/traversal and compilation do not prove it; GQR-0213 TODO/GQF-0228 OPEN. Totals unchanged266 findings/252 remediations:79 DONE/172 TODO/1 DEFERRED; coverage unchanged
+- Imported immutable GQR-0213 shared archive admission implementation pending Android routing 20261008. Evidence/snapshots/XML/logs/report/verifier:temp/general_cleanup_20261006/gqr0213-* and record_gqr0213.py. Existing JVM fixture registration reused; no new runner/catalog entry
+- No malformed-media/security/resource-pressure probe, device action, external request, staging or commit. All owned processes terminal; broader cleanup remains active

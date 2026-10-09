@@ -4,6 +4,7 @@ set(D1X_MAIN_SOURCES
     automap.c
     bm.c
     bmread.c
+    ../../android/app/src/main/cpp/shared/d1_shareware_native.cpp
     cntrlcen.c
     collide.c
     config.c
