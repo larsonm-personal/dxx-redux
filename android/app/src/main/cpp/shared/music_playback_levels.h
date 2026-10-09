@@ -1,7 +1,7 @@
 #ifndef DXX_MUSIC_PLAYBACK_LEVELS_H
 #define DXX_MUSIC_PLAYBACK_LEVELS_H
 
-/* Android music/effects loudness tuning
+/* Android music/effects/movie loudness tuning
  * Tuned with tests/compare_music_loudness.py: 120-second samples of seven D2
  * bundled SC-55-like / balanced EQ MIDI tracks, eight Definitive Collection CD
  * tracks, and four D1 controls, at music volume 8
@@ -57,6 +57,14 @@
  * 0.25 is -12.04 dB; at slider 8 this matches the corrected former slider-2 level
  * Including the shared trim: 0.25 * 0.625 = 0.15625 (-16.12 dB) before pan/distance */
 #define AUDIO_EFFECTS_VOLUME_SCALE 0.25f
+
+/* Android MVE movies: fixed source calibration, then the shared output trim
+ * Complete retail intro/briefing/flyout soundtracks measure about -13 to -15 LUFS
+ * 0.5 * 0.625 = 0.3125 (-10.10 dB), placing them around -23 to -25 LUFS
+ * Movies replace gameplay audio; keep dialogue above background music without
+ * compression or per-movie leveling. Existing movie slider behavior is unchanged
+ * Reproduce with tests/measure_movie_loudness.py */
+#define AUDIO_MOVIE_VOLUME_SCALE 0.5f
 
 /* Initial effects slider position, integer 0..8; saved choices override */
 #define AUDIO_DEFAULT_EFFECTS_VOLUME 8

@@ -30,6 +30,9 @@
 #include "libmve.h"
 #include "args.h"
 #include "console.h"
+#ifdef __ANDROID__
+#include "music_playback_levels.h"
+#endif
 
 #define MVE_OPCODE_ENDOFSTREAM          0x00
 #define MVE_OPCODE_ENDOFCHUNK           0x01
@@ -637,6 +640,22 @@ static int audio_data_handler(unsigned char major, unsigned char minor, unsigned
 				memset(mve_audio_buffers[mve_audio_buftail], 0, nsamp); /* XXX */
 			}
 
+#ifdef __ANDROID__
+			/* Calibrate decoded movie audio once, before conversion or queueing */
+			{
+				const float gain = AUDIO_MOVIE_VOLUME_SCALE * AUDIO_GAMEPLAY_HEADROOM_SCALE;
+				int i;
+				if (mve_audio_spec->format == AUDIO_U8) {
+					Uint8 *samples = (Uint8 *)mve_audio_buffers[mve_audio_buftail];
+					for (i = 0; i < nsamp; ++i)
+						samples[i] = (Uint8)(128 + (int)((samples[i] - 128) * gain));
+				} else {
+					short *samples = mve_audio_buffers[mve_audio_buftail];
+					for (i = 0; i < nsamp / (int)sizeof(*samples); ++i)
+						samples[i] = (short)(samples[i] * gain);
+				}
+			}
+#endif
 			// MD2211: the following block does on-the-fly audio conversion for SDL_mixer
 #ifdef USE_SDLMIXER
 			if (!GameArg.SndDisableSdlMixer && mve_audio_cvt_ready && mve_audio_cvt_needed) {
