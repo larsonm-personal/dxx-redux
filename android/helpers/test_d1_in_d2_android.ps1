@@ -45,7 +45,8 @@ if ($Reticles) {
     $TimeoutSeconds = [Math]::Max($TimeoutSeconds, 360)
 }
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$outputDirectory = Join-Path $repo ('temp/d1-launch-runtime-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$targetSlug = $Serial -replace '[^a-zA-Z0-9._-]', '_'
+$outputDirectory = Join-Path $repo ("temp/d1-launch-runtime-$targetSlug-" + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 & (Join-Path $PSScriptRoot 'retain-recent-artifacts.ps1') -Artifacts $outputDirectory
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 Write-Output "Runtime evidence: $outputDirectory"

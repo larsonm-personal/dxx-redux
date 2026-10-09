@@ -927,15 +927,21 @@ failed:
 	return NULL;
 }
 
+void d1_in_d2_initialize_robot_extensions(robot_info *ri)
+{
+	ri->weapon_type2 = -1;
+	ri->behavior = AIB_NORMAL;
+	ri->aim = 255;
+	ri->lightcast = 1;
+}
+
 static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
 {
 	int j, gun, state;
 
 	memset(ri, 0, sizeof(*ri));
 	/* D2-only fields have explicit defaults, independent of any D2 HAM */
-	ri->behavior = AIB_NORMAL;
-	ri->aim = 255;
-	ri->lightcast = 1;
+	d1_in_d2_initialize_robot_extensions(ri);
 	ri->model_num = PHYSFSX_readInt(fp);
 	ri->n_guns = PHYSFSX_readInt(fp);
 	for (j = 0; j < MAX_GUNS; j++)
@@ -947,7 +953,6 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
 	ri->exp2_vclip_num = PHYSFSX_readShort(fp);
 	ri->exp2_sound_num = PHYSFSX_readShort(fp);
 	ri->weapon_type = (sbyte)PHYSFSX_readShort(fp);
-	ri->weapon_type2 = -1;
 	ri->contains_id = PHYSFSX_readByte(fp);
 	ri->contains_count = PHYSFSX_readByte(fp);
 	ri->contains_prob = PHYSFSX_readByte(fp);
@@ -989,6 +994,17 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)
 	ri->always_0xabcd = PHYSFSX_readInt(fp);
 }
 
+void d1_in_d2_initialize_weapon_extensions(weapon_info *wi, int weapon_id)
+{
+	wi->speedvar = 128;
+	wi->flags = 0;
+	wi->flash = 0;
+	wi->afterburner_size = 0;
+	wi->children = weapon_id == SMART_ID ? PLAYER_SMART_HOMING_ID : -1;
+	wi->multi_damage_scale = F1_0;
+	wi->hires_picture = wi->picture;
+}
+
 static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
 {
 	int j;
@@ -1012,14 +1028,8 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
 	wi->bounce = (sbyte)PHYSFSX_readByte(fp);
 	wi->homing_flag = (sbyte)PHYSFSX_readByte(fp);
 	PHYSFSX_fseek(fp, 3, SEEK_CUR);
-	wi->speedvar = 128;
-	wi->flags = 0;
-	wi->flash = 0;
-	wi->afterburner_size = 0;
-	wi->children = weapon_id == SMART_ID ? PLAYER_SMART_HOMING_ID : -1;
 	wi->energy_usage = PHYSFSX_readFix(fp);
 	wi->fire_wait = PHYSFSX_readFix(fp);
-	wi->multi_damage_scale = F1_0;
 	bitmap_index_read(&wi->bitmap, fp);
 	wi->blob_size = PHYSFSX_readFix(fp);
 	wi->flash_size = PHYSFSX_readFix(fp);
@@ -1036,7 +1046,7 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
 	wi->lifetime = PHYSFSX_readFix(fp);
 	wi->damage_radius = PHYSFSX_readFix(fp);
 	bitmap_index_read(&wi->picture, fp);
-	wi->hires_picture = wi->picture;
+	d1_in_d2_initialize_weapon_extensions(wi, weapon_id);
 }
 
 static ushort d1_model_runtime_color(ushort color)

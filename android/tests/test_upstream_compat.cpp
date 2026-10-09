@@ -5782,6 +5782,12 @@ static void test_d1_shareware_sources(const char *directory, const char *registe
 	};
 	publish(prepare());
 	require(N_polygon_models == 56 && Num_sound_files == 70, "authentic shareware owns its model and sound banks");
+	for (int weapon = 0; weapon < N_weapon_types; ++weapon) {
+		require(Weapon_info[weapon].speedvar == 128 && Weapon_info[weapon].multi_damage_scale == F1_0,
+		        "shareware projectiles retain native speed and damage without D2-only variance");
+		require(Weapon_info[weapon].children == (weapon == SMART_ID ? PLAYER_SMART_HOMING_ID : -1),
+		        "only the native smart missile emits child projectiles");
+	}
 	init_objects();
 	require(load_level("level01.sdl") == 0, "load the authentic shareware level with its own definitions");
 	test_loaded_d1_weapon_firing(true);

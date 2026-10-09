@@ -227,7 +227,9 @@ public:
   for (int i = 0; i < D1_MAX_EFFECTS; ++i) generation.excluded_effects[i] = excluded_effects[i];
   for (int i = 0; i < N_robot_types; ++i) generation.unavailable_robots[i] = generation.robots[i].model_num == -1;
   for (auto &texture : generation.texture_info) texture.destroyed = -1;
-  for (auto &robot : generation.robots) { robot.weapon_type2 = -1; robot.behavior = AIB_NORMAL; robot.aim = 255; }
+  for (auto &robot : generation.robots) d1_in_d2_initialize_robot_extensions(&robot);
+  for (int i = 0; i < generation.num_weapon_types; ++i)
+   d1_in_d2_initialize_weapon_extensions(&generation.weapons[i], i);
  }
 };
 }

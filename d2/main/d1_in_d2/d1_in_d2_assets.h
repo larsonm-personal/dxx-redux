@@ -99,6 +99,9 @@ typedef struct d1_asset_generation {
 } d1_asset_generation;
 
 int d1_in_d2_read_shareware_definitions(d1_asset_generation *generation, const char **error);
+/* D1 sources have no D2-only weapon fields; apply after either source reader */
+void d1_in_d2_initialize_weapon_extensions(weapon_info *weapon, int weapon_id);
+void d1_in_d2_initialize_robot_extensions(robot_info *robot);
 
 /* Optional D2 content is read from explicit paths into unpublished storage
  * No source is inferred from live tables or the current gameplay profile */

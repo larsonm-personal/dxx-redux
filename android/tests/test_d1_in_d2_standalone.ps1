@@ -2,6 +2,7 @@
 # Catalog owner for the isolated Android D1-only resource/gameplay scenario
 param(
     [string]$D1DataDirectory,
+    [string]$D2DataDirectory,
     [switch]$SharewareSmoke,
     [switch]$SharewareCampaign,
     [ValidateSet(0, 3, 7)][int]$SharewareLastLevel = 0,
@@ -21,4 +22,4 @@ if (-not $D1DataDirectory) {
     $D1DataDirectory = $line[0].Substring('Resolved d1 data dir: '.Length)
 }
 & (Join-Path $repoRoot 'android/helpers/test_d1_in_d2_android.ps1') `
-    -D1DataDirectory $D1DataDirectory -Serial $Serial -AdbPath $AdbPath -SharewareSmoke:$SharewareSmoke -SharewareCampaign:$SharewareCampaign -SharewareLastLevel $SharewareLastLevel
+    -D1DataDirectory $D1DataDirectory -D2DataDirectory $D2DataDirectory -Serial $Serial -AdbPath $AdbPath -SharewareSmoke:$SharewareSmoke -SharewareCampaign:$SharewareCampaign -SharewareLastLevel $SharewareLastLevel

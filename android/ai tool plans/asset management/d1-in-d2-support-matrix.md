@@ -12,7 +12,7 @@ Native D1 remains available and is not being retired.
 | Registered PC 1.4/1.5 layout, including the tested GOG 1.4a package | Full reader validates and prepares the source               | PIG size 4920305, SHA-256 `093F9CC029200E9D71D5E14F2F06E5E876A658DD64DC664D6911C5D24D7B64FE`; campaign, custom definitions, save/rewind, rendering and LAN evidence in the ledger. Fresh eight-recording corpus is still running                                                                                                                                                                                                           |
 | GOG macOS installer containing the same registered PC data          | Same source as the preceding row                            | Extracted HOG and PIG hashes equal the Windows GOG package. This is not evidence of the original Mac game format                                                                                                                                                                                                                                                                                                                           |
 | Early OEM layout, PIG size 5039735                                  | Admitted to full validation                                 | No actual source-package runtime evidence in this session; unverified                                                                                                                                                                                                                                                                                                                                                                      |
-| PC DOS 1.4 shareware, uncompressed and compressed PIG               | Shared table/POF/sound reader prepares D2 assets            | Both representations pass all seven host level loads and Android emulator gameplay/save/load/rewind. The uncompressed demo also passes the level-one interaction/exit route on emulator and physical arm64. Original-package runtime qualification is recorded below                                                                                                                                                                       |
+| PC DOS 1.4 shareware, uncompressed and compressed PIG               | Shared table/POF/sound reader prepares D2 assets            | Both representations pass all seven host level loads and Android emulator gameplay/save/load/rewind. The uncompressed demo also passes the complete seven-level campaign and ending on emulator and physical arm64. Original-package runtime qualification is recorded below                                                                                                                                                               |
 | Test Flight PC demo                                                 | Same PC shareware reader; three-level campaign              | All three host level loads match native D1; Android emulator gameplay, save/load and rewind pass. The three-level campaign and ending also pass on the emulator (91 steps)                                                                                                                                                                                                                                                                 |
 | Earlier PC shareware variants                                       | Known PC shareware formats admitted to full validation      | Shared format support is not a version whitelist. No authentic earlier-edition runtime fixture has been qualified                                                                                                                                                                                                                                                                                                                          |
 | Early registered PC 1.0 PIG layouts                                 | Unsupported by the imported base reader; use native D1      | Separate from PC shareware; no new decoder is claimed                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -23,19 +23,39 @@ Native D1 remains available and is not being retired.
 
 ## Original-package PC shareware qualification
 
+The [PC shareware implementation milestone](d1-shareware-in-d2-20261008.md) is complete.
 On October 8, 2026, `android/tests/test_demo_import.ps1 -Serial emulator-5582`
 passes all 11 catalog archives through the production importer, checks exact
 installed bytes and manifests, verifies readiness separately for native D1,
 native D2 and D1-in-D2, and verifies failed-import preservation. Both PC downloads
 (`desc14sw.exe` and `descent 1 demo 1-4.zip`) each pass D2 gameplay, file restore
-and rewind (37 steps), then door/effect/reactor checks, all seven levels and the ending (123 steps). Runtime consumes the production-import outputs directly on
+and rewind (37 steps), then door/effect/reactor checks, all seven levels and the
+ending (123 steps). Runtime consumes the production-import outputs directly on
 the device, including their manifest; it does not substitute host-extracted data.
+A null `runtime_suite` explicitly means an archive has no runtime qualification
+in this corpus. Readiness alone does not establish playable content.
 
-Evidence and APK hashes: `temp/d1-shareware-reader/campaign-qualification.json` (full campaign), plus the earlier `original-package-qualification.json`,
-`original-package-runtime-final.log` and `package-{exe,zip}-{smoke,campaign}-*`.
-The target is Android API 34 x86_64. A null `runtime_suite` in the oracle means
-the package is not runtime-qualified by this corpus; readiness and import
-success alone are insufficient. Separate extracted-fixture emulator runs pass the seven-level DOS campaign and the three-level Test Flight campaign through their endings; see `temp/d1-shareware-reader/{dos,flight}-complete-*`. Both original-package full-campaign reruns also pass; evidence is in `original-package-full-campaign.log` and `full-package-{exe,zip}-{smoke,campaign}-*` in the same directory.
+The final corrected build also passes the seven-level demo ending, persistence
+and a 69-step demo/D2/demo round trip on the attached API 33 arm64 device using
+the isolated diagnostic app. Test Flight passes its 91-step three-level campaign
+and ending on API 34 x86_64. Compressed DOS data has independent host level,
+source-switching and Android persistence evidence.
+
+The final audit caught missing D2-only weapon defaults in the shareware adapter.
+Registered and shareware readers now share weapon and robot default initialization.
+Native/imported demo gameplay traces match all pickup, damage, drop, reactor,
+explosion and contact cases, and 41 weapon-rendering artifacts match exactly.
+Repeated missing table/model and truncated-HOG loads preserve the active assets;
+changed sources reject the saved identity and original sources recover it.
+
+Final evidence and APK hashes: `temp/d1-shareware-reader/final-qualification.json`.
+The same directory contains `qualified-fixtures.json`, `final-original-package-runtime.log`,
+`final-package-*`, `final-physical-*`, `qualified-flight-*`,
+`{demo,flight,compressed}-source-final-host.log`, `shareware-gameplay-rules-final.log`
+and `shareware-weapon-comparison-final.json`. Earlier qualification manifests are
+historical and predate the final adapter-default correction. These runs exercise
+app-private production import/staging; they do not newly qualify every storage
+provider or the broader registered-content replay corpus.
 
 ## Platforms and runtime modes
 
@@ -44,7 +64,7 @@ success alone are insufficient. Separate extracted-fixture emulator runs pass th
 | Windows x86 native D1 and imported D1    | Both executables build; native and ordinary D2 host suites, actual campaign/persistence and renderer checks pass                                                                                                                                                       | Current paired corpus `temp/d1-selection-death-corpus` is live. Historical recording/native disagreements remain separate from engine parity      |
 | Android x86-64, imported D1              | Actual D1-only level travel, both-installed switching, overlay/controls/Back after cooperative level travel, memory/file restore, rewind and companion controls verified. Edition admission and the registered-PC 67-step level-transition control pass on the new APK | Broader presentation coverage remains open; artifact hashes and exact source boundary are in `temp/d1-edition-scope-evidence/implementation.json` |
 | Android x86-64, native D1 control        | Actual memory restore/rewind and native-reference Spreadfire capture pass                                                                                                                                                                                              | Not a complete replay corpus on device                                                                                                            |
-| Android arm64-v8a and armeabi-v7a        | Both engines compile in the three-ABI APK. Physical arm64 API 33 / Mali-G77 MC9 passes the DOS demo gameplay, save/load, rewind and level-one exit route in the isolated diagnostic package                                                                            | armeabi-v7a runtime remains unqualified here; the arm64 demo check does not qualify the entire registered-content replay corpus                   |
+| Android arm64-v8a and armeabi-v7a        | Both engines compile in the three-ABI APK. Physical arm64 API 33 / Mali-G77 MC9 passes DOS demo gameplay, save/load, rewind, the seven-level ending and a D1/D2/D1 round trip in the isolated diagnostic package                                                       | armeabi-v7a runtime remains unqualified here; the arm64 demo check does not qualify the entire registered-content replay corpus                   |
 | Linux and macOS executables              | Cross-platform source paths retained                                                                                                                                                                                                                                   | No current build/runtime evidence in this Windows session                                                                                         |
 | Imported LAN co-op with matching sources | Physical level-one exit through level-two overlay/input/Back; host/client rewind and companion ownership verified                                                                                                                                                      | Not evidence for every competitive mode or mixed engine/version pairing                                                                           |
 | Rendering demos                          | Imported version 16/type 4 source identity, seek/rewind/export and opposite-endian cases verified                                                                                                                                                                      | Original native version-13/type-2 playback remains unsupported in D2                                                                              |

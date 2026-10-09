@@ -1,6 +1,6 @@
 # D1 DOS 1.4 shareware in the D2 engine
 
-Status: implementation in progress; shared definitions and D2 adapter implemented, Android gameplay and persistence qualification underway
+Status: complete for the PC shareware milestone. DOS 1.4 compressed/uncompressed and Test Flight are qualified as detailed in the completion audit below. Earlier editions without authentic fixtures remain unqualified.
 
 ## Outcome and scope
 
@@ -10,7 +10,7 @@ Deliver through six sequential parts below. Parts 2 and 3 are the largest and mo
 
 Include available earlier PC shareware and Test Flight fixtures in qualification. Accept compatible structures and complete dependencies; retain exclusions only for demonstrated missing capabilities. Original Mac and registered PC 1.0 formats require separate investigation if they differ from the implemented format. Multiplayer, arbitrary third-party shareware modifications and full D1/D2 engine consolidation are outside this first milestone. Existing registered D1, native D1 and ordinary D2 behavior must retain their current support.
 
-## Evidence and architectural decision
+## Evidence and architectural decision (initial state)
 
 - `d2/main/d1_in_d2/d1_in_d2_assets.c`: `d1_in_d2_source_edition_error` rejects all known PC shareware PIG sizes; `d1_in_d2_read_assets` expects embedded registered-PIG definitions
 - `d1/main/piggy.c`: shareware starts the bitmap/sound directory at offset zero and selects `PIGGY_PC_SHAREWARE`
@@ -113,6 +113,9 @@ Keep the launcher exclusion until preparation and native validation work; enable
 The milestone is complete when the authentic DOS 1.4 download installs through production code and runs the seven-level demo in D2 with its own assets, representative gameplay and persistence checks pass, and native D1 plus existing registered-D1-in-D2 and ordinary-D2 controls remain green. Any unavailable compressed fixture or untested platform remains explicitly unqualified.
 
 ## Implementation evidence, October 8
+
+The following notes are chronological. Intermediate failures and pending items
+are retained as history; the completion audit at the end records the final state.
 
 The authentic outputs already available under `temp/import-parity-audit/native-demo` and `native-flight` establish:
 
@@ -248,3 +251,66 @@ flags and object-contained robots; generation validation checks robot-contained
 robots and the default robot-drop reference. The five authentic host controls
 (DOS uncompressed, DOS compressed, Test Flight, registered D1 and ordinary D2)
 passed after the initial consumer guards. Final native D1 and D2 host integration suites pass, including default/drop-reference rejection checks (`robot-final-{native-d1-tests,host-tests}.log`). All five authentic host controls pass again with the final validation. The Android three-ABI rebuild passes; Test Flight passes the full 91-step campaign on the final APK. `temp/d1-shareware-reader/campaign-qualification.json` records exact APK hashes and run results. Remaining work is source switching, source-failure preservation and the final requirement audit; campaign endings and unavailable-robot checks are now verified.
+
+## Source retirement and adapter-default audit
+
+`test_upstream_compat --shareware-sources <shareware-directory> <registered-directory>`
+now exercises the real source reader and publication lifecycle. It repeatedly
+removes table, robot, reactor and ship members from isolated copies of the HOG,
+rejects truncated archives, and proves that failures preserve the live model,
+bitmap and sound pointers and the saved source identity. It also rejects a saved
+identity after a source change, accepts it after restoring the original source,
+and repeatedly switches between registered D1 and shareware while loading real
+levels and firing weapons. DOS uncompressed, DOS compressed and Test Flight all
+pass (`{demo,compressed,flight}-source-final-host.log`). Original fixtures are
+never modified. The original mounted HOG still contains the deliberately missing
+members, so these checks also verify that definition loading cannot borrow them
+from a different archive.
+
+The final native gameplay comparison found an adapter bug missed by startup and
+campaign tests: shareware weapons retained zeroed D2-only fields. This consumed
+extra simulation RNG during firing and could enable unintended child weapons.
+Registered and shareware sources now call the same weapon-extension initializer,
+including speed variance, child projectile, multiplayer damage and picture
+defaults. The robot-extension initializer is shared too, including the missing
+light-casting default. Native table grammar remains shared independently of these
+D2-specific adaptations.
+
+After the fix, complete native/imported gameplay traces match, including 64 door,
+30 pickup, 30 damage, 2160 drop, 96 robot-blast, 30 lava-impact and 1200 reactor-frame
+cases, plus motion, animation, contact and explosion cases. Ordinary D2 controls
+also pass. The existing `android/helpers/test_d1_gameplay_rules.ps1` reproduces
+this comparison with the demo data directory. Native and imported weapon traces
+also match all 41 state, indexed-pixel, palette, raw-frame and PNG artifacts across
+reload, custom-art retirement and return from ordinary D2. These are targeted
+comparisons, not a claim of whole-engine replay equivalence.
+
+The Android smoke runner now performs a full demo -> D2 -> demo round trip when
+given `-D2DataDirectory`, firing in each game and restoring the pre-switch demo
+save after returning. The registered standalone wrapper exposes that parameter.
+This passes 69 steps on both the emulator and the attached phone; the phone run
+uses the final corrected APK. Evidence directories include the device serial so
+concurrent runs on separate devices do not retire each other's artifacts.
+
+## Completion audit
+
+Final evidence root: `temp/d1-shareware-reader`. `final-qualification.json` pins
+the tested APKs, all eight final Android run results and the native comparison
+hashes. `qualified-fixtures.json` records exact HOG/PIG hashes and all archive
+member hashes for the three tested sources. Earlier evidence remains historical.
+
+| Part                       | Final evidence and outcome                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Source contract         | The original package oracle and fixture manifest identify DOS uncompressed/compressed and Test Flight separately. The inventory includes tables, palette, 45 POFs, levels and presentation resources. Native pre-refactor level metadata, independent BIN decoding and legacy sound decoding provide reference evidence                                                                        |
+| 2. Shared reader           | Both engines and host/Android builds use the same table grammar, bounded BIN/POF readers, model bounds, sound decoding and joint construction. Native D1 launches the demo and produces the matching actual gameplay and rendered traces. Malformed/truncated input and repeated-load checks pass                                                                                              |
+| 3. D2 generation           | Both DOS representations and Test Flight prepare owned assets without retail dependencies. Common references and unavailable robots are validated. Failed preparation preserves the active generation; source changes reject the old saved identity; restoring source bytes recovers it. Registered/shareware switching passes                                                                 |
+| 4. Admission and campaigns | Native edition classification admits the known PC shareware layouts; startup performs full dependency validation. Mac and early registered exclusions retain native D1 fallback. Both original PC imports pass separate readiness assertions. Seven-level DOS and three-level Test Flight endings pass. App-private production import/staging and both-games-installed selection are exercised |
+| 5. Runtime and persistence | Original EXE and ZIP outputs each pass 37-step gameplay/save/load/rewind and 123-step full-campaign checks on API 34 x86_64. The API 33 arm64 phone passes 37-step persistence, 123-step campaign and 69-step D1/D2/D1 checks in the isolated app. Test Flight passes 91 steps on the final APK. Host gameplay, damage/pickups, sound, rendering and source-retirement comparisons pass        |
+| 6. Corpus and controls     | All 11 original catalog archives declare separate per-engine readiness and runtime qualification; unsupported combinations remain explicit. Runtime uses the exact production-import outputs. Native D1 and D2 integration suites, three-ABI Android builds, scoped quality checks and both automation catalogs pass. The demo-import master timeout is 2400 seconds                           |
+
+The implementation milestone is complete. Earlier PC shareware fixtures that are
+not available, original Mac/early registered formats, Linux/macOS runtime,
+armeabi-v7a runtime, multiplayer and arbitrary third-party shareware modifications
+are not newly qualified. Full combat on every campaign level and full D1/D2
+consolidation remain outside this milestone. The physical test helper restores
+the isolated app's original files/preferences and returns to its launcher.
