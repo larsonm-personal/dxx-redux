@@ -35,6 +35,7 @@ extern "C" {
 #include "cntrlcen.h"
 #include "console.h"
 #include "digi.h"
+#include "d1_shareware_table.h"
 #include "sounds.h"
 #include "dxxerror.h"
 #ifdef USE_SDLMIXER
@@ -5171,6 +5172,37 @@ static void test_loaded_d1_weapon_firing(bool d1)
 			require(player.primary_weapon == LASER_INDEX, "D1 direct laser aliases resolve to the real laser inventory slot");
 		}
 		player = saved_player;
+	} else {
+		const auto saved_player = player;
+		ubyte saved_last_super[MAX_PRIMARY_WEAPONS];
+		std::memcpy(saved_last_super, Primary_last_was_super, sizeof(saved_last_super));
+		// D2 super lasers upgrade laser_level; they never own inventory slot 5
+		player.primary_weapon_flags = HAS_LASER_FLAG | HAS_VULCAN_FLAG;
+		for (int level = 0; level <= MAX_SUPER_LASER_LEVEL; ++level) {
+			for (int quad = 0; quad < 2; ++quad) {
+				player.laser_level = level;
+				player.flags = quad ? PLAYER_FLAGS_QUAD_LASERS : 0;
+				player.energy = 100 * F1_0;
+				player.primary_ammo[VULCAN_INDEX] = 1000;
+				player.primary_weapon = LASER_INDEX;
+				// Also exercise fallback from remembered upgrades that are no longer owned
+				Primary_last_was_super[LASER_INDEX] = Primary_last_was_super[VULCAN_INDEX] = 1;
+				require(!(player_has_weapon(Player_num, SUPER_LASER_INDEX, 0) & HAS_WEAPON_FLAG),
+				        "D2 laser upgrades never make the dummy super-laser inventory slot selectable");
+				for (int weapon : { VULCAN_INDEX, LASER_INDEX, LASER_INDEX, VULCAN_INDEX, VULCAN_INDEX }) {
+					do_weapon_select(weapon, 0);
+					require(player.primary_weapon == weapon, "D2 direct selection and reselects retain the owned laser or Vulcan slot");
+					const fix energy = player.energy;
+					const int ammo = player.primary_ammo[VULCAN_INDEX];
+					Next_laser_fire_time = GameTime64;
+					do_laser_firing_player();
+					require(weapon == VULCAN_INDEX ? player.primary_ammo[VULCAN_INDEX] < ammo : player.energy < energy,
+					        "D2 lasers and Vulcan still fire after reselecting, with or without super laser upgrades");
+				}
+			}
+		}
+		std::memcpy(Primary_last_was_super, saved_last_super, sizeof(saved_last_super));
+		player = saved_player;
 	}
 }
 
@@ -5786,6 +5818,59 @@ static d1_guidebot_asset_stats test_registered_guidebot_source(const char *direc
 	return previous;
 }
 
+static void check_shareware_sound_mappings()
+{
+	PHYSFS_file *file = PHYSFSX_openReadBuffered("bitmaps.tbl");
+	const bool encoded = !file;
+	if (!file) file = PHYSFSX_openReadBuffered("bitmaps.bin");
+	require(file != nullptr, "open the authentic shareware sound declarations");
+	d1_shareware_table_reader reader;
+	d1_shareware_table_init(&reader, [](void *source) {
+		ubyte value;
+		const auto count = PHYSFS_readBytes(static_cast<PHYSFS_file *>(source), &value, 1);
+		return count == 1 ? int(value) : (count == 0 ? -1 : -2); }, file, encoded);
+	std::vector<int> referenced(Num_sound_files, 0);
+	int active = 0, excluded = 0, result;
+	const int saved_lowmem = GameArg.SysLowMem;
+	char line[4096];
+	while ((result = d1_shareware_table_next(&reader, line, sizeof(line))) > 0) {
+		char directive[32], sample[32];
+		int logical;
+		if (std::sscanf(line, "%31s %d %31s", directive, &logical, sample) != 3) continue;
+		const bool skipped = !std::strcmp(directive, "@$SOUND");
+		if (!skipped && std::strcmp(directive, "$SOUND")) continue;
+		require(logical >= 0 && logical < 250, "source sound ID fits the D1 logical table");
+		if (skipped) {
+			++excluded;
+			continue;
+		}
+		++active;
+		if (char *extension = std::strchr(sample, '.')) *extension = 0;
+		const int expected = piggy_find_sound(sample);
+		require(expected >= 0 && expected < Num_sound_files, "every active shareware sound declaration names a packaged sample");
+		referenced[expected] = 1;
+		for (int lowmem : { 0, 1 }) {
+			GameArg.SysLowMem = lowmem;
+			if (digi_xlat_sound(logical) != expected)
+				std::fprintf(stderr, "Shareware sound %d (%s), lowmem=%d: expected %d, got %d\n", logical, sample, lowmem, expected, digi_xlat_sound(logical));
+			require(digi_xlat_sound(logical) == expected, "every active shareware sound resolves to its authored sample in both memory modes");
+			require(GameSounds[expected].data && GameSounds[expected].length > 0, "mapped shareware samples contain audio");
+		}
+	}
+	require(result == 0 && PHYSFS_close(file), "read the complete shareware sound list");
+	require(active == 82 && excluded == 7, "audit all active declarations and explicitly excluded registered-only sounds");
+	require(std::find(referenced.begin(), referenced.end(), 0) == referenced.end(), "all 70 packaged shareware samples are reachable through the source sound list");
+	for (int lowmem : { 0, 1 }) {
+		GameArg.SysLowMem = lowmem;
+		require(digi_xlat_sound(SOUND_GOOD_SELECTION_PRIMARY) == digi_xlat_sound(155) &&
+		            digi_xlat_sound(SOUND_GOOD_SELECTION_SECONDARY) == digi_xlat_sound(155) &&
+		            digi_xlat_sound(SOUND_CHEATER) == digi_xlat_sound(156),
+		        "D2 selection and cheat IDs alias the exact shareware sounds in both memory modes");
+	}
+	GameArg.SysLowMem = saved_lowmem;
+	std::puts("PASS: all 82 active shareware sound declarations, 70 samples and three engine aliases resolve in both memory modes");
+}
+
 static void test_d1_shareware_sources(const char *directory, const char *registered_directory)
 {
 	const std::string hog_path = std::string(directory) + "/DESCENT.HOG";
@@ -5811,6 +5896,7 @@ static void test_d1_shareware_sources(const char *directory, const char *registe
 	};
 	publish(prepare());
 	require(N_polygon_models == 56 && Num_sound_files == 70, "authentic shareware owns its model and sound banks");
+	check_shareware_sound_mappings();
 	for (int weapon = 0; weapon < N_weapon_types; ++weapon) {
 		require(Weapon_info[weapon].speedvar == 128 && Weapon_info[weapon].multi_damage_scale == F1_0,
 		        "shareware projectiles retain native speed and damage without D2-only variance");
@@ -5880,6 +5966,7 @@ static void test_d1_shareware_sources(const char *directory, const char *registe
 		require(PHYSFS_unmount(registered_hog.c_str()) && PHYSFS_unmount(registered_directory), "return to the selected shareware source");
 		publish(prepare());
 		require(N_polygon_models == 56 && Num_sound_files == 70 && restore_identity(), "shareware replaces registered D1 without stale models, sounds or source identity");
+		check_shareware_sound_mappings();
 		require(load_level("level01.sdl") == 0, "load shareware again after registered D1 retirement");
 		test_loaded_d1_weapon_firing(true);
 	}
