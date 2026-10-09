@@ -32,6 +32,7 @@
 #   .\test_lan.ps1 -GuidebotOwnership
 #   .\test_lan.ps1 -GuidebotClientRelease cage
 #   .\test_lan.ps1 -GuidebotClientRelease deploy
+#   .\test_lan.ps1 -GuidebotClientRelease deploy -MissionFile descent
 #   .\test_lan.ps1 -GuidebotSpawn -InitialLevel 8 -AllowSecretWarps
 #   .\test_lan.ps1 -GuidebotTravel -InitialLevel 8 -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -GuidebotHostObserver
@@ -2530,9 +2531,10 @@ try {
     if ($GuidebotSpawn -and ($InitialLevel -ne 8 -or $MissionFile -or -not $AllowSecretWarps)) {
         throw 'GuidebotSpawn requires Counterstrike level 8 with secret warps enabled'
     }
-    if ($GuidebotClientRelease -and ($Game -ne 'd2' -or $InitialLevel -ne 1 -or $MissionFile -or
+    if ($GuidebotClientRelease -and ($Game -ne 'd2' -or $InitialLevel -ne 1 -or
+            ($MissionFile -and ($MissionFile -ne 'descent' -or $GuidebotClientRelease -ne 'deploy')) -or
             $GuidebotOwnership -or $GuidebotSpawn -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore -or $HostMigration)) {
-        throw 'GuidebotClientRelease requires a separate Counterstrike level 1 scenario'
+        throw 'GuidebotClientRelease requires a separate Counterstrike level 1 scenario, or First Strike level 1 for deploy'
     }
     if (($GuidebotOwnership -and $GuidebotHostObserver) -or
         ($GuidebotOwnership -and $GuidebotSlotRemapRestore) -or
@@ -2615,7 +2617,7 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
     if ($GraphicsConfirmation) { Initialize-MultiplayerGraphicsFixture }
-    if ($D1LevelTransition) {
+    if ($D1LevelTransition -or $GuidebotClientRelease) {
         # This fixture verifies touch recovery, including handhelds that default to controller-only controls
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
@@ -3484,6 +3486,15 @@ try {
             -Description 'Enter secret mine, deploy missing Guide-Bot from client, repeat, dock and redeploy' -TimeoutSec 240
     }
     if ($testPassed -and $GuidebotClientRelease) {
+        $testPassed = Wait-ForCondition -Description 'Guide-Bot touch labels start Locked on both peers' -TimeoutSec 10 -PollMs 500 -Condition {
+            foreach ($serial in @($EMU1, $EMU2)) {
+                $ui = Get-GameUiIntrospection -Serial $serial
+                if (-not $ui -or -not $ui.touch_overlay_active -or $ui.guidebot_label -ne 'Locked') { return $false }
+            }
+            return $true
+        }
+    }
+    if ($testPassed -and $GuidebotClientRelease) {
         $releaseScripts = @{
             cage = 'test_coop_guidebot_client_cage.jsonc'
             deploy = 'test_coop_guidebot_client_deploy.jsonc'
@@ -3491,6 +3502,13 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_client_release_host.jsonc' `
             -SecondarySerial $EMU2 -SecondaryScript $releaseScripts[$GuidebotClientRelease] `
             -Description "Client Guide-Bot release via $GuidebotClientRelease retains client ownership" -TimeoutSec 45
+        if ($testPassed) {
+            $testPassed = Wait-ForCondition -Description 'Guide-Bot touch labels refresh without another command' -TimeoutSec 10 -PollMs 500 -Condition {
+                $hostUi = Get-GameUiIntrospection -Serial $EMU1
+                $joinUi = Get-GameUiIntrospection -Serial $EMU2
+                return $hostUi -and $joinUi -and $hostUi.guidebot_label -eq $JoinCallsign -and $joinUi.guidebot_label -eq 'Guide'
+            }
+        }
     }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario

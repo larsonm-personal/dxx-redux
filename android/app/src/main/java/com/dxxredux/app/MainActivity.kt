@@ -3188,6 +3188,7 @@ class MainActivity :
                             touchOverlay.enhancedGuidebotRouting = nativeGuidebotRoutingIsEnhanced()
                             touchOverlay.isActive = shouldShow
                             if (shouldShow) {
+                                touchOverlay.refreshGuidebotLabel()
                                 val weapons = nativeGetWeaponState()
                                 if (!weapons.contentEquals(lastOverlayWeaponState)) {
                                     lastOverlayWeaponState = weapons
@@ -3352,6 +3353,7 @@ class MainActivity :
                         ).put("touch_overlay_active", touchOverlay.isActive)
                         .put("weapon_state", org.json.JSONArray(nativeGetWeaponState().toList()))
                         .put("weapon_labels", JSONObject(touchOverlay.weaponLabels()))
+                        .put("guidebot_label", touchOverlay.guidebotLabel())
                         .put("paused_warning_shown", touchOverlay.isPausedWarningShown)
                         .put("touch_overlay_shown", touchOverlay.isShown)
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)

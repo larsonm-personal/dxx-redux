@@ -1,4 +1,4 @@
-// TEST HELPER: Release the placed Guide-Bot with the client's Deploy action
+// TEST HELPER: Release or create the Guide-Bot with the client's Deploy action
 [
     { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
     { "action": "assert", "expect": { "guidebot.released": false, "guidebot.owner_player": -1 } },

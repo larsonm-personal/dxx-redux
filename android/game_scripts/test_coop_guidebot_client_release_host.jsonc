@@ -1,4 +1,4 @@
-// TEST HELPER: Observe a client freeing the placed Guide-Bot in Counterstrike 1
+// TEST HELPER: Observe a client releasing or creating the Guide-Bot
 [
     { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
     { "action": "assert", "expect": { "guidebot.released": false, "guidebot.owner_player": -1 } },

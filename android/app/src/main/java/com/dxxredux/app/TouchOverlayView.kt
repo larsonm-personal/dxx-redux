@@ -1864,15 +1864,7 @@ class TouchOverlayView
                         continue
                     }
                     if (rm.control.id == "Guide") {
-                        val released = isBuddyReleasedProvider?.invoke() != false
-                        if (!released) {
-                            rm.quiescentLabel = "Locked"
-                        } else if (isEscortOwnerProvider?.invoke() == false) {
-                            val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
-                            rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Guide"
-                        } else {
-                            rm.quiescentLabel = "Guide"
-                        }
+                        rm.quiescentLabel = currentGuidebotLabel()
                     }
                     if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                         val isPrimary = rm.control.id == "PriWpn"
@@ -4045,6 +4037,33 @@ class TouchOverlayView
             radialStates
                 .filter { it.control.id == "PriWpn" || it.control.id == "SecWpn" }
                 .associate { it.control.id to it.quiescentLabel }
+
+        internal fun guidebotLabel(): String =
+            radialStates.firstOrNull { it.control.id == "Guide" }?.quiescentLabel.orEmpty()
+
+        private fun currentGuidebotLabel(): String =
+            when {
+                isBuddyReleasedProvider?.invoke() == false -> {
+                    "Locked"
+                }
+
+                isEscortOwnerProvider?.invoke() == false -> {
+                    escortOwnerCallsignProvider?.invoke().orEmpty().ifEmpty {
+                        "Guide"
+                    }
+                }
+
+                else -> {
+                    "Guide"
+                }
+            }
+
+        internal fun refreshGuidebotLabel() {
+            if (gameVariant == "d1" || automapActive) return
+            val guide = radialStates.firstOrNull { it.control.id == "Guide" } ?: return
+            // Network replies and cage releases can arrive after the last touch redraw
+            if (guide.quiescentLabel != currentGuidebotLabel()) invalidate()
+        }
 
         internal fun visibleRadialBindings(menuId: String): List<Int> {
             val menu =
