@@ -38,6 +38,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "playsave.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
+#include "d1_in_d2/d1_in_d2.h"
 
 int POrderList (int num);
 int SOrderList (int num);
@@ -340,7 +341,7 @@ void select_weapon(int weapon_num, int secondary_flag, int print_message, int wa
 	if (Objects[Players[Player_num].objnum].type == OBJ_GHOST)
 		return;
 
-	if (!secondary_flag && d1_in_d2_is_quad_selection(weapon_num)) {
+	if (!secondary_flag && d1_in_d2_is_laser_selection(weapon_num)) {
 		weapon_num = LASER_INDEX;
 		if (Players[Player_num].primary_weapon == LASER_INDEX)
 			return;
@@ -450,7 +451,11 @@ void do_weapon_select(int weapon_num, int secondary_flag)
 		has_flag = HAS_WEAPON_FLAG+HAS_AMMO_FLAG;
 	}
 
-	if (current == weapon_num || current == weapon_num+SUPER_WEAPON) {
+	if (d1_in_d2_use_d1_gameplay()) {
+		// D1 laser aliases overlap D2's upgraded weapon slots
+		weapon_status = player_has_weapon(Player_num, weapon_num, secondary_flag);
+	}
+	else if (current == weapon_num || current == weapon_num+SUPER_WEAPON) {
 
 		//already have this selected, so toggle to other of normal/super version
 

@@ -216,6 +216,13 @@ public:
   bool encoded = !archive.has("bitmaps.tbl"); Bytes bytes = archive.read(encoded ? "bitmaps.bin" : "bitmaps.tbl");
   TableInput input{bytes}; d1_shareware_table_reader reader;
   d1_shareware_table_init(&reader, TableInput::next, &input, encoded); read(reader, 1);
+  // PC shareware uses one selection sound and a different cheater sound ID
+  // Normalize the logical IDs consumed by D2 without changing the sample bank
+  for (int map = 0; map < 2; ++map) {
+   generation.sound_maps[map][SOUND_GOOD_SELECTION_PRIMARY] = generation.sound_maps[map][155];
+   generation.sound_maps[map][SOUND_GOOD_SELECTION_SECONDARY] = generation.sound_maps[map][155];
+   generation.sound_maps[map][SOUND_CHEATER] = generation.sound_maps[map][156];
+  }
   generation.num_textures = NumTextures; generation.num_wall_anims = Num_wall_anims;
   generation.num_gauges = 80; generation.num_cockpits = Num_cockpits; generation.num_powerups = N_powerup_types;
   generation.num_object_types = Num_total_object_types; generation.first_multi_bitmap = First_multi_bitmap_num;

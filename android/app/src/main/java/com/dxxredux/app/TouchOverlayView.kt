@@ -1373,6 +1373,7 @@ class TouchOverlayView
                 "touch_sticks" to org.json.JSONArray(layout.sticks.map { it.id }),
                 "touch_buttons" to org.json.JSONArray(layout.buttons.map { it.id }),
                 "touch_selectors" to org.json.JSONArray(layout.radialMenus.map { it.id }),
+                "primary_weapon_label" to weaponLabels()["PriWpn"].orEmpty(),
                 "hide_controller_bound_controls" to layout.hideControllerBoundControls,
             )
 
@@ -4039,6 +4040,11 @@ class TouchOverlayView
             dispatchRadialBinding(seg, seg.binding)
             return true
         }
+
+        internal fun weaponLabels(): Map<String, String> =
+            radialStates
+                .filter { it.control.id == "PriWpn" || it.control.id == "SecWpn" }
+                .associate { it.control.id to it.quiescentLabel }
 
         internal fun visibleRadialBindings(menuId: String): List<Int> {
             val menu =

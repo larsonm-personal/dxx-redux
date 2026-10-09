@@ -53,6 +53,8 @@ extern "C" {
 #include "maths.h"
 #include "vecmat.h"
 #include "weapon.h"
+#include "digi.h"
+#include "sounds.h"
 #include "laser.h"
 #include "cntrlcen.h"
 #include "coop_save.h"
@@ -2993,6 +2995,10 @@ extern "C" char *game_introspect_get_state(void)
 		player *p = &Players[Player_num];
 		j["primary_weapon"] = (int) p->primary_weapon;
 		j["secondary_weapon"] = (int) p->secondary_weapon;
+		j["weapon_selection_sounds"] = {
+			{ "primary", digi_xlat_sound(SOUND_GOOD_SELECTION_PRIMARY) },
+			{ "secondary", digi_xlat_sound(SOUND_GOOD_SELECTION_SECONDARY) }
+		};
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;

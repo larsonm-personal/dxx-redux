@@ -34,6 +34,8 @@ extern "C" {
 #include "collide.h"
 #include "cntrlcen.h"
 #include "console.h"
+#include "digi.h"
+#include "sounds.h"
 #include "dxxerror.h"
 #ifdef USE_SDLMIXER
 #include "digi_mixer.h"
@@ -5143,6 +5145,33 @@ static void test_loaded_d1_weapon_firing(bool d1)
 	player.flags &= ~PLAYER_FLAGS_CLOAKED;
 	Laser_do_weapon_sequence(&homer, 1, FrameTime, missile ^ 1, 1);
 	require(homer.lifeleft == 10 * F1_0 - (d1 ? 4 * FrameTime : 0), "D1 steering measures the velocity turn with its capped lifetime cost; D2 keeps its existing rule");
+
+	require(digi_xlat_sound(SOUND_GOOD_SELECTION_PRIMARY) >= 0 &&
+	            digi_xlat_sound(SOUND_GOOD_SELECTION_SECONDARY) >= 0,
+	        "both weapon selection sounds resolve in the loaded sound bank");
+	if (d1) {
+		const auto saved_player = player;
+		player.primary_weapon_flags |= HAS_LASER_FLAG | HAS_VULCAN_FLAG;
+		player.primary_ammo[VULCAN_INDEX] = 1000;
+		// Repeat the touch wheel's direct number-key selection, including reselects
+		for (int variant = 0; variant < 8; ++variant) {
+			player.laser_level = variant % 4;
+			player.flags = variant >= 4 ? PLAYER_FLAGS_QUAD_LASERS : 0;
+			for (int weapon : { VULCAN_INDEX, LASER_INDEX, LASER_INDEX, VULCAN_INDEX, VULCAN_INDEX }) {
+				do_weapon_select(weapon, 0);
+				require(player.primary_weapon == weapon, "D1 repeated direct selection never toggles into a D2 super weapon");
+				const fix energy = player.energy;
+				const int ammo = player.primary_ammo[VULCAN_INDEX];
+				Next_laser_fire_time = GameTime64;
+				do_laser_firing_player();
+				require(weapon == VULCAN_INDEX ? player.primary_ammo[VULCAN_INDEX] < ammo : player.energy < energy,
+				        "primary fire still consumes the selected weapon's resource after switching");
+			}
+			select_weapon(variant + 5, 0, 0, 0);
+			require(player.primary_weapon == LASER_INDEX, "D1 direct laser aliases resolve to the real laser inventory slot");
+		}
+		player = saved_player;
+	}
 }
 
 static void check_profile_fonts(bool d1)

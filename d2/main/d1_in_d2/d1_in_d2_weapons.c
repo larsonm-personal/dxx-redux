@@ -119,6 +119,12 @@ int d1_in_d2_is_quad_selection(int weapon_index)
 	return d1_in_d2_use_d1_gameplay() && weapon_index == D1_QUAD_SELECTION;
 }
 
+int d1_in_d2_is_laser_selection(int weapon_index)
+{
+	return d1_in_d2_use_d1_gameplay() &&
+		((weapon_index >= 5 && weapon_index < 13) || weapon_index == D1_QUAD_SELECTION);
+}
+
 int d1_in_d2_primary_selection_index(int weapon_index)
 {
 	if (d1_in_d2_use_d1_gameplay() && weapon_index == LASER_INDEX &&

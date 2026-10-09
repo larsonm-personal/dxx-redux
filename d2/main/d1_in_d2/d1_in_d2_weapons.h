@@ -29,6 +29,8 @@ int d1_in_d2_weapon_availability(ubyte player_num, int weapon_index, int seconda
 
 /* Native quad selection uses a logical index distinct from the inventory bit */
 int d1_in_d2_is_quad_selection(int weapon_index);
+/* Direct laser level/quad aliases must resolve to the laser inventory slot */
+int d1_in_d2_is_laser_selection(int weapon_index);
 int d1_in_d2_primary_selection_index(int weapon_index);
 /* Negative results leave ordinary D2 ordering/acquisition active */
 int d1_in_d2_primary_order(int weapon_index);

@@ -33,8 +33,18 @@
             "asset_trace.d1_compat.cockpit_frames_applied": "3",
             "audio.mixer_open": "true",
             "audio.osl_play_count": { "gt": 0 },
+            "weapon_selection_sounds.primary": { "gte": 0 },
+            "weapon_selection_sounds.secondary": { "gte": 0 },
         },
     },
+    // Re-selecting lasers through the touch wheel must not select D2 Super Laser
+    { "action": "select_radial", "menu": "PriWpn", "text": "Laser" },
+    { "action": "wait_ms", "ms": 400 },
+    { "action": "assert", "expect": { "primary_weapon": 0 } },
+    { "action": "select_radial", "menu": "PriWpn", "text": "Laser" },
+    { "action": "wait_ms", "ms": 400 },
+    { "action": "assert", "expect": { "primary_weapon": 0 } },
+    { "action": "controller_input", "expect_ui": { "primary_weapon_label": "Laser\nlvl 1" } },
     // Fresh pilot defaults bind accelerate to 102 and primary fire to 100
     { "action": "send_button", "button": 102, "held": 1 },
     { "action": "wait_for", "timeout_ms": 10000, "expect": { "position.z": { "gt": 5 } } },

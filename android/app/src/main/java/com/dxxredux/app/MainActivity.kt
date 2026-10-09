@@ -3085,6 +3085,8 @@ class MainActivity :
 
     private fun openGameMenuSafely(): Boolean = requestPauseAction(PauseState.OPEN_MENU)
 
+    private var lastOverlayWeaponState = IntArray(0)
+
     private fun startOverlayPolling() {
         overlayPoller.removeCallbacksAndMessages(null)
         val pollRunnable =
@@ -3188,6 +3190,13 @@ class MainActivity :
                             touchOverlay.updateGamePausedState(gamePaused, pause.canResume, pause.hint)
                             touchOverlay.enhancedGuidebotRouting = nativeGuidebotRoutingIsEnhanced()
                             touchOverlay.isActive = shouldShow
+                            if (shouldShow) {
+                                val weapons = nativeGetWeaponState()
+                                if (!weapons.contentEquals(lastOverlayWeaponState)) {
+                                    lastOverlayWeaponState = weapons
+                                    touchOverlay.invalidate()
+                                }
+                            }
                             touchOverlay.automapActive = automap
                             touchOverlay.updateDemoRecordingState(demoRecording)
                             if (!overlayEnabled && controllerMenuOpen && shouldShow && !wasActive) {
@@ -3344,6 +3353,8 @@ class MainActivity :
                                 .put("width", gameSurfaceView.width)
                                 .put("height", gameSurfaceView.height),
                         ).put("touch_overlay_active", touchOverlay.isActive)
+                        .put("weapon_state", org.json.JSONArray(nativeGetWeaponState().toList()))
+                        .put("weapon_labels", JSONObject(touchOverlay.weaponLabels()))
                         .put("paused_warning_shown", touchOverlay.isPausedWarningShown)
                         .put("touch_overlay_shown", touchOverlay.isShown)
                         .put("touch_overlay_attached", touchOverlay.isAttachedToWindow)
