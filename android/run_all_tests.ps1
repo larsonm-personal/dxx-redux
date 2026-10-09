@@ -415,6 +415,7 @@ $testTimeouts = @{
     "test_android_texture_bindings" = 600
     "test_android_xmodel_mipmaps" = 600
     "test_demo_import" = 2400
+    "test_enemy_within_import" = 1200
     "test_android_pause_state" = 360
     "test_audio_mix" = 900
     "test_macplay_audio" = 600
@@ -468,6 +469,7 @@ $testTimeouts = @{
     "test_mission_asset_isolation"        = 900
     "test_enemy_within_level2"            = 420
     "test_flyout_safety"                  = 1800
+    "test_mission_movies"                = 1800
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
     "test_xcrash_native_report"           = 300
@@ -630,6 +632,7 @@ $noInfraTests = @(
     "test_metadata_level_headers",
     "test_mission_metadata_flyouts",
     "test_flyout_safety",
+    "test_mission_movies",
     "test_mission_provenance",
     "test_test_runner_result",
     "test_cue_iso",
@@ -1580,7 +1583,7 @@ function Invoke-SuitePreflight {
             return $false
         }
         if ($script:needsInstrumentation) {
-            $instrumentApk = Join-Path $scriptDir 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'
+            $instrumentApk = Join-Path $scriptDir 'app/build/intermediates/apk/androidTest/debug/app-debug-androidTest.apk'
             $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', $instrumentApk) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
         }
@@ -1746,7 +1749,7 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
-$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_demo_import', 'test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
+$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_enemy_within_import', 'test_demo_import', 'test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
     if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
@@ -1774,7 +1777,7 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
     # Retain the exact APK used by this run even if another build changes outputs
     $suiteApk = Join-Path ([IO.Path]::GetFullPath($ReportDir)) "apk_$timestamp.apk"
     & (Join-Path $helpersDir 'retain-recent-artifacts.ps1') -Artifacts $suiteApk | Out-Host
-    Copy-Item -LiteralPath (Join-Path $scriptDir 'app/build/outputs/apk/debug/app-debug.apk') -Destination $suiteApk
+    Copy-Item -LiteralPath (Join-Path $scriptDir 'app/build/intermediates/apk/debug/app-debug.apk') -Destination $suiteApk
     $env:DXX_TEST_APK = $suiteApk
     Write-Host ""
 }

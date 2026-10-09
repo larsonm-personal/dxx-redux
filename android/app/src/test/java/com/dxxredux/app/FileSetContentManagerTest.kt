@@ -16,13 +16,164 @@ class FileSetContentManagerTest {
     @Test
     fun realVertigoInventory() {
         val setDir = temporaryFolder.newFolder("real-vertigo")
-        val source = File("../../game_data/extracted/VERTIGO/MISSIONS")
+        val source = File("../../game_data/extracted/VERTIGO")
         org.junit.Assume.assumeTrue("Local retail Vertigo fixture is unavailable", source.isDirectory)
-        for (name in listOf("D2X.HOG", "D2X.MN2")) source.resolve(name).copyTo(File(setDir, name))
+        for (name in listOf("D2X.HOG", "D2X.MN2")) source.resolve("MISSIONS/$name").copyTo(File(setDir, name))
+        for (name in listOf("D2X-H.MVL", "D2X-L.MVL")) source.resolve(name).copyTo(File(setDir, name))
+        val manager = FileSetContentManager(setDir)
+        val entry = manager.reconcile().entries.single()
+        assertEquals(4, entry.files.size)
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val mission = catalog.missions.single()
+        val resources = catalog.resourcesFor(mission.key)
+        for (name in listOf("D2X-H.MVL", "D2X-L.MVL")) {
+            val movie = resources.single { it.virtualPath.endsWith(name, ignoreCase = true) }
+            assertTrue(source.resolve(name).readBytes().contentEquals(movie.source.readBytes()))
+        }
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        manager.setEnabled(entry.id, false)
+        assertTrue(manager.buildMissionLaunchCatalog("d2").missions.isEmpty())
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+    }
+
+    @Test
+    fun laterMoviesJoinTheirMissionAndPreserveItsIdentityAndState() {
+        val setDir = temporaryFolder.newFolder("later-movies")
+        File(setDir, "other.txt").writeText("unrelated")
+        File(setDir, "d2x.mn2").writeText("zname = Vertigo\nnum_levels = 1\nfirst.rl2\n")
+        File(setDir, "first.rl2").writeText("level")
+        val manager = FileSetContentManager(setDir)
+        val mission = manager.reconcile().entries.single { it.displayName == "Vertigo" }
+        manager.move(mission.id, 0)
+        manager.setEnabled(mission.id, false)
+
+        for (name in listOf("D2X-L.MVL", "d2x-h.mvl")) {
+            File(setDir, name).writeText(name)
+            val result = manager.reconcile()
+            assertTrue(result.conflicts.isEmpty())
+            assertEquals(listOf(mission.id), result.adoptedIds)
+            assertEquals(2, result.entries.size)
+            val updated = result.entries.first()
+            assertEquals(mission.id, updated.id)
+            assertFalse(updated.enabled)
+            assertEquals(name, updated.files.single { it.name == name }.readText())
+            assertTrue(manager.buildMissionLaunchCatalog("d2").missions.isEmpty())
+            assertFalse(File(manager.buildProjection("d2"), "missions/$name").exists())
+        }
+        assertEquals(
+            4,
+            manager
+                .reconcile()
+                .entries
+                .first()
+                .files.size,
+        )
+        manager.setEnabled(mission.id, true)
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val key = catalog.missions.single().key
+        assertEquals(2, catalog.resourcesFor(key).count { it.virtualPath.endsWith(".mvl", true) })
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        assertTrue(manager.deleteEntry(mission.id))
+        assertEquals(
+            "other",
+            manager
+                .listEntries()
+                .single()
+                .displayName
+                .lowercase(),
+        )
+        assertFalse(File(manager.buildProjection("d2"), "missions/D2X-L.MVL").exists())
+    }
+
+    @Test
+    fun previouslyImportedMoviesJoinWhenTheirMissionArrives() {
+        val setDir = temporaryFolder.newFolder("movies-first")
+        File(setDir, "missions").mkdirs()
+        File(setDir, "missions/d2x-l.mvl").writeText("low")
+        File(setDir, "d2x-h.mvl").writeText("high")
+        File(setDir, "different-h.mvl").writeText("unrelated")
+        val manager = FileSetContentManager(setDir)
+        assertEquals(3, manager.reconcile().entries.size)
+        File(setDir, "d2x.mn2").writeText("zname = Vertigo\nnum_levels = 1\nfirst.rl2\n")
+        File(setDir, "d2x.hog").writeText("mission")
+        val result = manager.reconcile()
+        assertTrue(result.conflicts.isEmpty())
+        assertEquals(2, result.entries.size)
+        val mission = result.entries.single { it.displayName == "Vertigo" }
+        assertEquals(4, mission.files.size)
+        assertTrue(mission.virtualPaths.all { it.startsWith("missions/") })
+        assertEquals(2, FileSetContentManager(setDir).reconcile().entries.size)
+    }
+
+    @Test
+    fun reconciliationFinishesRetiringAMovieAlreadyPublishedIntoItsMission() {
+        val setDir = temporaryFolder.newFolder("retry-movie")
+        File(setDir, "d2x-h.mvl").writeText("high")
+        val manager = FileSetContentManager(setDir)
+        val movie = manager.reconcile().entries.single()
+        val movieDirectory = File(setDir, ".content/entries/${movie.id}")
+        val retainedSource = temporaryFolder.newFolder("retained-movie-source")
+        movieDirectory.copyRecursively(retainedSource, overwrite = true)
+        File(setDir, "d2x.mn2").writeText("zname = Vertigo\nnum_levels = 1\nfirst.rl2\n")
+        val mission = manager.reconcile().entries.single()
+        manager.setEnabled(mission.id, false)
+        // Recreate interruption after the mission manifest commit, before source retirement
+        retainedSource.copyRecursively(movieDirectory)
+        val result = FileSetContentManager(setDir).reconcile()
+        assertTrue(result.conflicts.isEmpty())
+        val recovered = result.entries.single()
+        assertEquals(mission.id, recovered.id)
+        assertFalse(recovered.enabled)
+        assertEquals(2, recovered.files.size)
+        assertEquals("high", recovered.files.single { it.extension == "mvl" }.readText())
+        assertFalse(movieDirectory.exists())
+    }
+
+    @Test
+    fun conflictingMovieImportIsKeptSeparateWithoutChangingMissionBytes() {
+        val setDir = temporaryFolder.newFolder("conflicting-movie")
+        File(setDir, "d2x.mn2").writeText("zname = Vertigo\nnum_levels = 1\nfirst.rl2\n")
+        File(setDir, "d2x-h.mvl").writeText("original")
+        val manager = FileSetContentManager(setDir)
+        val mission = manager.reconcile().entries.single()
+        File(setDir, "d2x-h.mvl").writeText("replacement")
+        val result = manager.reconcile()
+        assertEquals(2, result.entries.size)
+        assertTrue(result.conflicts.any { it.contains("movie content conflicts") })
+        assertEquals(
+            "original",
+            result.entries
+                .single {
+                    it.id == mission.id
+                }.files
+                .single { it.extension == "mvl" }
+                .readText(),
+        )
+        assertEquals(
+            "replacement",
+            result.entries
+                .single { it.id != mission.id }
+                .files
+                .single()
+                .readText(),
+        )
+        assertEquals(2, manager.reconcile().entries.size)
+    }
+
+    @Test
+    fun ambiguousMovieCompanionStaysSeparate() {
+        val setDir = temporaryFolder.newFolder("ambiguous-movie")
+        File(setDir, "d2x.mn2").writeText("zname = First\nnum_levels = 1\nfirst.rl2\n")
         val manager = FileSetContentManager(setDir)
         manager.reconcile()
-        assertEquals(1, manager.buildMissionLaunchCatalog("d2").missions.size)
-        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+        File(setDir, "d2x.mn2").writeText("zname = Second\nnum_levels = 1\nsecond.rl2\n")
+        File(setDir, "d2x.hog").writeText("second mission")
+        assertEquals(2, manager.reconcile().entries.size)
+        File(setDir, "d2x-h.mvl").writeText("ambiguous")
+        val result = manager.reconcile()
+        assertEquals(3, result.entries.size)
+        assertTrue(result.conflicts.any { it.contains("matches more than one mission") })
     }
 
     @Test

@@ -132,9 +132,18 @@ class ArchiveInputStreamsTest {
 
     @Test
     fun extractsOrdinaryZipLargerThanPreambleLimitByDefault() {
+        assertExtractsStoredPayload(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1)
+    }
+
+    @Test
+    fun sourceLargerThanOld512MiBLimitKeepsEntryBudgetAndCleansStage() {
+        // An entry at its allowed maximum plus ZIP headers crosses the old source ceiling
+        assertExtractsStoredPayload(512L * 1024L * 1024L)
+    }
+
+    private fun assertExtractsStoredPayload(payloadBytes: Long) {
         val stageDir = Files.createTempDirectory("dxx-zip-test-").toFile()
         val archive = stageDir.resolve("game-data.zip")
-        val payloadBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1
         val buffer = ByteArray(64 * 1024) { (it % 251).toByte() }
         val crc = CRC32()
         var remaining = payloadBytes

@@ -76,12 +76,18 @@ internal class FileSetContentManager(
                 removedDuplicates += removeAdoptedSources(entry, published, conflicts)
             }
 
+            val mergedMovies = attachMissionMovies(stored, conflicts)
             val state = repairState(stored.keys)
             if (adopted.isNotEmpty()) {
                 removedDuplicates += removePublishedSourceDuplicates(stored.values, conflicts)
             }
             val entries = materialize(stored.values, state)
-            FileSetContentReconcileResult(entries, adopted, removedDuplicates, conflicts.distinct())
+            FileSetContentReconcileResult(
+                entries,
+                adopted.map { mergedMovies[it] ?: it }.distinct(),
+                removedDuplicates,
+                conflicts.distinct(),
+            )
         }
 
     fun listEntries(): List<FileSetContentEntry> =
@@ -401,6 +407,74 @@ internal class FileSetContentManager(
     ): Boolean =
         this.game == game || this.game == GameFileFormats.GAME_BOTH ||
             (includeD1ForD2 && game == GameFileFormats.GAME_D2 && this.game == GameFileFormats.GAME_D1)
+
+    /** Associate later imports using the same sibling naming rule as the loose-file catalog */
+    private fun attachMissionMovies(
+        stored: MutableMap<String, StoredEntry>,
+        conflicts: MutableList<String>,
+    ): Map<String, String> {
+        val owners = mutableMapOf<String, MutableSet<String>>()
+        for (mission in stored.values.filter { it.kind == FileSetContentCatalog.KIND_LOOSE_MISSION }) {
+            for (file in mission.files) {
+                for (path in FileSetContentCatalog.missionMovieCompanionNames(file.path)) {
+                    owners.getOrPut(path.lowercase(Locale.US)) { mutableSetOf() }.add(mission.id)
+                }
+            }
+        }
+        val merged = mutableMapOf<String, String>()
+        for (movie in stored.values.toList()) {
+            if (movie.kind != FileSetContentCatalog.KIND_OTHER || movie.problem != null) continue
+            val file = movie.files.singleOrNull() ?: continue
+            if (GameFileFormats.extensionOf(file.path) != "mvl") continue
+            val path =
+                if (file.path.startsWith("missions/", ignoreCase = true)) file.path else "missions/${file.path}"
+            val candidates = owners[path.lowercase(Locale.US)].orEmpty()
+            if (candidates.size > 1) {
+                conflicts += "${file.path}: movie matches more than one mission; kept separate"
+            }
+            val mission = candidates.singleOrNull()?.let(stored::get) ?: continue
+            val previous = mission.files.singleOrNull { it.path.equals(path, ignoreCase = true) }
+            val destinationPath = previous?.path ?: path
+            val source = containedFile(File(entryDirectory(movie.id), "payload"), file.path)
+            val destination = containedFile(File(entryDirectory(mission.id), "payload"), destinationPath)
+            val sourceMatches = source.length() == file.sizeBytes && sha256(source) == file.sha256
+            val destinationMatches =
+                !destination.exists() ||
+                    (destination.isFile && destination.length() == file.sizeBytes && sha256(destination) == file.sha256)
+            if (!sourceMatches || !destinationMatches) {
+                conflicts += "${file.path}: movie content conflicts with ${mission.displayName}; kept separate"
+                continue
+            }
+            if (!destination.exists()) {
+                stagingDir.mkdirs()
+                val temporary = File(stagingDir, "movie-${UUID.randomUUID()}")
+                try {
+                    linkOrCopy(source, temporary)
+                    check(temporary.length() == file.sizeBytes && sha256(temporary) == file.sha256) {
+                        "Could not verify mission movie ${file.path}"
+                    }
+                    AtomicFilePublication.publishFile(temporary, destination)
+                } finally {
+                    temporary.delete()
+                }
+            }
+            val updated =
+                mission.copy(files = mission.files.filterNot { it == previous } + file.copy(path = destinationPath))
+            // Commit ownership before retiring the source; an interrupted merge can be retried
+            AtomicFilePublication.writeUtf8(
+                File(entryDirectory(mission.id), ENTRY_FILE),
+                entryJson(updated).toString(2) + "\n",
+            )
+            stored[mission.id] = updated
+            trashDir.mkdirs()
+            val retired = File(trashDir, "${movie.id}-${UUID.randomUUID()}")
+            check(entryDirectory(movie.id).renameTo(retired)) { "Could not retire movie entry ${movie.id}" }
+            stored.remove(movie.id)
+            merged[movie.id] = mission.id
+            retired.deleteRecursively()
+        }
+        return merged
+    }
 
     private fun publishEntry(entry: FileSetContentEntry): StoredEntry {
         val target = entryDirectory(entry.id)

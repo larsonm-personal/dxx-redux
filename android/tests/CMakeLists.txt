@@ -6,6 +6,10 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mission-movies")
+    add_test(NAME test_mission_movies COMMAND test_upstream_compat --mission-movies)
+    set_tests_properties(test_mission_movies
+                         PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mission-movies")
     if(DXX_TEST_GAME STREQUAL "d1")
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/d1-text-loader")
         add_test(NAME test_d1_text_loader COMMAND test_upstream_compat --d1-text-loader trace.json)

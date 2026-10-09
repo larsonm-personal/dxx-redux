@@ -2252,6 +2252,21 @@ struct {
 
 #define NUM_INTRO_MOVIES (sizeof(intro_movie) / sizeof(*intro_movie))
 
+/* Movie selection shared with the mission metadata survey */
+const char *level_intro_movie_filename(int level)
+{
+	if (!Current_mission || EMULATING_D1 || !PLAYING_BUILTIN_MISSION || is_SHAREWARE || is_MAC_SHARE || is_D2_OEM)
+		return NULL;
+	for (unsigned i = 0; i < NUM_INTRO_MOVIES; ++i)
+		if (intro_movie[i].level_num == level) return intro_movie[i].movie_name;
+	return NULL;
+}
+
+const char *endgame_movie_filename(void)
+{
+	return Current_mission && !EMULATING_D1 && PLAYING_BUILTIN_MISSION ? ENDMOVIE : NULL;
+}
+
 extern int robot_movies;	//0 means none, 1 means lowres, 2 means hires
 extern int intro_played;	//true if big intro movie played
 

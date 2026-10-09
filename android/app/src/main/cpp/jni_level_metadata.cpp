@@ -58,6 +58,7 @@ extern "C" {
 #include "wall.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2.h"
+#include "movie.h"
 #endif
 }
 
@@ -67,6 +68,7 @@ extern "C" {
 #include "midi_metadata_json.hpp"
 #include "mission_intent_classification.hpp"
 #include "mission_provenance.hpp"
+#include "mission_movie_scan.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "level_metadata_replacements.hpp"
@@ -570,6 +572,7 @@ class LevelMetadataRequestMounts
 			return 1;
 #ifdef DXX_BUILD_DESCENT_II
 		reset_level_robots_file();
+		close_extra_robot_movie();
 #endif
 		if (mission_loaded && Current_mission)
 			free_mission();
@@ -623,6 +626,13 @@ class LevelMetadataRequestMounts
 static json finish_levelmeta_request(LevelMetadataRequestMounts &mounts, const json &request,
                                      json result, char *error, size_t error_size)
 {
+	if (request.value("movies_only", false) && result.value("status", "") == "ok") {
+#ifdef DXX_BUILD_DESCENT_II
+		/* Reopen all scan libraries in playback order, with mission overrides last */
+		close_extra_robot_movie();
+#endif
+		result["movies"] = mission_movie_scan::collect<json>();
+	}
 	result["provenance"] = mission_provenance::collect(request, result);
 	if (mounts.finish(error, error_size))
 		return result;
@@ -1449,6 +1459,13 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 		return result;
 	}
 	LevelMetadataRequestMounts mounts;
+	if (request.value("movies_only", false)) {
+		const auto paths = json_string_array(request, "movie_search_paths");
+		for (auto path = paths.rbegin(); path != paths.rend(); ++path)
+			if (!mounts.mount(*path))
+				return finish_levelmeta_request(mounts, request,
+				                                failed_result(request, "could not mount installed movie resources"), error, sizeof(error));
+	}
 	const std::string flyout_movie_library = request.value("flyout_movie_library", "");
 	if (!flyout_movie_library.empty() && !mounts.mount(flyout_movie_library))
 		return finish_levelmeta_request(mounts, request,
@@ -1467,6 +1484,8 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
 		if (!load_mission_if_descriptor_available(request, mounts, error, sizeof(error)))
 			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		if (request.value("movies_only", false))
+			return finish_levelmeta_request(mounts, request, { { "status", "ok" } }, error, sizeof(error));
 		return finish_levelmeta_request(mounts, request, analyze_hog_entries(request), error, sizeof(error));
 	}
 	if (source_type == "mission_files") {
@@ -1474,9 +1493,13 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
 		if (!load_mission_if_descriptor_available(request, mounts, error, sizeof(error)))
 			return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+		if (request.value("movies_only", false))
+			return finish_levelmeta_request(mounts, request, { { "status", "ok" } }, error, sizeof(error));
 		return finish_levelmeta_request(mounts, request, analyze_hog_entries(request), error, sizeof(error));
 	}
 	if (source_type == "level") {
+		if (request.value("movies_only", false))
+			return finish_levelmeta_request(mounts, request, { { "status", "ok" } }, error, sizeof(error));
 		json root;
 		json levels = json::array();
 		CoopStartRange coop_start_range;
@@ -1542,6 +1565,8 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 		if (!load_requested_mission(mission_request, mounts, error, sizeof(error)))
 			return finish_levelmeta_request(
 			    mounts, request, failed_result(request, error), error, sizeof(error));
+		if (request.value("movies_only", false))
+			return finish_levelmeta_request(mounts, request, { { "status", "ok" } }, error, sizeof(error));
 		if (level_file.empty())
 			return finish_levelmeta_request(
 			    mounts, request, failed_result(request, "missing active level file"),
@@ -1568,6 +1593,8 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 	}
 	if (!load_requested_mission(request, mounts, error, sizeof(error)))
 		return finish_levelmeta_request(mounts, request, failed_result(request, error), error, sizeof(error));
+	if (request.value("movies_only", false))
+		return finish_levelmeta_request(mounts, request, { { "status", "ok" } }, error, sizeof(error));
 	return finish_levelmeta_request(mounts, request, analyze_loaded_mission(request), error, sizeof(error));
 }
 

@@ -490,6 +490,7 @@ internal data class LevelMetadataResult(
     val missionIntent: MissionIntentSummary? = null,
     val nativeJson: String = "",
     val provenance: JSONObject? = null,
+    val movies: MissionMovieScan? = null,
 ) {
     companion object {
         fun fromJson(text: String): LevelMetadataResult {
@@ -611,6 +612,7 @@ internal data class LevelMetadataResult(
                 missionIntent = obj.optMissionIntent("mission_intent"),
                 nativeJson = text,
                 provenance = obj.optJSONObject("provenance"),
+                movies = obj.optJSONObject("movies")?.let(MissionMovieScan::fromJson),
             )
         }
 
@@ -1352,12 +1354,13 @@ internal object LevelMetadataAnalyzer {
         cpuDutyPercent: Int = priority.cpuDutyPercent,
         cpuDutyControlFile: File? = null,
         totalTimeoutMs: Long = Long.MAX_VALUE,
+        moviesOnly: Boolean = false,
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
         withContext(Dispatchers.IO) {
             val stepCount = 5
             val expectedLevelCount =
-                (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
+                if (moviesOnly) 0 else (target.normalLevelFiles.size + target.secretLevelFiles.size).coerceAtLeast(0)
             var completedLevelCount = 0
             val levelProgressEstimator = LevelMetadataLevelProgressEstimator()
 
@@ -1382,7 +1385,7 @@ internal object LevelMetadataAnalyzer {
             progress("Checking metadata cache", 0)
             val resultCacheRoot = File(appContext.filesDir, "level_metadata_results")
             val identityStartedAt = SystemClock.elapsedRealtime()
-            val resultCacheIdentity = LevelMetadataResultCache.identify(target)
+            val resultCacheIdentity = if (moviesOnly) null else LevelMetadataResultCache.identify(target)
             val cachedResult =
                 resultCacheIdentity?.let {
                     LevelMetadataResultCache.read(resultCacheRoot, it, target, expectedLevelCount)
@@ -1429,7 +1432,19 @@ internal object LevelMetadataAnalyzer {
                             cpuDutyPercent,
                             cpuDutyControlFile,
                             totalTimeoutMs,
-                        )
+                        ).also { request ->
+                            if (moviesOnly) {
+                                request.put("movies_only", true)
+                                // Include enabled global media from the same file set as gameplay
+                                val paths =
+                                    target.dataDir?.let {
+                                        FileSetContentManager(
+                                            File(it),
+                                        ).buildLaunchPaths(target.game)
+                                    }
+                                request.put("movie_search_paths", JSONArray(paths.orEmpty()))
+                            }
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {

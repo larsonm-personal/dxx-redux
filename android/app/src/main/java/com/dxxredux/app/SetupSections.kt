@@ -3450,6 +3450,8 @@ private fun LevelMetadataDialog(
 ) {
     val context = LocalContext.current
     val dialogIdentity = remember(target) { Integer.toHexString(System.identityHashCode(Any())) }
+    var movieScan by remember(target) { mutableStateOf<MissionMovieScan?>(null) }
+    var movieScanning by remember(target) { mutableStateOf(false) }
     var result by remember(target) { mutableStateOf<LevelMetadataResult?>(null) }
     var loading by remember(target) { mutableStateOf(true) }
     var progress by remember(target) {
@@ -3522,6 +3524,9 @@ private fun LevelMetadataDialog(
                 overall = MetadataLoadProgress("Checking saved whole-mission report", 0, 0),
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
             )
+        movieScanning = true
+        movieScan = scanMissionMovies(context, target)
+        movieScanning = false
         result =
             LevelMetadataAnalyzer.analyze(context, target) { update ->
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -3558,6 +3563,42 @@ private fun LevelMetadataDialog(
                             .verticalScroll(scrollState)
                             .padding(end = 8.dp),
                 ) {
+                    if (movieScanning) {
+                        ModDetailLine("Scanning movies...")
+                    } else {
+                        movieScan?.let { scan ->
+                            ModDetailLine(
+                                scan.summary,
+                                color =
+                                    if (scan.missing.isNotEmpty()) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                            )
+                            scan.problems.forEach { ModDetailLine(it, color = MaterialTheme.colorScheme.error) }
+                            if (scan.missing.isNotEmpty()) {
+                                ModDetailLine(
+                                    "The mission is playable, but these animations or cutscenes will be absent.",
+                                )
+                                if (scan.unavailableLibraries.isNotEmpty()) {
+                                    ModDetailLine(
+                                        "Movie archives not installed: ${scan.unavailableLibraries.joinToString(", ")}",
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    TextButton(enabled = !movieScanning && !loading, onClick = {
+                        scope.launch {
+                            movieScanning = true
+                            try {
+                                movieScan = scanMissionMovies(context, target)
+                            } finally {
+                                movieScanning = false
+                            }
+                        }
+                    }) { Text("Scan for missing movies") }
                     if (loading) {
                         Text(
                             "This is a separate whole-mission report. Existing Guide-Bot route " +

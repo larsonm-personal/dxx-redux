@@ -52,6 +52,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_mission_asset_isolation'
             'test_enemy_within_level2'
             'test_flyout_safety'
+            'test_mission_movies'
             'test_mission_zip_batch'
             'test_unified_file_set_content'
             'test_disc_content_import'
@@ -60,6 +61,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_unified_content_mission_picker'
         )
         storage_import = @(
+            'test_enemy_within_import'
             'test_all_extracts'
             'test_cd_mission_hog_isolation'
             'test_gog_installer_d1_unified'

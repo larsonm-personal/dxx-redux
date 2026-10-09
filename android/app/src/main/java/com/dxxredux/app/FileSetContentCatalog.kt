@@ -117,6 +117,7 @@ internal object FileSetContentCatalog {
             val referencedNames =
                 buildSet {
                     add("${descriptor.nameWithoutExtension}.hog")
+                    addAll(missionMovieCompanionNames(descriptor.name))
                     addAll(parsed?.levelNames.orEmpty())
                     addAll(parsed?.secretLevelNames.orEmpty())
                     addAll(parsed?.assetReferences?.values.orEmpty())
@@ -201,6 +202,13 @@ internal object FileSetContentCatalog {
                 )
         }
         return entries.sortedWith(compareBy({ it.kind }, { it.displayName.lowercase(Locale.US) }, { it.id }))
+    }
+
+    // Keep the filename convention synchronized with d2/main/movie.c:init_movie
+    internal fun missionMovieCompanionNames(descriptorName: String): List<String> {
+        if (GameFileFormats.extensionOf(descriptorName) != "mn2") return emptyList()
+        val stem = descriptorName.substringBeforeLast('.')
+        return listOf("$stem-h.mvl", "$stem-l.mvl")
     }
 
     private fun parseDescriptor(file: File): GameFileFormats.MissionDescriptor? =

@@ -72,6 +72,32 @@ class FileSetContentCatalogTest {
     }
 
     @Test
+    fun groupsOnlyExactD2MovieCompanionsInTheSameDirectory() {
+        val setDir = temporaryFolder.newFolder("movie-companions")
+        File(setDir, "D2X.MN2").writeText("zname = Vertigo\nnum_levels = 1\nfirst.rl2\n")
+        File(setDir, "d2x.hog").writeText("mission")
+        File(setDir, "d2x-h.MVL").writeText("high")
+        File(setDir, "D2X-L.mvl").writeText("low")
+        File(setDir, "d2x-extra-h.mvl").writeText("unrelated")
+        File(setDir, "robots-h.mvl").writeText("base")
+        File(setDir, "other").mkdirs()
+        File(setDir, "other/d2x-h.mvl").writeText("other directory")
+        File(setDir, "first.msn").writeText("name = First\nnum_levels = 1\nfirst.rdl\n")
+        File(setDir, "first-h.mvl").writeText("not a D1 companion")
+
+        val entries = FileSetContentCatalog.scan(setDir)
+        val vertigo = entries.single { it.displayName == "Vertigo" }
+        assertEquals(
+            setOf("d2x.mn2", "d2x.hog", "d2x-h.mvl", "d2x-l.mvl"),
+            vertigo.files.map { it.name.lowercase() }.toSet(),
+        )
+        assertEquals(3, entries.count { it.kind == FileSetContentCatalog.KIND_OTHER })
+        assertEquals(1, entries.single { it.displayName == "First" }.files.size)
+        val files = entries.flatMap { it.files }
+        assertEquals(files.size, files.distinct().size)
+    }
+
+    @Test
     fun sharedDependencyCreatesOneOwnerAndStableIdentity() {
         val setDir = temporaryFolder.newFolder("shared")
         File(setDir, "one.mn2").writeText("name = One\nbriefing = shared.tex\nnum_levels = 1\none.rl2\n")

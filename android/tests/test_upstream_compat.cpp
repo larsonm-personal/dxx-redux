@@ -15,6 +15,7 @@
 #include "render_gameplay_view.h"
 #include <nlohmann/json.hpp>
 #include "flyout_metadata.hpp"
+#include "mission_movie_scan.hpp"
 #include <SDL.h>
 #ifdef USE_SDLMIXER
 #include <SDL_mixer.h>
@@ -11142,6 +11143,74 @@ static void test_mixed_rate_sound_conversion()
 }
 #endif
 
+static void test_mission_movie_scan(const char *vertigo_directory)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	mission.descent_version = 2;
+	mission.enhanced = 2;
+	char stem[] = "fixture";
+	mission.filename = stem;
+	std::strcpy(mission.briefing_text_filename, "brief.tex");
+	const std::string script = ";$Rx\n$S1\n$R3\n$R9\n$P\n$R3\n$$Rx\n";
+	write_fixture("brief.tex", bytes(script.begin(), script.end()));
+	using json = nlohmann::ordered_json;
+	auto scan = mission_movie_scan::collect<json>();
+	require(scan["missing"] == json::array({ "rb3.mve", "rb9.mve" }), "scan real briefing selectors, excluding comments and escaped commands");
+	require(scan["required"].size() == 2, "deduplicate movie dependencies");
+	bytes library = { 'D', 'M', 'V', 'L' };
+	append_int(library, 2);
+	for (const char *name : { "RB3.MVE", "RB9.mve" }) {
+		bytes entry(13);
+		std::memcpy(entry.data(), name, std::strlen(name));
+		append(library, entry);
+		append_int(library, 1);
+	}
+	append(library, { 1, 2 });
+	write_fixture("fixture-l.mvl", library);
+	scan = mission_movie_scan::collect<json>();
+	require(scan["missing"].empty(), "low-resolution library satisfies authored movie references with mixed case");
+	require(!PHYSFS_exists("RB3.MVE"), "movie scan releases its temporary library mounts");
+	require(PHYSFS_delete("fixture-l.mvl"), "remove low-resolution movie fixture");
+	write_fixture("fixture-h.mvl", library);
+	require(mission_movie_scan::collect<json>()["missing"].empty(), "high-resolution library satisfies movie references");
+	require(PHYSFS_delete("fixture-h.mvl"), "remove high-resolution movie fixture");
+	require(mission_movie_scan::collect<json>()["missing"].size() == 2, "fresh scan sees removed movie media");
+	write_fixture("rb3.mve", { 1 });
+	require(mission_movie_scan::collect<json>()["missing"] == json::array({ "rb9.mve" }), "loose movies satisfy individual references");
+	require(PHYSFS_delete("rb3.mve") && PHYSFS_delete("brief.tex"), "release movie fixtures");
+	mission.builtin_hogsize = FULL_MISSION_HOGSIZE;
+	mission.last_level = 24;
+	scan = mission_movie_scan::collect<json>();
+	for (const char *name : { "pla.mve", "plg.mve", "esa.mve", "end.mve" })
+		require(std::find(scan["required"].begin(), scan["required"].end(), name) != scan["required"].end(), "scan campaign intro, fly-out and ending movies from engine selection");
+	mission.builtin_hogsize = 0;
+	mission.descent_version = 1;
+	require(mission_movie_scan::collect<json>()["status"] == "not_applicable", "D1 robot model selectors are not movie dependencies");
+	if (vertigo_directory) {
+		mission.descent_version = 2;
+		char vertigo[] = "d2x";
+		mission.filename = vertigo;
+		std::strcpy(mission.briefing_text_filename, "d2x.txb");
+		const std::string hog = std::string(vertigo_directory) + "/MISSIONS/D2X.HOG";
+		require(PHYSFS_mount(hog.c_str(), nullptr, 0), "mount original Vertigo HOG");
+		scan = mission_movie_scan::collect<json>();
+		require(scan["required"].size() == 10 && scan["missing"].size() == 10, "original TXB references ten unavailable robot movies");
+		require(PHYSFS_mount(vertigo_directory, nullptr, 0), "mount original Vertigo movie installation");
+		scan = mission_movie_scan::collect<json>();
+		require(scan["required"].size() == 10 && scan["missing"].empty(), "all original Vertigo movies resolve after importing media");
+		require(!PHYSFS_exists("RB3.MVE"), "original movie archive released after scanning");
+		require(PHYSFS_unmount(vertigo_directory) && PHYSFS_unmount(hog.c_str()), "release original Vertigo assets");
+	}
+	Current_mission = nullptr;
+#else
+	require(mission_movie_scan::collect<nlohmann::ordered_json>()["status"] == "not_applicable", "D1 does not require MVE movie files");
+	(void) vertigo_directory;
+#endif
+	std::puts("PASS: mission movie dependency scan");
+}
+
 int main(int argc, char **argv)
 {
 	(void) argc;
@@ -11149,6 +11218,11 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if ((argc == 2 || argc == 3) && std::strcmp(argv[1], "--mission-movies") == 0) {
+		test_mission_movie_scan(argc == 3 ? argv[2] : nullptr);
+		PHYSFS_deinit();
+		return 0;
+	}
 #ifndef DXX_BUILD_DESCENT_II
 	if (argc == 3 && std::strcmp(argv[1], "--d1-text-loader") == 0) {
 		test_d1_text_loader(argv[2]);

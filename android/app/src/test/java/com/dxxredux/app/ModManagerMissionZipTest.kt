@@ -28,6 +28,8 @@ class ModManagerMissionZipTest {
         val enemyArchive = File(repository, "game_data/mission_files/ewithin-versions.zip")
         val maximumArchive = File(repository, "game_data/mission_files/descent_maximum_fixed.zip")
         assumeTrue("Local campaign fixtures are available", enemyArchive.isFile && maximumArchive.isFile)
+        // Exercise the launcher's stream probe before the file-based importer
+        assertTrue(enemyArchive.inputStream().use { MissionZip.isImportCandidate(it) })
         val filesDir = File("build/test-mission-launch-catalog-real-packs").absoluteFile
         filesDir.deleteRecursively()
         val manager = ModManager(filesDir)

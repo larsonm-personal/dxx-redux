@@ -51,6 +51,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var sliderNavigationOnly = false
     private var graphicsCapabilitiesOnly = false
     private var demoImportOnly = false
+    private var enemyWithinImportOnly = false
     private var controllerOverlayOnly = false
 
     override fun onCreate(arguments: Bundle?) {
@@ -63,6 +64,7 @@ class RecoveryInstrumentation : Instrumentation() {
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
         demoImportOnly = arguments?.getString("suite") == "demo_import"
+        enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
         coopSessionOnly = arguments?.getString("suite") == "coop_session"
@@ -73,6 +75,12 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (enemyWithinImportOnly) {
+                EnemyWithinImportChecks(this).run()
+                result.putString("stream", "PASS: Enemy Within full wrapper probe, URI import and Rebirth assets\n")
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (demoImportOnly) {
                 DemoImportChecks(this).run()
                 result.putString(

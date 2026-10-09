@@ -11,7 +11,8 @@ internal object ExtractionLimits {
     const val MAX_DESCRIPTOR_BYTES = 1024L * 1024L
 
     // Entire disk-staged ZIP source, including any self-extractor preamble
-    const val MAX_ZIP_SOURCE_BYTES = 512L * 1024L * 1024L
+    // Enemy Within's Rebirth/XL wrapper is 936 MB; this is not an in-memory allocation
+    const val MAX_ZIP_SOURCE_BYTES = 2L * 1024L * 1024L * 1024L
     const val MAX_ZIP_PREAMBLE_BYTES = 16L * 1024L * 1024L
 
     // Keep synchronized with DXX_EXTRACT_MAX_MEMORY_BYTES in extract_limits.h
