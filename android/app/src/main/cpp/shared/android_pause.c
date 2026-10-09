@@ -11,6 +11,7 @@
 #include "game.h"
 #include "inferno.h"
 #include "key.h"
+#include "kconfig.h"
 #include "multi.h"
 #include "newdemo.h"
 #include "endlevel.h"
@@ -143,6 +144,13 @@ void android_pause_publish(void)
 	                  (next.reasons & (ANDROID_PAUSE_UI | ANDROID_PAUSE_USER)) &&
 	                  !(next.reasons & ~(ANDROID_PAUSE_UI | ANDROID_PAUSE_USER));
 	next.legacy_depth = android_pause_legacy_depth();
+	if (!was_blocked && !next.input_allowed) {
+		/* Co-op keeps simulating behind menus, while ReadControls ignores releases
+		 * Clear the ship's controls without flushing events needed by the menu */
+		debug_log_force(DLOG_GAME, "Android pause input blocked: reasons=%d fire=%d heading=%d",
+		                next.reasons, Controls.fire_primary_state, Controls.heading_time);
+		memset(&Controls, 0, sizeof(Controls));
+	}
 	if (was_blocked && next.input_allowed) {
 		reset_time();
 		game_flush_inputs();

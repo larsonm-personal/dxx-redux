@@ -108,6 +108,21 @@ try {
         Paused | Out-Null
         Ui 'quick_load_close'
         Running | Out-Null
+        # Confirm through the actual Yes button: direct native quick_load bypasses
+        # Dialog's asynchronous dismissal and cannot catch a stale UI revision
+        Automate @(
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'difficulty:2'; post_delay_ms = 150 },
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'quick_save'; post_delay_ms = 300 },
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'difficulty:3'; post_delay_ms = 150 }
+        )
+        Ui 'quick_load_open'
+        $beforeLoad = Paused
+        if ($beforeLoad.native.difficulty -ne 3) { throw 'Quick-load fixture difficulty did not change' }
+        Ui 'quick_load_confirm'
+        Wait-State { param($s) $s.native.difficulty -eq 2 -and
+            $s.native.pause.session -gt $beforeLoad.native.pause.session -and
+            $s.native.pause.result -eq 1 -and $s.ui.pause.ui_modals -eq 0 } 'confirmed quick load restores saved difficulty and is acknowledged' | Out-Null
+        Running | Out-Null
         Automate @(@{ action = 'set_debug'; field = 'android_game_request'; value = 'pause'; post_delay_ms = 200 })
         $paused = Paused
         if (-not $paused.ui.pause.can_resume -or ($paused.native.pause.reasons -band 4) -eq 0) { throw 'Native user pause missing from overlay' }

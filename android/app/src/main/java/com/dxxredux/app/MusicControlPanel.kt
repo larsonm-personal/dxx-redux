@@ -28,6 +28,7 @@ class MusicControlPanel(
     context: Context,
     private val onDismiss: () -> Unit,
     private val onStateChanged: () -> Unit,
+    private val onPauseChange: (Boolean) -> Boolean = { (context as? MainActivity)?.nativeSetMusicPaused(it) == true },
     private val onVolumeChange: (Int) -> Int = { (context as? MainActivity)?.nativeSetMusicVolume(it) ?: -1 },
 ) : View(context) {
     data class TrackEntry(
@@ -51,6 +52,8 @@ class MusicControlPanel(
     private var sourceOptionsCache = listOf(MusicOverlaySourceOption("midi", "Base game MIDI"))
     private var scrollOffset = 0f
     private var selectedIndex = 0
+    private var selectedTrackIndex = 0
+    private var volumeReturnIndex = 1
     private var panelRect = RectF()
     private var closeRect = RectF()
     private var playRect = RectF()
@@ -129,11 +132,11 @@ class MusicControlPanel(
         refreshState()
     }
 
-    internal fun refreshState() {
-        val a = activity ?: return
+    internal fun refreshState(snapshot: String? = activity?.nativeGetMusicOverlayState()) {
+        if (snapshot == null) return
         state =
             runCatching {
-                val obj = JSONObject(a.nativeGetMusicOverlayState())
+                val obj = JSONObject(snapshot)
                 val tracksJson = obj.optJSONArray("tracks") ?: JSONArray()
                 val tracks =
                     buildList {
@@ -148,16 +151,18 @@ class MusicControlPanel(
                     source = obj.optString("source", "cd"),
                     midiUsesOpl3 = obj.optBoolean("midiUsesOpl3", false),
                     hasAddonMission = obj.optBoolean("hasAddonMission", false),
-                    oneTrackPerLevel = obj.optBoolean("oneTrackPerLevel", false),
+                    // android_music_control.c publishes these two flags as integer 0/1
+                    oneTrackPerLevel = obj.optInt("oneTrackPerLevel", 0) != 0,
                     volume = obj.optInt("volume", 8).coerceIn(0, 8),
-                    paused = obj.optBoolean("paused", false),
+                    paused = obj.optInt("paused", 0) != 0,
                     currentTrack = obj.optInt("currentTrack", -1),
                     tracks = tracks,
                 )
             }.getOrElse {
                 MusicState()
             }
-        if (selectedIndex >= focusCount()) selectedIndex = (focusCount() - 1).coerceAtLeast(0)
+        if (selectedIndex >= focusCount()) selectedIndex = if (state.tracks.isEmpty()) 1 else focusCount() - 1
+        if (volumeReturnIndex >= focusCount()) volumeReturnIndex = if (state.tracks.isEmpty()) 1 else focusCount() - 1
         refreshSourceOptions()
         invalidate()
     }
@@ -471,6 +476,10 @@ class MusicControlPanel(
                 volumeRect
             }
 
+            selectedIndex == closeFocusIndex() -> {
+                closeRect
+            }
+
             selectedIndex >= firstTrackFocusIndex() -> {
                 val trackIndex = selectedIndex - firstTrackFocusIndex()
                 trackRects.getOrNull(trackIndex)
@@ -513,31 +522,17 @@ class MusicControlPanel(
             }
 
             KeyEvent.KEYCODE_DPAD_LEFT,
-            -> {
-                if (selectedIndex == volumeFocusIndex()) {
-                    setVolume(state.volume - 1)
-                } else {
-                    moveFocus(-1)
-                }
-            }
-
             KeyEvent.KEYCODE_DPAD_RIGHT,
-            -> {
-                if (selectedIndex == volumeFocusIndex()) {
-                    setVolume(state.volume + 1)
-                } else {
-                    moveFocus(1)
-                }
-            }
-
             KeyEvent.KEYCODE_DPAD_UP,
-            -> {
-                moveFocus(-1)
-            }
-
             KeyEvent.KEYCODE_DPAD_DOWN,
             -> {
-                moveFocus(1)
+                if (selectedIndex == volumeFocusIndex() &&
+                    (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
+                ) {
+                    setVolume(state.volume + if (keyCode == KeyEvent.KEYCODE_DPAD_UP) 1 else -1)
+                } else {
+                    moveFocus(keyCode)
+                }
             }
 
             KeyEvent.KEYCODE_BUTTON_A,
@@ -550,8 +545,61 @@ class MusicControlPanel(
         return true
     }
 
-    private fun moveFocus(delta: Int) {
-        selectedIndex = (selectedIndex + delta).coerceIn(0, focusCount() - 1)
+    private fun moveFocus(keyCode: Int) {
+        val previous = selectedIndex
+        val inTracks = previous >= firstTrackFocusIndex()
+        if (inTracks) selectedTrackIndex = previous - firstTrackFocusIndex()
+        val trackFocus =
+            if (state.tracks.isEmpty()) {
+                previous
+            } else {
+                firstTrackFocusIndex() +
+                    selectedTrackIndex.coerceIn(0, state.tracks.lastIndex)
+            }
+        // The volume lane spans all rows, so horizontal exits return to its entry point
+        val next =
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    when {
+                        previous == volumeFocusIndex() -> volumeReturnIndex
+                        previous == closeFocusIndex() -> sourceFocusIndex()
+                        previous == sourceFocusIndex() || previous == 1 -> 0
+                        else -> volumeFocusIndex()
+                    }
+                }
+
+                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    when (previous) {
+                        volumeFocusIndex() -> volumeReturnIndex
+                        sourceFocusIndex() -> closeFocusIndex()
+                        0 -> 1
+                        else -> volumeFocusIndex()
+                    }
+                }
+
+                KeyEvent.KEYCODE_DPAD_UP -> {
+                    when {
+                        inTracks -> if (previous == firstTrackFocusIndex()) 1 else previous - 1
+                        previous == 0 || previous == 1 -> sourceFocusIndex()
+                        else -> previous
+                    }
+                }
+
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    when {
+                        inTracks -> (previous + 1).coerceAtMost(focusCount() - 1)
+                        previous == 0 || previous == 1 -> trackFocus
+                        previous == sourceFocusIndex() || previous == closeFocusIndex() -> 1
+                        else -> previous
+                    }
+                }
+
+                else -> {
+                    previous
+                }
+            }
+        if (next == volumeFocusIndex() && previous != next) volumeReturnIndex = previous
+        selectedIndex = next.coerceIn(0, focusCount() - 1)
         ensureFocusedTrackVisible()
         performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
     }
@@ -572,6 +620,10 @@ class MusicControlPanel(
 
             selectedIndex == volumeFocusIndex() -> {
                 setVolume(state.volume + 1)
+            }
+
+            selectedIndex == closeFocusIndex() -> {
+                onDismiss()
             }
 
             selectedIndex >= firstTrackFocusIndex() -> {
@@ -703,6 +755,7 @@ class MusicControlPanel(
     }
 
     private fun openSourceDropdown() {
+        selectedIndex = sourceFocusIndex()
         sourceDropdownIndex = sourceIndex()
         sourceDropdownOpen = true
         invalidate()
@@ -744,13 +797,13 @@ class MusicControlPanel(
             KeyEvent.KEYCODE_DPAD_LEFT,
             -> {
                 closeSourceDropdown()
-                moveFocus(-1)
+                moveFocus(keyCode)
             }
 
             KeyEvent.KEYCODE_DPAD_RIGHT,
             -> {
                 closeSourceDropdown()
-                moveFocus(1)
+                moveFocus(keyCode)
             }
 
             KeyEvent.KEYCODE_BUTTON_B,
@@ -827,7 +880,12 @@ class MusicControlPanel(
     }
 
     private fun setPaused(paused: Boolean) {
-        if (activity?.nativeSetMusicPaused(paused) == true) {
+        val queued = onPauseChange(paused)
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "[music-panel] pause old=${state.paused} requested=$paused queued=$queued",
+        )
+        if (queued) {
             state = state.copy(paused = paused)
             invalidate()
             onStateChanged()
@@ -860,7 +918,9 @@ class MusicControlPanel(
 
     private fun volumeFocusIndex(): Int = 3
 
-    private fun firstTrackFocusIndex(): Int = volumeFocusIndex() + 1
+    private fun closeFocusIndex(): Int = 4
+
+    private fun firstTrackFocusIndex(): Int = closeFocusIndex() + 1
 
     private fun maxScroll(): Float = (state.tracks.size * rowHeight - trackListRect.height()).coerceAtLeast(0f)
 

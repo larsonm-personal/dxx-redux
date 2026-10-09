@@ -34,6 +34,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_launch_feedback'
             'test_coop_save_compatibility'
             'test_coop_session'
+            'test_coop_pause'
         )
         audio_preferences = @(
             'test_dos_midi_parity'

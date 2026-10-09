@@ -3,11 +3,12 @@ package com.dxxredux.app
 /** Product limits also used by android_graphics_safety_preview_ready in native code */
 internal object GraphicsOptionChoices {
     val texture = listOf(0, 1, 2)
+    val msaaLevels = listOf(0, 2, 4)
 
     fun anisotropy(max: Int): List<Int> = listOf(0, 2, 4, 8, 16).filter { it == 0 || it <= max }
 
     fun msaa(capabilities: GraphicsCapabilities?): List<Int> =
-        listOf(0, 2, 4).filter { it == 0 || capabilities?.supportsMsaa(it) == true }
+        msaaLevels.filter { it == 0 || capabilities?.supportsMsaa(it) == true }
 
     fun next(
         values: List<Int>,

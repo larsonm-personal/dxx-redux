@@ -5315,7 +5315,7 @@ class TouchOverlayView
             animateAdminTray(true)
         }
 
-        fun closeAdminTray() {
+        fun closeAdminTray(animate: Boolean = true) {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
             adminTrayOpenedFromController = false
             closeAdminTrayDifficultyMenu()
@@ -5324,7 +5324,17 @@ class TouchOverlayView
             adminTrayPressedIndex = -1
             adminTrayPointerId = -1
             adminTrayDragging = false
-            animateAdminTray(false)
+            if (animate) {
+                animateAdminTray(false)
+            } else {
+                adminTrayAnimator?.cancel()
+                adminTraySlide = 0f
+                val wasOpen = adminTrayOpen
+                adminTrayOpen = false
+                adminTraySelectedIndex = -1
+                if (wasOpen) adminTrayClosedCallback?.invoke()
+                invalidate()
+            }
         }
 
         /** Whether the admin tray is currently open. */

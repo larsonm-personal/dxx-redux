@@ -197,8 +197,9 @@ internal class SliderNavigationChecks(
                 "AF is unavailable on this GPU",
                 "MSAA is unavailable for this display format",
                 "Test GPU",
+                0,
             )
-        val limited = GraphicsCapabilities(8, 4, 4, "", "", "Test GPU")
+        val limited = GraphicsCapabilities(8, 4, 4, "", "", "Test GPU", 4)
         try {
             for ((caps, enabledCount) in listOf(unsupported to 2, limited to 7, null to 8)) {
                 onMain {

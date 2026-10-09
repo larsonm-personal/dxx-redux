@@ -94,6 +94,7 @@ param(
     [string]$RestoreSavePath,
     [switch]$SkipBuild,
     [switch]$GraphicsConfirmation,
+    [switch]$PauseMenus,
     [switch]$IdleScreenSaver,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
@@ -337,6 +338,7 @@ if (($NormalPhysical -or $SecretExitRace) -and ($Game -ne "d2" -or $InitialLevel
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 if ($GraphicsConfirmation) { . "$PSScriptRoot\..\helpers\test_graphics_multiplayer.ps1" }
+if ($PauseMenus) { . "$PSScriptRoot\..\helpers\test_pause_multiplayer.ps1" }
 
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
@@ -3243,6 +3245,9 @@ try {
     }
     if ($GraphicsConfirmation) {
         $testPassed = Invoke-MultiplayerGraphicsScenario -TriggerScriptName 'test_graphics_multiplayer_trial.jsonc' -DecisionScriptName 'test_graphics_multiplayer_decide.jsonc'
+    }
+    if ($PauseMenus) {
+        $testPassed = Invoke-MultiplayerPauseScenario
     }
     if ($AllowSecretWarps -and $NoCoopQol) {
         $testPassed = $false

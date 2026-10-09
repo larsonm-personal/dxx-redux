@@ -2882,9 +2882,15 @@ class MainActivity :
         if (!gameStarted || pauseUiOwner == 0L || pauseUiSession < 0) return false
         pauseUiTransition = true
         try {
-            quickLoadDialog?.dismiss()
+            // Dialog posts OnDismissListener later, after the action is queued
+            // Clear its modal now so that callback cannot invalidate the request's UI revision
+            quickLoadDialog?.let { dialog ->
+                quickLoadDialog = null
+                dialog.dismiss()
+            }
             closeControllerSettingsStack()
-            touchOverlay.closeAdminTray()
+            // Finish the tray's modal state before queuing, not after its close animation
+            touchOverlay.closeAdminTray(animate = false)
             pauseUiModals = currentPauseModals()
             pauseUiRevision++
             // Publish the final UI state and the native action in one mailbox transaction
@@ -2896,6 +2902,10 @@ class MainActivity :
                     pauseUiModals,
                     action,
                 )
+            Log.i(
+                "DXX-Pause",
+                "Requested action=$action request=$pauseRequest revision=$pauseUiRevision modals=$pauseUiModals",
+            )
             return pauseRequest != 0L
         } finally {
             pauseUiTransition = false
@@ -2993,6 +3003,7 @@ class MainActivity :
             }
         val no = choice(PauseOverlayStyle.QUICK_LOAD_NO)
         val yes = choice(PauseOverlayStyle.QUICK_LOAD_YES)
+        yes.tag = "quick_load_yes"
         choices.addView(
             no,
             LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
@@ -3035,6 +3046,10 @@ class MainActivity :
             requestPauseAction(PauseState.QUICK_LOAD)
         }
         dialog.setOnDismissListener {
+            Log.i(
+                "DXX-Pause",
+                "Quick-load dismissed current=${quickLoadDialog === dialog} transition=$pauseUiTransition revision=$pauseUiRevision",
+            )
             if (quickLoadDialog === dialog) {
                 quickLoadDialog = null
                 publishPauseUi()
@@ -3434,6 +3449,15 @@ class MainActivity :
 
                             "quick_load_close" -> {
                                 quickLoadDialog?.dismiss()
+                            }
+
+                            "quick_load_confirm" -> {
+                                quickLoadDialog
+                                    ?.window
+                                    ?.decorView
+                                    ?.findViewWithTag<TextView>(
+                                        "quick_load_yes",
+                                    )?.performClick()
                             }
 
                             "resume" -> {

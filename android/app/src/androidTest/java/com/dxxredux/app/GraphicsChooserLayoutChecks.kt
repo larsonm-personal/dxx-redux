@@ -37,7 +37,7 @@ internal class GraphicsChooserLayoutChecks(
                         """{"phase":"editing","trial_id":1,
                     "candidate":{"TexFilt":2,"AnisoLevel":16,"MsaaLevel":4},
                     "current":{"TexFilt":2,"AnisoLevel":16,"MsaaLevel":4},
-                    "capabilities":{"schema":1,"aniso_max":16,"msaa_2":2,"msaa_4":4,
+                    "capabilities":{"schema":1,"aniso_max":16,"msaa_max":4,"msaa_2":2,"msaa_4":4,
                     "aniso_reason":"","msaa_reason":"","renderer":"Layout test"}}""",
                     )
                 val view =

@@ -12,7 +12,12 @@ internal data class GraphicsCapabilities(
     val anisoReason: String,
     val msaaReason: String,
     val renderer: String,
+    val msaaDriverMax: Int,
 ) {
+    // UI maxima describe selectable settings, not raw driver limits or rounded sample counts
+    val anisoChoiceMax: Int get() = GraphicsOptionChoices.anisotropy(anisoMax).last()
+    val msaaChoiceMax: Int get() = GraphicsOptionChoices.msaa(this).last()
+
     fun supportsMsaa(value: Int): Boolean = value == 0 || effectiveMsaa(value) >= value
 
     fun effectiveMsaa(value: Int): Int =
@@ -27,7 +32,7 @@ internal data class GraphicsCapabilities(
     fun msaaDetail(): String {
         if (msaa2 == 0 && msaa4 == 0) return msaaReason.ifBlank { "MSAA is unavailable for this color mode" }
         val details =
-            listOf(2, 4).map { requested ->
+            GraphicsOptionChoices.msaaLevels.filter { it > 0 }.map { requested ->
                 val actual = effectiveMsaa(requested)
                 when {
                     actual == 0 -> "${requested}x is unavailable"
@@ -35,12 +40,19 @@ internal data class GraphicsCapabilities(
                     else -> "${requested}x supported"
                 }
             }
-        return details.joinToString(". ")
+        val settingMax = GraphicsOptionChoices.msaaLevels.last()
+        val limitNote =
+            if (msaaDriverMax > settingMax) {
+                ". MSAA settings are capped at ${settingMax}x. The driver reports up to ${msaaDriverMax}x for this color mode."
+            } else {
+                ""
+            }
+        return details.joinToString(". ") + limitNote
     }
 
     fun anisoDetail(): String =
-        if (anisoMax > 1) {
-            "Supported up to ${anisoMax}x on this GPU"
+        if (anisoChoiceMax > 1) {
+            "Supported up to ${anisoChoiceMax}x on this GPU"
         } else {
             anisoReason.ifBlank { "Anisotropic filtering is unavailable on this graphics driver" }
         }
@@ -66,9 +78,11 @@ internal data class GraphicsCapabilities(
                 val max = data.getDouble("aniso_max")
                 val two = data.getInt("msaa_2")
                 val four = data.getInt("msaa_4")
+                val msaaMax = data.getInt("msaa_max")
                 require(max.isFinite() && max >= 1 && max <= 1024)
                 require(two == 0 || two in 2..1024)
                 require(four == 0 || four in 4..1024)
+                require(msaaMax == 0 || msaaMax in 2..1024)
                 GraphicsCapabilities(
                     max.toInt(),
                     two,
@@ -76,6 +90,7 @@ internal data class GraphicsCapabilities(
                     data.getString("aniso_reason"),
                     data.getString("msaa_reason"),
                     data.getString("renderer"),
+                    msaaMax,
                 )
             }.getOrNull()
     }

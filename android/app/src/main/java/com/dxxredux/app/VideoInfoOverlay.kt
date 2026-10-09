@@ -143,6 +143,19 @@ private const val VIDEO_INFO_TITLE_TEXT_SCALE = 1.1f
 private const val VIDEO_INFO_SOFT_INFO_SCALE = 0.6f
 private const val VIDEO_INFO_SOFT_BUTTON_SCALE = 0.8f
 
+internal fun videoInfoMultiplierText(
+    name: String,
+    level: Int,
+    maximum: Int,
+    effective: Int = level,
+): String =
+    when {
+        maximum < 2 -> "$name: Unavailable"
+        level <= 0 -> "$name: OFF (max ${maximum}x)"
+        effective > level -> "$name: ${level}x (uses ${effective}x)"
+        else -> "$name: ${level}x (max ${maximum}x)"
+    }
+
 /**
  * In-game overlay showing video/rendering diagnostics.
  *
@@ -193,9 +206,9 @@ class VideoInfoOverlay(
     private var drawPolys = 0
     private var cacheTimeMs = 0
     private var anisoLevel = 0
-    private var anisoMax = 0
+    private val anisoMax: Int get() = capabilities?.anisoChoiceMax ?: 0
     private var msaaLevel = 0
-    private var msaaMax = 0
+    private val msaaMax: Int get() = capabilities?.msaaChoiceMax ?: 0
     private var msaaEffective = 0
     private var gpuTimeUs = 0
     private var gpuTimerAvailable = 0
@@ -263,11 +276,9 @@ class VideoInfoOverlay(
                     }
                     if (stats != null && stats.size >= 20) {
                         anisoLevel = stats[18]
-                        anisoMax = stats[19]
                     }
                     if (stats != null && stats.size >= 22) {
                         msaaLevel = stats[20]
-                        msaaMax = stats[21]
                         msaaEffective = if (stats.size > 39) stats[39] else msaaLevel
                     }
                     if (stats != null && stats.size >= 24) {
@@ -316,6 +327,8 @@ class VideoInfoOverlay(
             "video_tex_filt" to texFiltLevel,
             "video_aniso" to anisoLevel,
             "video_msaa" to msaaLevel,
+            "video_aniso_text" to videoInfoMultiplierText("AF", anisoLevel, anisoMax),
+            "video_msaa_text" to videoInfoMultiplierText("MSAA", msaaLevel, msaaMax, msaaEffective),
             "video_msaa_available" to (msaaMax >= 2),
             "video_aniso_available" to (anisoMax > 1),
         )
@@ -714,16 +727,7 @@ class VideoInfoOverlay(
         baselineY += layout.buttonLineHeight
 
         // Anisotropic filtering cycle button
-        val anisoText =
-            if (anisoMax <=
-                1
-            ) {
-                "AF: Unavailable"
-            } else if (anisoLevel > 0) {
-                "AF: ${anisoLevel}x"
-            } else {
-                "AF: OFF"
-            }
+        val anisoText = videoInfoMultiplierText("AF", anisoLevel, anisoMax)
         val anisoPaint = if (anisoLevel > 0) fpsGoodPaint else fpsWarnPaint
         setButtonBounds(anisoRect, panelLeft, panelWidth, baselineY, layout)
         val anisoBg =
@@ -739,21 +743,11 @@ class VideoInfoOverlay(
             layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.ANISO,
         )
-        val maxText = if (anisoMax > 1) " (max ${anisoMax}x)" else ""
-        canvas.drawText(anisoText + maxText, panelLeft + layout.panelPad, baselineY, anisoPaint)
+        canvas.drawText(anisoText, panelLeft + layout.panelPad, baselineY, anisoPaint)
         baselineY += layout.buttonLineHeight
 
         // MSAA cycle button
-        val msaaText =
-            if (msaaMax <
-                2
-            ) {
-                "MSAA: Unavailable"
-            } else if (msaaLevel > 0) {
-                "MSAA: ${msaaLevel}x"
-            } else {
-                "MSAA: OFF"
-            }
+        val msaaText = videoInfoMultiplierText("MSAA", msaaLevel, msaaMax, msaaEffective)
         val msaaPaint = if (msaaLevel > 0) fpsGoodPaint else fpsWarnPaint
         setButtonBounds(msaaRect, panelLeft, panelWidth, baselineY, layout)
         val msaaBg =
@@ -769,17 +763,7 @@ class VideoInfoOverlay(
             layout.buttonCornerRadius,
             selectedControllerAction == VideoInfoControllerAction.MSAA,
         )
-        val msaaMaxText =
-            if (msaaLevel > 0 &&
-                msaaEffective > msaaLevel
-            ) {
-                " (uses ${msaaEffective}x)"
-            } else if (msaaMax > 0) {
-                " (max ${msaaMax}x)"
-            } else {
-                ""
-            }
-        canvas.drawText(msaaText + msaaMaxText, panelLeft + layout.panelPad, baselineY, msaaPaint)
+        canvas.drawText(msaaText, panelLeft + layout.panelPad, baselineY, msaaPaint)
         baselineY += layout.buttonLineHeight
 
         if (showDebugControls) {

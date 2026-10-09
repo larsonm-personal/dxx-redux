@@ -6,11 +6,15 @@ import android.graphics.Canvas
 import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Log
+import android.view.KeyEvent
 import android.view.MotionEvent
+import org.json.JSONObject
 
 /** Real panel gestures with the asynchronous native command queue replaced by a recording callback */
 internal fun checkMusicVolumeTouches(context: Context) {
     checkMusicSourceTouches(context)
+    checkMusicControllerNavigation(context)
+    checkMusicPauseRefresh(context)
     for ((width, height) in listOf(1000 to 600, 600 to 1000)) {
         val queued = mutableListOf<Int>()
         var refreshes = 0
@@ -99,6 +103,219 @@ internal fun checkMusicVolumeTouches(context: Context) {
         check(displayedVolume() == 7) { "Rejected native command changed the displayed volume" }
         check(refreshes == queued.size)
         Log.i("DXX-MusicVolumeTest", "PASS: ${width}x$height tap, drag, clamping, release, cancel and queue rejection")
+    }
+}
+
+private fun checkMusicPauseRefresh(context: Context) {
+    val queued = mutableListOf<Boolean>()
+    var acceptCommands = true
+    var refreshes = 0
+    val panel =
+        MusicControlPanel(
+            context,
+            onDismiss = { error("Pause dismissed the panel") },
+            onStateChanged = { refreshes++ },
+            onPauseChange = {
+                if (acceptCommands) queued.add(it)
+                acceptCommands
+            },
+        )
+
+    fun flag(name: String): Boolean {
+        val state =
+            MusicControlPanel::class.java
+                .getDeclaredField("state")
+                .apply { isAccessible = true }
+                .get(panel)!!
+        return state.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .getBoolean(state)
+    }
+
+    fun refresh(
+        paused: Boolean,
+        oneTrack: Boolean,
+    ) {
+        // Match the JNI snapshot's numeric flags, including refreshes after a queued command
+        val snapshot = JSONObject().put("paused", if (paused) 1 else 0).put("oneTrackPerLevel", if (oneTrack) 1 else 0)
+        Log.i("DXX-MusicPauseTest", "Snapshot=$snapshot boolean_decoder=${snapshot.optBoolean("paused", false)}")
+        panel.refreshState(snapshot.toString())
+        check(flag("paused") == paused) { "Refresh changed the Pause/Play state" }
+        check(flag("oneTrackPerLevel") == oneTrack) { "Refresh cleared One track per level" }
+    }
+
+    fun activatePause() {
+        check(panel.handleControllerKey(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.ACTION_DOWN))
+        check(panel.handleControllerKey(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.ACTION_UP))
+    }
+
+    refresh(false, true)
+    repeat(3) {
+        activatePause()
+        check(queued.last() && flag("paused")) { "Pause did not immediately switch to Play" }
+        repeat(3) { refresh(true, true) }
+        activatePause()
+        check(!queued.last() && !flag("paused")) { "Play queued another pause instead of resuming" }
+        repeat(3) { refresh(false, false) }
+    }
+    check(queued == listOf(true, false, true, false, true, false))
+    check(refreshes == queued.size)
+
+    acceptCommands = false
+    activatePause()
+    check(!flag("paused") && refreshes == queued.size) { "Rejected pause changed the displayed state" }
+    refresh(true, true)
+    activatePause()
+    check(flag("paused") && refreshes == queued.size) { "Rejected resume changed the displayed state" }
+    Log.i("DXX-MusicPauseTest", "PASS: repeated pause, refresh, resume, numeric checkbox state and command rejection")
+}
+
+private fun checkMusicControllerNavigation(context: Context) {
+    for ((width, height) in listOf(1000 to 600, 600 to 1000)) {
+        val queued = mutableListOf<Int>()
+        var dismissed = false
+        val panel =
+            MusicControlPanel(context, { dismissed = true }, {}) {
+                queued.add(it)
+                it
+            }
+
+        fun field(name: String) = MusicControlPanel::class.java.getDeclaredField(name).apply { isAccessible = true }
+
+        fun key(code: Int) {
+            check(panel.handleControllerKey(code, KeyEvent.ACTION_DOWN))
+            check(panel.handleControllerKey(code, KeyEvent.ACTION_UP))
+        }
+        panel.layout(0, 0, width, height)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        try {
+            fun expectFocus(
+                name: String,
+                track: Int = -1,
+            ) {
+                panel.draw(Canvas(bitmap))
+                val focused =
+                    MusicControlPanel::class.java
+                        .getDeclaredMethod("focusedRect")
+                        .apply { isAccessible = true }
+                        .invoke(panel)
+                val expected =
+                    if (track <
+                        0
+                    ) {
+                        field(name).get(panel)
+                    } else {
+                        (field("trackRects").get(panel) as List<*>)[track]
+                    }
+                check(focused == expected) { "Expected $name track=$track, got $focused instead of $expected" }
+            }
+            val up = KeyEvent.KEYCODE_DPAD_UP
+            val down = KeyEvent.KEYCODE_DPAD_DOWN
+            val left = KeyEvent.KEYCODE_DPAD_LEFT
+            val right = KeyEvent.KEYCODE_DPAD_RIGHT
+            val activate = KeyEvent.KEYCODE_DPAD_CENTER
+
+            // Empty lists leave focus on the header instead of entering a nonexistent row
+            key(down)
+            expectFocus("playRect")
+            key(right)
+            expectFocus("oneTrackRect")
+            key(down)
+            expectFocus("oneTrackRect")
+            key(up)
+            expectFocus("sourceRect")
+            key(left)
+            expectFocus("playRect")
+            key(up)
+            expectFocus("sourceRect")
+            key(right)
+            expectFocus("closeRect")
+            key(right)
+            expectFocus("volumeRect")
+            check(queued.isEmpty()) { "Horizontal navigation changed the volume" }
+            key(down)
+            key(up)
+            key(up)
+            check(queued == listOf(7, 8)) { "Vertical volume adjustment or upper clamp failed: $queued" }
+            repeat(10) { key(down) }
+            check(queued == listOf(7, 8, 7, 6, 5, 4, 3, 2, 1, 0)) { "Volume key-up or lower clamp failed: $queued" }
+            expectFocus("volumeRect")
+            key(left)
+            expectFocus("closeRect")
+            key(down)
+            expectFocus("oneTrackRect")
+            key(right)
+            expectFocus("volumeRect")
+            key(right)
+            expectFocus("oneTrackRect")
+            key(left)
+            expectFocus("playRect")
+            key(left)
+            expectFocus("volumeRect")
+            key(right)
+            expectFocus("playRect")
+
+            val state = field("state").get(panel)!!
+            state.javaClass
+                .getDeclaredField("tracks")
+                .apply { isAccessible = true }
+                .set(state, List(30) { MusicControlPanel.TrackEntry(it, "Track $it") })
+            key(down)
+            expectFocus("trackRects", 0)
+            key(up)
+            expectFocus("oneTrackRect")
+            key(down)
+            repeat(29) { key(down) }
+            expectFocus("trackRects", 29)
+            check(field("scrollOffset").getFloat(panel) > 0f) { "Track navigation did not scroll the list" }
+            key(down)
+            expectFocus("trackRects", 29)
+            for (exit in listOf(left, right)) {
+                key(exit)
+                expectFocus("volumeRect")
+                key(if (exit == left) right else left)
+                expectFocus("trackRects", 29)
+            }
+            key(up)
+            expectFocus("trackRects", 28)
+            repeat(29) { key(up) }
+            expectFocus("oneTrackRect")
+            check(queued.size == 10) { "Leaving volume changed its setting" }
+
+            key(up)
+            field(
+                "sourceOptionsCache",
+            ).set(panel, listOf(MusicOverlaySourceOption("cd", "CD"), MusicOverlaySourceOption("midi", "MIDI")))
+            key(activate)
+            check(field("sourceDropdownOpen").getBoolean(panel))
+            key(down)
+            check(field("sourceDropdownIndex").getInt(panel) == 1)
+            key(up)
+            check(field("sourceDropdownIndex").getInt(panel) == 0)
+            key(right)
+            check(!field("sourceDropdownOpen").getBoolean(panel))
+            expectFocus("closeRect")
+            key(left)
+            expectFocus("sourceRect")
+            key(activate)
+            key(left)
+            check(!field("sourceDropdownOpen").getBoolean(panel))
+            expectFocus("playRect")
+            key(up)
+            key(down)
+            expectFocus("oneTrackRect")
+            key(up)
+            key(right)
+            key(activate)
+            check(dismissed) { "Close could not be activated with the controller" }
+            Log.i(
+                "DXX-MusicControllerTest",
+                "PASS: ${width}x$height spatial focus, volume, track scrolling, dropdown and Close",
+            )
+        } finally {
+            bitmap.recycle()
+        }
     }
 }
 

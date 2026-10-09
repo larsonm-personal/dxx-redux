@@ -394,7 +394,7 @@ $manualTests = @(
 )
 
 # Infrastructure requirement classification
-$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
+$twoEmuTests = @("test_mp", "test_lan", "test_coop_pause", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
@@ -477,6 +477,7 @@ $testTimeouts = @{
     "test_native_host_unit_tests"         = 1200
     "test_mp"                             = 240
     "test_lan"                            = 240
+    "test_coop_pause"                      = 600
     "test_device_network_campaign"        = 21600
     "test_server_integration"             = 600
     "test_secret_area_baseline_diff"      = 60

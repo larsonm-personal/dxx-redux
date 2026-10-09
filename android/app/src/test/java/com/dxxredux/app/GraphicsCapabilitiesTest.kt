@@ -19,7 +19,7 @@ class GraphicsCapabilitiesTest {
         val file = File(temp.root, "graphics-capabilities-$depth.json")
         file.writeText(
             """{"schema":1,"fingerprint":"device-driver","color_depth":$depth,
-            "aniso_max":$aniso,"msaa_2":$two,"msaa_4":$four,
+            "aniso_max":$aniso,"msaa_max":${maxOf(two, four)},"msaa_2":$two,"msaa_4":$four,
             "aniso_reason":"AF is not supported","msaa_reason":"No shared sample count","renderer":"Test GPU"}""",
         )
         return file
@@ -78,5 +78,37 @@ class GraphicsCapabilitiesTest {
         assertEquals("AF is not supported", caps.anisoDetail())
         assertEquals(listOf(VideoInfoControllerAction.TEX_FILT), videoInfoControllerActions(false, false, false))
         assertFalse(videoInfoControllerActions(true, false, false).contains(VideoInfoControllerAction.MSAA))
+    }
+
+    @Test fun retroidLabelsUseSelectableMaximaInsteadOfRawDriverLimits() {
+        val caps =
+            GraphicsCapabilities.fromReport(
+                JSONObject(
+                    """{"schema":1,"aniso_max":16,"msaa_max":16,"msaa_2":4,"msaa_4":4,
+                "color_samples":[16,8,4],"depth_samples":[16,8,4],
+                "aniso_reason":"","msaa_reason":"","renderer":"Mali-G77 MC9"}""",
+                ),
+            )!!
+        assertEquals("AF: 16x (max 16x)", videoInfoMultiplierText("AF", 16, caps.anisoChoiceMax))
+        assertEquals("MSAA: 4x (max 4x)", videoInfoMultiplierText("MSAA", 4, caps.msaaChoiceMax, 4))
+        assertEquals("MSAA: OFF (max 4x)", videoInfoMultiplierText("MSAA", 0, caps.msaaChoiceMax, 0))
+        assertEquals("MSAA: 2x (uses 4x)", videoInfoMultiplierText("MSAA", 2, caps.msaaChoiceMax, 4))
+        assertEquals(
+            "2x uses 4x on this GPU. 4x supported. MSAA settings are capped at 4x. " +
+                "The driver reports up to 16x for this color mode.",
+            caps.msaaDetail(),
+        )
+        assertEquals("2x uses 4x on this GPU. 4x supported", caps.copy(msaaDriverMax = 4).msaaDetail())
+        assertEquals("Supported up to 16x on this GPU", caps.anisoDetail())
+
+        assertEquals("Supported up to 16x on this GPU", caps.copy(anisoMax = 64).anisoDetail())
+        assertEquals(4, caps.copy(msaa2 = 8, msaa4 = 8).msaaChoiceMax)
+        assertEquals(4, caps.copy(msaa2 = 0).msaaChoiceMax)
+        val partial = caps.copy(anisoMax = 3, msaa2 = 2, msaa4 = 0)
+        assertEquals(2, partial.anisoChoiceMax)
+        assertEquals("MSAA: 2x (max 2x)", videoInfoMultiplierText("MSAA", 2, partial.msaaChoiceMax))
+        val unavailable = caps.copy(anisoMax = 1, msaa2 = 0, msaa4 = 0)
+        assertEquals("AF: Unavailable", videoInfoMultiplierText("AF", 16, unavailable.anisoChoiceMax))
+        assertEquals("MSAA: Unavailable", videoInfoMultiplierText("MSAA", 4, unavailable.msaaChoiceMax, 4))
     }
 }
