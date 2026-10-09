@@ -192,7 +192,7 @@ fun SoundfontSelector() {
 
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text("Sound profile", style = MaterialTheme.typography.titleSmall)
-        listOf("ymfm" to "AdLib (OPL3) FM", "sf2" to "MIDI soundfont").forEach { (id, label) ->
+        listOf("ymfm" to "AdLib (OPL3) FM", "sf2" to "MIDI").forEach { (id, label) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = state.renderer == id, enabled = !busy, onClick = {
                     scope.launch {
@@ -234,7 +234,7 @@ fun SoundfontSelector() {
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().tvFocusBorder(),
             ) {
-                Text(state.fonts.firstOrNull { it.id == state.selected }?.name ?: bundled.name)
+                Text("choose soundfont")
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(text = { Text(bundled.name) }, onClick = {
@@ -255,7 +255,7 @@ fun SoundfontSelector() {
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().tvFocusBorder(),
             ) {
-                Text("eq $fontName")
+                Text("EQ for MIDI")
             }
         }
         Text("MIDI soundfont effects", style = MaterialTheme.typography.titleSmall)

@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -259,20 +260,24 @@ fun EnginePreferencesPage(
             onDismissRequest = { pendingPreset = null },
             title = { Text(preset.title, fontSize = 16.sp) },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(preset.description, fontSize = 12.sp, lineHeight = 16.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    preset.settings.forEach { PresetSettingRow(it) }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Confirm applies these settings to both games and all existing pilots.",
-                        fontSize = 11.sp,
-                        lineHeight = 14.sp,
-                    )
-                    if (presetError.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(presetError, color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+                val presetScrollState = rememberScrollState()
+                Box {
+                    Column(modifier = Modifier.verticalScroll(presetScrollState)) {
+                        Text(preset.description, fontSize = 12.sp, lineHeight = 16.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        preset.settings.forEach { PresetSettingRow(it) }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Confirm applies these settings to both games and all existing pilots.",
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp,
+                        )
+                        if (presetError.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(presetError, color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+                        }
                     }
+                    SharedScrollArrows(presetScrollState)
                 }
             },
             confirmButton = {

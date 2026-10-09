@@ -52,73 +52,77 @@ internal fun MusicEqDialog(
         onDismissRequest = onDismiss,
         title = { Text("eq $name") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Frequency response", style = MaterialTheme.typography.labelLarge)
-                EqCurve(curve)
-                val choices =
-                    listOf(MusicEq.FLAT to "Flat (no EQ)") +
-                        if (measured) {
-                            listOf(
-                                MusicEq.BALANCED to "Measured EQ - match SC-55 recordings",
-                            )
-                        } else {
-                            emptyList()
-                        }
-                choices.forEach { (id, label) ->
-                    val selected = if (id == MusicEq.FLAT) preset == id else preset != MusicEq.FLAT
-                    Row(
-                        Modifier.fillMaxWidth().selectable(
-                            selected,
-                            enabled = !busy,
-                            role = Role.RadioButton,
-                            onClick = { onSelect(id) },
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = selected, onClick = null, enabled = !busy)
-                        Text(label)
-                    }
-                }
-                if (measured && preset != MusicEq.FLAT) {
-                    Text("Curve smoothing", style = MaterialTheme.typography.labelLarge)
-                    Box {
-                        OutlinedButton(
-                            onClick = { expanded = true },
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+            val scrollState = rememberScrollState()
+            Box {
+                Column(Modifier.verticalScroll(scrollState), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Frequency response", style = MaterialTheme.typography.labelLarge)
+                    EqCurve(curve)
+                    val choices =
+                        listOf(MusicEq.FLAT to "Flat (no EQ)") +
+                            if (measured) {
+                                listOf(
+                                    MusicEq.BALANCED to "Measured EQ - match SC-55 recordings",
+                                )
+                            } else {
+                                emptyList()
+                            }
+                    choices.forEach { (id, label) ->
+                        val selected = if (id == MusicEq.FLAT) preset == id else preset != MusicEq.FLAT
+                        Row(
+                            Modifier.fillMaxWidth().selectable(
+                                selected,
+                                enabled = !busy,
+                                role = Role.RadioButton,
+                                onClick = { onSelect(id) },
+                            ),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(MusicEq.smoothing.getValue(preset))
+                            RadioButton(selected = selected, onClick = null, enabled = !busy)
+                            Text(label)
                         }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            MusicEq.smoothing.forEach { (id, label) ->
-                                DropdownMenuItem(text = { Text(label) }, onClick = {
-                                    expanded = false
-                                    onSelect(id)
-                                })
+                    }
+                    if (measured && preset != MusicEq.FLAT) {
+                        Text("Curve smoothing", style = MaterialTheme.typography.labelLarge)
+                        Box {
+                            OutlinedButton(
+                                onClick = { expanded = true },
+                                enabled = !busy,
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                            ) {
+                                Text(MusicEq.smoothing.getValue(preset))
+                            }
+                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                MusicEq.smoothing.forEach { (id, label) ->
+                                    DropdownMenuItem(text = { Text(label) }, onClick = {
+                                        expanded = false
+                                        onSelect(id)
+                                    })
+                                }
                             }
                         }
+                        Text(
+                            "Broad smooths more; Detail follows the measured curve more closely.",
+                        )
                     }
                     Text(
-                        "Broad smooths more; Detail follows the measured curve more closely.",
+                        if (measured) {
+                            "Average correction from 28 D1/D2 recordings for this SC-55 bank."
+                        } else if (profile ==
+                            MusicEq.OPL3
+                        ) {
+                            "OPL3 uses Flat. The recordings do not yet justify a measured correction."
+                        } else {
+                            "Flat is the default for this soundfont. No measured correction is available for this bank."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
                     )
+                    Text(
+                        "Saved per profile. Changing EQ stops the preview. Games use it on the next launch.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
-                Text(
-                    if (measured) {
-                        "Average correction from 28 D1/D2 recordings for this SC-55 bank."
-                    } else if (profile ==
-                        MusicEq.OPL3
-                    ) {
-                        "OPL3 uses Flat. The recordings do not yet justify a measured correction."
-                    } else {
-                        "Flat is the default for this soundfont. No measured correction is available for this bank."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    "Saved per profile. Changing EQ stops the preview. Games use it on the next launch.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                SharedScrollArrows(scrollState)
             }
         },
         confirmButton = {

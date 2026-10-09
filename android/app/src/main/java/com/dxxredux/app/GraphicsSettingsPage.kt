@@ -441,6 +441,12 @@ private fun ColorDepthSection(
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
+    Text(
+        "Choose 24-bit for smoother shading and less visible color banding. " +
+            "Try 16-bit to reduce color-buffer memory and bandwidth; it may run faster on some devices.",
+        fontSize = 9.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 // Shared constant: must match levels in VideoInfoOverlay.cycleMsaa()
