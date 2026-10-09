@@ -15,3 +15,10 @@
 - Reproduced the remaining Android launch issue after that fix: this preview demo stays in `intro_active=true` with `menu present=True` for 90s even after controller A, generic taps, and top-right intro-skip taps
 - Current suite decision: `android/tests/test_extract.ps1` treats `disc_id == "descent-ii-usa-3-level-interactive-preview"` as a file-only Android launch exception after extraction/file verification succeeds
 - Validation: targeted `test_extract.ps1` now exits 0 with `SKIP (file-only)`, and `test_all_extracts.ps1 -SpecPaths ...\extract_regression.json5` passes 1/1
+
+## Resolved 2026-10-08
+
+The file-only exception above has been removed. With complete split-SOW assets,
+the remaining launch failure was an unrecognized CD demo HOG size, fixed in the
+engine's existing demo classification. The full import-and-launch test now passes
+at level 1, Ahayweh Gate. See [the follow-up](d2-preview-launch-20261008.md).

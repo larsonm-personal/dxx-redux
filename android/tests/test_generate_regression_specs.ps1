@@ -20,15 +20,17 @@ try {
     $discDir = Join-Path $gameDataDir 'CD images\iso with fingerprint cue'
     $vertigoDir = Join-Path $gameDataDir 'CD images\vertigo-expansion-only'
     $baseD2Dir = Join-Path $gameDataDir 'CD images\d2-base'
+    $previewDir = Join-Path $gameDataDir 'CD images/d2-preview'
     $testFlightDir = Join-Path $gameDataDir 'CD images\test-flight'
     $combinedDir = Join-Path $gameDataDir 'combined launches\d2-plus-vertigo'
     $testsDir = Join-Path $tempRoot 'android\tests'
     $helpersDir = Join-Path $tempRoot 'android\helpers'
     $assetsDir = Join-Path $tempRoot 'android\app\src\main\assets'
-    New-Item -ItemType Directory -Path $discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir, $testsDir, $helpersDir, $assetsDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $previewDir, $combinedDir, $testsDir, $helpersDir, $assetsDir -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $vertigoDir 'data_tracks'), `
     (Join-Path $baseD2Dir 'data_tracks'), `
-    (Join-Path $testFlightDir 'data_tracks'), `
+    (Join-Path $testFlightDir 'data_tracks'),
+    (Join-Path $previewDir 'data_tracks'), `
     (Join-Path $discDir 'data_tracks') | Out-Null
 
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\generate_regression_specs.ps1') `
@@ -71,7 +73,7 @@ try {
         "FILE `"disc.iso`" BINARY`n  TRACK 01 MODE1/2048`n    INDEX 01 00:00:00`n",
         [System.Text.UTF8Encoding]::new($false)
     )
-    foreach ($fixtureDir in @($vertigoDir, $baseD2Dir, $testFlightDir)) {
+    foreach ($fixtureDir in @($vertigoDir, $baseD2Dir, $testFlightDir, $previewDir)) {
         [System.IO.File]::WriteAllText(
             (Join-Path $fixtureDir 'disc.cue'),
             "FILE `"disc.bin`" BINARY`n  TRACK 01 MODE1/2352`n    INDEX 01 00:00:00`n",
@@ -96,6 +98,9 @@ try {
             'fixture',
             [System.Text.UTF8Encoding]::new($false)
         )
+    }
+    foreach ($name in @('d2demo.hog', 'd2demo.ham', 'd2demo.pig')) {
+        [IO.File]::WriteAllText((Join-Path (Join-Path $previewDir 'data_tracks') $name), 'fixture')
     }
     foreach ($name in @('descent.hog', 'descent.pig')) {
         [System.IO.File]::WriteAllText(
@@ -136,7 +141,7 @@ try {
     . (Join-Path $helpersDir 'bounded_extraction.ps1')
     $extractScriptIdentity = Get-ExtractionPathIdentity `
         -Path (Join-Path $gameDataDir 'extract_all_cds.ps1') -Name 'extract_all_cds.ps1'
-    foreach ($fixtureDir in @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir)) {
+    foreach ($fixtureDir in @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $previewDir)) {
         $source = Resolve-DiscExtractionSource -Directory $fixtureDir
         $sourceIdentities = @($source.Files | ForEach-Object {
                 Get-ExtractionPathIdentity -Path $_.FullName -Name $_.Name
@@ -178,6 +183,11 @@ try {
         $null -eq $testFlightSpec.expected_mission -and $null -eq $testFlightSpec.expected_level1) `
         'The unsupported Test Flight demo should be a non-launchable file-only regression'
 
+    $previewSpec = Read-JsoncFile (Join-Path $previewDir 'extract_regression.jsonc')
+    Assert-True ($previewSpec.classification -eq 'd2_demo' -and $previewSpec.game -eq 'd2' -and
+        $previewSpec.expected_mission -eq 'Descent 2 Demo' -and $previewSpec.expected_level1 -eq 'Ahayweh Gate') `
+        'D2 Preview must generate a launchable demo spec with the name embedded in d2leva-1.sl2'
+
     $combinedSpec = Read-JsoncFile (Join-Path $combinedDir 'extract_regression.jsonc')
     Assert-True ($combinedSpec.source_type -eq 'combined' -and
         @($combinedSpec.source_specs).Count -eq 2 -and
@@ -190,7 +200,7 @@ try {
         @($combinedSpec.expected_files) -contains 'groupa.pig') `
         'A combined regression should merge and deduplicate component extraction oracles'
 
-    $specPaths = @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $combinedDir) |
+    $specPaths = @($discDir, $vertigoDir, $baseD2Dir, $testFlightDir, $previewDir, $combinedDir) |
         ForEach-Object { Join-Path $_ 'extract_regression.jsonc' }
     function Get-SpecSnapshots {
         $snapshots = @{}
@@ -333,7 +343,7 @@ try {
         'Selected existing GOG specs must be accounted as valid skips'
     Assert-SpecSnapshots $before
     $output = @(& $powerShellPath -NoProfile -NonInteractive -File $scriptPath -Force 2>&1)
-    Assert-True ($LASTEXITCODE -eq 0 -and ($output -join "`n") -match 'Generated 9 specs, skipped 0') `
+    Assert-True ($LASTEXITCODE -eq 0 -and ($output -join "`n") -match 'Generated 10 specs, skipped 0') `
         'Absent selector must retain ordinary CD, combined and GOG generation'
     Assert-SpecSnapshots $before -Except $discSpecPath
 

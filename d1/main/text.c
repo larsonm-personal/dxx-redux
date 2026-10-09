@@ -249,7 +249,8 @@ void load_text()
 
 		if (!tptr && i >= N_TEXT_STRINGS_MIN)	// account for non-registered 1.4/1.5 text files
 		{
-			Text_string[i-1] = extra_strings[i - N_TEXT_STRINGS_MIN - 1];
+			if (i > N_TEXT_STRINGS_MIN && !*Text_string[i-1])
+				Text_string[i-1] = extra_strings[i - N_TEXT_STRINGS_MIN - 1];
 			Text_string[i] = extra_strings[i - N_TEXT_STRINGS_MIN];
 			continue;
 		}

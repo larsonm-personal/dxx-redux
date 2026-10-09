@@ -237,6 +237,7 @@ int load_mission_shareware(void)
 			break;
 		default:
 			Int3(); // fall through
+		case CD_SHAREWARE_MISSION_HOGSIZE:
 		case SHAREWARE_MISSION_HOGSIZE:
 			N_secret_levels = 0;
 
@@ -509,6 +510,7 @@ void add_builtin_mission_to_list(mle *mission, char *name)
 		size = PHYSFSX_fsize("d2demo.hog");
 
 	switch (size) {
+	case CD_SHAREWARE_MISSION_HOGSIZE:
 	case SHAREWARE_MISSION_HOGSIZE:
 	case MAC_SHARE_MISSION_HOGSIZE:
 		mission->filename = d_strdup(SHAREWARE_MISSION_FILENAME);
@@ -809,6 +811,7 @@ int load_mission(mle *mission)
 
 	if (PLAYING_BUILTIN_MISSION) {
 		switch (Current_mission->builtin_hogsize) {
+		case CD_SHAREWARE_MISSION_HOGSIZE:
 		case SHAREWARE_MISSION_HOGSIZE:
 		case MAC_SHARE_MISSION_HOGSIZE:
 			strcpy(Briefing_text_filename,BIMD2_BRIEFING_FILE_SHARE);

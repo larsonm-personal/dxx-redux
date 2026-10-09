@@ -177,6 +177,9 @@ target_include_directories(test_graphics_config_transaction
 target_compile_definitions(test_graphics_config_transaction
                            PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
 add_test(NAME graphics_config_transaction_tests COMMAND test_graphics_config_transaction)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
+    add_subdirectory(directory_sync)
+endif()
 add_executable(
     test_graphics_safety_store
     ${CMAKE_CURRENT_SOURCE_DIR}/test_graphics_safety_store.cpp
@@ -806,6 +809,10 @@ else()
 endif()
 add_test(NAME pilot_pref_transaction_tests COMMAND test_pilot_pref_transaction)
 set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
+    add_subdirectory(rollback_backups)
+endif()
 
 # These executables use assert for both setup and verification. Keep assertions active when the host
 # suite is configured as Release so test setup is not compiled away before CTest runs.

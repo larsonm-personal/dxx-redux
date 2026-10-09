@@ -10436,6 +10436,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 #include "coop_pickup_reward_fixture.hpp"
 #include "config_policy_fixture.hpp"
 #include "secret_origins_fixture.hpp"
+#include "d1_text_loader_fixture.hpp"
 extern "C" {
 #include "matcen_mode.h"
 #include "multi.h"
@@ -10910,6 +10911,13 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+#ifndef DXX_BUILD_DESCENT_II
+	if (argc == 3 && std::strcmp(argv[1], "--d1-text-loader") == 0) {
+		test_d1_text_loader(argv[2]);
+		PHYSFS_deinit();
+		return 0;
+	}
+#endif
 	if (argc == 3 && std::strcmp(argv[1], "--secret-origins") == 0) {
 		test_secret_origins(argv[2]);
 		PHYSFS_deinit();

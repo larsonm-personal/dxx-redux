@@ -94794,3 +94794,433 @@ Disposition: GQF-0205 FIXED; GQR-0192 DONE. Historical impact score 71 (12/35/7/
 </details>
 
 <!-- END IMPORT: GQR-0217 secret origin admission implementation pending native runtime gates 20261008 -->
+<!-- BEGIN IMPORT: GQR-0217 exact secret origin admission remediation 20261008 SHA256:4c9b30127bb2b3aa71d0e02e8802408179b1e4108818f42fd6f474a35a458215 -->
+
+## GQR-0217 exact secret origin admission remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0217-native-remediation.md`
+- Imported SHA-256: `4c9b30127bb2b3aa71d0e02e8802408179b1e4108818f42fd6f474a35a458215`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0217 exact secret origin admission remediation 20261008
+
+- Completes prior immutable implementation checkpoint after current-source revalidation. Two Kotlin production lines retain every declared origin position using rejected zero sentinel and remove redundant empty-list test. Native parsers unchanged
+- Prior actual original policy fails on empty first origin followed by2. Maintained parser/projection/archive tests cover64 invalid token combinations per boundary across both games, supported first/multiple/whitespace controls, actual file/stream ZIP admission and64 ModManager replacement rejections preserving prior owner, files and manifest/source bytes and mtimes. Current source hashes match prior checkpoint exactly
+- Fresh selected Gradle/JUnit6/6 has zero errors/failures/skips. Android Debug APK build succeeds, not installed. Existing Gradle deprecation warnings remain
+- New maintained shared fixture invokes actual load_mission_from_current_dir:12 D1 MSN calls and24 D2 MN2/MSN calls on each of Windows and Android. Ordinary two-level lists and actual accepted secret count/table/name are checked. Valid multiple origins retain first; empty/bad/zero/negative/out-of-range first token cannot promote later2. Native legacy first-only acceptance of invalid later tokens remains, while launcher rejects entire invalid row
+- D2 properties initialize from pinned real HAM/S22, D1 uses pinned real HOG. No stubs or parser copies, native overflow probe, level decoding or gameplay startup. Real Android engine libraries execute in isolated processes on emulator-5582 only. Both Windows/Android complete traces match structurally
+- Initial Android fixture compile lacked graphics type dependency; corrected through normal bm header. Initial successful D2 process left property allocations at exit; final fixture uses normal gamedata_close and final both-game logs are empty. Final paired Windows build and native executions pass
+- Registered reusable Android runner resolves pinned game assets through existing helper, transports assets through optional generic native runner parameter and uses existing owned remote directories/timeouts/cleanup. Master600s timeout and metadata_lifecycle coverage entry added. Both catalogs pass94 standalone JSON/374 support/215 PS and313 master entries
+- Scoped mixed quality and final header quality pass. Exact normalized reconstruction preserves every pre-existing byte in dirty host harness, native helper, coverage and master except explicit fixture mode, asset transport and registration insertions. Prior Kotlin owners unchanged. No inherited edit or minimization saving
+- Accepted shared/JVM/ZIP/ownership and relevant Android/paired engine integration gates are now covered. No launcher UI, level startup, physical device, broad malformed-media/security/resource-pressure suite or APK installation claim. GQR-0217 DONE/GQF-0232 FIXED; broader campaign remains active
+
+## Authoritative evidence and scope
+
+```json
+{
+  "source_sha256": {
+    "android/tests/secret_origins_fixture.hpp": "476b604694709046524d230400c255a2e0c2691ea72383e9ebc749f2a8c6f4ea",
+    "android/tests/secret_origins/main.cpp": "066003a1f64b2ae50c153afbfcf43970df44a7eb738d0fa10382acd370adbc8c",
+    "android/tests/secret_origins/CMakeLists.txt": "c0b7ef04ef13272a58763601eebf410cae1e455fa1442dfadd6a7c75ec10dfd3",
+    "android/tests/test_upstream_compat.cpp": "a31ede9353a17d850379a2e9e4a9040c59158ced0032948df039bff06016ea8b",
+    "android/helpers/run_native_engine_fixture.ps1": "ee76545358d9cea282d2f27b052390caf612473cabf63eb06969736ec6be6d04",
+    "android/tests/test_android_secret_origins.ps1": "39ca78d3985788ad38d7c9e06e05b51d2fb8a166e941aac9ea881f56a9c28e14",
+    "android/helpers/test_suite_coverage.ps1": "367748d0cd9153b04fc4044558b5aeb74d9ca675ecee9d7d986a3edb209e2300",
+    "android/run_all_tests.ps1": "8d98bc1d467cfbcebd627176c97118f2a8d1fab6db4517063a7df00d69a7e53e",
+    "d1/main/mission.c": "cbc71603b6f09f61703d30a0fe7ff733c0d5da4f8145b5e5842de2f88e19d1cd",
+    "d2/main/mission.c": "621fd0107e29941f7735ccef7bff0a82010eed84f09ea4218e6c9146947c4630"
+  },
+  "prior_kotlin_sources_unchanged": true,
+  "dirty_owner_exact_scope_proof": true,
+  "junit": [
+    {
+      "file": "gqr0217-native-policy.xml",
+      "tests": 4,
+      "sha256": "593c1500109f05a45214e696c8ffb63726f43be0d76147ef090ed920f4034195"
+    },
+    {
+      "file": "gqr0217-native-formats.xml",
+      "tests": 1,
+      "sha256": "38233ac57e3a84bc43ce49fbc7ad1efe5224faa073fef4434a586f4ac6975af1"
+    },
+    {
+      "file": "gqr0217-native-archive.xml",
+      "tests": 1,
+      "sha256": "3c8f3dff3c355e7416f111c877717ecd181bfb9c471a87420e3fca82de5893a8"
+    }
+  ],
+  "traces": {
+    "d1": {
+      "windows_sha256": "e758538514f0c9c8e310a6df366e7485c0229f920c89b1e2dd776507aa2055dc",
+      "android_sha256": "e758538514f0c9c8e310a6df366e7485c0229f920c89b1e2dd776507aa2055dc",
+      "actual_loader_calls_per_platform": 12
+    },
+    "d2": {
+      "windows_sha256": "905be1604e7b87d1a56d3fe766292f6c345fc3bea951cdd4d837111c8ca8d7ed",
+      "android_sha256": "905be1604e7b87d1a56d3fe766292f6c345fc3bea951cdd4d837111c8ca8d7ed",
+      "actual_loader_calls_per_platform": 24
+    }
+  },
+  "logs_sha256": {
+    "gqr0217-native-windows-final-build.log": "7db10fa490a8638897fe3ad773cad974890492e9ef0a6d47ccb03898142f2ae2",
+    "gqr0217-native-android-shutdown.log": "ff6f15a43f0f508f31887f3e643569b9d67916c4ff01ecdb9a6185e78ef59593",
+    "gqr0217-native-quality-final.log": "d8f124f97a57adab3a9a136b6a4eae7049e86b66310470b4b09eaa9d92f69e24",
+    "gqr0217-native-quality-shutdown.log": "7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704",
+    "gqr0217-native-jvm-build.log": "eca10cc07503f700841ec3f4767e15b34cee5b7a23441008088eebc29daf8239",
+    "gqr0217-native-catalog-final.log": "7b3b1a34fac5a45223d7507ecb39267ee588a034cf390c40ddfa5888dbb36d23",
+    "gqr0217-native-master-catalog-final.log": "59dbc2c1a8983ec8fd45414f7c8ebd15e0f1b4e86bbcb2db0525c388468f47b5"
+  }
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0217 exact secret origin admission remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0187 D1 text final-line boundary implementation pending rejection rendering 20261008 SHA256:74236b873d32f542474d6af7f734e1aef0c8a92a110b03369818f26061577654 -->
+
+## GQR-0187 D1 text final-line boundary implementation pending rejection rendering 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0187-runtime-report.md`
+- Imported SHA-256: `74236b873d32f542474d6af7f734e1aef0c8a92a110b03369818f26061577654`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0187 D1 text final-line boundary implementation pending rejection rendering 20261008
+
+- Current-source revalidation confirmed prior header repair unchanged: original count621 and literal duplicate-callsign message. Accepted minimum/newline gate exposed unconditional previous-string fallback assignment at supported514 without final newline and loss of valid final line599 at600 without final newline
+- Add one guard requiring an optional prior slot above minimum and an empty prior string before replacing it. Original parser/table/handmade comments and paired D2 text owners otherwise unchanged. Product net+1 inherited source line; no net inherited diff reduction claimed for this follow-up
+- Actual original loader compiled with real PhysFS and ASAN safely fails only final-line equality on ordinary600/no-newline (exit7); current loader passes same assertion (exit0). Original514 fault was not executed
+- New maintained focused fixture links actual complete D1 engine and invokes load_text/free_text for514/600/621 with/without final newline. Verifies every authored string including native116/330 transforms, complete107-entry fallback consistency/endpoints, all621 non-null pointers and literal duplicate-callsign macro. Isolated generated TXB assets removed normally
+- Focused registered D1 CTest passes1/1 with six-case trace proving final-line identity and fallback endpoint. An earlier CTest result while linking used stale executable's default upstream suite and produced no fixture trace; discarded as invalid evidence. Final test runs after paired build, requires exact six-case trace and explicit fixture PASS marker through CTest PASS_REGULAR_EXPRESSION. Initial fixture compile used constant macro argument requiring an lvalue; corrected without product changes
+- Actual current text.c MSVC x86 ASAN adapter passes11 ordinary cases: all six boundaries plus five distinct existing production HOG text payloads. Real PhysFS handles reads; isolated open/error/case adapter is not complete game startup. All621 pointers/string reads and message literal checked
+- Paired full Windows build and Android Debug APK/all-three-ABI build pass. Initial Android build hit shared Kotlin incremental storage registration failure; first retry property was split by PowerShell and failed task selection. Quoted nonincremental property retry succeeds, no cache deletion. Existing unrelated native/Gradle warnings retained, no new edited-source warning
+- Scoped mixed quality and final fixture quality/diff checks pass. Exact normalized reconstruction preserves existing dirty host harness and test CMake except explicit focused fixture mode/registration. No new top-level PowerShell runner/catalog entry
+- Actual network duplicate-callsign rejection rendering remains unproven. GQR-0187 TODO/GQF-0200 OPEN; header/loader/macro assertions do not establish packet reception or messagebox rendering. Totals unchanged76 DONE/175 TODO/1 DEFERRED. No APK installation or device action, deliberate malformed-media/security/resource-pressure probe, staging or commit; concurrent changes preserved and broader goal active
+
+## Scope and authoritative evidence
+
+```json
+{
+  "sources_sha256": {
+    "d1/main/text.c": "ab177d94e8f7d9214ba4ebb92667683e4879042d6d533130ca142f5a923867c9",
+    "d1/main/text.h": "f3a32c66b5516aedbc0615fc626352f2dff2374cc76fb206b255a1e0beaf4e6c",
+    "d2/main/text.c": "aa34c2dbfd2270e0b67d566d98409bec3db199b336cf2add93af8601315c5709",
+    "d2/main/text.h": "a1cf6b6020d1f660c6e754e3c64bf28a7f2221484efaf33b5b6457553bdd9d5e",
+    "android/tests/d1_text_loader_fixture.hpp": "737e4c0e0f4153c4689c59c5d952ee8049d8d3b60ee0c62e7525e6a532f375e0",
+    "android/tests/test_upstream_compat.cpp": "84d97fa705be644c413fd975b8a4fd600654ebd0774c0e2912827970bdbb4962",
+    "android/tests/CMakeLists.txt": "8d80700e09699b9e5d180d147a2be6acb9938559514cf98f93f74440b5a2c4ee"
+  },
+  "exact_scope_proof": true,
+  "trace_sha256": "55c8b8d0c86fb528a8ce93b0b52d1ef4a5f1ab0840122af9112e87d0f5cde8f5",
+  "asan_cases": [
+    {
+      "name": "synthetic-514-newline0",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "6b3cedc3911c16125f63e58a30cbede9c21d00487bd36674a1fb1e0c9810145d",
+      "exit_code": 0
+    },
+    {
+      "name": "synthetic-514-newline1",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "4a304244be764c6d49324423fc7d03b80cbf52da9f4f5decad9122bc0c738e88",
+      "exit_code": 0
+    },
+    {
+      "name": "synthetic-600-newline0",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "93823337970fd52e85fdbe57a3f4dea8c8cbc5f7d62181fdb56fc4587a1f39a3",
+      "exit_code": 0
+    },
+    {
+      "name": "synthetic-600-newline1",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "1bbd1dda755ac98e1192bc7d14f6bda4b0f97b4a688c5c3ea96ea3b8b8c9c9e2",
+      "exit_code": 0
+    },
+    {
+      "name": "synthetic-621-newline0",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "f2fe2820e0cbf32b9a680d5f4ba859beac7cd4c89c26397ac17d8ae62a671183",
+      "exit_code": 0
+    },
+    {
+      "name": "synthetic-621-newline1",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "ordinary-synthetic",
+      "sha256": "fbbce49fb3876daf64b3fba5a851d1f3c2fed7af83fd35b8e443224afe7c606d",
+      "exit_code": 0
+    },
+    {
+      "name": "production-9c04503f717f",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "sha256": "9c04503f717fb544b9757293138aac4ef104944fe93cf8d0fda68c22b651bc55",
+      "exit_code": 0
+    },
+    {
+      "name": "production-6f57a7e8ea98",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "sha256": "6f57a7e8ea98ed826ca202ae6d22e06d37b8b23697d254f8b3487d46201f63a8",
+      "exit_code": 0
+    },
+    {
+      "name": "production-21ee279bceb0",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "sha256": "21ee279bceb05d93802388f7029b4af0684de75efe18d38a9b949cf68e5046f5",
+      "exit_code": 0
+    },
+    {
+      "name": "production-96fc4312e957",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "sha256": "96fc4312e957363e00c0ae251b34f53b0a60e4732fd161da82e6ee93c572abd1",
+      "exit_code": 0
+    },
+    {
+      "name": "production-e6ba7e448377",
+      "output": "Loaded 621 original strings; duplicate callsign message is independent",
+      "kind": "production-hog-text",
+      "sha256": "e6ba7e448377c27ca12ca117434684e7faaa5517d73569d28ef0c0eb2a5f2584",
+      "exit_code": 0
+    }
+  ],
+  "logs_sha256": {
+    "gqr0187-runtime-quality.log": "47baed1379d5801a5a44f18166105a6ffc7b0ccfa2d6a824e12b00c5a298ba4e",
+    "gqr0187-runtime-quality-fixture-final.log": "7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704",
+    "gqr0187-runtime-ctest-final.log": "891ad73e4e4f82151afb5c275ac50cd84bbb45553f28678efa1700cc7a2e0623",
+    "gqr0187-runtime-windows-final-build.log": "ee09c8d7eb1adb8eb5c335633c67609b53f01066d976ed83bf267f4bdae384f3",
+    "gqr0187-runtime-android-retry-build.log": "2d193081816b22dec25c631e212c01da5ecebfdab3fb39ab309b65950d06d74d",
+    "gqr0187-runtime-quality-registration.log": "19f79e1690d1a10aee9efc04313460b96fb51f5e0b7fe43a74a04df22f37af57",
+    "gqr0187-runtime-last-line.log": "b1fd9697b7c4c070caf7a2950f0405ac8f8984057c1475c0d42ed30c5768e0a3",
+    "gqr0187-runtime-asan.log": "2e8fb908a2269fda3ef6cb1dd7704699788fe148306e022d435cf08b6ad41dec"
+  }
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0187 D1 text final-line boundary implementation pending rejection rendering 20261008 -->
+<!-- BEGIN IMPORT: GQR-0231 unused XFing raw helper removal pending deferred fixture gate 20261008 SHA256:7303a3945074c5daac452b8d14f6695f4470f8fd8074b18c00d6c3057777a4b9 -->
+
+## GQR-0231 unused XFing raw helper removal pending deferred fixture gate 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0231-remediation.md`
+- Imported SHA-256: `7303a3945074c5daac452b8d14f6695f4470f8fd8074b18c00d6c3057777a4b9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0231 unused XFing raw helper removal pending deferred fixture gate 20261008
+
+- Revalidated GQR-0231/GQF-0247 against current tracked and working-tree code. Only four definitions and two calls inside dead Compare-XfingByteRanges exist. Direct dot-source consumers are converter, verifier, UUD2SP library and maintained asset fixture; reviewed dynamic extraction/invocation paths do not consume removed names
+- Remove exactly four complete functions and separating blank lines: Write-XfingPayloadFile, New-XfingPayloadRecord, Compare-XfingByteRanges and its exclusively dependent New-XfingByteRangeRecord.90 branch-owned lines removed, no replacement/alias/new abstraction or inherited edit
+- Exact normalized reconstruction proves every other library byte preserved, including live PigByIndex, portable PNG/palette/RLE readers, semantic HAM/surface differs, JSON patch and archive publication. Final tracked and current working-tree code references zero
+- Before/after child PowerShell runs execute exact ordinary positive statements from existing maintained test_xfing_asset_validation.ps1 through the last valid level control. Only repo/output paths rebased to owned scratch; no tracked fixture edit or implementation-mirroring test. Ordinary valid D1/D2 PIG, raw/RLE pixels, exact RGBA/mask PNG, minimal HAM, HOG export and D1 surface controls pass. Complete emitted fixture files are byte-identical
+- Actual unchanged converter runs both games before and after deletion against local real UUD1/UUD2 packs and baseline data. Actual verifier passes both resulting archives in each phase. Complete archive inventories and all members equal except manifest generatedUtc and one D2 HAM summary patchPath identifying distinct owned extraction directories. Exact expected patchPath in each phase and extracted HAM SHA versus summary patchSha256 are checked before normalizing that field; all remaining summary values/order preserved. Textures/masks, compatibility/source hashes, semantic level/HAM patch operations and documentation all covered, not just counters
+- Scoped PowerShell quality and diff check pass. No native/app build necessary for PowerShell-only dead-function deletion; no new runner/catalog registration or public API is added
+- Existing fixture's malformed-media/security/resource-pressure negative section remains deferred and unrun. Ordinary maintained statements and complete valid converter/verifier integration plus exact deletion/caller proof establish implementation and ordinary-path equivalence, not the complete named fixture gate or device rendering
+- GQR-0231 TODO/GQF-0247 OPEN pending complete maintained asset-validation gate under existing deferral; totals unchanged76 DONE/175 TODO/1 DEFERRED. Zero inherited minimization saving, device action, external request, staging or commit; prior cleanup and concurrent installer/import changes preserved, broader goal active
+
+## Exact source and integration evidence
+
+```json
+{
+  "source_sha256": "44b78c2b794676e2d88728d533cb0bc26f7bb6c906715ff7d8faa40a561e2155",
+  "before_sha256": "a807dacf1be693d418998a58fa9e29508c2bdedd418f0bbc1de85ac0614d7f0e",
+  "deleted_functions": [
+    "Write-XfingPayloadFile",
+    "New-XfingPayloadRecord",
+    "Compare-XfingByteRanges",
+    "New-XfingByteRangeRecord"
+  ],
+  "removed_lines": 90,
+  "all_other_normalized_source_bytes_preserved": true,
+  "tracked_and_working_tree_code_references": 0,
+  "positive_fixture_output_sha256": {
+    "hog-output.bin": "039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81",
+    "opaque-transparent-supertransparent-mask.png": "08e48f17348eeb62ca3f4071be0340d5c30b70867063005f87e25157c89d7107",
+    "opaque-transparent-supertransparent.png": "62315314126bd5e5f45569511b9b9c07e7ff1dc14d2f5185f074d1c3cbbc4d4b",
+    "png-d2.pig": "daaf0ea1127957edb2fd5d1bb9fd301fd1d706e9d8af242378612b562db8fe71",
+    "valid-d1.pig": "50f4220655527f6e8a059e0872f54be76adb4903524332025c14f58cdf2acf5e",
+    "valid-d2.pig": "a979620f9bdbe77dff0fb75a13da9b6b8c5b3dbd682e747fb469f2cd5b8a181d",
+    "valid-rle.pig": "b72e50b77b20c95ce7dc0cc7c834fe0c16e4c4659089666f3c5dc666f6c99724",
+    "valid.ham": "2ff50dbd766fcfbac0193cb67ca50e934a91e6657bfcedeee2a8e4c1ec8f2693",
+    "valid.hog": "5582e2b958cdcaf125da88cb4d83fc0d03ad66ba68f56ad5b9580ee5aa52e70e",
+    "valid.rdl": "1219e04903be938b970cf980859da8d70a1dc195bc3137bf9a0c618b067181f9"
+  },
+  "archives": {
+    "uud1tp-textures.dxa": {
+      "members": 126,
+      "normalizations": [
+        "manifest.generatedUtc"
+      ],
+      "normalized_member_inventory": "temp\\general_cleanup_20261006\\gqr0231-d1-members.json",
+      "normalized_member_inventory_sha256": "4176812dc882c464b59f7a431ec3d2a16e7904fe78bf64e809530b5a6fef2b41",
+      "baseline_archive_sha256": "6cd6af66927c5f622c5fe447b7cd734eac8d31c4c74ff1c35b58ac5103225996",
+      "current_archive_sha256": "ff68d6ee292e9bfe5b6457da895326e916492fa4ce5d690d65b970170f3ec2d4"
+    },
+    "uud2tp-textures.dxa": {
+      "members": 920,
+      "normalizations": [
+        "manifest.generatedUtc",
+        "ham_patch_summary.patchPath: exact owned extraction path; extracted bytes checked against patchSha256"
+      ],
+      "normalized_member_inventory": "temp\\general_cleanup_20261006\\gqr0231-d2-members.json",
+      "normalized_member_inventory_sha256": "ba95ea5b3903e22fdeafdf506ed1ad897c5c80d66bcb5e10d8f814bacc6582ef",
+      "baseline_archive_sha256": "309eda431ee2712bdd90c4d8f348bccb47189e4cfad01115225421df8cb20525",
+      "current_archive_sha256": "42a8617a4351f40a9bf30ea8778803ea8a256b81f0f252185cfc6b0f06004490"
+    }
+  },
+  "logs_sha256": {
+    "gqr0231-baseline.log": "3be10c0cab8d38bbb19aa84cbdad84603da06b29c662532169d4ae70f486bade",
+    "gqr0231-current.log": "2f9446d4a9eccc7171cfcf46d9b244a1b36fb7c020da7ae7dd4664f23de91f86",
+    "gqr0231-quality.log": "5126cfcd812c92f26411f8e763eef3241873e390f3857f66b57626d70cc8ac43",
+    "gqr0231-before-callers.txt": "7837836dcd2ce4f1a81d25c00931f474d7686709329ed8372369ecfe3c25e50f"
+  }
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0231 unused XFing raw helper removal pending deferred fixture gate 20261008 -->
+<!-- BEGIN IMPORT: GQR-0129 graphics directory descriptor lifetime remediation 20261008 SHA256:f929e75382b6efcb78d31a34144bd28dcf1a6e6cc6997d2105b1986c8422cd68 -->
+
+## GQR-0129 graphics directory descriptor lifetime remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0129-report.md`
+- Imported SHA-256: `f929e75382b6efcb78d31a34144bd28dcf1a6e6cc6997d2105b1986c8422cd68`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0129 graphics directory descriptor lifetime remediation 20261008
+
+- Revalidated GQR-0129/GQF-0142 against current actual sync_parent_directory. Short-circuit fsync success condition still skips close on sync error
+- Evaluate fsync result, always call close exactly once, clear success on close failure. Exact normalized reconstruction proves every other production byte unchanged, including transaction publication, rollback and separate GQR-0128 backup ownership. Product net+1 branch-owned line, zero inherited edit/minimization saving
+- New maintained standalone Linux/Android CMake fixture includes actual production implementation and interposes only fsync/close. Real directory open/stat/close and successful fsync remain underneath; ordinary one-shot/persistent sync errors and close-report errors are injected. No production test hook or parser/transaction copy
+- Actual original fixture first passes ordinary success then fails first batch sync-error lifetime check:4 directory acquisitions/3 closes/one live descriptor and process fd count4->5. Fixture immediately closes leaked descriptor before failing, no repeated leak/resource-pressure probe
+- Final registered standalone Linux Release CTest PASS1/1 with22 cases, explicit NDEBUG/O3 and Wall/Wextra/Werror, warning-free. Actual /proc/self/fd inventory unchanged and every observed directory descriptor fcntl-invalid at every audited return; close count equals acquisitions
+- Cases cover batch success and error at each of3 parent syncs, atomic replacement, existing/new targets, persistent sync failures during rollback, both batch/atomic close-report errors, replace-failure rollback sync error, ordinary prepublication read/parent-open failure and no-directory relative-path policy. Result enums and complete file bytes/absence are checked; final rmdir proves no staged/backup leftovers
+- Test registered under Linux/Android predicate because descriptor inventory uses /proc; Windows/macOS parent inventories unchanged. Standalone CMake supports focused maintained execution without extraction/media dependencies. No new top-level PowerShell/Android automation runner or catalog entry
+- Final actual Windows transaction target builds; Windows directory-sync no-op branch preserved by exact scope. Existing host /DNDEBUG versus /UNDEBUG warning belongs unchanged broad legacy fixture, while new focused fixture enforces NDEBUG. Actual Android Debug APK/paired games/all-three-ABI build succeeds, not installed; existing Gradle warnings unchanged
+- Scoped mixed C/CMake and final fixture/registration quality, exact dirty-CMake reconstruction and diff checks pass. Existing broad transaction fixture containing allocation/size probes remains unrun under deferral; no broad suite claim. Focused ordinary filesystem failures fully cover named GQR-0129 acceptance gates
+- GQR-0129 DONE/GQF-0142 FIXED; totals77 DONE/174 TODO/1 DEFERRED. Separate GQR-0128 remains open. No device action, deliberate malformed-media/security/resource-pressure probe, external request, staging or commit. Concurrent installer/import/preview and prior cleanup preserved, broader goal active
+
+## Exact source and authoritative evidence
+
+```json
+{
+  "source_sha256": {
+    "android\\app\\src\\main\\cpp\\shared\\graphics_config_transaction.c": "ca463081351365fc91990858e6bfb8fc8643f187d4abf1e1b5b922b808c49a9c",
+    "android\\app\\src\\main\\cpp\\extract\\CMakeLists.txt": "dac7d9997c4df332b8c2b7b20401d2117ad0f0ac10ffd496b9c02aae57c482ea",
+    "android/app/src/main/cpp/extract/directory_sync/main.c": "83df61700e2379ae83f129b6067c8fcae6e2dab60ac81d3fbd74d5b2fe1ddf8d",
+    "android/app/src/main/cpp/extract/directory_sync/CMakeLists.txt": "0e9b40cc3b9254f4b0811942e4d6e1d5f373aa662e23ee3764ad1938b70b14ea"
+  },
+  "exact_normalized_scope_proof": true,
+  "baseline_single_leak": {
+    "syncs": 4,
+    "closes": 3,
+    "live": 1,
+    "descriptor_count_before": 4,
+    "descriptor_count_after": 5,
+    "immediate_fixture_cleanup": true
+  },
+  "focused_release_cases": 22,
+  "logs_sha256": {
+    "gqr0129-baseline.log": "deac0a543c20f5195f9fe9a118bc4b9f538e6a013e8003f2830cd3dc61818a3b",
+    "gqr0129-linux-final.log": "153ed00a9d004f72603d10c48931e2c399ecc35c74532b283cf09bd9db0c9f62",
+    "gqr0129-quality.log": "74922c4a106937241be71e8705f8ea23902f8c00e81379413ccc88d869861c83",
+    "gqr0129-quality-fixture.log": "7852dcbac2ab1989a7127e19478868bdb0a15586fc32a03a1bf97c0adacf0704",
+    "gqr0129-quality-registration.log": "d39aea2a47a197101daaa65f95bb603840b208f428c78d92af9cbc710cbab793",
+    "gqr0129-windows-final-build.log": "4f8df751c0e27413e6d52876ad9525982e67cca59117b863f76237b11767ad33",
+    "gqr0129-android-build.log": "5410862ae61431eb672e36dbc251ec5d8bcf90388934d076fd65d434bef90bcf"
+  },
+  "linux_executable_sha256": "912573eea71ea8b59a108f4bfb99fcd9bce8f4fb78f412a1497b9dcfd3a1d3a5",
+  "explicit_ndebug_and_warning_errors": true,
+  "product_net_branch_lines": 1,
+  "inherited_edits_or_savings": 0
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0129 graphics directory descriptor lifetime remediation 20261008 -->
+<!-- BEGIN IMPORT: GQR-0128 graphics rollback original ownership remediation 20261008 SHA256:689cdcd99eeda19ad5a71e6494e0e8fa4b20e541dbbabe17389d1ea4badbe42b -->
+
+## GQR-0128 graphics rollback original ownership remediation 20261008 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gqr0128-report.md`
+- Imported SHA-256: `689cdcd99eeda19ad5a71e6494e0e8fa4b20e541dbbabe17389d1ea4badbe42b`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQR-0128 graphics rollback original ownership remediation 20261008
+
+- Fresh actual-source and original GQ1-CHUNK-0094-OBS-001/current canonical acceptance revalidation. Rollback consumed the backup before durable restoration, and cleanup deleted the only original after failed restoration
+- Per-target retain flag protects independent original backup. Existing checked private-file writer creates and syncs separate rollback copy from captured original bytes; replacement never consumes backup. Clear retention only after successful parent-directory sync. Failed write/replace/sync retains old bytes beside exact affected target; healthy siblings and unpublished targets clean their owned staging files
+- Header documents .bak.* original recovery contract. Android diagnostic logs exact retained path through a fixed format string; this branch is compiled for all three ABIs, not runtime log-verified. Existing typed ROLLBACK_FAILED remains unchanged. Successful transaction or durable rollback removes unneeded backups
+- Actual original Linux baseline compiles, then fails on missing retained original after injected later publication plus restoration failure. Baseline binary/log retained separately. No malformed-media, allocation, security or resource-pressure probe
+- Maintained fixture includes actual production implementation with only syscall interposition. Final Linux Release/NDEBUG/O3/Wall/Wextra/Werror CTest PASS1/1,37 cases. Windows actual parent-registered x64 CTest and standalone x86 Release/NDEBUG/W4/WX CTest each PASS1/1,11 cases, warning-free new fixture
+- Every publication-failure index and reachable earlier rollback target tested on both platforms. Linux each of three publication parent-sync failures crossed with each/all/no rollback target failures; atomic sync-triggered existing-target rollback included. Persistent restoration directory-sync and private-writer admission failures retain exact originals
+- Newly-created targets include publication/removal failure and Linux each target/atomic sync/removal failure. Exact target bytes or original absence and result enums checked. Retained original disk copies are recovered after call returns, then real transaction retry succeeds. Every inventory checks an unrelated .bak file unchanged and rejects unowned/temp artifacts; final directory removal proves owned files accounted for
+- Prior22 directory descriptor-lifetime cases still pass on Linux, with all result/content/absence and actual descriptor count/fcntl/close audits unchanged. Added inventory checks validate then remove only expected retained originals after undurable rollback. Exact normalized reconstruction proves no prior case or audit rewrite
+- Parent extraction CMake registers rollback fixture only for Windows/Linux/Android, keeping subdirectory target outside legacy UNDEBUG loop. Existing broad transaction target compiles but its allocation/size suite remains unrun under user deferral. No new top-level PowerShell runner or automation registration
+- Final Android assembleDebug/paired games/all-three-ABI build succeeds; APK not installed. First build preceded final diagnostics and is not final-source evidence. Initial Windows fixture-only shadow warnings fixed by distinct global names, then warning-as-error x64/x86 builds/tests pass. Early verifier correctly rejected still-running Android build; final verifier waits for success marker
+- Scoped mixed C/CMake quality and exact normalized production/header/dirty-parent/prior-fixture scope checks pass. GQR-0129 descriptor repair and all unrelated production bytes preserved. Product change entirely Android/shared; zero inherited D1/D2 edits or diff-minimization saving
+- GQR-0128 DONE/GQF-0141 FIXED; totals78 DONE/173 TODO/1 DEFERRED. Broader cleanup remains active. No device execution, external request, staging or commit. Concurrent installer/import/preview and previous cleanup preserved
+
+## Authoritative artifacts and hashes
+
+```json
+{
+  "source_sha256": {
+    "android/app/src/main/cpp/shared/graphics_config_transaction.c": "cb5e8527a0c886276ca99e6eb640a67a87e3b162bfb1d655b033e44c2b6240fa",
+    "android/app/src/main/cpp/shared/graphics_config_transaction.h": "84c35cd83861f81a934c05ba1547f24a0335009c603a583ffdabd1027a59acaa",
+    "android/app/src/main/cpp/extract/CMakeLists.txt": "af2f16ca88d16e137926ef3a757b54956c78a1c1eac0c0b50771a1a22fff9b25",
+    "android/app/src/main/cpp/extract/directory_sync/main.c": "09c195512dc5e851d1f0704898784512f359f7beb1e6530f3a277f33583f1c1e",
+    "android/app/src/main/cpp/extract/rollback_backups/main.c": "351ca72534aa4db3a15de4098139472f75c462fea88a4567ef60b2336c8b50d4",
+    "android/app/src/main/cpp/extract/rollback_backups/CMakeLists.txt": "409dcec9b3c08e5724ecb2b7a6fb6a44b7acea4020902b916fb34d80910526da"
+  },
+  "logs_sha256": {
+    "gqr0128-baseline.log": "dfdd3562ccfa0b61976bfdc2152b1156d4f7a56afae5646ac1f2ba7c54532a83",
+    "gqr0128-linux-complete.log": "235fecfec03a951478499f45fffbaaf83f6c533bc6374e0c3e0d481eda178ede",
+    "gqr0128-windows-final.log": "552296ffbc4bb232f2cebcd25894912bf97bb3829998a8983077c7eb1cb43f24",
+    "gqr0128-windows-x86-final.log": "97df6d498f0f5cd280c7ab20535b8c57d859cbadb41999c8108ed082a57cb6a9",
+    "gqr0128-android-final.log": "10f229a5dda1c80315b6a4993c65f5ba917570364cde46868f2b30607653444f",
+    "gqr0128-quality-final.log": "826b1e12754e170d92863418278d10674f70d7b1c79fbd9c2c4c12551b4d79dc",
+    "gqr0128-quality-registration.log": "e61d17a1f25a85f64f61dce361a3f97a1a156598ea515125401e86d8e3847708"
+  },
+  "before_product_sha256": "ca463081351365fc91990858e6bfb8fc8643f187d4abf1e1b5b922b808c49a9c",
+  "executables_sha256": {
+    "temp/general_cleanup_20261006/gqr0128-linux/test_graphics_rollback_backups": "ddfaa22f0ced30520706bbe6d68e20acc98360b259ce38dcc4e6a661f64a49ba",
+    "temp/general_cleanup_20261006/gqr0128-linux-final/test_graphics_rollback_backups": "8e68bf9b11b8c23ad84c5f676ea2b380fa3e5282e9a42d18f23db4a9d2bf8fa4",
+    "temp/general_cleanup_20261006/gqr0128-directory-final/test_graphics_directory_sync": "6a58904e19d15b8a1e4c312e1aa77d12a1b3ea88451e006e51f613c1800ad371",
+    "temp/general_cleanup_20261006/gqr0128-windows/Release/test_graphics_rollback_backups.exe": "2d76c7c7e8403fc2c2713a341dc55a8471efa404b4fa68f985321212dd0df7fe",
+    "android/tests/build/Release/test_graphics_rollback_backups.exe": "4caae3a8ea9166bcc964851f7be1c7724931a91cd14f44f5122e40d009fdaee5"
+  },
+  "scope_verifier_sha256": "eebc2f7e9e480950ba598ddc4706647ce07a74926c20bf31f854e41c9ab1cbb0",
+  "cases": {
+    "linux_rollback": 37,
+    "linux_descriptors": 22,
+    "windows_x64": 11,
+    "windows_x86": 11
+  },
+  "inherited_edits_or_savings": 0,
+  "runtime_android_diagnostic_claim": false
+}
+```
+
+</details>
+
+<!-- END IMPORT: GQR-0128 graphics rollback original ownership remediation 20261008 -->

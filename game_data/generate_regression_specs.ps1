@@ -87,7 +87,7 @@ function Get-DiscClassification($discId, $game, $extractedFiles) {
         return @{
             type = 'd2_demo'
             mission = 'Descent 2 Demo'
-            level1 = 'Corliss Steam Mine'
+            level1 = 'Ahayweh Gate'
             min_files = @('d2demo.hog', 'd2demo.ham', 'd2demo.pig')
         }
     }

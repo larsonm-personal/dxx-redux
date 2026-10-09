@@ -1542,14 +1542,6 @@ if (-not $canLaunch) {
     Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
-if ($spec.disc_id -eq 'descent-ii-usa-3-level-interactive-preview') {
-    Write-Status 'SKIP (file-only): D2 preview demo launch remains unsupported on Android; files verified' 'Yellow'
-    if (-not $KeepFiles) {
-        Send-SetupCommand 'clear_set' -Name $TEST_SET
-    }
-    Exit-Test 0 'skip' 'android_launch_unsupported' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
-}
-
 if ($SkipLaunch) {
     Write-Status "PASS (file-only, -SkipLaunch): $($spec.classification) - $pushCount files, can_launch=$($state.can_launch)" 'Green'
     if (-not $KeepFiles) {

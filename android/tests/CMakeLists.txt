@@ -6,6 +6,14 @@ set(DXX_TEST_GAME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../${DXX_TEST_GAME}")
 set(DXX_TEST_SHARED_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/shared")
 
 if(TARGET test_upstream_compat)
+    if(DXX_TEST_GAME STREQUAL "d1")
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/d1-text-loader")
+        add_test(NAME test_d1_text_loader COMMAND test_upstream_compat --d1-text-loader trace.json)
+        set_tests_properties(
+            test_d1_text_loader
+            PROPERTIES PASS_REGULAR_EXPRESSION "PASS: 6 actual D1 text loader cases"
+                       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/d1-text-loader")
+    endif()
     add_test(NAME test_matcen_stations COMMAND test_upstream_compat --matcen-stations
                                                matcen-stations.json)
     add_test(NAME test_config_policy COMMAND test_upstream_compat --config-policy

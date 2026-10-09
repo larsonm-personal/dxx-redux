@@ -102,3 +102,8 @@ incomplete-package and missing-volume preservation cases. The final native build
 and all three SOW suites passed. Scoped code-quality checks and diff whitespace
 checks passed. No physical-device changes or unrelated worktree edits were made
 for this coverage work.
+
+Follow-up 2026-10-08: the D2 Preview launch exclusion mentioned above is now
+removed, with the full original-CD launch test passing. See
+[d2-preview-launch-20261008.md](d2-preview-launch-20261008.md) for the engine
+classification fix and correction of the stale first-level name oracle.

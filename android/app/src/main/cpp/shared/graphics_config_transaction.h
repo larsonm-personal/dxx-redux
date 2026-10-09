@@ -24,6 +24,7 @@ enum graphics_config_transaction_result {
 	GRAPHICS_CONFIG_TRANSACTION_ROLLBACK_FAILED = 10
 };
 
+/* Failed rollback retains original bytes in .bak.* files beside unrestored or unsynced targets */
 enum graphics_config_transaction_result
 graphics_config_patch_files(const char *const *paths, size_t path_count,
                             const char *key, int value);

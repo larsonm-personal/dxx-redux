@@ -48,6 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define SHAREWARE_MISSION_FILENAME  "d2demo"
 #define SHAREWARE_MISSION_NAME      "Descent 2 Demo"
 #define SHAREWARE_MISSION_HOGSIZE   2292566 // v1.0 (d2demo.hog)
+#define CD_SHAREWARE_MISSION_HOGSIZE 2292749 // 3-Level Interactive Preview CD (d2demo.hog)
 #define MAC_SHARE_MISSION_HOGSIZE   4292746
 
 #define OEM_MISSION_FILENAME        "d2"
@@ -111,7 +112,7 @@ extern Mission *Current_mission; // current mission
 #define Level_names			Current_mission->level_names
 #define Secret_level_names		Current_mission->secret_level_names
 
-#define is_SHAREWARE (Current_mission->builtin_hogsize == SHAREWARE_MISSION_HOGSIZE)
+#define is_SHAREWARE (Current_mission->builtin_hogsize == SHAREWARE_MISSION_HOGSIZE || Current_mission->builtin_hogsize == CD_SHAREWARE_MISSION_HOGSIZE)
 #define is_MAC_SHARE (Current_mission->builtin_hogsize == MAC_SHARE_MISSION_HOGSIZE)
 #define is_D2_OEM (Current_mission->builtin_hogsize == OEM_MISSION_HOGSIZE)
 

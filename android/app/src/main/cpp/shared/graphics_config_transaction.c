@@ -5,8 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
 #include <time.h>
 
 static int debug_pause_ms;
@@ -74,6 +76,7 @@ struct staged_config {
 	char backup_path[PATH_MAX];
 	int existed;
 	int published;
+	int retain_backup;
 };
 
 #ifdef GRAPHICS_CONFIG_TRANSACTION_TESTING
@@ -116,8 +119,12 @@ static void cleanup_staged(struct staged_config *staged, size_t count)
 	for (i = 0; i < count; i++) {
 		if (staged[i].temporary_path[0])
 			remove(staged[i].temporary_path);
-		if (staged[i].backup_path[0])
+		if (staged[i].backup_path[0] && !staged[i].retain_backup)
 			remove(staged[i].backup_path);
+#ifdef __ANDROID__
+		if (staged[i].retain_backup)
+			__android_log_print(ANDROID_LOG_ERROR, "DXX-GraphicsRepair", "Graphics rollback original retained: %s", staged[i].backup_path);
+#endif
 		free(staged[i].original);
 		free(staged[i].updated);
 	}
@@ -345,7 +352,8 @@ static int sync_parent_directory(const char *path)
 	fd = open(directory, O_RDONLY | O_DIRECTORY);
 	if (fd < 0)
 		return 0;
-	ok = fsync(fd) == 0 && close(fd) == 0;
+	ok = fsync(fd) == 0;
+	if (close(fd) != 0) ok = 0;
 	return ok;
 #endif
 }
@@ -358,15 +366,22 @@ static int rollback_published(struct staged_config *staged, size_t published_cou
 		if (!item->published)
 			continue;
 		if (item->existed) {
-			if (!replace_path(item->backup_path, item->path, published_count, 0))
+			item->retain_backup = 1;
+			if (write_private_file(item->path, "rollback", item->original, item->original_size,
+			                       published_count, item->temporary_path, sizeof(item->temporary_path)) != GRAPHICS_CONFIG_TRANSACTION_OK ||
+			    !replace_path(item->temporary_path, item->path, published_count, 0)) {
 				ok = 0;
-			else
-				item->backup_path[0] = 0;
+				continue;
+			}
+			item->temporary_path[0] = 0;
 		} else if (remove(item->path) != 0 && errno != ENOENT) {
 			ok = 0;
+			continue;
 		}
 		if (!sync_parent_directory(item->path))
 			ok = 0;
+		else
+			item->retain_backup = 0;
 	}
 	return ok;
 }
