@@ -1887,6 +1887,7 @@ static void test_robot_initialization()
 
 static void test_d1_follow_path_frame()
 {
+	const int old_model_count = N_polygon_models;
 #ifdef DXX_BUILD_DESCENT_II
 	Mission mission = {};
 	Current_mission = &mission;
@@ -1953,6 +1954,7 @@ static void test_d1_follow_path_frame()
 		init_test_corridor(8);
 		Point_segs_free_ptr = Point_segs;
 		N_robot_types = 11;
+		N_polygon_models = 1;
 		Polygon_models[0].rad = F1_0;
 		Robot_info[10] = info;
 		for (const int id : { 0, 10 }) {
@@ -1969,6 +1971,7 @@ static void test_d1_follow_path_frame()
 		FrameTime = old_frame;
 		Point_segs_free_ptr = Point_segs;
 	}
+	N_polygon_models = old_model_count;
 #ifdef DXX_BUILD_DESCENT_II
 	Current_mission = nullptr;
 #endif
@@ -3993,6 +3996,8 @@ static void test_robot_relative_movement()
 
 static void test_boss_preparation_and_gating()
 {
+	const int old_model_count = N_polygon_models;
+	N_polygon_models = 1;
 #ifdef DXX_BUILD_DESCENT_II
 	Mission mission = {};
 	Current_mission = &mission;
@@ -4174,6 +4179,7 @@ static void test_boss_preparation_and_gating()
 	}
 	init_morphs();
 	Polygon_models[0] = old_model;
+	N_polygon_models = old_model_count;
 	Vclip[VCLIP_MORPHING_ROBOT] = old_clip;
 	Current_level_num = old_level;
 	Difficulty_level = old_difficulty;
@@ -5751,6 +5757,104 @@ static d1_guidebot_asset_stats test_registered_guidebot_source(const char *direc
 	return previous;
 }
 
+static void test_d1_shareware_sources(const char *directory, const char *registered_directory)
+{
+	const std::string hog_path = std::string(directory) + "/DESCENT.HOG";
+	const std::string registered_hog = std::string(registered_directory) + "/DESCENT.HOG";
+	const std::string scratch = std::string(PHYSFS_getWriteDir()) + "/shareware-source-fixtures";
+	require(PHYSFS_mount(directory, nullptr, 0) && PHYSFS_mount(hog_path.c_str(), nullptr, 0), "mount authentic PC shareware source");
+	GameArg.SndNoSound = GameArg.SndNoMusic = GameArg.SysInputDemoNoRender = 1;
+	GameArg.SndDigiSampleRate = SAMPLE_RATE_22K;
+#ifdef USE_SDLMIXER
+	GameArg.SndDisableSdlMixer = 1;
+#endif
+	digi_select_system(SDLAUDIO_SYSTEM);
+	Current_mission = nullptr;
+	require(d1_in_d2_init_base_resources(1), "select the real shareware baseline");
+	load_text();
+	gamedata_init();
+	d1_in_d2_init_startup_bitmaps();
+	const char *error = nullptr;
+	auto prepare = [&]() { return d1_in_d2_read_assets("descent.pig", "palette.256", &error); };
+	auto publish = [&](d1_asset_generation *assets) {
+		require(assets != nullptr, error ? error : "prepare source generation");
+		require(d1_in_d2_publish_assets(assets, &error), error ? error : "publish source generation");
+	};
+	publish(prepare());
+	require(N_polygon_models == 56 && Num_sound_files == 70, "authentic shareware owns its model and sound banks");
+	init_objects();
+	require(load_level("level01.sdl") == 0, "load the authentic shareware level with its own definitions");
+	test_loaded_d1_weapon_firing(true);
+	ubyte identity[64];
+	const int identity_size = d1_in_d2_capture_asset_identity(identity);
+	require(identity_size == 32, "shareware identity needs no registered D2 assets");
+	PHYSFS_file *saved = PHYSFS_openWrite("shareware-identity.bin");
+	require(saved && d1_in_d2_write_saved_asset_identity(saved) && PHYSFS_close(saved), "write the shareware save identity through the production writer");
+	auto restore_identity = [&]() {
+		PHYSFS_file *file = PHYSFS_openRead("shareware-identity.bin");
+		require(file != nullptr, "open saved shareware identity");
+		const bool result = d1_in_d2_read_saved_asset_identity(file, 0) != 0;
+		require(PHYSFS_close(file), "close saved shareware identity");
+		return result;
+	};
+	require(restore_identity(), "original source accepts its saved identity");
+	PHYSFS_file *source = PHYSFSX_openReadBuffered("descent.hog");
+	require(source != nullptr, "read the authentic source archive");
+	bytes hog(static_cast<size_t>(PHYSFS_fileLength(source)));
+	require(PHYSFS_readBytes(source, hog.data(), hog.size()) == static_cast<PHYSFS_sint64>(hog.size()) && PHYSFS_close(source), "copy source bytes without changing the original package");
+	auto member = [&](const char *name) {
+		for (size_t offset = 3; offset + 17 <= hog.size();) {
+			if (!d_stricmp(reinterpret_cast<const char *>(hog.data() + offset), name)) return offset;
+			const size_t size = hog[offset + 13] | (hog[offset + 14] << 8) | (hog[offset + 15] << 16) | (hog[offset + 16] << 24);
+			offset += 17 + size;
+		}
+		require(false, "required member exists in the authentic shareware archive");
+		return size_t(0);
+	};
+	require(PHYSFS_mkdir("shareware-source-fixtures") && PHYSFS_mount(scratch.c_str(), nullptr, 0), "mount isolated malformed-source overrides");
+	const auto live_model = Polygon_models[0].model_data;
+	const auto live_bitmap = GameBitmaps[1].bm_data;
+	const auto live_sound = GameSounds[0].data;
+	for (const char *name : { "bitmaps.bin", "robot01.pof", "reactor.pof", "pship1.pof" }) {
+		bytes missing = hog;
+		missing[member(name)] = '!';
+		write_fixture("shareware-source-fixtures/descent.hog", missing);
+		for (int repeat = 0; repeat < 2; ++repeat) {
+			require(prepare() == nullptr && error && std::strstr(error, "Missing D1 HOG member"), "missing shareware dependency rejects even when the mounted original HOG still contains that member");
+			require(Polygon_models[0].model_data == live_model && GameBitmaps[1].bm_data == live_bitmap && GameSounds[0].data == live_sound &&
+			            N_polygon_models == 56 && Num_sound_files == 70 && !d1_in_d2_check_asset_identity(identity, identity_size) && restore_identity(),
+			        "repeated failed preparation preserves published models, bitmaps, sounds and save identity");
+		}
+	}
+	write_fixture("shareware-source-fixtures/descent.hog", { 'D', 'H', 'F', 0 });
+	require(!prepare() && Polygon_models[0].model_data == live_model && restore_identity(), "truncated HOG rejection preserves the active generation");
+	bytes changed = hog;
+	changed.back() ^= 1;
+	write_fixture("shareware-source-fixtures/descent.hog", changed);
+	publish(prepare());
+	require(!restore_identity(), "changed source archive rejects a save from the previous shareware generation");
+	require(PHYSFS_unmount(scratch.c_str()), "remove the changed source override");
+	publish(prepare());
+	require(restore_identity(), "restoring authentic source bytes recovers the saved identity");
+	for (int repeat = 0; repeat < 2; ++repeat) {
+		require(PHYSFS_mount(registered_directory, nullptr, 0) && PHYSFS_mount(registered_hog.c_str(), nullptr, 0), "select registered D1 over the shareware source");
+		publish(prepare());
+		require(N_polygon_models == 78 && Num_sound_files == 98 && !restore_identity(), "registered D1 replaces the shareware bank and rejects its saved identity");
+		require(load_level("level01.rdl") == 0, "load registered D1 after shareware retirement");
+		test_loaded_d1_weapon_firing(true);
+		require(PHYSFS_unmount(registered_hog.c_str()) && PHYSFS_unmount(registered_directory), "return to the selected shareware source");
+		publish(prepare());
+		require(N_polygon_models == 56 && Num_sound_files == 70 && restore_identity(), "shareware replaces registered D1 without stale models, sounds or source identity");
+		require(load_level("level01.sdl") == 0, "load shareware again after registered D1 retirement");
+		test_loaded_d1_weapon_firing(true);
+	}
+	free_polygon_models();
+	piggy_reset_asset_registry();
+	free_text();
+	require(PHYSFS_unmount(hog_path.c_str()) && PHYSFS_unmount(directory), "release authentic source mounts");
+	std::puts("PASS: authentic shareware failed preparation, save identity and registered-source switching");
+}
+
 static void test_d1_registered_bitmaps(const char *directory, const char *d2_directory, bool graphics)
 {
 	const std::string hog = std::string(directory) + "/DESCENT.HOG";
@@ -6577,6 +6681,18 @@ static void test_d1_reactor()
 	require(prepared->gauges[0].index == 1 && prepared->cockpits[0].index == 1 && prepared->exit_model == 1 && prepared->destroyed_exit_model == 2, "presentation and exit references are owned");
 	require(prepared->sound_bank.count == 1 && prepared->sound_bank.samples[0].length == 4 && prepared->sound_bank.samples[0].data[0] == 5, "sound preparation preserves original samples");
 	require(prepared->bitmap_data->bitmaps[1].bm_data[0] == 1 && prepared->bitmap_data->palette[0] == 17, "source pixels and palette stay together");
+	prepared->unavailable_robots[prepared->object_ids[OBJ_ROBOT]] = 1;
+	require(!d1_in_d2_validate_asset_references(prepared, &error) && std::strcmp(error, "robot references") == 0,
+	        "the default robot drop cannot reference an excluded shareware robot");
+	prepared->unavailable_robots[prepared->object_ids[OBJ_ROBOT]] = 0;
+	const robot_info saved_robot = prepared->robots[0];
+	prepared->robots[0].contains_type = OBJ_ROBOT;
+	prepared->robots[0].contains_count = prepared->robots[0].contains_prob = 1;
+	prepared->robots[0].contains_id = prepared->num_robot_types;
+	require(!d1_in_d2_validate_asset_references(prepared, &error) && std::strcmp(error, "robot references") == 0,
+	        "robot drops cannot reference a missing robot definition");
+	prepared->robots[0] = saved_robot;
+	require(d1_in_d2_validate_asset_references(prepared, &error), "valid generation survives rejected robot references");
 	set_short(pig, 8, 2);
 	write_fixture("descent.pig", pig);
 	require(!d1_in_d2_read_assets("descent.pig", "source.256", &error) && std::strcmp(error, "texture bitmap references") == 0, "reject references outside the prepared bitmap collection");
@@ -10939,6 +11055,11 @@ int main(int argc, char **argv)
 		return 0;
 	}
 #ifdef DXX_BUILD_DESCENT_II
+	if (argc == 4 && std::strcmp(argv[1], "--shareware-sources") == 0) {
+		test_d1_shareware_sources(argv[2], argv[3]);
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--d1-bitmap-replacements") == 0) {
 		GameArg.SndNoSound = GameArg.SndNoMusic = 1;
 		digi_select_system(SDLAUDIO_SYSTEM);
@@ -11066,11 +11187,11 @@ int main(int argc, char **argv)
 	test_ai_diagnostic_profiles();
 #ifdef DXX_BUILD_DESCENT_II
 	test_native_ai_object_encoding();
-	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
-	                        D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
+	for (const int size : { D1_10_BIG_PIGSIZE, D1_10_PIGSIZE, D1_MAC_PIGSIZE, D1_MAC_SHARE_PIGSIZE })
 		require(d1_in_d2_source_edition_error(size) != nullptr, "unsupported native source layouts have explicit imported admission errors");
-	for (const int size : { D1_PIGSIZE, D1_OEM_PIGSIZE, 123456 })
-		require(d1_in_d2_source_edition_error(size) == nullptr, "registered and unknown layouts continue through full source validation");
+	for (const int size : { D1_SHARE_BIG_PIGSIZE, D1_SHARE_10_PIGSIZE, D1_SHARE_PIGSIZE,
+	                        D1_PIGSIZE, D1_OEM_PIGSIZE, 123456 })
+		require(d1_in_d2_source_edition_error(size) == nullptr, "PC shareware, registered and unknown layouts continue through full source validation");
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 	test_d1_ai_storage_scope();

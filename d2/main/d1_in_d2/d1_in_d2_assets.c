@@ -90,6 +90,14 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)
 static d1_asset_generation *Active_d1_assets;
 static const char *D1_asset_validation_error = "not validated";
 
+void d1_in_d2_require_robot(int robot_id)
+{
+	if (d1_in_d2_use_d1_gameplay() &&
+	    (robot_id < 0 || robot_id >= N_robot_types ||
+	     Robot_info[robot_id].model_num < 0 || Robot_info[robot_id].model_num >= N_polygon_models))
+		Error("Robot %d is unavailable in the selected D1 edition", robot_id);
+}
+
 fix d1_in_d2_robot_drop_radius(void)
 {
 	Assert(Active_d1_assets != NULL);
@@ -242,6 +250,10 @@ static int validate_d1_robot_references(const robot_info *robots, int num_robot_
 		    robot->see_sound >= D1_MAX_PIG_SOUNDS ||
 		    robot->attack_sound >= D1_MAX_PIG_SOUNDS ||
 		    robot->claw_sound >= D1_MAX_PIG_SOUNDS)
+			return 0;
+		if (robot->contains_count > 0 && robot->contains_prob > 0 && robot->contains_type == OBJ_ROBOT &&
+		    (robot->contains_id < 0 || robot->contains_id >= num_robot_types ||
+		     (unavailable && unavailable[robot->contains_id])))
 			return 0;
 		for (gun = 0; gun < robot->n_guns; gun++)
 			if (robot->gun_submodels[gun] >= models[robot->model_num].n_models)
@@ -484,39 +496,8 @@ static int validate_d1_robot_assets(PHYSFS_file *fp, int pigsize, int property_e
 	if (!read_d1_reactor_definition(fp, property_end, num_polygon_models, generation))
 		goto done;
 
-	stage = "cross references";
-	if (!d1_pig_valid_model_index(generation->ship.model_num, num_polygon_models) ||
-	    !d1_vclip_reference_valid(vclips, num_vclips, generation->ship.expl_vclip_num, 0))
-		goto done;
-	for (i = 0; i < num_polygon_models; i++)
-		if (!d1_pig_valid_optional_model_index(generation->dying_models[i], num_polygon_models) ||
-		    !d1_pig_valid_optional_model_index(generation->dead_models[i], num_polygon_models))
-			goto done;
-	for (i = 0; i < D1_MAX_OBJ_BITMAPS; i++)
-		if (generation->obj_bitmap_ptrs[i] >= D1_MAX_OBJ_BITMAPS)
-			goto done;
-	if (!validate_d1_robot_references(robots, num_robot_types, models, num_polygon_models,
-	                                  vclips, num_vclips, num_weapon_types, num_robot_joints, NULL))
-		goto done;
-	for (i = 0; i < num_weapon_types; i++) {
-		weapon_info *weapon = &weapons[i];
-		if (weapon->render_type < WEAPON_RENDER_NONE || weapon->render_type > WEAPON_RENDER_VCLIP ||
-		    (weapon->render_type == WEAPON_RENDER_POLYMODEL &&
-		     (!d1_pig_valid_model_index(weapon->model_num, num_polygon_models) ||
-		      !d1_pig_valid_optional_model_index(weapon->model_num_inner, num_polygon_models))) ||
-		    !d1_vclip_reference_valid(vclips, num_vclips, weapon->flash_vclip, 1) ||
-		    !d1_vclip_reference_valid(vclips, num_vclips, weapon->robot_hit_vclip, 1) ||
-		    !d1_vclip_reference_valid(vclips, num_vclips, weapon->wall_hit_vclip, 1) ||
-		    !d1_vclip_reference_valid(vclips, num_vclips, weapon->weapon_vclip, 1) ||
-		    weapon->flash_sound < -1 || weapon->flash_sound >= D1_MAX_PIG_SOUNDS ||
-		    weapon->robot_hit_sound < -1 || weapon->robot_hit_sound >= D1_MAX_PIG_SOUNDS ||
-		    weapon->wall_hit_sound < -1 || weapon->wall_hit_sound >= D1_MAX_PIG_SOUNDS)
-			goto done;
-	}
-	for (i = 0; i < num_powerups; i++)
-		if (!d1_vclip_reference_valid(vclips, num_vclips, powerups[i].vclip_num, 0) ||
-		    powerups[i].hit_sound < -1 || powerups[i].hit_sound >= D1_MAX_PIG_SOUNDS)
-			goto done;
+	/* Complete cross-reference validation runs on the prepared generation */
+	stage = "sound map references";
 	if (!d1_pig_validate_sound_map(sound_maps[0], D1_MAX_PIG_SOUNDS, MAX_SOUND_FILES) ||
 	    !d1_pig_validate_sound_map(sound_maps[1], D1_MAX_PIG_SOUNDS, D1_MAX_PIG_SOUNDS))
 		goto done;
@@ -813,7 +794,8 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co
 		}
 	}
 	*error = "robot references";
-	if (generation->object_ids[OBJ_ROBOT] >= generation->num_robot_types)
+	if (generation->object_ids[OBJ_ROBOT] >= generation->num_robot_types ||
+	    generation->unavailable_robots[generation->object_ids[OBJ_ROBOT]])
 		return 0;
 	if (!validate_d1_robot_references(generation->robots, generation->num_robot_types,
 	                                  generation->models, generation->num_polygon_models,

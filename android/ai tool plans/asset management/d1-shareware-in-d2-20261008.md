@@ -116,14 +116,14 @@ The milestone is complete when the authentic DOS 1.4 download installs through p
 
 The authentic outputs already available under `temp/import-parity-audit/native-demo` and `native-flight` establish:
 
-| Property | DOS 1.4 | Test Flight |
-| --- | --- | --- |
-| HOG bytes | 2339773 | 1626232 |
-| PIG bytes | 5092871 | 5092871 |
-| PIG bitmap/sound counts | 1152 / 70 | 1152 / 70 |
-| Table bytes / physical lines | 41634 / 806 | 41634 / 806 |
+| Property                              | DOS 1.4         | Test Flight     |
+| ------------------------------------- | --------------- | --------------- |
+| HOG bytes                             | 2339773         | 1626232         |
+| PIG bytes                             | 5092871         | 5092871         |
+| PIG bitmap/sound counts               | 1152 / 70       | 1152 / 70       |
+| Table bytes / physical lines          | 41634 / 806     | 41634 / 806     |
 | Referenced non-excluded POF resources | 45, all present | 45, all present |
-| Campaign levels | 7 SDL | 3 SDL |
+| Campaign levels                       | 7 SDL           | 3 SDL           |
 
 Both tables have SHA-256 `b6db41b2405d3356229c4d34e36e710c35ee07f02f4cc2ba0781e9145de2512c`; both palettes have SHA-256 `10a357857f8df8a0c70feda07cc2b231fcbb0c66779bb5164ce1fcd2aa7d632b`. This is positive evidence for a shared decoder, not yet proof of gameplay compatibility. Some older `game_data/..._extracted` directories still contain historical truncated extraction outputs, so they are not valid PIG fixtures.
 
@@ -191,3 +191,60 @@ Android emulator `emulator-5582` runtime evidence on 2026-10-08:
 - Scoped formatting and both automation catalog checks pass, including registration of the restore support script (`runtime-automation-catalog.log`, `runtime-runner-catalog.log`)
 
 These are extracted-fixture runtime checks, not yet original-installer-to-gameplay qualification. Remaining work includes selected-source palette binding, endian-safe model bounds, full definition validation and unavailable-robot consumers, campaign interaction/transition/completion, both-games-installed/source switching controls, physical-device validation, original-package import composition and the final support matrix. Earlier shareware editions without authentic fixtures remain unqualified. Do not infer completion from these smoke results.
+
+## Shared validation, portable bounds and campaign progression
+
+- Both adapters now calculate model bounds with the shared bounded little-endian POF reader, avoiding native-endian and unaligned vector casts. It preserves legacy first-vertex/translation behavior and rejects truncated vertex records and translated-coordinate overflow. Synthetic unaligned/negative-coordinate tests and all 45 actual models in both HOGs pass
+- Native D1 and D2 each load all seven DOS and three Test Flight levels after this change; complete level metadata matches the pre-refactor reference (`*-bounds-levels.json`)
+- Ship, weapon and powerup references moved from the registered-only reader into common generation validation, alongside count limits, clip frame limits and object-bitmap pointer checks. DOS uncompressed/compressed, Test Flight, registered D1 and ordinary D2 host loads pass (`*-shared-validation-levels.json`). A same-length BIN mutation from ship explosion clip 58 to 99 is rejected during preparation (`invalid-ship.log`)
+- Android debug and isolated diagnostic builds pass (`android-bounds-validation-build.log`, `android-isolated-build.log`)
+- `-SharewareCampaign` extends the existing first-level interaction route with the authentic demo's reactor model indices. DOS 1.4 passes doors, ceiling-light behavior, monitor destruction, lava metadata, reactor destruction/wreck rendering and a normal rendered exit to level 2 on the emulator (`demo-campaign-*` in the evidence directory)
+- Initial physical-device gameplay reaches level 1 but pauses for first-run graphics calibration. This is recorded as a failed test, not a supported-device result. The gameplay runner now explicitly marks that separately tested setup step as offered and preserves/restores `no_backup` as well as files/preferences
+
+Remaining qualification still includes the complete campaign/final-level ending, unavailable-robot consumers, selected-source palette behavior with both games, source switching, a passing physical run, original-package-to-gameplay composition and the support matrix. Portable bounds and common ship/weapon/powerup validation are implemented and verified; do not leave them listed as pending implementation.
+
+Physical and mixed-installation qualification completed later in the same work session:
+
+- Attached phone `JYPR42510121028` (Android API 33, Mali-G77 MC9), isolated package `com.dxxredux.app.nsdtest`: DOS demo movement, firing, sound, quick-save/load and natural rewind pass (`physical-demo-*`), followed by the full door/effect/reactor/exit route to level 2 (`physical-campaign-*`, 68 steps)
+- Emulator with retail D2 and the DOS demo installed together: verifies initial D2 asset mode, selects `D1: Descent Demo`, verifies imported demo mode with 60 models (56 source plus four optional companion models), then passes gameplay, save/load and rewind (`both-installed-*`, 40 steps). The same host validation also accepts ordinary D2 and registered D1
+- Runner fixes discovered during qualification: graphics setup-command values must be strings; insert setup steps after indexed scenario composition; use the demo mission name in a real mission picker; restore `no_backup` during cleanup. The intermediate failed runs are not counted as passing evidence. The diagnostic app's backup directories were restored and removed before the clean passing runs
+
+Next priorities: compose original downloaded package import with these engine checks; test complete campaign/final ending and remaining source-switching cases; audit unavailable robot creation paths; publish the exact qualified support matrix. The phone and ordinary both-games-installed smoke checks are now verified rather than pending.
+
+## Original-package import and runtime composition
+
+The registered `test_demo_import.ps1` now runs the entire catalog through `installDemoArchive`, checks explicit per-engine readiness from `demo_import_oracles.json`, and uses the exact installed on-device outputs for the two PC shareware runtime cases. Instrumentation retains those sets in a test-owned directory; the isolated runtime helper copies them with their manifest into the selected installation while preserving the original app state. No host extraction or replacement game data is involved. Cleanup removes the retained test outputs after the suite.
+
+Verified on emulator-5582, API 34 x86_64:
+
+- All 11 original archives pass import, installed-byte hashes, manifest checks, per-engine readiness and failed-import preservation
+- `desc14sw.exe` and `descent 1 demo 1-4.zip` each pass 37-step gameplay/save/load/rewind and 71-step door/effect/reactor/normal-exit-to-level-2 runs
+- The first composed campaign attempt exposed a test-route problem: the ship died while waiting beside the destroyed reactor. The route now relocates out of the blast area immediately after destruction, asserts survival, then checks the wreck and flies through the ordinary exit trigger. It does not alter shields, grant invulnerability or replace the exit transition
+- `original-package-runtime-final.log` exits successfully; `original-package-qualification.json` records APK/oracle hashes and all four run IDs. Durable results, introspection, native logs and screenshots use `package-{exe,zip}-{smoke,campaign}-*` in `temp/d1-shareware-reader`
+- App/instrumentation build, scoped mixed-language quality checks and both automation catalogs pass. The suite master timeout is 1800 seconds to include the runtime phases. Final device checks confirm test fixture/export and backup directories were removed
+- The support matrix now separates qualified PC shareware/Test Flight, unqualified earlier shareware, and still-unsupported registered PC 1.0/Mac formats. It records actual physical arm64 and original-package emulator evidence
+
+Remaining: complete campaign/final-ending qualification, remaining source-switching and malformed-source retirement cases, unavailable-robot creation audit, and final source/ABI/regression review. The original-package-to-gameplay coverage gap is closed for both PC download catalog entries; this does not complete the entire implementation plan.
+
+## Campaign completion and robot consumers
+
+The reusable Android runner now accepts `-SharewareLastLevel 3` or `7`. After
+the existing level-one combat, door, reactor and normal-exit route, it loads each
+remaining level, checks the live player, invokes that level's authored exit
+tunnel, and verifies advancement. The last level must show its ending briefing,
+order presentation and score flow before returning out of gameplay. This is
+campaign-transition coverage, not a claim of full combat coverage on every level.
+
+Both extracted-fixture runs passed on API 34 x86_64: Test Flight completed 91/91
+steps (`a9dc0b9d905a4ef9adb10018118ef339`), and DOS 1.4 completed 123/123
+steps (`db91895328a5498ca743acf8af3f477b`). Durable results, scripts, native logs
+and introspection are under `temp/d1-shareware-reader/{flight,dos}-complete-*`.
+The original-package suite now requests the seven-level campaign for both PC
+downloads; its expanded run passes for both downloads (123/123 campaign steps each). Evidence is in `original-package-full-campaign.log` and `full-package-{exe,zip}-{smoke,campaign}-*`; the installed APK hash is in `full-campaign-installed-apk-hash.txt`.
+
+Robot consumers now reject unavailable definitions before factory creation,
+boss gating, dropped-robot creation and paging. Level preparation checks factory
+flags and object-contained robots; generation validation checks robot-contained
+robots and the default robot-drop reference. The five authentic host controls
+(DOS uncompressed, DOS compressed, Test Flight, registered D1 and ordinary D2)
+passed after the initial consumer guards. Final native D1 and D2 host integration suites pass, including default/drop-reference rejection checks (`robot-final-{native-d1-tests,host-tests}.log`). All five authentic host controls pass again with the final validation. The Android three-ABI rebuild passes; Test Flight passes the full 91-step campaign on the final APK. `temp/d1-shareware-reader/campaign-qualification.json` records exact APK hashes and run results. Remaining work is source switching, source-failure preservation and the final requirement audit; campaign endings and unavailable-robot checks are now verified.

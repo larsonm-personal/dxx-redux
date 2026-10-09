@@ -15,7 +15,13 @@
                     "sha256": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac",
                     "size": 5092871
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": true
+            },
+            "runtime_suite": "d1-in-d2-shareware"
         },
         {
             "archive": "descent 1 demo 1-4.zip",
@@ -31,7 +37,13 @@
                     "sha256": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac",
                     "size": 5092871
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": true
+            },
+            "runtime_suite": "d1-in-d2-shareware"
         },
         {
             "archive": "descent 1 demo mac.zip",
@@ -47,7 +59,13 @@
                     "sha256": "b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905",
                     "size": 2714487
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "Descent Shareware.sit",
@@ -63,7 +81,13 @@
                     "sha256": "b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905",
                     "size": 2714487
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "Descent_demo.HQX",
@@ -79,7 +103,13 @@
                     "sha256": "b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905",
                     "size": 2714487
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "descent_demo.sit_.hqx",
@@ -95,7 +125,13 @@
                     "sha256": "b4608a1d0e6191ac6f07410d9714c591c77605a84bccdb882c2611bd885a2905",
                     "size": 2714487
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": true,
+                "d2": false,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "descent 2 demo 1-0.zip",
@@ -121,7 +157,13 @@
                     "sha256": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989",
                     "size": 2800295
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": false,
+                "d2": true,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "d2demo10.zip",
@@ -147,7 +189,13 @@
                     "sha256": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989",
                     "size": 2800295
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": false,
+                "d2": true,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "Descent II Preview.sit",
@@ -178,7 +226,13 @@
                     "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7",
                     "size": 31932
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": false,
+                "d2": true,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "descent2preview.sit",
@@ -209,7 +263,13 @@
                     "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7",
                     "size": 31932
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": false,
+                "d2": true,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         },
         {
             "archive": "descent2preview.sit_.hqx",
@@ -240,7 +300,13 @@
                     "sha256": "c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7",
                     "size": 31932
                 }
-            ]
+            ],
+            "launch_ready": {
+                "d1": false,
+                "d2": true,
+                "d1-in-d2": false
+            },
+            "runtime_suite": null
         }
     ]
 }

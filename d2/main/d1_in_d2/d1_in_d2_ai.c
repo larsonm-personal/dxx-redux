@@ -209,7 +209,10 @@ int d1_in_d2_ai_drop_robots(int id, int count, const vms_vector *velocity,
 	const vms_vector *position, int segment, int *result)
 {
 	int i;
-	if (!d1_in_d2_use_d1_gameplay() || Robot_info[id].companion)
+	if (!d1_in_d2_use_d1_gameplay())
+		return 0;
+	d1_in_d2_require_robot(id);
+	if (Robot_info[id].companion)
 		return 0;
 	*result = 0;
 	for (i = 0; i < count; ++i) {
@@ -525,6 +528,7 @@ int d1_in_d2_ai_gate_robot(int type, int segnum, int *result)
 	}
 	if (segnum < 0 || segnum > Highest_segment_index || type < 0 || type >= N_robot_types)
 		return 1;
+	d1_in_d2_require_robot(type);
 	info = &Robot_info[type];
 	size = Polygon_models[info->model_num].rad;
 	for (i = 0; i <= Highest_object_index; ++i)

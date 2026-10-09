@@ -11,6 +11,8 @@
 
 /* Known unsupported base layouts; NULL means the full reader must validate it */
 const char *d1_in_d2_source_edition_error(int64_t pig_size);
+/* Reject unavailable source definitions before runtime consumers index models */
+void d1_in_d2_require_robot(int robot_id);
 
 typedef struct d1_in_d2_asset_stats {
 	int effects_active;

@@ -63,6 +63,10 @@ int d1_in_d2_initialize_level_ambience(void)
 	int i;
 	if (!d1_in_d2_use_d1_gameplay())
 		return 0;
+	for (i = 0; i < Num_robot_centers; ++i)
+		for (int robot = 0; robot < 64; ++robot)
+			if ((uint32_t)RobotCenters[i].robot_flags[robot / 32] & (UINT32_C(1) << (robot % 32)))
+				d1_in_d2_require_robot(robot);
 	for (i = 0; i <= Highest_segment_index; ++i)
 		Segment2s[i].s2_flags &= ~(S2F_AMBIENT_LAVA | S2F_AMBIENT_WATER);
 	return 1;
@@ -491,6 +495,8 @@ int d1_in_d2_decode_level_textures(short *primary, short *overlay, int new_file_
 
 void d1_in_d2_fixup_level_object(object *obj, int level_version)
 {
+	if (d1_in_d2_use_d1_gameplay() && obj->contains_count > 0 && obj->contains_type == OBJ_ROBOT)
+		d1_in_d2_require_robot(obj->contains_id);
 	if (level_version <= 1 && (obj->render_type == RT_WEAPON_VCLIP || obj->render_type == RT_HOSTAGE ||
 	                           obj->render_type == RT_POWERUP || obj->render_type == RT_FIREBALL)) {
 		const int clip = obj->rtype.vclip_info.vclip_num;

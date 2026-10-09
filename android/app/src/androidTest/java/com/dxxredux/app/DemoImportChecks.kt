@@ -26,6 +26,9 @@ internal class DemoImportChecks(
                         }.toSet(),
             ) { "Demo corpus does not cover the package catalog" }
             val root = File(context.cacheDir, "demo-import-checks")
+            val runtimeRoot = File(context.filesDir, "demo-import-runtime")
+            runtimeRoot.deleteRecursively()
+            check(runtimeRoot.mkdirs())
             root.deleteRecursively()
             check(root.mkdirs())
             try {
@@ -67,6 +70,19 @@ internal class DemoImportChecks(
                     ) { "Launcher is not ready for $name" }
                     check(launchDataReadyForGame(game, setDir, manifest, SafManifest.forDir(setDir))) {
                         "Launcher launch readiness rejected $name"
+                    }
+                    val readiness = oracle.getJSONObject("launch_ready")
+                    for (target in listOf("d1", "d2", "d1-in-d2")) {
+                        check(
+                            launchDataReadyForGame(target, setDir, manifest, SafManifest.forDir(setDir)) ==
+                                readiness.getBoolean(target),
+                        ) { "Unexpected $target readiness for $name" }
+                    }
+                    if (!oracle.isNull("runtime_suite")) {
+                        check(oracle.getString("runtime_suite") == "d1-in-d2-shareware")
+                        check(readiness.getBoolean("d1-in-d2"))
+                        // The gameplay runner consumes these exact production-import outputs on the device
+                        check(setDir.copyRecursively(File(runtimeRoot, "set-$i")))
                     }
                     instrumentation.sendStatus(0, android.os.Bundle().apply { putString("stream", "Verified $name\n") })
                 }

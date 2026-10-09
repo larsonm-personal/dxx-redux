@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "matcen_mode.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
 
 // The max number of fuel stations per mine.
@@ -333,6 +334,7 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	short		objnum;
 	object	*obj;
 	int		default_behavior;
+	d1_in_d2_require_robot(object_id);
 
 	Players[Player_num].num_robots_level++;
 	Players[Player_num].num_robots_total++;

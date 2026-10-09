@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "mission.h"
 #include "args.h"
+#include "d1_in_d2/d1_in_d2.h"
 
 
 void paging_touch_vclip( vclip * vc )
@@ -161,6 +162,7 @@ sbyte super_boss_gate_type_list[13] = {0, 1, 8, 9, 10, 11, 12, 15, 16, 18, 19, 2
 void paging_touch_robot( int robot_index )
 {
 	int i;
+	d1_in_d2_require_robot(robot_index);
 
 	// Page in robot_index
 	paging_touch_model(Robot_info[robot_index].model_num);

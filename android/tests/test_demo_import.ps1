@@ -31,9 +31,17 @@ try {
     if ($result -notmatch 'PASS: demo corpus import' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') {
         throw 'Demo production import instrumentation failed'
     }
+    for ($i = 0; $i -lt $oracles.archives.Count; $i++) {
+        if (-not $oracles.archives[$i].runtime_suite) { continue }
+        if ($oracles.archives[$i].runtime_suite -ne 'd1-in-d2-shareware') { throw 'Unknown demo runtime suite' }
+        Write-Output "Original-package runtime checks: $($oracles.archives[$i].archive)"
+        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareSmoke -Serial $Serial
+        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareLastLevel 7 -Serial $Serial
+    }
 } finally {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-rf', 'files/demo-import-fixtures') | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-rf', 'files/demo-import-runtime') | Out-Null
     Adb -AdbArgs @('shell', 'rm', '-rf', $remote) | Out-Null
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }

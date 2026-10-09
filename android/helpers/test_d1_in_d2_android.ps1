@@ -1,11 +1,14 @@
 param(
-    [Parameter(Mandatory)][string]$D1DataDirectory,
+    [string]$D1DataDirectory,
+    [ValidateRange(-1, 1000)][int]$ImportedDemoIndex = -1,
     [string]$D2DataDirectory,
     [switch]$GameLog,
     [switch]$Reticles,
     [switch]$LauncherButtons,
     [switch]$SoundCheck,
     [switch]$SharewareSmoke,
+    [switch]$SharewareCampaign,
+    [ValidateSet(0, 3, 7)][int]$SharewareLastLevel = 0,
     [switch]$WeaponArt,
     [switch]$Guidebot,
     [switch]$EditionAdmission,
@@ -22,6 +25,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($SharewareLastLevel) { $SharewareCampaign = $true }
 . (Join-Path $PSScriptRoot 'test_helpers.ps1')
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
 Assert-IsolatedPhysicalTestApp
@@ -187,7 +191,15 @@ function Assert-WeaponArt {
 }
 
 $testLabel = if ($D2DataDirectory) { 'D2-to-D1' } else { 'D1-only' }
-$dataFiles = @('DESCENT.HOG', 'DESCENT.PIG') | ForEach-Object { Join-Path $D1DataDirectory $_ }
+if ($ImportedDemoIndex -ge 0) {
+    if ($D1DataDirectory -or $D2DataDirectory -or -not ($SharewareSmoke -or $SharewareCampaign)) {
+        throw 'ImportedDemoIndex requires a shareware scenario without local data directories'
+    }
+    $dataFiles = @()
+} else {
+    if (-not $D1DataDirectory) { throw 'Supply D1DataDirectory or ImportedDemoIndex' }
+    $dataFiles = @('DESCENT.HOG', 'DESCENT.PIG') | ForEach-Object { Join-Path $D1DataDirectory $_ }
+}
 if ($D2DataDirectory) {
     $dataFiles += @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S22', 'GROUPA.PIG', 'ALIEN1.PIG', 'ALIEN2.PIG', 'FIRE.PIG', 'ICE.PIG', 'WATER.PIG') |
         ForEach-Object { Join-Path $D2DataDirectory $_ }
@@ -197,22 +209,46 @@ foreach ($dataFile in $dataFiles) {
 }
 $steps = @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_in_d2_standalone.jsonc') -Raw | ConvertFrom-Json |
         Where-Object { -not $_._info })
-if ($SharewareSmoke) {
+if ($SharewareSmoke -or $SharewareCampaign) {
     if ($GameLog -or $Reticles -or $LauncherButtons -or $SoundCheck -or $WeaponArt -or $Guidebot -or $EditionAdmission -or $Metadata -or $RewindSourceCase -or $NativeD1) {
-        throw 'SharewareSmoke requires its own gameplay run'
+        throw 'Shareware checks require their own gameplay run'
     }
+    if ($SharewareSmoke -and $SharewareCampaign) { throw 'Select smoke or campaign checks' }
+    if ($SharewareCampaign) { $TimeoutSeconds = [Math]::Max($TimeoutSeconds, 300) }
     # Stop before the registered campaign's fixture-specific route
-    $firstTravelStep = 0
-    while ($firstTravelStep -lt $steps.Count -and $steps[$firstTravelStep].action -ne 'pose_view') { $firstTravelStep++ }
-    $steps = @($steps[0..($firstTravelStep - 1)])
+    if ($SharewareSmoke) {
+        $firstTravelStep = 0
+        while ($firstTravelStep -lt $steps.Count -and $steps[$firstTravelStep].action -ne 'pose_view') { $firstTravelStep++ }
+        $steps = @($steps[0..($firstTravelStep - 1)])
+    }
     foreach ($step in $steps) {
+        if ($step.action -eq 'select_mission') { $step.text = 'Descent Demo' }
         if ($step.expect -and $step.expect.PSObject.Properties['asset_trace.d1_compat.sound_files']) {
             $step.expect.'asset_trace.d1_compat.sound_files' = 70
             $step.expect.'asset_trace.d1_compat.robot_models' = @{ gt = 0 }
         }
+        # The PC demo keeps this level route but has its own model indices
+        if ($step.expect -and $step.expect.PSObject.Properties['level_scene.reactors[0].model']) {
+            $step.expect.'level_scene.reactors[0].model' = if ($step.expect.'level_scene.reactors[0].model' -eq 39) { 21 } else { 22 }
+        }
     }
-    $steps += @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_shareware_restore.jsonc') -Raw | ConvertFrom-Json |
-            Where-Object { -not $_._info })
+    if ($SharewareCampaign) {
+        $steps = @(foreach ($step in $steps) {
+                $step
+                if ($step.action -eq 'wait_for' -and $step.expect -and
+                    $step.expect.PSObject.Properties['level_scene.reactor_destroyed'] -and
+                    $step.expect.'level_scene.reactor_destroyed' -eq $true) {
+                    # Leave the blast area before waiting to inspect the reactor wreck
+                    @{ action = 'send_button'; button = 100; pressed = 0 }
+                    @{ action = 'pose_view'; segment = 69; x = -150; y = -202.5; z = 80; heading = 16384 }
+                    @{ action = 'assert'; expect = @{ player_dead = $false; 'player.shields' = @{ gt = 0 } } }
+                }
+            })
+    }
+    if ($SharewareSmoke) {
+        $steps += @(Get-Content (Join-Path $repo 'android/game_scripts/test_d1_shareware_restore.jsonc') -Raw | ConvertFrom-Json |
+                Where-Object { -not $_._info })
+    }
 }
 if ($Reticles) {
     # Exercise every reticle and grow/shrink the Circle/Dot caches in one game session
@@ -293,19 +329,46 @@ if ($SoundCheck) {
 }
 if ($D2DataDirectory -and -not $WeaponArt -and -not $Guidebot -and -not $Metadata) {
     $steps[1].game = 'd2'
+    $expectedModels = if ($SharewareSmoke -or $SharewareCampaign) { 60 } else { 82 }
     # Registered D2 contributes four independently owned companion models
     # The source/publication integration fixture verifies the 78 original models
     foreach ($step in $steps) {
         if ($step.action -eq 'assert' -and $step.expect.PSObject.Properties.Name -contains 'asset_trace.d1_compat.robot_models') {
-            $step.expect.'asset_trace.d1_compat.robot_models' = 82
+            $step.expect.'asset_trace.d1_compat.robot_models' = $expectedModels
         }
     }
     # Prove the initial D2 bank before selecting First Strike, then prove the
     # D1 bank is installed during its briefing, before level preparation
     $steps = @($steps[0..4]) + @(@{ action = 'assert'; expect = @{ 'asset_trace.mode' = 'd2' } }) + @($steps[5..8]) + @(
         @{ action = 'wait_for'; field = 'screen_advance_kind'; value = 'briefing'; timeout_ms = 15000 },
-        @{ action = 'assert'; expect = @{ 'asset_trace.mode' = 'd1-in-d2'; 'asset_trace.d1_compat.robot_models' = 82 } }
+        @{ action = 'assert'; expect = @{ 'asset_trace.mode' = 'd1-in-d2'; 'asset_trace.d1_compat.robot_models' = $expectedModels } }
     ) + @($steps[9..($steps.Count - 1)])
+    if ($SharewareSmoke) {
+        # Exercise retirement in both directions, then restore the pre-switch demo save
+        foreach ($mission in @('Counterstrike', 'Descent Demo')) {
+            $mode = if ($mission -eq 'Counterstrike') { 'd2' } else { 'd1-in-d2' }
+            $steps += @(
+                @{ action = 'key'; key = 'escape' },
+                @{ action = 'select'; text = 'Abort Game'; timeout_ms = 5000 },
+                @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ in_game = $false; current_level_num = 0 } },
+                @{ action = 'select'; text = 'New game'; timeout_ms = 10000 },
+                @{ action = 'select_mission'; text = $mission; timeout_ms = 10000 },
+                @{ action = 'select'; text = 'Ok'; timeout_ms = 5000 },
+                @{ action = 'select'; text = 'Trainee'; timeout_ms = 10000 },
+                @{ action = 'skip_briefing'; timeout_ms = 60000 },
+                @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ game_window_is_front = $true; 'asset_trace.mode' = $mode; current_level_num = 1 } },
+                @{ action = 'send_button'; button = 100; held = 1 },
+                @{ action = 'wait_for'; timeout_ms = 10000; expect = @{ 'player.energy' = @{ lt = 100 }; player_dead = $false } },
+                @{ action = 'send_button'; button = 100; pressed = 0 },
+                @{ action = 'introspect' }
+            )
+        }
+        $steps += @(
+            @{ action = 'set_debug'; field = 'android_game_request'; value = 'quick_load' },
+            @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ game_window_is_front = $true; 'position.z' = @{ lt = 1 }; 'asset_trace.d1_compat.robot_models' = $expectedModels; 'asset_trace.d1_compat.sound_files' = 70 } },
+            @{ action = 'introspect' }
+        )
+    }
 }
 if ($WeaponArt) {
     $steps = @($steps[0..11])
@@ -330,6 +393,40 @@ if ($Metadata) {
             Where-Object { -not $_._info })
 }
 if ($EditionAdmission) { $steps = @(@{ action = 'enter_launcher' }, @{ action = 'enter_game'; game = 'd1-in-d2' }) }
+if ($SharewareSmoke -or $SharewareCampaign) {
+    # Insert after indexed scenario composition; calibration has separate coverage
+    $steps = @($steps[0], @{ action = 'setup_command'; command = 'graphics_first_run_offered'; value = 'true' }) + $steps[1..($steps.Count - 1)]
+}
+if ($SharewareLastLevel) {
+    $TimeoutSeconds = [Math]::Max($TimeoutSeconds, 600)
+    # Level one exercises the real trigger; subsequent levels use their authored exit tunnels
+    for ($level = 2; $level -le $SharewareLastLevel; $level++) {
+        $steps += @(
+            @{ action = 'assert'; expect = @{ current_level_num = $level; game_window_is_front = $true; player_dead = $false } },
+            @{ action = 'wait_ms'; ms = 1000 },
+            @{ action = 'introspect' },
+            @{ action = 'trigger_endlevel'; value = 'from_exit_tunnel' }
+        )
+        if ($level -lt $SharewareLastLevel) {
+            $steps += @(
+                @{ action = 'wait_for'; timeout_ms = 60000; expect = @{ levelcomplete_active = $true; screen_advance_can_activate = $true } },
+                @{ action = 'request_screen_advance'; generation = 'current' },
+                @{ action = 'skip_briefing'; timeout_ms = 60000 },
+                @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ current_level_num = $level + 1; game_window_is_front = $true } }
+            )
+        }
+    }
+    $steps += @(
+        @{ action = 'wait_for'; field = 'screen_advance_kind'; value = 'briefing'; timeout_ms = 60000 },
+        @{ action = 'introspect' },
+        @{ action = 'key'; key = 'escape'; post_delay_ms = 1000 },
+        @{ action = 'key'; key = 'escape'; post_delay_ms = 1000 },
+        @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ levelcomplete_active = $true; screen_advance_can_activate = $true } },
+        @{ action = 'request_screen_advance'; generation = 'current' },
+        @{ action = 'wait_for'; timeout_ms = 30000; expect = @{ in_game = $false } },
+        @{ action = 'introspect' }
+    )
+}
 $steps | ConvertTo-Json -Depth 40 | Set-Content $scriptFile -Encoding utf8
 Invoke-Device -Arguments @('get-state') | Out-Null
 if ($ApkPath) { Invoke-Device -Arguments @('install', '-r', '-t', $ApkPath) | Out-Null }
@@ -338,7 +435,7 @@ Invoke-Device -Arguments @('shell', 'run-as', $package, 'mkdir', $backup) | Out-
 try {
     # Preserve the original installation; fresh files/preferences make hidden
     # game-directory, mod and external-import fallbacks unavailable to this run
-    foreach ($name in @('files', 'shared_prefs')) {
+    foreach ($name in @('files', 'shared_prefs', 'no_backup')) {
         & $AdbPath -s $Serial shell run-as $package test -d $name
         if ($LASTEXITCODE -eq 0) {
             Invoke-Device -Arguments @('shell', 'run-as', $package, 'mv', $name, "$backup/$name") | Out-Null
@@ -348,6 +445,11 @@ try {
         $created += $name
     }
     Invoke-Device -Arguments @('shell', 'run-as', $package, 'mkdir', '-p', 'files/imported/sets/default') | Out-Null
+    if ($ImportedDemoIndex -ge 0) {
+        # files was moved into the backup above; keep the installed bytes and manifest together
+        $imported = "$backup/files/demo-import-runtime/set-$ImportedDemoIndex"
+        Invoke-Device -Arguments @('shell', 'run-as', $package, 'cp', '-r', "$imported/.", 'files/imported/sets/default/') | Out-Null
+    }
     foreach ($dataFile in $dataFiles) {
         $name = Split-Path $dataFile -Leaf
         $deviceFile = "/data/local/tmp/d1-in-d2-$($name.ToLowerInvariant())"
@@ -504,6 +606,8 @@ try {
     elseif ($RewindSourceCase) { Write-Output "Android rewind source recovery evidence: $outputDirectory" }
     elseif ($Guidebot) { Write-Output 'PASS: Android optional Guide-Bot cold deploy, save/restore, memory rewind and D1/D2/D1 lifecycle' }
     elseif ($SharewareSmoke) { Write-Output 'PASS: Android PC shareware startup, movement, laser firing, sound playback, file restore and memory rewind in D2' }
+    elseif ($SharewareLastLevel) { Write-Output "PASS: Android PC shareware campaign traversed $SharewareLastLevel levels and completed its ending in D2" }
+    elseif ($SharewareCampaign) { Write-Output 'PASS: Android PC shareware doors, effects, reactor destruction and normal exit to level 2 in D2' }
     elseif ($Metadata) { Write-Output "$testLabel imported-D1 route-cache publication and adoption passed" }
     elseif ($LauncherButtons) { Write-Output "Launcher buttons, missing-file dialogs, music source visibility and D1-only D2 gameplay passed" }
     else { Write-Output "$testLabel Android First Strike interaction and level-transition checks passed" }
@@ -532,7 +636,7 @@ try {
     # Capture the complete crash directory before discarding the isolated data
     & $AdbPath -s $Serial exec-out run-as $package tar -cf - files/tombstones 2> (Join-Path $outputDirectory 'tombstones-error.txt') > (Join-Path $outputDirectory 'tombstones.tar')
     Invoke-Device -Arguments @('shell', 'am', 'force-stop', $package) | Out-Null
-    foreach ($name in @('shared_prefs', 'files')) {
+    foreach ($name in @('shared_prefs', 'files', 'no_backup')) {
         # These exact directories were created above; original data is in backup
         if ($created -contains $name) { Invoke-Device -Arguments @('shell', 'run-as', $package, 'rm', '-rf', $name) | Out-Null }
         if ($moved -contains $name) { Invoke-Device -Arguments @('shell', 'run-as', $package, 'mv', "$backup/$name", $name) | Out-Null }
