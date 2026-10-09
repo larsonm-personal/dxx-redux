@@ -71,7 +71,7 @@ foreach ($engine in $games) {
         @(Get-LaunchSteps $engine -Unsupported:($case -eq 'Unsupported') -Stall:($case -eq 'Stall')) | ForEach-Object { $steps.Add($_) }
         if ($case -ne 'Stall') {
             $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.candidate_ready' = 'true'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.accepted.TexFilt' = '0'; 'graphics_safety.requested.TexFilt' = '0'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
-            $steps.Add(@{ action = 'controller_input'; expect_ui = @{ graphics_chooser_open = $true; graphics_preview_tex_filt = 2 } })
+            $steps.Add(@{ action = 'controller_input'; expect_ui = @{ graphics_chooser_open = $true; graphics_preview_tex_filt = 2; graphics_preview_selection = 3 } })
             $steps.Add(@{ action = 'wait_ms'; ms = 3000 })
             $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'editing'; 'time_paused' = 'true'; 'graphics_safety.preview_presented_frames' = @{ gte = 5 } }))
         }
@@ -102,14 +102,14 @@ foreach ($engine in $games) {
                 # Real touch controls cycle maximum AF/MSAA to Off, including disabled rows
                 $steps.Add((New-TouchStep 'aniso_level'))
                 $steps.Add((New-TouchStep 'msaa_level'))
-                $steps.Add(@{ action = 'controller_input'; key = 'A'; post_delay_ms = 60 })
+                $steps.Add((New-TouchStep 'tex_filt'))
                 $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.current.TexFilt' = '0'; 'graphics_safety.current.AnisoLevel' = '0'; 'graphics_safety.current.MsaaLevel' = '0'; 'graphics_safety.phase' = 'editing' }))
                 if ($case -ne 'Unchanged') {
-                    $steps.Add(@{ action = 'controller_input'; key = 'A'; post_delay_ms = 60 })
+                    $steps.Add((New-TouchStep 'tex_filt'))
                     $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.current.TexFilt' = '1'; 'graphics_safety.phase' = 'editing'; 'graphics_safety.candidate_ready' = 'true' }))
                 }
                 if ($case -eq 'Back') { $steps.Add(@{ action = 'controller_input'; key = 'B'; post_delay_ms = 60 }) }
-                else { $steps.Add((New-TouchStep 'ok')) }
+                else { $steps.Add(@{ action = 'controller_input'; key = 'A'; post_delay_ms = 60 }) }
                 if ($case -ne 'Unchanged') {
                     $steps.Add(@{ action = 'wait_for'; timeout_ms = 1000; expect = @{ 'graphics_safety.phase' = 'challenge'; 'graphics_safety.candidate_ready' = 'true'; 'time_paused' = 'true' } })
                     $steps.Add(@{ action = 'controller_input'; expect_ui = @{ graphics_selected_ok = $true } })

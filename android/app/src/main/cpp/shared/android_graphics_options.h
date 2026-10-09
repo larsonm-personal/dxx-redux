@@ -27,6 +27,7 @@ int android_graphics_set_dynlight_color(int value, int persist);
 int android_graphics_set_movie_texfilt(int value, int persist);
 void android_graphics_apply_loaded_config(void);
 void android_graphics_apply_pilot_defaults(void);
+/* Android: valid surface dimensions make zero insets authoritative (square corners) */
 void android_graphics_set_rounded_corner_text_insets(int surface_width, int surface_height,
                                                      int top_left_px, int bottom_left_px,
                                                      int top_right_px, int bottom_right_px);

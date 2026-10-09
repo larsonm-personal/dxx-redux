@@ -363,6 +363,16 @@ void android_graphics_set_rounded_corner_text_insets(int surface_width, int surf
                                                      int top_left_px, int bottom_left_px,
                                                      int top_right_px, int bottom_right_px)
 {
+	if (g_corner_text_surface_width_px != surface_width ||
+	    g_corner_text_surface_height_px != surface_height ||
+	    g_corner_text_top_left_px != top_left_px ||
+	    g_corner_text_bottom_left_px != bottom_left_px ||
+	    g_corner_text_top_right_px != top_right_px ||
+	    g_corner_text_bottom_right_px != bottom_right_px)
+		debug_log_force(DLOG_GRAPHICS,
+		                "Android HUD corners: surface=%dx%d tl=%d bl=%d tr=%d br=%d",
+		                surface_width, surface_height, top_left_px, bottom_left_px,
+		                top_right_px, bottom_right_px);
 	g_corner_text_surface_width_px = surface_width > 0 ? surface_width : 0;
 	g_corner_text_surface_height_px = surface_height > 0 ? surface_height : 0;
 	g_corner_text_top_left_px = top_left_px > 0 ? top_left_px : 0;
@@ -392,9 +402,8 @@ static int isqrt_int64(long long value)
 
 static int scale_corner_text_x(int canvas_width, int inset_px)
 {
-	if (inset_px <= 0 && g_corner_text_surface_width_px > 0)
-		inset_px = g_corner_text_surface_width_px / 20;
-	if (inset_px <= 0 || g_corner_text_surface_width_px <= 0)
+	/* Android: use the fallback only before surface measurements arrive, not for square corners */
+	if (g_corner_text_surface_width_px <= 0)
 		return canvas_width / 20;
 	return (inset_px * canvas_width + g_corner_text_surface_width_px / 2) /
 	       g_corner_text_surface_width_px;
@@ -402,9 +411,7 @@ static int scale_corner_text_x(int canvas_width, int inset_px)
 
 static int scale_corner_text_y(int canvas_width, int canvas_height, int inset_px)
 {
-	if (inset_px <= 0 && g_corner_text_surface_width_px > 0)
-		inset_px = g_corner_text_surface_width_px / 20;
-	if (inset_px <= 0 || g_corner_text_surface_height_px <= 0)
+	if (g_corner_text_surface_height_px <= 0)
 		return canvas_width / 20;
 	return (inset_px * canvas_height + g_corner_text_surface_height_px / 2) /
 	       g_corner_text_surface_height_px;

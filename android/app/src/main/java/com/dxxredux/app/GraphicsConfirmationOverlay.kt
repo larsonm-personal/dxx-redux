@@ -61,7 +61,7 @@ internal class GraphicsConfirmationOverlay(
         }
     private var phase = "idle"
     private var previewPosted = false
-    private var previewSelection = 0
+    private var previewSelection = 3
     private var latestState = JSONObject()
     private var trialId = 0L
     private var deadline = 0L
@@ -234,7 +234,7 @@ internal class GraphicsConfirmationOverlay(
             selectedOk = state.optBoolean("first_run_trial")
             armPosted = false
             previewPosted = false
-            previewSelection = 0
+            previewSelection = 3
             restoreStarted = 0L
             restoreTimeoutMs = graphicsRestoreTimeoutMs(state)
             cancel.text = "Cancel (5)"

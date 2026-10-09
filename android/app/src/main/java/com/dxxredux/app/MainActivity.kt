@@ -2759,22 +2759,19 @@ class MainActivity :
         }
 
         val fallback = (width * 0.05f).roundToInt().coerceAtLeast(1)
-        var topLeft = 0
-        var bottomLeft = 0
-        var topRight = 0
-        var bottomRight = 0
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val insets = decorView.rootWindowInsets
-            topLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT))
-            bottomLeft = roundedCornerLeftInsetPx(insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT))
-            topRight = roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT))
+        var topLeft = fallback
+        var bottomLeft = fallback
+        var topRight = fallback
+        var bottomRight = fallback
+        val insets = decorView.rootWindowInsets
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && insets != null) {
+            // A missing corner in available WindowInsets means no rounding at that corner
+            topLeft = roundedCornerLeftInsetPx(insets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT))
+            bottomLeft = roundedCornerLeftInsetPx(insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT))
+            topRight = roundedCornerRightInsetPx(width, insets.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT))
             bottomRight =
-                roundedCornerRightInsetPx(width, insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT))
+                roundedCornerRightInsetPx(width, insets.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT))
         }
-        if (topLeft <= 0) topLeft = fallback
-        if (bottomLeft <= 0) bottomLeft = fallback
-        if (topRight <= 0) topRight = fallback
-        if (bottomRight <= 0) bottomRight = fallback
         try {
             nativeSetRoundedCornerTextInsets(width, height, topLeft, bottomLeft, topRight, bottomRight)
         } catch (_: Exception) {
