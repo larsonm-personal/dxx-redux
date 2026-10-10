@@ -620,6 +620,11 @@ int coop_remap_restored_players(rewind_file *file,
 		if (!(Players[i].connected == CONNECT_PLAYING ||
 		      Players[i].connected == CONNECT_WAITING))
 			continue;
+		if (Players[i].objnum < 0 || Players[i].objnum > Highest_object_index) {
+			COOPLOG("P%d '%s' has invalid live objnum %d during restore", i,
+			        Players[i].callsign, Players[i].objnum);
+			continue;
+		}
 
 		if (have_meta) {
 			int meta_idx = coop_find_player_in_metadata(Players[i].callsign,
@@ -637,11 +642,17 @@ int coop_remap_restored_players(rewind_file *file,
 			        Players[i].callsign);
 			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
 			                 Players[i].callsign);
-			continue;
-		}
-		if (Players[i].objnum < 0 || Players[i].objnum > Highest_object_index) {
-			COOPLOG("P%d '%s' has invalid live objnum %d during restore", i,
-			        Players[i].callsign, Players[i].objnum);
+			/* A saved absent ship is a stationary ghost: its physics union was
+			 * not read. Initialize it before state.c enables local thrust */
+			obj = &Objects[Players[i].objnum];
+			obj->type = OBJ_PLAYER;
+			obj->id = i;
+			obj->control_type = CT_REMOTE;
+			obj->movement_type = MT_PHYSICS;
+			obj->mtype.phys_info.flags = PF_USES_THRUST;
+			multi_reset_player_object(obj);
+			COOPLOG("restore fresh ship: player=%d obj=%d mass=%d drag=%d", i,
+			        Players[i].objnum, obj->mtype.phys_info.mass, obj->mtype.phys_info.drag);
 			continue;
 		}
 		claimed_slots[saved_slot] = 1;
@@ -923,6 +934,7 @@ static void coop_write_progress_inventory_file(const char *filename);
 static coop_player_record coop_absent_list[COOP_MAX_REMEMBERED_PLAYERS];
 static int16_t coop_absent_source_levels[COOP_MAX_REMEMBERED_PLAYERS];
 static int coop_num_absent = 0;
+static int coop_absent_restore_pending;
 
 void coop_snapshot_player(int pnum, coop_player_record *rec)
 {
@@ -1012,6 +1024,9 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	meta->num_absent_players = 0;
 	for (i = 0; i < coop_num_absent && i < COOP_MAX_REMEMBERED_PLAYERS; i++) {
 		memcpy(&meta->absent_players[i], &coop_absent_list[i], sizeof(coop_player_record));
+		/* Keys belong to the mine where the player left, not a later save */
+		if (coop_absent_source_levels[i] != Current_level_num)
+			meta->absent_players[i].flags &= ~(PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY);
 		meta->num_absent_players++;
 	}
 	return 1;
@@ -1271,52 +1286,58 @@ int coop_find_player_in_metadata(const char *callsign,
 	return -1;
 }
 
-void coop_track_absent_player(int pnum)
+static void coop_remember_absent_record(const coop_player_record *record, int source_level)
 {
 	int i;
-	coop_player_record rec;
-
-	if (!(Game_mode & GM_MULTI_COOP))
-		return;
-	if (pnum < 0 || pnum >= MAX_PLAYERS)
-		return;
-	if (!Players[pnum].callsign[0])
-		return;
-
-	coop_snapshot_player(pnum, &rec);
-	coop_recovery_departure_record(pnum, &rec);
+	coop_player_record rec = *record;
 	rec.was_connected = 0;
 
 	for (i = 0; i < coop_num_absent; i++) {
 		if ((rec.client_id[0] && strncmp(coop_absent_list[i].client_id, rec.client_id, COOP_CLIENT_ID_LEN) == 0) ||
 		    ((!rec.client_id[0] || !coop_absent_list[i].client_id[0]) &&
 		     strncasecmp(coop_absent_list[i].callsign, rec.callsign, COOP_CALLSIGN_LEN) == 0)) {
-			memcpy(&coop_absent_list[i], &rec, sizeof(rec));
-			coop_absent_source_levels[i] = (int16_t) Current_level_num;
-			COOP_SAVE_LOG(CON_NORMAL, "coop_save: updated absent player '%s' (slot %d)\n",
-			              rec.callsign, i);
-			return;
+			memmove(&coop_absent_list[i], &coop_absent_list[i + 1],
+			        sizeof(coop_absent_list[0]) * (coop_num_absent - i - 1));
+			memmove(&coop_absent_source_levels[i], &coop_absent_source_levels[i + 1],
+			        sizeof(coop_absent_source_levels[0]) * (coop_num_absent - i - 1));
+			coop_num_absent--;
+			break;
 		}
 	}
 
-	if (coop_num_absent >= COOP_MAX_REMEMBERED_PLAYERS) {
+	if (coop_num_absent >= COOP_ABSENT_PLAYER_LIMIT) {
 		coop_recovery_remember_record(&coop_absent_list[0]);
 		memmove(&coop_absent_list[0], &coop_absent_list[1],
-		        sizeof(coop_player_record) * (COOP_MAX_REMEMBERED_PLAYERS - 1));
+		        sizeof(coop_player_record) * (COOP_ABSENT_PLAYER_LIMIT - 1));
 		memmove(&coop_absent_source_levels[0], &coop_absent_source_levels[1],
-		        sizeof(int16_t) * (COOP_MAX_REMEMBERED_PLAYERS - 1));
-		coop_num_absent = COOP_MAX_REMEMBERED_PLAYERS - 1;
+		        sizeof(int16_t) * (COOP_ABSENT_PLAYER_LIMIT - 1));
+		coop_num_absent = COOP_ABSENT_PLAYER_LIMIT - 1;
 	}
 	memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
-	coop_absent_source_levels[coop_num_absent] = (int16_t) Current_level_num;
+	coop_absent_source_levels[coop_num_absent] = (int16_t) source_level;
 	coop_num_absent++;
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: tracked absent player '%s' (%d total absent)\n",
 	              rec.callsign, coop_num_absent);
 }
 
+void coop_track_absent_player(int pnum)
+{
+	coop_player_record rec;
+	if (!(Game_mode & GM_MULTI_COOP) || pnum < 0 || pnum >= MAX_PLAYERS || !Players[pnum].callsign[0]) return;
+	if ((coop_absent_restore_pending || multi_save_transfer_restoring() || multi_save_transfer_paused()) &&
+	    coop_find_absent_player(Players[pnum].callsign, Netgame.players[pnum].client_id)) {
+		COOPLOG("restore retained absent inventory after interrupted return: player=%d", pnum);
+		return;
+	}
+	coop_snapshot_player(pnum, &rec);
+	coop_recovery_departure_record(pnum, &rec);
+	coop_remember_absent_record(&rec, Current_level_num);
+}
+
 void coop_clear_absent_players(void)
 {
 	coop_num_absent = 0;
+	coop_absent_restore_pending = 0;
 	memset(coop_absent_list, 0, sizeof(coop_absent_list));
 	memset(coop_absent_source_levels, 0, sizeof(coop_absent_source_levels));
 }
@@ -1396,10 +1417,19 @@ int coop_take_absent_player_with_level(const char *callsign,
 
 void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 {
-	int i, n;
+	int i;
 	unsigned char present[8] = { 0 };
 
 	coop_clear_absent_players();
+	/* Disk records are oldest first. Carry the most recent ten, then retain
+	 * saved active players who are missing from the new lobby */
+	for (i = 0; i < meta->num_absent_players; i++) {
+		const coop_player_record *record = &meta->absent_players[i];
+		int saved = coop_find_player_in_metadata(record->callsign, record->client_id, meta);
+		/* A live saved inventory supersedes any stale absent copy */
+		if (saved < 0 || saved >= 8)
+			coop_remember_absent_record(record, meta->level_num);
+	}
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		int saved;
 		if (Players[i].connected != CONNECT_PLAYING &&
@@ -1415,22 +1445,34 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 	for (i = 0; i < meta->num_active_players; i++) {
 		if (present[i])
 			continue;
-		coop_absent_list[coop_num_absent] = meta->active_players[i];
-		coop_absent_list[coop_num_absent].was_connected = 0;
-		coop_absent_source_levels[coop_num_absent++] = meta->level_num;
+		coop_remember_absent_record(&meta->active_players[i], meta->level_num);
 		COOPLOG("restore retained missing player '%s' from saved slot %d for late join",
 		        meta->active_players[i].callsign, meta->active_players[i].original_slot);
 	}
-	n = meta->num_absent_players;
-	if (n > COOP_MAX_REMEMBERED_PLAYERS - coop_num_absent)
-		n = COOP_MAX_REMEMBERED_PLAYERS - coop_num_absent;
-	for (i = 0; i < n; i++) {
-		coop_absent_list[coop_num_absent] = meta->absent_players[i];
-		coop_absent_source_levels[coop_num_absent++] = meta->level_num;
-	}
-	for (; i < meta->num_absent_players; i++)
-		coop_recovery_remember_record(&meta->absent_players[i]);
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", coop_num_absent);
+	coop_absent_restore_pending = 1;
+}
+
+void coop_restore_connected_absent_players(void)
+{
+	if (!coop_absent_restore_pending || !(Game_mode & GM_MULTI_COOP) ||
+	    !Game_wind || multi_save_transfer_restoring() || multi_save_transfer_paused() ||
+	    coop_travel_blocks_gameplay()) return;
+	coop_absent_restore_pending = 0;
+	/* Initial lobby joins never pass through late-join object sync. Wait until
+	 * every restored world is loaded before publishing their remembered gear */
+	for (int i = 0; i < N_players; i++) {
+		if (Players[i].connected != CONNECT_PLAYING ||
+		    !coop_find_absent_player(Players[i].callsign, Netgame.players[i].client_id)) continue;
+		if (multi_i_am_master()) {
+			COOPLOG("restore remembered inventory: player=%d callsign='%s'", i, Players[i].callsign);
+			coop_send_restore_inventory(i);
+		} else {
+			/* The host owns the grant; remove stale cache copies on peers too */
+			coop_player_record record;
+			coop_take_absent_player_with_level(Players[i].callsign, Netgame.players[i].client_id, &record, NULL);
+		}
+	}
 }
 
 #define COOP_RESTORE_FLAGS_KEYS ( \
@@ -1989,14 +2031,7 @@ int coop_load_progress_inventory(void)
 	for (i = 0; i < num; ++i) {
 		if (i == host_record)
 			continue;
-		if (coop_num_absent >= COOP_MAX_REMEMBERED_PLAYERS) {
-			coop_recovery_remember_record(&records[i]);
-			continue;
-		}
-		records[i].was_connected = 0;
-		memcpy(&coop_absent_list[coop_num_absent], &records[i], sizeof(records[i]));
-		coop_absent_source_levels[coop_num_absent] = level;
-		coop_num_absent++;
+		coop_remember_absent_record(&records[i], level);
 	}
 	coop_progress_restore_attempted_level = Current_level_num;
 	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded progress inventory (L%d, %d records, host_restored=%d, %d absent)\n",

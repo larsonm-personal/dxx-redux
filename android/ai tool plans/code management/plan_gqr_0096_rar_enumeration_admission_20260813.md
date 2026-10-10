@@ -63,3 +63,15 @@ without the attempt limits that govern extraction
 - No `d1/` or `d2/` file changed
 
 There are no implementation or validation blockers
+
+## Pre-admission timestamp census reopened, 2026-10-09
+
+Existing GQF-0109/GQR-0096 reopened OPEN/TODO. Preserve incremental payload catalog admission and historical18 focused tests above. ArchiveFiles ExtractedReadableArchive248 calls readRarModificationDates291-309 before dispatcher249 and bounded extraction enumeration396. Separate traversal/buildMap retains native names/dates without shared work/entry/live-memory/cancellation admission; retained dates overlap later extraction catalog. Optional runCatching does not bound successful work and suppresses terminal failure meaning
+
+- [ ] Reconcile complete RAR facade date and extraction acquisition; collect stored timestamps through admitted visitation or an explicitly shared attempt instead of an unbounded preliminary census
+- [ ] Charge filtered visits, name normalization, date strings and metadata-map retention before operations; include simultaneously retained metadata and extraction catalog within one attempt
+- [ ] Preserve genuinely absent dates and stored-date provenance without swallowing terminal policy/cancellation or inferring dates from extracted filesystem output
+- [ ] Cover real facade date path plus extraction with small exact/one-over work/entry/retained bounds, long paths, filtered/undated entries, cancellation and failure; require early stop, released ownership and no output on rejection
+- [ ] Preserve canonical collision validation, declared/actual extraction accounting and safe capability fallback; coordinate host metadata reader budget with GQR0212 and source-generation/reader ownership with existing owners
+
+Exact report imported as GQR-0095 and GQR-0096 RAR residual diagnosis reopening 20261009 SHA2563ece54eabe7d4b8d90e943cf7e96fe4e07907f34a5dd6825240493afae02d3e7. Historical no-blocker statement applied to completed narrower implementation. Current completion requires these follow-ups; no code/test execution or deferred probes here

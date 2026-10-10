@@ -1,0 +1,6 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "assert", "expect": { "in_game": true, "multiplayer.num_connected": 1 } },
+    { "action": "set_debug", "field": "recovery_test_collect_homing", "value": "true" },
+    { "action": "introspect" },
+]

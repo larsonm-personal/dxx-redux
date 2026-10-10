@@ -54,3 +54,11 @@ completed, but concurrent build-directory access caused an x86_64 Ninja deps
 log permission error and a Kotlin incremental-output deletion error. A serial
 native-only rerun then passed all three ABIs. No emulator heap profiler or
 concurrent extraction stress run was performed.
+
+### STi2 production reservation ownership reopened, 2026-10-09
+
+- Imported GQR-0038 production reservation ownership diagnosis reopening 20261009 with exact source/test/plan identities. Frozen/current method15 reservation sequence unchanged; incomplete acceptance, no new source regrowth or duplicate finding
+- Existing GQF-0051 reopened FIXED to OPEN and GQR-0038 DONE to TODO. Failed reserve preserves retained charge, then cleanup wrongly releases an unacquired request; nested StuffIt can swallow failure and continue. Prior workspace/CRC/helper/OOM/media/ABI history preserved
+- Plan separates requested/acquired ownership, keeps returned payload charged to actual free and reserves retained buffers before materialization. Actual production rejection/continuation/lifetime acceptance remains deferred. No code/test change or executed physical overrun/security claim
+- Totals266 findings/252 remediations, now78 DONE/173 TODO/1 DEFERRED. GQ2 remains159 DONE/486 TODO, chunk0019 still in progress; GQ1 remains818 DONE/1 TODO
+- Additional0019 context read: current STi2 extraction/writer/resource/matching lifetime, complete CD preview/fingerprint JNI and strict string codec, paired protocol prefix and partial Kotlin EngineQuery consumer. Finish query caller/protocol/build/owner reconciliation before terminal report

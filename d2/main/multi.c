@@ -1721,6 +1721,8 @@ multi_leave_game(void)
 	if (!(Game_mode & GM_MULTI))
 		return;
 #ifdef __ANDROID__
+	/* Save before quitting drops the host's gear or clears the network state */
+	if (multi_i_am_master()) coop_autosave();
 	coop_level_restart_clear();
 #endif
 

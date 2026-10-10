@@ -38,6 +38,8 @@
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
+#   .\test_lan.ps1 -GhostInventory -Game d2 -MissionFile descent
+#   .\test_lan.ps1 -GhostInventory -GhostInventoryPickup -NoCoopQol -Game d2 -MissionFile descent
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
@@ -108,6 +110,8 @@ param(
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
+    [switch]$GhostInventory,
+    [switch]$GhostInventoryPickup,
     [ValidateRange(1, 10)]
     [int]$SavedLateJoinCancelCount = 1,
     [ValidateRange(0, 10)]
@@ -326,10 +330,7 @@ if ($SecretReactorDeath -and $SecretCountdown) { throw "Run reactor teammate dea
 if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object { $_ }).Count -gt 1) {
     throw "Run normal exit races, reactor teammate death and whole-team countdown expiry separately"
 }
-if ($CoopDeath -and $NoCoopQol -and $Game -eq "d1") { throw "D1 death recovery coverage requires co-op QoL" }
-if ($SpewRecovery -and $NoCoopQol -and ($Game -ne "d2" -or -not $AllowSecretWarps)) {
-    throw "SpewRecovery requires co-op QoL or D2 secret warps to enable recovery"
-}
+if ($GhostInventoryPickup -and -not $GhostInventory) { throw "GhostInventoryPickup requires GhostInventory" }
 if (@(@($WorldRestore, $SecretWorld, $TravelGate, $NormalPhysical, $SecretExitRace, $CoopDeath) | Where-Object { $_ }).Count -gt 1) {
     throw "Run WorldRestore, SecretWorld, TravelGate, NormalPhysical, SecretExitRace and CoopDeath separately; each owns the mine state"
 }
@@ -1984,6 +1985,98 @@ function Set-DeviceCoopRestoreSlot {
     return $actual -and $actual.Trim() -eq $Slot.ToString()
 }
 
+function Invoke-GhostInventoryScenario {
+    Write-Status '--- Dropped inventory survives host exit, cold lobby restores, and late join ---' 'White'
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_ghost_prepare.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_ghost_prepare.jsonc' `
+                -Description 'Remove combat while the host waits for cold rejoins')) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_late_join_seed.jsonc')) { return $false }
+    if (-not (Wait-ForCondition -Description 'Host acknowledges client equipment' -TimeoutSec 20 -PollMs 500 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU1
+                $peer = @($state.multiplayer.players | Where-Object { $_.callsign -eq $CALLSIGN2 })
+                return $peer.Count -eq 1 -and $peer[0].primary_flags -eq 9 -and $peer[0].homing_ammo -eq 6
+            })) { return $false }
+    $expectedHoming = 6
+    if ($GhostInventoryPickup) {
+        if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_ghost_drop.jsonc')) { return $false }
+        if (-not (Wait-ForCondition -Description 'Host records departing client gear in the world' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    return $state -and $state.multiplayer.recovery.live -gt 0
+                })) { return $false }
+        $expectedHoming = 2
+    }
+    for ($cycle = 1; $cycle -le 3; $cycle++) {
+        Write-Status "Ghost inventory save/reload cycle $cycle"
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description 'Host detects dropped client' -TimeoutSec 60 -PollMs 1000 -Condition {
+                    return (Get-IntroNumConnected -Intro (Get-GameIntrospection -Serial $EMU1)) -eq 1
+                })) { return $false }
+        # Exercise the actual exit autosave, not an explicit save before exit
+        if ($GhostInventoryPickup -and $cycle -eq 1) {
+            if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_ghost_collect.jsonc')) { return $false }
+            if (-not (Wait-ForCondition -Description 'Host collects four missiles after client departure' -TimeoutSec 20 -PollMs 500 -Condition {
+                        $state = Get-GameIntrospection -Serial $EMU1
+                        $me = @($state.multiplayer.players | Where-Object { $_.is_me })
+                        return $me.Count -eq 1 -and $me[0].homing_ammo -eq 4
+                    })) { return $false }
+        }
+        $previousSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_device_network_abort_game.jsonc')) { return $false }
+        if (-not (Wait-ForCondition -Description 'Host exits and writes coop autosave' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    $latestSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+                    return $state -and -not $state.in_game -and $latestSlot -ge 0 -and $latestSlot -ne $previousSlot
+                })) { return $false }
+        $slot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json') -Seconds 5 | Out-Null
+        }
+        if (-not (Start-SetupActivity -Serial $EMU1)) { return $false }
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $slot)) { return $false }
+        Send-MpCommand -Serial $EMU1 -Command 'lan_launch' -Extras $hostExtras
+        if (-not (Wait-ForCondition -Description 'Saved host enters lobby' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    return $state -and $state.is_network -and $state.multiplayer.network_status -eq 4
+                })) { return $false }
+        if ($cycle -eq 3) {
+            if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_start.jsonc')) { return $false }
+            if (-not (Wait-ForCondition -Description 'Host restores alone before late return' -TimeoutSec 60 -PollMs 500 -Condition {
+                        $state = Get-GameIntrospection -Serial $EMU1
+                        return $state -and $state.in_game -and $state.coop_restore.status -eq 'idle'
+                    })) { return $false }
+        }
+        if (-not (Start-SetupActivity -Serial $EMU2)) { return $false }
+        Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+        $script:ghostJoinApproved = $false
+        if (-not (Wait-ForCondition -Description 'Returning client recovers exact saved inventory' -TimeoutSec 180 -PollMs 500 -Condition {
+                    $hostState = Get-GameIntrospection -Serial $EMU1
+                    if ($cycle -eq 3 -and $hostState.multiplayer.join_request_pending -and -not $script:ghostJoinApproved) {
+                        Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                        $script:ghostJoinApproved = $true
+                    }
+                    $state = Get-GameIntrospection -Serial $EMU2
+                    if (-not $state -or -not $state.in_game -or $state.coop_restore.status -ne 'idle') { return $false }
+                    $peer = @($state.multiplayer.players | Where-Object { $_.is_me })
+                    $hostPlayer = @($hostState.multiplayer.players | Where-Object { $_.is_me })
+                    if ($GhostInventoryPickup -and ($hostPlayer.Count -ne 1 -or $hostPlayer[0].homing_ammo -ne 4 -or
+                            $hostState.multiplayer.recovery.world_objects -ne 0 -or $state.multiplayer.recovery.world_objects -ne 0)) { return $false }
+                    return $peer.Count -eq 1 -and ($peer[0].primary_flags -band 9) -eq 9 -and $peer[0].homing_ammo -eq $expectedHoming -and
+                    $state.player.laser_level -eq 2 -and (Get-IntroNumConnected -Intro $hostState) -eq 2
+                })) {
+            foreach ($serial in @($EMU1, $EMU2)) {
+                Get-GameIntrospection -Serial $serial | ConvertTo-Json -Depth 30 |
+                    Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-ghost-failure-$Game-$serial.json")
+            }
+            return $false
+        }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_ghost_flight.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_ghost_flight.jsonc' `
+                    -Description 'Restored ships can thrust without a physics assertion' -TimeoutSec 20)) { return $false }
+    }
+    return $true
+}
+
 function Invoke-SavedLateJoinScenario {
     Write-Status "--- Cancelled lobby join, solo restore, and one approved mid-level join ---" "White"
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_late_join_seed.jsonc")) { return $false }
@@ -2715,7 +2808,7 @@ try {
         }
     }
 
-    if ($GuidebotSlotRemapRestore -or $SavedLateJoin) {
+    if ($GuidebotSlotRemapRestore -or $SavedLateJoin -or $GhostInventory) {
         Write-Status "Clearing prior coop saves before restore coverage"
         foreach ($emu in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $emu -AdbArgs @(
@@ -3515,6 +3608,9 @@ try {
         if ($testPassed -and $CoopRewind) {
             $testPassed = Invoke-CoopRewindScenario -FromClient:$ClientRewind
         }
+    }
+    if ($testPassed -and $GhostInventory) {
+        $testPassed = Invoke-GhostInventoryScenario
     }
     if ($testPassed -and $VerifyAutomationFailure) {
         if ($Game -ne "d2") { throw "Terminal automation failure fixture requires D2" }

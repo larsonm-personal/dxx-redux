@@ -25,3 +25,13 @@
 - Quality: scoped production wrapper passed; direct ktlint formatting passed for the test path that the wrapper did not discover; `git diff --check` passed
 - Metrics: production `+10/-24`, focused tests `+130/-0`, inherited D1/D2 effect `+0/-0`
 - Native/assemble validation was not run because this Kotlin-only item compiled through Gradle while unrelated native extraction files were under concurrent modification
+
+## Current fixed source and preamble policy reconciliation, 2026-10-09
+
+GQ2-CHUNK-0030 reviewed frozen512MiB source staging and current2GiB default, with separate16MiB preamble bound. Historical16MiB total-source compatibility wording above no longer describes current code. Raw markers do not raise either fixed source policy and complete structural validation still precedes exposing entries, so existing marker-bypass root remains FIXED/DONE. No fresh source/resource execution. GQR0088 complete EOCD candidates and GQR0089 emitted central-set identity remain open; larger staging is not proof of a prevalidated seekable admission path
+
+## Current ZIP fixture evidence, 2026-10-09
+
+GQ2-CHUNK-0054 reads all8 frozen fixture hunks, complete375-line current fixture and229-line production helper. Preserve fixed staging ceiling and separate preamble bound, local-only reserved bit15 compatibility and supported-stream flag mismatch rejection. Post-frozen CP437/UTF8 and512MiB stored-entry source fixture match current2GiB whole-source policy, but were not executed in diagnosis. Exact payload length/CRC and close/failure stage checks are useful; no fresh large-source acceptance.
+
+Existing GQR0088 complete EOCD candidate selection and0089 central/sequential entry equivalence remain pending. Complete staging progress/cancellation/deadline stays with GQR0212, including count0 reads. Retain bounded small injected source-limit controls; no diagnosis resource probe or reopening completed marker-bypass repair. Historical61-test evidence is not a current execution.

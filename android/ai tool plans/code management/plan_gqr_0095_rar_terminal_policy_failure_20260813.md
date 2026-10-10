@@ -41,3 +41,15 @@ Keep native RAR policy, resource-limit, cancellation and integrity failures term
 - Owned product and test hunks add 165 lines and remove 13 lines: 61/13 in `ArchiveFiles.kt` after excluding the concurrent bounded-read hunks, plus the 104-line focused test
 - The 37-line durable plan brings the owned total to 202 additions and 13 removals
 - No `d1/` or `d2/` file changed
+
+## Initializer cause boundary reopened, 2026-10-09
+
+Existing GQF-0108/GQR-0095 reopened OPEN/TODO from the current classifier control flow. Preserve all historical repairs and validation above. LinkageError case348 precedes ExceptionInInitializerError355; local JDK21 javap confirms the subclass relationship, so the cause-specific initializer clause cannot run. No particular production initializer failure or fresh Android/host fallback execution claimed
+
+- [ ] Reconcile production native initialization and cause meaning; make initializer cause policy explicit before broad linkage classification
+- [ ] Preserve safe unavailable/unsupported backend fallback while keeping policy, cancellation, integrity and unknown initialization failures terminal with original identity
+- [ ] Use bounded or visited cause traversal and explicit precedence so nested wrappers or cycles cannot erase terminal meaning
+- [ ] Exercise the production dispatcher with small injected genuine missing-library initializer, terminal/unknown initializer causes and nested wrapper precedence/cycles; assert fallback eligibility, preserved identity and output cleanup
+- [ ] Reconcile host-tar/API capability and direct Setup source ownership with GQR0097, without broad fallback or inherited changes
+
+Exact report imported as GQR-0095 and GQR-0096 RAR residual diagnosis reopening 20261009 SHA2563ece54eabe7d4b8d90e943cf7e96fe4e07907f34a5dd6825240493afae02d3e7. Diagnosis only; no code/test execution. Deferred probes remain deferred

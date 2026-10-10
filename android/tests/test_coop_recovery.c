@@ -923,8 +923,82 @@ static void test_retired_world_revision_failure_is_atomic(void)
 	CHECK(!memcmp(saved, coop_recovery_data(), total * sizeof(*saved)));
 }
 
+static void test_saved_inventory_revision_without_qol(void)
+{
+	reset();
+	Netgame.game_flags &= ~NETGAME_FLAG_COOP_QOL;
+	coop_player_record returning = { 0 };
+	returning.shields = i2f(90);
+	returning.energy = i2f(80);
+	returning.primary_weapon_flags = 9;
+	returning.secondary_ammo[HOMING_INDEX] = 6;
+	CHECK(coop_recovery_active());
+	CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+	uint32_t revision = coop_recovery_restore_serial(1);
+	CHECK(revision != 0);
+	CHECK(returning.primary_weapon_flags == 9 && returning.secondary_ammo[HOMING_INDEX] == 6);
+	CHECK(returning.shields == i2f(90) && returning.energy == i2f(80));
+	Player_num = 1;
+	CHECK(coop_recovery_accept_restore(coop_recovery_epoch(), revision));
+	coop_recovery_set_restore_serial(1, revision);
+	CHECK(!coop_recovery_accept_restore(coop_recovery_epoch(), revision));
+}
+
+static void test_absent_pickups_survive_cold_restore(void)
+{
+	for (int qol = 0; qol <= 1; qol++) {
+		for (int late_drop = 0; late_drop <= 1; late_drop++) {
+			reset();
+			Netgame.game_flags = qol ? NETGAME_FLAG_COOP_QOL : 0;
+			Players[1].primary_weapon_flags |= 1u << VULCAN_INDEX;
+			Players[1].primary_ammo[VULCAN_INDEX] = 100;
+			Players[1].secondary_ammo[HOMING_INDEX] = 6;
+			coop_player_record absent;
+			coop_snapshot_player(1, &absent);
+			egg(10, POW_VULCAN_WEAPON);
+			egg(11, POW_HOMING_AMMO_4);
+			egg(12, POW_HOMING_AMMO_1);
+			egg(13, POW_HOMING_AMMO_1);
+			coop_recovery_drop(1, 0);
+			if (!late_drop) coop_recovery_departure_record(1, &absent);
+			Players[1].connected = CONNECT_DISCONNECTED;
+			request(10, 2);
+			request(11, 2);
+			CHECK(Players[2].primary_ammo[VULCAN_INDEX] == 100);
+			CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 4);
+			/* Save the ownership section alongside the absent record, then
+			 * discard all live session state as a host process restart does */
+			coop_recovery_prepare_save();
+			coop_recovery_item saved[8];
+			size_t total = coop_recovery_count();
+			CHECK(total <= 8);
+			memcpy(saved, coop_recovery_data(), total * sizeof(*saved));
+			reset();
+			Netgame.game_flags = qol ? NETGAME_FLAG_COOP_QOL : 0;
+			egg(12, POW_HOMING_AMMO_1);
+			egg(13, POW_HOMING_AMMO_1);
+			CHECK(coop_recovery_set_pending(saved, total));
+			CHECK(coop_recovery_apply_pending());
+			CHECK(coop_recovery_prepare_rejoin(1, &absent) == 2);
+			CHECK(absent.primary_weapon_flags == 1);
+			CHECK(absent.primary_ammo[VULCAN_INDEX] == 0);
+			CHECK(absent.secondary_ammo[HOMING_INDEX] == 2);
+			CHECK(Objects[12].flags & OF_SHOULD_BE_DEAD);
+			CHECK(Objects[13].flags & OF_SHOULD_BE_DEAD);
+			CHECK(coop_recovery_prepare_rejoin(1, &absent) == 0);
+			CHECK(absent.secondary_ammo[HOMING_INDEX] == 2);
+		}
+	}
+	Game_mode = 0;
+	CHECK(!coop_recovery_active());
+	Game_mode = GM_MULTI;
+	CHECK(!coop_recovery_active());
+}
+
 int main(void)
 {
+	test_absent_pickups_survive_cold_restore();
+	test_saved_inventory_revision_without_qol();
 	test_retired_world_credit_survives_restore_and_reclaim();
 	test_retired_world_revision_failure_is_atomic();
 	test_dormant_reclaim_and_two_world_roundtrip();

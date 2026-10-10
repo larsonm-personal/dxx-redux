@@ -47,12 +47,9 @@ static uint32_t equipment_flags(void)
 
 int coop_recovery_active(void)
 {
-	int enabled = Netgame.game_flags & NETGAME_FLAG_COOP_QOL;
-#if defined(__ANDROID__) && defined(DXX_BUILD_DESCENT_II)
-	/* Secret-world inventory accounting must not depend on the separate QoL switch */
-	enabled = enabled || Netgame.AllowSecretWarps || Current_level_num < 0;
-#endif
-	return (Game_mode & GM_MULTI_COOP) && enabled;
+	/* Persistent absent inventories require pickup accounting even when the
+	 * guidebot, arrows and warp QoL features are disabled */
+	return (Game_mode & GM_MULTI_COOP) != 0;
 }
 
 static int same_owner(const coop_recovery_item *item, int pnum)
@@ -642,12 +639,12 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 		rec->shields = i2f(100);
 		rec->energy = i2f(100);
 	}
-	if (!coop_recovery_active() || !multi_i_am_master()) return 0;
+	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master()) return 0;
 	/* A delayed death packet may have arrived after the disconnect snapshot */
 	coop_recovery_departure_record(pnum, rec);
 	/* Fence packets from the departed connection, even if no drop arrived */
 	player_life[pnum]++;
-	for (i = 0; i < count; i++) {
+	for (i = 0; coop_recovery_active() && i < count; i++) {
 		coop_recovery_gear taken;
 		if ((items[i].state != COOP_RECOVERY_LIVE && items[i].state != COOP_RECOVERY_CREDIT && items[i].state != COOP_RECOVERY_RECLAIMING && items[i].state != COOP_RECOVERY_DORMANT) ||
 		    !same_owner(&items[i], pnum)) continue;

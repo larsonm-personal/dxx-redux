@@ -32,7 +32,8 @@
 
 /* --- constants --- */
 #include "coop_save_format.h"
-#define COOP_MAX_REMEMBERED_PLAYERS 16
+#define COOP_MAX_REMEMBERED_PLAYERS 16         /* v13 disk capacity */
+#define COOP_ABSENT_PLAYER_LIMIT    10         /* live cache, oldest departure evicted first */
 #define COOP_CLIENT_ID_LEN          36         /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS       10         /* max(d1=5, d2=10) */
 #define COOP_CALLSIGN_LEN           8          /* matches CALLSIGN_LEN */
@@ -200,6 +201,8 @@ int coop_take_absent_player_with_level(const char *callsign,
  * players missing from the current session.
  * Called after state_restore_all_sub() loads a coop save. */
 void coop_load_absent_from_metadata(const coop_save_metadata *meta);
+/* Run after the restore barrier, before ordinary inventory packet application */
+void coop_restore_connected_absent_players(void);
 
 /* Reapply the live no-expire policy to player death spew loaded from a
  * cooperative save. Returns the number of corrected powerups. */

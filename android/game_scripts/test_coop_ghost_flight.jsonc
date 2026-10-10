@@ -1,0 +1,16 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": { "in_game": true, "time_paused": false, "multiplayer.num_connected": 2 },
+    },
+    { "action": "set_debug", "field": "coop_death_test", "value": "move_away" },
+    { "action": "send_button", "button": 102, "held": 1 },
+    { "action": "wait_for", "timeout_ms": 3000, "expect": { "throttle_time": { "gt": 0 } } },
+    { "action": "wait_ms", "ms": 500 },
+    { "action": "send_button", "button": 102, "pressed": 0 },
+    { "action": "set_debug", "field": "coop_death_test", "value": "move_away" },
+    { "action": "assert", "expect": { "in_game": true, "player_dead": false } },
+    { "action": "introspect" },
+]

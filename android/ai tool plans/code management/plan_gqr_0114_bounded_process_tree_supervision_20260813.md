@@ -53,3 +53,17 @@
 - `android/helpers/run_bounded_extractor.py`: 212 insertions, 35 deletions
 - `android/tests/test_run_bounded_extractor.py`: 109 insertions
 - Inherited `d1/` and `d2/` changes: zero
+
+## Diagnosis reopening, 2026-10-09
+
+The checked implementation and validation above remain historical evidence. GQF0127/GQR0114 reopened OPEN/TODO for an uncovered POSIX setup cancellation interval. In run_bounded_extractor.py528-547 the live owner is acquired and diagnostic thread started before the cleanup try548. SIGTERM handler611-612 raises ProcessCancelled; main625-630 returns130 and restores its handler without terminating the owned child when this earlier interval is interrupted. No survival fixture was executed. Complete source and maintained fixture review supports the control-flow diagnosis, not a fresh runtime outcome.
+
+Imported GQR-0114 process owner setup cancellation diagnosis reopening 20261009 SHA25629b411a7c8d03ac38276dd0de0758299540cdb7a27ecaefe8c0db626359fc8b2 records current identities, language-contract reference and acceptance scope. Preserve previous private group/gated job, sentinel and terminal-path controls. Existing test waits for parent-ready; ownership-unavailable mock fails before acquisition. Neither controls this setup interval. Do not infer a Windows job-close failure from the POSIX gap.
+
+- [ ] Define cancellation-safe child creation, owner handoff, diagnostic setup and teardown; moving try after owner assignment alone leaves an acquisition gap
+- [ ] Prefer nonthrowing cancellation request with finite wakeup and explicit observation; inspect SIGINT/SIGTERM and repeated cancellation during cleanup, restoring prior signal policy
+- [ ] Teardown partially initialized owner/thread/pipe states, terminate descendants and reap the root without assuming diagnostic startup succeeded
+- [ ] Add a controlled actual POSIX main setup cancellation barrier and ordinary post-ownership setup failure; assert finite exit, root/descendant cleanup and unrelated sentinel survival
+- [ ] Retain and run supported Windows/POSIX terminal-path, ownership-gate, output and wrapper controls during implementation; record fresh results separately from historical passes
+
+No code/test/script edit or execution in this diagnosis tranche. Deferred malformed-media/security/allocation/resource-pressure probes remain deferred. This repair requires no inherited D1/D2 changes.

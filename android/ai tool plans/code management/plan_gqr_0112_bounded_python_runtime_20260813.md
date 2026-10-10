@@ -47,3 +47,9 @@
 - `android/tests/test_bounded_python_runtime.ps1`: 109 new lines
 - Inherited `d1/` and `d2/` changes: zero
 - All three owned files are printable ASCII without a UTF-8 BOM
+
+## Current diagnosis reconciliation, 2026-10-09
+
+GQ2-CHUNK-0037 retains DONE GQR-0112/FIXED GQF-0125 runtime identity repair. Current implicit policy also supports the repository-pinned Linux x64 tree; original Windows-only and explicit-only non-Windows validation target above is historical. Current test checks actual copied repository tree plus unexpected-module rejection and spaced explicit override. No fresh runtime or tests executed in this diagnosis tranche.
+
+Complete setup/metadata request supervision remains distinct: identity probe and Kotlin CLI build/selection run synchronously outside extractor-child deadline. Coordinate finite preflight/CLI deadline, capped response and cancellation with existing BR-0582/GQR-0212 host owners; preserve hash/version/canonical path validation and DONE extractor process/output repairs. See plan_br_0018_host_mission_archive_admission_20261009.md for actual host expansion continuation; no tool-identity reopening.

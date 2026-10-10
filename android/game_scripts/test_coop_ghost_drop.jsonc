@@ -1,0 +1,11 @@
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    { "action": "set_debug", "field": "coop_death_test", "value": "move_away", "post_delay_ms": 1000 },
+    { "action": "set_debug", "field": "damage_player", "value": "500" },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": { "player_dead": true, "multiplayer.recovery.world_objects": { "gte": 1 } },
+    },
+    { "action": "introspect" },
+]

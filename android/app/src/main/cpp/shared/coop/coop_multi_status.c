@@ -149,13 +149,10 @@ void coop_send_restore_inventory(int pnum)
 		return;
 	if (!multi_i_am_master())
 		return;
-	/* Secret travel enables recovery independently of the general QoL switch */
-	if (!coop_recovery_active())
-		return;
-
 	if (!coop_take_absent_player_with_level(Players[pnum].callsign,
 	                                        Netgame.players[pnum].client_id,
 	                                        &rec, &source_level)) {
+		if (!coop_recovery_active()) return;
 		coop_snapshot_player(pnum, &rec);
 	}
 
@@ -163,6 +160,7 @@ void coop_send_restore_inventory(int pnum)
 	/* Publish the resulting inventory locally before sending it. A failed join
 	 * must cache this result, not the joining ship's default equipment */
 	coop_apply_record_to_player(pnum, &rec, source_level == Current_level_num);
+	if (pnum == Player_num) return;
 
 	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (src_level=%d cur_level=%d spew=%d shields=%d energy=%d laser=%d)\n",
 	           pnum, rec.callsign, source_level, Current_level_num, removed,
@@ -251,6 +249,7 @@ void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender, const
 
 void coop_apply_pending_restore_inventory(void)
 {
+	coop_restore_connected_absent_players();
 	const ubyte *buf = pending_restore;
 	if (!have_pending_restore) return;
 	coop_gameplay_stamp current = coop_gameplay_current_stamp();

@@ -13,6 +13,7 @@
 #include "gameseq.h"
 #include "gr.h"
 #include "mission.h"
+#include "multi.h"
 #include "object.h"
 #include "player.h"
 #include "palette.h"
@@ -1101,6 +1102,11 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 		          state_android_game_label());
 		return 0;
 	}
+	/* Abort clears the level before multiplayer teardown; capture coop here
+	 * while the mine and its pickup ownership ledger are still intact */
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    (save_kind == ANDROID_SAVE_META_KIND_AUTO_ABORT || save_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT))
+		return multi_i_am_master() ? coop_autosave() : 0;
 	if (!state_android_autosave_precheck(slotnum))
 		return 0;
 	if (Game_mode & GM_MULTI) {
