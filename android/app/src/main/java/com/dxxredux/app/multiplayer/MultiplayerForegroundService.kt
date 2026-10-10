@@ -2,9 +2,6 @@ package com.dxxredux.app.multiplayer
 
 import android.annotation.SuppressLint
 import android.app.AlarmManager
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -22,7 +19,6 @@ import android.os.SystemClock
 import android.util.Log
 import com.dxxredux.app.DebugLog
 import com.dxxredux.app.DebugLogCategory
-import com.dxxredux.app.R
 
 /**
  * Foreground service that keeps the main process alive during multiplayer.
@@ -78,7 +74,6 @@ class MultiplayerForegroundService : Service() {
             TAG,
             "Service command: action=${intent?.action} startId=$startId game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}",
         )
-        ensureChannel()
         when (intent?.action) {
             ACTION_START_GAME -> {
                 serviceLeases.setGameActive(true)
@@ -116,21 +111,7 @@ class MultiplayerForegroundService : Service() {
     }
 
     private fun showForegroundNotification() {
-        val builder =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Notification.Builder(this, CHANNEL_ID)
-            } else {
-                @Suppress("DEPRECATION")
-                Notification.Builder(this)
-            }
-        val notification =
-            builder
-                .setContentTitle("${getString(R.string.app_brand_name)} Multiplayer")
-                .setContentText(if (serviceLeases.gameActive) "Multiplayer game in progress" else "LAN lobby active")
-                .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setOngoing(true)
-                .build()
-        startForeground(NOTIFICATION_ID, notification)
+        MultiplayerSessionNotification.promote(this, serviceLeases.gameActive)
         Log.d(TAG, "Foreground notification active: game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}")
     }
 
@@ -221,6 +202,7 @@ class MultiplayerForegroundService : Service() {
     private fun forceBackgroundShutdown() {
         DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background service shutdown")
         disconnectGameProcess()
+        MultiplayerGameService.stop(this)
         serviceLeases.setGameActive(false)
         if (serviceLeases.active) {
             showForegroundNotification()
@@ -260,6 +242,7 @@ class MultiplayerForegroundService : Service() {
 
     override fun onDestroy() {
         Log.d(TAG, "Service destroyed: game=${serviceLeases.gameActive} lan=${serviceLeases.lanActive}")
+        MultiplayerGameService.stop(this)
         deadline.foreground()
         cancelBackgroundAlarm()
         deadlineHandler.removeCallbacksAndMessages(null)
@@ -283,25 +266,8 @@ class MultiplayerForegroundService : Service() {
         getSystemService(AlarmManager::class.java)?.cancel(backgroundAlarm(0))
     }
 
-    private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = getSystemService(NotificationManager::class.java) ?: return
-            if (nm.getNotificationChannel(CHANNEL_ID) != null) return
-            val channel =
-                NotificationChannel(
-                    CHANNEL_ID,
-                    "Multiplayer Session",
-                    NotificationManager.IMPORTANCE_LOW,
-                )
-            channel.description = "Keeps the game alive during multiplayer"
-            nm.createNotificationChannel(channel)
-        }
-    }
-
     companion object {
         private const val TAG = "MultiplayerForeground"
-        private const val CHANNEL_ID = "dxx_multiplayer_fg"
-        private const val NOTIFICATION_ID = 1001
         private const val BACKGROUND_TIMEOUT_MS = 20 * 60 * 1000L
         private const val ENGINE_DISCONNECT_GRACE_MS = 5_000L
         private const val BACKGROUND_ALARM_REQUEST = 1002

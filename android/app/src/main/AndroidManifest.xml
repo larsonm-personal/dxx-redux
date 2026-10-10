@@ -156,6 +156,13 @@
             android:exported="false"
             android:foregroundServiceType="connectedDevice"
         />
+        <!-- The engine needs foreground protection in its own process too -->
+        <service
+            android:name=".multiplayer.MultiplayerGameService"
+            android:process=":game"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"
+        />
 
         <!-- Isolated level metadata workers. Malformed third-party level files
              can crash native analysis without taking down SetupActivity.

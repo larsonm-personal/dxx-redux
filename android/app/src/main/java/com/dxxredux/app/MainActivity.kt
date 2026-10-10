@@ -2468,6 +2468,8 @@ class MainActivity :
             return
         }
         try {
+            com.dxxredux.app.multiplayer.MultiplayerGameService
+                .start(this)
             com.dxxredux.app.multiplayer.MultiplayerForegroundService
                 .start(this)
         } catch (e: IllegalStateException) {
@@ -2477,6 +2479,8 @@ class MainActivity :
                 throw e
             }
             Log.w("DXX-MP", "Native multiplayer service start deferred until app resumes", e)
+            com.dxxredux.app.multiplayer.MultiplayerGameService
+                .stop(this)
             return
         }
         RuntimeGameStateBridge.connect(
@@ -2492,6 +2496,8 @@ class MainActivity :
     private fun stopMultiplayerRuntime() {
         if (!multiplayerRuntimeStarted) return
         RuntimeGameStateBridge.disconnect()
+        com.dxxredux.app.multiplayer.MultiplayerGameService
+            .stop(this)
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
             .stop(this)
         multiplayerRuntimeStarted = false

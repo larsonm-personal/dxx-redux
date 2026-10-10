@@ -43,6 +43,7 @@
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -BackgroundRuntime  # Host and client keep serving while another app is visible
 #   .\test_lan.ps1 -GuidebotRoutingMode Original -HostMigration
 #   .\test_lan.ps1 -HostDevice emulator-5556 -HostAvd Nexus5X_Light_2 -JoinDevice emulator-5558 -JoinAvd DxxSdk36
 #   .\test_lan.ps1 -SpewRecovery
@@ -99,6 +100,7 @@ param(
     [switch]$GraphicsConfirmation,
     [switch]$PauseMenus,
     [switch]$IdleScreenSaver,
+    [switch]$BackgroundRuntime,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
     [ValidateSet('Original', 'Enhanced')]
@@ -514,6 +516,112 @@ function Get-IntroNumConnected {
     }
 
     return [int]$prop.Value
+}
+
+function Invoke-BackgroundRuntimeScenario {
+    function Get-BackgroundRuntimeState {
+        param([string]$Serial)
+        # A loaded emulator can miss the helper's 800 ms snapshot window
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            $state = Get-GameIntrospection -Serial $Serial -Fresh
+            if ($state) { return $state }
+        }
+        return $null
+    }
+
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_ghost_prepare.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_ghost_prepare.jsonc' `
+                -Description 'Remove combatants before unattended background test' -TimeoutSec 20)) {
+        throw 'Could not prepare unattended multiplayer session'
+    }
+    foreach ($hidden in @($EMU1, $EMU2)) {
+        $peer = if ($hidden -eq $EMU1) { $EMU2 } else { $EMU1 }
+        $role = if ($hidden -eq $EMU1) { 'host' } else { 'client' }
+        Write-Status "Backgrounding $role for 110 seconds without sending it broadcasts"
+        $gamePid = (Adb-Dev -Serial $hidden -AdbArgs @('shell', 'pidof', "${PACKAGE}:game")).Trim()
+        if ($gamePid -notmatch '^\d+$') { throw "Missing game process on $hidden" }
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'am', 'start', '-a', 'android.settings.SETTINGS') | Out-Null
+        $script:backgroundBefore = $null
+        if (-not (Wait-ForCondition -Description "$role acknowledges background visibility" -TimeoutSec 20 -PollMs 1000 -Condition {
+                    $script:backgroundBefore = Get-GameIntrospection -Serial $hidden -Fresh
+                    return $script:backgroundBefore -and $script:backgroundBefore.android_lifecycle.observed_visibility -eq 'background'
+                })) {
+            $state = $script:backgroundBefore | ConvertTo-Json -Depth 8
+            $state | Set-Content -LiteralPath (Join-Path $REPO_ROOT "temp/background-$Game-$role-entry.json")
+            throw "$role did not acknowledge background visibility"
+        }
+        $before = $script:backgroundBefore
+        # Introspection broadcasts promote a cached process and can hide the freezer bug
+        # Only the visible peer and system process diagnostics are queried during this wait
+        for ($interval = 1; $interval -le 11; $interval++) {
+            Start-Sleep -Seconds 10
+            if ($interval -eq 6) {
+                # Expire Android's temporary previous-activity protection by switching apps
+                # DIAL opens the stock dialer without placing a call
+                Adb-Dev -Serial $hidden -AdbArgs @('shell', 'am', 'start', '-a', 'android.intent.action.DIAL') | Out-Null
+            }
+            $peerState = Get-BackgroundRuntimeState -Serial $peer
+            $adj = Adb-Dev -Serial $hidden -AdbArgs @('shell', 'cat', "/proc/$gamePid/oom_score_adj")
+            Write-Status "Background $role interval=$interval/11 engine_oom_adj=$adj peer_players=$(Get-IntroNumConnected -Intro $peerState)"
+            $processes = Adb-Dev -Serial $hidden -AdbArgs @('shell', 'dumpsys', 'activity', 'processes')
+            $processes | Set-Content -LiteralPath (Join-Path $REPO_ROOT "temp/background-$Game-$role-processes.txt")
+            if (-not $peerState) { throw "Could not read visible peer state while $role was backgrounded" }
+            if ((Get-IntroNumConnected -Intro $peerState) -ne 2) {
+                throw "Peer lost the background $role"
+            }
+        }
+        if ($adj -notmatch '^\s*-?\d+\s*$' -or [int]$adj -ge 900) {
+            throw "Background $role engine is cached and eligible for freezing (oom_score_adj=$adj)"
+        }
+        $after = Get-BackgroundRuntimeState -Serial $hidden
+        if (-not $after -or (Get-IntroNumConnected -Intro $after) -ne 2 -or
+            $after.android_lifecycle.observed_visibility -ne 'background' -or
+            $after.idle_saver.game_time - $before.idle_saver.game_time -lt 100 -or
+            $after.android_lifecycle.work_counters.swap_presented -ne $before.android_lifecycle.work_counters.swap_presented) {
+            throw "Background $role must advance simulation and networking without presenting frames"
+        }
+        # Use the same launcher/back route as SCRIPT_BACKGROUND; MainActivity is not exported
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'monkey', '-p', $PACKAGE, '-c', 'android.intent.category.LAUNCHER', '1') | Out-Null
+        if (-not (Wait-SetupReady -Serial $hidden -TimeoutSec 30)) { throw "Launcher did not become ready on $hidden" }
+        if (-not (Wait-ForCondition -Description "Launcher receives input on $hidden" -TimeoutSec 20 -PollMs 500 -Condition {
+                    $windows = Adb-Dev -Serial $hidden -AdbArgs @('shell', 'dumpsys', 'window')
+                    return $windows -match "mCurrentFocus=.*$([regex]::Escape($PACKAGE))/.*SetupActivity"
+                })) { throw "Launcher did not receive input focus on $hidden" }
+        Adb-Dev -Serial $hidden -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_BACK') | Out-Null
+        if (-not (Wait-ForCondition -Description "$role returns to foreground" -TimeoutSec 20 -PollMs 1000 -Condition {
+                    $intro = Get-GameIntrospection -Serial $hidden -Fresh
+                    return $intro -and (Get-IntroNumConnected -Intro $intro) -eq 2 -and
+                    $intro.android_lifecycle.observed_visibility -eq 'foreground'
+                })) { throw "$role did not resume its multiplayer session" }
+        $resumedPid = (Adb-Dev -Serial $hidden -AdbArgs @('shell', 'pidof', "${PACKAGE}:game")).Trim()
+        if ($resumedPid -ne $gamePid) { throw "$role game process restarted" }
+    }
+    foreach ($serial in @($EMU1, $EMU2)) {
+        $state = Get-BackgroundRuntimeState -Serial $serial
+        if (-not $state) { throw "Could not read quit menu state on $serial" }
+        $menu = if ($state) { $state.PSObject.Properties['menu'] } else { $null }
+        if (-not $menu -or -not $menu.Value) {
+            Adb-Dev -Serial $serial -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
+        }
+        if (-not (Wait-ForCondition -Description "Quit menu ready on $serial" -TimeoutSec 10 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $serial -Fresh
+                    $menu = if ($state) { $state.PSObject.Properties['menu'] } else { $null }
+                    return $menu -and $menu.Value -and @($menu.Value.items | Where-Object text -eq 'Abort Game').Count -eq 1
+                })) { throw "Could not open quit menu on $serial" }
+    }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_background_quit.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_background_quit.jsonc' `
+                -Description 'Normal multiplayer exit releases game process protection' -TimeoutSec 30)) {
+        throw 'Could not exit background-tested multiplayer sessions'
+    }
+    foreach ($serial in @($EMU1, $EMU2)) {
+        if (-not (Wait-ForCondition -Description "Game process protection released on $serial" -TimeoutSec 15 -PollMs 1000 -Condition {
+                    $services = Adb-Dev -Serial $serial -AdbArgs @('shell', 'dumpsys', 'activity', 'services', "$PACKAGE/.multiplayer.MultiplayerGameService")
+                    # dumpsys also includes unrelated historical ANR service records
+                    return $services -and $services -notmatch "ServiceRecord\{[^\r\n]*$([regex]::Escape($PACKAGE))/\.multiplayer\.MultiplayerGameService\}"
+                })) { throw "Game process protection leaked on $serial" }
+    }
+    return $true
 }
 
 function Get-IntroGuidebot {
@@ -3309,6 +3417,10 @@ try {
     }
 
     $testPassed = $true
+    if ($BackgroundRuntime) {
+        $testPassed = $false
+        $testPassed = Invoke-BackgroundRuntimeScenario
+    }
     if ($IdleScreenSaver) {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_idle_screen_saver_multiplayer.jsonc' `
                     -SecondarySerial $EMU2 -SecondaryScript 'test_idle_screen_saver_multiplayer.jsonc' `

@@ -3917,3 +3917,2968 @@ Exact ordered table rows plus final LF fingerprint `0ca0ca332b155d7d432e278e77d4
   }
 ]
 ```
+
+### Graphics safety store current-source and presentation checkpoint, 2026-10-09
+
+- GQ2-CHUNK-0077 remains TODO/in progress. Complete current585line store,94line header and271line maintained fixture read. This supersedes their earlier current-whole-read:false flags, without terminal coverage or fresh execution credit. HEAD advanced to b661b6eb24e91adf5f3e566bc28eb73d4b679fda; all five earlier checkpoint source identities still match. New ghost-inventory commit requires later supplemental coverage
+- Actual preview presentation consumes a gameplay tag only after successful swap with matching window generation and non-null/current EGL context, then eligible() and rendered_revision==candidate_revision gate candidate_ready. Applied revision is recorded after applying the candidate. Failed, paused and missing-window swaps explicitly report failure; recreated surfaces cannot consume a stale generation/context tag. Ordinary armed non-first-run confirmation also has application-only candidate_ready paths at781/835: preserve this distinction, do not generalize preview presentation proof to every confirmation
+- Live Video Info preserves the accepted tuple through edits, waits for presented candidate, quiet deadline and unblocked UI, then finishes equal-baseline/all-off preview without confirmation. all_off concerns TexFilt/Aniso/MSAA only. First-run settling uses cancellation/restore for equality and confirmation for other changed tuples, including all-off. First-run Done currently sets quiet_until=0 with explicit-boundary comment, whereas original plan prose specifies2500ms: source/history reconciliation remains required before treating plan prose as current product acceptance
+- Durable store stages explicit field mask before config publication; active PREVIEW/PREPARING/CHALLENGE/RESTORING blocks flush. Event tick polls only with no local preview/preparing/armed/restore, outside state mutex; successful batch increments staged_generation. apply_snapshot persists only five renderer options onto requested game tuple, preserving launcher mode settings. Safe finish clears durable phase before optional ordinary config persistence; if that publication fails with no trial, storage_failure blocks rendering. Keep this behavior in storage/owner acceptance rather than claiming atomic renderer+journal+config transaction
+- Complete fixture source includes finish_safe_preview rejection for unsafe tuple/stale trial, success for baseline and all-off, plus phase/accepted preservation. Existing acceptance/deadline equality, racing OK/timeout, rollback replacement failure, PID reuse, deferred edits, abandoned preview and corruption refusal fixtures inspected, not executed. Fixture all-off example clears five fields but production predicate requires only three; no invented all-ten-field safety assertion
+- Full59line Kotlin file-only service binds native transaction lock to synchronous block/finally unlock, maps stage failure to IOException and validates read tuple length. Exact protectedKeys ordering and lock ordering through GraphicsConfigSerialization/AtomicFilePublication remain to inspect. Native D1/D2 requested graphics parsers use strtol(value,NULL,10), also accept numeric prefixes; std::stoi trailing suffix alone is not a new source-proved format incompatibility. Signed/unsigned JSON admission and owner-session failure behavior remain conditional source/domain reconciliation, with no malformed/process probes
+- Next: complete coordinator eligibility/config-write/remaining lifecycle gaps, actual serialization lock/key owner and transaction durability context; normalize JNI/parser/owner acceptance against canonical findings, then prepare terminal report/import GQC1046/GQD0926. No new finding/status/inherited saving; GQ2 remains217DONE/428TODO and1032 terminal ranks. Only diagnosis documents changed; no product/test/script edits, build/configure, formatter/generator, device/runtime/network/deferred probes, staging/commit
+
+Exact current source/range identities; whole-source identity does not grant unread source coverage:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_safety_store.cpp",
+    "current_lines": 585,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "6235db7f64da4cffc673f5d210d482de8f07fbc4cb9becd16abe6bfd2dfb5f47",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 585,
+        "range_lf_sha256": "6235db7f64da4cffc673f5d210d482de8f07fbc4cb9becd16abe6bfd2dfb5f47"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_safety_store.h",
+    "current_lines": 94,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "dd571697a601b26ab972cab0522cc58e60d5c86beb6c105e9d85fc791b01a6ba",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 94,
+        "range_lf_sha256": "dd571697a601b26ab972cab0522cc58e60d5c86beb6c105e9d85fc791b01a6ba"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/test_graphics_safety_store.cpp",
+    "current_lines": 271,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "b5fc37105f3e89ccb0b48f97d58a60b400cd2f75f969929cba7c48285d5abc4e",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 271,
+        "range_lf_sha256": "b5fc37105f3e89ccb0b48f97d58a60b400cd2f75f969929cba7c48285d5abc4e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_safety.cpp",
+    "current_lines": 922,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "1270646c745e49045a6c9a3c54851c8352aff3cb8c6586d45f171830be2e4240",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 120,
+        "range_lf_sha256": "506a5c8b822835c493fa5889e3beb6d6c70ac51c3339508a7e6819b60aec3ce0"
+      },
+      {
+        "first": 200,
+        "last": 274,
+        "range_lf_sha256": "c282346cc6e7b7852a712e9e6c7742a8050a7cfb3f2c8859eb92d7a0161de087"
+      },
+      {
+        "first": 270,
+        "last": 490,
+        "range_lf_sha256": "ae577e047b2ae920b935294194ae555955f57455f003c25ad9e5e0f9804a515c"
+      },
+      {
+        "first": 510,
+        "last": 570,
+        "range_lf_sha256": "cd0d97eea085e0784feadbc096a64e5bd71b63bcb9989247fbbe5c655c1e7ba3"
+      },
+      {
+        "first": 600,
+        "last": 695,
+        "range_lf_sha256": "1ed47106e2142878e9a94bdc912f8183d5f4001ad7b370fe3c91d743d5d5ce12"
+      },
+      {
+        "first": 700,
+        "last": 855,
+        "range_lf_sha256": "6be63a2963e78145385da610ef56b27caf5c892a3f6fadc23a3738772dcbaf5c"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_egl_surface.c",
+    "current_lines": 429,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "721eb6201daed860d878a753f8eba266da5550299f419dde3d8c8d5b497cbb7b",
+    "read_ranges": [
+      {
+        "first": 335,
+        "last": 410,
+        "range_lf_sha256": "7db37ed6eedcaf510449619484204324335f0755395bd2bf0f86d9d95e01fbbf"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/java/com/dxxredux/app/NativeGraphicsSafety.kt",
+    "current_lines": 59,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "d4976ee3092917ea55731ea8b494968e1e03f4400c641cd0e0f3bcdada12ecb7",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 59,
+        "range_lf_sha256": "d4976ee3092917ea55731ea8b494968e1e03f4400c641cd0e0f3bcdada12ecb7"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/config.c",
+    "current_lines": 405,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "d37660846fea2c63d4cf311110bef4a62d443f70d3de4a114e8c03c0e2061d96",
+    "read_ranges": [
+      {
+        "first": 205,
+        "last": 330,
+        "range_lf_sha256": "871e090ba2ea6dce8dfdf9a0d51426bb7d81475356dd24535c8e57bc5d87c66b"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/config.c",
+    "current_lines": 428,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "2978e46b6d79d6483274ce4ec344fac7772b8cfd082913d1dc526cf69d46777c",
+    "read_ranges": [
+      {
+        "first": 222,
+        "last": 351,
+        "range_lf_sha256": "8fede5320568a66e97102d055657e242ec836c1af583ece716ed960ee2afa28a"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/overlay, menu, etc/first-run-graphics-chooser-20261005.md",
+    "current_lines": 182,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "29e5edd76399c19a20046be85e8a18566f053f3d2eb5bcfeecf611962ae3c7ba",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 182,
+        "range_lf_sha256": "29e5edd76399c19a20046be85e8a18566f053f3d2eb5bcfeecf611962ae3c7ba"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/overlay, menu, etc/video-info-selectable-maxima-20261008.md",
+    "current_lines": 22,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "7a69291dccd3f97fd59a640cdf4cae452f3cb48b8b12530d820e31d6e234478b",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 22,
+        "range_lf_sha256": "7a69291dccd3f97fd59a640cdf4cae452f3cb48b8b12530d820e31d6e234478b"
+      }
+    ]
+  }
+]
+```
+
+### Graphics safety store terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0077: full frozen571line store92line header/current585line store94line header, full271line fixture922line coordinator and named native/Kotlin/policy consumers. Sixteen exact bindings; GQC1046/GQD0926; full report import SHA256f0855b827414db76b35eef203aadbcfd59e68fcaebbb7afc90105fd2f8f0e894; scope fingerprint `0ca0ca332b155d7d432e278e77d4ce3a1c1a8f2cfa54180659d1a7cfc23d7500`
+- Existing GQR0170 graphics JNI acceptance extended; GQR0164 numeric-domain precedent and BR0029/0044 ownership retained; completed GQR0128/0129 backup/descriptor repairs preserved. First-run Done zero-delay is explicit later history, not a defect inferred from old plan prose. No new root/status/inherited saving or fresh runtime acceptance
+- GQ2 now218DONE/427TODO; GQ1 remains818DONE/1TODO;268findings254remediations72DONE181TODO1DEFERRED;1033 unique impact-sorted terminal ranks. Earlier0077 pending checkpoints superseded. Next numbered scope0078; all remaining preflights/sweeps/investigations/worktree/current-head supplements and closure remain required
+- Only diagnosis documents/report changed; no product/test/script edits, build/configure, formatter/generator, device/runtime/network/deferred probes, staging/commit
+
+### Weapon art fixture terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0078: full frozen/current253line source9line header equal frozen, named Android/host output/caller and native save/rewind context. Ten exact bindings; GQC1047/GQD0927; full import SHA25676ee84e611a7dce2405dee4cedd451fde63ad74a0b004418c8286a7daeeb40d1; scope fingerprint `da5f7aae18c08786e601d71a942b74482a05f5195366a2e8ec160d64850dab96`
+- Existing GQR0173 scoped diagnostic cleanup and0175 clock admission acceptance extended by reference; BR0206 broader restore/recording transaction gates retained. Mutating isolated fixture is not observational parity; Android four-phase restore/readback and host custom-art lifecycle oracles remain distinct. No new finding/status/inherited saving or fresh runtime result
+- GQ2 now219DONE/426TODO; GQ1 remains818DONE/1TODO;268findings254remediations72DONE181TODO1DEFERRED;1034 unique sorted terminal ranks. Next numbered scope0079; all pending preflights/sweeps/investigations/worktree/current-head supplements and closure remain required
+- Only diagnosis documents/report changed; concurrent LAN/network plan work preserved. No product/test/script edits, build/configure, formatter/generator, runtime/device/network/deferred probes, staging/commit
+
+### Guidebot route decision terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0079: full frozen/current520line source211line header equal frozen; full441line fixture, named native adoption/publication/certificate/shadow and header ABI context. Eight exact bindings; GQC1048/GQD0928; import SHA256b0d128e969b1f26d1b56bf849fbbe19ba2e3d11f7cf8fc537b90852d39ea1aac; scope fingerprint `e3995e4ba31ad33b014b4eda762b3f33f966f8a903b11c603a75111379803bfc`
+- Retain distinct input/semantic/guidance/proof identity and active/passive adoption. BR0335 rebase/certificate acceptance remains open; balanced header packing source does not close historical ABI validation or suite registration. No new finding/status/inherited saving or fresh runtime proof
+- GQ2 now220DONE/425TODO; GQ1 remains818DONE/1TODO;268findings254remediations72DONE181TODO1DEFERRED;1035 unique sorted terminal ranks. Next numbered scope0080; all pending preflights/sweeps/investigations/worktree/current-head supplements and closure required
+- Only diagnosis documents/report changed; concurrent LAN/network work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/network/deferred probes, staging/commit
+
+### Chunk0080 automation caller and failure diagnosis checkpoint, 2026-10-09
+
+- Previous refresh-only goal turn was no progress. Revalidated instructions, active diagnosis-only objective, canonical queue and live HEAD `b661b6eb24e91adf5f3e566bc28eb73d4b679fda`;0080 remains TODO. No terminal report/import, rank or coverage increment
+- Exact assigned scope remains frozen game_automate.cpp zero-context diff hunks74-85 new5790-6171 and header hunk1 new68-71. Earlier assigned frozen hunks/body and full current physical delta reads are retained as prior context, not newly repeated full frozen evidence in this checkpoint
+- Fresh current mapped5834-6241 and complete header read, plus named bindings below. Failure writes terminal result and clears held axes; advance_step refuses inactive/failed scripts, so handlers that call failure and fall through do not manufacture PASS
+- Restore status injection directly constructs a six-byte packet and invokes receiver with a supplied sender. Receiver rejects non-host claimed sender, status above2, zero revision, equal/older revision. Full replay fixture exercises state assertions, duplicates and reordered revisions; source inspection is not transport authentication or fresh runtime acceptance
+- Briefing launch request requires nonzero matching published generation, launch permission and no pending request under mutex. Release delay requires reading non-host/non-observer phase and bounded20000ms. Join cancellation compares active UI generation; publisher deliberately uses briefing generation or1, matching automation fallback
+- Retained restart reads bounded file into checked allocation, replaces checkpoint buffer/identity and calls request; failure after replacement is distinct from atomic world restore. Preserve existing restore transaction acceptance; no claim of all-peer rollback, payload identity verification or runtime success
+- Current save/load adapter returns queue admission, not completed save/load or action execution. Pause queue can admit before later tick rejects graphics/background/coop/operation blockers. Current game_menu/resume commands ignore admission return; pause operation probe checks next published result without correlating request serial. Reconcile these observations against existing action/automation owners before deciding new root or implementation plan
+- Capture clock configured only for valid0/30/60fps and slowdown1-16 foreground single player without replay. Both D1/D2 guarded calc_game_time hooks apply frame time before GameTime64; capture function resets when no exit/multiplayer/replay. Header declarations are introspection-only; current introspection uses valid local output pointers. Preserve bounded clock acceptance, no capture/runtime evidence credited
+- Menu viewport clamps zoom250..3000 and pan-10000..10000 before atomic publication. Route time limit helper rejects zero and values above3600; true default branch needs constant/start caller reconciliation before terminal decision
+- Read errors produced no diagnosis credit: wildcard pause path rg failed; CP1252 bootstrap-ledger read failed before section output; pause range requested through290 exceeded280line file only after complete198-280 output. Bootstrap BR0206/0381 full fresh sections still pending
+- Remaining before terminal0080: recover exact frozen identity/fingerprint evidence, read restore fault implementation and route start/default/helper context, relevant Guidebot diagnostic definitions and fixture assertions, current pause owner/queue/probe fixture context, reconcile existing owners and bounded current delta, then finalize immutable report/import/ledgers/count/rank verification. All remaining campaign preflights/sweeps/investigations/supplements/closure still required
+- Only this resume Markdown changed by this checkpoint. No product/test/script edits, build/configure, formatter/generator, runtime/device/network/security/malformed/allocation/resource probes, staging or commit. Concurrent multiplayer work preserved
+
+Current named read identities (whole-file hashes do not grant whole-file reading credit):
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6245,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "a43fa237b23e6f4b4ce58570f6f0f99afa75a6e93be83886fc20db7f294b7e02",
+    "read_ranges": [
+      {
+        "first": 570,
+        "last": 635,
+        "range_lf_sha256": "f74b52b2b700874070795da7743da9340176893d4a659c1fbcdd43625893b1e6"
+      },
+      {
+        "first": 2110,
+        "last": 2175,
+        "range_lf_sha256": "1244ef7a0815648335c3d1da2a20a4ad4d98a04ef1008b530684d7de7cb78e82"
+      },
+      {
+        "first": 3010,
+        "last": 3075,
+        "range_lf_sha256": "3ec3b2c53610fbc5469f0c6b9013af3b03e6e47a75b566a9eda476d45cbe7e82"
+      },
+      {
+        "first": 3995,
+        "last": 4090,
+        "range_lf_sha256": "291a95dbf1bf9b232319609e87f2a4599a35eab909538f6d4a68c0288008f6f5"
+      },
+      {
+        "first": 5834,
+        "last": 6241,
+        "range_lf_sha256": "e7ef30486b4eafaa363a3e4334331667743b2ce1ec841f4d556ba41af5870918"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.h",
+    "current_lines": 110,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "e4631140255a0fdd3d62e78ad454f34e9c324b0f3e9a6d89a0f5497fbcf195b9",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 108,
+        "range_lf_sha256": "021cab06219a4f7bb9997b34c415d0828e59840261b8c3d591e675f96d8552bd"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "read_ranges": [
+      {
+        "first": 315,
+        "last": 390,
+        "range_lf_sha256": "b708bda2f0d2d5d51248d2d399beb9e1b9f8bd385ec82b36893367ad028ee929"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_briefing.c",
+    "current_lines": 882,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "04ddd04a61baa1f161a970b9c804690d797d075479ccad81be084c0640f84320",
+    "read_ranges": [
+      {
+        "first": 345,
+        "last": 405,
+        "range_lf_sha256": "7a5e6406d97855775f4905d1e3fcfa5bcba033b0ab551ca7f02fdbf6d1a3531a"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/net/net_udp_join_wait.c",
+    "current_lines": 285,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "6eb679c21c50302be5fc5beb2914e6c139a5d001fb70ba2e9345d185e5ccc5ef",
+    "read_ranges": [
+      {
+        "first": 35,
+        "last": 130,
+        "range_lf_sha256": "8142e0d04ac85c8be0459e0e29891ed8269f04692545273e9457ecedbeda00d8"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/net/net_udp_join_wait_transport.h",
+    "current_lines": 159,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "1f6d4f846776d9696f46ddee3e9cbb6d8881632c4f5a4e3159e2ec881d9561a0",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 55,
+        "range_lf_sha256": "174df628daadbf533e40e46ca9672c8849474560728f41ac4f29c24ab7bd2e6e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_level_restart.c",
+    "current_lines": 386,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "f23445c593353217fee1c9d3e83c3bed4e8a9db9bbef773e33ff85c7387c7d1f",
+    "read_ranges": [
+      {
+        "first": 285,
+        "last": 355,
+        "range_lf_sha256": "210e2f986de75adfa446a482cb4b596f5e0aa77be7be8ddaaf663d93152f52c2"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_lines": 2313,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "f11aa11a47d8ec24b0de866513502779d988f9cf8a71160fb9d187aea84489c2",
+    "read_ranges": [
+      {
+        "first": 745,
+        "last": 820,
+        "range_lf_sha256": "e6a4a9ed8f2f61ae36120b3082fe2d04d4b0ef57ca67723298bfb1c6529f46f6"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_menu_scale.c",
+    "current_lines": 891,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "0915784d07f07469818f1fba1d0d20b95853ba9fe1a11c590572feb3d59b136b",
+    "read_ranges": [
+      {
+        "first": 310,
+        "last": 345,
+        "range_lf_sha256": "ffc27ff31c6ce706e5b5ce70739c0fb02d38de350324080b9ab01128bad5b983"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_confirmation.cpp",
+    "current_lines": 2547,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "269990c1aadbbd5a994026edf072db9469d1961d3aedb140b8ee7b680f66c382",
+    "read_ranges": [
+      {
+        "first": 2250,
+        "last": 2295,
+        "range_lf_sha256": "828b6c79a0154999bcca7efe8829d566b24837d12de332e5ff1ecbd406d09964"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/game.c",
+    "current_lines": 1832,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8ffc27dbad4fc19aa4fed39377cf0083e7926161f5701016ac80879d5b9b3621",
+    "read_ranges": [
+      {
+        "first": 555,
+        "last": 580,
+        "range_lf_sha256": "1e637e13348a5a784c7bb3223de7f6a4837ca714b91dc1a599bb62e66b277205"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/game.c",
+    "current_lines": 2410,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "c99ffac2ceca68c067061591d14ecef2f300044a01019b6c0eb809356189e867",
+    "read_ranges": [
+      {
+        "first": 588,
+        "last": 612,
+        "range_lf_sha256": "3d0252fe6f4b758c7e6bfe34034a897934163dcc7ea7e87f612299f3cab9bce1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3275,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "0e712448abd2535fe41a8596c9fe6221e512cea400c7db3a431412efe77390c7",
+    "read_ranges": [
+      {
+        "first": 2895,
+        "last": 2920,
+        "range_lf_sha256": "e2bab53751812d55ced171b195a7734f3702e97f7ca344bbda990016a21d5edb"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/android_input.c",
+    "current_lines": 2205,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "35ddfe8172fd1a710c1a2d136ad663daef1486d53a6dccf645eb7ba17d7d3384",
+    "read_ranges": [
+      {
+        "first": 930,
+        "last": 1000,
+        "range_lf_sha256": "69e31ffbd4d63211165893078150b49b559952389bd4ce86552b931cde3b0efa"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_pause.c",
+    "current_lines": 280,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "6313e6c829c098885c3c7a1506f054d7168f4bf263a4a5329e955bf5dc57c2d2",
+    "read_ranges": [
+      {
+        "first": 60,
+        "last": 108,
+        "range_lf_sha256": "d6dfd072c0270025ea1d2fa2a67494f97bd24af7cbcd464ec6495f203c6b24bb"
+      },
+      {
+        "first": 198,
+        "last": 280,
+        "range_lf_sha256": "22548962d54d90952ca3008cbd2da19903147dcb6ed24acec2adf9c6d272595f"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_restore_status_replay.jsonc",
+    "current_lines": 22,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "038946c3f210a351cb11564a2c73f63f825815f7ecd874b3ca59f27941c74349",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 22,
+        "range_lf_sha256": "038946c3f210a351cb11564a2c73f63f825815f7ecd874b3ca59f27941c74349"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_restore_report_fail_after_hide.jsonc",
+    "current_lines": 7,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "f9ef8221f5fef679bdef0669807271bc6927c66237989b09b8834ecaabdc136d",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "f9ef8221f5fef679bdef0669807271bc6927c66237989b09b8834ecaabdc136d"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_restore_report_interrupted_restore.jsonc",
+    "current_lines": 5,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "ac5d10f184e97c6ca5a1821a065b4f3ebf2068f0a5340a91cbbe8e6db7481946",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "ac5d10f184e97c6ca5a1821a065b4f3ebf2068f0a5340a91cbbe8e6db7481946"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_restore_report_unexpected_exit.jsonc",
+    "current_lines": 4,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "2db7f214718fa8269031b950c44f2bdeefbe2a302bcb3189756a7c1f1847c398",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 4,
+        "range_lf_sha256": "2db7f214718fa8269031b950c44f2bdeefbe2a302bcb3189756a7c1f1847c398"
+      }
+    ]
+  }
+]
+```
+
+### Automation command boundary terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0080: exact frozen cpp hunks74-85/header hunk1 and enclosing assigned ranges, complete current physical delta/current mapped scope plus27 named bindings. GQC1049/GQD0929; report import SHA256311bdc06053db8287ee11d389630dc53716d04d611c7ae6a86c3cdf89ee5c8f3; scope fingerprint `9287769e922ba7f3659d66b820abc4a602c885f6137f9434eef76ac95356383b`
+- Retain BR0381 current observational residual, BR0244 admitted/terminal request correlation, BR0206 coordinated restores and GQR0173/0175 resource/clock gates. Safety insertion is off in current parity helper; historical safety-on reset is not freshly reproduced. Diagnostic receive injection is not transport authentication; queue admission is not completed save/load. No new finding/status/inherited saving or runtime acceptance
+- GQ2 now221DONE/424TODO; GQ1 remains818DONE/1TODO;268findings254remediations72DONE181TODO1DEFERRED;1036 unique contiguous impact-sorted terminal ranks. Earlier0080 checkpoint superseded by terminal report. Next numbered scope0081; all pending preflights/sweeps/investigations/worktree/current-head supplements and closure remain required
+- Only diagnosis documents/report changed; concurrent multiplayer work preserved. No product/test/script edits, build/configure, formatter/generator, runtime/device/network/deferred probes, staging or commit
+
+### Chunk0081 route certifier assigned-read checkpoint, 2026-10-09
+
+- Previous goal turn made progress:0080 terminal imported and verified, then0081 assigned review begun. Live HEAD remainsb661b6eb24e91adf5f3e566bc28eb73d4b679fda;0081 TODO, no terminal/report/import/rank increment
+- Complete frozen assigned certifier.c2251-2484 and header1-212 read; full current physical deltas empty and normalized whole sources equal frozen. Exact partial/whole identities below; equality does not grant whole certifier source coverage
+- Budgeted certification initializes invalid certificate and checks required pointers/route count. Reachability pending returns summary before copying live state; firing pending occurs after live state/plan copy and possible candidate mutation. Need actual publication/adoption callers to establish pending outputs stay private and do not invalidate incumbent guidance
+- Required actions are ordering barriers on invalid/unreachable target. Auto-closing hidden door may be skipped when later required usable target is reachable. Exit is blocked while reactor/boss prerequisite remains. Recheck required world-state after yielding firing search avoids publishing completed trigger action. No selected action plus still-required action invalidates; none required marks route OK. VALID certificate includes pending trigger/wall/object/frontier, not whole downstream path proof
+- Summary required_steps_low explicitly records only first64 actions; do not equate diagnostic bitmask with whole route-step completion. Header defines stateful reachability/firing/frontier/unexplored workspace, deadline/work budget and INVALID/VALID/PENDING, balanced MSVC pack and size72 assertion. Static source is not ABI/build/runtime acceptance
+- Remaining before terminal0081: enclosing helper signature2250, reachability job invalidation/reset/budget/firing/target helper definitions, actual shared/native publication/adoption consumers, focused fixtures and current owner reconciliation (BR0335, BR0229 and geometry/clock domains as applicable). No new finding/status/saving or execution; all remaining campaign units/supplements/closure required
+- Only diagnosis Markdown/report changed this turn. Concurrent multiplayer work preserved; no product/test/script edits or runtime/build/device/deferred probes/staging/commit
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/guidebot_route_certifier.c",
+    "frozen_blob": "083c2e7f3cc0161af9cddab8187e9b0147bd168e",
+    "equal_frozen": true,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "bdcc2d872fb80b21bd1ad544c4c8f19ca28254c9b855cf20a6cc10d4be391cc5",
+    "read_ranges": [
+      {
+        "first": 2251,
+        "last": 2484,
+        "range_lf_sha256": "1292a08cc5922e35fe0e6998af6bbd0bfb7027d65ac4caec2501be45e3634fc4"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/guidebot_route_certifier.h",
+    "frozen_blob": "976fe96c5170341b04b16db826919d2a6a6f317f",
+    "equal_frozen": true,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "188219dab014cf2e158054c9406ed73dc783e894f50c3f10082711fbafd806bb",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 212,
+        "range_lf_sha256": "188219dab014cf2e158054c9406ed73dc783e894f50c3f10082711fbafd806bb"
+      }
+    ]
+  }
+]
+```
+
+### Budgeted route certificate terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0081: full assigned frozen/current certifier2251-2484/header1-212, equal frozen; named reachability/firing/selection/publication and fixtures. Six exact bindings; GQC1050/GQD0930; report import SHA25651bd6e1d69989d7016b5acf2dfd6255f7f7324b328b8466f2958f2018fb6d28d; scope fingerprint `47fbc7e199435352e1e87b9c23efaf85d7e8fc5e00adfea32589deb987f82b64`
+- Stable resumable BFS start is deliberate maintained fixture policy. Live end-of-level path uses compiled selector wrapper, which ignores supplied budget; no direct production use of assigned budgeted API inferred. Retain BR0335 live rebase/path and coherent job acceptance, BR0229 ABI and GQR0182/0175 domains. No new finding/status/saving or runtime result
+- GQ2 now222DONE/423TODO; GQ1 remains818DONE/1TODO;268findings254remediations72DONE181TODO1DEFERRED;1037 unique sorted terminal ranks. Earlier0081 checkpoint superseded. Next numbered scope0082; all remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; concurrent multiplayer work preserved. No product/test/script edits, build/configure, formatter/generator, runtime/device/network/deferred probes, staging or commit
+
+### Chunk0082 save I/O and guided geometry diagnosis checkpoint, 2026-10-09
+
+- Previous goal turn made progress:0081 terminal imported/verified. Revalidated HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and current worktree.0082 remains TODO, no terminal report/import or queue/rank increment
+- Read all assigned frozen155line guidebot_save_io.h/273line guided_missile_route.cpp/30line header. All current physical deltas empty and complete normalized current sources equal frozen. Exact table DATA fingerprint `1e87685e94412d1561401d22e36b2098622805b138c1abc7b651a9e66719fec9`; header/separator excluded
+
+| Assigned path/scope | Base blob | Frozen head blob | Original blob | Assigned LF SHA256 |
+| --- | --- | --- | --- | --- |
+| `android/app/src/main/cpp/shared/guidebot_save_io.h` L1-L155 | `ABSENT` | `c12b399b09b740c870d94e1427a131a545d35aca` | `ABSENT` | `2bf7ffb838bc9d4470476bc267290e5630c840a1f4d0202854da2c95a6c48289` |
+| `android/app/src/main/cpp/shared/guided_missile_route.cpp` L1-L273 | `ABSENT` | `45847e07d2fb48318d76474e870cd2208412ae7a` | `ABSENT` | `d46c07a5fe0c1001249a8d30079cce94ad92dde89462d5e6396fe5fa11ee4781` |
+| `android/app/src/main/cpp/shared/guided_missile_route.h` L1-L30 | `ABSENT` | `5939752ad00ee271c459e277dba3c301b8892dfb` | `ABSENT` | `222fa941d2c7198771dbe7d2dee79b4fd304699580fe7ef025e8289e80468c68` |
+
+- Save schema41 explicitly encodes bytes/integer little-endian eight-byte words, raw double bits and fixed64byte textual long-double fields; clocks subtract/add epoch in unsigned arithmetic. Applying decode occurs only after checked read; signed/unsigned4byte domains checked, bounded helper decodes into private temporary even in non-applying pass. Text requires bounded256byte terminated field. Dry measure writing2 counts same schema without I/O. Do not claim typed clock or finite floating-domain validation from syntax/byte-width checks
+- Actual D2 escort runtime measures route section and caps framing at2MiB; reader consumes same schema and verifies exact declared length; metadata-only build skips bounded chunks. Native preflight uses apply0 and checks escort result then rewinds file; apply path uses !secret_restore and ignores return under prior-validation contract. Need full native preflight/apply ordering and immutable source/error acceptance before closure. Preserve completed GQR0161 relocation; no broad native deduplication
+- Named workspace schema bounds selected counts/cursors, but queue/detailed segment identities and long-double scores are raw fields. Pending job restored state/consumer domains and finite-score behavior need existing-owner reconciliation; no malformed/nonfinite/extreme/fault execution or newly formed finding yet
+- Guided route validates wall/launch pointer/count/player radius/destination/side/projectile radius, zeroes output first. Collision spend budget counts FVI calls; some allocation/BFS/sample admission work is outside that callback. Builds reverse missile-clear graph and chooses launch among supplied ship-reachable cells, samples portal/launch poses, shortens path, requires exact target-wall impact and rejects direct flare alternative, checks missile lifetime path length and muzzle clearance. Candidate output is cleared if later budget exhausts. Prediction is not inventory/equipment/physical flight acceptance
+- Current route_confirmation explicitly returns UNSUPPORTED for guided objective, matching header's separate flight/equipment contract. Snapshot fixture supplies synthetic guided callback for launch dependency/order and self-opening exclusion; it is not actual collision-route fixture. Route regeneration audit excerpts assert ordinary versus guided metadata counts; full audit and actual guided flight execution not credited
+- Static arithmetic sites including launch bounding-box interpolation use signed fixed-point operations; existing GQR0182 geometry acceptance and GQR0175 restored clocks remain open. Allocation/exception boundary and budget ownership need complete caller context before assigning any new root
+- Remaining before terminal0082: planner guided callback/output adoption and actual collision/native format contexts, focused native save/route fixtures and existing-owner reconciliation; finalize exact report/import/count/rank verification only afterward. All remaining campaign units/worktree/current-head supplements/closure still required
+- Oversized padded owner output was trimmed/recovered for complete0175/0182 rows and workspace185-260. Guessed route_trigger_dependency.cpp did not exist; discovery located actual route_planner.cpp callers. No missing range/output receives credit
+- Only this resume Markdown changed in this goal turn. No product/test/script edits, builds/configure, formatter/generator, runtime/device/network/security/malformed/allocation/resource probes, staging or commit. Concurrent multiplayer edits preserved
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/guidebot_save_io.h",
+    "current_lines": 155,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "2bf7ffb838bc9d4470476bc267290e5630c840a1f4d0202854da2c95a6c48289",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 155,
+        "range_lf_sha256": "2bf7ffb838bc9d4470476bc267290e5630c840a1f4d0202854da2c95a6c48289"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/guided_missile_route.cpp",
+    "current_lines": 273,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "d46c07a5fe0c1001249a8d30079cce94ad92dde89462d5e6396fe5fa11ee4781",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 273,
+        "range_lf_sha256": "d46c07a5fe0c1001249a8d30079cce94ad92dde89462d5e6396fe5fa11ee4781"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/guided_missile_route.h",
+    "current_lines": 30,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "222fa941d2c7198771dbe7d2dee79b4fd304699580fe7ef025e8289e80468c68",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 30,
+        "range_lf_sha256": "222fa941d2c7198771dbe7d2dee79b4fd304699580fe7ef025e8289e80468c68"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/escort.c",
+    "current_lines": 4488,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "63e7456878cc7235a951eabf356b90ba687bb95f53415e0814631872e8aafb2d",
+    "read_ranges": [
+      {
+        "first": 2148,
+        "last": 2248,
+        "range_lf_sha256": "10adfeaac84ae0f8c6b4be24a5d944ef50ecfc4418a6075544e24c8a90921d22"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_lines": 4032,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "5e58b81dfeb6d22734a791d950b17b387583409df74190d0d6fd202db8153bc7",
+    "read_ranges": [
+      {
+        "first": 1120,
+        "last": 1170,
+        "range_lf_sha256": "41185dec89bbf99f344f475c6fbb31dc4ddff76796d39c62ab72d9f9214e5266"
+      },
+      {
+        "first": 1230,
+        "last": 1265,
+        "range_lf_sha256": "ee4a9a706c2f39dcfdf2c7199f50782ea7d822319e2073243212b817a5981805"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/secretarea.c",
+    "current_lines": 5482,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8709513453992935df0c01be88983dba60d0cf1ea1ca2b6f23f287fb681cee6c",
+    "read_ranges": [
+      {
+        "first": 2240,
+        "last": 2270,
+        "range_lf_sha256": "87affdf245a0bf1fcbaf0ff783a7632061a8f23701f10197ccf9dcb6b5a20244"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_route_snapshot.cpp",
+    "current_lines": 3334,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "685ed9ef1522eafb5dd16b3f9a5b374283221643059f62af35ccb6bd2009a20d",
+    "read_ranges": [
+      {
+        "first": 2100,
+        "last": 2160,
+        "range_lf_sha256": "5eccef9a9a341d663e75310c8d8671a545cc9c4368ff8acce1e2acbdc03fcd4e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/guidebot_metadata_save_fields.h",
+    "current_lines": 323,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "4e3b6c1d3257fb32caea7425a84d1ca11ad8ace537c1740cd9aa839ee55e5443",
+    "read_ranges": [
+      {
+        "first": 185,
+        "last": 260,
+        "range_lf_sha256": "5c4a06f22de3e796803a2d5889cfd7e03fbfcbd1105d025eeb20ffae60b261a2"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_confirmation.cpp",
+    "current_lines": 2547,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "269990c1aadbbd5a994026edf072db9469d1961d3aedb140b8ee7b680f66c382",
+    "read_ranges": [
+      {
+        "first": 675,
+        "last": 696,
+        "range_lf_sha256": "3dcca42883956edf7a288cb8be912aa45bc745b48353647ab8501be5d2520a91"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0082 guided adoption and restore-order follow-up checkpoint, 2026-10-09
+
+- Previous turn made progress by saving complete assigned0082 source identities. HEAD remainsb661b6eb24e91adf5f3e566bc28eb73d4b679fda.0082 remains TODO with no terminal report/import/count/rank increment
+- Named planner find_guided_shot requires allowed callback, nonempty search.visit_order and analysis admission, then calls through view adapter. The shot caller first attempts ordinary firing; guided fallback excludes candidate trigger from launch progression, tries ordinary then optimistic approach, derives launch terminal and route path, resolves prerequisite movement, appends trigger step then annotates positive-point-count certificate. This is launch dependency planning, not equipment or actual missile flight proof
+- Actual native plan wrapper catches std::exception and all other exceptions, copies diagnostic failure and returns0. Do not create an uncaught-allocation root merely because guided helper is extern C and uses vectors. Complete enclosing try/callback-installation scope still required before claiming every helper invocation is protected; direct callers and whole resource budgets remain separate acceptance
+- Actual D2 runtime read is guarded by state_validate_runtime_state; validator checks non-applying Guidebot parse and rewinds file before applying. Earlier player/flight/weapon mutation is already visible before runtime validation, so runtime preflight does not establish whole-world atomic restore. Preserve existing BR0206 all-peer/partial-world transaction distinction. The Python test's textual ordering assertion is inspected only, not executed or proof of rollback/source-generation stability
+- A supplied collision-work callback bounds admitted FVI calls, not all vector allocation, graph/BFS and geometry sample admission work. No resource-pressure or benchmark probe performed. GQR0182 fixed-point geometry/0175 clocks remain existing acceptance gates; float/workspace typed-domain ownership still needs reconciliation before terminal
+- Added actionable diagnosis plan plan_gq2_0082_save_guided_continuation_20261009.md. Remaining exact caller-wrapper scope, native schema/consumer domain ownership, collision/route fixture oracle distinction and immutable terminal report/ledger verification required
+- Recovery limits: combined read4225-4295 and state3750-3795 was truncated; only complete3750-3777 credited plus separately recovered3773-3795. No whole4225-4295 credit. Planner5375-5420 complete; requested5450-5478 exceeded5473line file after complete5450-5473 output, no nonexistent lines credited
+- Only diagnosis Markdown changed. No product/test/script edits, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit; concurrent multiplayer changes preserved
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/route_planner.cpp",
+    "current_lines": 5473,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "a726c8099b3d8e9105378d53009a62c075dedd83f0d912f376ffbccb55bb801d",
+    "read_ranges": [
+      {
+        "first": 3145,
+        "last": 3180,
+        "range_lf_sha256": "6a6bda787baa0ccbc17650dd7d8a95e59d201c79731ade7306106b4c3997e4ee"
+      },
+      {
+        "first": 4165,
+        "last": 4225,
+        "range_lf_sha256": "54c29c37eefc1d8ab6ce820bd98c8c88042bcf70c730c15d3e3333ce1854e05d"
+      },
+      {
+        "first": 4295,
+        "last": 4415,
+        "range_lf_sha256": "af63079540ed54682ea2d1077d3a6f83edcaa76986537f76b20fb5f5afa7d6e0"
+      },
+      {
+        "first": 4935,
+        "last": 4952,
+        "range_lf_sha256": "1975987b6581e288f94466902cd0a56484f9ba39a8d50640ebfa0ad97b2b97cd"
+      },
+      {
+        "first": 5375,
+        "last": 5420,
+        "range_lf_sha256": "b39262512d5c021b66ae9267d463ea62679da0b036ac971b1e18ac46ce7e796a"
+      },
+      {
+        "first": 5450,
+        "last": 5473,
+        "range_lf_sha256": "07972852efd5d2f5878701434807b6f3e74a29d87e12156a797c31e4b9bf9d89"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_lines": 4032,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "5e58b81dfeb6d22734a791d950b17b387583409df74190d0d6fd202db8153bc7",
+    "read_ranges": [
+      {
+        "first": 3750,
+        "last": 3777,
+        "range_lf_sha256": "d055110d81be2de8057d5f5b62bb01240691ae0808f3d1d884722c2c1d101c4a"
+      },
+      {
+        "first": 3773,
+        "last": 3795,
+        "range_lf_sha256": "46fc40c19fe8ec333e32cdb809f3b6114b559ee5a7f8475817165e93c75cbea1"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_save_runtime_validation.py",
+    "current_lines": 333,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "129f193fffbb65e4ca22b3a157d80dfcc6272c4cb0fb708902006462a8ef15ac",
+    "read_ranges": [
+      {
+        "first": 140,
+        "last": 148,
+        "range_lf_sha256": "f862630fcdc58319756b873f5589a5d3dcbf7e59a65cc6bb674b4f693ecc85a1"
+      }
+    ]
+  }
+]
+```
+
+### Guidebot save and guided route terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0082: all458 frozen/current assigned lines equal frozen;13 named bindings, full native wrapper callback/exception context and save schema/next-consumer chain. GQC1051/GQD0931; report import SHA256e5095daa8eefb7bdd0184c9e2e996dbf5d0b309ac00ab3c9af6370084b964143; scope fingerprint `e4781b87d12800139db236622e2925ba823a0a69d28ed97f9472fc57292fef31`
+- New GQF0269/GQR0255: raw signed active unexplored cursor admitted by save codec and preserved pending runtime can reach negative strategic_distance subscript. Conditional current-version same-mode resumed job static proof only; no crafted save/security/malformed/extreme/resource execution. Distinct from translated-D1 AI GQF0214. Durable implementation plan added; TODO, no code changes
+- Retain explicit codec/guided geometry and separate equipment/flight; actual native planner wrapper contains exceptions. Preserve BR0206 transaction/BR0335 rebase and GQR0182/0175 geometry/clocks; zero inherited saving or runtime acceptance
+- GQ2 now223DONE/422TODO; GQ1 remains818DONE/1TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1038 unique sorted terminal ranks/255 remediation ranks.0082 checkpoints superseded. Next0083; all remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; concurrent multiplayer work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+###0082 optional target-mode restore corroboration
+
+- After terminal verification, read actual escort_restore_route_target_mode1639-1665: delegates admitted target to escort_route_set_target_mode then sets restore_pending1. Earlier0081 target setter762-771 invalidates only when target mode differs. Thus same target/routing mode does not force an unconditional workspace reset; preserved current-version/pending-work conditional chain in GQF0269 remains valid. No broadened exploit/runtime claim, report modification or extra coverage/count credit
+
+```json
+{
+  "path": "d2/main/guidebot_route.c",
+  "current_whole_read": false,
+  "read_ranges": [
+    {
+      "first": 1639,
+      "last": 1665,
+      "range_lf_sha256": "d5f485fe134cc29215a170b2f54a9a0af31af6b24537149aa7838db5a5130af7"
+    }
+  ]
+}
+```
+
+### Chunk0083 metadata and barrier caller checkpoint, 2026-10-09
+
+- Previous refresh turn confirmed state but supplied no new diagnosis evidence. This turn resumed0083 and read the complete frozen258/current267-line barrier plus its current delta, classification adapters, focused classification fixture, provenance entry wrappers, original-date transport and display, and transfer lifecycle callers
+- Current STARTING keeps the host paused until first RUN broadcast/local release; Android clock guards and client DONE publication order differ from frozen. Source reconciliation only, not pause/transaction runtime acceptance
+- JNI and host metadata analysis catches cover collect invocation, but failure JSON construction/final serialization and manual resource unwinding still need existing-owner reconciliation. Archive dates retain qualified member paths before native leaf matching; selected staging/member identity trace remains pending
+- Created plan_gq2_0083_metadata_barrier_continuation_20261009.md with remaining producer, identity, fixture, paired dispatch/pause/loader and immutable terminal gates.0083 remains TODO; no report/import, new finding, owner closure, terminal rank or count increment
+- GQ2 remains223DONE/422TODO;269findings255remediations72DONE182TODO1DEFERRED. HEAD remainsb661b6eb24e91adf5f3e566bc28eb73d4b679fda. Only diagnosis Markdown changed; concurrent multiplayer work preserved
+- Combined provenance fixture and broad owner search outputs were truncated: no full provenance fixture or broad ledger read credited. Frozen barrier first1-147 and148-258 recovered separately in complete output
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/mission_intent_classification.hpp",
+    "frozen_lines": 218,
+    "frozen_lf_sha256": "4a0c6d669c68d030313e7cf0d84ca48172273f16dfaf967950fefaae5ee90846",
+    "current_lines": 218,
+    "current_lf_sha256": "4a0c6d669c68d030313e7cf0d84ca48172273f16dfaf967950fefaae5ee90846",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/mission_provenance.hpp",
+    "frozen_lines": 261,
+    "frozen_lf_sha256": "330a9ad6705989ac35a3197d1dfbe4e462309fcebbae0c9b4a8956855842b79e",
+    "current_lines": 261,
+    "current_lf_sha256": "330a9ad6705989ac35a3197d1dfbe4e462309fcebbae0c9b4a8956855842b79e",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer_barrier.h",
+    "frozen_lines": 258,
+    "frozen_lf_sha256": "248bbf8f793751ac391bfb4b1b79b03680f1e139b46be90f2efca3aecd100e5e",
+    "current_lines": 267,
+    "current_lf_sha256": "4793442f512888394307324135ae2c322bcf4aedd33f01d4bcbcb5805fe77ec0",
+    "current_equal_frozen": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_read": false,
+    "current_whole_lf_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "read_ranges": [
+      {
+        "first": 125,
+        "last": 145,
+        "range_lf_sha256": "c9f0c74d9757088d5285ddcaff0d03495b2a5eb71fdb2857222a64269ffce8f6"
+      },
+      {
+        "first": 250,
+        "last": 286,
+        "range_lf_sha256": "6e8e4403423a090b94c7f319908c13a963a2fff9db06e980fe08179358e157e2"
+      },
+      {
+        "first": 300,
+        "last": 346,
+        "range_lf_sha256": "94f5feff6a2ce006a38162eb1e8bedd8a6f62f85ee7a433ca923bbd383ddbf46"
+      },
+      {
+        "first": 1448,
+        "last": 1476,
+        "range_lf_sha256": "6e2f212c058ba535589bac20f4785b0bcffc43fa98645e51d97a183c0f404d8d"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/jni_level_metadata.cpp",
+    "current_lines": 1656,
+    "current_whole_read": false,
+    "current_whole_lf_sha256": "6fed20eae87535101db097c1c5628837c928bcb22f533422ddcc74515558a36e",
+    "read_ranges": [
+      {
+        "first": 613,
+        "last": 641,
+        "range_lf_sha256": "192e4b8254a8425c3252e8f0b6d2f57a6063ef835b796cee811d3050e2d4a53a"
+      },
+      {
+        "first": 1101,
+        "last": 1139,
+        "range_lf_sha256": "25fed5a701f80e731113baa818476a37f82bb8d2b784da23775e298235831718"
+      },
+      {
+        "first": 1508,
+        "last": 1538,
+        "range_lf_sha256": "75bbd7f95bf1d8abc24343d7e1ecc98d3c606c120f7c5ee0a95ad7f69efcc977"
+      },
+      {
+        "first": 1574,
+        "last": 1656,
+        "range_lf_sha256": "84aecd60a502c2815569307cc8f807ca70b04a9e8a595a2491361db6f66f6ac8"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp",
+    "current_lines": 1482,
+    "current_whole_read": false,
+    "current_whole_lf_sha256": "b4857a07133766cf34da22c9658803d6a8f8714501b244f417c6caf6858c0269",
+    "read_ranges": [
+      {
+        "first": 1170,
+        "last": 1213,
+        "range_lf_sha256": "07a4757bab5798e3a9f55fd9ab11f2dd145b27a6a4a5f08ac7a429656b3d69d6"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/test_mission_intent_classification.cpp",
+    "current_lines": 69,
+    "current_whole_read": true,
+    "current_whole_lf_sha256": "37febd13e94cceeea83b9ad75ec870ab784aa6befc6f19c7c8bccb5f7c75ced7",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 69,
+        "range_lf_sha256": "37febd13e94cceeea83b9ad75ec870ab784aa6befc6f19c7c8bccb5f7c75ced7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/java/com/dxxredux/app/MissionProvenance.kt",
+    "current_lines": 86,
+    "current_whole_read": true,
+    "current_whole_lf_sha256": "0cbcece702434276a16e40eb615e536fe756d150d1220bcbb10d788f6e678ad7",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 86,
+        "range_lf_sha256": "0cbcece702434276a16e40eb615e536fe756d150d1220bcbb10d788f6e678ad7"
+      }
+    ]
+  },
+  {
+    "path": "android/mission-metadata-core/src/main/kotlin/com/dxxredux/app/ArchiveEntryDates.kt",
+    "current_lines": 68,
+    "current_whole_read": true,
+    "current_whole_lf_sha256": "4b8e945dfcd20f9343bee77ee6598c0e730bb4e1b4c27e22b3f9d0c42b2d238d",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 68,
+        "range_lf_sha256": "4b8e945dfcd20f9343bee77ee6598c0e730bb4e1b4c27e22b3f9d0c42b2d238d"
+      }
+    ]
+  }
+]
+```
+
+### Mission classification provenance and restore barrier terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0083: all737 frozen assigned lines and complete current barrier delta,24 named bindings, metadata row/descriptor/date selection and paired protocol/pause/loader callers. GQC1052/GQD0932; report import SHA25686adfe5a063a2cfb39afb83a77e65392f881fd59d361f024f9e21b762e94a5a9; scope fingerprint `4c44dad62307818b7b5d28f1852d4d314cf07a43f300150aec4669c399bde77b`
+- Retain shared intent/provenance policy and current STARTING/RUN release sequencing; selected archive staging rejects duplicate leaves while broader qualified identity/generation, metadata/resource admission and common-world transaction stay with existing GQR0212/0173/0099/0102 and BR0206. No new finding/status/runtime acceptance or inherited saving
+- GQ2 now224DONE/421TODO; GQ1 remains818DONE/1TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1039 unique sorted terminal ranks/255 remediation ranks.0083 checkpoints superseded. Next0084; remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and concurrent multiplayer work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+###0083 terminal verification
+
+- Verified exact immutable report import/body/SHA, three frozen blob/range fingerprints,24 current source/range bindings, contiguous unique1039 impact-sorted terminal ranks and255 remediation ranks,224/421 GQ2 statuses and unchanged269/255 finding/remediation statuses. Scoped tracked diagnosis diff check passed;0083 plan gates complete. No runtime acceptance or product changes. Next0084: portable co-op record header and powerup-duplication implementation/header hunks
+
+### Portable co-op records and pickup restore terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0084: complete portable82-line header, pickup implementation hunks1-9/header1-4 with full469/47-line shared context,13 named bindings and paired native restore/pickup/dispatch plus portable roster/source callers. GQC1053/GQD0933; report import SHA256c68632304216b5e319ac9f5e29f28d3466eff26e26fae0ac1f7c01bb544d11cd; scope fingerprint `a9ec5cd8c1180780ea10fa75eecf6fa841969bdd41491d82556650d86c12b4d9`
+- Optional discard/adoption and required world/source ownership completeness remain distinct. Extend existing BR0195 pickup/snapshot sender/object authority; retain BR0206 transaction/GQR0175 clocks and completed GQR0189 reward policy. No new finding/status/runtime acceptance or inherited saving
+- GQ2 now225DONE/420TODO; GQ1 remains818DONE/1TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1040 unique sorted terminal ranks/255 remediation ranks. Next0085; all remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda/concurrent multiplayer work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+###0084 terminal verification
+
+- Exact immutable report import/body/SHA, all assigned frozen hunk/range/diff fingerprints and13 current bindings verified. Queue225DONE/420TODO,1040 contiguous unique impact-sorted terminal ranks/255 remediation ranks and269/255 unchanged finding/remediation statuses verified; scoped tracked diagnosis diff check passed.0084 plan gates complete; no product/runtime acceptance. Next0085
+
+### Chunk0085 GPU timer and MSAA source/caller checkpoint, 2026-10-09
+
+- Previous goal turn completed0084. This turn read all assigned0085 zero-context4/35/6 hunks and full timer77/MSAA482/header90, recovered truncated MSAA349-388 and traced paired frame/flip/context/readback/options callers; read timer/policy fixtures and capability query, graphics failure callback and named EGL/automation context
+- All three current sources equal frozen; original attribution absent. Current one-query/full-ring-skip repair preserves BR0260 OPEN with historical current repair, not fresh execution. MSAA actual format/common samples/failure latch and retired-context name forgetting retained; EGL/shader admission remains BR0251/GQR0174
+- Authoritative archive marks BR0647 FIXED despite stale historical OPEN reference rows. Preserve closure; pending current MSAA failure/context/smoke fixture and diagnostics reconciliation must not re-admit that old root. Current failure callback diagnostic allocation/decision publication still needs producer/resource-owner reconciliation
+- Added plan_gq2_0085_gpu_msaa_continuation_20261009.md;0085 remains TODO with no terminal report/import/rank/count increment. GQ2 remains225DONE/420TODO;269findings255remediations72DONE182TODO1DEFERRED;1040 terminal ranks. No new root/status/runtime credit
+- HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and concurrent multiplayer changes preserved. Only diagnosis Markdown changed; no product/test/script edit, build/configure, formatter/generator, driver/device/deferred probes, staging or commit
+- Guessed .c capability/safety paths failed before exact .cpp discovery; BR0647 active-ledger lookup failed before archived source recovery. Combined MSAA read omitted part349-388 and was recovered explicitly. No full broad ledger/archive/test-runner coverage from searches
+
+Frozen identities:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_gpu_timer_android.c",
+    "assigned_hunks": 4,
+    "assigned_first": 35,
+    "assigned_last": 77,
+    "assigned_lf_sha256": "dab03c9101b3c2e0f8fb2140a90d0e4a60aece18fab3138fbebcf7e72b2e63b6",
+    "base_blob": "f9343b5edaddc5f43922a5df063dfe76c168fc85",
+    "frozen_head_blob": "dab09645aee1a8d0f7cf4c8af97dfba3e2162304",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "8d060b48a315e2fc7301c83dcc45d56db658fc46760b827cd2c30a65ec4d4000",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_msaa_android.c",
+    "assigned_hunks": 35,
+    "assigned_first": 10,
+    "assigned_last": 465,
+    "assigned_lf_sha256": "476bf08f1a0cc2aa6a046750c87f364db3d2d618306a950909061cbefb151342",
+    "base_blob": "891071abc5f0fc2a083be4c05284bc35bd61d454",
+    "frozen_head_blob": "ea78729332ee3bad45f99aa0302e5431b0648fc3",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "7dc6b65ffca6e28ac1a18e653179069abf2bd09794aeb1175a396e00b216594c",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_msaa_android.h",
+    "assigned_hunks": 6,
+    "assigned_first": 15,
+    "assigned_last": 63,
+    "assigned_lf_sha256": "86a7bed975f4bf9c4b8cab570a2d0fa148a7ef31c8a68284ceb5bf528c403e3c",
+    "base_blob": "00d8b3bdd0b949f7d927a63e753710266c57dc2b",
+    "frozen_head_blob": "bed6eb83f6db4143eb3b4836e145c8daaeeaea8a",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "85f0ea9131a592e1df808600e453781b251999933e8f80d2a299a4e78a32aba2",
+    "current_equal_frozen": true
+  }
+]
+```
+
+Current named bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_gpu_timer_android.c",
+    "current_lines": 77,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "c84f464d86c7391bd32eeaaa74b3fb7d751d981589d70bbcf51b91f83c6dd3c9",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 77,
+        "range_lf_sha256": "c84f464d86c7391bd32eeaaa74b3fb7d751d981589d70bbcf51b91f83c6dd3c9"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_msaa_android.c",
+    "current_lines": 482,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "696c2931c481556bbc7d987a8fbd862d260b5480e66d25387c4f1a0a23025d02",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 482,
+        "range_lf_sha256": "696c2931c481556bbc7d987a8fbd862d260b5480e66d25387c4f1a0a23025d02"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_msaa_android.h",
+    "current_lines": 90,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "a4e018b27f693556e8c7b67eb87cbd01cdf412e65503a8a26488e60759995d0e",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 90,
+        "range_lf_sha256": "a4e018b27f693556e8c7b67eb87cbd01cdf412e65503a8a26488e60759995d0e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_gpu_timer_android.h",
+    "current_lines": 22,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "29e2567722866f4358b450a546c0d0457e3b329b64c8afee20e2955fb7d6909d",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 20,
+        "range_lf_sha256": "286beba100745b33593e37f70204f4cf727ababe3a43f2d6c84f3ea31a3a1cf1"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_ogl_gpu_timer.c",
+    "current_lines": 91,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "3798abdf0be984ee05b7074f6882673947f4b23042ea613e5d59a05063941a99",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 91,
+        "range_lf_sha256": "3798abdf0be984ee05b7074f6882673947f4b23042ea613e5d59a05063941a99"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_android_gpu_policy.c",
+    "current_lines": 31,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "9b89ed26984df319ec38890fb6dbf045636d05ec42f9a029d4a9d578d737e600",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 31,
+        "range_lf_sha256": "9b89ed26984df319ec38890fb6dbf045636d05ec42f9a029d4a9d578d737e600"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_gpu_policy.h",
+    "current_lines": 41,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "d64d5be7856969edaccdc0ead2f63be648b54977b20e8abc4290a81a686b63af",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 41,
+        "range_lf_sha256": "d64d5be7856969edaccdc0ead2f63be648b54977b20e8abc4290a81a686b63af"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_gpu_capabilities.cpp",
+    "current_lines": 182,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "b56a869fd00d39ef7e72df4e62479d5d120b134d496dd0b25a4ba4bfa2aadc32",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 172,
+        "range_lf_sha256": "bbef2cd0678692dfba57a04c726d16393e3b858c9c0d12f3f791a17b4fe7bde7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_safety.cpp",
+    "current_lines": 922,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "1270646c745e49045a6c9a3c54851c8352aff3cb8c6586d45f171830be2e4240",
+    "read_ranges": [
+      {
+        "first": 566,
+        "last": 628,
+        "range_lf_sha256": "d6f53fdddfb0f860f2af7e938d1e0c55a15e0daca14a4274ab220f52a007afc3"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_egl_surface.c",
+    "current_lines": 429,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "721eb6201daed860d878a753f8eba266da5550299f419dde3d8c8d5b497cbb7b",
+    "read_ranges": [
+      {
+        "first": 105,
+        "last": 145,
+        "range_lf_sha256": "1aa2c13595c7a4fc2e9878521d5a909bf1a199735cc5af65b9569e12d30390a3"
+      },
+      {
+        "first": 289,
+        "last": 317,
+        "range_lf_sha256": "aa2a069e4688a73a41a92010851110f06c4b1f35000ca3de7382a740053cf4f1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6245,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "a43fa237b23e6f4b4ce58570f6f0f99afa75a6e93be83886fc20db7f294b7e02",
+    "read_ranges": [
+      {
+        "first": 4265,
+        "last": 4287,
+        "range_lf_sha256": "91087ba177cc80633299172e644f21b2c26c20b14b54480a625bce0d689eb9ea"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_graphics_recovery.ps1",
+    "current_lines": 13,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "52e5a0294d26d3f2675e71c3551a7e184c21fd6c070cae254fd7266b4e27f538",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 13,
+        "range_lf_sha256": "52e5a0294d26d3f2675e71c3551a7e184c21fd6c070cae254fd7266b4e27f538"
+      }
+    ]
+  },
+  {
+    "path": "d1/arch/ogl/ogl.c",
+    "current_lines": 3722,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "7aa1f1c0467b4ae9733d06fe542110a96a45829e9451aca92ff7a3d69ac0139e",
+    "read_ranges": [
+      {
+        "first": 416,
+        "last": 451,
+        "range_lf_sha256": "b793e612e11875c316bd30be2a00c4ac44c65bebf79f94bc4db8ba930bad95c3"
+      },
+      {
+        "first": 610,
+        "last": 647,
+        "range_lf_sha256": "d806ec3dc11512db494280bb692b6e388c4fcf3d4aa4736a511064a130fd0d3a"
+      },
+      {
+        "first": 2134,
+        "last": 2165,
+        "range_lf_sha256": "85e1ae94f0aed057a1e844faf2d360a4173509b7b40b8493d22bc61b33dc6c67"
+      },
+      {
+        "first": 2284,
+        "last": 2308,
+        "range_lf_sha256": "96a010ef602b9346968b52776002afcd6715306a3c603953213e77d28ebd12b6"
+      },
+      {
+        "first": 2374,
+        "last": 2433,
+        "range_lf_sha256": "f2d3918b4a11093ec77c341958f1af9ba357e82bf4204de478d29436ba4bab86"
+      },
+      {
+        "first": 2448,
+        "last": 2469,
+        "range_lf_sha256": "09a5c8b89e060cbcd873d74bb3155a6d686d077e4a97303a558f41249f56912f"
+      }
+    ]
+  },
+  {
+    "path": "d2/arch/ogl/ogl.c",
+    "current_lines": 3843,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8de8896af0f91fa478104e8e6404b8da7e64a8ef5e67d49a706db78a7c791690",
+    "read_ranges": [
+      {
+        "first": 419,
+        "last": 454,
+        "range_lf_sha256": "b793e612e11875c316bd30be2a00c4ac44c65bebf79f94bc4db8ba930bad95c3"
+      },
+      {
+        "first": 620,
+        "last": 658,
+        "range_lf_sha256": "d6a023c8e8b4a6840fb011f0b72e725ad8a7e40a281f0fbba196c19a34880bf0"
+      },
+      {
+        "first": 2157,
+        "last": 2188,
+        "range_lf_sha256": "85e1ae94f0aed057a1e844faf2d360a4173509b7b40b8493d22bc61b33dc6c67"
+      },
+      {
+        "first": 2305,
+        "last": 2329,
+        "range_lf_sha256": "96a010ef602b9346968b52776002afcd6715306a3c603953213e77d28ebd12b6"
+      },
+      {
+        "first": 2395,
+        "last": 2454,
+        "range_lf_sha256": "3e2cffdfb92b37c78dde124bd1876a90a126f7f35a61c2e925ac3141366ae90a"
+      },
+      {
+        "first": 2472,
+        "last": 2493,
+        "range_lf_sha256": "09a5c8b89e060cbcd873d74bb3155a6d686d077e4a97303a558f41249f56912f"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0085 fixture assertion follow-up checkpoint, 2026-10-09
+
+- Previous memory-refresh turn was no progress on diagnosis. Resumed actual fixture review; verified current HEAD and all14 saved source/caller bindings unchanged before extending evidence
+- Read allocation-failure fixture250-401: real one-shot color allocation error, phase5 failure evidence, complete accepted/current/requested settings rollback, expected1281 error and cleared latch after rollback, independent state-restored probe and later valid2-sample trial/retry acceptance. Authored assertions only; no runtime credit, no full401-line fixture coverage
+- Read context-loss fixture410-469: second reconstruction generation>=3, front/unpaused idle, independent color/VBO probes, no scene GL error, settled accepted settings. Earlier260-410 read was not newly rebound here; these exact additional ranges are bound below. Home/lock orchestration requires host actions; script markers alone do not perform them
+- Read render/menu fixture220-290,445-485,700-988: accepted2/4 requests, complete FBO and effective>=2 checks, independent color-stage probes and restoration; gameplay main/cockpit/missile scene marker passes, nonzero pass draw FBO, before-swap window FBO0, restoration and no scene errors. Requested4 is not an assertion of effective4. Markers are pre-swap evidence, not swap/presentation success. No whole988-line source coverage or execution
+- Preserve authoritative archived FIXED BR0647 and historical accepted oracle evidence; do not reopen from stale GQ1 rows. Active BR0260 still OPEN despite guarded begin/ring repair and inspected stub. BR0251 and GQR0174 remain OPEN/TODO for renderer/EGL/shader admission; no automatic closure from current context reconstruction source or authored tests
+- Graphics failure callback579-601 constructs/parses/dumps JSON before invoking rejection, so diagnostics allocation failure must not suppress required graphics recovery. This is a required acceptance reconciliation with existing graphics failure handling and producer containment, not a newly admitted generic exception finding. Existing GQR0173 specifically owns introspection producers; do not claim it already covers this separate callback without explicit owner extension. Check enclosing actual native exception boundary and decide owner scope before terminal publication; allocation probes remain deferred
+- Fixture assertion gate completed in0085 plan. Ownership reconciliation and immutable terminal report/import/hash/rank verification remain pending.0085 stays TODO,225DONE/420TODO,269findings255remediations72DONE182TODO1DEFERRED; no new finding/status or inherited savings. No product/test/script change, build, formatter, generator, device/probe execution, staging or commit; concurrent multiplayer paths preserved
+
+Additional current fixture bindings (only explicitly named ranges reviewed):
+
+```json
+[
+  {
+    "path": "android/game_scripts/test_graphics_msaa_allocation_failure.jsonc",
+    "current_lines": 401,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "ea212a6bbef7d8f5d13b3087c8c43ac1f99d175ce3eec57653cf7d980736427b",
+    "read_ranges": [
+      {
+        "first": 250,
+        "last": 401,
+        "range_lf_sha256": "824ad66fd2fbbbd8e93f8f7047e2f2866846f6484706e09881fccbd094f8ccc2"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_graphics_context_loss.jsonc",
+    "current_lines": 469,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "0fbc3862618fb8ef19b880acae94ec98763d97906495067094b3e6244f1c3d59",
+    "read_ranges": [
+      {
+        "first": 410,
+        "last": 469,
+        "range_lf_sha256": "fa5d532561b397214af80c7f3d33f13b80de6cbd659daf4b966abf77cea34da4"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_msaa_render_and_menu.jsonc",
+    "current_lines": 988,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "fb2e46f187576718c5caea21d2c8f6f9288fc44131603ee3af0902fdeb69d10b",
+    "read_ranges": [
+      {
+        "first": 220,
+        "last": 290,
+        "range_lf_sha256": "8c0c60125b96c6a5046e0f7d2b8ea99bd0ba932a92d972c5839e6e267f0a2188"
+      },
+      {
+        "first": 445,
+        "last": 485,
+        "range_lf_sha256": "0ef7bedec9124185e151990b08e7f502df2f678316bf547d74e1c59315306c57"
+      },
+      {
+        "first": 700,
+        "last": 988,
+        "range_lf_sha256": "70a1fb91bccbfe987cf1ef9bd6b8949a748f806e4394bb12509bdcf248f94b06"
+      }
+    ]
+  }
+]
+```
+
+### GPU timer and MSAA lifecycle terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0085: all4/35/6 frozen diff hunks and full77/482/90-line shared source,17 exact current source/caller/partial-fixture bindings. GQC1054/GQD0934; full immutable report import SHA2564f42a1c763fb2e17f96dd435337f6903c84b73d1f60586cbbcaf2c4a44578054; scope fingerprint `cc54c96ac970cbd3d1e7590141b4560f4ad90eb2d7dffe8fd735f589e95f9a73`
+- Retain current guarded query/ring repair under OPEN BR0260, common-format/sample MSAA admission and context-name reset. Extend existing BR0251 graphics recovery acceptance so optional failure diagnostics cannot suppress required rejection; separate TODO GQR0174 shader admission and FIXED archived BR0647 preserved. No new finding/remediation/status/inherited saving or runtime acceptance
+- GQ2 now226DONE/419TODO; GQ1 remains818DONE/1TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1041 unique sorted terminal ranks/255 remediation ranks.0085 checkpoints superseded by terminal evidence. Next0086; all remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and concurrent multiplayer work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+### Chunk0085 terminal verification, 2026-10-09
+
+- Exact immutable report import/body/SHA, ordered scope fingerprint, all45 frozen hunk/diff identities and17 current bindings verified. Queue226DONE/419TODO,1041 contiguous unique impact-sorted terminal ranks/255 remediation ranks and269/255 unchanged finding/remediation statuses verified; scoped tracked diagnosis whitespace check passed.0085 plan gates complete; no product/runtime acceptance. Next0086
+
+### Chunk0086 headless source and worker checkpoint, 2026-10-09
+
+- Previous goal turn completed0085 with verified terminal records. Read all0086 assigned65/2/1 frozen hunks and full dump1475/replay source/worker18. Full frozen dump ranges1-350,351-750,751-1206,1207-1475 emitted without truncation; no missing range. Read full current dump delta and named55-72/265-356 changed contexts, complete diagnostic helper/test and host worker plus native worker fixture and analysis export1620-1656
+- Worker/read-only fixture assertions preserve native poison/restart, one host busy-context retry and healthy reuse/profile/custom definition controls; no execution. Shared diagnostic warning dedup preserves ordinary repeats. Existing BR0209 headless terminal false-success and BR0233 direct output truncation/pre-close success remain OPEN; no duplicate root
+- Native export catches stdexception in parse/analyze/checkpoint but final JSON dump and catch failure construction are outside complete containment. Benchmark global timing/progress/tracking resets occur only normal path. Reconcile existing GQR0170/0082 and producer/resource ownership, serializer/replacement/statistics and actual caller contexts before terminal evidence
+- Added plan_gq2_0086_headless_metadata_continuation_20261009.md.0086 remains TODO with no report/import/rank/count increment;226DONE/419TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1041 terminal ranks/255 remediation ranks. No new finding/status/runtime/inherited saving
+- Broad rg source scan became unnecessarily slow; its session66997 was polled then interrupted after needed export path discovery. Terminal exit0 observed, no live tool/process left. Its second ledger search output truncated and is not full ledger credit; targeted short-cell searches used instead. BR0209/0233 combined output also truncated at tail; only visible evidence credited
+- HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda unchanged. Newly dirty concurrent RuntimeGameStateBridge.kt preserved along with prior multiplayer paths. Only diagnosis Markdown changed, no code/test/script edits, builds/configure, formatter/generator, driver/device/runtime/deferred probes, staging/commit
+
+Frozen identities:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp",
+    "assigned_first": 1,
+    "assigned_last": 1472,
+    "assigned_hunks": 65,
+    "frozen_whole_lines": 1475,
+    "frozen_whole_read": true,
+    "assigned_lf_sha256": "6806447743db120f012e9bae0a6fd68d12fff3be83612b79323ae10a24528f8c",
+    "frozen_whole_lf_sha256": "2bc94e8a28d9437f1d65066111d75a150673218188f55a9153f574f801b2f375",
+    "base_blob": "83b0e776a7a2fd2d5e428a2ec35430829906ce1d",
+    "frozen_head_blob": "d7d320b4b1bbd6fa658c8501701fb48830be2976",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "8bb4a1ac469d405adc40afce85c1356198121852235fbdc42ed85afbb57e4620",
+    "current_equal_frozen": false,
+    "current_delta_sha256": "61bab27338f597ce780149a20eee891acc29167e52bb2e3897105f2e41724547"
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/input_demo_headless_main.cpp",
+    "assigned_first": 1,
+    "assigned_last": 92,
+    "assigned_hunks": 2,
+    "frozen_whole_lines": 247,
+    "frozen_whole_read": true,
+    "assigned_lf_sha256": "322d26082946d489e9a896f6c1316ae9bf996c7af52350b415ac8e84ed12c91f",
+    "frozen_whole_lf_sha256": "b083bf298556ab8930becf8a919d26519728073ac17449e165d93e4f953ad7d1",
+    "base_blob": "0da152a4e6dc250218cf8ef212c95c94cf1e04c2",
+    "frozen_head_blob": "37b91ccbded929bc2d489d439105be931be4735b",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "3fe19eb672ae45e3732be9c4d6d167bdbbb6bcdf47e8530baea329c8837bb3d8",
+    "current_equal_frozen": true,
+    "current_delta_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/level_metadata_worker_main.cpp",
+    "assigned_first": 1,
+    "assigned_last": 18,
+    "assigned_hunks": 1,
+    "frozen_whole_lines": 18,
+    "frozen_whole_read": true,
+    "assigned_lf_sha256": "1a87738456384c4ced2e19a7294966767410747c78ba3c90b6373a14d796ce08",
+    "frozen_whole_lf_sha256": "1a87738456384c4ced2e19a7294966767410747c78ba3c90b6373a14d796ce08",
+    "base_blob": "ABSENT",
+    "frozen_head_blob": "605bfeddd3cef11c25a0b1c7f397c603cc012e14",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "fd56fc5492e51cc45930203ac886996f3daaeb969fd612945195f0b0ca92795b",
+    "current_equal_frozen": true,
+    "current_delta_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]
+```
+
+Explicit current bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/headless/input_demo_headless_main.cpp",
+    "current_lines": 247,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "b083bf298556ab8930becf8a919d26519728073ac17449e165d93e4f953ad7d1",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 247,
+        "range_lf_sha256": "b083bf298556ab8930becf8a919d26519728073ac17449e165d93e4f953ad7d1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/level_metadata_worker_main.cpp",
+    "current_lines": 18,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "1a87738456384c4ced2e19a7294966767410747c78ba3c90b6373a14d796ce08",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 18,
+        "range_lf_sha256": "1a87738456384c4ced2e19a7294966767410747c78ba3c90b6373a14d796ce08"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp",
+    "current_lines": 1482,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "b4857a07133766cf34da22c9658803d6a8f8714501b244f417c6caf6858c0269",
+    "read_ranges": [
+      {
+        "first": 55,
+        "last": 72,
+        "range_lf_sha256": "ea1825a5c593f937dfb666cb4317da7d8d66cfa31e2c7b7f6bd2bca110f6749e"
+      },
+      {
+        "first": 265,
+        "last": 356,
+        "range_lf_sha256": "ba25125250c5cb60543285441cc7925560e87a18cfa5bfe8b807bf6490af4f5d"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/headless/headless_diagnostics.h",
+    "current_lines": 26,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "507278c92f5ad1c8f4f08e9dcdffc36367dd7ba63db916ed9b9c2082c7b8a6c7",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 26,
+        "range_lf_sha256": "507278c92f5ad1c8f4f08e9dcdffc36367dd7ba63db916ed9b9c2082c7b8a6c7"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/host_metadata_worker.ps1",
+    "current_lines": 133,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "7ca5343b2f9b37830f42c4d997d420258da7961f4690c71c45849332d701a806",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 133,
+        "range_lf_sha256": "7ca5343b2f9b37830f42c4d997d420258da7961f4690c71c45849332d701a806"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_headless_diagnostics.cpp",
+    "current_lines": 29,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "5a6b271ddaa3b44ad3cad5fdb7b47fa8c0dda90a89639b51649016334f4e0da3",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 29,
+        "range_lf_sha256": "5a6b271ddaa3b44ad3cad5fdb7b47fa8c0dda90a89639b51649016334f4e0da3"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_native_metadata_worker.ps1",
+    "current_lines": 119,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "7077475822b8b341f29b5e79f28c10a6bf5f34c5ebd98a4f3a9922382cc5f481",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 119,
+        "range_lf_sha256": "7077475822b8b341f29b5e79f28c10a6bf5f34c5ebd98a4f3a9922382cc5f481"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/jni_level_metadata.cpp",
+    "current_lines": 1656,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "6fed20eae87535101db097c1c5628837c928bcb22f533422ddcc74515558a36e",
+    "read_ranges": [
+      {
+        "first": 1620,
+        "last": 1656,
+        "range_lf_sha256": "a7d295ed3b938f3802bf60abaea0a84c021a2ad6af0d8b8b4044a93774b53537"
+      }
+    ]
+  }
+]
+```
+
+### Headless metadata and replay protocol terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0086: all65/2/1 frozen hunks and complete frozen dump1475/replay/worker18, current dump complete delta/mapping and21 exact source/caller/fixture bindings. GQC1055/GQD0935; immutable report import SHA2565a91bdac660476043989aacb1ebabe006aec4db119ca1bbfc293b5172a8c1408; scope fingerprint `91c3e7fa854ab130d1a86c3570054585c7fe0577ba5b14551c881abdea085755`
+- Extend GQR0170 native metadata publication/callback reset to benchmark progress/tracking and scoped music/flyout temporary resources; retain GQR0082 poison/mount/restart and GQR0212 transport/work admission. OPEN BR0209 direct replay outcome and BR0233 output staging/flush/close remain existing roots. Current D1-in-D2 startup delta and completed GQR0162/0203/0224 repairs preserved. No new finding/remediation/status/inherited saving or fresh execution
+- GQ2 now227DONE/418TODO; GQ1 remains818DONE/1TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1042 unique sorted terminal ranks/255 remediation ranks.0086 source checkpoint superseded by terminal evidence. Next0087; all remaining preflights/sweeps/investigations/worktree/current-head supplements/closure required
+- Only diagnosis documents/report changed; HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and concurrent multiplayer/RuntimeGameStateBridge work preserved. No product/test/script edit, build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+### Chunk0086 terminal verification, 2026-10-09
+
+- Exact immutable report import/body/SHA, scope fingerprint, all68 frozen hunk/diff identities, current startup line mapping and21 current bindings verified.227DONE/418TODO main queue,1042 contiguous unique sorted terminal ranks/255 remediation ranks and269/255 unchanged finding/remediation statuses verified; scoped tracked diagnosis whitespace checks passed.0086 plan gates complete; no implementation/runtime acceptance. Next0087
+
+### Chunk0087 snapshot source and domain checkpoint, 2026-10-09
+
+- Previous turn completed0086 terminal report/import/verification. This turn read all assigned0087 planner18/C4/cpp21/header13 frozen hunks and full current/frozen planner382/C76/header246/cpp1187; all equal frozen. cpp302-551 fully present as added250-line diff hunk;1-301/552-897/898-1187 emitted as explicit whole source context. No truncated assigned/source output
+- Snapshot next-candidate publication and bounded count/action/link controls, stateful reveal gating, transit masks/compound actions/buddyproof, purpose-specific domain hashes, in-memory replay copy and partial serializer read. Need actual generation/query/fixture-export consumers before claiming completeness. state.hash/nav buddyproof difference and actor radius-only are evidence, not newly admitted defects
+- Named secretarea summary-valid/generation/audit and mismatch capture plus focused test2860-3057 read. Test intentionally suppresses boss-movement progression hash churn but detects death, separates actor radius and automap, checks in-memory replay plan and serialized capture. Authored assertions only, no full test/runtime credit
+- Capture null/ordinary build-false keeps prior fixture; exception clears. Mismatch caller ignores return. Need current getter/attempt association/freshness reconciliation under existing owners; do not invent independent defect without actual consumer proof. C domain hash has no local catch and calls callbacks; reconcile actual no-allocation/native contracts rather than generic ABI allegation
+- Added plan_gq2_0087_route_snapshot_continuation_20261009.md;0087 remains TODO with no report/import/rank/count increment.227DONE/418TODO;269findings255remediations72DONE182TODO1DEFERRED;194OPEN75FIXED;1042 terminal ranks/255 remediation ranks. No new finding/status/runtime/inherited saving
+- HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda unchanged; concurrent multiplayer/RuntimeGameStateBridge paths preserved. Only diagnosis Markdown changed; no product/test/script edit, build/configure, formatter/generator, runtime/device/security/malformed/allocation/resource probes, staging/commit
+
+Frozen identities:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/route_planner.h",
+    "assigned_first": 26,
+    "assigned_last": 365,
+    "assigned_hunks": 18,
+    "assigned_lf_sha256": "50dcd0c20970cd3fdd7e6ffb70d78680546bf321b5fbf59127a570826c986daa",
+    "base_blob": "f5232ddfc5a30239f797f554b0ff1bcb154235e3",
+    "frozen_head_blob": "28dc66e7201b8e6f1893e49adcb0f691bf0f207e",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "1ce7d25287e5e412a0ded64b59f37e65b930ae23801a55af3ab9310b4dbfc644",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot_c.h",
+    "assigned_first": 23,
+    "assigned_last": 70,
+    "assigned_hunks": 4,
+    "assigned_lf_sha256": "ff46e012b55a879a4e7eb9527b0770fda99840ce8050154003f67f5d515959fb",
+    "base_blob": "a92300b4ab0ce4835201d0f609358b6f21ac50b1",
+    "frozen_head_blob": "62c8ac59ebc477fc953af2a979594804bf834ec7",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "852b31bf51141c8e214f54d8e3d0fb4994fa6a3950668dabd4cc0d27257baca1",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot.cpp",
+    "assigned_first": 2,
+    "assigned_last": 1187,
+    "assigned_hunks": 21,
+    "assigned_lf_sha256": "90a27c33f66906568f2d0eb29bc37239ae08669bdd3a147df09776497f6012ae",
+    "base_blob": "4ae32bc90dcae83b2cc41c725b89989d069b2ca0",
+    "frozen_head_blob": "604c8328bb44e9328b85d85bbbfe38f8c003c159",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "c052f88423304c3eaba0e5add8aeccca643769e9cf0bacf1fd00db53907fa66d",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot.h",
+    "assigned_first": 7,
+    "assigned_last": 242,
+    "assigned_hunks": 13,
+    "assigned_lf_sha256": "6faedd50848106cc00fb6d2ff4cc00e3ed2e187146ab80e1842bb5448c450daf",
+    "base_blob": "644d9fbcebae8ae68e4b53dea7a83f3b04c97f8f",
+    "frozen_head_blob": "2f62505d06aa4fca01bda827aeff43c054b4eca4",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "7afb8c3965eed374ebe11083af16385e5638716bf988c977c5726c4725b98906",
+    "current_equal_frozen": true
+  }
+]
+```
+
+Current source/caller/fixture bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/route_planner.h",
+    "current_lines": 382,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "61a6abcd7e34d69f403ae5938ac0dd5d94321671a4b40f6b07674516704aa2cf",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 382,
+        "range_lf_sha256": "61a6abcd7e34d69f403ae5938ac0dd5d94321671a4b40f6b07674516704aa2cf"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot_c.h",
+    "current_lines": 76,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "76496d3a8206109db92f7a4273972692b613365621145915c712858fd9444805",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 76,
+        "range_lf_sha256": "76496d3a8206109db92f7a4273972692b613365621145915c712858fd9444805"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot.cpp",
+    "current_lines": 1187,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "00d8f5876b43973767fe0e3352b0c60ed435112d5e05f370de910dbee4d8e082",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 1187,
+        "range_lf_sha256": "00d8f5876b43973767fe0e3352b0c60ed435112d5e05f370de910dbee4d8e082"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_snapshot.h",
+    "current_lines": 246,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "a5dd45f968bae1129d5d74dfe1662429e2b16836968da10d159fbf92887d17ac",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 246,
+        "range_lf_sha256": "a5dd45f968bae1129d5d74dfe1662429e2b16836968da10d159fbf92887d17ac"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/secretarea.c",
+    "current_lines": 5482,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8709513453992935df0c01be88983dba60d0cf1ea1ca2b6f23f287fb681cee6c",
+    "read_ranges": [
+      {
+        "first": 3728,
+        "last": 3803,
+        "range_lf_sha256": "ad0dbd958e2a22fd9cf78bffb65a207d6d54bafa96607d62578ee83cb4b48d39"
+      },
+      {
+        "first": 3872,
+        "last": 3925,
+        "range_lf_sha256": "89b2587ac03a4bb33843c345382c4be3e9f1e5cb206e0eecb3789d06c7232da5"
+      },
+      {
+        "first": 4058,
+        "last": 4108,
+        "range_lf_sha256": "7c32045491cde70bc5dd8d25e67805a51e21cda334e47855ada2b668e8bd4e4a"
+      },
+      {
+        "first": 5140,
+        "last": 5205,
+        "range_lf_sha256": "36b07d4bb520e089ef57dd037861a9236c994f163f83a597b8f13f2845be590e"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_route_snapshot.cpp",
+    "current_lines": 3334,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "685ed9ef1522eafb5dd16b3f9a5b374283221643059f62af35ccb6bd2009a20d",
+    "read_ranges": [
+      {
+        "first": 2860,
+        "last": 3057,
+        "range_lf_sha256": "2d194bcdd7c800d793d1f69c3907c7eff0cb68ba0b16dee914e8012ebf017748"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0087 consumer and fixture publication checkpoint, 2026-10-09
+
+- Refreshed current goal/instructions/canonical queues and all six previous checkpoint bindings; unchanged at HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda. Verified0086 immutable report SHA2565a91bdac660476043989aacb1ebabe006aec4db119ca1bbfc293b5172a8c1408.227DONE/418TODO main GQ2; GQ1 818DONE/1TODO;269 findings194OPEN75FIXED;255 remediations72DONE182TODO1DEFERRED
+- Actual introspection parses the globally stored capture without comparison to the current shadow fixture hashes or attempt counter, reports valid from JSON object shape and embeds it beside the current summary. Current mismatch caller updates summary then ignores capture return. Full rescan and shadow enable reset clear capture; route-only refresh does not clear here. Ordinary failed capture can therefore retain an earlier payload beside later summary. This is a static conditional publication-association gap, not fresh reproduction, an admitted new finding or proof that an ordinary valid callback fails. Reconcile precise owner before terminal normalization; external request correlation BR0588 is related but does not by itself repair internal fixture association
+- Exact-symbol search across android C/C++ headers/sources/Python found apply_route_replay_fixture only definition/declaration and maintained tests; no production JSON reconstruction found by that search. In-memory application and serializer equality remain weaker than exported JSON replay equivalence; no universal no-reader claim
+- Seed/advance functions initialize eight generations to1 and advance each from its own hash with nonzero wrap. Navigation hash governs navigation generation; omission of buddy-proof from aggregate state hash alone is not missing navigation invalidation. Planner explicitly consumes buddy-proof for boss player-handoff route, marking waits_for_player
+- Read entry-state search and path reconstruction1200-1380: seven entry states per segment, transit masks checked for narrow entry, best state retained per segment and path follows state-node parents. Focused fixture1000-1088 preserves D1 action order and terminal action precedence;1360-1422 proves selective transit reachability in authored assertions. Invalid count/adjacency3334-line fixture tail returns failure but does not assert prior-output equality
+- Read both complete C planner wrappers5255-5416/5418-5473: local snapshot/cache/budget/visibility context, borrowed callbacks used within call,2million work/65536 cache defaults, catch boundary and truthful cancellation/partial-budget projection. Optional strict opaque-shot alternative uses separate cache namespace and remaining budget; its exhaustion deliberately does not invalidate completed main route, cancellation propagates. Do not equate budget counters with complete snapshot/search callback or allocation admission
+- BR0335 and BR0332 current OPEN owner sections read as historical root/acceptance, not fresh proof current repair absent. BR0588 remains external introspection request identity scope. Remaining0087 work: stateful transition and visibility key consumers, actual current persistent/live admission, focused failure assertions, root reconciliation/acceptance, terminal report/import/hash/rank checks.0087 remains TODO, no new root/status/rank/count/inherited saving
+- Bounded source output recovered after oversized owner-row output truncated; no coverage assigned to missing owner-row text. Wrapper read requested beyond actual5473-line EOF; completed all5473 before IndexError and subsequently recovered5396-5416 plus missing search1279. No source/test/script mutation, execution, formatter/build/generator, staging or commit; concurrent multiplayer work preserved
+
+Additional current source bindings (partial named context only):
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3275,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "0e712448abd2535fe41a8596c9fe6221e512cea400c7db3a431412efe77390c7",
+    "read_ranges": [
+      {
+        "first": 1015,
+        "last": 1058,
+        "range_lf_sha256": "61b82a0bc8e283b69b05336141fb37b174e8ae645406f198d78d50f3673537d7"
+      },
+      {
+        "first": 1215,
+        "last": 1278,
+        "range_lf_sha256": "fa7a52bba34aa21a6e30d29f2f48f9366a0919b955bcd06efe4d87e1f932afbf"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/secretarea.c",
+    "current_lines": 5482,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8709513453992935df0c01be88983dba60d0cf1ea1ca2b6f23f287fb681cee6c",
+    "read_ranges": [
+      {
+        "first": 195,
+        "last": 232,
+        "range_lf_sha256": "9351108f935a6684aec08fb21056171b524f85741d08418d06e6408732b5d94c"
+      },
+      {
+        "first": 906,
+        "last": 958,
+        "range_lf_sha256": "94dbc2b4b16609f58203fa68ba71aa584e5366e920d5302d81648246ba6e687f"
+      },
+      {
+        "first": 3728,
+        "last": 3803,
+        "range_lf_sha256": "ad0dbd958e2a22fd9cf78bffb65a207d6d54bafa96607d62578ee83cb4b48d39"
+      },
+      {
+        "first": 3810,
+        "last": 3845,
+        "range_lf_sha256": "5c0252a8c0057d303ee1df4224d40ded965e94fa2f3352b61ca1c34049c7913c"
+      },
+      {
+        "first": 5065,
+        "last": 5100,
+        "range_lf_sha256": "d89bf1071b13c0e3e3072a48ac5c4b01936e437ba9b18b4ad157394ce46a0e63"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_planner.cpp",
+    "current_lines": 5473,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "a726c8099b3d8e9105378d53009a62c075dedd83f0d912f376ffbccb55bb801d",
+    "read_ranges": [
+      {
+        "first": 353,
+        "last": 395,
+        "range_lf_sha256": "933ebdf9100137f1a3fec45b72af9dd983a14ca82d3ebb8eef5f5728dde784ae"
+      },
+      {
+        "first": 652,
+        "last": 675,
+        "range_lf_sha256": "f8d73a0b409f83ec498a7ee8f365db857d0424a53eae88e5c4497f7221ec96fd"
+      },
+      {
+        "first": 1200,
+        "last": 1380,
+        "range_lf_sha256": "fb782b65b881f88090cccbe9b26f54bf0e491b9fb7431446ba0b678886d54356"
+      },
+      {
+        "first": 2750,
+        "last": 2807,
+        "range_lf_sha256": "64b864d7ed3265dae34f83e1a49e9ee8ce72a14c2d488796a4e1209ec6126009"
+      },
+      {
+        "first": 5240,
+        "last": 5416,
+        "range_lf_sha256": "d0f7700810ab462ee5dd8e602a01e4577e015945813910f3f68a598c2fec87b6"
+      },
+      {
+        "first": 5418,
+        "last": 5473,
+        "range_lf_sha256": "c48ba9687bf032ffc98b150e13458e1eb3ab0ef0b962880bbed90aff38f4d75c"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_route_snapshot.cpp",
+    "current_lines": 3334,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "685ed9ef1522eafb5dd16b3f9a5b374283221643059f62af35ccb6bd2009a20d",
+    "read_ranges": [
+      {
+        "first": 1000,
+        "last": 1088,
+        "range_lf_sha256": "3338c49bfe3efc3aaa42fa54acec4170ca291d07d3ac493a4aabbadeabbea4d2"
+      },
+      {
+        "first": 1360,
+        "last": 1422,
+        "range_lf_sha256": "b67f08e1ef13033809de197214fd827ea4ec13fb7ed7db1fc91fac1111f26d14"
+      },
+      {
+        "first": 3300,
+        "last": 3334,
+        "range_lf_sha256": "41564f88f4b3213ef6bccdac35aa8488948484cfe3cb165fff593f2654d740b0"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0087 current cache and transition checkpoint, 2026-10-09
+
+- Current HEAD unchangedb661b6eb24e91adf5f3e566bc28eb73d4b679fda. Additional named contexts read in full untruncated output: cache1-150; secretarea3035-3145/3320-3393/3608-3685/3850-3935/4030-4248; planner391-495/595-650/1025-1140; tests1472-1579. Existing0081 terminal report current selector/private publication explanation independently agrees with named current caller; historical report is not fresh execution
+- Current persistent key contains generation/game/analysis_profile_hash/topology_hash only. Profile hashes effective game semantics, navigator radius, switch projectile radius/model version; no navigation fingerprint included. Load uses exact fixed record size, then read && close && decode still short-circuits close on short read. Existing BR0332 key-completeness and BR0336 close owners remain relevant; no duplicate root. Whole decoder/schema validation not claimed from1-150 ending at guard
+- Live end-of-level route uses compiled selector with valid canonical/live gates and ignored budget, not removed historical try_reuse. End-of-level is explicitly excluded from current full-planner fallback. Candidate state/summary/certificate initialized privately, published together only when candidate valid, or valid incumbent retained on deferred work. BR0335 acceptance must target actual selector current-object/start/nav/downstream proof, not demand recreation of removed old implementation or assume caller2ms budget bounds ignored selector
+- Stateful transition consumer respects action order, exits terminate without intermediate opening, one-sided lock/unlock skips paired wall, toggle opens doors/destroys blastables. Valid linked sides and reciprocal walls only; contrary transition rearms previously fired effects only on shootable restored surfaces, consumed one-shot remains unavailable. Maintained partial fixture asserts directionality in both authoritative modes, reversible reveal cycle and one-shot rejection; assertions inspected, not run
+- Visibility sample identity includes namespace/sample-kind/segment and wall or segment/position target. Cache is call-local in reviewed C wrappers; do not infer cross-snapshot persistent reuse simply because no snapshot hash appears in key. Broader repeated use during stateful progress and namespace invalidation still needs named call-site tracing
+- Next0087: final stateful visibility cache-use/namespace consumers, route replay reconstruction/failure acceptance and diagnostic publication ownership reconciliation, then immutable terminal report/canonical import verification. Conditional old replay payload remains recorded, not admitted as independent root or attributed solely to external BR0588 request freshness. Require current comparison identity on payload, truthful failed capture and explicit scope for JSON reconstruction before accepting replay diagnostics
+- Queue/status/rank totals unchanged:227DONE418TODO;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED.0087 TODO. Only diagnosis Markdown changed; no product/test/script mutation or execution, no deferred probes, staging or commit
+
+Additional current bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/route_analysis_cache.c",
+    "current_lines": 161,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "65497036779d9f7738c0222657479062a9957820ee7b6a0680017781fc2e2fe1",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 150,
+        "range_lf_sha256": "56aeb572c5ca2a65b545af90bd2ce473484d36f58003ce6d417380104cdc2d7e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/secretarea.c",
+    "current_lines": 5482,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "8709513453992935df0c01be88983dba60d0cf1ea1ca2b6f23f287fb681cee6c",
+    "read_ranges": [
+      {
+        "first": 3035,
+        "last": 3145,
+        "range_lf_sha256": "85fa04279c82f2573e2778eccdb42bf9efffc305d2fadba0532fac41704fe544"
+      },
+      {
+        "first": 3320,
+        "last": 3393,
+        "range_lf_sha256": "ccf9ecf54d99bcd4223650a3b15103fa2a4cd64e2dfa7520677e37c8886cdac3"
+      },
+      {
+        "first": 3608,
+        "last": 3685,
+        "range_lf_sha256": "27d3f98c0e36b2a7483f5891f67f78973530dfdac6ee7a4ea0c020fdeb8e04c1"
+      },
+      {
+        "first": 3850,
+        "last": 3935,
+        "range_lf_sha256": "3196a6ebbe9c60ff86d2402a36ee5bcd7de2850849f6ede625812daf99cf6b01"
+      },
+      {
+        "first": 4030,
+        "last": 4248,
+        "range_lf_sha256": "7de2836c1162a732f68666f957e3a93dfe270d47032af6fe454cc6e1fce31232"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/route_planner.cpp",
+    "current_lines": 5473,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "a726c8099b3d8e9105378d53009a62c075dedd83f0d912f376ffbccb55bb801d",
+    "read_ranges": [
+      {
+        "first": 391,
+        "last": 495,
+        "range_lf_sha256": "403d497f8037c066ed986ff00ff0819c8be8c1da89d974caebf03bfc2fd05b1d"
+      },
+      {
+        "first": 595,
+        "last": 650,
+        "range_lf_sha256": "fe464640c6cd2fe178ad5252f1076fd1b18b28d62d3d19cf10a27c2edf1e5f64"
+      },
+      {
+        "first": 1025,
+        "last": 1140,
+        "range_lf_sha256": "a85ba6dde794aa999ab4478afa1bf2fd374bf7638c861e4d53bd752c557fc853"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_route_snapshot.cpp",
+    "current_lines": 3334,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "685ed9ef1522eafb5dd16b3f9a5b374283221643059f62af35ccb6bd2009a20d",
+    "read_ranges": [
+      {
+        "first": 1472,
+        "last": 1579,
+        "range_lf_sha256": "d669134b7f6c7e01edd872b3b3b27106b09d5e091581ef41526acfabb62ac05d"
+      }
+    ]
+  }
+]
+```
+
+### Route snapshot and replay publication terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0087 all56 frozen hunks, four full assigned sources and9 merged current source/caller/fixture bindings; GQC1056/GQD0936. Immutable import SHA25693909be81a6fd82e6b9b4201c1662b607e8a11f95c4d16bc4347ca68b0311523; scope fingerprintb78966c7128068fefa308d71800fec3d652bc699ff995fcf2094a3fb94d05a44
+- Retain purpose-specific generations, entry-state transit search, ordered reversible/one-shot effects and call-local namespaced visibility caches. Current compiled selector/private candidate publication preserved; BR0335 acceptance targets actual current live start/object/nav/downstream coherence. BR0332 persistent identity and BR0336 short-read close remain existing owners
+- Extend GQR0173 producer/publication acceptance to route capture attempt identity and explicit failed capture with historical payload labeling. In-memory apply/JSON object shape do not establish executable reconstruction or current comparison association. GQR0182 geometry/GQR0212 bounds remain separate. No new finding/remediation/status/runtime/inherited saving
+- GQ2 main228DONE417TODO; GQ1 818DONE1TODO;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED;1043 sorted contiguous terminal ranks/255 remediation ranks. Next0088; all pending preflights/sweeps/investigations/worktree/current-head supplements/closure remain required
+- Only diagnosis report/documents changed; no product/test/script edit, execution, formatter/generator/build/configure, deferred probes, staging/commit. Current HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda; concurrent multiplayer work preserved
+
+### Chunk0087 terminal verification, 2026-10-09
+
+- Exact imported report body/SHA25693909be81a6fd82e6b9b4201c1662b607e8a11f95c4d16bc4347ca68b0311523, all56 frozen hunk identities,9 current merged bindings and ordered DATA scope fingerprint verified.228DONE417TODO main queue;1043 sorted unique contiguous terminal ranks/255 remediation ranks; unchanged269finding/255remediation statuses and HEAD verified; scoped tracked diagnosis whitespace checks pass
+- All0087 plan gates complete; earlier partial checkpoints superseded by terminal evidence. No runtime/remediation acceptance. Next0088, with remaining campaign/preflights/sweeps/investigations/worktree/current-head supplement/closure still pending
+
+### Chunk0088 TSF and end-level source checkpoint, 2026-10-09
+
+- Previous0087 terminal import/verification complete.0088 current full TSF1443/bitmap93/multi199/interface31 read untruncated; all3 helpers equal frozen. TSF differs by EOF publication-after-ring-write and gameplay headroom; complete current diff read. All4 frozen identities/hunk counts/range hashes verified mechanically; frozen65 TSF hunks not yet read, no terminal/import/queue/rank increment
+- Current source contracts and remaining gates documented in plan_gq2_0088_tsf_endlevel_continuation_20261009.md. Need exact frozen hunks/mapping, ring/build/lifecycle/completion assertions and paired bitmap/decoder/multiplayer consumers, existing owner/status reconciliation before terminal report. Search locations are discovery only, no coverage from unopened CMake/tests/inherited callers
+- Initial UTF8 source output failed at TSF64 due terminalcp1252; recovered whole1-320 with ASCII codepoint escapes, then bounded remaining source through1443. No source mutation or formatting of handmade comments
+-228DONE417TODO main GQ2;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED;1043terminal/255remediation ranks unchanged.0088 TODO; no new finding/status/runtime/inherited saving. Current HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda and concurrent multiplayer work preserved; only diagnosis Markdown changed, no product/test/script edit/execution/deferred probe/staging/commit
+
+Frozen identities:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/digi_tsf_music.c",
+    "assigned_first": 2,
+    "assigned_last": 1438,
+    "assigned_hunks": 65,
+    "assigned_lf_sha256": "068dc3c3ccbd31886740d404f9cf394af31813c19b8f1d0248dcfadaebd25c30",
+    "base_blob": "9b9b18887dc038f487a600169e79d187fa321d2b",
+    "frozen_head_blob": "afd0859d9b4043dde0cfe3cf16ec2718ad263b57",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "dcc4c736676fa3c2e61d2f9442497747eaf1cc0aad85a6590cff4e4dbbf27c85",
+    "current_equal_frozen": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_bitmap.h",
+    "assigned_first": 1,
+    "assigned_last": 93,
+    "assigned_hunks": 1,
+    "assigned_lf_sha256": "603f76991a6e75ce2f1f228ef8dfe59a03855a58ab3654ee99c1e641110710d6",
+    "base_blob": "ABSENT",
+    "frozen_head_blob": "2d67aca30cd19e88b978c7780ccda05bb349d0ef",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "46bc01e449db2499c8e4d8150a9d68212a16eaea239ef30923a3fe3a4df7a94a",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_multi_impl.h",
+    "assigned_first": 1,
+    "assigned_last": 199,
+    "assigned_hunks": 1,
+    "assigned_lf_sha256": "6905889d01e8684f2a873b1c358396e92c92d93ca06e9bc99f80254ce6cbacf7",
+    "base_blob": "ABSENT",
+    "frozen_head_blob": "b033272199c4fdfed6f5f398a21a6c27593c4639",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "a2fbbc2f97151ad661127817587981055124d0aa580de9af0e9c03656eeb1d33",
+    "current_equal_frozen": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_multi.h",
+    "assigned_first": 1,
+    "assigned_last": 31,
+    "assigned_hunks": 1,
+    "assigned_lf_sha256": "d22770ff9880a4c14d7c0997dc6cde95224ef29e37cb51cc6779590c0566e2f8",
+    "base_blob": "ABSENT",
+    "frozen_head_blob": "87ac4af8c70e55be5a20dce9fc66911ab9e50a96",
+    "original_blob": "ABSENT",
+    "whole_zero_context_diff_sha256": "7e9d3386427fc8554d7769321b306c2deacfe7699641dfa5b52b7f8aec80d804",
+    "current_equal_frozen": true
+  }
+]
+```
+
+Current whole-source bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/digi_tsf_music.c",
+    "current_lines": 1443,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "367fe39f2ac6a584357393d1a6bd5507ea761459e1b06e31dbfba1ab9bbd52d2",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 1443,
+        "range_lf_sha256": "367fe39f2ac6a584357393d1a6bd5507ea761459e1b06e31dbfba1ab9bbd52d2"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_bitmap.h",
+    "current_lines": 93,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "603f76991a6e75ce2f1f228ef8dfe59a03855a58ab3654ee99c1e641110710d6",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 93,
+        "range_lf_sha256": "603f76991a6e75ce2f1f228ef8dfe59a03855a58ab3654ee99c1e641110710d6"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_multi_impl.h",
+    "current_lines": 199,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "6905889d01e8684f2a873b1c358396e92c92d93ca06e9bc99f80254ce6cbacf7",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 199,
+        "range_lf_sha256": "6905889d01e8684f2a873b1c358396e92c92d93ca06e9bc99f80254ce6cbacf7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_multi.h",
+    "current_lines": 31,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "d22770ff9880a4c14d7c0997dc6cde95224ef29e37cb51cc6779590c0566e2f8",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 31,
+        "range_lf_sha256": "d22770ff9880a4c14d7c0997dc6cde95224ef29e37cb51cc6779590c0566e2f8"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0088 frozen TSF diff and completion fixture checkpoint, 2026-10-09
+
+- All65 TSF zero-context frozen hunks emitted/read in bounded1-22/23-44/45-65 with no truncation. Three helper whole addition hunks mechanically match previously read complete current sources; all additions and frozen attribution accounted. TSF current/frozen mapping below combines full current read with complete reviewed delta; do not claim frozen physical source separately emitted
+- Full pcm_ring and music_completion production/main/CMake/runner read. Fixture includes actual product producer/callback/lifecycle, controls synth output and write barrier, actual SDL worker;21 authored MIDI/HMP/PCM tail/full/empty/loop/pause/stop/replacement cases assert no premature hook, exact tail/zero padding, one-shot game-thread dispatch, cleanup and replacement isolation. Inspected only, no test/build/device execution or soundfont/acoustic oracle credit
+- Ring release/acquire cursor publication, producer space check and consumer bounds traced. Reset explicitly requires producer/consumer quiescence. Current EOF release occurs after final write; callback requires EOF plus empty ring. Preserve current repair rather than describe frozen premature EOF as unrepaired current behavior. Decoder/timeline and background/tuning/publication contexts still require owners and named consumer reconciliation
+- Android CMake named D1/D2 arch_sdl target source replacement defines ANDROID for TSF. Desktop branch textual deficiencies alone do not prove shipped desktop build failure; broader source selection remains unclaimed. Paired endlevel loader validates optional terrain/satellite before freeing previous bitmap and invokes legacy decoder by name afterward. Actual reopen/decoder/heightmap/native failure ownership still pending. Multi consumer search supplied discovery locations only, not read coverage
+- Only diagnosis documents changed, HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda unchanged; concurrent multiplayer work preserved.0088 TODO,228DONE417TODO,unchanged findings/remediations/ranks. No runtime/malformed/security/allocation/resource probe, product/test/script edit, formatter/generator/build/configure, staging or commit
+
+TSF65 frozen hunk identities:
+
+```json
+[
+  {
+    "ordinal": 1,
+    "header": "@@ -2 +2 @@",
+    "raw_lf_sha256": "7d88a89c35b6819d8bde83d34b80ba04afeeed0288260b21027c057bed6a8b81"
+  },
+  {
+    "ordinal": 2,
+    "header": "@@ -7 +7 @@",
+    "raw_lf_sha256": "8696a56efe3bbbb44a2cfc138a275ab69c1ced4b64daa9d1fa8ca5f77a9270d1"
+  },
+  {
+    "ordinal": 3,
+    "header": "@@ -10 +10 @@",
+    "raw_lf_sha256": "6145adb513a297370aaa492c8b19261e64c638c7d23c0441940b5fd0463840bf"
+  },
+  {
+    "ordinal": 4,
+    "header": "@@ -23,0 +24 @@",
+    "raw_lf_sha256": "d9d54d4328346512f54521d142a51312b716ca5b6a40ef5fa0e13106e92cb9a5"
+  },
+  {
+    "ordinal": 5,
+    "header": "@@ -30,0 +32,5 @@",
+    "raw_lf_sha256": "7fec3568b43f96723480d754fba632dc08f94500f11255e20d95a5671b5a065e"
+  },
+  {
+    "ordinal": 6,
+    "header": "@@ -44,0 +51,4 @@",
+    "raw_lf_sha256": "202fd1d39699f383aa116f1201328d0e17579813328adccbe2c566693761d19b"
+  },
+  {
+    "ordinal": 7,
+    "header": "@@ -45,0 +56,4 @@",
+    "raw_lf_sha256": "13dae85b69d46e325fb2bf43f14828405a9638962821ef3df3e1c9abe22efe6b"
+  },
+  {
+    "ordinal": 8,
+    "header": "@@ -52 +66,2 @@",
+    "raw_lf_sha256": "983b8d265d7d9b27cf1fc2e1f8b345bcbbdb45a8b04d96cc47dd30084ec77005"
+  },
+  {
+    "ordinal": 9,
+    "header": "@@ -54,0 +70,4 @@ static tml_message *g_midi_cur = NULL; /* current playback cursor        */",
+    "raw_lf_sha256": "51f8b03c1db6410e74e7534dcafc3463e456535324757a2b65724f8c841b11e3"
+  },
+  {
+    "ordinal": 10,
+    "header": "@@ -78,0 +98 @@ static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */",
+    "raw_lf_sha256": "c4b9072f308bd4ed9f37b1cc51462c3a450fbc06da1c350f4c56862639cf3a62"
+  },
+  {
+    "ordinal": 11,
+    "header": "@@ -89,2 +109,9 @@ static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */",
+    "raw_lf_sha256": "7f5204a76de3fd29f482b7a08b71a9760c64ed4686fb0932f9dbc023f944f773"
+  },
+  {
+    "ordinal": 12,
+    "header": "@@ -133,0 +161,4 @@ static unsigned int g_callback_trace_count = 0;",
+    "raw_lf_sha256": "8a5ca8477e55bbfe80b58cbc99efdc561b97976092dca420f4a71d38b123d097"
+  },
+  {
+    "ordinal": 13,
+    "header": "@@ -149,0 +181,4 @@ extern AAssetManager *g_asset_manager; /* set in jni_main.c              */",
+    "raw_lf_sha256": "afa5b907b608067b28fa6586f6238f9269cc3f572ea6127f1f18b3b8bf9ca014"
+  },
+  {
+    "ordinal": 14,
+    "header": "@@ -153,0 +189,5 @@ extern AAssetManager *g_asset_manager; /* set in jni_main.c              */",
+    "raw_lf_sha256": "c420ab39393d66e125c9926db7fc24e47563e147f753708414176d1ddef246db"
+  },
+  {
+    "ordinal": 15,
+    "header": "@@ -169,0 +210,4 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "642ebf417a1302ee0f5c59d7769caba7c1dac3fb2a140246a2f61c50ca91e356"
+  },
+  {
+    "ordinal": 16,
+    "header": "@@ -177,15 +221 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "3aec246225856b9254dc4732351e98fd61dbd658b95ec818b472a96b4bc10abf"
+  },
+  {
+    "ordinal": 17,
+    "header": "@@ -198 +228,3 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "21729cf0c1db0ac6a4c121e42a10c6ed7f88cb6899e68c3531cf8d4ef2c2e1f6"
+  },
+  {
+    "ordinal": 18,
+    "header": "@@ -202,3 +234,3 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "5d8672ebddfc15ee10863ba23afda46ef2f80515a268e9c4fb00a0f5bbd579dd"
+  },
+  {
+    "ordinal": 19,
+    "header": "@@ -208 +240 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "2ce2f01404c9d5fa26a06d7ae5c57c7cda673b70d6b4d82c23a4e2f7d2adab5b"
+  },
+  {
+    "ordinal": 20,
+    "header": "@@ -221,0 +254,58 @@ static int tsf_music_load_soundfont(void)",
+    "raw_lf_sha256": "f3114f86ee5ebf31ba3ba7f207a40cc08c3ac925235f35f703f203bf0a3ef3d2"
+  },
+  {
+    "ordinal": 21,
+    "header": "@@ -225,0 +316,7 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "7e8006adfdb0cc8a14dcbd9b420d95c0b227984a6f6407b9b43c0ff207b0c412"
+  },
+  {
+    "ordinal": 22,
+    "header": "@@ -254,2 +351,2 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "beea2d48c276060b24d4305f95fee1f07db92d2af8d17aacdc0aa90c8ed44a6b"
+  },
+  {
+    "ordinal": 23,
+    "header": "@@ -258 +355 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "1bcfdc3943dc5c8c7b458ef8a4e7243ee028dafdafc72ce9aa2c4d0561ec6214"
+  },
+  {
+    "ordinal": 24,
+    "header": "@@ -261,3 +358,3 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "645ac818de05f876af56072cea865473dfc1ede69a9d396caacc29ab151f1bf2"
+  },
+  {
+    "ordinal": 25,
+    "header": "@@ -266,2 +363,2 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "aecd4278a9f3bc697ff5f4ea8fbb1b6df3fb0ad612a05adbbf349cbed9ff341e"
+  },
+  {
+    "ordinal": 26,
+    "header": "@@ -270,2 +367,2 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "53db5e9616e6a223009de8f59d82fbb9f6a34b49365c5bc85612085080a7c7c2"
+  },
+  {
+    "ordinal": 27,
+    "header": "@@ -283 +380 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "e4f4dd5ea5158a536fd6f409658fad08c2e82763af454f79ec9590ef380e0138"
+  },
+  {
+    "ordinal": 28,
+    "header": "@@ -314,3 +411,3 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "9e21b1c6330a06390ed9a4e71b602a2ff5f34f7eb6187eb42186934c8619afe5"
+  },
+  {
+    "ordinal": 29,
+    "header": "@@ -319,3 +416,3 @@ static int render_frames(short *out, int frames)",
+    "raw_lf_sha256": "17d83603f85353fc67c8425ab7f7c6695ec1a000ed808db4cd558b0143682ced"
+  },
+  {
+    "ordinal": 30,
+    "header": "@@ -386,7 +483 @@ static int pcm_render_frames(short *out, int frames)",
+    "raw_lf_sha256": "e888944610c1109d51f42c3f27c880639cf7c346a61501027c385b6a3b6cf16a"
+  },
+  {
+    "ordinal": 31,
+    "header": "@@ -433,2 +524,2 @@ static void tsf_apply_tuning_command(const struct tsf_tuning_command *command,",
+    "raw_lf_sha256": "90665e401a685cdb2f8183c65d934eac0eba70001b28257cd6bb6856bf3d31ac"
+  },
+  {
+    "ordinal": 32,
+    "header": "@@ -440 +531 @@ static void tsf_apply_tuning_command(const struct tsf_tuning_command *command,",
+    "raw_lf_sha256": "c4bfc2f81d708ea69b07ecefae43de813661272b2a37e8079f9c5badf976b902"
+  },
+  {
+    "ordinal": 33,
+    "header": "@@ -521,44 +611,0 @@ static void tsf_finish_tuning_ownership(void)",
+    "raw_lf_sha256": "d42cc0304139d6622e013a29fd63f1856bb86ac833048118084387d8ce42b46f"
+  },
+  {
+    "ordinal": 34,
+    "header": "@@ -571,0 +619 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "60a2a4f938e43276f1c28428eac1df3775dbd0775779d863b636401de81872ec"
+  },
+  {
+    "ordinal": 35,
+    "header": "@@ -577,3 +625,3 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "72e4c4e437590a1c64f0c70de4811edc8a7af2f87a54f2c4758699ee1543071a"
+  },
+  {
+    "ordinal": 36,
+    "header": "@@ -582,0 +631,7 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "b84e398daee31bdafc277fc137cff779a6f459e6c14867932b6eb3b7ed3c526d"
+  },
+  {
+    "ordinal": 37,
+    "header": "@@ -607,2 +662,2 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "8ab57effc5bb63c0d42a9bee973960f16a6f30c8234a1f4ebb062bf63075628e"
+  },
+  {
+    "ordinal": 38,
+    "header": "@@ -620 +675 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "730457b16dee2d6d14179fd9bd7a2671ecb92805ba89cbd86d4200cad822fd53"
+  },
+  {
+    "ordinal": 39,
+    "header": "@@ -626 +681 @@ static int render_thread_func(void *data)",
+    "raw_lf_sha256": "eddb8bfe7d1a78050a77a0aa840e1cc46af2bafe523d0472a14fa50a6f93cb0d"
+  },
+  {
+    "ordinal": 40,
+    "header": "@@ -643 +698 @@ static int render_thread_start(void)",
+    "raw_lf_sha256": "bc963b3e66d2a4c6b7607989a8da0b30d216908f393936580ef7864e1e078bb0"
+  },
+  {
+    "ordinal": 41,
+    "header": "@@ -701 +756 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "f6004ab895b7c287c0802f3f85fe1b9d95072f9a2e94c98ba8546472dac656e8"
+  },
+  {
+    "ordinal": 42,
+    "header": "@@ -710 +765,8 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "6c466fb4c3d8a89b201c849fe72d73a828b8457cac365f8cf1218096dde19ede"
+  },
+  {
+    "ordinal": 43,
+    "header": "@@ -722 +784 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "713f7c37d8161eecce20ffdaa1d7923a7cca019af5fc1b7a67f244b2e1798e31"
+  },
+  {
+    "ordinal": 44,
+    "header": "@@ -727,0 +790,2 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "b6c509c3706477ffe44e85813ee4c02ea888611f9f1e8f07bbbe6d926562df55"
+  },
+  {
+    "ordinal": 45,
+    "header": "@@ -733,0 +798,5 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "0055ab83e3edd86d219a1d9830d6569692becfac1875bd28d6753d4f138ed0d3"
+  },
+  {
+    "ordinal": 46,
+    "header": "@@ -736 +805 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)",
+    "raw_lf_sha256": "cdcfcfbfdf38b8d94815215d2cfd39efba117ee9a8fc85af93912e47e23f8dc6"
+  },
+  {
+    "ordinal": 47,
+    "header": "@@ -890,0 +960,9 @@ static unsigned char *music_read_stdio_bounded(const char *filename,",
+    "raw_lf_sha256": "70aab1ea4e6b55b302acb25483f5bbace15f7ec428e92ab8e9f5f6aa711535f1"
+  },
+  {
+    "ordinal": 48,
+    "header": "@@ -894,0 +973,5 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "d0fd5ceb200e35dc8ef0ed4140f73e20ff6f2603bed77322bf6da3c2f44f40eb"
+  },
+  {
+    "ordinal": 49,
+    "header": "@@ -901,0 +985,6 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "9d62419422e17827be27277666fb627547b9eedc619f92db75f81095b93980d6"
+  },
+  {
+    "ordinal": 50,
+    "header": "@@ -908 +997 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "dfbdebed57264ab07b664c1fb7008a8154b953e65177a2a30ff9d7c452f6d726"
+  },
+  {
+    "ordinal": 51,
+    "header": "@@ -926 +1015,3 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "86ed4b3b2940119c7f81833cad085fcf0cd4569edb518069df7bafe326b318b7"
+  },
+  {
+    "ordinal": 52,
+    "header": "@@ -996,13 +1087,20 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "db8c8fee214b6fb376042ee1751519c9eb789357904ee743ae66df3016e67a49"
+  },
+  {
+    "ordinal": 53,
+    "header": "@@ -1010,0 +1109,6 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "1e86cf9c02fd96eacfe3b454c62b91ba57eccfdf8295586e29d024e8bd73be23"
+  },
+  {
+    "ordinal": 54,
+    "header": "@@ -1044,0 +1149,11 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "2947d06bd2be3d3edbfc6c61fce78ec90d038797fc5c6a7492eb827547c44a01"
+  },
+  {
+    "ordinal": 55,
+    "header": "@@ -1046,3 +1161,16 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "ffaaec6c0d7b9935fb590c08ea2033839108ed081b44d7dcb0b3dc2bfafb627e"
+  },
+  {
+    "ordinal": 56,
+    "header": "@@ -1070,0 +1199,3 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())",
+    "raw_lf_sha256": "ad6a6ed85ad0fde08b3cf390859c2c146b0a00e253d1a7fb89e22e99bde40a4c"
+  },
+  {
+    "ordinal": 57,
+    "header": "@@ -1104,0 +1236 @@ void mix_free_music(void)",
+    "raw_lf_sha256": "d702fe299ecf9bf2e9200a343fa5be599ae6d4b215b4587000778213c181d474"
+  },
+  {
+    "ordinal": 58,
+    "header": "@@ -1113,0 +1246,2 @@ void mix_free_music(void)",
+    "raw_lf_sha256": "2265cab802efad6527e25a074e0f7f97560decc8361dd8df2eba622282993757"
+  },
+  {
+    "ordinal": 59,
+    "header": "@@ -1114,0 +1249,2 @@ void mix_free_music(void)",
+    "raw_lf_sha256": "9e5a50cda53ae5c1a7c475c7a23cf85aff60d50b461b04e5c0eb8b154a187f75"
+  },
+  {
+    "ordinal": 60,
+    "header": "@@ -1131,3 +1267,3 @@ void mix_free_music(void)",
+    "raw_lf_sha256": "cc41138dc95a0fa0192a7c608f028239af7f4fe18a1c180b5f2d5743f718d1a3"
+  },
+  {
+    "ordinal": 61,
+    "header": "@@ -1255,0 +1392,5 @@ int tsf_music_get_active_voices_max(void)",
+    "raw_lf_sha256": "958166c40b8d23537e0b642f97f1d9db9ab41ebec7376ef44e89e80e339f57f3"
+  },
+  {
+    "ordinal": 62,
+    "header": "@@ -1262 +1403 @@ int tsf_music_get_rb_fill(void)",
+    "raw_lf_sha256": "525b606a0b6773f07a3e28271976929e0f54a8ec1610c160489a74189bd73773"
+  },
+  {
+    "ordinal": 63,
+    "header": "@@ -1266 +1407 @@ int tsf_music_get_rb_capacity(void)",
+    "raw_lf_sha256": "240fd102282bdb9ecc08f66e0ebdd0f2e3e6152e79ae76f4de3cdc6b05dcef77"
+  },
+  {
+    "ordinal": 64,
+    "header": "@@ -1271,0 +1413,4 @@ float tsf_music_get_gain_db(void)",
+    "raw_lf_sha256": "346d10fd398804b12931a1eed9152f1f4118acb9df1f8e5793b9dfb6668fa047"
+  },
+  {
+    "ordinal": 65,
+    "header": "@@ -1288,0 +1434,5 @@ void tsf_music_set_max_voices(int n)",
+    "raw_lf_sha256": "a4bc79e520c05210bf3cd5fb9562ed129b7e8cb7247249232eae1c3328806958"
+  }
+]
+```
+
+Current-to-frozen TSF line mapping:
+
+```json
+[
+  {
+    "tag": "equal",
+    "frozen_first": 1,
+    "frozen_last": 311,
+    "current_first": 1,
+    "current_last": 311
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 312,
+    "frozen_last": 312,
+    "current_first": 312,
+    "current_last": 312
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 313,
+    "frozen_last": 319,
+    "current_first": 313,
+    "current_last": 319
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 320,
+    "frozen_last": 320,
+    "current_first": 320,
+    "current_last": 320
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 321,
+    "frozen_last": 414,
+    "current_first": 321,
+    "current_last": 414
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 415,
+    "frozen_last": 415,
+    "current_first": 415,
+    "current_last": 415
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 416,
+    "frozen_last": 426,
+    "current_first": 416,
+    "current_last": 426
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 427,
+    "frozen_last": 427,
+    "current_first": 427,
+    "current_last": 427
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 428,
+    "frozen_last": 440,
+    "current_first": 428,
+    "current_last": 440
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 441,
+    "frozen_last": 441,
+    "current_first": 441,
+    "current_last": 441
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 442,
+    "frozen_last": 669,
+    "current_first": 442,
+    "current_last": 669
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 670,
+    "frozen_last": 671,
+    "current_first": 670,
+    "current_last": 672
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 672,
+    "frozen_last": 681,
+    "current_first": 673,
+    "current_last": 682
+  },
+  {
+    "tag": "insert",
+    "frozen_first": 682,
+    "frozen_last": 681,
+    "current_first": 683,
+    "current_last": 685
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 682,
+    "frozen_last": 788,
+    "current_first": 686,
+    "current_last": 792
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 789,
+    "frozen_last": 789,
+    "current_first": 793,
+    "current_last": 793
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 790,
+    "frozen_last": 832,
+    "current_first": 794,
+    "current_last": 836
+  },
+  {
+    "tag": "replace",
+    "frozen_first": 833,
+    "frozen_last": 834,
+    "current_first": 837,
+    "current_last": 839
+  },
+  {
+    "tag": "equal",
+    "frozen_first": 835,
+    "frozen_last": 1438,
+    "current_first": 840,
+    "current_last": 1443
+  }
+]
+```
+
+Additional current bindings:
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/pcm_ring.h",
+    "current_lines": 67,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "2ed20e74b0ba091cd81f8d321335cca4ab90cb0565155549eb39c06fcced3066",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 67,
+        "range_lf_sha256": "2ed20e74b0ba091cd81f8d321335cca4ab90cb0565155549eb39c06fcced3066"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/music_completion/production.c",
+    "current_lines": 288,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "b43b0fe1ba2937ccf468845a8b374f4de8a4778b1574575b3c15022286bdc96b",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 288,
+        "range_lf_sha256": "b43b0fe1ba2937ccf468845a8b374f4de8a4778b1574575b3c15022286bdc96b"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/music_completion/main.cpp",
+    "current_lines": 6,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "362472a8adb6032faad1b141100f0a0da70958eb80484ac5679550662322454e",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "362472a8adb6032faad1b141100f0a0da70958eb80484ac5679550662322454e"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/music_completion/CMakeLists.txt",
+    "current_lines": 13,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "c60dd25f6664ed3ef8a92b6ca40680480530673c17f6386d01b64185e1e60069",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 13,
+        "range_lf_sha256": "c60dd25f6664ed3ef8a92b6ca40680480530673c17f6386d01b64185e1e60069"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_android_music_completion.ps1",
+    "current_lines": 10,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "139b7e994bdbc682a6adaf0974531d0305279b76ce2f3b007be5fdc86e4074b2",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 10,
+        "range_lf_sha256": "139b7e994bdbc682a6adaf0974531d0305279b76ce2f3b007be5fdc86e4074b2"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/CMakeLists.txt",
+    "current_lines": 805,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "3a185b8da07fce6fd5fcc7e6dcb34cc9fafaaa06b1749bf3343f3f48dc0df92e",
+    "read_ranges": [
+      {
+        "first": 628,
+        "last": 655,
+        "range_lf_sha256": "96bb2ef02660029c23ef2f2fe7e8cbd56a57cca7cca7ab79f8aeb0e4b60017d1"
+      },
+      {
+        "first": 741,
+        "last": 772,
+        "range_lf_sha256": "2cf3e87b60f58f30c6124d7d1d334d7f0e693d12fb06d3de6f5bd2a88bc7201b"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/endlevel.c",
+    "current_lines": 1564,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "9843ef2d88d4df09541b17566b11206b4c19f270bb9c2a37457cd834cf473ab4",
+    "read_ranges": [
+      {
+        "first": 1460,
+        "last": 1515,
+        "range_lf_sha256": "91c45ed58054deca7d06b21b8480a283544ace8cccd19999c85c9fd4b14b76aa"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/endlevel.c",
+    "current_lines": 1747,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "478e2fe5464724dcc9766b2ea22b193c3b3f7435ed2f7ebc1a48d2fe338ca0a3",
+    "read_ranges": [
+      {
+        "first": 1645,
+        "last": 1700,
+        "range_lf_sha256": "d80d6438ed054e0a0204efd64bb019e1cc35f1d842a284bfca0d2a340096a847"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0088 decoder and multiplayer caller checkpoint, 2026-10-09
+
+- HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda unchanged. Named paired terrain/legacy IFF/UDP/multi texture/endlevel lifecycle consumers and whole flyout safety runner read; exact partial context identities below. No source/test execution or mutation
+- Paired heightmap preflight checks square grid/limit/exit coordinates before legacy decode, then repeats actual decoded data/dimension/coordinates validation before freeing prior height storage. Decoder error frees temporary height bitmap. Terrain/satellite callers preflight by name then reopen in iff_read_bitmap; preflight is not generic decoder repair or immutable reopened-stream identity proof
+- Legacy IFF handlers still distinguish PBM/ILBM row/plane/mask and byte-run expansion; shared guard restricts dimensions/padding/planes/chunk and compressed row output before this named path. D1 compressed body demands end cursor with historical mask/pad exception; D2 stops once output complete then seeks declared end. Do not falsely claim paired decoder equality from superficially similar loops. No hostile fixture or general loader audit
+- Both Android UDP age consumers validate exact packet length/type/token, player bounds and sender ownership, WAITING handling and coop world admission before note_exit. This defeats an unauthenticated arbitrary-age claim from shared helper alone; world gate implementation remains separately owned. Native multi texture assignment consumes native model/player tables; flyout takes live alt texture after object index gate, broader admission not established by these partial reads
+- Paired native begin/frame/end/model-render hooks read: detached presentation snapshot taken before flythrough start; stop disables track; frame skips frozen automation/path-failed state; model render inside g3 frame. Name HUD pass and native flythrough actor bounds/failed-path/catch-up behavior, world visit reset, and actual native fixture assertions remain pending
+- Whole test_flyout_safety runner builds/runs three host scenarios with240s process deadline, validates exit/JSON record counts and manages captured output/process disposal. This is maintained runner intent, not inspected production-body assertions or fresh validation; proprietary ordinary fixture resolution and malformed generated cases not executed. Guessed d1/d2 main/test_upstream_compat.cpp paths absent; later file discovery required, no missing-file coverage
+- GQ2 main228DONE417TODO;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED;1043terminal/255remediation ranks unchanged.0088 remains TODO, no new finding/status/runtime/inherited saving. Only diagnosis Markdown changed; concurrent multiplayer work preserved; no build/configure, formatter/generator, runtime/device/deferred probes, staging or commit
+
+Additional current bindings:
+
+```json
+[
+  {
+    "path": "android/tests/test_flyout_safety.ps1",
+    "current_lines": 65,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "fad25898f59667b97f9d20d6ab37f4c94d7aff064be772c1a6c5992e04c68b22",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 65,
+        "range_lf_sha256": "fad25898f59667b97f9d20d6ab37f4c94d7aff064be772c1a6c5992e04c68b22"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/terrain.c",
+    "current_lines": 490,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "3ad4773ba6ee17b91ec9a89d5fff1729148b1a5dd54f75a4267117ccf0852c0e",
+    "read_ranges": [
+      {
+        "first": 331,
+        "last": 395,
+        "range_lf_sha256": "6fa8dab640436da5eb1c61d018a0f7f55316b2f7be7d6652dd7be8e1c86001a8"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/terrain.c",
+    "current_lines": 494,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "bb8f0173e28a0828531ba690295ed88d3771eef81bf2e209e56a05350a84df6d",
+    "read_ranges": [
+      {
+        "first": 336,
+        "last": 400,
+        "range_lf_sha256": "6cf53fb1fde9a952529a3ece59b540ad99eac3fabb38baef4d7597aeac2eb722"
+      }
+    ]
+  },
+  {
+    "path": "d1/iff/iff.c",
+    "current_lines": 1017,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "d6cac84ee5a8689052a27b6bc30f36514ee828dcd76f0451f33ffa1a2387d371",
+    "read_ranges": [
+      {
+        "first": 90,
+        "last": 240,
+        "range_lf_sha256": "7902582f76cfcac70740886bf7939c5d39e7e4138a028a1b06ad32de8a781ffd"
+      },
+      {
+        "first": 350,
+        "last": 426,
+        "range_lf_sha256": "f915d657f1d7c4fa0fc906f11490398927eb9e05dde701d12f8b73381c4e8070"
+      },
+      {
+        "first": 550,
+        "last": 590,
+        "range_lf_sha256": "75a954f6636512745b6afc37dbf3bfb96e6d0572fc03ba692bb4ef3cc17497c2"
+      }
+    ]
+  },
+  {
+    "path": "d2/iff/iff.c",
+    "current_lines": 1031,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "4f01f023399d12c07b0ec62341d1da3e071f8ad1e268fc30bd70596b45cc9ce5",
+    "read_ranges": [
+      {
+        "first": 94,
+        "last": 242,
+        "range_lf_sha256": "0c13180758a41b7a9b2a7e28d5528218b1d0f0c39194c790efbe5c77029ad5ff"
+      },
+      {
+        "first": 587,
+        "last": 603,
+        "range_lf_sha256": "5ae6ffc83cf2f96b7158877adb956e000e2be1146783b27a44a5bee2614e36a1"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_lines": 9485,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "9462f142eddf85738dfd080c95ff4c9218da29e318cd98c667a0a1b8a8aeacda",
+    "read_ranges": [
+      {
+        "first": 4740,
+        "last": 4782,
+        "range_lf_sha256": "2f2b4d5bc93942d47420d6b8f31754432f4cb1cc4a998d3730fdfbad87c49c57"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9806,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "0c2da8a9664b8aef6ac32a03028f95c952726ba44d34de20dfbfbd2b268891b9",
+    "read_ranges": [
+      {
+        "first": 4875,
+        "last": 4917,
+        "range_lf_sha256": "2f2b4d5bc93942d47420d6b8f31754432f4cb1cc4a998d3730fdfbad87c49c57"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6344,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "3b9dcd7d85bf43278eba7cc6324ef2b8bfd2962c761e7cf2ab9b70db288be795",
+    "read_ranges": [
+      {
+        "first": 3310,
+        "last": 3333,
+        "range_lf_sha256": "f224230281ddd875eec8a6b1f468e9034210e99c66d5dbceb2238bc98e6f5dc4"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8388,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "eb622e7a6000afe9be47cdb102add8810bcf8806cc7b171193f1d2f16f648eaa",
+    "read_ranges": [
+      {
+        "first": 3521,
+        "last": 3544,
+        "range_lf_sha256": "f224230281ddd875eec8a6b1f468e9034210e99c66d5dbceb2238bc98e6f5dc4"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/endlevel.c",
+    "current_lines": 1564,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "9843ef2d88d4df09541b17566b11206b4c19f270bb9c2a37457cd834cf473ab4",
+    "read_ranges": [
+      {
+        "first": 292,
+        "last": 315,
+        "range_lf_sha256": "7ccad1dfe847792cf246692e76272aeb2ae371ee3e418da4d7e937fc8c187fb6"
+      },
+      {
+        "first": 397,
+        "last": 450,
+        "range_lf_sha256": "44eb0fb55eb9ff2d0c9947288834bd721367bdcb2d9d595a01bacf9de36c5493"
+      },
+      {
+        "first": 1065,
+        "last": 1083,
+        "range_lf_sha256": "a8563160c4832e78c2ac4973e99e9c039068ace40482623cb7a3f2987abf7eab"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/endlevel.c",
+    "current_lines": 1747,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "478e2fe5464724dcc9766b2ea22b193c3b3f7435ed2f7ebc1a48d2fe338ca0a3",
+    "read_ranges": [
+      {
+        "first": 480,
+        "last": 503,
+        "range_lf_sha256": "7ccad1dfe847792cf246692e76272aeb2ae371ee3e418da4d7e937fc8c187fb6"
+      },
+      {
+        "first": 585,
+        "last": 638,
+        "range_lf_sha256": "44eb0fb55eb9ff2d0c9947288834bd721367bdcb2d9d595a01bacf9de36c5493"
+      },
+      {
+        "first": 1253,
+        "last": 1271,
+        "range_lf_sha256": "ec41efa77739980eb412472f36dbf51351a80c920bc1a40aaa96749e87e6d73a"
+      }
+    ]
+  }
+]
+```
+
+### Chunk0088 final flythrough and remediation reconciliation checkpoint, 2026-10-09
+
+- Current HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda unchanged. Paired entire flythrough slot/start/step/substep contexts now read without gaps, HUD names dispatch and complete coop_world_visit helper plus focused actual native fixture bodies. All additional current source hashes/ranges verified below. No test/build/runtime/deferred probe or product/source change
+- Both native arrays reserve2+MAX_PLAYERS; local player/camera use0/1 and shared peer caller uses2+p. Step validates object segment/exit side/child before indexing; remote location updates presentation segment only and never relinks into gameplay lists. Local actor failures set global flyout_path_failed; remote failure returns without marking shared finished. Age cap600000ms and fixed step bound catch-up mathematically, not measured frame latency or callback count. No new unlimited-loop or arbitrary sender-age defect admitted from this source alone
+- HUD names dispatch when Endlevel_sequence active; model draw visibility/projection previously gates visible labels. Name projection uses same fixed actor state; no fresh render correctness, desktop parity build or denominator fault execution credited. World helper distinguishes session/active/high-water monotonic visit; shared actor reset checks active visit, native load reset remains explicit. Does not establish whole session transition orchestration from this helper alone
+- Native fixture1747-1820 authors staggered long-tunnel positions, absent peer sentinel, retry never restart, late outside/finished catch-up, gameplay object/time/SIM isolation, disconnect/secret exclusions, end retains exit ages and reset clears.8853-8963 authors valid masked heightmap, malformed description/missing/corrupt/truncated/row/shape rejection, recovery and invalid tunnel actual level completion.8965-9045 authors rendered level1/2/1 lifetime, own reachable exit vs decoy, save rejection during flyout, unchanged SIM state with varying render passes, all phases/explosion and actual next-level travel. Partial test contexts only, no full11400-line test or fresh execution claim
+- Canonical GQF0167 FIXED/GQR0154 DONE explicitly includes TSF MIDI/HMP/PCM ordered EOF and actual ring drain; current post-frozen delta is that repaired owner and must not reopen it. Historical84 cases/69-step integration/build/contract results remain historical; newly inspected21 authored cases are not fresh pass. GQR0157 DONE shared HMP extraction retained. Current BR0280 startup status is repair candidate (checked creation/cleanup observed) while its current OPEN root also covers independent Redbook/caller/fault acceptance; no closure or duplicated root. BR0250 separate audio tuple publication scope remains open, not generic proof TSF independent atomic counters race
+- Reviewed shared bitmap/native presentation contracts are retained; no invented universal IFF safety or wholesale D1/D2 deduplication. Original assigned shared paths ABSENT, no inherited saving. Terminal report must cite exact frozen scope/current mapping and merged bindings, preserve repaired owners and conditional evidence limits
+-0088 pending terminal report/import/canonical ranks/count verification. Main GQ2 remains228DONE417TODO;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED;1043terminal/255remediation ranks. No new root/status/runtime/inherited saving. Only diagnosis documents changed; concurrent multiplayer work preserved
+
+Additional current bindings:
+
+```json
+[
+  {
+    "path": "d1/main/endlevel.c",
+    "current_lines": 1564,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "9843ef2d88d4df09541b17566b11206b4c19f270bb9c2a37457cd834cf473ab4",
+    "read_ranges": [
+      {
+        "first": 1085,
+        "last": 1332,
+        "range_lf_sha256": "afbd20142fe63c3679677f54123f55600f440dd11c539d846564fb236259c633"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/endlevel.c",
+    "current_lines": 1747,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "478e2fe5464724dcc9766b2ea22b193c3b3f7435ed2f7ebc1a48d2fe338ca0a3",
+    "read_ranges": [
+      {
+        "first": 1273,
+        "last": 1519,
+        "range_lf_sha256": "68e74a12985e7faa649f51a72bec03d6124f8fe50e4f4a78026093f9ff2163f2"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/gauges.c",
+    "current_lines": 4571,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "b3553fb3200232ab5c1efdbdf9dbda29486fb4745a3f1bc7d1719e80bd35db4b",
+    "read_ranges": [
+      {
+        "first": 4002,
+        "last": 4024,
+        "range_lf_sha256": "8d72127dc81a917cd37d5c23d51bd2a8d18633616ec11bc23682b9fa5a44b36f"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/gauges.c",
+    "current_lines": 5165,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "79952a8136d2d94525139908a294a3754ff33705679b9026fc33622f9061c113",
+    "read_ranges": [
+      {
+        "first": 4400,
+        "last": 4422,
+        "range_lf_sha256": "317dc0917d70541546743d6c3e381289ce97e9ef248f4e71fbfafb5ccf986367"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_upstream_compat.cpp",
+    "current_lines": 11576,
+    "current_whole_read": false,
+    "current_whole_source_sha256": "fb09c0d0dfef2d62e6a7d3b17618673481e87966215fdb7c55246fc372957c53",
+    "read_ranges": [
+      {
+        "first": 1740,
+        "last": 1820,
+        "range_lf_sha256": "234135b60a25055a75a233fe9b7b7c4ede8f196d27442a57ddb2b269a93c3c9d"
+      },
+      {
+        "first": 8850,
+        "last": 9045,
+        "range_lf_sha256": "3243c25cd2ed7b67a5514326c6a64888932140b9ac563943b2dd43dfb0500606"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_world_visit.c",
+    "current_lines": 58,
+    "current_whole_read": true,
+    "current_whole_source_sha256": "6cfec7fb6ead0fdb3db4ccba9644c0176b0d460eb100ea4785423fe8c4291cc5",
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 58,
+        "range_lf_sha256": "6cfec7fb6ead0fdb3db4ccba9644c0176b0d460eb100ea4785423fe8c4291cc5"
+      }
+    ]
+  }
+]
+```
+
+### TSF music and end-level terminal diagnosis, 2026-10-09
+
+- Completed GQ2-CHUNK-0088 all68 frozen hunks, four current complete sources, frozen1438/current1443 TSF mapping and25 merged consumer/fixture bindings; GQC1057/GQD0937. Immutable imported report SHA256c6ada5c450ee4de601df4b618d436b64ac58998aae1ff123b291fc73cdb03453; scope fingerprintf0dd6ad754a7233a13ef5dd66d2be2fabbd0ec090f1dd7cbb73a0188c8c5a08a
+- Preserve GQR0154 DONE/GQF0167 FIXED ordered final audio EOF/drain and GQR0157 DONE shared HMP. BR0280 current checked-startup repair candidate retained under existing paired caller/resource and independent Redbook acceptance; BR0250 audio publication distinct. Shared bitmap bounds/post-decode height admission and detached world-scoped peer presentation retained, with native decoder differences and reopen/fixture limits explicit
+- No new finding/remediation/status/runtime/inherited saving. Main GQ2 229DONE416TODO; GQ1 818DONE1TODO;269findings194OPEN75FIXED;255remediations72DONE182TODO1DEFERRED;1044terminal/255remediation ranks. Terminal verification pending before plan closure
+- Only diagnosis report/documents changed; no product/test/script edit, build/configure/formatter/generator/runtime/device/deferred probes/staging/commit. Current HEADb661b6eb24e91adf5f3e566bc28eb73d4b679fda; concurrent multiplayer work preserved. Remaining campaign/preflights/sweeps/investigations/worktree/current-head supplement/closure required; next0089
+
+### Chunk0088 terminal verification, 2026-10-09
+
+- Exact imported report body/SHA256c6ada5c450ee4de601df4b618d436b64ac58998aae1ff123b291fc73cdb03453, all68 frozen hunk/blob/range/diff identities,25 merged current bindings,TSF mapping and ordered DATA fingerprint verified.229DONE416TODO main queue; unchanged269finding/255remediation statuses;1044 sorted unique contiguous terminal ranks/255 remediation ranks and HEAD verified; scoped tracked diagnosis whitespace checks pass
+-0088 all plan gates complete; previous partial checkpoints superseded. No runtime/implementation acceptance, new root/status/inherited saving. Next0089. All remaining campaign/preflights/sweeps/investigations/worktree/current-head supplement/closure still required
