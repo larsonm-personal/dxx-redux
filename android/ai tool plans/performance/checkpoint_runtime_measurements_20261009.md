@@ -1,5 +1,9 @@
 # S21 production checkpoint measurements
 
+This report records the baseline before the
+[single-player periodic-save rework](single_player_async_autosaves_20261009.md).
+Its synchronous single-player results describe that earlier implementation.
+
 ## Plan
 
 1. Add profiling-category completion records separating whole submission,

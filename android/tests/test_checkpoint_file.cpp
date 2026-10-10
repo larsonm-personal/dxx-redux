@@ -43,6 +43,30 @@ int main()
 	CHECK(std::filesystem::is_directory(blocked));
 	CHECK(!std::filesystem::exists(folder / "directory-target.checkpoint.stage"));
 	std::filesystem::remove(blocked);
+	const auto companion = folder / "secret.bin";
+	const auto companion_stage = folder / "secret.bin.checkpoint.stage";
+	const auto publish_pair = [&](const char *primary, const char *secret) {
+		return checkpoint_file_publish_pair(path.u8string().c_str(), primary, std::char_traits<char>::length(primary),
+		                                    companion.u8string().c_str(), secret, secret ? std::char_traits<char>::length(secret) : 0);
+	};
+	CHECK(publish_pair("pair-one", "secret-one"));
+	CHECK(read(path) == "pair-one" && read(companion) == "secret-one");
+	CHECK(publish_pair("pair-two", "secret-two"));
+	CHECK(read(path) == "pair-two" && read(companion) == "secret-two");
+	std::filesystem::create_directory(companion_stage);
+	CHECK(!publish_pair("failed", "failed-secret"));
+	CHECK(read(path) == "pair-two" && read(companion) == "secret-two");
+	CHECK(!std::filesystem::exists(stage));
+	std::filesystem::remove(companion_stage);
+	const auto backup = folder / "secret.bin.bak";
+	CHECK(checkpoint_file_publish(backup.u8string().c_str(), "preserve", 8));
+	CHECK(!publish_pair("blocked", "blocked-secret"));
+	CHECK(read(path) == "pair-two" && read(companion) == "secret-two");
+	CHECK(read(backup) == "preserve");
+	CHECK(!std::filesystem::exists(stage) && !std::filesystem::exists(companion_stage));
+	std::filesystem::remove(backup);
+	CHECK(publish_pair("without-secret", nullptr));
+	CHECK(read(path) == "without-secret" && !std::filesystem::exists(companion));
 	std::filesystem::remove(path);
 	std::filesystem::remove(folder);
 	std::puts("PASS: checkpoint replacement and failed publication preserve existing data");

@@ -83,6 +83,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include "state_android_shared.h"
+#include "state_checkpoint.h"
 #include "android_save_probe.h"
 #include "coop_save.h"
 #include "coop/coop_powerup_duplication.h"
@@ -1877,6 +1878,10 @@ int state_save_all(int blind_save)
 	int	rval;
 	char	filename[PATH_MAX], desc[DESC_LENGTH+1];
 
+#ifdef __ANDROID__
+	state_checkpoint_drain();
+#endif
+
 	if ( Game_mode & GM_MULTI )
 	{
 		if (Game_mode & GM_MULTI_COOP)
@@ -2144,6 +2149,10 @@ int state_save_all_sub(char *filename, char *desc)
 static int state_restore_all_internal(int in_game, char *filename_override)
 {
 	char filename[PATH_MAX];
+
+#ifdef __ANDROID__
+	state_checkpoint_drain();
+#endif
 
 	if ( Newdemo_state == ND_STATE_RECORDING )
 		newdemo_stop_recording(0);

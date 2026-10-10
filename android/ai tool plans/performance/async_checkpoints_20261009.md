@@ -98,11 +98,10 @@ cycles with isolated codec tests and engine integration tests.
 
 The worker handles frequent rewind captures and 30-second coop checkpoints.
 Explicit manual/transition/lifecycle saves retain their synchronous completion
-contract and drain older background writes before publishing. Single-player
-periodic disk saves retain the existing D2 main/secret-companion transaction;
-the cheaper metadata size pass also benefits that path. Moving that pair to the
-worker requires coherent ownership of the companion file and a separate pair
-publication test, rather than reading a mutable file after capture.
+contract and drain older background writes before publishing. The subsequent
+[single-player periodic-save rework](single_player_async_autosaves_20261009.md)
+adds immutable companion ownership and worker-side paired publication, sharing
+this same worker and removing periodic thumbnail rendering.
 
 Restore transfer is mandatory for Android coop loads; a failed transfer does
 not fall back to commanding peers to load their independently populated slots.

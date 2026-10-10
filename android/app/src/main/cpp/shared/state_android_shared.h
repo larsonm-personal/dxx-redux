@@ -56,5 +56,10 @@ int state_android_restore_slot(int slotnum);
 int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,
                                             int save_kind);
 void state_android_maybe_periodic_autosave(void);
+void state_android_secret_companion_changed(void);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* Diagnostic trigger: use the real scheduler without advancing the world clock */
+int state_android_periodic_autosave_test_due(void);
+#endif
 
 #endif

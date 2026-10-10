@@ -24,6 +24,10 @@ typedef struct state_checkpoint_attachment {
 int state_checkpoint_submit_disk(const char *description, int save_kind, const char *filename,
                                  const state_checkpoint_attachment *attachments, unsigned attachment_count,
                                  uint64_t token, state_checkpoint_callback callback);
+/* Refresh at explicit secret changes/context boundaries, never during capture */
+int state_checkpoint_refresh_companion(const char *source);
+int state_checkpoint_submit_slot(const char *description, int save_kind, int slot,
+                                 uint64_t token, state_checkpoint_callback callback);
 int state_checkpoint_writes_file(void);
 void state_checkpoint_poll(void);
 /* Only explicit synchronous saves/shutdown may wait for outstanding jobs */

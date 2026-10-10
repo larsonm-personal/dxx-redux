@@ -90,6 +90,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include "state_android_shared.h"
+#include "state_checkpoint.h"
 #include "android_save_probe.h"
 #include "coop_save.h"
 #include "coop/coop_powerup_duplication.h"
@@ -2262,6 +2263,10 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 	int	rval, filenum = -1;
 	char	filename[PATH_MAX], desc[DESC_LENGTH+1];
 
+#ifdef __ANDROID__
+	state_checkpoint_drain();
+#endif
+
 	if ((Current_level_num < 0) && (secret_save == 0)
 #ifdef __ANDROID__
 	    && !(Game_mode & GM_MULTI_COOP)
@@ -2348,6 +2353,7 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 #ifdef __ANDROID__
 	rval = state_android_save_to_path(filename, desc,
 	                                    ANDROID_SAVE_META_KIND_MANUAL, 0);
+	if (secret_save == 2) state_android_secret_companion_changed();
 #else
 	rval = state_save_all_sub(filename, desc);
 #endif
@@ -2786,6 +2792,7 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	int	filenum = -1;
 
 #ifdef __ANDROID__
+	state_checkpoint_drain();
 	debug_log(DLOG_GAME,
 	          "restore all enter: game=d2 in_game=%d secret=%d override='%s' newdemo=%d game_mode=%d level=%d callsign='%s'",
 	          in_game, secret_restore, filename_override ? filename_override : "",
@@ -2901,6 +2908,9 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 			} else {
 				PHYSFS_delete(SECRETC_FILENAME);
 			}
+#ifdef __ANDROID__
+			state_android_secret_companion_changed();
+#endif
 		}
 #ifdef __ANDROID__
 		else {
@@ -3609,13 +3619,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		}
 	}
 
-	if (!secret_restore) {
-		if (version >= 20) {
-			First_secret_visit = PHYSFSX_readSXE32(fp, swap);
-		} else
-			First_secret_visit = 1;
-	} else
-		First_secret_visit = 0;
+	{
+		/* Secret returns override this flag but must still consume its disk word */
+		int saved_first_secret_visit = version >= 20 ? PHYSFSX_readSXE32(fp, swap) : 1;
+		First_secret_visit = secret_restore ? 0 : saved_first_secret_visit;
+	}
 
 	if (version >= 22)
 	{

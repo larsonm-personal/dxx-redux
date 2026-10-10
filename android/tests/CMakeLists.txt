@@ -65,8 +65,10 @@ target_compile_features(test_checkpoint_slots PRIVATE cxx_std_17)
 target_link_libraries(test_checkpoint_slots PRIVATE Threads::Threads)
 add_test(NAME test_checkpoint_slots COMMAND test_checkpoint_slots)
 
-add_executable(test_checkpoint_file test_checkpoint_file.cpp
-                                    "${DXX_TEST_SHARED_SOURCE_DIR}/checkpoint_file.cpp")
+add_executable(
+    test_checkpoint_file
+    test_checkpoint_file.cpp "${DXX_TEST_SHARED_SOURCE_DIR}/checkpoint_file.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/android_file_pair_transaction.c")
 target_include_directories(test_checkpoint_file PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 target_compile_features(test_checkpoint_file PRIVATE cxx_std_17)
 add_test(NAME test_checkpoint_file COMMAND test_checkpoint_file)

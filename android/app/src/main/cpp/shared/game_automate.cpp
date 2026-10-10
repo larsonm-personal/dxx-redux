@@ -85,6 +85,7 @@ extern "C" {
 #include "rbaudio.h"
 #include "songs.h"
 #include "config.h"
+#include "args.h"
 #include "digi.h"
 #include "digi_mixer_music.h"
 #include "sounds.h"
@@ -138,6 +139,8 @@ void net_udp_show_game_rules(netgame_info *netgame);
 #include "route_confirmation.h"
 #include "scores.h"
 extern int Entered_from_level;
+extern int First_secret_visit;
+void EnterSecretLevel(void);
 #endif
 #ifdef ANDROID
 void android_automation_start_endlevel_sequence(void);
@@ -6074,6 +6077,130 @@ extern "C" void game_automate_tick(void)
 				ubyte packet[6] = { MULTI_COOP_RESTORE_STATUS, (ubyte) status };
 				for (int byte = 0; byte < 4; byte++) packet[2 + byte] = (ubyte) (revision >> (byte * 8));
 				multi_do_coop_restore_status(packet, sender);
+			} else if (s.field == "periodic_checkpoint") {
+#ifdef __ANDROID__
+				static int slot = -1, energy, score, level;
+				static std::vector<unsigned char> secret;
+				auto read_bytes = [](const char *filename) {
+					std::vector<unsigned char> bytes;
+					PHYSFS_file *file = PHYSFS_openRead(filename);
+					if (file) {
+						const auto size = PHYSFS_fileLength(file);
+						if (size > 0) {
+							bytes.resize(static_cast<size_t>(size));
+							if (PHYSFS_readBytes(file, bytes.data(), bytes.size()) != size) bytes.clear();
+						}
+						PHYSFS_close(file);
+					}
+					return bytes;
+				};
+				if (!Game_wind || !ConsoleObject || (Game_mode & GM_MULTI) || Player_is_dead) {
+					stop_script_fail("Periodic checkpoint fixture requires live single-player gameplay");
+					break;
+				}
+#ifdef DXX_BUILD_DESCENT_II
+				static int secret_robot = -1, secret_base;
+				if (s.value == "secret_enter") {
+					/* Use the mission's first authored secret entrance */
+					const int no_render = GameArg.SysInputDemoNoRender;
+					GameArg.SysInputDemoNoRender = 1;
+					secret_base = Secret_level_table[0];
+					StartNewLevelSub(secret_base, 1, 0);
+					First_secret_visit = 1;
+					EnterSecretLevel();
+					GameArg.SysInputDemoNoRender = no_render;
+					if (Current_level_num != -1) stop_script_fail("Secret fixture entry failed");
+					secret_robot = -1;
+					for (int i = 0; i <= Highest_object_index; ++i)
+						if (Objects[i].type == OBJ_ROBOT) {
+							secret_robot = i;
+							break;
+						}
+					if (secret_robot < 0) stop_script_fail("Secret fixture needs a robot marker");
+					else Objects[secret_robot].shields = i2f(321);
+				} else if (s.value == "secret_exit") {
+					const int no_render = GameArg.SysInputDemoNoRender;
+					GameArg.SysInputDemoNoRender = 1;
+					ExitSecretLevel();
+					GameArg.SysInputDemoNoRender = no_render;
+					if (Current_level_num != secret_base || read_bytes(SECRETC_FILENAME).empty())
+						stop_script_fail("Secret fixture did not retain its revisitable mine");
+				} else if (s.value == "secret_revisit") {
+					const int no_render = GameArg.SysInputDemoNoRender;
+					GameArg.SysInputDemoNoRender = 1;
+					EnterSecretLevel();
+					GameArg.SysInputDemoNoRender = no_render;
+					if (Current_level_num != -1 || secret_robot < 0 ||
+					    Objects[secret_robot].type != OBJ_ROBOT || Objects[secret_robot].shields != i2f(321))
+						stop_script_fail("Periodic slot failed to restore the saved secret mine");
+				} else
+#endif
+				    if (s.value == "capture" || s.value == "capture_absent" || s.value == "capture_again") {
+					state_checkpoint_drain();
+					secret.clear();
+#ifdef DXX_BUILD_DESCENT_II
+					if (s.value == "capture_absent") {
+						PHYSFS_delete(SECRETC_FILENAME);
+						state_android_secret_companion_changed();
+					}
+					secret = read_bytes(SECRETC_FILENAME);
+#endif
+					energy = Players[Player_num].energy;
+					score = Players[Player_num].score;
+					level = Current_level_num;
+					const int previous = slot;
+					slot = state_android_periodic_autosave_test_due();
+					if (slot < 0 || (s.value == "capture_again" && slot == previous)) {
+						stop_script_fail("Periodic scheduler failed to submit or rotate slots");
+						break;
+					}
+#ifdef DXX_BUILD_DESCENT_II
+					/* Change the live generation before collection: the job must own its bytes */
+					if (!secret.empty()) {
+						PHYSFS_delete(SECRETC_FILENAME);
+						state_android_secret_companion_changed();
+					}
+#endif
+				} else if (s.value == "capture_then_sync") {
+					state_checkpoint_drain();
+					slot = state_android_periodic_autosave_test_due();
+					Players[Player_num].energy = i2f(143);
+					if (slot < 0 || state_android_save_lifecycle_checkpoint(slot, "PERIODIC ORDERING", ANDROID_SAVE_META_KIND_AUTO_MINIMIZE) != 1) {
+						stop_script_fail("Synchronous save could not follow a queued periodic save");
+						break;
+					}
+					Players[Player_num].energy = i2f(13);
+					if (state_android_restore_slot(slot) != 1 || Players[Player_num].energy != i2f(143))
+						stop_script_fail("Queued periodic save overwrote the newer synchronous save");
+				} else if (s.value == "verify") {
+					char filename[PATH_MAX];
+					state_android_build_save_filename(filename, sizeof(filename), slot, 0, 1);
+					const auto bytes = read_bytes(filename);
+					android_save_meta_disk meta{};
+					if (bytes.size() >= sizeof(meta)) memcpy(&meta, bytes.data() + bytes.size() - sizeof(meta), sizeof(meta));
+					if (slot < 0 || !android_save_meta_is_valid(&meta) || meta.save_kind != ANDROID_SAVE_META_KIND_AUTO_PERIODIC) {
+						stop_script_fail("Periodic slot lacks valid launcher metadata");
+						break;
+					}
+#ifdef DXX_BUILD_DESCENT_II
+					state_android_build_secret_filename(filename, sizeof(filename), slot);
+					if (read_bytes(filename) != secret || (secret.empty() && PHYSFS_exists(filename))) {
+						stop_script_fail("Periodic slot companion generation differs from captured state");
+						break;
+					}
+#endif
+					Players[Player_num].energy = i2f(13);
+					if (state_android_restore_slot(slot) != 1 || Players[Player_num].energy != energy ||
+					    Players[Player_num].score != score || Current_level_num != level)
+						stop_script_fail("Periodic slot failed to restore player state");
+#ifdef DXX_BUILD_DESCENT_II
+					if (read_bytes(SECRETC_FILENAME) != secret || (secret.empty() && PHYSFS_exists(SECRETC_FILENAME)))
+						stop_script_fail("Periodic restore failed to restore companion presence or contents");
+#endif
+				} else stop_script_fail("Unknown periodic checkpoint action");
+#else
+				stop_script_fail("Periodic checkpoint fixture requires Android");
+#endif
 			} else if (s.field == "checkpoint_cycle") {
 #ifdef __ANDROID__
 				static rewind_memory_buffer reference = {}, checkpoint = {};

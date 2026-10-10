@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2/d1_in_d2_semantics.h"
 #ifdef __ANDROID__
 #include "escort.h"
+#include "state_android_shared.h"
 #endif
 
 //@@vms_vector controlcen_gun_points[MAX_CONTROLCEN_GUNS];
@@ -303,8 +304,12 @@ void do_controlcen_destroyed_stuff(object *objp)
 #endif
 
 	// If a secret level, delete secret.sgc to indicate that we can't return to our secret level.
-	if (Current_level_num < 0)
+	if (Current_level_num < 0) {
 		PHYSFS_delete(SECRETC_FILENAME);
+#ifdef __ANDROID__
+		state_android_secret_companion_changed();
+#endif
+	}
 
 	if (Base_control_center_explosion_time != DEFAULT_CONTROL_CENTER_EXPLOSION_TIME)
 		Total_countdown_time = Base_control_center_explosion_time + Base_control_center_explosion_time * (NDL-Difficulty_level-1)/2;

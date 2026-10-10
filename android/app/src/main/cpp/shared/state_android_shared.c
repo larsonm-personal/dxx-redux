@@ -552,11 +552,19 @@ typedef struct state_android_periodic_autosave_state {
 	fix64 last_game_time;
 	char callsign[CALLSIGN_LEN + 1];
 	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+	uint64_t pending;
 } state_android_periodic_autosave_state;
 
 static state_android_periodic_autosave_state g_state_android_periodic_autosave = {
-	0, 0, ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A, 0, 0, "", ""
+	0, 0, ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A, 0, 0, "", "", 0
 };
+
+void state_android_secret_companion_changed(void)
+{
+#if defined(__ANDROID__) && defined(DXX_BUILD_DESCENT_II)
+	state_checkpoint_refresh_companion(SECRETC_FILENAME);
+#endif
+}
 
 static void state_android_current_mission_name(char *mission_name,
                                                size_t mission_name_size)
@@ -593,6 +601,7 @@ static void state_android_periodic_autosave_reset(fix64 now,
 	state->last_game_time = now;
 	strncpy(state->callsign, callsign, sizeof(state->callsign) - 1);
 	strncpy(state->mission, mission, sizeof(state->mission) - 1);
+	state_android_secret_companion_changed();
 }
 
 static int state_android_periodic_context_changed(fix64 now,
@@ -1248,6 +1257,30 @@ int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,
 	           : -1;
 }
 
+#ifdef __ANDROID__
+static uint64_t periodic_token;
+
+static void state_android_periodic_completed(uint64_t token, int ok,
+                                             const rewind_memory_buffer *buffer)
+{
+	state_android_periodic_autosave_state *state = &g_state_android_periodic_autosave;
+	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+	(void) buffer;
+	if (state->pending != token) return;
+	state->pending = 0;
+	state_android_current_mission_name(mission, sizeof(mission));
+	if ((Game_mode & GM_MULTI) ||
+	    state_android_periodic_context_changed(GameTime64, Players[Player_num].callsign, mission)) return;
+	debug_log(DLOG_GAME, "autosave periodic %s: %s slot %d", ok ? "saved" : "failed",
+	          state_android_game_label(), state->next_slot);
+	if (ok)
+		state->next_slot = state->next_slot == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A
+		                       ? ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_B
+		                       : ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A;
+	state->next_save_time = GameTime64 + (ok ? state_android_periodic_interval() : state_android_periodic_retry_interval());
+}
+#endif
+
 void state_android_maybe_periodic_autosave(void)
 {
 	state_android_periodic_autosave_state *state =
@@ -1275,6 +1308,7 @@ void state_android_maybe_periodic_autosave(void)
 		state->last_game_time = GameTime64;
 		return;
 	}
+	if (state->pending) return;
 	if (GameTime64 < state->next_save_time) {
 		state->last_game_time = GameTime64;
 		return;
@@ -1282,6 +1316,14 @@ void state_android_maybe_periodic_autosave(void)
 
 	slotnum = state->next_slot;
 	state->last_game_time = GameTime64;
+#ifdef __ANDROID__
+	android_repair_player_callsign_for_autosave(state_android_game_label());
+	state->pending = ++periodic_token;
+	result = state_android_autosave_precheck(slotnum) && state_checkpoint_submit_slot(
+	                                                         ANDROID_SAVE_DESC_AUTO_PERIODIC, ANDROID_SAVE_META_KIND_AUTO_PERIODIC,
+	                                                         slotnum, state->pending, state_android_periodic_completed);
+	if (!result) state_android_periodic_completed(state->pending, 0, NULL);
+#else
 	result = state_android_save_to_slot(
 	    slotnum, ANDROID_SAVE_DESC_AUTO_PERIODIC, ANDROID_SAVE_META_KIND_AUTO_PERIODIC);
 	if (result > 0) {
@@ -1298,7 +1340,20 @@ void state_android_maybe_periodic_autosave(void)
 		debug_log(DLOG_GAME, "autosave periodic failed: %s slot %d",
 		          state_android_game_label(), slotnum);
 	}
+#endif
 }
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+int state_android_periodic_autosave_test_due(void)
+{
+	state_android_periodic_autosave_state *state = &g_state_android_periodic_autosave;
+	state_android_maybe_periodic_autosave();
+	if (!state->initialized || state->pending) return -1;
+	state->next_save_time = GameTime64;
+	state_android_maybe_periodic_autosave();
+	return state->pending ? state->next_slot : -1;
+}
+#endif
 
 void state_android_restore_player_flight_state(void)
 {

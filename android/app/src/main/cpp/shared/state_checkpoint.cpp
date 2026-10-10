@@ -3,6 +3,7 @@
 #include "checkpoint_file.h"
 #include <cerrno>
 #include <new>
+#include <memory>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
@@ -46,6 +47,8 @@ struct checkpoint_job {
 	int ok = 0;
 	unsigned attachment_failures = 0;
 	std::string filename;
+	std::string companion_filename;
+	std::shared_ptr<const std::vector<unsigned char>> companion;
 	struct attachment {
 		std::string filename, text;
 		int history_slot;
@@ -62,6 +65,9 @@ struct checkpoint_engine {
 	bool started = false;
 	size_t metadata_bytes = 0;
 	state_checkpoint_stats stats{};
+	/* Only the game thread replaces this pointer; published jobs own generations */
+	std::shared_ptr<const std::vector<unsigned char>> companion;
+	bool companion_valid = false;
 	~checkpoint_engine()
 	{
 		if (started) {
@@ -129,8 +135,16 @@ void *worker(void *argument)
 				job->ok = job->buffer.size >= sizeof(meta);
 				if (job->ok) {
 					memcpy(&meta, job->buffer.data + job->buffer.size - sizeof(meta), sizeof(meta));
-					job->ok = android_save_meta_is_valid(&meta) &&
-					          checkpoint_file_publish(job->filename.c_str(), job->buffer.data, job->buffer.size);
+					job->ok = android_save_meta_is_valid(&meta);
+					if (job->ok) {
+						if (job->companion_filename.empty())
+							job->ok = checkpoint_file_publish(job->filename.c_str(), job->buffer.data, job->buffer.size);
+						else
+							job->ok = checkpoint_file_publish_pair(job->filename.c_str(), job->buffer.data, job->buffer.size,
+							                                       job->companion_filename.c_str(),
+							                                       job->companion ? job->companion->data() : nullptr,
+							                                       job->companion ? job->companion->size() : 0);
+					}
 				}
 				if (job->ok)
 					for (const auto &attachment : job->attachments)
@@ -195,9 +209,9 @@ int state_checkpoint_submit(const char *description, int save_kind, uint64_t tok
 	return state_checkpoint_submit_disk(description, save_kind, nullptr, nullptr, 0, token, callback);
 }
 
-int state_checkpoint_submit_disk(const char *description, int save_kind, const char *filename,
-                                 const state_checkpoint_attachment *attachments, unsigned attachment_count,
-                                 uint64_t token, state_checkpoint_callback callback)
+static int submit_disk(const char *description, int save_kind, const char *filename,
+                       const state_checkpoint_attachment *attachments, unsigned attachment_count,
+                       uint64_t token, state_checkpoint_callback callback, const char *companion_filename)
 {
 	const int64_t submit_begin = clock_us();
 	if (!description || !callback || capturing || attachment_count > 8 ||
@@ -213,6 +227,8 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 	job->token = token;
 	job->callback = callback;
 	job->filename.clear();
+	job->companion_filename.clear();
+	job->companion.reset();
 	job->attachments.clear();
 	if (filename) {
 		const char *root = PHYSFS_getWriteDir();
@@ -222,6 +238,14 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 		}
 		const std::string prefix = std::string(root) + "/";
 		job->filename = prefix + filename;
+		if (companion_filename) {
+			if (!engine->companion_valid) {
+				engine->slots.abandon_capture();
+				return 0;
+			}
+			job->companion_filename = prefix + companion_filename;
+			job->companion = engine->companion;
+		}
 		char last_path[PATH_MAX], last_text[128];
 		if (!state_android_capture_last_save_set(last_path, sizeof(last_path), last_text, sizeof(last_text))) {
 			engine->slots.abandon_capture();
@@ -258,6 +282,52 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 	return 1;
 }
 
+int state_checkpoint_submit_disk(const char *description, int save_kind, const char *filename,
+                                 const state_checkpoint_attachment *attachments, unsigned attachment_count,
+                                 uint64_t token, state_checkpoint_callback callback)
+{
+	return submit_disk(description, save_kind, filename, attachments, attachment_count, token, callback, nullptr);
+}
+
+int state_checkpoint_refresh_companion(const char *source)
+{
+	if (!source || !state_checkpoint_initialize()) return 0;
+	engine->companion_valid = false;
+	engine->companion.reset();
+	if (!PHYSFS_exists(source)) {
+		engine->companion_valid = true;
+		return 1;
+	}
+	PHYSFS_File *file = PHYSFS_openRead(source);
+	if (!file) return 0;
+	const PHYSFS_sint64 size = PHYSFS_fileLength(file);
+	bool ok = size > 0 && static_cast<uint64_t>(size) <= SIZE_MAX;
+	std::shared_ptr<std::vector<unsigned char>> bytes;
+	if (ok) {
+		bytes = std::make_shared<std::vector<unsigned char>>(static_cast<size_t>(size));
+		ok = PHYSFS_readBytes(file, bytes->data(), bytes->size()) == size;
+	}
+	if (!PHYSFS_close(file)) ok = false;
+	if (ok) engine->companion = std::move(bytes);
+	engine->companion_valid = ok;
+	if (!ok) debug_log(DLOG_GAME, "checkpoint secret companion capture failed");
+	return ok;
+}
+
+int state_checkpoint_submit_slot(const char *description, int save_kind, int slot,
+                                 uint64_t token, state_checkpoint_callback callback)
+{
+	char filename[PATH_MAX];
+	if (!state_android_build_save_filename(filename, sizeof(filename), slot, 0, 1)) return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	char companion[PATH_MAX];
+	if (!state_android_build_secret_filename(companion, sizeof(companion), slot)) return 0;
+#else
+	const char *companion = nullptr;
+#endif
+	return submit_disk(description, save_kind, filename, nullptr, 0, token, callback, companion);
+}
+
 void state_checkpoint_poll(void)
 {
 	if (!engine) return;
@@ -279,6 +349,7 @@ void state_checkpoint_poll(void)
 		          (long long) job->capture_us, (long long) job->encode_us,
 		          (long long) (job->worker_us - job->encode_us), (long long) job->worker_us,
 		          (long long) collect_us, job->attachment_failures);
+		job->companion.reset();
 		engine->slots.release();
 	}
 }

@@ -35568,3 +35568,228 @@ GQC1089ISSUES/GQD0969NO_INHERITED_EFFECT, CURRENT-RECONCILIATION/RETAIN and numb
 
 - Revalidated frozen/current/prior source identities; completed actual251-500/501-750/tail751-869. Assigned750and whole869frozen source read; current882whole-source/controlflow remains, no identity-only current credit. Existing mailbox/generation/release/peer/visit/palette/desktop timing controls retained without new finding
 - Actual android_input UI and paired multi/UDP dispatch plus policy/integration paths discovered only; next current/header/policy/transport/UI/pause/presentation/fixtures/owners before gates/report/audit. All gatespending. No source/test/script edits or execution/new issue/status/rating/runtime/original saving;0116historical audit debt open, external work preserved, overall goal active
+
+
+### Chunk 0121 current source and paired admission checkpoint, 2026-10-09
+
+- Revalidated frozen/current identities and saved12 physical paths/complete current882source and header plus precise paired dispatcher/length/UDP/address/JNI/pause/build ranges. Gate1 complete; gates2-5 pending. Real136byte submessage extent guards and address-derived sender preserved, outer validator/direct/observer and pure policy chain still needed before complete acceptance
+- Shared pause/current Android guard supported by paired CMake definitions; JNI mutex-owned mailbox retained. Failed shared JNI path corrected with actual cpp/android_input.c read, no phantom read credit. No new issue/status/rating/runtime/original saving or product/test/script edits/execution.0121TODO/0116historical byte audit debt open, external work preserved, overall goal active
+
+
+Concurrent HEAD reconciliation: HEAD advanced externally to a59e4494b0051fa96d3fdacc9c1728a05f8d8ee6 (profile single-player saves) during this checkpoint. All12 newly saved current physical identities independently revalidated unchanged afterward. Working tree now contains only the two diagnosis-document edits from this checkpoint; no staging/commit performed here. Future context deltas must use current worktree and frozen campaign reference, not prior HEAD assumptions
+
+
+### Chunk 0121 policy, outer UDP and overlay checkpoint, 2026-10-09
+
+- Revalidated12prior physical identities; saved11paths24actual ranges including whole pure policy/header/overlay/unit fixture/runner and precise outer paired UDP/Activity/diagnostic/automation/CMake ranges. Policy authority/monotonic progress/deadline/barrier invariants retained; real size/session-token/address-port checks and immediate observer control forwarding traced
+- Overlay generation/pointer fencing and unit acceptance preserved. Diagnostics getter other JNI/automation callers still need ownership trace; integration fixtures/registration/presentation/palette/canonical acceptance/current deltas/report/audit remain. Gate1complete/gates2-5pending/0121TODO. No new issue/status/rating/runtime/saving/product/test/script mutation or execution;0116historical byte debt open, external work preserved, overall goal active
+
+
+### Chunk 0121 presentation/palette and maintained touch checkpoint, 2026-10-09
+
+- Saved14paths17actual ranges: paired titles/event/GL, whole D2 palette loader, movie, direct diagnostic JNI, real LAN runner and whole3scripts, refreshed CMake registration. Concurrent checkpoint CMake change caught by prewrite identity guard; reread preserves historical binding and credits current shifted target/list. Other prior source identities unchanged, external checkpoint work preserved
+- Real Skip/drag/deliberate-launch touch acceptance exists, both durable peer results required. Palette cache reset/invalidation supported by actual consumers. Direct diagnostic export ownership still acceptance to reconcile; only Kotlin declaration found, no proven active race. D1-in-D2/remaining fixtures/registration/canonical/current deltas/report/audit next. Gate1complete/gates2-5pending/0121TODO. No product/test/script edit or execution/new issue/status/rating/runtime/saving;0116historical byte debt open, overall goal active
+
+
+### Chunk 0121 D1-in-D2 and release/failure/media checkpoint, 2026-10-09
+
+- Saved13paths24actual ranges with D1-in-D2 planning/pump/parsing and paired authored completion, whole6release/failure/missing-media scripts, actual loss-runner/PID checks and coverage/master registration. Preserve repeated release handshake/save exclusion, usable host-loss outcome and5/6unavailable readiness. Source evidence only, no execution
+- Prior latest bindings revalidated except concurrent CMake569line update; complete HEAD delta read and shifted briefing registration refreshed. Other external product work preserved. Remaining engine hooks/focused fixtures/canonical/current deltas/report/audit. Gate1complete/gates2-5pending/0121TODO;0116historical byte debt open, no new issue/status/rating/runtime/saving or product/test/script edits, overall goal active
+
+
+### Chunk 0121 engine admission and focused fixture gates2-3 checkpoint, 2026-10-09
+
+- Latest bindings unchanged; saved17paths25actual ranges paired level-entry/rejoin/endlevel and sync/local reader, whole flyout hook, actual rejoin/empty/palette runner and whole8deadline/rejoin/observer scripts. Gates1-3complete, gates4-5pending,0121TODO. Retain shared ownership/narrow paired hooks, local reader outside roster/original deadlines and authored progress
+- Fixture limits explicit:17whole briefing scripts plus native policy source/runner and registration, no execution or universal optional-case credit. Palette diagnostic != visual-upload proof, malformed wire/JNI/owned-snapshot schedules remain existing-owner acceptance to reconcile. Next fresh canonical/current deltas/consolidation/report/import/audit. No new finding/status/rating/runtime/saving/product/test/script edits;0116historical byte debt open, external work preserved, overall goal active
+
+
+### Chunk 0121 existing owners and nine context diffs checkpoint, 2026-10-09
+
+- Saved9fully read current context deltas and37fresh canonical lines in2owners, existing BR0029/BR0044/GQF0183/GQR0170 states unchanged. Retain shared coordinator/policy/admission/release/palette/touch and narrow paired hooks. ArchivedBR0065scope remains unread, no repair/regression allegation
+- Initial57path/23delta inventory,14remaining deltas plus owner reconciliation/consolidation/report/audit. Concurrent game_automate.cpp changed after initial inventory; prepublication guard caught it, historical bindings retained and current rebind required. Gates1-3complete/gates4-5pending/0121TODO,0116historical byte debt open. No product/test/script edit or execution/new issue/status/rating/runtime/saving, external work preserved, goal active
+
+
+### Chunk 0121 archived codec and17context diff checkpoint, 2026-10-09
+
+- Saved8more whole current deltas (17of23initial inventory), actual refreshed automation/JNI startup ranges and17archivedBR0065lines. Preserve FIXEDcodec status/shared policy and existing GQR0170boundary acceptance; no regression/newroot claimed. Callsign producer constraints still actual trace needed
+- Remaining6large context deltas/input/Activity/automation/pairedGL/LAN plus current inventory/union and canonical acceptance before gate4/report/audit. Gates1-3complete/4-5pending/0121TODO. No product/test/script edit/execution/new issue/status/rating/runtime/saving; external work preserved,0116historical byte debt open, overall goal active
+
+
+### Chunk 0121 callsign admission and20context diffs checkpoint, 2026-10-09
+
+- Saved five actual physical bindings (picker/filter, preferences, launcher producer/debug setters, Activity consumer, native pilot copy) and three complete current deltas input/pairedGL. Ordinary picker/import paths constrain1-8ASCII; preference/debug setters require distinct producer acceptance. Preserve archived codec FIXED and shared pause/runtime/batch/palette owners, no new issue or regression claim
+-20of23initial context deltas saved. Next complete Activity/automation/LAN deltas, fresh context inventory/current range rebindings and owner acceptance consolidation, report/import/publication/audit. Gates1-3complete/4-5pending/0121TODO;0116historical inherited-byte audit debt open. No product/test/script changes or execution/runtime/saving; concurrent work preserved, overall goal active
+
+
+### Chunk 0121 all23initial context deltas and fresh inventory checkpoint, 2026-10-09
+
+- Complete Activity/automation/LAN current diffs read and saved, actual briefing action6040-6073 refreshed at current automation6588lines. Concurrent checkpoint additions mostly downstream; initial speculation about briefing offsets corrected. Preserve pause modal/session transaction, run-id durable results, current checkpoint/background fixture changes without execution or helper-body credit
+- Fresh inventory 61 physical paths/25 nonempty current deltas/23 saved; remaining new producer deltas [["android/app/src/main/cpp/shared/net/auto_net.c", 953], ["android/app/src/main/java/com/dxxredux/app/SetupActivity.kt", 25650]]. Next those deltas/current union rebindings/owner acceptance/consolidation before report/publication/audit. Gates1-3complete/4-5pending/0121TODO;0116historical audit debt open, no product edits or execution, overall goal active
+
+
+### Chunk 0121 all25current context deltas and consolidation preparation checkpoint, 2026-10-09
+
+- Both new producer deltas auto_net/SetupActivity complete;61physical contexts/25nonempty current deltas saved, latest source identities unchanged. Chronological historical ranges checked against current offsets; mismatches listed in continuation plan need explicit reread/mapping before final union
+- Gates1-3complete/4-5pending/0121TODO. Next current-range consolidation/concrete existing-owner acceptance, immutable report/import/publication/independent audit; then0122.0116historical byte audit debt remains. Diagnosis docs only, no product/test/script changes or execution, external work preserved, overall goal active
+
+
+### Chunk 0121 concurrent audit correction and fresh actual range reconciliation, 2026-10-09
+
+- Corrected preceding prose: actual audit listed automation source changed. Current6599line automation briefing6040-6073 and changed348line delta hunk actually read/rebound; all other raw hunks equal previously fully read evidence. Fresh CMake302-316/509-537 reread, historical offsets stay historical
+- Next final current guard/chronological union/existing-owner acceptance for gate4, then report/import/publication/independent gate5.0121TODO/0116historical byte debt open. Diagnosis docs only/no product edits or execution, external work preserved, overall goal active
+
+
+### Chunk 0121 final current reconciliation and gate4 checkpoint, 2026-10-09
+
+- Prewrite guard caught external automation changes; current6600line identity/changed349line hunk/shifted pause hunks read and rebound, briefing payload unchanged. All61latest physical identities/25complete deltas/54canonical lines in3owners revalidated. 134chronological actual-range entries reconstructed, stale historical tuples excluded;61physical unions/26whole
+- Gates1-4complete/5pending,0121TODO. RETAIN shared policy/coordinator/narrow paired hooks; zero assigned inherited saving. Existing GQR0170/BR0044 checked publication/first-exception and BR0029 owned diagnostics plans concrete, no new root/status/rating/runtime. Next retention/immutable report/raw baseline/import/publication/independent audit.0116historical byte debt separate, no product edits or execution, external work preserved, overall goal active
+
+
+### Chunk 0121 canonical publication pending independent terminal audit, 2026-10-09
+
+GQC1090ISSUES/GQD0970NO_INHERITED_EFFECT, CURRENT-RECONCILIATION/RETAIN and numbered0121DONE/REFERENCE56GQR0170 published. Immutable report SHA256 05e901f6eb0f1badb00a1240455e22518bf99e9ffa73cd3851adfb394ad82190; scope a0773bf84d3f187c0a6169cfed135336849f41b11f0db62267c033d5ba8d46e6. Five new semantic table records/one old queue removal,1077unique sorted terminal ranks; all other product/table semantics unchanged. Existing owner acceptance concrete in plan, BR raw bytes/statuses unchanged. Inherited raw baseline prefix preserved exactly. Gates1-4complete; independent audit required for gate5.0116historical inherited-byte debt open, diagnosis docs only/no product edits or execution/runtime/saving, external work preserved, overall goal active
+
+Read-only parser corrected before writing: terminal table includes65recheck/sweep/preflight/supplement IDs besides numbered chunks. Preserve all1076prior entries; literal pipes in annotations also remain in the final annotation cell. Two failed prewrite checks made no canonical mutations
+
+
+### Chunk 0121 terminal diagnosis handoff, 2026-10-09
+
+- All five diagnosis gates complete. Independent audit PASS: exact one assigned branch-added source frozen1-750of869/enclosing tail/current882whole, base/originalABSENT, frozen blob/range/current identities,4350manifest/exact generated queue; scope a0773bf84d3f187c0a6169cfed135336849f41b11f0db62267c033d5ba8d46e6.134 chronological actual-range entries independently reconstructed,7 stale historical tuples excluded from current unions;61physical paths26whole/25complete current context deltas and raw hunks/54prepublication canonical lines in3owners
+- Immutable report SHA256 05e901f6eb0f1badb00a1240455e22518bf99e9ffa73cd3851adfb394ad82190 and exact full imported body/fiveJSON blocks PASS. GQC1090ISSUES/GQD0970NO_INHERITED_EFFECT/normalization/0121DONE/REFERENCE56GQR0170 verified. Five new semantic table records/one old queue removal; every other product/table semantic row preserved,1077unique contiguous sorted terminal ranks. BR raw bytes unchanged; inherited raw prefix exactly equals saved prepublication baseline, no normalization or assigned inherited saving
+- Read-only publication checker corrected to include65non-numbered terminal IDs, preserving the whole ranking table; failed prewrite checks made no canonical mutation. Concurrent automation identities/ranges refreshed from actual reads; stale historical offsets not silently promoted. Scoped documentation diff-check PASS. No source/test/script edits or execution/build/device/probes, no new root/status/rating/runtime evidence; external product work preserved
+- Numbered canonical queue262DONE365TODO.0116canonicalDONE still separately gate5pending historical inherited-byte audit debt; this completion does not settle0116 or complete overall diagnosis goal
+- Next numbered scope GQ2-CHUNK-0122 shared/coop/coop_recovery.c frozenL1-L750. Discover exact frozen/current assignment/original attribution before diagnosis; earlier consumer reads do not widen assigned coverage
+
+
+### Chunk 0122 exact scope and first frozen read checkpoint, 2026-10-09
+
+- Created plan_gq2_0122_coop_recovery_continuation_20261009.md. Exact single branch-added source frozen1-750of1163/base-originalABSENT/current1160; actual1-250 and complete3hunk current delta read/bound. No assigned/current whole completion credit, zero assigned inherited saving
+- Preserve current all-coop persistent accounting independent of optional QoL, checked reserve cleanup/object identity/gear conservation intent; actual remaining inventory/restore/life/wire/paired consumers/fixtures/owners needed before findings. Next frozen251-750/enclosing/current source/header/actual callers.0121allfivegatesPASS, queue262DONE365TODO;0116historical byte debt open, diagnosis docs only/no product edits/execution, external work preserved, overall goal active
+
+
+### Chunk 0122 assigned completion and enclosing source checkpoint, 2026-10-09
+
+- Exact frozen assigned1-750 and enclosing751-1163 now completely read/bound. Current1160identity matches prior1228byte3hunk delta; current whole-source/controlflow still needed before gate1. Preserve reservation/provenance/conservation/freeze/life/revision/remote identity and world-only reconciliation guards
+- Next current source/header/actual paired consumers/transport/fixtures/canonical owners/current deltas/consolidation/report/audit. All gatespending/0122TODO,0121terminalPASS,0116historical byte debt open, no product edits or execution/new issue/status/rating/runtime/original saving, external work preserved, overall goal active
+
+
+### Chunk 0122 current whole source/header and gate1 checkpoint, 2026-10-09
+
+- Whole current1160source/97header actually read/bound, attribution unchanged; gate1complete. Packed Android little-endian fixed-width wire layout and zeroed length+1owner fields retained; no superficial struct-copy/strncpy allegation. Full-save section discard versus world-only validate-before-mutate contract needs actual caller trace
+- Next paired pickup/death/status/wire/rejoin/disconnect/save/world consumers, maintained fixtures/existing owners/current context diffs/report/audit. Gates2-5pending/0122TODO;0116historical byte audit debt open, no product edits/execution/new finding/status/rating/runtime/original saving, external work preserved, overall goal active
+
+
+### Chunk 0122 paired drop/pickup/status producer checkpoint, 2026-10-09
+
+- Saved5paths13actual partial ranges: paired death-mine/drop/provenance/pickup/ship-status/dispatch and host inventory producer. Preserve successful mine accounting/before-after inventory/authority-life-serial gates and apply-local-before-send failed-join cache. Actual nested/outer transport and remaining callers still needed; truncated broad canonical grep discovery only
+- Gate1complete/2-5pending/0122TODO. Next actual count/duplication/death/admission/rejoin/save/world callers, native/integration source fixtures/exact owners/current deltas/consolidation/report/audit. No product edits/execution/new finding/status/rating/runtime/original saving,0116historical byte debt open, external work preserved, overall goal active
+
+
+### Chunk 0122 nested packet, duplication and pending inventory checkpoint, 2026-10-09
+
+Actually read nine paths/nine partial ranges. Paired nested dispatch enforces declared submessage extent before handling; recovery wire length is 160 in both headers. Gameplay stamp is decoded and current world stamp is re-read after each handler. This establishes nested length/world fencing, not outer address/session admission. Host object transfer waits for matching recovery owner readiness before starting the joining world.
+
+Duplication admits only energy/shields and excludes player-dropped/spat objects; recovery equipment remains separate. Restore producer uses explicit little-endian fields, epoch/serial/life. Receive requires master sender and a valid nonobsolete visit, owns pending packet/stamp copy and rejects older pending visit/serial. Consumption uses current world/readiness action, discards obsolete input, checks own-player/cooperative state and recovery serial before applying inventory and publishing status. Gear value admission and full-save discard contract still need their actual owners/callers. Fixed-width record/header packing traced partially, no whole-header credit or new compatibility finding.
+
+Gate1 complete; gates2-5 pending and 0122 TODO. Next outer transport/death message counts, actual constant pickup selectors, freeze disconnect/frame/reset/save/world callers, fixtures/existing owners and current deltas before consolidation/report/audit. Diagnosis only; no source/test/script edits or execution, new finding/status/rating/runtime/original saving. Concurrent product work preserved; 0116 historical byte audit remains open; overall goal active.
+
+
+### Chunk 0122 outer transport, death admission and existing owners checkpoint, 2026-10-09
+
+Revalidated every prior current physical identity unchanged. Actually read four paths/18 partial ranges, plus exact canonical BR-0195/BR-0080/BR-0206/BR-0388 sections and printed adjacent lines. Paired security chain checks Android MDATA minimum/maximum size before token reads and dispatch. Session token, address+port roster lookup and state admission are real controls; no cryptographic identity claim. Reliable packets are deduplicated, master relays before local handling; downstream peers derive sender from master transport address. This distinction must be reconciled with existing BR-0195 before claiming end-to-end original-peer authority.
+
+Paired death/drop handlers check payload player bounds and obsolete recovery life, then reconstruct inventory/eggs and parse signed-char remote_created into mapping/cleanup loops. No count cap or sender-match check appears in the actually read dispatcher/handler; fixed nested extent alone cannot validate a payload-controlled object count. Mapping helper bounds, exact death wire layout, branch attribution and existing broader packet owners remain to trace before admitting a separate finding. Preserve distinction between inherited decoder behavior and new recovery life/drop hooks.
+
+BR-0195, BR-0080, BR-0206 and BR-0388 are canonically OPEN. Earlier historical evidence is not current repro proof: ship-status and inventory receive now contain guards. BR-0195 retains host-relay/authority acceptance; BR-0206 retains coordinated restore failure acceptance; BR-0388 retains actual stable identity wire acceptance. No statuses changed and no new root or rating claimed.
+
+Gate1 complete; gates2-5 pending, 0122 TODO. Next actual pickup selectors/map helper/death wire constants, save/world/freeze/disconnect/reset/migration callers, maintained fixtures and fresh context deltas/owner reconciliation/report/audit. Diagnosis documents only, no product/test/script edits or execution/runtime/original saving; concurrent work preserved and 0116 historical byte debt open. Overall goal active.
+
+
+### Chunk 0122 save discard contract, pickup selectors and migration checkpoint, 2026-10-09
+
+Revalidated prior identities unchanged. Saved nine paths/16 actual partial ranges. Save writer normalizes ledger after object serialization, then checks readiness/size and takes engine-owned data on its synchronous path. Parser bounds recovery_count against exact remaining byte span and publishes owned pending data only after read/allocation success. Ordinary restore deliberately clears optional gear and logs discard; travel/source restore rejects the same incomplete ownership section. Source completion additionally compares accepted/discarded totals against saved counts. Progress inventory requires pending recovery application before host inventory/absent records. Absent cache evicts oldest record into persistent recovery credit and preserves pending interrupted-return inventory.
+
+Pickup-count callers use constant secondary weapon selectors or -1 for shared ammo in both games; no arbitrary packet-controlled secondary subscript demonstrated. Map helper uses assertions for remote/local object bounds, not a runtime packet-domain check. Death wire lengths add eight Android life/omega bytes to legacy spans, consistent with producer offsets; payload count/mapping risks need frozen/base attribution and existing owner scope before classification.
+
+Migration caller invokes recovery host_changed only after elected local master and owner reset; recovery resets prior reclamation masks/state and requires new host acknowledgements. Frame binding does not remove disconnected peer bits. Actual rejoin readiness loop/disconnect/reset paths still need inspection before determining whether a removed peer can indefinitely block a freeze/save. Requested migration range ended at EOF113; the read loop then raised IndexError, so only actually printed80-113 credited, no nonexistent lines.
+
+Gate1 complete; gates2-5 pending, 0122 TODO. Next freeze/disconnect/state callers and maintained fixtures, exact packet issue owner/base attribution, fresh context deltas/consolidation/report/audit. No new root/status/rating/runtime/original saving, product/test/script edits or execution; concurrent work preserved, 0116 historical byte debt open, overall goal active.
+
+
+### Chunk 0122 native fixture, freeze/disconnect and paired restore checkpoint, 2026-10-09
+
+Actually read complete1027line native recovery fixture in three bounded batches plus precise recovery/disconnect/state ranges; all prior identities unchanged. Earlier one-shot native print was truncated and receives no whole credit; bounded rereads now establish whole source coverage. Harness exercises real recovery implementation with simulated engine objects/inventory/mapping and captured160byte packet transport; actual do_powerup, UDP envelope/relay, timer progression, allocator failure and device behavior are not proved by it. Source scenarios preserve partial capacity, overflow credit, late death/mines, expiry, identity, migration, repeated/reordered collect/freeze, used remote generation, discard missing/conflicting gear, dormant two-world reconciliation, retired-world atomic failure and absent cold restore with QoL both on/off. No fixture executed.
+
+Freeze waits for snapshot of active peer bits, retries without rechecking connectivity, and save_ready remains false while a reclamation mask is nonzero. Paired disconnect snapshots absent inventory, clears connection state, calls UDP disconnect, handles master migration and requests autosave. No recovery mask-clearing hook appears in these engine disconnect ranges. UDP disconnect body, join cancellation/reset and existing issue-owner acceptance remain to establish before classifying stale-wait liveness. Native fixture covers unused slots before freeze and late successful reply, not a peer disconnect after freeze with no reply. Concrete next acceptance: drop owner leaves; third peer is awaited; disconnect third peer before REC_FROZEN; require safe reconciliation or explicit cancellation that restores save readiness without granting uncertain gear.
+
+Paired full restore reports optional accepted/discarded gear and rejects incomplete source rollback before inventory matching. D2 world-only restore checks duplication discard and recovery atomic-world result, returns failure without replacing campaign inventory/life/serial; ordinary full restore applies saved slot mapping and absent cache. These actual callers confirm optional versus required ownership contracts, no new falsely successful full-restore issue. Existing BR-0206 coordinated outer transaction remains separate.
+
+Gate1 complete; gates2-5 pending and0122 TODO. Next UDP disconnect/join reset/cancel/epoch owners, frozen attribution and packet owners, maintained integration fixtures/registration, remaining consumers/current deltas/consolidation/report/audit. No product/test/script edit/execution/new canonical root/status/rating/runtime/original saving; concurrent work preserved and0116historical byte debt open. Overall goal active.
+
+
+### Chunk 0122 disconnect/cancel liveness and eleven integration scripts checkpoint, 2026-10-09
+
+Revalidated all prior source identities unchanged. Read paired UDP disconnect/stop-resync/endlevel cancellation, shared join cancel/reset, recovery save/readiness/receipt controls, real ghost runner, CMake registration and eleven whole integration scripts. Initial wrong header path did not exist; corrected shared/net path actually read1-65, no phantom read credit. Exact prior0093 terminal ledger lines retain existing BR0206/0388 OPEN and optional-versus-strict distinction, no status mutation.
+
+Concrete source-supported liveness candidate: owner returns while another active peer is in the reclamation wait mask; peer disconnects before sending FROZEN. Recovery rejoin_ready retries existing nonzero mask without pruning disconnected slots; receipt is sole per-peer bit clear, frame only binds objects. Engine disconnect marks slot disconnected and UDP disconnect only clears reliable receive tracking. Joining cancellation restores connection state and drops object-transfer flags but does not cancel reclamation. Save_ready/retire-world refuse nonzero masks; normal repeated calls cannot complete. Broader full reset/restore/new-host recovery can reset the state, but same surviving host has no traced cancellation hook. Do not fix by blindly reclaiming uncertain contents: missing peer may have collected gear before departing. Plan bounded conservative cancellation/reconciliation, preserve local pickup intersections and require readiness to recover without duplicating inventory. Check canonical root/attribution before creating a new finding.
+
+Native fixture covers unused slots before freeze and successful late pickup receipt; reviewed real runner performs three cold restore cycles, actual exit autosave, exact returning missiles/weapon/laser checks, no residual world gear and restored thrust. Eleven scripts owned by test_lan include death and partial pickup/seed/lobby cancellation/acceptance. These two-peer scenarios do not cover a third peer disconnecting during pending freeze. CMake compiles actual shared recovery implementation for chosen D1/D2 target; fixture registration source only, no execution or green-test claim. Remaining SpewRecovery runner, saved-late-join runner, master coverage and debug action consumers still require actual reads.
+
+Gate1 complete; gates2-5 pending,0122 TODO. Next exact existing quality issue owners/new-root attribution, remaining consumers/fixtures/registration and current context deltas, consolidation/report/audit. Diagnosis documents only, no product/test/script edits or execution/new canonical status/rating/runtime/original saving; concurrent work preserved,0116historical byte debt open, overall goal active.
+
+
+### Chunk 0122 actual automation, spew/saved join and quantity owner checkpoint, 2026-10-09
+
+Prior physical identities unchanged. Saved five paths/11 partial ranges, plus exact current GQF0254 OPEN/GQR0240 TODO rows. Existing quantity owner covers native D1/D1-in-D2 Vulcan minimum inflation after recovery request capping; constant selector trace does not settle actual grant semantics. Preserve existing focused quantity plan and separate GQR0189 eligibility; no duplicate finding/status mutation. Broad ledger search truncated and only discovery, no whole canonical read credit. No existing freeze-disconnect root was established by that discovery; fresh canonical owner census still needed before admission.
+
+SpewRecovery runner verifies real death equipment, host collection of four/returning two homing missiles, repeated process loss/rejoin twice, matching ledger rows and no residual world spew. SavedLateJoin runner includes death before save, cancelled lobby joins, host solo restore, optional partial world transfer cancellation/retry, exact inventory and ready_to_save afterward. This two-peer transfer cancellation occurs after object packets; recovery freeze before first object packet with third-peer loss remains uncovered. Remaining tail2315 onward and durable result helper need read before whole runner scenario acceptance. Native fixture source coverage does not establish current success.
+
+Actual debug collection calls collide_player_and_powerup, and damage calls native apply_damage_to_player; seed publishes ship status. Introspection exposes recovery counts, epoch and ready_to_save from engine owner. Automated credit/freeze actions already allow a narrow maintained liveness acceptance extension without adding another inventory ledger. Master coverage names test_lan,900second timeout exists, runner dispatches ghost/saved/spew flags and NoCoopQol explicitly sets option false; no blanket optional-variant execution claim. Native full fixture remains simulated mapping/transport while real debug actions reach collision/native grant.
+
+Gate1 complete; gates2-5 pending,0122 TODO. Next remaining reset/frame/alive/level/suspend consumers, saved-join tail/result helpers and host registration, exact packet/death base attribution, canonical issue census, current context diffs and report/audit. Diagnosis documents only, no product/test/script changes/execution/new canonical root/status/rating/runtime/original saving. Concurrent work preserved;0116historical byte debt open; overall goal active.
+
+
+### Chunk 0122 lifecycle, travel readiness and fixture gates2-3 checkpoint, 2026-10-09
+
+Revalidated38prior physical identities. Saved13paths/32actual partial ranges including whole56line native host runner. Paired new-game resets recovery/campaign/pending inventory; frames apply pending inventory then binding and restore/progress operations; respawn and reordered appearance call alive. Level entry leaves recovery world before resetting duplication. Actual powerup expiry precedes OF_SHOULD_BE_DEAD. Shared restore begin reserves/activates world visit, clears pending inventory and sets recovery generation; completion records restore result then ends recovery. Recovery gameplay messages may drain during closed world but require exact same nonzero visit/level. Preserve narrow Android paired hooks and shared owner.
+
+Travel portable admission validates full participant life/serial roster before player application; host packet portable receive validates record and recovery revision. Readiness gates dormant capture/portable capture/suspend/destination/ack; retirement failure explicitly enters world failure. Stale recovery freeze can affect this larger workflow; normal frame does not resolve it, new game/authoritative restore or host migration is a separate broader state replacement. No broad transactional correctness/runtime claim from partial travel/control reads.
+
+SavedLateJoin complete relevant scenario tail checks same host PID across repeated returns, bidirectional updates, both control scripts, readiness/no-world-spew and exact restored inventory. Shared runner stages per-serial run-id, reads durable JSON result and rejects wrong run-id; paired helper requires both terminal PASS. Native host runner selects D1/D2 builds then CTest, CMake actually registers every host target including recovery. All source reviewed only, no script/native/device/test execution. Source fixture coverage limits and explicit third-peer disconnect-during-freeze acceptance remain. Gates2-3 complete for assigned recovery diagnosis and source fixture inspection; gate4 owner/finding/current-delta consolidation and gate5 immutable publication/independent audit remain,0122TODO.
+
+Next exact canonical owner census for stale freeze, frozen/base death decoder attribution and existing GQF0254 grant owner, fresh current context delta inventory and complete reads, actionable simplification/acceptance, report/import/publication/audit. No new canonical root/status/rating/runtime/original saving or product/test/script edits; concurrent work preserved and0116historical byte debt open. Overall goal active.
+
+
+### Chunk 0122 seventeen complete current context deltas checkpoint, 2026-10-09
+
+All46latest physical identities unchanged. Fresh discovery inventory has25nonempty frozen-to-current context deltas;17actually read completely and now bound with raw hunk identities. Eight remain: shared coop_save,game_automate,CMake/test_lan,paired multi/net_udp. Inventory output and broad issue search was truncated; discovery only, not complete canonical owner credit.
+
+Current shared primary/laser/flag duplicate eligibility extraction removes53lines from each native powerup file into shared status owner. Preserve already-completed extraction; assigned branch-added recovery has zero1996attributable savings. This is eligibility, not final ammo grant repair under existing GQF0254/GQR0240. Persistent recovery enabled in all coop remains intentional and maintained QoL-on/off cold inventory fixtures. Paired state deltas include concurrent async checkpoint drain/profiling, secret companion generation and native secret-return disk-word consumption; optional gear consumer spans remain unchanged. These current changes are preserved and not executed or automatically attributed as new recovery defects.
+
+Other current deltas retain pause/checkpoint/diagnostic projections, guarded travel legacy resume, authored ghost scripts and suite registration/timeouts. Complete current delta read is structural coverage only, not whole helper/source implementation or runtime acceptance. Gates1-3complete;4-5pending,0122TODO. Next eight larger deltas, canonical freeze root and inherited death-message attribution, concrete acceptance/consolidation/report/audit. No product/test/script edits or execution/new canonical root/status/rating/runtime/original saving. External work preserved,0116historical byte debt open, overall goal active.
+
+
+### Chunk 0122 remaining eight context deltas and inherited decoder checkpoint, 2026-10-09
+
+All46 saved physical identities revalidated unchanged. The remaining eight complete current deltas were actually read in the preceding diagnosis turn and are now bound below; all25 current context deltas have complete read evidence. Paired multi extracts shared gameplay-option policy and removes duplicate periodic clocks; paired UDP changes add profiling. CMake registration, shared save/checkpoint work, automation and LAN additions preserve concurrent work. No product execution or source changes.
+
+Exact BR0278/0609 sections actually read: duplicate autosave cadence and diagnostic packet join-token ownership are separate from freeze acknowledgement liveness. Paired base engine death decoder ranges2433-2459/2540-2566 contain the existing remote_created mapping/cleanup loop; this is preexisting at the campaign base, not a new assigned recovery defect. Canonical discovery finds no established freeze-disconnect owner; definitive finding/plan admission remains pending. Gates1-3complete,4-5pending;0122TODO and0116historical byte-audit debt open. Overall diagnosis goal remains active.
+
+
+### Chunk 0122 actionable freeze-disconnect plan checkpoint, 2026-10-09
+
+Focused diagnosis-only plan plan_gq2_0122_recovery_freeze_disconnect_20261009.md now records bounded attempt lifetime, connection identity fencing, safe uncertain-remainder persistence and actual three-peer/native acceptance. Uncertain-remainder representation remains an explicit prerequisite design decision; blind bit pruning, indefinite global save blocking or forgetting/regranting gear do not satisfy acceptance. Existing authority, quantity, restore, scheduler, diagnostic and authenticated reconnect owners remain separate with unchanged statuses. Archived BR0225 L1232-L1248 actually read; its credential ownership is not freeze liveness. Current recovery L40-L125,L500-L665,L695-L750,L749-L779,L780-L825,L827-L863 reread to substantiate plan; no new whole-source or runtime claim.
+
+All25 current context deltas now saved. Canonical finding admission and immutable report/import/independent audit remain pending before0122DONE; gates1-3complete,4-5pending. No source/test/script edits or execution; external product work preserved,0116historical byte audit open, overall diagnosis goal active.
+
+
+### Chunk 0122 report preparation identity audit, 2026-10-09
+
+Read-only preparation verifies 142 chronological source range entries, 46 current physical paths (15 whole), 25 complete current context deltas and 160 unique canonical lines in 3 owners. Every saved current whole-source/range and canonical raw/text identity matches current bytes. No stale range excluded or missing-source-range path found. This validates evidence bindings, not product behavior, canonical publication or terminal completion. Focused cancellation plan is saved; gates4-5/0122TODO and0116historical byte debt remain pending. No product changes or execution; overall goal active.
+
+
+### Chunk 0122 measured saved-player restore extraction checkpoint, 2026-10-09
+
+Frozen recovery-bearing paired state hunks actually read completely. Found19line paired saved-player restoration loops with identical18line bodies and explicit D2 world-only exclusion; current24line enclosing ranges and shared lookup/absent/application/header contexts actually read. Earlier commentary20line estimate corrected by exact counting: replacing38loop lines with1D1+2D2 lines yields35expected inherited source lines across two edited hunks, not applied savings or whole hunk removal. Focused plan plan_gq2_0122_shared_saved_player_restore_20261009.md preserves existing shared save ownership/native format/failure boundaries/concurrent checkpoints. Provisional57(12/21/7/10/7) candidate separate from freeze liveness. DMR1-007 exact section read is deferred D2 filename-slot parser, not this loop.
+
+Canonical admission, final scope/report/import and independent audit remain pending;0122TODO/gates4-5pending. No product edits or execution.0116historical byte debt remains open, external work preserved, overall diagnosis goal active.
