@@ -30,6 +30,7 @@ extern "C" {
 #include "android_axis_mailbox.h"
 #include "android_mission_assets.h"
 #include "android_log.h"
+#include "state_checkpoint.h"
 #include "android_graphics_safety.h"
 #include "android_gpu_capabilities.h"
 #include "render_gameplay_view.h"
@@ -1784,6 +1785,13 @@ extern "C" char *game_introspect_get_state(void)
 		android_rewind_get_history(&count, &level, &generation);
 		j["rewind_history"] = { { "count", count }, { "level", level }, { "campaign_generation", generation } };
 	}
+#ifdef __ANDROID__
+	{
+		state_checkpoint_stats stats;
+		state_checkpoint_get_stats(&stats);
+		j["checkpoints"] = { { "submitted", stats.submitted }, { "completed", stats.completed }, { "failed", stats.failed }, { "deferred", stats.deferred }, { "pending", stats.pending }, { "capture_us", stats.capture_us }, { "max_capture_us", stats.max_capture_us }, { "worker_us", stats.worker_us } };
+	}
+#endif
 	{
 		net_join_status join;
 		unsigned join_presentations;

@@ -17,6 +17,7 @@
 #include "guidebot_route_certifier.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "guidebot_metadata_save_fields.h"
+#include "guidebot_metadata_snapshot.h"
 #endif
 #include "level_metadata_scan.h"
 #include "object.h"
@@ -42,6 +43,7 @@
 #include "android_level_preview.h"
 #include "android_native_build_info.h"
 #include "android_profile.h"
+#include "state_checkpoint.h"
 #include "android_route_metadata.h"
 #include <unistd.h>
 #endif
@@ -5443,40 +5445,27 @@ void level_metadata_cycle_objective_mode(void)
 }
 
 #ifdef DXX_BUILD_DESCENT_II
+void level_metadata_capture_snapshot(guidebot_metadata_snapshot *snapshot)
+{
+#define METADATA_STRUCT(type, name, serializer) memcpy(&snapshot->name, &Level_metadata_##name, sizeof(snapshot->name));
+#define METADATA_VALUE(type, name, kind)        memcpy(&snapshot->name, &Level_metadata_##name, sizeof(snapshot->name));
+#include "guidebot_metadata_save_members.h"
+#undef METADATA_STRUCT
+#undef METADATA_VALUE
+}
+
 void level_metadata_save_runtime(guidebot_save_stream *s)
 {
-	gb_save_level_metadata_state(s, &Level_metadata_canonical_state);
-	gb_save_route_planner_plan_summary(s, &Level_metadata_canonical_plan_summary);
-	GB_FIELD(s, Level_metadata_canonical_plan_summary_valid, GB_SIGNED);
-	gb_save_level_metadata_state(s, &Level_metadata_live_route_state);
-	GB_FIELD(s, Level_metadata_live_route_state_valid, GB_SIGNED);
-	gb_save_route_planner_plan_summary(s, &Level_metadata_live_plan_summary);
-	GB_FIELD(s, Level_metadata_live_plan_summary_valid, GB_SIGNED);
-	gb_save_level_metadata_state(s, &Level_metadata_live_candidate_state);
-	gb_save_route_planner_plan_summary(s, &Level_metadata_live_candidate_summary);
-	gb_save_guidebot_route_validity_certificate(s, &Level_metadata_live_candidate_certificate);
-	gb_save_route_snapshot_summary(s, &Level_metadata_canonical_snapshot);
-	GB_FIELD(s, Level_metadata_canonical_snapshot_valid, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_canonical_analysis_profile_hash, GB_UNSIGNED);
-	gb_save_route_snapshot_summary(s, &Level_metadata_live_snapshot);
-	GB_FIELD(s, Level_metadata_live_snapshot_valid, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_progression_object_audit_hash, GB_UNSIGNED);
-	GB_FIELD(s, Level_metadata_progression_object_audit_hash_valid, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_navigation_access_audit_hash, GB_UNSIGNED);
-	GB_FIELD(s, Level_metadata_navigation_access_audit_hash_valid, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_route_start_objnum, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_route_start_seg, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_live_route_target_seg, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_route_readiness, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_route_revision, GB_UNSIGNED);
-	gb_save_guidebot_route_certifier_workspace(s, &Level_metadata_route_certifier_workspace);
-	gb_save_guidebot_route_certifier_workspace(s, &Level_metadata_route_frontier_workspace);
-	gb_save_guidebot_route_certifier_summary(s, &Level_metadata_route_certifier_summary);
-	gb_save_guidebot_route_validity_certificate(s, &Level_metadata_live_certificate);
-	gb_save_guidebot_route_decision(s, &Level_metadata_published_route_decision);
-	GB_FIELD(s, Level_metadata_published_route_decision_valid, GB_SIGNED);
-	GB_FIELD(s, Level_metadata_live_route_provenance, GB_SIGNED);
-	gb_save_level_metadata_live_work_summary(s, &Level_metadata_live_work_summary);
-	GB_FIELD(s, Level_metadata_live_route_work_pending, GB_SIGNED);
+#ifdef __ANDROID__
+	if (state_checkpoint_defer_metadata(s)) return;
+#endif
+#define METADATA_STRUCT(type, name, serializer) serializer(s, &Level_metadata_##name);
+#define METADATA_VALUE(type, name, kind)        GB_FIELD(s, Level_metadata_##name, kind);
+#include "guidebot_metadata_save_members.h"
+#undef METADATA_STRUCT
+#undef METADATA_VALUE
 }
+#ifdef __ANDROID__
+#include "android_metadata_snapshot_probe_impl.h"
+#endif
 #endif

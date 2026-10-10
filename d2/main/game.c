@@ -1950,15 +1950,7 @@ void GameProcessFrame(void)
 #ifdef __ANDROID__
 	state_android_maybe_periodic_autosave();
 
-	/* Periodic coop autosave -- host only, every 30 seconds of level time */
-	{
-		static fix64 last_coop_autosave_time = 0;
-		if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master() &&
-		    GameTime64 >= last_coop_autosave_time + F1_0 * 30) {
-			last_coop_autosave_time = GameTime64;
-			coop_autosave();
-		}
-	}
+	coop_maybe_autosave();
 #endif
 }
 

@@ -2145,6 +2145,10 @@ static void escort_restore_companion_robot_control(void)
 }
 #endif
 
+#ifdef __ANDROID__
+#include "android_save_probe.h"
+#endif
+
 int escort_save_runtime(guidebot_save_stream *s)
 {
 	GB_FIELD(s, Max_escort_length, GB_SIGNED);
@@ -2175,6 +2179,9 @@ int escort_save_runtime(guidebot_save_stream *s)
 	GB_FIELD(s, Buddy_last_missile_time, GB_CLOCK);
 	GB_FIELD(s, Re_init_thief_time, GB_CLOCK);
 	GB_FIELD(s, Last_thief_hit_time, GB_CLOCK);
+#ifdef __ANDROID__
+	if (s->writing) android_save_probe_mark("runtime_fixed");
+#endif
 	/* Framing lets metadata-only builds consume saves from live-routing builds */
 	{
 		unsigned int route_bytes = 0;
@@ -2185,7 +2192,13 @@ int escort_save_runtime(guidebot_save_stream *s)
 			measure.writing = 2;
 			measure.bytes = 0;
 			escort_route_save_runtime(&measure);
+#ifdef __ANDROID__
+			if (s->writing) android_save_probe_mark("route_measure");
+#endif
 			level_metadata_save_runtime(&measure);
+#ifdef __ANDROID__
+			if (s->writing) android_save_probe_mark("metadata_measure");
+#endif
 			if (!measure.ok || measure.bytes > 2 * 1024 * 1024) return s->ok = 0;
 			route_bytes = (unsigned int)measure.bytes;
 		}
@@ -2199,7 +2212,13 @@ int escort_save_runtime(guidebot_save_stream *s)
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 			const size_t start = s->bytes;
 			escort_route_save_runtime(s);
+#ifdef __ANDROID__
+			if (s->writing) android_save_probe_mark("route_write");
+#endif
 			level_metadata_save_runtime(s);
+#ifdef __ANDROID__
+			if (s->writing) android_save_probe_mark("metadata_write");
+#endif
 			if (s->bytes - start != route_bytes) s->ok = 0;
 #else
 			unsigned char skipped[4096];

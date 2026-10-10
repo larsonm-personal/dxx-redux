@@ -394,12 +394,14 @@ $manualTests = @(
 )
 
 # Infrastructure requirement classification
-$twoEmuTests = @("test_mp", "test_lan", "test_coop_pause", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
+$twoEmuTests = @("test_mp", "test_lan", "test_coop_pause", "test_independent_checkpoints", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery", "test_emulator_recovery", "test_dual_emu", "test_dual_emu_setup", "test_manual_lan_coop", "test_lan_launch_preparation", "test_lan_qr_join", "test_manual_ip_engine")
 $serverTests = @("test_bot_client")
 $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_async_checkpoint_unified" = 360
+    "test_independent_checkpoints" = 1200
     "test_automap_objective_readiness_progress" = 600
     "test_android_automap_route_policy" = 600
     "test_android_config_policy" = 600

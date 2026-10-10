@@ -576,6 +576,8 @@ set(DXX_ANDROID_GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind_policy.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/state_checkpoint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/checkpoint_file.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp

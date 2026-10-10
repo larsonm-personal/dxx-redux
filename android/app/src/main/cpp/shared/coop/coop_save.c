@@ -30,6 +30,10 @@
 #include "../android_log.h"
 #include "../android_rewind.h"
 #include "../state_android_shared.h"
+#include "../android_save_probe.h"
+#ifdef __ANDROID__
+#include "../state_checkpoint.h"
+#endif
 #include "weapon.h"
 #include "state.h"
 #include "args.h"
@@ -924,6 +928,8 @@ static void coop_auto_restore_log_trigger(int slot, uint32_t gid, fix64 elapsed)
 
 /* --- forward declarations for static helpers --- */
 static void coop_write_autosave_history(int slot, int n_connected);
+static int coop_format_autosave_record(int slot, int n_connected, char *buf, size_t buf_size,
+                                       char *info, size_t info_size);
 static void coop_write_text_file(const char *filename, const char *buf);
 static void coop_append_other_slots(char *buf, int *off, int buf_size,
                                     const char *old_json, int exclude_slot);
@@ -1035,7 +1041,9 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 static int coop_write_save_payload(rewind_file *file)
 {
 	/* Only normalize the ledger here; objects have already been serialized */
+	android_save_probe_mark("metadata_entry");
 	coop_recovery_prepare_save();
+	android_save_probe_mark("recovery_prepare");
 	size_t count = coop_powerup_duplication_count();
 	const coop_powerup_collection *items =
 	    coop_powerup_duplication_data();
@@ -1057,13 +1065,16 @@ static int coop_write_save_payload(rewind_file *file)
 		return 0;
 	if (!meta.duplicate_energy_shields && count)
 		return 0;
+	android_save_probe_mark("coop_metadata");
 	items_size = count * sizeof(*items);
 	if (!saving_raw_world && campaign_live.active_level) {
 		if (campaign_live.active_level != Current_level_num ||
 		    strncmp(campaign_live.mission, Current_mission_filename, 9) ||
-		    !coop_campaign_worlds_valid(&campaign_live) ||
-		    !coop_campaign_encode(&campaign_live, &campaign_data, &campaign_size)) return 0;
+		    !coop_campaign_worlds_valid(&campaign_live)) return 0;
+		android_save_probe_mark("campaign_validate");
+		if (!coop_campaign_encode(&campaign_live, &campaign_data, &campaign_size)) return 0;
 	}
+	android_save_probe_mark("campaign_encode");
 	if (campaign_size > UINT32_MAX - (sizeof(meta) + items_size + recovery_size)) goto done;
 	memset(&footer, 0, sizeof(footer));
 	footer.tag = COOP_SAVE_FOOTER_TAG;
@@ -1078,6 +1089,7 @@ static int coop_write_save_payload(rewind_file *file)
 	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
 	if (campaign_size) checksum = coop_save_checksum(campaign_data, campaign_size, checksum);
 	footer.checksum = checksum;
+	android_save_probe_mark("coop_checksum");
 	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1 ||
 	    (items_size &&
 	     rewind_file_write(file, items, items_size, 1) != 1) ||
@@ -1085,6 +1097,7 @@ static int coop_write_save_payload(rewind_file *file)
 	    (campaign_size && rewind_file_write(file, campaign_data, campaign_size, 1) != 1) ||
 	    rewind_file_write(file, &footer, sizeof(footer), 1) != 1)
 		goto done;
+	android_save_probe_mark("coop_write");
 	COOP_SAVE_LOG(CON_DEBUG,
 	              "coop_save: wrote metadata trailer (%d active, %d absent, %u pickups, %u campaign bytes)\n",
 	              meta.num_active_players, meta.num_absent_players,
@@ -1556,12 +1569,84 @@ static uint32_t coop_make_autosave_game_id(void)
 	return id;
 }
 
+#ifdef __ANDROID__
+static int coop_async_save_pending;
+static void coop_async_save_complete(uint64_t token, int ok, const rewind_memory_buffer *buffer)
+{
+	(void) buffer;
+	coop_async_save_pending = 0;
+	debug_log(DLOG_GAME, "coop checkpoint %s: slot=%u", ok ? "saved" : "failed", (unsigned) token);
+}
+
+int coop_autosave_async(void)
+{
+	char filename[PATH_MAX], history[PATH_MAX], info_path[PATH_MAX];
+	char entry[2048], info[256], desc[20], callsign[CALLSIGN_LEN + 1];
+	state_checkpoint_attachment attachments[4];
+	int slot, accepted;
+	uint saved_id;
+	if (coop_async_save_pending || !(Game_mode & GM_MULTI_COOP) || !Game_wind ||
+	    !Current_level_num || Player_is_dead || Endlevel_sequence ||
+	    Players[Player_num].connected != CONNECT_PLAYING || coop_briefing_active() ||
+	    coop_travel_blocks_state_actions() || coop_restore_status == 1 ||
+	    multi_save_transfer_busy() || (Control_center_destroyed && !coop_save_countdown_allowed())) return 0;
+	slot = COOP_AUTOSAVE_SLOT_FIRST + coop_autosave_next_slot % COOP_AUTOSAVE_SLOT_COUNT;
+	if (!state_android_build_coop_autosave_filename(filename, sizeof(filename), slot) ||
+	    !state_android_build_coop_sidecar_filename(history, sizeof(history), "coop_autosave_history.json") ||
+	    !state_android_build_coop_sidecar_filename(info_path, sizeof(info_path), "coop_autosave_info.json") ||
+	    !coop_format_autosave_record(slot, N_players, entry, sizeof(entry), info, sizeof(info))) return 0;
+	attachments[0] = (state_checkpoint_attachment) { history, entry, slot };
+	attachments[1] = (state_checkpoint_attachment) { "coop_autosave_history.json", entry, slot };
+	attachments[2] = (state_checkpoint_attachment) { info_path, info, -1 };
+	attachments[3] = (state_checkpoint_attachment) { "coop_autosave_info.json", info, -1 };
+	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts", Current_level_num, N_players, Players[Player_num].score);
+	saved_id = state_game_id;
+	memcpy(callsign, Players[Player_num].callsign, sizeof(callsign));
+	state_game_id = coop_make_autosave_game_id();
+	snprintf(Players[Player_num].callsign, sizeof(Players[Player_num].callsign), "%s", COOP_AUTOSAVE_CALLSIGN);
+	accepted = state_checkpoint_submit_disk(desc, ANDROID_SAVE_META_KIND_MANUAL, filename,
+	                                        attachments, 4, (uint64_t) slot, coop_async_save_complete);
+	state_game_id = saved_id;
+	memcpy(Players[Player_num].callsign, callsign, sizeof(callsign));
+	if (accepted) {
+		coop_async_save_pending = 1;
+		++coop_autosave_next_slot;
+	}
+	return accepted;
+}
+
+void coop_maybe_autosave(void)
+{
+	static int initialized, level;
+	static char mission[PATH_MAX];
+	static fix64 last, next;
+	if (!(Game_mode & GM_MULTI_COOP)) {
+		initialized = 0;
+		return;
+	}
+	if (!initialized || level != Current_level_num || strcmp(mission, Current_mission_filename) || GameTime64 < last) {
+		initialized = 1;
+		level = Current_level_num;
+		snprintf(mission, sizeof(mission), "%s", Current_mission_filename);
+		next = GameTime64 + 30 * F1_0;
+	}
+	last = GameTime64;
+	if (GameTime64 >= next)
+		next = GameTime64 + (coop_autosave_async() ? 30 : 1) * F1_0;
+}
+#endif
+
 int coop_autosave(void)
 {
 	char filename[PATH_MAX];
 	char desc[20];
 	int slot;
 	uint32_t autosave_game_id;
+
+#ifdef __ANDROID__
+	/* Explicit transition/lifecycle saves must follow older background writes */
+	state_checkpoint_drain();
+#endif
 
 	/* Keep the last settled save intact while a replacement world is pending */
 	if (coop_briefing_active() || coop_travel_blocks_state_actions() || coop_restore_status == 1 ||
@@ -1613,19 +1698,19 @@ int coop_autosave(void)
 		memcpy(Players[Player_num].callsign, saved_callsign, CALLSIGN_LEN + 1);
 	}
 	coop_autosave_next_slot++;
+#ifndef __ANDROID__
 	if (multi_i_am_master())
 		multi_send_save_game(slot, autosave_game_id, desc);
+#endif
 
 	coop_write_autosave_history(slot, N_players);
 
 	return 1;
 }
 
-static void coop_write_autosave_history(int slot, int n_connected)
+static int coop_format_autosave_record(int slot, int n_connected, char *buf, size_t buf_size,
+                                       char *info, size_t info_size)
 {
-	char buf[2048];
-	char scoped_history[PATH_MAX];
-	char scoped_info[PATH_MAX];
 	int off = 0;
 	int i;
 	unsigned now = (unsigned) time(NULL);
@@ -1658,7 +1743,7 @@ static void coop_write_autosave_history(int slot, int n_connected)
 			if (Players[i].connected == CONNECT_PLAYING)
 				total_score += Players[i].score;
 
-		off += snprintf(buf + off, sizeof(buf) - off,
+		off += snprintf(buf + off, buf_size - off,
 		                "[\n  {\n"
 		                "    \"slot\": %d,\n"
 		                "    \"type\": \"full_save\",\n"
@@ -1681,9 +1766,32 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		                total_score, callsigns_json, client_ids_json);
 	}
 
+	off += snprintf(buf + off, buf_size - off, "]\n");
+	snprintf(info, info_size,
+	         "{\n"
+	         "  \"mission\": \"%s\",\n"
+	         "  \"level\": %d,\n"
+	         "  \"timestamp\": %u,\n"
+	         "  \"num_players\": %d\n"
+	         "}\n",
+	         Current_mission_filename,
+	         Current_level_num, now, n_connected);
+
+	return off > 0 && (size_t) off < buf_size;
+}
+
+static void coop_write_autosave_history(int slot, int n_connected)
+{
+	/* Retain all entries from the worker's expanded, pretty-printed history */
+	char buf[COOP_AUTOSAVE_SLOT_COUNT * 4096], info[256], scoped_history[PATH_MAX], scoped_info[PATH_MAX];
+	int off;
+	if (!coop_format_autosave_record(slot, n_connected, buf, sizeof(buf), info, sizeof(info))) return;
+	off = (int) strlen(buf) - 2;
+	buf[off] = '\0';
+
 	{
 		PHYSFS_file *old_fp;
-		char old_buf[2048];
+		char old_buf[sizeof(buf)];
 		PHYSFS_sint64 old_len;
 
 		if (!state_android_build_coop_sidecar_filename(
@@ -1708,24 +1816,9 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		coop_write_text_file(scoped_history, buf);
 	coop_write_text_file("coop_autosave_history.json", buf);
 
-	{
-		char jbuf[256];
-
-		snprintf(jbuf, sizeof(jbuf),
-		         "{\n"
-		         "  \"mission\": \"%s\",\n"
-		         "  \"level\": %d,\n"
-		         "  \"timestamp\": %u,\n"
-		         "  \"num_players\": %d\n"
-		         "}\n",
-		         Current_mission_filename,
-		         Current_level_num, now, n_connected);
-
-		if (state_android_build_coop_sidecar_filename(
-		        scoped_info, sizeof(scoped_info), "coop_autosave_info.json"))
-			coop_write_text_file(scoped_info, jbuf);
-		coop_write_text_file("coop_autosave_info.json", jbuf);
-	}
+	if (state_android_build_coop_sidecar_filename(scoped_info, sizeof(scoped_info), "coop_autosave_info.json"))
+		coop_write_text_file(scoped_info, info);
+	coop_write_text_file("coop_autosave_info.json", info);
 }
 
 static void coop_write_text_file(const char *filename, const char *buf)

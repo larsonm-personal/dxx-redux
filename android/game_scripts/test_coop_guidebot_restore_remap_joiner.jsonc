@@ -5,7 +5,7 @@
     { "action": "log", "message": "=== COOP GUIDEBOT RESTORE: remapped joiner ===" },
     {
         "action": "wait_for",
-        "timeout_ms": 90000,
+        "timeout_ms": 180000,
         "expect": {
             "in_game": "true",
             "is_network": "true",

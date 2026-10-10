@@ -213,6 +213,11 @@ int coop_restore_player_spew_lifetimes(void);
 /* Trigger a coop auto-save to slot COOP_AUTOSAVE_SLOT.
  * Returns 1 on success, 0 if conditions prevent saving. */
 int coop_autosave(void);
+/* Android periodic checkpoints are local to each peer and complete asynchronously */
+void coop_maybe_autosave(void);
+#ifdef __ANDROID__
+int coop_autosave_async(void);
+#endif
 
 /* --- inventory application helper --- */
 

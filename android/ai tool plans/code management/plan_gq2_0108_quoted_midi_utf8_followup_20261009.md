@@ -1,0 +1,14 @@
+# Quoted MIDI title UTF-8 publication follow-up, 2026-10-09
+
+Diagnosis and implementation plan only. Extend existing OPEN GQF0272/TODO GQR0258 retained-metadata scalar-prefix owner; no duplicate finding or completed JNI codec reopening. Audio-tag and quoted MIDI producers share the valid-prefix invariant, while file-format title selection stays in midi_metadata.c. No source/test/script edits or executable probes in this tranche
+
+- [x] Trace actual quoted fallback, title storage, JSON serialization and strict JNI rejection boundary; source-only valid-input witness
+- [ ] Preserve the longest complete UTF8 prefix at the existing255byte quoted-title cap, bounded to the quoted substring rather than trailing credits. Retain ordinary quoted fallback/selection heuristics, valid ASCII/CP1252-normalized/BMP/non-BMP content and current metadata limits
+- [ ] Reuse the existing GQR0258 bounded scalar-prefix policy where useful; do not add a parallel codec or repair invalid bytes in JNI. Keep C/C++ ownership/build boundaries and actual original engine format authority
+- [ ] Add future actual shared midi_metadata_parse/to_json fixtures with quoted title cuts before/inside/after two-, three- and four-byte scalars; verify title/display/source/text fields are validUTF8, JSON semantic roundtrip, statuses and ordinary fallback controls
+- [ ] Verify strict JNI roundtrip and actual Kotlin publication through nativeParse; preserve allocation/invalid-input status behavior and existing completed UTF8 repairs. Tests that only call a prefix helper or accept invalid inputs do not close actual parser publication
+- [ ] Run future registered midi_metadata CTest and appropriate Android paired ABI/desktop owner builds before remediation closure. No malformed/allocation/resource probes authorized by this diagnosis plan
+
+Witness without generating or executing input: one valid sequence-name text event containing doublequote,254ASCIIletters,UTF8 C3 A9,doublequote. Full text258bytes is validUTF8 and below1024eventcap. Whole-string sequence candidate rejects length>=256. Quoted fallback extracts256bytes, clamps to255 and copies254letters plusC3. Candidate length255/letters254 passes plausible_title, stores malformed title. JSON passes highbytes unchanged and strict JNI rejects the whole record. Displaycopy may itself remainvalid after79byte clamp, but doesnotrepair JSON title. This is a second retained-metadata producer site for the already-open scalar-prefix invariant; no runtime/corpus failure claimed
+
+Fixture construction requirement from complete test_midi_metadata.c read: put_text currently emits a single-byte length and only handles short test labels. Future258byte quoted-title controls must use proper SMF VLQ length via put_vlq or an equivalent valid fixture builder, preserving short existing fixtures. Do not manufacture invalid MIDI and then mistake parser rejection for quoted UTF8 publication coverage

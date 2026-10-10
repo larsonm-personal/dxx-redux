@@ -47,6 +47,12 @@ static inline void guidebot_save_bytes(guidebot_save_stream *s, void *data, size
 static inline void guidebot_save_field(guidebot_save_stream *s, void *field, size_t width, size_t count, int kind)
 {
 	size_t index;
+	/* Framing needs the encoded width, not value conversion or floating-point formatting */
+	if (s->writing == 2) {
+		if (s->ok) s->bytes += count * (kind == GB_BYTES ? 1 : kind == GB_LONG_DOUBLE ? 64
+			                                                                          : 8);
+		return;
+	}
 	for (index = 0; index < count && s->ok; ++index) {
 		unsigned char *value = (unsigned char *) field + index * width;
 		unsigned char bytes[64] = { 0 };

@@ -1599,18 +1599,11 @@ void multi_do_frame(void)
 	/* android port: broadcast coop status once per second for QoL overlay */
 	{
 		static fix64 last_coop_status_time = 0;
-		static fix64 last_coop_autosave_time = 0;
 		if ((Game_mode & GM_MULTI_COOP) && timer_query() >= last_coop_status_time + F1_0) {
 			coop_send_peer_status();
 			last_coop_status_time = timer_query();
 		}
-		/* Periodic autosave every 30 seconds (host only, coop only) */
-		if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master() &&
-		    !Endlevel_sequence && (!Control_center_destroyed || coop_save_countdown_allowed()) &&
-		    timer_query() >= last_coop_autosave_time + F1_0 * 30) {
-			coop_autosave();
-			last_coop_autosave_time = timer_query();
-		}
+
 	}
 #endif
 
@@ -7175,8 +7168,10 @@ void multi_send_restore_game(ubyte slot, uint id)
 			        slot, id, filename);
 			return;
 		}
-		COOPLOG("multi_send_restore_game: game=d2 restore transfer failed, falling back to restore packet slot=%d id=%u file='%s'",
+		COOPLOG("multi_send_restore_game: game=d2 restore transfer unavailable slot=%d id=%u file='%s'",
 		        slot, id, filename);
+		coop_restore_status_failed();
+		return;
 	}
 #endif
 	

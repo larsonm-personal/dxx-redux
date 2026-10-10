@@ -1,4 +1,4 @@
-// TEST HELPER: Observe the host-owned Guide-Bot while its coop save is made.
+// TEST HELPER: Save the future host's local view of the host-owned Guide-Bot
 // Run with test_lan.ps1 -GuidebotSlotRemapRestore.
 [
     { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
@@ -27,6 +27,7 @@
             "guidebot.route_target_mode_name": "unexplored",
         },
     },
+    { "action": "set_debug", "field": "coop_autosave", "value": "true" },
     { "action": "introspect" },
     { "action": "log", "message": "=== COOP GUIDEBOT RESTORE: save joiner PASS ===" },
 ]

@@ -39,6 +39,50 @@
 #include "android_music_control.h"
 #include "songs_android_shared.h"
 #include "state_android_shared.h"
+#include "android_save_probe.h"
+#ifdef __ANDROID__
+#include <time.h>
+#include "state_checkpoint.h"
+
+static android_save_probe_lap save_probe_laps[32];
+static int save_probe_active, save_probe_count;
+static int64_t save_probe_wall, save_probe_cpu;
+
+static int64_t save_probe_clock(clockid_t clock)
+{
+	struct timespec ts;
+	return clock_gettime(clock, &ts) == 0 ? (int64_t) ts.tv_sec * 1000000 + ts.tv_nsec / 1000 : -1;
+}
+
+void android_save_probe_begin(void)
+{
+	save_probe_count = 0;
+	save_probe_active = 1;
+	save_probe_wall = save_probe_clock(CLOCK_MONOTONIC);
+	save_probe_cpu = save_probe_clock(CLOCK_THREAD_CPUTIME_ID);
+}
+
+void android_save_probe_mark(const char *name)
+{
+	int64_t wall, cpu;
+	if (!save_probe_active || save_probe_count >= 32) return;
+	wall = save_probe_clock(CLOCK_MONOTONIC);
+	cpu = save_probe_clock(CLOCK_THREAD_CPUTIME_ID);
+	save_probe_laps[save_probe_count++] = (android_save_probe_lap) {
+		name, wall - save_probe_wall, cpu < 0 || save_probe_cpu < 0 ? -1 : cpu - save_probe_cpu
+	};
+	save_probe_wall = wall;
+	save_probe_cpu = cpu;
+}
+
+int android_save_probe_end(const android_save_probe_lap **laps)
+{
+	android_save_probe_mark("tail");
+	save_probe_active = 0;
+	*laps = save_probe_laps;
+	return save_probe_count;
+}
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
@@ -290,6 +334,17 @@ static int state_android_write_last_save_set(int coop, const char *pilot,
 		return 0;
 	}
 	return 1;
+}
+
+int state_android_capture_last_save_set(char *filename, size_t filename_size,
+                                        char *text, size_t text_size)
+{
+	const char *mission = state_android_current_mission_filename_or_default();
+	int length;
+	if (!filename || !text || !Players[Player_num].callsign[0] ||
+	    !state_android_last_save_set_path(filename, filename_size, !!(Game_mode & GM_MULTI_COOP))) return 0;
+	length = snprintf(text, text_size, "%s\n%s\n", Players[Player_num].callsign, mission);
+	return length > 0 && (size_t) length < text_size;
 }
 
 int state_android_build_save_filename(char *filename, size_t filename_size,
@@ -818,11 +873,15 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	char android_desc[STATE_ANDROID_DESC_LENGTH + 1];
 
 	if (rewind_file_is_memory(fp)) {
-		return !(Game_mode & GM_MULTI_COOP) ||
-		       coop_write_save_metadata_rewind(fp);
+		if ((Game_mode & GM_MULTI_COOP) && !coop_write_save_metadata_rewind(fp)) return 0;
+#ifdef __ANDROID__
+		if (!state_checkpoint_writes_file()) return 1;
+#else
+		return 1;
+#endif
 	}
 	physfs_fp = rewind_file_physfs_handle(fp);
-	if ((Game_mode & GM_MULTI_COOP) &&
+	if (!rewind_file_is_memory(fp) && (Game_mode & GM_MULTI_COOP) &&
 	    !coop_write_save_metadata(physfs_fp))
 		return 0;
 	memset(&android_params, 0, sizeof(android_params));
@@ -857,6 +916,11 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	matcen_mode_get_activation_counts(android_params.matcen_activation_counts,
 	                                  MATCEN_MODE_MAX_CENTERS);
 	android_save_meta_apply_cached_thumbnail(&android_params);
+	if (rewind_file_is_memory(fp)) {
+		android_save_meta_disk meta;
+		return android_save_meta_build(&meta, &android_params) &&
+		       rewind_file_write(fp, &meta, sizeof(meta), 1) == 1;
+	}
 	if (!android_save_meta_write_physfs(physfs_fp, &android_params))
 		return 0;
 	return 1;
@@ -920,6 +984,10 @@ int state_android_save_to_path(const char *filename, const char *desc,
 
 	if (!filename || !filename[0] || !desc)
 		return 0;
+#ifdef __ANDROID__
+	/* Explicit saves publish after older periodic checkpoints and their indexes */
+	if (!g_state_android_memory_write_buffer) state_checkpoint_drain();
+#endif
 	memset(save_filename, 0, sizeof(save_filename));
 	strncpy(save_filename, filename, PATH_MAX - 1);
 	android_save_meta_format_description(save_desc, sizeof(save_desc), desc,
@@ -935,8 +1003,10 @@ int state_android_save_to_path(const char *filename, const char *desc,
 	} else {
 		PHYSFS_delete(staged_filename);
 		result = state_save_all_sub(staged_filename, save_desc);
+		android_save_probe_mark("close");
 		if (result && !state_android_validate_save_path(staged_filename, save_kind))
 			result = 0;
+		android_save_probe_mark("validate_file");
 		if (result &&
 		    !state_android_publish_single_file(staged_filename, save_filename))
 			result = 0;
@@ -1120,6 +1190,10 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 int state_android_restore_slot(int slotnum)
 {
 	char filename[PATH_MAX];
+
+#ifdef __ANDROID__
+	state_checkpoint_drain();
+#endif
 
 	if (slotnum < 0 || slotnum >= STATE_ANDROID_NUM_SAVES)
 		return -1;

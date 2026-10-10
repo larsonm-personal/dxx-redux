@@ -156,6 +156,7 @@ param(
     [switch]$BriefingFailurePaused,
     [switch]$BriefingFailureRelease,
     [switch]$CountdownSave,
+    [switch]$IndependentCheckpoints,
     [Alias("RestoreParticipantLoss")]
     [ValidateSet("client", "host", "stalled", "sync_stalled", "load_client", "load_host")]
     [string]$RestoreFailure,
@@ -651,6 +652,8 @@ function Get-IntroPdataSequence {
     return [int]$prop.Value[$PlayerSlot]
 }
 
+$script:deviceAutomationRunIds = @{}
+
 function Start-DeviceGameAutomation {
     param([string]$Serial, [string]$ScriptName, [hashtable]$Params = @{})
 
@@ -687,9 +690,11 @@ function Start-DeviceGameAutomation {
         "shell", "run-as", $PACKAGE, "rm", "-f",
         "files/automation_result.json", "files/automation_log.jsonl"
     ) -Seconds 5 | Out-Null
+    $runId = [guid]::NewGuid().ToString('N')
+    $script:deviceAutomationRunIds[$Serial] = $runId
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE",
-        "--es", "script", $ScriptName
+        "--es", "script", $ScriptName, "--es", "run_id", $runId
     ) -Seconds 10 | Out-Null
     return $true
 }
@@ -704,7 +709,11 @@ function Get-DeviceAutomationResult {
         return $null
     }
     try {
-        return $json | ConvertFrom-Json
+        $result = $json | ConvertFrom-Json
+        if (-not (Test-AutomationResultRunId -Result $result -ExpectedRunId $script:deviceAutomationRunIds[$Serial])) {
+            return $null
+        }
+        return $result
     } catch {
         return $null
     }
@@ -2521,6 +2530,56 @@ function Invoke-RestoreStatusScenario {
     return $true
 }
 
+function Invoke-IndependentCheckpointStep {
+    param([string[]]$Devices, [string]$Operation)
+    foreach ($serial in $Devices) {
+        if (-not (Start-DeviceGameAutomation -Serial $serial -ScriptName 'test_coop_checkpoint_step.jsonc' -Params @{operation = $Operation })) {
+            throw "Could not start checkpoint $Operation on $serial"
+        }
+    }
+    foreach ($serial in $Devices) {
+        if (-not (Wait-ForCondition -Description "Checkpoint $Operation on $serial" -TimeoutSec 200 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $serial
+                    return $result -and $result.result -in @('PASS', 'FAIL')
+                })) { throw "Checkpoint $Operation timed out" }
+        if ((Get-DeviceAutomationResult -Serial $serial).result -ne 'PASS') {
+            Write-DeviceAutomationDiagnostics -Serial $serial
+            throw "Checkpoint $Operation failed on $serial"
+        }
+    }
+}
+
+function Invoke-IndependentCheckpointsScenario {
+    Invoke-IndependentCheckpointStep -Devices @($EMU1, $EMU2) -Operation seed
+    Invoke-IndependentCheckpointStep -Devices @($EMU1) -Operation queue
+    $hostSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+    if ($hostSlot -lt 0) { throw 'Host checkpoint was not published' }
+    $gameDir = if ($Game -eq 'd1') { 'd1x-redux' } else { 'd2x-redux' }
+    $missionKey = if ($MissionFile) { $MissionFile } elseif ($Game -eq 'd1') { 'default' } else { 'd2' }
+    $directory = "files/$gameDir/Players/save_sets/coop/$missionKey"
+    $selected = "$directory/coopsave.mg$hostSlot"
+    $hostHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $selected) -Seconds 10
+    if ($hostHash -notmatch '^[a-f0-9]{64} ') { throw "Missing host checkpoint at ${selected}: $hostHash" }
+    Invoke-IndependentCheckpointStep -Devices @($EMU1, $EMU2) -Operation mutate
+    Invoke-IndependentCheckpointStep -Devices @($EMU2) -Operation queue
+    $clientSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU2
+    if ($clientSlot -lt 0) { throw 'Client did not independently publish its checkpoint' }
+    if ($clientSlot -ne $hostSlot) {
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', "$directory/coopsave.mg$clientSlot", $selected) -Seconds 10 | Out-Null
+    }
+    $clientHash = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $selected) -Seconds 10
+    if ($clientHash -notmatch '^[a-f0-9]{64} ' -or
+        $hostHash.Substring(0, 64) -eq $clientHash.Substring(0, 64)) { throw 'Fixture did not create different valid saves in the selected slot' }
+    Write-Status "Different local histories verified: host slot $hostSlot, client slot $clientSlot" 'Green'
+    for ($cycle = 0; $cycle -lt 2; $cycle++) {
+        Invoke-IndependentCheckpointStep -Devices @($EMU1) -Operation "restore:$hostSlot"
+        Invoke-IndependentCheckpointStep -Devices @($EMU1, $EMU2) -Operation verify
+        if ($cycle -eq 0) { Invoke-IndependentCheckpointStep -Devices @($EMU1, $EMU2) -Operation mutate }
+    }
+    Write-Status 'PASS: repeated authoritative restore with different peer checkpoints' 'Green'
+    return $true
+}
+
 function Invoke-SpewRecoveryScenario {
     Write-Status "--- Death spew, process loss and repeated in-game rejoin ---" "White"
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_recovery_host.jsonc")) { return $false }
@@ -2570,20 +2629,32 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
     }
 
     $script:guidebotRestoreSaveSlot = -1
-    $saved = Wait-ForCondition -Description "coop autosave reaches both peers" -TimeoutSec 20 -PollMs 500 -Condition {
-        $latestSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+    # Fill the future host's ring asynchronously, then append a synchronous
+    # checkpoint. The latter must retain a history larger than the old 2 KiB buffer.
+    for ($checkpointIndex = 0; $checkpointIndex -lt 5; $checkpointIndex++) {
+        Invoke-IndependentCheckpointStep -Devices @($EMU2) -Operation queue
+    }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_idle.jsonc' `
+                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_restore_save_joiner.jsonc' `
+                -Description 'Synchronous checkpoint retains the asynchronous history')) { return $false }
+    $checkpointHistory = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat',
+        'files/d2x-redux/Players/save_sets/coop/d2/coop_autosave_history.json') -Seconds 10
+    if (@(ConvertFrom-CompatibleJsonItems -Json $checkpointHistory).Count -ne 5) {
+        throw 'Synchronous checkpoint discarded entries from the asynchronous history'
+    }
+    $saved = Wait-ForCondition -Description "future host publishes its local coop autosave" -TimeoutSec 20 -PollMs 500 -Condition {
+        $latestSlot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU2
         if ($latestSlot -lt 0) {
             return $false
         }
-        $bothHaveSave = (Test-DeviceCoopSaveSlot -Serial $EMU1 -Slot $latestSlot) -and
-        (Test-DeviceCoopSaveSlot -Serial $EMU2 -Slot $latestSlot -Callsign $CALLSIGN2)
+        $bothHaveSave = Test-DeviceCoopSaveSlot -Serial $EMU2 -Slot $latestSlot
         if ($bothHaveSave) {
             $script:guidebotRestoreSaveSlot = $latestSlot
         }
         return $bothHaveSave
     }
     if (-not $saved) {
-        Write-Status "FAIL: a matching synchronized coop autosave was not created" "Red"
+        Write-Status "FAIL: the future host's local coop autosave was not created" "Red"
         return $false
     }
     $saveSlot = $script:guidebotRestoreSaveSlot
@@ -2674,7 +2745,7 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
                 -SecondarySerial $EMU1 `
                 -SecondaryScript "test_coop_guidebot_restore_remap_joiner.jsonc" `
                 -Description "paired slot-remapped Guide-Bot restore automation" `
-                -TimeoutSec 105)) {
+                -TimeoutSec 210)) {
         return $false
     }
 
@@ -3472,6 +3543,10 @@ try {
     if ($CoopRewind -and -not $SavedLateJoin) {
         $testPassed = $false
         $testPassed = Invoke-CoopRewindScenario -FromClient:$ClientRewind
+    }
+
+    if ($IndependentCheckpoints) {
+        $testPassed = Invoke-IndependentCheckpointsScenario
     }
 
     if ($RestoreFailure) {

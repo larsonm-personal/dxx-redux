@@ -91,6 +91,9 @@ extern "C" {
 #include "songs_android_shared.h"
 #include "state.h"
 #include "state_android_shared.h"
+#include "android_save_probe.h"
+#include "state_checkpoint.h"
+#include "android_metadata_snapshot_probe.h"
 void multi_save_game(ubyte slot, uint id, char *desc);
 #include "window.h"
 #include "newmenu.h"
@@ -6071,6 +6074,231 @@ extern "C" void game_automate_tick(void)
 				ubyte packet[6] = { MULTI_COOP_RESTORE_STATUS, (ubyte) status };
 				for (int byte = 0; byte < 4; byte++) packet[2 + byte] = (ubyte) (revision >> (byte * 8));
 				multi_do_coop_restore_status(packet, sender);
+			} else if (s.field == "checkpoint_cycle") {
+#ifdef __ANDROID__
+				static rewind_memory_buffer reference = {}, checkpoint = {};
+				static int ready, level, score, energy, ammo, disk;
+				static vms_vector position;
+				static int64_t captured_time, collision_time;
+				if (!Game_wind || !ConsoleObject || (Game_mode & GM_MULTI) || Player_is_dead) {
+					stop_script_fail("Checkpoint cycle needs live single-player gameplay");
+					break;
+				}
+				if (s.value == "capture" || s.value == "capture_disk") {
+					ready = 0;
+					disk = s.value == "capture_disk";
+					level = Current_level_num;
+					score = Players[Player_num].score;
+					energy = Players[Player_num].energy;
+					ammo = Players[Player_num].secondary_ammo[0];
+					position = ConsoleObject->pos;
+					captured_time = GameTime64;
+					collision_time = collide_get_collision_delay_last_play_time();
+					/* Keep both saves at the same game and wall-clock epoch */
+					stop_time();
+					const auto completed = [](uint64_t, int ok, const rewind_memory_buffer *buffer) {
+						rewind_file file;
+						rewind_file_init_memory_write(&file, &checkpoint);
+						ready = ok && rewind_file_write(&file, buffer->data, 1, (PHYSFS_uint32) buffer->size) == (PHYSFS_sint64) buffer->size;
+						if (!rewind_file_close(&file)) ready = 0;
+					};
+					const int accepted = disk
+					                         ? state_checkpoint_submit_disk("CHECKPOINT TEST", ANDROID_SAVE_META_KIND_MANUAL,
+					                                                        "checkpoint-integration.bin", nullptr, 0, 1, completed)
+					                         : state_checkpoint_submit("CHECKPOINT TEST", ANDROID_SAVE_META_KIND_MANUAL, 1, completed);
+					if (!accepted) {
+						start_time();
+						stop_script_fail("Checkpoint submission failed");
+						break;
+					}
+					stop_time();
+					if (!state_save_to_memory(&reference, "CHECKPOINT TEST", ANDROID_SAVE_META_KIND_MANUAL, 1))
+						stop_script_fail("Checkpoint reference save failed");
+					start_time();
+				} else if (s.value == "roundtrip") {
+					const size_t trailer_bytes = disk ? sizeof(android_save_meta_disk) : 0;
+					if (!ready || reference.size + trailer_bytes != checkpoint.size || memcmp(reference.data, checkpoint.data, reference.size)) {
+						LOGE("checkpoint comparison: ready=%d reference=%zu checkpoint=%zu", ready, reference.size, checkpoint.size);
+						unsigned differences = 0;
+						for (size_t i = 0; i < (std::min) (reference.size, checkpoint.size); ++i) {
+							if (reference.data[i] != checkpoint.data[i] && ++differences <= 16)
+								LOGE("checkpoint difference offset=%zu reference=%u checkpoint=%u", i, reference.data[i], checkpoint.data[i]);
+						}
+						LOGE("checkpoint comparison: differing bytes=%u", differences);
+						stop_script_fail("Detached full save differs from capture-frame synchronous reference");
+						break;
+					}
+					if (disk) {
+						char filename[] = "checkpoint-integration.bin";
+						PHYSFS_file *file = PHYSFS_openRead(filename);
+						std::vector<unsigned char> published(checkpoint.size);
+						int matches = file && PHYSFS_fileLength(file) == (PHYSFS_sint64) checkpoint.size &&
+						              PHYSFS_read(file, published.data(), 1, (PHYSFS_uint32) published.size()) == (PHYSFS_sint64) published.size();
+						if (file) PHYSFS_close(file);
+						matches = matches && !memcmp(published.data(), checkpoint.data, checkpoint.size);
+						Players[Player_num].energy = i2f(13);
+						if (!matches || !state_restore_all_path(0, filename) || Players[Player_num].energy != energy ||
+						    Players[Player_num].score != score || Current_level_num != level) {
+							stop_script_fail("Published checkpoint bytes or disk restore failed");
+							break;
+						}
+						PHYSFS_delete(filename);
+					}
+					rewind_memory_buffer cycle = {};
+					for (int round = 0; round < 3; ++round) {
+						Players[Player_num].energy = i2f(13);
+						Players[Player_num].score = 987654;
+						Players[Player_num].secondary_ammo[0] = 0;
+						android_rewind_authoritative_restore restore = {};
+						restore.buffer = round ? cycle : checkpoint;
+						restore.snapshot_index = -1;
+						restore.game_time64 = captured_time;
+						restore.has_collision_delay_last_play_time = 1;
+						restore.collision_delay_last_play_time = collision_time;
+						/* Keep a byte-exact copy to catch readers modifying their input */
+						const std::vector<unsigned char> frozen(restore.buffer.data, restore.buffer.data + restore.buffer.size);
+						if (android_rewind_restore_authoritative(&restore) != ANDROID_REWIND_STATUS_RESTORED ||
+						    Current_level_num != level || Players[Player_num].energy != energy ||
+						    Players[Player_num].score != score || Players[Player_num].secondary_ammo[0] != ammo ||
+						    memcmp(&ConsoleObject->pos, &position, sizeof(position)) ||
+						    memcmp(frozen.data(), restore.buffer.data, frozen.size())) {
+							stop_script_fail("Checkpoint load changed its input or failed to restore captured world state");
+							break;
+						}
+						stop_time();
+						if (!state_save_to_memory(&cycle, "CHECKPOINT TEST", ANDROID_SAVE_META_KIND_MANUAL, 1)) {
+							stop_script_fail("Checkpoint repeated save failed");
+							break;
+						}
+					}
+					rewind_memory_buffer_discard(&cycle);
+					rewind_memory_buffer_discard(&reference);
+					rewind_memory_buffer_discard(&checkpoint);
+					ready = 0;
+				} else stop_script_fail("Unknown checkpoint cycle action");
+#else
+				stop_script_fail("Checkpoint cycle requires Android");
+#endif
+			} else if (s.field == "metadata_snapshot_probe") {
+#if defined(__ANDROID__) && defined(DXX_BUILD_DESCENT_II)
+				static json samples = json::array();
+				static fix64 capture_time;
+				if (s.value == "reset") {
+					samples = json::array();
+					if (!android_metadata_snapshot_reset()) stop_script_fail("Snapshot probe allocation failed");
+				} else if (s.value == "finish") {
+					android_metadata_snapshot_discard();
+				} else if (!Game_wind || Player_is_dead || Endlevel_sequence || game_is_time_paused()) {
+					stop_script_fail("Snapshot probe requires live gameplay");
+				} else if (s.value == "capture") {
+					capture_time = GameTime64;
+					if (!android_metadata_snapshot_start(capture_time)) stop_script_fail("Snapshot probe capture failed");
+				} else if (s.value == "verify") {
+					android_metadata_snapshot_result r = {};
+					const int ok = android_metadata_snapshot_finish(&r);
+					samples.push_back({ { "ok", ok }, { "level", Current_level_num }, { "coop", !!(Game_mode & GM_MULTI_COOP) }, { "players", N_players }, { "native_bytes", r.native_bytes }, { "encoded_bytes", r.encoded_bytes }, { "pool_bytes", r.pool_bytes }, { "capture_wall_us", r.capture_wall_us }, { "capture_cpu_us", r.capture_cpu_us }, { "direct_wall_us", r.direct_wall_us }, { "direct_cpu_us", r.direct_cpu_us }, { "worker_wall_us", r.worker_wall_us }, { "worker_cpu_us", r.worker_cpu_us }, { "equal", r.equal }, { "roundtrip_equal", r.roundtrip_equal }, { "live_changed", r.live_changed }, { "atomic_lock_free", r.atomic_lock_free }, { "game_advanced", GameTime64 > capture_time } });
+					const std::string report = samples.dump(2) + "\n";
+					PHYSFS_file *file = PHYSFS_openWrite("metadata_snapshot_probe.json");
+					bool written = file && PHYSFS_writeBytes(file, report.data(), report.size()) == (PHYSFS_sint64) report.size();
+					if (file && !PHYSFS_close(file)) written = false;
+					if (!ok || !written || GameTime64 <= capture_time) stop_script_fail("Snapshot probe comparison failed or gameplay did not advance");
+				} else stop_script_fail("Unknown snapshot probe action");
+#else
+				stop_script_fail("Snapshot probe requires Android D2");
+#endif
+			} else if (s.field == "save_probe") {
+#ifdef __ANDROID__
+				static json samples = json::array();
+				static rewind_memory_buffer reused = {};
+				const char *filename = "Players/__save_probe__.sav";
+				if (s.value == "reset" || s.value == "finish") {
+					rewind_memory_buffer_discard(&reused);
+					PHYSFS_delete(filename);
+					if (s.value == "reset") samples = json::array();
+				} else if (!Game_wind || Player_is_dead || Endlevel_sequence ||
+				           coop_travel_blocks_state_actions() || multi_save_transfer_busy() || game_is_time_paused()) {
+					stop_script_fail("Save probe requires settled live gameplay");
+				} else {
+					const bool disk = s.value == "disk_blank" || s.value == "disk_thumbnail";
+					const bool reuse = s.value == "memory_reuse";
+					const bool blank = s.value != "disk_thumbnail" && s.value != "memory_thumbnail";
+					if (!disk && !reuse && s.value != "memory_blank" && s.value != "memory_thumbnail") {
+						stop_script_fail("Unknown save probe mode");
+						break;
+					}
+					rewind_memory_buffer fresh = {};
+					rewind_memory_buffer *buffer = reuse ? &reused : &fresh;
+					const android_save_probe_lap *laps;
+					if (disk) stop_time();
+					android_save_probe_begin();
+					const int ok = disk ? state_android_save_to_path(filename, "SAVE PROBE", ANDROID_SAVE_META_KIND_MANUAL, blank) : state_save_to_memory(buffer, "SAVE PROBE", ANDROID_SAVE_META_KIND_MANUAL, blank);
+					const int count = android_save_probe_end(&laps);
+					json stages = json::object();
+					int64_t wall = 0, cpu = 0;
+					for (int i = 0; i < count; ++i) {
+						stages[laps[i].name] = { { "wall_us", laps[i].wall_us }, { "cpu_us", laps[i].cpu_us } };
+						wall += laps[i].wall_us;
+						if (cpu >= 0) cpu = laps[i].cpu_us < 0 ? -1 : cpu + laps[i].cpu_us;
+					}
+					size_t bytes = buffer->size;
+					if (disk) {
+						PHYSFS_file *file = PHYSFS_openRead(filename);
+						if (file) {
+							bytes = (size_t) PHYSFS_fileLength(file);
+							PHYSFS_close(file);
+						}
+					}
+					const coop_campaign *campaign = coop_campaign_current();
+					size_t campaign_bytes = 0;
+					for (unsigned i = 0; i < campaign->world_count; ++i) campaign_bytes += campaign->worlds[i].size;
+					samples.push_back({ { "mode", s.value }, { "ok", ok }, { "level", Current_level_num }, { "coop", !!(Game_mode & GM_MULTI_COOP) }, { "master", !!multi_i_am_master() }, { "players", N_players }, { "object_slots", Highest_object_index + 1 }, { "recovery_items", coop_recovery_count() }, { "campaign_worlds", campaign->world_count }, { "campaign_bytes", campaign_bytes }, { "bytes", bytes }, { "capacity", buffer->capacity }, { "wall_us", wall }, { "cpu_us", cpu }, { "stages", stages } });
+					rewind_memory_buffer_discard(&fresh);
+					/* Report I/O and logging are outside the measured save interval */
+					const std::string report = samples.dump(2) + "\n";
+					PHYSFS_file *file = PHYSFS_openWrite("save_probe.json");
+					bool written = file && PHYSFS_writeBytes(file, report.data(), report.size()) == (PHYSFS_sint64) report.size();
+					if (file && !PHYSFS_close(file)) written = false;
+					debug_log(DLOG_PROFILING, "save_probe mode=%s ok=%d bytes=%zu wall_us=%lld cpu_us=%lld", s.value.c_str(), ok, bytes, (long long) wall, (long long) cpu);
+					if (!ok || !written || game_is_time_paused()) stop_script_fail("Save probe failed or left game paused");
+				}
+#else
+				stop_script_fail("Save probe requires Android");
+#endif
+			} else if (s.field == "coop_checkpoint_test") {
+#ifdef __ANDROID__
+				if (!(Game_mode & GM_MULTI_COOP) || !Game_wind || multi_save_transfer_busy()) {
+					stop_script_fail("Checkpoint fixture needs settled co-op gameplay");
+				} else if (s.value == "seed" || s.value == "mutate") {
+					const int seed = s.value == "seed";
+					Players[Player_num].energy = i2f(seed ? 117 : 13);
+					Players[Player_num].score = seed ? 1234 + Player_num : 0;
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = seed ? 6 + Player_num : 0;
+					Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+					Players[Player_num].invulnerable_time = GameTime64;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "queue") {
+					if (!coop_autosave_async()) stop_script_fail("Asynchronous co-op checkpoint was rejected");
+				} else if (s.value.rfind("restore:", 0) == 0) {
+					const int slot = atoi(s.value.c_str() + 8);
+					char filename[PATH_MAX];
+					if (!multi_i_am_master() || slot < COOP_AUTOSAVE_SLOT_FIRST ||
+					    slot >= COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT ||
+					    !state_android_build_coop_autosave_filename(filename, sizeof(filename), slot)) {
+						stop_script_fail("Checkpoint restore needs an authoritative host slot");
+					} else {
+						const uint id = state_get_game_id(filename);
+						multi_send_restore_game(slot, id);
+						if (!id || !multi_save_transfer_busy()) stop_script_fail("Checkpoint restore transfer did not start");
+					}
+				} else if (s.value == "verify") {
+					if (Players[Player_num].energy != i2f(117) || Players[Player_num].score != 1234 + Player_num ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != 6 + Player_num || game_is_time_paused())
+						stop_script_fail("Authoritative checkpoint did not restore the saved team inventory");
+				} else stop_script_fail("Unknown co-op checkpoint fixture action");
+#else
+				stop_script_fail("Checkpoint fixture requires Android");
+#endif
 			} else if (s.field == "coop_autosave") {
 				if (s.value == "reject_during_transfer") {
 					if (!multi_save_transfer_busy() || coop_autosave())

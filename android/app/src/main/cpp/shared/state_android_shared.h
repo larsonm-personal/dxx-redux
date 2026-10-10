@@ -34,6 +34,8 @@ int state_android_build_coop_sidecar_filename(char *filename,
                                               const char *sidecar_name);
 int state_android_save_filename_is_coop(const char *filename);
 void state_android_ensure_parent_dirs_for_path(const char *filename);
+int state_android_capture_last_save_set(char *filename, size_t filename_size,
+                                        char *text, size_t text_size);
 int state_android_write_save_metadata(rewind_file *fp, const char *desc,
                                       const char *mission_filename);
 void state_android_restore_music_source_from_meta(const android_save_meta_disk *meta);

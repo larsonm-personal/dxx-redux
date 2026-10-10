@@ -35,6 +35,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_save_compatibility'
             'test_coop_session'
             'test_coop_pause'
+            'test_independent_checkpoints'
         )
         audio_preferences = @(
             'test_dos_midi_parity'
@@ -83,6 +84,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_acoustid_regeneration'
             'test_active_game_data_reset'
             'test_android_saveload_dispatch_unified'
+            'test_async_checkpoint_unified'
             'test_android_sdk_lifecycle'
             'test_idle_screen_saver'
             'test_bot_client'

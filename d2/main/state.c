@@ -90,6 +90,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #include "state_android_shared.h"
+#include "android_save_probe.h"
 #include "coop_save.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
@@ -2415,6 +2416,9 @@ int state_save_all_sub(char *filename, char *desc)
 //Save description
 	PHYSFS_write(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
+#ifdef __ANDROID__
+	android_save_probe_mark("open_header");
+#endif
 // Save the current screen shot...
 	// Headless verification saves native world state without a render context
 	if (g_android_save_blank_thumbnail || GameArg.SysInputDemoNoRender) {
@@ -2506,6 +2510,9 @@ int state_save_all_sub(char *filename, char *desc)
 	}
 	}
 
+#ifdef __ANDROID__
+	android_save_probe_mark("thumbnail");
+#endif
 // Save the Between levels flag...
 	i = 0;
 	PHYSFS_write(fp, &i, sizeof(int), 1);
@@ -2693,12 +2700,17 @@ int state_save_all_sub(char *filename, char *desc)
 		PHYSFS_write(fp, &Netgame.level_time, sizeof(int), 1);
 	}
 
+#ifdef __ANDROID__
+	android_save_probe_mark("world");
+#endif
 	if (!state_write_runtime_state(fp)) {
 		PHYSFS_close(fp);
+		start_time();
 		return 0;
 	}
 
 #ifdef __ANDROID__
+	android_save_probe_mark("runtime");
 	if (!state_android_write_save_metadata(fp, desc, mission_filename)) {
 		con_printf(CON_URGENT,
 			"coop_save: failed to write complete metadata\n");
@@ -2708,6 +2720,9 @@ int state_save_all_sub(char *filename, char *desc)
 	}
 #endif
 
+#ifdef __ANDROID__
+	android_save_probe_mark("launcher_metadata");
+#endif
 	if (!PHYSFS_close(fp)) {
 		start_time();
 		return 0;

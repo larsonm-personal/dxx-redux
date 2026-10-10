@@ -50,6 +50,27 @@ find_package(PhysFS REQUIRED)
 find_package(SDL)
 find_package(ZLIB REQUIRED)
 
+add_executable(
+    test_guidebot_metadata_snapshot test_guidebot_metadata_snapshot.c
+                                    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_metadata_snapshot.c")
+target_include_directories(test_guidebot_metadata_snapshot PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                                                   ${PHYSFS_INCLUDE_DIR})
+target_link_libraries(test_guidebot_metadata_snapshot PRIVATE ${PHYSFS_LIBRARY})
+add_test(NAME test_guidebot_metadata_snapshot COMMAND test_guidebot_metadata_snapshot)
+
+find_package(Threads REQUIRED)
+add_executable(test_checkpoint_slots test_checkpoint_slots.cpp)
+target_include_directories(test_checkpoint_slots PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+target_compile_features(test_checkpoint_slots PRIVATE cxx_std_17)
+target_link_libraries(test_checkpoint_slots PRIVATE Threads::Threads)
+add_test(NAME test_checkpoint_slots COMMAND test_checkpoint_slots)
+
+add_executable(test_checkpoint_file test_checkpoint_file.cpp
+                                    "${DXX_TEST_SHARED_SOURCE_DIR}/checkpoint_file.cpp")
+target_include_directories(test_checkpoint_file PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+target_compile_features(test_checkpoint_file PRIVATE cxx_std_17)
+add_test(NAME test_checkpoint_file COMMAND test_checkpoint_file)
+
 add_executable(test_level_section_io test_level_section_io.c)
 target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
                                                          ${PHYSFS_INCLUDE_DIR})
