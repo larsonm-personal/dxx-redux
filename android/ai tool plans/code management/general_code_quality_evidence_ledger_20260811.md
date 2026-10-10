@@ -201970,3 +201970,7842 @@ Read-only parser corrected before writing: terminal table includes65recheck/swee
 - Read-only publication checker corrected to include65non-numbered terminal IDs, preserving the whole ranking table; failed prewrite checks made no canonical mutation. Concurrent automation identities/ranges refreshed from actual reads; stale historical offsets not silently promoted. Scoped documentation diff-check PASS. No source/test/script edits or execution/build/device/probes, no new root/status/rating/runtime evidence; external product work preserved
 - Numbered canonical queue262DONE365TODO.0116canonicalDONE still separately gate5pending historical inherited-byte audit debt; this completion does not settle0116 or complete overall diagnosis goal
 - Next numbered scope GQ2-CHUNK-0122 shared/coop/coop_recovery.c frozenL1-L750. Discover exact frozen/current assignment/original attribution before diagnosis; earlier consumer reads do not widen assigned coverage
+
+<!-- BEGIN IMPORT: GQ2-CHUNK-0122 cooperative recovery diagnosis 20261009 SHA256:0da2748d41e9a8908f01b576571cd7c4b8d95469fdd0f984015cca1a1ef34de4 -->
+
+## GQ2-CHUNK-0122 cooperative recovery diagnosis 20261009 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0122-20261009.md`
+- Imported SHA-256: `0da2748d41e9a8908f01b576571cd7c4b8d95469fdd0f984015cca1a1ef34de4`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0122 cooperative recovery diagnosis 20261009
+
+Diagnosis and plans only. Gates1-4 complete for source diagnosis, owner consolidation and actionable plans; canonical publication and independent audit pending. No code/test/script edit or execution. Historical0116 byte-preservation audit debt remains open.
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; originalfb555eec75e1ed12c8348805ab335afb4c721b06; reconciled HEADa42fbb9f9afd702cdf9180a023fc72681d9939a6. One assigned branch-added source frozenL1-L750of1163, enclosing751-1163 and current1160whole actually read. Base/originalABSENT; zero assigned inherited saving. ScopeSHA7d625ca6bc272c1f076c020927d87a9ed5b02f120863d58d68233df81be5fd20; selected4350row manifest rawSHAe98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4. 149chronological actual source ranges, 46current physical paths/15whole, 25complete current context deltas and 193unique canonical lines in4owners. All current identities/ranges verified; no stale tuple silently promoted. Context does not widen assigned frozen coverage.
+
+Provisional impact rating:57(H/M/B/C/R=12/21/7/10/7); proposed owner:GQR-0262; rationale: paired19line inventory-restore loops into existing shared save owner remove35 inherited source lines/two edited hunks. Freeze-disconnect GQR-0261 independently rates44(23/0/7/10/4); highest owner is not a sum.
+
+## Diff-minimization assessment
+
+CANDIDATE: paired state.c19line active saved-player restoration loops, frozenD12873-2891/D23829-3847/currentD12900-2918/D23856-3874. Eighteen-line bodies match after whitespace normalization; D2 additionally excludes world-only restore. One D1 shared call and two-line guarded D2 call replace38inherited lines with3:35expected removed source lines, not applied savings or removal of enclosing whole hunks. Move to existing coop_save.c/.h with const metadata argument; no new subsystem/callback/build registration. Keep handmade comments, PHYSFS/native serialization/failure handling and D2 world-only guard at engine boundary. Full state recovery-bearing frozen hunks include36added/7removed D1 and43added/2removed D2; those counts include other policy and do not measure the candidate alone.
+
+Retain lifecycle/drop/pickup/codec hooks at actual native observation points. Frozen recovery-bearing multi hunks13pergame include69added/3removed D1 and86added/3removed D2; powerup onehunk8added pergame; gameseq threehunks9added D1/11added D2. These are hunk-level context counts, not proposed wholesale removals. Current shared duplicate eligibility and gameplay-option extraction already reduced paired policy; preserve completed repairs and concurrent checkpoint work. DMR1-007 is separate deferred D2 filename slot parser, not this loop. Focused plan:plan_gq2_0122_shared_saved_player_restore_20261009.md.
+
+## Findings, clean dimensions and owner reconciliation
+
+NEW proposedGQF-0275/GQR-0261 P2/high correctness/cooperative-recovery-liveness: returning owner starts freeze with another active peer; that peer disconnects before matching REC_FROZEN. Rejoin readiness snapshots slot bits and retries without participant loss/cancel/deadline reconciliation; save_ready and world operations remain blocked on same surviving host. Receive735-738 is sole individual clear; frame796-820 binds objects only; paired engine/UDP disconnect and shared join cancellation have no traced recovery termination. Broader authoritative reset/migration differs from ordinary same-host progress. Source-supported trigger, not runtime reproduction. Plan binds attempts to admitted connection lifetime, gives bounded explicit outcome, preserves known intersections and unresolved pickup ownership through persistence before enabling progress. Blind pruning/regranting, forgetting uncertain gear or indefinite save refusal fails acceptance. Representation of uncertainty is a prerequisite design decision. Maintained real native timer/participant and actual three-peer LAN inventory/save/restore acceptance specified in plan_gq2_0122_recovery_freeze_disconnect_20261009.md.
+
+NEW proposedGQF-0276/GQR-0262 P3/high diff-minimization/merge-pressure: paired saved-player loop candidate above; restore order, identity lookup, dead-ship normalization, local shields, serial/life and absent cache semantics preserved by actual engine-compiled shared owner and maintained equivalence/integration acceptance.
+
+Existing GQF0254/GQR0240 final native Vulcan minimum remains OPEN/TODO; constant pickup selectors and quantity caps do not settle actual native grant. GQF0202 eligibility extraction remains completed. BR0195 packet authority/host relay, BR0206 coordinated restore failure, BR0278 autosave cadence, BR0609 diagnostic token and archivedBR0225authenticated reconnect remain separate unchanged owners. Exact prior0093/current canonical rows and relevant sections read; targeted quality/BR active/archive symbol/category/trigger census did not establish a freeze-attempt or saved-player-loop owner. Broad truncated search receives discovery credit only. Independent base decoder ranges show remote_created mapping/cleanup loop already present at campaign base; do not create a new assigned recovery memory-safety root from it.
+
+Checked allocation reservation/growth and cleanup-before-publication, packed fixed-width little-endian160byte wire extent and bounded strings, object/index/signature/reverse mapping/generation, monotonic intersections, actual before/after pickup accounting, successful mine accounting, overflow credit, departure/life/revision/epoch ordering, dormant world validation and migration. Paired nested extent/current world fencing and outer session/address admission traced; not cryptographic end-to-end original-sender authority proof. Ordinary full save intentionally discards invalid optional gear with diagnostics; mandatory source/world completion validates before success. Preserve native formats/desktop hooks and shared Android policy. No unsupported memcpy/strncpy/index allegation, broad transactional correctness or runtime pass claimed.
+
+## Fixture evidence and implementation acceptance
+
+Native1027line recovery fixture whole read in bounded batches; real shared implementation with simulated objects/inventory/transport/static clock. Covers conservation/capacity/credit/expiry/identity/reorder/late pickup/migration/restore/cold absent/QoL-on-off source cases. Does not exercise actual native do_powerup, UDP transport, advancing time, allocator failure or devices. Eleven complete LAN-owned scripts, host runner, CMake registration, suite coverage/master timeout, durable run-ID/result helpers and relevant ghost/spew/saved-late-join runner scenarios inspected only. Two-peer return/cold restore and transfer cancellation do not prove third-peer loss during pending freeze. Actual automation reaches native collision/damage; no script executed.
+
+Implement extraction and liveness as separate owners. Both plans require current-tree overlap refresh, focused meaningful maintained acceptance, paired Windows/Android validation and scoped quality at implementation time. Security/malformed/allocation/resource probes remain deferred. This report completes assigned diagnosis, not any product fix or overall campaign. Pending numbered/sweep/preflight/investigation and final-head supplemental coverage remain required.
+
+## Exact assigned identity
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "assigned_first": 1,
+    "assigned_last": 750,
+    "frozen_lines": 1163,
+    "base_blob": "ABSENT",
+    "head_blob": "ab2d5b13b577c4fb7be5ea0f9fd11b7b6efd78dc",
+    "original_blob": "ABSENT",
+    "whole_frozen_source_lf_sha256": "7e0a9425153fff0c5205d1a3103da83ee5bad4b4cb6726c0a51c21e992729dc2",
+    "assigned_payload_lf_sha256": "dc8a26a95020c2fa6efca2db6ae90fe9adb1a569f1c0a9a9420e66c082ff669b",
+    "assigned_payload_complete_read": true,
+    "whole_frozen_file_read": true,
+    "frozen_read_ranges": [
+      {
+        "first": 1,
+        "last": 250,
+        "range_lf_sha256": "4daf169bcf61aae61d0f29d494b41371d98cb86fa469841cc866b80edf937ef1"
+      },
+      {
+        "first": 251,
+        "last": 500,
+        "range_lf_sha256": "671c9a55147676362993f10bb805273a3d8b70f60a49b73b5cfe216ece5081e2"
+      },
+      {
+        "first": 501,
+        "last": 750,
+        "range_lf_sha256": "9e7a3e8335b9165c01f79c3090438d2514fef0d2f0bbbdbcd4a1adf2b3e8e37c"
+      },
+      {
+        "first": 751,
+        "last": 1163,
+        "range_lf_sha256": "600fc7a8ad00e9a92c3ea1bf545fe357e1b865f5e2489a95d9b4b0bb75b491a4"
+      }
+    ],
+    "current_lines": 1160,
+    "current_whole_source_lf_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de",
+    "current_delta_lf_sha256": "875ad07ce95a841d22a283869f76c6879919cd1244c4d0559c3a060880ad682f",
+    "current_delta_bytes": 1228,
+    "current_delta_whole_read": true
+  }
+]
+```
+
+## Selected manifest identity
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "status": "A",
+    "old_path": "-",
+    "base_mode": "-",
+    "base_blob": "-",
+    "head_mode": "100644",
+    "head_blob": "ab2d5b13b577c4fb7be5ea0f9fd11b7b6efd78dc"
+  }
+]
+```
+
+## Current physical source reads
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h",
+    "current_lines": 130,
+    "current_whole_source_sha256": "68d0eaa5c5dabb295cf4da1fed1f6e70f8e041b0c1e856f569ea29badde76a8f",
+    "actual_read_ranges": [
+      {
+        "first": 78,
+        "last": 110,
+        "range_lf_sha256": "5b0aa472274d6613c5e140bc03844033262daefb04cf5fdb29a41832777b2b70"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 78,
+        "last": 110,
+        "range_lf_sha256": "5b0aa472274d6613c5e140bc03844033262daefb04cf5fdb29a41832777b2b70"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_host_migration.c",
+    "current_lines": 113,
+    "current_whole_source_sha256": "a7595f1c1e80c1b35cd11e3bf087e1019da310d1a4fbbad887d71ad3e0a0f32a",
+    "actual_read_ranges": [
+      {
+        "first": 80,
+        "last": 113,
+        "range_lf_sha256": "93fa16369bc4965de75a49d4daf75a49dd0c202780dc0a0e7e563c6e87aa60f2"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 80,
+        "last": 113,
+        "range_lf_sha256": "93fa16369bc4965de75a49d4daf75a49dd0c202780dc0a0e7e563c6e87aa60f2"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_multi_status.c",
+    "current_lines": 309,
+    "current_whole_source_sha256": "d4c6c7cc84fd032b949018220d1d0b2734b803f579dc49ef4eb408c05930f3af",
+    "actual_read_ranges": [
+      {
+        "first": 120,
+        "last": 180,
+        "range_lf_sha256": "8d394821876b4e250445e71fcf5ea081ec42f8ed02cf27523d9c8e0c983c26a7"
+      },
+      {
+        "first": 181,
+        "last": 309,
+        "range_lf_sha256": "23e06bd25afec1bdfeff45a5dcb61385d7fd40ae30391cbc691db3e569ba1202"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 120,
+        "last": 309,
+        "range_lf_sha256": "db311c4e1572f644a1ab2ca36920fc4976b0e53fa78f08831dcb691bd351603d"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_powerup_duplication.c",
+    "current_lines": 469,
+    "current_whole_source_sha256": "a3efbb0a8d96d197ff87a4eb2ad14b65a0e77d0a8ba6c8abb655e7c68e269175",
+    "actual_read_ranges": [
+      {
+        "first": 95,
+        "last": 127,
+        "range_lf_sha256": "83d902112b2c1bd0c51e4761a7146ff0226ca8246c0172e1399e2fe802794352"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 95,
+        "last": 127,
+        "range_lf_sha256": "83d902112b2c1bd0c51e4761a7146ff0226ca8246c0172e1399e2fe802794352"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "current_lines": 1160,
+    "current_whole_source_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 400,
+        "range_lf_sha256": "ed544cc5acdc0482375fea888649037d3be9c055a23284ad17a80db8c6ac0f26"
+      },
+      {
+        "first": 401,
+        "last": 800,
+        "range_lf_sha256": "de8f82cd0623db332e12f4137606d8b2e1dd935bb94ef034a8f9b332fa25b9f7"
+      },
+      {
+        "first": 801,
+        "last": 1160,
+        "range_lf_sha256": "4466abcebf136987b51dd614923e8f81ba0dc86cb5a19e230537f6a3500236bf"
+      },
+      {
+        "first": 796,
+        "last": 855,
+        "range_lf_sha256": "1d8ee7fa5f7941f5bab2d8c3ea76da7e2733e34338441f93f21ef372fcd5a289"
+      },
+      {
+        "first": 524,
+        "last": 565,
+        "range_lf_sha256": "7a4a7b2a646dfaf860afe163586f21e346be5eefb99c50e7a0873969e74accf6"
+      },
+      {
+        "first": 598,
+        "last": 660,
+        "range_lf_sha256": "8022003802d8b61431fa34f27d0d5cac944b0ee2954a6893597614f37e33b030"
+      },
+      {
+        "first": 680,
+        "last": 747,
+        "range_lf_sha256": "7df4c2d14dec374413355e2f3ebfc47a593e0f1950a5c399a9096cbeca001ede"
+      },
+      {
+        "first": 40,
+        "last": 125,
+        "range_lf_sha256": "260da32c07eecc69bbd70c8e6274ea7adfce90a24acf185178f171bdeaf27dff"
+      },
+      {
+        "first": 500,
+        "last": 665,
+        "range_lf_sha256": "ec6bfdad073f04e8036f8ee695aeac311e5e0ffb1e48e452b5c4aebcc54211d7"
+      },
+      {
+        "first": 695,
+        "last": 750,
+        "range_lf_sha256": "8778091d7f02810b04c34803f6c60f360ce32c1605c4926050cb8331270f9cf6"
+      },
+      {
+        "first": 749,
+        "last": 779,
+        "range_lf_sha256": "7f6355539ad18dcef849185965a7e936b4ea1e649c695cd873307382782c8098"
+      },
+      {
+        "first": 780,
+        "last": 825,
+        "range_lf_sha256": "6595388e588e99c2ee524e7162d974a1e0aa1fbe078dd54fcaa0af08792f0e0e"
+      },
+      {
+        "first": 827,
+        "last": 863,
+        "range_lf_sha256": "4669377d31a78a0b5fa5c77f19925b5543632b2484632dec5580206ad7585ab3"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 1160,
+        "range_lf_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.h",
+    "current_lines": 97,
+    "current_whole_source_sha256": "6e89f832ab07e027d39ba1e8ef29abf34d4e0fa10e544282c377378d1f9fdd5a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 97,
+        "range_lf_sha256": "6e89f832ab07e027d39ba1e8ef29abf34d4e0fa10e544282c377378d1f9fdd5a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 97,
+        "range_lf_sha256": "6e89f832ab07e027d39ba1e8ef29abf34d4e0fa10e544282c377378d1f9fdd5a"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_lines": 2406,
+    "current_whole_source_sha256": "c05b74994d936434bfc2a466a125193b4086bee09ee7fb1d5af1163c88c7acb6",
+    "actual_read_ranges": [
+      {
+        "first": 65,
+        "last": 95,
+        "range_lf_sha256": "825cce59de0ccc5a26b2cfe98714de22fb1ee5d8e3d03dee6421e3b4d64cf6f6"
+      },
+      {
+        "first": 1038,
+        "last": 1080,
+        "range_lf_sha256": "733f19002fd480e0ac69bd51f1ca557009e4c9e4a3b18a6a9f9f003159f1fa1e"
+      },
+      {
+        "first": 1210,
+        "last": 1246,
+        "range_lf_sha256": "0a94ac9155f8de2f3b213d10dee231591c465a1e462ea45706dc21333f23ce3a"
+      },
+      {
+        "first": 1305,
+        "last": 1355,
+        "range_lf_sha256": "4cb575af576acc73de0159f9c21f371438016b1614bbfaa83b682ff7b82f94ae"
+      },
+      {
+        "first": 2105,
+        "last": 2135,
+        "range_lf_sha256": "a76909b227e2361dee1e3a2d3cf34fb69b548c3cde45b6b7028a6254ecf70543"
+      },
+      {
+        "first": 130,
+        "last": 158,
+        "range_lf_sha256": "66a8b4f27ee37a9e8c5fd5636ec18a8486304fdbb6129ce3db63f771bee90171"
+      },
+      {
+        "first": 275,
+        "last": 309,
+        "range_lf_sha256": "a1757f71e9aacd9350e525ac90acf06719065c0e3e62205592e48d2449f1d4f3"
+      },
+      {
+        "first": 425,
+        "last": 441,
+        "range_lf_sha256": "15ad17a272d64ef779b261d3b0716bb5401fb62f104d69472b03ba8488419a6c"
+      },
+      {
+        "first": 1273,
+        "last": 1301,
+        "range_lf_sha256": "bf631b12f464740371966a5e61661f4b71bb81c6854c98878d48352ddaf6500f"
+      },
+      {
+        "first": 1431,
+        "last": 1467,
+        "range_lf_sha256": "14aaa1e6d98c17a3118c16dfc844f242ad5b1c88d04be633b040a462841c8fe0"
+      },
+      {
+        "first": 1520,
+        "last": 1579,
+        "range_lf_sha256": "a525ed95e1274a60a8bd8c59de1472de4534d287857acd21fc4aacc95bcd3ca1"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 65,
+        "last": 95,
+        "range_lf_sha256": "825cce59de0ccc5a26b2cfe98714de22fb1ee5d8e3d03dee6421e3b4d64cf6f6"
+      },
+      {
+        "first": 130,
+        "last": 158,
+        "range_lf_sha256": "66a8b4f27ee37a9e8c5fd5636ec18a8486304fdbb6129ce3db63f771bee90171"
+      },
+      {
+        "first": 275,
+        "last": 309,
+        "range_lf_sha256": "a1757f71e9aacd9350e525ac90acf06719065c0e3e62205592e48d2449f1d4f3"
+      },
+      {
+        "first": 425,
+        "last": 441,
+        "range_lf_sha256": "15ad17a272d64ef779b261d3b0716bb5401fb62f104d69472b03ba8488419a6c"
+      },
+      {
+        "first": 1038,
+        "last": 1080,
+        "range_lf_sha256": "733f19002fd480e0ac69bd51f1ca557009e4c9e4a3b18a6a9f9f003159f1fa1e"
+      },
+      {
+        "first": 1210,
+        "last": 1246,
+        "range_lf_sha256": "0a94ac9155f8de2f3b213d10dee231591c465a1e462ea45706dc21333f23ce3a"
+      },
+      {
+        "first": 1273,
+        "last": 1301,
+        "range_lf_sha256": "bf631b12f464740371966a5e61661f4b71bb81c6854c98878d48352ddaf6500f"
+      },
+      {
+        "first": 1305,
+        "last": 1355,
+        "range_lf_sha256": "4cb575af576acc73de0159f9c21f371438016b1614bbfaa83b682ff7b82f94ae"
+      },
+      {
+        "first": 1431,
+        "last": 1467,
+        "range_lf_sha256": "14aaa1e6d98c17a3118c16dfc844f242ad5b1c88d04be633b040a462841c8fe0"
+      },
+      {
+        "first": 1520,
+        "last": 1579,
+        "range_lf_sha256": "a525ed95e1274a60a8bd8c59de1472de4534d287857acd21fc4aacc95bcd3ca1"
+      },
+      {
+        "first": 2105,
+        "last": 2135,
+        "range_lf_sha256": "a76909b227e2361dee1e3a2d3cf34fb69b548c3cde45b6b7028a6254ecf70543"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.h",
+    "current_lines": 265,
+    "current_whole_source_sha256": "2c310490cbbe83eec1edb4db971f625ee185d9647c607664d272dc8c67e0b22c",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 75,
+        "range_lf_sha256": "6e716902de43e84fa0541ea9e018e695607dc9d0a30a568ffb3ffd964e5940f9"
+      },
+      {
+        "first": 165,
+        "last": 177,
+        "range_lf_sha256": "b35bbe01af57c88c13b75f4a6891b9017fd5f53d9680868a43937bf1c323bbd7"
+      },
+      {
+        "first": 219,
+        "last": 232,
+        "range_lf_sha256": "221a2708186c8e15d841dcf6953ff85b48d12a0eb3135ab481bb0f38b58243f1"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 75,
+        "range_lf_sha256": "6e716902de43e84fa0541ea9e018e695607dc9d0a30a568ffb3ffd964e5940f9"
+      },
+      {
+        "first": 165,
+        "last": 177,
+        "range_lf_sha256": "b35bbe01af57c88c13b75f4a6891b9017fd5f53d9680868a43937bf1c323bbd7"
+      },
+      {
+        "first": 219,
+        "last": 232,
+        "range_lf_sha256": "221a2708186c8e15d841dcf6953ff85b48d12a0eb3135ab481bb0f38b58243f1"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_lines": 1683,
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "actual_read_ranges": [
+      {
+        "first": 935,
+        "last": 955,
+        "range_lf_sha256": "c1f12d24ae22f8138859970756b3902d1dfca1ef6334969cc2924888cd251b8b"
+      },
+      {
+        "first": 1220,
+        "last": 1235,
+        "range_lf_sha256": "a5e4181cbae8902bcb0efcd29a5b1cf0e513618ecd0378365d51d8081dca43d3"
+      },
+      {
+        "first": 1328,
+        "last": 1347,
+        "range_lf_sha256": "d02c774b005e5d89f258cd121d29cb02fe31e13fa3568abef7059af1ddc17500"
+      },
+      {
+        "first": 1454,
+        "last": 1470,
+        "range_lf_sha256": "6030fac70aa5d8384dd940bbddbd86afc321703766fe101be37743f01994f57b"
+      },
+      {
+        "first": 1520,
+        "last": 1548,
+        "range_lf_sha256": "a588c81201549ed53a5b413c4d32853aaeeaf98837c5a83cd6137587a66d37cc"
+      },
+      {
+        "first": 1588,
+        "last": 1608,
+        "range_lf_sha256": "96297fdee01ff06b2d590852ba391f67dca535428f09e13463f51d9114032bc2"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 935,
+        "last": 955,
+        "range_lf_sha256": "c1f12d24ae22f8138859970756b3902d1dfca1ef6334969cc2924888cd251b8b"
+      },
+      {
+        "first": 1220,
+        "last": 1235,
+        "range_lf_sha256": "a5e4181cbae8902bcb0efcd29a5b1cf0e513618ecd0378365d51d8081dca43d3"
+      },
+      {
+        "first": 1328,
+        "last": 1347,
+        "range_lf_sha256": "d02c774b005e5d89f258cd121d29cb02fe31e13fa3568abef7059af1ddc17500"
+      },
+      {
+        "first": 1454,
+        "last": 1470,
+        "range_lf_sha256": "6030fac70aa5d8384dd940bbddbd86afc321703766fe101be37743f01994f57b"
+      },
+      {
+        "first": 1520,
+        "last": 1548,
+        "range_lf_sha256": "a588c81201549ed53a5b413c4d32853aaeeaf98837c5a83cd6137587a66d37cc"
+      },
+      {
+        "first": 1588,
+        "last": 1608,
+        "range_lf_sha256": "96297fdee01ff06b2d590852ba391f67dca535428f09e13463f51d9114032bc2"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6600,
+    "current_whole_source_sha256": "a389b03cc9f73738829f6f6b813f8aa40f15f63aa52a9499aa39f04753e9486b",
+    "actual_read_ranges": [
+      {
+        "first": 4471,
+        "last": 4558,
+        "range_lf_sha256": "b5c00a740cd06f5cffbd3799489537e1871c253235b5f583fc5d9cc483978835"
+      },
+      {
+        "first": 5802,
+        "last": 5836,
+        "range_lf_sha256": "412ea227539504f696ac6364acc5b29f006f849cc8e6b3582d8f5561e54831b9"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 4471,
+        "last": 4558,
+        "range_lf_sha256": "b5c00a740cd06f5cffbd3799489537e1871c253235b5f583fc5d9cc483978835"
+      },
+      {
+        "first": 5802,
+        "last": 5836,
+        "range_lf_sha256": "412ea227539504f696ac6364acc5b29f006f849cc8e6b3582d8f5561e54831b9"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3283,
+    "current_whole_source_sha256": "3b0e0075ef3817033c9ccbd1d604fda8181c7befb4fa78b96cbb765d21ea5b91",
+    "actual_read_ranges": [
+      {
+        "first": 2160,
+        "last": 2192,
+        "range_lf_sha256": "5bddd3e0205520776798e02751e81aca7dd138a9a1994f0e3579bd4a1f45e24c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2160,
+        "last": 2192,
+        "range_lf_sha256": "5bddd3e0205520776798e02751e81aca7dd138a9a1994f0e3579bd4a1f45e24c"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_source_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "actual_read_ranges": [
+      {
+        "first": 292,
+        "last": 347,
+        "range_lf_sha256": "3b96b6044a1dbb830c2ca0ae372b7b3a147acb9c163043152f1f4b5e144101c4"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 292,
+        "last": 347,
+        "range_lf_sha256": "3b96b6044a1dbb830c2ca0ae372b7b3a147acb9c163043152f1f4b5e144101c4"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/net/net_udp_join_wait_transport.h",
+    "current_lines": 159,
+    "current_whole_source_sha256": "1f6d4f846776d9696f46ddee3e9cbb6d8881632c4f5a4e3159e2ec881d9561a0",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 65,
+        "range_lf_sha256": "6fc0f46e2e0a90b7f6205a556a56fe1d530300f57d1266250c4c5f94cd49afd9"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 65,
+        "range_lf_sha256": "6fc0f46e2e0a90b7f6205a556a56fe1d530300f57d1266250c4c5f94cd49afd9"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_collect.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "8b5cfe13d67d3ceed763792a099806d912bd6d2120bc110ca6ccbe5e8d49aec6",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "8b5cfe13d67d3ceed763792a099806d912bd6d2120bc110ca6ccbe5e8d49aec6"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "8b5cfe13d67d3ceed763792a099806d912bd6d2120bc110ca6ccbe5e8d49aec6"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_drop.jsonc",
+    "current_lines": 11,
+    "current_whole_source_sha256": "0c3e7ae7bd2ac8cf66708f3a712197e3c6632fe4d12fa721d075685c8875ee82",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 11,
+        "range_lf_sha256": "0c3e7ae7bd2ac8cf66708f3a712197e3c6632fe4d12fa721d075685c8875ee82"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 11,
+        "range_lf_sha256": "0c3e7ae7bd2ac8cf66708f3a712197e3c6632fe4d12fa721d075685c8875ee82"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_flight.jsonc",
+    "current_lines": 16,
+    "current_whole_source_sha256": "4f2490030828943c7bbdba7c9107c1763897d1c6b7dd20b8b37612c40d66fa59",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "4f2490030828943c7bbdba7c9107c1763897d1c6b7dd20b8b37612c40d66fa59"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "4f2490030828943c7bbdba7c9107c1763897d1c6b7dd20b8b37612c40d66fa59"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_prepare.jsonc",
+    "current_lines": 5,
+    "current_whole_source_sha256": "1d964d0b39dee5fdc9a27d900c8df3322f7a504e6fba2b9bcd6e4cd8a6a7c139",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "1d964d0b39dee5fdc9a27d900c8df3322f7a504e6fba2b9bcd6e4cd8a6a7c139"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "1d964d0b39dee5fdc9a27d900c8df3322f7a504e6fba2b9bcd6e4cd8a6a7c139"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_late_join_accept.jsonc",
+    "current_lines": 1,
+    "current_whole_source_sha256": "4588d494bde659aa58909bebfbb1b8f3a24a912b0a9d78926b21c03c1dfff38b",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 1,
+        "range_lf_sha256": "4588d494bde659aa58909bebfbb1b8f3a24a912b0a9d78926b21c03c1dfff38b"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 1,
+        "range_lf_sha256": "4588d494bde659aa58909bebfbb1b8f3a24a912b0a9d78926b21c03c1dfff38b"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_late_join_regression.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "6a50e210ec75237dad95bc6fd8ef076fbcbe8e1e2c4d04fb6234221339a95622",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "6a50e210ec75237dad95bc6fd8ef076fbcbe8e1e2c4d04fb6234221339a95622"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "6a50e210ec75237dad95bc6fd8ef076fbcbe8e1e2c4d04fb6234221339a95622"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_late_join_save.jsonc",
+    "current_lines": 5,
+    "current_whole_source_sha256": "992be7a8755265870c50a8584f63330e7c72bfb19b6551e41044d15912b033a9",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "992be7a8755265870c50a8584f63330e7c72bfb19b6551e41044d15912b033a9"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "992be7a8755265870c50a8584f63330e7c72bfb19b6551e41044d15912b033a9"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_late_join_seed.jsonc",
+    "current_lines": 5,
+    "current_whole_source_sha256": "bba58a9f19206aaa1947c36fe889ef799ef7035e463491ef3ce1718162b1b2d4",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "bba58a9f19206aaa1947c36fe889ef799ef7035e463491ef3ce1718162b1b2d4"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "bba58a9f19206aaa1947c36fe889ef799ef7035e463491ef3ce1718162b1b2d4"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_late_join_start.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "cbd84c41b1476b055357efe07fdb631b4572d7ea52b9d8d5483ed62d797373f1",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "cbd84c41b1476b055357efe07fdb631b4572d7ea52b9d8d5483ed62d797373f1"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "cbd84c41b1476b055357efe07fdb631b4572d7ea52b9d8d5483ed62d797373f1"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_recovery_drop.jsonc",
+    "current_lines": 21,
+    "current_whole_source_sha256": "458ef983dd2304b53fd875b98229af197faa0a2a16ddcddf9169964f83312b8a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 21,
+        "range_lf_sha256": "458ef983dd2304b53fd875b98229af197faa0a2a16ddcddf9169964f83312b8a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 21,
+        "range_lf_sha256": "458ef983dd2304b53fd875b98229af197faa0a2a16ddcddf9169964f83312b8a"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_recovery_host.jsonc",
+    "current_lines": 13,
+    "current_whole_source_sha256": "8db23ef7a0370f9be6355f8c648ebb238c56ac7a546cc6a1b9097e9126b55d27",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 13,
+        "range_lf_sha256": "8db23ef7a0370f9be6355f8c648ebb238c56ac7a546cc6a1b9097e9126b55d27"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 13,
+        "range_lf_sha256": "8db23ef7a0370f9be6355f8c648ebb238c56ac7a546cc6a1b9097e9126b55d27"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "actual_read_ranges": [
+      {
+        "first": 8,
+        "last": 38,
+        "range_lf_sha256": "276f0177fe4d10f64cb4a1fb044e84603a57815cacc9afba13807df7df6c4aee"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 8,
+        "last": 38,
+        "range_lf_sha256": "276f0177fe4d10f64cb4a1fb044e84603a57815cacc9afba13807df7df6c4aee"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_lines": 2419,
+    "current_whole_source_sha256": "de93ee1524285ad44729b0469c2479d428d51f46910bda5fa1e2b6721bd955cb",
+    "actual_read_ranges": [
+      {
+        "first": 477,
+        "last": 487,
+        "range_lf_sha256": "12b87a8c8ebea671ae3e7194b5b5d11878758638938cfc730ab06c201e488396"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 477,
+        "last": 487,
+        "range_lf_sha256": "12b87a8c8ebea671ae3e7194b5b5d11878758638938cfc730ab06c201e488396"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_lines": 569,
+    "current_whole_source_sha256": "d19807e4ba01f7f113b363ef873bc3c1056fd567a4bb09adf868a0928fb23401",
+    "actual_read_ranges": [
+      {
+        "first": 160,
+        "last": 180,
+        "range_lf_sha256": "65f09a596e55a51ad101323ea7dbcfe11bc6dafa4eac35df70e0b49ec3206b58"
+      },
+      {
+        "first": 489,
+        "last": 505,
+        "range_lf_sha256": "fe0cae44d51350a5fdb0b21cc5b5b7269da0d79f1bb3ec2cccd75b567f6dd64b"
+      },
+      {
+        "first": 535,
+        "last": 569,
+        "range_lf_sha256": "92fb6dfc6759863822c94efeeec04b4e13f352580b3549250efa722483d98415"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 160,
+        "last": 180,
+        "range_lf_sha256": "65f09a596e55a51ad101323ea7dbcfe11bc6dafa4eac35df70e0b49ec3206b58"
+      },
+      {
+        "first": 489,
+        "last": 505,
+        "range_lf_sha256": "fe0cae44d51350a5fdb0b21cc5b5b7269da0d79f1bb3ec2cccd75b567f6dd64b"
+      },
+      {
+        "first": 535,
+        "last": 569,
+        "range_lf_sha256": "92fb6dfc6759863822c94efeeec04b4e13f352580b3549250efa722483d98415"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/test_coop_recovery.c",
+    "current_lines": 1027,
+    "current_whole_source_sha256": "8c241ce0dcf2f36513637bb3c16b602cd961c09207efa35396072c5d7ee19995",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 350,
+        "range_lf_sha256": "c3f46954eaf782eaea62862d98585affad577d7c4001d6d907eed1761eeebce9"
+      },
+      {
+        "first": 351,
+        "last": 700,
+        "range_lf_sha256": "c26fe5903029f123cef681ff313460fb19eed3636654b21aecea632f18b93724"
+      },
+      {
+        "first": 701,
+        "last": 1027,
+        "range_lf_sha256": "7e6e7ab71f9d66d822de29e161ff2cbf260d7c2490e3f933a5ecc31cbb1ad85e"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 1027,
+        "range_lf_sha256": "8c241ce0dcf2f36513637bb3c16b602cd961c09207efa35396072c5d7ee19995"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_lines": 4349,
+    "current_whole_source_sha256": "75e63ac88b449b6c72362a09f9ac68fff7f3278df2a482a06072f6aaffd8cb78",
+    "actual_read_ranges": [
+      {
+        "first": 2105,
+        "last": 2197,
+        "range_lf_sha256": "744a2a7fa4b3da392f3032113b3991f8cdd60836d5177508d32ecb3c3a8ffe14"
+      },
+      {
+        "first": 2583,
+        "last": 2678,
+        "range_lf_sha256": "d31c1c4ff5b85f7c109d428c28aec49b468448b7820653e9acec0a1a96ddd8bc"
+      },
+      {
+        "first": 2197,
+        "last": 2287,
+        "range_lf_sha256": "8850ab9a0dd96f9b16162ddfce7ed60634494fe902dde1971f71841a82d8b8a1"
+      },
+      {
+        "first": 2287,
+        "last": 2315,
+        "range_lf_sha256": "ee0f2e9e674f866629ee07da0050c630e8b073243ddc05bce7fcb967fabaf00a"
+      },
+      {
+        "first": 3110,
+        "last": 3123,
+        "range_lf_sha256": "ce66f11edc450747f7697951033e0ef20c94d61fdbafdec35e484a3210757cb8"
+      },
+      {
+        "first": 3787,
+        "last": 3805,
+        "range_lf_sha256": "2dd820cd9731d12949458d441b3bda7e041cef8b56dfbe5c400c8bd6105d8d6d"
+      },
+      {
+        "first": 4239,
+        "last": 4250,
+        "range_lf_sha256": "53f76043a15b4832237dc95d093ca3556b9c1a1e8028d0735eac481bf1c37126"
+      },
+      {
+        "first": 2315,
+        "last": 2368,
+        "range_lf_sha256": "e2527676ebcba6b4e50bc44df1523fe79537cad611b4a6bb266c77e2d7cfa86d"
+      },
+      {
+        "first": 657,
+        "last": 694,
+        "range_lf_sha256": "410747e9f4c16e95da58ace73bbe7c65da942007563bad81762c186205ed19ae"
+      },
+      {
+        "first": 1973,
+        "last": 2029,
+        "range_lf_sha256": "f09831c5442f5e83bd0027ce3180b9f37db5ddf89f9b3279f3c5c7db3d8f3c0a"
+      },
+      {
+        "first": 694,
+        "last": 724,
+        "range_lf_sha256": "3ca24e49ed61ec50080aecc8ea545421ca6e0deb9b6127796b09d74ffef992da"
+      },
+      {
+        "first": 2029,
+        "last": 2035,
+        "range_lf_sha256": "338c78e4cd04efbe395d6bc9480aa503d3f89e9116409afd6fbb694425f48992"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 657,
+        "last": 724,
+        "range_lf_sha256": "b777a25ae31b94c74b928d50cc84cfdf929cfed2fd84a76da1c7bbc660a89d17"
+      },
+      {
+        "first": 1973,
+        "last": 2035,
+        "range_lf_sha256": "cba212865fe6bc2008590d134e47a34fdc0440b0800b939514c363b212e663d3"
+      },
+      {
+        "first": 2105,
+        "last": 2368,
+        "range_lf_sha256": "b4acbac9d1894e1968f5848ce88c01e9554fb10c88bd737c5cef5cc777e6abdc"
+      },
+      {
+        "first": 2583,
+        "last": 2678,
+        "range_lf_sha256": "d31c1c4ff5b85f7c109d428c28aec49b468448b7820653e9acec0a1a96ddd8bc"
+      },
+      {
+        "first": 3110,
+        "last": 3123,
+        "range_lf_sha256": "ce66f11edc450747f7697951033e0ef20c94d61fdbafdec35e484a3210757cb8"
+      },
+      {
+        "first": 3787,
+        "last": 3805,
+        "range_lf_sha256": "2dd820cd9731d12949458d441b3bda7e041cef8b56dfbe5c400c8bd6105d8d6d"
+      },
+      {
+        "first": 4239,
+        "last": 4250,
+        "range_lf_sha256": "53f76043a15b4832237dc95d093ca3556b9c1a1e8028d0735eac481bf1c37126"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/test_native_host_unit_tests.ps1",
+    "current_lines": 56,
+    "current_whole_source_sha256": "c7234d6e26f1e617b1b16163f57301b8148826e1cfe3021d7c78c72be656a699",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 56,
+        "range_lf_sha256": "c7234d6e26f1e617b1b16163f57301b8148826e1cfe3021d7c78c72be656a699"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 56,
+        "range_lf_sha256": "c7234d6e26f1e617b1b16163f57301b8148826e1cfe3021d7c78c72be656a699"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/collide.c",
+    "current_lines": 2107,
+    "current_whole_source_sha256": "96d0cb5674f3a870e937344b53d37281fe1c819b8f44eab1d2ab94d0b042196b",
+    "actual_read_ranges": [
+      {
+        "first": 1250,
+        "last": 1300,
+        "range_lf_sha256": "af8dcf231154f30b320ae06275c45c6b9113af87d73c18f25833802a25990897"
+      },
+      {
+        "first": 1775,
+        "last": 1800,
+        "range_lf_sha256": "b6b4fc8e27f0e1ff9a649ef0fe955bd934a3d6a28f8bd223d46ec91d0c9919b2"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1250,
+        "last": 1300,
+        "range_lf_sha256": "af8dcf231154f30b320ae06275c45c6b9113af87d73c18f25833802a25990897"
+      },
+      {
+        "first": 1775,
+        "last": 1800,
+        "range_lf_sha256": "b6b4fc8e27f0e1ff9a649ef0fe955bd934a3d6a28f8bd223d46ec91d0c9919b2"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/gameseq.c",
+    "current_lines": 1901,
+    "current_whole_source_sha256": "edaddd98ebe9e26234394a7ff4a6339bb82c9419dc3371dc51206afdb960e914",
+    "actual_read_ranges": [
+      {
+        "first": 427,
+        "last": 441,
+        "range_lf_sha256": "a528c485641107f2aa4a80f1ac94ad9792c168c4b59fa5e62113f49c1ee2b995"
+      },
+      {
+        "first": 1338,
+        "last": 1355,
+        "range_lf_sha256": "29101453226df9552c99b3c56381af0bb7b4dd63bd80cf4e3dafa2117a9e5460"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 427,
+        "last": 441,
+        "range_lf_sha256": "a528c485641107f2aa4a80f1ac94ad9792c168c4b59fa5e62113f49c1ee2b995"
+      },
+      {
+        "first": 1338,
+        "last": 1355,
+        "range_lf_sha256": "29101453226df9552c99b3c56381af0bb7b4dd63bd80cf4e3dafa2117a9e5460"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6338,
+    "current_whole_source_sha256": "ef8d6a57383f1a8dbf3f4940b3c595d9cd40ca8c7cc61cc90f437ecd85bb508a",
+    "actual_read_ranges": [
+      {
+        "first": 2480,
+        "last": 2500,
+        "range_lf_sha256": "70ca6d80ddaedcd47aba3eb6d59fddad3a5757d161f6b4fb30cce8196368b06b"
+      },
+      {
+        "first": 3590,
+        "last": 3610,
+        "range_lf_sha256": "c47667bf267967c93630f64bfc190867c374ff435f2e0da2bc78c2223539dbfe"
+      },
+      {
+        "first": 5150,
+        "last": 5180,
+        "range_lf_sha256": "3264f300761c3324814a5af634c93f90f33958bba65051b6723858d7ef42e604"
+      },
+      {
+        "first": 5916,
+        "last": 5935,
+        "range_lf_sha256": "9a27d86a1c1872d66ef3521ae4a3c2c5ecc6508e72ba3c711353a14ff2b1ad64"
+      },
+      {
+        "first": 3338,
+        "last": 3409,
+        "range_lf_sha256": "15043e55d1695e5a490106fe77531ec089ae24f3011ba88d035aa43a6a42bd43"
+      },
+      {
+        "first": 2407,
+        "last": 2498,
+        "range_lf_sha256": "1b3b068e4f2be83628853ff920ef0ae1f634792c2360231125b6d973c3d3bc21"
+      },
+      {
+        "first": 5740,
+        "last": 5795,
+        "range_lf_sha256": "78aee4379606da38c81451d4cffc6959a3b2b347bba258d66dd201d5d05815e2"
+      },
+      {
+        "first": 5795,
+        "last": 5830,
+        "range_lf_sha256": "443a967ab7b1400d6a5ea19a2f2367274cd88937cf415700cf9b46ed61cd68c4"
+      },
+      {
+        "first": 778,
+        "last": 812,
+        "range_lf_sha256": "bf70528738ba3d54cd6a30422ab03b01e45721ebaf9bbdb63753082d69b48a12"
+      },
+      {
+        "first": 2776,
+        "last": 2825,
+        "range_lf_sha256": "6ae29435de8dd3fefb7a70e60482c06b08fbeeddf31b3287b53d58f12a2f2d92"
+      },
+      {
+        "first": 2825,
+        "last": 2880,
+        "range_lf_sha256": "9e42cca18269d0f70d4b2ac7cc92cb5c2ee61631e2f2c07348419b7cff719025"
+      },
+      {
+        "first": 917,
+        "last": 934,
+        "range_lf_sha256": "d240eabb7cef3677f4683c9481d68ea4617587a23dcab189743addac052b9bee"
+      },
+      {
+        "first": 1455,
+        "last": 1470,
+        "range_lf_sha256": "678710890db0ad3dae6fa480ac1141f9abb5068683241ffff10dfeb9386a34f4"
+      },
+      {
+        "first": 2385,
+        "last": 2405,
+        "range_lf_sha256": "2af3a1688dfe5cef0a1170c19c4d4dfadbefdd01103d6aa1411a65abe6a8a286"
+      },
+      {
+        "first": 2505,
+        "last": 2520,
+        "range_lf_sha256": "0349d24179a512f947918300a1b40e056758d595f6a8080e1a6d2398a2593923"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 778,
+        "last": 812,
+        "range_lf_sha256": "bf70528738ba3d54cd6a30422ab03b01e45721ebaf9bbdb63753082d69b48a12"
+      },
+      {
+        "first": 917,
+        "last": 934,
+        "range_lf_sha256": "d240eabb7cef3677f4683c9481d68ea4617587a23dcab189743addac052b9bee"
+      },
+      {
+        "first": 1455,
+        "last": 1470,
+        "range_lf_sha256": "678710890db0ad3dae6fa480ac1141f9abb5068683241ffff10dfeb9386a34f4"
+      },
+      {
+        "first": 2385,
+        "last": 2405,
+        "range_lf_sha256": "2af3a1688dfe5cef0a1170c19c4d4dfadbefdd01103d6aa1411a65abe6a8a286"
+      },
+      {
+        "first": 2407,
+        "last": 2500,
+        "range_lf_sha256": "4d1b25e6f25a7f33e978b495367cf072d81913fc4f7b5fc2b79f111916bf434d"
+      },
+      {
+        "first": 2505,
+        "last": 2520,
+        "range_lf_sha256": "0349d24179a512f947918300a1b40e056758d595f6a8080e1a6d2398a2593923"
+      },
+      {
+        "first": 2776,
+        "last": 2880,
+        "range_lf_sha256": "d7e455500b8a4ccb6f95fe727a586617e529a54519fdee922939714d623ed763"
+      },
+      {
+        "first": 3338,
+        "last": 3409,
+        "range_lf_sha256": "15043e55d1695e5a490106fe77531ec089ae24f3011ba88d035aa43a6a42bd43"
+      },
+      {
+        "first": 3590,
+        "last": 3610,
+        "range_lf_sha256": "c47667bf267967c93630f64bfc190867c374ff435f2e0da2bc78c2223539dbfe"
+      },
+      {
+        "first": 5150,
+        "last": 5180,
+        "range_lf_sha256": "3264f300761c3324814a5af634c93f90f33958bba65051b6723858d7ef42e604"
+      },
+      {
+        "first": 5740,
+        "last": 5830,
+        "range_lf_sha256": "ac34a19a728c3daf128ab878dc673c2935afca50879e9c3ccec38dbf4486ed17"
+      },
+      {
+        "first": 5916,
+        "last": 5935,
+        "range_lf_sha256": "9a27d86a1c1872d66ef3521ae4a3c2c5ecc6508e72ba3c711353a14ff2b1ad64"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/multi.h",
+    "current_lines": 805,
+    "current_whole_source_sha256": "54cde196ec8ecc87a691fb2bfba5839c9dd9678870fdabaa4f8842f2cba5879d",
+    "actual_read_ranges": [
+      {
+        "first": 155,
+        "last": 174,
+        "range_lf_sha256": "f497cfd411d2bd5ad718444883245bb65d37b5d6488ae66ee9fb028c6a296a99"
+      },
+      {
+        "first": 75,
+        "last": 88,
+        "range_lf_sha256": "837a09c48b974002aeae8c1cc8f69499565f387694f11ed8a65cc0c779989d59"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 75,
+        "last": 88,
+        "range_lf_sha256": "837a09c48b974002aeae8c1cc8f69499565f387694f11ed8a65cc0c779989d59"
+      },
+      {
+        "first": 155,
+        "last": 174,
+        "range_lf_sha256": "f497cfd411d2bd5ad718444883245bb65d37b5d6488ae66ee9fb028c6a296a99"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_lines": 9545,
+    "current_whole_source_sha256": "ea86217ca20922b3478e45e4c056fd1fb5d5532bc59f59fb6632cada38349738",
+    "actual_read_ranges": [
+      {
+        "first": 2900,
+        "last": 2930,
+        "range_lf_sha256": "697932ffba455309d2a340404fb14efe7ce9b3dc854ae14cd8dbb0780114df36"
+      },
+      {
+        "first": 8125,
+        "last": 8242,
+        "range_lf_sha256": "c0e46a1976a8e5a8d7bd990beaa4c95dc1762098b22dc83899a37d78c91efef1"
+      },
+      {
+        "first": 1250,
+        "last": 1275,
+        "range_lf_sha256": "da90623cea5f8645ac88e0958ec7ddea6d99b6c5d15cdefed2fc12be442f817e"
+      },
+      {
+        "first": 4400,
+        "last": 4495,
+        "range_lf_sha256": "5e856c89f2f0788a32fc3bf1afe3fe88508ef4708da49461c98009ad82701c85"
+      },
+      {
+        "first": 4718,
+        "last": 4745,
+        "range_lf_sha256": "5cb4c3daaa3925a37b69c4874d88f3a7be2d8875d718b06ac7b7943900f3f7b6"
+      },
+      {
+        "first": 1348,
+        "last": 1535,
+        "range_lf_sha256": "2ec434a7bf616625df4917485db12b273dc751e61316e668cffe44ff66fbd9b1"
+      },
+      {
+        "first": 1234,
+        "last": 1250,
+        "range_lf_sha256": "ea339db3183fcd8d63131f54f4f31ab034035e538dcaf53523ecdcf44ad64db6"
+      },
+      {
+        "first": 2356,
+        "last": 2410,
+        "range_lf_sha256": "040953697ff94ca545d75bbb8fd7171dea9c905e8ac0005745d5f1605fba6598"
+      },
+      {
+        "first": 2800,
+        "last": 2822,
+        "range_lf_sha256": "6ec25f3e53307b64ec57170be612d2bae9c62aa2ddb5b590cca7b7c21b21a738"
+      },
+      {
+        "first": 3195,
+        "last": 3218,
+        "range_lf_sha256": "426fb750b67fada5bd09d8972331b2f6477547c307c0980b2c0be6ce909da61d"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1234,
+        "last": 1275,
+        "range_lf_sha256": "33d398e7fa63d42ba6bf6209b18f0d878ec4e8bbb840ce852a3cc7c5b0b9813e"
+      },
+      {
+        "first": 1348,
+        "last": 1535,
+        "range_lf_sha256": "2ec434a7bf616625df4917485db12b273dc751e61316e668cffe44ff66fbd9b1"
+      },
+      {
+        "first": 2356,
+        "last": 2410,
+        "range_lf_sha256": "040953697ff94ca545d75bbb8fd7171dea9c905e8ac0005745d5f1605fba6598"
+      },
+      {
+        "first": 2800,
+        "last": 2822,
+        "range_lf_sha256": "6ec25f3e53307b64ec57170be612d2bae9c62aa2ddb5b590cca7b7c21b21a738"
+      },
+      {
+        "first": 2900,
+        "last": 2930,
+        "range_lf_sha256": "697932ffba455309d2a340404fb14efe7ce9b3dc854ae14cd8dbb0780114df36"
+      },
+      {
+        "first": 3195,
+        "last": 3218,
+        "range_lf_sha256": "426fb750b67fada5bd09d8972331b2f6477547c307c0980b2c0be6ce909da61d"
+      },
+      {
+        "first": 4400,
+        "last": 4495,
+        "range_lf_sha256": "5e856c89f2f0788a32fc3bf1afe3fe88508ef4708da49461c98009ad82701c85"
+      },
+      {
+        "first": 4718,
+        "last": 4745,
+        "range_lf_sha256": "5cb4c3daaa3925a37b69c4874d88f3a7be2d8875d718b06ac7b7943900f3f7b6"
+      },
+      {
+        "first": 8125,
+        "last": 8242,
+        "range_lf_sha256": "c0e46a1976a8e5a8d7bd990beaa4c95dc1762098b22dc83899a37d78c91efef1"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/object.c",
+    "current_lines": 2512,
+    "current_whole_source_sha256": "d0d1ef7361b2f10d24734c0ca5bf381cee959cf447af4a9b5e4ac5155307d1e6",
+    "actual_read_ranges": [
+      {
+        "first": 2020,
+        "last": 2040,
+        "range_lf_sha256": "4858c3260e05dc9a6ac641da32cb84afac0577c23a6b81d8e6b7d015cde6a2b5"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2020,
+        "last": 2040,
+        "range_lf_sha256": "4858c3260e05dc9a6ac641da32cb84afac0577c23a6b81d8e6b7d015cde6a2b5"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/powerup.c",
+    "current_lines": 597,
+    "current_whole_source_sha256": "c2c2b0d1982ef45be47911cbeefa7bb005cd3ea31abc428246325e8bc8d337cb",
+    "actual_read_ranges": [
+      {
+        "first": 340,
+        "last": 351,
+        "range_lf_sha256": "3b443d25c2f686d3e38caf0027f8080c0d13444af7c558d121df2d5ee6d0d3c6"
+      },
+      {
+        "first": 470,
+        "last": 518,
+        "range_lf_sha256": "232799d0a07c52b35e07b740f35d0509ed93e3e3c65c6dc7a5c5c0b547dfdead"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 340,
+        "last": 351,
+        "range_lf_sha256": "3b443d25c2f686d3e38caf0027f8080c0d13444af7c558d121df2d5ee6d0d3c6"
+      },
+      {
+        "first": 470,
+        "last": 518,
+        "range_lf_sha256": "232799d0a07c52b35e07b740f35d0509ed93e3e3c65c6dc7a5c5c0b547dfdead"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/state.c",
+    "current_lines": 3076,
+    "current_whole_source_sha256": "bca1fef229dab0504f866f275064422506cdf1f1e2854983a62a82720fa06e0c",
+    "actual_read_ranges": [
+      {
+        "first": 2875,
+        "last": 2922,
+        "range_lf_sha256": "f998e08509b81d45bd31a460c1c8627dd81199dc32d797296cdb8a0448cfa097"
+      },
+      {
+        "first": 2899,
+        "last": 2922,
+        "range_lf_sha256": "2abb5ebdf80672c3505c9ee8ccdf1f33fadaabad101932c3ccb49739bdbcfa3f"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2875,
+        "last": 2922,
+        "range_lf_sha256": "f998e08509b81d45bd31a460c1c8627dd81199dc32d797296cdb8a0448cfa097"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/collide.c",
+    "current_lines": 3352,
+    "current_whole_source_sha256": "596a5ddfc8817a9bfdfda7d96ac21ecdd40f707f2be5d9bb11540b24694b3abc",
+    "actual_read_ranges": [
+      {
+        "first": 2150,
+        "last": 2210,
+        "range_lf_sha256": "c5d5a3a7d393030f874c681a599efff0518521c3dc044de170f810db6548131c"
+      },
+      {
+        "first": 2955,
+        "last": 2985,
+        "range_lf_sha256": "3b3148100e593e883af01f5afe339ac266414e47e0591874b2c51f799a99a878"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2150,
+        "last": 2210,
+        "range_lf_sha256": "c5d5a3a7d393030f874c681a599efff0518521c3dc044de170f810db6548131c"
+      },
+      {
+        "first": 2955,
+        "last": 2985,
+        "range_lf_sha256": "3b3148100e593e883af01f5afe339ac266414e47e0591874b2c51f799a99a878"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_lines": 2636,
+    "current_whole_source_sha256": "4357f34f12df2f853d91b9f43b75b4b8d642528a976e35e72184a0fd0b19c69e",
+    "actual_read_ranges": [
+      {
+        "first": 571,
+        "last": 585,
+        "range_lf_sha256": "68316df11318c362c6f49d46d99573a44b8d5be79eac7cd0a012ad2bc8afdbdc"
+      },
+      {
+        "first": 1932,
+        "last": 1949,
+        "range_lf_sha256": "73bd6ee2d9be2da3d5bca02f06a669cfcf955fb5b721891c56e025bef7983ef3"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 571,
+        "last": 585,
+        "range_lf_sha256": "68316df11318c362c6f49d46d99573a44b8d5be79eac7cd0a012ad2bc8afdbdc"
+      },
+      {
+        "first": 1932,
+        "last": 1949,
+        "range_lf_sha256": "73bd6ee2d9be2da3d5bca02f06a669cfcf955fb5b721891c56e025bef7983ef3"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8383,
+    "current_whole_source_sha256": "544b3bfbcf4446f5b80f5894d53f10bb15bca848efb5f334b648d57bc933989e",
+    "actual_read_ranges": [
+      {
+        "first": 2615,
+        "last": 2635,
+        "range_lf_sha256": "80571caf8bc73250ce7c3cb84c0f0f574d058646505c68e0473203bb29280653"
+      },
+      {
+        "first": 3850,
+        "last": 3870,
+        "range_lf_sha256": "00f2c4554322ae1a47c28675d0cd4c53527973752e63765c2751c1df4c3f044a"
+      },
+      {
+        "first": 6855,
+        "last": 6885,
+        "range_lf_sha256": "5d25516b937867c9424315851e94bb932cee8217b955361a7773e6e0c64eb85c"
+      },
+      {
+        "first": 7927,
+        "last": 7947,
+        "range_lf_sha256": "7cf75b98aab86d9343af37f6fdbf9277edbb9a9b636060226aff72c05e0c5063"
+      },
+      {
+        "first": 3550,
+        "last": 3621,
+        "range_lf_sha256": "7a83bfe769d7ab19da92268ab8da73dc87b15e9d3769a4d30e1e7d41e40a8eb4"
+      },
+      {
+        "first": 2534,
+        "last": 2633,
+        "range_lf_sha256": "c6edff39eefade48da9e68a6f8599449ba904a98b88dad0a0c247c8e915dfc8f"
+      },
+      {
+        "first": 7680,
+        "last": 7760,
+        "range_lf_sha256": "8b5842ea4bde6b9929b05cf7521977fb9d77b5c2a6f05590d05145815e762f7b"
+      },
+      {
+        "first": 7760,
+        "last": 7795,
+        "range_lf_sha256": "0eb606de3d0364d52d09f811b6134b84feb89030022bd9bd1fdf28041724339a"
+      },
+      {
+        "first": 802,
+        "last": 836,
+        "range_lf_sha256": "7ce78818bca6ace11ec72bca43a5a63fcf8336b56b4781269b2b64cb3f1ad671"
+      },
+      {
+        "first": 2932,
+        "last": 2981,
+        "range_lf_sha256": "0e1b04ed6aa6709683db2fc7b3d631c1a51edb80a187eefdece8e46594442b97"
+      },
+      {
+        "first": 2981,
+        "last": 3037,
+        "range_lf_sha256": "41d1ed1c62d4177c19694bf877547d88abab5b36c093422467a294e9ba7ff916"
+      },
+      {
+        "first": 946,
+        "last": 963,
+        "range_lf_sha256": "d240eabb7cef3677f4683c9481d68ea4617587a23dcab189743addac052b9bee"
+      },
+      {
+        "first": 1524,
+        "last": 1540,
+        "range_lf_sha256": "98908bd18fa4d5019a25decafce311c56eaa5a88853d3e000ed189899e9ac2c7"
+      },
+      {
+        "first": 2512,
+        "last": 2532,
+        "range_lf_sha256": "56cd0f4b27aa79f77fcc19adb2f63719872fcd0644d0bb9164b181eb1aec31ff"
+      },
+      {
+        "first": 2640,
+        "last": 2655,
+        "range_lf_sha256": "e74ec934aa46593b0936cb1fbc0bc1c22a4bf7c82df29f8b5ef8b11191086a1f"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 802,
+        "last": 836,
+        "range_lf_sha256": "7ce78818bca6ace11ec72bca43a5a63fcf8336b56b4781269b2b64cb3f1ad671"
+      },
+      {
+        "first": 946,
+        "last": 963,
+        "range_lf_sha256": "d240eabb7cef3677f4683c9481d68ea4617587a23dcab189743addac052b9bee"
+      },
+      {
+        "first": 1524,
+        "last": 1540,
+        "range_lf_sha256": "98908bd18fa4d5019a25decafce311c56eaa5a88853d3e000ed189899e9ac2c7"
+      },
+      {
+        "first": 2512,
+        "last": 2532,
+        "range_lf_sha256": "56cd0f4b27aa79f77fcc19adb2f63719872fcd0644d0bb9164b181eb1aec31ff"
+      },
+      {
+        "first": 2534,
+        "last": 2635,
+        "range_lf_sha256": "28f4ee2fac83e4981d4cd3df5b1b144bcfb45df0ee9daa9ce48b79005bbaa8ca"
+      },
+      {
+        "first": 2640,
+        "last": 2655,
+        "range_lf_sha256": "e74ec934aa46593b0936cb1fbc0bc1c22a4bf7c82df29f8b5ef8b11191086a1f"
+      },
+      {
+        "first": 2932,
+        "last": 3037,
+        "range_lf_sha256": "60c4727822ceac0e191fbc288ac5d93a145c48e73a941351aae7fbe3cbcb370b"
+      },
+      {
+        "first": 3550,
+        "last": 3621,
+        "range_lf_sha256": "7a83bfe769d7ab19da92268ab8da73dc87b15e9d3769a4d30e1e7d41e40a8eb4"
+      },
+      {
+        "first": 3850,
+        "last": 3870,
+        "range_lf_sha256": "00f2c4554322ae1a47c28675d0cd4c53527973752e63765c2751c1df4c3f044a"
+      },
+      {
+        "first": 6855,
+        "last": 6885,
+        "range_lf_sha256": "5d25516b937867c9424315851e94bb932cee8217b955361a7773e6e0c64eb85c"
+      },
+      {
+        "first": 7680,
+        "last": 7795,
+        "range_lf_sha256": "232423663f275e2c3bbf1177f884684c4b07944856d53c6555fd1f651c550e37"
+      },
+      {
+        "first": 7927,
+        "last": 7947,
+        "range_lf_sha256": "7cf75b98aab86d9343af37f6fdbf9277edbb9a9b636060226aff72c05e0c5063"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.h",
+    "current_lines": 884,
+    "current_whole_source_sha256": "8d295eef071078800235acc0666a6b22cdfc91c6243071911df5de4963521486",
+    "actual_read_ranges": [
+      {
+        "first": 182,
+        "last": 206,
+        "range_lf_sha256": "36adb1cf632574ed480f45b0a59138acd201517e46001631398b61973ccb1b50"
+      },
+      {
+        "first": 61,
+        "last": 74,
+        "range_lf_sha256": "52569ef21ce075cbc6768ae69ce99afc48d401bf9e86e547b4951b2345719415"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 61,
+        "last": 74,
+        "range_lf_sha256": "52569ef21ce075cbc6768ae69ce99afc48d401bf9e86e547b4951b2345719415"
+      },
+      {
+        "first": 182,
+        "last": 206,
+        "range_lf_sha256": "36adb1cf632574ed480f45b0a59138acd201517e46001631398b61973ccb1b50"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9866,
+    "current_whole_source_sha256": "db612cb917424e032cf30356d962f24aaeee23e62c05db70e86fbd281585069e",
+    "actual_read_ranges": [
+      {
+        "first": 2918,
+        "last": 2948,
+        "range_lf_sha256": "3d16006cfb9bb26331d91827b8386e911efd03cc961a8f7380e6dc6176ce32dc"
+      },
+      {
+        "first": 8359,
+        "last": 8476,
+        "range_lf_sha256": "63f7439bd8d787b645f9a1b534a4d009359c28e9df27cc6ffdd59f902f6ceab5"
+      },
+      {
+        "first": 1256,
+        "last": 1281,
+        "range_lf_sha256": "49e3d66e3ca8c34be67a2143906959892476af9a2f1176a538a1eb6d281207af"
+      },
+      {
+        "first": 4535,
+        "last": 4630,
+        "range_lf_sha256": "7bca6b885ff9d9024ccef05f3358b371591cd639b546c6a3afc21e46b8123861"
+      },
+      {
+        "first": 4854,
+        "last": 4881,
+        "range_lf_sha256": "9cc875908d4991de3f5c5a72bb51f5a6b798b8f70b03121de0cf5aedd68d50d0"
+      },
+      {
+        "first": 1354,
+        "last": 1541,
+        "range_lf_sha256": "01ae0013a281bd83a1787c3c2ed4ed4a722803928670c2266c579ea9ca88faf6"
+      },
+      {
+        "first": 1240,
+        "last": 1256,
+        "range_lf_sha256": "ea339db3183fcd8d63131f54f4f31ab034035e538dcaf53523ecdcf44ad64db6"
+      },
+      {
+        "first": 2364,
+        "last": 2418,
+        "range_lf_sha256": "bdc1d25db4d1c69e547d1418d991587ab9993f8f9c7f514e159349d844b87bbd"
+      },
+      {
+        "first": 2818,
+        "last": 2840,
+        "range_lf_sha256": "6ec25f3e53307b64ec57170be612d2bae9c62aa2ddb5b590cca7b7c21b21a738"
+      },
+      {
+        "first": 3242,
+        "last": 3265,
+        "range_lf_sha256": "426fb750b67fada5bd09d8972331b2f6477547c307c0980b2c0be6ce909da61d"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1240,
+        "last": 1281,
+        "range_lf_sha256": "4879928381b7652607ecd0d22053fc6af1c2a9bb476c6df245646fb9e2528b35"
+      },
+      {
+        "first": 1354,
+        "last": 1541,
+        "range_lf_sha256": "01ae0013a281bd83a1787c3c2ed4ed4a722803928670c2266c579ea9ca88faf6"
+      },
+      {
+        "first": 2364,
+        "last": 2418,
+        "range_lf_sha256": "bdc1d25db4d1c69e547d1418d991587ab9993f8f9c7f514e159349d844b87bbd"
+      },
+      {
+        "first": 2818,
+        "last": 2840,
+        "range_lf_sha256": "6ec25f3e53307b64ec57170be612d2bae9c62aa2ddb5b590cca7b7c21b21a738"
+      },
+      {
+        "first": 2918,
+        "last": 2948,
+        "range_lf_sha256": "3d16006cfb9bb26331d91827b8386e911efd03cc961a8f7380e6dc6176ce32dc"
+      },
+      {
+        "first": 3242,
+        "last": 3265,
+        "range_lf_sha256": "426fb750b67fada5bd09d8972331b2f6477547c307c0980b2c0be6ce909da61d"
+      },
+      {
+        "first": 4535,
+        "last": 4630,
+        "range_lf_sha256": "7bca6b885ff9d9024ccef05f3358b371591cd639b546c6a3afc21e46b8123861"
+      },
+      {
+        "first": 4854,
+        "last": 4881,
+        "range_lf_sha256": "9cc875908d4991de3f5c5a72bb51f5a6b798b8f70b03121de0cf5aedd68d50d0"
+      },
+      {
+        "first": 8359,
+        "last": 8476,
+        "range_lf_sha256": "63f7439bd8d787b645f9a1b534a4d009359c28e9df27cc6ffdd59f902f6ceab5"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/object.c",
+    "current_lines": 3211,
+    "current_whole_source_sha256": "f3a60a6e6dd1409f6de368377d01813acd81d4f649c55280114cfb030941cd5c",
+    "actual_read_ranges": [
+      {
+        "first": 2444,
+        "last": 2464,
+        "range_lf_sha256": "a7086b8264083e50ef743bf8d358f74ca8817262c6a527e6b749f28dea8e8270"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2444,
+        "last": 2464,
+        "range_lf_sha256": "a7086b8264083e50ef743bf8d358f74ca8817262c6a527e6b749f28dea8e8270"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/powerup.c",
+    "current_lines": 829,
+    "current_whole_source_sha256": "6b7f611cde9f47ae55f46b695a530f8bea923c9e5e61e48fe086f12e0d4ad9c4",
+    "actual_read_ranges": [
+      {
+        "first": 380,
+        "last": 392,
+        "range_lf_sha256": "ddae0f782328c04f3e359c79ba8d3daab48a3be68f57be7d7b02f894f8462b29"
+      },
+      {
+        "first": 468,
+        "last": 489,
+        "range_lf_sha256": "f372407fd25e1e0fc13a239d40c67b214b99a1cad0c1bdec970e6cb2ca439b4d"
+      },
+      {
+        "first": 549,
+        "last": 595,
+        "range_lf_sha256": "2ac5d120223258cab60f95e010d4a8c279e5d10a6e6e63d673708ff7c77b1fcb"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 380,
+        "last": 392,
+        "range_lf_sha256": "ddae0f782328c04f3e359c79ba8d3daab48a3be68f57be7d7b02f894f8462b29"
+      },
+      {
+        "first": 468,
+        "last": 489,
+        "range_lf_sha256": "f372407fd25e1e0fc13a239d40c67b214b99a1cad0c1bdec970e6cb2ca439b4d"
+      },
+      {
+        "first": 549,
+        "last": 595,
+        "range_lf_sha256": "2ac5d120223258cab60f95e010d4a8c279e5d10a6e6e63d673708ff7c77b1fcb"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_lines": 4055,
+    "current_whole_source_sha256": "510e820e365fd928fb03044f324f917e65e10fff3456b49beccd2aff55e7256e",
+    "actual_read_ranges": [
+      {
+        "first": 3824,
+        "last": 3878,
+        "range_lf_sha256": "b7359f9d4b5a5968018b3da7141ca950ddb3643b7d0a4f06739a6f405e506186"
+      },
+      {
+        "first": 3855,
+        "last": 3878,
+        "range_lf_sha256": "714b5cc55d42b046eab30d0b1d9a3400d84408129f8869ea50219a179398f8dd"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 3824,
+        "last": 3878,
+        "range_lf_sha256": "b7359f9d4b5a5968018b3da7141ca950ddb3643b7d0a4f06739a6f405e506186"
+      }
+    ],
+    "current_whole_read": false
+  }
+]
+```
+
+## Complete current context deltas
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_multi_status.c",
+    "current_lines": 309,
+    "current_whole_source_sha256": "d4c6c7cc84fd032b949018220d1d0b2734b803f579dc49ef4eb408c05930f3af",
+    "current_delta_lf_sha256": "5b65abbb3a12b3207e7bbaa38be5e29ddcfdb8ed96215c210eca19fe587556b3",
+    "current_delta_bytes": 1998,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -18,0 +19,53 @@",
+        "raw_hunk_lf_sha256": "653d3883427e227efd189e1ee6ea0fe4e9d207f917f4fc11686640375f4ebca2"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -99,4 +151,0 @@ void coop_send_restore_inventory(int pnum)",
+        "raw_hunk_lf_sha256": "c7764b11a69f14b07c6447dd8e56a97c00d2d9f140074e6237ad30b79ffd02e4"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -105,0 +155 @@ void coop_send_restore_inventory(int pnum)",
+        "raw_hunk_lf_sha256": "3cb5c4ecf4bdda54d9c51c4d945e1f581af321fed3abf68778aa01f3a953ce9e"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -112,0 +163 @@ void coop_send_restore_inventory(int pnum)",
+        "raw_hunk_lf_sha256": "05054d4fa1da3dec305a94ef20838bad4b84df63d082dda3f74ec28409c9de2b"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -200,0 +252 @@ void coop_apply_pending_restore_inventory(void)",
+        "raw_hunk_lf_sha256": "c8835f4d5a1e043388255322374f4337717904dc83207b6a92ba5f909b1ff0c8"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "current_lines": 1160,
+    "current_whole_source_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de",
+    "current_delta_lf_sha256": "875ad07ce95a841d22a283869f76c6879919cd1244c4d0559c3a060880ad682f",
+    "current_delta_bytes": 1228,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -50,6 +50,3 @@ int coop_recovery_active(void)",
+        "raw_hunk_lf_sha256": "234a60c8fc37973c48fceb0e1655126f48920ed181d9f36464c49a2b23b4e5d5"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -645 +642 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)",
+        "raw_hunk_lf_sha256": "ece69033118db7deed8090df16d2a5157546e3ffeb5db9b5105a95800034f96e"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -650 +647 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)",
+        "raw_hunk_lf_sha256": "82aee5f21f981a22d6583bc97c8bec75e02eaa93093830c32e5f58c650313376"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_lines": 2406,
+    "current_whole_source_sha256": "c05b74994d936434bfc2a466a125193b4086bee09ee7fb1d5af1163c88c7acb6",
+    "current_delta_lf_sha256": "6eb8a32e456f0fa9b4e4d1fe4c58145e5fe85a868ee01a29594a593bf6587627",
+    "current_delta_bytes": 15329,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -32,0 +33,4 @@",
+        "raw_hunk_lf_sha256": "1b8240ac9e5c9996448bd3911a7f8282847396ca0b16eb642fc26e6dce63b093"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -622,0 +627,5 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "bda8ac31740870aa21013137408981467aaf527d04097c8736199134fc003c65"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -640,5 +649,11 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "a0ef02e61171a528f46ba2c6f42823909886defb0a17393287ddeb5393148f04"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -915,0 +931,2 @@ static void coop_write_autosave_history(int slot, int n_connected);",
+        "raw_hunk_lf_sha256": "0433564cc000519c2b4c723a4bd908ab027b2d38e4ce5985597907376c2a9221"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -925,0 +943 @@ static int coop_num_absent = 0;",
+        "raw_hunk_lf_sha256": "77f8400e3861fdd9d98fa4d1ba7e794961b7bf2982785f246e06fe2ca9f82af8"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1014,0 +1033,3 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "a40806547ca34c8c38da0d963750e539428da2472506259c8468a9133efef30e"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -1022,0 +1044 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "911fe6b01ab106b399317759c3c468ffb58df6f455877cf4a3c5e2a705f086b6"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -1023,0 +1046 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "c7103e9968e8861d65fc825846d803c508c06074fe33718c93edee1dfd52a085"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -1044,0 +1068 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "26c70a8f408ea331efdc6a762c73d830d02412e731b331f777b47135af7f5117"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -1049,2 +1073,3 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "a4f608d43a76edc4fb70bfe04de27dd4b8491fff48bb0594ce323cde8a6158be"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -1051,0 +1077 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "6a57b49e4189a33740822803f3ba681789643541545cc438936f523216308394"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -1065,0 +1092 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "3d267b2737d22c927a4641baa21c91da5f57976e129fc77a725a89c4fa726e9d"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -1072,0 +1100 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "aa9445b6d0a6ddc3534efb785d24f88bb515b5f38bded770d93c3615419d52d1"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -1274 +1302 @@ int coop_find_player_in_metadata(const char *callsign,",
+        "raw_hunk_lf_sha256": "a24b4f89d089b3eb90c111d791dbc2773931d119c5db290c388c3a66ab472602"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -1277,11 +1305 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "d6d6e0c68eae7018c1f37c494adb5e0c39c934146d81ab337682f470edbefbdd"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -1294,5 +1312,6 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "1556dc4c65bc0a47d06733168da12a695537b036648f17277b4fabb3e368f3b2"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -1302 +1321 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "1a4c21f7af73a88c4490f8536988355dfc9b02672642bb37302589af0359e711"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -1305 +1324 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "c644d17e83198d4c4fa5610bcb9c88c51362ff28cdfc3f197707d17c7cca7d3e"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -1307,2 +1326,2 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "c2743b25e1d73913534b72bd1e3e75ad7510b0c9d828c83014a367e4dd246d27"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -1311 +1330 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "6ed587142baa5c067fb4204997e12f69de9b6ba79c662869898a27259b5d3f13"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -1316,0 +1336,14 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "8be441d69e5914e7bd48279a729f904acb992a1b9777a272b6862c4d6cc45d66"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -1319,0 +1353 @@ void coop_clear_absent_players(void)",
+        "raw_hunk_lf_sha256": "5a69229542839c8766d2f40f374feb5a56161e898943d805600e567a5f427314"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -1399 +1433 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "dbc37618fb7eba3c602a8b87f8c1c27b9ff896cd8c74dc91fbf0894e485595ee"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -1402,0 +1437,9 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "4fc850d4baa341743c85379bc5a9d919a0a774737a59f373b86abdfda96f6eab"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -1418,3 +1461 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "4c92aa4c6f8fb3f987df16a57e65dde9b43e4b89024bf3dc4895f1f1835c958b"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -1424,9 +1464,0 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "f8170ce9dc25832d510c96344b40af574b821144a07c26b92065e312fbf69d2d"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -1433,0 +1466,23 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "8ce54bd2b01adc275c030b8674e6ab2a6b016bbd3b22f27006fea26985dc1017"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -1516,0 +1572,67 @@ static uint32_t coop_make_autosave_game_id(void)",
+        "raw_hunk_lf_sha256": "e0f509e92e109c7fe663fab55eab35f819d73fdaff405bd1beaf65993f3e58a4"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -1523,0 +1646,5 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "687df1ccf548c46d7a506b10b4be599e7c565db80330b6ad04cc976687e81061"
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -1573,0 +1701 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "dce3db8d60cc2777e1719cfda0c72f43600cb8b7ce782ca7a36536a2e67d5aa6"
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -1575,0 +1704 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "4ba472a2ef526fdf6c5fec50687a9d4abe3e5267d777559e93f8d05ee46ffe92"
+      },
+      {
+        "ordinal": 32,
+        "header": "@@ -1582 +1711,2 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "da4dc3737b5d9d3b85411943cb82c6375b4857df4d11462d527fb38b3df0fbc7"
+      },
+      {
+        "ordinal": 33,
+        "header": "@@ -1584,3 +1713,0 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "f68b0901884b80eb459a4a7201ac05cca5610a7948fb4cb24dc1260ac06ef113"
+      },
+      {
+        "ordinal": 34,
+        "header": "@@ -1619 +1746 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "2fc77e38bc4a522e6b0d58308bb8380c383e49c86e3e0a766060ed99831357bf"
+      },
+      {
+        "ordinal": 35,
+        "header": "@@ -1641,0 +1769,23 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "30ed9e847bd87ec997d0b0cc391f4eac621a7eea68f295ebb6cac3995222a24e"
+      },
+      {
+        "ordinal": 36,
+        "header": "@@ -1644 +1794 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "4acf4defafbc7ff6054af3feeae8bdbb7ab362f9c49d5f0b707553c59445f174"
+      },
+      {
+        "ordinal": 37,
+        "header": "@@ -1669,18 +1819,3 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "bbf2556b6e484608fce23b9ca26035d5bc81b7a4d1f2221958bde2e6a7b2420f"
+      },
+      {
+        "ordinal": 38,
+        "header": "@@ -1992,8 +2127 @@ int coop_load_progress_inventory(void)",
+        "raw_hunk_lf_sha256": "3659f9886ff338e3342857614d816f7add7a6d783f52a07bc9b9e7415bf995d7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.h",
+    "current_lines": 265,
+    "current_whole_source_sha256": "2c310490cbbe83eec1edb4db971f625ee185d9647c607664d272dc8c67e0b22c",
+    "current_delta_lf_sha256": "55ffbf540af46ec2f164698b30b6f8478954299b7f27220e5a01cd1dd0e81955",
+    "current_delta_bytes": 930,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -35 +35,2 @@",
+        "raw_hunk_lf_sha256": "c683cb69cbc9315d8bb99f93eb62139cbcbaa216f6f96efc727950ab0418db76"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -202,0 +204,2 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta);",
+        "raw_hunk_lf_sha256": "c6f551cae55879a3b6bd6d87d8cd31016bb847e3fa9df5d126628df21bb28b82"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -212,0 +216,5 @@ int coop_autosave(void);",
+        "raw_hunk_lf_sha256": "a43e92bc0634ee55fdf436435cacb7f9ce76ad78a79adcc6c6d6c9b49e1d657f"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_lines": 1683,
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "current_delta_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_bytes": 626,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -377,0 +378 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "718792624ad8f2b4064d4f20e3ed3b5b57badf861978c5b6117b66035f6b5519"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -378,0 +380 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "ff9bf25364d0dd4f9f991265f48c000b371481e88edad9cc621def745f5d78bd"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1512,0 +1515 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "52addf89260aa67d71133b9675b7e9acedc3c4963c944b4e2070214c5d1237a7"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1513,0 +1517 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "c65d9e45298fd52534feb9b2f3a2d796c1b8942edc000465892cb8888e5570e9"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1630,0 +1635 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "dfda55a99122f4841c89260e125d6f79f3e862a3e2f7f415350291f37dbd17e9"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1631,0 +1637 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "232de258f250eb031322f853fd48fdb8bf7d52372be3ae530b659c078704263f"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6600,
+    "current_whole_source_sha256": "a389b03cc9f73738829f6f6b813f8aa40f15f63aa52a9499aa39f04753e9486b",
+    "current_delta_lf_sha256": "7f0046a641675849504e5ce2fa4bcfc49bfe734416fd5cdf98a3c75c7c61e083",
+    "current_delta_bytes": 22524,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -57,0 +58 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -85,0 +87,5 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "412b0e1ea1a60be26f84eb3e5fef097b311104121c38b115df2224fbc200af59"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -88,0 +95,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "915ce06f65d05a0f3525ed421304a688404e368d37a71e84693d297481b5fb74"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -132,0 +142,2 @@ extern int Entered_from_level;",
+        "raw_hunk_lf_sha256": "5936ef7bdd1f361b9e2f51533c7099994129007abc4b038f5e13b94d4130cdce"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -4162,0 +4174,39 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6b870170e0b60c2d2cdf364e06f31df17b69316a2569191775656ac07f2bb948"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -6029,0 +6080,349 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "3bbbe66f8857e025f63875683d08f51d582fcd1dbd9b71ab6c49f918d91c9f99"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -6056 +6455 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6634e87cca9851e14fbfebab129a1501faeef5553e052fbc1c896cb5e5938591"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -6063,0 +6463,26 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "62d23469980d223848e24513a1acc6a71b061b4c638e414ecdd90d39db66f544"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3283,
+    "current_whole_source_sha256": "3b0e0075ef3817033c9ccbd1d604fda8181c7befb4fa78b96cbb765d21ea5b91",
+    "current_delta_lf_sha256": "316149f969569159021a71cf930d95a8b0fceb954b101f799b836406998b6aaa",
+    "current_delta_bytes": 2064,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -32,0 +33 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "052d8a486b1a9840d2fd9b1a793bb6487d0420a30847a947cc4ae9bb3178e714"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -36,0 +38 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "b1bdbbe3f1d836ffe2f0a91f8dfec091e02b008de2d7fc95aa74f7dfc964b033"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -54,0 +57,2 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "91e13ed01a65085283c57bc99979ecfd4e209b170580837b79325715c6b715da"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -73,0 +78 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "db42d1ad2fb210102e6a7eaf1e4f958690e76d0a1ccb9fea8ccbadf11025264c"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1708,0 +1714,5 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "61cbdbc12204eeef49d33a492e23b7afc65877c1c052937a518fe6408ad01c50"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1777,0 +1788,7 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "a800a88168ea481ecd5a131f14fc45a0a6f25b9eb70418757b1cfe2086fcda9a"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2472,0 +2490,3 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "e481def464545d3a5ddf7d723055fb75b93f79c152b7929d767852b3d6c7a60e"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2985,0 +3006,4 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "3dc617c31c5fce905243988dd10641e43f25009c78fa8666fdca4cf20bc5ffe3"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_collect.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "8b5cfe13d67d3ceed763792a099806d912bd6d2120bc110ca6ccbe5e8d49aec6",
+    "current_delta_lf_sha256": "3c62bc36554f0188e9445c6c2a33b73d4c5ea9befef6989162d0eeefd44ff63d",
+    "current_delta_bytes": 562,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,6 @@",
+        "raw_hunk_lf_sha256": "d27da64d5ac31c7825bdf43fee3d4f96b6f8def3b1863524f7ca2ef7e4c97cd4"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_drop.jsonc",
+    "current_lines": 11,
+    "current_whole_source_sha256": "0c3e7ae7bd2ac8cf66708f3a712197e3c6632fe4d12fa721d075685c8875ee82",
+    "current_delta_lf_sha256": "5679607f4d00cc67bdb6d643f74e24b5154adad19b1c10ed02a272684a01ce73",
+    "current_delta_bytes": 723,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,11 @@",
+        "raw_hunk_lf_sha256": "688cbd4f28da116d50001c92e37177a3f157c21c2f49a9f1e7e485398787ab9c"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_flight.jsonc",
+    "current_lines": 16,
+    "current_whole_source_sha256": "4f2490030828943c7bbdba7c9107c1763897d1c6b7dd20b8b37612c40d66fa59",
+    "current_delta_lf_sha256": "d80f3b7ebb3a1441446d4dfd22c9a85199a4bb1f29d8ca8d95cbd81ab78f22bf",
+    "current_delta_bytes": 1053,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,16 @@",
+        "raw_hunk_lf_sha256": "c94c4de35dc66c7173b795772ca34e5622119e35352ba16c9fb4ab02f4d2e876"
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_ghost_prepare.jsonc",
+    "current_lines": 5,
+    "current_whole_source_sha256": "1d964d0b39dee5fdc9a27d900c8df3322f7a504e6fba2b9bcd6e4cd8a6a7c139",
+    "current_delta_lf_sha256": "02a082ae45dfc6efea6b1bf5178a17764c534c0656aa3540bec3163e70a98b1a",
+    "current_delta_bytes": 454,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,5 @@",
+        "raw_hunk_lf_sha256": "2c4b478f083836b5f5fb04533cf0fa5f4eb7f5f8fddf43a6621a3d2bcdd4c4ed"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "current_delta_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_bytes": 1883,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -36,0 +37,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "67ca19e3b4e3a73eb529bc945ccfcf07a5f937292db1652c6277f556dc5d50aa"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -40,0 +43,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "98b9467d170d5ddc0bdb4288e59dc81952357ad46475261a069f2e5647efc382"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -51,0 +56 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "e4aa647a325820f36435205d82cc1b249b4f0931231eb79f261683268e2403cc"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -59,0 +65 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "54754e37e540b63b3b57138e8adecf108a9ad3a69990795acc6b02fdb92ce718"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -68,0 +75 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "3bb0e72fce7db8ceab30c199c8f285197bac1b6633575960ede6c189d71f3a57"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -79,0 +87 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f0ab512cb53afe4413ddbc4da82f10828b427de8b6bdb681c5d1b796636ffd7d"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -100,0 +109,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "bae990fce149dedfdf2ca4451ebfc0fae3086ce11dfb11d89f485eb093e56e43"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -164,0 +175 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "eac427e87ee5550cbfe50a637cab1ce16eba2630579c2174e4820a78e8afdc56"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -231,0 +243,12 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "30c1c390e43c615935f8f0bed6743afd94a2a67ba37b25ea02551e87907d6479"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -287,0 +311 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f6f82772793227cdd23db51e65ac17043afef6005ce4a5eb7f7d1eb3fd030615"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -296,0 +321 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "a2c8c1b86c1fd24d505846782e13bbff9710e0095f18271749c6570b86a34f56"
+      }
+    ]
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_lines": 2419,
+    "current_whole_source_sha256": "de93ee1524285ad44729b0469c2479d428d51f46910bda5fa1e2b6721bd955cb",
+    "current_delta_lf_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c",
+    "current_delta_bytes": 3548,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -397 +397 @@ $manualTests = @(",
+        "raw_hunk_lf_sha256": "734b3382912abcdcab489623b3e3abdcb24e9a803b1d71363950be94a10770bb"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -402,0 +403,21 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "99a570084ccf395302b62ed3c34ce9c8bde1324c2658ebdbf4f6fc56849b01db"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -440 +461 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "9e78a0c1abd4ba4a2b57def5a3d395711918a2bde38739c6ced00874fd7fbf38"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -452,0 +474 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "501848db89bd407bc9e15584bea9389cbf6fb973659ee02774cbfaff9caa0461"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -461 +483,2 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "4cc420aafc8e98389e3776a60efd68f7a522755e096d4e87f9a10f069fddfd65"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -586,0 +610,3 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "61691f7e4924b15d77fab96cd26ac2eca7182ae1acc628f21bc147ec084dcb5a"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -610,0 +637 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "01082ca958d6999a3df75226761cab11b05a8a40fcaf3e931d25ffd9ea35b7ee"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -1561 +1588 @@ function Invoke-SuitePreflight {",
+        "raw_hunk_lf_sha256": "53e5eb3c51b9e6a010e70be58e45729aabe55a7836704bfbaef39094157072a8"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -1727 +1754 @@ $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt",
+        "raw_hunk_lf_sha256": "db240c7120df965ede054885d1c2028e7188f367b7d7b0268b1e0678db1978ac"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -1755 +1782 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {",
+        "raw_hunk_lf_sha256": "9a21a277c8d20918b2f73b3e39042fdd6e8de2ecb3d10143a91e94bce62c3837"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_lines": 569,
+    "current_whole_source_sha256": "d19807e4ba01f7f113b363ef873bc3c1056fd567a4bb09adf868a0928fb23401",
+    "current_delta_lf_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8",
+    "current_delta_bytes": 6136,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -7,0 +8,25 @@ set(DXX_TEST_SHARED_SOURCE_DIR \"${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/sh",
+        "raw_hunk_lf_sha256": "defa122b5641533a634ab17600e9fbb83ce79daf02d819a400f6a14a5cf769bc"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -27,0 +53,23 @@ find_package(ZLIB REQUIRED)",
+        "raw_hunk_lf_sha256": "5fbd04b0e0c49c323c0888c9cb076cc990d6c516dcec15fdae9d8c33a7659c0e"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -33,0 +82,37 @@ add_executable(test_rng_seed_resume test_rng_seed_resume.c)",
+        "raw_hunk_lf_sha256": "521252763d56a91e732a0e7eab3c7c14d57a5a38945c44d508a92336490b6186"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -202,2 +287,3 @@ add_executable(",
+        "raw_hunk_lf_sha256": "41bd0e75cc7e04f49f3c1bab0884f5c926392f65a60c46e4fd9c1b3836ffc212"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_coop_recovery.c",
+    "current_lines": 1027,
+    "current_whole_source_sha256": "8c241ce0dcf2f36513637bb3c16b602cd961c09207efa35396072c5d7ee19995",
+    "current_delta_lf_sha256": "4e51c372b597ab52fe6133d6516a74337345aba7533c6c9bdb2eed3f9d1c17db",
+    "current_delta_bytes": 3263,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -925,0 +926,72 @@ static void test_retired_world_revision_failure_is_atomic(void)",
+        "raw_hunk_lf_sha256": "d80566f1742246a09d11278e8a894691676b46c2443890b5c0b69ad6598dbbb4"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -927,0 +1000,2 @@ int main(void)",
+        "raw_hunk_lf_sha256": "7cafc746538f172cfa8b8d8fa630852a8330a37c40ac35e0ad74b3bffa351a98"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_lines": 4349,
+    "current_whole_source_sha256": "75e63ac88b449b6c72362a09f9ac68fff7f3278df2a482a06072f6aaffd8cb78",
+    "current_delta_lf_sha256": "c83d81db12980c3a03433b371d3e1c41e47454430344a28d267f4d3f0186dbb0",
+    "current_delta_bytes": 25153,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -34,0 +35 @@",
+        "raw_hunk_lf_sha256": "2c4b90667993933f1fe7df495006ce1a8c5336e0ab197036d147212e8571e876"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -39,0 +41,2 @@",
+        "raw_hunk_lf_sha256": "b9e9176cbec232daf80ce1b8bc5eb42ba2ef1a2b26c5d337962d83e2d1627a69"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -42,0 +46 @@",
+        "raw_hunk_lf_sha256": "05e77be0c484c33f903169a2cf0a0c95d100fef672abcb4a728f69caca1c2dc5"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -96,0 +101 @@ param(",
+        "raw_hunk_lf_sha256": "3a212acf0b5ea1696971444a35395d2bfacb9a181ae166d1086f19615e351c88"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -97,0 +103 @@ param(",
+        "raw_hunk_lf_sha256": "65d16f99481a0289f31a878f108ca21f4de74f2ebdce76cc210f7f4601b73525"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -108,0 +115,2 @@ param(",
+        "raw_hunk_lf_sha256": "21846358cad2fd6ecddec281450517c95000bc88d49dbd39f82cef0ad810d5d6"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -150,0 +159 @@ param(",
+        "raw_hunk_lf_sha256": "bf18cb5f6ea0327c257bd255e14159ad1db93fcb77bfa7bad56b0cea6400818f"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -327,4 +336 @@ if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object {",
+        "raw_hunk_lf_sha256": "92d9e7291e44354a157eac2f9e45adf23728fbe9d1b0b62eec6e438f0cfd87bb"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -339,0 +346 @@ if ($GraphicsConfirmation) { . \"$PSScriptRoot\\..\\helpers\\test_graphics_multiplay",
+        "raw_hunk_lf_sha256": "4eb4ff34348d3b31e072d5b49e446aa366d2ef8c040e9dfe135a11625e0cfb67"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -514,0 +522,106 @@ function Get-IntroNumConnected {",
+        "raw_hunk_lf_sha256": "13a2cca16c828572aff2ca65f0343828a99ac37dc88748ed1a86a86aeddcd46e"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -541,0 +655,2 @@ function Get-IntroPdataSequence {",
+        "raw_hunk_lf_sha256": "118ba832072cd323b261e3fae2cc08d2757abbe358e1325250f62221157b647c"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -577,0 +693,2 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "013ec367cc0ea0e80b5a99e9ed54ffcac19cebe459a3ac4eb5e57088a546ca32"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -580 +697 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "2fb677d0aa33d34669862e88949556e58957e5494e9be6e33b099a98fcb70bac"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -595 +712,5 @@ function Get-DeviceAutomationResult {",
+        "raw_hunk_lf_sha256": "ff8a7b8da12237dd92190f6d95945c946bc6a40431464f2f32fca83b50b9548c"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -1983,0 +2105,92 @@ function Set-DeviceCoopRestoreSlot {",
+        "raw_hunk_lf_sha256": "003b31445ad25ec1f2f7d99154c616bd8b8e04f2ce709aaab363c3cf181afc34"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -2319,0 +2533,50 @@ function Invoke-RestoreStatusScenario {",
+        "raw_hunk_lf_sha256": "eecfd77742cd5de452724d770a3326765194521971113b89de74df86bf36564e"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -2369,2 +2632,15 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a46c41241e643804c0758df1871e309f15a0a416657e3439ebb7a0b86ebc63c7"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -2374,2 +2650 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "791ec8834a9e3891aad556bba00fe509ffb2946cd13b440e2395b5819952e97f"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -2382 +2657 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "0240c053232b77aa4293d8055fc21d477d660fe29a754a72e8759bbdefabc3fa"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -2473 +2748 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a5be51f2d95285b3420e7fd587ba1b31f262d67dacfcfacde5246b7bcb19ac0d"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -2531 +2806,2 @@ try {",
+        "raw_hunk_lf_sha256": "d8027bedfefd25b6bd15a6e347e8e424f345fdf1ad4124f1632bb0c8308ef47b"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -2533 +2809 @@ try {",
+        "raw_hunk_lf_sha256": "f358b960471d973aa109e16b9df37b0baa04ae2af0d628812d32d43364f1ba14"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -2616 +2892 @@ try {",
+        "raw_hunk_lf_sha256": "7466180276ee5bb67564aef63f5ba87f6f6d99c9f7a021bdc44f53d77e2f4cb7"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -2714 +2990 @@ try {",
+        "raw_hunk_lf_sha256": "036009338f2a1e5a2887b2b92149362969cb5c1b56f634912a75f1ff87381f73"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -3214,0 +3491,4 @@ try {",
+        "raw_hunk_lf_sha256": "1cb8fd5b041a1ce9b5ea777fcc83b725778ea86aaa88b3bc7c7100e1aafd48cb"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -3246,0 +3527,3 @@ try {",
+        "raw_hunk_lf_sha256": "a767a9ab2e276db110a6ce4f40289e9d98ac4b8ac3cf1a7b881cb4750fb20aec"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -3264,0 +3548,4 @@ try {",
+        "raw_hunk_lf_sha256": "de4a7ba856c83b46323e76e980a90a93d0f689919f912f4e714ccb1c078cd278"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -3480,0 +3768,9 @@ try {",
+        "raw_hunk_lf_sha256": "3c66736e4149d62965df2d28d8f9f2968aadbd598341a4dded11461de92f6728"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -3488,0 +3785,7 @@ try {",
+        "raw_hunk_lf_sha256": "883558cd2bfefbbe93f74a9431dfd3ac439933f3163d9b434109c3bf4f80ae26"
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -3495,0 +3799,3 @@ try {",
+        "raw_hunk_lf_sha256": "f4fde0f37dc60b53eda9bb335ac388d78cbd82d6f49cc72e060ef557bb5f8e3d"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6338,
+    "current_whole_source_sha256": "ef8d6a57383f1a8dbf3f4940b3c595d9cd40ca8c7cc61cc90f437ecd85bb508a",
+    "current_delta_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_bytes": 6115,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -25,0 +26 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "dce535e9289d4504765bcf1d506d452503feb0c0ba92112a4cf23937c6acea25"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1531 +1531,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "930bc83ddd098b518943a0b4abfdef903d5a203271156fcc7cd26b943991ecf6"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1536,7 +1535,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "701bbc97a0d45bb7b38f1f194bc28b0410586c8e072fffb801256ae3c12b5b76"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1650,0 +1644,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "779d6294de776d052b00f38a50509cda24e01cb94ce2063a87547396be65372f"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3469,139 +3463,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "1ddfd807fff7df1793c8fadefce0440a447fbdfa891140c8fd912efdd5e5ab37"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -5587 +5443 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "0aad15b1da2aa8ca3c9b3ef485b76a0775cb17382616a2f1e6e91a0a54f6855f"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -5588,0 +5445,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "225548a874f6a2032c0cd7fd13d593f3472d058000701c2f504e99da7d5b987a"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_lines": 9545,
+    "current_whole_source_sha256": "ea86217ca20922b3478e45e4c056fd1fb5d5532bc59f59fb6632cada38349738",
+    "current_delta_lf_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c",
+    "current_delta_bytes": 3729,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -655,0 +656,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "b776b40f395f5069c343fb38e3d0a7434d2c59e5ba38d8d03f5907dbe601f4cd"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -681,0 +685,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "41e25e8a39f3e17535d00b306de55ad33e5d244dd9aabed5f402e2d00f7176a3"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -713,0 +722,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "28fc3c1195a4068b73b8c6e1969f7d1b46b8542ace2806af83d810bd1511154a"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -714,0 +726,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b29768bd6f3b40b75f9a4ea25fe9213f53538751602d619311af24a9355099e3"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -724,0 +741,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "fc6a70a2621386a965d995f069e3241094cb3ba2e43e8022017c5459bccd3a64"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -725,0 +745,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "ed586e7d3e568a7596cb9a4b98c1bc6c524deb58939b1c957883ae2cfd3bb5ac"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -962,0 +988,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "361d5f89e5901412c86dd8265bc98e2acc11530a1ced248dbc49d70109a8f27d"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -963,0 +996 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "d0a4d2564099d31cde82e75c796b73d84ddae4e6124f1e300457b34b82193a21"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -7143,0 +7177,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "872ed28648342a9556140ae0e9c00841ecfa947d031dcac9de7c4934f46fddae"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -7153,0 +7200 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fb81ffa9b07a3ad732326873740ececd7a6c098206c300eed3ae83518e248228"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -7172,0 +7220,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "043d9f3e4531f4368e73a80cac33e403640dad70778b68d79283db665292ebc7"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -7173,0 +7224 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fa18c6e4d09b73b08ec9fef02ea8c8ebe5a978043d1781c54260b83258f8ec7c"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -7189,0 +7241,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "cc10d674021963481587547c99e0ed0dd187e311f4cf775ce7a363f9fa64e839"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -7190,0 +7245 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "5a6887e8539a47c23e12bd4472a51736e07db324e03d97621c89bc944013589e"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -7201,0 +7257,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "e7854df2d5839808c36b9c7cc8adf2f8860cbf64b4b5c6db2ade60d5c21dbd1d"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -7202,0 +7261 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "a3b1a3a144b7b3c0dad41152d94f4318262096b80e5f1e941b20b8a3922f72a8"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -7226,0 +7286 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d55b85cde1842b13add227a8af7fc5ecac54d00e3c0643cdf9717960536cef87"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/powerup.c",
+    "current_lines": 597,
+    "current_whole_source_sha256": "c2c2b0d1982ef45be47911cbeefa7bb005cd3ea31abc428246325e8bc8d337cb",
+    "current_delta_lf_sha256": "c294641dff1af0eb5d5f5b3ffb9bb185407643e4679a4b8c276e11d163d0390f",
+    "current_delta_bytes": 1392,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -237,53 +236,0 @@ int pick_up_energy(void)",
+        "raw_hunk_lf_sha256": "b9fdce07773a20d46ab7cb1a5b2645120992310645114f3bbeb440bfd69afa9a"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/state.c",
+    "current_lines": 3076,
+    "current_whole_source_sha256": "bca1fef229dab0504f866f275064422506cdf1f1e2854983a62a82720fa06e0c",
+    "current_delta_lf_sha256": "0d978b6424e73567ee1c97f40f557c2c0ad4e93280b0cc2b09a9b3852d51e41b",
+    "current_delta_bytes": 1482,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -67,0 +68,3 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "fdb368cfbfcd40340f8d7f93cf83be2995620347084c0eb0ebf229d6343f9962"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -82,0 +86,2 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "b2a546ff54d355d3870d6653b7bf5f8e789cf6372a1d205db960320b510a4b89"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1875,0 +1881,4 @@ int state_save_all(int blind_save)",
+        "raw_hunk_lf_sha256": "11b53f1f0a5e71b6358e5510544a9004258582b0b593cb76d04773f82adf8e9c"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1951,0 +1961,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "3a6b2e47d01aede5ae1aa0db97c270b421c02cede434a882f6ea83ca0886c264"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1957,0 +1970,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "3134f8b5a328087d3a0bb4a3fc4e7c4e3cfbc19291c52d93a49cdd9d3a4e01e8"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2104,0 +2120,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "9a2ed2c5fc2875facfc1c3197db8894ae3c4e8bf74d96263da001517412a257b"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2107,0 +2126 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "7a958640e9338a89c343d1caa2bf5317315deb9b4bc0eb2972b3a3730e88a9fe"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2116,0 +2136,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "4886ffe5570302e6d681f67e17e3da70e2057cc281edf5c84bd9dd3284356e8a"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -2130,0 +2153,4 @@ static int state_restore_all_internal(int in_game, char *filename_override)",
+        "raw_hunk_lf_sha256": "0a42f9b6afc1c589732f4a6b424ee9540d701010bfa64a3fd83f2c8ce3a0c9c1"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -2204,0 +2231 @@ int state_restore_all_sub(char *filename)",
+        "raw_hunk_lf_sha256": "5b420756edbe4216843ae7b19eeb442c74a67a20ca80ca2aa6343ee28f4a5dbc"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_lines": 2636,
+    "current_whole_source_sha256": "4357f34f12df2f853d91b9f43b75b4b8d642528a976e35e72184a0fd0b19c69e",
+    "current_delta_lf_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c",
+    "current_delta_bytes": 695,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2254,0 +2255,15 @@ struct {",
+        "raw_hunk_lf_sha256": "c632a5e5fe8fdbb634f941fad10822fbe00bfade7d05ac317a662b88427c803f"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8383,
+    "current_whole_source_sha256": "544b3bfbcf4446f5b80f5894d53f10bb15bca848efb5f334b648d57bc933989e",
+    "current_delta_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_bytes": 6115,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -29,0 +30 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "48c64f05add9003f65c6b6d0b62f9f7a17ea3cff2fa0b402a66d9f65858bdc79"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1601 +1601,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "be41a595cb8970c02b771bd73f909ace76dc29f8e48b2f5bb6f450dd6456549a"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1606,7 +1606 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "5abe6c931544d274f092ebb7fb0b78aaa014d1d9b9f062dca09b7e3b4b30ffb4"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1722,0 +1717,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "1b313823fabed42dc82842e143296ee50c12ad2b3bd967cd81cbdd2ea295aff5"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3680,139 +3675,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "f6fec461db9231693a2db59e6502630ef578089cd4ae10f5736090820096b9d6"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -7314 +7171 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "581156f24f453a9373307a154f866c07452f1e2c081e6828b4fa151628b6ce85"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -7315,0 +7173,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "f145e86316ba56e35513735e6fdbdd29b7957177af02dae3358a4b803682e0a3"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9866,
+    "current_whole_source_sha256": "db612cb917424e032cf30356d962f24aaeee23e62c05db70e86fbd281585069e",
+    "current_delta_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_bytes": 3730,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -663,0 +664,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "0e5183265030957e608b692ad37805ebb01f1c9569d962917e7e322cfcfca474"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -689,0 +693,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "35ef9103863a6bcecf8f57cdd0b45b6f95bc2d52476583c72fdb5d037eac40c6"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -718,0 +727,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b48f89ef09f5afcfb9186c942269f98ce619badbc5bcb99ab55bac25317691e6"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -719,0 +731,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "c02a531a0d1c146f43dfb134f20dea3191b00704080288edc61fa15f27f23669"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -729,0 +746,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "4ceff2573515aa31ede522d061986010175a1a0fdefce5768fa9ffaf8904d398"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -730,0 +750,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "362e38cc66239523952c080f3595317a69cd7fe6adc4d1ca8b0a3131d47d3899"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -967,0 +993,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "ab8a9feeeaf48e365d292a541a6c5e14d64070b1cf10fd6b36a5253d8ed0af27"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -968,0 +1001 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "aebee41ff9de7a9766934a5d6a2dd211f4a1477bed4278983f26d44570ad1d36"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -7350,0 +7384,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "8e9d6408bf0b665bb027983f9d5b1750f15543c2cab80b52ee7cd7164b1e33ce"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -7360,0 +7407 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "aa51adecdbdec0d2625aed4a99ca9d55e0623a17119b91592d89fe586e375cab"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -7379,0 +7427,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "933a4357c995dc8d37e04057ba969d64f5d2bf2a5fba15f1a96f25443f9a678b"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -7380,0 +7431 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "1757472f8da5e75bd68668ad5a385422a7f5844904335bd39485bc2e7af69e36"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -7396,0 +7448,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "c0bd0c729af0924a89d36575fb68bad7826a9493291befbb3ceb9e28622f6816"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -7397,0 +7452 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b96c5d6cc1bb0c1fafb658199ff60af345749ed05cec235acb77d2ba880d8b55"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -7409,0 +7465,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d60058544aca1fab899f62af253036ad4afaa7fee3a98e40534cc84f228f3328"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -7410,0 +7469 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "52b29ecd8b7785e3922c3879a27c08c92f6e63e5048d5873c72956d219ed7295"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -7434,0 +7494 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b3b8dcb7a26f7424c409802370d59c6b45290eaebbb66e28e81fb55b5a84efab"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/powerup.c",
+    "current_lines": 829,
+    "current_whole_source_sha256": "6b7f611cde9f47ae55f46b695a530f8bea923c9e5e61e48fe086f12e0d4ad9c4",
+    "current_delta_lf_sha256": "97343ba758c852a1a165b53b8f906ecfb33569fa9bfc3493cdd36684e7367b35",
+    "current_delta_bytes": 1393,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -265,53 +264,0 @@ int pick_up_energy(void)",
+        "raw_hunk_lf_sha256": "5217227a63609a3254122a4a96379cc99d97f78eed471f4e7f8c72cc5f78a4a7"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_lines": 4055,
+    "current_whole_source_sha256": "510e820e365fd928fb03044f324f917e65e10fff3456b49beccd2aff55e7256e",
+    "current_delta_lf_sha256": "ec1de8c7542a811d0b1b4f78a4bbc3a880735d7054c988ea138dd29275859b4e",
+    "current_delta_bytes": 2446,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -71,0 +72,3 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "630b83575f03e3e544d06fa1ead86f85ceb080ad83684f91379a965dd57baea8"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -89,0 +93,2 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "20c4f3544f8e38be426c6946cf52cf7923bb7ecc42726cd95de534a2b7aab7d2"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -2260,0 +2266,4 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)",
+        "raw_hunk_lf_sha256": "a6af7dccef0212ea6a8a89a593f8df6838e2c82e2a70d11e83d679b64be7ee48"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -2346,0 +2356 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)",
+        "raw_hunk_lf_sha256": "9e5112852153910df5e49d6d6e49d895c7ca87ee012093b86cc6f8f5328b207e"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -2414,0 +2425,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "bc2099b312ab77adadfd8da31d1b71bc25400ca7f76104955b2d117935e81e92"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2505,0 +2519,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "356ee139e10748d4b4acdf99d8624055fc6c545f05accea75fdd1e1960f19a60"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2692,0 +2709,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "5783fdfc072d41fb4e7d7484dcad4201d010448f9d6e7f3c7695e6fe49341762"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2694,0 +2714 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "65761d0de981111721756e92b3afc01da3d4ee19ed45db64772ab8109b22a907"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -2698,0 +2719 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "81e496616f969e961a81f4fb8ee6560cb245406068eb60c41a1cdbfca2807685"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -2707,0 +2729,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "87378310d88cf515c8a595467588d8ca6063cd60f865b8de5a1a559b490396a9"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -2770,0 +2795 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)",
+        "raw_hunk_lf_sha256": "56bf80227674f6ff23f66eed32cd38190c62ff6b38f57c88279102ca3e422557"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -2885,0 +2911,3 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)",
+        "raw_hunk_lf_sha256": "409f8168f836ac48731712b0a9772f2f478e4b1639fe4f50772483c8b2dcb168"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -2951,0 +2980 @@ int state_restore_all_sub(char *filename, int secret_restore)",
+        "raw_hunk_lf_sha256": "e7e9ca94a03b93b6d20ad3384fa0243dd32c4cfeb4610250c4c9836ce1ab3f01"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -3593,7 +3622,5 @@ int state_restore_all_sub(char *filename, int secret_restore)",
+        "raw_hunk_lf_sha256": "f38c02ac14e6be47fcea6f96f1b7b9175ee4287555d1a2fe84e0382e542c982b"
+      }
+    ]
+  }
+]
+```
+
+## Canonical owner source reads
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/branch_adversarial_review_ledger.done.md",
+    "prepublication_whole_source_sha256": "83cc17a288f4c8032fff9e4964f7d437e37d16187b29573a0147779a761886f2",
+    "read_lines": [
+      {
+        "line": 1232,
+        "text": "### BR-0225: P1 - Authenticate reconnecting UDP players independently of callsign",
+        "line_lf_sha256": "b67e7e16bb4422594dee05c25a94dcf0359418e0f7654ed530135b107f5a6c21"
+      },
+      {
+        "line": 1233,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 1234,
+        "text": "- [x] FIXED",
+        "line_lf_sha256": "7face513eb717307cfe301caa55c9b6fb7a59f43f40d11e6253e8979632146f8"
+      },
+      {
+        "line": 1235,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 1236,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 1237,
+        "text": "- Category: security/protocol-authentication",
+        "line_lf_sha256": "b08e2e8d5a22db2264a8046b14b1852dc853cd830d76c984bd2c6d482d7d8ba9"
+      },
+      {
+        "line": 1238,
+        "text": "- Found by: R1-CHUNK-0116",
+        "line_lf_sha256": "d68ced636961ee6643566831eb78f89f0817c9e4c1b844378b2515cd99a8baa4"
+      },
+      {
+        "line": 1239,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/net/net_udp_android.c:L53-L72` in player-identity matching",
+        "line_lf_sha256": "5ed3a35a1b2198da1047eb0d864963377efbf1569c2379605425f9683c76fbe7"
+      },
+      {
+        "line": 1240,
+        "text": "- Related: `android/app/src/main/cpp/d1x-rebirth/main/net_udp.c:L1049-L1089,L2042-L2178`, `android/app/src/main/cpp/d2x-rebirth/main/net_udp.c:L1059-L1099,L2056-L2195`, and `android/app/src/main/cpp/shared/net/net_udp_android.c:L145-L174`",
+        "line_lf_sha256": "ca49826647905e4643d1befed12aa272ae9fc18f2b047c48b3678bf237feba2f"
+      },
+      {
+        "line": 1241,
+        "text": "- Evidence: The frozen branch replaces the base's exact callsign-plus-full-socket-address reconnect match with a first pass that ignores the UDP port and an Android fallback that selects any disconnected slot solely by callsign, regardless of source address. The accompanying rationale treats launcher-assigned unique random callsigns as sufficient safety, but uniqueness prevents accidental collisions rather than proving possession: callsigns are player identifiers exposed to other participants, not secret reconnect capabilities. A valid `UPID_REQUEST` carries no durable credential bound to the prior slot, and its requester-controlled token is not validated by the request-token gate. Once the callsign fallback matches, paired D1 and D2 welcome paths classify the sender as the prior player, preserve that slot's identity and state, rewrite its address to the sender, issue a new player token, announce a reconnect, and start object synchronization.",
+        "line_lf_sha256": "d4bb7525526f473adf0c3aa3ac0bc9c031b028899390550750a88b9249e9644d"
+      },
+      {
+        "line": 1242,
+        "text": "- Trigger: Observe or learn a player's callsign, wait for that player to become disconnected, then send an otherwise valid same-level join request using that callsign from a different address before the legitimate player reconnects",
+        "line_lf_sha256": "1052d4097aad874d66b13957e2307e7184480f8da4fa8c034532bef37ea114c1"
+      },
+      {
+        "line": 1243,
+        "text": "- Impact: A peer or network observer can claim the disconnected player's slot, score, object and multiplayer identity, receive reconnect state and subsequent packets intended for that slot, act under the victim's identity, and prevent or displace the legitimate reconnect.",
+        "line_lf_sha256": "59e7e7d74e50c2a8249c19563ea12c0a6979f199b4822abf61f79877d393e22d"
+      },
+      {
+        "line": 1244,
+        "text": "- Expected: Reclaiming a disconnected slot proves possession of a stable secret or authenticated player identity bound to that slot and the current game generation; a display name, IP address, or uniqueness guarantee alone is never accepted as ownership.",
+        "line_lf_sha256": "ac98a1c7affac62944aa84c894afd72831d2a8b3a2c4e25b02ce02b708f00835"
+      },
+      {
+        "line": 1245,
+        "text": "- Suggested fix: Give each admitted player a cryptographically random reconnect capability or authenticated matchmaking player identity bound to the game generation and slot, carry it across the supported host-migration flow, and require it before restoring prior state. Rotate or invalidate capabilities on generation changes and successful takeover, use constant-time comparison where appropriate, and retain callsigns only for display and collision handling. For LAN admission without matchmaking, establish and return the random capability during the authenticated initial join.",
+        "line_lf_sha256": "625a241dce6dcc3f3c5e1eaa430ddc707994823a4cd56f168fc96b5273e03b3a"
+      },
+      {
+        "line": 1246,
+        "text": "- Validation: Exercise paired D1 and D2 direct, proxy, NAT-rebound, and host-migration reconnects with the rightful capability, then attempt takeover from the same and different IP using the victim's public callsign, a duplicated callsign, another player's capability, an old game-generation capability, and a replayed capability after successful reconnect. Require only the current credential owner to reclaim the slot, preserve legitimate address migration, issue no object sync or replacement token on failure, and leave the real player's slot available.",
+        "line_lf_sha256": "31c946fc41b9ec06e4605314c20af9e7d94d2e4660f5cae1df5f02c3c7a9ca4d"
+      },
+      {
+        "line": 1247,
+        "text": "- Resolution: Fixed on 2026-07-27. Android D1 and D2 now authenticate every UDP join and reconnect request with a process-lifetime P-256 identity, a game-generation-bound signed monotonic request counter, and a fresh route-bound challenge before any disconnected slot, address, token, or object-sync state is restored. Slot lookup uses only the replicated public key; callsigns are display and collision data. Full sync and ADDPLAYER replicate public keys for host migration, direct and proven proxy routes are preserved through reconnect sync, generation changes invalidate signed requests, counters reject request replay, and completed challenges reject proof replay. Native request, key, counter, and challenge tests, Kotlin signing and tamper tests, scoped quality, all 25 D1 and 29 D2 host tests, both Windows builds, and JDK 21 debug builds and tests for arm64-v8a, armeabi-v7a, and x86_64 passed. A live multi-device direct, proxy, NAT-rebound, and host-migration adversarial session was not available locally; independent P1 verification remains a campaign closure action.",
+        "line_lf_sha256": "2eca15ad8a4b09b293d07e89479e943ec61e98e216f3f0d931bc98fe40e0ace4"
+      },
+      {
+        "line": 1248,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/branch_adversarial_review_ledger.md",
+    "prepublication_whole_source_sha256": "5d3b3546092545d246084591a968933f966e1676fc7c47e79163cfafe142b5fa",
+    "read_lines": [
+      {
+        "line": 11676,
+        "text": "### BR-0080: P1 - Validate ship-status player and weapon indices before caching or display",
+        "line_lf_sha256": "5656d65f2bc24e2e4932846cded3bd8916f0951e69fe1da2f9279ca68d24b9d6"
+      },
+      {
+        "line": 11677,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 11678,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 11679,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 11680,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 11681,
+        "text": "- Category: security/memory-safety",
+        "line_lf_sha256": "29c54699b27d6949770a330350582ba081938c0f4730ea09cec0069bfb2eb26e"
+      },
+      {
+        "line": 11682,
+        "text": "- Found by: R1-CHUNK-0039",
+        "line_lf_sha256": "efd5885d0f6ce60d62ffc2cbb4521fe4eb0b817a94599ad86e531f6c8b14707e"
+      },
+      {
+        "line": 11683,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_main.c:L1101-L1125` in `nativeGetTeammateStatus`",
+        "line_lf_sha256": "b27c5f5fb903347bd89529cb9265c7ac4fcbc702f3bdf7870176a88d209cf776"
+      },
+      {
+        "line": 11684,
+        "text": "- Related: `d1/main/multi.c:L4982-L5065,L5567-L5679`, `d2/main/multi.c:L6510-L6616,L7369-L7523`, `d1/main/net_udp.c:L6740-L6826`, `d2/main/net_udp.c:L6893-L6980`, and `android/app/src/main/java/com/dxxredux/app/CoopStatsOverlay.kt:L57-L125`",
+        "line_lf_sha256": "d63a8518e226063079fd8a21e4f770f20424b793b963f8f4fb2ceee966e747c0"
+      },
+      {
+        "line": 11685,
+        "text": "- Evidence: Android extends `MULTI_SHIP_STATUS` to broadcast and cache every cooperative peer's inventory. Both D1 and D2 decoders trust the packet's inner player byte as a `Players[]` index and cast its secondary-weapon byte to signed `sbyte` without checking either range; outer UDP address checks do not bind these inner fields to the authenticated sender, and the host relays multiplayer data before local dispatch. The main-looper cooperative overlay then polls `nativeGetTeammateStatus`, which indexes `Players[i].secondary_ammo[Players[i].secondary_weapon]` for every slot. A peer can therefore send `0xff` or another out-of-range weapon value, have it cached as -1 or a large positive index, and make the next overlay poll perform an out-of-bounds native read. An out-of-range inner player byte can produce an earlier out-of-bounds write during packet decode",
+        "line_lf_sha256": "e0b5c5a7edd62448cb6025e46ac5ec1c31014481477d0d59a91201deb8d238ae"
+      },
+      {
+        "line": 11686,
+        "text": "- Trigger: Join a cooperative D1 or D2 game with a modified or malicious peer that sends a correctly sized `MULTI_SHIP_STATUS` packet containing an inner player index at or above `MAX_PLAYERS`, or a secondary-weapon byte outside the game's 0-to-4 or 0-to-9 range; show or auto-start the cooperative overlay for the weapon-index read",
+        "line_lf_sha256": "258544d6097d84c7447ffc77eb6bff454f3e6ac20c6aac81950474d95b838692"
+      },
+      {
+        "line": 11687,
+        "text": "- Impact: A network peer can cause out-of-bounds writes to the global player array or out-of-bounds reads from an ammo array, leading to native memory corruption, process crashes, corrupted multiplayer state, or adjacent native values being surfaced to the Java overlay",
+        "line_lf_sha256": "edff20b32afef730498a1fd73a41c551f64d9e70d0881ccf6f2f55094e938cbf"
+      },
+      {
+        "line": 11688,
+        "text": "- Expected: The packet boundary authenticates the claimed player and validates every enum and array index before mutating shared state; display code treats cached network state as untrusted and never uses it as an unchecked subscript",
+        "line_lf_sha256": "6f6c871c1fc04c15894df3609b535ca2fdc94886a68591085fd9a5566a7c4fda"
+      },
+      {
+        "line": 11689,
+        "text": "- Suggested fix: In both D1 and D2, pass the authenticated sender identity to ship-status dispatch, require the inner player field to match it or an explicitly authorized relay source, reject player indices outside the active `Players` bounds, and validate primary and secondary weapon values against the game-specific array counts before committing a complete temporary decode. Independently range-check `secondary_weapon` in the snapshot builder and return an unavailable sentinel rather than indexing invalid state",
+        "line_lf_sha256": "0843d5411c49c6f604e252f7793368ac9fac73305af71bfa44ac843ad0950bcc"
+      },
+      {
+        "line": 11690,
+        "text": "- Validation: Add D1 and D2 packet tests for valid boundary values, `0xff`, one-past-last weapon, `MAX_PLAYERS`, mismatched authenticated sender, host relay, observer, and cooperative-client paths; assert rejection leaves every player field unchanged, overlay polling returns a sentinel without an invalid access, and AddressSanitizer reports no out-of-bounds read or write",
+        "line_lf_sha256": "8663f61c843ec40ad91df2d795ba34d5570545ab4c76e28770346e719ec9fe9f"
+      },
+      {
+        "line": 11691,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 11692,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13364,
+        "text": "### BR-0195: P1 - Authenticate cooperative state-packet authority",
+        "line_lf_sha256": "07fb04931803da2bfa3f77daf88120c0eb0bf3163b631495387cf495d9f72c23"
+      },
+      {
+        "line": 13365,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13366,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13367,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13368,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13369,
+        "text": "- Category: security/protocol-integrity",
+        "line_lf_sha256": "c87bc12d04938b23d85891fd138abd8d5e08e509e780ccdf0fdaefedfc316861"
+      },
+      {
+        "line": 13370,
+        "text": "- Found by: R1-CHUNK-0101, R1-CHUNK-0119, R1-CHUNK-0122, R1-CHUNK-0141, R1-CHUNK-0204, R1-CHUNK-0238",
+        "line_lf_sha256": "971604baa33672161954e4924ff6d5134643f4e0be056602b4ae9279820ec194"
+      },
+      {
+        "line": 13371,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/coop/coop_multi_status.c:L75-L82,L159-L192`; `android/app/src/main/cpp/shared/coop/coop_warp.c:L333-L365`; `android/app/src/main/cpp/shared/multi_save_transfer.c:L79-L84,L770-L805`; `d1/main/multi.c:L3323-L3346,L5707-L5708`; and `d2/main/multi.c:L3486-L3509,L7620-L7621` in cooperative packet application",
+        "line_lf_sha256": "172a75a221f2748ad742195287dd26a7bce86fbe8185a724e3a2c263a74e52c8"
+      },
+      {
+        "line": 13372,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_rewind_policy.c:L39-L47`, `android/app/src/main/cpp/shared/difficulty_runtime_shared.c:L76-L117`, `d1/main/multi.c:L5567-L5708`, `d2/main/multi.c:L7355-L7621`, `d1/main/net_udp.c:L6721-L6804`, `d2/main/net_udp.c:L6881-L6958`, and BR-0080",
+        "line_lf_sha256": "e0dea2314f818bab87a06bcc59f55cfa207ccacb25d3a033bac74f9cd65e2aa7"
+      },
+      {
+        "line": 13373,
+        "text": "- Evidence: The new handlers trust identity or authority encoded inside the multiplayer payload. `coop_do_peer_status` writes the claimed slot's kill statistics without comparing it with the authenticated outer UDP sender. More seriously, `coop_do_restore_inventory` checks only that the claimed target equals the local player, then applies attacker-controlled energy, shields, score, laser level, weapon flags, twenty ammo values, durable flags, lifetime statistics, and time totals. `coop_warp_do_packet` similarly accepts a payload-selected warper slot, valid segment, and coordinates, then moves and relinks that claimed player's object without requiring the claimed warper to match the authenticated sender. The paired `multi_do_difficulty` handlers likewise authorize solely by comparing the payload's claimed sender byte with `multi_who_is_master`; a non-host can copy the public master slot into byte 1 and choose any admitted difficulty. The handler then changes live AI, weapon, damage, scoring, history, `Netgame`, HUD, and player-default state and writes the receiving player's profile. Rewind requests add the same identity flaw: `multi_do_rewind_request` treats payload byte 1 as the requester, checks only that some connected or waiting player occupies that slot, indexes its one-second throttle by the claimed slot, and sends results to that slot. On the host, the UDP layer authenticates a peer only against the outer `pnum`, then forwards the complete inner message to every other player before local dispatch. D2 carries that authenticated slot into `multi_process_data_from_player` but passes it only to a later escort-owner handler, not to these cooperative handlers; D1 discards it before dispatch. A non-host peer can therefore send a valid restore packet with another player's slot in byte 1, a warp packet claiming another connected player and arbitrary accepted destination coordinates, a difficulty packet claiming the master, or rewind requests that cycle through other connected slots. The host accepts and relays the state packets; recipients apply the trusted-host copy to live state, while forged rewind identities bypass the intended per-client throttle and misdirect results. The same path lets a peer attribute arbitrary status totals to another slot. BR-0080 covers unsafe ship-status indices and their memory-safety impact; this finding covers the distinct identity, authority, and cooperative state-integrity failure in the new message types.",
+        "line_lf_sha256": "c8a87b2ce6745f0bda03d1c2ae27bcb060e3cf137bcfc570ea756bc009784ba7"
+      },
+      {
+        "line": 13374,
+        "text": "- Trigger: Join an Android cooperative D1 or D2 game with a modified peer; send `MULTI_COOP_RESTORE_INV` through the normal multiplayer channel with the victim's player number and chosen record fields, send `MULTI_COOP_PEER_STATUS` with another connected player's number, send `MULTI_WARP_TO_PLAYER` with the victim as the claimed warper and chosen valid segment and coordinates, send `MULTI_DIFFICULTY` with the master slot in byte 1 and an attacker-selected value in byte 2, or enable client rewind requests and rapidly send `MULTI_REWIND_REQUEST` while cycling byte 1 through connected player slots",
+        "line_lf_sha256": "cbc4d9a564068ff26c902f1669d8db83c2fee48d5702d22ecccf3701e21c3ab7"
+      },
+      {
+        "line": 13375,
+        "text": "- Impact: Any admitted participant can remotely replace another player's combat inventory, score, progression totals, and selected durable state, falsify another player's cooperative statistics, teleport and relink another player's object, force the global difficulty and persist that forced choice as each recipient's default, or bypass the rewind requester's per-second throttle in proportion to the number of occupied slots while attributing requests and responses to victims. Invalid semantic values such as an out-of-range laser level or unverified warp position also enter engine state, so later gameplay operates on state that the normal inventory, save, and warp paths never produce.",
+        "line_lf_sha256": "99445a430c89d53fa6ea654973803b5038171956ba9521eb58501a901a429c5f"
+      },
+      {
+        "line": 13376,
+        "text": "- Expected: Peer-status, warp, and rewind-request identities match the authenticated sender, inventory restoration and difficulty changes are accepted only from the current authenticated master in their valid phases, throttling follows the real peer rather than a payload claim, and every decoded field and destination is validated before one atomic state update.",
+        "line_lf_sha256": "973dc0dd682a466fde99a910f1444e3b6d9489bcbb97284c76be46fd4d2077ce"
+      },
+      {
+        "line": 13377,
+        "text": "- Suggested fix: Preserve the authenticated outer player through D1 and D2 multi-message dispatch, pass it to every cooperative handler, require peer-status, warp, and rewind-request identity to match that sender, index rewind throttling by the authenticated sender, and require restore and difficulty messages to originate from `Multi_master_playernum`, with restore additionally requiring a pending local rejoin. Require cooperative mode and a connected playing sender, validate warp position semantics before mutation, decode inventory into a temporary record, validate every field against game-specific limits, then commit once. Ensure the host rejects and does not relay unauthorized packets and that rejected difficulty messages cannot reach player-file persistence.",
+        "line_lf_sha256": "bedd22be5b674e1f9af740f01c9c63c2e8d2c533917055a5736e58439afc5db8"
+      },
+      {
+        "line": 13378,
+        "text": "- Validation: Add paired D1 and D2 protocol tests with separate host, sender, victim, and observer identities; cover valid self-warp, host restoration and host difficulty changes, valid and throttled client rewind, non-host restore and difficulty forgery, mismatched peer-status, warp, and rewind identities, rewind slot cycling, forged outer and inner slots, arbitrary warp segment and coordinates, host relay, direct and reliable delivery, stale restoration outside rejoin, and boundary plus invalid record fields. Assert rejected packets are not forwarded, do not rewrite player files, do not consume or bypass another peer's rewind throttle, and leave all player, object, segment-link, cooperative-stat, difficulty, history, and default-preference state byte-for-byte unchanged.",
+        "line_lf_sha256": "a9cf61e1c418995f3c7b235fc4a7c644fc439d6d082ed3a7f0d419b2f934dc77"
+      },
+      {
+        "line": 13379,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L174-L185,L674-L750` and the closing handlers at `L751-L809`",
+        "line_lf_sha256": "a6afb9bfc6fccdbc4a83907a4934f9c9f5de58ec06ca67417d7360d5eeff6718"
+      },
+      {
+        "line": 13380,
+        "text": "- Additional evidence (R1-CHUNK-0204): Transfer authority is unauthenticated in both directions. Every non-host client accepts `BEGIN`, `CHUNK`, and `APPLY` based on local role and an eight-bit transfer ID, without proving that the original sender was the host; because the host authenticates and relays a peer's outer packet before these inner handlers run, a participant can supply a self-consistent size, FNV checksum, chunks, and apply command that recipients treat as an authoritative host rewind or save restore. Conversely, the host's ready handler trusts payload byte 2 as `pnum`; a different peer can claim a victim slot in both a buffer-ready message and the later apply-ready message, advance both readiness flags, and make the host transmit or restore without the victim reaching either phase. Requiring reliable delivery does not authenticate the inner authority or claimed slot.",
+        "line_lf_sha256": "d1689616fa890530d5ae96e6e051dcd5a6a6ad9a5a6a1833c2207591292c497a"
+      },
+      {
+        "line": 13381,
+        "text": "- Additional validation (R1-CHUNK-0204): Extend the paired protocol matrix to all four transfer messages. Inject `BEGIN`, every `CHUNK`, and `APPLY` from a non-host with a valid attacker-computed checksum and a host-looking payload, and forge `READY_BUFFER` and `READY_APPLY` with another client's slot. Assert the host drops these before relay, clients accept transfer phases only from the authenticated current host, ready phases update only the authenticated sender's slot, and no allocation reset, payload publication, restore, readiness transition, timeout extension, or HUD success occurs for rejected traffic.",
+        "line_lf_sha256": "f4e1aa5d9a5e5b1c5ff3f84cd41afb3aa5a50fc949201b5338ec056df60cf3b1"
+      },
+      {
+        "line": 13382,
+        "text": "- Additional location (R1-CHUNK-0238): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/multi.c:L4810-L4962,L5567-L5677`; paired `d2/main/multi.c:L6331-L6482,L7362-L7514`",
+        "line_lf_sha256": "58d07eaaf61bd68c91cb3e4df03c1b9735b04fa135a1d64da58c3de324fc67f7"
+      },
+      {
+        "line": 13383,
+        "text": "- Additional evidence (R1-CHUNK-0238): Android changes damage and repair from observer-directed status into broadcasts received by every cooperative peer, then adds ordinary-player branches that write `Players[buf[1]].shields` without checking that byte 1 is in range or matches the authenticated outer sender. Both commands have fixed accepted sizes, so a participant can send a correctly sized packet with a victim's slot and chosen `new_shields`, or use `0xff` to write beyond `Players[]`. The host's UDP path authenticates only the outer player, forwards the untouched message to other players before local dispatch, and does not compare the inner slot. D1 discards sender identity in `multi_process_bigdata`; D2 carries `authenticated_sender` into `multi_process_data_from_player` but calls both handlers without it. Thus one admitted peer can corrupt every recipient's cached shield state or trigger network-reachable native memory corruption. This is the same missing authenticated-sender binding already tracked here; BR-0080 covers the analogous ship-status-specific indices.",
+        "line_lf_sha256": "a09ebc52ab610d5a49ebc2267c3ffc4ab63eebbc0bf6a08003d5ea2614d6c061"
+      },
+      {
+        "line": 13384,
+        "text": "- Additional validation (R1-CHUNK-0238): Add paired D1/D2 cooperative packet tests for valid self damage and repair, a different connected slot, `MAX_PLAYERS`, and `0xff`, over reliable and ordinary delivery with host relay and observers present. Assert the host rejects mismatched or out-of-range inner slots before forwarding, recipients derive the target only from the authenticated sender, legitimate updates affect exactly that sender, all rejected traffic leaves `Players[]` and adjacent sentinels unchanged, and AddressSanitizer reports no invalid access.",
+        "line_lf_sha256": "4801ea86d12fec6a30df528c088d7f60b58477396a79574fefef4d63c57e4feb"
+      },
+      {
+        "line": 13385,
+        "text": "- Additional location (R1-CHUNK-0248): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/net_udp.c:L948-L1010,L1049-L1075,L6013-L6063,L7476-L7526`, with paired `d2/main/net_udp.c:L7660-L7710`, and `d1/main/multi.c:L2723-L2802`",
+        "line_lf_sha256": "f23b3caae86c298e639943df8fec2ed76c1f856d44d831064813aa0c62285b5a"
+      },
+      {
+        "line": 13386,
+        "text": "- Additional evidence (R1-CHUNK-0248): The branch changes P2P ping handling from refreshing slot zero only for an observer host to refreshing the current master's `LastPacketTime` for every ping whose payload-selected `from_player` equals `multi_who_is_master()`, describing that claim as proof the host is reachable. P2P ping admission validates the fixed packet size and shared netgame token, but does not bind `from_player` to `sender_addr`; the existing route-trust flaw was present at the base, but the branch newly uses that unauthenticated identity as a host-liveness credential. Any admitted peer can therefore continue sending valid pings that claim the departed master. Each ping resets the timestamp before `net_udp_timeout_check` can call `multi_disconnect_player(master)`, and that disconnect is the path that invokes Android cooperative host migration or reports host loss. A malicious or faulty survivor can hold every recipient that hears the forged heartbeat on the dead-host roster indefinitely instead of letting the session recover.",
+        "line_lf_sha256": "536deaad1080a4b78247d6b7f23ddd0e497feda1dbb3bb33104dca0cea9caa24"
+      },
+      {
+        "line": 13387,
+        "text": "- Additional validation (R1-CHUNK-0248): In paired D1 and D2 direct and proxy tests, disconnect the current host while another admitted peer sends P2P pings claiming itself, the host, another survivor, and invalid boundary slots. Require only an address- or authenticated-route-bound host packet to refresh host liveness; forged host claims must not change any `LastPacketTime`, route, loss, or connection state and must not delay the bounded timeout, deterministic master election, or explicit host-loss exit. Repeat after migration with a nonzero master slot and with observer-host mode.",
+        "line_lf_sha256": "306bc8602beeb8a7b92a3a3493dc885edcca926f61ec116de7208b55f8d6022c"
+      },
+      {
+        "line": 13388,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13389,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13447,
+        "text": "### BR-0206: P1 - Stage multiplayer restores before applying any peer",
+        "line_lf_sha256": "28c59ee9eb7721b1fe6023a7431396c75423080503d160109a5273ffe6279bae"
+      },
+      {
+        "line": 13448,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13449,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13450,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13451,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13452,
+        "text": "- Category: correctness/multiplayer-synchronization",
+        "line_lf_sha256": "d4e30ca72e57b19ab44b4cedd6f4b9821ca2c676ad3380fa1921816bb5732f2c"
+      },
+      {
+        "line": 13453,
+        "text": "- Found by: R1-CHUNK-0107, R1-CHUNK-0204, R1-CHUNK-0274",
+        "line_lf_sha256": "a9bb990507b0793ddf15f222ad1e751a28f60d7d772b92e384333c82509c6e28"
+      },
+      {
+        "line": 13454,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_rewind.c:L398-L436` in authoritative restore and `android/app/src/main/cpp/shared/multi_save_transfer.c:L188-L258,L573-L610` in client and host rewind application",
+        "line_lf_sha256": "2cda2d940b5cf268c5b0fc84511fe34be17fd8763326e3b526fd4505693e5cf9"
+      },
+      {
+        "line": 13455,
+        "text": "- Related: `d1/main/state.c:L1704-L1709,L1980-L2003`, `d2/main/state.c:L2081-L2086,L2648-L2675`, and `android/app/src/main/cpp/shared/state_android_shared.c:L710-L735`",
+        "line_lf_sha256": "2d8e660a5d6ad74f654b00509f5aaab6cf46fdaa47153bcf3a419c29a8300dbe"
+      },
+      {
+        "line": 13456,
+        "text": "- Evidence: A cooperative rewind snapshot is serialized on the host and its save header therefore contains the host's callsign. Each client receives that buffer with `snapshot_index = -1` and calls `android_rewind_restore_authoritative`, which always calls `state_restore_from_memory`. The paired D1 and D2 restore code rejects a cooperative save whose recorded callsign differs from `Players[Player_num].callsign`; only `state_restore_coop_from_memory` enables the authoritative remap exception. Thus every normally named non-host client rejects the host snapshot before restoration. Independently, `multi_perform_rewind_request` restores the host first and only afterward calls `multi_send_rewind_save_transfer`. An active transfer or allocation failure makes that setup fail immediately, and a later ready, packet, checksum, disconnect, or timeout failure can abort it asynchronously, but the function merely logs setup failure and returns the host's successful status with no rollback. Even the success path lets the host simulate from the rewound state while clients wait for the complete transfer and apply command.",
+        "line_lf_sha256": "7e40681640e19d65d130d2bac6e97e21e696459b347cfbfc94d8685516e69def"
+      },
+      {
+        "line": 13457,
+        "text": "- Trigger: In a cooperative D1 or D2 game with at least one client whose callsign differs from the host, perform a rewind; or make transfer allocation, setup, readiness, delivery, checksum, or timeout handling fail after the host selects a point",
+        "line_lf_sha256": "26b37d76a4cd12f953346ae1cb635dff65eb52cbe950080c3a59cfc4443650ee"
+      },
+      {
+        "line": 13458,
+        "text": "- Impact: The host rewinds while clients remain on their prior world generation, and ordinary packets can cross between incompatible object, player, wall, RNG, and game-time states. The session can immediately desynchronize, reject subsequent state, disconnect peers, or crash in gameplay that assumes shared object identity; the advertised cooperative rewind cannot complete for the normal distinct-callsign case.",
+        "line_lf_sha256": "959877c1e1fa2ec03cd6523b875a784909f17c5035193907585f4188406a7257"
+      },
+      {
+        "line": 13459,
+        "text": "- Expected: Every required peer validates and stages the same authoritative snapshot before any peer resumes from it, and all peers either apply one generation at a coordinated boundary or retain the prior state.",
+        "line_lf_sha256": "e0f2d7e7b52777920ff9b88531d9a83063dfa0bc32b2380dcaa848331268bc37"
+      },
+      {
+        "line": 13460,
+        "text": "- Suggested fix: Use the cooperative authoritative restore mode for received rewind images, but make that only the apply phase of a two-phase protocol. Copy and validate the snapshot on every required peer, pause or generation-gate simulation and incompatible packets, collect readiness, then apply host and clients at one coordinated boundary and acknowledge completion. Abort before mutation if staging fails; define disconnect and apply-failure recovery rather than logging after the host has committed.",
+        "line_lf_sha256": "83c7276486377883787751b98f59f84525a340ea0378a0ae2fcd37b32cdabddd"
+      },
+      {
+        "line": 13461,
+        "text": "- Validation: Run paired D1 and D2 sessions with a host and multiple distinct-callsign clients, rewind during active object, wall, score, and RNG changes, and compare complete synchronized state after resume. Inject allocation failure, an already active transfer, lost and reordered begin/chunk/apply packets, checksum mismatch, slow readiness, timeout, disconnect before each phase, and client restore failure; assert every run either applies exactly one common generation or leaves every survivor on the prior generation with no cross-generation packets.",
+        "line_lf_sha256": "713c38ca07f7b2ec964d5ef434141fe42b417eb9df067500ccff4388f27bdfb8"
+      },
+      {
+        "line": 13462,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L215-L233,L397-L463` in cooperative save acknowledgment and host application",
+        "line_lf_sha256": "ce55cb4da27320266b3f8b3bcc20052501a739abcbc5b87d4e1198e85517df1e"
+      },
+      {
+        "line": 13463,
+        "text": "- Additional evidence (R1-CHUNK-0204): The same non-atomic protocol also governs an ordinary cooperative save restore. After checksum verification, each client sends `MULTI_SAVE_TRANSFER_READY_APPLY` before `multi_prepare_restore_sync` and before calling `state_restore_coop_from_memory`. That call is fallible and mutates live state while parsing, yet the client sends no success or failure result afterward. The host records the pre-call packet as `applying_players[pnum] = 1` and, once every required slot has merely entered that branch, resets transfer state and calls its own `multi_restore_game`. A client allocation, compatibility, parse, or partial-restore failure therefore cannot veto the host: the host and successful peers commit while that client remains old or partially mutated. A client that returns failure also resets and discards its receive buffer without telling the host that application failed.",
+        "line_lf_sha256": "cc3536bc6110611bfbbf2411637a209e096f6a242a102e2724e7db9d9ef45861"
+      },
+      {
+        "line": 13464,
+        "text": "- Additional validation (R1-CHUNK-0204): Cover host-selected cooperative save restoration as well as rewind in the all-peers-or-none matrix. Inject a valid-checksum image that fails parsing on exactly one client, failure before and after live mutation, delayed restore, disconnect during apply, and host local restore failure. Require a distinct staged-success acknowledgment before any mutation and a post-commit result or recoverable generation protocol; assert the host never interprets branch entry as success and every survivor either commits the same save generation or resumes the untouched prior generation.",
+        "line_lf_sha256": "54fd4d38372ba230c0d9c253a51cc96830b35e384b9d86ae2e26d7a180c38054"
+      },
+      {
+        "line": 13465,
+        "text": "- Additional location (R1-CHUNK-0274): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/multi.c:L6824-L6852,L6915-L6962` in restore dispatch and host initiation, with `android/app/src/main/cpp/shared/multi_save_transfer.c:L477-L545` in transfer setup and pending-state reporting",
+        "line_lf_sha256": "857ca3e686f354097f742eec4327bebe11e548bf66751cd1176692ef60433eb4"
+      },
+      {
+        "line": 13466,
+        "text": "- Additional evidence (R1-CHUNK-0274): Every cooperative restore-transfer setup failure, including disabled packet-loss prevention, save open, size, allocation, read, or active-transfer failure, returns zero. `multi_send_restore_game` interprets that zero as permission to broadcast the legacy `MULTI_RESTORE_GAME` packet, and `multi_initiate_restore_game` then observes no active pending transfer and immediately calls `multi_restore_game` on the host. The legacy packet carries only a slot and game ID, not the host's authoritative save image; with per-player save namespaces, peers can lack or reject that local slot while the host has already committed. Thus a setup failure that should abort before mutation instead starts a host-only generation and exposes the same cross-generation traffic and failure modes as the later apply failures already tracked here.",
+        "line_lf_sha256": "be1fecc411617ee3d14384cb52e4520250951d4469339c692156a48c04d22fe2"
+      },
+      {
+        "line": 13467,
+        "text": "- Additional validation (R1-CHUNK-0274): In paired cooperative restore tests, inject each setup failure before any begin packet: packet-loss prevention disabled, missing or unreadable host save, zero and oversized file, allocation and short-read failure, and an already active transfer. Require no legacy restore packet, no host or client state mutation, no score or object traffic from a new generation, an explicit failure result, and a cleared or recoverable transfer state; retain the no-connected-client case as the only path allowed to restore locally without a transfer.",
+        "line_lf_sha256": "374854abc7f0c560bf6d21394e5983b7f1a4615add1fdd750fc4e81b298ae38a"
+      },
+      {
+        "line": 13468,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13469,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13470,
+        "text": "### BR-0209: P2 - Fail headless execution when replay validation or requested output fails",
+        "line_lf_sha256": "fb1f788182d93fea536796e2ebf3ac235b6f2733d6100270a03c2ce57e61994c"
+      },
+      {
+        "line": 14430,
+        "text": "### BR-0278: P2 - Use one cooperative autosave scheduler",
+        "line_lf_sha256": "eb8706848d4ba3769a7e9d9720cbd441c72a0ae2ea532852621e777ff3315ff0"
+      },
+      {
+        "line": 14431,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 14432,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 14433,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 14434,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 14435,
+        "text": "- Category: performance/state-persistence",
+        "line_lf_sha256": "9c434b45c56f23e907cc1f788b7bcaab3784fe9a79f5080ed6ac37ca0db779c4"
+      },
+      {
+        "line": 14436,
+        "text": "- Found by: R1-CHUNK-0162, R1-CHUNK-0283",
+        "line_lf_sha256": "de59f9a57bb2c7afb7e554504673b94abafb04efc388c0ef4d748d8be9bac3c6"
+      },
+      {
+        "line": 14437,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/game.c:L1414-L1422`, `d1/main/multi.c:L1502-L1518`, `d2/main/game.c:L1752-L1760`, and `d2/main/multi.c:L1547-L1563` in periodic cooperative autosave scheduling",
+        "line_lf_sha256": "5e9d93f0d15f6d18ebf131d83e072c5295604b59b6b414c437b7dfa305e4e3e7"
+      },
+      {
+        "line": 14438,
+        "text": "- Related: `android/app/src/main/cpp/shared/coop/coop_save.c:L566-L625`, `d1/main/game.c:L1250-L1424`, `d2/main/game.c:L1523-L1762`, and `android/ai tool plans/networking/multiplayer-quick-resume-plan.md:L140-L147,L242-L248`",
+        "line_lf_sha256": "1bff22d5edd39d55dd332c12e5de1c81a1e7e22ff6165571a124c844d1fb205b"
+      },
+      {
+        "line": 14439,
+        "text": "- Evidence: Each paired game calls `multi_do_frame` from `GameProcessFrame`, then later in that same gameplay frame evaluates another cooperative autosave block. The multiplayer block schedules every 30 seconds with a function-static `timer_query` timestamp, while the game block independently schedules every 30 seconds with a separate function-static `GameTime64` timestamp. `coop_autosave` has no shared deadline or in-progress throttle, so both admitted blocks each rotate the five-slot ring, generate a new game ID, broadcast a multiplayer save command, synchronously write a full save, and rewrite history. When their phases coincide they perform two complete saves in one frame and consume two slots; when offset they produce about twice the documented rate. The static clocks also have different lifetimes: `GameTime64` resets at level start while its remembered deadline does not, and `timer_query` persists across levels and sessions. The frozen quick-resume audit explicitly identifies the duplicate game and multiplayer schedulers as unresolved, while focused tests exercise neither clock.",
+        "line_lf_sha256": "5ef4c47cb6b66a351ab9c7e838213595fac43b5b26d93958aa1bca3d319b5e51"
+      },
+      {
+        "line": 14440,
+        "text": "- Trigger: Host an Android cooperative D1 or D2 game for at least 30 seconds, especially after entering or changing a level when the process timer and level timer deadlines align or after a prior level left the game-time deadline above the reset clock",
+        "line_lf_sha256": "0f6ca04a49f52d4426fe627ffeda367102fb5c3c96e0045ce9927f62730c6723"
+      },
+      {
+        "line": 14441,
+        "text": "- Impact: The game can perform two full synchronous save and metadata writes plus two save broadcasts in one frame, causing avoidable gameplay stalls, storage and network churn, and two-slot jumps. Even when staggered, the intended five-slot 2.5-minute history is compressed toward half that window, while reset and persistent clock disagreement makes save cadence depend on prior level and process history.",
+        "line_lf_sha256": "18c77e811a70da5aeef6b33cdbaa03940cf4872900495789a28340c465632ac1"
+      },
+      {
+        "line": 14442,
+        "text": "- Expected: One host-owned cooperative scheduler emits at most one save per defined interval, resets from explicit session and level events, uses one clock, and advances the ring only after successful completion.",
+        "line_lf_sha256": "d41b1522646bab9b4f199a829817a68608d0db13730c800a5ef368d36c9a5815"
+      },
+      {
+        "line": 14443,
+        "text": "- Suggested fix: Remove both caller-local schedules in favor of one shared cooperative autosave policy called from one paired frame location. Store its session, mission, level, last-attempt, and last-success state together, reset explicitly on lifecycle transitions, coalesce disconnect and periodic requests where appropriate, and coordinate success and retry semantics with BR-0235 and BR-0258.",
+        "line_lf_sha256": "c94919d61ccfe315d6429d67e2070b0ee8e736f358dea64d5b9fb5e351720fad"
+      },
+      {
+        "line": 14444,
+        "text": "- Validation: Drive paired D1 and D2 with deterministic process and game clocks across fresh launch, delayed game entry, 29/30/31 seconds, multiple intervals, level reset, restore with nonzero game time, host migration, non-coop transitions, disconnect near a deadline, write failure, and recovery. Count save calls, broadcasts, slot changes, and history generations; require at most one admitted periodic save per interval, no double write in one frame, explicit reset behavior, full five-slot retention at the documented cadence, and no rotation on failure.",
+        "line_lf_sha256": "533c24327e0618f4d6c16d4ce37a884ca2af982ac1942614e6c74b0d2cadf5bc"
+      },
+      {
+        "line": 14445,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 14446,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 15706,
+        "text": "### BR-0388: P2 - Carry stable client identity in join sequence packets",
+        "line_lf_sha256": "3b1324dab89e28bb89b1afa3acbeb058852a7e28f28789e52fbfac69c0475c9d"
+      },
+      {
+        "line": 15707,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 15708,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 15709,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 15710,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 15711,
+        "text": "- Category: correctness/network-identity",
+        "line_lf_sha256": "4379a728f5a02ee7d5a0f7d5fc614bac5af46a2c0b6f4bff29d0d7581a662f74"
+      },
+      {
+        "line": 15712,
+        "text": "- Found by: R1-CHUNK-0309",
+        "line_lf_sha256": "e04c36c7a1bf9f52c34a38c7bf4b6f72a23c479f42ed477fde3905c0610ee9a8"
+      },
+      {
+        "line": 15713,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/net_udp.h:L66` at `UPID_SEQUENCE_SIZE`, with paired `d1/main/net_udp.h:L66`",
+        "line_lf_sha256": "fab2eb081566f7e5bb32f3c65bda8627319bc241b788e543934971db5d4c34ce"
+      },
+      {
+        "line": 15714,
+        "text": "- Related: `d2/main/multi.h:L513-L531`, `d2/main/net_udp.c:L1731-L1775,L1798-L1805,L2734-L2784,L3669-L3782`, paired `d1/main/net_udp.c:L1728-L1772,L1794-L1802,L2713-L2763,L3584-L3696`, `android/app/src/main/cpp/jni_main.c:L838-L860`, `android/app/src/main/cpp/shared/net/auto_net.c:L46`, `android/app/src/main/cpp/shared/coop/coop_save.c:L50-L78,L259-L269,L415-L450,L918-L944`, and `android/ai tool plans/networking/plan_uuid_player_identity.md:L1-L34`",
+        "line_lf_sha256": "d130de45a728ab9cacf48f824ea236f92002f1710aa16357737364fffb3c5d23"
+      },
+      {
+        "line": 15715,
+        "text": "- Evidence: The branch adds `client_id[37]` to each network player and copies the launcher's installation UUID into `UDP_Seq.player.client_id`, but the unchanged sequence-size expression has no 37-byte field and both paired `net_udp_send_sequence_packet` implementations serialize only callsign, connection state, rank, colors, observer status, and socket address. Their receivers parse the same old layout and never assign `client_id`. Packet dispatch first zeroes the destination `UDP_sequence_packet`, so the host deterministically receives an empty ID, then `net_udp_add_player` copies that empty field into `Netgame.players[N_players]`. UPID_ADDPLAYER uses the same sequence codec, and later full game-info merely republishes the already empty Netgame field to every peer. The UUID plan labels network propagation working, yet cooperative metadata snapshots, absent-player matching, restore mapping, progress output, and status lookup all prefer this field and fall back to callsign when it is empty. The focused identity test exercises only a standalone comparison helper and never crosses the UDP wire.",
+        "line_lf_sha256": "176f316586e946439a553ff5149e8dc691297e5b6b74c497eadc4e9c9f20d74e"
+      },
+      {
+        "line": 15716,
+        "text": "- Trigger: Start or join an Android D1 or D2 multiplayer game with a nonempty installation UUID, then save, restore, rejoin, migrate hosts, or resume cooperative state after a player's callsign changes, is replaced, or collides with a saved display identity",
+        "line_lf_sha256": "996cdb3e435d44fcda568277f38f12fdc8630ff2ec6622752472ae964ad69880"
+      },
+      {
+        "line": 15717,
+        "text": "- Impact: Every remote participant loses the stable identity the feature was introduced to preserve. Cooperative saves and absent-player state are recorded with empty IDs, restore silently falls back to transient display callsigns, renamed players can spawn fresh while a reused or colliding callsign can receive mismatched state, and host migration republishes the same missing identity instead of repairing it.",
+        "line_lf_sha256": "b13fd803d8dd2b7835ccc38be46f031b4e2f73572e370639d6ef5f0e1300f17b"
+      },
+      {
+        "line": 15718,
+        "text": "- Expected: The join request and ADDPLAYER protocol carry one validated, NUL-terminated stable identity for every admitted player, and all peers publish the identical value before any save metadata or restore matching consumes it.",
+        "line_lf_sha256": "669e651fff59ad9bf6cbd2ae12807a240ba4cbfa3e5ac8ddb7178e9429789d35"
+      },
+      {
+        "line": 15719,
+        "text": "- Suggested fix: Add an explicitly versioned fixed-size or length-delimited client-identity field to the sequence wire schema, update the shared size constant and paired D1/D2 writer and reader together, validate UUID syntax and termination before admission, and copy only the parsed value into Netgame. Prefer folding this identity into the authenticated reconnect credential so it cannot be substituted independently, and reject rather than silently downgrade when stable identity is required for a cooperative restore.",
+        "line_lf_sha256": "6e988130a70f541ec29b9f45cc5e2738969c6faa58e38036595bb6d33ca73d89"
+      },
+      {
+        "line": 15720,
+        "text": "- Validation: Add byte-exact paired D1/D2 request and ADDPLAYER vectors with empty, valid 36-character, unterminated, malformed, truncated, and oversized identities; send them through actual serialization, admission, rebroadcast, full sync, host migration, save metadata, absent-player lookup, and restore. Require every peer to observe the same validated ID, changed callsigns and reordered slots to map to the correct saved player, malformed identities to fail before publication, and desktop compatibility to reject or negotiate the extended layout explicitly.",
+        "line_lf_sha256": "b9e238500774957aafadef9db366f565f14ee93fab88fbcd665e3a69eedae3e3"
+      },
+      {
+        "line": 15721,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 15722,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 15723,
+        "text": "### BR-0391: P2 - Check thumbnail buffers before OpenGL readback",
+        "line_lf_sha256": "9678857ec0c1a8904841ff4bfe41543f667fabbdd8026c7825ab06fd089aed05"
+      },
+      {
+        "line": 15724,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 15725,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 15726,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 15727,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 15728,
+        "text": "- Category: reliability/memory-safety",
+        "line_lf_sha256": "cc119aa37cb3c83ba40af9f5f3c8bec92aaaa814adc5175a2e0248bae16190bd"
+      },
+      {
+        "line": 19034,
+        "text": "### BR-0609: P2 - Compare object packets only within one rejoin session",
+        "line_lf_sha256": "aa52e7b3fc9e8c45efb45b8e1c08007e4df58f648f7b59d53a9a87994a1c7fba"
+      },
+      {
+        "line": 19035,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 19036,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 19037,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 19038,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 19039,
+        "text": "- Category: correctness/diagnostics",
+        "line_lf_sha256": "6d1ea9a66688a8f99453c42f542c5b81739efbcf6b9193ca9e30f95ca74022b4"
+      },
+      {
+        "line": 19040,
+        "text": "- Found by: R1-CHUNK-0498",
+        "line_lf_sha256": "4555d21173ad2f756af057a099e64c35454aa085ebd91fdb4280da8e64f2cca3"
+      },
+      {
+        "line": 19041,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/tools/decode_object_packets.ps1:L269-L325,L390-L398`; `android/tools/decode_object_packets.py:L246-L305,L356-L363` in TX/RX diff aggregation",
+        "line_lf_sha256": "99f561317d52a8abf4a3d5d948df1a5137f90c0a779028b1c4142fca69b25610"
+      },
+      {
+        "line": 19042,
+        "text": "- Related: `d1/main/net_udp.c:L2342-L2423`; `d2/main/net_udp.c:L2364-L2447`; `android/app/src/main/cpp/shared/net/net_udp_android.c:L17-L29`; BR-0348; BR-0356",
+        "line_lf_sha256": "c07030cf7504df16b6eab85cb8989adaa70c9db221d8b001c86c1c9a1e33840f"
+      },
+      {
+        "line": 19043,
+        "text": "- Evidence: Both decoders parse and display the four-byte join token from every object packet, but diff mode ignores it and combines all TX packets and all RX packets in the input into one dictionary keyed only by sender-local object number. A later session or device silently overwrites an earlier object with the same number; direction is the only remaining partition. The documented combined-log workflow and ordinary reconnect, retry, or repeated capture can contain multiple tokens, so unrelated streams are treated as one transfer. An in-memory probe supplied TX token 1/local 5, TX token 2/local 5, and RX token 2/local 5: the tool decoded all three token values, reduced two transmitted objects to one, and printed `No objects lost`, hiding token 1's absent receive. Reversing membership can similarly invent loss or compare different object bodies as one identity.",
+        "line_lf_sha256": "6be12c081fb35e3fd57b40e75cf61b497442c7fc1214cad39ecffd8542a40f4b"
+      },
+      {
+        "line": 19044,
+        "text": "- Trigger: Run `-Diff` or `--diff` on a combined host/client log containing two joins, reconnect generations, retries, multiple devices, or stale buffered records whose object streams use different tokens and reuse local object numbers",
+        "line_lf_sha256": "d25d3d89dcf58af990856c1e8a18b56eb0466917b6e3175544ea025f9f48220f"
+      },
+      {
+        "line": 19045,
+        "text": "- Impact: The diagnostic can falsely clear the packet-loss cause of a failed rejoin or accuse a healthy stream, sending multiplayer debugging toward state conversion, verification, or transport fixes using an invalid object set and count. It is especially misleading for the fragmentation and ineffective-retry failures already tracked by BR-0348 and BR-0356.",
+        "line_lf_sha256": "1aa363b82b5ef12b9eca8a17d759232ffa94b7929045040b00389bd592bbee4e"
+      },
+      {
+        "line": 19046,
+        "text": "- Expected: Diff results are partitioned by one explicitly selected transfer identity, including token and capture endpoint or another proven session boundary; duplicate or ambiguous streams are reported rather than merged, and only corresponding TX/RX generations are compared",
+        "line_lf_sha256": "1524a3603eb9dc4734e84ae004bfaf101317a3d4a46d0a94533e47ff6f140c15"
+      },
+      {
+        "line": 19047,
+        "text": "- Suggested fix: Group packets by decoded token and endpoint/source log identity, preserve packet order and duplicate local numbers, pair exactly one TX and RX stream per session, and require an explicit selection when a file contains multiple candidates. Validate INIT/END ownership and declared total count before declaring no loss.",
+        "line_lf_sha256": "035980238727d2781343c46cdd8f63867988209f22a4c618af5fab7922ea9f50"
+      },
+      {
+        "line": 19048,
+        "text": "- Validation: Cover one complete stream, two interleaved tokens with reused object numbers, repeated attempts with the same peers, multiple devices, stale buffered records, duplicate and reordered packets, missing INIT or END, mismatched player markers, and token reuse across separated generations. Require exact per-session sent, received, duplicate, truncated, and missing sets and prohibit `No objects lost` for any unpaired or incomplete selected stream.",
+        "line_lf_sha256": "d946f355fbcd061fb535537dfd17ac1735d9977f26fe94c5ea9fd2b77b33d7d7"
+      },
+      {
+        "line": 19049,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 19050,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/d1d2_diff_minimization_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "a28a830a6b5a419c3770534dd8b65cfc34bac136fec9153b30719f89c2677f05",
+    "read_lines": [
+      {
+        "line": 160,
+        "text": "- Required evidence: isolated metrics, descriptor fixtures, D-pad/axis/combiner/touch automation where available, both Windows builds, configured Android ABIs, scoped quality, and `git diff --check`.",
+        "line_lf_sha256": "9dee714173c113f2d2719eea722a9b35fba8afff6aa3276d08a8686cec5599fe"
+      },
+      {
+        "line": 161,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 162,
+        "text": "### DMR1-CHUNK-005: paired scene-object profiler scan",
+        "line_lf_sha256": "e9b5177729bf53f395e9cb8c23ff4733b35ed3b65d4a6ab57c4627e30678bea8"
+      },
+      {
+        "line": 163,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 164,
+        "text": "- Inherited sources: `d1/main/game.c:172-201` and `d2/main/game.c:180-209` at the survey head.",
+        "line_lf_sha256": "81409edf730f3507f8bf9163c564895644336ecba8cdd7921db07c4d4f808532"
+      },
+      {
+        "line": 165,
+        "text": "- Put the scan in `android/app/src/main/cpp/shared/android_profile.c/.h` or one narrowly named engine-aware profiling source, compiled with the correct game headers, with one call from each inherited source.",
+        "line_lf_sha256": "9e44d744fe31dc7307258bdc6d6a5edca257b64d0dd4226ef68a0954e3d262d2"
+      },
+      {
+        "line": 166,
+        "text": "- Pass a span and minimal ownership context if direct engine compilation is not clean. Do not add callbacks, allocation, a second traversal, or changed object ordering.",
+        "line_lf_sha256": "8bd567f4ebda625a9c0072f3fc9fa7d0cfa55f3bbdeca960f6c6bc513e484e8d"
+      },
+      {
+        "line": 167,
+        "text": "- Move no simulation, object lifecycle, or frame policy. Counter meaning and per-frame timing must remain exact.",
+        "line_lf_sha256": "5c8ece65b03b5691d9316a5e6c83afc17a5712b772748cfb8cb33e1d6a65c126"
+      },
+      {
+        "line": 168,
+        "text": "- Required evidence: isolated metrics, focused active/projectile/reactor/remote-robot counter coverage, frame-time smoke where available, both Windows builds, configured Android ABIs, scoped quality, and `git diff --check`.",
+        "line_lf_sha256": "273a7df4c69275083ad22f86b26c3acc2b4b5dcd70de95fbe36a30f7da968b7e"
+      },
+      {
+        "line": 169,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 170,
+        "text": "### DMR1-CHUNK-006: remaining D2 input-demo helper residue",
+        "line_lf_sha256": "359d9a13a34538b26973dedb74a563c25bdef3914f97eef794d3c6b953531497"
+      },
+      {
+        "line": 171,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 172,
+        "text": "- Inherited sources: `d2/main/fvi.c:815-858` and `d2/main/collide.c:113-128` at the survey head.",
+        "line_lf_sha256": "4bc0f9fa60b087d60c84c10b64aa0f93afd2bc29dd4be43c8b9edb055e12d069"
+      },
+      {
+        "line": 173,
+        "text": "- Move only the boundary-probe gate/logger and homing-player-bump environment gate into branch-added `d2/main/input_demo_hooks.c/.h`.",
+        "line_lf_sha256": "63e7710f287ebd8943308ea04c32fffa01591df11f70d584dc865d234c6799f7"
+      },
+      {
+        "line": 174,
+        "text": "- Do not combine this work with general sink cleanup, demo-format change, or simulation behavior change.",
+        "line_lf_sha256": "dde61fdd60173997c0b9083063965800eba6ca64449d8c57612c315526d12541"
+      },
+      {
+        "line": 175,
+        "text": "- Preserve every enable gate, event order, RNG-neutral behavior, message field, environment predicate, and call-site observation.",
+        "line_lf_sha256": "9825485ac6b3f39ce38a46c9f92aca1c5f12dcee4aecca514d2624bf7216bfe2"
+      },
+      {
+        "line": 176,
+        "text": "- Required evidence: isolated metrics, known boundary and homing-bump replays with exact final-state and RNG comparison, D2 Windows build, configured Android ABIs, scoped quality, and `git diff --check`.",
+        "line_lf_sha256": "5e3bd08430d6e32a54ea86436cfef013690f31004ff3d3c73bbab0d574004948"
+      },
+      {
+        "line": 177,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 178,
+        "text": "### DMR1-CHUNK-007: D2 direct-restore slot parser",
+        "line_lf_sha256": "b1c4a8988a751b37de2b22c41b64ef339cb3529a36e2f7daabeefae80e14cdcc"
+      },
+      {
+        "line": 179,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 180,
+        "text": "- Inherited source: `d2/main/state.c:2662-2693` and its call near survey line 2750.",
+        "line_lf_sha256": "2e560efe06a48f9d1e251b706ad5201e1ed607f10bd0564417574e577ba8ff86"
+      },
+      {
+        "line": 181,
+        "text": "- Natural owner: `android/app/src/main/cpp/shared/state_android_shared.c/.h`.",
+        "line_lf_sha256": "7b9df8ba5589172c956f8ad8201a04394fa8ea687eee1c9000085168286ff460"
+      },
+      {
+        "line": 182,
+        "text": "- This remains deferred unless a coherent state-adjacent chunk or correctness reason lifts it above the stopping threshold. It must never justify broad save serialization edits.",
+        "line_lf_sha256": "3f20a08cb948909610b45cb60e36e5acfc51389c7e13f9d0134609b44e63a9b5"
+      },
+      {
+        "line": 183,
+        "text": "- Preserve null and malformed handling, case behavior, accepted `.sg0` through `.mg9` suffixes, extra-suffix rejection, logging categories, and direct-restore selection.",
+        "line_lf_sha256": "ca8c4cf3caf85c244bc2c798cd38c27935aff14cb89250924d30b91148cb4369"
+      },
+      {
+        "line": 184,
+        "text": "- Required evidence if activated: table-driven parser coverage, D2 save/restore integration, D2 Windows and Android builds, scoped quality, and `git diff --check`.",
+        "line_lf_sha256": "32aee7af8f69134abe7fe2d3c0f7fcac04346152186cc6c33fe24a592043d606"
+      },
+      {
+        "line": 185,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 186,
+        "text": "### DMR1-CHUNK-008: paired last-player retention predicates",
+        "line_lf_sha256": "d3f11346ae1f1a266e5cd33d0e47820e0dc386bb0c6d7b6905c5429a496eb379"
+      },
+      {
+        "line": 187,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 188,
+        "text": "- Inherited sources: `d1/main/config.c:100-116` and `d2/main/config.c:117-133` at the survey head.",
+        "line_lf_sha256": "02857fcbe3eb92a8040a17332a6a916ef69ec2a9867abfa9995162a4624ec809"
+      },
+      {
+        "line": 189,
+        "text": "- Move only `android_saved_last_player` and `android_should_keep_saved_last_player` to an existing natural config or `android/app/src/main/cpp/shared/net/auto_net.c/.h` owner if adjacent work makes the extraction worthwhile.",
+        "line_lf_sha256": "3c51447b303156694d123e18634f8dac59f2411cf7170801b5e2b4a86baa9c4f"
+      },
+      {
+        "line": 190,
+        "text": "- Keep D1/D2 first-run defaults and music defaults local. Do not create a new subsystem for two small predicates.",
+        "line_lf_sha256": "d1a15b67d710898ab2ddaf7829cbecdc20269d309df232dd2b6d072281fc8f5b"
+      },
+      {
+        "line": 191,
+        "text": "- Required evidence if activated: empty, coop-autosave, transient auto-net, and ordinary pilot-name cases plus desktop config read/write and Android first-launch coverage.",
+        "line_lf_sha256": "7483e2ebf8c7947ee74f3d4e53737d564ce323b3574eae487f484da1cc970547"
+      },
+      {
+        "line": 192,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "1e1abc0a62f4f8bbd7386011774bffa78d9a33e0024567a14f2fcd48e32206d5",
+    "read_lines": [
+      {
+        "line": 8104,
+        "text": "| `GQF-0254` | `OPEN` | P2/high | correctness/cooperative-inventory | d1/main/powerup.c; d2/main/powerup.c; d2/main/d1_in_d2/d1_in_d2_semantics.c; shared coop_recovery.c | First native D1 Vulcan acquisition grants the legacy 196-round minimum despite tagged recovery contents of 0 or 10. D1 bypasses the quantity cap; D1-in-D2 raises the capped value in its native policy helper. Recovery accounting subtracts only recorded contents and cannot undo excess player ammo. Unchanged paired cases and helpers compiled with small stand-ins reproduce the requested grant; ordinary D2, full-ammo and untagged controls pass. GQR-0240 owns actual pickup/recovery integration repair and validation; no network/device result claimed |",
+        "line_lf_sha256": "a64d16a8203f9ccbf003ca7ac18b73150a9010703a81f78de4b622a055d9d798"
+      },
+      {
+        "line": 10918,
+        "text": "| `GQR-0240` | `TODO` | `GQF-0254` | Enforce recovery ammo after native pickup minimums | Use existing recovery quantity ownership at the final native ammo grant in D1 and D1-in-D2. Preserve ordinary untagged single-player/competitive behavior, first/duplicate eligibility, partial ammo and recovery credit semantics; do not add an inventory ledger. Maintained actual native pickup plus recovery-note integration for 0/low/full tagged ammo, first/duplicate weapon, receiver capacity, D1-in-D2 and ordinary D2 controls, followed by co-op death/drop/pickup/save/restore validation, paired Windows/Android builds and scoped quality. The host stand-in proves a requested-grant defect only; coordinate GQR-0189 without conflating eligibility and quantity |",
+        "line_lf_sha256": "aaa5fe639e2c12b23841959cb7f921ab320d9f9f8b46116c550301183fb60fbe"
+      },
+      {
+        "line": 22495,
+        "text": "### Cooperative recovery and restore remap terminal diagnosis, 2026-10-09",
+        "line_lf_sha256": "cf1fddcf51e8d991fcdbf057fa6fccd06ccaba8089db242c4d6ac15d308edee7"
+      },
+      {
+        "line": 22496,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 22497,
+        "text": "- Completed GQ2-CHUNK-0093 all598 assigned frozen lines/hunk,13 merged current bindings and explicit recovery delta map. GQC1062/GQD0942;scope fingerprintbdb6d81a52c9e25d852b7bfc6ddbb392f9a1f6a4cc178ebc01517a19f3f38153;immutable report SHA25682e7ec2c7dde4dc4ece1ac4ce5ba563a12f81e3a31623cf85ec4f87d4865383b",
+        "line_lf_sha256": "63a9ab9d55ac3a476f012da7e7d914462ff99b113bb8a124eafbc47cffd925ff"
+      },
+      {
+        "line": 22498,
+        "text": "- BR0206 coordinated native restore and BR0388 stable wire identity remain OPEN; optional discard distinguished from strict source/dormant gear admission. Source/checksum/validity mask and authored fixtures do not imply runtime acceptance. No new finding/remediation/status/inherited saving",
+        "line_lf_sha256": "e17d89d2dc5dea5f9e8e105e7cb975ca7458a17bc9a863d6b6bc1de57f9cd6ba"
+      },
+      {
+        "line": 22499,
+        "text": "- GQ2 now234DONE411TODO;GQ1 remains818DONE1TODO.271 findings196OPEN75FIXED;257 remediations72DONE184TODO1DEFERRED.1049 terminal impact rows;257 product priorities unchanged",
+        "line_lf_sha256": "2de7b1dca7061a6750cb4fbdbdc7a84592438ca8a57074333993123ca7c82f31"
+      },
+      {
+        "line": 22500,
+        "text": "- Independent terminal verification required before0094; pending preflights/sweeps/investigations/worktree/current-head supplements/closure remain. No code/test/script mutation, runtime or deferred probes;goal active",
+        "line_lf_sha256": "131cd53fd30f128e648189a8e500044af17c9c0c1fd2aa52705f80aea0168e71"
+      },
+      {
+        "line": 22501,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 22502,
+        "text": "### SoundFont and shared synth terminal diagnosis, 2026-10-09",
+        "line_lf_sha256": "569ecd43d98554e9482f079c6bd076665664f4b30432cb73b99ab6ef36f035fc"
+      },
+      {
+        "line": 22503,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 22504,
+        "text": "- Completed GQ2-CHUNK-0094 all698 frozen/current-equal assigned lines and8 merged consumer bindings including final corpus seek/ownership reads. GQC1063/GQD0943;scope fingerprintcc71be1db453f1f889b0f2d3bf6d22dae7c2450fb1ac175faf36e9124171b5d0;immutable report SHA2568f5ffdf365e0c53f0bc4c7da8ab19861635a17a5c5f5f0ea706e055872cb77fb",
+        "line_lf_sha256": "23ccafe8cbedc96182483c7f455886e8448c2e9471a26ded9f0a84a3c62e7583"
+      },
+      {
+        "line": 22505,
+        "text": "- GQR0256 terminal TSF neighbor and0254 full corpus PCM remain TODO;0131 output ownership TODO and0157 completed extraction preserved. Actual playback resets held/sustain before startup; production FluidSynth distinct from TSF fixtures. No new root/status/runtime acceptance/inherited saving",
+        "line_lf_sha256": "98eaa9856bc295d2943bafc3160eea51a4bbaa73168a713ca4a9d4f470aa14b8"
+      },
+      {
+        "line": 22506,
+        "text": "- GQ2 now235DONE410TODO;GQ1 remains818DONE1TODO.271 findings196OPEN75FIXED;257 remediations72DONE184TODO1DEFERRED.1050 terminal impact rows;257 product priorities unchanged",
+        "line_lf_sha256": "0fd0c68ab7b9ba116155f8958b4cbe9269d8808a7723e5c380ae99d9ff1821d1"
+      },
+      {
+        "line": 22507,
+        "text": "- Independent terminal verification required before0095. No product/test/script mutation or media/runtime/deferred probes; all preflights/sweeps/investigations/worktree/current-head supplements/closure remain;goal active",
+        "line_lf_sha256": "89c44abaa5c7cdd6c73446f95d1590d5485b18db0fcbb82fa9ead7f50af207b6"
+      },
+      {
+        "line": 22508,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 22509,
+        "text": "### Endlevel runtime and flyout metadata terminal diagnosis, 2026-10-09",
+        "line_lf_sha256": "bc8742bbcd357b827183da132def046bd1a0e13a21b4368f786c27fc945420da"
+      },
+      {
+        "line": 22510,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 22511,
+        "text": "- Completed GQ2-CHUNK-0095 all581 frozen/current-equal assigned lines and16 merged current bindings. GQC1064/GQD0944;scope fingerprint93e9b595a2b718354236c4f924a25d22dbd4a64183c784217d6fbc87f80e7cfd;immutable report SHA256785260151094fd15e0f094ca06e30a558d338a70000cb107e82eea6c1d72f8fd",
+        "line_lf_sha256": "1b49d2f1d23958ebe0b70fe0834fcc82665cfd5d984cb028515b5fa070e31529"
+      }
+    ]
+  }
+]
+```
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0122 cooperative recovery diagnosis 20261009 -->
+
+### Chunk 0122 terminal diagnosis handoff, 2026-10-09
+
+- All five diagnosis gates complete. Independent audit PASS: exact generated assigned frozen recoveryL1-L750of1163/enclosing tail/current1160whole, base/originalABSENT, blob/range/manifest identities.149 chronological actual ranges reconstructed,46physical15whole/25complete current context deltas with exact raw hunks/193canonical lines in4owners. No stale tuple promoted.
+- Immutable report SHA256 0da2748d41e9a8908f01b576571cd7c4b8d95469fdd0f984015cca1a1ef34de4; scope 7d625ca6bc272c1f076c020927d87a9ed5b02f120863d58d68233df81be5fd20. Exact imported body/fiveJSON blocks PASS. GQC1091ISSUES/GQD0971CANDIDATE/CURRENT-RECONCILIATION and0122DONE/PRIMARY57GQR0262 verified. Two separate findings/remediations: GQF0275OPEN/GQR0261TODO freeze-disconnect44, GQF0276OPEN/GQR0262TODO saved-player restore extraction57.35expected inherited line reduction, no applied saving. Both state paths exist in1996 original.
+- Eleven added semantic table rows/one old TODO queue row removed; every other table/product semantic row preserved.262unique contiguous sorted fix ranks/1078terminal ranks; inherited raw baseline prefix preserved exactly and active/archivedBR bytes unchanged. Scoped documentation diff-check PASS. No product/source/test/script changes or execution/build/device/probes; concurrent work preserved. Fixture source inspection is not runtime acceptance; uncertain pickup representation remains implementation design prerequisite.
+- Numbered canonical queue263DONE364TODO.0116canonicalDONE retains separate gate5historical inherited-byte audit debt; this completion does not settle0116 or complete overall goal.
+- Next numbered scope GQ2-CHUNK-0123 shared/coop/coop_save.c diff hunks1-46,newL16-L1160. Discover exact frozen assignments/current attribution; prior contextual reads do not widen assigned scope.
+
+<!-- BEGIN IMPORT: GQ2-CHUNK-0123 cooperative save diagnosis 20261009 SHA256:08c18a889e7d49d9e265cc3430b8c3fd1680377e44dfd736de285a8fa773bc3a -->
+
+## GQ2-CHUNK-0123 cooperative save diagnosis 20261009 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0123-20261009.md`
+- Imported SHA-256: `08c18a889e7d49d9e265cc3430b8c3fd1680377e44dfd736de285a8fa773bc3a`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0123 cooperative save diagnosis 20261009
+
+Diagnosis and plans only. Gates1-4 complete; immutable publication and independent canonical audit pending. No product/source/test/script edits, builds, devices or probes. Historical0116 inherited-byte audit debt remains open.
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; originalfb555eec75e1ed12c8348805ab335afb4c721b06; reconciled HEADa42fbb9f9afd702cdf9180a023fc72681d9939a6. One assigned modified branch-added save source,46of91frozen hunks,newL16-L1160, enclosing frozen1-1260of2278/current1-1272of2406. Base1475lines; originalABSENT. ScopeSHA3fe765f9e3be05c9a297c2f0055ad47a48e35cf29a751ed361f571165e55c85f; manifest4350rows/rawSHAe98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4.92 chronological current source ranges/36physical19whole/36complete current deltas/74unique canonical lines in2owners. Source identity does not imply whole-file reading; context does not widen assigned frozen scope.
+
+Provisional impact rating:57(H/M/B/C/R=12/21/7/10/7), existing GQR-0262 REFERENCE. Existing candidate remains57; no new owner, summed score or applied saving.
+
+## Diff-minimization assessment
+
+CANDIDATE/REFERENCE existing GQF0276/GQR0262: identical18line bodies in paired19line saved-player restore loops, currentD12900-2918/D23856-3874. Existing shared coop_save.c/.h helper replaces38inherited lines with1D1/2guardedD2 lines:35expected removed inherited lines/two edited hunks. Preserve const metadata, lookup/iteration order, callsign-ID fallback, recovery_alive, dead-ship energy/shield normalization, same-level application/local shields and old-slot serial/life ordering. Keep D2 world-only exclusion explicit and PHYSFS/native serialization/failure/absent-cache boundaries at engine caller. Focused plan plan_gq2_0122_shared_saved_player_restore_20261009.md; no implementation or measured applied savings.
+
+Retain shared campaign/save/portable/remap owners, engine-packed formats, explicit allocation ownership and narrow native observation hooks. No additional concrete safe extraction identified in assigned scope. Shared async save/profiling/absent-cache current changes reconciled as context; their full implementation acceptance is separate. Assigned originalABSENT means zero assigned1996line saving.
+
+## Findings, clean dimensions and owner reconciliation
+
+No new finding. Existing GQR0261 freeze-disconnect cancellation44 remains separate from loop extraction57. BR0195 packet/relay authority, BR0206 all-survivor restore staging/failure convergence and BR0082 native body/scope admission remain OPEN with unchanged acceptance. Exact owner sections and relevant quality/remediation rows read. Current status/address/extent checks do not close broader authority; current paired transfer-unavailable branches fail rather than fallback but do not prove whole coordinated restore acceptance.
+
+Save/world/source paths preserve bounded campaign payloads, explicit source checkpoint identity/generation/checksum checks, optional gear diagnostics, required source completion counts and outer travel rollback. Codec owns copies before replacement, builds detached candidates, validates extents/order/reserved/checksum and commits only matching source identity/generation. Metadata staging parser has side effects despite preserving file position. Full structural footer checks are not complete native DGSS-body semantic admission. Portable fixed172byte record preserves engine inventory/timer/weapon domains; session/remap preserves live identity and bounds object mapping. stats_slots/claimed_slots set together establish equal complements, so unmatched placement syntax alone is not an overflow finding. Preserve current absent-ghost physics initialization before thrust.
+
+Actual source rollback persists source checkpoint before readiness and checks paused recovery/source state before portable restoration. Destination load marks started before fallible engine call; failure enters recovering checkpoint transfer, recovery failure exits lobby, acknowledgements distinguish restored/unchanged world and suppress pending failure. Ordinary restore sends READY_APPLY before fallible local restore and relies on broader protocol; no new root or closure from local sequential mutation alone. Native metadata consumers validate source gear and preserve D2 world-only rejection/recovery versus ordinary campaign/player application. Native full restore reports load failure or completion afterward; HUD failure expiry calls complete after ten seconds and is UI state, not transactional success evidence.
+
+## Fixture evidence and implementation acceptance
+
+Whole format64,restore-fixture121,campaign277 sources and actual CMake registration read; no execution. Format uses synthetic payload and structural helpers; restore tool authors actual ABI-shaped corrupt sections for a real save; campaign fixture invokes real codec with opaque synthetic world bytes. None alone establishes full native body validation, actual restore or multi-peer failure convergence.
+
+Six whole D2 LAN-owned world/rollback scripts and three whole D1/D2 fence scripts read with actual runner/automation oracle. SecretRollback optional switch enables SecretWorld; registration and900second master timeout do not automatically run the specialized scenario. Paired runner requires both durable matching-run-ID PASS results. Source oracle checks actual retained source/campaign/generation, exact recovery record ownership/quantities and live object binding, robots and carried local/remote state. History verifier decodes actual rewind/restart campaign archives without staging live metadata. Waiting rollback fixture forces required participants CONNECT_WAITING, drops one initial acknowledged chunk while still queueing reliable retransmission; paired queue admits only matching isolated controls and resends. Actual UDP admission bounds complete envelope/stamp/token/address routing before fixed-size inner dispatch. This source evidence is not executed delivery, cryptographic end-to-end authority or broader distinct-survivor failure-matrix acceptance.
+
+All current deltas read completely, including empty diffs. LAN372line30hunk and automation439line8hunk current changes add independent local histories/host restore, ghost cold/late return, background/pause/guidebot and checkpoint/profiling fixtures; existing rollback bodies remain unchanged. No whole native engine/LAN/automation credit. Preserve native formats/comments/desktop guards and concurrent async checkpoint work. Implementation acceptance for existing loop plan must use actual native equivalence and paired ordinary/world/absent/source controls; broader owners retain their existing multi-peer failure/authority/body validation matrices.
+
+This completes assigned diagnosis preparation, not a product repair or overall campaign.0123canonicalTODO until independent report/import/rank audit; next0124actualassigned coop_travel.cL1-L750. Pending numbered/supplemental/sweep/final-head coverage and0116debt remain required.
+
+## Exact assigned identity
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "assignment": "diff hunks1-46,newL16-L1160",
+    "base_lines": 1475,
+    "frozen_lines": 2278,
+    "current_lines": 2406,
+    "base_blob": "b6bc653c39c5aeaf37ed9a06c3b01d02c8b60212",
+    "head_blob": "e15eb3e296b6b06d852c0378dfe83ce5bbbef433",
+    "original_blob": "ABSENT",
+    "base_whole_source_lf_sha256": "b5d1ef9d131ad951e605798490bcfbb3c3ec627a4fa2647e6ba185b44874e7dc",
+    "head_whole_source_lf_sha256": "7d8b4fcf63b931954e9d601edd650421e4453c80d3261cd97a55bb93c73fbceb",
+    "current_whole_source_sha256": "c05b74994d936434bfc2a466a125193b4086bee09ee7fb1d5af1163c88c7acb6",
+    "base_whole_read": false,
+    "head_whole_read": false,
+    "current_whole_read": false,
+    "total_frozen_hunks": 91,
+    "assigned_hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -15,0 +16,4 @@",
+        "raw_hunk_lf_sha256": "5509e9625184af5c6dc3fc797bd6605ed993c0f6cf2cb7e21ee1bde37b96b67c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -17,0 +22,2 @@",
+        "raw_hunk_lf_sha256": "e1eb57aeee1dfed7b4c5d9648c4c2ff92896d37effda166765d44d1e4cc39543",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -24,0 +31 @@",
+        "raw_hunk_lf_sha256": "1e0a9579acdd323439d5831f33f764d437d9e4148d57277a02bffce1b5566905",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -37,0 +45 @@",
+        "raw_hunk_lf_sha256": "45bca4d619702c96015f6713596d385cd8eff21bae2bcbb42c3d9677ef8169d0",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -44,0 +53 @@ extern sbyte PKilledFlags[MAX_PLAYERS];",
+        "raw_hunk_lf_sha256": "b39f86ba4bd765fc21633763cc437b08ece517cd91569b37c267630e3cb26731",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -48,0 +58,538 @@ extern fix ThisLevelTime;",
+        "raw_hunk_lf_sha256": "44a407e6df948c53f1b97a4e814df8ab9e8eae7786fc2426fa1ff6732a2cf774",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            180
+          ],
+          [
+            181,
+            360
+          ],
+          [
+            361,
+            539
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -52,0 +600 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "20e862dc8ca4f3de8c91e6928dbada349f7e5ce46197af6fefeadaf4572276e4",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -58,0 +607 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "80021cfa5a41f18a2379fad3e91c487e26676ffa20680af8ae55eae8bd765ccf",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -60,0 +610,4 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "5f0e24e8c89c38c3e8edcbfd7c7177a83479ce92f747447451a6dcef7af08e86",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -62,0 +616 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "c9b49bc3f6e5b92830b1e6f5b50f550a308ccd999f5a9474c45800dd336b73d5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -73 +627 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "0c3039df3b5e19e7eaba83ce9c557a4a5c7e3a0d96d80d830cafb05056c886ef",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -74,0 +629,2 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "ff9a08768b5485607c71f7a6c0fc9b0cb7fcb76137053098d0dcf773c3b68d0d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -79 +635 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "84f82be2d8f186e5ec8edf4673874d235d81f213a5a3da18f39d31ae6d0bd6ab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -85,0 +642,5 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "f5589aef25e07bdc75990abac1bc31204236621b5d5a9ab7ea59d5f619a54c18",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -86,0 +648,3 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "fcb96fb830916a8b692f45d243beed993cb000c738e25805dfca0b1056f38ca6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -89,0 +654,2 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "8c1341bb6a7c9eb91946bd93ba25176abd70f51019a01c78ac98319a9d8d21b3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -90,0 +657 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "b7aa80a42e8d23d3f0407ddde81b85c54c321826a6a4b3c6b3bc74b547cd8f5e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -115,0 +683,14 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "4a75433e3bcb450edfa3959bde931b9a1016705cb0a74cd3541ebe6b7ca2895a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            15
+          ]
+        ]
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -200,0 +782,3 @@ void coop_restore_status_complete(void)",
+        "raw_hunk_lf_sha256": "81106e7ee79af3530870b68840c7e70275f74059aa6f36c6285b54502989a7ce",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -213,0 +798,9 @@ const char *coop_restore_status_message(int *is_error)",
+        "raw_hunk_lf_sha256": "ffda14991dcb3b520f48013f84ae2b202b3264bcb61d745d6e3a3914fc1baeef",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -234,0 +828,18 @@ static void coop_write_metadata_extra(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "af30349f1931887a3ff163ccc73b4d65de0ec03045a8f74eb5ac694ffcea1cb3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            19
+          ]
+        ]
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -332,0 +944,7 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)",
+        "raw_hunk_lf_sha256": "e2f6f44228836e36a35dfc1616009bc07b0ab7be085389b2fb37528cde4c012c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -366,0 +985,7 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "12cc618847b6bdf8a9b3d12da8be06be6dcd94348f15fa650162dbda47bb0041",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -367,0 +993,8 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "4ed8abbad913ed8309486a6d8096596af2fe257de4dcdfff99417f8e0e2b6bf2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -372,0 +1006 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "779cf4bbc991c8f102837af6790b3fe95b26f5f540cc03dc43f673f0044c8c76",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -386,13 +1019,0 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "5e66ac6e13e0bb05cec0de5e9d9ede874f80a6af3f6094435a19e4fac761fd48",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            14
+          ]
+        ]
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -400,0 +1022,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "7dc3901f840e974dd2f5ad45a66210cef2bad6738af6d7b302081a452a1dd347",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -404,0 +1028,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "27a3310661cc990bf63bef9c8aa9b23b0010515839a352b87ffc17c9cda34dca",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -407,0 +1033,3 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "9d734bb1eee05ece5d7b277107a7f806199720be6d23b82a06bc0ec77556fec4",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -409 +1037 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "3b1f2f70dd80236ccfa8bbe4ef593338c856e05997fcd1963dc9282e30f959a3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -412 +1040,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "e7a72523fd71c41fd8a2faa2086ef5758e7042be7823524d8993706e8ac9cbf7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 32,
+        "header": "@@ -416,0 +1046,7 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "e4819e9d55b7fc434d0a1ca0ec6944a0f94ab6c1d060414fdc82f698b1e1aac7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 33,
+        "header": "@@ -420 +1056 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "0fe7cd09cd75c5c9f326ebd426f560a55d0e4ec884f5b7629b80d97f1b0991e9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 34,
+        "header": "@@ -421,0 +1058,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "3ae313224f8f7260998d03fd97ae3c56394bd467e17cfdc8a6c18e7af8ad82d4",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 35,
+        "header": "@@ -424,0 +1063,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "c6aa8d1eb14e9525a89ed5a8eee079d489f336a78f5de86ef1aa44da9b6abcff",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 36,
+        "header": "@@ -428,0 +1069,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "0433d7a0a09d3718767e417fd30e83dd58e316d085f80d87bd2902a8d99a2a09",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 37,
+        "header": "@@ -430 +1072 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "a4c3afd3b0e1f54a38f731198735969844e8ec62b1091513d1dccd3cd33fe370",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 38,
+        "header": "@@ -432 +1074 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "edf1ee4ff426fce7023a5516d28daa98547e0aaed5804ad3706513e1cc97eb18",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 39,
+        "header": "@@ -434,2 +1076,5 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "378831fa6155adf55ad073497188547ee183733eb54584037b8482e1ecac5f30",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 40,
+        "header": "@@ -461,0 +1107,4 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "f729ad353ac824e025b565d8cee79c55f54d7eb8e07bc9b0f855af7b0e231f82",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 41,
+        "header": "@@ -465,0 +1115,4 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "6776d95b92e2662a651885600ac5189b11aa51853e309ec782405ebd52269950",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 42,
+        "header": "@@ -476,7 +1129,2 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "a3c63c480140be12f88f4ce662f3c840127131c1216b7e891e36c218ae9a0edf",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 43,
+        "header": "@@ -490,8 +1138 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "6245877dc3f1fe7a432a6e798885b2291ed70fbe4973c91e15355105da2bedaa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 44,
+        "header": "@@ -499,2 +1140,10 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "78fe097ed033dbf7e34feaa7ac80661e3ed8b17e463d525d8237fd8f33126509",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            13
+          ]
+        ]
+      },
+      {
+        "ordinal": 45,
+        "header": "@@ -503,0 +1153 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "0717d02b495af33d62edbcc5eb0c401d25bd697700a4c512a4b3ad4facf08276",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 46,
+        "header": "@@ -506,3 +1156,5 @@ int coop_read_save_metadata_rewind(rewind_file *file,",
+        "raw_hunk_lf_sha256": "632ec1ba7e21fc847f39b3d10e2dfc83cfb11f67af6422e3e574a35491719f39",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      }
+    ],
+    "frozen_diff_lf_sha256": "66502a2c41c43fa7ccb35d5964e77649c209581a1aee89b852496ba79a9ad4a0",
+    "manifest_raw_sha256": "e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4",
+    "frozen_read_ranges": [
+      {
+        "first": 1,
+        "last": 57,
+        "range_lf_sha256": "11ac0536f27c95fac2a43522bd172bc503b8b8216468f3bbd27c9a18a3e931f2"
+      },
+      {
+        "first": 596,
+        "last": 714,
+        "range_lf_sha256": "90ad8864892ef2e6e1740fc50f7baf9fccf9a78ac9906a4d95f9045f942cb110"
+      },
+      {
+        "first": 58,
+        "last": 595,
+        "range_lf_sha256": "a878ff3559a780c0335f38c702406a267f8e862d4f4d133d755f27fcb8a829d2",
+        "read_source": "complete assigned added hunk6"
+      },
+      {
+        "first": 715,
+        "last": 975,
+        "range_lf_sha256": "b83173a02629a0493944bf50c890ded145cc3cb27534618f3cff8eb1f173f511",
+        "read_source": "bounded frozen source output"
+      },
+      {
+        "first": 976,
+        "last": 1260,
+        "range_lf_sha256": "aea910642bf76dbf852ec54ce18835f3dbacadcd2efc06decd648b9a241a1050",
+        "read_source": "bounded frozen source output"
+      }
+    ],
+    "assigned_payload_complete_read": true,
+    "whole_frozen_file_read": false,
+    "current_delta_raw_sha256": "6eb8a32e456f0fa9b4e4d1fe4c58145e5fe85a868ee01a29594a593bf6587627",
+    "current_delta_whole_read": true
+  }
+]
+```
+
+## Selected manifest identity
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "status": "M",
+    "old_path": "-",
+    "base_mode": "100644",
+    "base_blob": "b6bc653c39c5aeaf37ed9a06c3b01d02c8b60212",
+    "head_mode": "100644",
+    "head_blob": "e15eb3e296b6b06d852c0378dfe83ce5bbbef433"
+  }
+]
+```
+
+## Current physical source reads
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_lines": 2406,
+    "current_whole_source_sha256": "c05b74994d936434bfc2a466a125193b4086bee09ee7fb1d5af1163c88c7acb6",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 250,
+        "range_lf_sha256": "f8125f95113ba469acb8bb831195cffc018f603c442579b604c8e7ca14e2e0f9"
+      },
+      {
+        "first": 251,
+        "last": 500,
+        "range_lf_sha256": "810d139df6acbd89c15c5fa7ee761efd1c8bdf16dfc9fa41e705205ed8c5175a"
+      },
+      {
+        "first": 501,
+        "last": 750,
+        "range_lf_sha256": "cfb0dde736cc8d2d6e2f571b77341715ffb21c9b06459a06dc3ffd6b6dfd345c"
+      },
+      {
+        "first": 751,
+        "last": 1000,
+        "range_lf_sha256": "db2efecfc78f899693f5cab652405a4e3f54b5c6903526ef11b897108f93966e"
+      },
+      {
+        "first": 1001,
+        "last": 1260,
+        "range_lf_sha256": "c5c2c51129f54b5e0c025b1a57522cdcc3911d88dc8986ed55e31c5b55296a0b"
+      },
+      {
+        "first": 1261,
+        "last": 1272,
+        "range_lf_sha256": "c855dae6fc79154c53e8aed8bea40cb7f2bc599bea125b93266e911db4841039"
+      },
+      {
+        "first": 773,
+        "last": 853,
+        "range_lf_sha256": "e58ed2e010f1df38b7561aafaae5b758cd26ecc357c7de40b4a0af968ed8fa98"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 1272,
+        "range_lf_sha256": "e0f8beccb68d3fd49107ab92f8cc8d8eb10b289390f637d4eaec906c5fdb36a0"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_lines": 1683,
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "actual_read_ranges": [
+      {
+        "first": 685,
+        "last": 820,
+        "range_lf_sha256": "8c83f40e944b54de988392af09f3dc15dd75259efde5f1728e91b0ac735548f0"
+      },
+      {
+        "first": 858,
+        "last": 902,
+        "range_lf_sha256": "006785102a11ec1afc81ede107128aa03f115d336c9bae4fd9e0035343c0647f"
+      },
+      {
+        "first": 938,
+        "last": 984,
+        "range_lf_sha256": "983f1a69e56ad9a62a20582f834d0357361516f0be5d0ac9e4fa49a59a327921"
+      },
+      {
+        "first": 1384,
+        "last": 1437,
+        "range_lf_sha256": "ab75d51852a1ea5b850a0694e1676e5339dd229423c756c278628bc0d83a468c"
+      },
+      {
+        "first": 1476,
+        "last": 1510,
+        "range_lf_sha256": "a9803331e510a7625cf0408dd0174b0ba425084f76add7a26812269b062952a1"
+      },
+      {
+        "first": 1536,
+        "last": 1627,
+        "range_lf_sha256": "679dc957a9b9ca42b8a462f5a4cf21ebf8bb4e7c0d6ea38153fdb329039b5b6d"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 685,
+        "last": 820,
+        "range_lf_sha256": "8c83f40e944b54de988392af09f3dc15dd75259efde5f1728e91b0ac735548f0"
+      },
+      {
+        "first": 858,
+        "last": 902,
+        "range_lf_sha256": "006785102a11ec1afc81ede107128aa03f115d336c9bae4fd9e0035343c0647f"
+      },
+      {
+        "first": 938,
+        "last": 984,
+        "range_lf_sha256": "983f1a69e56ad9a62a20582f834d0357361516f0be5d0ac9e4fa49a59a327921"
+      },
+      {
+        "first": 1384,
+        "last": 1437,
+        "range_lf_sha256": "ab75d51852a1ea5b850a0694e1676e5339dd229423c756c278628bc0d83a468c"
+      },
+      {
+        "first": 1476,
+        "last": 1510,
+        "range_lf_sha256": "a9803331e510a7625cf0408dd0174b0ba425084f76add7a26812269b062952a1"
+      },
+      {
+        "first": 1536,
+        "last": 1627,
+        "range_lf_sha256": "679dc957a9b9ca42b8a462f5a4cf21ebf8bb4e7c0d6ea38153fdb329039b5b6d"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_source_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "actual_read_ranges": [
+      {
+        "first": 374,
+        "last": 423,
+        "range_lf_sha256": "2903bff4264d3b8539e1a62f9ce2dcb9a73c06f45313edd6e2a33e6c4ac5c0f1"
+      },
+      {
+        "first": 446,
+        "last": 493,
+        "range_lf_sha256": "c0bae86f6753b4a2ec204185977aefd64a30388cd0e4ebf3f968cd0f65fb4c16"
+      },
+      {
+        "first": 493,
+        "last": 556,
+        "range_lf_sha256": "4d55c27b850b8ed8ccc805bb65a9ce2d5ff2aa837fba7d3d0d4abae5b5aba323"
+      },
+      {
+        "first": 125,
+        "last": 174,
+        "range_lf_sha256": "26acea70a3d5b346e7fbd9c6fda78c3e1509fd56f28173b49abda1fd123291d6"
+      },
+      {
+        "first": 346,
+        "last": 380,
+        "range_lf_sha256": "92a91eafa93536e4719580e8ffe54319d1174a4430dbf80a9a23232b3cd6d795"
+      },
+      {
+        "first": 621,
+        "last": 641,
+        "range_lf_sha256": "3cc14d434aa6051ecd51540cdf1be26f8252fc0b6ea1f0af5344e830b8479903"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 125,
+        "last": 174,
+        "range_lf_sha256": "26acea70a3d5b346e7fbd9c6fda78c3e1509fd56f28173b49abda1fd123291d6"
+      },
+      {
+        "first": 346,
+        "last": 423,
+        "range_lf_sha256": "699b65c696704c0a22773273a34854a6088d20edd11a9a990a1e8f3b230022e8"
+      },
+      {
+        "first": 446,
+        "last": 556,
+        "range_lf_sha256": "ea5de8cf2375226a71e5f46a06a3b2faf1cc0e6a836800c465aa157e26f0728d"
+      },
+      {
+        "first": 621,
+        "last": 641,
+        "range_lf_sha256": "3cc14d434aa6051ecd51540cdf1be26f8252fc0b6ea1f0af5344e830b8479903"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_android_shared.c",
+    "current_lines": 1384,
+    "current_whole_source_sha256": "3836f98e3c738fd2dbd50c587573232904bb2d09cf1671ca3f6898453d054b20",
+    "actual_read_ranges": [
+      {
+        "first": 800,
+        "last": 901,
+        "range_lf_sha256": "795058959f553f0aa8f83dcb58609e1a6cb34d6da9a495b39690e3c7a1276d1f"
+      },
+      {
+        "first": 1072,
+        "last": 1133,
+        "range_lf_sha256": "5e228e25c189fc4f34e75e865163242e7890e504c5d4c25bcb52079b43cc4ba9"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 800,
+        "last": 901,
+        "range_lf_sha256": "795058959f553f0aa8f83dcb58609e1a6cb34d6da9a495b39690e3c7a1276d1f"
+      },
+      {
+        "first": 1072,
+        "last": 1133,
+        "range_lf_sha256": "5e228e25c189fc4f34e75e865163242e7890e504c5d4c25bcb52079b43cc4ba9"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/state.c",
+    "current_lines": 3076,
+    "current_whole_source_sha256": "bca1fef229dab0504f866f275064422506cdf1f1e2854983a62a82720fa06e0c",
+    "actual_read_ranges": [
+      {
+        "first": 2724,
+        "last": 2777,
+        "range_lf_sha256": "c6df9e82f307dfd03f54bfd1c1ac74f7ac706a372d7e40c232d252b78c408566"
+      },
+      {
+        "first": 2870,
+        "last": 2936,
+        "range_lf_sha256": "5d975dcf166323739d163bbd8522c9dfd4b210f2ac5eced99a0c37b95437fab4"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 2724,
+        "last": 2777,
+        "range_lf_sha256": "c6df9e82f307dfd03f54bfd1c1ac74f7ac706a372d7e40c232d252b78c408566"
+      },
+      {
+        "first": 2870,
+        "last": 2936,
+        "range_lf_sha256": "5d975dcf166323739d163bbd8522c9dfd4b210f2ac5eced99a0c37b95437fab4"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_lines": 4055,
+    "current_whole_source_sha256": "510e820e365fd928fb03044f324f917e65e10fff3456b49beccd2aff55e7256e",
+    "actual_read_ranges": [
+      {
+        "first": 3663,
+        "last": 3717,
+        "range_lf_sha256": "d33a64b0b791a244544d2007fc66fdf96f7dc90de5b2996d04793a36dd1d4c91"
+      },
+      {
+        "first": 3814,
+        "last": 3904,
+        "range_lf_sha256": "28fe126a64700b96a9114b1eda46f27cf7a1a6edb0823233ac9aeb17f608deef"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 3663,
+        "last": 3717,
+        "range_lf_sha256": "d33a64b0b791a244544d2007fc66fdf96f7dc90de5b2996d04793a36dd1d4c91"
+      },
+      {
+        "first": 3814,
+        "last": 3904,
+        "range_lf_sha256": "28fe126a64700b96a9114b1eda46f27cf7a1a6edb0823233ac9aeb17f608deef"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_portable.h",
+    "current_lines": 82,
+    "current_whole_source_sha256": "05677dde3ff949ccc91717a50d831bc67ee44eebc2e44956af782202c45cb518",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 82,
+        "range_lf_sha256": "05677dde3ff949ccc91717a50d831bc67ee44eebc2e44956af782202c45cb518"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 82,
+        "range_lf_sha256": "05677dde3ff949ccc91717a50d831bc67ee44eebc2e44956af782202c45cb518"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_restore_remap.h",
+    "current_lines": 19,
+    "current_whole_source_sha256": "84304b667df6fdf236844bf9cf88408b75ae0ec1749a370285e44705c3731e30",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 19,
+        "range_lf_sha256": "84304b667df6fdf236844bf9cf88408b75ae0ec1749a370285e44705c3731e30"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 19,
+        "range_lf_sha256": "84304b667df6fdf236844bf9cf88408b75ae0ec1749a370285e44705c3731e30"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_player_session.h",
+    "current_lines": 60,
+    "current_whole_source_sha256": "da136732943221917c685b810e2b1ba63f32e84553c260a421063f59ea112283",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 60,
+        "range_lf_sha256": "da136732943221917c685b810e2b1ba63f32e84553c260a421063f59ea112283"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 60,
+        "range_lf_sha256": "da136732943221917c685b810e2b1ba63f32e84553c260a421063f59ea112283"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_coop_save_format.c",
+    "current_lines": 64,
+    "current_whole_source_sha256": "001e7fe204165eaa5fd1cca82a346874fc23bc7833b31f1850565080aa5e5555",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 64,
+        "range_lf_sha256": "001e7fe204165eaa5fd1cca82a346874fc23bc7833b31f1850565080aa5e5555"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 64,
+        "range_lf_sha256": "001e7fe204165eaa5fd1cca82a346874fc23bc7833b31f1850565080aa5e5555"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/coop_restore_fixture.c",
+    "current_lines": 121,
+    "current_whole_source_sha256": "78bdb21d14555cbbb1ff0da961c7bac8b664af1251f119724eaece14bd03d56e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 121,
+        "range_lf_sha256": "78bdb21d14555cbbb1ff0da961c7bac8b664af1251f119724eaece14bd03d56e"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 121,
+        "range_lf_sha256": "78bdb21d14555cbbb1ff0da961c7bac8b664af1251f119724eaece14bd03d56e"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_coop_campaign.c",
+    "current_lines": 277,
+    "current_whole_source_sha256": "44c9e7c381c4056526fb584b42431469febc2bf137e25bd2a579fe22c0f16c13",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 277,
+        "range_lf_sha256": "44c9e7c381c4056526fb584b42431469febc2bf137e25bd2a579fe22c0f16c13"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 277,
+        "range_lf_sha256": "44c9e7c381c4056526fb584b42431469febc2bf137e25bd2a579fe22c0f16c13"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save_format.h",
+    "current_lines": 87,
+    "current_whole_source_sha256": "6572f44c9a713ec5b1ff7524dc701f6344aba0575df1437870a787fbcdcc556e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 87,
+        "range_lf_sha256": "6572f44c9a713ec5b1ff7524dc701f6344aba0575df1437870a787fbcdcc556e"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 87,
+        "range_lf_sha256": "6572f44c9a713ec5b1ff7524dc701f6344aba0575df1437870a787fbcdcc556e"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_lines": 569,
+    "current_whole_source_sha256": "d19807e4ba01f7f113b363ef873bc3c1056fd567a4bb09adf868a0928fb23401",
+    "actual_read_ranges": [
+      {
+        "first": 177,
+        "last": 185,
+        "range_lf_sha256": "b33d4035e87ec63a536c3696f55af074e92a7b9a907d90b42915543a9e1df904"
+      },
+      {
+        "first": 213,
+        "last": 225,
+        "range_lf_sha256": "451c1cf5b290057d7a92fc365a8aeceabeae4e3d406a3cf90fa441cb4c8f6529"
+      },
+      {
+        "first": 489,
+        "last": 513,
+        "range_lf_sha256": "5d5fc63e5e43ace32425ec8ed518e26489ace32bfe0ab6f7078d8b5edfcd6085"
+      },
+      {
+        "first": 555,
+        "last": 561,
+        "range_lf_sha256": "6126b548cc3d232cd2d0facb76d514719ac3a0ffc7bfc9a4c8652803cbd86b63"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 177,
+        "last": 185,
+        "range_lf_sha256": "b33d4035e87ec63a536c3696f55af074e92a7b9a907d90b42915543a9e1df904"
+      },
+      {
+        "first": 213,
+        "last": 225,
+        "range_lf_sha256": "451c1cf5b290057d7a92fc365a8aeceabeae4e3d406a3cf90fa441cb4c8f6529"
+      },
+      {
+        "first": 489,
+        "last": 513,
+        "range_lf_sha256": "5d5fc63e5e43ace32425ec8ed518e26489ace32bfe0ab6f7078d8b5edfcd6085"
+      },
+      {
+        "first": 555,
+        "last": 561,
+        "range_lf_sha256": "6126b548cc3d232cd2d0facb76d514719ac3a0ffc7bfc9a4c8652803cbd86b63"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.c",
+    "current_lines": 418,
+    "current_whole_source_sha256": "a4adc3483c32abaf010a827da77b32556a3b1bdbbf21121564a59bc8d5351b5c",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 243,
+        "range_lf_sha256": "67aae0abfac4df047dd5634fe38e72710488f201a3cc33161550429a90ae275e"
+      },
+      {
+        "first": 244,
+        "last": 418,
+        "range_lf_sha256": "9f7dbf9c125212a6066bd820d5bb4086e766f061a32aacf468463ec939a44118"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 418,
+        "range_lf_sha256": "a4adc3483c32abaf010a827da77b32556a3b1bdbbf21121564a59bc8d5351b5c"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_lines": 4349,
+    "current_whole_source_sha256": "75e63ac88b449b6c72362a09f9ac68fff7f3278df2a482a06072f6aaffd8cb78",
+    "actual_read_ranges": [
+      {
+        "first": 3921,
+        "last": 3960,
+        "range_lf_sha256": "c9e08136f66225a102c454eefbff1d4dabb87d8657d51de0efa27c6cf6e06151"
+      },
+      {
+        "first": 3961,
+        "last": 4044,
+        "range_lf_sha256": "375be556a209bf00e54aba331c2870f89448e8b73aa05d25c5602d502c134c10"
+      },
+      {
+        "first": 1884,
+        "last": 1945,
+        "range_lf_sha256": "a0d7d627032eeb82c8bb25ca081419533807332f8a3197f6658df1bf1022d431"
+      },
+      {
+        "first": 1973,
+        "last": 2058,
+        "range_lf_sha256": "6c5f429ffff4fbd5ce762f4d0d5549684b79de060e0d430b217f0f597e2e3cb6"
+      },
+      {
+        "first": 674,
+        "last": 748,
+        "range_lf_sha256": "9a42c1f8f4b14b5aa7a7b031f71810af7409a0b0be6284e2d1300f4f438f0195"
+      },
+      {
+        "first": 657,
+        "last": 673,
+        "range_lf_sha256": "4f69e85af4c4847401bfec18beecab337ee2fed77586cdd02246daa4a1698507"
+      },
+      {
+        "first": 169,
+        "last": 183,
+        "range_lf_sha256": "7baae9d4a4aca9ab4b7c1fa2cc65ac212722733499dd9740238e168e844683ca"
+      },
+      {
+        "first": 292,
+        "last": 324,
+        "range_lf_sha256": "5f3522c30e7290fc969d5c1d842af16fe25a4e57301e6ecbb4b8a5b1ba54835c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 169,
+        "last": 183,
+        "range_lf_sha256": "7baae9d4a4aca9ab4b7c1fa2cc65ac212722733499dd9740238e168e844683ca"
+      },
+      {
+        "first": 292,
+        "last": 324,
+        "range_lf_sha256": "5f3522c30e7290fc969d5c1d842af16fe25a4e57301e6ecbb4b8a5b1ba54835c"
+      },
+      {
+        "first": 657,
+        "last": 748,
+        "range_lf_sha256": "237b024ebd24995203faadc176b3348d1b08c8051b36d11dc1ea905ee23d9666"
+      },
+      {
+        "first": 1884,
+        "last": 1945,
+        "range_lf_sha256": "a0d7d627032eeb82c8bb25ca081419533807332f8a3197f6658df1bf1022d431"
+      },
+      {
+        "first": 1973,
+        "last": 2058,
+        "range_lf_sha256": "6c5f429ffff4fbd5ce762f4d0d5549684b79de060e0d430b217f0f597e2e3cb6"
+      },
+      {
+        "first": 3921,
+        "last": 4044,
+        "range_lf_sha256": "d93258032698804c5cd3346fa2c6f5b106873bd7178803f3412b47e8b7d802af"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6600,
+    "current_whole_source_sha256": "a389b03cc9f73738829f6f6b813f8aa40f15f63aa52a9499aa39f04753e9486b",
+    "actual_read_ranges": [
+      {
+        "first": 4848,
+        "last": 4901,
+        "range_lf_sha256": "181a25c58f57a9d0dba9932fdb8261cc6d80d700eec35ced338d1af3424d949d"
+      },
+      {
+        "first": 5482,
+        "last": 5579,
+        "range_lf_sha256": "4c839890b4497ca43a4f242560f472ead7d804fa38e00abd91f9b90e834e69e8"
+      },
+      {
+        "first": 5314,
+        "last": 5402,
+        "range_lf_sha256": "30893408ab313ac42e73ae399e8cbc1f3d14d84650311c22a5f6aa09dc8cd610"
+      },
+      {
+        "first": 5570,
+        "last": 5604,
+        "range_lf_sha256": "b524547eed0ba27d6a9d0c77c4f4b8eacdea51a2f4fdbe636bee7162e38546c9"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 4848,
+        "last": 4901,
+        "range_lf_sha256": "181a25c58f57a9d0dba9932fdb8261cc6d80d700eec35ced338d1af3424d949d"
+      },
+      {
+        "first": 5314,
+        "last": 5402,
+        "range_lf_sha256": "30893408ab313ac42e73ae399e8cbc1f3d14d84650311c22a5f6aa09dc8cd610"
+      },
+      {
+        "first": 5482,
+        "last": 5604,
+        "range_lf_sha256": "35b4f715f5731df8d180b7f33a1b02452d90ecc941f2a9140acf4edb0b4a7b1c"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.h",
+    "current_lines": 265,
+    "current_whole_source_sha256": "2c310490cbbe83eec1edb4db971f625ee185d9647c607664d272dc8c67e0b22c",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 265,
+        "range_lf_sha256": "2c310490cbbe83eec1edb4db971f625ee185d9647c607664d272dc8c67e0b22c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 265,
+        "range_lf_sha256": "2c310490cbbe83eec1edb4db971f625ee185d9647c607664d272dc8c67e0b22c"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.h",
+    "current_lines": 78,
+    "current_whole_source_sha256": "493315e82c33d449215fde9f02633e7f2c8d02f4984fe924c116e7d0caab40af",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 78,
+        "range_lf_sha256": "493315e82c33d449215fde9f02633e7f2c8d02f4984fe924c116e7d0caab40af"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 78,
+        "range_lf_sha256": "493315e82c33d449215fde9f02633e7f2c8d02f4984fe924c116e7d0caab40af"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_carry.jsonc",
+    "current_lines": 7,
+    "current_whole_source_sha256": "2274088d00db5328d31e87d047137662449a3b8faced595ef7e9a2ad86047a0b",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "2274088d00db5328d31e87d047137662449a3b8faced595ef7e9a2ad86047a0b"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "2274088d00db5328d31e87d047137662449a3b8faced595ef7e9a2ad86047a0b"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_tag.jsonc",
+    "current_lines": 4,
+    "current_whole_source_sha256": "1fdb608086bec4d6bc0e97238897a0cd5379ce8512902b9cd0f83c3e445263ab",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 4,
+        "range_lf_sha256": "1fdb608086bec4d6bc0e97238897a0cd5379ce8512902b9cd0f83c3e445263ab"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 4,
+        "range_lf_sha256": "1fdb608086bec4d6bc0e97238897a0cd5379ce8512902b9cd0f83c3e445263ab"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_prepare_host.jsonc",
+    "current_lines": 11,
+    "current_whole_source_sha256": "de51f906c1567263806cff9dda8a6edab6ee965c9148e1a33db5764d408a5e43",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 11,
+        "range_lf_sha256": "de51f906c1567263806cff9dda8a6edab6ee965c9148e1a33db5764d408a5e43"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 11,
+        "range_lf_sha256": "de51f906c1567263806cff9dda8a6edab6ee965c9148e1a33db5764d408a5e43"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_prepare.jsonc",
+    "current_lines": 8,
+    "current_whole_source_sha256": "8e5f12d8597a1f80692a14d937b82ad99f12d1cb5db928af91bde486f51bcb2e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 8,
+        "range_lf_sha256": "8e5f12d8597a1f80692a14d937b82ad99f12d1cb5db928af91bde486f51bcb2e"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 8,
+        "range_lf_sha256": "8e5f12d8597a1f80692a14d937b82ad99f12d1cb5db928af91bde486f51bcb2e"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6338,
+    "current_whole_source_sha256": "ef8d6a57383f1a8dbf3f4940b3c595d9cd40ca8c7cc61cc90f437ecd85bb508a",
+    "actual_read_ranges": [
+      {
+        "first": 5642,
+        "last": 5730,
+        "range_lf_sha256": "0590e5ffb5b6d58acd4b495b16017d3d9b433076c25630a03fe8f82c8682295d"
+      },
+      {
+        "first": 5770,
+        "last": 5808,
+        "range_lf_sha256": "e44c20ec23494091e98dec1e20566fb01c910677e1014d6cf9c5f7d22e12e32c"
+      },
+      {
+        "first": 5938,
+        "last": 5948,
+        "range_lf_sha256": "af563e6a1203615b269497a1d889e313e4f54505b66dcd5491dd83198bd4b736"
+      },
+      {
+        "first": 3338,
+        "last": 3409,
+        "range_lf_sha256": "15043e55d1695e5a490106fe77531ec089ae24f3011ba88d035aa43a6a42bd43"
+      },
+      {
+        "first": 4681,
+        "last": 4694,
+        "range_lf_sha256": "92d2af0a14e5348d4fe44816667eccb4ac888a1acc079a4eb03330139d0d096c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 3338,
+        "last": 3409,
+        "range_lf_sha256": "15043e55d1695e5a490106fe77531ec089ae24f3011ba88d035aa43a6a42bd43"
+      },
+      {
+        "first": 4681,
+        "last": 4694,
+        "range_lf_sha256": "92d2af0a14e5348d4fe44816667eccb4ac888a1acc079a4eb03330139d0d096c"
+      },
+      {
+        "first": 5642,
+        "last": 5730,
+        "range_lf_sha256": "0590e5ffb5b6d58acd4b495b16017d3d9b433076c25630a03fe8f82c8682295d"
+      },
+      {
+        "first": 5770,
+        "last": 5808,
+        "range_lf_sha256": "e44c20ec23494091e98dec1e20566fb01c910677e1014d6cf9c5f7d22e12e32c"
+      },
+      {
+        "first": 5938,
+        "last": 5948,
+        "range_lf_sha256": "af563e6a1203615b269497a1d889e313e4f54505b66dcd5491dd83198bd4b736"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8383,
+    "current_whole_source_sha256": "544b3bfbcf4446f5b80f5894d53f10bb15bca848efb5f334b648d57bc933989e",
+    "actual_read_ranges": [
+      {
+        "first": 7371,
+        "last": 7460,
+        "range_lf_sha256": "0bc416b712068bad2311354045744fd3b78fc23b3553e37a93064da1f0efc357"
+      },
+      {
+        "first": 3545,
+        "last": 3619,
+        "range_lf_sha256": "6812e877f2773aaef8a33a91af3088c6cfc825b60b9673ec69d3d55af2e1cf88"
+      },
+      {
+        "first": 7754,
+        "last": 7784,
+        "range_lf_sha256": "2c1038ba89a95ca88c47103ade8c40cfdfbc98fde50eb77a73748dd3d275afe7"
+      },
+      {
+        "first": 7948,
+        "last": 7958,
+        "range_lf_sha256": "c61498af3031876a77ede36e081158e1666af8a536b5a3aecdb4af94b140057d"
+      },
+      {
+        "first": 5372,
+        "last": 5385,
+        "range_lf_sha256": "698add7ee06bb2ecf661bc7e889ee80e51ec0298bba4288f1a1e8113cee3c845"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 3545,
+        "last": 3619,
+        "range_lf_sha256": "6812e877f2773aaef8a33a91af3088c6cfc825b60b9673ec69d3d55af2e1cf88"
+      },
+      {
+        "first": 5372,
+        "last": 5385,
+        "range_lf_sha256": "698add7ee06bb2ecf661bc7e889ee80e51ec0298bba4288f1a1e8113cee3c845"
+      },
+      {
+        "first": 7371,
+        "last": 7460,
+        "range_lf_sha256": "0bc416b712068bad2311354045744fd3b78fc23b3553e37a93064da1f0efc357"
+      },
+      {
+        "first": 7754,
+        "last": 7784,
+        "range_lf_sha256": "2c1038ba89a95ca88c47103ade8c40cfdfbc98fde50eb77a73748dd3d275afe7"
+      },
+      {
+        "first": 7948,
+        "last": 7958,
+        "range_lf_sha256": "c61498af3031876a77ede36e081158e1666af8a536b5a3aecdb4af94b140057d"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_lines": 9545,
+    "current_whole_source_sha256": "ea86217ca20922b3478e45e4c056fd1fb5d5532bc59f59fb6632cada38349738",
+    "actual_read_ranges": [
+      {
+        "first": 8004,
+        "last": 8041,
+        "range_lf_sha256": "80a8b9f226c2694301ee3750575c7586eaaf86473fc6bc7d429ce2faad92c0c2"
+      },
+      {
+        "first": 7771,
+        "last": 7830,
+        "range_lf_sha256": "9ee94190def00cff850178c55076b36754ebb199fc2509f00d0379e5f8e77d35"
+      },
+      {
+        "first": 8130,
+        "last": 8238,
+        "range_lf_sha256": "a9a2dd168625401b0e0556fdb83a21f94bde69bfff13fc17ddb19dd846abdede"
+      },
+      {
+        "first": 4420,
+        "last": 4505,
+        "range_lf_sha256": "0d9b142d806911e220dfe9305c6332611d98886da05ea7e1fe7093acc007d77d"
+      },
+      {
+        "first": 1365,
+        "last": 1430,
+        "range_lf_sha256": "fe67ea432dae72c366b10b46273f61bcddc66b117e67d85a86ac3742c9d45c29"
+      },
+      {
+        "first": 1506,
+        "last": 1580,
+        "range_lf_sha256": "1c70f709cdf5b9b26f5945d09dddb14583fd9ef68cea158792ea5ea791f9112b"
+      },
+      {
+        "first": 1431,
+        "last": 1505,
+        "range_lf_sha256": "7a53df3023b684d4f0bebc5589d184fcfb3f3cb0163b49290c018089ea8f48a0"
+      },
+      {
+        "first": 1260,
+        "last": 1328,
+        "range_lf_sha256": "29457a1caff37bf4d4014a9a6e5f1a059fbb6604a64e2961b88d6035ad9dcb4a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1260,
+        "last": 1328,
+        "range_lf_sha256": "29457a1caff37bf4d4014a9a6e5f1a059fbb6604a64e2961b88d6035ad9dcb4a"
+      },
+      {
+        "first": 1365,
+        "last": 1580,
+        "range_lf_sha256": "99d3d09e980646700651cdacbaab7f4aa38097284ff5afccd2adb4cb07e4a940"
+      },
+      {
+        "first": 4420,
+        "last": 4505,
+        "range_lf_sha256": "0d9b142d806911e220dfe9305c6332611d98886da05ea7e1fe7093acc007d77d"
+      },
+      {
+        "first": 7771,
+        "last": 7830,
+        "range_lf_sha256": "9ee94190def00cff850178c55076b36754ebb199fc2509f00d0379e5f8e77d35"
+      },
+      {
+        "first": 8004,
+        "last": 8041,
+        "range_lf_sha256": "80a8b9f226c2694301ee3750575c7586eaaf86473fc6bc7d429ce2faad92c0c2"
+      },
+      {
+        "first": 8130,
+        "last": 8238,
+        "range_lf_sha256": "a9a2dd168625401b0e0556fdb83a21f94bde69bfff13fc17ddb19dd846abdede"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9866,
+    "current_whole_source_sha256": "db612cb917424e032cf30356d962f24aaeee23e62c05db70e86fbd281585069e",
+    "actual_read_ranges": [
+      {
+        "first": 8240,
+        "last": 8277,
+        "range_lf_sha256": "5704766a3427158e2a6eebfda24c085e4cf3da501cf14c87a25d64e31fe470a0"
+      },
+      {
+        "first": 7998,
+        "last": 8057,
+        "range_lf_sha256": "5bb4330a922aad8c3d9375cb9320d0829a2d86f9da0fc69be93f8edd87df5b68"
+      },
+      {
+        "first": 8054,
+        "last": 8070,
+        "range_lf_sha256": "843622a9bab31fdcdca8a587549c7e3ba9f9b7103ae1b7aa348a89c9f5bec685"
+      },
+      {
+        "first": 8364,
+        "last": 8472,
+        "range_lf_sha256": "50a1e02a3f3b861e9937407b2d64521daebdac5bf561ca08c7e43ccb1e79f73d"
+      },
+      {
+        "first": 4555,
+        "last": 4640,
+        "range_lf_sha256": "63fabd8a4f330659ac7cf7b2b06d5ec9eafaf70575cf266c15c82234573e29e9"
+      },
+      {
+        "first": 1371,
+        "last": 1435,
+        "range_lf_sha256": "00a1e11243db4b834964c7ffa21cde27fe72fec1f12b8a8f0cff035fae0503c3"
+      },
+      {
+        "first": 1511,
+        "last": 1585,
+        "range_lf_sha256": "c1636a3e73b80a8d8cd8a186985675055a7ccefc53688d12e3118f68b033bf28"
+      },
+      {
+        "first": 1436,
+        "last": 1510,
+        "range_lf_sha256": "21079ce7e834f2a8ab704019359892169b3be207a5b1a655fb700c48704ccce8"
+      },
+      {
+        "first": 1266,
+        "last": 1334,
+        "range_lf_sha256": "29457a1caff37bf4d4014a9a6e5f1a059fbb6604a64e2961b88d6035ad9dcb4a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1266,
+        "last": 1334,
+        "range_lf_sha256": "29457a1caff37bf4d4014a9a6e5f1a059fbb6604a64e2961b88d6035ad9dcb4a"
+      },
+      {
+        "first": 1371,
+        "last": 1585,
+        "range_lf_sha256": "f70e43f09af8dd5142ad87e091055644e75756d920b908c553fbeef5e4486fa7"
+      },
+      {
+        "first": 4555,
+        "last": 4640,
+        "range_lf_sha256": "63fabd8a4f330659ac7cf7b2b06d5ec9eafaf70575cf266c15c82234573e29e9"
+      },
+      {
+        "first": 7998,
+        "last": 8070,
+        "range_lf_sha256": "dfdf7444b722515716cadd169bd69b765a1019612867b5fe7c027e16ceafa7bc"
+      },
+      {
+        "first": 8240,
+        "last": 8277,
+        "range_lf_sha256": "5704766a3427158e2a6eebfda24c085e4cf3da501cf14c87a25d64e31fe470a0"
+      },
+      {
+        "first": 8364,
+        "last": 8472,
+        "range_lf_sha256": "50a1e02a3f3b861e9937407b2d64521daebdac5bf561ca08c7e43ccb1e79f73d"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/multi.h",
+    "current_lines": 805,
+    "current_whole_source_sha256": "54cde196ec8ecc87a691fb2bfba5839c9dd9678870fdabaa4f8842f2cba5879d",
+    "actual_read_ranges": [
+      {
+        "first": 154,
+        "last": 162,
+        "range_lf_sha256": "4e4f168dfdbed4410bd4c1ecdf21f42bdd670789212f46897a9c4d9c70103ae1"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 154,
+        "last": 162,
+        "range_lf_sha256": "4e4f168dfdbed4410bd4c1ecdf21f42bdd670789212f46897a9c4d9c70103ae1"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.h",
+    "current_lines": 884,
+    "current_whole_source_sha256": "8d295eef071078800235acc0666a6b22cdfc91c6243071911df5de4963521486",
+    "actual_read_ranges": [
+      {
+        "first": 181,
+        "last": 189,
+        "range_lf_sha256": "4e4f168dfdbed4410bd4c1ecdf21f42bdd670789212f46897a9c4d9c70103ae1"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 181,
+        "last": 189,
+        "range_lf_sha256": "4e4f168dfdbed4410bd4c1ecdf21f42bdd670789212f46897a9c4d9c70103ae1"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/game_scripts/test_coop_mdata_fence_arm.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "9bf9e2e224cf21e4e15868442c9dcd6e708ff2112098adea5814c6f3d86afcb5",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "9bf9e2e224cf21e4e15868442c9dcd6e708ff2112098adea5814c6f3d86afcb5"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "9bf9e2e224cf21e4e15868442c9dcd6e708ff2112098adea5814c6f3d86afcb5"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_mdata_fence.jsonc",
+    "current_lines": 19,
+    "current_whole_source_sha256": "036035cb32ddcfd724c85a4420b06b50f5d775ea498541c223b3ee82a154e08f",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 19,
+        "range_lf_sha256": "036035cb32ddcfd724c85a4420b06b50f5d775ea498541c223b3ee82a154e08f"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 19,
+        "range_lf_sha256": "036035cb32ddcfd724c85a4420b06b50f5d775ea498541c223b3ee82a154e08f"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_packet_fences_verify.jsonc",
+    "current_lines": 5,
+    "current_whole_source_sha256": "57d98320bc2747ec0194751b4eaa6820ff7d00f8742bbdac32f03218432ef6ce",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "57d98320bc2747ec0194751b4eaa6820ff7d00f8742bbdac32f03218432ef6ce"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 5,
+        "range_lf_sha256": "57d98320bc2747ec0194751b4eaa6820ff7d00f8742bbdac32f03218432ef6ce"
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "actual_read_ranges": [
+      {
+        "first": 10,
+        "last": 34,
+        "range_lf_sha256": "ae7faad05c15ffee0652d710163e6dbf2abed0a799779e37cadb7cb96c38b8bb"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 10,
+        "last": 34,
+        "range_lf_sha256": "ae7faad05c15ffee0652d710163e6dbf2abed0a799779e37cadb7cb96c38b8bb"
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_lines": 2419,
+    "current_whole_source_sha256": "de93ee1524285ad44729b0469c2479d428d51f46910bda5fa1e2b6721bd955cb",
+    "actual_read_ranges": [
+      {
+        "first": 474,
+        "last": 491,
+        "range_lf_sha256": "eda1b8f11d624aac195a9070ef4dc24b8c9cfc8e7b7873ce60a43b95a3f46b58"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 474,
+        "last": 491,
+        "range_lf_sha256": "eda1b8f11d624aac195a9070ef4dc24b8c9cfc8e7b7873ce60a43b95a3f46b58"
+      }
+    ],
+    "current_whole_read": false
+  }
+]
+```
+
+## Complete current context deltas
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_delta_bytes": 15329,
+    "current_delta_raw_sha256": "6eb8a32e456f0fa9b4e4d1fe4c58145e5fe85a868ee01a29594a593bf6587627",
+    "current_delta_lines": 318,
+    "current_delta_lf_sha256": "6eb8a32e456f0fa9b4e4d1fe4c58145e5fe85a868ee01a29594a593bf6587627",
+    "current_delta_hunks": 38,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 318,
+        "range_lf_sha256": "6eb8a32e456f0fa9b4e4d1fe4c58145e5fe85a868ee01a29594a593bf6587627"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -32,0 +33,4 @@",
+        "raw_hunk_lf_sha256": "1b8240ac9e5c9996448bd3911a7f8282847396ca0b16eb642fc26e6dce63b093"
+      },
+      {
+        "header": "@@ -622,0 +627,5 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "bda8ac31740870aa21013137408981467aaf527d04097c8736199134fc003c65"
+      },
+      {
+        "header": "@@ -640,5 +649,11 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "a0ef02e61171a528f46ba2c6f42823909886defb0a17393287ddeb5393148f04"
+      },
+      {
+        "header": "@@ -915,0 +931,2 @@ static void coop_write_autosave_history(int slot, int n_connected);",
+        "raw_hunk_lf_sha256": "0433564cc000519c2b4c723a4bd908ab027b2d38e4ce5985597907376c2a9221"
+      },
+      {
+        "header": "@@ -925,0 +943 @@ static int coop_num_absent = 0;",
+        "raw_hunk_lf_sha256": "77f8400e3861fdd9d98fa4d1ba7e794961b7bf2982785f246e06fe2ca9f82af8"
+      },
+      {
+        "header": "@@ -1014,0 +1033,3 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "a40806547ca34c8c38da0d963750e539428da2472506259c8468a9133efef30e"
+      },
+      {
+        "header": "@@ -1022,0 +1044 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "911fe6b01ab106b399317759c3c468ffb58df6f455877cf4a3c5e2a705f086b6"
+      },
+      {
+        "header": "@@ -1023,0 +1046 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "c7103e9968e8861d65fc825846d803c508c06074fe33718c93edee1dfd52a085"
+      },
+      {
+        "header": "@@ -1044,0 +1068 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "26c70a8f408ea331efdc6a762c73d830d02412e731b331f777b47135af7f5117"
+      },
+      {
+        "header": "@@ -1049,2 +1073,3 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "a4f608d43a76edc4fb70bfe04de27dd4b8491fff48bb0594ce323cde8a6158be"
+      },
+      {
+        "header": "@@ -1051,0 +1077 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "6a57b49e4189a33740822803f3ba681789643541545cc438936f523216308394"
+      },
+      {
+        "header": "@@ -1065,0 +1092 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "3d267b2737d22c927a4641baa21c91da5f57976e129fc77a725a89c4fa726e9d"
+      },
+      {
+        "header": "@@ -1072,0 +1100 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "aa9445b6d0a6ddc3534efb785d24f88bb515b5f38bded770d93c3615419d52d1"
+      },
+      {
+        "header": "@@ -1274 +1302 @@ int coop_find_player_in_metadata(const char *callsign,",
+        "raw_hunk_lf_sha256": "a24b4f89d089b3eb90c111d791dbc2773931d119c5db290c388c3a66ab472602"
+      },
+      {
+        "header": "@@ -1277,11 +1305 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "d6d6e0c68eae7018c1f37c494adb5e0c39c934146d81ab337682f470edbefbdd"
+      },
+      {
+        "header": "@@ -1294,5 +1312,6 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "1556dc4c65bc0a47d06733168da12a695537b036648f17277b4fabb3e368f3b2"
+      },
+      {
+        "header": "@@ -1302 +1321 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "1a4c21f7af73a88c4490f8536988355dfc9b02672642bb37302589af0359e711"
+      },
+      {
+        "header": "@@ -1305 +1324 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "c644d17e83198d4c4fa5610bcb9c88c51362ff28cdfc3f197707d17c7cca7d3e"
+      },
+      {
+        "header": "@@ -1307,2 +1326,2 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "c2743b25e1d73913534b72bd1e3e75ad7510b0c9d828c83014a367e4dd246d27"
+      },
+      {
+        "header": "@@ -1311 +1330 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "6ed587142baa5c067fb4204997e12f69de9b6ba79c662869898a27259b5d3f13"
+      },
+      {
+        "header": "@@ -1316,0 +1336,14 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "8be441d69e5914e7bd48279a729f904acb992a1b9777a272b6862c4d6cc45d66"
+      },
+      {
+        "header": "@@ -1319,0 +1353 @@ void coop_clear_absent_players(void)",
+        "raw_hunk_lf_sha256": "5a69229542839c8766d2f40f374feb5a56161e898943d805600e567a5f427314"
+      },
+      {
+        "header": "@@ -1399 +1433 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "dbc37618fb7eba3c602a8b87f8c1c27b9ff896cd8c74dc91fbf0894e485595ee"
+      },
+      {
+        "header": "@@ -1402,0 +1437,9 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "4fc850d4baa341743c85379bc5a9d919a0a774737a59f373b86abdfda96f6eab"
+      },
+      {
+        "header": "@@ -1418,3 +1461 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "4c92aa4c6f8fb3f987df16a57e65dde9b43e4b89024bf3dc4895f1f1835c958b"
+      },
+      {
+        "header": "@@ -1424,9 +1464,0 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "f8170ce9dc25832d510c96344b40af574b821144a07c26b92065e312fbf69d2d"
+      },
+      {
+        "header": "@@ -1433,0 +1466,23 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "8ce54bd2b01adc275c030b8674e6ab2a6b016bbd3b22f27006fea26985dc1017"
+      },
+      {
+        "header": "@@ -1516,0 +1572,67 @@ static uint32_t coop_make_autosave_game_id(void)",
+        "raw_hunk_lf_sha256": "e0f509e92e109c7fe663fab55eab35f819d73fdaff405bd1beaf65993f3e58a4"
+      },
+      {
+        "header": "@@ -1523,0 +1646,5 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "687df1ccf548c46d7a506b10b4be599e7c565db80330b6ad04cc976687e81061"
+      },
+      {
+        "header": "@@ -1573,0 +1701 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "dce3db8d60cc2777e1719cfda0c72f43600cb8b7ce782ca7a36536a2e67d5aa6"
+      },
+      {
+        "header": "@@ -1575,0 +1704 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "4ba472a2ef526fdf6c5fec50687a9d4abe3e5267d777559e93f8d05ee46ffe92"
+      },
+      {
+        "header": "@@ -1582 +1711,2 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "da4dc3737b5d9d3b85411943cb82c6375b4857df4d11462d527fb38b3df0fbc7"
+      },
+      {
+        "header": "@@ -1584,3 +1713,0 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "f68b0901884b80eb459a4a7201ac05cca5610a7948fb4cb24dc1260ac06ef113"
+      },
+      {
+        "header": "@@ -1619 +1746 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "2fc77e38bc4a522e6b0d58308bb8380c383e49c86e3e0a766060ed99831357bf"
+      },
+      {
+        "header": "@@ -1641,0 +1769,23 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "30ed9e847bd87ec997d0b0cc391f4eac621a7eea68f295ebb6cac3995222a24e"
+      },
+      {
+        "header": "@@ -1644 +1794 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "4acf4defafbc7ff6054af3feeae8bdbb7ab362f9c49d5f0b707553c59445f174"
+      },
+      {
+        "header": "@@ -1669,18 +1819,3 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "bbf2556b6e484608fce23b9ca26035d5bc81b7a4d1f2221958bde2e6a7b2420f"
+      },
+      {
+        "header": "@@ -1992,8 +2127 @@ int coop_load_progress_inventory(void)",
+        "raw_hunk_lf_sha256": "3659f9886ff338e3342857614d816f7add7a6d783f52a07bc9b9e7415bf995d7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_delta_bytes": 626,
+    "current_delta_raw_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_lines": 16,
+    "current_delta_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_hunks": 6,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -377,0 +378 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "718792624ad8f2b4064d4f20e3ed3b5b57badf861978c5b6117b66035f6b5519"
+      },
+      {
+        "header": "@@ -378,0 +380 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "ff9bf25364d0dd4f9f991265f48c000b371481e88edad9cc621def745f5d78bd"
+      },
+      {
+        "header": "@@ -1512,0 +1515 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "52addf89260aa67d71133b9675b7e9acedc3c4963c944b4e2070214c5d1237a7"
+      },
+      {
+        "header": "@@ -1513,0 +1517 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "c65d9e45298fd52534feb9b2f3a2d796c1b8942edc000465892cb8888e5570e9"
+      },
+      {
+        "header": "@@ -1630,0 +1635 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "dfda55a99122f4841c89260e125d6f79f3e862a3e2f7f415350291f37dbd17e9"
+      },
+      {
+        "header": "@@ -1631,0 +1637 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "232de258f250eb031322f853fd48fdb8bf7d52372be3ae530b659c078704263f"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_android_shared.c",
+    "current_delta_bytes": 7469,
+    "current_delta_raw_sha256": "0efdb2038a699434887e52227d6c663c5c64ca46f35e8a579fda7391792de326",
+    "current_delta_lines": 167,
+    "current_delta_lf_sha256": "0efdb2038a699434887e52227d6c663c5c64ca46f35e8a579fda7391792de326",
+    "current_delta_hunks": 20,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 167,
+        "range_lf_sha256": "0efdb2038a699434887e52227d6c663c5c64ca46f35e8a579fda7391792de326"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -15,0 +16 @@",
+        "raw_hunk_lf_sha256": "92b947934c462175dded758064be5b64f3543677c62eeb93be1857626e99f3ff"
+      },
+      {
+        "header": "@@ -40,0 +42,44 @@",
+        "raw_hunk_lf_sha256": "1ab5c3a22ad5504d51cdda02ccf3985f1ff9bbc56bca360744d7160cdd9510a5"
+      },
+      {
+        "header": "@@ -293,0 +339,11 @@ static int state_android_write_last_save_set(int coop, const char *pilot,",
+        "raw_hunk_lf_sha256": "701539fef483a5b290e6fc3f93e6d7fb3dca524e97b4a2b5898639b9d0f3db62"
+      },
+      {
+        "header": "@@ -498,0 +555 @@ typedef struct state_android_periodic_autosave_state {",
+        "raw_hunk_lf_sha256": "ca1729af2053a87a993a3e01101dbfb72daac5bab525c2d8b5b131106f9aa84c"
+      },
+      {
+        "header": "@@ -502 +559 @@ static state_android_periodic_autosave_state g_state_android_periodic_autosave =",
+        "raw_hunk_lf_sha256": "33831fc09cb01c864d2b348a02e5a1e1ea056e0e5db39a6a2dd5c3cf8683f640"
+      },
+      {
+        "header": "@@ -504,0 +562,7 @@ static state_android_periodic_autosave_state g_state_android_periodic_autosave =",
+        "raw_hunk_lf_sha256": "c8cb5155c98ba4b4ba56ee9cf9d21f47f601f84432ac04dbd2929b03a4be9284"
+      },
+      {
+        "header": "@@ -539,0 +604 @@ static void state_android_periodic_autosave_reset(fix64 now,",
+        "raw_hunk_lf_sha256": "b4ace8508f3305da8e8322538c136c3bf132e1f104b5082c75b7a43fbe7acbb7"
+      },
+      {
+        "header": "@@ -820,2 +885,6 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "27f6dc71ae7aa9ab363de1f989ae3ae7bd7c51b942203614aac1f52be058d062"
+      },
+      {
+        "header": "@@ -824 +893 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "6779c2c750303ee9d71d986ba01bd8451f059f01eaddadcb805a7f396fe2f043"
+      },
+      {
+        "header": "@@ -858,0 +928,5 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "b9db5018d7ed961cc7fa24581ad45bac4a1aa56d53f364aada28147af2218b3b"
+      },
+      {
+        "header": "@@ -921,0 +996,4 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "2aaefce68038aad1fd712b41a1b4cbe1e4ab4b6c24bd64e3cbaf34a09cd4ee12"
+      },
+      {
+        "header": "@@ -936,0 +1015 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "0b2d64e6c45856258f1dc43b169bc8c8fe80dc1346205f89e1cf94175465d147"
+      },
+      {
+        "header": "@@ -938,0 +1018 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "cba90e37bf78565d6e0f8a4ade293cf0190f685be13680a0e2bedfea1dd3b78d"
+      },
+      {
+        "header": "@@ -1103,0 +1184,5 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)",
+        "raw_hunk_lf_sha256": "16635cfbf317cdb67301a2d50240c167db91de06b58dd0ede814a5fc20c52697"
+      },
+      {
+        "header": "@@ -1117,0 +1203,4 @@ int state_android_restore_slot(int slotnum)",
+        "raw_hunk_lf_sha256": "32d52552f9a623533885f364fb6cc0e01bd70c2bc3d44514b3f64a56f4bc5ba3"
+      },
+      {
+        "header": "@@ -1170,0 +1260,24 @@ int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,",
+        "raw_hunk_lf_sha256": "5bbdd6313f107a619fba963b2b60fc7c2b529568a1c97d8e7939c18a6989e3f7"
+      },
+      {
+        "header": "@@ -1197,0 +1311 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "4fb9930a8b009dbf7bacf681635c84232244ba6e0db95cb3cde4d232f1c6d123"
+      },
+      {
+        "header": "@@ -1204,0 +1319,8 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "b04b1b7e7fa2cdee1b97572d5d141938176d778bbd24980c0c6338e2a026f813"
+      },
+      {
+        "header": "@@ -1220,0 +1343,12 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "b3d429e26dc7666f2d635d8c251f53c87d6ceaf036809677dcdd77bc8afa26a4"
+      },
+      {
+        "header": "@@ -1221,0 +1356 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "733fa5e409296ca1e4ed28d789631e9554ec2be0f1ae7093f1853cb604ccec5f"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/state.c",
+    "current_delta_bytes": 1482,
+    "current_delta_raw_sha256": "0d978b6424e73567ee1c97f40f557c2c0ad4e93280b0cc2b09a9b3852d51e41b",
+    "current_delta_lines": 41,
+    "current_delta_lf_sha256": "0d978b6424e73567ee1c97f40f557c2c0ad4e93280b0cc2b09a9b3852d51e41b",
+    "current_delta_hunks": 10,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 41,
+        "range_lf_sha256": "0d978b6424e73567ee1c97f40f557c2c0ad4e93280b0cc2b09a9b3852d51e41b"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -67,0 +68,3 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "fdb368cfbfcd40340f8d7f93cf83be2995620347084c0eb0ebf229d6343f9962"
+      },
+      {
+        "header": "@@ -82,0 +86,2 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "b2a546ff54d355d3870d6653b7bf5f8e789cf6372a1d205db960320b510a4b89"
+      },
+      {
+        "header": "@@ -1875,0 +1881,4 @@ int state_save_all(int blind_save)",
+        "raw_hunk_lf_sha256": "11b53f1f0a5e71b6358e5510544a9004258582b0b593cb76d04773f82adf8e9c"
+      },
+      {
+        "header": "@@ -1951,0 +1961,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "3a6b2e47d01aede5ae1aa0db97c270b421c02cede434a882f6ea83ca0886c264"
+      },
+      {
+        "header": "@@ -1957,0 +1970,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "3134f8b5a328087d3a0bb4a3fc4e7c4e3cfbc19291c52d93a49cdd9d3a4e01e8"
+      },
+      {
+        "header": "@@ -2104,0 +2120,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "9a2ed2c5fc2875facfc1c3197db8894ae3c4e8bf74d96263da001517412a257b"
+      },
+      {
+        "header": "@@ -2107,0 +2126 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "7a958640e9338a89c343d1caa2bf5317315deb9b4bc0eb2972b3a3730e88a9fe"
+      },
+      {
+        "header": "@@ -2116,0 +2136,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "4886ffe5570302e6d681f67e17e3da70e2057cc281edf5c84bd9dd3284356e8a"
+      },
+      {
+        "header": "@@ -2130,0 +2153,4 @@ static int state_restore_all_internal(int in_game, char *filename_override)",
+        "raw_hunk_lf_sha256": "0a42f9b6afc1c589732f4a6b424ee9540d701010bfa64a3fd83f2c8ce3a0c9c1"
+      },
+      {
+        "header": "@@ -2204,0 +2231 @@ int state_restore_all_sub(char *filename)",
+        "raw_hunk_lf_sha256": "5b420756edbe4216843ae7b19eeb442c74a67a20ca80ca2aa6343ee28f4a5dbc"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/state.c",
+    "current_delta_bytes": 2446,
+    "current_delta_raw_sha256": "ec1de8c7542a811d0b1b4f78a4bbc3a880735d7054c988ea138dd29275859b4e",
+    "current_delta_lines": 59,
+    "current_delta_lf_sha256": "ec1de8c7542a811d0b1b4f78a4bbc3a880735d7054c988ea138dd29275859b4e",
+    "current_delta_hunks": 14,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 59,
+        "range_lf_sha256": "ec1de8c7542a811d0b1b4f78a4bbc3a880735d7054c988ea138dd29275859b4e"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -71,0 +72,3 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "630b83575f03e3e544d06fa1ead86f85ceb080ad83684f91379a965dd57baea8"
+      },
+      {
+        "header": "@@ -89,0 +93,2 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "20c4f3544f8e38be426c6946cf52cf7923bb7ecc42726cd95de534a2b7aab7d2"
+      },
+      {
+        "header": "@@ -2260,0 +2266,4 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)",
+        "raw_hunk_lf_sha256": "a6af7dccef0212ea6a8a89a593f8df6838e2c82e2a70d11e83d679b64be7ee48"
+      },
+      {
+        "header": "@@ -2346,0 +2356 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)",
+        "raw_hunk_lf_sha256": "9e5112852153910df5e49d6d6e49d895c7ca87ee012093b86cc6f8f5328b207e"
+      },
+      {
+        "header": "@@ -2414,0 +2425,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "bc2099b312ab77adadfd8da31d1b71bc25400ca7f76104955b2d117935e81e92"
+      },
+      {
+        "header": "@@ -2505,0 +2519,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "356ee139e10748d4b4acdf99d8624055fc6c545f05accea75fdd1e1960f19a60"
+      },
+      {
+        "header": "@@ -2692,0 +2709,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "5783fdfc072d41fb4e7d7484dcad4201d010448f9d6e7f3c7695e6fe49341762"
+      },
+      {
+        "header": "@@ -2694,0 +2714 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "65761d0de981111721756e92b3afc01da3d4ee19ed45db64772ab8109b22a907"
+      },
+      {
+        "header": "@@ -2698,0 +2719 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "81e496616f969e961a81f4fb8ee6560cb245406068eb60c41a1cdbfca2807685"
+      },
+      {
+        "header": "@@ -2707,0 +2729,3 @@ int state_save_all_sub(char *filename, char *desc)",
+        "raw_hunk_lf_sha256": "87378310d88cf515c8a595467588d8ca6063cd60f865b8de5a1a559b490396a9"
+      },
+      {
+        "header": "@@ -2770,0 +2795 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)",
+        "raw_hunk_lf_sha256": "56bf80227674f6ff23f66eed32cd38190c62ff6b38f57c88279102ca3e422557"
+      },
+      {
+        "header": "@@ -2885,0 +2911,3 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)",
+        "raw_hunk_lf_sha256": "409f8168f836ac48731712b0a9772f2f478e4b1639fe4f50772483c8b2dcb168"
+      },
+      {
+        "header": "@@ -2951,0 +2980 @@ int state_restore_all_sub(char *filename, int secret_restore)",
+        "raw_hunk_lf_sha256": "e7e9ca94a03b93b6d20ad3384fa0243dd32c4cfeb4610250c4c9836ce1ab3f01"
+      },
+      {
+        "header": "@@ -3593,7 +3622,5 @@ int state_restore_all_sub(char *filename, int secret_restore)",
+        "raw_hunk_lf_sha256": "f38c02ac14e6be47fcea6f96f1b7b9175ee4287555d1a2fe84e0382e542c982b"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_portable.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_restore_remap.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_player_session.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/test_coop_save_format.c",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/coop_restore_fixture.c",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/test_coop_campaign.c",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save_format.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_delta_bytes": 6136,
+    "current_delta_raw_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8",
+    "current_delta_lines": 98,
+    "current_delta_lf_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8",
+    "current_delta_hunks": 4,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 98,
+        "range_lf_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -7,0 +8,25 @@ set(DXX_TEST_SHARED_SOURCE_DIR \"${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/sh",
+        "raw_hunk_lf_sha256": "defa122b5641533a634ab17600e9fbb83ce79daf02d819a400f6a14a5cf769bc"
+      },
+      {
+        "header": "@@ -27,0 +53,23 @@ find_package(ZLIB REQUIRED)",
+        "raw_hunk_lf_sha256": "5fbd04b0e0c49c323c0888c9cb076cc990d6c516dcec15fdae9d8c33a7659c0e"
+      },
+      {
+        "header": "@@ -33,0 +82,37 @@ add_executable(test_rng_seed_resume test_rng_seed_resume.c)",
+        "raw_hunk_lf_sha256": "521252763d56a91e732a0e7eab3c7c14d57a5a38945c44d508a92336490b6186"
+      },
+      {
+        "header": "@@ -202,2 +287,3 @@ add_executable(",
+        "raw_hunk_lf_sha256": "41bd0e75cc7e04f49f3c1bab0884f5c926392f65a60c46e4fd9c1b3836ffc212"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.c",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.h",
+    "current_delta_bytes": 930,
+    "current_delta_raw_sha256": "55ffbf540af46ec2f164698b30b6f8478954299b7f27220e5a01cd1dd0e81955",
+    "current_delta_lines": 17,
+    "current_delta_lf_sha256": "55ffbf540af46ec2f164698b30b6f8478954299b7f27220e5a01cd1dd0e81955",
+    "current_delta_hunks": 3,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 17,
+        "range_lf_sha256": "55ffbf540af46ec2f164698b30b6f8478954299b7f27220e5a01cd1dd0e81955"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -35 +35,2 @@",
+        "raw_hunk_lf_sha256": "c683cb69cbc9315d8bb99f93eb62139cbcbaa216f6f96efc727950ab0418db76"
+      },
+      {
+        "header": "@@ -202,0 +204,2 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta);",
+        "raw_hunk_lf_sha256": "c6f551cae55879a3b6bd6d87d8cd31016bb847e3fa9df5d126628df21bb28b82"
+      },
+      {
+        "header": "@@ -212,0 +216,5 @@ int coop_autosave(void);",
+        "raw_hunk_lf_sha256": "a43e92bc0634ee55fdf436435cacb7f9ce76ad78a79adcc6c6d6c9b49e1d657f"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_carry.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_tag.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_prepare_host.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_prepare.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_lines": 165,
+    "current_delta_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 165,
+        "range_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -25,0 +26 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "dce535e9289d4504765bcf1d506d452503feb0c0ba92112a4cf23937c6acea25"
+      },
+      {
+        "header": "@@ -1531 +1531,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "930bc83ddd098b518943a0b4abfdef903d5a203271156fcc7cd26b943991ecf6"
+      },
+      {
+        "header": "@@ -1536,7 +1535,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "701bbc97a0d45bb7b38f1f194bc28b0410586c8e072fffb801256ae3c12b5b76"
+      },
+      {
+        "header": "@@ -1650,0 +1644,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "779d6294de776d052b00f38a50509cda24e01cb94ce2063a87547396be65372f"
+      },
+      {
+        "header": "@@ -3469,139 +3463,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "1ddfd807fff7df1793c8fadefce0440a447fbdfa891140c8fd912efdd5e5ab37"
+      },
+      {
+        "header": "@@ -5587 +5443 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "0aad15b1da2aa8ca3c9b3ef485b76a0775cb17382616a2f1e6e91a0a54f6855f"
+      },
+      {
+        "header": "@@ -5588,0 +5445,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "225548a874f6a2032c0cd7fd13d593f3472d058000701c2f504e99da7d5b987a"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_lines": 166,
+    "current_delta_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 166,
+        "range_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -29,0 +30 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "48c64f05add9003f65c6b6d0b62f9f7a17ea3cff2fa0b402a66d9f65858bdc79"
+      },
+      {
+        "header": "@@ -1601 +1601,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "be41a595cb8970c02b771bd73f909ace76dc29f8e48b2f5bb6f450dd6456549a"
+      },
+      {
+        "header": "@@ -1606,7 +1606 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "5abe6c931544d274f092ebb7fb0b78aaa014d1d9b9f062dca09b7e3b4b30ffb4"
+      },
+      {
+        "header": "@@ -1722,0 +1717,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "1b313823fabed42dc82842e143296ee50c12ad2b3bd967cd81cbdd2ea295aff5"
+      },
+      {
+        "header": "@@ -3680,139 +3675,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "f6fec461db9231693a2db59e6502630ef578089cd4ae10f5736090820096b9d6"
+      },
+      {
+        "header": "@@ -7314 +7171 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "581156f24f453a9373307a154f866c07452f1e2c081e6828b4fa151628b6ce85"
+      },
+      {
+        "header": "@@ -7315,0 +7173,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "f145e86316ba56e35513735e6fdbdd29b7957177af02dae3358a4b803682e0a3"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_delta_bytes": 3729,
+    "current_delta_raw_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c",
+    "current_delta_lines": 81,
+    "current_delta_lf_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c",
+    "current_delta_hunks": 17,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 81,
+        "range_lf_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -655,0 +656,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "b776b40f395f5069c343fb38e3d0a7434d2c59e5ba38d8d03f5907dbe601f4cd"
+      },
+      {
+        "header": "@@ -681,0 +685,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "41e25e8a39f3e17535d00b306de55ad33e5d244dd9aabed5f402e2d00f7176a3"
+      },
+      {
+        "header": "@@ -713,0 +722,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "28fc3c1195a4068b73b8c6e1969f7d1b46b8542ace2806af83d810bd1511154a"
+      },
+      {
+        "header": "@@ -714,0 +726,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b29768bd6f3b40b75f9a4ea25fe9213f53538751602d619311af24a9355099e3"
+      },
+      {
+        "header": "@@ -724,0 +741,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "fc6a70a2621386a965d995f069e3241094cb3ba2e43e8022017c5459bccd3a64"
+      },
+      {
+        "header": "@@ -725,0 +745,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "ed586e7d3e568a7596cb9a4b98c1bc6c524deb58939b1c957883ae2cfd3bb5ac"
+      },
+      {
+        "header": "@@ -962,0 +988,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "361d5f89e5901412c86dd8265bc98e2acc11530a1ced248dbc49d70109a8f27d"
+      },
+      {
+        "header": "@@ -963,0 +996 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "d0a4d2564099d31cde82e75c796b73d84ddae4e6124f1e300457b34b82193a21"
+      },
+      {
+        "header": "@@ -7143,0 +7177,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "872ed28648342a9556140ae0e9c00841ecfa947d031dcac9de7c4934f46fddae"
+      },
+      {
+        "header": "@@ -7153,0 +7200 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fb81ffa9b07a3ad732326873740ececd7a6c098206c300eed3ae83518e248228"
+      },
+      {
+        "header": "@@ -7172,0 +7220,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "043d9f3e4531f4368e73a80cac33e403640dad70778b68d79283db665292ebc7"
+      },
+      {
+        "header": "@@ -7173,0 +7224 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fa18c6e4d09b73b08ec9fef02ea8c8ebe5a978043d1781c54260b83258f8ec7c"
+      },
+      {
+        "header": "@@ -7189,0 +7241,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "cc10d674021963481587547c99e0ed0dd187e311f4cf775ce7a363f9fa64e839"
+      },
+      {
+        "header": "@@ -7190,0 +7245 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "5a6887e8539a47c23e12bd4472a51736e07db324e03d97621c89bc944013589e"
+      },
+      {
+        "header": "@@ -7201,0 +7257,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "e7854df2d5839808c36b9c7cc8adf2f8860cbf64b4b5c6db2ade60d5c21dbd1d"
+      },
+      {
+        "header": "@@ -7202,0 +7261 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "a3b1a3a144b7b3c0dad41152d94f4318262096b80e5f1e941b20b8a3922f72a8"
+      },
+      {
+        "header": "@@ -7226,0 +7286 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d55b85cde1842b13add227a8af7fc5ecac54d00e3c0643cdf9717960536cef87"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_delta_bytes": 3730,
+    "current_delta_raw_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_lines": 81,
+    "current_delta_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_hunks": 17,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 81,
+        "range_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -663,0 +664,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "0e5183265030957e608b692ad37805ebb01f1c9569d962917e7e322cfcfca474"
+      },
+      {
+        "header": "@@ -689,0 +693,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "35ef9103863a6bcecf8f57cdd0b45b6f95bc2d52476583c72fdb5d037eac40c6"
+      },
+      {
+        "header": "@@ -718,0 +727,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b48f89ef09f5afcfb9186c942269f98ce619badbc5bcb99ab55bac25317691e6"
+      },
+      {
+        "header": "@@ -719,0 +731,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "c02a531a0d1c146f43dfb134f20dea3191b00704080288edc61fa15f27f23669"
+      },
+      {
+        "header": "@@ -729,0 +746,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "4ceff2573515aa31ede522d061986010175a1a0fdefce5768fa9ffaf8904d398"
+      },
+      {
+        "header": "@@ -730,0 +750,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "362e38cc66239523952c080f3595317a69cd7fe6adc4d1ca8b0a3131d47d3899"
+      },
+      {
+        "header": "@@ -967,0 +993,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "ab8a9feeeaf48e365d292a541a6c5e14d64070b1cf10fd6b36a5253d8ed0af27"
+      },
+      {
+        "header": "@@ -968,0 +1001 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "aebee41ff9de7a9766934a5d6a2dd211f4a1477bed4278983f26d44570ad1d36"
+      },
+      {
+        "header": "@@ -7350,0 +7384,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "8e9d6408bf0b665bb027983f9d5b1750f15543c2cab80b52ee7cd7164b1e33ce"
+      },
+      {
+        "header": "@@ -7360,0 +7407 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "aa51adecdbdec0d2625aed4a99ca9d55e0623a17119b91592d89fe586e375cab"
+      },
+      {
+        "header": "@@ -7379,0 +7427,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "933a4357c995dc8d37e04057ba969d64f5d2bf2a5fba15f1a96f25443f9a678b"
+      },
+      {
+        "header": "@@ -7380,0 +7431 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "1757472f8da5e75bd68668ad5a385422a7f5844904335bd39485bc2e7af69e36"
+      },
+      {
+        "header": "@@ -7396,0 +7448,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "c0bd0c729af0924a89d36575fb68bad7826a9493291befbb3ceb9e28622f6816"
+      },
+      {
+        "header": "@@ -7397,0 +7452 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b96c5d6cc1bb0c1fafb658199ff60af345749ed05cec235acb77d2ba880d8b55"
+      },
+      {
+        "header": "@@ -7409,0 +7465,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d60058544aca1fab899f62af253036ad4afaa7fee3a98e40534cc84f228f3328"
+      },
+      {
+        "header": "@@ -7410,0 +7469 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "52b29ecd8b7785e3922c3879a27c08c92f6e63e5048d5873c72956d219ed7295"
+      },
+      {
+        "header": "@@ -7434,0 +7494 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b3b8dcb7a26f7424c409802370d59c6b45290eaebbb66e28e81fb55b5a84efab"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/multi.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/multi.h",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_mdata_fence_arm.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_mdata_fence.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_packet_fences_verify.jsonc",
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_delta_bytes": 1883,
+    "current_delta_raw_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_lines": 40,
+    "current_delta_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_hunks": 11,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 40,
+        "range_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -36,0 +37,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "67ca19e3b4e3a73eb529bc945ccfcf07a5f937292db1652c6277f556dc5d50aa"
+      },
+      {
+        "header": "@@ -40,0 +43,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "98b9467d170d5ddc0bdb4288e59dc81952357ad46475261a069f2e5647efc382"
+      },
+      {
+        "header": "@@ -51,0 +56 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "e4aa647a325820f36435205d82cc1b249b4f0931231eb79f261683268e2403cc"
+      },
+      {
+        "header": "@@ -59,0 +65 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "54754e37e540b63b3b57138e8adecf108a9ad3a69990795acc6b02fdb92ce718"
+      },
+      {
+        "header": "@@ -68,0 +75 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "3bb0e72fce7db8ceab30c199c8f285197bac1b6633575960ede6c189d71f3a57"
+      },
+      {
+        "header": "@@ -79,0 +87 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f0ab512cb53afe4413ddbc4da82f10828b427de8b6bdb681c5d1b796636ffd7d"
+      },
+      {
+        "header": "@@ -100,0 +109,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "bae990fce149dedfdf2ca4451ebfc0fae3086ce11dfb11d89f485eb093e56e43"
+      },
+      {
+        "header": "@@ -164,0 +175 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "eac427e87ee5550cbfe50a637cab1ce16eba2630579c2174e4820a78e8afdc56"
+      },
+      {
+        "header": "@@ -231,0 +243,12 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "30c1c390e43c615935f8f0bed6743afd94a2a67ba37b25ea02551e87907d6479"
+      },
+      {
+        "header": "@@ -287,0 +311 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f6f82772793227cdd23db51e65ac17043afef6005ce4a5eb7f7d1eb3fd030615"
+      },
+      {
+        "header": "@@ -296,0 +321 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "a2c8c1b86c1fd24d505846782e13bbff9710e0095f18271749c6570b86a34f56"
+      }
+    ]
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_delta_bytes": 3548,
+    "current_delta_raw_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c",
+    "current_delta_lines": 53,
+    "current_delta_lf_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c",
+    "current_delta_hunks": 10,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 53,
+        "range_lf_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -397 +397 @@ $manualTests = @(",
+        "raw_hunk_lf_sha256": "734b3382912abcdcab489623b3e3abdcb24e9a803b1d71363950be94a10770bb"
+      },
+      {
+        "header": "@@ -402,0 +403,21 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "99a570084ccf395302b62ed3c34ce9c8bde1324c2658ebdbf4f6fc56849b01db"
+      },
+      {
+        "header": "@@ -440 +461 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "9e78a0c1abd4ba4a2b57def5a3d395711918a2bde38739c6ced00874fd7fbf38"
+      },
+      {
+        "header": "@@ -452,0 +474 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "501848db89bd407bc9e15584bea9389cbf6fb973659ee02774cbfaff9caa0461"
+      },
+      {
+        "header": "@@ -461 +483,2 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "4cc420aafc8e98389e3776a60efd68f7a522755e096d4e87f9a10f069fddfd65"
+      },
+      {
+        "header": "@@ -586,0 +610,3 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "61691f7e4924b15d77fab96cd26ac2eca7182ae1acc628f21bc147ec084dcb5a"
+      },
+      {
+        "header": "@@ -610,0 +637 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "01082ca958d6999a3df75226761cab11b05a8a40fcaf3e931d25ffd9ea35b7ee"
+      },
+      {
+        "header": "@@ -1561 +1588 @@ function Invoke-SuitePreflight {",
+        "raw_hunk_lf_sha256": "53e5eb3c51b9e6a010e70be58e45729aabe55a7836704bfbaef39094157072a8"
+      },
+      {
+        "header": "@@ -1727 +1754 @@ $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt",
+        "raw_hunk_lf_sha256": "db240c7120df965ede054885d1c2028e7188f367b7d7b0268b1e0678db1978ac"
+      },
+      {
+        "header": "@@ -1755 +1782 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {",
+        "raw_hunk_lf_sha256": "9a21a277c8d20918b2f73b3e39042fdd6e8de2ecb3d10143a91e94bce62c3837"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_delta_bytes": 25153,
+    "current_delta_raw_sha256": "c83d81db12980c3a03433b371d3e1c41e47454430344a28d267f4d3f0186dbb0",
+    "current_delta_lines": 372,
+    "current_delta_lf_sha256": "c83d81db12980c3a03433b371d3e1c41e47454430344a28d267f4d3f0186dbb0",
+    "current_delta_hunks": 30,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 125,
+        "range_lf_sha256": "3aad418c6c7d854f962be8f7b2ce40b87fb94f7a309424f2d7b1d1d93d1a5d09"
+      },
+      {
+        "first": 126,
+        "last": 250,
+        "range_lf_sha256": "83ff4324c7ebb36acde6662875e8a75fa8677b0bc731c1ee396c19fb96be4122"
+      },
+      {
+        "first": 251,
+        "last": 372,
+        "range_lf_sha256": "8608613a29e5a57d893ff5a677839bea2955fa8f2e253bde1e234808770e7f24"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -34,0 +35 @@",
+        "raw_hunk_lf_sha256": "2c4b90667993933f1fe7df495006ce1a8c5336e0ab197036d147212e8571e876"
+      },
+      {
+        "header": "@@ -39,0 +41,2 @@",
+        "raw_hunk_lf_sha256": "b9e9176cbec232daf80ce1b8bc5eb42ba2ef1a2b26c5d337962d83e2d1627a69"
+      },
+      {
+        "header": "@@ -42,0 +46 @@",
+        "raw_hunk_lf_sha256": "05e77be0c484c33f903169a2cf0a0c95d100fef672abcb4a728f69caca1c2dc5"
+      },
+      {
+        "header": "@@ -96,0 +101 @@ param(",
+        "raw_hunk_lf_sha256": "3a212acf0b5ea1696971444a35395d2bfacb9a181ae166d1086f19615e351c88"
+      },
+      {
+        "header": "@@ -97,0 +103 @@ param(",
+        "raw_hunk_lf_sha256": "65d16f99481a0289f31a878f108ca21f4de74f2ebdce76cc210f7f4601b73525"
+      },
+      {
+        "header": "@@ -108,0 +115,2 @@ param(",
+        "raw_hunk_lf_sha256": "21846358cad2fd6ecddec281450517c95000bc88d49dbd39f82cef0ad810d5d6"
+      },
+      {
+        "header": "@@ -150,0 +159 @@ param(",
+        "raw_hunk_lf_sha256": "bf18cb5f6ea0327c257bd255e14159ad1db93fcb77bfa7bad56b0cea6400818f"
+      },
+      {
+        "header": "@@ -327,4 +336 @@ if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object {",
+        "raw_hunk_lf_sha256": "92d9e7291e44354a157eac2f9e45adf23728fbe9d1b0b62eec6e438f0cfd87bb"
+      },
+      {
+        "header": "@@ -339,0 +346 @@ if ($GraphicsConfirmation) { . \"$PSScriptRoot\\..\\helpers\\test_graphics_multiplay",
+        "raw_hunk_lf_sha256": "4eb4ff34348d3b31e072d5b49e446aa366d2ef8c040e9dfe135a11625e0cfb67"
+      },
+      {
+        "header": "@@ -514,0 +522,106 @@ function Get-IntroNumConnected {",
+        "raw_hunk_lf_sha256": "13a2cca16c828572aff2ca65f0343828a99ac37dc88748ed1a86a86aeddcd46e"
+      },
+      {
+        "header": "@@ -541,0 +655,2 @@ function Get-IntroPdataSequence {",
+        "raw_hunk_lf_sha256": "118ba832072cd323b261e3fae2cc08d2757abbe358e1325250f62221157b647c"
+      },
+      {
+        "header": "@@ -577,0 +693,2 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "013ec367cc0ea0e80b5a99e9ed54ffcac19cebe459a3ac4eb5e57088a546ca32"
+      },
+      {
+        "header": "@@ -580 +697 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "2fb677d0aa33d34669862e88949556e58957e5494e9be6e33b099a98fcb70bac"
+      },
+      {
+        "header": "@@ -595 +712,5 @@ function Get-DeviceAutomationResult {",
+        "raw_hunk_lf_sha256": "ff8a7b8da12237dd92190f6d95945c946bc6a40431464f2f32fca83b50b9548c"
+      },
+      {
+        "header": "@@ -1983,0 +2105,92 @@ function Set-DeviceCoopRestoreSlot {",
+        "raw_hunk_lf_sha256": "003b31445ad25ec1f2f7d99154c616bd8b8e04f2ce709aaab363c3cf181afc34"
+      },
+      {
+        "header": "@@ -2319,0 +2533,50 @@ function Invoke-RestoreStatusScenario {",
+        "raw_hunk_lf_sha256": "eecfd77742cd5de452724d770a3326765194521971113b89de74df86bf36564e"
+      },
+      {
+        "header": "@@ -2369,2 +2632,15 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a46c41241e643804c0758df1871e309f15a0a416657e3439ebb7a0b86ebc63c7"
+      },
+      {
+        "header": "@@ -2374,2 +2650 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "791ec8834a9e3891aad556bba00fe509ffb2946cd13b440e2395b5819952e97f"
+      },
+      {
+        "header": "@@ -2382 +2657 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "0240c053232b77aa4293d8055fc21d477d660fe29a754a72e8759bbdefabc3fa"
+      },
+      {
+        "header": "@@ -2473 +2748 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a5be51f2d95285b3420e7fd587ba1b31f262d67dacfcfacde5246b7bcb19ac0d"
+      },
+      {
+        "header": "@@ -2531 +2806,2 @@ try {",
+        "raw_hunk_lf_sha256": "d8027bedfefd25b6bd15a6e347e8e424f345fdf1ad4124f1632bb0c8308ef47b"
+      },
+      {
+        "header": "@@ -2533 +2809 @@ try {",
+        "raw_hunk_lf_sha256": "f358b960471d973aa109e16b9df37b0baa04ae2af0d628812d32d43364f1ba14"
+      },
+      {
+        "header": "@@ -2616 +2892 @@ try {",
+        "raw_hunk_lf_sha256": "7466180276ee5bb67564aef63f5ba87f6f6d99c9f7a021bdc44f53d77e2f4cb7"
+      },
+      {
+        "header": "@@ -2714 +2990 @@ try {",
+        "raw_hunk_lf_sha256": "036009338f2a1e5a2887b2b92149362969cb5c1b56f634912a75f1ff87381f73"
+      },
+      {
+        "header": "@@ -3214,0 +3491,4 @@ try {",
+        "raw_hunk_lf_sha256": "1cb8fd5b041a1ce9b5ea777fcc83b725778ea86aaa88b3bc7c7100e1aafd48cb"
+      },
+      {
+        "header": "@@ -3246,0 +3527,3 @@ try {",
+        "raw_hunk_lf_sha256": "a767a9ab2e276db110a6ce4f40289e9d98ac4b8ac3cf1a7b881cb4750fb20aec"
+      },
+      {
+        "header": "@@ -3264,0 +3548,4 @@ try {",
+        "raw_hunk_lf_sha256": "de4a7ba856c83b46323e76e980a90a93d0f689919f912f4e714ccb1c078cd278"
+      },
+      {
+        "header": "@@ -3480,0 +3768,9 @@ try {",
+        "raw_hunk_lf_sha256": "3c66736e4149d62965df2d28d8f9f2968aadbd598341a4dded11461de92f6728"
+      },
+      {
+        "header": "@@ -3488,0 +3785,7 @@ try {",
+        "raw_hunk_lf_sha256": "883558cd2bfefbbe93f74a9431dfd3ac439933f3163d9b434109c3bf4f80ae26"
+      },
+      {
+        "header": "@@ -3495,0 +3799,3 @@ try {",
+        "raw_hunk_lf_sha256": "f4fde0f37dc60b53eda9bb335ac388d78cbd82d6f49cc72e060ef557bb5f8e3d"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_delta_bytes": 22524,
+    "current_delta_raw_sha256": "7f0046a641675849504e5ce2fa4bcfc49bfe734416fd5cdf98a3c75c7c61e083",
+    "current_delta_lines": 439,
+    "current_delta_lf_sha256": "7f0046a641675849504e5ce2fa4bcfc49bfe734416fd5cdf98a3c75c7c61e083",
+    "current_delta_hunks": 8,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 125,
+        "range_lf_sha256": "90beec265e1e02e4ab80b37555fdb3cc91ffcc2b8ecf5f4f32c4747a9ec45a1f"
+      },
+      {
+        "first": 126,
+        "last": 250,
+        "range_lf_sha256": "2c362792b29757857266382c49509925d0d965c613b2660fcf0627ac3cb1133e"
+      },
+      {
+        "first": 251,
+        "last": 375,
+        "range_lf_sha256": "cdc9589700f1b4106316f68ec099c5c8a4a8e63ab75ff25d72e1a8dc9499b734"
+      },
+      {
+        "first": 376,
+        "last": 439,
+        "range_lf_sha256": "8a2bf5fb9d98bbef13a4de10c114eb21d4a9738742fc3647c8079ac40c8135dd"
+      }
+    ],
+    "hunks": [
+      {
+        "header": "@@ -57,0 +58 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892"
+      },
+      {
+        "header": "@@ -85,0 +87,5 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "412b0e1ea1a60be26f84eb3e5fef097b311104121c38b115df2224fbc200af59"
+      },
+      {
+        "header": "@@ -88,0 +95,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "915ce06f65d05a0f3525ed421304a688404e368d37a71e84693d297481b5fb74"
+      },
+      {
+        "header": "@@ -132,0 +142,2 @@ extern int Entered_from_level;",
+        "raw_hunk_lf_sha256": "5936ef7bdd1f361b9e2f51533c7099994129007abc4b038f5e13b94d4130cdce"
+      },
+      {
+        "header": "@@ -4162,0 +4174,39 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6b870170e0b60c2d2cdf364e06f31df17b69316a2569191775656ac07f2bb948"
+      },
+      {
+        "header": "@@ -6029,0 +6080,349 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "3bbbe66f8857e025f63875683d08f51d582fcd1dbd9b71ab6c49f918d91c9f99"
+      },
+      {
+        "header": "@@ -6056 +6455 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6634e87cca9851e14fbfebab129a1501faeef5553e052fbc1c896cb5e5938591"
+      },
+      {
+        "header": "@@ -6063,0 +6463,26 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "62d23469980d223848e24513a1acc6a71b061b4c638e414ecdd90d39db66f544"
+      }
+    ]
+  }
+]
+```
+
+## Canonical owner source reads
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/branch_adversarial_review_ledger.md",
+    "prepublication_whole_source_sha256": "5d3b3546092545d246084591a968933f966e1676fc7c47e79163cfafe142b5fa",
+    "read_lines": [
+      {
+        "line": 11693,
+        "text": "### BR-0082: P2 - Validate metadata-backed save bodies before offering Resume",
+        "line_lf_sha256": "addad6dbb44331e8679e057c518a58a6dcf4214eeb300c1e7d2ed0f979068a13"
+      },
+      {
+        "line": 11694,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 11695,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 11696,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 11697,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 11698,
+        "text": "- Category: correctness/input-validation",
+        "line_lf_sha256": "dbefaa1e59b8a6773926a18d3db0c154b5603589f2e07647260c250c1d4f39e7"
+      },
+      {
+        "line": 11699,
+        "text": "- Found by: R1-CHUNK-0041, R1-CHUNK-0266",
+        "line_lf_sha256": "c1ec30d0e056c9ec1e83ca590325d0acef003c0ee6d40897d4c243ef6ada3af4"
+      },
+      {
+        "line": 11700,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_resume_save.cpp:L378-L399,L444-L497,L611-L656` in `read_resume_candidate`, candidate selection, and `save_explorer_slot_json`, with paired startup callsign readers at `d1/main/state.c:L2568-L2617` and `d2/main/state.c:L3376-L3425`",
+        "line_lf_sha256": "ed2512e64a05281405ead35a7d2a4533aaa2b60b213a57c8cf8c630572023ab9"
+      },
+      {
+        "line": 11701,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_save_meta.c:L151-L183,L233-L279`, `android/app/src/main/cpp/shared/android_resume_pilot.c:L90-L156`, `android/app/src/main/cpp/shared/startup_resume_shared.c:L40-L88`, `android/app/src/main/cpp/shared/coop/coop_save.c:L580-L621`, `d1/main/state.c:L1930-L2045,L2513-L2617`, `d2/main/state.c:L2048-L2207,L2569-L2720,L3319-L3425`, `android/app/src/main/java/com/dxxredux/app/SaveExplorerBridge.kt:L40-L78`, and `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1857-L1921`",
+        "line_lf_sha256": "2a617ee86ba64d0633334e914dfb3869e110a085eb3f25db21c51ed8020bed06"
+      },
+      {
+        "line": 11702,
+        "text": "- Evidence: `read_resume_candidate` treats a schema-valid Android metadata trailer as sufficient proof that the entire file is a loadable save. `android_save_meta_read_path` seeks only to the trailer and validates its tag, version, enum ranges, and thumbnail shape; it never reads the DGSS magic, save version, game-specific header, mission, level, or any body byte. Candidate selection and Save Explorer therefore advertise a file whose body is truncated, corrupt, cross-format, or arbitrary whenever its final metadata structure remains valid. Kotlin trusts the native candidate and launches the selected game, which only then asks the full engine restore path to parse the unvalidated body. The separate legacy parser cannot mitigate this case because it runs only when metadata is invalid. A branch-produced manual cooperative save is a concrete non-corrupt instance of the same mismatch: `.mgN` files with real metadata callsigns pass `read_resume_candidate`, but the cooperative writer inserts `state_game_id` and `CALLSIGN_LEN+1` bytes between version and description. The new paired `state_get_save_file_callsign` helpers and normal startup restore both assume description follows version immediately, so they parse the cooperative body 13 bytes early. The helper's apparent player callsign begins at the saved mission terminator and is empty for the normal eight-byte mission field, while `state_restore_all_path` starts with non-multiplayer `Game_mode` and cannot select the cooperative header branch.",
+        "line_lf_sha256": "635a17707d6584a0f202ea035396150ef8c8f8894a13594e2df8f16e2d01ccae"
+      },
+      {
+        "line": 11703,
+        "text": "- Trigger: Corrupt or truncate the body of an Android save while preserving its metadata trailer, append a copied valid trailer to a save-slot-named non-save file, encounter a save write or restore whose body is inconsistent with its surviving footer, or create a manual cooperative `.mgN` save under a real callsign and select it as the newest or Save Explorer resume candidate",
+        "line_lf_sha256": "ba40fe634c58c5fcd5c22d4ba67b137278fdee24f3ee7b360b4702ebb7ba2d74"
+      },
+      {
+        "line": 11704,
+        "text": "- Impact: The launcher can rank and offer a corrupt or unsupported-layout file as the newest or highest-progress resume, hide a usable older candidate behind it, and hand malformed state to a large engine deserializer instead of retaining the file as an explicit orphan. In the ordinary cooperative case, the advertised Load action predictably cannot recover the saved session and can first derive the wrong pilot identity from misaligned body fields.",
+        "line_lf_sha256": "f0ea0fe4dc529bf50b00102d0d860497d18cc7d819d5794498436eee10b921a9"
+      },
+      {
+        "line": 11705,
+        "text": "- Expected: Metadata is descriptive, not proof of body validity; every offered candidate passes game-specific save-header and structural validation, including its single-player or cooperative scope, and an invalid or unsupported body remains visible only as a non-loadable orphan with a precise reason",
+        "line_lf_sha256": "588f8a599feacfc8738ee964ca3aca647997a443796b9460f3b357769cb574a4"
+      },
+      {
+        "line": 11706,
+        "text": "- Suggested fix: Centralize a side-effect-free D1/D2 save validation API owned by the engine readers and require it for metadata-backed and legacy candidates before ranking or exposing Load. At minimum validate DGSS magic, compatible version, expected game and scope-specific header layout, complete mandatory reads, mission termination and availability, and plausible level fields; do not duplicate a weaker launcher-only parser. Encode or derive cooperative scope explicitly and either exclude cooperative saves from single-player startup resume or implement a dedicated cooperative-session restore path; make callsign extraction use the same validated layout parser.",
+        "line_lf_sha256": "b92cc96ff3b035b3697a832b2aaeee04d82b0f82380a7f796421f0c4de49b404"
+      },
+      {
+        "line": 11707,
+        "text": "- Validation: Add native-to-Kotlin fixtures with valid metadata plus valid single-player and cooperative D1 and D2 bodies, valid trailers on wrong-magic and random bodies, truncation before and within mandatory fields, a cross-game body, invalid mission termination, and a corrupt body that preserves timestamp and progress metadata. Include manual cooperative saves with real callsigns and sentinel autosaves in flat and save-set paths. Assert corrupt and unsupported-scope files never become Resume or Load candidates or displace the newest valid save, while any deliberately supported cooperative path reads its header, callsign, mission, and level at the correct offsets and launches only with established multiplayer session state.",
+        "line_lf_sha256": "fae18961dc2cb65feeb06cf4f902db4ae81d102643ae39c7c3a653a59bf60d36"
+      },
+      {
+        "line": 11708,
+        "text": "- Verification (2026-08-10, sol-5.6-medium): CONFIRMED, with the remediation boundary narrowed. Frozen `android_save_meta_read_path` seeks from EOF and validates only the packed trailer and its enum/thumbnail fields (`android/app/src/main/cpp/shared/android_save_meta.c:L233-L279`); `read_resume_candidate` then publishes it without reading byte zero (`android/app/src/main/cpp/jni_resume_save.cpp:L378-L399`), and both newest/options selection loops rank that result at L444-L497. This is directly reproduced by the maintained native metadata test: `android/tests/test_android_save_meta.c:L5-L20,L78-L173` writes the literal non-DGSS body `base-save-body` before valid D1/D2 trailers and expects those files to parse and compete for newest selection. The launcher recursively collects both `.sgN` and `.mgN` files and converts the selected metadata directly to Resume JSON (`jni_resume_save.cpp:L39-L84,L744-L829`), while Kotlin's metadata-backed fixtures start from trusted candidate DTOs and do not disprove native body admission. The paired restore paths validate `DGSS` and only a game-specific minimum version, then read the header, load the mission, set time/player globals, and continue deserializing (`d1/main/state.c:L1930-L2085`; `d2/main/state.c:L2569-L2750`); startup invokes them only after launch through `startup_resume_shared.c:L57-L82`. They have no side-effect-free complete-body validation API or rollback wrapper. Complete preflight cannot be implemented by merely reusing `read_save_header_preview`: D1 version 15 and D2 version 29 share `DGSS`, the preview has only minimum-version gates, cooperative writers insert `state_game_id` plus a nine-byte callsign before description (`d1/main/state.c:L1697-L1712`; paired D2 L2075-L2089), and later DGSS sections are version-gated, count-driven, and unframed. The feasible local fix is therefore two-part: immediately require a scope-aware paired header probe and exclude cooperative layouts from single-player Resume; for newly written metadata, version the trailer to carry the exact pre-trailer byte count plus a digest computed over the complete DGSS/cooperative prefix, and verify both before ranking. Existing unhashed saves can remain inspectable and use only the explicitly weaker header-qualified legacy policy. A true semantic complete-body validator would require a separate staged-reader refactor and must not be simulated by calling the mutating restore. Focused tests should retain genuine paired D1/D2 single-player saves, reject the current literal-body fixtures, copied trailers, prefix truncation/bit flips, version-crossed bodies, and `.mgN` candidates, and prove invalid high-timestamp files cannot displace a valid older candidate.",
+        "line_lf_sha256": "1b42825bbd2ca7470d447ea2de69a1f4931f74a3d29e970aaf857af03ee94344"
+      },
+      {
+        "line": 11709,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 11710,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13364,
+        "text": "### BR-0195: P1 - Authenticate cooperative state-packet authority",
+        "line_lf_sha256": "07fb04931803da2bfa3f77daf88120c0eb0bf3163b631495387cf495d9f72c23"
+      },
+      {
+        "line": 13365,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13366,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13367,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13368,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13369,
+        "text": "- Category: security/protocol-integrity",
+        "line_lf_sha256": "c87bc12d04938b23d85891fd138abd8d5e08e509e780ccdf0fdaefedfc316861"
+      },
+      {
+        "line": 13370,
+        "text": "- Found by: R1-CHUNK-0101, R1-CHUNK-0119, R1-CHUNK-0122, R1-CHUNK-0141, R1-CHUNK-0204, R1-CHUNK-0238",
+        "line_lf_sha256": "971604baa33672161954e4924ff6d5134643f4e0be056602b4ae9279820ec194"
+      },
+      {
+        "line": 13371,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/coop/coop_multi_status.c:L75-L82,L159-L192`; `android/app/src/main/cpp/shared/coop/coop_warp.c:L333-L365`; `android/app/src/main/cpp/shared/multi_save_transfer.c:L79-L84,L770-L805`; `d1/main/multi.c:L3323-L3346,L5707-L5708`; and `d2/main/multi.c:L3486-L3509,L7620-L7621` in cooperative packet application",
+        "line_lf_sha256": "172a75a221f2748ad742195287dd26a7bce86fbe8185a724e3a2c263a74e52c8"
+      },
+      {
+        "line": 13372,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_rewind_policy.c:L39-L47`, `android/app/src/main/cpp/shared/difficulty_runtime_shared.c:L76-L117`, `d1/main/multi.c:L5567-L5708`, `d2/main/multi.c:L7355-L7621`, `d1/main/net_udp.c:L6721-L6804`, `d2/main/net_udp.c:L6881-L6958`, and BR-0080",
+        "line_lf_sha256": "e0dea2314f818bab87a06bcc59f55cfa207ccacb25d3a033bac74f9cd65e2aa7"
+      },
+      {
+        "line": 13373,
+        "text": "- Evidence: The new handlers trust identity or authority encoded inside the multiplayer payload. `coop_do_peer_status` writes the claimed slot's kill statistics without comparing it with the authenticated outer UDP sender. More seriously, `coop_do_restore_inventory` checks only that the claimed target equals the local player, then applies attacker-controlled energy, shields, score, laser level, weapon flags, twenty ammo values, durable flags, lifetime statistics, and time totals. `coop_warp_do_packet` similarly accepts a payload-selected warper slot, valid segment, and coordinates, then moves and relinks that claimed player's object without requiring the claimed warper to match the authenticated sender. The paired `multi_do_difficulty` handlers likewise authorize solely by comparing the payload's claimed sender byte with `multi_who_is_master`; a non-host can copy the public master slot into byte 1 and choose any admitted difficulty. The handler then changes live AI, weapon, damage, scoring, history, `Netgame`, HUD, and player-default state and writes the receiving player's profile. Rewind requests add the same identity flaw: `multi_do_rewind_request` treats payload byte 1 as the requester, checks only that some connected or waiting player occupies that slot, indexes its one-second throttle by the claimed slot, and sends results to that slot. On the host, the UDP layer authenticates a peer only against the outer `pnum`, then forwards the complete inner message to every other player before local dispatch. D2 carries that authenticated slot into `multi_process_data_from_player` but passes it only to a later escort-owner handler, not to these cooperative handlers; D1 discards it before dispatch. A non-host peer can therefore send a valid restore packet with another player's slot in byte 1, a warp packet claiming another connected player and arbitrary accepted destination coordinates, a difficulty packet claiming the master, or rewind requests that cycle through other connected slots. The host accepts and relays the state packets; recipients apply the trusted-host copy to live state, while forged rewind identities bypass the intended per-client throttle and misdirect results. The same path lets a peer attribute arbitrary status totals to another slot. BR-0080 covers unsafe ship-status indices and their memory-safety impact; this finding covers the distinct identity, authority, and cooperative state-integrity failure in the new message types.",
+        "line_lf_sha256": "c8a87b2ce6745f0bda03d1c2ae27bcb060e3cf137bcfc570ea756bc009784ba7"
+      },
+      {
+        "line": 13374,
+        "text": "- Trigger: Join an Android cooperative D1 or D2 game with a modified peer; send `MULTI_COOP_RESTORE_INV` through the normal multiplayer channel with the victim's player number and chosen record fields, send `MULTI_COOP_PEER_STATUS` with another connected player's number, send `MULTI_WARP_TO_PLAYER` with the victim as the claimed warper and chosen valid segment and coordinates, send `MULTI_DIFFICULTY` with the master slot in byte 1 and an attacker-selected value in byte 2, or enable client rewind requests and rapidly send `MULTI_REWIND_REQUEST` while cycling byte 1 through connected player slots",
+        "line_lf_sha256": "cbc4d9a564068ff26c902f1669d8db83c2fee48d5702d22ecccf3701e21c3ab7"
+      },
+      {
+        "line": 13375,
+        "text": "- Impact: Any admitted participant can remotely replace another player's combat inventory, score, progression totals, and selected durable state, falsify another player's cooperative statistics, teleport and relink another player's object, force the global difficulty and persist that forced choice as each recipient's default, or bypass the rewind requester's per-second throttle in proportion to the number of occupied slots while attributing requests and responses to victims. Invalid semantic values such as an out-of-range laser level or unverified warp position also enter engine state, so later gameplay operates on state that the normal inventory, save, and warp paths never produce.",
+        "line_lf_sha256": "99445a430c89d53fa6ea654973803b5038171956ba9521eb58501a901a429c5f"
+      },
+      {
+        "line": 13376,
+        "text": "- Expected: Peer-status, warp, and rewind-request identities match the authenticated sender, inventory restoration and difficulty changes are accepted only from the current authenticated master in their valid phases, throttling follows the real peer rather than a payload claim, and every decoded field and destination is validated before one atomic state update.",
+        "line_lf_sha256": "973dc0dd682a466fde99a910f1444e3b6d9489bcbb97284c76be46fd4d2077ce"
+      },
+      {
+        "line": 13377,
+        "text": "- Suggested fix: Preserve the authenticated outer player through D1 and D2 multi-message dispatch, pass it to every cooperative handler, require peer-status, warp, and rewind-request identity to match that sender, index rewind throttling by the authenticated sender, and require restore and difficulty messages to originate from `Multi_master_playernum`, with restore additionally requiring a pending local rejoin. Require cooperative mode and a connected playing sender, validate warp position semantics before mutation, decode inventory into a temporary record, validate every field against game-specific limits, then commit once. Ensure the host rejects and does not relay unauthorized packets and that rejected difficulty messages cannot reach player-file persistence.",
+        "line_lf_sha256": "bedd22be5b674e1f9af740f01c9c63c2e8d2c533917055a5736e58439afc5db8"
+      },
+      {
+        "line": 13378,
+        "text": "- Validation: Add paired D1 and D2 protocol tests with separate host, sender, victim, and observer identities; cover valid self-warp, host restoration and host difficulty changes, valid and throttled client rewind, non-host restore and difficulty forgery, mismatched peer-status, warp, and rewind identities, rewind slot cycling, forged outer and inner slots, arbitrary warp segment and coordinates, host relay, direct and reliable delivery, stale restoration outside rejoin, and boundary plus invalid record fields. Assert rejected packets are not forwarded, do not rewrite player files, do not consume or bypass another peer's rewind throttle, and leave all player, object, segment-link, cooperative-stat, difficulty, history, and default-preference state byte-for-byte unchanged.",
+        "line_lf_sha256": "a9cf61e1c418995f3c7b235fc4a7c644fc439d6d082ed3a7f0d419b2f934dc77"
+      },
+      {
+        "line": 13379,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L174-L185,L674-L750` and the closing handlers at `L751-L809`",
+        "line_lf_sha256": "a6afb9bfc6fccdbc4a83907a4934f9c9f5de58ec06ca67417d7360d5eeff6718"
+      },
+      {
+        "line": 13380,
+        "text": "- Additional evidence (R1-CHUNK-0204): Transfer authority is unauthenticated in both directions. Every non-host client accepts `BEGIN`, `CHUNK`, and `APPLY` based on local role and an eight-bit transfer ID, without proving that the original sender was the host; because the host authenticates and relays a peer's outer packet before these inner handlers run, a participant can supply a self-consistent size, FNV checksum, chunks, and apply command that recipients treat as an authoritative host rewind or save restore. Conversely, the host's ready handler trusts payload byte 2 as `pnum`; a different peer can claim a victim slot in both a buffer-ready message and the later apply-ready message, advance both readiness flags, and make the host transmit or restore without the victim reaching either phase. Requiring reliable delivery does not authenticate the inner authority or claimed slot.",
+        "line_lf_sha256": "d1689616fa890530d5ae96e6e051dcd5a6a6ad9a5a6a1833c2207591292c497a"
+      },
+      {
+        "line": 13381,
+        "text": "- Additional validation (R1-CHUNK-0204): Extend the paired protocol matrix to all four transfer messages. Inject `BEGIN`, every `CHUNK`, and `APPLY` from a non-host with a valid attacker-computed checksum and a host-looking payload, and forge `READY_BUFFER` and `READY_APPLY` with another client's slot. Assert the host drops these before relay, clients accept transfer phases only from the authenticated current host, ready phases update only the authenticated sender's slot, and no allocation reset, payload publication, restore, readiness transition, timeout extension, or HUD success occurs for rejected traffic.",
+        "line_lf_sha256": "f4e1aa5d9a5e5b1c5ff3f84cd41afb3aa5a50fc949201b5338ec056df60cf3b1"
+      },
+      {
+        "line": 13382,
+        "text": "- Additional location (R1-CHUNK-0238): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/multi.c:L4810-L4962,L5567-L5677`; paired `d2/main/multi.c:L6331-L6482,L7362-L7514`",
+        "line_lf_sha256": "58d07eaaf61bd68c91cb3e4df03c1b9735b04fa135a1d64da58c3de324fc67f7"
+      },
+      {
+        "line": 13383,
+        "text": "- Additional evidence (R1-CHUNK-0238): Android changes damage and repair from observer-directed status into broadcasts received by every cooperative peer, then adds ordinary-player branches that write `Players[buf[1]].shields` without checking that byte 1 is in range or matches the authenticated outer sender. Both commands have fixed accepted sizes, so a participant can send a correctly sized packet with a victim's slot and chosen `new_shields`, or use `0xff` to write beyond `Players[]`. The host's UDP path authenticates only the outer player, forwards the untouched message to other players before local dispatch, and does not compare the inner slot. D1 discards sender identity in `multi_process_bigdata`; D2 carries `authenticated_sender` into `multi_process_data_from_player` but calls both handlers without it. Thus one admitted peer can corrupt every recipient's cached shield state or trigger network-reachable native memory corruption. This is the same missing authenticated-sender binding already tracked here; BR-0080 covers the analogous ship-status-specific indices.",
+        "line_lf_sha256": "a09ebc52ab610d5a49ebc2267c3ffc4ab63eebbc0bf6a08003d5ea2614d6c061"
+      },
+      {
+        "line": 13384,
+        "text": "- Additional validation (R1-CHUNK-0238): Add paired D1/D2 cooperative packet tests for valid self damage and repair, a different connected slot, `MAX_PLAYERS`, and `0xff`, over reliable and ordinary delivery with host relay and observers present. Assert the host rejects mismatched or out-of-range inner slots before forwarding, recipients derive the target only from the authenticated sender, legitimate updates affect exactly that sender, all rejected traffic leaves `Players[]` and adjacent sentinels unchanged, and AddressSanitizer reports no invalid access.",
+        "line_lf_sha256": "4801ea86d12fec6a30df528c088d7f60b58477396a79574fefef4d63c57e4feb"
+      },
+      {
+        "line": 13385,
+        "text": "- Additional location (R1-CHUNK-0248): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/net_udp.c:L948-L1010,L1049-L1075,L6013-L6063,L7476-L7526`, with paired `d2/main/net_udp.c:L7660-L7710`, and `d1/main/multi.c:L2723-L2802`",
+        "line_lf_sha256": "f23b3caae86c298e639943df8fec2ed76c1f856d44d831064813aa0c62285b5a"
+      },
+      {
+        "line": 13386,
+        "text": "- Additional evidence (R1-CHUNK-0248): The branch changes P2P ping handling from refreshing slot zero only for an observer host to refreshing the current master's `LastPacketTime` for every ping whose payload-selected `from_player` equals `multi_who_is_master()`, describing that claim as proof the host is reachable. P2P ping admission validates the fixed packet size and shared netgame token, but does not bind `from_player` to `sender_addr`; the existing route-trust flaw was present at the base, but the branch newly uses that unauthenticated identity as a host-liveness credential. Any admitted peer can therefore continue sending valid pings that claim the departed master. Each ping resets the timestamp before `net_udp_timeout_check` can call `multi_disconnect_player(master)`, and that disconnect is the path that invokes Android cooperative host migration or reports host loss. A malicious or faulty survivor can hold every recipient that hears the forged heartbeat on the dead-host roster indefinitely instead of letting the session recover.",
+        "line_lf_sha256": "536deaad1080a4b78247d6b7f23ddd0e497feda1dbb3bb33104dca0cea9caa24"
+      },
+      {
+        "line": 13387,
+        "text": "- Additional validation (R1-CHUNK-0248): In paired D1 and D2 direct and proxy tests, disconnect the current host while another admitted peer sends P2P pings claiming itself, the host, another survivor, and invalid boundary slots. Require only an address- or authenticated-route-bound host packet to refresh host liveness; forged host claims must not change any `LastPacketTime`, route, loss, or connection state and must not delay the bounded timeout, deterministic master election, or explicit host-loss exit. Repeat after migration with a nonzero master slot and with observer-host mode.",
+        "line_lf_sha256": "306bc8602beeb8a7b92a3a3493dc885edcca926f61ec116de7208b55f8d6022c"
+      },
+      {
+        "line": 13388,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13389,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13447,
+        "text": "### BR-0206: P1 - Stage multiplayer restores before applying any peer",
+        "line_lf_sha256": "28c59ee9eb7721b1fe6023a7431396c75423080503d160109a5273ffe6279bae"
+      },
+      {
+        "line": 13448,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13449,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13450,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13451,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13452,
+        "text": "- Category: correctness/multiplayer-synchronization",
+        "line_lf_sha256": "d4e30ca72e57b19ab44b4cedd6f4b9821ca2c676ad3380fa1921816bb5732f2c"
+      },
+      {
+        "line": 13453,
+        "text": "- Found by: R1-CHUNK-0107, R1-CHUNK-0204, R1-CHUNK-0274",
+        "line_lf_sha256": "a9bb990507b0793ddf15f222ad1e751a28f60d7d772b92e384333c82509c6e28"
+      },
+      {
+        "line": 13454,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_rewind.c:L398-L436` in authoritative restore and `android/app/src/main/cpp/shared/multi_save_transfer.c:L188-L258,L573-L610` in client and host rewind application",
+        "line_lf_sha256": "2cda2d940b5cf268c5b0fc84511fe34be17fd8763326e3b526fd4505693e5cf9"
+      },
+      {
+        "line": 13455,
+        "text": "- Related: `d1/main/state.c:L1704-L1709,L1980-L2003`, `d2/main/state.c:L2081-L2086,L2648-L2675`, and `android/app/src/main/cpp/shared/state_android_shared.c:L710-L735`",
+        "line_lf_sha256": "2d8e660a5d6ad74f654b00509f5aaab6cf46fdaa47153bcf3a419c29a8300dbe"
+      },
+      {
+        "line": 13456,
+        "text": "- Evidence: A cooperative rewind snapshot is serialized on the host and its save header therefore contains the host's callsign. Each client receives that buffer with `snapshot_index = -1` and calls `android_rewind_restore_authoritative`, which always calls `state_restore_from_memory`. The paired D1 and D2 restore code rejects a cooperative save whose recorded callsign differs from `Players[Player_num].callsign`; only `state_restore_coop_from_memory` enables the authoritative remap exception. Thus every normally named non-host client rejects the host snapshot before restoration. Independently, `multi_perform_rewind_request` restores the host first and only afterward calls `multi_send_rewind_save_transfer`. An active transfer or allocation failure makes that setup fail immediately, and a later ready, packet, checksum, disconnect, or timeout failure can abort it asynchronously, but the function merely logs setup failure and returns the host's successful status with no rollback. Even the success path lets the host simulate from the rewound state while clients wait for the complete transfer and apply command.",
+        "line_lf_sha256": "7e40681640e19d65d130d2bac6e97e21e696459b347cfbfc94d8685516e69def"
+      },
+      {
+        "line": 13457,
+        "text": "- Trigger: In a cooperative D1 or D2 game with at least one client whose callsign differs from the host, perform a rewind; or make transfer allocation, setup, readiness, delivery, checksum, or timeout handling fail after the host selects a point",
+        "line_lf_sha256": "26b37d76a4cd12f953346ae1cb635dff65eb52cbe950080c3a59cfc4443650ee"
+      },
+      {
+        "line": 13458,
+        "text": "- Impact: The host rewinds while clients remain on their prior world generation, and ordinary packets can cross between incompatible object, player, wall, RNG, and game-time states. The session can immediately desynchronize, reject subsequent state, disconnect peers, or crash in gameplay that assumes shared object identity; the advertised cooperative rewind cannot complete for the normal distinct-callsign case.",
+        "line_lf_sha256": "959877c1e1fa2ec03cd6523b875a784909f17c5035193907585f4188406a7257"
+      },
+      {
+        "line": 13459,
+        "text": "- Expected: Every required peer validates and stages the same authoritative snapshot before any peer resumes from it, and all peers either apply one generation at a coordinated boundary or retain the prior state.",
+        "line_lf_sha256": "e0f2d7e7b52777920ff9b88531d9a83063dfa0bc32b2380dcaa848331268bc37"
+      },
+      {
+        "line": 13460,
+        "text": "- Suggested fix: Use the cooperative authoritative restore mode for received rewind images, but make that only the apply phase of a two-phase protocol. Copy and validate the snapshot on every required peer, pause or generation-gate simulation and incompatible packets, collect readiness, then apply host and clients at one coordinated boundary and acknowledge completion. Abort before mutation if staging fails; define disconnect and apply-failure recovery rather than logging after the host has committed.",
+        "line_lf_sha256": "83c7276486377883787751b98f59f84525a340ea0378a0ae2fcd37b32cdabddd"
+      },
+      {
+        "line": 13461,
+        "text": "- Validation: Run paired D1 and D2 sessions with a host and multiple distinct-callsign clients, rewind during active object, wall, score, and RNG changes, and compare complete synchronized state after resume. Inject allocation failure, an already active transfer, lost and reordered begin/chunk/apply packets, checksum mismatch, slow readiness, timeout, disconnect before each phase, and client restore failure; assert every run either applies exactly one common generation or leaves every survivor on the prior generation with no cross-generation packets.",
+        "line_lf_sha256": "713c38ca07f7b2ec964d5ef434141fe42b417eb9df067500ccff4388f27bdfb8"
+      },
+      {
+        "line": 13462,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L215-L233,L397-L463` in cooperative save acknowledgment and host application",
+        "line_lf_sha256": "ce55cb4da27320266b3f8b3bcc20052501a739abcbc5b87d4e1198e85517df1e"
+      },
+      {
+        "line": 13463,
+        "text": "- Additional evidence (R1-CHUNK-0204): The same non-atomic protocol also governs an ordinary cooperative save restore. After checksum verification, each client sends `MULTI_SAVE_TRANSFER_READY_APPLY` before `multi_prepare_restore_sync` and before calling `state_restore_coop_from_memory`. That call is fallible and mutates live state while parsing, yet the client sends no success or failure result afterward. The host records the pre-call packet as `applying_players[pnum] = 1` and, once every required slot has merely entered that branch, resets transfer state and calls its own `multi_restore_game`. A client allocation, compatibility, parse, or partial-restore failure therefore cannot veto the host: the host and successful peers commit while that client remains old or partially mutated. A client that returns failure also resets and discards its receive buffer without telling the host that application failed.",
+        "line_lf_sha256": "cc3536bc6110611bfbbf2411637a209e096f6a242a102e2724e7db9d9ef45861"
+      },
+      {
+        "line": 13464,
+        "text": "- Additional validation (R1-CHUNK-0204): Cover host-selected cooperative save restoration as well as rewind in the all-peers-or-none matrix. Inject a valid-checksum image that fails parsing on exactly one client, failure before and after live mutation, delayed restore, disconnect during apply, and host local restore failure. Require a distinct staged-success acknowledgment before any mutation and a post-commit result or recoverable generation protocol; assert the host never interprets branch entry as success and every survivor either commits the same save generation or resumes the untouched prior generation.",
+        "line_lf_sha256": "54fd4d38372ba230c0d9c253a51cc96830b35e384b9d86ae2e26d7a180c38054"
+      },
+      {
+        "line": 13465,
+        "text": "- Additional location (R1-CHUNK-0274): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/multi.c:L6824-L6852,L6915-L6962` in restore dispatch and host initiation, with `android/app/src/main/cpp/shared/multi_save_transfer.c:L477-L545` in transfer setup and pending-state reporting",
+        "line_lf_sha256": "857ca3e686f354097f742eec4327bebe11e548bf66751cd1176692ef60433eb4"
+      },
+      {
+        "line": 13466,
+        "text": "- Additional evidence (R1-CHUNK-0274): Every cooperative restore-transfer setup failure, including disabled packet-loss prevention, save open, size, allocation, read, or active-transfer failure, returns zero. `multi_send_restore_game` interprets that zero as permission to broadcast the legacy `MULTI_RESTORE_GAME` packet, and `multi_initiate_restore_game` then observes no active pending transfer and immediately calls `multi_restore_game` on the host. The legacy packet carries only a slot and game ID, not the host's authoritative save image; with per-player save namespaces, peers can lack or reject that local slot while the host has already committed. Thus a setup failure that should abort before mutation instead starts a host-only generation and exposes the same cross-generation traffic and failure modes as the later apply failures already tracked here.",
+        "line_lf_sha256": "be1fecc411617ee3d14384cb52e4520250951d4469339c692156a48c04d22fe2"
+      },
+      {
+        "line": 13467,
+        "text": "- Additional validation (R1-CHUNK-0274): In paired cooperative restore tests, inject each setup failure before any begin packet: packet-loss prevention disabled, missing or unreadable host save, zero and oversized file, allocation and short-read failure, and an already active transfer. Require no legacy restore packet, no host or client state mutation, no score or object traffic from a new generation, an explicit failure result, and a cleared or recoverable transfer state; retain the no-connected-client case as the only path allowed to restore locally without a transfer.",
+        "line_lf_sha256": "374854abc7f0c560bf6d21394e5983b7f1a4615add1fdd750fc4e81b298ae38a"
+      },
+      {
+        "line": 13468,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13469,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "90146e8c2fec658600cf8e86e1a389559815b9febf70e159cf89c30d3b849489",
+    "read_lines": [
+      {
+        "line": 145,
+        "text": "| 17 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0262` | `TODO` | `GQF-0276` | Extract paired active saved-player restoration |",
+        "line_lf_sha256": "62a66e1c907e011dab403fd99b4e4883b482d3346214a75687b3f880bca09f15"
+      },
+      {
+        "line": 342,
+        "text": "| 214 | 44 | MEDIUM | 23/0/7/10/4 | `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes with conservative persisted ownership |",
+        "line_lf_sha256": "90c38bf6a658394cbedc768e8cfb93e1822a407b4bbce5efefde934abbf2816c"
+      },
+      {
+        "line": 477,
+        "text": "| 79 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQ2-CHUNK-0122` | `CANDIDATE` | `GQR-0262` | `PRIMARY` | Paired19line saved-player restore loops into existing shared owner;35expected inherited line reduction. Separate freeze-disconnect liveness GQR0261/44; source-only plans |",
+        "line_lf_sha256": "3e6c7dbb1bf821dc0335c0eda43fb846efdd587482fd3bc5c70c4119e2102a95"
+      },
+      {
+        "line": 8129,
+        "text": "| `GQF-0275` | `OPEN` | P2/high | correctness/cooperative-recovery-liveness | shared coop_recovery.c; paired disconnect/join cancellation | Returning gear owner snapshots a third active peer in freeze_waiting; peer leaves before matching REC_FROZEN, same-host retries never terminate and recovery save/world readiness remains blocked. Only receipt clears individual bits; ordinary disconnect/frame/join cancellation does not. Source-supported trigger, no runtime repro. GQR0261 bounded connection-bound attempt cancellation and persisted uncertain-pickup reconciliation plan |",
+        "line_lf_sha256": "82171761fe800ab504237bfcf9e56b3bf072b1e1b6ecb2c1eef413e211e42442"
+      },
+      {
+        "line": 8130,
+        "text": "| `GQF-0276` | `OPEN` | P3/high | diff-minimization/merge-pressure | d1/main/state.c; d2/main/state.c active saved-player restoration | Paired19line restore loops have identical18line bodies, with D2 world-only exclusion. Move to existing shared coop_save.c/.h; one D1 and two guarded D2 call lines remove35 inherited source lines across two edited hunks. Preserve native format/PHYSFS/failure boundaries, slot mapping and inventory/life/serial order. Proposed savings only, GQR0262 focused extraction and actual equivalence acceptance |",
+        "line_lf_sha256": "fa316b242310efc6e8779fa9fc5c81a012afcbf9f6271514bad6f8b00f4d97a4"
+      },
+      {
+        "line": 10947,
+        "text": "| `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes without duplicating gear | Shared connection-bound attempt lifetime with explicit participant-loss/join-cancel/bounded failure outcomes. Preserve known pickup intersections; resolve and persist uncertain remainder within existing recovery ledger before regrant or save/world progress. No blind mask prune, forgotten gear or indefinite global save block. Maintained actual native timer/participant, stale reply/slot reuse/persistence/migration and real three-peer same-host LAN readiness/inventory/save/restore acceptance. Plan plan_gq2_0122_recovery_freeze_disconnect_20261009.md; design prerequisite, no implementation/runtime result |",
+        "line_lf_sha256": "7028ac8605f2b58536b9017063b7b254c9c68caef59a43ea1ff7402841fa50bb"
+      },
+      {
+        "line": 10948,
+        "text": "| `GQR-0262` | `TODO` | `GQF-0276` | Share saved active-player inventory restoration | Existing coop_save.c/.h const-metadata helper replaces paired19line loops with1D1/2guardedD2 lines, expected35 inherited lines/two edited hunks. Preserve traversal/ID fallback/dead-ship normalization/same-level inventory/local shields/old-slot serial-life and absent-cache order. D2 world-only guard stays explicit at caller; no native format or transaction rewrite. Actual native state-equivalence plus paired restore/absent/world controls and platform validation. Plan plan_gq2_0122_shared_saved_player_restore_20261009.md; no implementation/applied saving |",
+        "line_lf_sha256": "6e2d01d13cd68fce54a753350c2bee18a5e04a703c8eb46b9b31be59b5976832"
+      }
+    ]
+  }
+]
+```
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0123 cooperative save diagnosis 20261009 -->
+
+### Chunk0123 canonical publication pending independent audit, 2026-10-09
+
+One modified branch-added save source46of91frozen hunks/newL16-L1160/enclosing frozen1-1260/current1-1272partial;92actual current ranges/36physical19whole/36complete current deltas/74canonical lines in2owners. CANDIDATE/REFERENCE57 GQR0262 existing paired restore-loop extraction35expected inherited lines/two edited hunks; separate GQR0261freeze44 and BR0195/0206/0082 authority/restore/body admission retained. No new finding/status/rating/applied saving or product execution. Report SHA256 `08c18a889e7d49d9e265cc3430b8c3fd1680377e44dfd736de285a8fa773bc3a`; scope `3fe765f9e3be05c9a297c2f0055ad47a48e35cf29a751ed361f571165e55c85f`. Canonical0123DONE diagnosis only, existing product owners unchanged. Exact report imported; gates1-4complete,gate5auditpending. Terminal ranks1079 rebuilt; fix ranks262unchanged. No product/source/test/script edits or execution; external work preserved,0116historical byte debt open, overall goal active.
+
+
+### Chunk0123 terminal diagnosis handoff, 2026-10-09
+
+- Allfive diagnosis gates complete. Independent audit PASS:46complete assigned raw hunks/91total, frozen enclosing1-1260/head2278, currentassignedpartial1-1272of2406, modified branch-added base1475/originalABSENT.92chronological actual ranges/36physical19whole/36complete current deltas/74unique canonical lines in2owners; range/manifest/blob/raw-delta/coverage bindings verified. No source identity silently promoted to whole-file credit.
+- Immutable reportSHA256 08c18a889e7d49d9e265cc3430b8c3fd1680377e44dfd736de285a8fa773bc3a; scope 3fe765f9e3be05c9a297c2f0055ad47a48e35cf29a751ed361f571165e55c85f. Exact fiveJSONblocks/full imported body PASS. GQC1092ISSUES/GQD0972CANDIDATE/CURRENT-RECONCILIATION and0123DONE/57GQR0262REFERENCE. No new finding or product owner change. Existing extraction35expected inherited lines/two edited hunks only; assigned/applied saving zero. Separate GQR0261freeze44 and BR0195/0206/0082 acceptance remain unchanged.
+- Fiveadded semantic rows/one oldTODOqueue row removed; all other table/product semantics preserved.262unique contiguous sorted fix ranks/1079terminal ranks follow established score/H/M/C/R/ID ordering. Publication initially used an extra benefit tie-break; independent audit identified mismatch and rank-only correction restored established order before PASS. Inherited/resume raw baseline prefixes retained exactly; active/archivedBR bytes unchanged. Scoped documentation diff-check PASS.
+- No product/source/test/script edits, execution/build/device/probes; concurrent work preserved. Source fixtures/structural metadata/UI status/partial authority are not runtime/full semantic acceptance.0116historical inherited-byte audit debt remains separate. Numbered queue264DONE363TODO; overall goal active.
+- Next numbered assigned scope0124 shared/coop/coop_travel.cL1-L750. Refresh exact frozen assignment/base/current/original attribution and reread assigned source; prior0123travel context does not establish0124assigned completion.

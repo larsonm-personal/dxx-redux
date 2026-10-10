@@ -1,6 +1,6 @@
 # Extract paired saved-player inventory restoration
 
-Diagnosis-only candidate plan for GQ2-CHUNK-0122. No product edit, build or test execution. Canonical finding/remediation admission remains pending.
+Diagnosis-only candidate plan for GQ2-CHUNK-0122. No product edit, build or test execution. Canonical GQF-0276 OPEN / GQR-0262 TODO admitted by chunk0122 publication. Product implementation and acceptance remain pending.
 
 ## Measured opportunity
 
@@ -12,7 +12,7 @@ The natural owner is existing shared coop_save.c/.h: it already owns metadata lo
 
 ## Ownership reconciliation
 
-DMR1-CHUNK-007 concerns the D2 direct-restore filename-slot parser and is a separate deferred extraction. Existing BR0206 concerns coordinated restore failure, BR0195 packet authority, and GQF0254 final native ammo grants; this extraction does not resolve their acceptance. No active canonical extraction row for this saved-player loop was found in the inspected finding/remediation and DMR tables or targeted earlier plan search. Definitive canonical admission remains required before implementation dispatch.
+DMR1-CHUNK-007 concerns the D2 direct-restore filename-slot parser and is a separate deferred extraction. Existing BR0206 concerns coordinated restore failure, BR0195 packet authority, and GQF0254 final native ammo grants; this extraction does not resolve their acceptance. No active canonical extraction row for this saved-player loop was found in the inspected finding/remediation and DMR tables or targeted earlier plan search. Canonical admission now records this extraction separately as GQF-0276/GQR-0262; refresh overlap and prerequisites before implementation dispatch.
 
 The larger recovery-bearing frozen state hunks contain36added/7removed lines in D1 and43added/2removed in D2, including includes and broader optional/strict gear handling. The measured candidate is only the19line loop in each, avoiding collateral extraction of distinct D2 world restore and failure/close policy. Frozen multi/powerup/gameseq lifecycle/codec hooks remain at natural engine observation boundaries; do not add wrapper tables around these narrow calls merely to move lines.
 

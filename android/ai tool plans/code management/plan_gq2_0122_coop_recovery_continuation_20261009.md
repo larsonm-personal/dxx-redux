@@ -5,8 +5,8 @@ Diagnosis and plans only. Preserve concurrent external work, shared Android owne
 - [x] Complete exact frozen L1-L750 reads, enclosing context and current/original attribution
 - [x] Trace inventory/egg/object identity/packet/restore/life/rejoin and paired engine consumers
 - [x] Inspect maintained fixtures/registration without execution and state acceptance limits
-- [ ] Reconcile existing owners, simplification/retention and concrete acceptance
-- [ ] Publish/import immutable report and independently audit scope/records/ranks
+- [x] Reconcile existing owners, simplification/retention and concrete acceptance
+- [x] Publish/import immutable report and independently audit scope/records/ranks
 
 ## Exact scope and first frozen read checkpoint
 
@@ -3971,3 +3971,17 @@ Canonical admission, final scope/report/import and independent audit remain pend
   }
 ]
 ```
+
+
+### Chunk 0122 canonical publication pending independent audit, 2026-10-09
+
+One branch-added recovery source frozenL1-L750of1163/enclosing/current1160whole;149 actual ranges/46physical15whole/25complete current deltas/193canonical lines. New GQF0275/GQR0261 P2 freeze-disconnect liveness; separate GQF0276/GQR0262 P3 paired saved-player loop extraction35expected inherited lines/two edited hunks. Base/originalABSENT/zero assigned or applied inherited saving. CANDIDATE57 PRIMARY GQR0262; separate liveness44. Preserve existing quantity/authority/restore and completed eligibility owners. Source-only diagnosis, no product edits/execution/runtime closure. Report SHA256 `0da2748d41e9a8908f01b576571cd7c4b8d95469fdd0f984015cca1a1ef34de4`; scope `7d625ca6bc272c1f076c020927d87a9ed5b02f120863d58d68233df81be5fd20`. Canonical0122DONE, finding/remediation IDs admitted separately; product owners remain OPEN/TODO. Fix ranks262 and terminal ranks1078 rebuilt with all prior semantics retained. Exact evidence imported. Gates1-4complete; gate5 independent audit pending,0116historical byte debt open, overall diagnosis goal active.
+
+
+### Chunk 0122 terminal diagnosis handoff, 2026-10-09
+
+- All five diagnosis gates complete. Independent audit PASS: exact generated assigned frozen recoveryL1-L750of1163/enclosing tail/current1160whole, base/originalABSENT, blob/range/manifest identities.149 chronological actual ranges reconstructed,46physical15whole/25complete current context deltas with exact raw hunks/193canonical lines in4owners. No stale tuple promoted.
+- Immutable report SHA256 0da2748d41e9a8908f01b576571cd7c4b8d95469fdd0f984015cca1a1ef34de4; scope 7d625ca6bc272c1f076c020927d87a9ed5b02f120863d58d68233df81be5fd20. Exact imported body/fiveJSON blocks PASS. GQC1091ISSUES/GQD0971CANDIDATE/CURRENT-RECONCILIATION and0122DONE/PRIMARY57GQR0262 verified. Two separate findings/remediations: GQF0275OPEN/GQR0261TODO freeze-disconnect44, GQF0276OPEN/GQR0262TODO saved-player restore extraction57.35expected inherited line reduction, no applied saving. Both state paths exist in1996 original.
+- Eleven added semantic table rows/one old TODO queue row removed; every other table/product semantic row preserved.262unique contiguous sorted fix ranks/1078terminal ranks; inherited raw baseline prefix preserved exactly and active/archivedBR bytes unchanged. Scoped documentation diff-check PASS. No product/source/test/script changes or execution/build/device/probes; concurrent work preserved. Fixture source inspection is not runtime acceptance; uncertain pickup representation remains implementation design prerequisite.
+- Numbered canonical queue263DONE364TODO.0116canonicalDONE retains separate gate5historical inherited-byte audit debt; this completion does not settle0116 or complete overall goal.
+- Next numbered scope GQ2-CHUNK-0123 shared/coop/coop_save.c diff hunks1-46,newL16-L1160. Discover exact frozen assignments/current attribution; prior contextual reads do not widen assigned scope.

@@ -1,6 +1,6 @@
 # Cooperative recovery freeze cancellation and departed-peer reconciliation
 
-Diagnosis-only implementation plan; no product changes or test execution in this tranche. Candidate finding is not yet admitted to the canonical ledger. Chunk0122 publication must assign fresh IDs and reconcile existing owners before treating this as a new canonical finding.
+Diagnosis-only implementation plan; no product changes or test execution in this tranche. Canonical GQF-0275 OPEN / GQR-0261 TODO admitted by chunk0122 publication. Product implementation and acceptance remain pending.
 
 ## Problem and evidence
 
