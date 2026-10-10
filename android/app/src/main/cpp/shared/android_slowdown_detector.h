@@ -2,6 +2,7 @@
 #define ANDROID_SLOWDOWN_DETECTOR_H
 
 #include <stdint.h>
+#include "android_network_profile.h"
 
 #define ANDROID_SLOWDOWN_RING_CAPACITY 768
 #define ANDROID_SLOWDOWN_WORST_COUNT   3
@@ -122,5 +123,48 @@ const struct android_slowdown_frame *android_slowdown_detector_ring_get(
     const struct android_slowdown_detector *detector, int oldest_index);
 int android_slowdown_detector_detail_active(const struct android_slowdown_detector *detector,
                                             int64_t now_us);
+
+/* Android isolated-hitch diagnostics, independent of the sustained capture budget */
+struct android_stutter_frame {
+	struct android_slowdown_frame frame;
+	struct android_network_frame network;
+	int32_t multi_us;
+	int32_t move_us;
+	int32_t ai_us;
+	int32_t sound_us;
+	int32_t effects_us;
+	int32_t rewind_us;
+	int32_t mode;
+};
+
+struct android_stutter_window {
+	int64_t start_us;
+	int64_t end_us;
+	int64_t interval_total_us;
+	int64_t excess_us;
+	int32_t frames;
+	int32_t hitches;
+	int32_t over_100ms;
+	int32_t over_250ms;
+	int32_t max_interval_us;
+	int32_t threshold_us;
+	int32_t baseline_us;
+	struct android_stutter_frame worst;
+	struct android_stutter_frame before_worst;
+};
+
+struct android_stutter_detector {
+	struct android_stutter_window window;
+	struct android_stutter_window completed;
+	struct android_stutter_frame previous;
+	int64_t suppress_until_us;
+	int32_t baseline_us;
+};
+
+void android_stutter_detector_reset(struct android_stutter_detector *detector);
+/* Returns one when a bounded summary is ready in completed */
+int android_stutter_detector_feed(struct android_stutter_detector *detector,
+                                  const struct android_stutter_frame *sample);
+int android_stutter_detector_flush(struct android_stutter_detector *detector);
 
 #endif /* ANDROID_SLOWDOWN_DETECTOR_H */

@@ -1404,7 +1404,7 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Automatic slowdown capture", fontSize = 13.sp)
             Text(
-                "Writes a small Profiling log only after a sustained slowdown",
+                "Logs isolated stutters, frame timing summaries, and sustained slowdowns",
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -653,6 +653,9 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre
 	//return;
 	if(! GameArg.LogNetTraffic) { return; }
 
+#ifdef __ANDROID__
+	struct android_network_stamp profile_start = android_profile_net_begin();
+#endif
 	net_log_init();
 
 	struct timeval t;
@@ -679,6 +682,11 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre
 		}
 		PHYSFSX_printf(netlog_fp, "\n"); 
 	}
+#ifdef __ANDROID__
+	android_profile_net_end(profile_start, ANDROID_NETWORK_TRAFFIC_LOG, -1,
+	                        len > 0 ? ((const ubyte *) msg)[0] : -1,
+	                        len > 0 ? msg_name(((const ubyte *) msg)[0]) : NULL, len, 0);
+#endif
 }
 
 void net_log_comment(char* comment) {
@@ -711,7 +719,15 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con
 
 	net_log_log(1, msg, len, to, tolen); 
 
+#ifdef __ANDROID__
+	struct android_network_stamp profile_start = android_profile_net_begin();
+#endif
 	ssize_t rv = sendto(sockfd, msg, len, flags, to, tolen);
+#ifdef __ANDROID__
+	android_profile_net_end(profile_start, ANDROID_NETWORK_SEND, sockfd,
+	                        len > 0 ? ((const ubyte *) msg)[0] : -1,
+	                        len > 0 ? msg_name(((const ubyte *) msg)[0]) : NULL, len, (int) rv);
+#endif
 
 	UDP_num_sendto++;
 	if (rv > 0)
@@ -722,7 +738,16 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con
 
 ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, socklen_t *fromlen)
 {
+#ifdef __ANDROID__
+	struct android_network_stamp profile_start = android_profile_net_begin();
+#endif
 	ssize_t rv = recvfrom(sockfd, buf, len, flags, from, fromlen);
+#ifdef __ANDROID__
+	android_profile_net_end(profile_start, ANDROID_NETWORK_RECEIVE, sockfd,
+	                        rv > 0 ? ((const ubyte *) buf)[0] : -1,
+	                        rv > 0 ? msg_name(((const ubyte *) buf)[0]) : NULL,
+	                        rv > 0 ? (int) rv : 0, (int) rv);
+#endif
 
 	net_log_log(0, buf, rv, from, *fromlen); 
 
@@ -960,7 +985,15 @@ int udp_general_packet_ready(int socknum)
 	FD_ZERO(&set);
 	FD_SET(UDP_Socket[socknum], &set);
 	tv.tv_sec = tv.tv_usec = 0;
+#ifdef __ANDROID__
+	struct android_network_stamp profile_start = android_profile_net_begin();
+	int ready = select(UDP_Socket[socknum] + 1, &set, NULL, NULL, &tv);
+	android_profile_net_end(profile_start, ANDROID_NETWORK_POLL, UDP_Socket[socknum],
+	                        -1, NULL, 0, ready);
+	if (ready > 0)
+#else
 	if (select(UDP_Socket[socknum] + 1, &set, NULL, NULL, &tv) > 0)
+#endif
 		return 1;
 	else
 		return 0;
@@ -7141,6 +7174,19 @@ void net_udp_flush()
 		while (udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr) > 0);
 }
 
+#ifdef __ANDROID__
+static void net_udp_profile_process_packet(ubyte *packet, struct _sockaddr sender_addr,
+                                           int size, int socknum)
+{
+	struct android_network_stamp start = android_profile_net_begin();
+	const int packet_type = packet[0];
+	const int socket_id = UDP_Socket[socknum];
+	net_udp_process_packet(packet, sender_addr, size, 0);
+	android_profile_net_end(start, ANDROID_NETWORK_DISPATCH, socket_id,
+	                        packet_type, msg_name(packet_type), size, 0);
+}
+#endif
+
 void net_udp_listen()
 {
 	int size;
@@ -7151,6 +7197,7 @@ void net_udp_listen()
 #endif
 	struct _sockaddr sender_addr;
 #ifdef __ANDROID__
+	struct android_network_stamp profile_listen_start = android_profile_net_begin();
 	long long android_profile_network_start =
 	    android_profile_network_begin();
 	static int rx_pdata = 0;
@@ -7170,7 +7217,11 @@ void net_udp_listen()
 				default: break;
 			}
 #endif
+#ifdef __ANDROID__
+			net_udp_profile_process_packet(packet, sender_addr, size, 0);
+#else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
+#endif
 			size = udp_receive_packet( 0, packet, sizeof(packet), &sender_addr );
 		}
 	}
@@ -7187,7 +7238,11 @@ void net_udp_listen()
 				default: break;
 			}
 #endif
+#ifdef __ANDROID__
+			net_udp_profile_process_packet(packet, sender_addr, size, 1);
+#else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
+#endif
 			size = udp_receive_packet( 1, packet, sizeof(packet), &sender_addr );
 		}
 	}
@@ -7199,7 +7254,11 @@ void net_udp_listen()
 #ifdef __ANDROID__
 			android_profile_network_packet(size);
 #endif
+#ifdef __ANDROID__
+			net_udp_profile_process_packet(packet, sender_addr, size, 2);
+#else
 			net_udp_process_packet( packet, sender_addr, size, 0 );
+#endif
 			size = udp_receive_packet( 2, packet, sizeof(packet), &sender_addr );
 		}
 	}
@@ -7224,6 +7283,7 @@ void net_udp_listen()
 		}
 	}
 	android_profile_network_end(android_profile_network_start);
+	android_profile_net_end(profile_listen_start, ANDROID_NETWORK_LISTEN, -1, -1, NULL, 0, 0);
 #endif
 }
 

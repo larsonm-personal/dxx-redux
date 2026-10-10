@@ -1163,6 +1163,9 @@ int game_handler(window *wind, d_event *event, void *data)
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
+			#ifdef __ANDROID__
+			android_profile_resume();
+			#endif
 			set_screen_mode(SCREEN_GAME);
 
 			event_toggle_focus(1);
@@ -1274,7 +1277,9 @@ int game_handler(window *wind, d_event *event, void *data)
 				if (!game_is_time_paused())
 				{
 					#ifdef __ANDROID__
+					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_REWIND);
 					android_rewind_maybe_capture_frame();
+					android_profile_bucket_end(ANDROID_PROFILE_BUCKET_REWIND);
 					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
 					calc_game_time();
@@ -1441,7 +1446,13 @@ void GameProcessFrame(void)
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI)
 	{
+		#ifdef __ANDROID__
+		android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_MULTI);
+		#endif
 		multi_do_frame();
+		#ifdef __ANDROID__
+		android_profile_bucket_end(ANDROID_PROFILE_BUCKET_MULTI);
+		#endif
 #ifdef __ANDROID__
 		if (multi_save_transfer_paused()) return;
 		if (state_restore_take_menu_request()) {
@@ -1464,7 +1475,13 @@ void GameProcessFrame(void)
 		ThisLevelTime +=FrameTime;
 #endif
 
+	#ifdef __ANDROID__
+	android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SOUND);
+	#endif
 	digi_sync_sounds();
+	#ifdef __ANDROID__
+	android_profile_bucket_end(ANDROID_PROFILE_BUCKET_SOUND);
+	#endif
 
 	if (Endlevel_sequence) {
 		do_endlevel_frame();
@@ -1473,6 +1490,9 @@ void GameProcessFrame(void)
 		return;					//skip everything else
 	}
 
+#ifdef __ANDROID__
+	android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_EFFECTS);
+#endif
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_exploding_wall_frame();
 	if ((Newdemo_state != ND_STATE_PLAYBACK) || (Newdemo_vcr_state != ND_STATE_PAUSED)) {
@@ -1480,6 +1500,10 @@ void GameProcessFrame(void)
 		wall_frame_process();
 		triggers_frame_process();
 	}
+
+#ifdef __ANDROID__
+	android_profile_bucket_end(ANDROID_PROFILE_BUCKET_EFFECTS);
+#endif
 
 	if (Control_center_destroyed) {
 		if (Newdemo_state==ND_STATE_RECORDING )
@@ -1501,7 +1525,13 @@ void GameProcessFrame(void)
 
 		Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
+		#ifdef __ANDROID__
+		android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_MOVE);
+		#endif
 		object_move_all();
+		#ifdef __ANDROID__
+		android_profile_bucket_end(ANDROID_PROFILE_BUCKET_MOVE);
+		#endif
 		input_demo_debug_log_player_motion_state("after_move");
 		powerup_grab_cheat_all();
 
@@ -1510,7 +1540,13 @@ void GameProcessFrame(void)
 
 		fuelcen_update_all();
 
+		#ifdef __ANDROID__
+		android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_AI);
+		#endif
 		do_ai_frame_all();
+		#ifdef __ANDROID__
+		android_profile_bucket_end(ANDROID_PROFILE_BUCKET_AI);
+		#endif
 
 		if (allowed_to_fire_laser())
 			FireLaser();				// Fire Laser!

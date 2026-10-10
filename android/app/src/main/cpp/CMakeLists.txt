@@ -581,6 +581,7 @@ set(DXX_ANDROID_GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_network_profile.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_resume_pilot.c

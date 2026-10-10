@@ -3,6 +3,7 @@
 #include "android_profile.h"
 
 #include <limits.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -152,6 +153,7 @@ static int g_android_profile_object_max_model;
 static unsigned int g_android_profile_simulation_frame_id;
 static int g_android_profile_frame_time_us;
 static long long g_android_profile_network_us;
+static struct android_network_frame g_android_profile_network_detail;
 static int g_android_profile_network_packets;
 static int g_android_profile_network_bytes;
 static int g_android_profile_remote_robot_updates;
@@ -165,6 +167,7 @@ static struct android_profile_remote_robot_state
 static struct android_profile_bucket_state g_android_profile_buckets[ANDROID_PROFILE_BUCKET_COUNT];
 static struct android_profile_texture_burst_state g_android_profile_texture_burst;
 static struct android_slowdown_detector g_android_slowdown_detector;
+static struct android_stutter_detector g_android_stutter_detector;
 static volatile int g_android_slowdown_capture_requested;
 static volatile int g_android_profile_resume_pending;
 static int g_android_profile_max_fps;
@@ -181,6 +184,12 @@ static const char *g_android_profile_bucket_names[ANDROID_PROFILE_BUCKET_COUNT] 
 	"render",
 	"replay",
 	"record",
+	"multi",
+	"move",
+	"ai",
+	"sound",
+	"effects",
+	"rewind",
 };
 
 static const char *g_android_profile_gl_metric_names[ANDROID_PROFILE_GL_COUNT] = {
@@ -417,6 +426,55 @@ static int android_profile_i32_duration(long long value)
 	if (value < 0)
 		return 0;
 	return (int) value;
+}
+
+static void android_stutter_format_frame(char *line, size_t capacity, const char *role,
+                                         const struct android_stutter_frame *sample)
+{
+	const struct android_slowdown_frame *frame = &sample->frame;
+	const long long other_us = (long long) frame->total_us - frame->wait_us -
+	                           frame->sim_us - frame->render_us - frame->replay_us - sample->rewind_us;
+	/* Subsystem fields overlap their parent sim/render bucket; GPU is asynchronous */
+	snprintf(line, capacity,
+	         "stutter_v=1 type=frame role=%s game=%s frame=%u mono_us=%lld level=%d seg=%d mode=0x%x sim_frame=%u total_us=%d wait_us=%d sim_us=%d render_us=%d replay_us=%d rewind_us=%d other_us=%lld multi_us=%d move_us=%d ai_us=%d sound_us=%d effects_us=%d record_us=%d net_us=%d net_packets=%d net_bytes=%d latest_swap_us=%d latest_gpu_us=%d latest_resolve_us=%d latest_glerr_us=%d latest_flip_gap_us=%d objects=%d projectiles=%d robots_local=%d robots_remote=%d robots_stale=%d max_robot_age_ms=%d tpolys=%d texbinds=%d max_fps=%d vsync=%d\n",
+	         role, g_android_profile_game, frame->frame_id, (long long) frame->end_us,
+	         frame->level, frame->viewer_segment, (unsigned int) sample->mode,
+	         frame->simulation_frame_id, frame->total_us, frame->wait_us, frame->sim_us,
+	         frame->render_us, frame->replay_us, sample->rewind_us, other_us,
+	         sample->multi_us, sample->move_us, sample->ai_us, sample->sound_us,
+	         sample->effects_us, frame->record_us, frame->network_us,
+	         frame->network_packets, frame->network_bytes, frame->swap_us, frame->gpu_us,
+	         frame->resolve_us, frame->gl_error_us, frame->flip_gap_us,
+	         frame->active_object_count, frame->projectile_object_count,
+	         frame->local_robot_count, frame->remote_robot_count,
+	         frame->stale_remote_robot_count, frame->max_remote_robot_age_ms,
+	         frame->textured_polys, frame->texture_binds, frame->max_fps, frame->vsync);
+}
+
+static void android_stutter_log_window(void)
+{
+	const struct android_stutter_window *window = &g_android_stutter_detector.completed;
+	const long long outside_us = window->worst.frame.end_us -
+	                             window->before_worst.frame.end_us - window->worst.frame.total_us;
+	char line[16384];
+	snprintf(line, sizeof(line),
+	         "stutter_v=1 type=window game=%s start_us=%lld end_us=%lld frames=%d hitches=%d over_100ms=%d over_250ms=%d avg_interval_us=%lld max_interval_us=%d baseline_us=%d threshold_us=%d excess_us=%lld worst_frame=%u outside_us=%lld\n",
+	         g_android_profile_game, (long long) window->start_us, (long long) window->end_us,
+	         window->frames, window->hitches, window->over_100ms, window->over_250ms,
+	         (long long) (window->interval_total_us / window->frames), window->max_interval_us,
+	         window->baseline_us, window->threshold_us, (long long) window->excess_us,
+	         window->worst.frame.frame_id, outside_us > 0 ? outside_us : 0);
+	if (window->hitches) {
+		size_t used = strlen(line);
+		android_stutter_format_frame(line + used, sizeof(line) - used,
+		                             "before", &window->before_worst);
+		used = strlen(line);
+		android_stutter_format_frame(line + used, sizeof(line) - used,
+		                             "worst", &window->worst);
+		android_network_profile_format(line, sizeof(line), "before", window->before_worst.frame.frame_id, &window->before_worst.network);
+		android_network_profile_format(line, sizeof(line), "worst", window->worst.frame.frame_id, &window->worst.network);
+	}
+	debug_log_batch_force(DLOG_PROFILING, line);
 }
 
 static void android_flight_append_frame(const char *type,
@@ -777,6 +835,7 @@ static void android_profile_reset_frame_metrics(void)
 	g_android_profile_simulation_frame_id = 0;
 	g_android_profile_frame_time_us = 0;
 	g_android_profile_network_us = 0;
+	memset(&g_android_profile_network_detail, 0, sizeof(g_android_profile_network_detail));
 	g_android_profile_network_packets = 0;
 	g_android_profile_network_bytes = 0;
 	g_android_profile_remote_robot_updates = 0;
@@ -934,6 +993,13 @@ void android_profile_frame_begin(const char *game, unsigned int frame_id)
 	const int resuming = __atomic_exchange_n(&g_android_profile_resume_pending, 0,
 	                                         __ATOMIC_ACQ_REL);
 
+	if ((!g_android_slowdown_capture_requested || resuming) &&
+	    g_android_stutter_detector.previous.frame.end_us) {
+		if (android_stutter_detector_flush(&g_android_stutter_detector))
+			android_stutter_log_window();
+		android_stutter_detector_reset(&g_android_stutter_detector);
+	}
+
 	if (!g_android_slowdown_capture_requested &&
 	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_CAPTURING)
 		android_flight_flush_batch();
@@ -1057,6 +1123,50 @@ void android_profile_network_end(long long start_us)
 	if (!g_android_profile_frame_active || start_us <= 0)
 		return;
 	g_android_profile_network_us += android_profile_now_us() - start_us;
+}
+
+static int64_t android_profile_thread_cpu_us(void)
+{
+	struct timespec ts;
+	if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) != 0)
+		return -1;
+	return (int64_t) ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
+
+struct android_network_stamp android_profile_net_begin(void)
+{
+	struct android_network_stamp stamp = { 0, -1 };
+	const int saved_errno = errno;
+	if (g_android_profile_frame_active &&
+	    g_android_slowdown_detector.state != ANDROID_SLOWDOWN_DISABLED) {
+		stamp.wall_us = android_profile_now_us();
+		stamp.cpu_us = android_profile_thread_cpu_us();
+	}
+	errno = saved_errno;
+	return stamp;
+}
+
+void android_profile_net_end(struct android_network_stamp start, int stage,
+                             int socket_id, int packet_type, const char *packet_name,
+                             int bytes, int result)
+{
+	const int saved_errno = errno;
+	if (start.wall_us && g_android_profile_frame_active) {
+		struct android_network_sample sample;
+		const int64_t wall_us = android_profile_now_us();
+		const int64_t cpu_us = android_profile_thread_cpu_us();
+		memset(&sample, 0, sizeof(sample));
+		sample.wall_us = wall_us - start.wall_us;
+		sample.cpu_us = start.cpu_us >= 0 && cpu_us >= start.cpu_us ? cpu_us - start.cpu_us : -1;
+		sample.socket_id = socket_id;
+		sample.packet_type = packet_type;
+		sample.bytes = bytes;
+		sample.result = result;
+		sample.error = result < 0 ? saved_errno : 0;
+		strncpy(sample.packet_name, packet_name ? packet_name : "none", sizeof(sample.packet_name) - 1);
+		android_network_profile_record(&g_android_profile_network_detail, stage, &sample);
+	}
+	errno = saved_errno;
 }
 
 void android_profile_remote_robot_update(int objnum, int signature)
@@ -1421,6 +1531,21 @@ void android_profile_frame_end(void)
 		flight_frame.max_object_model = g_android_profile_object_max_model;
 		flight_frame.max_fps = g_android_profile_max_fps;
 		flight_frame.vsync = g_android_profile_vsync;
+		{
+			struct android_stutter_frame sample;
+			memset(&sample, 0, sizeof(sample));
+			sample.frame = flight_frame;
+			sample.network = g_android_profile_network_detail;
+			sample.multi_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_MULTI].frame_us);
+			sample.move_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_MOVE].frame_us);
+			sample.ai_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_AI].frame_us);
+			sample.sound_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_SOUND].frame_us);
+			sample.effects_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_EFFECTS].frame_us);
+			sample.rewind_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REWIND].frame_us);
+			sample.mode = Game_mode;
+			if (android_stutter_detector_feed(&g_android_stutter_detector, &sample))
+				android_stutter_log_window();
+		}
 		flight_events = android_slowdown_detector_feed(&g_android_slowdown_detector,
 		                                               &flight_frame);
 		if (flight_events & ANDROID_SLOWDOWN_EVENT_TRIGGER)
@@ -1509,6 +1634,9 @@ void android_profile_frame_end(void)
 
 void android_profile_flush(void)
 {
+	if (android_stutter_detector_flush(&g_android_stutter_detector))
+		android_stutter_log_window();
+	android_stutter_detector_reset(&g_android_stutter_detector);
 	android_profile_maybe_finish_texture_burst(android_profile_now_us(), "flush");
 
 	if (g_android_profile_sample_active)

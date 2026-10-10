@@ -261,8 +261,9 @@ target_include_directories(
                                       "${DXX_TEST_SHARED_SOURCE_DIR}")
 
 add_executable(
-    test_android_slowdown_detector test_android_slowdown_detector.c
-                                   "${DXX_TEST_SHARED_SOURCE_DIR}/android_slowdown_detector.c")
+    test_android_slowdown_detector
+    test_android_slowdown_detector.c "${DXX_TEST_SHARED_SOURCE_DIR}/android_slowdown_detector.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/android_network_profile.c")
 target_include_directories(test_android_slowdown_detector PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
 add_executable(

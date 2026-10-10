@@ -311,3 +311,81 @@ int android_slowdown_detector_detail_active(const struct android_slowdown_detect
 		return 1;
 	return capture_elapsed_us % 10000000LL < 1000000LL;
 }
+
+void android_stutter_detector_reset(struct android_stutter_detector *detector)
+{
+	memset(detector, 0, sizeof(*detector));
+}
+
+int android_stutter_detector_flush(struct android_stutter_detector *detector)
+{
+	if (!detector->window.frames)
+		return 0;
+	detector->completed = detector->window;
+	memset(&detector->window, 0, sizeof(detector->window));
+	return 1;
+}
+
+int android_stutter_detector_feed(struct android_stutter_detector *detector,
+                                  const struct android_stutter_frame *sample)
+{
+	const struct android_slowdown_frame *frame = &sample->frame;
+	const struct android_slowdown_frame *previous = &detector->previous.frame;
+	struct android_stutter_window *window = &detector->window;
+	int64_t interval_us = frame->end_us - previous->end_us;
+	int32_t threshold_us;
+	int hitch;
+	int ready = 0;
+
+	if (!previous->end_us || interval_us <= 0 || interval_us >= DISCONTINUITY_US ||
+	    frame->level != previous->level || frame->max_fps != previous->max_fps ||
+	    frame->vsync != previous->vsync || sample->mode != detector->previous.mode) {
+		/* Preserve a pending report before discarding transition timing */
+		ready = android_stutter_detector_flush(detector);
+		detector->baseline_us = 0;
+		detector->suppress_until_us = frame->end_us + LEVEL_SUPPRESS_US;
+		detector->previous = *sample;
+		return ready;
+	}
+	if (interval_us < frame->total_us)
+		interval_us = frame->total_us;
+	if (!detector->baseline_us)
+		detector->baseline_us = clamp_i64_to_i32(interval_us);
+	threshold_us = clamp_i64_to_i32((int64_t) detector->baseline_us * 3 / 2);
+	if (threshold_us < 50000)
+		threshold_us = 50000;
+	hitch = interval_us >= threshold_us;
+	/* Learn through warmup; once armed, spikes must not raise their own threshold */
+	if (!hitch || frame->end_us < detector->suppress_until_us)
+		detector->baseline_us += (int32_t) ((interval_us - detector->baseline_us) / 32);
+	if (frame->end_us < detector->suppress_until_us) {
+		detector->previous = *sample;
+		return 0;
+	}
+	if (!window->frames)
+		window->start_us = previous->end_us;
+	window->end_us = frame->end_us;
+	window->frames++;
+	window->interval_total_us += interval_us;
+	if (hitch) {
+		window->hitches++;
+		window->excess_us += interval_us - detector->baseline_us;
+	}
+	if (interval_us >= 100000)
+		window->over_100ms++;
+	if (interval_us >= 250000)
+		window->over_250ms++;
+	if (interval_us > window->max_interval_us) {
+		window->max_interval_us = clamp_i64_to_i32(interval_us);
+		window->threshold_us = threshold_us;
+		window->baseline_us = detector->baseline_us;
+		window->worst = *sample;
+		window->before_worst = detector->previous;
+	}
+	detector->previous = *sample;
+	/* No per-frame formatting: at most one report per second, heartbeat every ten */
+	if (window->end_us - window->start_us >=
+	    (window->hitches ? WINDOW_US : 10 * WINDOW_US))
+		return android_stutter_detector_flush(detector);
+	return 0;
+}

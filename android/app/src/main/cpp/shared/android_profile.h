@@ -3,12 +3,20 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
+#include "android_network_profile.h"
+
 enum android_profile_bucket {
 	ANDROID_PROFILE_BUCKET_WAIT = 0,
 	ANDROID_PROFILE_BUCKET_SIM,
 	ANDROID_PROFILE_BUCKET_RENDER,
 	ANDROID_PROFILE_BUCKET_REPLAY,
 	ANDROID_PROFILE_BUCKET_RECORD,
+	ANDROID_PROFILE_BUCKET_MULTI,
+	ANDROID_PROFILE_BUCKET_MOVE,
+	ANDROID_PROFILE_BUCKET_AI,
+	ANDROID_PROFILE_BUCKET_SOUND,
+	ANDROID_PROFILE_BUCKET_EFFECTS,
+	ANDROID_PROFILE_BUCKET_REWIND,
 	ANDROID_PROFILE_BUCKET_COUNT
 };
 
@@ -92,6 +100,10 @@ void android_profile_note_flip(void);
 long long android_profile_network_begin(void);
 void android_profile_network_packet(int packet_bytes);
 void android_profile_network_end(long long start_us);
+struct android_network_stamp android_profile_net_begin(void);
+void android_profile_net_end(struct android_network_stamp start, int stage,
+                             int socket_id, int packet_type, const char *packet_name,
+                             int bytes, int result);
 void android_profile_remote_robot_update(int objnum, int signature);
 void android_profile_remote_robot_live(int objnum, int signature,
                                        int remote_owned);
