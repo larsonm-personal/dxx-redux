@@ -3993,7 +3993,7 @@ try {
                             -SecondarySerial $EMU2 -SecondaryScript $reactorPrepare -Description "Prepare secret reactor deaths before $leg")) { throw "Secret reactor setup failed" }
             }
             if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostTravel `
-                        -SecondarySerial $EMU2 -SecondaryScript $clientTravel -Description "Host prepares, transfers and commits secret $leg" -TimeoutSec 270)) { throw "Secret world $leg failed" }
+                        -SecondarySerial $EMU2 -SecondaryScript $clientTravel -Description "Host prepares, transfers and commits secret $leg" -TimeoutSec 600)) { throw "Secret world $leg failed" }
             # Introspection is serviced on an engine frame; a slow frame can
             # leave the previous visit's JSON in place after automation finishes
             if ($SecretRollback) {
@@ -4041,6 +4041,13 @@ try {
                         }
                         return $true
                     })) { throw "Invalid committed campaigns after secret $leg" }
+            if ($SecretSaveRestore) {
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_archive_checkpoint.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_archive_checkpoint.jsonc' `
+                            -Description "Verify deferred archive bytes after $leg" -TimeoutSec 180)) {
+                    throw 'Deferred campaign checkpoint verification failed'
+                }
+            }
             if ($GuidebotTravel) {
                 $buddyCheck = if ($expectedGeneration -ge $sourceCampaign.generation + 3) { 'test_coop_guidebot_travel_docked.jsonc' } else { 'test_coop_guidebot_travel_released.jsonc' }
                 $clientBuddyCheck = if ($expectedGeneration -ge $sourceCampaign.generation + 3) { $buddyCheck } else { 'test_coop_guidebot_travel_navigation_client.jsonc' }

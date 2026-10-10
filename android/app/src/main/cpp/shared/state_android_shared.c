@@ -25,7 +25,6 @@
 #include "u_mem.h"
 #include "physfsx.h"
 #include "android_resume_pilot.h"
-#include "android_file_pair_transaction.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
 #ifdef __ANDROID__
@@ -43,6 +42,7 @@
 #ifdef __ANDROID__
 #include <time.h>
 #include "state_checkpoint.h"
+#include "checkpoint_file.h"
 
 static android_save_probe_lap save_probe_laps[32];
 static int save_probe_active, save_probe_count;
@@ -347,29 +347,45 @@ int state_android_capture_last_save_set(char *filename, size_t filename_size,
 	return length > 0 && (size_t) length < text_size;
 }
 
+int state_android_recover_save_path(const char *filename)
+{
+#if defined(__ANDROID__) && defined(DXX_BUILD_DESCENT_II)
+	char absolute[PATH_MAX];
+	const char *root = PHYSFS_getWriteDir();
+	if (!filename || !root || snprintf(absolute, sizeof(absolute), "%s/%s", root, filename) >= (int) sizeof(absolute)) return 0;
+	return checkpoint_file_recover_save(absolute);
+#else
+	(void) filename;
+	return 1;
+#endif
+}
+
 int state_android_build_save_filename(char *filename, size_t filename_size,
                                       int slotnum, int coop, int for_save)
 {
 	char pilot[CALLSIGN_LEN + 1];
 	char mission[ANDROID_SAVE_META_MISSION_LEN + 1];
+	int ready;
 
 	if (!filename || !filename_size)
 		return 0;
 	memset(pilot, 0, sizeof(pilot));
 	memset(mission, 0, sizeof(mission));
-	if (!for_save && !coop &&
-	    state_android_read_last_save_set(coop, pilot, sizeof(pilot), mission,
-	                                     sizeof(mission))) {
-		return android_save_set_build_slot_path(
-		    filename, filename_size, GameArg.SysUsePlayersDir,
-		    state_android_current_scope(coop), pilot, mission, slotnum, coop);
+	if (for_save || coop ||
+	    !state_android_read_last_save_set(coop, pilot, sizeof(pilot), mission,
+	                                      sizeof(mission))) {
+		snprintf(pilot, sizeof(pilot), "%s", Players[Player_num].callsign);
+		snprintf(mission, sizeof(mission), "%s",
+		         state_android_current_mission_filename_or_default());
 	}
-	snprintf(pilot, sizeof(pilot), "%s", Players[Player_num].callsign);
-	snprintf(mission, sizeof(mission), "%s",
-	         state_android_current_mission_filename_or_default());
-	return android_save_set_build_slot_path(
-	    filename, filename_size, GameArg.SysUsePlayersDir,
-	    state_android_current_scope(coop), pilot, mission, slotnum, coop);
+	ready = android_save_set_build_slot_path(
+	            filename, filename_size, GameArg.SysUsePlayersDir,
+	            state_android_current_scope(coop), pilot, mission, slotnum, coop) &&
+	        (for_save || state_android_recover_save_path(filename));
+	/* Legacy menu callers ignore the result; never leave a readable path to
+	 * a pair whose recovery could not finish */
+	if (!ready) filename[0] = '\0';
+	return ready;
 }
 
 int state_android_build_coop_autosave_filename(char *filename,
@@ -426,27 +442,6 @@ static int state_android_autosave_precheck(int slotnum)
 	return 1;
 }
 
-#ifdef DXX_BUILD_DESCENT_II
-static int state_android_pair_exists(void *context, const char *path)
-{
-	(void) context;
-	return PHYSFSX_exists(path, 0);
-}
-
-static int state_android_pair_rename(void *context, const char *old_path,
-                                     const char *new_path)
-{
-	(void) context;
-	return PHYSFSX_rename(old_path, new_path);
-}
-
-static int state_android_pair_delete(void *context, const char *path)
-{
-	(void) context;
-	return !PHYSFSX_exists(path, 0) || PHYSFS_delete(path);
-}
-#endif
-
 static int state_android_publish_single_file(const char *temporary,
                                              const char *filename)
 {
@@ -474,27 +469,22 @@ static int state_android_publish_single_file(const char *temporary,
 static int state_android_publish_save_slot(const char *temp_filename,
                                            const char *filename, int slotnum)
 {
-#ifdef DXX_BUILD_DESCENT_II
-	char main_backup[PATH_MAX];
+#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
 	char companion[PATH_MAX];
 	char companion_temp[PATH_MAX];
-	char companion_backup[PATH_MAX];
+	char main_absolute[PATH_MAX], temp_absolute[PATH_MAX];
+	char companion_absolute[PATH_MAX], companion_temp_absolute[PATH_MAX];
+	const char *root = PHYSFS_getWriteDir();
 	int companion_present;
 	int copy_result;
-	struct android_file_pair_paths paths;
-	struct android_file_pair_ops ops = {
-		NULL, state_android_pair_exists, state_android_pair_rename,
-		state_android_pair_delete
-	};
 
-	if (!state_android_build_secret_filename(
-	        companion, sizeof(companion), slotnum) ||
-	    snprintf(main_backup, sizeof(main_backup), "%s.bak", filename) >=
-	        (int) sizeof(main_backup) ||
+	if (!root || !state_android_build_secret_filename(companion, sizeof(companion), slotnum) ||
 	    snprintf(companion_temp, sizeof(companion_temp), "%s.tmp", companion) >=
 	        (int) sizeof(companion_temp) ||
-	    snprintf(companion_backup, sizeof(companion_backup), "%s.bak", companion) >=
-	        (int) sizeof(companion_backup))
+	    snprintf(main_absolute, sizeof(main_absolute), "%s/%s", root, filename) >= (int) sizeof(main_absolute) ||
+	    snprintf(temp_absolute, sizeof(temp_absolute), "%s/%s", root, temp_filename) >= (int) sizeof(temp_absolute) ||
+	    snprintf(companion_absolute, sizeof(companion_absolute), "%s/%s", root, companion) >= (int) sizeof(companion_absolute) ||
+	    snprintf(companion_temp_absolute, sizeof(companion_temp_absolute), "%s/%s", root, companion_temp) >= (int) sizeof(companion_temp_absolute))
 		return 0;
 	PHYSFS_delete(companion_temp);
 	companion_present = PHYSFSX_exists(SECRETC_FILENAME, 0);
@@ -509,14 +499,8 @@ static int state_android_publish_save_slot(const char *temp_filename,
 			return 0;
 		}
 	}
-	paths.primary_temp = temp_filename;
-	paths.primary_path = filename;
-	paths.primary_backup = main_backup;
-	paths.companion_temp = companion_temp;
-	paths.companion_path = companion;
-	paths.companion_backup = companion_backup;
-	paths.companion_present = companion_present;
-	if (!android_file_pair_publish(&paths, &ops)) {
+	if (!checkpoint_file_publish_staged_pair(temp_absolute, main_absolute, companion_temp_absolute,
+	                                         companion_absolute, companion_present)) {
 		debug_log(DLOG_GAME,
 		          "autosave failed: D2 slot %d main/secret pair publish",
 		          slotnum);
@@ -631,7 +615,8 @@ static int state_android_read_save_meta_for_slot(int slotnum,
 
 	if (!meta)
 		return 0;
-	state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1);
+	if (!state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 1) ||
+	    !state_android_recover_save_path(filename)) return 0;
 	fp = PHYSFSX_openReadBuffered(filename);
 	if (!fp)
 		return 0;

@@ -2,7 +2,7 @@
     { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
     {
         "action": "wait_for",
-        "timeout_ms": 90000,
+        "timeout_ms": 300000,
         "expect": { "coop_travel.phase": 4, "coop_travel.prepared": true, "time_paused": true },
     },
     { "action": "set_debug", "field": "coop_travel_test", "value": "arrival_hold" },

@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <nlohmann/json.hpp>
+#include "checkpoint_file.h"
 
 extern "C" {
 #include "android_save_meta.h"
@@ -97,6 +98,7 @@ static void collect_save_paths_recursive(const char *dir_path,
 	if (!dir_path || !paths || depth > 8)
 		return;
 
+	checkpoint_file_recover_directory(dir_path);
 	dp = opendir(dir_path);
 	if (!dp)
 		return;
@@ -111,7 +113,7 @@ static void collect_save_paths_recursive(const char *dir_path,
 		if (path_wrote <= 0 || path_wrote >= (int) sizeof(path))
 			continue;
 		if (is_save_slot_name(ent->d_name)) {
-			paths->emplace_back(path);
+			if (checkpoint_file_recover_save(path)) paths->emplace_back(path);
 			continue;
 		}
 		if (stat(path, &st) == 0 && S_ISDIR(st.st_mode))

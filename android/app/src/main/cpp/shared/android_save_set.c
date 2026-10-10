@@ -132,7 +132,7 @@ int android_save_set_build_secret_path(char *dst, size_t dst_size,
 	android_save_set_sanitize_component(pilot_dir, sizeof(pilot_dir),
 	                                    pilot, "player");
 	android_save_set_mission_component(mission_dir, sizeof(mission_dir), mission);
-	return snprintf(dst, dst_size, "%s/single/%s/%s/%csecret.sgc",
+	return snprintf(dst, dst_size, "%s/single/%s/%s/%c" ANDROID_SAVE_SET_SECRET_SUFFIX,
 	                android_save_set_root(use_players_dir), pilot_dir,
 	                mission_dir, fc) < (int) dst_size;
 }

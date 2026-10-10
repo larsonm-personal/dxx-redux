@@ -29,6 +29,11 @@ int state_checkpoint_refresh_companion(const char *source);
 int state_checkpoint_submit_slot(const char *description, int save_kind, int slot,
                                  uint64_t token, state_checkpoint_callback callback);
 int state_checkpoint_writes_file(void);
+/* Game-thread campaign mutation boundary; consumes malloc-owned bytes even on failure */
+int state_checkpoint_cache_campaign(unsigned char *data, size_t size);
+void state_checkpoint_get_campaign(const unsigned char **data, size_t *size);
+/* Returns 1 when deferred, 0 for synchronous saves, -1 on capture failure */
+int state_checkpoint_defer_campaign(rewind_file *file, const unsigned char *data, size_t size, uint32_t checksum);
 void state_checkpoint_poll(void);
 /* Only explicit synchronous saves/shutdown may wait for outstanding jobs */
 void state_checkpoint_drain(void);
@@ -37,6 +42,8 @@ int state_checkpoint_defer_metadata(struct guidebot_save_stream *stream);
 typedef struct state_checkpoint_stats {
 	unsigned submitted, completed, failed, deferred, pending;
 	int64_t capture_us, max_capture_us, worker_us;
+	unsigned campaign_generations;
+	size_t campaign_bytes;
 } state_checkpoint_stats;
 void state_checkpoint_get_stats(state_checkpoint_stats *stats);
 

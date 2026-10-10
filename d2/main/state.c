@@ -2846,6 +2846,10 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	if (filename_override) {
 		strcpy(filename, filename_override);
 #ifdef __ANDROID__
+		if (!state_android_recover_save_path(filename)) {
+			start_time();
+			return 0;
+		}
 		filenum = state_android_slot_from_direct_restore_path(filename_override);
 		debug_log(DLOG_GAME,
 		          "restore all filename selected: game=d2 source=override file='%s' slot=%d",

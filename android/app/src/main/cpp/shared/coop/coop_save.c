@@ -61,6 +61,12 @@ extern fix ThisLevelTime;
 
 static coop_campaign campaign_live;
 static coop_campaign campaign_pending;
+#ifdef __ANDROID__
+static int campaign_cache_valid;
+static int coop_refresh_campaign_cache(void);
+#else
+#define coop_refresh_campaign_cache() ((void) 0)
+#endif
 static int saving_raw_world;
 static int restoring_world;
 static int restoring_source, source_metadata_read, source_metadata_failed, source_gear_restored;
@@ -99,6 +105,7 @@ void coop_campaign_reset_runtime(void)
 	coop_campaign_clear(&campaign_live);
 	coop_campaign_clear(&campaign_pending);
 	saving_raw_world = 0;
+	coop_refresh_campaign_cache();
 }
 
 void coop_campaign_note_normal_level(int level)
@@ -117,6 +124,7 @@ void coop_campaign_note_normal_level(int level)
 	campaign_live.entered_from = 0;
 	campaign_live.base_returnable = 0;
 	++campaign_live.generation;
+	coop_refresh_campaign_cache();
 #else
 	(void) level;
 #endif
@@ -127,6 +135,7 @@ void coop_campaign_apply_pending(void)
 	coop_campaign_clear(&campaign_live);
 	campaign_live = campaign_pending;
 	memset(&campaign_pending, 0, sizeof(campaign_pending));
+	coop_refresh_campaign_cache();
 #ifdef DXX_BUILD_DESCENT_II
 	/* The legacy save body does not store the secret mine's return level */
 	Entered_from_level = campaign_live.entered_from;
@@ -458,6 +467,7 @@ int coop_commit_secret_travel(coop_campaign_travel *travel)
 	    strncmp(travel->mission, Current_mission_filename, 9) ||
 	    (ending ? !coop_validate_secret_travel(travel) : Current_level_num != travel->destination.level) ||
 	    !coop_campaign_commit_travel(&campaign_live, travel)) return 0;
+	coop_refresh_campaign_cache();
 	Entered_from_level = campaign_live.entered_from;
 	First_secret_visit = 0;
 	if (advancing) {
@@ -507,6 +517,21 @@ static int coop_campaign_worlds_valid(const coop_campaign *campaign)
 	}
 	return 1;
 }
+
+#ifdef __ANDROID__
+static int coop_refresh_campaign_cache(void)
+{
+	unsigned char *data = NULL;
+	size_t size = 0;
+	campaign_cache_valid = 0;
+	/* Every mutation invalidates the old generation, including load/reset */
+	if (!state_checkpoint_cache_campaign(NULL, 0)) return 0;
+	if (campaign_live.active_level &&
+	    (!coop_campaign_worlds_valid(&campaign_live) || !coop_campaign_encode(&campaign_live, &data, &size))) return 0;
+	campaign_cache_valid = state_checkpoint_cache_campaign(data, size);
+	return campaign_cache_valid;
+}
+#endif
 
 int coop_validate_secret_travel(const coop_campaign_travel *travel)
 {
@@ -1053,9 +1078,10 @@ static int coop_write_save_payload(rewind_file *file)
 	coop_save_metadata meta;
 	coop_save_footer footer;
 	uint32_t checksum = 2166136261u;
-	unsigned char *campaign_data = NULL;
+	unsigned char *owned_campaign = NULL;
+	const unsigned char *campaign_data = NULL;
 	size_t campaign_size = 0;
-	int result = 0;
+	int result = 0, campaign_deferred = 0;
 
 	if (!file || !coop_recovery_save_ready() || !coop_build_save_metadata(&meta) ||
 	    count > UINT32_MAX ||
@@ -1069,10 +1095,17 @@ static int coop_write_save_payload(rewind_file *file)
 	items_size = count * sizeof(*items);
 	if (!saving_raw_world && campaign_live.active_level) {
 		if (campaign_live.active_level != Current_level_num ||
-		    strncmp(campaign_live.mission, Current_mission_filename, 9) ||
-		    !coop_campaign_worlds_valid(&campaign_live)) return 0;
+		    strncmp(campaign_live.mission, Current_mission_filename, 9)) return 0;
+#ifdef __ANDROID__
+		/* Stable worlds are validated/encoded once at the mutation boundary */
+		if (!campaign_cache_valid && !coop_refresh_campaign_cache()) return 0;
+		state_checkpoint_get_campaign(&campaign_data, &campaign_size);
+#else
+		if (!coop_campaign_worlds_valid(&campaign_live)) return 0;
 		android_save_probe_mark("campaign_validate");
-		if (!coop_campaign_encode(&campaign_live, &campaign_data, &campaign_size)) return 0;
+		if (!coop_campaign_encode(&campaign_live, &owned_campaign, &campaign_size)) return 0;
+		campaign_data = owned_campaign;
+#endif
 	}
 	android_save_probe_mark("campaign_encode");
 	if (campaign_size > UINT32_MAX - (sizeof(meta) + items_size + recovery_size)) goto done;
@@ -1087,16 +1120,22 @@ static int coop_write_save_payload(rewind_file *file)
 	if (items_size)
 		checksum = coop_save_checksum(items, items_size, checksum);
 	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
-	if (campaign_size) checksum = coop_save_checksum(campaign_data, campaign_size, checksum);
-	footer.checksum = checksum;
 	android_save_probe_mark("coop_checksum");
 	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1 ||
 	    (items_size &&
 	     rewind_file_write(file, items, items_size, 1) != 1) ||
-	    (recovery_size && rewind_file_write(file, recovery, recovery_size, 1) != 1) ||
-	    (campaign_size && rewind_file_write(file, campaign_data, campaign_size, 1) != 1) ||
-	    rewind_file_write(file, &footer, sizeof(footer), 1) != 1)
+	    (recovery_size && rewind_file_write(file, recovery, recovery_size, 1) != 1))
 		goto done;
+#ifdef __ANDROID__
+	campaign_deferred = state_checkpoint_defer_campaign(file, campaign_data, campaign_size, checksum);
+	if (campaign_deferred < 0) goto done;
+#endif
+	if (campaign_size && !campaign_deferred) {
+		checksum = coop_save_checksum(campaign_data, campaign_size, checksum);
+		if (rewind_file_write(file, campaign_data, campaign_size, 1) != 1) goto done;
+	}
+	footer.checksum = checksum;
+	if (rewind_file_write(file, &footer, sizeof(footer), 1) != 1) goto done;
 	android_save_probe_mark("coop_write");
 	COOP_SAVE_LOG(CON_DEBUG,
 	              "coop_save: wrote metadata trailer (%d active, %d absent, %u pickups, %u campaign bytes)\n",
@@ -1104,7 +1143,7 @@ static int coop_write_save_payload(rewind_file *file)
 	              footer.collection_count, footer.campaign_size);
 	result = 1;
 done:
-	free(campaign_data);
+	free(owned_campaign);
 	return result;
 }
 

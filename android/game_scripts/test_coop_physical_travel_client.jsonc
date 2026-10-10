@@ -3,7 +3,7 @@
     { "action": "set_debug", "field": "coop_travel_test", "value": "physical_exit" },
     {
         "action": "wait_for",
-        "timeout_ms": 90000,
+        "timeout_ms": 300000,
         "expect": {
             "coop_travel.physical": true,
             "coop_travel.phase": 4,

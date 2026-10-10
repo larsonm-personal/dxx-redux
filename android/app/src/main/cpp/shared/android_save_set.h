@@ -6,6 +6,7 @@
 #define ANDROID_SAVE_SET_ROOT_PLAYERS  "Players/save_sets"
 #define ANDROID_SAVE_SET_ROOT_LOCAL    "save_sets"
 #define ANDROID_SAVE_SET_COOP_CALLSIGN "coopsave"
+#define ANDROID_SAVE_SET_SECRET_SUFFIX "secret.sgc"
 
 void android_save_set_sanitize_component(char *dst, size_t dst_size,
                                          const char *src,

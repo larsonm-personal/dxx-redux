@@ -14,11 +14,13 @@
 
 extern "C" {
 #include "game.h"
+#include "args.h"
 #include "state.h"
 #include "state_android_shared.h"
 #include "android_log.h"
 #include "android_save_meta.h"
 #include "coop/coop_save.h"
+#include "coop/coop_save_format.h"
 #include "guidebot_save_io.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "guidebot_metadata_snapshot.h"
@@ -49,6 +51,9 @@ struct checkpoint_job {
 	std::string filename;
 	std::string companion_filename;
 	std::shared_ptr<const std::vector<unsigned char>> companion;
+	std::shared_ptr<const unsigned char> campaign;
+	size_t campaign_size = 0, campaign_offset = 0;
+	uint32_t campaign_checksum = 0;
 	struct attachment {
 		std::string filename, text;
 		int history_slot;
@@ -68,6 +73,8 @@ struct checkpoint_engine {
 	/* Only the game thread replaces this pointer; published jobs own generations */
 	std::shared_ptr<const std::vector<unsigned char>> companion;
 	bool companion_valid = false;
+	std::shared_ptr<const unsigned char> campaign;
+	size_t campaign_size = 0;
 	~checkpoint_engine()
 	{
 		if (started) {
@@ -111,6 +118,25 @@ bool publish_attachment(const checkpoint_job::attachment &attachment)
 	return checkpoint_file_publish(attachment.filename.c_str(), text.data(), text.size()) != 0;
 }
 
+static int finish_campaign(checkpoint_job &job)
+{
+	if (!job.campaign_size) return 1;
+	const size_t original = job.buffer.size, offset = job.campaign_offset, bytes = job.campaign_size;
+	if (!job.campaign || offset > original || sizeof(coop_save_footer) > original - offset || bytes > SIZE_MAX - original) return 0;
+	coop_save_footer footer;
+	memcpy(&footer, job.buffer.data + offset, sizeof(footer));
+	if (footer.tag != COOP_SAVE_FOOTER_TAG || footer.version != COOP_SAVE_META_VER || footer.campaign_size != bytes) return 0;
+	rewind_file file;
+	rewind_file_init_memory_write(&file, &job.buffer);
+	if (!rewind_file_memory_reserve(&file, original + bytes)) return 0;
+	memmove(job.buffer.data + offset + bytes, job.buffer.data + offset, original - offset);
+	memcpy(job.buffer.data + offset, job.campaign.get(), bytes);
+	footer.checksum = coop_save_checksum(job.campaign.get(), bytes, job.campaign_checksum);
+	memcpy(job.buffer.data + offset + bytes, &footer, sizeof(footer));
+	file.position = original + bytes;
+	return rewind_file_close(&file);
+}
+
 void *worker(void *argument)
 {
 	auto &e = *static_cast<checkpoint_engine *>(argument);
@@ -129,6 +155,7 @@ void *worker(void *argument)
 				                                            job->buffer.data + job->metadata_offset, job->metadata_bytes, job->epoch);
 			}
 #endif
+			if (job->ok) job->ok = finish_campaign(*job);
 			job->encode_us = clock_us() - start;
 			if (job->ok && !job->filename.empty()) {
 				android_save_meta_disk meta;
@@ -229,6 +256,8 @@ static int submit_disk(const char *description, int save_kind, const char *filen
 	job->filename.clear();
 	job->companion_filename.clear();
 	job->companion.reset();
+	job->campaign.reset();
+	job->campaign_size = 0;
 	job->attachments.clear();
 	if (filename) {
 		const char *root = PHYSFS_getWriteDir();
@@ -299,7 +328,10 @@ int state_checkpoint_refresh_companion(const char *source)
 		return 1;
 	}
 	PHYSFS_File *file = PHYSFS_openRead(source);
-	if (!file) return 0;
+	if (!file) {
+		debug_log(DLOG_GAME, "checkpoint secret companion open failed; periodic save will retry");
+		return 0;
+	}
 	const PHYSFS_sint64 size = PHYSFS_fileLength(file);
 	bool ok = size > 0 && static_cast<uint64_t>(size) <= SIZE_MAX;
 	std::shared_ptr<std::vector<unsigned char>> bytes;
@@ -322,6 +354,10 @@ int state_checkpoint_submit_slot(const char *description, int save_kind, int slo
 #ifdef DXX_BUILD_DESCENT_II
 	char companion[PATH_MAX];
 	if (!state_android_build_secret_filename(companion, sizeof(companion), slot)) return 0;
+	/* The scheduler already backs off failed submissions. Retry an invalid
+	 * capture at that deadline even when no level/secret transition occurred */
+	if (!state_checkpoint_initialize() ||
+	    (!engine->companion_valid && !state_checkpoint_refresh_companion(SECRETC_FILENAME))) return 0;
 #else
 	const char *companion = nullptr;
 #endif
@@ -350,6 +386,7 @@ void state_checkpoint_poll(void)
 		          (long long) (job->worker_us - job->encode_us), (long long) job->worker_us,
 		          (long long) collect_us, job->attachment_failures);
 		job->companion.reset();
+		job->campaign.reset();
 		engine->slots.release();
 	}
 }
@@ -398,6 +435,46 @@ int state_checkpoint_defer_metadata(guidebot_save_stream *stream)
 int state_checkpoint_writes_file(void)
 {
 	return capturing && !capturing->filename.empty();
+}
+
+int state_checkpoint_cache_campaign(unsigned char *data, size_t size)
+{
+	if (!state_checkpoint_initialize()) {
+		free(data);
+		return 0;
+	}
+	engine->campaign.reset();
+	engine->campaign_size = 0;
+	engine->stats.campaign_bytes = 0;
+	if (!data) return size == 0;
+	try {
+		engine->campaign = std::shared_ptr<const unsigned char>(data, free);
+		engine->campaign_size = size;
+		engine->stats.campaign_bytes = size;
+		++engine->stats.campaign_generations;
+		return 1;
+	} catch (const std::bad_alloc &) {
+		/* shared_ptr invokes the supplied deleter when allocation fails */
+		return 0;
+	}
+}
+
+void state_checkpoint_get_campaign(const unsigned char **data, size_t *size)
+{
+	*data = engine ? engine->campaign.get() : nullptr;
+	*size = engine ? engine->campaign_size : 0;
+}
+
+int state_checkpoint_defer_campaign(rewind_file *file, const unsigned char *data, size_t size, uint32_t checksum)
+{
+	if (!capturing || !size) return 0;
+	if (!file || file->memory_buffer != &capturing->buffer || capturing->campaign_size ||
+	    data != engine->campaign.get() || size != engine->campaign_size) return -1;
+	capturing->campaign = engine->campaign;
+	capturing->campaign_size = size;
+	capturing->campaign_offset = file->position;
+	capturing->campaign_checksum = checksum;
+	return 1;
 }
 
 void state_checkpoint_get_stats(state_checkpoint_stats *stats)

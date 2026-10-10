@@ -1,0 +1,15 @@
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_lan" } },
+    {
+        "action": "wait_for",
+        "expect": { "checkpoints.pending": 0, "coop_restore.transfer_busy": false },
+        "timeout_ms": 180000,
+    },
+    { "action": "set_debug", "field": "coop_checkpoint_test", "value": "archive_capture" },
+    { "action": "wait_for", "expect": { "checkpoints.pending": 0 }, "timeout_ms": 180000 },
+    { "action": "set_debug", "field": "coop_checkpoint_test", "value": "archive_verify" },
+    { "action": "set_debug", "field": "coop_checkpoint_test", "value": "archive_capture_disk" },
+    { "action": "wait_for", "expect": { "checkpoints.pending": 0 }, "timeout_ms": 180000 },
+    { "action": "set_debug", "field": "coop_checkpoint_test", "value": "archive_verify" },
+    { "action": "assert", "expect": { "in_game": true, "time_paused": false, "multiplayer.num_connected": 2 } },
+]

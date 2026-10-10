@@ -6135,7 +6135,7 @@ extern "C" void game_automate_tick(void)
 						stop_script_fail("Periodic slot failed to restore the saved secret mine");
 				} else
 #endif
-				    if (s.value == "capture" || s.value == "capture_absent" || s.value == "capture_again") {
+				    if (s.value == "capture" || s.value == "capture_absent" || s.value == "capture_again" || s.value == "capture_retry") {
 					state_checkpoint_drain();
 					secret.clear();
 #ifdef DXX_BUILD_DESCENT_II
@@ -6144,6 +6144,23 @@ extern "C" void game_automate_tick(void)
 						state_android_secret_companion_changed();
 					}
 					secret = read_bytes(SECRETC_FILENAME);
+					if (s.value == "capture_retry") {
+						state_android_maybe_periodic_autosave();
+						PHYSFS_file *file = PHYSFS_openWrite(SECRETC_FILENAME);
+						const bool truncated = file && PHYSFS_close(file);
+						if (secret.empty() || !truncated || state_checkpoint_refresh_companion(SECRETC_FILENAME)) {
+							stop_script_fail("Companion retry fixture did not invalidate an unreadable generation");
+							break;
+						}
+						file = PHYSFS_openWrite(SECRETC_FILENAME);
+						const bool repaired = file && PHYSFS_writeBytes(file, secret.data(), secret.size()) == (PHYSFS_sint64) secret.size();
+						const bool closed = file && PHYSFS_close(file);
+						if (!repaired || !closed) {
+							stop_script_fail("Companion retry fixture could not repair the source");
+							break;
+						}
+						/* No context change/refresh notification: submission must retry */
+					}
 #endif
 					energy = Players[Player_num].energy;
 					score = Players[Player_num].score;
@@ -6160,6 +6177,37 @@ extern "C" void game_automate_tick(void)
 						PHYSFS_delete(SECRETC_FILENAME);
 						state_android_secret_companion_changed();
 					}
+#endif
+				} else if (s.value == "recover_interrupted") {
+#ifdef DXX_BUILD_DESCENT_II
+					state_checkpoint_drain();
+					char primary[PATH_MAX], companion[PATH_MAX];
+					state_android_build_save_filename(primary, sizeof(primary), slot, 0, 1);
+					state_android_build_secret_filename(companion, sizeof(companion), slot);
+					const std::string pending = std::string(primary) + ".pair.pending";
+					const unsigned char journal[] = { static_cast<unsigned char>(secret.empty() ? 1 : 3), 0x50, 0x58, 0x44 };
+					/* A reader must reject an unrecoverable pair even if its caller
+					 * ignores the filename builder's return value */
+					PHYSFS_file *file = PHYSFS_openWrite(pending.c_str());
+					if (!file || !PHYSFS_close(file)) {
+						stop_script_fail("Could not create invalid recovery record");
+						break;
+					}
+					char rejected[PATH_MAX];
+					if (state_android_build_save_filename(rejected, sizeof(rejected), slot, 0, 0) || rejected[0]) {
+						stop_script_fail("Unrecoverable pair exposed a readable slot path");
+						break;
+					}
+					file = PHYSFS_openWrite(pending.c_str());
+					const bool written = file && PHYSFS_writeBytes(file, journal, sizeof(journal)) == sizeof(journal);
+					const bool closed = file && PHYSFS_close(file);
+					if (!written || !closed || !PHYSFSX_rename(primary, (std::string(primary) + ".bak").c_str()) ||
+					    (!secret.empty() && !PHYSFSX_rename(companion, (std::string(companion) + ".bak").c_str()))) {
+						stop_script_fail("Interrupted pair fixture could not stage the crash state");
+						break;
+					}
+					if (state_android_restore_slot(slot) != 1 || Players[Player_num].energy != energy || read_bytes(SECRETC_FILENAME) != secret)
+						stop_script_fail("Native restore failed to recover the interrupted pair");
 #endif
 				} else if (s.value == "capture_then_sync") {
 					state_checkpoint_drain();
@@ -6393,8 +6441,58 @@ extern "C" void game_automate_tick(void)
 #endif
 			} else if (s.field == "coop_checkpoint_test") {
 #ifdef __ANDROID__
+				static std::vector<unsigned char> archive_reference, archive_capture;
+				static unsigned archive_generation;
+				static int archive_ready, archive_disk;
 				if (!(Game_mode & GM_MULTI_COOP) || !Game_wind || multi_save_transfer_busy()) {
 					stop_script_fail("Checkpoint fixture needs settled co-op gameplay");
+				} else if (s.value == "archive_capture" || s.value == "archive_capture_disk") {
+					state_checkpoint_drain();
+					state_checkpoint_stats stats;
+					state_checkpoint_get_stats(&stats);
+					if (stats.campaign_bytes <= 40) {
+						stop_script_fail("Archive checkpoint fixture needs a real dormant world");
+						break;
+					}
+					archive_generation = stats.campaign_generations;
+					archive_ready = 0;
+					archive_disk = s.value == "archive_capture_disk";
+					const auto completed = [](uint64_t, int ok, const rewind_memory_buffer *buffer) {
+						archive_capture.assign(buffer->data, buffer->data + buffer->size);
+						archive_ready = ok;
+					};
+					stop_time();
+					const int accepted = archive_disk ? state_checkpoint_submit_disk("ARCHIVE TEST", ANDROID_SAVE_META_KIND_MANUAL,
+					                                                                 "archive-checkpoint-test.sav", nullptr, 0, 1, completed)
+					                                  : state_checkpoint_submit("ARCHIVE TEST", ANDROID_SAVE_META_KIND_MANUAL, 1, completed);
+					rewind_memory_buffer reference = {};
+					stop_time();
+					const int saved = state_save_to_memory(&reference, "ARCHIVE TEST", ANDROID_SAVE_META_KIND_MANUAL, 1);
+					start_time();
+					archive_reference.assign(reference.data, reference.data + reference.size);
+					rewind_memory_buffer_discard(&reference);
+					if (!accepted || !saved) stop_script_fail("Archive checkpoint capture/reference failed");
+				} else if (s.value == "archive_verify") {
+					state_checkpoint_stats stats;
+					state_checkpoint_get_stats(&stats);
+					const size_t trailer = archive_disk ? sizeof(android_save_meta_disk) : 0;
+					if (!archive_ready || archive_capture.size() != archive_reference.size() + trailer ||
+					    memcmp(archive_reference.data(), archive_capture.data(), archive_reference.size()) ||
+					    stats.campaign_generations != archive_generation) {
+						stop_script_fail("Deferred archive differs from synchronous bytes or was rebuilt during capture");
+						break;
+					}
+					if (archive_disk) {
+						PHYSFS_file *file = PHYSFS_openRead("archive-checkpoint-test.sav");
+						std::vector<unsigned char> bytes(archive_capture.size());
+						const bool matched = file && PHYSFS_fileLength(file) == (PHYSFS_sint64) bytes.size() &&
+						                     PHYSFS_readBytes(file, bytes.data(), bytes.size()) == (PHYSFS_sint64) bytes.size() && bytes == archive_capture;
+						if (file) PHYSFS_close(file);
+						PHYSFS_delete("archive-checkpoint-test.sav");
+						if (!matched) stop_script_fail("Published archive checkpoint differs from completed bytes");
+					}
+					debug_log(DLOG_GAME, "archive checkpoint verified: disk=%d bytes=%zu generation=%u capture_us=%lld", archive_disk,
+					          archive_capture.size(), archive_generation, (long long) stats.capture_us);
 				} else if (s.value == "seed" || s.value == "mutate") {
 					const int seed = s.value == "seed";
 					Players[Player_num].energy = i2f(seed ? 117 : 13);

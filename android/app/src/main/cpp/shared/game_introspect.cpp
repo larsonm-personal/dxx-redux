@@ -1789,7 +1789,7 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		state_checkpoint_stats stats;
 		state_checkpoint_get_stats(&stats);
-		j["checkpoints"] = { { "submitted", stats.submitted }, { "completed", stats.completed }, { "failed", stats.failed }, { "deferred", stats.deferred }, { "pending", stats.pending }, { "capture_us", stats.capture_us }, { "max_capture_us", stats.max_capture_us }, { "worker_us", stats.worker_us } };
+		j["checkpoints"] = { { "submitted", stats.submitted }, { "completed", stats.completed }, { "failed", stats.failed }, { "deferred", stats.deferred }, { "pending", stats.pending }, { "capture_us", stats.capture_us }, { "max_capture_us", stats.max_capture_us }, { "worker_us", stats.worker_us }, { "campaign_generations", stats.campaign_generations }, { "campaign_bytes", stats.campaign_bytes } };
 	}
 #endif
 	{

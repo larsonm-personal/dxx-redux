@@ -209809,3 +209809,9013 @@ One modified branch-added save source46of91frozen hunks/newL16-L1160/enclosing f
 - Fiveadded semantic rows/one oldTODOqueue row removed; all other table/product semantics preserved.262unique contiguous sorted fix ranks/1079terminal ranks follow established score/H/M/C/R/ID ordering. Publication initially used an extra benefit tie-break; independent audit identified mismatch and rank-only correction restored established order before PASS. Inherited/resume raw baseline prefixes retained exactly; active/archivedBR bytes unchanged. Scoped documentation diff-check PASS.
 - No product/source/test/script edits, execution/build/device/probes; concurrent work preserved. Source fixtures/structural metadata/UI status/partial authority are not runtime/full semantic acceptance.0116historical inherited-byte audit debt remains separate. Numbered queue264DONE363TODO; overall goal active.
 - Next numbered assigned scope0124 shared/coop/coop_travel.cL1-L750. Refresh exact frozen assignment/base/current/original attribution and reread assigned source; prior0123travel context does not establish0124assigned completion.
+
+<!-- BEGIN IMPORT: GQ2-CHUNK-0124 cooperative travel diagnosis 20261009 SHA256:4638b9d87b705b95ea5f684a2c2829afc3c1571c7d53e87b498b3cb32873740c -->
+
+## GQ2-CHUNK-0124 cooperative travel diagnosis 20261009 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0124-20261009.md`
+- Imported SHA-256: `4638b9d87b705b95ea5f684a2c2829afc3c1571c7d53e87b498b3cb32873740c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0124 cooperative travel diagnosis 20261009
+
+Diagnosis and plans only. Gates1-4 complete; immutable publication and independent canonical audit pending. No product/source/test/script edits, execution/build/device/probes, staging or commit. Historical0116 raw-byte audit debt remains separate.
+
+Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; originalfb555eec75e1ed12c8348805ab335afb4c721b06. Reconciled HEAD666c9e0754a5943a8ce506fa1c16e98ed2b836c3, immutable worktree evidence captured2026-10-10T04:11:07.920606+00:00. Snapshot temp/general_cleanup_20261006/gq2-0124-evidence-snapshot-20261009.json, rawSHA154eaa70bc3f73dda1d3286515b3f2f348abcae877966cab7d1b6c0043bc9450. One assigned branch-added source frozenL1-L750of1677, actually read frozen enclosing1-770partial; current whole1-1683. Base/originalABSENT. Source assignment does not claim the full1677line addition hunk read. ScopeSHA6c6dae3b1648a572a2ce1a79fba05316c2c41dad9d65ddbe24d720c9f7179e74; manifest4350rows/rawSHAe98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4.119chronological actual current ranges/55physical36whole/55complete current unified0deltas (37zero/18nonempty)/72canonical lines in2owners. Four obsolete chronological range records excluded historically; identity does not supply reading credit.
+
+Provisional impact44(H/M/B/C/R=23/0/7/10/4), existing GQR-0261 REFERENCE only. NO_INHERITED_EFFECT/RETAIN, no new candidate/finding/owner/rating or applied saving. Assigned travel source absent1996original implies zero assigned inherited-line saving. Preserve shared travel/policy/portable/campaign/checkpoint/arrival owners and narrow paired native physical/death/companion hooks. Existing paired saved-player extraction GQR0262 remains separate; no new safe extraction identified.
+
+## Ownership, failure and simplification assessment
+
+Travel binds source visit/campaign/recovery/game/host/participants/nonce before arbitration. Shared policy carries bounded phases/generation and participant acknowledgements, normal individual escape, saturating deadlines, recovering generation and host-loss lobby outcome. Frame freeze waits for living settled participants and reliable drain, captures source checkpoint before consuming physical trigger, suppresses success ACK on failed native application and coordinates prepared/checkpoint/arrival checksums before release. Normal exit replay is one-shot; reset/frame legacy pause guards retain Android cooperative pause ownership. Current whole pause source and native hooks support source diagnosis, not lifecycle/runtime acceptance.
+
+Arrival helper plans all participant positions before ship movement using bounded segment search, full-radius geometry masks and obstacle/FVI checks. Caller validates live roster, agrees checksum, clears motion, guards reciprocal exits, applies companion then marks arrivals. Native companion reconstruction removes prior buddy/docked copies, preserves mine switch history, chooses eligible owner and agreed free object ID, restores statistics/shields/ownership/docked state. Fallible mutation belongs outer rollback acceptance; do not invent a separate local atomicity root or broadly merge game-specific physical/companion code.
+
+Checkpoint capture owns an independent byte copy. Persistence closes temporary file, fsyncs, rereads exact bytes, renames and syncs parent before publishing readiness. Parent-sync failure occurs after rename: no all-failures prior-disk-preservation guarantee. Restore requires retained owned memory, readiness, exact disk equality, paused recovering gate, source generation plus one and actual campaign/native restore before portable restoration. Inspected consumer does not reload checkpoint after process restart. Actual producer paths allocate/copy separate buffers, so suspected self-alias use-after-free is not established. No newly proven failed travel rollback from durability boundary.
+
+Receive admission binds authenticated sender and fixed envelope extent through native dispatch, source/campaign/host/nonce/epoch, fresh revision/generation and bounded phase/roster masks. Portable snapshot life/serial and physical authored crossing state are checked. Local range evidence does not close whole relay/authority acceptance. Native reappearance intentionally supports reappear-before-explode; travel clears dead bit before native PKilledFlags rejection. Moving hook after rejection would miss legitimate early respawn. Same-visit older death-cycle traffic remains a hypothesis requiring a concrete delivery/identity counterexample; no new finding and no harmlessness guarantee.
+
+## Existing owners and fixture acceptance
+
+BR0082 metadata/body qualification, BR0195 sender/relay authority and BR0206 staged all-survivor restore convergence remain OPEN. GQF0275/GQR0261 recovery-freeze liveness remains OPEN/TODO with conservative persisted uncertain pickup ownership prerequisite; travel phase participant removal/timeout does not resolve it. GQR0262 saved-player loop extraction remains TODO separately. All canonical statuses/ratings unchanged; related44reference creates no new implementation owner.
+
+Actual maintained whole travel/rollback/dying/companion leaves and real automation/runner oracles were inspected. Policy native test invokes real shared policy and covers barrier/duplicate/order/stale/eight-player/recovery/host-loss cases; paired Android CMake/CTest registration inspected, no execution. Paired runner starts per-device GUIDs, clears old durable results and requires both matching-run-ID terminal PASS. Specialized travel/physical/rollback/disconnect options remain optional, not default coverage. Disconnect phase leaves assert host-only convergence; no both-survivor or complete failure-matrix claim.
+
+Physical oracle checks full-radius segment admission, zero ship motion, pairwise separation, maximum roster planner and arrival guard. Rollback oracle checks retained checkpoint/source generation/world/portable fields, life/serial, ownership and live object binding; history verifier decodes actual campaign footer without proving complete native body validity. Dying fixture settles accepted death once before capture. Companion fixtures check single owner/health/control/path/redeploy. These are maintained source assertions, not runtime results or broader protocol closure.
+
+## Current reconciliation and boundaries
+
+All55 exact current deltas were actually read, including37empty diffs. Refreshed automation525/LAN380/state256/save-set7/header6unified0 lines bound to retained snapshot and revalidated live before gate4. Current periodic retry/crash-state, deferred archive byte/reference/generation, independent peer checkpoint, history, cold/late inventory and background/pause assertions belong concurrent work; implementation acceptance remains separate. Archive fixture is invoked only under SecretSaveRestore. History fixture fills five asynchronous entries then checks synchronous append preserves five.
+
+State slot-read wrapper now routes through shared AndroidD2 checkpoint-file recovery; refreshed travel sidecar/native restore wrappers remain unchanged. Shared suffix constant preserves secret.sgc and cooperative sidecar naming. Concurrent checkpoint/pair implementations not wholly audited here. Four historical ranges excluded from current credit: state365-412, state351-425, oldsave-set1-166, LAN4038-4087. Current unchanged earlier body ranges remain actual evidence without additional reading. Newly read header has33lines, correcting prior34line shorthand.
+
+Keep native packed formats/comments, desktop guards, explicit PHYSFS failures, allocation ownership and agreed object IDs. No product change proposed beyond existing distinct owners.0124canonicalTODO until import/independent audit. Next0125assigned frozen coop_travel.cL751-L1500 requires actual assigned rereading; contextual whole source credit does not silently complete the next assignment. Pending numbered/supplemental/sweep/final-head reconciliation and0116historical audit debt remain required.
+
+## Exact assigned identity
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "assignment": "frozen source L1-L750",
+    "assigned_first": 1,
+    "assigned_last": 750,
+    "base_lines": 0,
+    "frozen_lines": 1677,
+    "current_lines": 1683,
+    "base_blob": "-",
+    "head_blob": "b5a673bb06b6f7b3827bb64275939b10be4cbe78",
+    "original_blob": "ABSENT",
+    "base_whole_source_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head_whole_source_lf_sha256": "6498b92b5908e662ed4001d6bb80a42b95fd36d11c9960ddfebf25dd826ffe73",
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "base_whole_read": false,
+    "head_whole_read": false,
+    "current_whole_read": true,
+    "total_frozen_hunks": 1,
+    "assigned_hunks": [],
+    "assigned_partial_hunk": {
+      "ordinal": 1,
+      "source_first": 1,
+      "source_last": 750,
+      "whole_hunk_complete_read": false
+    },
+    "frozen_diff_lf_sha256": "f759a8070e366ce6b2eec94b36f753cfc0d8928be8f79bddff1784781c718a5b",
+    "manifest_raw_sha256": "e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4",
+    "frozen_read_ranges": [
+      {
+        "first": 1,
+        "last": 120,
+        "range_lf_sha256": "1ee25338720e33cf0e2db805ae78e0e49a648e7c2f6d1e016281ff3452285b59"
+      },
+      {
+        "first": 121,
+        "last": 330,
+        "range_lf_sha256": "8a15fcbd1b44a19bdadd965f03919a1bad973e0b704864641bb33e15bd66cd94"
+      },
+      {
+        "first": 331,
+        "last": 540,
+        "range_lf_sha256": "9dce6de570e5a0079ad9ef412e30e21d224702defa6eb01aec3bc5d7f10a8fce"
+      },
+      {
+        "first": 541,
+        "last": 770,
+        "range_lf_sha256": "29e4b64d713b3689af9e0e63ce1811101f7779f48ca8b9cc1b3d0592905303c0"
+      }
+    ],
+    "assigned_payload_lf_sha256": "d695f8929cd623515ceaa00008bcd989b7cc711ceb3a332b12b2555d213460ad",
+    "assigned_payload_complete_read": true,
+    "whole_frozen_file_read": false,
+    "current_delta_raw_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_whole_read": true
+  }
+]
+```
+
+## Frozen path manifest
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "status": "A",
+    "old_path": "-",
+    "base_mode": "-",
+    "base_blob": "-",
+    "head_mode": "100644",
+    "head_blob": "b5a673bb06b6f7b3827bb64275939b10be4cbe78"
+  }
+]
+```
+
+## Actual current source reading
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_lines": 1683,
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 260,
+        "range_lf_sha256": "c2be7171ff4efa820b8ac735cb88afe36b3230adcca31cc4e5ec801a064d7417"
+      },
+      {
+        "first": 261,
+        "last": 520,
+        "range_lf_sha256": "f22d60474be9ac489f837b87ce25b544ae9885f2afdee4569c6f3084394327a1"
+      },
+      {
+        "first": 521,
+        "last": 757,
+        "range_lf_sha256": "da5de2c3ad807464cea115474cbd326495de2066e9882bd9be493ef6895a3aed"
+      },
+      {
+        "first": 1330,
+        "last": 1375,
+        "range_lf_sha256": "d4de59fddf5504786137741083397d211b2f101645196c2c693ff2ffd0fe3501"
+      },
+      {
+        "first": 1504,
+        "last": 1525,
+        "range_lf_sha256": "d12d30dcbdbe12b25e5d7f2314f9f78df1a827bbe8b03fb7ab55fd7d94d8e60e"
+      },
+      {
+        "first": 1612,
+        "last": 1645,
+        "range_lf_sha256": "f8499ac683f71a85322867fd2c587c5068564b8cd1a9e09a8b6e7301eec479fc"
+      },
+      {
+        "first": 796,
+        "last": 842,
+        "range_lf_sha256": "1eb764dd5ecdba5fbac9b366c804d673dda647c017dbbd8be9e883977923b841"
+      },
+      {
+        "first": 1393,
+        "last": 1440,
+        "range_lf_sha256": "bd7a47dd1ebb8a09735c1d9023c5d845217495a153b33cd03d0283691e4ff253"
+      },
+      {
+        "first": 1441,
+        "last": 1617,
+        "range_lf_sha256": "781834997f6a1b3e64e6479c1a2243b176ba1616b58f7b946a5f83834bd68ac2"
+      },
+      {
+        "first": 1646,
+        "last": 1653,
+        "range_lf_sha256": "41b52357c858127e7aed360c6be185bbec25aeda81f9164c3fa4fa615eae091c"
+      },
+      {
+        "first": 1040,
+        "last": 1135,
+        "range_lf_sha256": "ae83524368bf9c3a427e966cdb9d98451c85fc0ce32b5289128b94571bcd7c65"
+      },
+      {
+        "first": 1136,
+        "last": 1330,
+        "range_lf_sha256": "e567e1d975bc89a58664740ab86ecdcddd5d711a0ab302fb644b2d8444e19cd9"
+      },
+      {
+        "first": 1010,
+        "last": 1039,
+        "range_lf_sha256": "88e6b351f36cc8bc17660cae86f62b04f0d58f758ae66ac203cf6d2bbc1da9cd"
+      },
+      {
+        "first": 1618,
+        "last": 1645,
+        "range_lf_sha256": "9e745cb7ff745c189911ee38d24681ff6307a99bd08fe397bf608c73342a4e00"
+      },
+      {
+        "first": 620,
+        "last": 685,
+        "range_lf_sha256": "0e5ee26a5c34c06b6de61b11c1bb8f47f8afd701076b18b9ba76c8a567d35fb8"
+      },
+      {
+        "first": 684,
+        "last": 755,
+        "range_lf_sha256": "5293364665d8c554fe103540e08592aafc8460ca79f0c3d91965804db719cde8"
+      },
+      {
+        "first": 240,
+        "last": 330,
+        "range_lf_sha256": "4ac76c6ce495bf928130c4c0cfb948f4920aaa9aac4f5e7845cfc49efc592aae"
+      },
+      {
+        "first": 520,
+        "last": 582,
+        "range_lf_sha256": "14cc74b0e6ff84dcc1b4b5dc420eb83ee9b77930ded4b877aa10957d0bb886e4"
+      },
+      {
+        "first": 756,
+        "last": 795,
+        "range_lf_sha256": "088760caf11e3a1008dec466fb674a6bebab3534c1cef3dcd07fcdf8d9c16ddc"
+      },
+      {
+        "first": 843,
+        "last": 1009,
+        "range_lf_sha256": "63efd7e838dbaab79e4dfa314228491aa8c4192f8d174eee2b26d08f7aa54fad"
+      },
+      {
+        "first": 1376,
+        "last": 1392,
+        "range_lf_sha256": "1299b9d0f0dc70c1fafb9f2259e03315420878fa2dbbb7232a8f2b280e0adc40"
+      },
+      {
+        "first": 1654,
+        "last": 1683,
+        "range_lf_sha256": "40e04ec5899ed8fae3974895e75cdc1db4d6a2b9f16fce36d2ecaa7d92b447e7"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        1683
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.h",
+    "current_lines": 87,
+    "current_whole_source_sha256": "0a2a70948e755faf4a0f39c5b9161eda1761a49a24350abdc7ffc68d06a8d9d6",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 87,
+        "range_lf_sha256": "0a2a70948e755faf4a0f39c5b9161eda1761a49a24350abdc7ffc68d06a8d9d6"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        87
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.h",
+    "current_lines": 14,
+    "current_whole_source_sha256": "df12844071ca2a5fda190b7126d699ff7b8c47433fe77afd5589e49a3e3158f5",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 14,
+        "range_lf_sha256": "df12844071ca2a5fda190b7126d699ff7b8c47433fe77afd5589e49a3e3158f5"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        14
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.c",
+    "current_lines": 155,
+    "current_whole_source_sha256": "81fc639d8e705b46a737c5f1d77cee66d1c9af818104fb37e1c76e9bcb1f3478",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 155,
+        "range_lf_sha256": "81fc639d8e705b46a737c5f1d77cee66d1c9af818104fb37e1c76e9bcb1f3478"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        155
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.h",
+    "current_lines": 127,
+    "current_whole_source_sha256": "1dcb664e763dca67289dc505b4222d211764bb1c03b4969897e8a54e809c20f5",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 127,
+        "range_lf_sha256": "1dcb664e763dca67289dc505b4222d211764bb1c03b4969897e8a54e809c20f5"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        127
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.c",
+    "current_lines": 300,
+    "current_whole_source_sha256": "06438f8f659ce70a4d1dfbaaa1ca79c07282cd89e0234330cdeb9d09586d7973",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 185,
+        "range_lf_sha256": "8458a3fbb10e2e306646ed7ae923f9fb0ee4d6d790ba80d93bd0558435d0cb14"
+      },
+      {
+        "first": 186,
+        "last": 300,
+        "range_lf_sha256": "bd86a51eb41a65814d757a6abb5523d27714d87acf09d990072f88ec7805ccf4"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        300
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_pause.c",
+    "current_lines": 280,
+    "current_whole_source_sha256": "6313e6c829c098885c3c7a1506f054d7168f4bf263a4a5329e955bf5dc57c2d2",
+    "actual_read_ranges": [
+      {
+        "first": 80,
+        "last": 135,
+        "range_lf_sha256": "5a78e867a23a088d50342d84aaea0c779833ca8068fd49993ed463aef9d3c016"
+      },
+      {
+        "first": 1,
+        "last": 280,
+        "range_lf_sha256": "6313e6c829c098885c3c7a1506f054d7168f4bf263a4a5329e955bf5dc57c2d2"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        280
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_source_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "actual_read_ranges": [
+      {
+        "first": 446,
+        "last": 484,
+        "range_lf_sha256": "a0d650c75016f9b6ef78bbe1d6c563c1bb9175ec991be27fca247eb46d8a5b52"
+      },
+      {
+        "first": 870,
+        "last": 907,
+        "range_lf_sha256": "3d377d5210ef1d9ffbcde757cee29b95d60494524f29952e8dc6cba7473ebc4b"
+      },
+      {
+        "first": 1112,
+        "last": 1137,
+        "range_lf_sha256": "33296362b8a261a2f2fd58d1e9f05ab0414dac02657e55ef0e401541ed59cd5d"
+      },
+      {
+        "first": 548,
+        "last": 646,
+        "range_lf_sha256": "5c6b9478f99156cea48848787911a1c733efc0d3fb5a6e62eaa3df105f398f58"
+      },
+      {
+        "first": 151,
+        "last": 179,
+        "range_lf_sha256": "82ec2a487457627adc7f4b67418193752612015b0fa38873a33601497a7b9b00"
+      }
+    ],
+    "union_ranges": [
+      [
+        151,
+        179
+      ],
+      [
+        446,
+        484
+      ],
+      [
+        548,
+        646
+      ],
+      [
+        870,
+        907
+      ],
+      [
+        1112,
+        1137
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/test_coop_transition_policy.ps1",
+    "current_lines": 26,
+    "current_whole_source_sha256": "90fc10566939ccb450a1d2858fd756c44a610873797f35ba13da1f11b27578bf",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 26,
+        "range_lf_sha256": "90fc10566939ccb450a1d2858fd756c44a610873797f35ba13da1f11b27578bf"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        26
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_coop_transition_policy.c",
+    "current_lines": 354,
+    "current_whole_source_sha256": "ed23d7f5cc89bbb15d99404e02a1f6577a34253af6b934517a5f83b3f4d76b9a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 180,
+        "range_lf_sha256": "2a29d352b3c16e7ce69855a9ddcf83765ae7d9f4983cf3e175b5591b7dd02834"
+      },
+      {
+        "first": 181,
+        "last": 354,
+        "range_lf_sha256": "aadd33ffb9722c96ef31c94150c763112bafd0e45b13b3108254e0fe68d699f1"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        354
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/misc/physfsx.c",
+    "current_lines": 584,
+    "current_whole_source_sha256": "18c164ffe3e583e90dbabc7ab0c379b754dbd69928d156e4400adefc4cf18e6a",
+    "actual_read_ranges": [
+      {
+        "first": 271,
+        "last": 351,
+        "range_lf_sha256": "433dd053c4244b2ce1ea18bcecb6b3dde6f28a06c2b2191fc0e3f24913376117"
+      }
+    ],
+    "union_ranges": [
+      [
+        271,
+        351
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/misc/physfsx.c",
+    "current_lines": 589,
+    "current_whole_source_sha256": "250671bf068596c14f290f74b10ee6deebe1ea6c3c1711d7b4d48f2450b93b18",
+    "actual_read_ranges": [
+      {
+        "first": 276,
+        "last": 356,
+        "range_lf_sha256": "27c8fb7ffef208591d01e4859cf0a17fc42ffdb2919bbcd7be93127a769af62c"
+      }
+    ],
+    "union_ranges": [
+      [
+        276,
+        356
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_android_shared.c",
+    "current_lines": 1367,
+    "current_whole_source_sha256": "51defa1c505732bdd5555925b2961fce93e46ee796841ead89052eb91f4b623c",
+    "actual_read_ranges": [
+      {
+        "first": 241,
+        "last": 271,
+        "range_lf_sha256": "93724d54fd7d4306885260964988ae49d5de46ed10974a24bc40cb146b2b76fe"
+      },
+      {
+        "first": 241,
+        "last": 257,
+        "range_lf_sha256": "204d25b3f86761b7b0169799d2b4d7e76e1381ca2ac43f10eb80aa51e4c8d5d8"
+      },
+      {
+        "first": 240,
+        "last": 273,
+        "range_lf_sha256": "1de0924a60c96577b84aad0bb12bb867227e3604eb3ed9ebe56f12d02fd34d33"
+      },
+      {
+        "first": 351,
+        "last": 427,
+        "range_lf_sha256": "4e23aa04aa75c832e769a666a59b172a9a982ae6ae0c4893aa1b06278867b712"
+      }
+    ],
+    "union_ranges": [
+      [
+        240,
+        273
+      ],
+      [
+        351,
+        427
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_lines": 569,
+    "current_whole_source_sha256": "d19807e4ba01f7f113b363ef873bc3c1056fd567a4bb09adf868a0928fb23401",
+    "actual_read_ranges": [
+      {
+        "first": 298,
+        "last": 318,
+        "range_lf_sha256": "fac78cc123546d2a7e588d458c65605023c9f30e33e1fe552bb6d09fd6c644d5"
+      },
+      {
+        "first": 511,
+        "last": 533,
+        "range_lf_sha256": "f92a0ff698ca6b88fe31bb0c3487393d2a34461ed90b4db3ea4303367519d1e8"
+      },
+      {
+        "first": 537,
+        "last": 569,
+        "range_lf_sha256": "871f49ff750f6be14e8f75d94fd95dc634a8a4a389593d6b2508bd795aef98ed"
+      }
+    ],
+    "union_ranges": [
+      [
+        298,
+        318
+      ],
+      [
+        511,
+        533
+      ],
+      [
+        537,
+        569
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/object.c",
+    "current_lines": 3211,
+    "current_whole_source_sha256": "f3a60a6e6dd1409f6de368377d01813acd81d4f649c55280114cfb030941cd5c",
+    "actual_read_ranges": [
+      {
+        "first": 1860,
+        "last": 1926,
+        "range_lf_sha256": "95f7f552bdeab72a19799572dff3a083b6b1125096376902262f80f570f4c020"
+      }
+    ],
+    "union_ranges": [
+      [
+        1860,
+        1926
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/switch.c",
+    "current_lines": 945,
+    "current_whole_source_sha256": "46517062c61186f70a7285077d7343ac45699e784af843dc58600eb4b58c5c08",
+    "actual_read_ranges": [
+      {
+        "first": 722,
+        "last": 758,
+        "range_lf_sha256": "6f59f0d6010344768ba05e239714a210c51d88a2d8c34e714de861abbbb5650d"
+      }
+    ],
+    "union_ranges": [
+      [
+        722,
+        758
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_lines": 2636,
+    "current_whole_source_sha256": "4357f34f12df2f853d91b9f43b75b4b8d642528a976e35e72184a0fd0b19c69e",
+    "actual_read_ranges": [
+      {
+        "first": 566,
+        "last": 590,
+        "range_lf_sha256": "c342f7eebe945f33cc1e5460491c955a27deba36f5847584f74a9c147899269b"
+      }
+    ],
+    "union_ranges": [
+      [
+        566,
+        590
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8383,
+    "current_whole_source_sha256": "544b3bfbcf4446f5b80f5894d53f10bb15bca848efb5f334b648d57bc933989e",
+    "actual_read_ranges": [
+      {
+        "first": 1246,
+        "last": 1273,
+        "range_lf_sha256": "11585187c08a416f044311a784d7ac538c578ba2fea23a29de7b8494a249b134"
+      },
+      {
+        "first": 2503,
+        "last": 2524,
+        "range_lf_sha256": "c433301325292465763ea2e43178b03774f7c9d60709f31b8cf72516f9a395b9"
+      },
+      {
+        "first": 2712,
+        "last": 2739,
+        "range_lf_sha256": "60eb3e4fb6fd949a390e557486d0380960e3c218fcc791eb90d0e051c3b56215"
+      },
+      {
+        "first": 2504,
+        "last": 2543,
+        "range_lf_sha256": "a13876fc08409b15cd2f9e6e8497dfa2852c522aa1609920d8b0202d26d208bf"
+      },
+      {
+        "first": 2615,
+        "last": 2670,
+        "range_lf_sha256": "4994ae3bf1e4c7595234b2eef16d84e775ff17e9b25235fa61af43d50e8e614d"
+      },
+      {
+        "first": 7770,
+        "last": 7790,
+        "range_lf_sha256": "51aa7dee3f89dc0660e97774b39530af541e6962c4fcdfcfdcfb5e91ed2612d7"
+      },
+      {
+        "first": 4159,
+        "last": 4180,
+        "range_lf_sha256": "5d32269ad80b692278ad74328cf78d53bb52ff0652c7ae04a47ba329147d469b"
+      },
+      {
+        "first": 7665,
+        "last": 7713,
+        "range_lf_sha256": "fbb19b59113e9299d8c4197276f2480ad35faf7533d095ec06183ce374babd46"
+      },
+      {
+        "first": 3553,
+        "last": 3613,
+        "range_lf_sha256": "6b61e1ce5bb158013d9244fcb9866385f9daab78cf9c800dced85e8ca88cf54c"
+      },
+      {
+        "first": 7919,
+        "last": 7944,
+        "range_lf_sha256": "931f17f2e90f7dff1188cf0381dc2158ab92ee6cfcf0487b2882022f1f0b3d8e"
+      }
+    ],
+    "union_ranges": [
+      [
+        1246,
+        1273
+      ],
+      [
+        2503,
+        2543
+      ],
+      [
+        2615,
+        2670
+      ],
+      [
+        2712,
+        2739
+      ],
+      [
+        3553,
+        3613
+      ],
+      [
+        4159,
+        4180
+      ],
+      [
+        7665,
+        7713
+      ],
+      [
+        7770,
+        7790
+      ],
+      [
+        7919,
+        7944
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_save_set.c",
+    "current_lines": 166,
+    "current_whole_source_sha256": "403c8fcc138c8fc7d17aeefafeceaaef1c1e90e576861e43bfaea8dcc5fe872a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 166,
+        "range_lf_sha256": "403c8fcc138c8fc7d17aeefafeceaaef1c1e90e576861e43bfaea8dcc5fe872a"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        166
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_lines": 4356,
+    "current_whole_source_sha256": "1e8b4073a09ad224b7e98b7ff42c1e3272a047c40f88c014abe334faa7ff8ff0",
+    "actual_read_ranges": [
+      {
+        "first": 3858,
+        "last": 3917,
+        "range_lf_sha256": "17ecd84690b58faca057fc4f30c0d950d07c6f5cd1339667453710b1c757637b"
+      },
+      {
+        "first": 166,
+        "last": 184,
+        "range_lf_sha256": "dab7602f43e2cc18edbc2bf62103b386a2c5e98460f4b8103438830ffaeaa8c9"
+      },
+      {
+        "first": 200,
+        "last": 212,
+        "range_lf_sha256": "4b7c24a47143a8ce48d5bcd3a6b117340e975d6360b76c2f7d751b196988bc37"
+      },
+      {
+        "first": 296,
+        "last": 310,
+        "range_lf_sha256": "fd986c99b6b483d5337cac0551182be2a0bb9bf3856c08afe43bead5728dbd44"
+      },
+      {
+        "first": 3917,
+        "last": 3972,
+        "range_lf_sha256": "38f49136cdb49a108ea08798ba4689e8d9aad4d0960ef088f665d738a85ca25c"
+      },
+      {
+        "first": 3973,
+        "last": 4037,
+        "range_lf_sha256": "95903b5de69116b9bfcc9fc0e59c98d4212eb613fc1e86771a28c28db0388c3a"
+      },
+      {
+        "first": 657,
+        "last": 718,
+        "range_lf_sha256": "6dd51de092635d699c1f3d50924a7325859ed413c078e91325a201630f26cf07"
+      },
+      {
+        "first": 1973,
+        "last": 2052,
+        "range_lf_sha256": "47c200e52409c57c7131c15728dac52fd339f262b7b7979a70a1dec7a05c8e13"
+      },
+      {
+        "first": 719,
+        "last": 722,
+        "range_lf_sha256": "6f9450ad48151e0ba6f31422ac9530fd880071c0f8a2431ed4f7855e5b6551b0"
+      },
+      {
+        "first": 4038,
+        "last": 4094,
+        "range_lf_sha256": "48fd9905b309a530029a41b037f2e8b90ce6727342ecdce5264c6611ffea76c1"
+      }
+    ],
+    "union_ranges": [
+      [
+        166,
+        184
+      ],
+      [
+        200,
+        212
+      ],
+      [
+        296,
+        310
+      ],
+      [
+        657,
+        722
+      ],
+      [
+        1973,
+        2052
+      ],
+      [
+        3858,
+        4094
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_arm.jsonc",
+    "current_lines": 8,
+    "current_whole_source_sha256": "3210f64928ea6fac78aff96971b579fe03e94e633be3e8508bf631686d7e1919",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 8,
+        "range_lf_sha256": "3210f64928ea6fac78aff96971b579fe03e94e633be3e8508bf631686d7e1919"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        8
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_host.jsonc",
+    "current_lines": 16,
+    "current_whole_source_sha256": "0a6f214de7ecfdbaac3d7e54595239e66880d23fd0e70ad4a12a6eaa23e842d3",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "0a6f214de7ecfdbaac3d7e54595239e66880d23fd0e70ad4a12a6eaa23e842d3"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        16
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_client.jsonc",
+    "current_lines": 9,
+    "current_whole_source_sha256": "eac07d806caba27a6b25d48ee93ba995bae99f1258876da9c1de454fecaec7c6",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 9,
+        "range_lf_sha256": "eac07d806caba27a6b25d48ee93ba995bae99f1258876da9c1de454fecaec7c6"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        9
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_normal_host.jsonc",
+    "current_lines": 7,
+    "current_whole_source_sha256": "09a44fd6764971cf598bc51da28203f7924925107edc9dcb5fbcb4e374cea6f3",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "09a44fd6764971cf598bc51da28203f7924925107edc9dcb5fbcb4e374cea6f3"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        7
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_normal_client.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "a9148a8e0996da49ea8d6b4c2f11545ea587c6d909ba1eb442e41b4d612c30b1",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "a9148a8e0996da49ea8d6b4c2f11545ea587c6d909ba1eb442e41b4d612c30b1"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        6
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_freezing.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "d4ae308a3563139d12fc761254afbef77a31f88e90b0c3530217cb3383664c64",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "d4ae308a3563139d12fc761254afbef77a31f88e90b0c3530217cb3383664c64"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_capturing.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "deb2e16dafe8e265c3b2b3c156cc6fdb6148c8efb899210bd38e2eb070d22985",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "deb2e16dafe8e265c3b2b3c156cc6fdb6148c8efb899210bd38e2eb070d22985"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_loading.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "67192c1b27b3026bad59f9ee4efea3e9d345787081033e5161779605a9377fc0",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "67192c1b27b3026bad59f9ee4efea3e9d345787081033e5161779605a9377fc0"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_committed.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "262b0d5f983275ea8340838d04ec1c5d5ad1883e45ac826dc63e2ebef8264a42",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "262b0d5f983275ea8340838d04ec1c5d5ad1883e45ac826dc63e2ebef8264a42"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_release.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "c5be86d5d621af62fdeb5e90f3a4b68e5a4fa56cf446b14b2c39a80ef5bcc0ac",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "c5be86d5d621af62fdeb5e90f3a4b68e5a4fa56cf446b14b2c39a80ef5bcc0ac"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/tests/test_native_host_unit_tests.ps1",
+    "current_lines": 56,
+    "current_whole_source_sha256": "c7234d6e26f1e617b1b16163f57301b8148826e1cfe3021d7c78c72be656a699",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 56,
+        "range_lf_sha256": "c7234d6e26f1e617b1b16163f57301b8148826e1cfe3021d7c78c72be656a699"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        56
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "actual_read_ranges": [
+      {
+        "first": 157,
+        "last": 171,
+        "range_lf_sha256": "a6fde31b1023c0a5782afa9758bb59a45f73883703051336e2c016bc85300373"
+      },
+      {
+        "first": 1,
+        "last": 35,
+        "range_lf_sha256": "033022283a7ba59e4debaaa6b011186ccde57c0d5a626c159eecaf0e2cdbf23e"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        35
+      ],
+      [
+        157,
+        171
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_lines": 2419,
+    "current_whole_source_sha256": "de93ee1524285ad44729b0469c2479d428d51f46910bda5fa1e2b6721bd955cb",
+    "actual_read_ranges": [
+      {
+        "first": 475,
+        "last": 485,
+        "range_lf_sha256": "858277775969e54542c1cc20e850ed5eac46e2e6cee20022c1066946845897a8"
+      },
+      {
+        "first": 647,
+        "last": 657,
+        "range_lf_sha256": "29980d42149f7d5735f2f3a563231c8eff13e5ee34423603a0254a81bc9f1883"
+      },
+      {
+        "first": 390,
+        "last": 399,
+        "range_lf_sha256": "a39d385f70cef81e2af21fbd3212b3a98fbca923d8996d7a74545945e936797a"
+      }
+    ],
+    "union_ranges": [
+      [
+        390,
+        399
+      ],
+      [
+        475,
+        485
+      ],
+      [
+        647,
+        657
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/escort.c",
+    "current_lines": 4507,
+    "current_whole_source_sha256": "02ccd71335d0685c0fd2d6be8a11e0f38f43412c31a04f32c5957ca3bdf96300",
+    "actual_read_ranges": [
+      {
+        "first": 4130,
+        "last": 4219,
+        "range_lf_sha256": "16aafcc677a474bd4d3400619117b9ed0f6cb1d3aa47a6d5a88432a027033c03"
+      }
+    ],
+    "union_ranges": [
+      [
+        4130,
+        4219
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6686,
+    "current_whole_source_sha256": "bb1287c74d0fe3daf248cc102f50cd72dcbb29e83ddb50343158f3bd02105aca",
+    "actual_read_ranges": [
+      {
+        "first": 4581,
+        "last": 4608,
+        "range_lf_sha256": "10ad568f1c72d4427849196aa2759dc04cbcf65430c62ec344df77afebe8d66f"
+      },
+      {
+        "first": 4644,
+        "last": 4657,
+        "range_lf_sha256": "c6a58cce947ccd8b9a824efabccc43fb5c3d56d08c5ac03c9dfa77391fdf5e35"
+      },
+      {
+        "first": 4881,
+        "last": 4934,
+        "range_lf_sha256": "4158dc84590286c48fd8744747fb7b07cb1ca7ff84cdd2270e98b34f360aed5e"
+      },
+      {
+        "first": 4657,
+        "last": 4700,
+        "range_lf_sha256": "d684536f406c3d168f33208204cff8210818fe89d680eba717fc1ea6e94d51c6"
+      },
+      {
+        "first": 4735,
+        "last": 4808,
+        "range_lf_sha256": "4c4359fd2217848e3567be92d11300df6e93e37ba4c2ee2ed58c26612ec472b8"
+      },
+      {
+        "first": 4701,
+        "last": 4734,
+        "range_lf_sha256": "6062415140262e46e9170169a2f18a21c7a45d8d57146d9599fe73f879b57b93"
+      },
+      {
+        "first": 4809,
+        "last": 4825,
+        "range_lf_sha256": "294c201d7bb7bedfce80475793a69924e53af3996e2a2be606268972286e7fad"
+      },
+      {
+        "first": 4859,
+        "last": 4882,
+        "range_lf_sha256": "109680783443c67013c41f521e562a44d9f62805095395db600151c9f422afbd"
+      },
+      {
+        "first": 5482,
+        "last": 5570,
+        "range_lf_sha256": "fc1feadef4e5cc067e07934c6376260fa6d00918d81c38ffae7683b22b42a460"
+      },
+      {
+        "first": 5570,
+        "last": 5610,
+        "range_lf_sha256": "a66a655715626fc3e43f160277824ee9a5284d6e233aca248a18293d1aa9fbca"
+      }
+    ],
+    "union_ranges": [
+      [
+        4581,
+        4608
+      ],
+      [
+        4644,
+        4825
+      ],
+      [
+        4859,
+        4934
+      ],
+      [
+        5482,
+        5610
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9866,
+    "current_whole_source_sha256": "db612cb917424e032cf30356d962f24aaeee23e62c05db70e86fbd281585069e",
+    "actual_read_ranges": [
+      {
+        "first": 8395,
+        "last": 8430,
+        "range_lf_sha256": "cf2c1b8c76acec96034c839942624dd2fa32785392eae83e4bf3932e20b178c5"
+      },
+      {
+        "first": 8460,
+        "last": 8512,
+        "range_lf_sha256": "4cf7dda7398e53f16c2400e370305222b397da08c883838818c08c8165d06d4a"
+      }
+    ],
+    "union_ranges": [
+      [
+        8395,
+        8430
+      ],
+      [
+        8460,
+        8512
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h",
+    "current_lines": 130,
+    "current_whole_source_sha256": "68d0eaa5c5dabb295cf4da1fed1f6e70f8e041b0c1e856f569ea29badde76a8f",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 130,
+        "range_lf_sha256": "68d0eaa5c5dabb295cf4da1fed1f6e70f8e041b0c1e856f569ea29badde76a8f"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        130
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_prepare_host.jsonc",
+    "current_lines": 8,
+    "current_whole_source_sha256": "8afb7ceb1b3e45da4de44edffd583a690dd2769e554ec5464cee41f24917a350",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 8,
+        "range_lf_sha256": "8afb7ceb1b3e45da4de44edffd583a690dd2769e554ec5464cee41f24917a350"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        8
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_prepare_client.jsonc",
+    "current_lines": 12,
+    "current_whole_source_sha256": "62bf14254809c8be84ce8a81fdab5bd6841fe61b0360ecf2481c78178923ffe5",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 12,
+        "range_lf_sha256": "62bf14254809c8be84ce8a81fdab5bd6841fe61b0360ecf2481c78178923ffe5"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        12
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_travel_client.jsonc",
+    "current_lines": 35,
+    "current_whole_source_sha256": "5636426829dc9c632f76d70395808187b4e619dad11761f60b343850dfe066b0",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 35,
+        "range_lf_sha256": "5636426829dc9c632f76d70395808187b4e619dad11761f60b343850dfe066b0"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        35
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_released.jsonc",
+    "current_lines": 15,
+    "current_whole_source_sha256": "e60779c9f3c39c3913912f7febfa15d7d7e1d3c1181b238aea55e4fe2b13142e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 15,
+        "range_lf_sha256": "e60779c9f3c39c3913912f7febfa15d7d7e1d3c1181b238aea55e4fe2b13142e"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        15
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_docked.jsonc",
+    "current_lines": 14,
+    "current_whole_source_sha256": "b6b7e96a80cd2ccfe3fdfb247d2da17e30323a14062c64534021a93c873ed340",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 14,
+        "range_lf_sha256": "b6b7e96a80cd2ccfe3fdfb247d2da17e30323a14062c64534021a93c873ed340"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        14
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_prepare.jsonc",
+    "current_lines": 8,
+    "current_whole_source_sha256": "8e5f12d8597a1f80692a14d937b82ad99f12d1cb5db928af91bde486f51bcb2e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 8,
+        "range_lf_sha256": "8e5f12d8597a1f80692a14d937b82ad99f12d1cb5db928af91bde486f51bcb2e"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        8
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        27
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        27
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_dead.jsonc",
+    "current_lines": 39,
+    "current_whole_source_sha256": "ec676049737a6c4d58dc0cf11e3a1a8467490ccbaafa93678b4ffbf7d230eabc",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 39,
+        "range_lf_sha256": "ec676049737a6c4d58dc0cf11e3a1a8467490ccbaafa93678b4ffbf7d230eabc"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        39
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_alive.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "d7f06b9cd1b2d4964f5e56aa17dd294ecb2ae6ac140107ff446e5eb828c78889",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "d7f06b9cd1b2d4964f5e56aa17dd294ecb2ae6ac140107ff446e5eb828c78889"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        45
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_navigation_client.jsonc",
+    "current_lines": 18,
+    "current_whole_source_sha256": "eea0e218c0f556dcc822242b62235e33f56474dcdf35abfd00cc9bf6267ce760",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 18,
+        "range_lf_sha256": "eea0e218c0f556dcc822242b62235e33f56474dcdf35abfd00cc9bf6267ce760"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        18
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_redeploy_client.jsonc",
+    "current_lines": 26,
+    "current_whole_source_sha256": "cb31ad67bcbfb6239045284a9176a36e5d36c0e4ae752954863744eb14c9efc8",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 26,
+        "range_lf_sha256": "cb31ad67bcbfb6239045284a9176a36e5d36c0e4ae752954863744eb14c9efc8"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        26
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_dock_client.jsonc",
+    "current_lines": 6,
+    "current_whole_source_sha256": "c532cdda8fa1ba72095ef244c0f4ec874306899c062f657580195eb4ed9eb3bd",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "c532cdda8fa1ba72095ef244c0f4ec874306899c062f657580195eb4ed9eb3bd"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        6
+      ]
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6338,
+    "current_whole_source_sha256": "ef8d6a57383f1a8dbf3f4940b3c595d9cd40ca8c7cc61cc90f437ecd85bb508a",
+    "actual_read_ranges": [
+      {
+        "first": 5908,
+        "last": 5933,
+        "range_lf_sha256": "931f17f2e90f7dff1188cf0381dc2158ab92ee6cfcf0487b2882022f1f0b3d8e"
+      }
+    ],
+    "union_ranges": [
+      [
+        5908,
+        5933
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_lines": 2858,
+    "current_whole_source_sha256": "84ed2a0e0ed751248662f5adb6d4378d3240b3162e3af261faa306b5fa13420e",
+    "actual_read_ranges": [
+      {
+        "first": 1602,
+        "last": 1627,
+        "range_lf_sha256": "c1d2f97d857f374eb690f6fb0210866e5fb666634a995c099acb033fe59fdfad"
+      }
+    ],
+    "union_ranges": [
+      [
+        1602,
+        1627
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/CMakeLists.txt",
+    "current_lines": 335,
+    "current_whole_source_sha256": "0259c679b4c2262f037202e9abe2c1146d0bc31097b6c9794e0ff251c99fed91",
+    "actual_read_ranges": [
+      {
+        "first": 112,
+        "last": 141,
+        "range_lf_sha256": "c9be70740f61753b203b9203ee9843358693e51bb64304a06c00282c61c21067"
+      }
+    ],
+    "union_ranges": [
+      [
+        112,
+        141
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/CMakeLists.txt",
+    "current_lines": 415,
+    "current_whole_source_sha256": "73acb72c4419fb6f33223cef603a074c60bcfd33b7a48f744eeabe49b340d47e",
+    "actual_read_ranges": [
+      {
+        "first": 144,
+        "last": 173,
+        "range_lf_sha256": "e83574da6eed43b6a92ea6baf49c4b9577426594cbbf18a8292a20665b05f626"
+      }
+    ],
+    "union_ranges": [
+      [
+        144,
+        173
+      ]
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_save_set.h",
+    "current_lines": 33,
+    "current_whole_source_sha256": "797eb64c5d5c636c4d1cd2a4590a46afe319baa5085fdd578ae63c5b893a9b44",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 33,
+        "range_lf_sha256": "797eb64c5d5c636c4d1cd2a4590a46afe319baa5085fdd578ae63c5b893a9b44"
+      }
+    ],
+    "union_ranges": [
+      [
+        1,
+        33
+      ]
+    ],
+    "current_whole_read": true
+  }
+]
+```
+
+## Complete current delta reading
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 626,
+    "current_delta_raw_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_lines": 16,
+    "current_delta_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_hunks": 6,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -377,0 +378 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "718792624ad8f2b4064d4f20e3ed3b5b57badf861978c5b6117b66035f6b5519",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -378,0 +380 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "ff9bf25364d0dd4f9f991265f48c000b371481e88edad9cc621def745f5d78bd",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1512,0 +1515 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "52addf89260aa67d71133b9675b7e9acedc3c4963c944b4e2070214c5d1237a7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1513,0 +1517 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "c65d9e45298fd52534feb9b2f3a2d796c1b8942edc000465892cb8888e5570e9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1630,0 +1635 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "dfda55a99122f4841c89260e125d6f79f3e862a3e2f7f415350291f37dbd17e9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1631,0 +1637 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "232de258f250eb031322f853fd48fdb8bf7d52372be3ae530b659c078704263f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_pause.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 10430,
+    "current_delta_raw_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301",
+    "current_delta_lines": 286,
+    "current_delta_lf_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 286,
+        "range_lf_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,280 @@",
+        "raw_hunk_lf_sha256": "7f2cdbf08bd3c5c3edc6059c88b33b06012735bb48c4aa24ab1d9dd1b3f05a20",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            281
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/test_coop_transition_policy.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/test_coop_transition_policy.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/misc/physfsx.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/misc/physfsx.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_android_shared.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 11924,
+    "current_delta_raw_sha256": "3c8f1b797d1ef5366b6dd816de59d33ae9b1d338e1219e643b0a5961ee73a75a",
+    "current_delta_lines": 256,
+    "current_delta_lf_sha256": "3c8f1b797d1ef5366b6dd816de59d33ae9b1d338e1219e643b0a5961ee73a75a",
+    "current_delta_hunks": 30,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 256,
+        "range_lf_sha256": "3c8f1b797d1ef5366b6dd816de59d33ae9b1d338e1219e643b0a5961ee73a75a"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -15,0 +16 @@",
+        "raw_hunk_lf_sha256": "92b947934c462175dded758064be5b64f3543677c62eeb93be1857626e99f3ff",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -27 +27,0 @@",
+        "raw_hunk_lf_sha256": "6299a97ba16ab16f8ba5a09ec4a688c8f947df132d60eb3bcbe3869813593e19",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -40,0 +41,45 @@",
+        "raw_hunk_lf_sha256": "c8cfd56dec2cbca6a5ef7a1cd8ac6c16c20bffab0bf53ee3d699788d20efae31",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            46
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -293,0 +339,24 @@ static int state_android_write_last_save_set(int coop, const char *pilot,",
+        "raw_hunk_lf_sha256": "889c307066a9b858c6df5f310c5eeb13b7255c44eb6549355762d8e6603a7940",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            25
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -308,2 +377,3 @@ int state_android_build_save_filename(char *filename, size_t filename_size,",
+        "raw_hunk_lf_sha256": "4a5d327e10985fa57dea558228f04a4c6325119946526d6985982ccee2638d52",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -315,2 +385,3 @@ int state_android_build_save_filename(char *filename, size_t filename_size,",
+        "raw_hunk_lf_sha256": "4564266a12bcf8e5c0975978a9c52fedf13038a5c03ea3ce3f28e7dd809f4513",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -373,21 +443,0 @@ static int state_android_autosave_precheck(int slotnum)",
+        "raw_hunk_lf_sha256": "257df42c5b93903ff277280e0e75095941730b718624892690085b18094143d2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            22
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -421,2 +471 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "752886855f5aad11758d4d33070d451376cbeb6220a735aa674b0a85eced3f8d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -425 +474,3 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "524d0be4e35d2ea51a33c6d1498061d62a8514a8efe046dac5796c3c9be9eaa8",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -428,5 +478,0 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "71e52a1705dd650e5727c2b17d0a19a2ea5bceb39e23e9cf1e86db2c3893ccfa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -434,4 +480 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "09834a3c6fbba4c07e7dcdb4dab3f44c6b4a54a9cab33ef43d0c7cbea7a402b6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -440,2 +483,4 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "dac50e5564d68b32372ddf941605ff9b4a48728d2b1abf6125015bc68090daab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -456,8 +501,2 @@ static int state_android_publish_save_slot(const char *temp_filename,",
+        "raw_hunk_lf_sha256": "68e6f07342b601d9366f631b36f60d595316ba49480f9c59cb5fc6e49d71c9af",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            11
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -498,0 +538 @@ typedef struct state_android_periodic_autosave_state {",
+        "raw_hunk_lf_sha256": "893c91e7bc7b368e77c6a2815921aa40d6150476dbd3fc9136d127a9f94dbc64",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -502 +542 @@ static state_android_periodic_autosave_state g_state_android_periodic_autosave =",
+        "raw_hunk_lf_sha256": "30aa9e3d1c510c7420740d3d5762270180047ac07cb85fa6d3aa9956844c7fa1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -504,0 +545,7 @@ static state_android_periodic_autosave_state g_state_android_periodic_autosave =",
+        "raw_hunk_lf_sha256": "6540b7bee00f2f4ffe7b8950f0eeac248da1907fcef13d9147176f8dfa456801",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -539,0 +587 @@ static void state_android_periodic_autosave_reset(fix64 now,",
+        "raw_hunk_lf_sha256": "3e5f9353e4398d38fd09da5fd6b530f27f6b83f32c142cd9ea76de274ed6f417",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -820,2 +868,6 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "fa9fd6dab67eb1e3ca01eade27d3febd9c57abd51ff43acd0fcc96facacebef9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -824 +876 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "72f0b21a3e15b8808a3b0fdd8f598b3930de713b7d7b1dec379abc365f630051",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -858,0 +911,5 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,",
+        "raw_hunk_lf_sha256": "cbc56d9a1a412006fddb839f16af2ef670706accac04c2fd4d0e50b87d1fcd89",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -921,0 +979,4 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "60f33e3716d1d41e5d5b2ebea60fa78161022640d748f5d5df95384c1868f2ee",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -936,0 +998 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "5e56f923c6fbf9bc5a4634ffe86d3359995588029ac32085372a31ac377a1497",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -938,0 +1001 @@ int state_android_save_to_path(const char *filename, const char *desc,",
+        "raw_hunk_lf_sha256": "6c4be33c60f3ab08d0a995863e6c61a723f79f2a9547f3e78df2d94db7bd5db2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -1103,0 +1167,5 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)",
+        "raw_hunk_lf_sha256": "9110a1a91bf4e8bec3bff68b5d9e1b8ce836599e499f62b1761d4646d3091af0",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -1117,0 +1186,4 @@ int state_android_restore_slot(int slotnum)",
+        "raw_hunk_lf_sha256": "ccd5deab82d39ab9c73b53c5f5d441186bbcc3f01f076091a942f0eacf09fe01",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -1170,0 +1243,24 @@ int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,",
+        "raw_hunk_lf_sha256": "2da42e94e93b993a27d86df653e7503f52dc6d4f1d0ed25aa84707df88e5a46d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            25
+          ]
+        ]
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -1197,0 +1294 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "f8114cae392d8c25e83ced39c445434515526fd422d42e1bda45a4f4cc56a90b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -1204,0 +1302,8 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "b4b36c940501edf129c37cf8ef6711b2d88e4b7f54486a8fe2d72d256b0b5df2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -1220,0 +1326 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "8c8fc50d2d991e84a0ee7ea8bc8825a7782911addfe0e22c9cc294f309e63137",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -1222,0 +1329,12 @@ void state_android_maybe_periodic_autosave(void)",
+        "raw_hunk_lf_sha256": "50a70eb98257bb8c4ba69003c119fb0b183b94c1811df579d9bee034223ca4b5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            13
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/tests/CMakeLists.txt",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 6136,
+    "current_delta_raw_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8",
+    "current_delta_lines": 98,
+    "current_delta_lf_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8",
+    "current_delta_hunks": 4,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 98,
+        "range_lf_sha256": "8cb0310bc3575e5a529226cbb5ffdd635f91a247ae913bfe617df974b58fbdb8"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -7,0 +8,25 @@ set(DXX_TEST_SHARED_SOURCE_DIR \"${CMAKE_CURRENT_LIST_DIR}/../app/src/main/cpp/sh",
+        "raw_hunk_lf_sha256": "defa122b5641533a634ab17600e9fbb83ce79daf02d819a400f6a14a5cf769bc",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            26
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -27,0 +53,23 @@ find_package(ZLIB REQUIRED)",
+        "raw_hunk_lf_sha256": "5fbd04b0e0c49c323c0888c9cb076cc990d6c516dcec15fdae9d8c33a7659c0e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            24
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -33,0 +82,37 @@ add_executable(test_rng_seed_resume test_rng_seed_resume.c)",
+        "raw_hunk_lf_sha256": "521252763d56a91e732a0e7eab3c7c14d57a5a38945c44d508a92336490b6186",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            38
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -202,2 +287,3 @@ add_executable(",
+        "raw_hunk_lf_sha256": "41bd0e75cc7e04f49f3c1bab0884f5c926392f65a60c46e4fd9c1b3836ffc212",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/object.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/switch.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 695,
+    "current_delta_raw_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c",
+    "current_delta_lines": 20,
+    "current_delta_lf_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 20,
+        "range_lf_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2254,0 +2255,15 @@ struct {",
+        "raw_hunk_lf_sha256": "c632a5e5fe8fdbb634f941fad10822fbe00bfade7d05ac317a662b88427c803f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_lines": 166,
+    "current_delta_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 166,
+        "range_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -29,0 +30 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "48c64f05add9003f65c6b6d0b62f9f7a17ea3cff2fa0b402a66d9f65858bdc79",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1601 +1601,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "be41a595cb8970c02b771bd73f909ace76dc29f8e48b2f5bb6f450dd6456549a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1606,7 +1606 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "5abe6c931544d274f092ebb7fb0b78aaa014d1d9b9f062dca09b7e3b4b30ffb4",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1722,0 +1717,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "1b313823fabed42dc82842e143296ee50c12ad2b3bd967cd81cbdd2ea295aff5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3680,139 +3675,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "f6fec461db9231693a2db59e6502630ef578089cd4ae10f5736090820096b9d6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            140
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -7314 +7171 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "581156f24f453a9373307a154f866c07452f1e2c081e6828b4fa151628b6ce85",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -7315,0 +7173,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "f145e86316ba56e35513735e6fdbdd29b7957177af02dae3358a4b803682e0a3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_save_set.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 499,
+    "current_delta_raw_sha256": "8501c07198d117f479d052bfbdc43552e3edf8bea68131f81f0926da119ab9f1",
+    "current_delta_lines": 7,
+    "current_delta_lf_sha256": "8501c07198d117f479d052bfbdc43552e3edf8bea68131f81f0926da119ab9f1",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "8501c07198d117f479d052bfbdc43552e3edf8bea68131f81f0926da119ab9f1"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -135 +135 @@ int android_save_set_build_secret_path(char *dst, size_t dst_size,",
+        "raw_hunk_lf_sha256": "9a23ffe44d7e14fb4ee3796170d1c53d1d4ed7689866d699a9d07f3dcf346535",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 25675,
+    "current_delta_raw_sha256": "57bfeeb37c28c97f0a25d8d957649df1667a3593e68608a6f6b8efe38e9826f7",
+    "current_delta_lines": 380,
+    "current_delta_lf_sha256": "57bfeeb37c28c97f0a25d8d957649df1667a3593e68608a6f6b8efe38e9826f7",
+    "current_delta_hunks": 31,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 190,
+        "range_lf_sha256": "7502f899c4259360007a4352f84f862d060460bb176fa231b60680b3d698cc4c"
+      },
+      {
+        "first": 191,
+        "last": 380,
+        "range_lf_sha256": "543022425c173c4627959276227d2d8f32b2103a11b5b34cf4b1bdc9e7641c9b"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -34,0 +35 @@",
+        "raw_hunk_lf_sha256": "2c4b90667993933f1fe7df495006ce1a8c5336e0ab197036d147212e8571e876",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -39,0 +41,2 @@",
+        "raw_hunk_lf_sha256": "b9e9176cbec232daf80ce1b8bc5eb42ba2ef1a2b26c5d337962d83e2d1627a69",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -42,0 +46 @@",
+        "raw_hunk_lf_sha256": "05e77be0c484c33f903169a2cf0a0c95d100fef672abcb4a728f69caca1c2dc5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -96,0 +101 @@ param(",
+        "raw_hunk_lf_sha256": "3a212acf0b5ea1696971444a35395d2bfacb9a181ae166d1086f19615e351c88",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -97,0 +103 @@ param(",
+        "raw_hunk_lf_sha256": "65d16f99481a0289f31a878f108ca21f4de74f2ebdce76cc210f7f4601b73525",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -108,0 +115,2 @@ param(",
+        "raw_hunk_lf_sha256": "21846358cad2fd6ecddec281450517c95000bc88d49dbd39f82cef0ad810d5d6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -150,0 +159 @@ param(",
+        "raw_hunk_lf_sha256": "bf18cb5f6ea0327c257bd255e14159ad1db93fcb77bfa7bad56b0cea6400818f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -327,4 +336 @@ if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object {",
+        "raw_hunk_lf_sha256": "92d9e7291e44354a157eac2f9e45adf23728fbe9d1b0b62eec6e438f0cfd87bb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -339,0 +346 @@ if ($GraphicsConfirmation) { . \"$PSScriptRoot\\..\\helpers\\test_graphics_multiplay",
+        "raw_hunk_lf_sha256": "4eb4ff34348d3b31e072d5b49e446aa366d2ef8c040e9dfe135a11625e0cfb67",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -514,0 +522,106 @@ function Get-IntroNumConnected {",
+        "raw_hunk_lf_sha256": "13a2cca16c828572aff2ca65f0343828a99ac37dc88748ed1a86a86aeddcd46e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            107
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -541,0 +655,2 @@ function Get-IntroPdataSequence {",
+        "raw_hunk_lf_sha256": "118ba832072cd323b261e3fae2cc08d2757abbe358e1325250f62221157b647c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -577,0 +693,2 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "013ec367cc0ea0e80b5a99e9ed54ffcac19cebe459a3ac4eb5e57088a546ca32",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -580 +697 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "2fb677d0aa33d34669862e88949556e58957e5494e9be6e33b099a98fcb70bac",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -595 +712,5 @@ function Get-DeviceAutomationResult {",
+        "raw_hunk_lf_sha256": "ff8a7b8da12237dd92190f6d95945c946bc6a40431464f2f32fca83b50b9548c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -1983,0 +2105,92 @@ function Set-DeviceCoopRestoreSlot {",
+        "raw_hunk_lf_sha256": "003b31445ad25ec1f2f7d99154c616bd8b8e04f2ce709aaab363c3cf181afc34",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            93
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -2319,0 +2533,50 @@ function Invoke-RestoreStatusScenario {",
+        "raw_hunk_lf_sha256": "eecfd77742cd5de452724d770a3326765194521971113b89de74df86bf36564e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            51
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -2369,2 +2632,15 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a46c41241e643804c0758df1871e309f15a0a416657e3439ebb7a0b86ebc63c7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            18
+          ]
+        ]
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -2374,2 +2650 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "791ec8834a9e3891aad556bba00fe509ffb2946cd13b440e2395b5819952e97f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -2382 +2657 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "0240c053232b77aa4293d8055fc21d477d660fe29a754a72e8759bbdefabc3fa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -2473 +2748 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a5be51f2d95285b3420e7fd587ba1b31f262d67dacfcfacde5246b7bcb19ac0d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -2531 +2806,2 @@ try {",
+        "raw_hunk_lf_sha256": "d8027bedfefd25b6bd15a6e347e8e424f345fdf1ad4124f1632bb0c8308ef47b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -2533 +2809 @@ try {",
+        "raw_hunk_lf_sha256": "f358b960471d973aa109e16b9df37b0baa04ae2af0d628812d32d43364f1ba14",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -2616 +2892 @@ try {",
+        "raw_hunk_lf_sha256": "7466180276ee5bb67564aef63f5ba87f6f6d99c9f7a021bdc44f53d77e2f4cb7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -2714 +2990 @@ try {",
+        "raw_hunk_lf_sha256": "036009338f2a1e5a2887b2b92149362969cb5c1b56f634912a75f1ff87381f73",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -3214,0 +3491,4 @@ try {",
+        "raw_hunk_lf_sha256": "1cb8fd5b041a1ce9b5ea777fcc83b725778ea86aaa88b3bc7c7100e1aafd48cb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -3246,0 +3527,3 @@ try {",
+        "raw_hunk_lf_sha256": "a767a9ab2e276db110a6ce4f40289e9d98ac4b8ac3cf1a7b881cb4750fb20aec",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -3264,0 +3548,4 @@ try {",
+        "raw_hunk_lf_sha256": "de4a7ba856c83b46323e76e980a90a93d0f689919f912f4e714ccb1c078cd278",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -3480,0 +3768,9 @@ try {",
+        "raw_hunk_lf_sha256": "3c66736e4149d62965df2d28d8f9f2968aadbd598341a4dded11461de92f6728",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -3488,0 +3785,7 @@ try {",
+        "raw_hunk_lf_sha256": "883558cd2bfefbbe93f74a9431dfd3ac439933f3163d9b434109c3bf4f80ae26",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -3495,0 +3799,3 @@ try {",
+        "raw_hunk_lf_sha256": "f4fde0f37dc60b53eda9bb335ac388d78cbd82d6f49cc72e060ef557bb5f8e3d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -3737,0 +4044,7 @@ try {",
+        "raw_hunk_lf_sha256": "81d5e80e0c6cb8390b16e0d34cfdb04af14a722b58ea502190bfd26758ccc088",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_arm.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_gate_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_normal_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_travel_normal_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_freezing.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_capturing.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_loading.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_committed.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_disconnect_release.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/tests/test_native_host_unit_tests.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1883,
+    "current_delta_raw_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_lines": 40,
+    "current_delta_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_hunks": 11,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 40,
+        "range_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -36,0 +37,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "67ca19e3b4e3a73eb529bc945ccfcf07a5f937292db1652c6277f556dc5d50aa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -40,0 +43,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "98b9467d170d5ddc0bdb4288e59dc81952357ad46475261a069f2e5647efc382",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -51,0 +56 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "e4aa647a325820f36435205d82cc1b249b4f0931231eb79f261683268e2403cc",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -59,0 +65 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "54754e37e540b63b3b57138e8adecf108a9ad3a69990795acc6b02fdb92ce718",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -68,0 +75 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "3bb0e72fce7db8ceab30c199c8f285197bac1b6633575960ede6c189d71f3a57",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -79,0 +87 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f0ab512cb53afe4413ddbc4da82f10828b427de8b6bdb681c5d1b796636ffd7d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -100,0 +109,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "bae990fce149dedfdf2ca4451ebfc0fae3086ce11dfb11d89f485eb093e56e43",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -164,0 +175 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "eac427e87ee5550cbfe50a637cab1ce16eba2630579c2174e4820a78e8afdc56",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -231,0 +243,12 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "30c1c390e43c615935f8f0bed6743afd94a2a67ba37b25ea02551e87907d6479",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            13
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -287,0 +311 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f6f82772793227cdd23db51e65ac17043afef6005ce4a5eb7f7d1eb3fd030615",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -296,0 +321 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "a2c8c1b86c1fd24d505846782e13bbff9710e0095f18271749c6570b86a34f56",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/run_all_tests.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3548,
+    "current_delta_raw_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c",
+    "current_delta_lines": 53,
+    "current_delta_lf_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c",
+    "current_delta_hunks": 10,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 53,
+        "range_lf_sha256": "6a93a14791b05b119e3e35a618c6af1b6d174b687d8542358443e598ad95916c"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -397 +397 @@ $manualTests = @(",
+        "raw_hunk_lf_sha256": "734b3382912abcdcab489623b3e3abdcb24e9a803b1d71363950be94a10770bb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -402,0 +403,21 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "99a570084ccf395302b62ed3c34ce9c8bde1324c2658ebdbf4f6fc56849b01db",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            22
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -440 +461 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "9e78a0c1abd4ba4a2b57def5a3d395711918a2bde38739c6ced00874fd7fbf38",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -452,0 +474 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "501848db89bd407bc9e15584bea9389cbf6fb973659ee02774cbfaff9caa0461",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -461 +483,2 @@ $testTimeouts = @{",
+        "raw_hunk_lf_sha256": "4cc420aafc8e98389e3776a60efd68f7a522755e096d4e87f9a10f069fddfd65",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -586,0 +610,3 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "61691f7e4924b15d77fab96cd26ac2eca7182ae1acc628f21bc147ec084dcb5a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -610,0 +637 @@ $noInfraTests = @(",
+        "raw_hunk_lf_sha256": "01082ca958d6999a3df75226761cab11b05a8a40fcaf3e931d25ffd9ea35b7ee",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -1561 +1588 @@ function Invoke-SuitePreflight {",
+        "raw_hunk_lf_sha256": "53e5eb3c51b9e6a010e70be58e45729aabe55a7836704bfbaef39094157072a8",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -1727 +1754 @@ $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt",
+        "raw_hunk_lf_sha256": "db240c7120df965ede054885d1c2028e7188f367b7d7b0268b1e0678db1978ac",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -1755 +1782 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {",
+        "raw_hunk_lf_sha256": "9a21a277c8d20918b2f73b3e39042fdd6e8de2ecb3d10143a91e94bce62c3837",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/escort.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1376,
+    "current_delta_raw_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705",
+    "current_delta_lines": 37,
+    "current_delta_lf_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705",
+    "current_delta_hunks": 8,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 37,
+        "range_lf_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2056,2 +2055,0 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)",
+        "raw_hunk_lf_sha256": "fb6116be1accb834ee09ce688d3e7ee6c618cbd881a81dccc20dcd3a96ba78cb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -2062,3 +2060 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)",
+        "raw_hunk_lf_sha256": "ff5cdc8b43ec12eae1300c63d676040df41abca518f22c5ba3bbc207274953c3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -2151,0 +2148,4 @@ static void escort_restore_companion_robot_control(void)",
+        "raw_hunk_lf_sha256": "6af4b3235076f059a602608b145f36e8146c9294d95fefa8fc9f54b710973250",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -2181,0 +2182,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "eb0765e26770a8557aa94a17e3e75893b271165479fd019d3d037a3b0f4dcd2c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -2191,0 +2195,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "fef56b990adb87480140fcb225d6b53686613651543da29e7b5245d64df04115",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2192,0 +2199,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "ab0bc5b9caf0df283f53fbcf047b04194d93b82d31bc98d73c72ddac97b8108f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2205,0 +2215,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "3078354a927f2f2d4c6cf777ad305f0b7eafebaebee2727771a1c03c44a09b11",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2206,0 +2219,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "82cfef1a5ae4511d9d2352153900ae31b4c4574c23d77d403c8b765627babbb7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 27734,
+    "current_delta_raw_sha256": "fabed0dfaeee7ec8e8e450a06dd9e3f8ecb92d44a21d4854e9e028090a7e7ba5",
+    "current_delta_lines": 525,
+    "current_delta_lf_sha256": "fabed0dfaeee7ec8e8e450a06dd9e3f8ecb92d44a21d4854e9e028090a7e7ba5",
+    "current_delta_hunks": 8,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 260,
+        "range_lf_sha256": "2917f6aefb8739a58f7ac5809cde2eb3d5c5b44098813bd357e831433763d047"
+      },
+      {
+        "first": 261,
+        "last": 525,
+        "range_lf_sha256": "b771d9f8aee0147a1f999505959f1fce1a675814c94ee7a04eca1a3a2f121bd0"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -57,0 +58 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -85,0 +87,5 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "412b0e1ea1a60be26f84eb3e5fef097b311104121c38b115df2224fbc200af59",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -88,0 +95,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "915ce06f65d05a0f3525ed421304a688404e368d37a71e84693d297481b5fb74",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -132,0 +142,2 @@ extern int Entered_from_level;",
+        "raw_hunk_lf_sha256": "5936ef7bdd1f361b9e2f51533c7099994129007abc4b038f5e13b94d4130cdce",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -4162,0 +4174,39 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6b870170e0b60c2d2cdf364e06f31df17b69316a2569191775656ac07f2bb948",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            40
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -6029,0 +6080,435 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "1d06ff97aa3c07bbcb4848b08136aa16dcaae37143e9eada47d23ef59c1c4d6c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            436
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -6056 +6541 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "06a8fee7b2ede6ef551948a7a4638473099a9c5c32bfb51c3f36ca6de0b87c6d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -6063,0 +6549,26 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "aa1b5f445dcf0ff247fb4fc341019ff7c6641b9d114b3f9097b04b09d8e7d8a8",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            27
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3730,
+    "current_delta_raw_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_lines": 81,
+    "current_delta_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_hunks": 17,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 81,
+        "range_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -663,0 +664,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "0e5183265030957e608b692ad37805ebb01f1c9569d962917e7e322cfcfca474",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -689,0 +693,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "35ef9103863a6bcecf8f57cdd0b45b6f95bc2d52476583c72fdb5d037eac40c6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -718,0 +727,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b48f89ef09f5afcfb9186c942269f98ce619badbc5bcb99ab55bac25317691e6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -719,0 +731,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "c02a531a0d1c146f43dfb134f20dea3191b00704080288edc61fa15f27f23669",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -729,0 +746,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "4ceff2573515aa31ede522d061986010175a1a0fdefce5768fa9ffaf8904d398",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -730,0 +750,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "362e38cc66239523952c080f3595317a69cd7fe6adc4d1ca8b0a3131d47d3899",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -967,0 +993,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "ab8a9feeeaf48e365d292a541a6c5e14d64070b1cf10fd6b36a5253d8ed0af27",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -968,0 +1001 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "aebee41ff9de7a9766934a5d6a2dd211f4a1477bed4278983f26d44570ad1d36",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -7350,0 +7384,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "8e9d6408bf0b665bb027983f9d5b1750f15543c2cab80b52ee7cd7164b1e33ce",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            14
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -7360,0 +7407 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "aa51adecdbdec0d2625aed4a99ca9d55e0623a17119b91592d89fe586e375cab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -7379,0 +7427,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "933a4357c995dc8d37e04057ba969d64f5d2bf2a5fba15f1a96f25443f9a678b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -7380,0 +7431 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "1757472f8da5e75bd68668ad5a385422a7f5844904335bd39485bc2e7af69e36",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -7396,0 +7448,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "c0bd0c729af0924a89d36575fb68bad7826a9493291befbb3ceb9e28622f6816",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -7397,0 +7452 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b96c5d6cc1bb0c1fafb658199ff60af345749ed05cec235acb77d2ba880d8b55",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -7409,0 +7465,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d60058544aca1fab899f62af253036ad4afaa7fee3a98e40534cc84f228f3328",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -7410,0 +7469 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "52b29ecd8b7785e3922c3879a27c08c92f6e63e5048d5873c72956d219ed7295",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -7434,0 +7494 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b3b8dcb7a26f7424c409802370d59c6b45290eaebbb66e28e81fb55b5a84efab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_prepare_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_prepare_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_travel_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_released.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_docked.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_prepare.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_dead.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_alive.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_navigation_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_redeploy_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_dock_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_lines": 165,
+    "current_delta_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 165,
+        "range_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -25,0 +26 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "dce535e9289d4504765bcf1d506d452503feb0c0ba92112a4cf23937c6acea25",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1531 +1531,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "930bc83ddd098b518943a0b4abfdef903d5a203271156fcc7cd26b943991ecf6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1536,7 +1535,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "701bbc97a0d45bb7b38f1f194bc28b0410586c8e072fffb801256ae3c12b5b76",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1650,0 +1644,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "779d6294de776d052b00f38a50509cda24e01cb94ce2063a87547396be65372f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3469,139 +3463,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "1ddfd807fff7df1793c8fadefce0440a447fbdfa891140c8fd912efdd5e5ab37",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            140
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -5587 +5443 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "0aad15b1da2aa8ca3c9b3ef485b76a0775cb17382616a2f1e6e91a0a54f6855f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -5588,0 +5445,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "225548a874f6a2032c0cd7fd13d593f3472d058000701c2f504e99da7d5b987a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3602,
+    "current_delta_raw_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3",
+    "current_delta_lines": 73,
+    "current_delta_lf_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3",
+    "current_delta_hunks": 9,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 73,
+        "range_lf_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -1076,2 +1075,0 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "0b4f54e544b0135e068d4300320a451f8f2637b34e2d696c653bbd542ff89961",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1079 +1077,2 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "5b0ba67b2566b92d1b290a48be267711e1fe7a0b17d7c436695e217338aba5a2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1892,0 +1892,2 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "4ce134082aca5015eb9e00797ec62849d275278d4e0350046cd64027f1b5e607",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1895 +1896 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "147ce4be26b83fcd9c373861e8a2c800fddd654a2f354a7082f192aa4e2e95a1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1897 +1898 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "c3dacede583844d6d112af5ae67dc44e353debb159e10b9b6cab4d279e107205",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2247 +2248,32 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "523c56a8de6d9eb594fd23364877a679933d3bd3f8f6c6581d12e487a5d8091e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            34
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2252,5 +2284 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "8c048760feae14b545b732a31cf5872598dfd6878bcf6f017808afce8c835374",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2262 +2290 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "3e77014099edf8d754b2fda986bf7d6eadfee68692fab50afa5c26074af180f5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -2265,5 +2293,3 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "b267f4badd58ce0c892bf59da5ae7c128be21ea24e0a2b7d6a7e21d8c60ebd43",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d1/main/CMakeLists.txt",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1296,
+    "current_delta_raw_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a",
+    "current_delta_lines": 24,
+    "current_delta_lf_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a",
+    "current_delta_hunks": 3,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 24,
+        "range_lf_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -6,0 +7 @@ set(D1X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "5c037e8c22e2a99840276aaa66ed74236db0c93accb3a9a0eb87b9645eee6f03",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -99,0 +101 @@ set(D1X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "e0625e247f67c2167f1712142107e1eb4f3d6404b4104615ee9c0d38ccf40da0",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -332,13 +334,2 @@ install(TARGETS dxx-redux-d1 RUNTIME DESTINATION .)",
+        "raw_hunk_lf_sha256": "0331cfd2f40241f84a28c58335290f4705922c194fb4633fc176636f252f8daa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/CMakeLists.txt",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1380,
+    "current_delta_raw_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042",
+    "current_delta_lines": 26,
+    "current_delta_lf_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042",
+    "current_delta_hunks": 4,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 26,
+        "range_lf_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -16,0 +17 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "5c1ff567fca9e3d6c5fdfa880153c4283f50487de72b425b77ba5ce898915ca3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -105,0 +107 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "23f1fd172d537aa3b4ea4014435811a5effc115885055790dbbd1d1bf023b8f1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -130,0 +133 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "e73eb6ed8b6b237fc7813acc1e36287418251400dbff2f5b5e14ad6447fc7fe6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -411,13 +414,2 @@ install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)",
+        "raw_hunk_lf_sha256": "4c4090d69896121c9dae72ad093f68918b860a563abf5ba01e86ac3da2b0be8f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_save_set.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 332,
+    "current_delta_raw_sha256": "10f93a4112b7141e284c631a528b1028ff9a10eebf4fcacc742784bc33c9db80",
+    "current_delta_lines": 6,
+    "current_delta_lf_sha256": "10f93a4112b7141e284c631a528b1028ff9a10eebf4fcacc742784bc33c9db80",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 6,
+        "range_lf_sha256": "10f93a4112b7141e284c631a528b1028ff9a10eebf4fcacc742784bc33c9db80"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -8,0 +9 @@",
+        "raw_hunk_lf_sha256": "6eeb3c3f6420361ef277131f2425c1eea8e07904c2a7e852e4c94b1a4d291855",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  }
+]
+```
+
+## Canonical owner reading
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/branch_adversarial_review_ledger.md",
+    "prepublication_whole_source_sha256": "5d3b3546092545d246084591a968933f966e1676fc7c47e79163cfafe142b5fa",
+    "read_lines": [
+      {
+        "line": 11693,
+        "text": "### BR-0082: P2 - Validate metadata-backed save bodies before offering Resume",
+        "line_lf_sha256": "addad6dbb44331e8679e057c518a58a6dcf4214eeb300c1e7d2ed0f979068a13"
+      },
+      {
+        "line": 11694,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 11695,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 11696,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 11697,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 11698,
+        "text": "- Category: correctness/input-validation",
+        "line_lf_sha256": "dbefaa1e59b8a6773926a18d3db0c154b5603589f2e07647260c250c1d4f39e7"
+      },
+      {
+        "line": 11699,
+        "text": "- Found by: R1-CHUNK-0041, R1-CHUNK-0266",
+        "line_lf_sha256": "c1ec30d0e056c9ec1e83ca590325d0acef003c0ee6d40897d4c243ef6ada3af4"
+      },
+      {
+        "line": 11700,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_resume_save.cpp:L378-L399,L444-L497,L611-L656` in `read_resume_candidate`, candidate selection, and `save_explorer_slot_json`, with paired startup callsign readers at `d1/main/state.c:L2568-L2617` and `d2/main/state.c:L3376-L3425`",
+        "line_lf_sha256": "ed2512e64a05281405ead35a7d2a4533aaa2b60b213a57c8cf8c630572023ab9"
+      },
+      {
+        "line": 11701,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_save_meta.c:L151-L183,L233-L279`, `android/app/src/main/cpp/shared/android_resume_pilot.c:L90-L156`, `android/app/src/main/cpp/shared/startup_resume_shared.c:L40-L88`, `android/app/src/main/cpp/shared/coop/coop_save.c:L580-L621`, `d1/main/state.c:L1930-L2045,L2513-L2617`, `d2/main/state.c:L2048-L2207,L2569-L2720,L3319-L3425`, `android/app/src/main/java/com/dxxredux/app/SaveExplorerBridge.kt:L40-L78`, and `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1857-L1921`",
+        "line_lf_sha256": "2a617ee86ba64d0633334e914dfb3869e110a085eb3f25db21c51ed8020bed06"
+      },
+      {
+        "line": 11702,
+        "text": "- Evidence: `read_resume_candidate` treats a schema-valid Android metadata trailer as sufficient proof that the entire file is a loadable save. `android_save_meta_read_path` seeks only to the trailer and validates its tag, version, enum ranges, and thumbnail shape; it never reads the DGSS magic, save version, game-specific header, mission, level, or any body byte. Candidate selection and Save Explorer therefore advertise a file whose body is truncated, corrupt, cross-format, or arbitrary whenever its final metadata structure remains valid. Kotlin trusts the native candidate and launches the selected game, which only then asks the full engine restore path to parse the unvalidated body. The separate legacy parser cannot mitigate this case because it runs only when metadata is invalid. A branch-produced manual cooperative save is a concrete non-corrupt instance of the same mismatch: `.mgN` files with real metadata callsigns pass `read_resume_candidate`, but the cooperative writer inserts `state_game_id` and `CALLSIGN_LEN+1` bytes between version and description. The new paired `state_get_save_file_callsign` helpers and normal startup restore both assume description follows version immediately, so they parse the cooperative body 13 bytes early. The helper's apparent player callsign begins at the saved mission terminator and is empty for the normal eight-byte mission field, while `state_restore_all_path` starts with non-multiplayer `Game_mode` and cannot select the cooperative header branch.",
+        "line_lf_sha256": "635a17707d6584a0f202ea035396150ef8c8f8894a13594e2df8f16e2d01ccae"
+      },
+      {
+        "line": 11703,
+        "text": "- Trigger: Corrupt or truncate the body of an Android save while preserving its metadata trailer, append a copied valid trailer to a save-slot-named non-save file, encounter a save write or restore whose body is inconsistent with its surviving footer, or create a manual cooperative `.mgN` save under a real callsign and select it as the newest or Save Explorer resume candidate",
+        "line_lf_sha256": "ba40fe634c58c5fcd5c22d4ba67b137278fdee24f3ee7b360b4702ebb7ba2d74"
+      },
+      {
+        "line": 11704,
+        "text": "- Impact: The launcher can rank and offer a corrupt or unsupported-layout file as the newest or highest-progress resume, hide a usable older candidate behind it, and hand malformed state to a large engine deserializer instead of retaining the file as an explicit orphan. In the ordinary cooperative case, the advertised Load action predictably cannot recover the saved session and can first derive the wrong pilot identity from misaligned body fields.",
+        "line_lf_sha256": "f0ea0fe4dc529bf50b00102d0d860497d18cc7d819d5794498436eee10b921a9"
+      },
+      {
+        "line": 11705,
+        "text": "- Expected: Metadata is descriptive, not proof of body validity; every offered candidate passes game-specific save-header and structural validation, including its single-player or cooperative scope, and an invalid or unsupported body remains visible only as a non-loadable orphan with a precise reason",
+        "line_lf_sha256": "588f8a599feacfc8738ee964ca3aca647997a443796b9460f3b357769cb574a4"
+      },
+      {
+        "line": 11706,
+        "text": "- Suggested fix: Centralize a side-effect-free D1/D2 save validation API owned by the engine readers and require it for metadata-backed and legacy candidates before ranking or exposing Load. At minimum validate DGSS magic, compatible version, expected game and scope-specific header layout, complete mandatory reads, mission termination and availability, and plausible level fields; do not duplicate a weaker launcher-only parser. Encode or derive cooperative scope explicitly and either exclude cooperative saves from single-player startup resume or implement a dedicated cooperative-session restore path; make callsign extraction use the same validated layout parser.",
+        "line_lf_sha256": "b92cc96ff3b035b3697a832b2aaeee04d82b0f82380a7f796421f0c4de49b404"
+      },
+      {
+        "line": 11707,
+        "text": "- Validation: Add native-to-Kotlin fixtures with valid metadata plus valid single-player and cooperative D1 and D2 bodies, valid trailers on wrong-magic and random bodies, truncation before and within mandatory fields, a cross-game body, invalid mission termination, and a corrupt body that preserves timestamp and progress metadata. Include manual cooperative saves with real callsigns and sentinel autosaves in flat and save-set paths. Assert corrupt and unsupported-scope files never become Resume or Load candidates or displace the newest valid save, while any deliberately supported cooperative path reads its header, callsign, mission, and level at the correct offsets and launches only with established multiplayer session state.",
+        "line_lf_sha256": "fae18961dc2cb65feeb06cf4f902db4ae81d102643ae39c7c3a653a59bf60d36"
+      },
+      {
+        "line": 11708,
+        "text": "- Verification (2026-08-10, sol-5.6-medium): CONFIRMED, with the remediation boundary narrowed. Frozen `android_save_meta_read_path` seeks from EOF and validates only the packed trailer and its enum/thumbnail fields (`android/app/src/main/cpp/shared/android_save_meta.c:L233-L279`); `read_resume_candidate` then publishes it without reading byte zero (`android/app/src/main/cpp/jni_resume_save.cpp:L378-L399`), and both newest/options selection loops rank that result at L444-L497. This is directly reproduced by the maintained native metadata test: `android/tests/test_android_save_meta.c:L5-L20,L78-L173` writes the literal non-DGSS body `base-save-body` before valid D1/D2 trailers and expects those files to parse and compete for newest selection. The launcher recursively collects both `.sgN` and `.mgN` files and converts the selected metadata directly to Resume JSON (`jni_resume_save.cpp:L39-L84,L744-L829`), while Kotlin's metadata-backed fixtures start from trusted candidate DTOs and do not disprove native body admission. The paired restore paths validate `DGSS` and only a game-specific minimum version, then read the header, load the mission, set time/player globals, and continue deserializing (`d1/main/state.c:L1930-L2085`; `d2/main/state.c:L2569-L2750`); startup invokes them only after launch through `startup_resume_shared.c:L57-L82`. They have no side-effect-free complete-body validation API or rollback wrapper. Complete preflight cannot be implemented by merely reusing `read_save_header_preview`: D1 version 15 and D2 version 29 share `DGSS`, the preview has only minimum-version gates, cooperative writers insert `state_game_id` plus a nine-byte callsign before description (`d1/main/state.c:L1697-L1712`; paired D2 L2075-L2089), and later DGSS sections are version-gated, count-driven, and unframed. The feasible local fix is therefore two-part: immediately require a scope-aware paired header probe and exclude cooperative layouts from single-player Resume; for newly written metadata, version the trailer to carry the exact pre-trailer byte count plus a digest computed over the complete DGSS/cooperative prefix, and verify both before ranking. Existing unhashed saves can remain inspectable and use only the explicitly weaker header-qualified legacy policy. A true semantic complete-body validator would require a separate staged-reader refactor and must not be simulated by calling the mutating restore. Focused tests should retain genuine paired D1/D2 single-player saves, reject the current literal-body fixtures, copied trailers, prefix truncation/bit flips, version-crossed bodies, and `.mgN` candidates, and prove invalid high-timestamp files cannot displace a valid older candidate.",
+        "line_lf_sha256": "1b42825bbd2ca7470d447ea2de69a1f4931f74a3d29e970aaf857af03ee94344"
+      },
+      {
+        "line": 11709,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 11710,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13447,
+        "text": "### BR-0206: P1 - Stage multiplayer restores before applying any peer",
+        "line_lf_sha256": "28c59ee9eb7721b1fe6023a7431396c75423080503d160109a5273ffe6279bae"
+      },
+      {
+        "line": 13448,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13449,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13450,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13451,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13452,
+        "text": "- Category: correctness/multiplayer-synchronization",
+        "line_lf_sha256": "d4e30ca72e57b19ab44b4cedd6f4b9821ca2c676ad3380fa1921816bb5732f2c"
+      },
+      {
+        "line": 13453,
+        "text": "- Found by: R1-CHUNK-0107, R1-CHUNK-0204, R1-CHUNK-0274",
+        "line_lf_sha256": "a9bb990507b0793ddf15f222ad1e751a28f60d7d772b92e384333c82509c6e28"
+      },
+      {
+        "line": 13454,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_rewind.c:L398-L436` in authoritative restore and `android/app/src/main/cpp/shared/multi_save_transfer.c:L188-L258,L573-L610` in client and host rewind application",
+        "line_lf_sha256": "2cda2d940b5cf268c5b0fc84511fe34be17fd8763326e3b526fd4505693e5cf9"
+      },
+      {
+        "line": 13455,
+        "text": "- Related: `d1/main/state.c:L1704-L1709,L1980-L2003`, `d2/main/state.c:L2081-L2086,L2648-L2675`, and `android/app/src/main/cpp/shared/state_android_shared.c:L710-L735`",
+        "line_lf_sha256": "2d8e660a5d6ad74f654b00509f5aaab6cf46fdaa47153bcf3a419c29a8300dbe"
+      },
+      {
+        "line": 13456,
+        "text": "- Evidence: A cooperative rewind snapshot is serialized on the host and its save header therefore contains the host's callsign. Each client receives that buffer with `snapshot_index = -1` and calls `android_rewind_restore_authoritative`, which always calls `state_restore_from_memory`. The paired D1 and D2 restore code rejects a cooperative save whose recorded callsign differs from `Players[Player_num].callsign`; only `state_restore_coop_from_memory` enables the authoritative remap exception. Thus every normally named non-host client rejects the host snapshot before restoration. Independently, `multi_perform_rewind_request` restores the host first and only afterward calls `multi_send_rewind_save_transfer`. An active transfer or allocation failure makes that setup fail immediately, and a later ready, packet, checksum, disconnect, or timeout failure can abort it asynchronously, but the function merely logs setup failure and returns the host's successful status with no rollback. Even the success path lets the host simulate from the rewound state while clients wait for the complete transfer and apply command.",
+        "line_lf_sha256": "7e40681640e19d65d130d2bac6e97e21e696459b347cfbfc94d8685516e69def"
+      },
+      {
+        "line": 13457,
+        "text": "- Trigger: In a cooperative D1 or D2 game with at least one client whose callsign differs from the host, perform a rewind; or make transfer allocation, setup, readiness, delivery, checksum, or timeout handling fail after the host selects a point",
+        "line_lf_sha256": "26b37d76a4cd12f953346ae1cb635dff65eb52cbe950080c3a59cfc4443650ee"
+      },
+      {
+        "line": 13458,
+        "text": "- Impact: The host rewinds while clients remain on their prior world generation, and ordinary packets can cross between incompatible object, player, wall, RNG, and game-time states. The session can immediately desynchronize, reject subsequent state, disconnect peers, or crash in gameplay that assumes shared object identity; the advertised cooperative rewind cannot complete for the normal distinct-callsign case.",
+        "line_lf_sha256": "959877c1e1fa2ec03cd6523b875a784909f17c5035193907585f4188406a7257"
+      },
+      {
+        "line": 13459,
+        "text": "- Expected: Every required peer validates and stages the same authoritative snapshot before any peer resumes from it, and all peers either apply one generation at a coordinated boundary or retain the prior state.",
+        "line_lf_sha256": "e0f2d7e7b52777920ff9b88531d9a83063dfa0bc32b2380dcaa848331268bc37"
+      },
+      {
+        "line": 13460,
+        "text": "- Suggested fix: Use the cooperative authoritative restore mode for received rewind images, but make that only the apply phase of a two-phase protocol. Copy and validate the snapshot on every required peer, pause or generation-gate simulation and incompatible packets, collect readiness, then apply host and clients at one coordinated boundary and acknowledge completion. Abort before mutation if staging fails; define disconnect and apply-failure recovery rather than logging after the host has committed.",
+        "line_lf_sha256": "83c7276486377883787751b98f59f84525a340ea0378a0ae2fcd37b32cdabddd"
+      },
+      {
+        "line": 13461,
+        "text": "- Validation: Run paired D1 and D2 sessions with a host and multiple distinct-callsign clients, rewind during active object, wall, score, and RNG changes, and compare complete synchronized state after resume. Inject allocation failure, an already active transfer, lost and reordered begin/chunk/apply packets, checksum mismatch, slow readiness, timeout, disconnect before each phase, and client restore failure; assert every run either applies exactly one common generation or leaves every survivor on the prior generation with no cross-generation packets.",
+        "line_lf_sha256": "713c38ca07f7b2ec964d5ef434141fe42b417eb9df067500ccff4388f27bdfb8"
+      },
+      {
+        "line": 13462,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L215-L233,L397-L463` in cooperative save acknowledgment and host application",
+        "line_lf_sha256": "ce55cb4da27320266b3f8b3bcc20052501a739abcbc5b87d4e1198e85517df1e"
+      },
+      {
+        "line": 13463,
+        "text": "- Additional evidence (R1-CHUNK-0204): The same non-atomic protocol also governs an ordinary cooperative save restore. After checksum verification, each client sends `MULTI_SAVE_TRANSFER_READY_APPLY` before `multi_prepare_restore_sync` and before calling `state_restore_coop_from_memory`. That call is fallible and mutates live state while parsing, yet the client sends no success or failure result afterward. The host records the pre-call packet as `applying_players[pnum] = 1` and, once every required slot has merely entered that branch, resets transfer state and calls its own `multi_restore_game`. A client allocation, compatibility, parse, or partial-restore failure therefore cannot veto the host: the host and successful peers commit while that client remains old or partially mutated. A client that returns failure also resets and discards its receive buffer without telling the host that application failed.",
+        "line_lf_sha256": "cc3536bc6110611bfbbf2411637a209e096f6a242a102e2724e7db9d9ef45861"
+      },
+      {
+        "line": 13464,
+        "text": "- Additional validation (R1-CHUNK-0204): Cover host-selected cooperative save restoration as well as rewind in the all-peers-or-none matrix. Inject a valid-checksum image that fails parsing on exactly one client, failure before and after live mutation, delayed restore, disconnect during apply, and host local restore failure. Require a distinct staged-success acknowledgment before any mutation and a post-commit result or recoverable generation protocol; assert the host never interprets branch entry as success and every survivor either commits the same save generation or resumes the untouched prior generation.",
+        "line_lf_sha256": "54fd4d38372ba230c0d9c253a51cc96830b35e384b9d86ae2e26d7a180c38054"
+      },
+      {
+        "line": 13465,
+        "text": "- Additional location (R1-CHUNK-0274): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/multi.c:L6824-L6852,L6915-L6962` in restore dispatch and host initiation, with `android/app/src/main/cpp/shared/multi_save_transfer.c:L477-L545` in transfer setup and pending-state reporting",
+        "line_lf_sha256": "857ca3e686f354097f742eec4327bebe11e548bf66751cd1176692ef60433eb4"
+      },
+      {
+        "line": 13466,
+        "text": "- Additional evidence (R1-CHUNK-0274): Every cooperative restore-transfer setup failure, including disabled packet-loss prevention, save open, size, allocation, read, or active-transfer failure, returns zero. `multi_send_restore_game` interprets that zero as permission to broadcast the legacy `MULTI_RESTORE_GAME` packet, and `multi_initiate_restore_game` then observes no active pending transfer and immediately calls `multi_restore_game` on the host. The legacy packet carries only a slot and game ID, not the host's authoritative save image; with per-player save namespaces, peers can lack or reject that local slot while the host has already committed. Thus a setup failure that should abort before mutation instead starts a host-only generation and exposes the same cross-generation traffic and failure modes as the later apply failures already tracked here.",
+        "line_lf_sha256": "be1fecc411617ee3d14384cb52e4520250951d4469339c692156a48c04d22fe2"
+      },
+      {
+        "line": 13467,
+        "text": "- Additional validation (R1-CHUNK-0274): In paired cooperative restore tests, inject each setup failure before any begin packet: packet-loss prevention disabled, missing or unreadable host save, zero and oversized file, allocation and short-read failure, and an already active transfer. Require no legacy restore packet, no host or client state mutation, no score or object traffic from a new generation, an explicit failure result, and a cleared or recoverable transfer state; retain the no-connected-client case as the only path allowed to restore locally without a transfer.",
+        "line_lf_sha256": "374854abc7f0c560bf6d21394e5983b7f1a4615add1fdd750fc4e81b298ae38a"
+      },
+      {
+        "line": 13468,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13469,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13364,
+        "text": "### BR-0195: P1 - Authenticate cooperative state-packet authority",
+        "line_lf_sha256": "07fb04931803da2bfa3f77daf88120c0eb0bf3163b631495387cf495d9f72c23"
+      },
+      {
+        "line": 13365,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      {
+        "line": 13366,
+        "text": "- [ ] OPEN",
+        "line_lf_sha256": "b51f310dfc99aa47b58cba7fed1dcfd6b13bab97a2e98b391a97d32ca57cef17"
+      },
+      {
+        "line": 13367,
+        "text": "- Type: defect",
+        "line_lf_sha256": "c35c251f5479984ecc3bbf292b2b96bf30c6e0e55e1ed672b025c4eb0125e918"
+      },
+      {
+        "line": 13368,
+        "text": "- Confidence: high",
+        "line_lf_sha256": "666adfafe63b7fd4e579910b19eecf81f6e25bc211a7165f4bffdf849ca7e334"
+      },
+      {
+        "line": 13369,
+        "text": "- Category: security/protocol-integrity",
+        "line_lf_sha256": "c87bc12d04938b23d85891fd138abd8d5e08e509e780ccdf0fdaefedfc316861"
+      },
+      {
+        "line": 13370,
+        "text": "- Found by: R1-CHUNK-0101, R1-CHUNK-0119, R1-CHUNK-0122, R1-CHUNK-0141, R1-CHUNK-0204, R1-CHUNK-0238",
+        "line_lf_sha256": "971604baa33672161954e4924ff6d5134643f4e0be056602b4ae9279820ec194"
+      },
+      {
+        "line": 13371,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/coop/coop_multi_status.c:L75-L82,L159-L192`; `android/app/src/main/cpp/shared/coop/coop_warp.c:L333-L365`; `android/app/src/main/cpp/shared/multi_save_transfer.c:L79-L84,L770-L805`; `d1/main/multi.c:L3323-L3346,L5707-L5708`; and `d2/main/multi.c:L3486-L3509,L7620-L7621` in cooperative packet application",
+        "line_lf_sha256": "172a75a221f2748ad742195287dd26a7bce86fbe8185a724e3a2c263a74e52c8"
+      },
+      {
+        "line": 13372,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_rewind_policy.c:L39-L47`, `android/app/src/main/cpp/shared/difficulty_runtime_shared.c:L76-L117`, `d1/main/multi.c:L5567-L5708`, `d2/main/multi.c:L7355-L7621`, `d1/main/net_udp.c:L6721-L6804`, `d2/main/net_udp.c:L6881-L6958`, and BR-0080",
+        "line_lf_sha256": "e0dea2314f818bab87a06bcc59f55cfa207ccacb25d3a033bac74f9cd65e2aa7"
+      },
+      {
+        "line": 13373,
+        "text": "- Evidence: The new handlers trust identity or authority encoded inside the multiplayer payload. `coop_do_peer_status` writes the claimed slot's kill statistics without comparing it with the authenticated outer UDP sender. More seriously, `coop_do_restore_inventory` checks only that the claimed target equals the local player, then applies attacker-controlled energy, shields, score, laser level, weapon flags, twenty ammo values, durable flags, lifetime statistics, and time totals. `coop_warp_do_packet` similarly accepts a payload-selected warper slot, valid segment, and coordinates, then moves and relinks that claimed player's object without requiring the claimed warper to match the authenticated sender. The paired `multi_do_difficulty` handlers likewise authorize solely by comparing the payload's claimed sender byte with `multi_who_is_master`; a non-host can copy the public master slot into byte 1 and choose any admitted difficulty. The handler then changes live AI, weapon, damage, scoring, history, `Netgame`, HUD, and player-default state and writes the receiving player's profile. Rewind requests add the same identity flaw: `multi_do_rewind_request` treats payload byte 1 as the requester, checks only that some connected or waiting player occupies that slot, indexes its one-second throttle by the claimed slot, and sends results to that slot. On the host, the UDP layer authenticates a peer only against the outer `pnum`, then forwards the complete inner message to every other player before local dispatch. D2 carries that authenticated slot into `multi_process_data_from_player` but passes it only to a later escort-owner handler, not to these cooperative handlers; D1 discards it before dispatch. A non-host peer can therefore send a valid restore packet with another player's slot in byte 1, a warp packet claiming another connected player and arbitrary accepted destination coordinates, a difficulty packet claiming the master, or rewind requests that cycle through other connected slots. The host accepts and relays the state packets; recipients apply the trusted-host copy to live state, while forged rewind identities bypass the intended per-client throttle and misdirect results. The same path lets a peer attribute arbitrary status totals to another slot. BR-0080 covers unsafe ship-status indices and their memory-safety impact; this finding covers the distinct identity, authority, and cooperative state-integrity failure in the new message types.",
+        "line_lf_sha256": "c8a87b2ce6745f0bda03d1c2ae27bcb060e3cf137bcfc570ea756bc009784ba7"
+      },
+      {
+        "line": 13374,
+        "text": "- Trigger: Join an Android cooperative D1 or D2 game with a modified peer; send `MULTI_COOP_RESTORE_INV` through the normal multiplayer channel with the victim's player number and chosen record fields, send `MULTI_COOP_PEER_STATUS` with another connected player's number, send `MULTI_WARP_TO_PLAYER` with the victim as the claimed warper and chosen valid segment and coordinates, send `MULTI_DIFFICULTY` with the master slot in byte 1 and an attacker-selected value in byte 2, or enable client rewind requests and rapidly send `MULTI_REWIND_REQUEST` while cycling byte 1 through connected player slots",
+        "line_lf_sha256": "cbc4d9a564068ff26c902f1669d8db83c2fee48d5702d22ecccf3701e21c3ab7"
+      },
+      {
+        "line": 13375,
+        "text": "- Impact: Any admitted participant can remotely replace another player's combat inventory, score, progression totals, and selected durable state, falsify another player's cooperative statistics, teleport and relink another player's object, force the global difficulty and persist that forced choice as each recipient's default, or bypass the rewind requester's per-second throttle in proportion to the number of occupied slots while attributing requests and responses to victims. Invalid semantic values such as an out-of-range laser level or unverified warp position also enter engine state, so later gameplay operates on state that the normal inventory, save, and warp paths never produce.",
+        "line_lf_sha256": "99445a430c89d53fa6ea654973803b5038171956ba9521eb58501a901a429c5f"
+      },
+      {
+        "line": 13376,
+        "text": "- Expected: Peer-status, warp, and rewind-request identities match the authenticated sender, inventory restoration and difficulty changes are accepted only from the current authenticated master in their valid phases, throttling follows the real peer rather than a payload claim, and every decoded field and destination is validated before one atomic state update.",
+        "line_lf_sha256": "973dc0dd682a466fde99a910f1444e3b6d9489bcbb97284c76be46fd4d2077ce"
+      },
+      {
+        "line": 13377,
+        "text": "- Suggested fix: Preserve the authenticated outer player through D1 and D2 multi-message dispatch, pass it to every cooperative handler, require peer-status, warp, and rewind-request identity to match that sender, index rewind throttling by the authenticated sender, and require restore and difficulty messages to originate from `Multi_master_playernum`, with restore additionally requiring a pending local rejoin. Require cooperative mode and a connected playing sender, validate warp position semantics before mutation, decode inventory into a temporary record, validate every field against game-specific limits, then commit once. Ensure the host rejects and does not relay unauthorized packets and that rejected difficulty messages cannot reach player-file persistence.",
+        "line_lf_sha256": "bedd22be5b674e1f9af740f01c9c63c2e8d2c533917055a5736e58439afc5db8"
+      },
+      {
+        "line": 13378,
+        "text": "- Validation: Add paired D1 and D2 protocol tests with separate host, sender, victim, and observer identities; cover valid self-warp, host restoration and host difficulty changes, valid and throttled client rewind, non-host restore and difficulty forgery, mismatched peer-status, warp, and rewind identities, rewind slot cycling, forged outer and inner slots, arbitrary warp segment and coordinates, host relay, direct and reliable delivery, stale restoration outside rejoin, and boundary plus invalid record fields. Assert rejected packets are not forwarded, do not rewrite player files, do not consume or bypass another peer's rewind throttle, and leave all player, object, segment-link, cooperative-stat, difficulty, history, and default-preference state byte-for-byte unchanged.",
+        "line_lf_sha256": "a9cf61e1c418995f3c7b235fc4a7c644fc439d6d082ed3a7f0d419b2f934dc77"
+      },
+      {
+        "line": 13379,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L174-L185,L674-L750` and the closing handlers at `L751-L809`",
+        "line_lf_sha256": "a6afb9bfc6fccdbc4a83907a4934f9c9f5de58ec06ca67417d7360d5eeff6718"
+      },
+      {
+        "line": 13380,
+        "text": "- Additional evidence (R1-CHUNK-0204): Transfer authority is unauthenticated in both directions. Every non-host client accepts `BEGIN`, `CHUNK`, and `APPLY` based on local role and an eight-bit transfer ID, without proving that the original sender was the host; because the host authenticates and relays a peer's outer packet before these inner handlers run, a participant can supply a self-consistent size, FNV checksum, chunks, and apply command that recipients treat as an authoritative host rewind or save restore. Conversely, the host's ready handler trusts payload byte 2 as `pnum`; a different peer can claim a victim slot in both a buffer-ready message and the later apply-ready message, advance both readiness flags, and make the host transmit or restore without the victim reaching either phase. Requiring reliable delivery does not authenticate the inner authority or claimed slot.",
+        "line_lf_sha256": "d1689616fa890530d5ae96e6e051dcd5a6a6ad9a5a6a1833c2207591292c497a"
+      },
+      {
+        "line": 13381,
+        "text": "- Additional validation (R1-CHUNK-0204): Extend the paired protocol matrix to all four transfer messages. Inject `BEGIN`, every `CHUNK`, and `APPLY` from a non-host with a valid attacker-computed checksum and a host-looking payload, and forge `READY_BUFFER` and `READY_APPLY` with another client's slot. Assert the host drops these before relay, clients accept transfer phases only from the authenticated current host, ready phases update only the authenticated sender's slot, and no allocation reset, payload publication, restore, readiness transition, timeout extension, or HUD success occurs for rejected traffic.",
+        "line_lf_sha256": "f4e1aa5d9a5e5b1c5ff3f84cd41afb3aa5a50fc949201b5338ec056df60cf3b1"
+      },
+      {
+        "line": 13382,
+        "text": "- Additional location (R1-CHUNK-0238): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/multi.c:L4810-L4962,L5567-L5677`; paired `d2/main/multi.c:L6331-L6482,L7362-L7514`",
+        "line_lf_sha256": "58d07eaaf61bd68c91cb3e4df03c1b9735b04fa135a1d64da58c3de324fc67f7"
+      },
+      {
+        "line": 13383,
+        "text": "- Additional evidence (R1-CHUNK-0238): Android changes damage and repair from observer-directed status into broadcasts received by every cooperative peer, then adds ordinary-player branches that write `Players[buf[1]].shields` without checking that byte 1 is in range or matches the authenticated outer sender. Both commands have fixed accepted sizes, so a participant can send a correctly sized packet with a victim's slot and chosen `new_shields`, or use `0xff` to write beyond `Players[]`. The host's UDP path authenticates only the outer player, forwards the untouched message to other players before local dispatch, and does not compare the inner slot. D1 discards sender identity in `multi_process_bigdata`; D2 carries `authenticated_sender` into `multi_process_data_from_player` but calls both handlers without it. Thus one admitted peer can corrupt every recipient's cached shield state or trigger network-reachable native memory corruption. This is the same missing authenticated-sender binding already tracked here; BR-0080 covers the analogous ship-status-specific indices.",
+        "line_lf_sha256": "a09ebc52ab610d5a49ebc2267c3ffc4ab63eebbc0bf6a08003d5ea2614d6c061"
+      },
+      {
+        "line": 13384,
+        "text": "- Additional validation (R1-CHUNK-0238): Add paired D1/D2 cooperative packet tests for valid self damage and repair, a different connected slot, `MAX_PLAYERS`, and `0xff`, over reliable and ordinary delivery with host relay and observers present. Assert the host rejects mismatched or out-of-range inner slots before forwarding, recipients derive the target only from the authenticated sender, legitimate updates affect exactly that sender, all rejected traffic leaves `Players[]` and adjacent sentinels unchanged, and AddressSanitizer reports no invalid access.",
+        "line_lf_sha256": "4801ea86d12fec6a30df528c088d7f60b58477396a79574fefef4d63c57e4feb"
+      },
+      {
+        "line": 13385,
+        "text": "- Additional location (R1-CHUNK-0248): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/net_udp.c:L948-L1010,L1049-L1075,L6013-L6063,L7476-L7526`, with paired `d2/main/net_udp.c:L7660-L7710`, and `d1/main/multi.c:L2723-L2802`",
+        "line_lf_sha256": "f23b3caae86c298e639943df8fec2ed76c1f856d44d831064813aa0c62285b5a"
+      },
+      {
+        "line": 13386,
+        "text": "- Additional evidence (R1-CHUNK-0248): The branch changes P2P ping handling from refreshing slot zero only for an observer host to refreshing the current master's `LastPacketTime` for every ping whose payload-selected `from_player` equals `multi_who_is_master()`, describing that claim as proof the host is reachable. P2P ping admission validates the fixed packet size and shared netgame token, but does not bind `from_player` to `sender_addr`; the existing route-trust flaw was present at the base, but the branch newly uses that unauthenticated identity as a host-liveness credential. Any admitted peer can therefore continue sending valid pings that claim the departed master. Each ping resets the timestamp before `net_udp_timeout_check` can call `multi_disconnect_player(master)`, and that disconnect is the path that invokes Android cooperative host migration or reports host loss. A malicious or faulty survivor can hold every recipient that hears the forged heartbeat on the dead-host roster indefinitely instead of letting the session recover.",
+        "line_lf_sha256": "536deaad1080a4b78247d6b7f23ddd0e497feda1dbb3bb33104dca0cea9caa24"
+      },
+      {
+        "line": 13387,
+        "text": "- Additional validation (R1-CHUNK-0248): In paired D1 and D2 direct and proxy tests, disconnect the current host while another admitted peer sends P2P pings claiming itself, the host, another survivor, and invalid boundary slots. Require only an address- or authenticated-route-bound host packet to refresh host liveness; forged host claims must not change any `LastPacketTime`, route, loss, or connection state and must not delay the bounded timeout, deterministic master election, or explicit host-loss exit. Repeat after migration with a nonzero master slot and with observer-host mode.",
+        "line_lf_sha256": "306bc8602beeb8a7b92a3a3493dc885edcca926f61ec116de7208b55f8d6022c"
+      },
+      {
+        "line": 13388,
+        "text": "- Resolution: Pending",
+        "line_lf_sha256": "9283e8d2b02a60dd95afcd32c737e52c949ba2cc15180e9d8967d03ca1e1d976"
+      },
+      {
+        "line": 13389,
+        "text": "",
+        "line_lf_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "15f69dbb829c366ac486b52f98c3e1183a1dd53bb4b4f8a177dd26fe2418cfff",
+    "read_lines": [
+      {
+        "line": 145,
+        "text": "| 17 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0262` | `TODO` | `GQF-0276` | Extract paired active saved-player restoration |",
+        "line_lf_sha256": "62a66e1c907e011dab403fd99b4e4883b482d3346214a75687b3f880bca09f15"
+      },
+      {
+        "line": 342,
+        "text": "| 214 | 44 | MEDIUM | 23/0/7/10/4 | `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes with conservative persisted ownership |",
+        "line_lf_sha256": "90c38bf6a658394cbedc768e8cfb93e1822a407b4bbce5efefde934abbf2816c"
+      },
+      {
+        "line": 8131,
+        "text": "| `GQF-0275` | `OPEN` | P2/high | correctness/cooperative-recovery-liveness | shared coop_recovery.c; paired disconnect/join cancellation | Returning gear owner snapshots a third active peer in freeze_waiting; peer leaves before matching REC_FROZEN, same-host retries never terminate and recovery save/world readiness remains blocked. Only receipt clears individual bits; ordinary disconnect/frame/join cancellation does not. Source-supported trigger, no runtime repro. GQR0261 bounded connection-bound attempt cancellation and persisted uncertain-pickup reconciliation plan |",
+        "line_lf_sha256": "82171761fe800ab504237bfcf9e56b3bf072b1e1b6ecb2c1eef413e211e42442"
+      },
+      {
+        "line": 10951,
+        "text": "| `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes without duplicating gear | Shared connection-bound attempt lifetime with explicit participant-loss/join-cancel/bounded failure outcomes. Preserve known pickup intersections; resolve and persist uncertain remainder within existing recovery ledger before regrant or save/world progress. No blind mask prune, forgotten gear or indefinite global save block. Maintained actual native timer/participant, stale reply/slot reuse/persistence/migration and real three-peer same-host LAN readiness/inventory/save/restore acceptance. Plan plan_gq2_0122_recovery_freeze_disconnect_20261009.md; design prerequisite, no implementation/runtime result |",
+        "line_lf_sha256": "7028ac8605f2b58536b9017063b7b254c9c68caef59a43ea1ff7402841fa50bb"
+      },
+      {
+        "line": 11369,
+        "text": "| GQ2-CHUNK-0124 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/coop/coop_travel.c` | L1-L750 | - |",
+        "line_lf_sha256": "75313c2477c26626682009e888a00b605ff27d2b366d27422ba9a895e7e01cac"
+      }
+    ]
+  }
+]
+```
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0124 cooperative travel diagnosis 20261009 -->
+
+### Chunk0124 terminal diagnosis handoff, 2026-10-09
+
+- Allfive gates complete. Independent audit PASS: exact assigned frozenL1-L750/enclosing1-770of1677partial/current1683whole;119actual chronological ranges/55physical36whole/55complete current unified0deltas/72canonical lines in2owners. Assigned full addition hunk explicitly partial, no whole frozen-file reading inferred. Manifest4350/rawidentity/blob/base/original absence and source/range/delta/hunk/checksum bindings verified.55live source identities still match retained snapshot at audit; no outstanding live drift.
+- Immutable reportSHA256 4638b9d87b705b95ea5f684a2c2829afc3c1571c7d53e87b498b3cb32873740c; scope 6c6dae3b1648a572a2ce1a79fba05316c2c41dad9d65ddbe24d720c9f7179e74. Exact fiveJSONblocks/full imported body verified. GQC1093ISSUES/GQD0973NO_INHERITED_EFFECT/CURRENT-RECONCILIATION-RETAIN/0124DONE; existing GQR0261REFERENCE44 unchanged. BR0082/0195/0206 remain OPEN, GQR0262separateTODO. No new primary owner/finding/rating/candidate or applied saving; assigned branch-added travel absent1996original, zero assigned inherited saving.
+- Fiveadded semantic rows/one oldTODOqueue row removed; all other table/product semantics retained.262unique contiguous sorted fix ranks unchanged;1080terminal ranks follow established score/H/M/C/R/ID ordering. Inherited/resume raw baseline prefixes preserved; evidence raw prefix/exact report import verified; active/archiveBRbytes unchanged. Historical stale body ranges remain explicitly excluded from current reading credit.
+- No product/source/test/script edits, execution/build/device/probes, staging or commit. Concurrent product work preserved. Maintained assertions/registration/partial authority are not runtime/full semantic acceptance.0116historical inherited-byte audit debt remains separate; numbered queue265DONE362TODO; overall goal active.
+- Next numbered scope0125 shared/coop/coop_travel.c frozenL751-L1500. Read exact assigned source anew;0124whole contextual source evidence does not silently complete0125assignment. Pending remaining numbered/supplemental/sweeps/final-head/worktree supplements/closure all required.
+
+<!-- BEGIN IMPORT: GQ2-CHUNK-0125 cooperative travel continuation diagnosis 20261009 SHA256:4b2e6f8b97046c7abad4ff86f7f1c5c3a15118b8fecb28c149d81c33728ff43e -->
+
+## GQ2-CHUNK-0125 cooperative travel continuation diagnosis 20261009 imported evidence
+
+- Original workspace path: `temp/general_cleanup_20261006/gq2-review-0125-20261009.md`
+- Imported SHA-256: `4b2e6f8b97046c7abad4ff86f7f1c5c3a15118b8fecb28c149d81c33728ff43e`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ2-CHUNK-0125 cooperative travel continuation diagnosis 20261009
+
+Diagnosis and plans only. Gates1-4 complete; publication and independent canonical audit pending. No product/source/test/script changes or execution, staging or commit. Historical0116 raw-byte audit debt remains separate; overall campaign incomplete.
+
+Assigned frozen coop_travel.cL751-L1500of1677, actual enclosing750-1677partial. Current enclosing752-1683partial1683file with additional explicitly listed contexts; no whole current travel source credit. Base/originalABSENT, zero assigned/applied inherited saving. ScopeSHA 868634707d1ed9d7ec4c3c3378df458ed492f495cfca56b5c452738f92fb67c7. Manifest4350/rawSHAe98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4. Frozen base7877ad30d05887b8e19869ed4c50075e41e2f88e/headb4997ac4115a3b2ac6d6cf0b8e1459675a7744ef; originalfb555eec75e1ed12c8348805ab335afb4c721b06. Reconciled HEAD666c9e0754a5943a8ce506fa1c16e98ed2b836c3. Retained snapshot temp/general_cleanup_20261006/gq2-0125-evidence-snapshot-20261009.json/rawSHA49a653d6711b59639c7c492198c471b1be488fe31b299787680c8104af53e00d.35physical contexts/98actual chronological current source ranges/16whole/35complete unified0current deltas/71canonical lines in2owners, all independently matched live before report preparation. Hashing/snapshotting supplies no unrecorded reading credit.
+
+NO_INHERITED_EFFECT/RETAIN; impact44 MEDIUM(H/M/B/C/R=23/0/7/10/4), existing GQR0261REFERENCE only. No new finding/candidate/owner/rating/safe extraction or applied savings. Preserve shared Android travel/policy/portable/campaign/checkpoint/arrival owners and narrow native physical/death/companion hooks, formats/comments/desktop guards. GQR0262 paired saved-player extraction35expected inherited lines/twoeditedhunks remains separate unimplemented proposal.
+
+## Ownership and failure boundaries
+
+Assigned restore requires exact owned retained source bytes/readiness/disk comparison, recovering owned pause/generation+1 and actual sourcecampaign/native restore before portable survivors. Capture/stage/transfer allocate detached/copy buffers before publication, so caller frees are supported; no demonstrated selfalias failure in actual producers. Checkpoint publishes after temp close/fsync/reread/rename/parent sync. Parent-sync failure follows rename, an explicit durability boundary; processrestartdiskreload is not shown. Portable/world/arrival/companion mutations remain fallible and sequential; later failure belongs outer rollback/all-survivor acceptance.
+
+Campaign codec bounds counts/world sizes/total archive, validates reserved fields/exact extents/checksum/sorted unique levels/mission/generation, publishes owned detached candidates and preserves old candidates on decode failure. Native world loading validates nonrecursive footer/fresh admission, merges carried stats/effects/life/serial/omega/dropinventory with world counters/map after native load. Structural container validation does not certify native DGSS-body semantics.
+
+Shared transfer copies before publication, preserves source visit for checkpoint/campaign, reserves destination/rollback visit and recoveryepoch, admits captured waiting rollback participants, uses reliablewindow/rate/idle/total limits and applies only at real frame boundaries. READY_APPLY for world/rollback precedes native call, while travel phaseACK separately requires actual applied/restored/failure state. Recovery cancels old WORLD..CHECKPOINT transfer without canceling newROLLBACK. Actual frame prunes departed travel participants, bounds phase waits, captures before consuming trigger, cancels in-flight work before rollback and suppresses success ACK on failure. This does not repair uncertain recovery-freeze ownership.
+
+Paired network bigdata parsers validate fixed228byte command extent; UDP packet dispatcher checks stamped MDATA size before receiver data[5]/token access on inspected routes. Host relays transport before innerdispatch, clients observe host-address identity, BEGIN/CHUNK/APPLY innerhandlers carry no original authenticated sender. Nonce/source/generation/phase checks are not cryptographic authorization. Existing BR0195 originalsender/pre-relay/hostauthority acceptance remains OPEN; no duplicate root or whole-network memory-safety claim.
+
+Native physical crossing captures authored wall before legacy broadcast, pauseowner retains COOP|OPERATION in multiplayer and rejects resumeloadmenu during travel. Arrival planner searches atmost32connected segments, enforces surface/obstacle/ship separation and returns explicit failure before caller movement; subsequent companion rebuild may fail after ship mutation. Native reappearance hook intentionally precedes legacyPKilledFlags rejection to support reappear-before-explode. Older samevisitdeathcycle concern needs concrete deliverycounterexample; do not infer safe reordering or harmlessness.
+
+## Fixtures and existing owners
+
+Actual rollback/dying/physical/companion leaves, automation assertions, paired GUID-correlated terminalPASS runner and optional LAN selection were read. Oracles check retainedcheckpoint, actual postload rollback/gearbindings, campaign/world/portable/life/serial, zero arrival motion/separation/MAXroster planner, conditional reciprocal guard, one settled death, single companion owner/health/control/navigation and actual history archive generation. Rollbackwaiting test requires captured waitingpeer and actual one dropped rollbackchunk. Optional flags/registration are not standard execution or complete failure matrices; no tests/builds/device/probes run.
+
+BR0082 metadata/body admission,BR0195authority andBR0206all-survivor staged restore/failure convergence remain OPEN. GQF0275/GQR0261freezeOPEN/TODO44 requires conservative persisted uncertainpickup reconciliation, not blind participant pruning. GQF0276/GQR0262extractionOPEN/TODO57 unchanged. All existing statuses/ratings preserved.
+
+Current pairedmulti extracts reactor/matcen, removes periodicblocks/adds exitsave and rejects legacyfallback; UDP profiling does not change travelrelay admission. Concurrent cache/deferred checkpoint/absentinventory/history/secretpair work and periodic/crash/byteequality/independentpeer/background assertions are reconciliation context, not product acceptance. Complete checkpoint worker source was read, but dependencies and native worker failure/durability matrices are not fully audited. Campaigncache invalidates at mutation and save writer retries invalidcache, so ignored refresh return at travelcommit alone does not demonstrate a silent successful omittedcampaign. Changed travel leaves extend preparation90to300seconds/LAN270to600seconds only. Historical0116 byte audit debt and remaining campaign chunks/supplements/sweeps/final-head closure stay open.
+
+## Assigned frozen source and attribution
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "assignment": "frozen source L751-L1500",
+    "assigned_first": 751,
+    "assigned_last": 1500,
+    "base_lines": 0,
+    "frozen_lines": 1677,
+    "current_lines": 1683,
+    "base_blob": "-",
+    "head_blob": "b5a673bb06b6f7b3827bb64275939b10be4cbe78",
+    "original_blob": "ABSENT",
+    "base_whole_source_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head_whole_source_lf_sha256": "6498b92b5908e662ed4001d6bb80a42b95fd36d11c9960ddfebf25dd826ffe73",
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "base_whole_read": false,
+    "head_whole_read": false,
+    "current_whole_read": false,
+    "total_frozen_hunks": 1,
+    "assigned_hunks": [],
+    "assigned_partial_hunk": {
+      "ordinal": 1,
+      "source_first": 751,
+      "source_last": 1500,
+      "whole_hunk_complete_read": false
+    },
+    "frozen_diff_lf_sha256": "f759a8070e366ce6b2eec94b36f753cfc0d8928be8f79bddff1784781c718a5b",
+    "manifest_raw_sha256": "e98f92caee38b30d0eebdd558e5739a7dd1ea58a025700914e8d51030a941bd4",
+    "frozen_read_ranges": [
+      {
+        "first": 751,
+        "last": 1000,
+        "range_lf_sha256": "89a8e7eb9f4c6df20b7417867d0aac29ac994f3fc6b2a93294f9497434cbed5c"
+      },
+      {
+        "first": 1001,
+        "last": 1250,
+        "range_lf_sha256": "2cf3cf5381e85e4ca81b5d7685d9c72c4383059a9e0e5767b9409f802e623c22"
+      },
+      {
+        "first": 1251,
+        "last": 1500,
+        "range_lf_sha256": "90d881e62b953d037a12c2e28e65697e8972f3b5affaea02de524a5cf6238289"
+      },
+      {
+        "first": 750,
+        "last": 750,
+        "range_lf_sha256": "ce897abaac55d756b5b5bbff7a39b48e9b79f190b6a1e17914f7e6d25cbb188d"
+      },
+      {
+        "first": 1501,
+        "last": 1677,
+        "range_lf_sha256": "dce6ec993be1c5e992e4802e1ad3b4046da68730a7523abaf18b6aaaf80b2ad0"
+      }
+    ],
+    "assigned_payload_lf_sha256": "19078e34ad79b0c0e9dcb5b0494d3f36007bafacd999f6f2d640c83c23b7b587",
+    "assigned_payload_complete_read": true,
+    "whole_frozen_file_read": false,
+    "current_delta_raw_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_whole_read": true
+  }
+]
+```
+
+## Assigned manifest fingerprint
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "status": "A",
+    "old_path": "-",
+    "base_mode": "-",
+    "base_blob": "-",
+    "head_mode": "100644",
+    "head_blob": "b5a673bb06b6f7b3827bb64275939b10be4cbe78"
+  }
+]
+```
+
+## Exact current physical reading contexts
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_lines": 1683,
+    "current_whole_source_sha256": "95d66835bef5aa0e1c05b8c738c5225593ef7afa0ea98f35fa40c0d5feab7026",
+    "actual_read_ranges": [
+      {
+        "first": 752,
+        "last": 1050,
+        "range_lf_sha256": "30e0589195a4fecc4c48bbc1ad1067d8187e3e82a0de27a864369b55ee00f102"
+      },
+      {
+        "first": 1051,
+        "last": 1370,
+        "range_lf_sha256": "cb14e8637276f764f85ae344ab14802fb986c639027cc664f172b41f9f33b062"
+      },
+      {
+        "first": 1371,
+        "last": 1683,
+        "range_lf_sha256": "046aef14f8a604a41a7fca827b258a23cdc3a9fe2f41fe71647dcfd0dfb50709"
+      },
+      {
+        "first": 599,
+        "last": 751,
+        "range_lf_sha256": "79db1d75737ef2a8c94cdefc507805c8628cfa2b7bd304c2a972bbea8c8b519b"
+      },
+      {
+        "first": 204,
+        "last": 274,
+        "range_lf_sha256": "316f047db830fe558dd18f339babb714b95a15854ca1d93a1ad453b3a843a767"
+      },
+      {
+        "first": 537,
+        "last": 598,
+        "range_lf_sha256": "392454b8a3b7bbe39b0ff300dc50c90567947ca50f6a192a91f30ccee27b6c8d"
+      },
+      {
+        "first": 275,
+        "last": 275,
+        "range_lf_sha256": "412ca345ccf75bf9c0806bce695be8de808b79984251a7a54d202cf6101dd451"
+      },
+      {
+        "first": 505,
+        "last": 536,
+        "range_lf_sha256": "2dc5bdef2007cbf0d73c8859e64c617028513069762105b8b3eca755535e7303"
+      },
+      {
+        "first": 1,
+        "last": 32,
+        "range_lf_sha256": "95b9dc98a6f17ff7d3df308b4b29ac93590a3161a2414613b16f1ae0495c1e44"
+      },
+      {
+        "first": 1382,
+        "last": 1402,
+        "range_lf_sha256": "d606bc57e7aad2834430811bd2d292b9e753faf0e633ebd97aa4c3e5f844a5a1"
+      },
+      {
+        "first": 1403,
+        "last": 1406,
+        "range_lf_sha256": "ef6e48e9a4f10ab23f7d97600d8d7711527cf2dec425b4cb64db6d06400ab882"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 32
+      },
+      {
+        "first": 204,
+        "last": 275
+      },
+      {
+        "first": 505,
+        "last": 1683
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_lines": 1532,
+    "current_whole_source_sha256": "6503fc084ee4237ede76c305ece77ebcecf2e3858a80ecb3d57114392cb0d185",
+    "actual_read_ranges": [
+      {
+        "first": 397,
+        "last": 501,
+        "range_lf_sha256": "94db2425f436dae77d0ab5f9c1e7f5823f05ebacaf374ed408eedb56ab2b7d96"
+      },
+      {
+        "first": 548,
+        "last": 646,
+        "range_lf_sha256": "5c6b9478f99156cea48848787911a1c733efc0d3fb5a6e62eaa3df105f398f58"
+      },
+      {
+        "first": 1087,
+        "last": 1177,
+        "range_lf_sha256": "94c7ee1ef7fe56e6fd84a54879fd24db563a4792941cd11db0d77da39806b8c0"
+      },
+      {
+        "first": 501,
+        "last": 547,
+        "range_lf_sha256": "a92cc6cc121bd370b64a1c6cda6a0f6766f7ca66887aa849c99e92ea7a10883b"
+      },
+      {
+        "first": 748,
+        "last": 970,
+        "range_lf_sha256": "f8e0822435a0e5091092c0ccb235150648cc49c74f604d2d7ef253994ba0a8f0"
+      },
+      {
+        "first": 260,
+        "last": 286,
+        "range_lf_sha256": "439611d2630bfd42b5fe15773f213c4d637485b87fffe861c85654784c327fe6"
+      },
+      {
+        "first": 729,
+        "last": 747,
+        "range_lf_sha256": "286020c0cae5a9370b217d9b268684cabc83eee17eec83dabb29b2dad7812db1"
+      },
+      {
+        "first": 971,
+        "last": 990,
+        "range_lf_sha256": "0dc5e5330eccc1e02548696450d2bc3d14b008748cd689476324221c6502bec7"
+      },
+      {
+        "first": 1343,
+        "last": 1532,
+        "range_lf_sha256": "995b3e25cf519b091f68fe017bb511a013098ce312140c39328a60b320230ca1"
+      },
+      {
+        "first": 151,
+        "last": 177,
+        "range_lf_sha256": "47fddeb9c60928e2213914683888eb88daa8a3441e60d4fd283c20a7397c569c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 151,
+        "last": 177
+      },
+      {
+        "first": 260,
+        "last": 286
+      },
+      {
+        "first": 397,
+        "last": 646
+      },
+      {
+        "first": 729,
+        "last": 990
+      },
+      {
+        "first": 1087,
+        "last": 1177
+      },
+      {
+        "first": 1343,
+        "last": 1532
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_lines": 6338,
+    "current_whole_source_sha256": "ef8d6a57383f1a8dbf3f4940b3c595d9cd40ca8c7cc61cc90f437ecd85bb508a",
+    "actual_read_ranges": [
+      {
+        "first": 5750,
+        "last": 5798,
+        "range_lf_sha256": "bcf41c601592a8ca9729d1abfd4c22f40cf7201c3aad6e819de05a10444be143"
+      },
+      {
+        "first": 5910,
+        "last": 5933,
+        "range_lf_sha256": "5204cf3ae584b85590e4c6c859d221dc38b163fc32d9b8e42d397e9082783dc7"
+      },
+      {
+        "first": 5798,
+        "last": 5820,
+        "range_lf_sha256": "abf9b593b1ebd947bab226f9ae7c85567e25535d0bc95d23c8924f73dc9ef148"
+      },
+      {
+        "first": 5933,
+        "last": 5947,
+        "range_lf_sha256": "b460c92b068f8b48d3bb3388586f6b69d5374da871a9fe98de90d9aaf3f49ce0"
+      },
+      {
+        "first": 3355,
+        "last": 3405,
+        "range_lf_sha256": "21786096f8a7464f224ddf75fb2868e3e937f5f6103416db516183a48931e75d"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 3355,
+        "last": 3405
+      },
+      {
+        "first": 5750,
+        "last": 5820
+      },
+      {
+        "first": 5910,
+        "last": 5947
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_lines": 8383,
+    "current_whole_source_sha256": "544b3bfbcf4446f5b80f5894d53f10bb15bca848efb5f334b648d57bc933989e",
+    "actual_read_ranges": [
+      {
+        "first": 7758,
+        "last": 7820,
+        "range_lf_sha256": "57b775f93e9ef9b344cee5daf704d6fd6f9e15811a0204b6349dfb410572c80a"
+      },
+      {
+        "first": 7920,
+        "last": 7945,
+        "range_lf_sha256": "360328a83fccbc4567736bd157291bd2a5ce99597a6cb5a4aad6e5b64f28320a"
+      },
+      {
+        "first": 7943,
+        "last": 7960,
+        "range_lf_sha256": "943808cb39bcd87c8b32c01d885be884e159e5de623aa5e5e63efa3da30c2a5c"
+      },
+      {
+        "first": 3571,
+        "last": 3615,
+        "range_lf_sha256": "aed14c160ef23605d54bf27ed82c73dad103cd0ecd977128807d61214d50d29b"
+      },
+      {
+        "first": 3616,
+        "last": 3622,
+        "range_lf_sha256": "0e7c8b578960bcbefce9d55088216bcb33a908af932b71b4387b03fa1ce46d1c"
+      },
+      {
+        "first": 1244,
+        "last": 1285,
+        "range_lf_sha256": "cddd599d69ba49615a3395356334f4d8deaa1716c441eff25a5c91a40a3f8fe6"
+      },
+      {
+        "first": 2500,
+        "last": 2540,
+        "range_lf_sha256": "715d03fd550618f84c4e40892650066f7bac26bbca66577e3d9737c222cd7360"
+      },
+      {
+        "first": 2715,
+        "last": 2740,
+        "range_lf_sha256": "9a75d7c8040c0ca7cde9a07ac55b15367eea7ea23ac35dfa3ce420750375f6de"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1244,
+        "last": 1285
+      },
+      {
+        "first": 2500,
+        "last": 2540
+      },
+      {
+        "first": 2715,
+        "last": 2740
+      },
+      {
+        "first": 3571,
+        "last": 3622
+      },
+      {
+        "first": 7758,
+        "last": 7820
+      },
+      {
+        "first": 7920,
+        "last": 7960
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer_policy.h",
+    "current_lines": 115,
+    "current_whole_source_sha256": "5660688db86114453067b704eb8eef16e5ef538eb5fb5c827a13956e327bcf66",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 115,
+        "range_lf_sha256": "5660688db86114453067b704eb8eef16e5ef538eb5fb5c827a13956e327bcf66"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 115
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/multi.h",
+    "current_lines": 805,
+    "current_whole_source_sha256": "54cde196ec8ecc87a691fb2bfba5839c9dd9678870fdabaa4f8842f2cba5879d",
+    "actual_read_ranges": [
+      {
+        "first": 160,
+        "last": 170,
+        "range_lf_sha256": "47096f1362ebb08374ba8787de14fd27a7cbb62a6c71bb59a691262512962579"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 160,
+        "last": 170
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/multi.h",
+    "current_lines": 884,
+    "current_whole_source_sha256": "8d295eef071078800235acc0666a6b22cdfc91c6243071911df5de4963521486",
+    "actual_read_ranges": [
+      {
+        "first": 187,
+        "last": 197,
+        "range_lf_sha256": "14b06a809eb667c0de2e7aa6b119b24facefd1996e2252140d012ceb6c4dd78c"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 187,
+        "last": 197
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_lines": 2445,
+    "current_whole_source_sha256": "4a000d47e1c07604893c00f4eafce29d7e97341c33ed8a6057f95a4bea37de5f",
+    "actual_read_ranges": [
+      {
+        "first": 215,
+        "last": 290,
+        "range_lf_sha256": "92e78cea1d6476e20c06e3719701aec53b2451be48941d686dc102a9bccb1eb4"
+      },
+      {
+        "first": 432,
+        "last": 569,
+        "range_lf_sha256": "9e0f0d36b68405e8e1900c6baf598519df9854da860fb9ef0ee78fdfcf6fcb54"
+      },
+      {
+        "first": 569,
+        "last": 631,
+        "range_lf_sha256": "906e01326d3eefade8c713ce63c2e57f373569a228fb8b0d89f9ecbb3eb356a9"
+      },
+      {
+        "first": 1080,
+        "last": 1128,
+        "range_lf_sha256": "eb3fbd47160b2d06cbb6d10a281ca51d676a81d3cba799e6d75ce44e98dc2c02"
+      },
+      {
+        "first": 1129,
+        "last": 1165,
+        "range_lf_sha256": "8186809e55352cd836c8211ff0f7a6f1a1b60371359767fff1b7b081384ca16a"
+      },
+      {
+        "first": 72,
+        "last": 95,
+        "range_lf_sha256": "fbef705b4be6d013f01de0ea892e9dab77064ea5a060aeb6e1816fa43f8b701c"
+      },
+      {
+        "first": 277,
+        "last": 330,
+        "range_lf_sha256": "03d024caaae771f16b366e4751e194b2430a0ca3407a7d589f2e70398db895c9"
+      },
+      {
+        "first": 331,
+        "last": 397,
+        "range_lf_sha256": "80e6137655782ad49a14fbe30d1377e8762fd31b318cff7e9749abfc41629201"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 72,
+        "last": 95
+      },
+      {
+        "first": 215,
+        "last": 397
+      },
+      {
+        "first": 432,
+        "last": 631
+      },
+      {
+        "first": 1080,
+        "last": 1165
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_pause.c",
+    "current_lines": 280,
+    "current_whole_source_sha256": "6313e6c829c098885c3c7a1506f054d7168f4bf263a4a5329e955bf5dc57c2d2",
+    "actual_read_ranges": [
+      {
+        "first": 101,
+        "last": 127,
+        "range_lf_sha256": "e629f0fcb2aefceda3ed94398312058a3a576d142bfcd7216067b8a4d9d37f01"
+      },
+      {
+        "first": 214,
+        "last": 237,
+        "range_lf_sha256": "ae1130eb1ef61f490c721d1a5fc9a0a837aa3175e63a21ed03729c770faf709c"
+      },
+      {
+        "first": 1,
+        "last": 280,
+        "range_lf_sha256": "6313e6c829c098885c3c7a1506f054d7168f4bf263a4a5329e955bf5dc57c2d2"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 280
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h",
+    "current_lines": 130,
+    "current_whole_source_sha256": "68d0eaa5c5dabb295cf4da1fed1f6e70f8e041b0c1e856f569ea29badde76a8f",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 130,
+        "range_lf_sha256": "68d0eaa5c5dabb295cf4da1fed1f6e70f8e041b0c1e856f569ea29badde76a8f"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 130
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_lines": 9545,
+    "current_whole_source_sha256": "ea86217ca20922b3478e45e4c056fd1fb5d5532bc59f59fb6632cada38349738",
+    "actual_read_ranges": [
+      {
+        "first": 8125,
+        "last": 8238,
+        "range_lf_sha256": "cd14dfeba457636694d65069dab9fa18251c8b9e1b3b59f568567727dc79d19d"
+      },
+      {
+        "first": 1367,
+        "last": 1434,
+        "range_lf_sha256": "dc519f61785c964bf44b8f1d5e0558b6ff09448e45cdb7ebdc60a2123109a7c1"
+      },
+      {
+        "first": 4400,
+        "last": 4496,
+        "range_lf_sha256": "543f9f1f54dc14a9c1503bbb0686be5e8a849f16c08e3b8de17aeaab2895bf7f"
+      },
+      {
+        "first": 4718,
+        "last": 4746,
+        "range_lf_sha256": "46a0b539a676a6900e315afd570b4822dea90e95113dc922670272f2dbb0f65e"
+      },
+      {
+        "first": 1506,
+        "last": 1517,
+        "range_lf_sha256": "5dd44d724754003c2e215826fa6518268608f22b77e5066b2f2a75c695f6be77"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1367,
+        "last": 1434
+      },
+      {
+        "first": 1506,
+        "last": 1517
+      },
+      {
+        "first": 4400,
+        "last": 4496
+      },
+      {
+        "first": 4718,
+        "last": 4746
+      },
+      {
+        "first": 8125,
+        "last": 8238
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_lines": 9866,
+    "current_whole_source_sha256": "db612cb917424e032cf30356d962f24aaeee23e62c05db70e86fbd281585069e",
+    "actual_read_ranges": [
+      {
+        "first": 8359,
+        "last": 8472,
+        "range_lf_sha256": "8b23af59d86b9635f8a73d707bc284e8c8e0cb5b816797d053c8900c9bd58180"
+      },
+      {
+        "first": 1373,
+        "last": 1439,
+        "range_lf_sha256": "0d3265175c44ee7f1f1c2be24691ca31fd12522d916e7e5c0c6a474650651337"
+      },
+      {
+        "first": 4534,
+        "last": 4632,
+        "range_lf_sha256": "1a90aa0008b3f52326cb8697b4c355b3a3fa57ea7c287b427fd00bf9fef229d0"
+      },
+      {
+        "first": 4854,
+        "last": 4882,
+        "range_lf_sha256": "715793219e7b6d032fc69a7809f234da7b5277a9afd8c7f4c3c51d46e9e393cd"
+      },
+      {
+        "first": 1512,
+        "last": 1523,
+        "range_lf_sha256": "dc7c0ad46e50fe63d877226d525bc11d3b3413aff23dd70dabc63a1202e038f5"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1373,
+        "last": 1439
+      },
+      {
+        "first": 1512,
+        "last": 1523
+      },
+      {
+        "first": 4534,
+        "last": 4632
+      },
+      {
+        "first": 4854,
+        "last": 4882
+      },
+      {
+        "first": 8359,
+        "last": 8472
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_checkpoint.cpp",
+    "current_lines": 483,
+    "current_whole_source_sha256": "9027b1bbff20872408dd13b06bbe306de557631baab6b393df44b54fda3baac0",
+    "actual_read_ranges": [
+      {
+        "first": 420,
+        "last": 480,
+        "range_lf_sha256": "c29901f77a3572a860005cbac9722a15c389bb60aaf28b98169918cb6f509100"
+      },
+      {
+        "first": 1,
+        "last": 483,
+        "range_lf_sha256": "9027b1bbff20872408dd13b06bbe306de557631baab6b393df44b54fda3baac0"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 483
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_travel_client.jsonc",
+    "current_lines": 35,
+    "current_whole_source_sha256": "707a9d202c2a5fdcf23edc973685a9e107a29f973ce012d5b2d3be082947df5f",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 35,
+        "range_lf_sha256": "707a9d202c2a5fdcf23edc973685a9e107a29f973ce012d5b2d3be082947df5f"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 35
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_host.jsonc",
+    "current_lines": 31,
+    "current_whole_source_sha256": "d527de521081bcee8ac6ce5b09358bdc9053e709a2ea56d7563d4fb83b06ae9a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 31,
+        "range_lf_sha256": "d527de521081bcee8ac6ce5b09358bdc9053e709a2ea56d7563d4fb83b06ae9a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 31
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6698,
+    "current_whole_source_sha256": "a8bea161104542435a8a8335a0e58d99baa435974eb9bda20ef5169637e7d327",
+    "actual_read_ranges": [
+      {
+        "first": 4730,
+        "last": 4795,
+        "range_lf_sha256": "ea92a6abf8fcaa35c3b7045e6111dd81e61576ae0376f0ad2abb86239cd9eb29"
+      },
+      {
+        "first": 5482,
+        "last": 5520,
+        "range_lf_sha256": "d692f8b39a4535583d1a825595c86741673d2da052d811b446a7ef269d25cd11"
+      },
+      {
+        "first": 5570,
+        "last": 5598,
+        "range_lf_sha256": "ef40e210136c751601cea175d1479ba9e44531eed607ba392c241a7498df17e0"
+      },
+      {
+        "first": 5521,
+        "last": 5569,
+        "range_lf_sha256": "0b2e7cf1c9b9a626e87f2fc19c37b000d967160cc2c9d338d7fdcb5efa7b066f"
+      },
+      {
+        "first": 5599,
+        "last": 5616,
+        "range_lf_sha256": "fa045d700fbf90c9b624e08dabde6142a288a35365ef157131abf571e593ceef"
+      },
+      {
+        "first": 4856,
+        "last": 4887,
+        "range_lf_sha256": "73eb729b02553398494c1267404332928c95edb263260d8f40e188b6ebdb258a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 4730,
+        "last": 4795
+      },
+      {
+        "first": 4856,
+        "last": 4887
+      },
+      {
+        "first": 5482,
+        "last": 5616
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_lines": 4356,
+    "current_whole_source_sha256": "154b7448f848e5a84ef657a0beca8224478cd646cee4726f86261ea87bbaae76",
+    "actual_read_ranges": [
+      {
+        "first": 683,
+        "last": 727,
+        "range_lf_sha256": "3108bafbb2be2efb95f9ae372e9ec69c0442034a337ad1dfd68ceee351c92dff"
+      },
+      {
+        "first": 1973,
+        "last": 2024,
+        "range_lf_sha256": "5ff738287c72852580c9beb4a851861ee5f9872ea0b62f4cb26727e8984688c3"
+      },
+      {
+        "first": 3925,
+        "last": 4008,
+        "range_lf_sha256": "86ca44c5dae0bd71878965e33c5e0a0acf2531625bdeb5d583304e0390393672"
+      },
+      {
+        "first": 4009,
+        "last": 4037,
+        "range_lf_sha256": "d009a25aefe0420ef6d35e14cfb4cc0e431aaa2dedc0d41b485fad50f002f95e"
+      },
+      {
+        "first": 172,
+        "last": 190,
+        "range_lf_sha256": "e1738af2401ff4e27151b4d3500f0c026fd02066ad25a87f3c6ce50e4a771d6f"
+      },
+      {
+        "first": 296,
+        "last": 308,
+        "range_lf_sha256": "9fd2d0696d25cc5358161a250f1d13194e6975d0323f9804055d9ce69883ec30"
+      },
+      {
+        "first": 2025,
+        "last": 2031,
+        "range_lf_sha256": "3cce2a1ca154e2b7fd3ee61ebff4113175f15ccd60d4e34cd0858288fd9d0fe5"
+      },
+      {
+        "first": 4038,
+        "last": 4050,
+        "range_lf_sha256": "13028b85837444a41ffd326aba02aa35ac04da76f7341c36344bbae34c35bbdb"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 172,
+        "last": 190
+      },
+      {
+        "first": 296,
+        "last": 308
+      },
+      {
+        "first": 683,
+        "last": 727
+      },
+      {
+        "first": 1973,
+        "last": 2031
+      },
+      {
+        "first": 3925,
+        "last": 4050
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "actual_read_ranges": [
+      {
+        "first": 15,
+        "last": 35,
+        "range_lf_sha256": "2c90145558412d0ca026390c37be7070f67373c9e699066fb0a3b184cb2e5d15"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 15,
+        "last": 35
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_lines": 2858,
+    "current_whole_source_sha256": "84ed2a0e0ed751248662f5adb6d4378d3240b3162e3af261faa306b5fa13420e",
+    "actual_read_ranges": [
+      {
+        "first": 1602,
+        "last": 1630,
+        "range_lf_sha256": "3715628c1e5bfb1730716ee11331914e3224892c1ec4baa8681f0c5d5c61ae6b"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1602,
+        "last": 1630
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.c",
+    "current_lines": 418,
+    "current_whole_source_sha256": "a4adc3483c32abaf010a827da77b32556a3b1bdbbf21121564a59bc8d5351b5c",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 240,
+        "range_lf_sha256": "a8cf1a1c5629f5945d711ba332f1f155fb39b1cb7acbffede9af043f80e6d7c2"
+      },
+      {
+        "first": 241,
+        "last": 418,
+        "range_lf_sha256": "67236ea81568164f0bb713174d3144abb73fc21858e4d319a06f195dd130815b"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 418
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_lines": 2636,
+    "current_whole_source_sha256": "4357f34f12df2f853d91b9f43b75b4b8d642528a976e35e72184a0fd0b19c69e",
+    "actual_read_ranges": [
+      {
+        "first": 562,
+        "last": 590,
+        "range_lf_sha256": "ad95bb9e15e77af8f2fdaf705884a236eb0910625759c7f57a41d7959e0d67b9"
+      },
+      {
+        "first": 1788,
+        "last": 1828,
+        "range_lf_sha256": "c5f40571532749db91a73743eb7e43621865e5a468574f7128cd06608b79d02a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 562,
+        "last": 590
+      },
+      {
+        "first": 1788,
+        "last": 1828
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/switch.c",
+    "current_lines": 945,
+    "current_whole_source_sha256": "46517062c61186f70a7285077d7343ac45699e784af843dc58600eb4b58c5c08",
+    "actual_read_ranges": [
+      {
+        "first": 515,
+        "last": 534,
+        "range_lf_sha256": "3c9438d15bac66a7251b46d8350e67e453932e0fa00c0cf466d24d9d32b55b26"
+      },
+      {
+        "first": 727,
+        "last": 764,
+        "range_lf_sha256": "5a11c068cace3ee54d6c1359087dff6c141128398de9d031b24126a814e709e7"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 515,
+        "last": 534
+      },
+      {
+        "first": 727,
+        "last": 764
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/escort.c",
+    "current_lines": 4507,
+    "current_whole_source_sha256": "02ccd71335d0685c0fd2d6be8a11e0f38f43412c31a04f32c5957ca3bdf96300",
+    "actual_read_ranges": [
+      {
+        "first": 4139,
+        "last": 4225,
+        "range_lf_sha256": "ab0a878d565c8dcb8e7ce47900aefa780b5404f1224a4ea86e74cc110d8adab4"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 4139,
+        "last": 4225
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/object.c",
+    "current_lines": 3211,
+    "current_whole_source_sha256": "f3a60a6e6dd1409f6de368377d01813acd81d4f649c55280114cfb030941cd5c",
+    "actual_read_ranges": [
+      {
+        "first": 1870,
+        "last": 1912,
+        "range_lf_sha256": "2222f4578da35c8bc924a5959902851022e158ed3666d1a97d6c924b9a29dbce"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1870,
+        "last": 1912
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_prepare_host.jsonc",
+    "current_lines": 11,
+    "current_whole_source_sha256": "de51f906c1567263806cff9dda8a6edab6ee965c9148e1a33db5764d408a5e43",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 11,
+        "range_lf_sha256": "de51f906c1567263806cff9dda8a6edab6ee965c9148e1a33db5764d408a5e43"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 11
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "87e66d6d59b85725cc4b9c062d799612056e2477d3d2bbb2fd729f114aece82a"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 27
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_lines": 27,
+    "current_whole_source_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 27,
+        "range_lf_sha256": "17eb11a928c87fd003ee8adda51c15f3d8efc99bb202ef6048aafa7f901fcccb"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 27
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_dead.jsonc",
+    "current_lines": 39,
+    "current_whole_source_sha256": "ec676049737a6c4d58dc0cf11e3a1a8467490ccbaafa93678b4ffbf7d230eabc",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 39,
+        "range_lf_sha256": "ec676049737a6c4d58dc0cf11e3a1a8467490ccbaafa93678b4ffbf7d230eabc"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 39
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_alive.jsonc",
+    "current_lines": 45,
+    "current_whole_source_sha256": "d7f06b9cd1b2d4964f5e56aa17dd294ecb2ae6ac140107ff446e5eb828c78889",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 45,
+        "range_lf_sha256": "d7f06b9cd1b2d4964f5e56aa17dd294ecb2ae6ac140107ff446e5eb828c78889"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 45
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_released.jsonc",
+    "current_lines": 15,
+    "current_whole_source_sha256": "e60779c9f3c39c3913912f7febfa15d7d7e1d3c1181b238aea55e4fe2b13142e",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 15,
+        "range_lf_sha256": "e60779c9f3c39c3913912f7febfa15d7d7e1d3c1181b238aea55e4fe2b13142e"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 15
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_navigation_client.jsonc",
+    "current_lines": 18,
+    "current_whole_source_sha256": "eea0e218c0f556dcc822242b62235e33f56474dcdf35abfd00cc9bf6267ce760",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 18,
+        "range_lf_sha256": "eea0e218c0f556dcc822242b62235e33f56474dcdf35abfd00cc9bf6267ce760"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 18
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.c",
+    "current_lines": 155,
+    "current_whole_source_sha256": "81fc639d8e705b46a737c5f1d77cee66d1c9af818104fb37e1c76e9bcb1f3478",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 155,
+        "range_lf_sha256": "81fc639d8e705b46a737c5f1d77cee66d1c9af818104fb37e1c76e9bcb1f3478"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 155
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.c",
+    "current_lines": 300,
+    "current_whole_source_sha256": "06438f8f659ce70a4d1dfbaaa1ca79c07282cd89e0234330cdeb9d09586d7973",
+    "actual_read_ranges": [
+      {
+        "first": 1,
+        "last": 300,
+        "range_lf_sha256": "06438f8f659ce70a4d1dfbaaa1ca79c07282cd89e0234330cdeb9d09586d7973"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 1,
+        "last": 300
+      }
+    ],
+    "current_whole_read": true
+  },
+  {
+    "path": "d1/main/CMakeLists.txt",
+    "current_lines": 335,
+    "current_whole_source_sha256": "0259c679b4c2262f037202e9abe2c1146d0bc31097b6c9794e0ff251c99fed91",
+    "actual_read_ranges": [
+      {
+        "first": 99,
+        "last": 135,
+        "range_lf_sha256": "31294b7dda994599cc31625340ac07fc430acc64a0a20141e30171763be2e3de"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 99,
+        "last": 135
+      }
+    ],
+    "current_whole_read": false
+  },
+  {
+    "path": "d2/main/CMakeLists.txt",
+    "current_lines": 415,
+    "current_whole_source_sha256": "73acb72c4419fb6f33223cef603a074c60bcfd33b7a48f744eeabe49b340d47e",
+    "actual_read_ranges": [
+      {
+        "first": 131,
+        "last": 167,
+        "range_lf_sha256": "7763c09d8df461a4af9f4a3dcb584af4f335afc99a566261304e69228324b988"
+      }
+    ],
+    "union_ranges": [
+      {
+        "first": 131,
+        "last": 167
+      }
+    ],
+    "current_whole_read": false
+  }
+]
+```
+
+## Complete current worktree deltas
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_travel.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 626,
+    "current_delta_raw_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_lines": 16,
+    "current_delta_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67",
+    "current_delta_hunks": 6,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "d4dcb2410c3f4945cd44d50b9577052434ec57882025d026e6e81bca4b6c3b67"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -377,0 +378 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "718792624ad8f2b4064d4f20e3ed3b5b57badf861978c5b6117b66035f6b5519",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -378,0 +380 @@ void coop_travel_reset(void)",
+        "raw_hunk_lf_sha256": "ff9bf25364d0dd4f9f991265f48c000b371481e88edad9cc621def745f5d78bd",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1512,0 +1515 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "52addf89260aa67d71133b9675b7e9acedc3c4963c944b4e2070214c5d1237a7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1513,0 +1517 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "c65d9e45298fd52534feb9b2f3a2d796c1b8942edc000465892cb8888e5570e9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1630,0 +1635 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "dfda55a99122f4841c89260e125d6f79f3e862a3e2f7f415350291f37dbd17e9",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1631,0 +1637 @@ int coop_travel_frame(void)",
+        "raw_hunk_lf_sha256": "232de258f250eb031322f853fd48fdb8bf7d52372be3ae530b659c078704263f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/multi.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_lines": 165,
+    "current_delta_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 165,
+        "range_lf_sha256": "e4a7d7ea0eddd0ce6e499d5c7f7b15665ac7052a3020a223288566d4727c2230"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -25,0 +26 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "dce535e9289d4504765bcf1d506d452503feb0c0ba92112a4cf23937c6acea25",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1531 +1531,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "930bc83ddd098b518943a0b4abfdef903d5a203271156fcc7cd26b943991ecf6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1536,7 +1535,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "701bbc97a0d45bb7b38f1f194bc28b0410586c8e072fffb801256ae3c12b5b76",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1650,0 +1644,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "779d6294de776d052b00f38a50509cda24e01cb94ce2063a87547396be65372f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3469,139 +3463,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "1ddfd807fff7df1793c8fadefce0440a447fbdfa891140c8fd912efdd5e5ab37",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            140
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -5587 +5443 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "0aad15b1da2aa8ca3c9b3ef485b76a0775cb17382616a2f1e6e91a0a54f6855f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -5588,0 +5445,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "225548a874f6a2032c0cd7fd13d593f3472d058000701c2f504e99da7d5b987a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/multi.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 6115,
+    "current_delta_raw_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_lines": 166,
+    "current_delta_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084",
+    "current_delta_hunks": 7,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 166,
+        "range_lf_sha256": "88958e219c5f148429b8ef5b843e0d97800371e8aa241e4fe1b43e0d84ef3084"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -29,0 +30 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.",
+        "raw_hunk_lf_sha256": "48c64f05add9003f65c6b6d0b62f9f7a17ea3cff2fa0b402a66d9f65858bdc79",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1601 +1601,0 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "be41a595cb8970c02b771bd73f909ace76dc29f8e48b2f5bb6f450dd6456549a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1606,7 +1606 @@ void multi_do_frame(void)",
+        "raw_hunk_lf_sha256": "5abe6c931544d274f092ebb7fb0b78aaa014d1d9b9f062dca09b7e3b4b30ffb4",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1722,0 +1717,2 @@ multi_leave_game(void)",
+        "raw_hunk_lf_sha256": "1b313823fabed42dc82842e143296ee50c12ad2b3bd967cd81cbdd2ea295aff5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -3680,139 +3675,0 @@ void multi_do_difficulty(const ubyte *buf)",
+        "raw_hunk_lf_sha256": "f6fec461db9231693a2db59e6502630ef578089cd4ae10f5736090820096b9d6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            140
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -7314 +7171 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "581156f24f453a9373307a154f866c07452f1e2c081e6828b4fa151628b6ce85",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -7315,0 +7173,2 @@ void multi_send_restore_game(ubyte slot, uint id)",
+        "raw_hunk_lf_sha256": "f145e86316ba56e35513735e6fdbdd29b7957177af02dae3358a4b803682e0a3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/multi_save_transfer_policy.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/multi.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/multi.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_save.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 18414,
+    "current_delta_raw_sha256": "060da1db5178a12c41e6fad64359a36dabd7e871d23f21c9a4abcc3b6b530300",
+    "current_delta_lines": 385,
+    "current_delta_lf_sha256": "060da1db5178a12c41e6fad64359a36dabd7e871d23f21c9a4abcc3b6b530300",
+    "current_delta_hunks": 48,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 385,
+        "range_lf_sha256": "060da1db5178a12c41e6fad64359a36dabd7e871d23f21c9a4abcc3b6b530300"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -32,0 +33,4 @@",
+        "raw_hunk_lf_sha256": "1b8240ac9e5c9996448bd3911a7f8282847396ca0b16eb642fc26e6dce63b093",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -59,0 +64,6 @@ static coop_campaign campaign_pending;",
+        "raw_hunk_lf_sha256": "b7a8db4c44caba638b5bf8a6c2a6febb66f8270905f96788f9bfe6f6076c5752",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -97,0 +108 @@ void coop_campaign_reset_runtime(void)",
+        "raw_hunk_lf_sha256": "4edd29407a52398679115b3d8f43a00085bbf991183dd4d30df1d64409e9281c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -115,0 +127 @@ void coop_campaign_note_normal_level(int level)",
+        "raw_hunk_lf_sha256": "4cf446dad5b912c5abb97cd69390153071f84023d71d56708a6f0da437eb876f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -125,0 +138 @@ void coop_campaign_apply_pending(void)",
+        "raw_hunk_lf_sha256": "b90767337e58b78fe773ec72a83d2a0850d041638566eb32f95672883676fa78",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -456,0 +470 @@ int coop_commit_secret_travel(coop_campaign_travel *travel)",
+        "raw_hunk_lf_sha256": "b83dee46fdd48739d8f9599b836151aea65085f0a900924d3a2992217263b1bb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -506,0 +521,15 @@ static int coop_campaign_worlds_valid(const coop_campaign *campaign)",
+        "raw_hunk_lf_sha256": "70117e64b26144081a72ada3190d018d0c66a724902bab362390dfd50685fc42",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -622,0 +652,5 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "75dffc43af04b495ee25b4ffb68244115f8287b66c9fb953d75c3380a24c4795",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -640,5 +674,11 @@ int coop_remap_restored_players(rewind_file *file,",
+        "raw_hunk_lf_sha256": "5089d862a24e63dd62e03a927113310e1cfedeb3cbecc8cb4723ee47beb61a7d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            17
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -915,0 +956,2 @@ static void coop_write_autosave_history(int slot, int n_connected);",
+        "raw_hunk_lf_sha256": "6566f47d91366f8e1631d62d022953df943ced000f9df85ec2269445f9dbcaee",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -925,0 +968 @@ static int coop_num_absent = 0;",
+        "raw_hunk_lf_sha256": "050fd2844c5169ff218a31ccdb2bf77b276348bc40bfd59a37544b5d4ef60f4c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -1014,0 +1058,3 @@ static int coop_build_save_metadata(coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "00aa90210052274a2b016e5004de60fa3f159c34fa49a0ab83e320f6bf8e994f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -1022,0 +1069 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "5a1edbf0544385f04ad803bafe8494caaf11ec83a64e9f3b4a8f1eec546f6019",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -1023,0 +1071 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "ecf03c1132efa5d81c9c20d378085cd4a1b3f7b285014eca2999f60ca7d81c1b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -1033 +1081,2 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "4e9dff0299c40b2ec4bc1e003e0b434cfd82dd9d257ea1f6b9a9822d8bde22d7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -1035 +1084 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "e22dadb540c58d7bc7e9ad3ab5145d4882c5b61693d4d27b38ee8e8f96f6eb3c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -1044,0 +1094 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "95609f5077aaac817e45dafbcbc24fbcc715fd19b109696a6dcc2e22621744c6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -1048,3 +1098,11 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "386ee27182d68d824a14202155909f12c073c3a0c7fece31da85148866727ce8",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            15
+          ]
+        ]
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -1051,0 +1110 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "d330c84b739b0ef3a8d843ef233b479754086f8da19cd496369173dd44409956",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -1064,2 +1123 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "430c328e7f5f178162338fc591d63e2601110e3afa3cdb8f968e3fd7d09a9faf",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -1069,3 +1127 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "8a46d2c11a6e596b018d4f889723ef9880d1d034816e556c4e0c4dedbc9f542f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -1072,0 +1129,11 @@ static int coop_write_save_payload(rewind_file *file)",
+        "raw_hunk_lf_sha256": "67b1cadbd3a154422b2942968d127b9f66da3d1e523704330458c3752d1878bb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            12
+          ]
+        ]
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -1079 +1146 @@ done:",
+        "raw_hunk_lf_sha256": "23b8de7529a5cad98cc1675184a3b7d7572b5b2d7d39c8df635da20a1390c197",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -1274 +1341 @@ int coop_find_player_in_metadata(const char *callsign,",
+        "raw_hunk_lf_sha256": "cfc43c3d7c5417a80c7b2c26d58bab1fac4e1af543c58cc46addf02cc709519b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -1277,11 +1344 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "b180710bcb56871ec73d042948fc4f1d6c063c0b0abca06ac048f9e2283f535c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            13
+          ]
+        ]
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -1294,5 +1351,6 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "cb0ec4357d8cfba230fc86614c43faebe0244fd2384f95bc2b2d12323e814514",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            12
+          ]
+        ]
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -1302 +1360 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "9c161d4a61964197fdf4cfa8f3b53d38dabc1175031afad10695b19c66842d45",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -1305 +1363 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "18fc5a9bfcdc1f1343b89760b98160acec1223044c1a27c695f651a798827cad",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -1307,2 +1365,2 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "4e1b60315cfe4f34bb635c43fdb70415cc4b4815e941068d4df185303b9453e5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -1311 +1369 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "49f153ae10b335d0d72b908cbf5cc9fdefef62a07eaede5b44cc99acbdda33d0",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -1316,0 +1375,14 @@ void coop_track_absent_player(int pnum)",
+        "raw_hunk_lf_sha256": "87cc4583134e4ab30d0ae91a336df7c4a9922d4bf00641c9691b9f67f3f183cb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            15
+          ]
+        ]
+      },
+      {
+        "ordinal": 32,
+        "header": "@@ -1319,0 +1392 @@ void coop_clear_absent_players(void)",
+        "raw_hunk_lf_sha256": "272da8ee44b9710e5426ca72b3a67ac545730d6ce868c82c854403228eeceb20",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 33,
+        "header": "@@ -1399 +1472 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "94088cd62d7482ad780e609ba5378ae2e631f1e09937c1cd0b1b1d13b3af1312",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 34,
+        "header": "@@ -1402,0 +1476,9 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "81e394bda74a250cce635292cfda278d579b79411c14bfbbf20cd6e68781560c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 35,
+        "header": "@@ -1418,3 +1500 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "525cb43a46f6732d61ac2b383f39a66dabdf6620661821b66243b4f5617df65f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 36,
+        "header": "@@ -1424,9 +1503,0 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "f6fded00cfb325dbb64bd06a085338739e15a5f4eba07e25ef448566a3fdd8c1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 37,
+        "header": "@@ -1433,0 +1505,23 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)",
+        "raw_hunk_lf_sha256": "57d32057a379e36015219873961079edf7e5def9d88b1fdad0f994c108b87e4a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            24
+          ]
+        ]
+      },
+      {
+        "ordinal": 38,
+        "header": "@@ -1516,0 +1611,67 @@ static uint32_t coop_make_autosave_game_id(void)",
+        "raw_hunk_lf_sha256": "abcf42c8b47021b463b164288983af78ec924b391042568896e8542a1fad5b55",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            68
+          ]
+        ]
+      },
+      {
+        "ordinal": 39,
+        "header": "@@ -1523,0 +1685,5 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "cfdbc4e36382d71470b527f53d648612cba9260b7789b7675c7ff3070df5d444",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 40,
+        "header": "@@ -1573,0 +1740 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "061e16f481680d1e9321cad41f11360db8ab800348653d733653e91e44297de6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 41,
+        "header": "@@ -1575,0 +1743 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "caa4dbd39d80ae89e29e1f05c7b85e6c0782120be1f09a46ee929d80a39bf50c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 42,
+        "header": "@@ -1582 +1750,2 @@ int coop_autosave(void)",
+        "raw_hunk_lf_sha256": "04b31cf2ec7d78177d672c8abaa7e931a3bbdf73601637ae0be6c65432b67b0c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 43,
+        "header": "@@ -1584,3 +1752,0 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "7b9df6a460d2f659df24ed5f68636e852db7ca162151456197ced16895352793",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 44,
+        "header": "@@ -1619 +1785 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "44e32af620abf8406ee0a12ce7398aa56aaeadb0b608049cba970b20463eb0ec",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 45,
+        "header": "@@ -1641,0 +1808,23 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "88a907b4df7c4f050c43cdc1d0a8f629214311566742055f37c1fd5b35d4457e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            24
+          ]
+        ]
+      },
+      {
+        "ordinal": 46,
+        "header": "@@ -1644 +1833 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "798e5a32b62286eb022503250c92a0da9aea877a0db16b9462dd5c4860a3c024",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 47,
+        "header": "@@ -1669,18 +1858,3 @@ static void coop_write_autosave_history(int slot, int n_connected)",
+        "raw_hunk_lf_sha256": "6556e104de69b028d3d7332b8a60fbfadd9fdc583466b90e48a97147ef587cbc",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            22
+          ]
+        ]
+      },
+      {
+        "ordinal": 48,
+        "header": "@@ -1992,8 +2166 @@ int coop_load_progress_inventory(void)",
+        "raw_hunk_lf_sha256": "8271f58710c96ad588564b9c467522fe2a6b83d8d12ce3fc8ffef666198be005",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_pause.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 10430,
+    "current_delta_raw_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301",
+    "current_delta_lines": 286,
+    "current_delta_lf_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 286,
+        "range_lf_sha256": "2a00f5460e64defad79ff56dc8641992e04d1044fc05b19fde60c0e830f58301"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,280 @@",
+        "raw_hunk_lf_sha256": "7f2cdbf08bd3c5c3edc6059c88b33b06012735bb48c4aa24ab1d9dd1b3f05a20",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            281
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_gameplay_fence.h",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/net_udp.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3729,
+    "current_delta_raw_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c",
+    "current_delta_lines": 81,
+    "current_delta_lf_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c",
+    "current_delta_hunks": 17,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 81,
+        "range_lf_sha256": "d7635322bd48a02a3317a7f9a8311519803472ce28b1f03f007717f4b22b5e9c"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -655,0 +656,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "b776b40f395f5069c343fb38e3d0a7434d2c59e5ba38d8d03f5907dbe601f4cd",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -681,0 +685,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "41e25e8a39f3e17535d00b306de55ad33e5d244dd9aabed5f402e2d00f7176a3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -713,0 +722,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "28fc3c1195a4068b73b8c6e1969f7d1b46b8542ace2806af83d810bd1511154a",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -714,0 +726,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b29768bd6f3b40b75f9a4ea25fe9213f53538751602d619311af24a9355099e3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -724,0 +741,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "fc6a70a2621386a965d995f069e3241094cb3ba2e43e8022017c5459bccd3a64",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -725,0 +745,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "ed586e7d3e568a7596cb9a4b98c1bc6c524deb58939b1c957883ae2cfd3bb5ac",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -962,0 +988,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "361d5f89e5901412c86dd8265bc98e2acc11530a1ced248dbc49d70109a8f27d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -963,0 +996 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "d0a4d2564099d31cde82e75c796b73d84ddae4e6124f1e300457b34b82193a21",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -7143,0 +7177,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "872ed28648342a9556140ae0e9c00841ecfa947d031dcac9de7c4934f46fddae",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            14
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -7153,0 +7200 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fb81ffa9b07a3ad732326873740ececd7a6c098206c300eed3ae83518e248228",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -7172,0 +7220,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "043d9f3e4531f4368e73a80cac33e403640dad70778b68d79283db665292ebc7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -7173,0 +7224 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "fa18c6e4d09b73b08ec9fef02ea8c8ebe5a978043d1781c54260b83258f8ec7c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -7189,0 +7241,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "cc10d674021963481587547c99e0ed0dd187e311f4cf775ce7a363f9fa64e839",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -7190,0 +7245 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "5a6887e8539a47c23e12bd4472a51736e07db324e03d97621c89bc944013589e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -7201,0 +7257,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "e7854df2d5839808c36b9c7cc8adf2f8860cbf64b4b5c6db2ade60d5c21dbd1d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -7202,0 +7261 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "a3b1a3a144b7b3c0dad41152d94f4318262096b80e5f1e941b20b8a3922f72a8",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -7226,0 +7286 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d55b85cde1842b13add227a8af7fc5ecac54d00e3c0643cdf9717960536cef87",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/net_udp.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3730,
+    "current_delta_raw_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_lines": 81,
+    "current_delta_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de",
+    "current_delta_hunks": 17,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 81,
+        "range_lf_sha256": "707df50ae181fb589c062fb9e0737f0eb562c04cc8b52095abc0f006ec1ca9de"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -663,0 +664,3 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "0e5183265030957e608b692ad37805ebb01f1c9569d962917e7e322cfcfca474",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -689,0 +693,5 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre",
+        "raw_hunk_lf_sha256": "35ef9103863a6bcecf8f57cdd0b45b6f95bc2d52476583c72fdb5d037eac40c6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -718,0 +727,3 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "b48f89ef09f5afcfb9186c942269f98ce619badbc5bcb99ab55bac25317691e6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -719,0 +731,5 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con",
+        "raw_hunk_lf_sha256": "c02a531a0d1c146f43dfb134f20dea3191b00704080288edc61fa15f27f23669",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -729,0 +746,3 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "4ceff2573515aa31ede522d061986010175a1a0fdefce5768fa9ffaf8904d398",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -730,0 +750,6 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct",
+        "raw_hunk_lf_sha256": "362e38cc66239523952c080f3595317a69cd7fe6adc4d1ca8b0a3131d47d3899",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -967,0 +993,7 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "ab8a9feeeaf48e365d292a541a6c5e14d64070b1cf10fd6b36a5253d8ed0af27",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -968,0 +1001 @@ int udp_general_packet_ready(int socknum)",
+        "raw_hunk_lf_sha256": "aebee41ff9de7a9766934a5d6a2dd211f4a1477bed4278983f26d44570ad1d36",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -7350,0 +7384,13 @@ void net_udp_flush()",
+        "raw_hunk_lf_sha256": "8e9d6408bf0b665bb027983f9d5b1750f15543c2cab80b52ee7cd7164b1e33ce",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            14
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -7360,0 +7407 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "aa51adecdbdec0d2625aed4a99ca9d55e0623a17119b91592d89fe586e375cab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -7379,0 +7427,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "933a4357c995dc8d37e04057ba969d64f5d2bf2a5fba15f1a96f25443f9a678b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -7380,0 +7431 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "1757472f8da5e75bd68668ad5a385422a7f5844904335bd39485bc2e7af69e36",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -7396,0 +7448,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "c0bd0c729af0924a89d36575fb68bad7826a9493291befbb3ceb9e28622f6816",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -7397,0 +7452 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b96c5d6cc1bb0c1fafb658199ff60af345749ed05cec235acb77d2ba880d8b55",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -7409,0 +7465,3 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "d60058544aca1fab899f62af253036ad4afaa7fee3a98e40534cc84f228f3328",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -7410,0 +7469 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "52b29ecd8b7785e3922c3879a27c08c92f6e63e5048d5873c72956d219ed7295",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -7434,0 +7494 @@ void net_udp_listen()",
+        "raw_hunk_lf_sha256": "b3b8dcb7a26f7424c409802370d59c6b45290eaebbb66e28e81fb55b5a84efab",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/state_checkpoint.cpp",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 17463,
+    "current_delta_raw_sha256": "effe9a460e0ac78b1e2b7949213ac5fa63a66d4bc474d78443433271a67dfa3d",
+    "current_delta_lines": 489,
+    "current_delta_lf_sha256": "effe9a460e0ac78b1e2b7949213ac5fa63a66d4bc474d78443433271a67dfa3d",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 489,
+        "range_lf_sha256": "effe9a460e0ac78b1e2b7949213ac5fa63a66d4bc474d78443433271a67dfa3d"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,483 @@",
+        "raw_hunk_lf_sha256": "850f9229db8d6069cd21cf3a64bc014954a23f69eecece6ff2b18d6bc67740ad",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            484
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_physical_travel_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 374,
+    "current_delta_raw_sha256": "9db8fd7552bd806b70a0ba5ef510bc53f19389de852a553dd8129ff4fc58b791",
+    "current_delta_lines": 7,
+    "current_delta_lf_sha256": "9db8fd7552bd806b70a0ba5ef510bc53f19389de852a553dd8129ff4fc58b791",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "9db8fd7552bd806b70a0ba5ef510bc53f19389de852a553dd8129ff4fc58b791"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -6 +6 @@",
+        "raw_hunk_lf_sha256": "f16e9020367f90aaec340b1dd067487bb0bf37e025047d6d80834af704bcb916",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_travel_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 354,
+    "current_delta_raw_sha256": "7571eeb2c14f2229a00bff2b3a28f8852d7e7b6ecd77b3d26ed2292a38792fb9",
+    "current_delta_lines": 7,
+    "current_delta_lf_sha256": "7571eeb2c14f2229a00bff2b3a28f8852d7e7b6ecd77b3d26ed2292a38792fb9",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 7,
+        "range_lf_sha256": "7571eeb2c14f2229a00bff2b3a28f8852d7e7b6ecd77b3d26ed2292a38792fb9"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -5 +5 @@",
+        "raw_hunk_lf_sha256": "fd84add4d62578225fe971e50178b2600f87d8d95cc054d636c82a2abbb4a766",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 28273,
+    "current_delta_raw_sha256": "c66af34e19c66a28f08fe077cf0a34766d27ede8534e1e338b5b1ed2a15eada5",
+    "current_delta_lines": 537,
+    "current_delta_lf_sha256": "c66af34e19c66a28f08fe077cf0a34766d27ede8534e1e338b5b1ed2a15eada5",
+    "current_delta_hunks": 8,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 270,
+        "range_lf_sha256": "2e9cafd712817560854f118c75a9aa7c491e3c8b4a8732ec62c84b744a18702e"
+      },
+      {
+        "first": 271,
+        "last": 537,
+        "range_lf_sha256": "eeb1955a636dad302e55a1849fe36e676e252ba64f65e15818c9876b8e8e4eea"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -57,0 +58 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -85,0 +87,5 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "412b0e1ea1a60be26f84eb3e5fef097b311104121c38b115df2224fbc200af59",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -88,0 +95,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "915ce06f65d05a0f3525ed421304a688404e368d37a71e84693d297481b5fb74",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -132,0 +142,2 @@ extern int Entered_from_level;",
+        "raw_hunk_lf_sha256": "5936ef7bdd1f361b9e2f51533c7099994129007abc4b038f5e13b94d4130cdce",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -4162,0 +4174,39 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "6b870170e0b60c2d2cdf364e06f31df17b69316a2569191775656ac07f2bb948",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            40
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -6029,0 +6080,447 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "95aede0dedc97b3c60c2e9d0b32a67ef3ddb9a04e4fbc75f135c3359df3141e1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            211
+          ],
+          [
+            212,
+            448
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -6056 +6553 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "42b16f4bd2ef359a5873c2e5de98b5b00155b51bb9dd7d6cb6ab8fb226306a9f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -6063,0 +6561,26 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "f6d22130a04b27cdd89098f3c88e021c71fd023f1e6c152e1debb8d3e2be4022",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            27
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_lan.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 26095,
+    "current_delta_raw_sha256": "d72f9a720a8a824e278322ae822a0dc108419b9db283de0e8c89eca14078462b",
+    "current_delta_lines": 383,
+    "current_delta_lf_sha256": "d72f9a720a8a824e278322ae822a0dc108419b9db283de0e8c89eca14078462b",
+    "current_delta_hunks": 32,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 383,
+        "range_lf_sha256": "d72f9a720a8a824e278322ae822a0dc108419b9db283de0e8c89eca14078462b"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -34,0 +35 @@",
+        "raw_hunk_lf_sha256": "2c4b90667993933f1fe7df495006ce1a8c5336e0ab197036d147212e8571e876",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -39,0 +41,2 @@",
+        "raw_hunk_lf_sha256": "b9e9176cbec232daf80ce1b8bc5eb42ba2ef1a2b26c5d337962d83e2d1627a69",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -42,0 +46 @@",
+        "raw_hunk_lf_sha256": "05e77be0c484c33f903169a2cf0a0c95d100fef672abcb4a728f69caca1c2dc5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -96,0 +101 @@ param(",
+        "raw_hunk_lf_sha256": "3a212acf0b5ea1696971444a35395d2bfacb9a181ae166d1086f19615e351c88",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -97,0 +103 @@ param(",
+        "raw_hunk_lf_sha256": "65d16f99481a0289f31a878f108ca21f4de74f2ebdce76cc210f7f4601b73525",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -108,0 +115,2 @@ param(",
+        "raw_hunk_lf_sha256": "21846358cad2fd6ecddec281450517c95000bc88d49dbd39f82cef0ad810d5d6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -150,0 +159 @@ param(",
+        "raw_hunk_lf_sha256": "bf18cb5f6ea0327c257bd255e14159ad1db93fcb77bfa7bad56b0cea6400818f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -327,4 +336 @@ if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object {",
+        "raw_hunk_lf_sha256": "92d9e7291e44354a157eac2f9e45adf23728fbe9d1b0b62eec6e438f0cfd87bb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            6
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -339,0 +346 @@ if ($GraphicsConfirmation) { . \"$PSScriptRoot\\..\\helpers\\test_graphics_multiplay",
+        "raw_hunk_lf_sha256": "4eb4ff34348d3b31e072d5b49e446aa366d2ef8c040e9dfe135a11625e0cfb67",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -514,0 +522,106 @@ function Get-IntroNumConnected {",
+        "raw_hunk_lf_sha256": "13a2cca16c828572aff2ca65f0343828a99ac37dc88748ed1a86a86aeddcd46e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            107
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -541,0 +655,2 @@ function Get-IntroPdataSequence {",
+        "raw_hunk_lf_sha256": "118ba832072cd323b261e3fae2cc08d2757abbe358e1325250f62221157b647c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -577,0 +693,2 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "013ec367cc0ea0e80b5a99e9ed54ffcac19cebe459a3ac4eb5e57088a546ca32",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -580 +697 @@ function Start-DeviceGameAutomation {",
+        "raw_hunk_lf_sha256": "2fb677d0aa33d34669862e88949556e58957e5494e9be6e33b099a98fcb70bac",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -595 +712,5 @@ function Get-DeviceAutomationResult {",
+        "raw_hunk_lf_sha256": "ff8a7b8da12237dd92190f6d95945c946bc6a40431464f2f32fca83b50b9548c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -1983,0 +2105,92 @@ function Set-DeviceCoopRestoreSlot {",
+        "raw_hunk_lf_sha256": "003b31445ad25ec1f2f7d99154c616bd8b8e04f2ce709aaab363c3cf181afc34",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            93
+          ]
+        ]
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -2319,0 +2533,50 @@ function Invoke-RestoreStatusScenario {",
+        "raw_hunk_lf_sha256": "eecfd77742cd5de452724d770a3326765194521971113b89de74df86bf36564e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            51
+          ]
+        ]
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -2369,2 +2632,15 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a46c41241e643804c0758df1871e309f15a0a416657e3439ebb7a0b86ebc63c7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            18
+          ]
+        ]
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -2374,2 +2650 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "791ec8834a9e3891aad556bba00fe509ffb2946cd13b440e2395b5819952e97f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -2382 +2657 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "0240c053232b77aa4293d8055fc21d477d660fe29a754a72e8759bbdefabc3fa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -2473 +2748 @@ function Invoke-GuidebotSlotRemapRestoreScenario {",
+        "raw_hunk_lf_sha256": "a5be51f2d95285b3420e7fd587ba1b31f262d67dacfcfacde5246b7bcb19ac0d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -2531 +2806,2 @@ try {",
+        "raw_hunk_lf_sha256": "d8027bedfefd25b6bd15a6e347e8e424f345fdf1ad4124f1632bb0c8308ef47b",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -2533 +2809 @@ try {",
+        "raw_hunk_lf_sha256": "f358b960471d973aa109e16b9df37b0baa04ae2af0d628812d32d43364f1ba14",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -2616 +2892 @@ try {",
+        "raw_hunk_lf_sha256": "7466180276ee5bb67564aef63f5ba87f6f6d99c9f7a021bdc44f53d77e2f4cb7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -2714 +2990 @@ try {",
+        "raw_hunk_lf_sha256": "036009338f2a1e5a2887b2b92149362969cb5c1b56f634912a75f1ff87381f73",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -3214,0 +3491,4 @@ try {",
+        "raw_hunk_lf_sha256": "1cb8fd5b041a1ce9b5ea777fcc83b725778ea86aaa88b3bc7c7100e1aafd48cb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -3246,0 +3527,3 @@ try {",
+        "raw_hunk_lf_sha256": "a767a9ab2e276db110a6ce4f40289e9d98ac4b8ac3cf1a7b881cb4750fb20aec",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -3264,0 +3548,4 @@ try {",
+        "raw_hunk_lf_sha256": "de4a7ba856c83b46323e76e980a90a93d0f689919f912f4e714ccb1c078cd278",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -3480,0 +3768,9 @@ try {",
+        "raw_hunk_lf_sha256": "3c66736e4149d62965df2d28d8f9f2968aadbd598341a4dded11461de92f6728",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            10
+          ]
+        ]
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -3488,0 +3785,7 @@ try {",
+        "raw_hunk_lf_sha256": "883558cd2bfefbbe93f74a9431dfd3ac439933f3163d9b434109c3bf4f80ae26",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -3495,0 +3799,3 @@ try {",
+        "raw_hunk_lf_sha256": "f4fde0f37dc60b53eda9bb335ac388d78cbd82d6f49cc72e060ef557bb5f8e3d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -3690 +3996 @@ try {",
+        "raw_hunk_lf_sha256": "8b828a7587d6f6ca490f42d66450d04997f6a8715cb711b6b88d3a82459ae591",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 32,
+        "header": "@@ -3737,0 +4044,7 @@ try {",
+        "raw_hunk_lf_sha256": "81d5e80e0c6cb8390b16e0d34cfdb04af14a722b58ea502190bfd26758ccc088",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            8
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1883,
+    "current_delta_raw_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_lines": 40,
+    "current_delta_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_hunks": 11,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 40,
+        "range_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -36,0 +37,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "67ca19e3b4e3a73eb529bc945ccfcf07a5f937292db1652c6277f556dc5d50aa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -40,0 +43,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "98b9467d170d5ddc0bdb4288e59dc81952357ad46475261a069f2e5647efc382",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -51,0 +56 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "e4aa647a325820f36435205d82cc1b249b4f0931231eb79f261683268e2403cc",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -59,0 +65 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "54754e37e540b63b3b57138e8adecf108a9ad3a69990795acc6b02fdb92ce718",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -68,0 +75 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "3bb0e72fce7db8ceab30c199c8f285197bac1b6633575960ede6c189d71f3a57",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -79,0 +87 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f0ab512cb53afe4413ddbc4da82f10828b427de8b6bdb681c5d1b796636ffd7d",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -100,0 +109,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "bae990fce149dedfdf2ca4451ebfc0fae3086ce11dfb11d89f485eb093e56e43",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -164,0 +175 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "eac427e87ee5550cbfe50a637cab1ce16eba2630579c2174e4820a78e8afdc56",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -231,0 +243,12 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "30c1c390e43c615935f8f0bed6743afd94a2a67ba37b25ea02551e87907d6479",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            13
+          ]
+        ]
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -287,0 +311 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f6f82772793227cdd23db51e65ac17043afef6005ce4a5eb7f7d1eb3fd030615",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -296,0 +321 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "a2c8c1b86c1fd24d505846782e13bbff9710e0095f18271749c6570b86a34f56",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 3602,
+    "current_delta_raw_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3",
+    "current_delta_lines": 73,
+    "current_delta_lf_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3",
+    "current_delta_hunks": 9,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 73,
+        "range_lf_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -1076,2 +1075,0 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "0b4f54e544b0135e068d4300320a451f8f2637b34e2d696c653bbd542ff89961",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1079 +1077,2 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "5b0ba67b2566b92d1b290a48be267711e1fe7a0b17d7c436695e217338aba5a2",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1892,0 +1892,2 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "4ce134082aca5015eb9e00797ec62849d275278d4e0350046cd64027f1b5e607",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1895 +1896 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "147ce4be26b83fcd9c373861e8a2c800fddd654a2f354a7082f192aa4e2e95a1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1897 +1898 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "c3dacede583844d6d112af5ae67dc44e353debb159e10b9b6cab4d279e107205",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2247 +2248,32 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "523c56a8de6d9eb594fd23364877a679933d3bd3f8f6c6581d12e487a5d8091e",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            34
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2252,5 +2284 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "8c048760feae14b545b732a31cf5872598dfd6878bcf6f017808afce8c835374",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            7
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2262 +2290 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "3e77014099edf8d754b2fda986bf7d6eadfee68692fab50afa5c26074af180f5",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -2265,5 +2293,3 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "b267f4badd58ce0c892bf59da5ae7c128be21ea24e0a2b7d6a7e21d8c60ebd43",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            9
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_campaign.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/gameseq.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 695,
+    "current_delta_raw_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c",
+    "current_delta_lines": 20,
+    "current_delta_lf_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c",
+    "current_delta_hunks": 1,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 20,
+        "range_lf_sha256": "5bf6426952d4798abd2cb7f87b16d84340594dc23c26c5db663f7ba0eeb33e0c"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2254,0 +2255,15 @@ struct {",
+        "raw_hunk_lf_sha256": "c632a5e5fe8fdbb634f941fad10822fbe00bfade7d05ac317a662b88427c803f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/switch.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d2/main/escort.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1376,
+    "current_delta_raw_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705",
+    "current_delta_lines": 37,
+    "current_delta_lf_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705",
+    "current_delta_hunks": 8,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 37,
+        "range_lf_sha256": "c0423f179e770cde54e9b701e911b99d3d7ea9c9e50f950721c54230f0d26705"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2056,2 +2055,0 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)",
+        "raw_hunk_lf_sha256": "fb6116be1accb834ee09ce688d3e7ee6c618cbd881a81dccc20dcd3a96ba78cb",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -2062,3 +2060 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)",
+        "raw_hunk_lf_sha256": "ff5cdc8b43ec12eae1300c63d676040df41abca518f22c5ba3bbc207274953c3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -2151,0 +2148,4 @@ static void escort_restore_companion_robot_control(void)",
+        "raw_hunk_lf_sha256": "6af4b3235076f059a602608b145f36e8146c9294d95fefa8fc9f54b710973250",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -2181,0 +2182,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "eb0765e26770a8557aa94a17e3e75893b271165479fd019d3d037a3b0f4dcd2c",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -2191,0 +2195,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "fef56b990adb87480140fcb225d6b53686613651543da29e7b5245d64df04115",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2192,0 +2199,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "ab0bc5b9caf0df283f53fbcf047b04194d93b82d31bc98d73c72ddac97b8108f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2205,0 +2215,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "3078354a927f2f2d4c6cf777ad305f0b7eafebaebee2727771a1c03c44a09b11",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2206,0 +2219,3 @@ int escort_save_runtime(guidebot_save_stream *s)",
+        "raw_hunk_lf_sha256": "82cfef1a5ae4511d9d2352153900ae31b4c4574c23d77d403c8b765627babbb7",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            4
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/object.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_prepare_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_host.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_world_rollback_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_dead.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_dying_travel_alive.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_released.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/game_scripts/test_coop_guidebot_travel_navigation_client.jsonc",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop_start_positions.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_transition_policy.c",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 0,
+    "current_delta_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_lines": 0,
+    "current_delta_lf_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "current_delta_hunks": 0,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [],
+    "hunks": []
+  },
+  {
+    "path": "d1/main/CMakeLists.txt",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1296,
+    "current_delta_raw_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a",
+    "current_delta_lines": 24,
+    "current_delta_lf_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a",
+    "current_delta_hunks": 3,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 24,
+        "range_lf_sha256": "473d0996d8c02c182bc1cae76a02bb920c8bc13b4a4ee608eb15625bd2f1b47a"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -6,0 +7 @@ set(D1X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "5c037e8c22e2a99840276aaa66ed74236db0c93accb3a9a0eb87b9645eee6f03",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -99,0 +101 @@ set(D1X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "e0625e247f67c2167f1712142107e1eb4f3d6404b4104615ee9c0d38ccf40da0",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -332,13 +334,2 @@ install(TARGETS dxx-redux-d1 RUNTIME DESTINATION .)",
+        "raw_hunk_lf_sha256": "0331cfd2f40241f84a28c58335290f4705922c194fb4633fc176636f252f8daa",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "path": "d2/main/CMakeLists.txt",
+    "current_delta_unified": 0,
+    "current_delta_bytes": 1380,
+    "current_delta_raw_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042",
+    "current_delta_lines": 26,
+    "current_delta_lf_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042",
+    "current_delta_hunks": 4,
+    "current_delta_complete_read": true,
+    "current_delta_read_ranges": [
+      {
+        "first": 1,
+        "last": 26,
+        "range_lf_sha256": "71ddd1601d7d6cdf945b38ecdcc2e1439372b84980ec64ee4a777936a0003042"
+      }
+    ],
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -16,0 +17 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "5c1ff567fca9e3d6c5fdfa880153c4283f50487de72b425b77ba5ce898915ca3",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -105,0 +107 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "23f1fd172d537aa3b4ea4014435811a5effc115885055790dbbd1d1bf023b8f1",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -130,0 +133 @@ set(D2X_MAIN_SOURCES",
+        "raw_hunk_lf_sha256": "e73eb6ed8b6b237fc7813acc1e36287418251400dbff2f5b5e14ad6447fc7fe6",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -411,13 +414,2 @@ install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)",
+        "raw_hunk_lf_sha256": "4c4090d69896121c9dae72ad093f68918b860a563abf5ba01e86ac3da2b0be8f",
+        "complete_read": true,
+        "actual_read_raw_ranges": [
+          [
+            1,
+            16
+          ]
+        ]
+      }
+    ]
+  }
+]
+```
+
+## Existing canonical owner lines
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/branch_adversarial_review_ledger.md",
+    "prepublication_whole_source_sha256": "a3d8758f9f214723a263fb322cf11260c64bf54098c725df0bc15e6e7e20caf0",
+    "read_lines": [
+      {
+        "line": 11693,
+        "text": "### BR-0082: P2 - Validate metadata-backed save bodies before offering Resume"
+      },
+      {
+        "line": 11694,
+        "text": ""
+      },
+      {
+        "line": 11695,
+        "text": "- [ ] OPEN"
+      },
+      {
+        "line": 11696,
+        "text": "- Type: defect"
+      },
+      {
+        "line": 11697,
+        "text": "- Confidence: high"
+      },
+      {
+        "line": 11698,
+        "text": "- Category: correctness/input-validation"
+      },
+      {
+        "line": 11699,
+        "text": "- Found by: R1-CHUNK-0041, R1-CHUNK-0266"
+      },
+      {
+        "line": 11700,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/jni_resume_save.cpp:L378-L399,L444-L497,L611-L656` in `read_resume_candidate`, candidate selection, and `save_explorer_slot_json`, with paired startup callsign readers at `d1/main/state.c:L2568-L2617` and `d2/main/state.c:L3376-L3425`"
+      },
+      {
+        "line": 11701,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_save_meta.c:L151-L183,L233-L279`, `android/app/src/main/cpp/shared/android_resume_pilot.c:L90-L156`, `android/app/src/main/cpp/shared/startup_resume_shared.c:L40-L88`, `android/app/src/main/cpp/shared/coop/coop_save.c:L580-L621`, `d1/main/state.c:L1930-L2045,L2513-L2617`, `d2/main/state.c:L2048-L2207,L2569-L2720,L3319-L3425`, `android/app/src/main/java/com/dxxredux/app/SaveExplorerBridge.kt:L40-L78`, and `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt:L1857-L1921`"
+      },
+      {
+        "line": 11702,
+        "text": "- Evidence: `read_resume_candidate` treats a schema-valid Android metadata trailer as sufficient proof that the entire file is a loadable save. `android_save_meta_read_path` seeks only to the trailer and validates its tag, version, enum ranges, and thumbnail shape; it never reads the DGSS magic, save version, game-specific header, mission, level, or any body byte. Candidate selection and Save Explorer therefore advertise a file whose body is truncated, corrupt, cross-format, or arbitrary whenever its final metadata structure remains valid. Kotlin trusts the native candidate and launches the selected game, which only then asks the full engine restore path to parse the unvalidated body. The separate legacy parser cannot mitigate this case because it runs only when metadata is invalid. A branch-produced manual cooperative save is a concrete non-corrupt instance of the same mismatch: `.mgN` files with real metadata callsigns pass `read_resume_candidate`, but the cooperative writer inserts `state_game_id` and `CALLSIGN_LEN+1` bytes between version and description. The new paired `state_get_save_file_callsign` helpers and normal startup restore both assume description follows version immediately, so they parse the cooperative body 13 bytes early. The helper's apparent player callsign begins at the saved mission terminator and is empty for the normal eight-byte mission field, while `state_restore_all_path` starts with non-multiplayer `Game_mode` and cannot select the cooperative header branch."
+      },
+      {
+        "line": 11703,
+        "text": "- Trigger: Corrupt or truncate the body of an Android save while preserving its metadata trailer, append a copied valid trailer to a save-slot-named non-save file, encounter a save write or restore whose body is inconsistent with its surviving footer, or create a manual cooperative `.mgN` save under a real callsign and select it as the newest or Save Explorer resume candidate"
+      },
+      {
+        "line": 11704,
+        "text": "- Impact: The launcher can rank and offer a corrupt or unsupported-layout file as the newest or highest-progress resume, hide a usable older candidate behind it, and hand malformed state to a large engine deserializer instead of retaining the file as an explicit orphan. In the ordinary cooperative case, the advertised Load action predictably cannot recover the saved session and can first derive the wrong pilot identity from misaligned body fields."
+      },
+      {
+        "line": 11705,
+        "text": "- Expected: Metadata is descriptive, not proof of body validity; every offered candidate passes game-specific save-header and structural validation, including its single-player or cooperative scope, and an invalid or unsupported body remains visible only as a non-loadable orphan with a precise reason"
+      },
+      {
+        "line": 11706,
+        "text": "- Suggested fix: Centralize a side-effect-free D1/D2 save validation API owned by the engine readers and require it for metadata-backed and legacy candidates before ranking or exposing Load. At minimum validate DGSS magic, compatible version, expected game and scope-specific header layout, complete mandatory reads, mission termination and availability, and plausible level fields; do not duplicate a weaker launcher-only parser. Encode or derive cooperative scope explicitly and either exclude cooperative saves from single-player startup resume or implement a dedicated cooperative-session restore path; make callsign extraction use the same validated layout parser."
+      },
+      {
+        "line": 11707,
+        "text": "- Validation: Add native-to-Kotlin fixtures with valid metadata plus valid single-player and cooperative D1 and D2 bodies, valid trailers on wrong-magic and random bodies, truncation before and within mandatory fields, a cross-game body, invalid mission termination, and a corrupt body that preserves timestamp and progress metadata. Include manual cooperative saves with real callsigns and sentinel autosaves in flat and save-set paths. Assert corrupt and unsupported-scope files never become Resume or Load candidates or displace the newest valid save, while any deliberately supported cooperative path reads its header, callsign, mission, and level at the correct offsets and launches only with established multiplayer session state."
+      },
+      {
+        "line": 11708,
+        "text": "- Verification (2026-08-10, sol-5.6-medium): CONFIRMED, with the remediation boundary narrowed. Frozen `android_save_meta_read_path` seeks from EOF and validates only the packed trailer and its enum/thumbnail fields (`android/app/src/main/cpp/shared/android_save_meta.c:L233-L279`); `read_resume_candidate` then publishes it without reading byte zero (`android/app/src/main/cpp/jni_resume_save.cpp:L378-L399`), and both newest/options selection loops rank that result at L444-L497. This is directly reproduced by the maintained native metadata test: `android/tests/test_android_save_meta.c:L5-L20,L78-L173` writes the literal non-DGSS body `base-save-body` before valid D1/D2 trailers and expects those files to parse and compete for newest selection. The launcher recursively collects both `.sgN` and `.mgN` files and converts the selected metadata directly to Resume JSON (`jni_resume_save.cpp:L39-L84,L744-L829`), while Kotlin's metadata-backed fixtures start from trusted candidate DTOs and do not disprove native body admission. The paired restore paths validate `DGSS` and only a game-specific minimum version, then read the header, load the mission, set time/player globals, and continue deserializing (`d1/main/state.c:L1930-L2085`; `d2/main/state.c:L2569-L2750`); startup invokes them only after launch through `startup_resume_shared.c:L57-L82`. They have no side-effect-free complete-body validation API or rollback wrapper. Complete preflight cannot be implemented by merely reusing `read_save_header_preview`: D1 version 15 and D2 version 29 share `DGSS`, the preview has only minimum-version gates, cooperative writers insert `state_game_id` plus a nine-byte callsign before description (`d1/main/state.c:L1697-L1712`; paired D2 L2075-L2089), and later DGSS sections are version-gated, count-driven, and unframed. The feasible local fix is therefore two-part: immediately require a scope-aware paired header probe and exclude cooperative layouts from single-player Resume; for newly written metadata, version the trailer to carry the exact pre-trailer byte count plus a digest computed over the complete DGSS/cooperative prefix, and verify both before ranking. Existing unhashed saves can remain inspectable and use only the explicitly weaker header-qualified legacy policy. A true semantic complete-body validator would require a separate staged-reader refactor and must not be simulated by calling the mutating restore. Focused tests should retain genuine paired D1/D2 single-player saves, reject the current literal-body fixtures, copied trailers, prefix truncation/bit flips, version-crossed bodies, and `.mgN` candidates, and prove invalid high-timestamp files cannot displace a valid older candidate."
+      },
+      {
+        "line": 11709,
+        "text": "- Resolution: Pending"
+      },
+      {
+        "line": 13364,
+        "text": "### BR-0195: P1 - Authenticate cooperative state-packet authority"
+      },
+      {
+        "line": 13365,
+        "text": ""
+      },
+      {
+        "line": 13366,
+        "text": "- [ ] OPEN"
+      },
+      {
+        "line": 13367,
+        "text": "- Type: defect"
+      },
+      {
+        "line": 13368,
+        "text": "- Confidence: high"
+      },
+      {
+        "line": 13369,
+        "text": "- Category: security/protocol-integrity"
+      },
+      {
+        "line": 13370,
+        "text": "- Found by: R1-CHUNK-0101, R1-CHUNK-0119, R1-CHUNK-0122, R1-CHUNK-0141, R1-CHUNK-0204, R1-CHUNK-0238"
+      },
+      {
+        "line": 13371,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/coop/coop_multi_status.c:L75-L82,L159-L192`; `android/app/src/main/cpp/shared/coop/coop_warp.c:L333-L365`; `android/app/src/main/cpp/shared/multi_save_transfer.c:L79-L84,L770-L805`; `d1/main/multi.c:L3323-L3346,L5707-L5708`; and `d2/main/multi.c:L3486-L3509,L7620-L7621` in cooperative packet application"
+      },
+      {
+        "line": 13372,
+        "text": "- Related: `android/app/src/main/cpp/shared/android_rewind_policy.c:L39-L47`, `android/app/src/main/cpp/shared/difficulty_runtime_shared.c:L76-L117`, `d1/main/multi.c:L5567-L5708`, `d2/main/multi.c:L7355-L7621`, `d1/main/net_udp.c:L6721-L6804`, `d2/main/net_udp.c:L6881-L6958`, and BR-0080"
+      },
+      {
+        "line": 13373,
+        "text": "- Evidence: The new handlers trust identity or authority encoded inside the multiplayer payload. `coop_do_peer_status` writes the claimed slot's kill statistics without comparing it with the authenticated outer UDP sender. More seriously, `coop_do_restore_inventory` checks only that the claimed target equals the local player, then applies attacker-controlled energy, shields, score, laser level, weapon flags, twenty ammo values, durable flags, lifetime statistics, and time totals. `coop_warp_do_packet` similarly accepts a payload-selected warper slot, valid segment, and coordinates, then moves and relinks that claimed player's object without requiring the claimed warper to match the authenticated sender. The paired `multi_do_difficulty` handlers likewise authorize solely by comparing the payload's claimed sender byte with `multi_who_is_master`; a non-host can copy the public master slot into byte 1 and choose any admitted difficulty. The handler then changes live AI, weapon, damage, scoring, history, `Netgame`, HUD, and player-default state and writes the receiving player's profile. Rewind requests add the same identity flaw: `multi_do_rewind_request` treats payload byte 1 as the requester, checks only that some connected or waiting player occupies that slot, indexes its one-second throttle by the claimed slot, and sends results to that slot. On the host, the UDP layer authenticates a peer only against the outer `pnum`, then forwards the complete inner message to every other player before local dispatch. D2 carries that authenticated slot into `multi_process_data_from_player` but passes it only to a later escort-owner handler, not to these cooperative handlers; D1 discards it before dispatch. A non-host peer can therefore send a valid restore packet with another player's slot in byte 1, a warp packet claiming another connected player and arbitrary accepted destination coordinates, a difficulty packet claiming the master, or rewind requests that cycle through other connected slots. The host accepts and relays the state packets; recipients apply the trusted-host copy to live state, while forged rewind identities bypass the intended per-client throttle and misdirect results. The same path lets a peer attribute arbitrary status totals to another slot. BR-0080 covers unsafe ship-status indices and their memory-safety impact; this finding covers the distinct identity, authority, and cooperative state-integrity failure in the new message types."
+      },
+      {
+        "line": 13374,
+        "text": "- Trigger: Join an Android cooperative D1 or D2 game with a modified peer; send `MULTI_COOP_RESTORE_INV` through the normal multiplayer channel with the victim's player number and chosen record fields, send `MULTI_COOP_PEER_STATUS` with another connected player's number, send `MULTI_WARP_TO_PLAYER` with the victim as the claimed warper and chosen valid segment and coordinates, send `MULTI_DIFFICULTY` with the master slot in byte 1 and an attacker-selected value in byte 2, or enable client rewind requests and rapidly send `MULTI_REWIND_REQUEST` while cycling byte 1 through connected player slots"
+      },
+      {
+        "line": 13375,
+        "text": "- Impact: Any admitted participant can remotely replace another player's combat inventory, score, progression totals, and selected durable state, falsify another player's cooperative statistics, teleport and relink another player's object, force the global difficulty and persist that forced choice as each recipient's default, or bypass the rewind requester's per-second throttle in proportion to the number of occupied slots while attributing requests and responses to victims. Invalid semantic values such as an out-of-range laser level or unverified warp position also enter engine state, so later gameplay operates on state that the normal inventory, save, and warp paths never produce."
+      },
+      {
+        "line": 13376,
+        "text": "- Expected: Peer-status, warp, and rewind-request identities match the authenticated sender, inventory restoration and difficulty changes are accepted only from the current authenticated master in their valid phases, throttling follows the real peer rather than a payload claim, and every decoded field and destination is validated before one atomic state update."
+      },
+      {
+        "line": 13377,
+        "text": "- Suggested fix: Preserve the authenticated outer player through D1 and D2 multi-message dispatch, pass it to every cooperative handler, require peer-status, warp, and rewind-request identity to match that sender, index rewind throttling by the authenticated sender, and require restore and difficulty messages to originate from `Multi_master_playernum`, with restore additionally requiring a pending local rejoin. Require cooperative mode and a connected playing sender, validate warp position semantics before mutation, decode inventory into a temporary record, validate every field against game-specific limits, then commit once. Ensure the host rejects and does not relay unauthorized packets and that rejected difficulty messages cannot reach player-file persistence."
+      },
+      {
+        "line": 13378,
+        "text": "- Validation: Add paired D1 and D2 protocol tests with separate host, sender, victim, and observer identities; cover valid self-warp, host restoration and host difficulty changes, valid and throttled client rewind, non-host restore and difficulty forgery, mismatched peer-status, warp, and rewind identities, rewind slot cycling, forged outer and inner slots, arbitrary warp segment and coordinates, host relay, direct and reliable delivery, stale restoration outside rejoin, and boundary plus invalid record fields. Assert rejected packets are not forwarded, do not rewrite player files, do not consume or bypass another peer's rewind throttle, and leave all player, object, segment-link, cooperative-stat, difficulty, history, and default-preference state byte-for-byte unchanged."
+      },
+      {
+        "line": 13379,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L174-L185,L674-L750` and the closing handlers at `L751-L809`"
+      },
+      {
+        "line": 13380,
+        "text": "- Additional evidence (R1-CHUNK-0204): Transfer authority is unauthenticated in both directions. Every non-host client accepts `BEGIN`, `CHUNK`, and `APPLY` based on local role and an eight-bit transfer ID, without proving that the original sender was the host; because the host authenticates and relays a peer's outer packet before these inner handlers run, a participant can supply a self-consistent size, FNV checksum, chunks, and apply command that recipients treat as an authoritative host rewind or save restore. Conversely, the host's ready handler trusts payload byte 2 as `pnum`; a different peer can claim a victim slot in both a buffer-ready message and the later apply-ready message, advance both readiness flags, and make the host transmit or restore without the victim reaching either phase. Requiring reliable delivery does not authenticate the inner authority or claimed slot."
+      },
+      {
+        "line": 13381,
+        "text": "- Additional validation (R1-CHUNK-0204): Extend the paired protocol matrix to all four transfer messages. Inject `BEGIN`, every `CHUNK`, and `APPLY` from a non-host with a valid attacker-computed checksum and a host-looking payload, and forge `READY_BUFFER` and `READY_APPLY` with another client's slot. Assert the host drops these before relay, clients accept transfer phases only from the authenticated current host, ready phases update only the authenticated sender's slot, and no allocation reset, payload publication, restore, readiness transition, timeout extension, or HUD success occurs for rejected traffic."
+      },
+      {
+        "line": 13382,
+        "text": "- Additional location (R1-CHUNK-0238): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/multi.c:L4810-L4962,L5567-L5677`; paired `d2/main/multi.c:L6331-L6482,L7362-L7514`"
+      },
+      {
+        "line": 13383,
+        "text": "- Additional evidence (R1-CHUNK-0238): Android changes damage and repair from observer-directed status into broadcasts received by every cooperative peer, then adds ordinary-player branches that write `Players[buf[1]].shields` without checking that byte 1 is in range or matches the authenticated outer sender. Both commands have fixed accepted sizes, so a participant can send a correctly sized packet with a victim's slot and chosen `new_shields`, or use `0xff` to write beyond `Players[]`. The host's UDP path authenticates only the outer player, forwards the untouched message to other players before local dispatch, and does not compare the inner slot. D1 discards sender identity in `multi_process_bigdata`; D2 carries `authenticated_sender` into `multi_process_data_from_player` but calls both handlers without it. Thus one admitted peer can corrupt every recipient's cached shield state or trigger network-reachable native memory corruption. This is the same missing authenticated-sender binding already tracked here; BR-0080 covers the analogous ship-status-specific indices."
+      },
+      {
+        "line": 13384,
+        "text": "- Additional validation (R1-CHUNK-0238): Add paired D1/D2 cooperative packet tests for valid self damage and repair, a different connected slot, `MAX_PLAYERS`, and `0xff`, over reliable and ordinary delivery with host relay and observers present. Assert the host rejects mismatched or out-of-range inner slots before forwarding, recipients derive the target only from the authenticated sender, legitimate updates affect exactly that sender, all rejected traffic leaves `Players[]` and adjacent sentinels unchanged, and AddressSanitizer reports no invalid access."
+      },
+      {
+        "line": 13385,
+        "text": "- Additional location (R1-CHUNK-0248): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d1/main/net_udp.c:L948-L1010,L1049-L1075,L6013-L6063,L7476-L7526`, with paired `d2/main/net_udp.c:L7660-L7710`, and `d1/main/multi.c:L2723-L2802`"
+      },
+      {
+        "line": 13386,
+        "text": "- Additional evidence (R1-CHUNK-0248): The branch changes P2P ping handling from refreshing slot zero only for an observer host to refreshing the current master's `LastPacketTime` for every ping whose payload-selected `from_player` equals `multi_who_is_master()`, describing that claim as proof the host is reachable. P2P ping admission validates the fixed packet size and shared netgame token, but does not bind `from_player` to `sender_addr`; the existing route-trust flaw was present at the base, but the branch newly uses that unauthenticated identity as a host-liveness credential. Any admitted peer can therefore continue sending valid pings that claim the departed master. Each ping resets the timestamp before `net_udp_timeout_check` can call `multi_disconnect_player(master)`, and that disconnect is the path that invokes Android cooperative host migration or reports host loss. A malicious or faulty survivor can hold every recipient that hears the forged heartbeat on the dead-host roster indefinitely instead of letting the session recover."
+      },
+      {
+        "line": 13387,
+        "text": "- Additional validation (R1-CHUNK-0248): In paired D1 and D2 direct and proxy tests, disconnect the current host while another admitted peer sends P2P pings claiming itself, the host, another survivor, and invalid boundary slots. Require only an address- or authenticated-route-bound host packet to refresh host liveness; forged host claims must not change any `LastPacketTime`, route, loss, or connection state and must not delay the bounded timeout, deterministic master election, or explicit host-loss exit. Repeat after migration with a nonzero master slot and with observer-host mode."
+      },
+      {
+        "line": 13388,
+        "text": "- Resolution: Pending"
+      },
+      {
+        "line": 13389,
+        "text": ""
+      },
+      {
+        "line": 13447,
+        "text": "### BR-0206: P1 - Stage multiplayer restores before applying any peer"
+      },
+      {
+        "line": 13448,
+        "text": ""
+      },
+      {
+        "line": 13449,
+        "text": "- [ ] OPEN"
+      },
+      {
+        "line": 13450,
+        "text": "- Type: defect"
+      },
+      {
+        "line": 13451,
+        "text": "- Confidence: high"
+      },
+      {
+        "line": 13452,
+        "text": "- Category: correctness/multiplayer-synchronization"
+      },
+      {
+        "line": 13453,
+        "text": "- Found by: R1-CHUNK-0107, R1-CHUNK-0204, R1-CHUNK-0274"
+      },
+      {
+        "line": 13454,
+        "text": "- Location: `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/android_rewind.c:L398-L436` in authoritative restore and `android/app/src/main/cpp/shared/multi_save_transfer.c:L188-L258,L573-L610` in client and host rewind application"
+      },
+      {
+        "line": 13455,
+        "text": "- Related: `d1/main/state.c:L1704-L1709,L1980-L2003`, `d2/main/state.c:L2081-L2086,L2648-L2675`, and `android/app/src/main/cpp/shared/state_android_shared.c:L710-L735`"
+      },
+      {
+        "line": 13456,
+        "text": "- Evidence: A cooperative rewind snapshot is serialized on the host and its save header therefore contains the host's callsign. Each client receives that buffer with `snapshot_index = -1` and calls `android_rewind_restore_authoritative`, which always calls `state_restore_from_memory`. The paired D1 and D2 restore code rejects a cooperative save whose recorded callsign differs from `Players[Player_num].callsign`; only `state_restore_coop_from_memory` enables the authoritative remap exception. Thus every normally named non-host client rejects the host snapshot before restoration. Independently, `multi_perform_rewind_request` restores the host first and only afterward calls `multi_send_rewind_save_transfer`. An active transfer or allocation failure makes that setup fail immediately, and a later ready, packet, checksum, disconnect, or timeout failure can abort it asynchronously, but the function merely logs setup failure and returns the host's successful status with no rollback. Even the success path lets the host simulate from the rewound state while clients wait for the complete transfer and apply command."
+      },
+      {
+        "line": 13457,
+        "text": "- Trigger: In a cooperative D1 or D2 game with at least one client whose callsign differs from the host, perform a rewind; or make transfer allocation, setup, readiness, delivery, checksum, or timeout handling fail after the host selects a point"
+      },
+      {
+        "line": 13458,
+        "text": "- Impact: The host rewinds while clients remain on their prior world generation, and ordinary packets can cross between incompatible object, player, wall, RNG, and game-time states. The session can immediately desynchronize, reject subsequent state, disconnect peers, or crash in gameplay that assumes shared object identity; the advertised cooperative rewind cannot complete for the normal distinct-callsign case."
+      },
+      {
+        "line": 13459,
+        "text": "- Expected: Every required peer validates and stages the same authoritative snapshot before any peer resumes from it, and all peers either apply one generation at a coordinated boundary or retain the prior state."
+      },
+      {
+        "line": 13460,
+        "text": "- Suggested fix: Use the cooperative authoritative restore mode for received rewind images, but make that only the apply phase of a two-phase protocol. Copy and validate the snapshot on every required peer, pause or generation-gate simulation and incompatible packets, collect readiness, then apply host and clients at one coordinated boundary and acknowledge completion. Abort before mutation if staging fails; define disconnect and apply-failure recovery rather than logging after the host has committed."
+      },
+      {
+        "line": 13461,
+        "text": "- Validation: Run paired D1 and D2 sessions with a host and multiple distinct-callsign clients, rewind during active object, wall, score, and RNG changes, and compare complete synchronized state after resume. Inject allocation failure, an already active transfer, lost and reordered begin/chunk/apply packets, checksum mismatch, slow readiness, timeout, disconnect before each phase, and client restore failure; assert every run either applies exactly one common generation or leaves every survivor on the prior generation with no cross-generation packets."
+      },
+      {
+        "line": 13462,
+        "text": "- Additional location (R1-CHUNK-0204): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:android/app/src/main/cpp/shared/multi_save_transfer.c:L215-L233,L397-L463` in cooperative save acknowledgment and host application"
+      },
+      {
+        "line": 13463,
+        "text": "- Additional evidence (R1-CHUNK-0204): The same non-atomic protocol also governs an ordinary cooperative save restore. After checksum verification, each client sends `MULTI_SAVE_TRANSFER_READY_APPLY` before `multi_prepare_restore_sync` and before calling `state_restore_coop_from_memory`. That call is fallible and mutates live state while parsing, yet the client sends no success or failure result afterward. The host records the pre-call packet as `applying_players[pnum] = 1` and, once every required slot has merely entered that branch, resets transfer state and calls its own `multi_restore_game`. A client allocation, compatibility, parse, or partial-restore failure therefore cannot veto the host: the host and successful peers commit while that client remains old or partially mutated. A client that returns failure also resets and discards its receive buffer without telling the host that application failed."
+      },
+      {
+        "line": 13464,
+        "text": "- Additional validation (R1-CHUNK-0204): Cover host-selected cooperative save restoration as well as rewind in the all-peers-or-none matrix. Inject a valid-checksum image that fails parsing on exactly one client, failure before and after live mutation, delayed restore, disconnect during apply, and host local restore failure. Require a distinct staged-success acknowledgment before any mutation and a post-commit result or recoverable generation protocol; assert the host never interprets branch entry as success and every survivor either commits the same save generation or resumes the untouched prior generation."
+      },
+      {
+        "line": 13465,
+        "text": "- Additional location (R1-CHUNK-0274): `c01d8fe4686c63d931b1e543a6305bbafaa944a9:d2/main/multi.c:L6824-L6852,L6915-L6962` in restore dispatch and host initiation, with `android/app/src/main/cpp/shared/multi_save_transfer.c:L477-L545` in transfer setup and pending-state reporting"
+      },
+      {
+        "line": 13466,
+        "text": "- Additional evidence (R1-CHUNK-0274): Every cooperative restore-transfer setup failure, including disabled packet-loss prevention, save open, size, allocation, read, or active-transfer failure, returns zero. `multi_send_restore_game` interprets that zero as permission to broadcast the legacy `MULTI_RESTORE_GAME` packet, and `multi_initiate_restore_game` then observes no active pending transfer and immediately calls `multi_restore_game` on the host. The legacy packet carries only a slot and game ID, not the host's authoritative save image; with per-player save namespaces, peers can lack or reject that local slot while the host has already committed. Thus a setup failure that should abort before mutation instead starts a host-only generation and exposes the same cross-generation traffic and failure modes as the later apply failures already tracked here."
+      },
+      {
+        "line": 13467,
+        "text": "- Additional validation (R1-CHUNK-0274): In paired cooperative restore tests, inject each setup failure before any begin packet: packet-loss prevention disabled, missing or unreadable host save, zero and oversized file, allocation and short-read failure, and an already active transfer. Require no legacy restore packet, no host or client state mutation, no score or object traffic from a new generation, an explicit failure result, and a cleared or recoverable transfer state; retain the no-connected-client case as the only path allowed to restore locally without a transfer."
+      },
+      {
+        "line": 13468,
+        "text": "- Resolution: Pending"
+      }
+    ]
+  },
+  {
+    "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "e89f56e1be9b197e419d5d7a0264de59427888cac10e16b66d1f20a360df459d",
+    "read_lines": [
+      {
+        "line": 145,
+        "text": "| 17 | 57 | MEDIUM-HIGH | 12/21/7/10/7 | `GQR-0262` | `TODO` | `GQF-0276` | Extract paired active saved-player restoration |"
+      },
+      {
+        "line": 342,
+        "text": "| 214 | 44 | MEDIUM | 23/0/7/10/4 | `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes with conservative persisted ownership |"
+      },
+      {
+        "line": 8133,
+        "text": "| `GQF-0275` | `OPEN` | P2/high | correctness/cooperative-recovery-liveness | shared coop_recovery.c; paired disconnect/join cancellation | Returning gear owner snapshots a third active peer in freeze_waiting; peer leaves before matching REC_FROZEN, same-host retries never terminate and recovery save/world readiness remains blocked. Only receipt clears individual bits; ordinary disconnect/frame/join cancellation does not. Source-supported trigger, no runtime repro. GQR0261 bounded connection-bound attempt cancellation and persisted uncertain-pickup reconciliation plan |"
+      },
+      {
+        "line": 8134,
+        "text": "| `GQF-0276` | `OPEN` | P3/high | diff-minimization/merge-pressure | d1/main/state.c; d2/main/state.c active saved-player restoration | Paired19line restore loops have identical18line bodies, with D2 world-only exclusion. Move to existing shared coop_save.c/.h; one D1 and two guarded D2 call lines remove35 inherited source lines across two edited hunks. Preserve native format/PHYSFS/failure boundaries, slot mapping and inventory/life/serial order. Proposed savings only, GQR0262 focused extraction and actual equivalence acceptance |"
+      },
+      {
+        "line": 10955,
+        "text": "| `GQR-0261` | `TODO` | `GQF-0275` | Terminate abandoned recovery freezes without duplicating gear | Shared connection-bound attempt lifetime with explicit participant-loss/join-cancel/bounded failure outcomes. Preserve known pickup intersections; resolve and persist uncertain remainder within existing recovery ledger before regrant or save/world progress. No blind mask prune, forgotten gear or indefinite global save block. Maintained actual native timer/participant, stale reply/slot reuse/persistence/migration and real three-peer same-host LAN readiness/inventory/save/restore acceptance. Plan plan_gq2_0122_recovery_freeze_disconnect_20261009.md; design prerequisite, no implementation/runtime result |"
+      },
+      {
+        "line": 10956,
+        "text": "| `GQR-0262` | `TODO` | `GQF-0276` | Share saved active-player inventory restoration | Existing coop_save.c/.h const-metadata helper replaces paired19line loops with1D1/2guardedD2 lines, expected35 inherited lines/two edited hunks. Preserve traversal/ID fallback/dead-ship normalization/same-level inventory/local shields/old-slot serial-life and absent-cache order. D2 world-only guard stays explicit at caller; no native format or transaction rewrite. Actual native state-equivalence plus paired restore/absent/world controls and platform validation. Plan plan_gq2_0122_shared_saved_player_restore_20261009.md; no implementation/applied saving |"
+      }
+    ]
+  }
+]
+```
+
+</details>
+
+<!-- END IMPORT: GQ2-CHUNK-0125 cooperative travel continuation diagnosis 20261009 -->
+
+### Chunk0125 canonical publication checkpoint, 2026-10-09
+
+One branch-added travel source frozenL751-L1500of1677/enclosing750-1677partial/current1683partial;98actual ranges/35physical16whole/35complete unified0current deltas/71canonical lines. NO_INHERITED_EFFECT/RETAIN; base/originalABSENT, zero assigned/applied saving. Existing GQR0261REFERENCE44; BR0082/0195/0206OPEN and GQR0262separateTODO unchanged. No new owner/finding/rating/extraction or execution. Report SHA256 `4b2e6f8b97046c7abad4ff86f7f1c5c3a15118b8fecb28c149d81c33728ff43e`; scope `868634707d1ed9d7ec4c3c3378df458ed492f495cfca56b5c452738f92fb67c7`. Exact immutable report imported as GQ2-CHUNK-0125 cooperative travel continuation diagnosis 20261009. GQC1094ISSUES/GQD0974NO_INHERITED_EFFECT/CURRENT-RECONCILIATION-RETAIN/0125DONE diagnosis only. Five added semantic rows/one oldTODO queue removed;1081terminal ranks rebuilt score/H/M/C/R/ID,262fix ranks unchanged. Existing owner/product statuses and ratings preserved. Gates1-4complete;gate5independent audit pending.0116historical audit debt separate, overallgoalactive. No product/source/test/script edits, execution/build/device/probes/staging/commit; concurrent work preserved.
+
+
+### Chunk0125 terminal diagnosis handoff, 2026-10-09
+
+- Allfive gates complete. Independent publication audit PASS: exact assigned frozenL751-L1500/enclosing750-1677partial/current1683partial;98actual chronological ranges/35physical16whole/35complete unified0current deltas/71canonical lines in2owners. Complete addition hunk explicitly partial, no whole frozen/current travel claim. Manifest4350rawidentity/blob/base/originalabsence and source/range/delta/hunk checks verified against snapshot/live; no live drift at audit.
+- Immutable reportSHA2564b2e6f8b97046c7abad4ff86f7f1c5c3a15118b8fecb28c149d81c33728ff43e; scope868634707d1ed9d7ec4c3c3378df458ed492f495cfca56b5c452738f92fb67c7. Exact fiveJSONblocks/imported body PASS. GQC1094ISSUES/GQD0974NO_INHERITED_EFFECT/CURRENT-RECONCILIATION-RETAIN/0125DONE; existing GQR0261REFERENCE44 unchanged. BR0082/0195/0206OPEN, GQF0275freezeOPEN/GQR0261TODO and GQR0262extractionseparateTODO. No newfinding/candidate/owner/rating/extraction/appliedsaving; originalABSENT/zero assigned inheritedsaving.
+- Fiveadded semantic rows/one oldTODO removed; all other table/product semantics retained.262fix ranks unchanged;1081terminal ranks contiguous/unique/sorted score/H/M/C/R/ID. Inherited/resume/evidence prior raw prefixes preserved; exact report imported; active/archiveBRrawbytes unchanged. Fixture source/registration/partial authority/container metadata/worker source are not runtime/full semantic acceptance; concurrent product work preserved.
+- No product/source/test/script edits, tests/build/device/probes, staging or commit.0116historical inherited-byte audit debt remains separate; numbered queue266DONE361TODO; overall goal active.
+- Next numbered scope0126 game_automate.cpp frozen diff hunks1-69/newL29-L4304. Discover exact assignment/current attribution before diagnosis;0125partial automation context/delta reconciliation does not complete0126assignment. Remaining numbered/supplemental/sweeps/final-head/worktree supplements/closure still required.
