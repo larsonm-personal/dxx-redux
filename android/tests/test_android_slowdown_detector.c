@@ -269,10 +269,14 @@ static void test_stutter_gameplay_trace(void)
 	android_stutter_detector_flush(&detector);
 	before = sample.frame.frame_id;
 	sample.move_us = 55000;
+	sample.outer_us[ANDROID_OUTER_PRESENT] = 9000;
+	sample.outer_cpu_us[ANDROID_OUTER_PRESENT] = 1000;
 	sample.network.stage[ANDROID_NETWORK_RECEIVE].wall_us = 45000;
 	sample.network.stage[ANDROID_NETWORK_RECEIVE].cpu_us = 25;
 	feed_stutter(&detector, &sample, 1, 80000, 70000);
 	sample.move_us = 0;
+	memset(sample.outer_us, 0, sizeof(sample.outer_us));
+	memset(sample.outer_cpu_us, 0, sizeof(sample.outer_cpu_us));
 	memset(&sample.network, 0, sizeof(sample.network));
 	reports = feed_stutter(&detector, &sample, 25, 40000, 5000);
 	expect_true("isolated 80 ms frame reported", reports == 1);
@@ -285,6 +289,10 @@ static void test_stutter_gameplay_trace(void)
 	                detector.completed.worst.network.stage[ANDROID_NETWORK_RECEIVE].cpu_us == 25);
 	expect_true("outside callback gap retained",
 	            detector.completed.max_interval_us - detector.completed.worst.frame.total_us == 10000);
+	expect_true("preceding presentation wall/CPU evidence stays with its frame",
+	            detector.completed.worst.outer_us[ANDROID_OUTER_PRESENT] == 9000 &&
+	                detector.completed.worst.outer_cpu_us[ANDROID_OUTER_PRESENT] == 1000 &&
+	                detector.completed.before_worst.outer_us[ANDROID_OUTER_PRESENT] == 0);
 	expect_true("cap aware threshold", detector.completed.threshold_us == 60000);
 	/* Another short stall must still report, regardless of sustained recorder cooldown */
 	feed_stutter(&detector, &sample, 1, 90000, 5000);

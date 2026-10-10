@@ -39,14 +39,14 @@ object DebugLog {
     private val enabledCategories = BooleanArray(DebugLogCategory.COUNT)
     private val lock = Any()
     private val tsFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
-    private val forcedBatchExecutor =
+    private val diagnosticBatchExecutor =
         ThreadPoolExecutor(
             1,
             1,
             0L,
             TimeUnit.MILLISECONDS,
-            ArrayBlockingQueue(2),
-            { runnable -> Thread(runnable, "slowdown-log-writer").apply { isDaemon = true } },
+            ArrayBlockingQueue(8),
+            { runnable -> Thread(runnable, "diagnostic-log-writer").apply { isDaemon = true } },
         )
 
     /** True if any category is enabled (controls file open/close). */
@@ -137,6 +137,11 @@ object DebugLog {
         category: Int,
         message: String,
     ) {
+        // Frame diagnostics must not wait for formatting or file flushes
+        if (category == DebugLogCategory.PROFILING) {
+            logBatch(category, message)
+            return
+        }
         synchronized(lock) {
             writer ?: return
             if (category < 0 || category >= DebugLogCategory.COUNT) return
@@ -173,6 +178,22 @@ object DebugLog {
         payload: String,
         timestampEachLine: Boolean = true,
     ) {
+        if (category == DebugLogCategory.PROFILING) {
+            try {
+                diagnosticBatchExecutor.execute { writeBatch(category, payload, timestampEachLine) }
+            } catch (_: RejectedExecutionException) {
+                Log.w(TAG, "Dropping profiling batch because the writer queue is full")
+            }
+        } else {
+            writeBatch(category, payload, timestampEachLine)
+        }
+    }
+
+    private fun writeBatch(
+        category: Int,
+        payload: String,
+        timestampEachLine: Boolean,
+    ) {
         synchronized(lock) {
             writer ?: return
             if (category < 0 || category >= DebugLogCategory.COUNT) return
@@ -208,7 +229,7 @@ object DebugLog {
         if (category < 0 || category >= DebugLogCategory.COUNT || payload.isBlank()) return
         val appContext = context.applicationContext
         try {
-            forcedBatchExecutor.execute {
+            diagnosticBatchExecutor.execute {
                 synchronized(lock) {
                     if (writer == null) openLog(appContext)
                     writer ?: return@synchronized

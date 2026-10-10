@@ -23,7 +23,7 @@ Both cntrlcen.c files exist in originalfb555eec75e1ed12c8348805ab335afb4c721b06;
 - Both games must link exactly one pause-state definition on Android and desktop. Build paired native targets on both platforms and check new warnings
 - Inactive, endlevel and nonpositive-timer requests must reject without mutation. Active pause/resume must preserve the supplied exact fixed-point timer and native displayed-seconds calculation
 - Paused countdown frames must leave timer and SIM RNG/rocking/audio/terminal flash/death unchanged. Resume must continue normally. Cosmetic effects outside countdown simulation retain native policy
-- Preserve clearing at countdown start, level initialization, restore/teardown and host migration. Pause remains transient, excluded from save/pilot/cheat state; loading an active countdown resumes running
+- Preserve clearing at countdown start, level initialization, native restore initialization and host migration. Cooperative save metadata explicitly stores reactor_paused and reapplies its saved value after native reset; preserve that behavior and validate paused and running cooperative saves separately. Pilot/cheat persistence remains outside this extraction
 - Preserve cooperative host authority, connected-sender checks, exact timer synchronization, duplicate-state behavior and competitive rejection. Verify host-local/client request, nonhost/malformed rejection and migration for both games
 - Verify automation setter active/inactive cases and map menu flow. Current maintained countdown travel fixture does not directly exercise reactor_countdown_paused; identify or extend meaningful direct coverage in the future implementation tranche
 - Run relevant existing tests and paired integration checks only when implementation is authorized. Historical map_reactor_countdown_pause_20260814.md validation claims are context, not acceptance evidence for this extraction
@@ -35,9 +35,9 @@ Both cntrlcen.c files exist in originalfb555eec75e1ed12c8348805ab335afb4c721b06;
 - [x] Read complete paired frozen cntrlcen.c diffs and original symbol attribution
 - [x] Read portable paired CMake source registration contexts
 - [x] Read whole earlier feature plan in bounded untruncated ranges
-- [ ] Finish packet/session/reset/caller ownership review for parent0127
-- [ ] Reconcile existing canonical owners using broader aliases and bounded actual rows; no duplicate finding admission
-- [ ] Publish parent immutable diagnosis report and audit before assigning final canonical finding/remediation/ranking entries
+- [x] Finish packet/session/reset/caller ownership review for parent0127
+- [x] Reconcile existing canonical owners using broader aliases and bounded actual rows; no duplicate finding admission
+- [x] Publish parent immutable diagnosis report and audit before assigning final canonical finding/remediation/ranking entries
 
 Provisional severity P3 maintenance/diff minimization. No runtime defect asserted. No final score or ID assigned; zero applied saving. Parent evidence bindings record actual reads and hashes. Whole original sources, current CMake files and native lifecycle remain partial
 
@@ -47,3 +47,8 @@ Provisional severity P3 maintenance/diff minimization. No runtime defect asserte
 Actual test_multi_gameplay_options.c whole230lines and CMake registration100-120 read on2026-10-09. Target links shared multi_gameplay_options.c and matcen_mode.c. Its countdown functions are mocks: active is a fixture Boolean, setter directly assigns timer/pause and returns changed-state, not the native setter return/admission contract. Thus existing captured packet roundtrips cannot validate proposed extraction's native seconds rounding, active/endlevel rejection, paused SIM/RNG behavior or restore/reset lifecycle. Plan meaningful real-owner coverage in later implementation; do not count these packet mocks as that evidence
 
 Existing GQF-0257FIXED/GQR-0243DONE is the earlier paired139line multiplayer packet extraction, not the paired21line countdown domain state/functions proposed here. Preserve that closure and its saving; final canonical duplicate reconciliation remains pending
+
+
+## Canonical diagnosis admission
+
+Parent0127 allfive diagnosis gates independently audited complete. GQF-0277OPEN/GQR-0263TODO admitted57MEDIUM-HIGH12/21/7/10/7;42expected inherited lines/two hunks,zero appliedsaving. ReportSHA2567c0b6144523db3a67b7f39ea9b039a5120254da9f3aa806163e1fac1525b74e5. Implementation and runtime validation remain pending; no code changes

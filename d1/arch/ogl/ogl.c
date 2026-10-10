@@ -2414,6 +2414,7 @@ void gr_flip(void)
 		 * have shown libglcore crashes here even though only debug consumers need
 		 * these samples. */
 		if (need_fb_sample) {
+			android_profile_outer_mark(ANDROID_OUTER_READBACK);
 			if (trace_flip)
 				crash_breadcrumb("gr_flip: fb_sample");
 			int w, h;
@@ -2424,6 +2425,7 @@ void gr_flip(void)
 				&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
 				&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
 			game_introspect_sample_framebuffer(w, h);
+			android_profile_outer_mark(ANDROID_OUTER_PRESENT);
 		}
 	}
 	ogl_android_apply_pending_runtime_options("gr_flip");
@@ -2455,10 +2457,12 @@ void gr_flip(void)
 	android_ogl_scene_probe_before_swap(ogl_msaa_state.flip_serial);
 	android_ogl_loading_probe_frame();
 #endif
+		android_profile_outer_mark(ANDROID_OUTER_SWAP);
 		android_perf_clock_now(&swap_start);
 		ogl_swap_buffers_internal();
 		android_perf_clock_now(&swap_end);
 		g_swap_time_us = android_perf_elapsed_us(&swap_start, &swap_end);
+		android_profile_outer_mark(ANDROID_OUTER_PRESENT);
 		android_ogl_msaa_presented(&ogl_msaa_state);
 	}
 #else

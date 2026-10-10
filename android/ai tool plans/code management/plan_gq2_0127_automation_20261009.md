@@ -3,10 +3,10 @@
 Diagnosis and plans only.0126 allfive gates independently audited; numbered queue267DONE/360TODO. Preserve concurrent work. No source/product/test/script changes, builds/tests/devices/probes, staging or commits.0116 historical raw-byte audit debt remains separate
 
 - [x] Complete exact frozen assigned hunks, enclosing/current source and original attribution
-- [ ] Trace routing, cockpit, weapon art, countdown, matcen and boss ownership boundaries
-- [ ] Inspect maintained fixtures and registration without execution; state acceptance limits
-- [ ] Reconcile existing owners, simplification and complete current deltas
-- [ ] Publish/import immutable report and independently audit scope/records/ranks
+- [x] Trace routing, cockpit, weapon art, countdown, matcen and boss ownership boundaries
+- [x] Inspect maintained fixtures and registration without execution; state acceptance limits
+- [x] Reconcile existing owners, simplification and complete current deltas
+- [x] Publish/import immutable report and independently audit scope/records/ranks
 
 ## Assigned frozen/current read checkpoint
 
@@ -3484,3 +3484,310 @@ Gate1complete;2-5pending/canonical0127TODO. Next two complete current deltas plu
   ]
 }
 ```
+
+
+## All current deltas complete and maintained matcen oracle checkpoint, 2026-10-09
+
+Fresh all99 prior actual source range/raw auditPASS. Actually read final automation537line delta in1-180/181-360/361-537 and matcen485line addition delta in1-245/246-485, all untruncated. Whole matcen479line current source credited through exact addition-body comparison in two source ranges; previous bounded observations remain chronological. Whole33line maintained matcen runner and catalog268-278 also actually read; its complete39line current addition delta read. Total103 actual chronological source ranges/45 physical contexts/16 whole contexts; all45 tracked current deltas complete. Source and delta reading do not imply whole automation/current native lifecycle acceptance
+
+Current automation delta includes checked checkpoint byte comparisons, repeated memory restore input preservation, exact published bytes/metadata/secret-generation recovery, archive parity and session-bound pause probes. These are source assertions, not executed acceptance. Diagnostic callback lifetime/run replacement/result publication remain existing owner acceptance extensions; no fresh root/status closure inferred. Full current source and giant dispatch remain partial
+
+Whole matcen script declares paired games, concrete resource hashes, nonstandalone ownership by test_android_matcen_stations; ordinary menu save/load restores1after2,2after0,0after1. Whole runner calls actual native station fixture expected36cases, requires each command exit success and paired durable resultPASS with steps_completed==total_steps. Catalog currentdelta registers runner and actualbossrow verified. Source-only runner does not prove execution, native countdown control/reset/SIM behavior, whole network or fresh run identity; keep existing output/lifecycle acceptance limits
+
+Gate3fixture review complete with explicit limitations; gate1alreadycomplete; gates2/4/5pending/canonical0127TODO. Next bounded final native header/owner duplicate reconciliation, proposed extraction attribution, consolidated evidence audit/snapshot/report/import/independent audit. No new canonical finding/status/rating/applied saving or source/test/script edits/execution/staging/commit.0116 historical audit debt separate, numbered267DONE/360TODO, overallgoalactive
+
+```json
+{
+  "live_head": "a55f2a759e71da814f59497e3ed80bd4143cf0ad",
+  "prior_actual_source_ranges_audited": 99,
+  "current_source_reads": [
+    {
+      "path": "android/game_scripts/test_matcen_save_restore.jsonc",
+      "source_lines": 479,
+      "raw_sha256": "43455f755ef2ca57edb15b6563ef9fc80f7a12fcdf13bb3a173a2fead0a1d6e7",
+      "whole_source": true,
+      "actual_read_ranges": [
+        {
+          "start": 1,
+          "end": 239,
+          "lf_sha256": "21060f42fe2831990931eb5197810506a8ab84fc5899ad0ec1421d94f30e838a"
+        },
+        {
+          "start": 240,
+          "end": 479,
+          "lf_sha256": "054bc7a5cc645224734c56d5e8c164a67d932a32cd5ffa40b58d874f30c36a4d"
+        }
+      ],
+      "actual_source_read_through_complete_addition_diff": true
+    },
+    {
+      "path": "android/tests/test_android_matcen_stations.ps1",
+      "source_lines": 33,
+      "raw_sha256": "493f17c13a6d16215c72819bb265fb2c4b6716d7df1a2f9abca85520930f5141",
+      "whole_source": true,
+      "actual_read_ranges": [
+        {
+          "start": 1,
+          "end": 33,
+          "lf_sha256": "493f17c13a6d16215c72819bb265fb2c4b6716d7df1a2f9abca85520930f5141"
+        }
+      ]
+    },
+    {
+      "path": "android/helpers/test_suite_coverage.ps1",
+      "source_lines": 399,
+      "raw_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+      "whole_source": false,
+      "actual_read_ranges": [
+        {
+          "start": 268,
+          "end": 278,
+          "lf_sha256": "03df050879ac4ddd3c94617ecc81815eb5612d7d97195fb25d69e322921b26f9"
+        }
+      ]
+    }
+  ],
+  "complete_current_deltas": [
+    {
+      "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+      "diff_lines": 537,
+      "raw_sha256": "c66af34e19c66a28f08fe077cf0a34766d27ede8534e1e338b5b1ed2a15eada5",
+      "hunks": 8,
+      "complete_current_delta_read": true,
+      "actual_diff_read_ranges": [
+        {
+          "start": 1,
+          "end": 180,
+          "lf_sha256": "172a3585d4ccd44042cc917d018d3ac7b19a763406ea7e5489f3d36bb37ca438"
+        },
+        {
+          "start": 181,
+          "end": 360,
+          "lf_sha256": "b0761a9ad79faa5c14c2b7a6ea862e24716c2d4b038ddacfcf94e90411587932"
+        },
+        {
+          "start": 361,
+          "end": 537,
+          "lf_sha256": "03579cf7ede76eae568af662c6aca6b9ec732498c7c5a0da17a674e744adadd6"
+        }
+      ],
+      "hunk_records": [
+        {
+          "header": "@@ -57,0 +58 @@ extern \"C\" {",
+          "raw_start": 5,
+          "raw_end": 6,
+          "lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892"
+        },
+        {
+          "header": "@@ -85,0 +87,5 @@ extern \"C\" {",
+          "raw_start": 7,
+          "raw_end": 12,
+          "lf_sha256": "412b0e1ea1a60be26f84eb3e5fef097b311104121c38b115df2224fbc200af59"
+        },
+        {
+          "header": "@@ -88,0 +95,3 @@ extern \"C\" {",
+          "raw_start": 13,
+          "raw_end": 16,
+          "lf_sha256": "915ce06f65d05a0f3525ed421304a688404e368d37a71e84693d297481b5fb74"
+        },
+        {
+          "header": "@@ -132,0 +142,2 @@ extern int Entered_from_level;",
+          "raw_start": 17,
+          "raw_end": 19,
+          "lf_sha256": "5936ef7bdd1f361b9e2f51533c7099994129007abc4b038f5e13b94d4130cdce"
+        },
+        {
+          "header": "@@ -4162,0 +4174,39 @@ extern \"C\" void game_automate_tick(void)",
+          "raw_start": 20,
+          "raw_end": 59,
+          "lf_sha256": "6b870170e0b60c2d2cdf364e06f31df17b69316a2569191775656ac07f2bb948"
+        },
+        {
+          "header": "@@ -6029,0 +6080,447 @@ extern \"C\" void game_automate_tick(void)",
+          "raw_start": 60,
+          "raw_end": 507,
+          "lf_sha256": "95aede0dedc97b3c60c2e9d0b32a67ef3ddb9a04e4fbc75f135c3359df3141e1"
+        },
+        {
+          "header": "@@ -6056 +6553 @@ extern \"C\" void game_automate_tick(void)",
+          "raw_start": 508,
+          "raw_end": 510,
+          "lf_sha256": "42b16f4bd2ef359a5873c2e5de98b5b00155b51bb9dd7d6cb6ab8fb226306a9f"
+        },
+        {
+          "header": "@@ -6063,0 +6561,26 @@ extern \"C\" void game_automate_tick(void)",
+          "raw_start": 511,
+          "raw_end": 537,
+          "lf_sha256": "f6d22130a04b27cdd89098f3c88e021c71fd023f1e6c152e1debb8d3e2be4022"
+        }
+      ]
+    },
+    {
+      "path": "android/game_scripts/test_matcen_save_restore.jsonc",
+      "diff_lines": 485,
+      "raw_sha256": "39a9b4c6b9b2485bf5fe707505546003d903eb13b64763e9feb873ba007a22b9",
+      "hunks": 1,
+      "complete_current_delta_read": true,
+      "actual_diff_read_ranges": [
+        {
+          "start": 1,
+          "end": 245,
+          "lf_sha256": "688e4b411b1c332d6b1060f4993a3545e0feb8dc52f907322c4ddfa75f61821c"
+        },
+        {
+          "start": 246,
+          "end": 485,
+          "lf_sha256": "84bbb01f9b06f457f04b1e9a72cb380976beac9f7e517c510aad899f512733e4"
+        }
+      ],
+      "hunk_records": [
+        {
+          "header": "@@ -0,0 +1,479 @@",
+          "raw_start": 6,
+          "raw_end": 485,
+          "lf_sha256": "67b3ab9c3b12a9c01e64ac0d1f6c472da7aa527094d6b7e1e6cbe840cbf6abd7"
+        }
+      ]
+    },
+    {
+      "path": "android/tests/test_android_matcen_stations.ps1",
+      "diff_lines": 39,
+      "raw_sha256": "f2e8556db875e17babf55e7eb0dc2cce452c217daed936bdb4958b0f5514734b",
+      "hunks": 1,
+      "complete_current_delta_read": true,
+      "actual_diff_read_ranges": [
+        {
+          "start": 1,
+          "end": 39,
+          "lf_sha256": "f2e8556db875e17babf55e7eb0dc2cce452c217daed936bdb4958b0f5514734b"
+        }
+      ],
+      "hunk_records": [
+        {
+          "header": "@@ -0,0 +1,33 @@",
+          "raw_start": 6,
+          "raw_end": 39,
+          "lf_sha256": "ea0b558c9f58217c9a1ec73098d4697247a8c05b4b51dd65c47f39887e2165da"
+        }
+      ]
+    }
+  ],
+  "pending_current_delta_inventory": []
+}
+```
+
+
+## Native API and canonical ownership reconciliation; gate2 complete, 2026-10-09
+
+Two fresh untruncated paired cntrlcen.h declaration/global ranges confirm portable native API and per-game timer/control-center ownership; two new tracked header current deltas empty.105 chronological source ranges/47 physical contexts/16 whole contexts;47/47 current deltas complete. Two actual quality rows bring29canonical lines in2ledger owners. Broad owner alias search inventory is not whole canonical reading; actual earlier packet extraction GQF0257/GQR0243 and native semantics GQD0779/GQC0899 rows distinct from paired21line transient countdown API proposal
+
+Gate2 ownership review complete with bounded native/session/transport/render/save/diagnostic ownership and explicit acceptance limits. Compact cockpit/global accessors, original actor collisions/clock/reset placements/format ownership retained; no broad original-engine dedup. Proposed42line extraction isolates only branch-added exact duplicate pause state/API into portable shared per-game source. Existing broad/narrow automation replacement/lifecycle/schema/output/numeric owners retained without new defect/status/rating changes. Replay/coop/secret restore routing policy and persistent owner generation/sequence barriers verified at recorded source boundaries, not whole live network/native lifecycle proof
+
+Unexecuted countdown admission/SIM/reset/network failure coverage and run-replacement/callback/output acceptance remain required in later remediation; absence of those tests is not new runtime counterexample. No canonical new finding/remediation ID or final rating admitted yet. Gate1/2/3complete;gate4 consolidated audit/snapshot pending;gate5report/import/audit pending/canonical0127TODO.0116 historical debt separate and overallgoalactive. No source/test/script edits or execution/staging/commit
+
+```json
+{
+  "live_head": "a55f2a759e71da814f59497e3ed80bd4143cf0ad",
+  "current_source_reads": [
+    {
+      "path": "d1/main/cntrlcen.h",
+      "source_lines": 107,
+      "raw_sha256": "f003dfac98324a99ba33526c1d30abfecb0c500fbcde3981771fd912364be38d",
+      "whole_source": false,
+      "actual_read_ranges": [
+        {
+          "start": 82,
+          "end": 96,
+          "lf_sha256": "a1f2b865e8f344782ffc437a35e0af8ea3cc24d87a1ab0c7f20026bb74d51dc4"
+        }
+      ]
+    },
+    {
+      "path": "d2/main/cntrlcen.h",
+      "source_lines": 126,
+      "raw_sha256": "0af2cf17febe4b8fd5e0a40a16664e8ab1fc3dceac43771e488ee2a96ebcd7c3",
+      "whole_source": false,
+      "actual_read_ranges": [
+        {
+          "start": 95,
+          "end": 109,
+          "lf_sha256": "ee6df211862b051c3e0593d4fe09053ddca37962136370242b26ce1de65b6444"
+        }
+      ]
+    }
+  ],
+  "canonical_reads": [
+    {
+      "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+      "source_lines": 22709,
+      "raw_sha256": "95c69d9990067b140b81732a33d3c3933c2dcbc381ccf553e7a12c58f11030b8",
+      "actual_read_ranges": [
+        {
+          "start": 7634,
+          "end": 7634,
+          "lf_sha256": "b4f54bf0c74828df0ad93b68e4e10a3b1541035e09ee5d7985993333f0fcfb90"
+        },
+        {
+          "start": 10499,
+          "end": 10499,
+          "lf_sha256": "6fb0afec974a5c5d752b95714f393bc9a7a257d5d40c9515c9823477041ed96f"
+        }
+      ]
+    }
+  ],
+  "complete_current_deltas": [
+    {
+      "path": "d1/main/cntrlcen.h",
+      "diff_lines": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "hunks": 0,
+      "complete_current_delta_read": true,
+      "actual_diff_read_ranges": [],
+      "hunk_records": []
+    },
+    {
+      "path": "d2/main/cntrlcen.h",
+      "diff_lines": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "hunks": 0,
+      "complete_current_delta_read": true,
+      "actual_diff_read_ranges": [],
+      "hunk_records": []
+    }
+  ]
+}
+```
+
+
+## Consolidated evidence audit PASS; gate4 complete, 2026-10-09
+
+Initial audit stopped before writes because HEAD advanced toa55f2a759e71da814f59497e3ed80bd4143cf0ad. Revalidated all105 chronological actual source ranges/47physical16whole/47complete current delta pairs/29canonical lines in2owners; all source/raw/body/delta/hunk/canonical hashes unchanged and PASS. Manifest4350/frozen assigned3hunks/raw787-866/full diff identity/current exact mapping contained in actual reads/originalABSENT verified. Current automation/native whole lifecycle remains partial; source-only acceptance limits preserved
+
+Retention called before snapshot temp/general_cleanup_20261006/gq2-0127-evidence-snapshot-20261009.json, rawSHA2561d088e56c3173459a50a26ac1307ccf807f4049a042650b3565811813a52803e. Fresh HEADa55f2a759e71da814f59497e3ed80bd4143cf0ad stable after snapshot. Proposed42line paired countdown extraction plan only; no canonical newfinding/remediation/status/rating/applied saving. Gates1-4complete;gate5immutable report/canonical admission/import/independent audit pending/canonical0127TODO.0116 historical debt separate, numbered267DONE/360TODO, overallgoalactive. No source/test/script edits or execution/staging/commit by this review
+
+
+## Immutable0127 report prepared; canonical publication pending, 2026-10-09
+
+Retention called before immutable temp/general_cleanup_20261006/gq2-review-0127-20261009.md, reportSHA2567c0b6144523db3a67b7f39ea9b039a5120254da9f3aa806163e1fac1525b74e5; scopea693e804c389bc811ccdfb395f2ccebe0f67c8f3ecdfc0f924cd7c412a9b609b. ExactlyfiveJSONblocks assigned/manifest/source/currentdeltas/canonical. Snapshot source/raw/range/delta/canonical hashes freshly revalidated at HEADa55f2a759e71da814f59497e3ed80bd4143cf0ad before preparation.105actual ranges/47physical16whole/47complete currentdeltas/29canonical lines
+
+ProposedGQF0277/GQR0263 identifiers verified unused, candidate57MEDIUM-HIGH12/21/7/10/7 for portable shared countdown control21lines each/42expected inherited lines/two hunks. Not canonically admitted yet; no appliedsaving or code changes. Prior packet extractionGQF0257/GQR0243FIXED/DONE distinct; existing automation/native acceptance owners unchanged. Retained prepublication exact raw-byte snapshots of8documents at temp/general_cleanup_20261006/gq2-canonical-before-0127.json, fullbase64 not printed
+
+Gates1-4complete;gate5canonical semantic publication/new candidate admission/report import/rank normalization/independent audit pending/canonical0127TODO. Do not recreate immutable report or baseline. Next operate from saved report/baseline and verify exact added rows/prior semantics/rawprefixes/BRbytes/scope/source/ranks before terminal handoff.0116 historical debt separate, numbered267DONE/360TODO and overallgoalactive. No source/test/script edits or execution/staging/commit
+
+
+### Chunk0127 canonical publication checkpoint, 2026-10-09
+
+GQC1096ISSUES/GQD0976CANDIDATE/CURRENT-RECONCILIATION-CANDIDATE/0127DONE;GQF0277OPEN/GQR0263TODO candidate57MEDIUM-HIGH12/21/7/10/7,42expected inherited lines/two hunks,zero applied saving. Frozen3hunks/raw787-866/77added0removed;105actual ranges/47physical16whole/47complete currentdeltas/29canonical lines. GQF-0277/GQR-0263 portable countdown control candidate42expected inherited lines/two hunks; zero applied saving. Existing owners unchanged. ReportSHA `7c0b6144523db3a67b7f39ea9b039a5120254da9f3aa806163e1fac1525b74e5`; scope `a693e804c389bc811ccdfb395f2ccebe0f67c8f3ecdfc0f924cd7c412a9b609b`
+
+Two initial rank selector audits stopped before canonical writes; final selection includes all terminal sweep IDs and uses owner column. Imported report preserved. Eightadded semantic rows/one oldTODO removed expected;1083terminal/263fix ranks normalized score/H/M/C/R/ID,omitB. Independent audit pending. Gates1-4complete;gate5pending.0116 historical debt separate and overallgoalactive. No source/test/script edits or execution/staging/commit
+
+
+### Chunk0127 terminal diagnosis handoff, 2026-10-09
+
+Allfive gates complete. Independent auditPASS: exactfiveJSONblocks/report import/scope/frozen3hunks/raw787-866/current77line mappingcontainedinactualreads/manifest4350/originalABSENT;105actualranges47physical16whole47complete currentdeltas29canonical lines. Snapshot/report/source/raw/range/body/hunk hashes verified against liveHEADa55f2a759e71da814f59497e3ed80bd4143cf0ad; whole automation/native lifecycle remains partial
+
+GQC1096ISSUES/GQD0976CANDIDATE/CURRENT-RECONCILIATION-CANDIDATE/0127DONE. GQF0277OPEN/GQR0263TODO57MEDIUM-HIGH12/21/7/10/7 admits portable paired countdown21line API extraction,42expected inherited lines/two hunks;zero appliedsaving. Earlier packet extraction/status/rating/saving unchanged. Real native-owner admission/seconds/SIM/reset/network validation remains laterimplementation; mocks do not certify it. Existing automation/native/output/lifecycle owners preserved
+
+Eightaddedsemanticrows/one oldTODOremoved; all other table/product/finding/remediation semantics unchanged.1083terminal/263fix rankscontiguousuniqueandsortedscore/H/M/C/R/ID,omitB. Prior inherited/resume/evidence/plan rawprefixespreservedbeforeexactgate5replacement; reportimportexactandunique;BRactive/archive bytesunchanged. Two selector audit failures stoppedbeforecanonicalwrites; corrected allterminal/sweep owner-column selectionPASS
+
+No source/product/test/script edits or builds/tests/devices/probes/staging/commit by thisreview.0116 historical audit debt separate; numbered268DONE359TODO/627,overallgoalactive. Nextassignment | GQ2-CHUNK-0128 | [ ] TODO | source | high | authored-source | `android/app/src/main/cpp/shared/game_automate.cpp` | diff hunks 73-73, new L4421-L5774 | - |. Remaining numbered/supplemental/sweeps/finalhead closure required

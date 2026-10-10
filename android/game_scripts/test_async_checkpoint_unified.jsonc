@@ -143,5 +143,10 @@
     { "action": "set_debug", "field": "periodic_checkpoint", "value": "verify", "when": "d2" },
     { "action": "set_debug", "field": "periodic_checkpoint", "value": "capture_then_sync" },
     { "action": "assert", "expect": { "in_game": true, "time_paused": false, "checkpoints.failed": 0 } },
+    // Verify another owned snapshot after repeated restores have churned the debug allocator
+    { "action": "set_debug", "field": "checkpoint_cycle", "value": "capture" },
+    { "action": "wait_for", "expect": { "checkpoints.pending": 0 }, "timeout_ms": 10000 },
+    { "action": "set_debug", "field": "checkpoint_cycle", "value": "roundtrip" },
+    { "action": "assert", "expect": { "in_game": true, "time_paused": false, "checkpoints.failed": 0 } },
     { "action": "introspect" },
 ]

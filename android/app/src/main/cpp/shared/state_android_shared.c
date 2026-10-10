@@ -62,6 +62,13 @@ void android_save_probe_begin(void)
 	save_probe_cpu = save_probe_clock(CLOCK_THREAD_CPUTIME_ID);
 }
 
+int android_save_probe_begin_if_idle(void)
+{
+	if (save_probe_active) return 0;
+	android_save_probe_begin();
+	return 1;
+}
+
 void android_save_probe_mark(const char *name)
 {
 	int64_t wall, cpu;

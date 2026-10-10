@@ -2,6 +2,7 @@
 #include "state_checkpoint.h"
 #include "checkpoint_file.h"
 #include <cerrno>
+#include <algorithm>
 #include <new>
 #include <memory>
 #include <pthread.h>
@@ -19,6 +20,7 @@ extern "C" {
 #include "state_android_shared.h"
 #include "android_log.h"
 #include "android_save_meta.h"
+#include "android_save_probe.h"
 #include "coop/coop_save.h"
 #include "coop/coop_save_format.h"
 #include "guidebot_save_io.h"
@@ -44,6 +46,8 @@ struct checkpoint_job {
 	size_t metadata_offset = 0, metadata_bytes = 0;
 	int64_t epoch = 0, worker_us = 0;
 	int64_t submit_begin_us = 0, capture_us = 0, submit_us = 0, encode_us = 0;
+	android_save_probe_lap capture_laps[32]{};
+	int capture_lap_count = 0;
 	uint64_t token = 0;
 	state_checkpoint_callback callback = nullptr;
 	int ok = 0;
@@ -290,12 +294,19 @@ static int submit_disk(const char *description, int save_kind, const char *filen
 		}
 	}
 	const int64_t start = clock_us();
+	const bool profile_capture = debug_log_enabled[DLOG_PROFILING] && android_save_probe_begin_if_idle();
+	job->capture_lap_count = 0;
 	capturing = job;
 	stop_time();
 	const int ok = state_save_to_memory(&job->buffer, description, save_kind, 1);
 	capturing = nullptr;
 	engine->stats.capture_us = clock_us() - start;
 	job->capture_us = engine->stats.capture_us;
+	if (profile_capture) {
+		const android_save_probe_lap *laps;
+		job->capture_lap_count = android_save_probe_end(&laps);
+		std::copy(laps, laps + job->capture_lap_count, job->capture_laps);
+	}
 	if (engine->stats.capture_us > engine->stats.max_capture_us)
 		engine->stats.max_capture_us = engine->stats.capture_us;
 	if (!ok) {
@@ -385,6 +396,20 @@ void state_checkpoint_poll(void)
 		          (long long) job->capture_us, (long long) job->encode_us,
 		          (long long) (job->worker_us - job->encode_us), (long long) job->worker_us,
 		          (long long) collect_us, job->attachment_failures);
+		/* Store laps with the owned job; emit only at collection, never per write */
+		if (job->capture_lap_count && debug_log_enabled[DLOG_PROFILING]) {
+			char line[4096];
+			size_t used = 0;
+			for (int i = 0; i < job->capture_lap_count && used < sizeof(line) - 1; ++i) {
+				const auto &lap = job->capture_laps[i];
+				const int written = snprintf(line + used, sizeof(line) - used,
+				                             "checkpoint_v=1 type=capture_stage submit_begin_us=%lld stage=%s wall_us=%lld cpu_us=%lld\n",
+				                             (long long) job->submit_begin_us, lap.name, (long long) lap.wall_us, (long long) lap.cpu_us);
+				if (written < 0) break;
+				used += size_t(written) < sizeof(line) - used ? size_t(written) : sizeof(line) - used - 1;
+			}
+			debug_log_batch(DLOG_PROFILING, line);
+		}
 		job->companion.reset();
 		job->campaign.reset();
 		engine->slots.release();

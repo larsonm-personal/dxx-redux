@@ -449,6 +449,19 @@ static void android_stutter_format_frame(char *line, size_t capacity, const char
 	         frame->local_robot_count, frame->remote_robot_count,
 	         frame->stale_remote_robot_count, frame->max_remote_robot_age_ms,
 	         frame->textured_polys, frame->texture_binds, frame->max_fps, frame->vsync);
+	{
+		static const char *names[ANDROID_OUTER_COUNT] = {
+			"unattributed", "profile", "present", "readback", "swap", "introspect", "lifecycle", "automation", "input", "dispatch"
+		};
+		int i;
+		for (i = 0; i < ANDROID_OUTER_COUNT; ++i) {
+			size_t used = strlen(line);
+			if (used >= capacity - 1) break;
+			snprintf(line + used, capacity - used,
+			         "stutter_v=1 type=outer role=%s frame=%u stage=%s wall_us=%lld cpu_us=%lld\n",
+			         role, frame->frame_id, names[i], (long long) sample->outer_us[i], (long long) sample->outer_cpu_us[i]);
+		}
+	}
 }
 
 static void android_stutter_log_window(void)
@@ -985,6 +998,29 @@ static void android_profile_start_sample(long long now_ms, const char *game)
 	    now_ms);
 }
 
+/* Only the game thread touches these end-to-begin gap accumulators */
+static long long outer_wall, outer_cpu;
+static enum android_profile_outer_stage outer_stage;
+static int64_t outer_us[ANDROID_OUTER_COUNT], outer_cpu_us[ANDROID_OUTER_COUNT];
+static int64_t frame_outer_us[ANDROID_OUTER_COUNT], frame_outer_cpu_us[ANDROID_OUTER_COUNT];
+static int64_t android_profile_thread_cpu_us(void);
+
+void android_profile_outer_mark(enum android_profile_outer_stage stage)
+{
+	long long wall, cpu;
+	if (g_android_profile_frame_active || !outer_wall) return;
+	wall = android_profile_now_us();
+	cpu = android_profile_thread_cpu_us();
+	outer_us[outer_stage] += wall - outer_wall;
+	if (cpu >= 0 && outer_cpu >= 0 && outer_cpu_us[outer_stage] >= 0)
+		outer_cpu_us[outer_stage] += cpu - outer_cpu;
+	else
+		outer_cpu_us[outer_stage] = -1;
+	outer_wall = wall;
+	outer_cpu = cpu;
+	outer_stage = stage;
+}
+
 void android_profile_frame_begin(const char *game, unsigned int frame_id)
 {
 	long long now_ms;
@@ -1017,9 +1053,18 @@ void android_profile_frame_begin(const char *game, unsigned int frame_id)
 	    g_android_slowdown_detector.state == ANDROID_SLOWDOWN_DISABLED) {
 		g_android_profile_frame_active = 0;
 		g_android_profile_object_detail_active = 0;
+		outer_wall = 0;
+		memset(outer_us, 0, sizeof(outer_us));
+		memset(outer_cpu_us, 0, sizeof(outer_cpu_us));
 		return;
 	}
 
+	android_profile_outer_mark(ANDROID_OUTER_UNATTRIBUTED);
+	memcpy(frame_outer_us, outer_us, sizeof(outer_us));
+	memcpy(frame_outer_cpu_us, outer_cpu_us, sizeof(outer_cpu_us));
+	memset(outer_us, 0, sizeof(outer_us));
+	memset(outer_cpu_us, 0, sizeof(outer_cpu_us));
+	outer_wall = 0;
 	now_ms = android_profile_now_ms();
 	now_us = android_profile_now_us();
 
@@ -1450,6 +1495,9 @@ void android_profile_frame_end(void)
 	now_us = android_profile_now_us();
 	now_ms = now_us / 1000LL;
 	total_us = now_us - g_android_profile_frame_start_us;
+	outer_wall = now_us;
+	outer_cpu = android_profile_thread_cpu_us();
+	outer_stage = ANDROID_OUTER_PROFILE;
 
 	android_profile_finish_open_buckets(now_us);
 	g_android_profile_frame_active = 0;
@@ -1543,6 +1591,8 @@ void android_profile_frame_end(void)
 			sample.effects_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_EFFECTS].frame_us);
 			sample.rewind_us = android_profile_i32_duration(g_android_profile_buckets[ANDROID_PROFILE_BUCKET_REWIND].frame_us);
 			sample.mode = Game_mode;
+			memcpy(sample.outer_us, frame_outer_us, sizeof(sample.outer_us));
+			memcpy(sample.outer_cpu_us, frame_outer_cpu_us, sizeof(sample.outer_cpu_us));
 			if (android_stutter_detector_feed(&g_android_stutter_detector, &sample))
 				android_stutter_log_window();
 		}

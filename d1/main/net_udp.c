@@ -652,6 +652,10 @@ void net_log_init(void)
 void net_log_log(char tx, const void* msg, int len, const struct sockaddr *address, socklen_t addrlen) {
 	//return;
 	if(! GameArg.LogNetTraffic) { return; }
+#ifdef __ANDROID__
+	/* Android packet files obey the same launcher category as network messages */
+	if (!debug_log_enabled[DLOG_NETWORK]) return;
+#endif
 
 #ifdef __ANDROID__
 	struct android_network_stamp profile_start = android_profile_net_begin();
@@ -692,6 +696,10 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre
 void net_log_comment(char* comment) {
 	//return;
 	if(! GameArg.LogNetTraffic) { return; }
+#ifdef __ANDROID__
+	/* Android packet files obey the same launcher category as network messages */
+	if (!debug_log_enabled[DLOG_NETWORK]) return;
+#endif
 
 #ifdef __ANDROID__
 	/* Bridge to Kotlin debug log. This sits after the LogNetTraffic

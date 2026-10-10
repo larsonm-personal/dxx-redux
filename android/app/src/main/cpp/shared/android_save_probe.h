@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-/* Android experiment-only sequential laps, enabled explicitly by automation */
+/* Android sequential laps for profiling and explicit automation probes */
 #ifdef __ANDROID__
 typedef struct android_save_probe_lap {
 	const char *name;
@@ -12,6 +12,7 @@ typedef struct android_save_probe_lap {
 } android_save_probe_lap;
 
 void android_save_probe_begin(void);
+int android_save_probe_begin_if_idle(void);
 void android_save_probe_mark(const char *name);
 int android_save_probe_end(const android_save_probe_lap **laps);
 #else

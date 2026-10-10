@@ -19,6 +19,7 @@
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
 #include "android_pause.h"
+#include "android_profile.h"
 #include "coop/coop_endgame.h"
 #include "coop/coop_briefing.h"
 #include "android_lifecycle_actions.h"
@@ -226,6 +227,7 @@ void event_process(void)
 	window *wind = window_get_front();
 
 #ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_LIFECYCLE);
 	android_pause_tick();
 #endif
 #if defined(ANDROID) && defined(OGL)
@@ -250,13 +252,20 @@ void event_process(void)
 	coop_flyout_observer_frame();
 #endif
 
+#ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_AUTOMATION);
+#endif
 #ifdef INTROSPECT_ON
 	game_automate_tick();
 #endif
 
+#ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_INPUT);
+#endif
 	event_poll();	// send input events first
 #ifdef ANDROID
 	android_pause_publish();
+	android_profile_outer_mark(ANDROID_OUTER_DISPATCH);
 #endif
 
 	// Doing this prevents problems when a draw event can create a newmenu,
@@ -304,11 +313,18 @@ void event_process(void)
 	}
 
 #ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_PRESENT);
 	if (!android_idle_saver_hidden())
 #endif
 	gr_flip();
+#ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_INTROSPECT);
+#endif
 #ifdef INTROSPECT_ON
 	game_introspect_check_and_dump();
+#endif
+#ifdef ANDROID
+	android_profile_outer_mark(ANDROID_OUTER_UNATTRIBUTED);
 #endif
 }
 

@@ -124,6 +124,20 @@ const struct android_slowdown_frame *android_slowdown_detector_ring_get(
 int android_slowdown_detector_detail_active(const struct android_slowdown_detector *detector,
                                             int64_t now_us);
 
+enum android_profile_outer_stage {
+	ANDROID_OUTER_UNATTRIBUTED,
+	ANDROID_OUTER_PROFILE,
+	ANDROID_OUTER_PRESENT,
+	ANDROID_OUTER_READBACK,
+	ANDROID_OUTER_SWAP,
+	ANDROID_OUTER_INTROSPECT,
+	ANDROID_OUTER_LIFECYCLE,
+	ANDROID_OUTER_AUTOMATION,
+	ANDROID_OUTER_INPUT,
+	ANDROID_OUTER_DISPATCH,
+	ANDROID_OUTER_COUNT
+};
+
 /* Android isolated-hitch diagnostics, independent of the sustained capture budget */
 struct android_stutter_frame {
 	struct android_slowdown_frame frame;
@@ -135,6 +149,8 @@ struct android_stutter_frame {
 	int32_t effects_us;
 	int32_t rewind_us;
 	int32_t mode;
+	int64_t outer_us[ANDROID_OUTER_COUNT];
+	int64_t outer_cpu_us[ANDROID_OUTER_COUNT];
 };
 
 struct android_stutter_window {

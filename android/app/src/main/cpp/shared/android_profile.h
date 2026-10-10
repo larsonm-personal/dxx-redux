@@ -4,6 +4,7 @@
 #if defined(ANDROID) || defined(__ANDROID__)
 
 #include "android_network_profile.h"
+#include "android_slowdown_detector.h"
 
 enum android_profile_bucket {
 	ANDROID_PROFILE_BUCKET_WAIT = 0,
@@ -92,6 +93,8 @@ void android_profile_log_restore(
     const char *game, int level, const char *file, int game_mode,
     int had_game_window, const struct android_profile_restore_metrics *metrics);
 void android_profile_frame_begin(const char *game, unsigned int frame_id);
+/* Partition the preceding end-to-begin gap; stages never include the frame body */
+void android_profile_outer_mark(enum android_profile_outer_stage stage);
 void android_profile_set_frame_context(int level, int viewer_segment);
 void android_profile_set_frame_pacing(int max_fps, int vsync);
 void android_profile_set_simulation_metrics(unsigned int simulation_frame_id,
