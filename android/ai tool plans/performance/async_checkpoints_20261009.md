@@ -87,9 +87,12 @@ cycles with isolated codec tests and engine integration tests.
 - During the D1-in-D2 coop run, the host recorded six completed checkpoints,
   no failures, 1.362 ms latest capture and 1.472 ms maximum capture. This is
   emulator evidence, not an S21 before/after performance result
-- S21 production timing rerun is pending normal device unlock. Its diagnostic
-  app contains the ARM64 build, its original stay-awake setting (0) is restored,
-  and its production application was not changed
+- S21 production timing is complete; see
+  [the measurement report](checkpoint_runtime_measurements_20261009.md). Co-op
+  disk captures took 4.151 ms median, with encoding/publication on the worker.
+  The remaining synchronous single-player periodic save produced a 75.320 ms
+  frame interval. Device settings were restored and the production app was not
+  changed
 
 ## Scope and follow-up
 

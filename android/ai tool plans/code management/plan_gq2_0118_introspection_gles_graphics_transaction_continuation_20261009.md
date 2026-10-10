@@ -3,10 +3,10 @@
 Diagnosis and plans only. Preserve concurrent external source work, handmade comments, native/desktop formats, shared implementation and narrow paired hooks. No product/test/script edits, builds/tests/runtime/device/probes/formatter/generator/staging/commit execution.0117 terminally audited;0116 gate5 remains pending historical inherited-document byte reconciliation
 
 - [x] Read and bind exact frozen scopes, complete current assigned deltas, manifest and original attribution
-- [ ] Trace actual current introspection accessor/projection/request, GLES state/lifecycle and graphics transaction callers
-- [ ] Inspect maintained fixtures and actual registration without execution; distinguish source evidence
-- [ ] Reconcile existing canonical owners, simplification/retention decisions and concrete acceptance
-- [ ] Publish/import immutable report and independently audit scope, coverage, records, counts/ranks and attribution
+- [x] Trace actual current introspection accessor/projection/request, GLES state/lifecycle and graphics transaction callers
+- [x] Inspect maintained fixtures and actual registration without execution; distinguish source evidence
+- [x] Reconcile existing canonical owners, simplification/retention decisions and concrete acceptance
+- [x] Publish/import immutable report and independently audit scope, coverage, records, counts/ranks and attribution
 
 ## Frozen scope and initial diagnosis
 
@@ -2782,3 +2782,2719 @@ These reads complete focused producer traces for the identified projections with
   }
 ]
 ```
+
+
+## Complete smaller current context deltas checkpoint, 2026-10-09
+
+Revalidated91 prior actual source ranges across60 paths. Completely read/bound all28 nonempty traced context diffs <=3602rawbytes using exact frozen-head git diff --unified=0 --find-renames --find-copies-harder --no-ext-diff --no-textconv flags. Diff evidence does not give whole current source credit. Remaining larger context diffs have no new completion credit here
+
+Current reconciliation retains checked directory closure and original-backup recovery, shared GLES texture/cache ownership and actual draw stats, paired Android mipmap explicit generation, copied pointer-removal texture adapter reduction, loaded graphics synchronization, preparing-confirmation presentation gate and safe-preview finish admission. Paired control diagnostic additions and menu stale-release guard remain Android-only. Recovery activation now depends on cooperative mode rather than separate QoL switch; keep current producer contract. Automap adoption policy moved to shared owner with replay/multiplayer admission. Current introspection checkpoint/pause/volume/sound fields and helper/catalog changes are external work; preserve them, do not expand assigned frozen coverage or infer their full validation from diff reads. D1-in-D2 removed74line frame-loader is current context reduction, not saving attributable to this frozen assigned chunk. Shared retain/no-original-effect disposition remains zero original-file saving for nine assigned paths
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/extract/CMakeLists.txt",
+    "current_lines": 828,
+    "current_whole_source_sha256": "af2f16ca88d16e137926ef3a757b54956c78a1c1eac0c0b50771a1a22fff9b25",
+    "current_delta_lf_sha256": "7c04ce39ef6de81c60f8a58e820313be7d61754c02c6198e673585fca26eed65",
+    "current_delta_bytes": 1384,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -179,0 +180,3 @@ add_test(NAME graphics_config_transaction_tests COMMAND test_graphics_config_tra",
+        "raw_hunk_lf_sha256": "c81a080640029b40d000b65509b7e725ce8ad3b19a2b37309266acb134e6e4be"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -206,0 +210 @@ add_test(",
+        "raw_hunk_lf_sha256": "6ea242867a32e4fdd9f0ba23460ca0c1d26083b782e1a504a1b45abedbecf723"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -428,0 +433 @@ add_test(NAME fingerprint_tests COMMAND test_fingerprint \"${_CP_TEST_DATA}\")",
+        "raw_hunk_lf_sha256": "446e852dc00e0188feeeda98634861ac349f6f1ef192f7f9abb2f065efb14f64"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -714,0 +720 @@ add_test(NAME music_name_table_tests COMMAND test_music_name_table)",
+        "raw_hunk_lf_sha256": "06b379169c66a623037ec7e8a66c8bc4d1bb2e9c9e143bbb28bb172ed8ea25f7"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -769,0 +776 @@ add_test(NAME hog_midi_catalog_tests COMMAND test_hog_midi_catalog)",
+        "raw_hunk_lf_sha256": "3538233dc3764c6f7213d0d0ec966486f6c233d05abfd8048118c3b1c6efdb86"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -805,0 +813,4 @@ set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURR",
+        "raw_hunk_lf_sha256": "71399f57b31c678848a58213d9d9106d7fee35f3f87aab35da051c73ef67583d"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/directory_sync/CMakeLists.txt",
+    "current_lines": 10,
+    "current_whole_source_sha256": "0e9b40cc3b9254f4b0811942e4d6e1d5f373aa662e23ee3764ad1938b70b14ea",
+    "current_delta_lf_sha256": "90a9b66ece4fc16e5c418c2a18a877a6dd272bef09e6898eb1c1ff147d0a2329",
+    "current_delta_bytes": 897,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,10 @@",
+        "raw_hunk_lf_sha256": "85e4c7f48af1f3acd62147302862c61270553fbeff0e5bded146c86b6903f9b7"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/rollback_backups/CMakeLists.txt",
+    "current_lines": 14,
+    "current_whole_source_sha256": "409dcec9b3c08e5724ecb2b7a6fb6a44b7acea4020902b916fb34d80910526da",
+    "current_delta_lf_sha256": "33520338907ae048c60fe80e1311553055e8bda0e94f3d376df788e74f4c5e5f",
+    "current_delta_bytes": 1027,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,14 @@",
+        "raw_hunk_lf_sha256": "b9418434a579b03d8c90afd93ef1a922579c23ee8bb6629bf4b65af256080507"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_egl_surface.c",
+    "current_lines": 429,
+    "current_whole_source_sha256": "721eb6201daed860d878a753f8eba266da5550299f419dde3d8c8d5b497cbb7b",
+    "current_delta_lf_sha256": "d9482b1b4a4b6636703918c08624ecb30a7e9e6e8cd0e72b7e487223efb11fc4",
+    "current_delta_bytes": 514,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -349,0 +350,3 @@ void android_egl_surface_swap(struct android_egl_surface_state *state)",
+        "raw_hunk_lf_sha256": "e105a1047649efa31929de4ccdd9ec21f467c45bd9574f200a96974a8c37b9dd"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_options.c",
+    "current_lines": 518,
+    "current_whole_source_sha256": "f6a62a6adc7915a5f527fb178e517eb3a10c1418b23ebee9c8c628de55233145",
+    "current_delta_lf_sha256": "b2f627fe0d87724998ab59ad6eeb2d5c9d71e51ab7fd07e2c9199412acc030b2",
+    "current_delta_bytes": 2250,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -35,0 +36,14 @@ static int clamp_texfilt(int value)",
+        "raw_hunk_lf_sha256": "ceff3e82226c525beb98d0d9d50e1ad13bdffd9e5467d14c9adec6c698b0471b"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -351,0 +366,10 @@ void android_graphics_set_rounded_corner_text_insets(int surface_width, int surf",
+        "raw_hunk_lf_sha256": "d0a1151582a6f5f869310ed14f6a1ec4e62a4b3a8c6be44e85c1898944b67bf6"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -381,3 +405,2 @@ static int scale_corner_text_x(int canvas_width, int inset_px)",
+        "raw_hunk_lf_sha256": "3f8823cf24bb3f4335b47fe6d73130ae301d2da2ff500f121436bae986260c5c"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -391,3 +414 @@ static int scale_corner_text_y(int canvas_width, int canvas_height, int inset_px",
+        "raw_hunk_lf_sha256": "117c41e88e873b7fa8d80e107fce417c1187beb1555dc6483f34b7fbecbadd96"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/automap_metadata_overlay.c",
+    "current_lines": 976,
+    "current_whole_source_sha256": "5c90ee9bede1037d14a821aaf4c75ab5703f7d22718218be195eb8e1f868f9b4",
+    "current_delta_lf_sha256": "faa996adb9f45f63ac038c0a2717467c28f3e04d7e9929fa2b2b63d12f01e756",
+    "current_delta_bytes": 960,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -23,0 +24,3 @@",
+        "raw_hunk_lf_sha256": "21e16beb7be83894f307d5b354905bc076b502648ed4572c7168a0b8f7f49af5"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -84 +87 @@ void automap_metadata_begin(void)",
+        "raw_hunk_lf_sha256": "cca63bcbe886b600640aef0e88a5345761870920bc1f8e64aba584dbbbcc98da"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -86,0 +90,6 @@ void automap_metadata_update_route(int player_objnum, int allow_adoption)",
+        "raw_hunk_lf_sha256": "2d53730c3cbcd635d519274bfa6db1987980ba0d80dc904780de816f67506c06"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -90 +98,0 @@ void automap_metadata_update_route(int player_objnum, int allow_adoption)",
+        "raw_hunk_lf_sha256": "67038ee1be35baafea8accd5b88a06d9dd166d210d1340b1c5449d0b6a0e9bc8"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "current_lines": 1160,
+    "current_whole_source_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de",
+    "current_delta_lf_sha256": "875ad07ce95a841d22a283869f76c6879919cd1244c4d0559c3a060880ad682f",
+    "current_delta_bytes": 1228,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -50,6 +50,3 @@ int coop_recovery_active(void)",
+        "raw_hunk_lf_sha256": "234a60c8fc37973c48fceb0e1655126f48920ed181d9f36464c49a2b23b4e5d5"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -645 +642 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)",
+        "raw_hunk_lf_sha256": "ece69033118db7deed8090df16d2a5157546e3ffeb5db9b5105a95800034f96e"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -650 +647 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)",
+        "raw_hunk_lf_sha256": "82aee5f21f981a22d6583bc97c8bec75e02eaa93093830c32e5f58c650313376"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3283,
+    "current_whole_source_sha256": "3b0e0075ef3817033c9ccbd1d604fda8181c7befb4fa78b96cbb765d21ea5b91",
+    "current_delta_lf_sha256": "316149f969569159021a71cf930d95a8b0fceb954b101f799b836406998b6aaa",
+    "current_delta_bytes": 2064,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -32,0 +33 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "052d8a486b1a9840d2fd9b1a793bb6487d0420a30847a947cc4ae9bb3178e714"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -36,0 +38 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "b1bdbbe3f1d836ffe2f0a91f8dfec091e02b008de2d7fc95aa74f7dfc964b033"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -54,0 +57,2 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "91e13ed01a65085283c57bc99979ecfd4e209b170580837b79325715c6b715da"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -73,0 +78 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "db42d1ad2fb210102e6a7eaf1e4f958690e76d0a1ccb9fea8ccbadf11025264c"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1708,0 +1714,5 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "61cbdbc12204eeef49d33a492e23b7afc65877c1c052937a518fe6408ad01c50"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -1777,0 +1788,7 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "a800a88168ea481ecd5a131f14fc45a0a6f25b9eb70418757b1cfe2086fcda9a"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2472,0 +2490,3 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "e481def464545d3a5ddf7d723055fb75b93f79c152b7929d767852b3d6c7a60e"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2985,0 +3006,4 @@ extern \"C\" char *game_introspect_get_state(void)",
+        "raw_hunk_lf_sha256": "3dc617c31c5fce905243988dd10641e43f25009c78fa8666fdca4cf20bc5ffe3"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/gles3_shim.c",
+    "current_lines": 1131,
+    "current_whole_source_sha256": "fc1bb17dd51e4fff43b0a4b517caf32b60e092007d2ac37e463f5ddc6f90cf36",
+    "current_delta_lf_sha256": "2435f6e1798a470526a5f7c75361d74ebf97a8bc971e22ac1866a28a66b44a2a",
+    "current_delta_bytes": 3435,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -19,0 +20,3 @@",
+        "raw_hunk_lf_sha256": "8cd6e189164e9b29ebd8cf64a46c8270d215c7ea4e2a6fbf6c341f403e95916a"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -66,0 +70,46 @@ void gles3_shim_delete_buffers(GLsizei count, const GLuint *buffers)",
+        "raw_hunk_lf_sha256": "e256f70d6ecd66c20801609a4cda1a0d0ce5433f5d11794f42bf0261bdee35b8"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -260,0 +310,7 @@ static int gl_type_size(GLenum type)",
+        "raw_hunk_lf_sha256": "895d41d63f127a7aee4d24d3ccc1943d422978e2c69c75e9bc154745588cbc35"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -268,0 +325 @@ static void gles3_shim_reserve_stream_data(int bytes)",
+        "raw_hunk_lf_sha256": "105ce3135d31b217f80dbb6d3a68c3ec753b8435c387e76e8d94e9fbf4e24a02"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -286,0 +344,4 @@ void gles3_shim_init(void)",
+        "raw_hunk_lf_sha256": "0ef2ef237ccc34f9b31c3b5d4c09a5db67c59531bbc26bde87097fbba40ac4fd"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -373,0 +435,3 @@ void gles3_shim_shutdown(void)",
+        "raw_hunk_lf_sha256": "51c488d5ec1b47d587547d8e22166e41b7be3a4d9b8e00c1da5542d5caad6c08"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -782 +846 @@ int gles3_shim_probe_vbo_arrays(void)",
+        "raw_hunk_lf_sha256": "553173fa509f1dfad175b62a6fff7aed6f8f8fbcb84d8f339441a08af0978a12"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -874,2 +938,2 @@ int gles3_shim_probe_vbo_arrays(void)",
+        "raw_hunk_lf_sha256": "cfc5410084d52441305e9844fe176893adb1c9f9d75e0743accf19346f1ebee3"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -913,0 +978,3 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)",
+        "raw_hunk_lf_sha256": "44c174e6e811128ca8b0f8f7520bcdd3548006d689e75b5438322a93cc914170"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/gles3_shim.h",
+    "current_lines": 208,
+    "current_whole_source_sha256": "1d8e50a9425b7cbf5e4f2b1fe17dce876a986f92a905b38b940772ac9bffa9bf",
+    "current_delta_lf_sha256": "0034feee8cd181d6e79365247608b406031c66fbe9089e18bd0d471e81fd2bf9",
+    "current_delta_bytes": 1149,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -14,0 +15 @@",
+        "raw_hunk_lf_sha256": "aa608f97200d035b6991c60ac466971c578a070cbea94d3df1b2319a5a2bf5cd"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -23,0 +25,17 @@ void gles3_shim_shutdown(void);",
+        "raw_hunk_lf_sha256": "5289138abeaa8599e854f06c12fc05ab8508103718d6d0051eca448b94396de1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_config_transaction.c",
+    "current_lines": 539,
+    "current_whole_source_sha256": "cb5e8527a0c886276ca99e6eb640a67a87e3b162bfb1d655b033e44c2b6240fa",
+    "current_delta_lf_sha256": "8045c283e70e6e4b0d9505a09066927f56a2995baa32d4c91dc30b59ae58e6e9",
+    "current_delta_bytes": 2105,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -8 +8 @@",
+        "raw_hunk_lf_sha256": "e61262b066ecda509adb84eacab298d8fdfc86318fcb2c59f999b6642cf88eae"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -9,0 +10,2 @@",
+        "raw_hunk_lf_sha256": "85c78f84025b823876e16d3e2eb5b3a77a0ab957073f969aa9ec7ff4d9c347ec"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -76,0 +79 @@ struct staged_config {",
+        "raw_hunk_lf_sha256": "4a50221b38039ee9bab8efddf53b92430319e9b949bf5dcf8b4101643131d37d"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -119 +122 @@ static void cleanup_staged(struct staged_config *staged, size_t count)",
+        "raw_hunk_lf_sha256": "de875506030eb9282d3a5450d5ce2ee910bc6f279261ff38b2c623c4a035de43"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -120,0 +124,4 @@ static void cleanup_staged(struct staged_config *staged, size_t count)",
+        "raw_hunk_lf_sha256": "7d116686b4df2168368ab7ad8130f6a7df847340e3c458db60c3eec8a0c32c79"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -348 +355,2 @@ static int sync_parent_directory(const char *path)",
+        "raw_hunk_lf_sha256": "8aeab8a9a26ef4c74abf47473f24b8e107241a4dd22bf974e04784eeff5eb634"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -361 +369,4 @@ static int rollback_published(struct staged_config *staged, size_t published_cou",
+        "raw_hunk_lf_sha256": "1a1236f657265ba689612acec739cbcdd5b4a7f423fcaa1b87e67e19feb8ec6c"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -363,2 +374,3 @@ static int rollback_published(struct staged_config *staged, size_t published_cou",
+        "raw_hunk_lf_sha256": "558901fe3fce4a2ed412e78359f48a328b1d46af4c6acc8114564bf820f08ef5"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -366,0 +379 @@ static int rollback_published(struct staged_config *staged, size_t published_cou",
+        "raw_hunk_lf_sha256": "35424fd36fa02602158903c318fd2c1fbed431ce0f87fe270a553b761260a65c"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -369,0 +383,2 @@ static int rollback_published(struct staged_config *staged, size_t published_cou",
+        "raw_hunk_lf_sha256": "c77c49535ec39babd1a68ab50f0f2e241e16052541fa905a03330436b5869515"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_config_transaction.h",
+    "current_lines": 65,
+    "current_whole_source_sha256": "84c35cd83861f81a934c05ba1547f24a0335009c603a583ffdabd1027a59acaa",
+    "current_delta_lf_sha256": "04a5e737efd1351a42ba04b72372fa17778a71f4b83df1c0ef392d4f6b26abfc",
+    "current_delta_bytes": 467,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -26,0 +27 @@ enum graphics_config_transaction_result {",
+        "raw_hunk_lf_sha256": "34a25b58020803c59393b4cf5a1d7ba7543e471f1670ff20b5dc5522b04ce713"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_safety_store.cpp",
+    "current_lines": 585,
+    "current_whole_source_sha256": "6235db7f64da4cffc673f5d210d482de8f07fbc4cb9becd16abe6bfd2dfb5f47",
+    "current_delta_lf_sha256": "b28c227b91df5a36aaa3dd89726b273f2fecb2c344cab0580d2c334be5816007",
+    "current_delta_bytes": 934,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -467,0 +468,14 @@ try {",
+        "raw_hunk_lf_sha256": "0dddb1c0003819f128c8aa1a947be1414a95cb39abfd41812fdc971b913c5488"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_texture_android.h",
+    "current_lines": 84,
+    "current_whole_source_sha256": "f7e181aefe3c14eb738d1c4e192946b806d4a4824780635f10c85986280b23f7",
+    "current_delta_lf_sha256": "6b3e4d1de5cfdd7dd86a5789d756bf7d51a34ee96dec47173d8ca60c0e155782",
+    "current_delta_bytes": 735,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -12,2 +11,0 @@",
+        "raw_hunk_lf_sha256": "c11bc78da587e334b1c4aa70270848b644f1e11368c586965162c9acf52e4862"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -20,3 +17,0 @@ struct android_ogl_bind_texture_state {",
+        "raw_hunk_lf_sha256": "71f71d4e748a8af48ea3d2607b53dff5dfa843c0d862a577e7fbfcd5556f2868"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -34 +28,0 @@ struct android_ogl_texture_anisotropy_state {",
+        "raw_hunk_lf_sha256": "79c9b2f817f41e6723f03b9566d92c29bb909dfa57980dcda92d37c22244dc42"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -41 +34,0 @@ struct android_ogl_texture_texfilt_state {",
+        "raw_hunk_lf_sha256": "9c55a64639767f61f54efab42fa9172d50f11eae2710a98844d18313c06636f2"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -49 +41,0 @@ struct android_ogl_texture_filter_state {",
+        "raw_hunk_lf_sha256": "db3713cb8f04d99789591586a603cb6577dee9f942fa63d416662ef274d60eb3"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_lines": 2858,
+    "current_whole_source_sha256": "84ed2a0e0ed751248662f5adb6d4378d3240b3162e3af261faa306b5fa13420e",
+    "current_delta_lf_sha256": "7efcd877a26f9b3491ac4af985c071b7c4521d7f079b429ac30d60829e7968c3",
+    "current_delta_bytes": 3602,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -1076,2 +1075,0 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "0b4f54e544b0135e068d4300320a451f8f2637b34e2d696c653bbd542ff89961"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1079 +1077,2 @@ function Get-ScriptDeps {",
+        "raw_hunk_lf_sha256": "5b0ba67b2566b92d1b290a48be267711e1fe7a0b17d7c436695e217338aba5a2"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1892,0 +1892,2 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "4ce134082aca5015eb9e00797ec62849d275278d4e0350046cd64027f1b5e607"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1895 +1896 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "147ce4be26b83fcd9c373861e8a2c800fddd654a2f354a7082f192aa4e2e95a1"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1897 +1898 @@ function Watch-AutomationResult {",
+        "raw_hunk_lf_sha256": "c3dacede583844d6d112af5ae67dc44e353debb159e10b9b6cab4d279e107205"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2247 +2248,32 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "523c56a8de6d9eb594fd23364877a679933d3bd3f8f6c6581d12e487a5d8091e"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2252,5 +2284 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "8c048760feae14b545b732a31cf5872598dfd6878bcf6f017808afce8c835374"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2262 +2290 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "3e77014099edf8d754b2fda986bf7d6eadfee68692fab50afa5c26074af180f5"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -2265,5 +2293,3 @@ function Resolve-TestScript {",
+        "raw_hunk_lf_sha256": "b267f4badd58ce0c892bf59da5ae7c128be21ea24e0a2b7d6a7e21d8c60ebd43"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "current_delta_lf_sha256": "4f5bfa43d0f051e13cfdf94101696935c2fc25153e0a8185595deed0d3135be7",
+    "current_delta_bytes": 1883,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -36,0 +37,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "67ca19e3b4e3a73eb529bc945ccfcf07a5f937292db1652c6277f556dc5d50aa"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -40,0 +43,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "98b9467d170d5ddc0bdb4288e59dc81952357ad46475261a069f2e5647efc382"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -51,0 +56 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "e4aa647a325820f36435205d82cc1b249b4f0931231eb79f261683268e2403cc"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -59,0 +65 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "54754e37e540b63b3b57138e8adecf108a9ad3a69990795acc6b02fdb92ce718"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -68,0 +75 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "3bb0e72fce7db8ceab30c199c8f285197bac1b6633575960ede6c189d71f3a57"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -79,0 +87 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f0ab512cb53afe4413ddbc4da82f10828b427de8b6bdb681c5d1b796636ffd7d"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -100,0 +109,2 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "bae990fce149dedfdf2ca4451ebfc0fae3086ce11dfb11d89f485eb093e56e43"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -164,0 +175 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "eac427e87ee5550cbfe50a637cab1ce16eba2630579c2174e4820a78e8afdc56"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -231,0 +243,12 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "30c1c390e43c615935f8f0bed6743afd94a2a67ba37b25ea02551e87907d6479"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -287,0 +311 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "f6f82772793227cdd23db51e65ac17043afef6005ce4a5eb7f7d1eb3fd030615"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -296,0 +321 @@ function Get-TestSuiteCoveragePolicy {",
+        "raw_hunk_lf_sha256": "a2c8c1b86c1fd24d505846782e13bbff9710e0095f18271749c6570b86a34f56"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_android_texture_bindings.ps1",
+    "current_lines": 16,
+    "current_whole_source_sha256": "081d8f8484d3c279a44e9cf1239960a71cbfc060aaaeb962e2aeeb10ecc44348",
+    "current_delta_lf_sha256": "0a0fda7331b6e72cbc17e46aac8f5e6117c13da919abe16b86c5644a47ca4726",
+    "current_delta_bytes": 895,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,16 @@",
+        "raw_hunk_lf_sha256": "8e48025d02be0efc13bcffe86bf9dae2913eec68bae2218a5ef0cd88aa959acd"
+      }
+    ]
+  },
+  {
+    "path": "d1/arch/sdl/event.c",
+    "current_lines": 335,
+    "current_whole_source_sha256": "63be2813fd95c4ecbca49a0c17332db6316dc5ebca82d352a2149bd24860384e",
+    "current_delta_lf_sha256": "31a077a17b66eb81bb2e8a9dffe04f238ca6d02de91daaa62b8a6776abf96afb",
+    "current_delta_bytes": 374,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -20,0 +21 @@",
+        "raw_hunk_lf_sha256": "c3c3cb0b4175ecec2597107d06d08107050da8ef3e66ae5c034edc5df19cc057"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -226,0 +228,3 @@ void event_process(void)",
+        "raw_hunk_lf_sha256": "83d818b0705bb8998be4acae17c79996978f4257cf9c77030e449408666e3adc"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -253,0 +258,3 @@ void event_process(void)",
+        "raw_hunk_lf_sha256": "93eb6001ceb4a540969fb96cb8cb2d6fc4076d08af591a5f819a1fda20215fbd"
+      }
+    ]
+  },
+  {
+    "path": "d1/include/ogl_init.h",
+    "current_lines": 144,
+    "current_whole_source_sha256": "415f29a2828392aa30a9e40f25699d1817363150929b201dc6da4dc094369d79",
+    "current_delta_lf_sha256": "832a0573da0622efc26e73b58ad59e051078b5f0a93e425826d1602d76bc18d3",
+    "current_delta_bytes": 378,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -127 +127 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal",
+        "raw_hunk_lf_sha256": "ce8d2e4062f53776469bbeb0465e34f457b701950d51a22506ca4d10abe55a00"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/kconfig.c",
+    "current_lines": 2213,
+    "current_whole_source_sha256": "457ead1fbf568609fd2fa38aa008ef51cbe2984240c56619fb17c60582ca0916",
+    "current_delta_lf_sha256": "dd44360022b8c6e977622f6898c97de0f790d294c1e828eb965bea97c92f3037",
+    "current_delta_bytes": 1345,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -1313,0 +1314,5 @@ static fix joystick_axis_time(int axis, int control, fix limit)",
+        "raw_hunk_lf_sha256": "f0fd08f8039b8261971c12ee444ed9bd328250fbc5a2cf025f9b758ae1efe796"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1571,0 +1577,5 @@ void kconfig_read_controls(d_event *event, int automap_flag)",
+        "raw_hunk_lf_sha256": "bc9b8081f2d7101edd42e7ee948209ebaafa9daabcf7b1f92b637bf50fef6118"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -2083,0 +2094,6 @@ void kconfig_read_controls(d_event *event, int automap_flag)",
+        "raw_hunk_lf_sha256": "a6f9edf33e1a9cec91a7c0dae4ac5c3ab6bc27eda8d0be232550e334d50f12b3"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/newmenu.c",
+    "current_lines": 3556,
+    "current_whole_source_sha256": "91038b8efa638cae70a23fc2f649beca7659d0653897abeac61a51ac718f5b48",
+    "current_delta_lf_sha256": "74bebca1bd81b32ead3b6b244dce04cffe8e612d5af0f0898a8f1403aaf1618a",
+    "current_delta_bytes": 421,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2250,0 +2251,5 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)",
+        "raw_hunk_lf_sha256": "5d5a107b3eed732de348585f713e203dcd6786addc8496723007fab1452066a8"
+      }
+    ]
+  },
+  {
+    "path": "d1/xmodel/xmodel.cpp",
+    "current_lines": 333,
+    "current_whole_source_sha256": "a18cbdd5a8618dcea6fb313b6c3d5e728f648e3ae57a7740b94949f3e63425fc",
+    "current_delta_lf_sha256": "a0be6f91865b143cfee5706392f7fedcc20c380bd12303a4b0c62ea6d5467589",
+    "current_delta_bytes": 352,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -69 +69 @@ int xmodel_load_gl(void *model) {",
+        "raw_hunk_lf_sha256": "1949597f0a965b802b20ea9b5a914448b602e404c9bd9baa7fc92111aa703f64"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -74 +74 @@ int xmodel_load_gl(void *model) {",
+        "raw_hunk_lf_sha256": "e65de2c5d4590f9df8f5b214b3a45b1fdda7f538830e22f3d9f5dab5b1e2beb9"
+      }
+    ]
+  },
+  {
+    "path": "d2/arch/sdl/event.c",
+    "current_lines": 335,
+    "current_whole_source_sha256": "63be2813fd95c4ecbca49a0c17332db6316dc5ebca82d352a2149bd24860384e",
+    "current_delta_lf_sha256": "648c995ce46777223743ec5f6e5e054691564d6b9c9c4b5c90da1c04302da337",
+    "current_delta_bytes": 374,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -20,0 +21 @@",
+        "raw_hunk_lf_sha256": "c3c3cb0b4175ecec2597107d06d08107050da8ef3e66ae5c034edc5df19cc057"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -226,0 +228,3 @@ void event_process(void)",
+        "raw_hunk_lf_sha256": "83d818b0705bb8998be4acae17c79996978f4257cf9c77030e449408666e3adc"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -253,0 +258,3 @@ void event_process(void)",
+        "raw_hunk_lf_sha256": "93eb6001ceb4a540969fb96cb8cb2d6fc4076d08af591a5f819a1fda20215fbd"
+      }
+    ]
+  },
+  {
+    "path": "d2/include/ogl_init.h",
+    "current_lines": 144,
+    "current_whole_source_sha256": "9b8a4067bde985bee2205abf1a9cff20a71ac4a92f4de6161520631cf15841f1",
+    "current_delta_lf_sha256": "748fba08ca96862392ea38fbecf87c10b59c35b9f310bfac2b9a2b1369149343",
+    "current_delta_bytes": 378,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -127 +127 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal",
+        "raw_hunk_lf_sha256": "ce8d2e4062f53776469bbeb0465e34f457b701950d51a22506ca4d10abe55a00"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/d1_in_d2/d1_in_d2_bitmaps.c",
+    "current_lines": 986,
+    "current_whole_source_sha256": "673f71f47dee3045e15ebf314b9187fdab01ac3309376c7498dd21c6ca191558",
+    "current_delta_lf_sha256": "49b96a916a71007c686c6b070040783e1580b52cc4080a3c7385278fbf425b8d",
+    "current_delta_bytes": 2542,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -892,74 +891,0 @@ void load_d1_bitmap_replacements()",
+        "raw_hunk_lf_sha256": "b68821a6d7a8edba220271c82aeb8e29e1910e6452bc99a34d51ce58d9e7144e"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/kconfig.c",
+    "current_lines": 2265,
+    "current_whole_source_sha256": "1179aa638facb9f79b468c04e25c8394a0705acc720526ee8443ce003abaa413",
+    "current_delta_lf_sha256": "734c84e2cefb8c9bcbaeed15f7cc7dbbac3be0d8001f04c9ec2cefa43dca528b",
+    "current_delta_bytes": 1345,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -1346,0 +1347,5 @@ static fix joystick_axis_time(int axis, int control, fix limit)",
+        "raw_hunk_lf_sha256": "79cbb938214fb2e419b0b0ccf624319d7297557998df1f9362b5287a3d3f1814"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -1612,0 +1618,5 @@ void kconfig_read_controls(d_event *event, int automap_flag)",
+        "raw_hunk_lf_sha256": "8560f932056d95cfa32b64c345799f87a3247e27f59f068382c182e7822cefe1"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -2123,0 +2134,6 @@ void kconfig_read_controls(d_event *event, int automap_flag)",
+        "raw_hunk_lf_sha256": "576c0be08e090ccba3f93f9000c4e665ca393ab8bf377fe5656c0488180df3b3"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/newmenu.c",
+    "current_lines": 3548,
+    "current_whole_source_sha256": "abde2bdb26a44fef08b83a85b072e15239c68ebda12e491373c4977dada0d1ef",
+    "current_delta_lf_sha256": "db491ade69648b2f2feed8b5031500977e5ee6df988908d9661c138e494f2a00",
+    "current_delta_bytes": 421,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -2241,0 +2242,5 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)",
+        "raw_hunk_lf_sha256": "f222ce05a1d40891f319636da2fb6ddbcef136950457f6a7c3c0a11f85e0a533"
+      }
+    ]
+  },
+  {
+    "path": "d2/xmodel/xmodel.cpp",
+    "current_lines": 333,
+    "current_whole_source_sha256": "319fa28b34563b4136bd7442967669e826647b91d61e07b8890dfaedbdcf67ed",
+    "current_delta_lf_sha256": "6fb4cf0ebb72d1bd563e35dc19405fe06562f27e593c81ba88faf5ace7d26439",
+    "current_delta_bytes": 352,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -61 +61 @@ int xmodel_load_gl(void *model) {",
+        "raw_hunk_lf_sha256": "74908b7f62658606c145cc2dea52ab5893a153feea984f4ec94347be113837e5"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -74 +74 @@ int xmodel_load_gl(void *model) {",
+        "raw_hunk_lf_sha256": "e65de2c5d4590f9df8f5b214b3a45b1fdda7f538830e22f3d9f5dab5b1e2beb9"
+      }
+    ]
+  }
+]
+```
+
+
+## Current graphics safety and production directory fixture deltas, 2026-10-09
+
+Completely read/bound graphics safety31hunk current delta and whole added directory fixture216line delta. Current safety delegates simulation blocking to pause owner; adds live preview durable record before GL apply, revision/quiet-period admission, all-off/accepted finish check, retry-first-run policy and completed-frame withholding. Preserve these current repairs and independent UI watchdog order, no historical stop_time/pause_owned claim carried forward. Source diff adds no runtime or whole899+line implementation credit. Existing checked-lock admission follow-up remains separate from renderer/pause improvements
+
+Directory fixture actual production inclusion and always-enabled require are preserved, including persistent/one-shot sync failure, failed directory close, atomic/batch existing/absent targets, rollback original inventory, /proc/F_GETFD actual descriptor counts, read/open/relative-path controls. Not an exclusive-name acquisition/collision oracle; acceptance gap from candidate cleanup remains explicit. Whole diff reconfirms already saved current whole fixture evidence, does not multiply physical whole credit
+
+Focused current caller/producer trace and maintained fixture/registration inspection are complete for diagnosis gates2/3. They establish source behavior and explicit coverage gaps, not successful execution or complete acceptance of existing findings. Gate4 still requires final full-context delta/owner consolidation; gate5 publication and independent audit pending. Frozen assigned scope unchanged/zero original effect; external product work preserved
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_safety.cpp",
+    "current_lines": 922,
+    "current_whole_source_sha256": "1270646c745e49045a6c9a3c54851c8352aff3cb8c6586d45f171830be2e4240",
+    "current_delta_lf_sha256": "cbe664c76b7b7541418dcb8700f8ba7dd1aa29a70f612c289454cfc44b10f627",
+    "current_delta_bytes": 9982,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -53,2 +53 @@ bool ui_blocked = false;",
+        "raw_hunk_lf_sha256": "31957525854e0eca9a913e8463bf6eda6aea07b9ea3f53ff4b56da756a4fa1e9"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -62,0 +62 @@ enum preview_phase { preview_none,",
+        "raw_hunk_lf_sha256": "71958f3cd0ffb722ce58289d7311468d33512b7e67165b8450e2683dc420c767"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -67,0 +68 @@ bool first_run_trial = false;",
+        "raw_hunk_lf_sha256": "ad8e49edf07db0547748b9fd40f63f1603cf86fa1101446729c274baea28f10a"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -73,0 +75,3 @@ bool main_view_rendered = false;",
+        "raw_hunk_lf_sha256": "707b467e55c40acab216b68e7d61fb8f6710eb056b332ef309ef1226bcc8d4b9"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -170,0 +175 @@ std::string state_json_locked()",
+        "raw_hunk_lf_sha256": "927354ce96e1fe45b1592f15a74ffd548f30939bbfd660c7dd6890e905c0b874"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -178,2 +183,4 @@ std::string state_json_locked()",
+        "raw_hunk_lf_sha256": "c74f79ed7783152c538c4df6f22554d5a36538435698d6324d370c6800070b64"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -270 +277,3 @@ bool apply_snapshot(const graphics_safety_snapshot &snapshot, bool persist)",
+        "raw_hunk_lf_sha256": "fe44351069fe4d0315402a6f8254e5b0c134d583c38b4920f1627669272e7070"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -272,4 +281,3 @@ void release_pause()",
+        "raw_hunk_lf_sha256": "b4124111d3494f71f2694c6aefbfc520760609347a307ff985be6a9bc2145efa"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -277 +284,0 @@ void release_pause()",
+        "raw_hunk_lf_sha256": "faaa1ba41a21e47864b979980f7216153fc65c7afff731ca56147771b6a2adca"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -316,0 +324,12 @@ extern \"C\" void android_graphics_safety_main_view_rendered(void)",
+        "raw_hunk_lf_sha256": "3d459e9e3d3659e9aaf4368c29751502b4f26179ab4a86a78f34400398075050"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -318,0 +338,7 @@ extern \"C\" void android_graphics_safety_presented(int success, uint64_t generati",
+        "raw_hunk_lf_sha256": "56f1deca54b59dcaef0b893a609998c2dd286b24be213f83235222eb0c3695df"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -328 +354 @@ extern \"C\" void android_graphics_safety_presented(int success, uint64_t generati",
+        "raw_hunk_lf_sha256": "9bd40a8fb6accc12002fcf5bacce2af36536522bbfda7010d0cfb824d5e79bc4"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -365,4 +390,0 @@ extern \"C\" void android_graphics_safety_presented(int success, uint64_t generati",
+        "raw_hunk_lf_sha256": "bcabd55ea605484f69536110477a31534ded6e35f38c666624b77e66945e9a22"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -425 +447,2 @@ extern \"C\" int android_graphics_safety_preview_done(uint64_t id)",
+        "raw_hunk_lf_sha256": "ffc55fbcda370943c5b0247aeeae171a33e47c967ce86f72fc92ca07cf279002"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -434 +457,2 @@ extern \"C\" int android_graphics_safety_queue_option(const char *name, int value,",
+        "raw_hunk_lf_sha256": "2084848ed5a53b3e1d6ccb62df9342c289d360a896cc34e8132865496203dad7"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -449,0 +474,2 @@ extern \"C\" int android_graphics_safety_queue_option(const char *name, int value,",
+        "raw_hunk_lf_sha256": "725034b0dc0c1c4e479cc8912dd2a6a33ef51cdf7b66ed0fee0d829f3dd6406d"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -529,0 +556,6 @@ extern \"C\" int android_graphics_safety_decide(uint64_t id, int accept, const cha",
+        "raw_hunk_lf_sha256": "d99cc3a22ef2e9f73ae7ed51caea7856c24d84de1f821262dbf392e9b0725e97"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -640 +671,0 @@ extern \"C\" void android_graphics_safety_event_tick(void)",
+        "raw_hunk_lf_sha256": "62469e367d1a467172e3a3cd9579253150e734013d8841b85ca1bea5a2382e31"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -648 +678,0 @@ extern \"C\" void android_graphics_safety_event_tick(void)",
+        "raw_hunk_lf_sha256": "9cba03934704bdee404cd723aa5db2708f9bc8edf1ed83dc73fba518bfce4ddd"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -654,0 +685,15 @@ extern \"C\" void android_graphics_safety_event_tick(void)",
+        "raw_hunk_lf_sha256": "7e6c8dff78060574a0931ef227743cb9d68d3b8c01b466d802c0430bfa01081b"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -661 +706 @@ extern \"C\" void android_graphics_safety_event_tick(void)",
+        "raw_hunk_lf_sha256": "51d96bb191ae45074e50cb7d8c0ad098b7e9ab35c1263965f40b9f28b6015962"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -664 +709 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "9ba5e215808043aab5bd55adac35f911b5bc9e0a083c916381fbf39dc84aaae1"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -674,0 +720,26 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "65608208ceb850155c67e9619b3c00e14fbe34ba83b8130703d673e25c41ff69"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -677 +748 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "4cb10b31b727951cc550ecb1d06b8aeef0ba2ecd54129277d6fd2b668713f2b2"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -681 +752 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "4f2333969eb6fd218c2f27a537b1bf9f9fb37d79f65b66ed2834f4290bfcac77"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -684 +755,10 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "c760561aa3f3f2f790bcaa21dd1532156c2e8b89ff913cf62f314cb18fbf9ac6"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -685,0 +766,2 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "ec90514c52243fa3c20c735bfba670b6e5a5dea5a5fdcc6f47668488e3e33dfa"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -724,0 +807,2 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "f35675aa4e616263b4bb8aab50d4e0e659462b400b09a8a04a92c8e174609260"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -733,4 +816,0 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "30e945d409e2fad6010a9409bd69e0af65448f87dc16ee0d636f0ff30219b14b"
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -761 +841 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "3da384d726d487ad4858ba63afdf275ace507c51fd788a0bb273cd181ec6f8e9"
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -768,0 +849,7 @@ extern \"C\" int android_graphics_safety_before_main_view(void)",
+        "raw_hunk_lf_sha256": "4bed6cbb125da9920356995d4666fe4e65f53ecc7b6d30920b3a9987843d7ad2"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/directory_sync/main.c",
+    "current_lines": 216,
+    "current_whole_source_sha256": "09c195512dc5e851d1f0704898784512f359f7beb1e6530f3a277f33583f1c1e",
+    "current_delta_lf_sha256": "fe8e041457b61a34a895c03a21842081a70aaee08fad2784069a039d61323f48",
+    "current_delta_bytes": 9005,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,216 @@",
+        "raw_hunk_lf_sha256": "425b3a0cb202128451305c9a179fb9988a15363dfbfafebe146a421957409172"
+      }
+    ]
+  }
+]
+```
+
+
+## Larger transaction, GL fixture, automation, asset and CMake deltas checkpoint, 2026-10-09
+
+Revalidated91 saved actual source ranges and30 prior complete context deltas; completely read/bound six further nonempty current context diffs. Current context coverage36of38; MainActivity and upstream-compatibility fixture deltas still pending. Exact frozen assignment and original attribution unchanged
+
+Rollback fixture306line added delta confirms actual production inclusion, Win/POSIX restoration substitution and always-enabled require. Failed restore/undurable restore/original absence and subsequent recovery/retry are tested; unrelated.bak.keep preserved. This does not substitute for failed-exclusive-create candidate ownership tests. Whole GL fixture359line and orchestration257line diffs confirm baseline/current facade conditional, cached/raw/null adapter/unit/delete/filter controls, real enhanced-model upload/draw/free/native font comparisons, two distinct contexts with nonzero initial unit and explicit destruction. Runner count agreement derived from exact source: each context30helper+4enhanced cases gives68baseline; current adds5owner+1lifecycle percontext gives80. No runtime pass credited. Mipmap matrix alignment1 intentionally excludes separate packed-RGB alignment acceptance
+
+Current automation7hunk delta adds external audio controls/checkpoint roundtrip/save and metadata performance probes/co-op restore fixture plus shared pause queue/admission probes. Preserve concurrent work; do not execute it or claim its writer callbacks/save/pause lifetime validated from this read. The assigned exporter axis sample remains ordinary engine-owned copied state; current added probes do not confer external request correlation or C ABI containment
+
+D1-in-D2 assets29hunk delta introduces shared shareware sound decode/prepared generation validation and initialization helpers. Stats getters remain copied generation observations. Cross-reference validation moved to prepared generation rather than deleted without replacement; excluded effects/unavailable robots have explicit policy and source identities retained. This is current context, not frozen assigned original savings or full shareware acceptance
+
+Native CMake2hunk delta consolidates common sources into DXX_ANDROID_GAME_SOURCES, copies pergame lists and inserts D1 Mac audio/D2 preview sources at prior sequence points. Common accessor implementations remain compiled separately for both games despite one literal occurrence. Preserve real common-list simplification; stale lexical fixture expectation2 belongs under GQF0162/GQR0149. Keep D2-only preview JNI/state in one loaded library, preserve handmade ownership comment and new external checkpoint source registrations. No build executed or duplicate-source/linkage acceptance claimed solely from lexical diff
+
+```json
+[
+  {
+    "path": "android/app/src/main/cpp/extract/rollback_backups/main.c",
+    "current_lines": 306,
+    "current_whole_source_sha256": "351ca72534aa4db3a15de4098139472f75c462fea88a4567ef60b2336c8b50d4",
+    "current_delta_lf_sha256": "956dfd2b44448b5a10c9f55b8a249795210e159046ea67fc9bbb9fd36df9753d",
+    "current_delta_bytes": 12311,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,306 @@",
+        "raw_hunk_lf_sha256": "3df9ca4603696b0735516a4d852faa2483a2a92e3e86ce258ab2ff8e744c96d5"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/texture_bindings_fixture.hpp",
+    "current_lines": 359,
+    "current_whole_source_sha256": "6a4834f3d169c40b4b0a4363707faa3666259d52dda848d805dd277add629a73",
+    "current_delta_lf_sha256": "7a41c9ddf755632b8ec3c79ec34e527cc7b456388c7111f56720b41739c215c6",
+    "current_delta_bytes": 14522,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,359 @@",
+        "raw_hunk_lf_sha256": "0dc4ce2c5132941429d3ec97e298a961c2f7c9e3145dce4abf80de51c2d8666b"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/texture_labels/main.cpp",
+    "current_lines": 257,
+    "current_whole_source_sha256": "79c1b9cec2fd93a17b7a9675f228d8b755a363e5c499e2b79eb2d05e6132866c",
+    "current_delta_lf_sha256": "01f53af5008ca346768ad0e58ad856d253e0030e368fdd65ddb02f23b5732b8a",
+    "current_delta_bytes": 12928,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -0,0 +1,257 @@",
+        "raw_hunk_lf_sha256": "bf096c21642ef412da74fe124e53247c7c2a72abbb01a41d89acb9a46a36f7f1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6473,
+    "current_whole_source_sha256": "7dd26962e1938b1a9aa9e5a99b177ec899e35ffc050249577067b46b389a768a",
+    "current_delta_lf_sha256": "38827dc544475aab38cc9fee032fef03b1a41eb9c14a0337a4a5edcccc5e8f55",
+    "current_delta_bytes": 16674,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -57,0 +58 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "41e6603f21f10a8a86fc68722e00199d0f534e6650e521780240cf1d9dbea892"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -85,0 +87,4 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "0368e05db877aa574664f148a433dbe814547a4e8f445bd69a0402fbd8503361"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -88,0 +94,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "d14bfb978fa4b335161acec99e5b1e0854b59f44e8341724c04d16b00ad1db9a"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -4162,0 +4171,39 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "c42476d5fa1b3c78616c11105e11b6499741ea205e5b26515c51ae2b222d96e7"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -6029,0 +6077,225 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "37a1d36ada047b1a380bc66b95353996b583d34bbfe4c426e282be70af9d0cc9"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -6056 +6328 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "7f2156e640c064a0e67f13e57e761b1f89cb0b2f62da5355de7badd78737eec0"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -6063,0 +6336,26 @@ extern \"C\" void game_automate_tick(void)",
+        "raw_hunk_lf_sha256": "fb16b58db5a20703dc763db5a03710c30752f546ca7176e65761dfe09cace984"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/d1_in_d2/d1_in_d2_assets.c",
+    "current_lines": 1404,
+    "current_whole_source_sha256": "a45997f4e4846206262881da8d8824a473f5a19714b5cf4cb3e7f407693bb726",
+    "current_delta_lf_sha256": "dcb34ff0454d1f44d1428ef9643a1677026f7cbff1a0ae4698c910b94d53b4ef",
+    "current_delta_bytes": 15156,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -44,0 +45 @@",
+        "raw_hunk_lf_sha256": "79a106eb0a65d472c21c4fad24100878d1faea83f50d735c954a9d65f7cb168e"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -91,0 +93,8 @@ static const char *D1_asset_validation_error = \"not validated\";",
+        "raw_hunk_lf_sha256": "33fc4193662466994a698b290269c056db4d4d6acb7fe299ea4208cb0cb0603b"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -117,3 +125,0 @@ const char *d1_in_d2_source_edition_error(int64_t pig_size)",
+        "raw_hunk_lf_sha256": "98ad3867a77f2fe5d202b8b93b60cc9ea392e9ce8914b623eaf2f97cb649da04"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -225 +231 @@ static int validate_d1_robot_references(const robot_info *robots, int num_robot_",
+        "raw_hunk_lf_sha256": "9d6c08f8aab0203e3f2b2a2677f84c6704a20716c7745dbe701deb73ebabffc1"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -229,0 +236,7 @@ static int validate_d1_robot_references(const robot_info *robots, int num_robot_",
+        "raw_hunk_lf_sha256": "9b87f7fcc65ed82e6ce8ef909cc44c37cef7e7f588c99305cfc05d0d7dec09da"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -240,0 +254,4 @@ static int validate_d1_robot_references(const robot_info *robots, int num_robot_",
+        "raw_hunk_lf_sha256": "848ee054e1524556f6a20a2e9f6412f70fea792157ba7647eaab4537dd95644c"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -482,33 +499,2 @@ static int validate_d1_robot_assets(PHYSFS_file *fp, int pigsize, int property_e",
+        "raw_hunk_lf_sha256": "941f911a29349726b0b68df9017146759eac1da389ac16ac90c18a99b4fec629"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -550,0 +537,2 @@ static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)",
+        "raw_hunk_lf_sha256": "a8c60f29733c3188af79108caa04dbe6506c5fd75036ff05d77ce32066addccd"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -564 +552 @@ static int d1_pig_data_start(PHYSFS_file *fp, int pigsize, int *pig_data_start)",
+        "raw_hunk_lf_sha256": "f098e4e1bc5455743d8099d3d1f3a7be59d0174112db854a48e6cd4d08a8416d"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -573,0 +562 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,",
+        "raw_hunk_lf_sha256": "6623eb2808dfb8ca41eab3a6d3565659115a89d3cdc42279804c1c20678e00ec"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -618 +607,2 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,",
+        "raw_hunk_lf_sha256": "909cdeec92288c73a445b2c632d5d5d4d823a6622d59300f08b5ca290aac4734"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -649,4 +639,13 @@ static int read_d1_sound_bank(PHYSFS_file *fp, int pigsize,",
+        "raw_hunk_lf_sha256": "70e72797ee5932381571ce115596c3f1184b7ccbd98c27ea662a5aef785fb4b7"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -681,0 +681,43 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "ea231cb1ecf27a0a6a2f99fd595a0baf4f1068be62a02050d189a7d28e6177c1"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -688 +730,3 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "e5e50a11a802309ed8fe22c3aa9a240d38503b3aa3382905d4891a9d0c762e59"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -691,0 +736 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "edda0f4bf47adeeb5b2d04ed6f51c0f3693e70ea4afce08af5e9f63373c19906"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -700 +745 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "3ffc5cc814a3a0915f2fa873e3858ac30a956b19292d4c2bd0a791912f20ce03"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -727 +772,2 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "30ea542e9728b169dcd408a8fefe9914054ca4b9aade17ce14e12ee6d2989ff9"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -751 +797,2 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "cfb5bcae133e6449d25b03c0b10a35dbe3470b953deda802c8e2c132d93badf7"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -756 +803 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "3bba0a5528a35cb0aff7d7a7afc4bac08f075da177e33e1dcfb3b1c979b96a72"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -783,0 +831,38 @@ int d1_in_d2_validate_asset_references(const d1_asset_generation *generation, co",
+        "raw_hunk_lf_sha256": "911001c6068884020bd09935b3bd1d5f981025fb3bc1abeee12e900d70f6f3b3"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -791,0 +877,6 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale",
+        "raw_hunk_lf_sha256": "e4101416af9128fa78e47d0077abadcc16bb6f9eb08369586d6eaa60d92cb2b7"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -816 +907 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale",
+        "raw_hunk_lf_sha256": "493c7b2d5186072ceb05196b114d9ab503a9d00c952fc7394379de907a3566ff"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -838,0 +930,8 @@ failed:",
+        "raw_hunk_lf_sha256": "081d5432dd3572e34744471c8867e0803726181fdff3e37563baa844951c7d70"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -845,3 +944 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "2b3c47eb4a68012b64e2259528eec29fd174a43b91bc98144291d9b828495b8d"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -859 +955,0 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "e39753c38e97ad11c3a041c3f8769e63a64067025d2b7c7b04498479b2d22001"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -900,0 +997,11 @@ static void read_d1_robot_info(robot_info *ri, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "5c85cf47323bf7d4b8137df2d11f37faf9f87229006c2708ecc2bdccccabc1d2"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -924,5 +1030,0 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "f498018462b9580f1acad7cff1066d397c609dbea9e63202c1d67c68ec9df5ab"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -931 +1032,0 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "15a284e1bd2278787a9755d48582813ba8d6539a68c31c3419c0d92b3008df35"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -948 +1049 @@ static void read_d1_weapon_info(weapon_info *wi, int weapon_id, PHYSFS_file *fp)",
+        "raw_hunk_lf_sha256": "ff0c1768c95dcf0be40a0f082efde8adc75dce21bb3051ecb9839f4db5fb6086"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/CMakeLists.txt",
+    "current_lines": 808,
+    "current_whole_source_sha256": "f3e277840219058ce27a476d4e80133e90bb65b445f0430eb39d215f74945f44",
+    "current_delta_lf_sha256": "3fea36f61cdb0a0ccbe1bddccf9ef2d3ba2508a30809b0372137e9ca847aa75a",
+    "current_delta_bytes": 20291,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -512,92 +512,103 @@ endif()",
+        "raw_hunk_lf_sha256": "965e654308290c31bc00572ff113694b752a9fa6976c825c59c7e2b1a96796d4"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -698,98 +709,16 @@ endif()",
+        "raw_hunk_lf_sha256": "e5e0dbed3454f553e9c25312b428bbfd070017c3b33ae4a4f3de8339a6a52dae"
+      }
+    ]
+  }
+]
+```
+
+
+## Final context reconciliation and canonical decisions, 2026-10-09
+
+Completely read/bound final MainActivity59hunk and upstream fixture29hunk deltas. All38 nonempty current context diffs revalidated, all91 independent actual source read ranges and prior canonical lines match current sources. Activity preserves shared pause owner/session/revision atomic request and complete modal reconciliation, touch capture lifecycle and current UI introspection fields. Do not revive removed UI-owned pause counters or treat pause request identity as native introspection result identity. Upstream fixture extends authentic shareware prepared-generation rejection/source switching, repeated laser/Vulcan selection, briefing pixel geometry, real movie dependency/mount release and focused command dispatch; preserve these external assertions with no runtime credit
+
+Diff-minimization assessment: NO_INHERITED_EFFECT for nine assigned branch-added files (original counterparts absent); RETAIN shared native projection/layout adapters, GLES transition owner and config transaction. Paired native private-field adapters and game-specific includes remain narrow necessary format/layout boundaries. Moving native layout/data policy into Kotlin or adding wrapper callbacks would invert ownership or add inherited churn. Current common-source CMake consolidation and shared texture ownership remove branch-added duplication already; do not duplicate source entries to satisfy stale lexical test. Exact assigned scope528reviewlines84hunks4whole unchanged, zero original inherited paths/hunks/lines saving
+
+Normalize observations as existing-owner extensions: BR-0029 native snapshot/thread admission; BR-0588 engine request/result identity and terminal completion (preserve -Fresh improvement and UI request_id sidecar); GQF0186/GQR0173 allocation/parse/CABI containment and acquired malloc/PhysFS buffers; GQF0162/GQR0149 stale source-count oracle, compiled structural and mutation acceptance. Failed private-file acquisition followed by unconditional pathname cleanup extends BR-0233 explicit remove-only-owned-temporary publication root: native transaction write_private_file261-282/cleanup116-123 with batch439-449/atomic498-506 failure paths. BR0632/0634 unrelated stage workflows are excluded. Add candidate/acquired ownership and sentinel collision/open/truncation/rollback-copy tests as precise native acceptance, do not reopen completed BR0200/GQR0128 retained backup or GQR0129 descriptor repairs
+
+Highest existing live reference GQR0170TODO/GQF0183OPEN56MEDIUM-HIGH (H/M/B/C/R32/0/7/10/7): current jni_main state/capability publication and exported mission-assets allocation boundaries are already covered by its maintained acceptance. Preserve completed strict codecs/shared ownership; first-exception/partial acquisition/complete JSON/no leaked owned resources remain deferred. Separate GQR0173 rating44 and source-contract GQR0149 rating50 remain unchanged. This is REFERENCE, not new primary remediation, issue or score. No canonical ledger status mutation here
+
+Acceptance scope: ordinary paired Android/desktop boundaries, actual production-included syscall fixtures extended for pre-existing collision sentinels and failed acquisition, compiled accessor ownership/mutation contracts, allocation/parse failure containment at actual exported producer and JNI boundaries, request A success/B failure/C recovery with delayed/concurrent results and complete owned publication. Preserve lifecycle/GL binding/model/font/mipmap/source-identity controls. No test/build/device/probe execution in diagnosis; source assertions and historical repaired passes are not new fault-acceptance evidence
+
+## Final two complete current context diffs
+
+```json
+[
+  {
+    "path": "android/app/src/main/java/com/dxxredux/app/MainActivity.kt",
+    "current_lines": 5176,
+    "current_whole_source_sha256": "f13cfe391e4cd987b0022b77b1a8b23d550aeb6571e5cbff6fa43245b70d3227",
+    "current_delta_lf_sha256": "aa25e0fc96515ea8554e180ee446994bdad3a825f5e2af86afef82b18f937c47",
+    "current_delta_bytes": 21996,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -68,2 +68 @@ internal fun shouldShowTouchOverlay(",
+        "raw_hunk_lf_sha256": "fd926ce18b8c05587541b4a916921255a375b5d40ee9ee2c66f35613aa5a01f7"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -75 +74,2 @@ internal fun shouldShowTouchOverlay(",
+        "raw_hunk_lf_sha256": "d8d17b66b090b234c639470c2b0b1c6c45fbeaca1bf2b72b9e4f3bab07c28c62"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -80,0 +81,9 @@ internal fun shouldShowTouchOverlay(",
+        "raw_hunk_lf_sha256": "6d85d9eaadc6a3d4f3d35d473bd68f1fc10c9ffbf9b9b7a120e34b6f3704a997"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -657,5 +666 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "4fbc2459eeb93724710a21719d75ca3cd076bd7212ec9f474d691073bfb8832f"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -663 +668 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "007a19933f93ecede48fa512259fd827f13675654dfcfffa02322ee566c99b53"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -665,3 +670,6 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "f54a283c8ca8a9c9231f7ec688ad4f4ee07d95b95011315950f8abb9651838ce"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -669 +677,7 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "af7bbb1d7b479a7a610a309f2546c7615fdbf596d4f2e912ae7393c2fa75b469"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -671 +685 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "5fe79833e22eaf8eb5a9e29d34e91441597597cc9afee3b8a4f75ade46296f39"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -892,0 +907,7 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "aba42103ebb7d546f36593cd3a74968fcf8cf461b91bb7960aa1feec91dabf45"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -925 +946,7 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "8c62b181484c0a98d4dbb5b0feb3f80d9714ac488e2bd9f93d9250659f7eb80f"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -1338,0 +1366,3 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ba36b297dc5a339f03905c6c874f0c47bfd3370007192c76528fa21808b9da24"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -1385,2 +1415,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "e1a5da2d827175d20b84afc123e08e696b79c7732fe96f35d0c7a3457c57aec8"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -1875,0 +1906 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "83bf8439420d54ae3c1d6e1d062fce9c1fc6900344363f5f298548ba9b47a7e5"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -2305,0 +2337 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "c0c5de0b12fd14bcdff4a9f2b4e74a8971a9aca962c4fb993d095426b62ea832"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -2438,0 +2471,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "4533e36b34415197ccfe721d4ee880c4b02e99c923fcb217ad28f52d8d55c72b"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -2447,0 +2482,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "6878e75a8d8ce5ba081f2b32575bef3644cf6cda4e046cdc2d718cf433d45b36"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -2462,0 +2499,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "09909eafd464abfcf6db0fc5677c7ed0a2793ec4b2960b8b1d1ae5919a11308a"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -2512 +2550 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "59c3227bca963c4c3f67b9b0ca662fbbb8ad2f39f473e9c6ff0dc0049bad8f20"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -2518,0 +2557,6 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "0fd6b72bcadf96492086cd4bb72b7df75ef77807230148d666ccf2b3fa05d1fe"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -2519,0 +2564 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "64a1fe4af8a1440ded31db7219b05e9e35c5219f1cb32d3feb3e703d2a7b9ae2"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -2641,0 +2687 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "e31cb0c7fd800a4e97271e18c8eee66e94a9c33d79eb395f22d3b90a9a5f8ddd"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -2643 +2689,6 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "129cee3571169486c77043d43ac85f719989173bac8b0a9dbb7cbb76d25ba220"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -2717,9 +2768,10 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "05bb6c95d188a46dae224591f74f947b2783fe043974de128600eebe6fe2bdfd"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -2727 +2779 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ab80445f63e14a8f6d765e448486a2fb82a24d71c4a2c50558cd2dc057b3a16c"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -2729,4 +2780,0 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "dd3c4c7c68c8f22246545fa6889902e2b4dd9b5341b5a8f93bc12826d9c891c5"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -2792,18 +2840,16 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "699953a5c99a182ac9b90cbe878d43fdee4b53489a941aa85a4c956c103ce340"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -2810,0 +2857,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "5d3e96c1d59a0982472cef2c6b6103d76c840d5d93795ff1f0da1ca57d0a0b4a"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -2812,4 +2860,17 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ed9444aa9218f506dafcdb1c10b6a465c0113b023e163cf0355f0e61f53b4585"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -2817,2 +2878,4 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "e2a5cb08d8e1b00ae7de324a57d0daff05e998a022631c7c7d2a4c8647c0f087"
+      },
+      {
+        "ordinal": 30,
+        "header": "@@ -2821,5 +2884,3 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ec9bed9e7202906dcf6129402dfee4bb76715e5ac8f22e9d75e547b11d1ca200"
+      },
+      {
+        "ordinal": 31,
+        "header": "@@ -2827,3 +2888,5 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "83b27b56c86b3500b6874a30d6d93496c4ee3ce47bf507d0fe3f787c1747a8bf"
+      },
+      {
+        "ordinal": 32,
+        "header": "@@ -2831,2 +2894,21 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "759ba3a2597903af609e1e0f1ad8be86d6699ee4c0e2c78183767f93ce49fa67"
+      },
+      {
+        "ordinal": 33,
+        "header": "@@ -2835,0 +2918,4 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "3e09cdfeb8f2ef402b74ce21cba4770017a82ced75acb46ad300529d309a1f15"
+      },
+      {
+        "ordinal": 34,
+        "header": "@@ -2867,7 +2953 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "f986484e8b1d98d1358f895b632c20a5f56fd044d375d3ade48e4ca542603704"
+      },
+      {
+        "ordinal": 35,
+        "header": "@@ -2882,8 +2962 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ab466e1a572acdf95dcbbe743731486fd9fd773dad656ec2c09cf8c9a25e9610"
+      },
+      {
+        "ordinal": 36,
+        "header": "@@ -2935,0 +3009 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "5a0caf38fd297969a673d56a9387e250c20bea9a11951828b5bf4e7afd8c0c76"
+      },
+      {
+        "ordinal": 37,
+        "header": "@@ -2975,2 +3049 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "02bdfdd94ddffe7376d0e9bd14b970ee3f5db50e1aaedac21f782906b022373e"
+      },
+      {
+        "ordinal": 38,
+        "header": "@@ -2979,2 +3052,8 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "51689bf290fadd27e9f05531ffafc5add96ebc8d280bf5ea3e34cd99c92ca3e7"
+      },
+      {
+        "ordinal": 39,
+        "header": "@@ -2982,0 +3062 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "ad692e2f0a443713eb6d609efdff2e2bfeab561d6315ba9bdc041794bbef7cb8"
+      },
+      {
+        "ordinal": 40,
+        "header": "@@ -3006,9 +3086 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "5c441c68f2658b5a03d1008ce9b332ae8e240c3fdc3d39a09828da46ff7f6b21"
+      },
+      {
+        "ordinal": 41,
+        "header": "@@ -3017,15 +3089 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "6e44da78cc822ce266d313a7391c57a109e03113c7dcdf10336f0963a0324c44"
+      },
+      {
+        "ordinal": 42,
+        "header": "@@ -3033,4 +3091 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "823ea04594e114ed1f8176db90933cfa5d4bd202a27a462a3ec1cc88d9f91cdf"
+      },
+      {
+        "ordinal": 43,
+        "header": "@@ -3057 +3112,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "c8189b5a3f526fe93bb0bae53d7df0c40d70b543f44035a40e4373bce93a89da"
+      },
+      {
+        "ordinal": 44,
+        "header": "@@ -3083 +3139 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "835f735e14b9d46dbf5ef37608f3bd273013da896c5c04875b375194ee998f51"
+      },
+      {
+        "ordinal": 45,
+        "header": "@@ -3106,6 +3162,2 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "dfe20243a135c0e123f11b0c085c359c27337fe9e5d9577b5e9a407330982cf7"
+      },
+      {
+        "ordinal": 46,
+        "header": "@@ -3122 +3174 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "2db288ab53fd2accb0435fd48a8dff94f8dbb602066306cd0703b3f56eb961f3"
+      },
+      {
+        "ordinal": 47,
+        "header": "@@ -3134,2 +3186 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "7a0fa49dc87be773c7e7e80ee9fb6113981690caf3c17bc198e4b88d675b3ca7"
+      },
+      {
+        "ordinal": 48,
+        "header": "@@ -3142 +3193 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "e5e175691defad1e18c962e436455058a908c8fed0344d619ff24bbb9ff5cac8"
+      },
+      {
+        "ordinal": 49,
+        "header": "@@ -3144,0 +3196,8 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "c75374384d3a32f90c93ca88d8a35a15d49e50995940349e41dc7486e7f9efb3"
+      },
+      {
+        "ordinal": 50,
+        "header": "@@ -3300,0 +3360,4 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "4c4980f9a6ab1f243802af28d9c0650a3ba05c228f9c35c7e2735938109b986f"
+      },
+      {
+        "ordinal": 51,
+        "header": "@@ -3307 +3370,16 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "38c84b709b474a4228793be1a780ab2148ce49cdb767c0267225425bed8bde98"
+      },
+      {
+        "ordinal": 52,
+        "header": "@@ -3365,0 +3444,58 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "6be1223b3af738c06abeb8fbbcc1e85e2fb42c0ac814e97fbc075576e46c5d4f"
+      },
+      {
+        "ordinal": 53,
+        "header": "@@ -3432,0 +3569 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "12cc7440821a9c5d8984cc4d59262cdef5fe2011a6c1bd059fa3bc3e8cbba361"
+      },
+      {
+        "ordinal": 54,
+        "header": "@@ -3452,6 +3589,3 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "3e7a27bbb938c47df253823cb6b691b19a9ddcdc684f3eb0db1f557ab45c788c"
+      },
+      {
+        "ordinal": 55,
+        "header": "@@ -4723 +4856,0 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "404a084ce8dbe8da368213c12597430564a0dc742b24ec6d5daa817e0ee5ff65"
+      },
+      {
+        "ordinal": 56,
+        "header": "@@ -4730 +4863 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "9d76558a59305970dd83161b127a1d6e6697d3364f839620c3e8fec1b25a09a3"
+      },
+      {
+        "ordinal": 57,
+        "header": "@@ -4734,0 +4868 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "c8b7b1811205053816e34f2260a9f2193ac6182095d0a2f77767f2096b20a3c5"
+      },
+      {
+        "ordinal": 58,
+        "header": "@@ -4775 +4909 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "78afe815ad1b6a67d4203471cb577cab05ce8367825b5a6eab0be497164b8c0f"
+      },
+      {
+        "ordinal": 59,
+        "header": "@@ -4883,0 +5018,4 @@ class MainActivity :",
+        "raw_hunk_lf_sha256": "132b0bc598175257c748000d93d07dce73ce05bfa68829338c4575244aed63ff"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_upstream_compat.cpp",
+    "current_lines": 11576,
+    "current_whole_source_sha256": "fb09c0d0dfef2d62e6a7d3b17618673481e87966215fdb7c55246fc372957c53",
+    "current_delta_lf_sha256": "714491dcb4d40519cabcd5fb6821ffde1c11e564427edd91a153f6a3515f2463",
+    "current_delta_bytes": 28872,
+    "current_delta_whole_read": true,
+    "hunks": [
+      {
+        "ordinal": 1,
+        "header": "@@ -17,0 +18 @@",
+        "raw_hunk_lf_sha256": "4e7213d71047667de63f5d117534388e515ea9dddafe576b9df46fb9a3985c05"
+      },
+      {
+        "ordinal": 2,
+        "header": "@@ -36,0 +38,3 @@ extern \"C\" {",
+        "raw_hunk_lf_sha256": "6bfdb21e9d2ca8003199cc3e1d228e89581da4bdf12cd6ff65b4b64ad64da008"
+      },
+      {
+        "ordinal": 3,
+        "header": "@@ -1889,0 +1894 @@ static void test_d1_follow_path_frame()",
+        "raw_hunk_lf_sha256": "4e05e3377ea4c7c8d47f79d5ee4c4c32953944c8a34905244869b47dc1381e93"
+      },
+      {
+        "ordinal": 4,
+        "header": "@@ -1955,0 +1961 @@ static void test_d1_follow_path_frame()",
+        "raw_hunk_lf_sha256": "df3e4a089a2f343aa870e3e3f8efa5482b585288de65f03e820c4ea31c90be98"
+      },
+      {
+        "ordinal": 5,
+        "header": "@@ -1971,0 +1978 @@ static void test_d1_follow_path_frame()",
+        "raw_hunk_lf_sha256": "66fd0cd54abc047b062badaf1c17919b1bce1d000b43e0191fdb244edf3117b3"
+      },
+      {
+        "ordinal": 6,
+        "header": "@@ -2736 +2742,0 @@ static void write_robot_frame_trace(const char *filename)",
+        "raw_hunk_lf_sha256": "4f4ffc3c54b8ecf91ea327b47cb428cf1e995cae14cb2898b90e2d936df1f17c"
+      },
+      {
+        "ordinal": 7,
+        "header": "@@ -2764,0 +2771,2 @@ static void write_robot_frame_trace(const char *filename)",
+        "raw_hunk_lf_sha256": "659c1dce5e3395caa8592b16dc7dc856185cfebfa1b84b66a3dfcde83e30f3d3"
+      },
+      {
+        "ordinal": 8,
+        "header": "@@ -2796,0 +2805,5 @@ static void write_robot_frame_trace(const char *filename)",
+        "raw_hunk_lf_sha256": "f52aa8def65e5a9ff5c60fa7bdf8c7e9bb84a648357cfe358c4fcda8817c87cc"
+      },
+      {
+        "ordinal": 9,
+        "header": "@@ -3989,0 +4003,2 @@ static void test_boss_preparation_and_gating()",
+        "raw_hunk_lf_sha256": "1f6187a53949b1d24e2c66da983cba494ada5612b444b4d343ce42fd09b1e9db"
+      },
+      {
+        "ordinal": 10,
+        "header": "@@ -4170,0 +4186 @@ static void test_boss_preparation_and_gating()",
+        "raw_hunk_lf_sha256": "92fe3a817468d1fa99b49cb6da3d3ece6bff8cd4bfe09c1cf27c1f7041d61681"
+      },
+      {
+        "ordinal": 11,
+        "header": "@@ -5133,0 +5150,58 @@ static void test_loaded_d1_weapon_firing(bool d1)",
+        "raw_hunk_lf_sha256": "625482ae3df775459ff82b580471b6aa374a304375154d7d27e7364e5ff0ef41"
+      },
+      {
+        "ordinal": 12,
+        "header": "@@ -5747,0 +5822,159 @@ static d1_guidebot_asset_stats test_registered_guidebot_source(const char *direc",
+        "raw_hunk_lf_sha256": "2f3c1ccd9637aa24d36e495d7a316c69c84fe8b623e710a7517314cb73f52b22"
+      },
+      {
+        "ordinal": 13,
+        "header": "@@ -6573,0 +6807,12 @@ static void test_d1_reactor()",
+        "raw_hunk_lf_sha256": "6f3c778701f5f9239f6255e7b4cc47142b41dff148dfd06d8566f9ed31ad9eb4"
+      },
+      {
+        "ordinal": 14,
+        "header": "@@ -9277,0 +9523 @@ static struct {",
+        "raw_hunk_lf_sha256": "a4683ee67e9ff4b9c011560bd749510d047cec0cd3e768c84d60f9b7284704ab"
+      },
+      {
+        "ordinal": 15,
+        "header": "@@ -9302,0 +9549 @@ static int briefing_trace_event(d_event *event)",
+        "raw_hunk_lf_sha256": "896a70ef089044034e53b4a8b39e34e7a7526b76421ac1fae1c8e49ac1242f03"
+      },
+      {
+        "ordinal": 16,
+        "header": "@@ -9303,0 +9551 @@ static int briefing_trace_event(d_event *event)",
+        "raw_hunk_lf_sha256": "41d2f52e100b0c23de9eaf449b636444c02c60dfed3545c6fee083802a29e7f7"
+      },
+      {
+        "ordinal": 17,
+        "header": "@@ -9309,0 +9558,32 @@ static int briefing_trace_event(d_event *event)",
+        "raw_hunk_lf_sha256": "f92449ba12c566f1cf97857e13e2c05263b036534cda434659c37b85bd44213e"
+      },
+      {
+        "ordinal": 18,
+        "header": "@@ -9480,0 +9761,18 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "12d6ebb226a6379e8530a9c7c64659e181143a97ed1ccaec4534e0c0c8654edb"
+      },
+      {
+        "ordinal": 19,
+        "header": "@@ -9486,0 +9785,3 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "bae3da5172ab6f31ad8906435aedcb9b91e28dd76a9e957f825a18e27d2a7369"
+      },
+      {
+        "ordinal": 20,
+        "header": "@@ -9497,0 +9799,2 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "1d7a4637df09145a66ef62e37e61b9e39b5ddb1c67fb5b9dc9d3f0297102fed3"
+      },
+      {
+        "ordinal": 21,
+        "header": "@@ -9498,0 +9802,4 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "aa5257e33e2b4faa7c475456ee0b3b4c604966a36a159e038f5d7794a9cdd31d"
+      },
+      {
+        "ordinal": 22,
+        "header": "@@ -9500 +9806,0 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "4059c10ce24a5004a13ac807b1d5c8ad60e4de4d3bcef1a33fe948df7b0a9c83"
+      },
+      {
+        "ordinal": 23,
+        "header": "@@ -9502,0 +9809,30 @@ static void write_briefing_trace(const char *directory, const char *d2_directory",
+        "raw_hunk_lf_sha256": "661ee25fd6b43501cb0da690a951e2dc62ea8bcc27c1f78776c78d73ae4512e9"
+      },
+      {
+        "ordinal": 24,
+        "header": "@@ -10429,0 +10766,12 @@ static nlohmann::json exercise_gameplay_rules(bool native)",
+        "raw_hunk_lf_sha256": "864a67eb0c9dc44e6ded8571087f1e221b3107a2b8d0c25ea5506980758f1cc2"
+      },
+      {
+        "ordinal": 25,
+        "header": "@@ -10888,0 +11237,68 @@ static void test_mixed_rate_sound_conversion()",
+        "raw_hunk_lf_sha256": "882470623473b4568ea5dc220c44fe70e759d8b52b624faf9a5826bce2c5b259"
+      },
+      {
+        "ordinal": 26,
+        "header": "@@ -10895,0 +11312,32 @@ int main(int argc, char **argv)",
+        "raw_hunk_lf_sha256": "04d7d3ff1f3b6a684c4742980557401e5ecd79baaa69173b54e203cbebd95170"
+      },
+      {
+        "ordinal": 27,
+        "header": "@@ -10896,0 +11345,14 @@ int main(int argc, char **argv)",
+        "raw_hunk_lf_sha256": "d9492a3b35776cb9598ac817b85920bce44d2d3ca4aadd869963433fe6337f33"
+      },
+      {
+        "ordinal": 28,
+        "header": "@@ -11015,2 +11477 @@ int main(int argc, char **argv)",
+        "raw_hunk_lf_sha256": "b583da5070d6a66538ec5b68984f85f21119793b7ecb94d7bcf743f9a2060b92"
+      },
+      {
+        "ordinal": 29,
+        "header": "@@ -11018,2 +11479,3 @@ int main(int argc, char **argv)",
+        "raw_hunk_lf_sha256": "a2c410f3b59799b5d6cd169cd81766365678caf6efd674d4d99a5f5cacb7faf4"
+      }
+    ]
+  }
+]
+```
+
+## Highest existing JNI owner bindings
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/general_code_quality_ledger_20260811.md",
+    "prepublication_whole_source_sha256": "492457c07b51496bf216d7543ff2c1f48643c3ee3ee56dd7b20681377a1b8118",
+    "read_lines": [
+      {
+        "line": 148,
+        "text": "| 20 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | `GQR-0170` | `TODO` | `GQF-0183` | Make remaining pilot/input JNI acquisitions and publication exception-safe |",
+        "line_lf_sha256": "055d1467253dc8b3fbbba6502a4d3341bb3d5acefd4e1ba6f5566d6bc689b25f"
+      },
+      {
+        "line": 8025,
+        "text": "| `GQF-0183` | `OPEN`  | P1/high             | stability/jni-boundary/failure-path                           | Autoselect/gamepad/preferences pilot and batch-input JNI bridges                                          | Assigned live bridges use unchecked string/array acquisition, class/object/array/string allocation and dependent JNI stores; partial failures can dereference null and continue with pending exceptions. Reuse checked JNI ownership and preserve first exceptions across pilot bridges and stop batch-axis acquisition immediately after failure; include pre-parse C++ allocation containment. Uncovered scope linked to completed GQR-0039/GQF-0052                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |",
+        "line_lf_sha256": "9726884acefa6c83708435842de8d8a83bf014a9e430709f9bd71f0d25088b6e"
+      },
+      {
+        "line": 10832,
+        "text": "| `GQR-0170` | `TODO`     | `GQF-0183`                         | Make remaining pilot/input JNI acquisitions and publication exception-safe        | android_autoselect.cpp, android_gamepad_config.cpp, android_pilot_prefs.cpp and android_input.c batch-axis acquisition; production partial acquisition/allocation and pending-exception fixtures; shared JNI helpers, C++ boundary containment, Android ABI builds and CheckJNI Also synchronize maintained test_cockpit_mode_validation.py with actual staged append_pilots/patch_pilots before-write validation, preserving completed BR0267 cockpit rejection: chunk0692 actually fails the stale for_each_pilot substring assertion; verify rejection precedes acquisition and every staged enumeration/publication path Also cover current jni_resume_save.cpp CoopSaveCompatibility_nativeSlotPath/nativeCompatibilityStatus: strict string acquisition, first-exception short-circuit, scoped file/string cleanup, native allocation containment and Unicode/partial-acquisition CheckJNI fixtures Extended GQ2-0019: include jni_engine_query.cpp request/decode in existing remaining JNI publication/exception boundary. Preserve pending Java exception, check length/region/new-array failure, contain vector/JSON allocation exceptions and publish no partial result; non-null Kotlin input and ASCII JSON do not establish native allocation containment. Validate both engine codecs and existing real UDP/socket controls plus deferred allocation/CheckJNI matrix Extended GQ2-0023: include jni_level_metadata.cpp catch-generated failure JSON and final JNI/host dump containment. Scoped reset of global progress/cancel callbacks and analysis overrides on every scan exit; callback JSON/string allocation must not escape C callbacks or retain stack context pointers after failure. Actual subsequent-request/first-exception/no-partial-publication acceptance and coordinated poisoned worker retirement; no allocation/fault execution credited Extended GQ2-0026: include jni_main.c graphics option/decision and state/capability publication boundaries. Contain C++ JSON/string exceptions, scope owned name/reason cleanup, preserve first Java exception and expose complete valid JSON without truncated-success publication from fixed4096/8192 buffers. Retain synchronized copies and completed strict codec scopes; ordinary producer/consumer and deferred allocation/CheckJNI acceptance, no fresh execution credited Extended GQ2-0077: include file-only jni_graphics_safety.cpp stage/read boundary; check object acquisition before string helper, preserve first pending exception and localref/string cleanup, contain vector/JSON allocation and reject partial output-array publication; existing production partial-acquisition/CheckJNI gates remain unrun Extended GQ2-0097: contain TagLib/audio-tag parse and serialization exceptions across exported C/JNI owners; scope partially retained raw properties and metadata through vector/JSON/Java publication, preserve checked UTF8 input cleanup/first exception and report truthful failure. Actual file/PhysFS and active JSON consumer retry/no-leak/no-partial-publication acceptance; allocation/fault execution deferred. Preserve completed0024 codec; distinct0258 producer scalar-prefix defect Extended GQ2-0099: shared/android_mission_assets.cpp exported init/prepare/activate/context_json/resolve_key allocation and C ABI boundaries need scoped catalog/mount/snapshot ownership; successful mount precedes vector registration. Preserve fatal failed-unmount policy and ordinary baseline restoration; reserve ownership before side effects or roll back the acquired mount on registration failure, contain exceptions with truthful terminal status, and never continue mixed owners. Coordinate GQR0082 metadata poison/retirement and BR0103/BR0506 launch publication; actual deferred allocator/cleanup/retry acceptance under plan_gq2_0099_meta_actions_mission_assets_continuation_20261009.md Extended GQ2-0101: contain preview stream-following typed JSON/mount/string and robot-summary allocation across C/JNI owners; preserve first exception, checked acquisition, owned request/data/activity cleanup and truthful terminal callback/process disposition. Coordinate BR0029 acknowledged applied-summary snapshot and GQR0102/0212 source/admission. Actual paired preview/ordinary failure and deferred CheckJNI/allocation acceptance in plan_gq2_0101_graphics_idle_preview_continuation_20261009.md; no fresh runtime credit |",
+        "line_lf_sha256": "b7bcc637f65f0f94d89de528dab8e27d91bde6ff06ef68e72c57c9a7e1617a79"
+      }
+    ]
+  }
+]
+```
+
+## Derived physical union for report consolidation (not independent read credit)
+
+```json
+[
+  {
+    "path": "android/ai tool plans/code management/plan_gq2_0104_graphics_lock_admission_followup_20261009.md",
+    "current_lines": 28,
+    "current_whole_source_sha256": "f568d6f8b6815a39cb406611d807244a9f94048e7338c4b39589f125811aa127",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 28,
+        "range_lf_sha256": "f568d6f8b6815a39cb406611d807244a9f94048e7338c4b39589f125811aa127"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/CMakeLists.txt",
+    "current_lines": 808,
+    "current_whole_source_sha256": "f3e277840219058ce27a476d4e80133e90bb65b445f0430eb39d215f74945f44",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 550,
+        "last": 572,
+        "range_lf_sha256": "d13324a6c3d5a78b1893a2a2721ac64c5ebd9940a1fa7df2c281646e3ddab54b"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/CMakeLists.txt",
+    "current_lines": 828,
+    "current_whole_source_sha256": "af2f16ca88d16e137926ef3a757b54956c78a1c1eac0c0b50771a1a22fff9b25",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 165,
+        "last": 182,
+        "range_lf_sha256": "16d0549813152d9bafde106fbabe152841dabadb5e939488afa374dadf050c38"
+      },
+      {
+        "first": 475,
+        "last": 487,
+        "range_lf_sha256": "ba14b69b3395a5408682c4634578b87c0bdabd4bf1ddb9974209fe13c5ca4f13"
+      },
+      {
+        "first": 700,
+        "last": 709,
+        "range_lf_sha256": "5e47be812a34d855f9f7eb3759d2fca0ebb0652441bac5cbee9c84e43ed92866"
+      },
+      {
+        "first": 807,
+        "last": 828,
+        "range_lf_sha256": "8eefe5354a3294d7cd8b79589d11d487680a3fd61a96def70898bfb2a30b59c4"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/directory_sync/CMakeLists.txt",
+    "current_lines": 10,
+    "current_whole_source_sha256": "0e9b40cc3b9254f4b0811942e4d6e1d5f373aa662e23ee3764ad1938b70b14ea",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 10,
+        "range_lf_sha256": "0e9b40cc3b9254f4b0811942e4d6e1d5f373aa662e23ee3764ad1938b70b14ea"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/directory_sync/main.c",
+    "current_lines": 216,
+    "current_whole_source_sha256": "09c195512dc5e851d1f0704898784512f359f7beb1e6530f3a277f33583f1c1e",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 216,
+        "range_lf_sha256": "09c195512dc5e851d1f0704898784512f359f7beb1e6530f3a277f33583f1c1e"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/rollback_backups/CMakeLists.txt",
+    "current_lines": 14,
+    "current_whole_source_sha256": "409dcec9b3c08e5724ecb2b7a6fb6a44b7acea4020902b916fb34d80910526da",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 14,
+        "range_lf_sha256": "409dcec9b3c08e5724ecb2b7a6fb6a44b7acea4020902b916fb34d80910526da"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/rollback_backups/main.c",
+    "current_lines": 306,
+    "current_whole_source_sha256": "351ca72534aa4db3a15de4098139472f75c462fea88a4567ef60b2336c8b50d4",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 306,
+        "range_lf_sha256": "351ca72534aa4db3a15de4098139472f75c462fea88a4567ef60b2336c8b50d4"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/extract/test_graphics_config_transaction.c",
+    "current_lines": 181,
+    "current_whole_source_sha256": "de41ac0a7b8450cdbfa497d10a2ae2382c4ee1c5cc70a4a279ffa91f25f69d85",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 181,
+        "range_lf_sha256": "de41ac0a7b8450cdbfa497d10a2ae2382c4ee1c5cc70a4a279ffa91f25f69d85"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/jni_main.c",
+    "current_lines": 1887,
+    "current_whole_source_sha256": "2d9733c20a7c6eea702c766f55347665a3d7ad245026965042eb5590d5a6a413",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 815,
+        "last": 883,
+        "range_lf_sha256": "92033bd8245c24bf9f1bdd59618f818dedb4bc26bdaf611b342fe3d3bc29cae3"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_axis_mailbox.cpp",
+    "current_lines": 332,
+    "current_whole_source_sha256": "b26b40a023bc244023710be3425d36506cb2ed4ba9a206db097bcd68e0ce2047",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 265,
+        "last": 290,
+        "range_lf_sha256": "0d274495c2097a2842f751a80ab04b5df26acb0215381676a467ac046fa0a500"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_egl_surface.c",
+    "current_lines": 429,
+    "current_whole_source_sha256": "721eb6201daed860d878a753f8eba266da5550299f419dde3d8c8d5b497cbb7b",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 110,
+        "last": 150,
+        "range_lf_sha256": "0aecae11886a37096e99078bf4d71c89234d246903b2fba9993f13012aec24e4"
+      },
+      {
+        "first": 284,
+        "last": 323,
+        "range_lf_sha256": "b55ead0009c9b5ffa314204dd96c89cbf7d48f35850b1b86ecd7f209ca52b6d0"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_gpu_capabilities.cpp",
+    "current_lines": 182,
+    "current_whole_source_sha256": "b56a869fd00d39ef7e72df4e62479d5d120b134d496dd0b25a4ba4bfa2aadc32",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 150,
+        "last": 182,
+        "range_lf_sha256": "7500464cf25da75fee07cdc111fc0d653a76b1259a633c093f987df6c3648adb"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_options.c",
+    "current_lines": 518,
+    "current_whole_source_sha256": "f6a62a6adc7915a5f527fb178e517eb3a10c1418b23ebee9c8c628de55233145",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 119,
+        "last": 175,
+        "range_lf_sha256": "848785db6f9a4be963b43721f97671ae4fe29b6f4db4d984532ea02080371382"
+      },
+      {
+        "first": 190,
+        "last": 216,
+        "range_lf_sha256": "dc6092dad8e385f2e94e47df37619888f80e55a27c70fcbcb962d5796b8a4474"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_graphics_safety.cpp",
+    "current_lines": 922,
+    "current_whole_source_sha256": "1270646c745e49045a6c9a3c54851c8352aff3cb8c6586d45f171830be2e4240",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 384,
+        "last": 413,
+        "range_lf_sha256": "3b29d2ff42e0894616299c9386d66ffd7522732f91d84467c96be18b6492fdbf"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_menu_scale.c",
+    "current_lines": 891,
+    "current_whole_source_sha256": "0915784d07f07469818f1fba1d0d20b95853ba9fe1a11c590572feb3d59b136b",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 535,
+        "last": 550,
+        "range_lf_sha256": "435a5f01309c1c213d3f5d1a08f4200618a10be388f2f6680ca763dc82a5489c"
+      },
+      {
+        "first": 561,
+        "last": 653,
+        "range_lf_sha256": "2afc9ded11c3a97a4ef6fbe654e29c8aea2a70050362914d978cd37bda61f183"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/android_mission_assets.cpp",
+    "current_lines": 218,
+    "current_whole_source_sha256": "a5cf77091a22f3a1244d863f3b64cc873f9edc12c8d8562acc870e65e7ec30c2",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 182,
+        "last": 208,
+        "range_lf_sha256": "bc28296d1c2b81586e43ca2eabe462d4bf481c6b5d19a9219a40854595d92814"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/automap_metadata_overlay.c",
+    "current_lines": 976,
+    "current_whole_source_sha256": "5c90ee9bede1037d14a821aaf4c75ab5703f7d22718218be195eb8e1f868f9b4",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 858,
+        "last": 891,
+        "range_lf_sha256": "8afb4d529e4264a2b0214fcde198deb20025a80633227ca36c099bb88e12733d"
+      },
+      {
+        "first": 936,
+        "last": 960,
+        "range_lf_sha256": "643122bb9aea31f183ca087e8d728e20a9c60df82dad3118af64ff8c0d769ad4"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/coop/coop_recovery.c",
+    "current_lines": 1160,
+    "current_whole_source_sha256": "a5d76cf188ad8c8057c9d90b6162451ca8127f24fb01b3bd3683e5d9602a38de",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 20,
+        "last": 115,
+        "range_lf_sha256": "cac9bbbff8b047373e9e1c7695f15967473d3748406f95b870b79eca20a5cf10"
+      },
+      {
+        "first": 870,
+        "last": 899,
+        "range_lf_sha256": "8e96d8d543e49c583fbd585996836f8a7223cb4be8c194c2d5038310c70148a9"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/endlevel_multi_impl.h",
+    "current_lines": 199,
+    "current_whole_source_sha256": "6905889d01e8684f2a873b1c358396e92c92d93ca06e9bc99f80254ce6cbacf7",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 52,
+        "range_lf_sha256": "de9a357ec21cee8b5031287a15b0c7490a1baae25523da213aa18b617216a06d"
+      },
+      {
+        "first": 165,
+        "last": 199,
+        "range_lf_sha256": "3d1288194e7b64f22008d44dd6ad641b37ea2d2fd44100cd7983f04eb16e69ef"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_automate.cpp",
+    "current_lines": 6473,
+    "current_whole_source_sha256": "7dd26962e1938b1a9aa9e5a99b177ec899e35ffc050249577067b46b389a768a",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 3105,
+        "last": 3122,
+        "range_lf_sha256": "fef83d831734c98ed32ece0b28e0bcfe65dd6436e1f64af5cbb75af0ff3d1cff"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/game_introspect.cpp",
+    "current_lines": 3283,
+    "current_whole_source_sha256": "3b0e0075ef3817033c9ccbd1d604fda8181c7befb4fa78b96cbb765d21ea5b91",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 120,
+        "last": 220,
+        "range_lf_sha256": "f2b1ad4a79c11cde2919d1cc6ba1f278b14e65f929332a043762b163712c9bcc"
+      },
+      {
+        "first": 2150,
+        "last": 2200,
+        "range_lf_sha256": "bb775a97ffac471476fb833837c86e8f805a18713b4e36e41ea6121014c72939"
+      },
+      {
+        "first": 2290,
+        "last": 2320,
+        "range_lf_sha256": "d007668191bd5c8be312c8643e2beec17e53cf0488cb24dd07f7280c7b6a8bbd"
+      },
+      {
+        "first": 2540,
+        "last": 2574,
+        "range_lf_sha256": "2ed9787e65dad26608879da7bfd9095a0dadd8d59840e021a5d2846e460fa05a"
+      },
+      {
+        "first": 2688,
+        "last": 2975,
+        "range_lf_sha256": "3dbe73bccc867ba64caebef3282e956fdd841a7450e9f5a595ae090be56bb85a"
+      },
+      {
+        "first": 3025,
+        "last": 3105,
+        "range_lf_sha256": "d8280be8d1de54850668a8266a1f0d056e2a5e73fd84f3d1f11a149a18224220"
+      },
+      {
+        "first": 3208,
+        "last": 3283,
+        "range_lf_sha256": "486c6b476d96ec7a26fc5de976746eac19abaedbf98563ba0d8b2bcc4be363ec"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/gles3_shim.c",
+    "current_lines": 1131,
+    "current_whole_source_sha256": "fc1bb17dd51e4fff43b0a4b517caf32b60e092007d2ac37e463f5ddc6f90cf36",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 115,
+        "range_lf_sha256": "3757a0a2c92fcab90faed0e232173fe8334cb97981ee1d43a31191ea5de93de7"
+      },
+      {
+        "first": 310,
+        "last": 450,
+        "range_lf_sha256": "6dd404f4d381e9196529e322626292d4a9e6ec9221d92e4eda8d4fcc698d2af2"
+      },
+      {
+        "first": 617,
+        "last": 650,
+        "range_lf_sha256": "ddfda900dc7d181bc15de52c6954dfefa73d0b6007cd8cbddd4e4c2430a89b57"
+      },
+      {
+        "first": 779,
+        "last": 1131,
+        "range_lf_sha256": "889ce479d67bb915f8c24ef4af39700f8694c4bb73fd01c88636922c11dbe5af"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/gles3_shim.h",
+    "current_lines": 208,
+    "current_whole_source_sha256": "1d8e50a9425b7cbf5e4f2b1fe17dce876a986f92a905b38b940772ac9bffa9bf",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 208,
+        "range_lf_sha256": "1d8e50a9425b7cbf5e4f2b1fe17dce876a986f92a905b38b940772ac9bffa9bf"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/gles3_shim_array_sources.h",
+    "current_lines": 41,
+    "current_whole_source_sha256": "4210fdf930ca9e61e792393a2ca04ace261d48d835bc9eef446c1e8fd71e9c9a",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 41,
+        "range_lf_sha256": "4210fdf930ca9e61e792393a2ca04ace261d48d835bc9eef446c1e8fd71e9c9a"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_config_transaction.c",
+    "current_lines": 539,
+    "current_whole_source_sha256": "cb5e8527a0c886276ca99e6eb640a67a87e3b162bfb1d655b033e44c2b6240fa",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 539,
+        "range_lf_sha256": "cb5e8527a0c886276ca99e6eb640a67a87e3b162bfb1d655b033e44c2b6240fa"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_config_transaction.h",
+    "current_lines": 65,
+    "current_whole_source_sha256": "84c35cd83861f81a934c05ba1547f24a0335009c603a583ffdabd1027a59acaa",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 65,
+        "range_lf_sha256": "84c35cd83861f81a934c05ba1547f24a0335009c603a583ffdabd1027a59acaa"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/graphics_safety_store.cpp",
+    "current_lines": 585,
+    "current_whole_source_sha256": "6235db7f64da4cffc673f5d210d482de8f07fbc4cb9becd16abe6bfd2dfb5f47",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 88,
+        "last": 119,
+        "range_lf_sha256": "335c778413934aaebe9cc35faf8ad983b31429ed62b537666cccda6881825c61"
+      },
+      {
+        "first": 475,
+        "last": 515,
+        "range_lf_sha256": "27c3fc242f8571b1fababb2b68091b9276ab676ff5e9a3708e95c4b11c8651fc"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/music_track_json.c",
+    "current_lines": 97,
+    "current_whole_source_sha256": "ac51c87beb01d54ab2affe0cd98d4b8763542fd4e94ac6db0a0066d789fe0de8",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 97,
+        "range_lf_sha256": "ac51c87beb01d54ab2affe0cd98d4b8763542fd4e94ac6db0a0066d789fe0de8"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/music_track_json.h",
+    "current_lines": 18,
+    "current_whole_source_sha256": "d4eab7423b37d7aa585753896ddd53e6f42fa431d0d3153e0af59de3e7cbc016",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 18,
+        "range_lf_sha256": "d4eab7423b37d7aa585753896ddd53e6f42fa431d0d3153e0af59de3e7cbc016"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_2d_batch.c",
+    "current_lines": 124,
+    "current_whole_source_sha256": "0d43145b9c3ba814b1afac2d8bb130c36211ce8816a545ef8383c9e3c081aab0",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 124,
+        "range_lf_sha256": "0d43145b9c3ba814b1afac2d8bb130c36211ce8816a545ef8383c9e3c081aab0"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/ogl_texture_android.h",
+    "current_lines": 84,
+    "current_whole_source_sha256": "f7e181aefe3c14eb738d1c4e192946b806d4a4824780635f10c85986280b23f7",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 78,
+        "range_lf_sha256": "8179005f09aa85bc96618ad2d36dfd646bbf415a80b2a8a502dc194b6a4c9d67"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/songs_android_shared.c",
+    "current_lines": 335,
+    "current_whole_source_sha256": "a57090c87219701d930d6e9726c92f9e86dec24bb5243390074e678797eb2f04",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 245,
+        "last": 335,
+        "range_lf_sha256": "6bba48ee3cade2c0ea1e232711cfad118741bc66ef2142b17d0f218af00770f1"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/test_gles3_shim_array_sources.c",
+    "current_lines": 77,
+    "current_whole_source_sha256": "b79b36566fd82e28ed1403ffcd39cd9aab0cafdd44e2a6572e11838728d9daad",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 77,
+        "range_lf_sha256": "b79b36566fd82e28ed1403ffcd39cd9aab0cafdd44e2a6572e11838728d9daad"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/cpp/shared/test_music_track_json.c",
+    "current_lines": 54,
+    "current_whole_source_sha256": "888486fefc3a0a520301d0badc40c314ac78144006a103d940987c3df734e1de",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 54,
+        "range_lf_sha256": "888486fefc3a0a520301d0badc40c314ac78144006a103d940987c3df734e1de"
+      }
+    ]
+  },
+  {
+    "path": "android/app/src/main/java/com/dxxredux/app/MainActivity.kt",
+    "current_lines": 5176,
+    "current_whole_source_sha256": "f13cfe391e4cd987b0022b77b1a8b23d550aeb6571e5cbff6fa43245b70d3227",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 3333,
+        "last": 3395,
+        "range_lf_sha256": "11cff1b46347913db68458f1b27f5588312c57e2c580206b3e022428dde4cd74"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/introspect.sh",
+    "current_lines": 148,
+    "current_whole_source_sha256": "701e97a708f310212fa4194a4c3a3d951b3856829a63a79c3c9940147814a1e6",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 148,
+        "range_lf_sha256": "701e97a708f310212fa4194a4c3a3d951b3856829a63a79c3c9940147814a1e6"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_helpers.ps1",
+    "current_lines": 2858,
+    "current_whole_source_sha256": "84ed2a0e0ed751248662f5adb6d4378d3240b3162e3af261faa306b5fa13420e",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 2056,
+        "last": 2085,
+        "range_lf_sha256": "5b6c354273e1c750114ec77b4428534387452bf948130c4d29b8467bf1b9786a"
+      },
+      {
+        "first": 2325,
+        "last": 2332,
+        "range_lf_sha256": "0b4688721f31c5d0583d73082c4f461f18f632092f898d1a0caf45cef868220d"
+      }
+    ]
+  },
+  {
+    "path": "android/helpers/test_suite_coverage.ps1",
+    "current_lines": 399,
+    "current_whole_source_sha256": "03d5a094973f992e73e3c504a2d5a5658ab896809605bbeb3b2c3c06d935f72a",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 242,
+        "last": 260,
+        "range_lf_sha256": "c8f731c00b2d698fdd2313cca3993e6ee09ae63faaaf836bae68825b06bbc3af"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_android_texture_bindings.ps1",
+    "current_lines": 16,
+    "current_whole_source_sha256": "081d8f8484d3c279a44e9cf1239960a71cbfc060aaaeb962e2aeeb10ecc44348",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 16,
+        "range_lf_sha256": "081d8f8484d3c279a44e9cf1239960a71cbfc060aaaeb962e2aeeb10ecc44348"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_introspection_accessor_contracts.py",
+    "current_lines": 92,
+    "current_whole_source_sha256": "bbecc59184e33a17c8eeb718726dd51f54cbc359742285886069b24253e8aa62",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 92,
+        "range_lf_sha256": "bbecc59184e33a17c8eeb718726dd51f54cbc359742285886069b24253e8aa62"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/test_upstream_compat.cpp",
+    "current_lines": 11576,
+    "current_whole_source_sha256": "fb09c0d0dfef2d62e6a7d3b17618673481e87966215fdb7c55246fc372957c53",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1763,
+        "last": 1819,
+        "range_lf_sha256": "9346887dc0be971cd68d457d7769802ddde333aa7d6437156e317ea547ca97d3"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/texture_bindings_fixture.hpp",
+    "current_lines": 359,
+    "current_whole_source_sha256": "6a4834f3d169c40b4b0a4363707faa3666259d52dda848d805dd277add629a73",
+    "current_whole_read": true,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 359,
+        "range_lf_sha256": "6a4834f3d169c40b4b0a4363707faa3666259d52dda848d805dd277add629a73"
+      }
+    ]
+  },
+  {
+    "path": "android/tests/texture_labels/main.cpp",
+    "current_lines": 257,
+    "current_whole_source_sha256": "79c1b9cec2fd93a17b7a9675f228d8b755a363e5c499e2b79eb2d05e6132866c",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 63,
+        "last": 257,
+        "range_lf_sha256": "7cc38405bfa383bd438170fe8889676ba67106a9332e9f5c4b31220203056a44"
+      }
+    ]
+  },
+  {
+    "path": "d1/arch/sdl/event.c",
+    "current_lines": 335,
+    "current_whole_source_sha256": "63be2813fd95c4ecbca49a0c17332db6316dc5ebca82d352a2149bd24860384e",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 264,
+        "last": 282,
+        "range_lf_sha256": "84ce5710c281fd319a657a0dca7c27c2eeeb7fe37abb6eabcbce1437f8a5db1c"
+      },
+      {
+        "first": 300,
+        "last": 315,
+        "range_lf_sha256": "14a899f0a2ab745c974fca369d9f9db020637c15fdaef1f201264081f680c611"
+      }
+    ]
+  },
+  {
+    "path": "d1/arch/sdl/window.c",
+    "current_lines": 230,
+    "current_whole_source_sha256": "a1ac626745b53e39c948b2ab7bf4bd75aaa3f34efdf3549558188a8a020d89ef",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 214,
+        "last": 230,
+        "range_lf_sha256": "8f0f01e79823c612acd63bc099c1b09df7bd5f1bd610cbe38481859b35904dba"
+      }
+    ]
+  },
+  {
+    "path": "d1/include/internal.h",
+    "current_lines": 68,
+    "current_whole_source_sha256": "041a552f06e088327d92bb83d164ce5a389dbfdbc482c011d52a66a4217498ca",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 40,
+        "range_lf_sha256": "d621e889f56ad35ee558bf91b22fe66b4631fff064576d60482f8bc02f2b05ea"
+      }
+    ]
+  },
+  {
+    "path": "d1/include/ogl_init.h",
+    "current_lines": 144,
+    "current_whole_source_sha256": "415f29a2828392aa30a9e40f25699d1817363150929b201dc6da4dc094369d79",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 38,
+        "range_lf_sha256": "89206d6628839d37583bfc253e7efc568c9916ffd3ee47897a75fd190d91aab9"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/kconfig.c",
+    "current_lines": 2213,
+    "current_whole_source_sha256": "457ead1fbf568609fd2fa38aa008ef51cbe2984240c56619fb17c60582ca0916",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1445,
+        "last": 1461,
+        "range_lf_sha256": "efe6df88a474cf2a3db1eb994f14be0fdb2a8843f4bc0279fcc63495109a7f88"
+      }
+    ]
+  },
+  {
+    "path": "d1/main/newmenu.c",
+    "current_lines": 3556,
+    "current_whole_source_sha256": "91038b8efa638cae70a23fc2f649beca7659d0653897abeac61a51ac718f5b48",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 780,
+        "last": 810,
+        "range_lf_sha256": "46bf1b20f16a5a892bd21e374e0161dc4b2bd592cf0d98b1d72d9342094da5cd"
+      },
+      {
+        "first": 2675,
+        "last": 2690,
+        "range_lf_sha256": "bd5fa370fcb459c6cf0ada2ad866d0f0430594acc8e4908e38cc26439deaeb65"
+      }
+    ]
+  },
+  {
+    "path": "d1/xmodel/xmodel.cpp",
+    "current_lines": 333,
+    "current_whole_source_sha256": "a18cbdd5a8618dcea6fb313b6c3d5e728f648e3ae57a7740b94949f3e63425fc",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 99,
+        "range_lf_sha256": "aac6458c498beef544ada34b656be3a928405baec01172ce656320416ae32033"
+      },
+      {
+        "first": 181,
+        "last": 221,
+        "range_lf_sha256": "b6d0364a30dcdc93e9f9f33c79879a725d9bcd1ec20fc60848c021a15413add7"
+      }
+    ]
+  },
+  {
+    "path": "d2/arch/sdl/event.c",
+    "current_lines": 335,
+    "current_whole_source_sha256": "63be2813fd95c4ecbca49a0c17332db6316dc5ebca82d352a2149bd24860384e",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 264,
+        "last": 282,
+        "range_lf_sha256": "84ce5710c281fd319a657a0dca7c27c2eeeb7fe37abb6eabcbce1437f8a5db1c"
+      },
+      {
+        "first": 300,
+        "last": 315,
+        "range_lf_sha256": "14a899f0a2ab745c974fca369d9f9db020637c15fdaef1f201264081f680c611"
+      }
+    ]
+  },
+  {
+    "path": "d2/arch/sdl/window.c",
+    "current_lines": 230,
+    "current_whole_source_sha256": "a1ac626745b53e39c948b2ab7bf4bd75aaa3f34efdf3549558188a8a020d89ef",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 214,
+        "last": 230,
+        "range_lf_sha256": "8f0f01e79823c612acd63bc099c1b09df7bd5f1bd610cbe38481859b35904dba"
+      }
+    ]
+  },
+  {
+    "path": "d2/include/internal.h",
+    "current_lines": 68,
+    "current_whole_source_sha256": "041a552f06e088327d92bb83d164ce5a389dbfdbc482c011d52a66a4217498ca",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 40,
+        "range_lf_sha256": "d621e889f56ad35ee558bf91b22fe66b4631fff064576d60482f8bc02f2b05ea"
+      }
+    ]
+  },
+  {
+    "path": "d2/include/ogl_init.h",
+    "current_lines": 144,
+    "current_whole_source_sha256": "9b8a4067bde985bee2205abf1a9cff20a71ac4a92f4de6161520631cf15841f1",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 38,
+        "range_lf_sha256": "89206d6628839d37583bfc253e7efc568c9916ffd3ee47897a75fd190d91aab9"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/d1_in_d2/d1_in_d2_assets.c",
+    "current_lines": 1404,
+    "current_whole_source_sha256": "a45997f4e4846206262881da8d8824a473f5a19714b5cf4cb3e7f407693bb726",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 110,
+        "last": 138,
+        "range_lf_sha256": "dddf8220583b6029674cf7c7796a9e43448fcc9b3eae02e63675f90ad7df96ce"
+      },
+      {
+        "first": 1138,
+        "last": 1155,
+        "range_lf_sha256": "369db4f9a75fecc208d0bf1e0ae8c0bdd4c959e7e1fadb663073b919b7928f11"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/d1_in_d2/d1_in_d2_bitmaps.c",
+    "current_lines": 986,
+    "current_whole_source_sha256": "673f71f47dee3045e15ebf314b9187fdab01ac3309376c7498dd21c6ca191558",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 518,
+        "last": 538,
+        "range_lf_sha256": "aaf534b792822acb45d38ffafa361a00b5818f99123f169ea2b985a5eeda1d02"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/kconfig.c",
+    "current_lines": 2265,
+    "current_whole_source_sha256": "1179aa638facb9f79b468c04e25c8394a0705acc720526ee8443ce003abaa413",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1484,
+        "last": 1500,
+        "range_lf_sha256": "efe6df88a474cf2a3db1eb994f14be0fdb2a8843f4bc0279fcc63495109a7f88"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/movie.c",
+    "current_lines": 953,
+    "current_whole_source_sha256": "b697dfeaec47d0270c5f5bc9b15cb78f9091459f2b4f72d27c724ee2908f105a",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 425,
+        "last": 463,
+        "range_lf_sha256": "51d05c7353be0ab965f7a87c785fc880e7502d0cb1f87cb7672f5b90730db8c2"
+      }
+    ]
+  },
+  {
+    "path": "d2/main/newmenu.c",
+    "current_lines": 3548,
+    "current_whole_source_sha256": "abde2bdb26a44fef08b83a85b072e15239c68ebda12e491373c4977dada0d1ef",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 770,
+        "last": 800,
+        "range_lf_sha256": "46bf1b20f16a5a892bd21e374e0161dc4b2bd592cf0d98b1d72d9342094da5cd"
+      },
+      {
+        "first": 2673,
+        "last": 2688,
+        "range_lf_sha256": "90affb3fa3ecb70975a8799af78bed755bd4e0cde743538cbda203c4283be849"
+      }
+    ]
+  },
+  {
+    "path": "d2/xmodel/xmodel.cpp",
+    "current_lines": 333,
+    "current_whole_source_sha256": "319fa28b34563b4136bd7442967669e826647b91d61e07b8890dfaedbdcf67ed",
+    "current_whole_read": false,
+    "read_ranges": [
+      {
+        "first": 1,
+        "last": 99,
+        "range_lf_sha256": "39221b010b52654cd36fc25313fbbd36edfecc01060f04641bcf5b91ba1f6bce"
+      },
+      {
+        "first": 181,
+        "last": 221,
+        "range_lf_sha256": "b6d0364a30dcdc93e9f9f33c79879a725d9bcd1ec20fc60848c021a15413add7"
+      }
+    ]
+  }
+]
+```
+
+
+## Concurrent HEAD reconciliation before report creation
+
+HEAD advanced externally from8a730eb6aa1d34382b4a76e6f1f5abd3e18aa96c toa567186952a5c0e1f2d5f8cdfe8506645171aad0. All91 independent actual ranges/38 source context deltas remain exact. Previously untracked whole-read0104 lock follow-up plan is now committed and has a5710byte frozen-head documentation delta; this is historical context document, not an additional product-source delta or changed diagnosis. Treat38 as complete product/fixture/helper context deltas, with historical plan source credit separately preserved. No report existed when preliminary check stopped; external commit preserved
+
+
+### Corrected immutable report imported, canonical publication pending, 2026-10-09
+
+- Retention helper executed. Corrected immutable report temp/general_cleanup_20261006/gq2-review-0118-reconciled-20261009.md SHA256 c03534c6e30bbc3d2050a21c1c6714d74529417cd9c8c12abd4ce23bb144433e (275646bytes) created; exactly five JSON blocks independently parsed and exact full imported body verified. Assigned9,manifest9,physical60(19whole),context38,canonical174lines;91independent ranges/current external HEADa567186952a5c0e1f2d5f8cdfe8506645171aad0 reconciled
+- Earlier temp/general_cleanup_20261006/gq2-review-0118-20261009.md SHA25605041b0f0deb20d27b67951919b149f55392cc9bf7aeacfab2bd7b8962dd72a2 preserved immutable/imported as superseded assembly. It mistakenly retained20 historical JSON blocks plus five consolidated blocks because re.sub flags were passed as count; no canonical product/coverage publication used it. Corrected title/report supersedes assembly only, unchanged diagnosis/identities
+- Use temp/general_cleanup_20261006/gq2-canonical-before-0118-reconciled.json for publication: five raw bytes/base64 snapshots/raw-LF hashes and plan/scope/report guards. Baseline decode/raw identitiesPASS. Preserve inherited raw prefix exactly;0116 historical missing-byte debt remains unresolved
+- Gates1-4complete;0118queueTODO, no GQC/GQD/normalization/terminal record published. Next guard baseline/publish canonical reference/coverage and precise BR0233 native acquisition acceptance, independent exact-scope/import/records/counts/ranks/current attribution audit before gate5. Documentation/report only/no source/test/script edits or execution/new primary issue/rating/runtime/saving, external product work preserved, overall goal active
+
+
+### Chunk 0118 canonical publication pending independent terminal audit, 2026-10-09
+
+GQC1087ISSUES/GQD0967NO_INHERITED_EFFECT, CURRENT-RECONCILIATION/EXTENDS/RETAIN and numbered0118DONE/REFERENCE56GQR0170 published with corrected report SHA256 c03534c6e30bbc3d2050a21c1c6714d74529417cd9c8c12abd4ce23bb144433e. BR0233 precise native acquired-private-file cleanup acceptance appended with unchanged status/rating; completed0128/0129 retained. Five new semantic table records/one old queue removal,1074unique sorted terminal ranks; existing product semantics unchanged. Inherited raw baseline prefix preserved exactly. Gates1-4complete; independent audit required for gate5/terminal handoff.0116historical auditdebtopen, documentation only/no product execution or edits, overall goal active
+
+
+### Chunk 0118 terminal diagnosis handoff, 2026-10-09
+
+- All five diagnosis gates complete. Independent audit PASS: exact9assigned paths/528reviewlines/84rawhunks/4whole, actual frozen base/head blobs including ABSENT added-file base,4350manifest/exact generated queue/originalABSENT/current assigned identities/scope14f736fcc799d17f7de4d708fa88b5c1bdaa4a86843db692bd78f6fdcb0d67b4.91independent chronological actualranges reconstructed excluding derived union;60physical unions19whole/38complete productcontextdiff rawhunks;174canonical prepublication bindings from exact raw snapshots plus unchanged archived done-ledger raw hash
+- Corrected immutable report SHA256 c03534c6e30bbc3d2050a21c1c6714d74529417cd9c8c12abd4ce23bb144433e and exact imported body/fiveJSON blocks PASS; superseded25block assembly remains immutable historical evidence. Canonical GQC1087ISSUES/GQD0967NO_INHERITED_EFFECT/normalization/0118DONE and REFERENCE56GQR0170 verified. Five new semantic table records/one old queue removal; preserved all other product/table semantic rows/statuses,1074uniquecontiguoussorted terminal ranks/260product ranks. BR0233-only precise acceptance insertion preserves all surrounding raw bytes/status; inherited prepublication exact raw byte prefix independently equals baseline snapshot, no normalization or original saving
+- Three read-only checker assumptions corrected: absent base must accept ABSENT, archived done ledger uses unchanged raw hash when absent from active-document snapshots, gate count uses anchored plan checkboxes rather than quoted historical FIXED checkbox. These were audit syntax/coverage assumptions, no product failure or hidden evidence mutation. Scoped documentation diff-check PASS
+- Numbered canonical queue259DONE368TODO;0116canonicalDONE still separately gate5pending historical inherited-byte auditdebt. This completion does not settle0116 or complete overall goal. No new primary finding/status/rating/runtime evidence; no source/test/script edits or execution, external product work preserved
+- Next numbered scope GQ2-CHUNK-0119 android_graphics_safety.cpp frozen L1-L750. Discover exact frozen/current assignment/original attribution before diagnosis; earlier context reads do not widen frozen coverage

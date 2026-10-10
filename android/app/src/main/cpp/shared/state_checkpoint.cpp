@@ -40,6 +40,7 @@ struct checkpoint_job {
 #endif
 	size_t metadata_offset = 0, metadata_bytes = 0;
 	int64_t epoch = 0, worker_us = 0;
+	int64_t submit_begin_us = 0, capture_us = 0, submit_us = 0, encode_us = 0;
 	uint64_t token = 0;
 	state_checkpoint_callback callback = nullptr;
 	int ok = 0;
@@ -122,6 +123,7 @@ void *worker(void *argument)
 				                                            job->buffer.data + job->metadata_offset, job->metadata_bytes, job->epoch);
 			}
 #endif
+			job->encode_us = clock_us() - start;
 			if (job->ok && !job->filename.empty()) {
 				android_save_meta_disk meta;
 				job->ok = job->buffer.size >= sizeof(meta);
@@ -197,6 +199,7 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
                                  const state_checkpoint_attachment *attachments, unsigned attachment_count,
                                  uint64_t token, state_checkpoint_callback callback)
 {
+	const int64_t submit_begin = clock_us();
 	if (!description || !callback || capturing || attachment_count > 8 ||
 	    (attachment_count && !attachments) || !state_checkpoint_initialize()) return 0;
 	auto *job = engine->slots.try_capture();
@@ -205,6 +208,7 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 		return 0;
 	}
 	job->metadata_bytes = 0;
+	job->submit_begin_us = submit_begin;
 	job->epoch = GameTime64;
 	job->token = token;
 	job->callback = callback;
@@ -238,6 +242,7 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 	const int ok = state_save_to_memory(&job->buffer, description, save_kind, 1);
 	capturing = nullptr;
 	engine->stats.capture_us = clock_us() - start;
+	job->capture_us = engine->stats.capture_us;
 	if (engine->stats.capture_us > engine->stats.max_capture_us)
 		engine->stats.max_capture_us = engine->stats.capture_us;
 	if (!ok) {
@@ -245,6 +250,7 @@ int state_checkpoint_submit_disk(const char *description, int save_kind, const c
 		++engine->stats.failed;
 		return 0;
 	}
+	job->submit_us = clock_us() - submit_begin;
 	engine->slots.submit();
 	++engine->stats.submitted;
 	++engine->stats.pending;
@@ -263,7 +269,16 @@ void state_checkpoint_poll(void)
 		engine->stats.worker_us = job->worker_us;
 		if (job->attachment_failures)
 			debug_log(DLOG_GAME, "checkpoint saved with %u sidecar write failures", job->attachment_failures);
+		const int64_t collect_begin = clock_us();
 		job->callback(job->token, job->ok, &job->buffer);
+		const int64_t collect_us = clock_us() - collect_begin;
+		debug_log(DLOG_PROFILING,
+		          "checkpoint_v=1 kind=%s ok=%d bytes=%zu submit_begin_us=%lld submit_us=%lld capture_us=%lld encode_us=%lld publish_us=%lld worker_us=%lld collect_us=%lld sidecar_failures=%u",
+		          job->filename.empty() ? "memory" : "disk", job->ok, job->buffer.size,
+		          (long long) job->submit_begin_us, (long long) job->submit_us,
+		          (long long) job->capture_us, (long long) job->encode_us,
+		          (long long) (job->worker_us - job->encode_us), (long long) job->worker_us,
+		          (long long) collect_us, job->attachment_failures);
 		engine->slots.release();
 	}
 }
