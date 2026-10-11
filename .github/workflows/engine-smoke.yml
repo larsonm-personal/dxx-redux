@@ -15,7 +15,7 @@ jobs:
   engine:
     name: Linux ${{ matrix.game }} build and tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +34,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
-            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev
+            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
+            xvfb xauth libgl1-mesa-dri
 
       - name: Check the Linux build and test runner
         timeout-minutes: 1
@@ -44,6 +45,25 @@ jobs:
       - name: Build all native targets and run asset-free tests
         timeout-minutes: 17
         run: ./run-linux-build.sh --test --target "${{ matrix.game }}" --jobs 4 --generator Ninja
+
+      - name: Prepare pinned public shareware data
+        timeout-minutes: 5
+        shell: pwsh
+        run: ./android/helpers/setup_shareware_test_data.ps1 -Game ${{ matrix.game }} -Download
+
+      - name: Exercise real shareware replay and metadata
+        timeout-minutes: 3
+        env:
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          game="${{ matrix.game }}"
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_input_demo_runtime_smoke.ps1 \
+            -Game "$game" -DataEdition shareware \
+            -"${game^^}Exe" "$PWD/build${game}-test/main/${game}x-redux"
+          pwsh -NoProfile -File android/tests/test_secret_area_baseline.ps1 \
+            -Game "$game" -DataEdition shareware -RequireAssets \
+            -"${game^^}Exe" "$PWD/build${game}-test/main/dxx-redux-${game}-headless-metadata"
 
       - name: Keep test and configure diagnostics
         if: always()
@@ -55,5 +75,7 @@ jobs:
             build${{ matrix.game }}-test/Testing/Temporary/
             build${{ matrix.game }}-test/CMakeFiles/CMakeConfigureLog.yaml
             build${{ matrix.game }}-test/CMakeCache.txt
+            temp/input_demo_runtime_smoke/shareware/
+            android/temp/secret_area_shareware_baseline/
           retention-days: 3
           if-no-files-found: ignore

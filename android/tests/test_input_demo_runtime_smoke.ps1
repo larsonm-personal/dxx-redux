@@ -7,7 +7,11 @@ param(
     [string]$Game = 'both',
     [int]$TimeoutSeconds = 60,
     [Alias('HogDir')]
-    [string]$DataDir
+    [string]$DataDir,
+    [ValidateSet('shareware', 'retail')]
+    [string]$DataEdition = 'shareware',
+    [string]$D1Exe,
+    [string]$D2Exe
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,8 +19,9 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 . (Join-Path $PSScriptRoot 'input_demo_game_data.ps1')
+. (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
 
-$outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_smoke'
+$outRoot = Join-Path $repoRoot "temp/input_demo_runtime_smoke/$DataEdition"
 
 function Write-SmokeConfig {
     param([string]$Path)
@@ -45,9 +50,7 @@ function New-LaunchSandbox {
     New-Item -ItemType Directory -Path $sandboxDir | Out-Null
 
     Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe
-    Get-ChildItem -LiteralPath $sourceDir -File |
-        Where-Object { $_.Extension -eq '.dll' } |
-        Copy-Item -Destination $sandboxDir
+    Get-RegressionRuntimeLibraries -Directory $sourceDir | Copy-Item -Destination $sandboxDir
 
     Write-SmokeConfig -Path (Join-Path $sandboxDir 'descent.cfg')
 
@@ -65,6 +68,13 @@ function Write-AsciiFile {
 
 function Get-GameConfig {
     param([string]$Name)
+
+    if ($DataEdition -eq 'shareware') {
+        $config = Get-SharewareTestGameConfig -RepoRoot $repoRoot -Game $Name
+        $config.Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName $Name
+        $config.TitleArg = if ($Name -eq 'd1') { '-notitles' } else { '-nomovies' }
+        return $config
+    }
 
     switch ($Name) {
         'd1' {
@@ -110,6 +120,10 @@ function Get-GameConfig {
 function Resolve-SmokeDataDir {
     param([hashtable]$Config)
 
+    if ($DataEdition -eq 'shareware') {
+        return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $Config.Name -DataDir $DataDir
+    }
+
     return Resolve-InputDemoDataDir `
         -RepoRoot $repoRoot `
         -Config $Config `
@@ -131,6 +145,8 @@ function New-Fixture {
     }
     New-Item -ItemType Directory -Path $FixtureDir | Out-Null
 
+    # This generated fixture checks replay/trace plumbing, not a recorded RNG oracle
+    # Synthetic RNG values can produce diagnostics; determinism uses the recorded corpus
     $demoText = @"
 {"type":"header","version":2,"game":"$GameName","mission":"$($Config.Mission)","build_number":0,"git_version":"unknown","arch":"$arch","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
 {"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100}}
@@ -171,6 +187,8 @@ function Invoke-ReplaySmoke {
     param([string]$GameName)
 
     $config = Get-GameConfig $GameName
+    $override = if ($GameName -eq 'd1') { $D1Exe } else { $D2Exe }
+    if ($override) { $config.Exe = (Resolve-Path -LiteralPath $override).Path }
     $resolvedDataDir = Resolve-SmokeDataDir -Config $config
     $fixtureDir = Join-Path $outRoot $GameName
     $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
@@ -289,7 +307,10 @@ if (-not (Test-Path $outRoot)) {
 
 $games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
 foreach ($gameName in $games) {
-    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $gameName
+    $override = if ($gameName -eq 'd1') { $D1Exe } else { $D2Exe }
+    if (-not $override) {
+        Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $gameName
+    }
 }
 foreach ($gameName in $games) {
     Invoke-ReplaySmoke -GameName $gameName
