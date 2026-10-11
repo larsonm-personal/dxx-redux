@@ -1,0 +1,31 @@
+# Chunk 0388 existing-owner continuation, 2026-10-11
+
+Diagnosis and planning only, serial. No source changes, tests or runtime acceptance. Preserve concurrent work, paired games, native format authority and desktop behavior. No new root or inherited saving.
+
+## Current repairs and actual-entry acceptance
+
+BR-0589/0590 remain OPEN. The assigned stale-emulator helper now requires an explicit target for Kill, preserves healthy targets, delegates selected-port process inventory/stop and emits cleaned only after shared residual checks. Do not repeat historical global enumeration/kill and unconditional cleaned behavior as current. Complete recording transport/process controls for healthy guards, offline or missing targets, ambiguous/reused PIDs, failed/hung discovery, denied stops and residual target state. Failure-to-null discovery must not establish absence; native statuses and independently bounded verified retirement must be admitted. Retain actual recovery fixture boot-ID and guard temporary-file controls. BR-0539 selected-serial and bounded-wait ownership stays distinct.
+
+BR-0173/0543: preserve Windows enrollment before child startup, one non-inherited sole job handle and worker-local jobs; retain Linux requesting-parent pidfd, subreaper adoption, unreaped group leader, adopted detached descendants and exact worker exit propagation. Actual Windows fixture covers pool/stage/error/exit/timeout descendants; Linux fixture drives real PowerShell pool across exit7 and ownerSIGKILL with detached session, pidfds and stream assertions. No fresh executions are claimed. Finish timeout/start-failure/cleanup-throw controls and bounded retirement; pool finally must attempt every remaining owned child even if an earlier stop fails, and stream completion/retirement cannot hang outside the declared deadline. Preserve unrelated process sentinels and avoid process-name cleanup. Do not import the unrelated compiler-by-name root as this supervisor's defect.
+
+BR-0233/0543: preserve same-directory uniquely owned temporary/backup publication, checked Replace/Move and selected Windows sharing retries. Actual JSON publisher callers normalize before writing and have no raw fallback. Complete generation/read/flush/close/replace and cleanup-failure controls while retaining prior valid files and exact owner-only cleanup. Preserve errors independently of cleanup. No copied engine layout/schema or Android metadata migration.
+
+FIXED BR-0166/0591 stay FIXED. Strict malformed/scalar mission metadata, duplicate decoded members and nonfinite constants are rejected before publication. Host/Android numeric precision, negative-zero, excluded replacement details, structured intent field ordering, variant paths and idempotence assertions are retained. Both Python and Node stdin modes consume all input before normal output, so a healthy-path pipe deadlock is not established. Formatter startup/input/output failure bounds and owned retirement still require actual-entry acceptance under the process/cleanup contracts; do not reopen fixed fail-closed or duplicate-input defects solely for this question. Keep raw fallback absent.
+
+## Compatibility, disk reserve and unchanged publication
+
+Retain ordinal JSON hashtable keys, explicit array shape and Windows5.1 fallback behavior. Actual fixture checks nested/empty/singleton arrays, pipeline item versus value contracts, relative paths, evidence host architecture, Windows5.1 parseability and canonical spec parity with explicit unavailable-runtime SKIP. Full supported caller/runtime acceptance remains separate from source assertions.
+
+Retain longest component-separated output mount selection and non-destructive reserve checks. Actual host fixture exercises an uncreated /dev/shm path; stage caller checks requested pinned files and full size reserve before creation and verifies copied hashes. Physical link/mount alias and concurrent-space acceptance remain future controls, without claiming a lexical path check proves physical ownership. Retention caller reserves after housekeeping and on absent parent roots. No test generation or cleanup execution during diagnosis.
+
+RepositoryJsonc uses maintained Node/Prettier stdin; preserve comments and equivalent sidecar bytes/timestamps through unchanged publication. Maintained fingerprint fixture checks equivalent CRLF/tab sidecars for both staged album and direct output, and damaged prior sidecar replacement. Preserve exact unchanged generation. Resolve only the tool needed by each mode where it simplifies the current unnecessary Python lookup before Node selection, without changing pin or parser policy.
+
+## Ledger generator assigned boundary
+
+Retain the single assigned json5-to-jsonc classification change. Current classifier119-184 maps frozen line101 to current173; normal inventory calls Get-ReviewKind and emits canonical path inventory. Later current generator repairs are explicitly read as complete delta, not whole775-body review. Actual fixtures construct real Git histories including rename/copy, mode-only, Unicode/control paths, deleted old ranges, full copied source scopes, exact counts and hunk/stat coverage, overwrite refusal and unchanged byte/timestamp preservation. No generator was invoked. Post-frozen whole-branch supplements still own later changes beyond this frozen assignment.
+
+## Simplification and disposition
+
+Retain all eight helpers: distinct stale-device policy, branch review classification, Python metadata canonicalization, PowerShell process/publication adaptation, output reserve, runtime compatibility, Linux supervision and Windows supervision boundaries. Simplify repeated checked bounded child-lifetime operations within the existing ownership policy where semantics match. Keep platform-specific supervision separate, preserve numeric/provenance assertions and do not merge away tests or native authority.
+
+All eight paths are authored and absent1996. Zero inherited-file saving, no extraction/revert or broad d1/d2 deduplication. Overall RETAIN/BR-0543 REFERENCE47 MEDIUM (23/0/4/10/10), same-owner GQ1-CHUNK-0688. Existing directly applicable ownership scores tie at47; preserve canonical tie rule and no unrelated P1 uplift. No new finding, remediation, investigation or owner status change. Full canonical report/snapshot/publication audit remains required before chunk DONE.

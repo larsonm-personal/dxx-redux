@@ -82,6 +82,14 @@ void android_mod_sound_loaded(int sample, const char *filename)
 	                GameSounds[sample].freq, hash_text(entry.fingerprint).c_str());
 }
 
+void android_mod_sound_bank_loaded(int sample, const char *filename)
+{
+	const auto origin = origin_of(real_path(filename));
+	// Stock banks are not mods; record samples supplied by a DXA sound bank
+	if (origin.size() >= 4 && SDL_strcasecmp(origin.c_str() + origin.size() - 4, ".dxa") == 0)
+		android_mod_sound_loaded(sample, filename);
+}
+
 void android_mod_sound_apply(int sample, const char *name, int content_game)
 {
 	if (sample < 0 || sample >= MAX_SOUND_FILES || !name || !*name) return;
@@ -101,12 +109,16 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 	int selected = -1;
 	char **search = PHYSFS_getSearchPath();
 	if (search) {
-		for (char **p = search; *p && selected < 0; ++p)
+		for (char **p = search; *p && selected == -1; ++p) {
 			for (int i = 0; i < 2; ++i)
 				if (!origins[i].empty() && origins[i] == *p) {
 					selected = i;
 					break;
 				}
+			// A higher-priority bank must also win over lower-priority loose PCM
+			if (selected == -1 && !entry.origin.empty() && entry.origin == *p)
+				selected = -2;
+		}
 		PHYSFS_freeList(search);
 	}
 	if (selected < 0) return;

@@ -11,10 +11,11 @@ Research checked 2026-10-10. Candidates are not verified downloads. Compatibilit
 | [Descent 3 style weapon/effect packs](https://pumosoftware.com/d2x-xl/) | Separate D1 and D2 downloads | Check whether visual replacements need XL models or effect code |
 | [D2X-XL high-resolution models](https://pumosoftware.com/d2x-xl/) | Replacement 3D models | Redux has an ASE loader; inspect model names, material paths, attachments and render cost before claiming support |
 | [D2X-XL menu wallpapers](https://pumosoftware.com/d2x-xl/) | Menu backgrounds | Map names/formats to the presentation loader and verify cropping and readability |
-| [UUD2SP by Xfing](https://descentbb.net/viewtopic.php?t=21386) | Restores sound assignments and effects, including D1 material | Existing local semantic HAM conversion needs combined UUD2TP, high-res PCM, rate and event-playback acceptance |
 
 Pumo's page also hosts XL-exclusive campaigns, including Pumo Mines and The Sphere. Treat these as a separate engine-compatibility project: successful archive import would not establish support for their level effects and extensions. [Author-hosted catalog](https://pumosoftware.com/d2x-xl/)
 
 The existing model loader comes from XL and calls `ASE::CModel::Read` in `d1/xmodel/xmodel.cpp` and its D2 counterpart. This makes ASE packages plausible candidates, but it is not evidence that every XL model format or feature works
 
 No candidate above has been added to the public recommendation list during this audit. Retain author credits and inspect each actual archive before conversion or publication
+
+UUD2SP graduated to the recommended release on 2026-10-11 after original-bank fidelity, 11/22 kHz mixer playback, UUD2TP composition, both high-res PCM priorities and mission re-entry acceptance. See its [conversion and verification notes](xfing/d2x_sp/README.md)

@@ -2,7 +2,7 @@
 # Run a maintained fixture linked to the actual Android engine libraries
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('config_policy', 'matcen_stations', 'texture_labels', 'automap_route_policy', 'music_completion', 'redbook_completion', 'cd_preview_completion', 'secret_origins', 'd1_mod_patches', 'mod_bitmaps', 'mod_renderer')][string]$Fixture,
+    [Parameter(Mandatory)][ValidateSet('config_policy', 'matcen_stations', 'texture_labels', 'automap_route_policy', 'music_completion', 'redbook_completion', 'cd_preview_completion', 'secret_origins', 'd1_mod_patches', 'mod_bitmaps', 'mod_renderer', 'mod_sounds')][string]$Fixture,
     [Parameter(Mandatory)][int]$ExpectedCases,
     [int]$ExpectedD2Cases = 0,
     [string]$Serial = $env:ANDROID_SERIAL,

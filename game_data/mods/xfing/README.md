@@ -26,3 +26,5 @@ The seventh palette is optional game content: its conversion source is required 
 Both packs are included in the [recommended mods release](https://github.com/larsonm-personal/dxx-redux/releases/tag/texture-packs-v1) and the launcher's recommended downloads. Put UUD above high-res texture packs to retain its corrected artwork; putting high-res first can cover the visible UUD images while its indexed and semantic fixes remain active. The updated Android engine is required for the indexed, level-surface and animation fixes; mounting the archive in an older engine does not establish support
 
 See [AUDIT.md](AUDIT.md) for source-to-output, real gameplay and release-download evidence. Publication is repeatable with `python game_data/mods/d2x-xl/prepare_texture_release.py --publish` from the repository root
+
+UUD2SP sound fixes have a separate [conversion and acceptance workflow](d2x_sp/README.md). Its original sound banks are retained, and its semantic HAM changes compose with UUD2TP without replacing the entire game-data file

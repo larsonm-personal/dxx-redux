@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -340,6 +341,49 @@ class ModManagerDetailsTest {
 
         val report = manager.checkEnabledModCompatibility("d2", setDir)
         assertTrue(report.toUserMessage(), report.ok)
+    }
+
+    @Test
+    fun mergedTextureRowPreservesSoundFieldsInBothModOrders() {
+        for (soundFirst in listOf(true, false)) {
+            val filesDir = createTempDirectory("mod-row-sound-composition").toFile()
+            val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+            val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+            val baseSha256 = sha256(File(setDir, "descent2.ham").apply { writeText("base-ham") })
+            val original =
+                JSONObject(
+                    """{"Index":5,"PlayTime":65536,"NumFrames":1,"Frames":[1],"OpenSound":146,"CloseSound":147,"Flags":0,"Filename":"door05","Pad":0}""",
+                )
+            val changed = JSONObject(original.toString()).put("PlayTime", 52428)
+            val texturePatch =
+                JSONArray()
+                    .put(JSONObject().put("op", "test").put("path", "/sections/wclips/5").put("value", original))
+                    .put(JSONObject().put("op", "replace").put("path", "/sections/wclips/5").put("value", changed))
+            val soundPatch = """[
+                {"op":"test","path":"/sections/wclips/5/OpenSound","value":146},
+                {"op":"replace","path":"/sections/wclips/5/OpenSound","value":88}
+            ]"""
+            writePatchDxa(File(modsDir, "sound.dxa"), "sound", baseSha256, soundPatch)
+            writePatchDxa(File(modsDir, "texture.dxa"), "texture", baseSha256, texturePatch.toString())
+            val order = listOf("sound.dxa" to "Sound", "texture.dxa" to "Texture")
+            writeModManifest(filesDir, *(if (soundFirst) order else order.reversed()).toTypedArray())
+            val manager = ModManager(filesDir)
+            val report = manager.checkEnabledModCompatibility("d2", setDir)
+            assertTrue(report.toUserMessage(), report.ok)
+            manager.writeEnabledModPaths("d2")
+            val root = File(filesDir, "d2x-redux/.active_mod_paths").readLines().first()
+            val merged = JSONArray(File(root, patchPath).readText())
+            val writes =
+                (0 until merged.length()).map { merged.getJSONObject(it) }.filter {
+                    it.getString("op") !=
+                        "test"
+                }
+            assertEquals(1, writes.size)
+            val row = writes.single().getJSONObject("value")
+            assertEquals(52428, row.getInt("PlayTime"))
+            assertEquals(88, row.getInt("OpenSound"))
+            assertEquals(147, row.getInt("CloseSound"))
+        }
     }
 
     private fun ZipOutputStream.writeEntry(

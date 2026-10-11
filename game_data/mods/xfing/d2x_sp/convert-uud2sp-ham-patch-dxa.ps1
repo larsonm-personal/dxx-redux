@@ -14,7 +14,7 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..\..")
 . (Join-Path $scriptDir "uud2sp_ham_patch_lib.ps1")
 
 if (-not $OutputPath) {
-    $OutputPath = Join-Path $scriptDir "UUD2SP1_4.no_ham.dxa"
+    $OutputPath = Join-Path $scriptDir "uud2sp-sounds.dxa"
 }
 if (-not $OutputDir) {
     $OutputDir = Join-Path $scriptDir "tmp\uud2sp_ham_patch_dxa"
@@ -64,12 +64,23 @@ function New-Uud2spRequiredBaseFile {
 }
 
 function Get-Uud2spReadmeText {
-    return @"
-# UUD2SP
+    $readme = @"
+# UUD2SP Sound Fixes and Restorations
 
-Translated to DXA by the Android Redux project
-See the conversion scripts on GitHub
+Original UUD2SP 1.4 by Xfing, with contributions credited in UUD2SP.rtf
+Source: https://descentbb.net/viewtopic.php?t=21386
+
+Restores D1 robot and door sounds in D2 and fixes several effects' playback rates
+Uses the author's original 11 and 22 kHz sound banks without resampling
+Requires D2 retail v1.2 data and the Android Redux semantic HAM patch support
+Can be combined with UUD2TP; place above D2 High-Res Sounds to retain these effects
+Restart the game session after changing mods; Mod Details reports loaded and played sounds
+
+The original DXA replaces the entire HAM; this conversion applies only its changes
+Door clip 9 timing follows the author's combined UUD2TP+SP release
+Repeatable conversion: game_data/mods/xfing/d2x_sp/convert-uud2sp-ham-patch-dxa.ps1
 "@
+    return $readme.Replace("`r`n", "`n")
 }
 
 function Get-Uud2spSha256ForFile {
@@ -114,8 +125,11 @@ foreach ($path in @($baseHamPath, $patchedHamPath, $rtfPath, $OriginalDxaPath) +
     }
 }
 
+& (Join-Path $repoRoot "android/helpers/retain-recent-artifacts.ps1") -Artifacts $OutputPath, $OutputDir
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
-$stageRoot = Join-Path $OutputDir "stage"
+$outputRoot = [IO.Path]::GetFullPath($OutputDir)
+$stageRoot = [IO.Path]::GetFullPath((Join-Path $outputRoot "stage"))
+if ([IO.Path]::GetDirectoryName($stageRoot) -ne $outputRoot) { throw 'Stage directory must be inside the output directory' }
 if (Test-Path -LiteralPath $stageRoot) {
     Remove-Item -LiteralPath $stageRoot -Recurse -Force
 }

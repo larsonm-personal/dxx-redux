@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
+import org.json.JSONTokener
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -1584,10 +1585,42 @@ class ModManager(
         var wrotePatch = false
         for ((patchPath, patchDocuments) in documents.filter { it.operations != null }.groupBy { it.owner.patchPath }) {
             if (patchDocuments.map { it.owner.modFilename }.distinct().size <= 1) continue
-            val merged = JSONArray()
+            // Compose tested row changes before emitting them: a texture row must
+            // not restore stock sound fields changed by a separate sound patch
+            val rows = linkedMapOf<String, JSONObject>()
             for (document in patchDocuments) {
                 val operations = document.operations ?: continue
-                for (index in 0 until operations.length()) merged.put(operations.get(index))
+                val testedRows = mutableSetOf<String>()
+                for (index in 0 until operations.length()) {
+                    val operation = operations.getJSONObject(index)
+                    val path = operation.getString("path")
+                    val value = operation.opt("value")
+                    if (operation.optString("op") == "test" && value is JSONObject) testedRows += path
+                    if (operation.optString("op") == "replace" && path in testedRows && value is JSONObject) {
+                        rows[path] = JSONObject(value.toString())
+                    }
+                }
+            }
+            for (document in patchDocuments) {
+                for (write in document.writes) {
+                    val field = write.scope.field ?: continue
+                    rows[write.scope.rowPath]?.put(field, JSONTokener(write.valueText).nextValue())
+                }
+            }
+            val merged = JSONArray()
+            val emittedRows = mutableSetOf<String>()
+            for (document in patchDocuments) {
+                val operations = document.operations ?: continue
+                for (index in 0 until operations.length()) {
+                    val operation = operations.getJSONObject(index)
+                    val scope = parsePatchScope(operation.getString("path"))
+                    val row = scope?.let { rows[it.rowPath] }
+                    if (operation.optString("op") == "test" || row == null) {
+                        merged.put(operation)
+                    } else if (scope.field == null && emittedRows.add(scope.rowPath)) {
+                        merged.put(JSONObject(operation.toString()).put("value", row))
+                    }
+                }
             }
             val output = File(root, patchPath.replace('/', File.separatorChar))
             output.parentFile?.mkdirs()

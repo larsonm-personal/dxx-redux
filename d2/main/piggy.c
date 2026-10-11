@@ -1251,6 +1251,7 @@ void piggy_read_sounds(void)
 #ifdef __ANDROID__
 				int read_ok = PHYSFS_read(fp, snd->data, snd->length, 1) == 1;
 				android_sound_trace_loaded(i, AllSounds[i].name, SoundOffset[i], read_ok);
+				if (read_ok) android_mod_sound_bank_loaded(i, DEFAULT_SNDFILE);
 #else
 				PHYSFS_read( fp, snd->data, snd->length, 1 );
 #endif

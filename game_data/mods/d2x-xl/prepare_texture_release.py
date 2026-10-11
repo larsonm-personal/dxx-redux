@@ -31,17 +31,26 @@ EXTRA_PACKS = (
     ("d1xr-mac-demo-sounds.dxa", "missing_mac_sounds", ["mac-d1"]),
 )
 EXTRA_DESCRIPTIONS = {
+    "uud2sp-sounds.dxa": (
+        "UUD2SP Sound Fixes and Restorations",
+        "D2 retail",
+        "Restores robot and door sounds and fixes effects' playback rates. "
+        "Place above D2 High-Res Sounds to retain these effects "
+        "(higher mods in the list mask matching assets in lower ones)",
+    ),
     "uud1tp-textures.dxa": (
         "UUD1 Texture Fixes",
         "D1 PC retail and D1-in-D2",
         "Fixes original-resolution textures, selected level surfaces and door timing. "
-        "Place above high-res packs to retain its corrected artwork",
+        "Place above high-res packs to retain its corrected artwork "
+        "(higher mods in the list mask matching assets in lower ones)",
     ),
     "uud2tp-textures.dxa": (
         "UUD2 Texture Fixes and Extras",
         "D2 retail",
         "Fixes original-resolution textures and restores extra doors, lava and surfaces for custom missions. "
-        "Place above high-res packs to retain its corrected artwork",
+        "Place above high-res packs to retain its corrected artwork "
+        "(higher mods in the list mask matching assets in lower ones)",
     ),
     "d1-hires-sounds.dxa": (
         "D1 High-Res Sounds",
@@ -68,7 +77,7 @@ CREDITS = (
     "Credits: D1 source textures and sounds by DizzyRox, Novacron and Aus-RED-5; "
     "D2 source textures and sounds by Aus-RED-5D, DizzyRox, MetalBeast, Novacron and Theftbot, "
     "from the D2X-XL packs. D1 presentation and Mac sound add-ons are from D1X-Rebirth by Zico. "
-    "UUD1TP and UUD2TP are by Xfing. "
+    "UUD1TP, UUD2TP and UUD2SP are by Xfing. "
     "Original archive README files are preserved"
 )
 
@@ -272,6 +281,51 @@ def inspect_uud_pack(path: Path, game: str) -> dict:
     }
 
 
+def inspect_uud_sound_pack(path: Path) -> dict:
+    with zipfile.ZipFile(path) as archive:
+        validate_archive(archive)
+        manifest = json.loads(archive.read("metadata/manifest.json"))
+        if manifest.get("pack") != "uud2sp" or manifest.get("game") != "d2":
+            raise ValueError(f"Wrong UUD2SP manifest: {path}")
+        if any(name.lower().endswith(".ham") for name in archive.namelist()):
+            raise ValueError(f"Unexpected full HAM override: {path}")
+        names_by_rate = []
+        for bank in manifest["d2"]["soundFiles"]:
+            data = archive.read(bank["path"])
+            if len(data) != bank["size"] or hashlib.sha256(data).hexdigest() != bank["sha256"]:
+                raise ValueError(f"Sound bank identity mismatch: {path}:{bank['path']}")
+            if data[:8] != b"DSND\x01\0\0\0" or len(data) < 12:
+                raise ValueError(f"Invalid sound bank: {path}")
+            count = struct.unpack_from("<I", data, 8)[0]
+            start = 12 + count * 20
+            if not 0 < count <= 256 or start > len(data):
+                raise ValueError(f"Invalid sound bank headers: {path}")
+            names = []
+            for index in range(count):
+                name, length, _, offset = struct.unpack_from("<8sIII", data, 12 + index * 20)
+                if not length or start + offset + length > len(data):
+                    raise ValueError(f"Truncated sound sample: {path}:{index}")
+                names.append(name.rstrip(b"\0"))
+            if len(set(names)) != count:
+                raise ValueError(f"Duplicate sound names: {path}")
+            names_by_rate.append(names)
+        if len(names_by_rate) != 2 or names_by_rate[0] != names_by_rate[1]:
+            raise ValueError(f"11/22 kHz bank slots differ: {path}")
+        operations = json.loads(archive.read(manifest["d2"]["hamPatchPath"]))
+        if not operations or len(operations) != manifest["d2"]["hamPatchOperationCount"]:
+            raise ValueError(f"Missing UUD2SP semantic patches: {path}")
+        if "UUD2SP.rtf" not in archive.namelist():
+            raise ValueError(f"Missing author documentation: {path}")
+    return {
+        **file_identity(path),
+        "kind": "sound_fixes",
+        "supported_modes": ["d2"],
+        "sounds": count,
+        "sample_rates": [11025, 22050],
+        "semantic_patches": 1,
+    }
+
+
 def gh(*args: str) -> str:
     # Argument arrays preserve paths with spaces without invoking a shell
     result = subprocess.run(["gh", *args], capture_output=True, text=True, check=False)
@@ -367,6 +421,9 @@ def main() -> None:
     uud_source = source.parent / "xfing/dxx_tp/tmp/plain_texture_dxa"
     uud_paths = [uud_source / f"uu{game}tp-textures.dxa" for game in ("d1", "d2")]
     uud_packs = [inspect_uud_pack(path, game) for path, game in zip(uud_paths, ("d1", "d2"), strict=True)]
+    sound_patch = source.parent / "xfing/d2x_sp/uud2sp-sounds.dxa"
+    uud_packs.append(inspect_uud_sound_pack(sound_patch))
+    uud_paths.append(sound_patch)
     manifest = {"schema": 1, "tag": TAG, "recommended_resolution": 256, "packs": packs}
     write_if_changed(args.output / "texture-packs.json", json.dumps(manifest, indent=2) + "\n")
     all_packs = (

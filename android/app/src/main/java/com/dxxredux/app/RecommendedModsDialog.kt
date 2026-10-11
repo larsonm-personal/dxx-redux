@@ -31,7 +31,8 @@ internal val RECOMMENDED_MODS =
             description =
                 "Fixes original-resolution textures, selected level surfaces and door timing " +
                     "for D1 PC retail and D1-in-D2. " +
-                    "Place above high-res packs to retain its corrected artwork",
+                    "Place above high-res packs to retain its corrected artwork " +
+                    "(higher mods in the list mask matching assets in lower ones)",
             game = "d1",
             sizeBytes = 472_064L,
         ),
@@ -41,9 +42,20 @@ internal val RECOMMENDED_MODS =
             description =
                 "Fixes original-resolution textures and restores extra doors, lava and surfaces " +
                     "for D2 custom missions. " +
-                    "Place above high-res packs to retain its corrected artwork",
+                    "Place above high-res packs to retain its corrected artwork " +
+                    "(higher mods in the list mask matching assets in lower ones)",
             game = "d2",
             sizeBytes = 3_242_301L,
+        ),
+        RecommendedMod(
+            filename = "uud2sp-sounds.dxa",
+            displayName = "UUD2SP Sound Fixes and Restorations",
+            description =
+                "Restores robot and door sounds in D2 and fixes effects' playback rates. " +
+                    "Place above D2 High-Res Sounds to retain these effects " +
+                    "(higher mods in the list mask matching assets in lower ones)",
+            game = "d2",
+            sizeBytes = 6_986_269L,
         ),
         RecommendedMod(
             filename = "d1-hires-256-textures-ktx2.dxa",

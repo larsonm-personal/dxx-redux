@@ -17,7 +17,7 @@ if (-not $BaselineRoot) {
     $BaselineRoot = Join-Path $repoRoot "game_data_to_copy_to_emulator\temp"
 }
 if (-not $SoundDxaPath) {
-    $SoundDxaPath = Join-Path $scriptDir "UUD2SP1_4.no_ham.dxa"
+    $SoundDxaPath = Join-Path $scriptDir "uud2sp-sounds.dxa"
 }
 if (-not $TextureDxaPath) {
     $TextureDxaPath = Join-Path $repoRoot "game_data\mods\xfing\dxx_tp\tmp\plain_texture_dxa\uud2tp-textures.dxa"
@@ -236,21 +236,15 @@ function Get-Uud2CompositionFieldWrites {
     param($Document)
 
     $writes = @()
-    foreach ($op in @($Document.operations)) {
-        $opName = [string]$op.op
-        if ($opName -eq "test") {
-            continue
-        }
-        if (@("add", "replace") -notcontains $opName) {
-            throw "Unsupported patch operation $opName in $($Document.path)"
-        }
-        $path = [string]$op.path
-        if ($op.value -is [pscustomobject] -and -not (Split-Uud2CompositionScope $path).Field) {
-            foreach ($property in @($op.value.PSObject.Properties)) {
+    # Match launcher composition: unchanged fields in a tested row are not writes
+    foreach ($write in @(Get-Uud2CompositionWrites $Document)) {
+        $path = $write.Scope
+        if ($write.Value -is [pscustomobject] -and -not (Split-Uud2CompositionScope $path).Field) {
+            foreach ($property in @($write.Value.PSObject.Properties)) {
                 $writes += [pscustomobject]@{ Scope = "$path/$($property.Name)"; Value = $property.Value; Source = $Document.path }
             }
         } else {
-            $writes += [pscustomobject]@{ Scope = $path; Value = $op.value; Source = $Document.path }
+            $writes += $write
         }
     }
     return @($writes)
