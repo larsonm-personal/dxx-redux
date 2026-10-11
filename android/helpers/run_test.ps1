@@ -129,7 +129,7 @@ if (-not $isStandaloneScript) {
     Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
     if ($Params.Count -eq 0) {
         foreach ($preflightGame in $gameList) {
-            $preflightPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $preflightGame -DataEdition $script:resolvedDataEdition
+            $preflightPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $preflightGame -DataEdition $script:resolvedDataEdition -SoftwareNavigation:(Test-SoftwareAndroidTestTarget)
             $rawScriptText = Get-Content -LiteralPath $preflightPath -Raw
             $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
             if ($rawPlaceholders.Count -gt 0) {
@@ -233,7 +233,7 @@ try {
 
         # -- Resolve script (variable substitution + conditional filtering) --
 
-        $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams -DataEdition $script:resolvedDataEdition
+        $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams -DataEdition $script:resolvedDataEdition -SoftwareNavigation:(Test-SoftwareAndroidTestTarget)
         $runId = [guid]::NewGuid().ToString("N")
         $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
         $pushName = "$scriptStem.run-$runId.jsonc"
