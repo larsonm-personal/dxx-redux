@@ -31,6 +31,8 @@ if ($linuxHost) {
     if (-not $python) { throw 'Python is required for Linux build CLI regression tests' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_linux_build_cli.py')
     if ($LASTEXITCODE -ne 0) { throw 'Linux build CLI regression tests failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_public_sanitizer_runner.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Public sanitizer runner regression tests failed' }
     & bash (Join-Path $repoRoot 'run-linux-build.sh') --target $Game --test --build-type $Configuration
     if ($LASTEXITCODE -ne 0) { throw "Native Linux build/tests failed with exit code $LASTEXITCODE" }
     return
