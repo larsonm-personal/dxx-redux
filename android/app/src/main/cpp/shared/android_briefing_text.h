@@ -10,6 +10,10 @@ typedef struct android_briefing_text_state {
 	char text[2049];
 } android_briefing_text_state;
 
+/* Native D1 keeps its handler private; automation only needs window identity */
+struct window;
+int android_d1_briefing_is_window(struct window *wind);
+
 void android_briefing_text_snapshot(android_briefing_text_state *state);
 
 #endif
