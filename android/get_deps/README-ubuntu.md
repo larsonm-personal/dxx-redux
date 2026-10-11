@@ -80,3 +80,10 @@ this option does not weaken test assertions or turn off Android security feature
 Run device tests serially with a current debug APK and matching instrumentation
 APK. Slow guest execution can still exceed individual test deadlines; report
 those failures separately rather than claiming a full Android suite pass.
+
+For debug scripts launched through `run_test.ps1`, software mode supplies a
+60-second `tap_button` search budget only when that action has no `timeout_ms`.
+Explicit action deadlines, assertions, gameplay waits, delays and frame budgets
+are unchanged. Standalone script resolution, accelerated emulators and physical
+targets retain their defaults. The master runner includes these implicit search
+budgets in its child-process estimate so it cannot cut the diagnostic short.

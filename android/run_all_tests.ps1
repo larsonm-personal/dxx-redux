@@ -499,7 +499,7 @@ function Get-RunTestJsoncChildTimeoutSeconds {
 
     $scriptTimeout = [Math]::Max(
         [Math]::Max(300, $TestTimeoutSeconds),
-        (Get-ScriptTimeoutSeconds -ScriptPath $ScriptPath)
+        (Get-ScriptTimeoutSeconds -ScriptPath $ScriptPath -SoftwareNavigation:(Test-SoftwareAndroidTestTarget))
     )
     if ((Get-ScriptIsLauncher -ScriptPath $ScriptPath) -and $scriptTimeout -lt 600) {
         $scriptTimeout = 600

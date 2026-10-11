@@ -180,3 +180,99 @@ if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $publicDeps) -or ($scri
     throw 'Unaudited legacy dispatch unexpectedly changed'
 }
 Write-Host 'PASS: actual runner dispatch isolates and verifies both audited editions'
+
+# Software navigation changes only an implicit button-search deadline in resolved debug scripts
+$previousSoftwareMode = $env:DXX_ANDROID_SOFTWARE_EMULATOR
+$previousSerial = $env:ANDROID_SERIAL
+$navigationTemp = Join-Path ([IO.Path]::GetTempPath()) ('software-navigation-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $navigationTemp | Out-Null
+try {
+    $fixture = Join-Path $navigationTemp 'navigation.jsonc'
+    $fixtureText = @'
+[
+    {"action":"tap_button","text":"Game Preferences","post_delay_ms":500},
+    {"action":"tap_button","text":"Explicit","timeout_ms":1234},
+    {"action":"tap_button","text":"Explicit zero","timeout_ms":0},
+    {"action":"tap_button","text":"Explicit null","timeout_ms":null},
+    {"action":"wait_for","field":"in_game","value":true,"timeout_ms":1111},
+    {"action":"wait_ms","ms":222},
+    {"action":"send_button","button":0,"post_delay_ms":333},
+    {"action":"assert","expect":{"frame_count":42,"player_dead":false}}
+]
+'@
+    [IO.File]::WriteAllText($fixture, $fixtureText)
+    $env:DXX_ANDROID_SOFTWARE_EMULATOR = '1'
+    $env:ANDROID_SERIAL = 'emulator-5554'
+    $baseline = Get-Content (Resolve-TestScript -ScriptPath $fixture -GameId d1) -Raw
+    $originalEstimate = Get-ScriptTimeoutSeconds -ScriptPath $fixture -BufferSeconds 0
+    $software = Get-Content (Resolve-TestScript -ScriptPath $fixture -GameId d1 -SoftwareNavigation) -Raw | ConvertFrom-Json
+    if ($software[0].timeout_ms -ne 60000 -or $software[1].timeout_ms -ne 1234 -or $software[2].timeout_ms -ne 0) {
+        throw 'Implicit navigation budget or explicit action deadline changed incorrectly'
+    }
+    if (-not $software[3].PSObject.Properties['timeout_ms'] -or $null -ne $software[3].timeout_ms) { throw 'Explicit null timeout changed' }
+    $software[0].PSObject.Properties.Remove('timeout_ms')
+    if (($software | ConvertTo-Json -Depth 20 -Compress) -cne ($baseline | ConvertFrom-Json | ConvertTo-Json -Depth 20 -Compress)) {
+        throw 'Software navigation changed a non-navigation action, assertion or delay'
+    }
+    $softwareEstimate = Get-ScriptTimeoutSeconds -ScriptPath $fixture -BufferSeconds 0 -SoftwareNavigation
+    $resolvedSoftware = Resolve-TestScript -ScriptPath $fixture -GameId d1 -SoftwareNavigation
+    if ($softwareEstimate -ne (Get-ScriptTimeoutSeconds -ScriptPath $resolvedSoftware -BufferSeconds 0 -SoftwareNavigation)) {
+        throw 'Resolved navigation budgets were double-counted in the outer estimate'
+    }
+    if ($softwareEstimate -le $originalEstimate) { throw 'Parent timeout estimate omitted implicit navigation work' }
+    foreach ($case in @(
+            @{ Mode = '1'; Serial = 'physical-device' },
+            @{ Mode = ''; Serial = 'emulator-5554' },
+            @{ Mode = '1'; Serial = '' }
+        )) {
+        $env:DXX_ANDROID_SOFTWARE_EMULATOR = $case.Mode
+        $env:ANDROID_SERIAL = $case.Serial
+        $unchanged = Get-Content (Resolve-TestScript -ScriptPath $fixture -GameId d1 -SoftwareNavigation) -Raw
+        if ($unchanged -cne $baseline -or (Get-ScriptTimeoutSeconds -ScriptPath $fixture -BufferSeconds 0 -SoftwareNavigation) -ne $originalEstimate) {
+            throw 'Unselected, accelerated or physical target acquired software navigation budgets'
+        }
+    }
+    $env:DXX_ANDROID_SOFTWARE_EMULATOR = '1'
+    $env:ANDROID_SERIAL = 'emulator-5554'
+    $preferences = Join-Path $script:ANDROID_ROOT 'game_scripts/test_engine_prefs_unified.jsonc'
+    $originalHash = (Get-FileHash $preferences).Hash
+    foreach ($edition in @('shareware', 'retail')) {
+        foreach ($game in @('d1', 'd2')) {
+            $profileBaseline = Get-Content (Resolve-TestScript -ScriptPath $preferences -GameId $game -DataEdition $edition) -Raw | ConvertFrom-Json
+            $profileSoftware = Get-Content (Resolve-TestScript -ScriptPath $preferences -GameId $game -DataEdition $edition -SoftwareNavigation) -Raw | ConvertFrom-Json
+            for ($i = 0; $i -lt $profileBaseline.Count; $i++) {
+                if ($profileBaseline[$i].action -eq 'tap_button' -and -not $profileBaseline[$i].PSObject.Properties['timeout_ms']) {
+                    if ($profileSoftware[$i].timeout_ms -ne 60000) { throw 'Profile navigation default missing' }
+                    $profileSoftware[$i].PSObject.Properties.Remove('timeout_ms')
+                }
+            }
+            if (($profileSoftware | ConvertTo-Json -Depth 100 -Compress) -cne ($profileBaseline | ConvertTo-Json -Depth 100 -Compress)) {
+                throw "$edition/$game software profile changed behavior or gameplay timing"
+            }
+        }
+    }
+    if ((Get-FileHash $preferences).Hash -cne $originalHash) { throw 'Software profile rewrote an authored fixture' }
+    $suiteAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $script:ANDROID_ROOT 'run_all_tests.ps1'), [ref]$null, [ref]$null)
+    $childBudget = $suiteAst.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-RunTestJsoncChildTimeoutSeconds'
+        }, $true)
+    . ([scriptblock]::Create($childBudget.Extent.Text))
+    $TestTimeoutSeconds = 300
+    $testTimeouts = @{}
+    $manyTaps = Join-Path $navigationTemp 'many-taps.jsonc'
+    $steps = @([pscustomobject]@{ action = 'enter_launcher' })
+    for ($i = 0; $i -lt 12; $i++) { $steps += [pscustomobject]@{ action = 'tap_button'; text = 'Example' } }
+    [IO.File]::WriteAllText($manyTaps, (ConvertTo-Json -InputObject $steps))
+    if ((Get-RunTestJsoncChildTimeoutSeconds -ScriptPath $manyTaps -TestName 'many-taps') -ne 735) {
+        throw 'Actual master runner omitted implicit navigation budgets from its child deadline'
+    }
+    $env:DXX_ANDROID_SOFTWARE_EMULATOR = ''
+    if ((Get-RunTestJsoncChildTimeoutSeconds -ScriptPath $manyTaps -TestName 'many-taps') -ne 600) {
+        throw 'Actual master runner changed the accelerated launcher deadline'
+    }
+    Write-Host 'PASS: software-only implicit UI navigation, explicit deadlines, profiles and outer estimates'
+} finally {
+    $env:DXX_ANDROID_SOFTWARE_EMULATOR = $previousSoftwareMode
+    $env:ANDROID_SERIAL = $previousSerial
+    Remove-Item -LiteralPath $navigationTemp -Recurse -Force
+}

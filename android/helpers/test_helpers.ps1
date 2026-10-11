@@ -51,17 +51,26 @@ function Test-SoftwareAndroidTestTarget {
 }
 
 function Get-AndroidInfrastructureTimeout {
-    # Host transport/lifecycle budgets only; never scale in-script assertions.
+    # Host transport/lifecycle and implicit UI navigation budgets; never scale assertions
     param(
         [Parameter(Mandatory)][int]$DefaultSeconds,
-        [ValidateSet('Adb', 'Launcher', 'GameStartup', 'Handoff', 'Boot')][string]$Kind = 'Adb',
+        [ValidateSet('Adb', 'Launcher', 'GameStartup', 'Handoff', 'Boot', 'UiNavigation')][string]$Kind = 'Adb',
         [string]$Serial = $env:ANDROID_SERIAL
     )
     if (-not (Test-SoftwareAndroidTestTarget -Serial $Serial)) {
         return $DefaultSeconds
     }
-    $softwareSeconds = @{ Adb = 30; Launcher = 180; GameStartup = 300; Handoff = 180; Boot = 1200 }
+    $softwareSeconds = @{ Adb = 30; Launcher = 180; GameStartup = 300; Handoff = 180; Boot = 1200; UiNavigation = 60 }
     return [Math]::Max($DefaultSeconds, $softwareSeconds[$Kind])
+}
+
+function Get-SoftwareNavigationTimeoutMilliseconds {
+    param([switch]$SoftwareNavigation)
+    # Only an explicitly selected software emulator's debug script gets this default
+    if ($SoftwareNavigation -and $env:ANDROID_SERIAL -match '^emulator-\d+$' -and (Test-SoftwareAndroidTestTarget)) {
+        return 1000 * (Get-AndroidInfrastructureTimeout -DefaultSeconds 10 -Kind UiNavigation)
+    }
+    return 0
 }
 
 function Adb {
@@ -2358,7 +2367,8 @@ function Resolve-TestScript {
         [Parameter(Mandatory = $true)]
         [string]$GameId,
         [hashtable]$Params = @{},
-        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default',
+        [switch]$SoftwareNavigation
     )
     # Fixtures use optional JSON properties; do not inherit a caller's strict property checks
     Set-StrictMode -Off
@@ -2444,6 +2454,7 @@ function Resolve-TestScript {
     }
 
     # Resolve filtering first; excluded step values need no variables for this game
+    $navigationTimeoutMs = Get-SoftwareNavigationTimeoutMilliseconds -SoftwareNavigation:$SoftwareNavigation
     $filtered = @()
     foreach ($step in $arr) {
         if ($step._info) { continue }
@@ -2453,6 +2464,10 @@ function Resolve-TestScript {
         # Remove the "when" property from output
         if ($whenVal) {
             $step.PSObject.Properties.Remove('when')
+        }
+        if ($navigationTimeoutMs -gt 0 -and $step.action -eq 'tap_button' -and
+            -not $step.PSObject.Properties['timeout_ms']) {
+            $step | Add-Member -NotePropertyName timeout_ms -NotePropertyValue $navigationTimeoutMs
         }
         $filtered += Resolve-TemplateValue -Value $step
     }
@@ -2476,7 +2491,8 @@ function Get-ScriptTimeoutSeconds {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
-        [int]$BufferSeconds = 15
+        [int]$BufferSeconds = 15,
+        [switch]$SoftwareNavigation
     )
     if (-not (Test-Path $ScriptPath)) { return 60 + $BufferSeconds }
     $raw = Get-Content $ScriptPath -Raw
@@ -2484,6 +2500,16 @@ function Get-ScriptTimeoutSeconds {
     # Match all numeric values for timing keys (works on raw jsonc text)
     foreach ($m in [regex]::Matches($raw, '"(?:ms|timeout_ms|post_delay_ms)"\s*:\s*(\d+)')) {
         $totalMs += [int]$m.Groups[1].Value
+    }
+    $navigationTimeoutMs = Get-SoftwareNavigationTimeoutMilliseconds -SoftwareNavigation:$SoftwareNavigation
+    if ($navigationTimeoutMs -gt 0) {
+        $steps = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath | ConvertFrom-Json
+        foreach ($step in $steps) {
+            if ($step.PSObject.Properties['action'] -and $step.action -eq 'tap_button' -and
+                -not $step.PSObject.Properties['timeout_ms']) {
+                $totalMs += $navigationTimeoutMs
+            }
+        }
     }
     $seconds = [Math]::Ceiling($totalMs / 1000.0)
     return [Math]::Max(30, $seconds + $BufferSeconds)
