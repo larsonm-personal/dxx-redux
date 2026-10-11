@@ -51,6 +51,7 @@ extern "C" {
 #include "android_save_meta.h"
 #include "android_axis_mailbox.h"
 #include "android_screen_advance.h"
+#include "android_briefing_text.h"
 #include "android_graphics_options.h"
 #include "graphics_config_transaction.h"
 #ifdef ANDROID
@@ -1564,6 +1565,15 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 		automap_key_command(front, (d_event *) &key_event, (automap *) data);
 		return true;
 	}
+#if defined(ANDROID) && !defined(DXX_BUILD_DESCENT_II)
+	if (android_d1_briefing_is_window(front)) {
+		if (!data)
+			return false;
+		LOGI("SELECT: dispatching briefing key %s (key=%d)", key_name, keycode);
+		window_send_event(front, (d_event *) &key_event);
+		return true;
+	}
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler) {
 		if (!data)
@@ -1615,6 +1625,10 @@ static bool can_direct_dispatch_front_key_command(void)
 		return true;
 	if (cb == (int (*)(window *, d_event *, void *)) automap_handler)
 		return data != NULL;
+#if defined(ANDROID) && !defined(DXX_BUILD_DESCENT_II)
+	if (android_d1_briefing_is_window(front))
+		return data != NULL;
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
 		return data != NULL;
@@ -1638,6 +1652,10 @@ static const char *describe_window_handler(window *wind)
 		return "listbox";
 	if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler)
 		return "kconfig";
+#if defined(ANDROID) && !defined(DXX_BUILD_DESCENT_II)
+	if (android_d1_briefing_is_window(wind))
+		return "briefing";
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 	if (cb == (int (*)(window *, d_event *, void *)) title_handler)
 		return "title";
