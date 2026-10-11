@@ -83,6 +83,17 @@ using levelmeta_context = jobject;
 #else
 using levelmeta_env = void *;
 using levelmeta_context = void *;
+
+// Desktop metadata workers have no UI, even when a display is available
+static void levelmeta_error(const char *message)
+{
+	fprintf(stderr, "%s\n", message);
+}
+
+static void levelmeta_warning(char *message)
+{
+	fprintf(stderr, "%s\n", message);
+}
 #endif
 
 static unsigned char *levelmeta_screen_pixels = NULL;
@@ -469,8 +480,13 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 	/* Partial engine initialization cannot be safely repeated in this process */
 	levelmeta_runtime_poisoned = 1;
 	mem_init();
+#ifdef __ANDROID__
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
+#else
+	error_init(levelmeta_error);
+	set_warn_func(levelmeta_warning);
+#endif
 #ifdef __ANDROID__
 	const char *game_dir =
 #ifdef DXX_BUILD_DESCENT_II
