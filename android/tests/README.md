@@ -191,3 +191,41 @@ contention, exit-code propagation, timeouts and PowerShell AVD argument forwardi
 
 See [public automation profiles](SHAREWARE_AUTOMATION.md) for the audited D1/D2
 subset, isolated fixture setup, explicit retail fallback and verification limits.
+
+## Public native save integrity
+
+`test_d1_wall_blast_save.ps1` runs the existing real game save fixture with pinned
+D1/D2 public data by default. Prepare data explicitly using
+`android/helpers/setup_shareware_test_data.ps1 -Game both -Download`, then run:
+
+```bash
+xvfb-run -a pwsh -NoProfile -File android/tests/test_d1_wall_blast_save.ps1 \
+  -NativeExe "$PWD/buildd1-test/main/test_upstream_compat" \
+  -ImportedExe "$PWD/buildd2-test/main/test_upstream_compat" \
+  -DataEdition shareware
+```
+
+Build both fixtures with `./run-linux-build.sh --test --target both --jobs 4`.
+Linux runtime needs an X display/software OpenGL; no emulator is used. Explicit
+`-D1Assets`/`-D2Assets` paths are accepted only when their public file identities
+match the existing pinned manifest. The runner normalizes public filename case
+in isolated copies and never writes to the supplied data directories. Resolving
+fixtures never downloads them implicitly.
+
+The test selects authentic exploding blastable walls in each public first level.
+It compares five explosion phases before and after native D1, imported D1 and
+ordinary D2 save/restore, opposite-endian restoration, and both byte orders of
+native D1 checkpoints translated into D2. Across those phases and byte orders,
+1,260 malformed or truncated checkpoints must leave live objects, walls,
+segments, player, time, RNG state/counters and active blasts unchanged. Legacy
+native saves must clear unavailable blast state. These are runtime comparisons,
+not new golden snapshots.
+
+Retail coverage remains available with `-DataEdition retail -D1Assets <path>
+-D2Assets <path>`. Retail files are not redistributed or supplied by this test.
+Each invocation creates a fresh `run-*` directory under
+`temp/wall-blast-save-<edition>` (or `-Output`) with executable/data identities,
+checkpoints, raw traces, process logs, exit status and `report.json`. The public
+save-integrity CI job builds both fixtures and retains this evidence even on
+failure. `test_wall_blast_save_profiles.ps1` separately checks report admission
+and rejection; passing it does not establish runtime persistence correctness.
