@@ -330,7 +330,7 @@ try {
                     break
                 }
 
-                Write-Status "SetupActivity not responding after 30s" "Yellow"
+                Write-Status "SetupActivity readiness check timed out" "Yellow"
                 if ($launcherAttempt -ge 2) {
                     break
                 }

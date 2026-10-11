@@ -72,9 +72,10 @@ Assert-True (($script:callLog -join ',') -eq 'health,start:23,recover,health,ins
 $script:callLog = @()
 $script:recoverySuccess = $false
 $script:startResults.Enqueue($false)
+$expectedStartupBudget = Get-AndroidInfrastructureTimeout -DefaultSeconds 60 -Kind Launcher
 $result = Ensure-LauncherTestDeviceReady
 Assert-True (-not $result) 'Failed emulator recovery should fail preflight'
-Assert-True (($script:callLog -join ',') -eq 'health,start:60,recover') 'Failed recovery should stop immediately'
+Assert-True (($script:callLog -join ',') -eq "health,start:$expectedStartupBudget,recover") 'Failed recovery should stop immediately'
 
 Write-Host 'Extraction suite device preflight tests passed' -ForegroundColor Green
 exit 0
