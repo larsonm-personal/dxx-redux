@@ -653,6 +653,8 @@ $noInfraTests = @(
     "test_native_host_unit_tests",
     "test_server_integration",
     "test_secret_area_baseline_diff",
+    "test_shareware_test_data",
+    "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
     "test_test_report_runtimes",

@@ -2,6 +2,8 @@
 param(
     [ValidateSet('both', 'd1', 'd2')]
     [string]$Game = 'both',
+    [ValidateSet('retail', 'shareware')]
+    [string]$DataEdition = 'retail',
     [string]$BaselinePath,
     [string]$OutputDir,
     [Alias('HogDir')]
@@ -17,15 +19,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+if ($UpdateBaseline -and $Game -ne 'both') {
+    throw 'Updating a baseline requires -Game both to preserve both engine fixtures'
+}
+
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_game_data.ps1')
 . (Join-Path $PSScriptRoot 'secret_area_baseline_helpers.ps1')
+if ($DataEdition -eq 'shareware') {
+    . (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
+}
 
+$baselineName = if ($DataEdition -eq 'shareware') { 'secret_area_shareware_baseline' } else { 'secret_area_base_game_baseline' }
 if (-not $BaselinePath) {
-    $BaselinePath = Join-RegressionPath $repoRoot 'android' 'test_fixtures' 'secret_area_base_game_baseline.json'
+    $BaselinePath = Join-RegressionPath $repoRoot 'android' 'test_fixtures' "$baselineName.json"
 }
 if (-not $OutputDir) {
-    $OutputDir = Join-RegressionPath $repoRoot 'android' 'temp' 'secret_area_baseline'
+    $outputName = if ($DataEdition -eq 'shareware') { 'secret_area_shareware_baseline' } else { 'secret_area_baseline' }
+    $OutputDir = Join-RegressionPath $repoRoot 'android' 'temp' $outputName
 }
 
 function Get-SecretAreaGameConfig {
@@ -118,6 +129,9 @@ function Resolve-SecretAreaDataDir {
     )
 
     try {
+        if ($DataEdition -eq 'shareware') {
+            return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $Name -DataDir $Requested
+        }
         return Resolve-InputDemoDataDir -RepoRoot $repoRoot -Config (Get-SecretAreaGameConfig -Name $Name) -RequestedDataDir $Requested -Purpose 'secret-area baseline'
     } catch {
         if ($RequireAssets) {
@@ -149,7 +163,7 @@ function Invoke-SecretAreaDump {
 
     $targetDir = Split-Path -Parent $OutPath
     New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
-    Write-Host "Secret-area baseline: dumping $Name"
+    Write-Host "Secret-area baseline: dumping $Name ($DataEdition)"
     & $Exe -hogdir $ResolvedDataDir -secretarea-json-out $OutPath | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "Secret-area dump failed for $Name"
@@ -166,11 +180,38 @@ function Write-CanonicalJsonFile {
     )
 
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Path) | Out-Null
-    $json = ($Value | ConvertTo-Json -Depth 100) -replace "`r`n", "`n"
-    [System.IO.File]::WriteAllText($Path, $json + "`n", [System.Text.UTF8Encoding]::new($false))
+    $json = (($Value | ConvertTo-Json -Depth 100) -replace "`r`n", "`n") + "`n"
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        $existing = [System.IO.File]::ReadAllText($Path)
+        if ($existing -ceq $json) { return }
+        try {
+            $normalizedExisting = ((($existing | ConvertFrom-Json) | ConvertTo-Json -Depth 100) -replace "`r`n", "`n") + "`n"
+            if ($normalizedExisting -ceq $json) { return }
+        } catch {
+            # Regeneration can replace a damaged previous output
+        }
+    }
+    [System.IO.File]::WriteAllText($Path, $json, [System.Text.UTF8Encoding]::new($false))
 }
 
-$games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
+function Select-SecretAreaBaselineGame {
+    param(
+        [Parameter(Mandatory)]$Baseline,
+        [Parameter(Mandatory)][ValidateSet('both', 'd1', 'd2')][string]$SelectedGame
+    )
+
+    if ($SelectedGame -ne 'both') {
+        $selected = @($Baseline.games | Where-Object { $_.game -eq $SelectedGame })
+        if ($selected.Count -ne 1) {
+            throw "Baseline must contain exactly one entry for $SelectedGame"
+        }
+        $Baseline.games = $selected
+    }
+    return $Baseline
+}
+
+$games = @('d1', 'd2')
+if ($Game -ne 'both') { $games = @($Game) }
 $actualGames = @()
 
 foreach ($gameName in $games) {
@@ -208,7 +249,7 @@ $actual = [ordered]@{
     schema = 'dxx-secret-area-regression-v1'
     games = $actualGames
 }
-$actualPath = Join-Path $OutputDir 'actual_secret_area_base_game_baseline.json'
+$actualPath = Join-Path $OutputDir "actual_$baselineName.json"
 Write-CanonicalJsonFile -Value $actual -Path $actualPath
 
 if ($UpdateBaseline) {
@@ -223,7 +264,7 @@ if (-not (Test-Path -LiteralPath $BaselinePath -PathType Leaf)) {
 
 $expectedText = (Get-Content -LiteralPath $BaselinePath -Raw).Trim()
 $actualText = (Get-Content -LiteralPath $actualPath -Raw).Trim()
-$expected = $expectedText | ConvertFrom-Json
+$expected = Select-SecretAreaBaselineGame -Baseline ($expectedText | ConvertFrom-Json) -SelectedGame $Game
 $diff = Compare-JsonStructure -Expected $expected -Actual $actual
 if ($diff.Total -gt 0) {
     $formattedDiff = Format-JsonStructureDiff -Diff $diff
@@ -231,7 +272,9 @@ if ($diff.Total -gt 0) {
     throw "Secret-area baseline changed`nExpected: $BaselinePath`nActual: $actualPath"
 }
 
-if ($expectedText -ne $actualText) {
+if ($Game -ne 'both') {
+    Write-Host "Secret-area baseline matched for ${Game}: $BaselinePath"
+} elseif ($expectedText -ne $actualText) {
     Write-Host "Secret-area baseline matched structurally (representation differs): $BaselinePath"
 } else {
     Write-Host "Secret-area baseline matched: $BaselinePath"

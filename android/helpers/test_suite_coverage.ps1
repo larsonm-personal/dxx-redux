@@ -176,6 +176,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_runtime_targeted_sampling'
             'test_secret_area_baseline'
             'test_secret_area_baseline_diff'
+            'test_shareware_test_data'
+            'test_secret_area_data_profiles'
             'test_server_integration'
             'test_standard_game_data_resolution'
             'test_test_helpers_process_wait'

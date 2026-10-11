@@ -2,6 +2,8 @@
 param(
     [ValidateSet('both', 'd1', 'd2')]
     [string]$Game = 'both',
+    [ValidateSet('retail', 'shareware')]
+    [string]$DataEdition = 'retail',
     [string]$BaselinePath,
     [string]$OutputDir,
     [Alias('HogDir')]
@@ -21,6 +23,7 @@ $argsList = @(
     '-ExecutionPolicy', 'Bypass',
     '-File', (Join-Path $PSScriptRoot 'test_secret_area_baseline.ps1'),
     '-Game', $Game,
+    '-DataEdition', $DataEdition,
     '-UpdateBaseline'
 )
 

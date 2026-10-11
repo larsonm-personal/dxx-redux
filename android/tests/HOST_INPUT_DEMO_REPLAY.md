@@ -50,3 +50,42 @@ Notes:
 - `-StateLogPath <path>` lets you pick the actual replay trace output file explicitly. Add `-CompareStateTrace` if you also want the wrapper to run the compare helper.
 - `-TraceRng` writes `temp/input_demo_state_traces/*.actual_rngtrace.jsonl` and runs the RNG trace comparer automatically against `<demo>.rngtrace.jsonl`.
 - `-RngLogPath <path>` lets you pick the replay RNG trace output file explicitly. Add `-CompareRngTrace` if you want the wrapper to run only the compare step without the convenience alias.
+
+## Public shareware runtime smoke
+
+The existing generated three-frame smoke uses pinned DOS shareware data for both
+engines by default. It still verifies replay identity, difficulty and frame count,
+frame-state output, and complete RNG trace publication. It does not replace the
+recorded retail replay corpus or its gameplay-state oracles. The generated RNG
+inputs are synthetic and may emit mismatch diagnostics; this smoke asserts trace
+publication rather than deterministic equality.
+
+Prepare public data explicitly once (PowerShell 7, CMake, and a C compiler):
+
+```powershell
+pwsh -NoProfile -File android/helpers/setup_shareware_test_data.ps1 -Download
+pwsh -NoProfile -File android/tests/test_input_demo_runtime_smoke.ps1 -Game both
+```
+
+Setup uses the existing bounded ZIP reader and native SOW volume assembler; it
+never launches a DOS installer. It checks the package and extracted file hashes
+against the existing import oracles. Subsequent runs are offline and fail if the
+shareware fixture is missing, modified, or contaminated by preferred D2 retail
+assets. See `game_data/demo installers/README.md` for fixture provenance and setup.
+
+The smoke runs the real windowed SDL/OpenGL games. On headless Linux use Xvfb and
+software GL; a dummy video driver is insufficient. For explicitly selected existing
+builds, bypass automatic build selection with `-D1Exe` and `-D2Exe`:
+
+```bash
+SDL_VIDEODRIVER=x11 SDL_AUDIODRIVER=dummy LIBGL_ALWAYS_SOFTWARE=1 \
+  xvfb-run -a pwsh -NoProfile -File android/tests/test_input_demo_runtime_smoke.ps1 \
+  -D1Exe "$PWD/buildd1/main/d1x-redux" -D2Exe "$PWD/buildd2/main/d2x-redux"
+```
+
+Use `-DataEdition retail` to run the unchanged retail data requirements and
+assertions. `-DataDir` selects one explicit edition-appropriate data directory;
+for separate game directories, invoke `-Game d1` and `-Game d2` separately.
+Public smoke outputs are isolated under `temp/input_demo_runtime_smoke/shareware/`,
+and retail outputs under the adjacent `retail/` directory. This host coverage does
+not test Android launcher import, device storage, or Android rendering.
