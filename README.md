@@ -73,3 +73,40 @@ Building in msys2 / Linux
   `cmake --build build`
 
   (add `-j4` to use 4 cores)
+
+Linux native tests
+------------------
+
+Install the native development packages above and CMake 3.21 or newer. Ninja is
+optional; Python 3 is required for the CLI regression suite and the PowerShell
+native-test wrapper. The first configure downloads pinned source dependencies,
+so it needs network access. PowerShell, the Android SDK and game media are not
+required for this Bash/CTest workflow
+
+From the repository root, build both games and run their asset-free native tests:
+
+```sh
+./run-linux-build.sh --test
+./run-linux-build.sh --test --target d2 --jobs 2
+```
+
+Test mode builds all desktop, headless and test targets in `buildd1-test` and
+`buildd2-test`, leaving the normal build trees and replay freshness stamps alone.
+It enables OpenGL, SDL_mixer and UDP and uses Debug with reduced `-g1` debug
+information. An explicit non-Debug `--build-type` is rejected so test assertions
+stay active. Both single- and multi-configuration generators select Debug
+
+Builds use four parallel jobs by default in test mode. CTest runs serially with
+dummy SDL audio/video drivers, a 120-second per-test timeout and failure output.
+Finding no tests is an error. Each tree contains `ctest-results.xml` and
+`Testing/Temporary/` diagnostics. No retail game files or replay corpus are needed;
+these component and integration tests do not replace full-game demo replays
+
+Use `--sanitizer address --test` for separate `buildd1-test-asan` and
+`buildd2-test-asan` trees. `--clean` deletes only the selected trees. `--cmake PATH`
+selects CMake and prefers its sibling CTest; PATH is the fallback for CTest.
+`--test --list-tools` prints the selected tools without building
+
+Without `--test`, the existing defaults remain `RelWithDebInfo`, `buildd1` and
+`buildd2`, with unbounded build parallelism unless `--jobs N` is supplied and no
+CTest execution. See [.github/CI.md](.github/CI.md) for CI coverage and limits

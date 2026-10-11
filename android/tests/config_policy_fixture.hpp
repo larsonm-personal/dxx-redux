@@ -53,7 +53,7 @@ static void test_config_policy(const char *output)
 #if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
 		require(GameCfg.MusicType == (discs == 3 ? MUSIC_TYPE_REDBOOK : MUSIC_TYPE_BUILTIN) && GameCfg.OrigTrackOrder == (discs == 3), "D2 first-run disc/music defaults retained");
 #endif
-		trace.push_back({ { "no_file", discs }, { "control", PlayerCfg.ControlType }, { "automap", PlayerCfg.AutomapFreeFlight }, { "music", GameCfg.MusicType }, { "track_order", GameCfg.OrigTrackOrder }, { "screen", Game_screen_mode } });
+		trace.push_back({ { "no_file", discs }, { "control", PlayerCfg.ControlType }, { "automap", PlayerCfg.AutomapFreeFlight }, { "music", static_cast<int>(GameCfg.MusicType) }, { "track_order", static_cast<int>(GameCfg.OrigTrackOrder) }, { "screen", Game_screen_mode } });
 	}
 	for (const char *name : { "descent_ii.gog", "descent_ii.inst" })
 		if (PHYSFS_exists(name)) require(PHYSFS_delete(name), "remove first-run presence marker");
@@ -95,7 +95,7 @@ static void test_config_policy(const char *output)
 			require(GameCfg.MovieTexFilt == 1, "D2 movie policy retained");
 #endif
 			require(WriteConfigFile() == 0, "round trip loaded graphics config");
-			trace.push_back({ { "filter_input", filter }, { "fov_input", fov }, { "filter", GameCfg.TexFilt }, { "fov", GameCfg.MainViewFov }, { "config", read() } });
+			trace.push_back({ { "filter_input", filter }, { "fov_input", fov }, { "filter", static_cast<int>(GameCfg.TexFilt) }, { "fov", static_cast<int>(GameCfg.MainViewFov) }, { "config", read() } });
 		}
 	require(PHYSFS_delete("descent.cfg"), "remove owned config fixture");
 	std::FILE *file = std::fopen(output, "wb");

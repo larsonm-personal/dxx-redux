@@ -36,26 +36,14 @@ jobs:
             build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
             libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev
 
-      # Debug keeps assertions active; reduced debug info bounds disk/memory use
-      - name: Configure all desktop, headless and test targets
-        timeout-minutes: 3
-        run: |
-          cmake -S "${{ matrix.game }}" -B build-smoke -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug \
-            '-DCMAKE_C_FLAGS_DEBUG=-O0 -g1' '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1' \
-            -DBUILD_TESTING=ON -DOPENGL=ON -DSDLMIXER=ON -DUDP=ON \
-            -DOpenGL_GL_PREFERENCE=LEGACY
+      - name: Check the Linux build and test runner
+        timeout-minutes: 1
+        run: python3 android/tests/test_linux_build_cli.py
 
-      - name: Compile and link all targets
-        timeout-minutes: 14
-        run: cmake --build build-smoke --parallel 4
-
-      # Some tests share fixture filenames, so run serially within each game
-      - name: Run asset-free engine and demo tests
-        timeout-minutes: 3
-        run: |
-          ctest --test-dir build-smoke --output-on-failure --no-tests=error \
-            --parallel 1 --timeout 120 --output-junit ctest-results.xml
+      # Debug keeps assertions active; tests run serially with a 120-second timeout
+      - name: Build all native targets and run asset-free tests
+        timeout-minutes: 17
+        run: ./run-linux-build.sh --test --target "${{ matrix.game }}" --jobs 4 --generator Ninja
 
       - name: Keep test and configure diagnostics
         if: always()
@@ -63,9 +51,9 @@ jobs:
         with:
           name: engine-smoke-${{ matrix.game }}
           path: |
-            build-smoke/ctest-results.xml
-            build-smoke/Testing/Temporary/
-            build-smoke/CMakeFiles/CMakeConfigureLog.yaml
-            build-smoke/CMakeCache.txt
+            build${{ matrix.game }}-test/ctest-results.xml
+            build${{ matrix.game }}-test/Testing/Temporary/
+            build${{ matrix.game }}-test/CMakeFiles/CMakeConfigureLog.yaml
+            build${{ matrix.game }}-test/CMakeCache.txt
           retention-days: 3
           if-no-files-found: ignore
