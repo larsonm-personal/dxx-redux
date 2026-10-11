@@ -400,6 +400,7 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_d1_wall_blast_save" = 300
     "test_async_checkpoint_unified" = 360
     "test_independent_checkpoints" = 1200
     "test_automap_objective_readiness_progress" = 600
@@ -656,6 +657,8 @@ $noInfraTests = @(
     "test_server_integration",
     "test_secret_area_baseline_diff",
     "test_shareware_test_data",
+    "test_wall_blast_save_profiles",
+    "test_d1_wall_blast_save",
     "test_shareware_automation_profiles",
     "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",

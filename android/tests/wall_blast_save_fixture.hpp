@@ -1,6 +1,6 @@
 // A wall blast changes passability and emits damaging SIM-randomized explosions
 // Exercise its real caller and save/restore path in a loaded campaign level
-static nlohmann::json exercise_wall_blast_save(const char *native_directory = nullptr)
+static nlohmann::json exercise_wall_blast_save(const char *native_directory = nullptr, bool shareware = false, bool ordinary_d2 = false)
 {
 	using nlohmann::json;
 	json report = json::array();
@@ -9,12 +9,19 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 		StartNewGame(1);
 		int wall = -1;
 		for (int i = 0; i < Num_walls; ++i)
-			if (Walls[i].type == WALL_BLASTABLE && (WallAnims[Walls[i].clip_num].flags & WCF_EXPLODES)) {
+			if (Walls[i].type == WALL_BLASTABLE && Walls[i].clip_num >= 0 && Walls[i].clip_num < Num_wall_anims && (WallAnims[Walls[i].clip_num].flags & WCF_EXPLODES)) {
 				wall = i;
 				break;
 			}
 		require(wall >= 0, "actual campaign contains an exploding blastable wall");
 		const int segment = Walls[wall].segnum, side = Walls[wall].sidenum;
+		if (shareware) {
+			require(std::strcmp(Level_names[0], ordinary_d2 ? "d2leva-1.sl2" : "level01.sdl") == 0,
+			        "public save fixture selects the pinned demo level");
+			require(wall == (ordinary_d2 ? 37 : 10) && Walls[wall].clip_num == 6,
+			        "public save fixture selects the authentic exploding wall, without substituting geometry");
+		}
+		const json selection = { { "edition", shareware ? "shareware" : "retail" }, { "content_game", ordinary_d2 ? "d2" : "d1" }, { "mission", Current_mission_filename }, { "level", Level_names[0] }, { "level_num", Current_level_num }, { "wall", wall }, { "segment", segment }, { "side", side }, { "clip", +Walls[wall].clip_num }, { "wall_type", +Walls[wall].type }, { "clip_flags", +WallAnims[Walls[wall].clip_num].flags } };
 		GameTime64 = 10 * F1_0;
 		FrameTime = F1_0 / 32;
 		d_srand(1234);
@@ -26,11 +33,14 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 			GameTime64 += FrameTime;
 			do_exploding_wall_frame();
 		}
-		std::string filename = "wall-blast-" + std::to_string(elapsed) + ".sav";
+		std::string filename = std::string(ordinary_d2 ? "d2-wall-blast-" : "wall-blast-") + std::to_string(elapsed) + ".sav";
 		char description[21] = "Active wall blast";
+		// Both native save subroutines consume the pause owned by their normal caller
+		stop_time();
 		require(state_save_all_sub(&filename[0], description), "save during actual wall blast");
 		const auto saved = read_save_fixture(filename);
 		const auto opposite = save_endian_fixture(saved).convert();
+		require(save_endian_fixture(opposite).convert() == saved, "independent endian conversion preserves every save byte reversibly");
 		const std::string opposite_path = "opposite-" + filename;
 		write_fixture(opposite_path.c_str(), opposite);
 		const auto finish = [&]() {
@@ -53,7 +63,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 #endif
 		FrameTime = F1_0 / 32;
 		const auto restored = finish();
-		report.push_back({ { "elapsed", elapsed }, { "uninterrupted", uninterrupted }, { "restored", restored }, { "differences", json::diff(uninterrupted, restored) } });
+		report.push_back({ { "elapsed", elapsed }, { "selection", selection }, { "uninterrupted", uninterrupted }, { "restored", restored }, { "differences", json::diff(uninterrupted, restored) } });
 		std::string endian_file = opposite_path;
 #ifdef DXX_BUILD_DESCENT_II
 		require(state_restore_all_sub(&endian_file[0], 0), "restore opposite-endian wall blast");
@@ -75,6 +85,29 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 				Difficulty_level = start.difficulty;
 				const std::vector<object> before_objects(Objects, Objects + Highest_object_index + 1);
 				const std::vector<expl_wall> before_blasts(expl_wall_list, expl_wall_list + MAX_EXPLODING_WALLS);
+				const std::vector<::wall> before_walls(Walls, Walls + Num_walls);
+				const std::vector<::segment> before_segments(Segments, Segments + Highest_segment_index + 1);
+				const auto before_player = Players[Player_num];
+				const int before_highest_object = Highest_object_index, before_num_walls = Num_walls;
+				const auto before_time = GameTime64;
+				unsigned before_rng = 0, before_fx_rng = 0;
+				require(d_rand_get_state(&before_rng) && d_rand_get_stream_state(D_RNG_FX, &before_fx_rng), "snapshot checkpoint rejection RNG");
+				const auto before_draws = d_rand_get_call_count(), before_fx_draws = d_rand_get_stream_call_count(D_RNG_FX);
+				const auto reject_unchanged = [&](const bytes &damaged) {
+					require(!d1_save_translate_apply_checkpoint_objects(damaged.data(), damaged.size(), &start),
+					        "reject truncated or invalid wall-blast checkpoint before applying saved state");
+					unsigned rng = 0, fx_rng = 0;
+					require(d_rand_get_state(&rng) && d_rand_get_stream_state(D_RNG_FX, &fx_rng) &&
+					            rng == before_rng && fx_rng == before_fx_rng && d_rand_get_call_count() == before_draws &&
+					            d_rand_get_stream_call_count(D_RNG_FX) == before_fx_draws && GameTime64 == before_time &&
+					            Highest_object_index == before_highest_object && Num_walls == before_num_walls &&
+					            std::memcmp(Objects, before_objects.data(), before_objects.size() * sizeof(object)) == 0 &&
+					            std::memcmp(Walls, before_walls.data(), before_walls.size() * sizeof(::wall)) == 0 &&
+					            std::memcmp(Segments, before_segments.data(), before_segments.size() * sizeof(::segment)) == 0 &&
+					            std::memcmp(&Players[Player_num], &before_player, sizeof(before_player)) == 0 &&
+					            std::memcmp(expl_wall_list, before_blasts.data(), before_blasts.size() * sizeof(expl_wall)) == 0,
+					        "rejected checkpoint leaves objects, walls, segments, player, time, RNG and active blasts unchanged");
+				};
 				for (int malformed = 0; malformed < 6; ++malformed) {
 					auto damaged = data;
 					if (!malformed) damaged.pop_back();
@@ -88,18 +121,23 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 						set_int(damaged, damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES + field * 4,
 						        start.checkpoint_swap ? SWAPINT(value) : value);
 					}
-					require(!d1_save_translate_apply_checkpoint_objects(damaged.data(), damaged.size(), &start),
-					        "reject truncated or invalid wall-blast checkpoint before applying saved state");
-					require(std::memcmp(Objects, before_objects.data(), before_objects.size() * sizeof(object)) == 0 &&
-					            std::memcmp(expl_wall_list, before_blasts.data(), before_blasts.size() * sizeof(expl_wall)) == 0,
-					        "rejected wall-blast checkpoint leaves objects and active blasts unchanged");
+					reject_unchanged(damaged);
 				}
+				// Every truncation boundary in the appended pool must fail atomically
+				for (int missing = 2; missing <= EXPLODING_WALL_RUNTIME_DISK_BYTES; ++missing) {
+					auto damaged = data;
+					damaged.resize(damaged.size() - missing);
+					reject_unchanged(damaged);
+				}
+				auto last_slot = data;
+				set_int(last_slot, last_slot.size() - 12, start.checkpoint_swap ? SWAPINT(-2) : -2);
+				reject_unchanged(last_slot);
 				require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start), "import native wall blast through normal checkpoint adapter");
 				d1_save_translate_apply_checkpoint_player(&start, "walltest");
 				FrameTime = F1_0 / 32;
 				const auto translated = finish();
 				report.back()["import_differences"][source] = json::diff(uninterrupted, translated);
-				report.back()["rejected_mutations"][source] = 6;
+				report.back()["rejected_mutations"][source] = EXPLODING_WALL_RUNTIME_DISK_BYTES + 6;
 				if (source == filename) {
 					auto legacy = data;
 					legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES);
@@ -108,6 +146,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 					require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start), "decode prior native save format");
 					expl_wall_list[9] = { segment, side, F1_0 / 2 };
 					require(d1_save_translate_apply_checkpoint_objects(legacy.data(), legacy.size(), &legacy_start), "admit native version 18 without a wall-blast record");
+					report.back()["legacy_cleared"] = true;
 					for (const auto &blast : expl_wall_list)
 						require(blast.segnum == -1, "legacy checkpoint clears unavailable wall-blast state instead of inheriting another world");
 				}
@@ -120,7 +159,7 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 	return report;
 }
 
-static void write_wall_blast_save_trace(const char *d2_directory, const char *native_directory)
+static void write_wall_blast_save_trace(const char *d2_directory, const char *native_directory, bool shareware)
 {
 	key_init();
 	mouse_init();
@@ -133,16 +172,17 @@ static void write_wall_blast_save_trace(const char *d2_directory, const char *na
 	std::strcpy(Players[0].callsign, "walltest");
 	Difficulty_level = 2;
 	if (native_directory) require(PHYSFS_mount(native_directory, "native-checkpoints", 0), "mount native wall-blast checkpoints");
-	const auto native = exercise_wall_blast_save(native_directory);
+	const auto native = exercise_wall_blast_save(native_directory, shareware);
 	const auto output = native.dump(2) + "\n";
 	write_fixture("wall-blast.json", bytes(output.begin(), output.end()));
 #ifdef DXX_BUILD_DESCENT_II
 	if (d2_directory) {
-		const std::string hog = std::string(d2_directory) + "/descent2.hog";
+		const std::string hog = std::string(d2_directory) + (shareware ? "/d2demo.hog" : "/descent2.hog");
 		require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(hog.c_str(), nullptr, 0), "mount ordinary D2 wall resources");
-		char mission[] = "d2";
+		char retail_mission[] = "d2", public_mission[] = "d2demo";
+		char *mission = shareware ? public_mission : retail_mission;
 		require(load_mission_by_name(mission), "select ordinary D2 wall persistence control");
-		const auto control = exercise_wall_blast_save().dump(2) + "\n";
+		const auto control = exercise_wall_blast_save(nullptr, shareware, true).dump(2) + "\n";
 		write_fixture("wall-blast-d2.json", bytes(control.begin(), control.end()));
 	}
 #else

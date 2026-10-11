@@ -177,6 +177,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_secret_area_baseline'
             'test_secret_area_baseline_diff'
             'test_shareware_test_data'
+            'test_wall_blast_save_profiles'
             'test_shareware_automation_profiles'
             'test_secret_area_data_profiles'
             'test_server_integration'

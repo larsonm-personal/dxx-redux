@@ -10781,9 +10781,9 @@ extern "C" {
 #include "network_asset_fixture.hpp"
 #include "wall_blast_save_fixture.hpp"
 
-static void write_gameplay_rules_trace(const char *directory, const char *d2_directory, int weapon_trace = 0, const char *native_demo = nullptr)
+static void write_gameplay_rules_trace(const char *directory, const char *d2_directory, int weapon_trace = 0, const char *native_demo = nullptr, bool shareware = false)
 {
-	const std::string hog = std::string(directory) + "/DESCENT.HOG";
+	const std::string hog = std::string(directory) + (shareware ? "/descent.hog" : "/DESCENT.HOG");
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount native gameplay resources");
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
@@ -10808,7 +10808,7 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 #endif
 	require(load_mission_by_name(mission), "select native gameplay mission");
 	if (weapon_trace == 8) {
-		write_wall_blast_save_trace(d2_directory, native_demo);
+		write_wall_blast_save_trace(d2_directory, native_demo, shareware);
 		return;
 	}
 #ifdef DXX_BUILD_DESCENT_II
@@ -11399,8 +11399,8 @@ int main(int argc, char **argv)
 		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
 	}
-	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--wall-blast-save-trace") == 0) {
-		write_gameplay_rules_trace(argv[2], argv[3], 8, argc == 5 ? argv[4] : nullptr);
+	if ((argc == 4 || argc == 5) && (std::strcmp(argv[1], "--wall-blast-save-trace") == 0 || std::strcmp(argv[1], "--wall-blast-save-shareware-trace") == 0)) {
+		write_gameplay_rules_trace(argv[2], argv[3], 8, argc == 5 ? argv[4] : nullptr, std::strcmp(argv[1], "--wall-blast-save-shareware-trace") == 0);
 		return 0;
 	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--pickup-autoselect-trace") == 0) {

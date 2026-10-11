@@ -228,6 +228,18 @@ class save_endian_fixture
 		words(4, 6); // cadence low/high words
 #ifdef DXX_BUILD_DESCENT_II
 		skip(4); // Guide-Bot routing mode is explicitly little-endian
+		if (version >= 41) {
+			// escort_save_runtime: 27 explicitly little-endian 64-bit fields,
+			// a 150-byte goal message, then a bounded LE64 route-payload length
+			// These records retain their byte order even under a swapped save header
+			skip(27 * 8 + 150);
+			const size_t length_offset = pos;
+			skip(8);
+			uint64_t route_bytes = 0;
+			for (unsigned i = 0; i < 8; ++i) route_bytes |= uint64_t(data[length_offset + i]) << (i * 8);
+			require(route_bytes <= 2 * 1024 * 1024, "bounded explicit-endian Guide-Bot route payload");
+			skip(static_cast<size_t>(route_bytes));
+		}
 #else
 		if (version >= 19) words(4, MAX_EXPLODING_WALLS * 3);
 #endif
@@ -247,7 +259,7 @@ class save_endian_fixture
 		skip(4);
 		const int version = integer();
 #ifdef DXX_BUILD_DESCENT_II
-		require(version == 38 || version == 40, "current ordinary/imported D2 save fixture");
+		require(version == 38 || version == 40 || version == 41 || version == 42, "current ordinary/imported D2 save fixture");
 #else
 		require(version == 18 || version == 19, "current native D1 save fixture");
 #endif
@@ -259,7 +271,7 @@ class save_endian_fixture
 		skip(2);     // selected weapons
 		words(4, 5); // difficulty history and cheats
 #ifdef DXX_BUILD_DESCENT_II
-		if (version == 40) {
+		if (version == 40 || version == 42) {
 			const int length = count();
 			skip(length);
 		}
