@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -314,7 +315,11 @@ def run(args):
         if not getattr(args, f"exe_{game}").is_file():
             raise parity.EvidenceError(f"Missing {game} executable")
     args.output.mkdir(parents=True, exist_ok=False)
-    with (args.output / "producer.lock").open("w", encoding="ascii"):
+    with (args.output / "producer.lock").open("w", encoding="ascii") as lease:
+        if os.name == "posix":
+            import fcntl
+
+            fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         return _run_cases(args, cases)
 
 

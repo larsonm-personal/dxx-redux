@@ -5,6 +5,7 @@ import copy
 import contextlib
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +15,32 @@ import run_compact_public_replays as runner
 
 
 class RuntimeGateTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "POSIX retention uses advisory file locks")
+    def test_active_capture_holds_retention_lease(self):
+        import fcntl
+
+        args = argparse.Namespace(
+            corpus=self.root,
+            data_d1=self.root,
+            data_d2=self.root,
+            exe_d1=self.demo,
+            exe_d2=self.demo,
+            output=self.root / "active-capture",
+        )
+
+        def inspect_lease(args, cases):
+            with (args.output / "producer.lock").open("r") as competing:
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(competing.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return 0
+
+        with (
+            mock.patch.object(runner, "load_corpus", return_value=[]),
+            mock.patch.object(runner, "validate_assets"),
+            mock.patch.object(runner, "_run_cases", side_effect=inspect_lease),
+        ):
+            self.assertEqual(runner.run(args), 0)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
