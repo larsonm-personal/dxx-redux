@@ -11,7 +11,8 @@ param(
     [ValidateSet('shareware', 'retail')]
     [string]$DataEdition = 'shareware',
     [string]$D1Exe,
-    [string]$D2Exe
+    [string]$D2Exe,
+    [string]$OutputDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,7 +22,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_game_data.ps1')
 . (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
 
-$outRoot = Join-Path $repoRoot "temp/input_demo_runtime_smoke/$DataEdition"
+$outRoot = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $repoRoot "temp/input_demo_runtime_smoke/$DataEdition" }
 
 function Write-SmokeConfig {
     param([string]$Path)
@@ -222,8 +223,8 @@ function Invoke-ReplaySmoke {
     $startInfo.FileName = $sandboxExe
     $startInfo.WorkingDirectory = $fixtureDir
     $startInfo.UseShellExecute = $false
-    $startInfo.RedirectStandardOutput = $false
-    $startInfo.RedirectStandardError = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
     $quotedArgs = $launchArgs | ForEach-Object {
         if ($_ -match '[\s"]') {
             '"' + ($_ -replace '"', '\"') + '"'
@@ -236,6 +237,9 @@ function Invoke-ReplaySmoke {
     if (-not $process) {
         throw "Failed to start $GameName replay smoke process"
     }
+
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
 
     # The replay result precedes RNG trace publication during replay teardown
     # Wait for all declared RNG events before terminating the menu process
@@ -262,20 +266,31 @@ function Invoke-ReplaySmoke {
         Start-Sleep -Milliseconds 100
     }
 
-    if (-not $outputsReady) {
-        if (-not $process.HasExited) {
-            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+    # A completed result must not conceal a native failure during teardown
+    $naturalExit = $process.HasExited
+    if (-not $naturalExit) {
+        try { $process.Kill() } catch {
+            if (-not $process.HasExited) { throw }
+            $naturalExit = $true
         }
-        if ($process.HasExited -and $process.ExitCode -ne 0) {
-            $argText = ($launchArgs | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' '
-            throw "$GameName replay smoke exited with code $($process.ExitCode)`nRepro: $sandboxExe $argText"
-        }
-        try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-        throw "Incomplete $GameName replay smoke outputs after waiting up to $TimeoutSeconds seconds (result, state trace and complete RNG trace required)"
     }
-
-    if (-not $process.HasExited) {
-        try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+    $process.WaitForExit()
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
+    [IO.File]::WriteAllText((Join-Path $actualResultDir 'stdout.log'), $stdout)
+    [IO.File]::WriteAllText((Join-Path $actualResultDir 'stderr.log'), $stderr)
+    $diagnostics = $stdout + "`n" + $stderr
+    foreach ($log in @(Get-ChildItem -LiteralPath $fixtureDir, (Split-Path $sandboxExe) -File -Filter '*.txt')) {
+        $diagnostics += "`n" + [IO.File]::ReadAllText($log.FullName)
+    }
+    if ($diagnostics -match 'AddressSanitizer|LeakSanitizer|runtime error:') {
+        throw "$GameName replay emitted sanitizer diagnostics; see $actualResultDir"
+    }
+    if ($naturalExit -and $process.ExitCode -ne 0) {
+        throw "$GameName replay smoke exited with code $($process.ExitCode); see $actualResultDir"
+    }
+    if (-not $outputsReady) {
+        throw "Incomplete $GameName replay smoke outputs after waiting up to $TimeoutSeconds seconds (result, state trace and complete RNG trace required)"
     }
 
     $expected = Get-ExpectedResultFromDemo $demoPath

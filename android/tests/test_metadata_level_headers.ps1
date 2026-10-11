@@ -6,7 +6,9 @@ param(
     [string]$D1DataDir,
     [string]$D2DataDir,
     [string]$D1Exe,
-    [string]$D2Exe
+    [string]$D2Exe,
+    [string]$OutputDirectory,
+    [switch]$KeepArtifacts
 )
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -15,8 +17,13 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
 . (Join-Path $repoRoot 'android/helpers/standard_game_data.ps1')
 . (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
-$root = Join-Path $repoRoot ('android/temp/metadata-level-header-test/run_' + [guid]::NewGuid().ToString('N'))
-& (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $root -DirectoryPrefix run_
+$root = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $repoRoot ('android/temp/metadata-level-header-test/run_' + [guid]::NewGuid().ToString('N')) }
+if ($OutputDirectory) {
+    if (Test-Path -LiteralPath $root) { throw "Use a new output directory: $root" }
+    & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $root
+} else {
+    & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $root -DirectoryPrefix run_
+}
 New-Item -ItemType Directory -Path $root -Force | Out-Null
 $fixtureLock = $null
 $passed = $false
@@ -84,6 +91,6 @@ try {
     Write-Host "PASS native metadata $DataEdition $($engines -join '/') rejects malformed headers and preserves worker state"
 } finally {
     if ($fixtureLock) { $fixtureLock.Dispose() }
-    if ($passed) { Remove-Item -LiteralPath $root -Recurse -Force }
-    else { Write-Host "Metadata header failure diagnostics: $root" }
+    if ($passed -and -not $KeepArtifacts) { Remove-Item -LiteralPath $root -Recurse -Force }
+    else { Write-Host "Metadata header diagnostics: $root" }
 }
