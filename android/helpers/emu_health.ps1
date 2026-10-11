@@ -8,9 +8,12 @@ param(
     [string]$AvdName,
     [string]$GpuRenderer = "host",
     [switch]$Headless,
+    [switch]$SoftwareCpu = ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1"),
     [string]$PreferredSerial = $env:ANDROID_SERIAL,
     [switch]$ForceRestart
 )
+
+if ($SoftwareCpu -and -not $PSBoundParameters.ContainsKey('TimeoutSeconds')) { $TimeoutSeconds = 1200 }
 
 $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot "test_helpers.ps1")
@@ -22,7 +25,7 @@ if (-not ($Restart -and $ForceRestart) -and (Test-EmulatorHealthy -Serial $Prefe
     exit 0
 }
 if (-not $Restart) {
-    if ($Wait -and (Wait-EmulatorBootComplete -Serial $PreferredSerial -TimeoutSeconds $TimeoutSeconds)) { exit 0 }
+    if ($Wait -and (Wait-EmulatorBootComplete -Serial $PreferredSerial -TimeoutSeconds $TimeoutSeconds -AdbTimeoutSeconds $(if ($SoftwareCpu) { 30 } else { 5 }) -RecoverSharedStorage:$SoftwareCpu)) { exit 0 }
     Write-Host "UNHEALTHY ($PreferredSerial)"
     exit 1
 }
@@ -43,7 +46,7 @@ if (-not (Stop-ManagedEmulator -Serial $PreferredSerial)) {
     Write-Host "Could not stop $PreferredSerial"
     exit 1
 }
-if (Start-ManagedEmulator -AvdName $AvdName -Serial $PreferredSerial -GpuRenderer $GpuRenderer -Headless:$Headless -BootTimeoutSeconds $TimeoutSeconds) {
+if (Start-ManagedEmulator -AvdName $AvdName -Serial $PreferredSerial -GpuRenderer $GpuRenderer -Headless:$Headless -SoftwareCpu:$SoftwareCpu -BootTimeoutSeconds $TimeoutSeconds) {
     Write-Host "RESTARTED_AND_HEALTHY ($PreferredSerial)"
     exit 2
 }

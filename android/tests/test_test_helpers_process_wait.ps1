@@ -30,7 +30,7 @@ if ($helperSource -notmatch 'PASS \(file-based after process exit') {
     throw 'Launcher monitoring does not consume a terminal result before process-exit failure'
 }
 if ($helperSource -notmatch 'function Test-AppPrivateStorageReady' -or
-    $helperSource -notmatch 'Wait-EmulatorReadyForTests -TimeoutSeconds 30') {
+    $helperSource -notmatch 'Wait-EmulatorReadyForTests -TimeoutSeconds \(Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher\)') {
     throw 'Emulator recovery does not validate app-private storage readiness'
 }
 if ($helperSource -notmatch '\$displayedLogLines\.Add\(\$trimmedLine\)') {
