@@ -76,14 +76,15 @@ static void test_coop_pickup_rewards(const char *output)
 								if (item.weapon != VULCAN_INDEX)
 									require(Players[1].energy == (reward ? 112 : 100) * F1_0, "duplicate energy depends on every included peer's inventory");
 								require(sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX), "duplicate rewards do not consume SIM or FX RNG");
+								// Copy packed scalar fields before JSON binds forwarding references
 								trace.push_back({ { "case", { edition, item.id, mode, host_observer, subject, phase, missing } },
 								                  { "used", used },
-								                  { "energy", Players[1].energy },
-								                  { "ammo", Players[1].primary_ammo[VULCAN_INDEX] },
-								                  { "remaining_ammo", pickup.ctype.powerup_info.count },
-								                  { "score", Players[1].score },
-								                  { "flags", Players[1].flags },
-								                  { "weapons", Players[1].primary_weapon_flags },
+								                  { "energy", static_cast<fix>(Players[1].energy) },
+								                  { "ammo", static_cast<ushort>(Players[1].primary_ammo[VULCAN_INDEX]) },
+								                  { "remaining_ammo", static_cast<int>(pickup.ctype.powerup_info.count) },
+								                  { "score", static_cast<int>(Players[1].score) },
+								                  { "flags", static_cast<uint>(Players[1].flags) },
+								                  { "weapons", static_cast<unsigned>(Players[1].primary_weapon_flags) },
 								                  { "laser", Players[1].laser_level } });
 							}
 	}
