@@ -56,6 +56,7 @@ if ($DataEdition -eq 'shareware') {
 $observed = [Collections.Generic.List[object]]::new()
 
 # Exercise the native guard even if a caller ignores the first retirement flag
+# EOF must terminate a headless worker even with DISPLAY set (no modal exit warnings)
 $worker = New-MetadataWorker -Executable $Executable
 try {
     $outputTask = $worker.Process.StandardOutput.ReadToEndAsync()
@@ -69,7 +70,6 @@ try {
     $worker.Process.StandardInput.Close()
     if (-not $worker.Process.WaitForExit($TimeoutSeconds * 1000)) { throw 'Native initialization guard hung' }
     $text = $outputTask.GetAwaiter().GetResult()
-    $text | Set-Content -LiteralPath (Join-Path $OutputDirectory 'native-guard.log') -Encoding utf8
     $results = @($text -split '\r?\n' | Where-Object { $_.StartsWith("DXXMETA`t") } | ForEach-Object { $_.Substring(8) | ConvertFrom-Json })
     if ($worker.Process.ExitCode -ne 0 -or $results.Count -ne 2 -or
         -not $results[0].worker_restart_required -or -not $results[1].worker_restart_required -or
@@ -78,6 +78,9 @@ try {
     }
 } finally {
     Stop-MetadataWorkerProcess -Worker $worker
+    # Retain shutdown diagnostics on success and timeout, including sanitizer output
+    $outputTask.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $OutputDirectory 'native-guard.log') -Encoding utf8
+    $worker.ErrorTask.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $OutputDirectory 'native-guard.stderr.log') -Encoding utf8
 }
 $worker = New-MetadataWorker -Executable $Executable
 
