@@ -1,0 +1,85 @@
+{
+    "schema": 1,
+    "cases": [
+        {
+            "game": "d1",
+            "scenario": "flight",
+            "demo": "d1-public-flight.dximdemo",
+            "oracle": "d1-public-flight.oracle.json",
+            "actions": {
+                "target": -1,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": -1,
+                "wall_contact_frames": 51
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "pickup",
+            "demo": "d1-public-pickup.dximdemo",
+            "oracle": "d1-public-pickup.oracle.json",
+            "actions": {
+                "target": 50,
+                "target_id": 1,
+                "target_signature": 51,
+                "action_frame": 228,
+                "wall_contact_frames": 0,
+                "pickup_gain_frame": 227
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "door",
+            "demo": "d1-public-door.dximdemo",
+            "oracle": "d1-public-door.oracle.json",
+            "actions": {
+                "target": 9,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 365,
+                "wall_contact_frames": 0
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "flight",
+            "demo": "d2-public-flight.dximdemo",
+            "oracle": "d2-public-flight.oracle.json",
+            "actions": {
+                "target": -1,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": -1,
+                "wall_contact_frames": 51
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "pickup",
+            "demo": "d2-public-pickup.dximdemo",
+            "oracle": "d2-public-pickup.oracle.json",
+            "actions": {
+                "target": 99,
+                "target_id": 2,
+                "target_signature": 100,
+                "action_frame": 114,
+                "wall_contact_frames": 0,
+                "pickup_gain_frame": 113
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "door",
+            "demo": "d2-public-door.dximdemo",
+            "oracle": "d2-public-door.oracle.json",
+            "actions": {
+                "target": 76,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 89,
+                "wall_contact_frames": 0
+            }
+        }
+    ]
+}

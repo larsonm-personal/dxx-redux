@@ -209,6 +209,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_combined_package_identity'
             'test_d1_network_assets'
             'test_d1_wall_blast_save'
+            'test_compact_public_replays'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'
             # Full semantic coverage is still incomplete; retain a nonzero gate

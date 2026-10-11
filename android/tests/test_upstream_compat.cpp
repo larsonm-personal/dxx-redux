@@ -11302,6 +11302,8 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 	std::puts("PASS: mission movie dependency scan");
 }
 
+#include "public_level_replay_fixture.hpp"
+
 int main(int argc, char **argv)
 {
 	(void) argc;
@@ -11309,6 +11311,10 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
+		capture_public_level_replay(argv[2], argv[3]);
+		return 0;
+	}
 	if ((argc == 2 || argc == 3) && std::strcmp(argv[1], "--mission-movies") == 0) {
 		test_mission_movie_scan(argc == 3 ? argv[2] : nullptr);
 		PHYSFS_deinit();

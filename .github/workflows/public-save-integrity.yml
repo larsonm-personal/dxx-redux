@@ -1,4 +1,4 @@
-name: Public save integrity
+name: Public runtime integrity
 
 on:
   pull_request:
@@ -13,9 +13,9 @@ concurrency:
 
 jobs:
   save-integrity:
-    name: Linux public native save integrity
+    name: Linux public native save and replay integrity
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       SDL_AUDIODRIVER: dummy
       SDL_VIDEODRIVER: x11
@@ -48,7 +48,7 @@ jobs:
             cmake -S "$game" -B "build${game}-save" -G Ninja \
               -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
               -DCMAKE_C_FLAGS_DEBUG="-O0 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g1"
-            cmake --build "build${game}-save" --target test_upstream_compat --parallel 4
+            cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" --parallel 4
           done
 
       - name: Prepare pinned public shareware data
@@ -64,6 +64,23 @@ jobs:
             -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat"
 
+      - name: Check compact public replay admission
+        timeout-minutes: 2
+        run: |
+          python3 android/tests/test_compact_public_replay.py
+          python3 android/tests/test_run_compact_public_replays.py
+          python3 android/tests/test_compact_public_gameplay_parity.py
+          pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
+          pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
+
+      - name: Replay compact public level starts
+        timeout-minutes: 20
+        run: |
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' pwsh -NoProfile -File android/tests/test_compact_public_replays.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
+            -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
+            -Output "$PWD/temp/public-replay-ci"
+
       - name: Keep save integrity evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -71,6 +88,7 @@ jobs:
           name: public-save-integrity
           path: |
             temp/wall-blast-save-shareware/
+            temp/public-replay-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
