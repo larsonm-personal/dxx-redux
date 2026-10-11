@@ -8,6 +8,7 @@
 [
     {
         "_info": {
+            "_shareware": true,
             "games": ["d2"],
             "_deps": [
                 {

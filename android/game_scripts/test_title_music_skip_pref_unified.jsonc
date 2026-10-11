@@ -5,6 +5,7 @@
 [
     {
         "_info": {
+            "_shareware": true,
             "games": ["d1", "d2"],
             "vars": {
                 "d1": { "GAME": "d1", "GAME_NUM": "1" },

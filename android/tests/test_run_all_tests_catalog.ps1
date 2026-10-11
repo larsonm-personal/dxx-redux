@@ -41,7 +41,7 @@ try {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
-        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_secret_area_data_profiles')) {
+        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles')) {
             $entry = @($catalog.tests | Where-Object name -eq $name)
             if ($entry.Count -ne 1 -or $entry[0].type -ne 'ps1' -or $entry[0].requires -ne 'none' -or
                 $name -notin (Get-TestSuiteCoveragePolicy).core) {
