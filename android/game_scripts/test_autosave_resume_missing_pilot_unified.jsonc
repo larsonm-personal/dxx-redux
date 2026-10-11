@@ -2,6 +2,10 @@
 [
     {
         "_info": {
+            "_shareware": true,
+            "_shareware_vars": {
+                "d2": { "SAVE_PATH": "Players/save_sets/single/player/d2demo/player.sg8" },
+            },
             "games": ["d1", "d2"],
             "vars": {
                 "d1": {

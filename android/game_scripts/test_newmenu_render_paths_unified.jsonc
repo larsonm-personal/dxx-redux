@@ -5,6 +5,7 @@
 [
     {
         "_info": {
+            "_shareware": true,
             "games": ["d1", "d2"],
             "vars": {
                 "d1": { "MISSION": "First Strike", "GAME_NUM": "1" },

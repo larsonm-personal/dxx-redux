@@ -2,6 +2,7 @@
 [
     {
         "_info": {
+            "_shareware": true,
             "_standalone": false,
             "_owner": "test_ogl_runtime_texture_options_unified",
             "games": ["d1", "d2"],

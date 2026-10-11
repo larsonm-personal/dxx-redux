@@ -1,7 +1,6 @@
 // TEST: Death state via the normal engine damage path
 // Verifies player_dead introspection after launching a real level.
-//   D1: Level 11 of "First Strike" -- instant threat
-//   D2: Level 24 of "Counterstrike" -- mid-game level that loads quickly
+// Public profile: level 1 of each demo; explicit retail keeps D1 L11 and D2 L24
 //
 // Uses _info.vars for game-specific mission name, level number, and
 // level input keys. Steps with "when" are only run for that game.
@@ -15,6 +14,11 @@
 [
     {
         "_info": {
+            "_shareware": true,
+            "_shareware_vars": {
+                "d1": { "LEVEL": "1", "LEVEL_KEY_1": "0", "LEVEL_KEY_2": "1" },
+                "d2": { "LEVEL": "1", "LEVEL_KEY_1": "0", "LEVEL_KEY_2": "1" },
+            },
             "games": ["d1", "d2"],
             "vars": {
                 "d1": {

@@ -1063,15 +1063,85 @@ function Try-ExtractLocalGameDataSources {
     return $ranAny
 }
 
+function Get-TestScriptDataEdition {
+    param(
+        [Parameter(Mandatory)][string]$ScriptPath,
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
+    )
+    $info = Get-TestScriptInfo -ScriptPath $ScriptPath
+    $supportsShareware = $info -and $info.PSObject.Properties['_shareware'] -and $info._shareware -eq $true
+    if ($supportsShareware -and (-not $info.PSObject.Properties['_deps'] -or -not $info._deps)) {
+        throw "Audited shareware scripts must retain explicit retail dependencies: $ScriptPath"
+    }
+    if ($DataEdition -eq 'shareware' -and -not $supportsShareware) {
+        throw "Script has not been audited for public shareware: $ScriptPath"
+    }
+    if ($DataEdition -eq 'default') {
+        if ($supportsShareware) { return 'shareware' }
+        return 'retail'
+    }
+    return $DataEdition
+}
+
+function Get-SharewareAutomationDeps {
+    . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+    # Keep both games present so D2 retains its mission picker
+    foreach ($game in @('d1', 'd2')) {
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $game
+        foreach ($file in $config.RequiredHashes) {
+            [pscustomobject]@{ file = $file.File; sha256 = $file.Sha256 }
+        }
+    }
+}
+
+function Initialize-SharewareAutomationData {
+    . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+    # Validate every host input before touching the disposable test set
+    $index = @{}
+    foreach ($game in @('d1', 'd2')) {
+        $directory = Resolve-SharewareTestData -RepoRoot $script:REPO_ROOT -Game $game
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $game
+        foreach ($file in $config.RequiredHashes) { $index[$file.Sha256] = Join-Path $directory $file.File }
+    }
+    Clear-AutomationDataSet
+    $script:GameDataIndex = $index
+}
+
+function Clear-AutomationDataSet {
+    Stop-AppAndWait
+    # Do not let a previous edition's archives or loose levels shadow pinned data
+    if ($script:DEFAULT_SET_DIR -cne 'files/imported/sets/default') {
+        throw 'Unexpected automation data target; refusing to clear it'
+    }
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-rf', $script:DEFAULT_SET_DIR) | Out-Null
+    $remaining = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'ls', $script:DEFAULT_SET_DIR) -Seconds 10 -IncludeStandardError
+    if ($remaining -notmatch 'No such file or directory') { throw "Could not isolate automation device data: $remaining" }
+}
+
+function Assert-AutomationDeviceData {
+    param([Parameter(Mandatory)][array]$Deps)
+    foreach ($dep in $Deps) {
+        $path = "$($script:DEFAULT_SET_DIR)/$($dep.file)"
+        $hash = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', $path) -Seconds 30
+        if (-not $hash -or ($hash -split '\s+')[0] -cne $dep.sha256) {
+            throw "Staged automation data failed SHA256 verification: $path"
+        }
+    }
+}
+
 function Get-ScriptDeps {
     # Read a .jsonc test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
     # When -Vars is provided, ${VAR} placeholders in file and sha256 fields are replaced.
     param(
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [hashtable]$Vars = @{}
+        [hashtable]$Vars = @{},
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
     )
     if (-not (Test-Path $ScriptPath)) { return $null }
+    if ((Get-TestScriptDataEdition -ScriptPath $ScriptPath -DataEdition $DataEdition) -eq 'shareware') {
+        return @(Get-SharewareAutomationDeps)
+    }
     $raw = Get-Content $ScriptPath -Raw
     try {
         $arr = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath |
@@ -1452,6 +1522,13 @@ function Ensure-GameDataOnDevice {
     $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "$setDir/") -Seconds 5
     $onDevice = @()
     if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
+
+    # This legacy entry point always requests retail data. Public D1 uses the
+    # same filenames, so filename presence alone cannot validate a prior demo run
+    if ('d2demo.hog' -in $onDevice) {
+        Clear-AutomationDataSet
+        $onDevice = @()
+    }
 
     $missing = $needed | Where-Object { $_ -notin $onDevice }
     if (-not $missing -or $missing.Count -eq 0) { return $true }
@@ -2204,7 +2281,8 @@ function Resolve-TestScript {
         [string]$ScriptPath,
         [Parameter(Mandatory = $true)]
         [string]$GameId,
-        [hashtable]$Params = @{}
+        [hashtable]$Params = @{},
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
     )
     # Fixtures use optional JSON properties; do not inherit a caller's strict property checks
     Set-StrictMode -Off
@@ -2241,6 +2319,19 @@ function Resolve-TestScript {
                         $vars[$prop.Name] = $prop.Value
                     }
                 }
+            }
+        }
+    }
+
+    if ((Get-TestScriptDataEdition -ScriptPath $ScriptPath -DataEdition $DataEdition) -eq 'shareware') {
+        . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+        Set-StrictMode -Off
+        $assetGame = if ($vars['GAME'] -eq 'd1-in-d2') { 'd1' } else { $GameId }
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $assetGame
+        $vars['MISSION'] = $config.MissionTitle
+        if ($info._shareware_vars -and $info._shareware_vars.$GameId) {
+            foreach ($property in $info._shareware_vars.$GameId.PSObject.Properties) {
+                $vars[$property.Name] = $property.Value
             }
         }
     }

@@ -3,7 +3,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('d1', 'd2')][string]$Game,
-    [string]$Serial
+    [string]$Serial,
+    [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,7 +22,7 @@ function Invoke-TextureCase([string]$Name, [string]$Engine, [object[]]$Steps) {
     $log = Join-Path $output "$Engine-$Name.log"
     ConvertTo-Json -InputObject $Steps -Depth 35 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
     Adb -AdbArgs @('logcat', '-c') | Out-Null
-    & pwsh -NoProfile -NonInteractive -File "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $path -Game $Engine -Serial $Serial -LeaveRunning -TimeoutSeconds 300 *> $log
+    & pwsh -NoProfile -NonInteractive -File "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $path -Game $Engine -Serial $Serial -DataEdition $DataEdition -LeaveRunning -TimeoutSeconds 300 *> $log
     $result = $LASTEXITCODE
     Get-Content -LiteralPath $log | Select-String '^\[.*\] (PASS|FAIL)|SCRIPT_RESULT:' | Select-Object -Last 6 | ForEach-Object { Write-Output $_.Line }
     if ($result -ne 0) { throw "$Engine $Name failed: $log" }

@@ -186,3 +186,8 @@ separate tests on Windows and Linux. SDK fixtures exercise standalone retention
 handoff, failed or partial installs, full-bootstrap deferral and Windows shell
 re-entry. `test_sdk_writer_lock` runs on both hosts and checks writer exclusion,
 contention, exit-code propagation, timeouts and PowerShell AVD argument forwarding
+
+## Public shareware automation
+
+See [public automation profiles](SHAREWARE_AUTOMATION.md) for the audited D1/D2
+subset, isolated fixture setup, explicit retail fallback and verification limits.
