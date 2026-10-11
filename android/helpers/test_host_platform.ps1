@@ -240,7 +240,8 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
     function Test-RegressionCMakeCacheNeedsFreshConfigure {
         param(
             [Parameter(Mandatory)][string]$BuildDir,
-            [Parameter(Mandatory)][string]$ExpectedTriplet
+            [Parameter(Mandatory)][string]$ExpectedTriplet,
+            [string]$ExpectedBuildType
         )
 
         $cachePath = Join-RegressionPath $BuildDir "CMakeCache.txt"
@@ -249,6 +250,19 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         }
 
         $cacheText = Get-Content -Raw -LiteralPath $cachePath
+        if ($ExpectedBuildType -and $cacheText -match 'CMAKE_BUILD_TYPE:STRING=([^\r\n]+)' -and $matches[1] -ne $ExpectedBuildType) {
+            # FindSDL/FindSDL_mixer cache one configuration's library paths
+            Write-Host "Refreshing CMake cache: build type is '$($matches[1])', expected '$ExpectedBuildType'"
+            return $true
+        }
+        if ($ExpectedBuildType -and $cacheText -match 'SDL_MIXER_LIBRARY:FILEPATH=([^\r\n]+)') {
+            $library = $matches[1] -replace '\\', '/'
+            if ($library -match '/vcpkg_installed/[^/]+/(debug/)?lib/' -and
+                ([bool]$matches[1] -ne ($ExpectedBuildType -eq 'Debug'))) {
+                Write-Host 'Refreshing CMake cache: SDL_mixer library belongs to a different build type'
+                return $true
+            }
+        }
         if ($cacheText -match "VCPKG_TARGET_TRIPLET:STRING=([^\r\n]+)" -and $matches[1] -ne $ExpectedTriplet) {
             Write-Host "Refreshing CMake cache: vcpkg triplet is '$($matches[1])', expected '$ExpectedTriplet'"
             return $true
@@ -263,6 +277,29 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         }
 
         return $false
+    }
+
+    function Sync-RegressionWindowsRuntimeLibraries {
+        param(
+            [Parameter(Mandatory)][string]$BuildDir,
+            [Parameter(Mandatory)][string]$Triplet,
+            [Parameter(Mandatory)][string]$BuildType
+        )
+
+        $runtimePart = if ($BuildType -eq 'Debug') { 'debug/bin' } else { 'bin' }
+        $runtimeDir = Join-RegressionPath $BuildDir 'vcpkg_installed' $Triplet $runtimePart
+        foreach ($output in @('main', 'tests')) {
+            $outputDir = Join-Path $BuildDir $output
+            if (-not (Test-Path -LiteralPath $outputDir)) { continue }
+            foreach ($deployed in Get-ChildItem -LiteralPath $outputDir -Filter '*.dll' -File) {
+                $source = Join-Path $runtimeDir $deployed.Name
+                # vcpkg app-local deployment only replaces older files; Debug DLLs can be newer
+                if ((Test-Path -LiteralPath $source -PathType Leaf) -and
+                    (Get-FileHash -LiteralPath $source).Hash -ne (Get-FileHash -LiteralPath $deployed.FullName).Hash) {
+                    Copy-Item -LiteralPath $source -Destination $deployed.FullName -Force
+                }
+            }
+        }
     }
 
     function Invoke-RegressionCMakeConfigure {

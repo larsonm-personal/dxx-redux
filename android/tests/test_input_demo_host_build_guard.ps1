@@ -45,6 +45,32 @@ try {
     $executablePath = Join-Path $caseRoot 'buildd2\main\test.exe'
     New-Item -ItemType Directory -Path (Split-Path $executablePath -Parent) -Force | Out-Null
     [System.IO.File]::WriteAllText($executablePath, 'test')
+    $cacheDirectory = Join-Path $caseRoot 'buildd2'
+    $cachePath = Join-Path $cacheDirectory 'CMakeCache.txt'
+    foreach ($configuration in @('Debug', 'RelWithDebInfo')) {
+        $libraryPart = if ($configuration -eq 'Debug') { 'debug/lib' } else { 'lib' }
+        [IO.File]::WriteAllText($cachePath, "CMAKE_BUILD_TYPE:STRING=$configuration`nVCPKG_TARGET_TRIPLET:STRING=x86-windows`nSDL_MIXER_LIBRARY:FILEPATH=C:/fixture/vcpkg_installed/x86-windows/$libraryPart/SDL_mixer.lib`n")
+        Assert-True (-not (Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $cacheDirectory -ExpectedTriplet x86-windows -ExpectedBuildType $configuration)) 'Matching build configuration should preserve the CMake cache'
+        $other = if ($configuration -eq 'Debug') { 'RelWithDebInfo' } else { 'Debug' }
+        Assert-True (Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $cacheDirectory -ExpectedTriplet x86-windows -ExpectedBuildType $other) 'Changing build configuration must rediscover SDL libraries'
+        [IO.File]::WriteAllText($cachePath, ([IO.File]::ReadAllText($cachePath).Replace("CMAKE_BUILD_TYPE:STRING=$configuration", "CMAKE_BUILD_TYPE:STRING=$other")))
+        Assert-True (Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $cacheDirectory -ExpectedTriplet x86-windows -ExpectedBuildType $other) 'An already switched cache must reject libraries from the old configuration'
+        $runtimePart = if ($configuration -eq 'Debug') { 'debug/bin' } else { 'bin' }
+        $runtimeDir = Join-Path $cacheDirectory "vcpkg_installed/x86-windows/$runtimePart"
+        New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null
+        [IO.File]::WriteAllText((Join-Path $runtimeDir 'SDL.dll'), $configuration)
+        foreach ($output in @('main', 'tests')) {
+            $outputDir = Join-Path $cacheDirectory $output
+            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+            $deployed = Join-Path $outputDir 'SDL.dll'
+            [IO.File]::WriteAllText($deployed, $other)
+            (Get-Item -LiteralPath $deployed).LastWriteTime = (Get-Date).AddDays(1)
+        }
+        Sync-RegressionWindowsRuntimeLibraries -BuildDir $cacheDirectory -Triplet x86-windows -BuildType $configuration
+        foreach ($output in @('main', 'tests')) {
+            Assert-True ([IO.File]::ReadAllText((Join-Path $cacheDirectory "$output/SDL.dll")) -eq $configuration) 'Configuration switch must replace a newer DLL from the previous configuration'
+        }
+    }
     $stampPath = Get-InputDemoBuildStampPath -RepoRoot $caseRoot -GameName 'd2'
     New-Item -ItemType Directory -Path (Split-Path $stampPath -Parent) -Force | Out-Null
     $revision = Get-InputDemoSourceRevision -RepoRoot $caseRoot
