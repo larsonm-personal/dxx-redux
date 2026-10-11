@@ -1,6 +1,8 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
-    [Parameter(Mandatory)][string]$DataDirectory,
+    [string]$DataDirectory,
+    [ValidateSet('shareware', 'retail')][string]$DataEdition = 'shareware',
+    [string]$D2DataDirectory,
     [ValidateSet('d1', 'd2')][string]$Game = 'd1',
     [ValidateSet('d1', 'd2')][string]$ContentGame,
     [switch]$CheckProfileSwitch,
@@ -13,16 +15,44 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repo 'android/helpers/host_metadata_worker.ps1')
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repo "temp/native-metadata-worker-$Game" }
+if (-not $ContentGame) { $ContentGame = $Game }
+if ($CheckProfileSwitch -and ($Game -ne 'd2' -or $ContentGame -ne 'd1')) { throw 'Profile switch requires imported D1 with both base games present' }
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repo "temp/native-metadata-worker-$DataEdition-$Game-$ContentGame" }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 & (Join-Path $repo 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $OutputDirectory
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $emptyDirectory = Join-Path $OutputDirectory 'empty'
 New-Item -ItemType Directory -Force $emptyDirectory | Out-Null
-$DataDirectory = (Resolve-Path -LiteralPath $DataDirectory).Path
 $Executable = (Resolve-Path -LiteralPath $Executable).Path
-if (-not $ContentGame) { $ContentGame = $Game }
-$level = if ($ContentGame -eq 'd1') { 'level01.rdl' } else { 'd2leva-1.rl2' }
+if ($DataEdition -eq 'shareware') {
+    . (Join-Path $repo 'android/helpers/shareware_test_data.ps1')
+    $DataDirectory = Resolve-SharewareTestData -RepoRoot $repo -Game $ContentGame -DataDir $DataDirectory
+    $level = (Get-SharewareTestGameConfig -RepoRoot $repo -Game $ContentGame).FirstLevel
+    if ($CheckProfileSwitch) {
+        $D2DataDirectory = Resolve-SharewareTestData -RepoRoot $repo -Game d2 -DataDir $D2DataDirectory
+        # Keep data_dir identical so this exercises content-profile retirement,
+        # not just the separate data-directory-change guard
+        $combined = Join-Path $OutputDirectory ('profile-switch-data-' + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $combined | Out-Null
+        foreach ($content in @('d1', 'd2')) {
+            $source = if ($content -eq 'd1') { $DataDirectory } else { $D2DataDirectory }
+            $config = Get-SharewareTestGameConfig -RepoRoot $repo -Game $content
+            foreach ($file in $config.RequiredFiles) {
+                Copy-Item -LiteralPath (Join-Path $source $file) -Destination $combined
+            }
+            Assert-SharewareTestDataDirectory -Config $config -DataDir $combined -AllowExtraFiles | Out-Null
+        }
+        $DataDirectory = $combined
+        $D2DataDirectory = $combined
+    }
+    $d2Level = (Get-SharewareTestGameConfig -RepoRoot $repo -Game d2).FirstLevel
+} else {
+    if (-not $DataDirectory) { throw 'Retail metadata tests require -DataDirectory' }
+    $DataDirectory = (Resolve-Path -LiteralPath $DataDirectory).Path
+    if (-not $D2DataDirectory) { $D2DataDirectory = $DataDirectory }
+    $level = if ($ContentGame -eq 'd1') { 'level01.rdl' } else { 'd2leva-1.rl2' }
+    $d2Level = 'd2leva-1.rl2'
+}
 $observed = [Collections.Generic.List[object]]::new()
 
 # Exercise the native guard even if a caller ignores the first retirement flag
@@ -53,6 +83,9 @@ $worker = New-MetadataWorker -Executable $Executable
 
 function Request([string]$Name, [string]$Data, [string]$LevelFile, [string]$Content = $ContentGame,
     [string]$ExtraDirectory = '', [string]$MissionName = '') {
+    if (-not $MissionName -and $Content -eq 'd2' -and $DataEdition -eq 'shareware') {
+        $MissionName = (Get-SharewareTestGameConfig -RepoRoot $repo -Game d2).Mission
+    }
     if (-not $MissionName -and $Content -eq 'd1' -and $Game -eq 'd2') { $MissionName = 'descent' }
     $result = Invoke-MetadataWorker -Worker $worker -Request ([ordered]@{
             schema = 'dxx-level-metadata-request-v1'; request_id = $Name; game = $Game
@@ -86,7 +119,7 @@ try {
     }
     if ($CheckProfileSwitch) {
         if ($Game -ne 'd2' -or $ContentGame -ne 'd1') { throw 'Profile switch requires imported D1 with both base games present' }
-        $d2 = Request 'switch-d2' $DataDirectory 'd2leva-1.rl2' 'd2'
+        $d2 = Request 'switch-d2' $D2DataDirectory $d2Level 'd2'
         if ($d2.status -ne 'ok' -or $worker.Process.Id -eq $healthyPid) { throw 'D2 profile switch did not recover automatically' }
         $d2Pid = $worker.Process.Id
         $d1 = Request 'switch-back-d1' $DataDirectory $level 'd1'
@@ -112,7 +145,7 @@ try {
             throw 'Custom definitions leaked into the next stock request'
         }
     }
-    Write-Output "PASS engine=$Game content=$ContentGame metadata initialization failure, recovery, request failure and healthy reuse"
+    Write-Output "PASS edition=$DataEdition engine=$Game content=$ContentGame metadata initialization failure, recovery, request failure and healthy reuse"
 } finally {
     $observed | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'observed.json') -Encoding utf8
     Stop-MetadataWorkerProcess -Worker $worker
