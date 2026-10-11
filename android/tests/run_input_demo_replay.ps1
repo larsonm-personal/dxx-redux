@@ -14,6 +14,7 @@ param(
     [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [Alias('HogDir')]
     [string]$DataDir,
+    [ValidateSet('retail', 'shareware')][string]$DataEdition = 'retail',
     [string]$Pilot,
     [switch]$NoRender,
     [switch]$PreferHeadlessConsole,
@@ -382,6 +383,14 @@ function Get-DemoApproximateReplayFps {
 function Get-GameConfig {
     param([string]$Name)
 
+    if ($DataEdition -eq 'shareware') {
+        . (Join-Path (Split-Path $PSScriptRoot) 'helpers/shareware_test_data.ps1')
+        $public = Get-SharewareTestGameConfig -RepoRoot $repoRoot -Game $Name
+        $public.Exe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName $Name
+        $public.MaxFps = if ($Name -eq 'd1') { 200 } else { 1000 }
+        return $public
+    }
+
     switch ($Name) {
         'd1' {
             return @{
@@ -579,6 +588,11 @@ function Resolve-DataDir {
         [string]$RequestedDataDir
     )
 
+    if ($DataEdition -eq 'shareware') {
+        . (Join-Path (Split-Path $PSScriptRoot) 'helpers/shareware_test_data.ps1')
+        $contentGame = if ($D1InD2) { 'd1' } else { $Config.Name }
+        return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $contentGame -DataDir $RequestedDataDir
+    }
     # Paired captures supply a staged bank and must not consult live index generators
     if ($RequestedDataDir -and (Test-DataDirMatchesGame -Path $RequestedDataDir -Config $Config)) {
         return (Resolve-Path -LiteralPath $RequestedDataDir).Path

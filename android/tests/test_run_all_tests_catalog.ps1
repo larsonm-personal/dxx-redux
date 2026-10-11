@@ -76,6 +76,12 @@ try {
             'test_combined_package_identity' -notin (Get-TestSuiteCoveragePolicy).explicit) {
             throw 'Combined package inspection must remain an explicit host probe with caller-selected artifacts'
         }
+        $publicReplays = @($catalog.tests | Where-Object name -eq 'test_compact_public_replays')
+        if ($publicReplays.Count -ne 1 -or $publicReplays[0].requires -ne 'none' -or
+            $publicReplays[0].timeout_seconds -lt 1800 -or
+            'test_compact_public_replays' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Compact public replays must retain explicit host-only scheduling and their matrix timeout'
+        }
         $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
         if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {
             throw 'Graphics fault scripts must run through their recovery owner'

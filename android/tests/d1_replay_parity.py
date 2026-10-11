@@ -29,6 +29,8 @@ HARNESS_FILES = (
     "android/tests/run_input_demo_replay.ps1",
     "android/tests/input_demo_host_build_guard.ps1",
     "android/helpers/test_host_platform.ps1",
+    "android/helpers/shareware_test_data.ps1",
+    "android/helpers/verified_dependencies.ps1",
     "android/helpers/powershell_compat.ps1",
     "android/helpers/input_demo_replay_menu.ps1",
     "android/helpers/output_disk_space.ps1",

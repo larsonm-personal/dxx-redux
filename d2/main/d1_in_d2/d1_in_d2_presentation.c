@@ -146,7 +146,8 @@ int d1_in_d2_free_text(void)
 	const int owned_d1 = D1_text != NULL;
 	const int owned_d2 = D2_text_loaded;
 	int i;
-	d_free(D1_text);
+	if (D1_text)
+		d_free(D1_text);
 	/* Engine text.c retains ownership of its D2 buffer and separately allocated label */
 	if (owned_d2)
 		memcpy(Text_string, D2_strings, sizeof(D2_strings));
@@ -224,7 +225,8 @@ int d1_in_d2_read_text(const char *filename, int encoded)
 	/* Native D1 shortens this label to fit the weapon box */
 	if (!strcmp(source[116], "SPREADFIRE"))
 		strcpy(source[116], "SPREAD");
-	d_free(D1_text);
+	if (D1_text)
+		d_free(D1_text);
 	D1_text = data;
 	for (i = 0; i < N_TEXT_STRINGS; ++i) {
 		const int index = d1_text_index(i);
