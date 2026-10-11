@@ -49,7 +49,9 @@ jobs:
       - name: Prepare pinned public shareware data
         timeout-minutes: 5
         shell: pwsh
-        run: ./android/helpers/setup_shareware_test_data.ps1 -Game ${{ matrix.game }} -Download
+        run: |
+          $fixtures = if ('${{ matrix.game }}' -eq 'd2') { 'both' } else { 'd1' }
+          ./android/helpers/setup_shareware_test_data.ps1 -Game $fixtures -Download
 
       - name: Exercise real shareware replay and metadata
         timeout-minutes: 3
@@ -65,6 +67,20 @@ jobs:
             -Game "$game" -DataEdition shareware -RequireAssets \
             -"${game^^}Exe" "$PWD/build${game}-test/main/dxx-redux-${game}-headless-metadata"
 
+      - name: Check public metadata worker failure recovery
+        timeout-minutes: 3
+        run: |
+          game="${{ matrix.game }}"
+          worker="$PWD/build${game}-test/main/dxx-redux-${game}-metadata-worker"
+          pwsh -NoProfile -File android/tests/test_native_metadata_worker.ps1 \
+            -Game "$game" -DataEdition shareware -Executable "$worker"
+          pwsh -NoProfile -File android/tests/test_metadata_level_headers.ps1 \
+            -NoBuild -Game "$game" -DataEdition shareware -"${game^^}Exe" "$worker"
+          if [ "$game" = d2 ]; then
+            pwsh -NoProfile -File android/tests/test_native_metadata_worker.ps1 \
+              -Game d2 -ContentGame d1 -CheckProfileSwitch -DataEdition shareware -Executable "$worker"
+          fi
+
       - name: Keep test and configure diagnostics
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -77,5 +93,7 @@ jobs:
             build${{ matrix.game }}-test/CMakeCache.txt
             temp/input_demo_runtime_smoke/shareware/
             android/temp/secret_area_shareware_baseline/
+            temp/native-metadata-worker-*/
+            android/temp/metadata-level-header-test/
           retention-days: 3
           if-no-files-found: ignore

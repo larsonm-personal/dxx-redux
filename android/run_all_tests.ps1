@@ -649,6 +649,7 @@ $noInfraTests = @(
     "test_vertigo_metadata_checkpoints",
     "test_vertigo_metadata",
     "test_metadata_level_headers",
+    "test_native_metadata_worker",
     "test_mission_metadata_flyouts",
     "test_flyout_safety",
     "test_mission_movies",

@@ -66,6 +66,11 @@ try {
             $fovSupport.Count -ne 1 -or $fovSupport[0].owner -ne $fovOwner[0].base_name) {
             throw 'FOV demo support must run through its two-engine integration owner'
         }
+        $metadataWorker = @($catalog.tests | Where-Object name -eq 'test_native_metadata_worker')
+        if ($metadataWorker.Count -ne 1 -or $metadataWorker[0].requires -ne 'none' -or
+            'test_native_metadata_worker' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Native metadata lifecycle probe must remain an explicit host test without emulator provisioning'
+        }
         $packageProbe = @($catalog.tests | Where-Object name -eq 'test_combined_package_identity')
         if ($packageProbe.Count -ne 1 -or $packageProbe[0].requires -ne 'none' -or
             'test_combined_package_identity' -notin (Get-TestSuiteCoveragePolicy).explicit) {
