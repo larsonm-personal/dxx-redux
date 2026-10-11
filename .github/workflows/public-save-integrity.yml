@@ -36,6 +36,11 @@ jobs:
             libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri
 
+      - name: Prepare native test workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-public-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-public-deps" > dependency_base.txt
+
       - name: Check save evidence admission
         timeout-minutes: 1
         shell: pwsh
