@@ -1082,6 +1082,10 @@ static void grs_font_read(grs_font *gf, PHYSFS_file *fp)
 	gf->ft_kerndata = (ubyte *)((size_t)PHYSFSX_readInt(fp) - GRS_FONT_SIZE);
 }
 
+#ifdef __ANDROID__
+#include "android_mod_assets.h"
+#endif
+
 grs_font * gr_init_font( const char * fontname )
 {
 	static int first_time=1;
@@ -1192,6 +1196,10 @@ grs_font * gr_init_font( const char * fontname )
 	ogl_init_font(font);
 #endif
 
+
+#ifdef __ANDROID__
+	android_mod_asset_loaded("font", fontname, font->ft_w, font->ft_h);
+#endif
 	return font;
 	
 }

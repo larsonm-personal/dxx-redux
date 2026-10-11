@@ -137,6 +137,12 @@ int bitmap_index_read_n(bitmap_index *bi, int n, PHYSFS_file *fp);
 
 char* piggy_game_bitmap_name(grs_bitmap *bmp);
 int piggy_bitmap_get_flags(grs_bitmap *bmp);
+#ifdef __ANDROID__
+int piggy_bitmap_is_custom(grs_bitmap *bitmap);
+int piggy_bitmap_get_offset(int bitmap_index);
+ubyte piggy_bitmap_get_file_flags(int bitmap_index);
+void piggy_bitmap_set_file_state(int bitmap_index, int offset, ubyte flags);
+#endif
 int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capacity);
 
 #endif // _PIGGY_H

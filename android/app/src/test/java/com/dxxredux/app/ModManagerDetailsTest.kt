@@ -15,6 +15,41 @@ class ModManagerDetailsTest {
     private val patchPath = "patches/d2/ham_patch.rfc6902.json"
 
     @Test
+    fun d1LevelSurfacePatchesAreAcceptedAndConflictsRemainVisible() {
+        val filesDir = createTempDirectory("mod-d1-surfaces").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val path = "patches/d1/level_surface_patch.rfc6902.json"
+
+        fun writeSurface(
+            filename: String,
+            level: String,
+            texture: Int,
+        ) {
+            ZipOutputStream(File(modsDir, filename).outputStream()).use { zip ->
+                zip.writeEntry(
+                    path,
+                    """[
+                        {"op":"test","path":"/levels/$level/sha256","value":"source-hash"},
+                        {"op":"test","path":"/levels/$level/surfaces/134:0","value":{"tmap1":14}},
+                        {"op":"replace","path":"/levels/$level/surfaces/134:0","value":{"tmap1":$texture}}
+                    ]""",
+                )
+            }
+        }
+        writeSurface("first.dxa", "level03.rdl", 8)
+        writeSurface("second.dxa", "level17.rdl", 9)
+        writeModManifest(filesDir, "first.dxa" to "First", "second.dxa" to "Second", game = "d1")
+        val manager = ModManager(filesDir)
+        val accepted = manager.checkEnabledModCompatibility("d1", setDir)
+        assertTrue(accepted.toUserMessage(), accepted.ok)
+        writeSurface("second.dxa", "level03.rdl", 9)
+        val conflict = manager.checkEnabledModCompatibility("d1", setDir)
+        assertFalse(conflict.ok)
+        assertTrue(conflict.toUserMessage().contains("tmap1"))
+    }
+
+    @Test
     fun detailsSummarizeArchiveCategoriesPatchesAndBaseRequirements() {
         val filesDir = createTempDirectory("mod-details").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
@@ -354,6 +389,7 @@ class ModManagerDetailsTest {
     private fun writeModManifest(
         filesDir: File,
         vararg mods: Pair<String, String>,
+        game: String = "d2",
     ) {
         val modsDir = File(filesDir, "mods").also { it.mkdirs() }
         val modEntries =
@@ -366,7 +402,7 @@ class ModManagerDetailsTest {
                   "enabled": true,
                   "addedAt": 0,
                   "sizeBytes": $sizeBytes,
-                  "game": "d2",
+                  "game": "$game",
                   "order": $index
                 }
                 """.trimIndent()

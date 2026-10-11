@@ -89,6 +89,10 @@ struct PCX_PHYSFS_file
 
 static int pcx_read_bitmap_file(struct PCX_PHYSFS_file *const pcxphysfs, grs_bitmap * bmp,int bitmap_type ,ubyte * palette);
 
+#ifdef __ANDROID__
+#include "android_mod_assets.h"
+#endif
+
 int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * palette )
 {
 	struct PCX_PHYSFS_file pcxphysfs;
@@ -98,6 +102,9 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 		return PCX_ERROR_OPENING;
 	result = pcx_read_bitmap_file(&pcxphysfs, bmp, bitmap_type, palette);
 	PHYSFS_close(pcxphysfs.PCXfile);
+#ifdef __ANDROID__
+	if (result == PCX_ERROR_NONE) android_mod_asset_loaded("image", filename, bmp->bm_w, bmp->bm_h);
+#endif
 	return result;
 }
 

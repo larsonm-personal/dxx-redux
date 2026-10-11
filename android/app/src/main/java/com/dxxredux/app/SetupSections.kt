@@ -212,6 +212,7 @@ internal fun ModsSection(
     var detailTarget by remember { mutableStateOf<ModManager.ModInfo?>(null) }
     var contentDetailTarget by remember { mutableStateOf<FileSetContentEntry?>(null) }
     var showDemos by remember(setDir.absolutePath) { mutableStateOf(false) }
+    var showRecommendedMods by remember(setDir.absolutePath) { mutableStateOf(false) }
     var detailInfo by remember { mutableStateOf<ModManager.ModDetails?>(null) }
     var detailLoading by remember { mutableStateOf(false) }
     var detailProgress by remember { mutableStateOf<MetadataLoadProgress?>(null) }
@@ -468,58 +469,52 @@ internal fun ModsSection(
             }
         }
 
-        val installedNames = mods.map { portableGameFilenameIdentity(it.filename) }.toSet()
-        val uninstalled = RECOMMENDED_MODS.filter { portableGameFilenameIdentity(it.filename) !in installedNames }
-        if (uninstalled.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Recommended",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
-            )
-            uninstalled.forEach { rec ->
-                RecommendedModRow(
-                    rec = rec,
-                    progress = modDownloadProgress[rec.filename],
-                    onDownload = {
-                        val modsDir = modManager.importDirectory()
-                        scope.launch {
-                            setupDownloadFile(
-                                url = rec.downloadUrl,
-                                destDir = modsDir,
-                                filename = rec.filename,
-                                onProgress = { pct ->
-                                    modDownloadProgress[rec.filename] = pct
-                                },
-                                onDone = { success ->
-                                    modDownloadProgress[rec.filename] =
-                                        if (success) -2 else -1
-                                    if (success) {
-                                        val file = File(modsDir, rec.filename)
-                                        modManager.importCompleted(
-                                            rec.filename,
-                                            rec.displayName,
-                                            file.length(),
-                                            rec.game,
-                                        )
-                                        mods = modManager.listMods()
-                                    } else {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                "Download failed: ${rec.filename}",
-                                                Toast.LENGTH_LONG,
-                                            ).show()
-                                    }
-                                },
-                            )
-                        }
-                    },
-                )
-            }
+        OutlinedButton(onClick = { showRecommendedMods = true }) {
+            Text("Recommended mods")
         }
+    }
+
+    if (showRecommendedMods) {
+        RecommendedModsDialog(
+            installedNames = mods.map { portableGameFilenameIdentity(it.filename) }.toSet(),
+            downloadProgress = modDownloadProgress,
+            onDismiss = { showRecommendedMods = false },
+            onDownload = { rec ->
+                modDownloadProgress[rec.filename] = 0
+                val modsDir = modManager.importDirectory()
+                scope.launch {
+                    setupDownloadFile(
+                        url = rec.downloadUrl,
+                        destDir = modsDir,
+                        filename = rec.filename,
+                        onProgress = { pct ->
+                            modDownloadProgress[rec.filename] = pct
+                        },
+                        onDone = { success ->
+                            modDownloadProgress[rec.filename] =
+                                if (success) -2 else -1
+                            if (success) {
+                                val file = File(modsDir, rec.filename)
+                                modManager.importCompleted(
+                                    rec.filename,
+                                    rec.displayName,
+                                    file.length(),
+                                    rec.game,
+                                )
+                                mods = modManager.listMods()
+                            } else {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Download failed: ${rec.filename}",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                            }
+                        },
+                    )
+                }
+            },
+        )
     }
 
     if (showDemos) {
@@ -717,6 +712,12 @@ private fun ModDetailsDialog(
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
     var musicDialogTarget by remember { mutableStateOf<MissionZipMusicDialogTarget?>(null) }
+    val usage by produceState<List<Pair<String, String>>>(emptyList(), details?.archivePath) {
+        value =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                details?.archivePath?.let { readModUsage(context.filesDir, it) }.orEmpty()
+            }
+    }
     val topLevelMetadataTargets =
         remember(details?.archivePath, details?.missionZip, setDir.absolutePath, mod.displayName, mod.game) {
             details?.let {
@@ -847,6 +848,9 @@ private fun ModDetailsDialog(
                         )
                         DetailRow("Game", mod.game.uppercase(Locale.US))
                         DetailRow("State", if (mod.enabled) "Enabled" else "Disabled")
+                        usage.forEach { (label, value) -> DetailRow(label, value) }
+                        if (usage.isEmpty()) ModDetailLine("Launch a game to record sound, image and font use")
+                        ModDetailLine("Usage describes the last run of each engine; changes apply on the next launch")
                         DetailRow(
                             "Manifest",
                             if (details.missionZip != null) {
@@ -2408,9 +2412,9 @@ private fun ModRow(
                     text =
                         "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed " +
                             "${DxaTextureScanner.ENGINE_TEXTURE_CAP}px " +
-                            "(max ${scanResult.maxWidth}x${scanResult.maxHeight}) - mod cannot be enabled",
+                            "(max ${scanResult.maxWidth}x${scanResult.maxHeight}); adapted to device limits",
                     fontSize = 10.sp,
-                    color = Color(0xFFF44336),
+                    color = Color(0xFFCCCCCC),
                 )
             } else if (scanResult != null && scanResult.textureCount > 0) {
                 Text(
@@ -2646,62 +2650,6 @@ private fun contentKindLabel(kind: String): String =
         FileSetContentCatalog.KIND_DEMO -> "Demo"
         else -> "Other content"
     }
-
-@Composable
-private fun RecommendedModRow(
-    rec: RecommendedMod,
-    progress: Int?,
-    onDownload: () -> Unit,
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(rec.displayName, fontSize = 12.sp)
-            Text(
-                "${rec.description} - ${rec.game.uppercase()}",
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        when (progress) {
-            null -> {
-                Button(
-                    onClick = onDownload,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(28.dp),
-                ) { Text("Download", fontSize = 11.sp) }
-            }
-
-            in 0..100 -> {
-                Text(
-                    "$progress%",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.width(40.dp),
-                )
-            }
-
-            -1 -> {
-                Text("Error", fontSize = 12.sp, color = Color(0xFFF44336))
-            }
-
-            -2 -> {
-                Text(
-                    "\u2713",
-                    fontSize = 14.sp,
-                    color = Color(0xFF4CAF50),
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-    }
-}
 
 @Composable
 internal fun MusicInfoSection(

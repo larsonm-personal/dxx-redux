@@ -12,6 +12,7 @@ import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import org.json.JSONObject
 
 internal enum class VideoInfoControllerAction {
     TEX_FILT,
@@ -136,7 +137,7 @@ internal fun computeVideoInfoOverlayLayout(
     )
 }
 
-private const val VIDEO_INFO_INFO_ROW_COUNT = 15
+private const val VIDEO_INFO_INFO_ROW_COUNT = 18
 private const val VIDEO_INFO_PAD_DP = 8f
 private const val VIDEO_INFO_LINE_HEIGHT_SCALE = 1.5f
 private const val VIDEO_INFO_TITLE_TEXT_SCALE = 1.1f
@@ -169,6 +170,8 @@ class VideoInfoOverlay(
 ) : View(context) {
     /** Provider that calls nativeGetVideoStats(). */
     var statsProvider: (() -> IntArray?)? = null
+    var texturePackProvider: (() -> String?)? = null
+    private var texturePacks = JSONObject()
     internal var capabilitiesProvider: (() -> GraphicsCapabilities?)? = null
     private var capabilities: GraphicsCapabilities? = null
 
@@ -251,6 +254,7 @@ class VideoInfoOverlay(
                 DormancyDiagnostics.recordIndependentOverlayPoll()
                 try {
                     val stats = statsProvider?.invoke()
+                    texturePacks = texturePackProvider?.invoke()?.let { JSONObject(it) } ?: JSONObject()
                     capabilities = capabilitiesProvider?.invoke()
                     if (stats != null && stats.size >= 11) {
                         fps = stats[0]
@@ -324,6 +328,9 @@ class VideoInfoOverlay(
         mapOf(
             "video_selected" to (selectedControllerAction?.name ?: ""),
             "video_polling" to polling,
+            "video_texture_status" to texturePacks.optString("status"),
+            "video_texture_rows" to
+                texturePackStatusRows(texturePacks).joinToString("\n") { "${it.first} ${it.second}" },
             "video_tex_filt" to texFiltLevel,
             "video_aniso" to anisoLevel,
             "video_msaa" to msaaLevel,
@@ -643,6 +650,18 @@ class VideoInfoOverlay(
         canvas.drawText(formatBinarySize(texMemoryKb.toLong() * 1024L), valueColumn, baselineY, valuePaint)
         baselineY += layout.infoLineHeight
 
+        val packRows = texturePackStatusRows(texturePacks)
+        for ((label, value) in packRows) {
+            canvas.drawText(label, panelLeft + layout.panelPad, baselineY, labelPaint)
+            val oldSize = valuePaint.textSize
+            val available = panelLeft + panelWidth - layout.panelPad - valueColumn
+            val measured = valuePaint.measureText(value)
+            if (measured > available && measured > 0f) valuePaint.textSize *= available / measured
+            canvas.drawText(value, valueColumn, baselineY, valuePaint)
+            valuePaint.textSize = oldSize
+            baselineY += layout.infoLineHeight
+        }
+
         // Hi-res textures
         val pct = if (totalLoaded > 0) (hiresCount * 100 / totalLoaded) else 0
         canvas.drawText("Hires:", panelLeft + layout.panelPad, baselineY, labelPaint)
@@ -662,7 +681,12 @@ class VideoInfoOverlay(
 
         // GL texture cap
         canvas.drawText("GL cap:", panelLeft + layout.panelPad, baselineY, labelPaint)
-        canvas.drawText("${glMaxTexSize}px", valueColumn, baselineY, valuePaint)
+        canvas.drawText(
+            "${texturePacks.optInt("max_texture_size", glMaxTexSize)}px",
+            valueColumn,
+            baselineY,
+            valuePaint,
+        )
         baselineY += layout.infoLineHeight
 
         // Render resolution

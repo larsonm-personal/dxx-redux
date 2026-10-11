@@ -198,7 +198,7 @@ throw 'Fixture never interrupted retirement'
     Set-HeadlessProcessArguments -StartInfo $start -Arguments @(
         '-NoProfile', '-File', $interruptedCleaner, $cleaner, $checkouts[0],
         (Join-Path $repoRoot 'android/helpers/host_processes.ps1'),
-        (ConvertTo-Json -InputObject $unreadableBackground -Compress),
+        (ConvertTo-Json -InputObject @($unreadableBackground | Select-Object ProcessId, Name, CommandLine) -Compress),
         ${function:Get-DxxHostProcessInventory}.ToString()
     )
     $start.UseShellExecute = $false

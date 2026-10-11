@@ -3,6 +3,7 @@
 #include "android_graphics_safety.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_log.h"
+#include "cntrlcen.h"
 #include "coop/coop_briefing.h"
 #include "coop/coop_endgame.h"
 #include "coop/coop_travel.h"
@@ -16,6 +17,8 @@
 #include "newdemo.h"
 #include "endlevel.h"
 #include "screens.h"
+#include "segment.h"
+#include "automap.h"
 #include "window.h"
 #include <pthread.h>
 #include <string.h>
@@ -130,6 +133,27 @@ int android_pause_input_allowed(void)
 {
 	return Game_wind && window_get_front() == Game_wind && Screen_mode == SCREEN_GAME &&
 	       !engine_ui_modals && !debug_modals && !android_pause_reasons();
+}
+
+int android_pause_try_open_automap(d_event *event)
+{
+	if (!Game_wind || window_get_front() != Game_wind || Screen_mode != SCREEN_GAME ||
+	    android_pause_reasons() != ANDROID_PAUSE_GRAPHICS || Player_is_dead ||
+	    Endlevel_sequence || Newdemo_state == ND_STATE_PLAYBACK ||
+	    ((Game_mode & GM_MULTI) && Control_center_destroyed && Countdown_seconds_left < 10)) return 0;
+	if (event->type != EVENT_KEY_COMMAND && event->type != EVENT_JOYSTICK_BUTTON_DOWN &&
+	    event->type != EVENT_MOUSE_BUTTON_DOWN) return 0;
+
+	/* Resolve the configured map binding while discarding every ship control
+	 * Opening the map interrupts the graphics trial through its normal window transition */
+	memset(&Controls, 0, sizeof(Controls));
+	kconfig_read_controls(event, 1);
+	const int open = Controls.automap_count != 0;
+	memset(&Controls, 0, sizeof(Controls));
+	debug_log(DLOG_GRAPHICS, "Paused graphics navigation: event=%d key=%d automap=%d",
+	          event->type, event->type == EVENT_KEY_COMMAND ? event_key_get(event) : -1, open);
+	if (open) do_automap();
+	return open;
 }
 
 void android_pause_publish(void)

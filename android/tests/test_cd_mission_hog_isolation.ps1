@@ -17,4 +17,7 @@ foreach ($file in $files) {
         throw "CD collection contains failed or empty mission metadata: $($file.Name)"
     }
 }
+if (@(Get-ChildItem -LiteralPath (Join-Path $outputRoot 'stages') -Directory).Count) {
+    throw 'Metadata workers retained staged mission payloads after completing requests'
+}
 Write-Host 'CD mission HOG isolation tests passed'

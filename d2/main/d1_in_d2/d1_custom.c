@@ -324,6 +324,9 @@ static int d1_custom_pack_sounds(d1_sound_generation *bank, const d1_custom_soun
 	for (i = 0; i < bank->count; i++) {
 		digi_sound *sample = &bank->samples[i];
 		const ubyte *source = replacements[i] ? replacements[i]->data : sample->data;
+#ifdef __ANDROID__
+		if (replacements[i]) bank->custom[i] = 1;
+#endif
 		int length = replacements[i] ? replacements[i]->length : sample->length;
 		memcpy(data + bytes, source, length);
 		sample->data = data + bytes;
@@ -469,6 +472,9 @@ static int d1_custom_read_file(d1_asset_generation *generation, const char *file
 		if (!info->data)
 			continue;
 		bitmap = &generation->bitmap_data->bitmaps[info->repl_idx];
+#ifdef __ANDROID__
+		generation->custom_bitmaps[info->repl_idx] = 1;
+#endif
 		d_free(bitmap->bm_data);
 		gr_init_bitmap(bitmap, BM_LINEAR, 0, 0, info->width, info->height, info->width, info->data);
 		gr_set_bitmap_flags(bitmap, info->flags);

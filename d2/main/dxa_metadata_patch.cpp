@@ -1,5 +1,6 @@
 #ifdef __ANDROID__
 #include "android_sound_trace.h"
+#include "android_mod_assets.h"
 #endif
 
 #include <algorithm>
@@ -1015,6 +1016,8 @@ void apply_patch_value(const patch_path &path, const json &value)
 
 extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 {
+	/* Called after reading fresh HAM tables; the previous pack no longer owns slots */
+	g_max_virtual_bitmap_index = -1;
 	std::string text;
 	std::unique_ptr<ham_patch_snapshot> snapshot;
 	try {
@@ -1053,6 +1056,9 @@ extern "C" void dxa_metadata_patch_apply_d2_ham(void)
 			applied++;
 		}
 		con_printf(CON_NORMAL, "DXA metadata: applied %d HAM patch operations after %d tests\n", applied, tested);
+#ifdef __ANDROID__
+		if (applied) android_mod_asset_loaded("metadata", kD2HamPatchPath, 0, 0);
+#endif
 	} catch (const std::exception &ex) {
 		if (snapshot)
 			snapshot->restore();

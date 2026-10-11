@@ -50,6 +50,8 @@ void android_pause_new_session(void);
 void android_pause_outer_tick(void);
 int android_pause_reasons(void);
 int android_pause_input_allowed(void);
+struct d_event;
+int android_pause_try_open_automap(struct d_event *event);
 int android_pause_simulation_paused(void);
 int android_pause_queue_action(int action);
 int android_pause_legacy_depth(void);

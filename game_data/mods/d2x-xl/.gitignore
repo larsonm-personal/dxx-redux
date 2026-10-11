@@ -1,4 +1,5 @@
 *
 !*.md
 !*.ps1
+!*.py
 !.gitignore

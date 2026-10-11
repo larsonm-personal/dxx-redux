@@ -1288,6 +1288,25 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "import_mod" -> {
+                        val path = intent.getStringExtra("path") ?: return
+                        runIo {
+                            val file = File(filesDir, path).canonicalFile
+                            require(file.path.startsWith(filesDir.canonicalPath + File.separator)) {
+                                "Import test file must be in app storage"
+                            }
+                            val imported =
+                                ModManager
+                                    .forActiveSet(filesDir, this@SetupActivity)
+                                    .importMod(Uri.fromFile(file), file.name, contentResolver)
+                            check(
+                                imported != null && imported.enabled,
+                            ) { "Mod import or validation failed: ${file.name}" }
+                            Log.i("DXX-Setup", "import_mod '${file.name}': enabled")
+                            requestSetupRefresh()
+                        }
+                    }
+
                     "delete_mod" -> {
                         val filename = intent.getStringExtra("filename") ?: return
                         runIo {
@@ -4457,12 +4476,28 @@ private fun SetupScreen(
                                 } else {
                                     ""
                                 }
-                            Text(
-                                "$buildLine\n" +
-                                    "${AppBuildDetails.aboutText()}\n" +
-                                    "Arch: $arch\n" +
-                                    "Renderer: ${BuildConfig.RENDERER}$storeNote",
-                            )
+                            Column {
+                                Text(
+                                    "$buildLine\n" +
+                                        "${AppBuildDetails.aboutText()}\n" +
+                                        "Arch: $arch\n" +
+                                        "Renderer: ${BuildConfig.RENDERER}$storeNote",
+                                )
+                                if (BuildConfig.GITHUB_RELEASE) {
+                                    TextButton(
+                                        onClick = {
+                                            context.startActivity(
+                                                Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse("https://github.com/larsonm-personal/dxx-redux/releases"),
+                                                ),
+                                            )
+                                        },
+                                    ) {
+                                        Text("GitHub releases")
+                                    }
+                                }
+                            }
                         },
                     )
                 }

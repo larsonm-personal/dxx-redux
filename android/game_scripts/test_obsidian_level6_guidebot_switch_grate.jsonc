@@ -109,8 +109,9 @@
             "guidebot.route_goal_objective_seg": "506",
         },
     },
-    { "action": "pose_route_guidance", "post_delay_ms": 250 },
-    { "action": "meta_action", "id": 1042, "post_delay_ms": 500 },
+    // Keep the player away from the firing pose while the companion moves near the grate
+    // Warping the companion behind a player aimed at the switch can activate it
+    { "action": "set_debug", "field": "guidebot_segment", "value": "506", "post_delay_ms": 500 },
     { "action": "wait_ms", "ms": 12000 },
     { "action": "wait_for", "timeout_ms": 10000, "expect": { "guidebot.path_length": { "gt": 1 } } },
     {
@@ -118,6 +119,16 @@
         "expect": {
             "guidebot.route_goal_trigger": "14",
             "guidebot.route_goal_objective_seg": "506",
+        },
+    },
+    { "action": "set_debug", "field": "fire_trigger", "value": "14", "post_delay_ms": 100 },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "guidebot.route_goal_label": "red key",
+            "guidebot.route_goal_objective_seg": "467",
+            "guidebot.route_goal_trigger": "-1",
         },
     },
     { "action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ===" },

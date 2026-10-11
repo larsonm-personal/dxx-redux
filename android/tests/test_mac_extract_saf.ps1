@@ -158,9 +158,11 @@ try {
         try { & (Resolve-RegressionGradleWrapper -AndroidDir (Join-Path $repoRoot "android")) :app:assembleDebug } finally { Pop-Location }
         if ($LASTEXITCODE -ne 0) { throw "Debug APK build failed" }
     }
-    $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = if ($env:DXX_TEST_APK) { $env:DXX_TEST_APK } else {
+        Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+    }
     if (-not (Test-Path -LiteralPath $apk -PathType Leaf)) { throw "Debug APK not found: $apk" }
-    Adb -AdbArgs @("install", "-r", $apk) -Seconds 120 | Out-Null
+    Adb -AdbArgs @("install", "-r", "-t", $apk) -Seconds 120 | Out-Null
 
     # Earlier mission tests can leave hundreds of MiB of disposable staged music
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-rf", "cache/mission_zip_music") | Out-Null

@@ -75,7 +75,7 @@ try {
     $archive.Dispose()
 }
 
-& $adb -s $Serial install -r $apk | Out-Null
+& $adb -s $Serial install -r -t $apk | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Fail "APK install failed"
 }

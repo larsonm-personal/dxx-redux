@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.ByteBuffer
@@ -73,6 +74,7 @@ class DxaTextureScannerTest {
         assertEquals(2560, result.maxWidth)
         assertEquals(3072, result.maxHeight)
         assertEquals(2, result.textureCount)
+        assertTrue(result.canEnable)
         assertEquals(1, result.oversizedCount)
         assertEquals(1, result.oversizedEntries.size)
         assertEquals("statusbx2.png", result.oversizedEntries[0].name)
@@ -125,6 +127,7 @@ class DxaTextureScannerTest {
         assertNotNull(result)
         result!!
         assertEquals(1, result.textureCount)
+        assertTrue(result.canEnable)
         assertEquals(1, result.oversizedCount)
         assertEquals("large.jpg", result.oversizedEntries.single().name)
     }

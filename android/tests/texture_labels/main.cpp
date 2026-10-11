@@ -59,6 +59,7 @@ static std::string readback_hash()
 #include "../merged_wrap_fixture.hpp"
 #include "../merge_cache_fixture.hpp"
 #include "../texture_bindings_fixture.hpp"
+#include "../ktx2_mipmaps_fixture.hpp"
 int main(int argc, char **argv)
 {
 	if (argc < 2 || argc > 3) return 1;
@@ -142,7 +143,8 @@ int main(int argc, char **argv)
 		GameCfg.TexFilt = GameCfg.MenuTexFilt = GameCfg.HudTexFilt = 0;
 		GameCfg.ClassicDepth = 1;
 		g_debug_tex_overlay_active = 1;
-		if (mipmaps) test_xmodel_mipmaps(results, generation, baseline);
+		if (argc == 3 && std::strcmp(argv[2], "ktx2-mipmaps") == 0) test_ktx2_mipmaps(results, generation);
+		else if (mipmaps) test_xmodel_mipmaps(results, generation, baseline);
 		else if (bindings) {
 			gr_set_curfont(&font);
 			test_texture_bindings(results, generation, baseline);

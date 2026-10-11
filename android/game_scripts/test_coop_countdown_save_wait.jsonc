@@ -15,9 +15,26 @@
     },
     {
         "action": "wait_for",
+        "timeout_ms": 5000,
+        "expect": {
+            "coop_restore.download_percent": 0,
+            "coop_restore.message": "Downloading save: 0%",
+        },
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "coop_restore.download_percent": { "gt": 0, "lt": 100 },
+            "coop_restore.message": { "contains": "Downloading save:" },
+        },
+    },
+    {
+        "action": "wait_for",
         "timeout_ms": 180000,
         "expect": {
             "coop_restore.transfer_busy": false,
+            "coop_restore.download_percent": -1,
             "in_game": true,
             "time_paused": false,
         },

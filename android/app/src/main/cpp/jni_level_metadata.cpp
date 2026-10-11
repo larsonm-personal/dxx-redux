@@ -537,7 +537,8 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 
 class LevelMetadataRequestMounts
 {
-	std::vector<std::string> mounted_paths;
+	std::vector<std::string> original_paths;
+	int original_paths_valid = 0;
 	int mission_loaded = 0;
 	int finished = 0;
 	int active_assets = 0;
@@ -559,6 +560,17 @@ class LevelMetadataRequestMounts
 	}
 
   public:
+	LevelMetadataRequestMounts()
+	{
+		char **paths = PHYSFS_getSearchPath();
+		if (!paths)
+			return;
+		for (char **path = paths; *path; ++path)
+			original_paths.emplace_back(*path);
+		PHYSFS_freeList(paths);
+		original_paths_valid = 1;
+	}
+
 	~LevelMetadataRequestMounts()
 	{
 		finish(NULL, 0);
@@ -566,7 +578,7 @@ class LevelMetadataRequestMounts
 
 	int finish(char *error, size_t error_size)
 	{
-		int cleanup_ok = 1;
+		int cleanup_ok = original_paths_valid;
 
 		if (finished)
 			return 1;
@@ -581,11 +593,19 @@ class LevelMetadataRequestMounts
 		if (active_assets)
 			android_mission_asset_reset_before();
 #endif
-		for (std::vector<std::string>::reverse_iterator path = mounted_paths.rbegin();
-		     path != mounted_paths.rend(); ++path)
-			if (!PHYSFS_unmount(path->c_str()) && search_path_contains(*path) != 0)
+		// Mission loading can mount additional HOGs outside the explicit request list
+		if (original_paths_valid) {
+			char **paths = PHYSFS_getSearchPath();
+			if (!paths)
 				cleanup_ok = 0;
-		mounted_paths.clear();
+			else {
+				for (char **path = paths; *path; ++path)
+					if (std::find(original_paths.begin(), original_paths.end(), *path) == original_paths.end() &&
+					    !PHYSFS_unmount(*path) && search_path_contains(*path) != 0)
+						cleanup_ok = 0;
+				PHYSFS_freeList(paths);
+			}
+		}
 #ifdef __ANDROID__
 		if (active_assets)
 			android_mission_asset_reset_baseline();
@@ -598,11 +618,12 @@ class LevelMetadataRequestMounts
 
 	int mount(const std::string &path)
 	{
+		if (!original_paths_valid)
+			return 0;
 		if (search_path_contains(path) == 1)
 			return 1;
 		if (!PHYSFS_mount(path.c_str(), NULL, 0))
 			return 0;
-		mounted_paths.push_back(path);
 		return 1;
 	}
 

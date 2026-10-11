@@ -848,6 +848,18 @@ class ModManager(
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
                 }
             }
+            // D1-only packs must not replace similarly named D2 assets. The D2
+            // engine consults this namespace when using D1 sounds/presentation.
+            // Keep the mount point synchronized with android_mod_assets.cpp.
+            if (game == "d2" && includeD1MissionZipsForD2) {
+                mods
+                    .filter { it.enabled && !it.isLevel && it.game == "d1" }
+                    .sortedBy { it.order }
+                    .forEach { mod ->
+                        val file = modFile(mod.filename)
+                        if (file.isFile && file.length() > 0) validPaths += "${file.absolutePath}\td1-mods"
+                    }
+            }
             validPaths += contentPaths.filter { File(it).exists() }
             if (validPaths.isEmpty()) {
                 pathFile.delete()
@@ -1588,6 +1600,15 @@ class ModManager(
     private fun parsePatchScope(path: String): PatchScope? {
         if (!path.startsWith("/")) return null
         val segments = path.split('/').drop(1).map { decodeJsonPointerSegment(it) }
+        if (segments.size == 4 && segments[0] == "levels" && segments[2] == "surfaces") {
+            val surface = segments[3].split(':')
+            if (surface.size != 2 || surface[0].toIntOrNull()?.let { it >= 0 } != true ||
+                surface[1].toIntOrNull() !in 0..5
+            ) {
+                return null
+            }
+            return PatchScope(path, null)
+        }
         if (segments.size !in 3..4 || segments[0] != "sections") return null
         val index = segments[2].toIntOrNull() ?: return null
         val rowPath = "/sections/${segments[1]}/$index"
@@ -1974,12 +1995,13 @@ class ModManager(
     private fun detectGame(filename: String): String = GameFileFormats.gameHint(filename)
 
     private fun generateDisplayName(filename: String): String =
-        stripLauncherDxaSuffix(filename)
-            .replace(Regex("[_-]"), " ")
-            .split(" ")
-            .joinToString(" ") { word ->
-                if (word.length <= 2) word.uppercase() else word.replaceFirstChar { it.uppercase() }
-            }
+        RECOMMENDED_MODS.firstOrNull { it.filename.equals(filename, ignoreCase = true) }?.displayName
+            ?: stripLauncherDxaSuffix(filename)
+                .replace(Regex("[_-]"), " ")
+                .split(" ")
+                .joinToString(" ") { word ->
+                    if (word.length <= 2) word.uppercase() else word.replaceFirstChar { it.uppercase() }
+                }
 
     private fun load() {
         if (!manifestFile.exists()) {
@@ -2001,7 +2023,15 @@ class ModManager(
                         }
                         ModInfo(
                             filename = filename,
-                            displayName = obj.getString("displayName"),
+                            displayName =
+                                RECOMMENDED_MODS
+                                    .firstOrNull {
+                                        it.filename.equals(
+                                            filename,
+                                            ignoreCase = true,
+                                        )
+                                    }?.displayName
+                                    ?: obj.getString("displayName"),
                             enabled = obj.optBoolean("enabled", true),
                             addedAt = obj.optLong("addedAt", 0),
                             sizeBytes = size,

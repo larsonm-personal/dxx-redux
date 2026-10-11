@@ -580,6 +580,10 @@ set(DXX_ANDROID_GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/checkpoint_file.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mod_assets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mod_bitmaps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_d1_mod_patches.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_usage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c

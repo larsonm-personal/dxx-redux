@@ -31,6 +31,9 @@ if (-not $Uud1Root) {
 if (-not $Uud2Root) {
     $Uud2Root = Join-Path $scriptDir "dxx_tp\uud2tp"
 }
+if (-not $D2DescentBaselinePig) {
+    $D2DescentBaselinePig = Join-Path $scriptDir "dxx_tp\baseline-d2-descent\original-2015\DESCENT.PIG"
+}
 
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 
@@ -172,7 +175,9 @@ function Add-XfingTextureImages {
         if (-not $row.Patch) {
             continue
         }
-        $safeName = (Get-XfingSafeName $row.Patch.Name).ToLowerInvariant()
+        # Replacement lookup uses the installed PIG name, not a renamed source entry
+        $runtimeName = if ($row.Base) { $row.Base.Name } else { "idx$($row.Patch.Index)" }
+        $safeName = (Get-XfingSafeName $runtimeName).ToLowerInvariant()
         if (-not $nameCounts.ContainsKey($safeName)) {
             $nameCounts[$safeName] = 0
         }
@@ -187,7 +192,7 @@ function Add-XfingTextureImages {
         }
         $baseEntry = $row.Base
         $displayName = Get-XfingSafeName $patchEntry.Name
-        $safeName = if ($row.Status -eq "Extra") { "idx$($patchEntry.Index)" } else { $displayName }
+        $safeName = if ($baseEntry) { Get-XfingSafeName $baseEntry.Name } else { "idx$($patchEntry.Index)" }
         $needsIndexPath = ($row.Status -ne "Extra") -and ($nameCounts[$safeName.ToLowerInvariant()] -gt 1)
         $zipPath = Get-XfingTextureZipPath `
             -ZipPrefix $ZipPrefix `
@@ -214,6 +219,7 @@ function Add-XfingTextureImages {
             path = $zipPath
             maskPath = if ($png.maskSha256) { $maskZipPath } else { $null }
             name = $displayName
+            runtimeName = $safeName
             rawName = $patchEntry.RawName
             baseIndex = if ($baseEntry) { $baseEntry.Index } else { $null }
             patchIndex = $patchEntry.Index
@@ -230,9 +236,14 @@ function Add-XfingTextureImages {
         }
     }
 
+    $pogPath = if ($GameName -eq 'd1') { 'patches/d1/bitmaps.pog' } else {
+        'patches/d2/sets/' + [IO.Path]::GetFileNameWithoutExtension($PigKey).ToLowerInvariant() + '.pog'
+    }
+    Export-XfingBitmapPog -Pig $PatchPig -Rows $changedRows -Path (Join-XfingStagePath -StageRoot $StageRoot -ZipPath $pogPath)
     return [pscustomobject]@{
         game = $GameName
         pig = $PigKey
+        bitmapPatchPath = $pogPath
         basePath = Get-XfingDisplayPath $BasePig.Path
         patchPath = Get-XfingDisplayPath $PatchPig.Path
         baseSha256 = $BasePig.Sha256
@@ -303,6 +314,7 @@ function New-XfingD1Archive {
         $baseLevel = Read-XfingD1LevelSurfaces $baseLevelPath
         $patchLevel = Read-XfingD1LevelSurfaces $patchLevelPath
         $changes = Compare-XfingD1LevelSurfaces -BaseLevel $baseLevel -PatchLevel $patchLevel -LevelName $levelName
+        $levelPatchOps += New-XfingJsonPatchOperation -Op test -Path "/levels/$levelName/sha256" -Value (Get-XfingSha256ForFile $baseLevelPath)
         $levelPatchOps += Convert-XfingD1SurfaceRowsToJsonPatch -Rows $changes
         $levelDeltas += [pscustomobject]@{
             level = $levelName
@@ -318,6 +330,9 @@ function New-XfingD1Archive {
     $levelSummaryPath = "patches/d1/level_surface_patch_summary.json"
     Write-XfingJsonFile -Path (Join-XfingStagePath -StageRoot $stageRoot -ZipPath $levelPatchPath) -Value @($levelPatchOps)
     Write-XfingJsonFile -Path (Join-XfingStagePath -StageRoot $stageRoot -ZipPath $levelSummaryPath) -Value @($levelDeltas)
+    $propertiesPatchPath = "patches/d1/properties_patch.rfc6902.json"
+    $propertiesPatchOps = @(Get-XfingD1PropertyPatch -BasePig $basePig -PatchPig $patchPig)
+    Write-XfingJsonFile -Path (Join-XfingStagePath -StageRoot $stageRoot -ZipPath $propertiesPatchPath) -Value $propertiesPatchOps
 
     $requiredBaseDescription = "D1 retail v1.4a/v1.5 data with the standard DESCENT.PIG and DESCENT.HOG hashes, such as GOG or Infinite Abyss installs that preserve those files"
     $requiredBaseFiles = @(
@@ -329,7 +344,7 @@ function New-XfingD1Archive {
             -Size (Get-Item -LiteralPath $basePigPath).Length `
             -Version "D1 v1.4a/v1.5 retail DESCENT.PIG" `
             -Reason "Texture replacement names and indices were generated against this PIG" `
-            -PatchPaths @()
+            -PatchPaths @($propertiesPatchPath)
         New-XfingRequiredBaseFile `
             -GameName "d1" `
             -Role "baselineHog" `
@@ -362,6 +377,7 @@ function New-XfingD1Archive {
         sourceFiles = @($sourceFiles)
         d1 = [pscustomobject]@{
             texturePigs = @($pigTextures)
+            propertiesPatchPath = $propertiesPatchPath
             levelSurfacePatchFormat = "RFC 6902 JSON Patch"
             levelSurfacePatchTarget = "com.dxxredux.d1-level-surfaces.v1"
             levelSurfacePatchPath = $levelPatchPath
@@ -385,40 +401,6 @@ function New-XfingD1Archive {
     }
 }
 
-$script:XfingD2SpCombinedWclipAlignment = @(
-    [pscustomobject]@{ index = 5; values = [ordered]@{ PlayTime = 52428; OpenSound = 88; CloseSound = 89 } },
-    [pscustomobject]@{ index = 9; values = [ordered]@{ PlayTime = 65536; OpenSound = 88; CloseSound = 89 } }
-)
-
-function Set-XfingD2SpCombinedWclipValues {
-    param([object[]]$Rows)
-
-    $aligned = @()
-    foreach ($override in $script:XfingD2SpCombinedWclipAlignment) {
-        $row = @($Rows | Where-Object { $_.section -eq "wclip" -and [int]$_.index -eq [int]$override.index }) | Select-Object -First 1
-        if (-not $row) {
-            throw "Missing UUD2TP wclip $($override.index) row for D2TP+SP combined alignment"
-        }
-        foreach ($property in $override.values.GetEnumerator()) {
-            if (-not ($row.patch.PSObject.Properties.Name -contains $property.Key)) {
-                throw "Missing UUD2TP wclip $($override.index) field $($property.Key) for D2TP+SP combined alignment"
-            }
-            $previousPatchValue = $row.patch.PSObject.Properties[$property.Key].Value
-            $row.patch.PSObject.Properties[$property.Key].Value = $property.Value
-            $aligned += [pscustomobject]@{
-                section = "wclips"
-                index = [int]$override.index
-                field = $property.Key
-                base = $row.base.PSObject.Properties[$property.Key].Value
-                sourcePatch = $previousPatchValue
-                patch = $property.Value
-                reason = "Matches Xfing's D2TP+SP combined HAM"
-            }
-        }
-    }
-    return @($aligned)
-}
-
 function New-XfingHamDelta {
     param(
         [string]$StageRoot,
@@ -435,7 +417,7 @@ function New-XfingHamDelta {
     $vclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Vclips -PatchRows $patchHam.Vclips -Section "vclip"
     $eclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Eclips -PatchRows $patchHam.Eclips -Section "eclip"
     $wclipRows = Compare-XfingRowsByJson -BaseRows $baseHam.Walls -PatchRows $patchHam.Walls -Section "wclip"
-    $spCombinedAlignment = Set-XfingD2SpCombinedWclipValues -Rows $wclipRows
+    # Preserve standalone TP semantics; SP combinations need their own explicit composition
     $patchOps = @()
     $patchOps += Convert-XfingRowsToJsonPatch -Rows $textureRows -BasePath "/sections/textures"
     $patchOps += Convert-XfingRowsToJsonPatch -Rows $vclipRows -BasePath "/sections/vclips"
@@ -464,7 +446,6 @@ function New-XfingHamDelta {
         vclipDeltas = @($vclipRows)
         eclipDeltas = @($eclipRows)
         wclipDeltas = @($wclipRows)
-        spCombinedAlignment = @($spCombinedAlignment)
     }
     $hamPatchPath = "patches/d2/ham_patch.rfc6902.json"
     $hamSummaryPath = "patches/d2/ham_patch_summary.json"
@@ -479,11 +460,13 @@ function New-XfingHamDelta {
         vclipDeltas = @($vclipRows).Count
         eclipDeltas = @($eclipRows).Count
         wclipDeltas = @($wclipRows).Count
-        spCombinedAlignmentDeltas = @($spCombinedAlignment).Count
     }
 }
 
 function New-XfingD2Archive {
+    if (-not (Test-Path -LiteralPath $D2DescentBaselinePig)) {
+        throw 'Missing original D2 DESCENT.PIG baseline; see README.md or pass -D2DescentBaselinePig'
+    }
     $stageRoot = New-XfingStageRoot "d2"
     $metadataRoot = Join-Path $stageRoot "metadata"
     $baseHogPath = Join-Path $BaselineRoot "DESCENT2.HOG"
@@ -526,9 +509,8 @@ function New-XfingD2Archive {
     }
 
     $patchedHamPath = Join-Path $OutputDir "work\d2\DESCENT2.HAM"
-    if (-not (Test-Path -LiteralPath $patchedHamPath)) {
-        Export-XfingZipEntry -ZipPath (Join-Path $Uud2Root "uud2tp.dxa") -EntryName "DESCENT2.HAM" -OutputPath $patchedHamPath
-    }
+    # Always refresh this input so changed source DXAs cannot reuse a stale HAM
+    Export-XfingZipEntry -ZipPath (Join-Path $Uud2Root "uud2tp.dxa") -EntryName "DESCENT2.HAM" -OutputPath $patchedHamPath
     $hamDelta = New-XfingHamDelta -StageRoot $stageRoot -PatchedHamPath $patchedHamPath
 
     $skippedSources = @()
@@ -587,16 +569,18 @@ function New-XfingD2Archive {
             -PatchPaths @($hamDelta.path)
     )
     foreach ($texturePig in @($pigTextures)) {
-        $basePigPath = Join-Path $BaselineRoot $texturePig.pig
+        $basePigPath = Join-Path $repoRoot $texturePig.basePath
+        $optionalPalette = $texturePig.pig -ieq 'DESCENT.PIG'
         $requiredBaseFiles += New-XfingRequiredBaseFile `
             -GameName "d2" `
             -Role "baselinePig" `
             -Path $basePigPath `
             -Sha256 $texturePig.baseSha256 `
             -Size (Get-Item -LiteralPath $basePigPath).Length `
-            -Version "D2 v1.2 $($texturePig.pig)" `
+            -Version $(if ($optionalPalette) { 'Pumo D1 palette for D2 (2015)' } else { "D2 v1.2 $($texturePig.pig)" }) `
             -Reason "Texture replacement names and texture-set membership were generated against this PIG" `
-            -PatchPaths @()
+            -PatchPaths @() `
+            -Required (-not $optionalPalette)
     }
     $manifest = [pscustomobject]@{
         schema = "com.dxxredux.plain-texture-dxa.v1"
@@ -640,7 +624,6 @@ function New-XfingD2Archive {
                 eclips = $hamDelta.eclipDeltas
                 wclips = $hamDelta.wclipDeltas
             }
-            spCombinedAlignmentFieldDeltas = $hamDelta.spCombinedAlignmentDeltas
             skippedSources = @($skippedSources)
         }
     }

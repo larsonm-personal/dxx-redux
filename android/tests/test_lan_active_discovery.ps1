@@ -9,8 +9,6 @@ $env:ANDROID_SERIAL = $Serial
 $prefsPath = 'shared_prefs/dxx_prefs.xml'
 $backupCreated = $false
 $probe = $null
-$replySender = $null
-$redirectAdded = $false
 $fixtureDir = Join-Path $PSScriptRoot '../temp/lan_active_discovery'
 New-Item -ItemType Directory -Path $fixtureDir -Force | Out-Null
 
@@ -34,10 +32,6 @@ try {
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', '/data/local/tmp/lan-query-prefs.xml', $prefsPath) | Out-Null
     $probe = [Net.Sockets.UdpClient]::new(42400)
     $probe.Client.ReceiveTimeout = 15000
-    $replySender = [Net.Sockets.UdpClient]::new()
-    $redirect = Adb -AdbArgs @('emu', 'redir', 'add', 'udp:42490:42400')
-    if ($redirect -notmatch 'OK') { throw "Could not forward discovery reply: $redirect" }
-    $redirectAdded = $true
     Adb -AdbArgs @('logcat', '-c') | Out-Null
     Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
@@ -58,8 +52,9 @@ try {
         "lobby_id":"query-only-fixture", "callsign":"QueryOnlyHost",
         "game":"d2", "mission":"descent", "mode":"coop", "player_count":1, "max_players":4
     }')
-    # Use a separate source port for emulator redirection; netsimd owns the query return mapping
-    $replySender.Send($reply, $reply.Length, '127.0.0.1', 42490) | Out-Null
+    # Reply through the query's NAT mapping, preserving the host's discovery source port
+    # An unrelated console redirection does not exercise this active-query return path
+    $probe.Send($reply, $reply.Length, $sender) | Out-Null
     if (-not (Wait-ForCondition -Description 'query-only host appears without manual Find Last Host' -TimeoutSec 10 -Condition {
                 Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.MP_COMMAND', '-p', $script:PACKAGE,
                     '--es', 'command', 'lan_discover_status') | Out-Null
@@ -75,8 +70,6 @@ try {
     # Retain packet handling and discovery status before another test clears logcat
     Adb -AdbArgs @('logcat', '-b', 'all', '-d', '-s', 'DXX-MP:I', 'LobbyService:D', 'AndroidRuntime:E') | Write-Output
     if ($probe) { $probe.Dispose() }
-    if ($replySender) { $replySender.Dispose() }
-    if ($redirectAdded) { Adb -AdbArgs @('emu', 'redir', 'del', 'udp:42490') | Out-Null }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     if ($backupCreated) {
         Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mv', "$prefsPath.discovery-backup", $prefsPath) | Out-Null

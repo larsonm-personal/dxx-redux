@@ -75,6 +75,10 @@ typedef struct _ogl_texture {
 	int flags;
 #ifdef ANDROID
 	GLenum min_filter, mag_filter;
+	int authored_mip_count, mip_base_level;
+	unsigned int replacement_source;
+	int sprite_additive;
+	unsigned int additive_draws; /* Android diagnostics: actual sprite draw submissions */
 #endif
 } ogl_texture;
 

@@ -183,6 +183,10 @@ int bald_guy_load( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * pa
 	return PCX_ERROR_NONE;
 }
 
+#ifdef __ANDROID__
+#include "android_mod_assets.h"
+#endif
+
 int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * palette )
 {
 	PCXHeader header;
@@ -281,6 +285,9 @@ int pcx_read_bitmap( char * filename, grs_bitmap * bmp,int bitmap_type ,ubyte * 
 		}
 	}
 	PHYSFS_close(PCXfile);
+#ifdef __ANDROID__
+	android_mod_asset_loaded("image", filename, bmp->bm_w, bmp->bm_h);
+#endif
 	return PCX_ERROR_NONE;
 }
 

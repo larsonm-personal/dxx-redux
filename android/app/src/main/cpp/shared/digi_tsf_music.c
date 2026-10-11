@@ -72,7 +72,18 @@ static struct hmp_playback_info g_hmp_info;
 static struct midi_seek_timeline g_hmp_timeline;
 static struct hmp_tsf_state g_hmp_saved_state;
 
-static unsigned char *g_midi_buf = NULL; /* raw MIDI bytes from hmp2mid    */
+static unsigned char *g_midi_buf = NULL; /* tracked HMP conversion or malloc-owned MIDI read */
+
+static void tsf_free_midi_buffer(void)
+{
+	if (g_midi_buf) {
+		if (g_is_hmp)
+			d_free(g_midi_buf);
+		else
+			free(g_midi_buf);
+		g_midi_buf = NULL;
+	}
+}
 
 static double g_playback_msec = 0.0; /* current playback time (ms)     */
 static int g_playing = 0;            /* 1 = music is actively playing  */
@@ -1106,7 +1117,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		converted = music_synth_convert_hmp(g_tsf, hmp_data, (int) hmp_size, loop,
 		                                    &g_midi_buf, &midi_len, &g_hmp_info);
 		tsf_atomic_store_int(&g_renderer_snapshot, music_synth_is_fm(g_tsf));
-		d_free(hmp_data);
+		free(hmp_data);
 		if (!converted) {
 			con_printf(CON_CRITICAL, "TSF: HMP playback conversion failed for %s\n", filename);
 			return 0;
@@ -1143,7 +1154,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	if (!g_midi) {
 		con_printf(CON_CRITICAL, "TSF: tml_load_memory failed for %s\n",
 		           filename);
-		d_free(g_midi_buf);
+		tsf_free_midi_buffer();
 		return 0;
 	}
 
@@ -1251,7 +1262,6 @@ void mix_free_music(void)
 	if (g_is_hmp && g_tsf)
 		music_synth_hmp_capture(g_tsf, &g_hmp_saved_state);
 	g_midi_cur = NULL;
-	g_is_hmp = 0;
 	memset(&g_hmp_timeline, 0, sizeof(g_hmp_timeline));
 
 	if (g_midi) {
@@ -1263,9 +1273,10 @@ void mix_free_music(void)
 
 	if (g_midi_buf) {
 		crash_breadcrumb_v("mix_free: midi_buf_free %p", (void *) g_midi_buf);
-		d_free(g_midi_buf);
+		tsf_free_midi_buffer();
 		crash_breadcrumb("mix_free: midi_buf_free_done");
 	}
+	g_is_hmp = 0;
 
 	/* Stop all voices but keep the synth loaded */
 	if (g_tsf) {

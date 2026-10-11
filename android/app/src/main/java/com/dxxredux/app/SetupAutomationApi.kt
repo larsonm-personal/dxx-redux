@@ -284,16 +284,37 @@ internal fun SetupActivity.performAccessibilityClick(
     val lower = buttonText.lowercase()
     val labelledClicks =
         clickNodes.map { click ->
-            val contained = textNodes.filter { click.bounds.contains(it.bounds) }
+            val contained = textNodes.filter { textBelongsToClickable(it.bounds, click.bounds) }
             click to contained.joinToString(" ") { it.text }.lowercase()
         }
     // Match the button resolved by findButtonByText before considering substrings
     val match =
         labelledClicks.find { it.second == lower }
             ?: if (exactOnly) null else labelledClicks.find { it.second.contains(lower) }
-    return match?.let {
-        provider.performAction(it.first.id, AccessibilityNodeInfo.ACTION_CLICK, null)
-    } ?: false
+    val performed =
+        match?.let {
+            provider.performAction(it.first.id, AccessibilityNodeInfo.ACTION_CLICK, null)
+        } ?: false
+    Log.i(
+        "DXX-Setup",
+        "Automation click: text=$buttonText node=${match?.first?.id} bounds=${match?.first?.bounds} " +
+            "performed=$performed root=${root.javaClass.simpleName} focused=${root.hasWindowFocus()}",
+    )
+    if (match == null) {
+        Log.i(
+            "DXX-Setup",
+            "Automation click labels: " +
+                textNodes
+                    .filter {
+                        it.text.equals(
+                            buttonText,
+                            ignoreCase = true,
+                        )
+                    }.joinToString { "${it.text}:${it.bounds}" } +
+                " clickables=" + clickNodes.joinToString { "${it.id}:${it.bounds}" },
+        )
+    }
+    return performed
 }
 
 /** Hide the soft keyboard if it's showing. */

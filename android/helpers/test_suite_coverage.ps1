@@ -40,6 +40,7 @@ function Get-TestSuiteCoveragePolicy {
         audio_preferences = @(
             'test_dos_midi_parity'
             'test_sound_trace'
+            'test_dxa_asset_usage'
             'test_audio_mix'
             'test_macplay_audio'
             'test_soundfont_download_catalog'
@@ -252,6 +253,13 @@ function Get-TestSuiteCoveragePolicy {
             'test_android_merge_cache'
             'test_android_texture_bindings'
             'test_android_xmodel_mipmaps'
+            'test_android_ktx2_mipmaps'
+            'test_hires_pack_release'
+            'test_uud_mod_combinations'
+            'test_uud_mission_gameplay'
+            'test_uud_surface_levels'
+            'test_d2xxl_texture_merge'
+            'test_d2xxl_texture_animation'
             'test_fov_cpu_visibility'
             'test_mac_d2_demo_graphics'
             'test_msaa_render_and_menu'
@@ -319,6 +327,9 @@ function Get-TestSuiteCoveragePolicy {
         )
         metadata_lifecycle = @(
             'test_android_secret_origins'
+            'test_android_d1_mod_patches'
+            'test_android_mod_bitmaps'
+            'test_android_mod_renderer'
             'test_compressed_music_metadata'
             'test_level_metadata_hxm_worker_reuse'
             'test_level_metadata_interactive_preemption'

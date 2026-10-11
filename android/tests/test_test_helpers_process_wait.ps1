@@ -148,9 +148,37 @@ function Adb-Timeout {
 
 function Test-EmulatorHealthy { return $true }
 function Test-AppPackageInstalled { return $true }
+$originalSerial = $env:ANDROID_SERIAL
+$env:ANDROID_SERIAL = 'emulator-5554'
+$script:immersiveSetting = ''
+$script:settingsWritable = $true
+$script:settingsWrites = 0
+function Adb-Dev-Timeout {
+    param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds)
+    if ($Serial -ne 'emulator-5554' -or $AdbArgs[4] -ne 'immersive_mode_confirmations') {
+        throw 'Unexpected emulator settings access'
+    }
+    if ($AdbArgs[2] -eq 'get') { return $script:immersiveSetting }
+    $script:settingsWrites++
+    if ($script:settingsWritable) { $script:immersiveSetting = $AdbArgs[5] }
+}
 if (-not (Test-EmulatorReadyForTests)) {
     throw 'Writable app-private storage was rejected by emulator readiness'
 }
+if ($script:immersiveSetting -ne 'confirmed' -or $script:settingsWrites -ne 1) {
+    throw 'Fresh emulator fullscreen onboarding was not provisioned'
+}
+if (-not (Initialize-EmulatorTestUi) -or $script:settingsWrites -ne 1) {
+    throw 'Confirmed fullscreen onboarding was rewritten'
+}
+if (-not (Initialize-EmulatorTestUi -Serial 'physical-fixture') -or $script:settingsWrites -ne 1) {
+    throw 'Emulator provisioning modified a physical target'
+}
+$script:immersiveSetting = ''
+$script:settingsWritable = $false
+if (Test-EmulatorReadyForTests) { throw 'Failed fullscreen onboarding provisioning was accepted' }
+$script:settingsWritable = $true
+if (-not (Test-EmulatorReadyForTests)) { throw 'Fullscreen onboarding provisioning did not recover' }
 $script:AppPrivateStorageReady = $false
 if (Test-EmulatorReadyForTests) {
     throw 'Unwritable app-private storage was accepted by emulator readiness'
@@ -159,6 +187,7 @@ if ($script:LastAppPrivateStorageReason -notmatch 'marker check failed') {
     throw "App-private storage failure reason was not retained: $script:LastAppPrivateStorageReason"
 }
 $script:AppPrivateStorageReady = $true
+$env:ANDROID_SERIAL = $originalSerial
 
 if (Wait-ProcessDead -TimeoutMs 250) {
     throw 'Wait-ProcessDead returned true while the game process was still alive'

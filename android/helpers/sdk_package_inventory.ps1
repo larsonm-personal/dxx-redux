@@ -34,8 +34,11 @@ function Read-DxxSdkIni([string]$Path) {
     foreach ($line in Get-Content -LiteralPath $Path -ErrorAction Stop) {
         if ($line -match '^\s*([^#;=]+?)\s*=\s*(.*?)\s*$') {
             $key = $Matches[1]
+            $value = $Matches[2]
+            # Only package reference keys matter; emulator tuning options may repeat
+            if ($key -notmatch '^(path(\.rel)?|image\.sysdir\.\d+)$') { continue }
             if ($values.ContainsKey($key)) { throw "Duplicate configuration key $key in $Path" }
-            $values[$key] = $Matches[2]
+            $values[$key] = $value
         }
     }
     $values

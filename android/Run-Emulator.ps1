@@ -213,7 +213,7 @@ Write-Host "Device booted"
 # -- 4. Install APK ---------------------------------------------------------
 Write-Host ""
 Write-Host "=== Installing APK ==="
-& $ADB install -r $APK
+& $ADB install -r -t $APK
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: APK install failed" -ForegroundColor Red
     exit 1

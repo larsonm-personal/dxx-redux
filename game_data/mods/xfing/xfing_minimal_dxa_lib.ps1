@@ -524,6 +524,84 @@ function Export-XfingBitmapEntryPng {
     }
 }
 
+function Export-XfingBitmapPog {
+    param($Pig, [object[]]$Rows, [string]$Path)
+
+    # Standard D2 POG container with uncompressed indexed pixels, also consumed by Redux D1
+    # Keeping palette indices preserves CPU transparency tests as well as rendered RGBA
+    $parent = Split-Path -Parent $Path
+    New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Create, [IO.FileAccess]::Write)
+    $writer = [IO.BinaryWriter]::new($stream)
+    try {
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('DPOG'))
+        $writer.Write([int]1)
+        $writer.Write([int]$Rows.Count)
+        foreach ($row in $Rows) { $writer.Write([uint16]$row.Patch.Index) }
+        $offset = 0
+        foreach ($row in $Rows) {
+            $entry = $row.Patch
+            $name = if ($row.Base) { $row.Base.RawName } else { "idx$($entry.Index)" }
+            $dflags = if ($row.Base) { $row.Base.DFlags -band 127 } else { 0 }
+            $nameBytes = [Text.Encoding]::ASCII.GetBytes($name)
+            if ($nameBytes.Length -gt 8 -or $entry.Width -gt 4095 -or $entry.Height -gt 4095) {
+                throw 'Bitmap cannot be represented by a POG header'
+            }
+            $headerName = [byte[]]::new(8)
+            [Array]::Copy($nameBytes, $headerName, $nameBytes.Length)
+            $writer.Write($headerName)
+            $writer.Write([byte]$dflags)
+            $writer.Write([byte]($entry.Width -band 255))
+            $writer.Write([byte]($entry.Height -band 255))
+            $writer.Write([byte](($entry.Width -shr 8) -bor (($entry.Height -shr 8) -shl 4)))
+            $writer.Write([byte]($entry.Flags -band 7))
+            $writer.Write([byte]$entry.AvgColor)
+            $writer.Write([int]$offset)
+            $offset += $entry.Width * $entry.Height
+        }
+        foreach ($row in $Rows) {
+            $pixels = Expand-XfingBitmapPixels -Pig $Pig -Entry $row.Patch
+            $writer.Write([byte[]]$pixels)
+        }
+    } finally {
+        $writer.Dispose()
+        $stream.Dispose()
+    }
+}
+
+function Get-XfingD1PropertyPatch {
+    param($BasePig, $PatchPig)
+
+    # D1 retail compiled properties layout; see properties_read_cmp and d1_in_d2_assets.c
+    $wallStart = 4 + 4 + 800 * 2 + 800 * 26 + 250 * 2 + 4 + 70 * 82 + 4 + 60 * 130 + 4
+    if ($BasePig.PigDataStart -ne $PatchPig.PigDataStart -or $BasePig.PigDataStart -lt ($wallStart + 30 * 66)) {
+        throw 'D1 property conversion requires matching retail PIG metadata layouts'
+    }
+    $expected = [byte[]]::new($BasePig.PigDataStart)
+    [Array]::Copy($BasePig.Bytes, $expected, $expected.Length)
+    $ops = @()
+    $wallCount = [BitConverter]::ToInt32($BasePig.Bytes, $wallStart - 4)
+    if ($wallCount -lt 0 -or $wallCount -gt 30) { throw 'Invalid D1 wall animation count' }
+    for ($index = 0; $index -lt $wallCount; $index++) {
+        $offset = $wallStart + $index * 66
+        $baseTime = [BitConverter]::ToInt32($BasePig.Bytes, $offset)
+        $patchTime = [BitConverter]::ToInt32($PatchPig.Bytes, $offset)
+        if ($baseTime -eq $patchTime) { continue }
+        $frames = [BitConverter]::ToInt16($PatchPig.Bytes, $offset + 4)
+        if ($frames -le 0 -or $patchTime -lt $frames) { throw 'Invalid D1 wall animation timing' }
+        $path = "/sections/wclips/$index/PlayTime"
+        $ops += New-XfingJsonPatchOperation -Op test -Path $path -Value $baseTime
+        $ops += New-XfingJsonPatchOperation -Op replace -Path $path -Value $patchTime
+        [Array]::Copy($PatchPig.Bytes, $offset, $expected, $offset, 4)
+    }
+    for ($offset = 4; $offset -lt $expected.Length; $offset++) {
+        if ($expected[$offset] -ne $PatchPig.Bytes[$offset]) {
+            throw "D1 metadata change at byte $offset has no semantic conversion"
+        }
+    }
+    return $ops
+}
+
 function Read-XfingD1Pig {
     param([string]$Path)
 
@@ -836,7 +914,10 @@ function Read-XfingName13 {
     Assert-XfingSpan -Offset $Position.Value -Length 13 -Limit $Bytes.Length -Description "13-byte name"
     $text = [System.Text.Encoding]::ASCII.GetString($Bytes, $Position.Value, 13)
     $Position.Value += 13
-    return $text.Trim([char]0).TrimEnd()
+    # Engine fixed strings stop at the first NUL; bytes after it are not filename data
+    $zeroIndex = $text.IndexOf([char]0)
+    if ($zeroIndex -ge 0) { $text = $text.Substring(0, $zeroIndex) }
+    return $text
 }
 
 function Read-XfingVClipRecord {
@@ -1403,7 +1484,9 @@ function Write-XfingJsonFile {
     if (-not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent | Out-Null
     }
-    [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth $Depth) + "`n", [Text.UTF8Encoding]::new($false))
+    $content = ($Value | ConvertTo-Json -Depth $Depth) + "`n"
+    if ((Test-Path -LiteralPath $Path) -and [IO.File]::ReadAllText($Path) -ceq $content) { return }
+    [IO.File]::WriteAllText($Path, $content, [Text.UTF8Encoding]::new($false))
 }
 
 function New-XfingDxaFromDirectory {
@@ -1412,22 +1495,60 @@ function New-XfingDxaFromDirectory {
         [string]$OutputPath
     )
 
+    $files = @(Get-ChildItem -LiteralPath $SourceDir -Recurse -File | Sort-Object FullName)
+    # Compare actual entry contents, ignoring only the manifest generation timestamp
+    # An unchanged run preserves the published archive bytes, mtime and timestamp
     if (Test-Path -LiteralPath $OutputPath) {
-        Remove-Item -LiteralPath $OutputPath -Force
+        $old = [IO.Compression.ZipFile]::OpenRead($OutputPath)
+        $same = $old.Entries.Count -eq $files.Count
+        $oldManifest = $null
+        try {
+            foreach ($file in $files) {
+                if (-not $same) { break }
+                $relative = (Get-CompatibleRelativePath -BasePath $SourceDir -TargetPath $file.FullName).Replace('\', '/')
+                $entry = $old.GetEntry($relative)
+                if (-not $entry) { $same = $false; break }
+                $stream = $entry.Open()
+                $memory = [IO.MemoryStream]::new()
+                try { $stream.CopyTo($memory); $previous = $memory.ToArray() }
+                finally { $stream.Dispose(); $memory.Dispose() }
+                $current = [IO.File]::ReadAllBytes($file.FullName)
+                if ($relative -eq 'metadata/manifest.json') {
+                    $oldManifest = [Text.Encoding]::UTF8.GetString($previous)
+                    $before = $oldManifest | ConvertFrom-Json
+                    $after = [Text.Encoding]::UTF8.GetString($current) | ConvertFrom-Json
+                    $before.PSObject.Properties.Remove('generatedUtc')
+                    $after.PSObject.Properties.Remove('generatedUtc')
+                    $same = ($before | ConvertTo-Json -Depth 100 -Compress) -ceq ($after | ConvertTo-Json -Depth 100 -Compress)
+                } else {
+                    $same = (Get-XfingSha256ForBytes $previous) -ceq (Get-XfingSha256ForBytes $current)
+                }
+            }
+        } finally { $old.Dispose() }
+        if ($same) {
+            if ($null -ne $oldManifest) {
+                [IO.File]::WriteAllText((Join-Path $SourceDir 'metadata/manifest.json'), $oldManifest, [Text.UTF8Encoding]::new($false))
+            }
+            return
+        }
     }
-    $archive = [System.IO.Compression.ZipFile]::Open($OutputPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    # Build beside the destination; an interrupted build leaves the previous release intact
+    $temporary = "$OutputPath.tmp"
+    $output = [IO.File]::Open($temporary, [IO.FileMode]::Create, [IO.FileAccess]::Write)
+    $archive = [IO.Compression.ZipArchive]::new($output, [IO.Compression.ZipArchiveMode]::Create)
     try {
-        $files = Get-ChildItem -LiteralPath $SourceDir -Recurse -File | Sort-Object FullName
         foreach ($file in $files) {
             $relative = (Get-CompatibleRelativePath -BasePath $SourceDir -TargetPath $file.FullName).Replace('\', '/')
-            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-                $archive,
-                $file.FullName,
-                $relative,
-                [System.IO.Compression.CompressionLevel]::Optimal
-            ) | Out-Null
+            $entry = $archive.CreateEntry($relative, [IO.Compression.CompressionLevel]::Optimal)
+            $entry.LastWriteTime = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+            $source = [IO.File]::OpenRead($file.FullName)
+            $target = $entry.Open()
+            try { $source.CopyTo($target) }
+            finally { $source.Dispose(); $target.Dispose() }
         }
     } finally {
         $archive.Dispose()
+        $output.Dispose()
     }
+    [IO.File]::Move($temporary, $OutputPath, $true)
 }

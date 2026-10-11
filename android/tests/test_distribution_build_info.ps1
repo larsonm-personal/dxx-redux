@@ -28,7 +28,7 @@ if ($badging -notmatch "(?m)^(?:sdkVersion|minSdkVersion):'([0-9]+)'") { throw '
 $minimum = $Matches[1]
 if ($badging -notmatch "(?m)^targetSdkVersion:'([0-9]+)'") { throw 'Missing target SDK' }
 $target = $Matches[1]
-& $script:ADB -s $Serial install -r $Apk | Out-Null
+& $script:ADB -s $Serial install -r -t $Apk | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'APK install failed' }
 $deviceApi = [int](Adb -AdbArgs @('shell', 'getprop', 'ro.build.version.sdk'))
 $packageInfo = Adb -AdbArgs @('shell', 'dumpsys', 'package', $script:PACKAGE)

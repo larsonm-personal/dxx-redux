@@ -11,7 +11,7 @@ Ensure-EmulatorHealthy | Out-Null
 & $ADB shell am force-stop $script:PACKAGE
 & $ADB shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
 if ($Install) {
-    & $ADB install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
+    & $ADB install -r -t (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
     if ($LASTEXITCODE -ne 0) { throw 'Could not install the test APK' }
 }
 $fixtures = Join-Path $repoRoot 'temp/mission-isolation-fixtures'

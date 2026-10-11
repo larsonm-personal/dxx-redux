@@ -9,7 +9,7 @@ class VideoInfoOverlayLayoutTest {
     fun fullHeightKeepsDefaultSizes() {
         val layout =
             computeVideoInfoOverlayLayout(
-                height = 720,
+                height = 900,
                 density = 2f,
                 baseTextSize = 22f,
                 actionRows = 3,
@@ -17,15 +17,15 @@ class VideoInfoOverlayLayoutTest {
 
         assertEquals(22f, layout.infoTextSize)
         assertEquals(22f, layout.buttonTextSize)
-        assertEquals(626f, layout.panelHeight)
-        assertFits(720, layout)
+        assertEquals(725f, layout.panelHeight)
+        assertFits(900, layout)
     }
 
     @Test
     fun normalShortHeightShrinksInfoBeforeButtons() {
         val layout =
             computeVideoInfoOverlayLayout(
-                height = 480,
+                height = 550,
                 density = 2f,
                 baseTextSize = 22f,
                 actionRows = 3,
@@ -33,7 +33,7 @@ class VideoInfoOverlayLayoutTest {
 
         assertTrue(layout.infoTextSize < layout.buttonTextSize)
         assertEquals(22f, layout.buttonTextSize)
-        assertFits(480, layout)
+        assertFits(550, layout)
     }
 
     @Test

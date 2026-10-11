@@ -1,6 +1,7 @@
 *
 !*.md
 !*.ps1
+!*.py
 !.gitignore
 !d2x_sp/
 !d2x_sp/.gitignore

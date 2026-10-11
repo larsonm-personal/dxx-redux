@@ -2,12 +2,13 @@
 # Run a maintained fixture linked to the actual Android engine libraries
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('config_policy', 'matcen_stations', 'texture_labels', 'automap_route_policy', 'music_completion', 'redbook_completion', 'cd_preview_completion', 'secret_origins')][string]$Fixture,
+    [Parameter(Mandatory)][ValidateSet('config_policy', 'matcen_stations', 'texture_labels', 'automap_route_policy', 'music_completion', 'redbook_completion', 'cd_preview_completion', 'secret_origins', 'd1_mod_patches', 'mod_bitmaps', 'mod_renderer')][string]$Fixture,
     [Parameter(Mandatory)][int]$ExpectedCases,
+    [int]$ExpectedD2Cases = 0,
     [string]$Serial = $env:ANDROID_SERIAL,
     [string]$NativeBuildDir,
     [string]$NativeLibraryDir,
-    [ValidateSet('labels', 'batches', 'batches-baseline', 'merged-wrap', 'merged-wrap-baseline', 'merge-cache', 'bindings', 'bindings-baseline', 'mipmaps', 'mipmaps-baseline')][string]$Mode = 'labels',
+    [ValidateSet('labels', 'batches', 'batches-baseline', 'merged-wrap', 'merged-wrap-baseline', 'merge-cache', 'bindings', 'bindings-baseline', 'mipmaps', 'mipmaps-baseline', 'ktx2-mipmaps')][string]$Mode = 'labels',
     [string]$OutputDirectory,
     [string[]]$DataFiles = @(),
     [switch]$NoEngineBuild
@@ -71,6 +72,14 @@ try {
         & $adb @device push $library.FullName "$remote/"
         if ($LASTEXITCODE -ne 0) { throw "Push failed: $($library.Name)" }
     }
+    if (-not (Test-Path (Join-Path $libraries 'libc++_shared.so'))) {
+        $triple = switch ($abi) { 'x86_64' { 'x86_64-linux-android' } 'arm64-v8a' { 'aarch64-linux-android' } 'armeabi-v7a' { 'arm-linux-androideabi' } }
+        $toolchain = Split-Path (Split-Path $settings.CMAKE_CXX_COMPILER_AR)
+        $runtime = Join-Path $toolchain "sysroot/usr/lib/$triple/libc++_shared.so"
+        if (-not (Test-Path -LiteralPath $runtime)) { throw "Missing NDK C++ runtime: $runtime" }
+        & $adb @device push $runtime "$remote/"
+        if ($LASTEXITCODE -ne 0) { throw 'Push C++ runtime failed' }
+    }
     foreach ($game in @('d1', 'd2')) {
         foreach ($asset in $assetFiles) {
             & $adb @device push $asset.FullName "$remote/$game/$($asset.Name)"
@@ -106,8 +115,9 @@ try {
         & $adb @device pull "$remote/$game/trace.json" (Join-Path $OutputDirectory "$game.json")
         if ($LASTEXITCODE -ne 0) { throw "$game trace pull failed" }
         $cases = @(Get-Content (Join-Path $OutputDirectory "$game.json") -Raw | ConvertFrom-Json)
-        if ($cases.Count -ne $ExpectedCases) { throw "$game $Fixture trace case count is not $ExpectedCases" }
-        Write-Host "$game $Fixture passed: $ExpectedCases actual engine cases"
+        $expectedForGame = if ($game -eq 'd2' -and $ExpectedD2Cases) { $ExpectedD2Cases } else { $ExpectedCases }
+        if ($cases.Count -ne $expectedForGame) { throw "$game $Fixture trace case count is not $expectedForGame" }
+        Write-Host "$game $Fixture passed: $expectedForGame actual engine cases"
     }
 } finally {
     if ($remote -notmatch ('^/data/local/tmp/dxx-' + [regex]::Escape($artifactName) + '-[a-f0-9]{32}$')) { throw 'Invalid native test cleanup path' }

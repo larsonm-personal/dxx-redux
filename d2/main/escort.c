@@ -3555,6 +3555,9 @@ static void escort_menu_item_text(escort_menu *menu, int item, char *buf, size_t
 
 static void escort_menu_move_selection(escort_menu *menu, int delta)
 {
+#ifdef __ANDROID__
+	debug_log(DLOG_GUIDEBOT, "Guide menu navigation: from=%d delta=%d count=%d", menu->selected_item, delta, menu->item_count);
+#endif
 	menu->selected_item = (menu->selected_item + delta + menu->item_count) % menu->item_count;
 }
 

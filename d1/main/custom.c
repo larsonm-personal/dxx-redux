@@ -14,6 +14,12 @@
 #include "hash.h"
 #include "u_mem.h"
 #include "custom.h"
+#ifdef __ANDROID__
+#include "args.h"
+#ifdef USE_SDLMIXER
+extern void digi_mixer_free_cached_sounds(void);
+#endif
+#endif
 
 //#define D2TMAP_CONV // used for testing
 
@@ -22,6 +28,9 @@ extern hashtable AllDigiSndNames;
 
 struct snd_info
 {
+#ifdef __ANDROID__
+	int freq;
+#endif
 	unsigned int length;
 	ubyte *data;
 };
@@ -66,6 +75,13 @@ struct custom_info
 };
 
 grs_bitmap BitmapOriginal[MAX_BITMAP_FILES];
+#ifdef __ANDROID__
+int piggy_bitmap_is_custom(grs_bitmap *bitmap)
+{
+	return bitmap >= GameBitmaps && bitmap < &GameBitmaps[Num_bitmap_files] &&
+	       (BitmapOriginal[bitmap - GameBitmaps].bm_flags & 0x80);
+}
+#endif
 struct snd_info SoundOriginal[MAX_SOUND_FILES];
 
 static void change_ext(char *filename, const char *newext, int filename_size)
@@ -446,6 +462,9 @@ int load_pigpog(char *pogname)
 				SoundOriginal[x & 0x7fffffff].length = snd->length | 0x80000000;
 #endif
 				SoundOriginal[x & 0x7fffffff].data = snd->data;
+#ifdef __ANDROID__
+				SoundOriginal[x & 0x7fffffff].freq = snd->freq;
+#endif
 			}
 
 #ifdef ALLEGRO
@@ -454,6 +473,9 @@ int load_pigpog(char *pogname)
 				snd->length = j;
 #endif
 			snd->data = p;
+#ifdef __ANDROID__
+			snd->freq = 11025;
+#endif
 
 			if (PHYSFS_read(f, p, j, 1) < 1)
 			{
@@ -714,6 +736,9 @@ void custom_remove()
 		{
 			d_free(GameSounds[i].data);
 			GameSounds[i].data = SoundOriginal[i].data;
+#ifdef __ANDROID__
+			GameSounds[i].freq = SoundOriginal[i].freq;
+#endif
 #ifdef ALLEGRO
 			GameSounds[i].len = SoundOriginal[i].length & 0x7fffffff;
 #else
@@ -727,6 +752,13 @@ void load_custom_data(char *level_name)
 {
 	char custom_file[64];
 
+#ifdef __ANDROID__
+	/* Android PCM overlays and level overrides share the mixer cache */
+	digi_stop_digi_sounds();
+#ifdef USE_SDLMIXER
+	if (!GameArg.SndDisableSdlMixer) digi_mixer_free_cached_sounds();
+#endif
+#endif
 	custom_remove();
 	strncpy(custom_file, level_name, 63);
 	custom_file[63] = 0;

@@ -199,8 +199,20 @@ function Test-AppPrivateStorageReady {
     }
 }
 
+function Initialize-EmulatorTestUi {
+    param([string]$Serial = $env:ANDROID_SERIAL)
+    if (-not $Serial) { $Serial = $script:PRIMARY_EMULATOR_SERIAL }
+    if (Test-PhysicalTestTarget -Serial $Serial) { return $true }
+    # A fresh Android image otherwise puts a system prompt above the first fullscreen game
+    $query = @('shell', 'settings', 'get', 'secure', 'immersive_mode_confirmations')
+    if ((Adb-Dev-Timeout -Serial $Serial -AdbArgs $query -Seconds 5) -eq 'confirmed') { return $true }
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'settings', 'put', 'secure', 'immersive_mode_confirmations', 'confirmed') -Seconds 5 | Out-Null
+    return ((Adb-Dev-Timeout -Serial $Serial -AdbArgs $query -Seconds 5) -eq 'confirmed')
+}
+
 function Test-EmulatorReadyForTests {
     if (-not (Test-EmulatorHealthy)) { return $false }
+    if (-not (Initialize-EmulatorTestUi)) { return $false }
     if (-not (Test-AppPackageInstalled)) { return $true }
     return (Test-AppPrivateStorageReady)
 }
@@ -2434,7 +2446,9 @@ function Start-ManagedEmulatorProcess {
         [Parameter(Mandatory)][string]$AvdName,
         [Parameter(Mandatory)][string]$Serial,
         [string]$GpuRenderer = "host",
-        [switch]$Headless
+        [switch]$Headless,
+        [string]$DataPath,
+        [switch]$ReadOnly
     )
 
     $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AvdName
@@ -2444,6 +2458,8 @@ function Start-ManagedEmulatorProcess {
     if ($Headless) {
         $arguments += "-no-window"
     }
+    if ($DataPath) { $arguments += @('-data', $DataPath) }
+    if ($ReadOnly) { $arguments += '-read-only' }
 
     try {
         if (Test-RegressionWindowsHost) {
@@ -2480,17 +2496,57 @@ function Get-ManagedEmulatorProcesses {
     if (Test-RegressionWindowsHost) {
         return @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
                 $_.Name -match '^(emulator|qemu-system.*)\.exe$' -and $_.CommandLine -match $pattern
-            } | Select-Object ProcessId)
+            } | Select-Object ProcessId, Name, CommandLine)
     }
     return @(& /bin/ps -axo 'pid=,args=' | ForEach-Object {
             if ($_ -match '^\s*(\d+)\s+(.*)$') {
                 $processId = [int]$Matches[1]
                 $commandLine = $Matches[2]
                 if ($commandLine -match '(?:^|/)emulator\s|qemu-system' -and $commandLine -match $pattern) {
-                    [pscustomobject]@{ ProcessId = $processId }
+                    $arguments = $null
+                    $argumentPath = "/proc/$processId/cmdline"
+                    if (Test-Path -LiteralPath $argumentPath) {
+                        try {
+                            $arguments = [IO.File]::ReadAllText($argumentPath).Split([char[]]@([char]0), [StringSplitOptions]::RemoveEmptyEntries)
+                        } catch {}
+                    }
+                    [pscustomobject]@{ ProcessId = $processId; CommandLine = $commandLine; Arguments = $arguments }
                 }
             }
         })
+}
+
+function Get-ManagedEmulatorLaunchSettings {
+    param([Parameter(Mandatory)][string]$Serial)
+    # Read the live process before stopping it, even when its ADB transport is offline
+    $processes = @(Get-ManagedEmulatorProcesses -Serial $Serial | Sort-Object @{
+            Expression = { if ($_.PSObject.Properties['Name'] -and $_.Name -match '^emulator(?:\.exe)?$') { 0 } else { 1 } }
+        })
+    foreach ($process in $processes) {
+        $arguments = @()
+        if ($process.PSObject.Properties['Arguments'] -and $process.Arguments) {
+            $arguments = @($process.Arguments)
+        } elseif ($process.PSObject.Properties['CommandLine'] -and $process.CommandLine) {
+            $arguments = @([regex]::Matches($process.CommandLine, '"([^"]*)"|''([^'']*)''|(\S+)') | ForEach-Object {
+                    if ($_.Groups[1].Success) { $_.Groups[1].Value }
+                    elseif ($_.Groups[2].Success) { $_.Groups[2].Value }
+                    else { $_.Groups[3].Value }
+                })
+        }
+        if (-not $arguments.Count) { continue }
+        $settings = @{ Headless = $arguments -contains '-no-window'; ReadOnly = $arguments -contains '-read-only' }
+        $options = @{ '-avd' = 'AvdName'; '-gpu' = 'GpuRenderer'; '-data' = 'DataPath' }
+        for ($index = 0; $index -lt $arguments.Count; $index++) {
+            if ($options.ContainsKey($arguments[$index])) {
+                if ($index + 1 -ge $arguments.Count) { throw "Incomplete emulator option: $($arguments[$index])" }
+                $settingName = $options[$arguments[$index]]
+                $index++
+                $settings[$settingName] = $arguments[$index]
+            }
+        }
+        if ($settings.ContainsKey('AvdName')) { return $settings }
+    }
+    return @{}
 }
 
 function Get-ManagedEmulatorPort {
@@ -2565,7 +2621,7 @@ function Wait-EmulatorBootComplete {
         if ($boot -and $boot.Trim() -eq "1") {
             $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds 5
             if ($packageService -and $packageService -notmatch "Can't find service: package" -and $packageService -match "package:android") {
-                return $true
+                if (Initialize-EmulatorTestUi -Serial $Serial) { return $true }
             }
         }
         Start-Sleep -Seconds 1
@@ -2582,7 +2638,9 @@ function Start-ManagedEmulator {
         [int]$BootTimeoutSeconds = 240,
         [int]$ExistingProcessRecoverySeconds = 30,
         [string]$GpuRenderer = "host",
-        [switch]$Headless
+        [switch]$Headless,
+        [string]$DataPath,
+        [switch]$ReadOnly
     )
 
     Get-ManagedEmulatorPort -Serial $Serial | Out-Null
@@ -2619,7 +2677,7 @@ function Start-ManagedEmulator {
 
     foreach ($launch in $launches) {
         Write-Status "  Starting $AvdName ($Serial, $($launch.Label))..." "Yellow"
-        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -Serial $Serial -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless)) {
+        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -Serial $Serial -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless -DataPath $DataPath -ReadOnly:$ReadOnly)) {
             Write-ManagedEmulatorLogTail -AvdName $AvdName
             continue
         }
@@ -2817,7 +2875,7 @@ function Install-ApkOnDevice {
     }
     if (-not $Serial) { $Serial = Initialize-AndroidTestTarget }
     Write-Status "Installing test APK on $Serial..."
-    $installArgs = @('install', '-r')
+    $installArgs = @('install', '-r', '-t')
     # Restore the suite's saved debug APK after tests that install newer builds
     if ($Serial -like 'emulator-*') { $installArgs += '-d' }
     $installArgs += $apk

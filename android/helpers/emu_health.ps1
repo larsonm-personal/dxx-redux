@@ -8,6 +8,8 @@ param(
     [string]$AvdName,
     [string]$GpuRenderer = "host",
     [switch]$Headless,
+    [string]$DataPath,
+    [switch]$ReadOnly,
     [string]$PreferredSerial = $env:ANDROID_SERIAL,
     [switch]$ForceRestart
 )
@@ -27,6 +29,12 @@ if (-not $Restart) {
     exit 1
 }
 
+$runningSettings = Get-ManagedEmulatorLaunchSettings -Serial $PreferredSerial
+foreach ($setting in @('AvdName', 'GpuRenderer', 'Headless', 'DataPath', 'ReadOnly')) {
+    if (-not $PSBoundParameters.ContainsKey($setting) -and $runningSettings.ContainsKey($setting)) {
+        Set-Variable -Name $setting -Value $runningSettings[$setting]
+    }
+}
 if (-not $AvdName) {
     $avd = Adb-Dev-Timeout -Serial $PreferredSerial -AdbArgs @("emu", "avd", "name") -Seconds 5
     if ($avd) { $AvdName = ($avd -split "`n" | Where-Object { $_.Trim() -and $_.Trim() -ne "OK" } | Select-Object -First 1).Trim() }
@@ -43,7 +51,7 @@ if (-not (Stop-ManagedEmulator -Serial $PreferredSerial)) {
     Write-Host "Could not stop $PreferredSerial"
     exit 1
 }
-if (Start-ManagedEmulator -AvdName $AvdName -Serial $PreferredSerial -GpuRenderer $GpuRenderer -Headless:$Headless -BootTimeoutSeconds $TimeoutSeconds) {
+if (Start-ManagedEmulator -AvdName $AvdName -Serial $PreferredSerial -GpuRenderer $GpuRenderer -Headless:$Headless -DataPath $DataPath -ReadOnly:$ReadOnly -BootTimeoutSeconds $TimeoutSeconds) {
     Write-Host "RESTARTED_AND_HEALTHY ($PreferredSerial)"
     exit 2
 }

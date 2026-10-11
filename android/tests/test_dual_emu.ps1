@@ -230,7 +230,7 @@ Write-Status "--- Installing APK on both emulators ---" "White"
 
 foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
     Write-Status "  Installing on $serial..."
-    $installOut = Adb-Dev-Timeout -Serial $serial -AdbArgs @("install", "-r", $APK) -Seconds 60
+    $installOut = Adb-Dev-Timeout -Serial $serial -AdbArgs @("install", "-r", "-t", $APK) -Seconds 60
     if ($installOut -and $installOut -match "Success") {
         Write-Status "  ${serial}: installed" "Green"
     } else {

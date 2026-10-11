@@ -15,7 +15,7 @@ enum { RESTORE_LOADED = 3,
 	   RESTORE_RUN_ACK,
 	   RESTORE_ERROR };
 static struct {
-	uint64_t visit, deadline, next_send;
+	uint64_t visit, deadline, next_send, started_ms;
 	unsigned required, loaded, acknowledged, running;
 	int host, id, phase, pause_owned, local_loaded;
 } Restore_barrier;
@@ -154,6 +154,7 @@ static int restore_barrier_begin(int kind, int id, uint64_t visit, unsigned chun
 	Restore_barrier.id = id;
 	Restore_barrier.host = multi_who_is_master();
 	Restore_barrier.phase = RESTORE_LOADING;
+	Restore_barrier.started_ms = multi_save_transfer_now_ms();
 	Restore_barrier.deadline = multi_save_transfer_now_ms() + multi_save_transfer_limit_ms(chunks) + 60000u;
 	for (int i = 0; i < N_players; ++i)
 		if (Players[i].connected == CONNECT_PLAYING) Restore_barrier.required |= 1u << i;

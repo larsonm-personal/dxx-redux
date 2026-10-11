@@ -10,6 +10,7 @@
 
 #ifdef __ANDROID__
 #include "android_sound_trace.h"
+#include "android_mod_assets.h"
 #include "music_playback_levels.h"
 #endif
 
@@ -230,7 +231,12 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 	android_sound_trace_play(soundnum, SoundChunks[soundnum].abuf, SoundChunks[soundnum].alen,
 	                         digi_mixer_source_rate(soundnum), channel);
 #endif
+#ifdef __ANDROID__
+	if (Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop) >= 0)
+		android_mod_sound_played(soundnum);
+#else
 	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
+#endif
 	Mix_SetPanning(channel, 255-mix_pan, mix_pan);
 	if (volume > F1_0)
 		Mix_SetDistance(channel, 0);

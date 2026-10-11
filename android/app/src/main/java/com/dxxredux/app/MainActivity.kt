@@ -717,6 +717,8 @@ class MainActivity :
     // Video stats: [fps, total_loaded, hires_count, max_hires_w, max_hires_h,
     //   gl_max_tex_size, tex_memory_kb, render_w, render_h, display_w, display_h]
     // android port: video diagnostics overlay
+    external fun nativeGetTexturePackStatus(): String
+
     external fun nativeGetVideoStats(): IntArray
 
     // android port: coop QoL overlay -- robot kill stats per player
@@ -2112,6 +2114,7 @@ class MainActivity :
         val vidOverlay =
             VideoInfoOverlay(this).apply {
                 visibility = View.GONE
+                texturePackProvider = { runCatching { nativeGetTexturePackStatus() }.getOrNull() }
                 statsProvider = {
                     try {
                         nativeGetVideoStats()

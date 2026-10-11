@@ -208,7 +208,8 @@ function Read-Jsonc {
 }
 
 function Get-SetupIntrospection {
-    Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
+    param([int]$TimeoutSeconds = $script:ADB_TIMEOUT)
+    Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') -Timeout $TimeoutSeconds | Out-Null
     Start-Sleep -Milliseconds 800
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
@@ -1257,7 +1258,15 @@ if ($useDirectCdImport) {
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
         Start-Sleep -Seconds 2
-        $state = Get-SetupIntrospection
+        # Android queues this broadcast behind the pending import command
+        $remainingSeconds = [int][Math]::Ceiling($importTimeoutSeconds - $importSw.Elapsed.TotalSeconds)
+        if ($remainingSeconds -le 0) { break }
+        try {
+            $state = Get-SetupIntrospection -TimeoutSeconds $remainingSeconds
+        } catch {
+            if ($_.Exception.Message -match '^ADB timeout \(' -and $importSw.Elapsed.TotalSeconds -ge $importTimeoutSeconds) { break }
+            throw
+        }
         if (-not $state) { continue }
         $remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $state)
         $missingExpected = @(Get-ExtractRegressionMissingExpectedFiles $expectedFiles $remoteFiles)
@@ -1341,7 +1350,15 @@ if ($useDirectCdImport) {
     $importSw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
         Start-Sleep -Seconds 2
-        $state = Get-SetupIntrospection
+        # Android queues this broadcast behind the pending import command
+        $remainingSeconds = [int][Math]::Ceiling($importTimeoutSeconds - $importSw.Elapsed.TotalSeconds)
+        if ($remainingSeconds -le 0) { break }
+        try {
+            $state = Get-SetupIntrospection -TimeoutSeconds $remainingSeconds
+        } catch {
+            if ($_.Exception.Message -match '^ADB timeout \(' -and $importSw.Elapsed.TotalSeconds -ge $importTimeoutSeconds) { break }
+            throw
+        }
         if (-not $state) { continue }
         $remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $state)
         $missingExpected = @(Get-ExtractRegressionMissingExpectedFiles $expectedFiles $remoteFiles)

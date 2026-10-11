@@ -21,7 +21,14 @@ function Invoke-MenuSteps {
                 if (-not $raw -or $raw -notmatch '^\s*\{') { return $false }
                 $result = $raw | ConvertFrom-Json
                 if ($result.run_id -ne $runId) { return $false }
-                if ($result.result -eq 'FAIL') { throw "Menu automation failed: $raw" }
+                if ($result.result -eq 'FAIL') {
+                    [IO.File]::WriteAllText((Join-Path $outputDir 'failure-result.json'), ($result | ConvertTo-Json -Depth 10) + "`n")
+                    foreach ($name in @('automation_log.jsonl', 'introspect.json')) {
+                        Adb -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', "files/$name") |
+                            Out-File -LiteralPath (Join-Path $outputDir "failure-$name") -Encoding utf8
+                    }
+                    throw "Menu automation failed: $raw"
+                }
                 return $result.result -eq 'PASS'
             })) { throw 'Menu automation did not finish' }
 }
@@ -50,8 +57,14 @@ function Assert-GuideMenu {
         @{action = 'controller_input'; key = 'DUp'; post_delay_ms = 150 },
         @{action = 'assert'; expect = @{'menu.selected_index' = ($count - 1) } },
         @{action = 'controller_input'; key = 'DDown'; post_delay_ms = 150 },
-        @{action = 'controller_input'; key = 'DDown'; pressed = $true; post_delay_ms = 800 },
-        @{action = 'controller_input'; key = 'DDown'; pressed = $false; post_delay_ms = 200 },
+        @{action = 'assert'; expect = @{'menu.selected_index' = 0 } },
+        # Release as soon as repeat is observed: a fixed hold can wrap a whole menu
+        @{action = 'controller_input'; key = 'DDown'; pressed = $true; post_delay_ms = 0 },
+        @{
+            action = 'controller_input'; key = 'DDown'; pressed = $false; post_delay_ms = 200
+            expect = @{'menu.type' = 'guidebot'; 'menu.selected_index' = @{range = @(2, ($count - 1)) } }
+            timeout_ms = 3000
+        },
         @{action = 'assert'; expect = @{'menu.selected_index' = @{range = @(2, ($count - 1)) } } },
         @{action = 'controller_input'; key = 'B'; post_delay_ms = 200 }
     )
@@ -140,6 +153,7 @@ try {
     Assert-GuideMenu -Enhanced $false
     Write-Status 'PASS: added goals hide and return with active routing, including after save restore' 'Green'
 } finally {
+    Adb -AdbArgs @('logcat', '-d') | Out-File -LiteralPath (Join-Path $outputDir 'logcat.log') -Encoding utf8
     Stop-AppAndWait
     if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial }
     else { Remove-Item Env:ANDROID_SERIAL -ErrorAction SilentlyContinue }

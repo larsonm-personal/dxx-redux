@@ -107,18 +107,6 @@ $script:superTransparentKeyRed = 120
 $script:superTransparentKeyGreen = 88
 $script:superTransparentKeyBlue = 128
 
-function Test-IsSuperTransparentColor {
-    param(
-        [byte]$Blue,
-        [byte]$Green,
-        [byte]$Red
-    )
-
-    return $Blue -eq $script:superTransparentKeyBlue -and
-    $Green -eq $script:superTransparentKeyGreen -and
-    $Red -eq $script:superTransparentKeyRed
-}
-
 function Assert-D2xxlTgaMetadataSpan {
     param(
         [long]$Offset,
@@ -136,7 +124,8 @@ function Assert-D2xxlTgaMetadataSpan {
 function Get-D2xxlTgaLayout {
     param(
         [byte[]]$Bytes,
-        [string]$Path
+        [string]$Path,
+        [switch]$D2xxlSource
     )
 
     if ($Bytes.Length -lt 18) {
@@ -148,16 +137,16 @@ function Get-D2xxlTgaLayout {
     $imageType = [int]$Bytes[2]
     $cmapStart = [BitConverter]::ToUInt16($Bytes, 3)
     $cmapLength = [BitConverter]::ToUInt16($Bytes, 5)
-    $cmapBits = [int]$Bytes[7]
     $width = [int][BitConverter]::ToUInt16($Bytes, 12)
     $height = [int][BitConverter]::ToUInt16($Bytes, 14)
     $bpp = [int]$Bytes[16]
     $descriptor = [int]$Bytes[17]
 
-    if ($imageType -ne 2) {
-        throw "Unsupported TGA type $imageType (only uncompressed true-color type 2 is supported): $Path"
+    if ($imageType -notin @(2, 10)) {
+        throw "Unsupported TGA type $imageType (only true-color types 2 and 10 are supported): $Path"
     }
-    if ($colorMapType -ne 0 -or $cmapStart -ne 0 -or $cmapLength -ne 0 -or $cmapBits -ne 0) {
+    # A zero-length absent color map has no entries; some original TGAs retain its unused depth
+    if ($colorMapType -ne 0 -or $cmapStart -ne 0 -or $cmapLength -ne 0) {
         throw "Type-2 TGA must not declare a color map: $Path"
     }
     if ($width -le 0 -or $height -le 0 -or $width -gt $script:tgaMaxDimension -or $height -gt $script:tgaMaxDimension) {
@@ -182,6 +171,19 @@ function Get-D2xxlTgaLayout {
     $dataOffset = [long]18 + $identSize
     $pixelBytes = $pixelCount * $channels
     $imageEnd = $dataOffset + $pixelBytes
+    if ($imageType -eq 10) {
+        $imageEnd = $dataOffset
+        $decodedPixels = 0L
+        while ($decodedPixels -lt $pixelCount) {
+            if ($imageEnd -ge $Bytes.Length) { throw "Truncated TGA RLE packet: $Path" }
+            $packet = $Bytes[$imageEnd++]
+            $count = ($packet -band 127) + 1
+            if ($count -gt $pixelCount - $decodedPixels) { throw "TGA RLE packet exceeds pixel count: $Path" }
+            $imageEnd += $(if ($packet -band 128) { $channels } else { $channels * $count })
+            if ($imageEnd -gt $Bytes.Length) { throw "Truncated TGA RLE pixels: $Path" }
+            $decodedPixels += $count
+        }
+    }
     if ($imageEnd -gt $Bytes.Length) {
         throw "TGA pixel payload is truncated: $Path"
     }
@@ -209,6 +211,8 @@ function Get-D2xxlTgaLayout {
         if ($extensionOffset -ne 0) {
             Assert-D2xxlTgaMetadataSpan -Offset $extensionOffset -Length 2 -ImageEnd $imageEnd -FooterOffset $footerOffset -Description "TGA extension header"
             $extensionSize = [long][BitConverter]::ToUInt16($Bytes, [int]$extensionOffset)
+            # Original ctrl03/ctrl04 strips declare 494 but store the complete 495-byte area
+            if ($D2xxlSource -and $extensionSize -eq 494) { $extensionSize = 495 }
             if ($extensionSize -ne 495) {
                 throw "TGA extension area has unsupported size $($extensionSize): $Path"
             }
@@ -234,6 +238,7 @@ function Get-D2xxlTgaLayout {
         Width = $width
         Height = $height
         Channels = $channels
+        ImageType = $imageType
         AlphaBits = $alphaBits
         DataOffset = [int]$dataOffset
         TopOrigin = ($descriptor -band 0x20) -ne 0
@@ -284,23 +289,51 @@ function ConvertTo-D2xxlTgaBitmap {
 }
 
 function Read-D2xxlTgaPixels {
-    param([string]$Path)
+    param([string]$Path, [switch]$D2xxlSource)
 
     $fileLength = (Get-Item -LiteralPath $Path).Length
     if ($fileLength -gt $script:tgaMaxInputBytes) {
         throw "TGA exceeds the $($script:tgaMaxInputBytes)-byte input limit: $Path"
     }
     $bytes = [System.IO.File]::ReadAllBytes($Path)
-    $layout = Get-D2xxlTgaLayout -Bytes $bytes -Path $Path
+    $layout = Get-D2xxlTgaLayout -Bytes $bytes -Path $Path -D2xxlSource:$D2xxlSource
     $width = $layout.Width
     $height = $layout.Height
     $channels = $layout.Channels
     $pixelCount = $width * $height
+    if ($layout.ImageType -eq 10) {
+        $raw = [byte[]]::new($pixelCount * $channels)
+        $cursor = $layout.DataOffset
+        $written = 0
+        # Packet bounds and the exact expanded pixel count were checked by the layout reader
+        while ($written -lt $raw.Length) {
+            $packet = $bytes[$cursor++]
+            $count = ($packet -band 127) + 1
+            if ($packet -band 128) {
+                for ($i = 0; $i -lt $count; $i++) {
+                    [Array]::Copy($bytes, $cursor, $raw, $written, $channels)
+                    $written += $channels
+                }
+                $cursor += $channels
+            } else {
+                $length = $count * $channels
+                [Array]::Copy($bytes, $cursor, $raw, $written, $length)
+                $cursor += $length
+                $written += $length
+            }
+        }
+        $bytes = $raw
+        $layout.DataOffset = 0
+    }
+    # Avoid millions of PowerShell function invocations when decoding full-size strips
+    $keyBlue = $script:superTransparentKeyBlue
+    $keyGreen = $script:superTransparentKeyGreen
+    $keyRed = $script:superTransparentKeyRed
 
     $hasKeyColor = $false
     for ($pixel = 0; $pixel -lt $pixelCount; $pixel++) {
         $idx = $layout.DataOffset + ($pixel * $channels)
-        if (Test-IsSuperTransparentColor -Blue $bytes[$idx] -Green $bytes[$idx + 1] -Red $bytes[$idx + 2]) {
+        if ($bytes[$idx] -eq $keyBlue -and $bytes[$idx + 1] -eq $keyGreen -and $bytes[$idx + 2] -eq $keyRed) {
             $hasKeyColor = $true
             break
         }
@@ -326,7 +359,7 @@ function Read-D2xxlTgaPixels {
             $source = $layout.DataOffset + (($storedY * $width + $storedX) * $channels)
             $destinationPixel = $destY * $width + $destX
             $destination = $destinationPixel * $outputChannels
-            $isKey = Test-IsSuperTransparentColor -Blue $bytes[$source] -Green $bytes[$source + 1] -Red $bytes[$source + 2]
+            $isKey = $bytes[$source] -eq $keyBlue -and $bytes[$source + 1] -eq $keyGreen -and $bytes[$source + 2] -eq $keyRed
             if ($isKey) {
                 $hasTransparentPixels = $true
                 if ($maskBytes) {
@@ -343,7 +376,7 @@ function Read-D2xxlTgaPixels {
             $outputBytes[$destination + 1] = $bytes[$source + 1]
             $outputBytes[$destination + 2] = $bytes[$source + 2]
             if ($useArgb) {
-                $alpha = if ($channels -eq 4 -and $layout.AlphaBits -eq 8) { $bytes[$source + 3] } else { 255 }
+                $alpha = if ($channels -eq 4 -and ($layout.AlphaBits -eq 8 -or $D2xxlSource)) { $bytes[$source + 3] } else { 255 }
                 $outputBytes[$destination + 3] = $alpha
                 if ($alpha -eq 0) {
                     $outputBytes[$destination] = 0
@@ -407,9 +440,9 @@ function Read-D2xxlTgaPixels {
 
 # Keep platform-specific bitmap allocation outside the portable TGA decoder
 function Read-TGA {
-    param([string]$Path)
+    param([string]$Path, [switch]$D2xxlSource)
 
-    $decoded = Read-D2xxlTgaPixels -Path $Path
+    $decoded = Read-D2xxlTgaPixels -Path $Path -D2xxlSource:$D2xxlSource
     $width = $decoded.Width
     $height = $decoded.Height
     $outputChannels = $decoded.Channels
@@ -450,7 +483,15 @@ function Read-TGA {
 # Uses Read-TGA for correct alpha preservation and key color handling,
 # then saves each frame as PNG. Replaces strip TGAs in-place.
 function Split-StripTextures {
-    param([string]$TgaDir, [string]$MagickPath)
+    param([string]$TgaDir, [string]$MagickPath, [string]$GameId)
+
+    # Stock PIG frame counts for source strips with a different authored length
+    # Doors and one-shot effects retain both endpoints; looping effects sample one cycle
+    $frameCounts = if ($GameId -eq 'd1') {
+        @{ door18 = 8; door19 = 8; door20 = 7; door21 = 6; door23 = 7; door25 = 7; wall01 = 5; misc066 = 9; misc11 = 4 }
+    } elseif ($GameId -eq 'd2') {
+        @{ door18 = 8; door19 = 8; door20 = 7; door21 = 6; door23 = 7; door38 = 6; wall01 = 5; lava06 = 4; mtrl01 = 18; mtrl03 = 9 }
+    } else { @{} }
 
     $splitCount = 0
     $tgaFiles = Get-ChildItem -Path $TgaDir -Filter "*.tga" -File
@@ -459,12 +500,20 @@ function Split-StripTextures {
         # Only process files that are frame-0 of an animation (name#0)
         if ($bn -notmatch '#0(-\w+)?$') { continue }
 
-        $tgaResult = Read-TGA $tga.FullName
+        # Legacy XL artwork stores meaningful alpha even when descriptor alpha bits are zero
+        $tgaResult = Read-TGA $tga.FullName -D2xxlSource
         $bmp = $tgaResult.Bitmap
         $maskBmp = $tgaResult.Mask
         try {
             $w = $bmp.Width
             $h = $bmp.Height
+            # This original weapon strip has a transparent export row after its two frames
+            if ($GameId -eq 'd2' -and $bn -eq 'box03b#0' -and $w -eq 512 -and $h -eq 1025) {
+                for ($x = 0; $x -lt $w; $x++) {
+                    if ($bmp.GetPixel($x, $h - 1).A -ne 0) { throw 'Unexpected nontransparent box03b export row' }
+                }
+                $h--
+            }
             if ($h -le $w -or $h % $w -ne 0) {
                 continue
             }
@@ -483,13 +532,21 @@ function Split-StripTextures {
                 $nameBase = $bn -replace '#0$', ''
             }
 
+            $outputFrames = if ($frameCounts.ContainsKey($nameBase)) { $frameCounts[$nameBase] } else { $nFrames }
+            $loop = $nameBase -in @('misc066', 'misc11', 'lava06')
+
             Remove-Item $tga.FullName -Force
 
             # Read-TGA already handled alpha and key color
-            for ($i = 0; $i -lt $nFrames; $i++) {
+            for ($i = 0; $i -lt $outputFrames; $i++) {
                 $frameName = "${nameBase}#${i}${variant}.png"
                 $framePath = Join-Path $TgaDir $frameName
-                $y = $i * $w
+                $sourceFrame = if ($loop) {
+                    [int][Math]::Floor($i * $nFrames / $outputFrames)
+                } else {
+                    [int][Math]::Round($i * ($nFrames - 1) / ($outputFrames - 1), [MidpointRounding]::AwayFromZero)
+                }
+                $y = $sourceFrame * $w
                 $rect = [System.Drawing.Rectangle]::new(0, $y, $w, $w)
                 $frame = $null
                 try {
@@ -552,12 +609,16 @@ function Convert-WithMagick {
         $safeInput,
         '-colorspace', 'RGB',
         '-filter', 'Lanczos',
-        '-resize', "${MaxDim}x${MaxDim}",
+        '-resize', "${MaxDim}x${MaxDim}>",
         '-unsharp', '0x0.4',
         '-colorspace', 'sRGB'
     )
     if ($OutputPath -match '\.jpg$') {
         $magickArgs += @('-quality', '92')
+    } elseif ([IO.Path]::GetFileNameWithoutExtension($OutputPath) -in @('rock156', 'rock178', 'rock260')) {
+        # Stock rocks contain isolated transparent pixels; the authored replacements are opaque
+        # Retain an explicit opaque alpha channel so the engine accepts their corrected artwork
+        $magickArgs += @('-define', 'png:color-type=6')
     }
     $magickArgs += $safeOutput
     & $MagickPath $magickArgs 2>$null
@@ -593,8 +654,8 @@ function Convert-WithMagick {
 #    d2x-xl:  arw01!0.tga  ('!' used as alternate frame separator)
 #    PIGfile: arw01#0      (engine only uses '#' for frame indexing)
 #    Fix: rename replacing '!' with '#'
-#    Note: arw01.tga (no frame suffix) also exists -- removed since the
-#    engine only references the individual frames arw01#0 through arw01#5
+#    Note: arw01.tga (no frame suffix) remains an unused alternative; the
+#    engine references the individual frames arw01#0 through arw01#5
 #
 # 3. TARGETING RETICLE COLOR VARIANTS (both archives, D2)
 #    d2x-xl:  targ01b#0-green.tga, targ01b#0-red.tga, targ01b#0.tga
@@ -606,17 +667,15 @@ function Convert-WithMagick {
 # 4. LAVA ZERO-PADDING (256px archive only, D2)
 #    d2x-xl:  lava6#0.tga
 #    PIGfile: lava06#0
-#    Note: the 512 archive has lava06 (correct). 256 has lava6 (wrong).
-#    Fix: not applied here -- the merge pass copies from 512 to 256. If
-#    the 256 pack is rebuilt alone, add: lava6 -> lava06
+#    Both archives also contain the correctly named lava06#0 animation strip
+#    The single lava6#0 alternative must not overwrite that complete animation
 #
 # 5. D1-ONLY TEXTURE NAMES IN D2 PACK (512px archive, D2)
 #    d2x-xl D2 pack includes: rock001, rock002, rock006, rock007, rock265,
-#    metl131, metl132, metl133, metl134, metl135
-#    These are Descent 1 PIGfile names. D2's PIGfile does not contain these
-#    names (it uses different numbers for equivalent textures).
-#    No fix applied -- left in archive harmlessly (no matching bitmap to bind to).
-#    They ARE valid in the D1 pack
+#    metl133, metl134, metl135
+#    These are Descent 1 PIGfile names, absent from the stock D2 PIG
+#    metl131 and metl132 occur in neither stock PIG and remain unmatched
+#    No automatic numeric reassignment: similar names do not establish artwork identity
 #
 # 6. NON-PIGFILE ADDON TEXTURES (256px archive, D2)
 #    blast, bubble, bullcase, bulletcase, corona, deadzone, fire, flare,
@@ -705,17 +764,20 @@ function Convert-GameTextures {
     )
 
     if (-not (Test-Path $ArchivePath)) {
-        Write-Host "Archive not found: $ArchivePath -- skipping $GameId"
-        return
+        throw "Archive not found: $ArchivePath"
     }
 
-    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_tex_convert_$GameId"
-    if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
+    $conversionRepo = (Resolve-Path (Join-Path $scriptDir '../../..')).Path
+    $conversionRoot = [IO.Path]::GetFullPath((Join-Path $conversionRepo 'android/temp/d2xxl-convert'))
+    $tempDir = Join-Path $conversionRoot ('run_' + [guid]::NewGuid().ToString('N'))
+    & (Join-Path $conversionRepo 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempDir -DirectoryPrefix run_
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     $sizeSuffix = if ($MaxDim -gt 0 -and $MaxDim -lt $actualTexSize) { $MaxDim } else { $actualTexSize }
     $dxaName = "${GameId}-hires-${sizeSuffix}-textures-ktx2.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
+    New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
+    $buildingPath = $dxaPath + '.building-' + [guid]::NewGuid().ToString('N')
     $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $useMagick = $MagickPath -and $MaxDim -gt 0 -and (Test-Path $MagickPath)
@@ -735,9 +797,7 @@ function Convert-GameTextures {
 
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
     if (-not (Test-Path $tgaDir)) {
-        Write-Host "  No textures/$GameId directory found in archive -- skipping"
-        Remove-Item -Recurse -Force $tempDir
-        return
+        throw "No textures/$GameId directory found in archive"
     }
 
     # Rename d2x-xl files to DXX PIGfile names BEFORE splitting, because
@@ -747,10 +807,15 @@ function Convert-GameTextures {
     $fixups = Rename-D2xxlTextures -TgaDir $tgaDir -GameId $GameId
     Write-Host "  Name fixup scan complete: $($fixups.Renamed) renamed in $(Format-ElapsedText $fixupStopwatch.Elapsed)"
 
+    # Reject unsupported source layouts before expensive splitting and compression
+    foreach ($file in (Get-ChildItem -LiteralPath $tgaDir -Filter '*.tga' -File)) {
+        Get-D2xxlTgaLayout -Bytes ([IO.File]::ReadAllBytes($file.FullName)) -Path $file.FullName -D2xxlSource | Out-Null
+    }
+
     # Pre-split animation strips into individual frame files
     $splitStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     Write-Host "  Scanning animation strips"
-    $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath
+    $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath -GameId $GameId
     Write-Host "  Animation strip scan complete: $splitCount split in $(Format-ElapsedText $splitStopwatch.Elapsed)"
 
     # Collect all texture files: TGA (single frames), PNG (split frames), JPG
@@ -763,228 +828,246 @@ function Convert-GameTextures {
     Write-Host "  Inventory complete: TGA=$($tgaFiles.Count) PNG=$($pngFiles.Count) JPG=$($jpgFiles.Count) total=$total in $(Format-ElapsedText $inventoryStopwatch.Elapsed)"
 
     # Create ZIP (dxa)
-    if (Test-Path $dxaPath) { Remove-Item $dxaPath }
     Write-Host "  Creating DXA container: $dxaName"
-    $zip = [System.IO.Compression.ZipFile]::Open($dxaPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    $zip = [System.IO.Compression.ZipFile]::Open($buildingPath, [System.IO.Compression.ZipArchiveMode]::Create)
     $conversionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $converted = 0
     $skipped = 0
     $errors = 0
     $processed = 0
+    $entryTime = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
 
     # Cockpit overlays retain source quality up to the engine's hard safety cap
     $engineTextureCap = 2048
     $noDownscalePattern = '^(cockpit|hires-cockpit)'
 
-    foreach ($tga in @($tgaFiles) + @($pngFiles)) {
-        $processed++
-        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $tga.Name
-        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
-        $isTga = $tga.Extension -eq '.tga'
+    try {
+        foreach ($tga in @($tgaFiles) + @($pngFiles)) {
+            $processed++
+            Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $tga.Name
+            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
+            $isTga = $tga.Extension -eq '.tga'
 
-        # The quality exemption never bypasses the engine's safety cap
-        $skipDownscale = $baseName -match $noDownscalePattern
-        $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
-        $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
+            # The quality exemption never bypasses the engine's safety cap
+            $skipDownscale = $baseName -match $noDownscalePattern
+            $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
+            $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
-        try {
-            $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
-            $tempPng = Join-Path $tempDir "$baseName.png"
-            $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
+            try {
+                $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
+                $tempPng = Join-Path $tempDir "$baseName.png"
+                $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
-            if ($isTga) {
-                # Read-TGA handles alpha preservation and key color
-                # correctly by reading raw TGA bytes (not ImageMagick).
-                # Also returns a mask for exact-key supertransparent textures
-                $tgaResult = Read-TGA $tga.FullName
-                $bmp = $tgaResult.Bitmap
-                $maskBmp = $tgaResult.Mask
-                $prePng = Join-Path $tempDir "$baseName.pre.png"
-                $maskPrePng = $null
-                try {
-                    $bmp.Save($prePng, [System.Drawing.Imaging.ImageFormat]::Png)
-                    $inputForResize = $prePng
-                    if ($maskBmp) {
-                        $maskPrePng = Join-Path $tempDir "${baseName}_mask.pre.png"
-                        $maskBmp.Save($maskPrePng, [System.Drawing.Imaging.ImageFormat]::Png)
-                    }
-                } finally {
-                    $bmp.Dispose()
-                    if ($maskBmp) {
-                        $maskBmp.Dispose()
-                    }
-                }
-            } else {
-                # PNG from strip splitter: already has correct alpha
-                $inputForResize = $tga.FullName
-                # Check for mask from strip splitter
-                $splitMaskPath = Join-Path (Split-Path $tga.FullName) "${baseName}_mask.png"
-                $maskPrePng = if (Test-Path $splitMaskPath) { $splitMaskPath } else { $null }
-            }
-
-            if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
-                # ImageMagick path: high-quality linear-light Lanczos downscale
-                Convert-WithMagick -InputPath $inputForResize -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
-            } elseif ($isTga) {
-                # Non-ImageMagick path: pre-PNG already created, just resize
-                if ($effectiveMaxDim -gt 0) {
-                    $bmp = [System.Drawing.Bitmap]::new($inputForResize)
-                    if ($bmp.Width -gt $effectiveMaxDim -or $bmp.Height -gt $effectiveMaxDim) {
-                        $scale = [Math]::Min($effectiveMaxDim / $bmp.Width, $effectiveMaxDim / $bmp.Height)
-                        $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
-                        $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
-                        $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                if ($isTga) {
+                    # Read-TGA handles alpha preservation and key color
+                    # correctly by reading raw TGA bytes (not ImageMagick).
+                    # Also returns a mask for exact-key supertransparent textures
+                    $tgaResult = Read-TGA $tga.FullName -D2xxlSource
+                    $bmp = $tgaResult.Bitmap
+                    $maskBmp = $tgaResult.Mask
+                    $prePng = Join-Path $tempDir "$baseName.pre.png"
+                    $maskPrePng = $null
+                    try {
+                        $bmp.Save($prePng, [System.Drawing.Imaging.ImageFormat]::Png)
+                        $inputForResize = $prePng
+                        if ($maskBmp) {
+                            $maskPrePng = Join-Path $tempDir "${baseName}_mask.pre.png"
+                            $maskBmp.Save($maskPrePng, [System.Drawing.Imaging.ImageFormat]::Png)
+                        }
+                    } finally {
                         $bmp.Dispose()
-                        $bmp = $resized
+                        if ($maskBmp) {
+                            $maskBmp.Dispose()
+                        }
                     }
-                    $bmp.Save($tempPng, [System.Drawing.Imaging.ImageFormat]::Png)
-                    $bmp.Dispose()
                 } else {
+                    # PNG from strip splitter: already has correct alpha
+                    $inputForResize = $tga.FullName
+                    # Check for mask from strip splitter
+                    $splitMaskPath = Join-Path (Split-Path $tga.FullName) "${baseName}_mask.png"
+                    $maskPrePng = if (Test-Path $splitMaskPath) { $splitMaskPath } else { $null }
+                }
+
+                if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
+                    # ImageMagick path: high-quality linear-light Lanczos downscale
+                    Convert-WithMagick -InputPath $inputForResize -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
+                } elseif ($isTga) {
+                    # Non-ImageMagick path: pre-PNG already created, just resize
+                    if ($effectiveMaxDim -gt 0) {
+                        $bmp = [System.Drawing.Bitmap]::new($inputForResize)
+                        if ($bmp.Width -gt $effectiveMaxDim -or $bmp.Height -gt $effectiveMaxDim) {
+                            $scale = [Math]::Min($effectiveMaxDim / $bmp.Width, $effectiveMaxDim / $bmp.Height)
+                            $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
+                            $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
+                            $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                            $bmp.Dispose()
+                            $bmp = $resized
+                        }
+                        $bmp.Save($tempPng, [System.Drawing.Imaging.ImageFormat]::Png)
+                        $bmp.Dispose()
+                    } else {
+                        Copy-Item $inputForResize $tempPng -Force
+                    }
+                } else {
+                    # PNG input, no ImageMagick, no resize: just copy
                     Copy-Item $inputForResize $tempPng -Force
                 }
-            } else {
-                # PNG input, no ImageMagick, no resize: just copy
-                Copy-Item $inputForResize $tempPng -Force
-            }
 
-            # Clean up pre-processed intermediate
-            if ($isTga -and (Test-Path $inputForResize)) {
-                Remove-Item $inputForResize -Force -ErrorAction SilentlyContinue
-            }
-
-            # Resize mask alongside main texture if present
-            # Use nearest-neighbor (Point) filter for masks to keep binary
-            # edges crisp -- Lanczos would anti-alias the mask boundaries
-            $tempMaskPng = $null
-            if ($maskPrePng -and (Test-Path $maskPrePng)) {
-                $tempMaskPng = Join-Path $tempDir "${baseName}_mask.png"
-                if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
-                    $safeMaskIn = $maskPrePng
-                    if ($maskPrePng -match '#') {
-                        $dir = Split-Path $maskPrePng
-                        $ext = [IO.Path]::GetExtension($maskPrePng)
-                        $safeMaskIn = Join-Path $dir ("_safe_mask_" + [IO.Path]::GetFileNameWithoutExtension($maskPrePng).Replace('#', '_H_') + $ext)
-                        Copy-Item $maskPrePng $safeMaskIn -Force
-                    }
-                    $safeMaskOut = $tempMaskPng
-                    if ($tempMaskPng -match '#') {
-                        $dir = Split-Path $tempMaskPng
-                        $ext = [IO.Path]::GetExtension($tempMaskPng)
-                        $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#', '_H_') + $ext)
-                    }
-                    & $MagickPath $safeMaskIn -filter Point -resize "${effectiveMaxDim}x${effectiveMaxDim}" $safeMaskOut 2>$null
-                    if ($safeMaskIn -ne $maskPrePng) { Remove-Item $safeMaskIn -Force -ErrorAction SilentlyContinue }
-                    if ($safeMaskOut -ne $tempMaskPng -and (Test-Path $safeMaskOut)) {
-                        Move-Item $safeMaskOut $tempMaskPng -Force
-                    }
-                } else {
-                    Copy-Item $maskPrePng $tempMaskPng -Force
+                # Clean up pre-processed intermediate
+                if ($isTga -and (Test-Path $inputForResize)) {
+                    Remove-Item $inputForResize -Force -ErrorAction SilentlyContinue
                 }
-                Remove-Item $maskPrePng -Force -ErrorAction SilentlyContinue
-            }
 
-            # Run etc2tool to compress to ETC2
-            & $Etc2ToolPath $tempPng $tempEtc2 2>$null
-            if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
+                # Resize mask alongside main texture if present
+                # Use nearest-neighbor (Point) filter for masks to keep binary
+                # edges crisp -- Lanczos would anti-alias the mask boundaries
+                $tempMaskPng = $null
+                if ($maskPrePng -and (Test-Path $maskPrePng)) {
+                    $tempMaskPng = Join-Path $tempDir "${baseName}_mask.png"
+                    if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
+                        $safeMaskIn = $maskPrePng
+                        if ($maskPrePng -match '#') {
+                            $dir = Split-Path $maskPrePng
+                            $ext = [IO.Path]::GetExtension($maskPrePng)
+                            $safeMaskIn = Join-Path $dir ("_safe_mask_" + [IO.Path]::GetFileNameWithoutExtension($maskPrePng).Replace('#', '_H_') + $ext)
+                            Copy-Item $maskPrePng $safeMaskIn -Force
+                        }
+                        $safeMaskOut = $tempMaskPng
+                        if ($tempMaskPng -match '#') {
+                            $dir = Split-Path $tempMaskPng
+                            $ext = [IO.Path]::GetExtension($tempMaskPng)
+                            $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#', '_H_') + $ext)
+                        }
+                        & $MagickPath $safeMaskIn -filter Point -resize "${effectiveMaxDim}x${effectiveMaxDim}>" -define 'png:exclude-chunk=date,time' $safeMaskOut 2>$null
+                        if ($safeMaskIn -ne $maskPrePng) { Remove-Item $safeMaskIn -Force -ErrorAction SilentlyContinue }
+                        if ($safeMaskOut -ne $tempMaskPng -and (Test-Path $safeMaskOut)) {
+                            Move-Item $safeMaskOut $tempMaskPng -Force
+                        }
+                    } else {
+                        Copy-Item $maskPrePng $tempMaskPng -Force
+                    }
+                    Remove-Item $maskPrePng -Force -ErrorAction SilentlyContinue
+                }
 
-            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-            $stream = $entry.Open()
-            $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
-            $stream.Write($fileBytes, 0, $fileBytes.Length)
-            $stream.Close()
+                # Run etc2tool to compress to ETC2
+                & $Etc2ToolPath $tempPng $tempEtc2 2>$null
+                if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
 
-            # Add super-transparent mask if present
-            if ($tempMaskPng -and (Test-Path $tempMaskPng)) {
-                $maskEntryName = Get-D2xxlMaskEntryPath -GameId $GameId -BaseName $baseName
-                $maskEntry = $zip.CreateEntry($maskEntryName, [System.IO.Compression.CompressionLevel]::Optimal)
-                $maskStream = $maskEntry.Open()
-                $maskFileBytes = [System.IO.File]::ReadAllBytes($tempMaskPng)
-                $maskStream.Write($maskFileBytes, 0, $maskFileBytes.Length)
-                $maskStream.Close()
-                Remove-Item $tempMaskPng -Force -ErrorAction SilentlyContinue
-            }
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $entry.LastWriteTime = $entryTime
+                $stream = $entry.Open()
+                $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
+                $stream.Write($fileBytes, 0, $fileBytes.Length)
+                $stream.Close()
 
-            Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
+                Add-D2xxlSpriteBlendEntry -Zip $zip -GameId $GameId -BaseName $baseName
 
-            $converted++
-            if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                # Add super-transparent mask if present
+                if ($tempMaskPng -and (Test-Path $tempMaskPng)) {
+                    $maskEntryName = Get-D2xxlMaskEntryPath -GameId $GameId -BaseName $baseName
+                    $maskEntry = $zip.CreateEntry($maskEntryName, [System.IO.Compression.CompressionLevel]::Optimal)
+                    $maskEntry.LastWriteTime = $entryTime
+                    $maskStream = $maskEntry.Open()
+                    $maskFileBytes = [System.IO.File]::ReadAllBytes($tempMaskPng)
+                    $maskStream.Write($maskFileBytes, 0, $maskFileBytes.Length)
+                    $maskStream.Close()
+                    Remove-Item $tempMaskPng -Force -ErrorAction SilentlyContinue
+                }
+
+                Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
+
+                $converted++
+                if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                    Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $tga.Name -Succeeded $converted -Errors $errors
+                }
+            } catch {
+                Write-Host "  ERROR converting $($tga.Name): $_"
+                $errors++
                 Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $tga.Name -Succeeded $converted -Errors $errors
             }
-        } catch {
-            Write-Host "  ERROR converting $($tga.Name): $_"
-            $errors++
-            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $tga.Name -Succeeded $converted -Errors $errors
         }
-    }
 
-    # Handle JPG files (convert through etc2tool too)
-    foreach ($jpg in $jpgFiles) {
-        $processed++
-        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $jpg.Name
-        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
-        $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
-        $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
+        # Handle JPG files (convert through etc2tool too)
+        foreach ($jpg in $jpgFiles) {
+            $processed++
+            Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $jpg.Name
+            $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
+            $entryName = Get-D2xxlTextureEntryPath -GameId $GameId -BaseName $baseName
+            $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
-        # The quality exemption never bypasses the engine's safety cap
-        $skipDownscale = $baseName -match $noDownscalePattern
-        $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
-        $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
+            # The quality exemption never bypasses the engine's safety cap
+            $skipDownscale = $baseName -match $noDownscalePattern
+            $effectiveMaxDim = if ($skipDownscale -or $MaxDim -le 0) { $engineTextureCap } else { [Math]::Min($MaxDim, $engineTextureCap) }
+            $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
-        try {
-            if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
-                $tempPng = Join-Path $tempDir "$baseName.png"
-                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
-                & $Etc2ToolPath $tempPng $tempEtc2 2>$null
-                Remove-Item $tempPng -ErrorAction SilentlyContinue
-            } else {
-                # etc2tool reads JPG directly via stb_image
-                & $Etc2ToolPath $jpg.FullName $tempEtc2 2>$null
-            }
-            if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
+            try {
+                if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
+                    $tempPng = Join-Path $tempDir "$baseName.png"
+                    Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
+                    & $Etc2ToolPath $tempPng $tempEtc2 2>$null
+                    Remove-Item $tempPng -ErrorAction SilentlyContinue
+                } else {
+                    # etc2tool reads JPG directly via stb_image
+                    & $Etc2ToolPath $jpg.FullName $tempEtc2 2>$null
+                }
+                if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
 
-            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-            $stream = $entry.Open()
-            $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
-            $stream.Write($fileBytes, 0, $fileBytes.Length)
-            $stream.Close()
-            Remove-Item $tempEtc2 -ErrorAction SilentlyContinue
-            $converted++
-            if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $entry.LastWriteTime = $entryTime
+                $stream = $entry.Open()
+                $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
+                $stream.Write($fileBytes, 0, $fileBytes.Length)
+                $stream.Close()
+                Remove-Item $tempEtc2 -ErrorAction SilentlyContinue
+                $converted++
+                if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                    Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $jpg.Name -Succeeded $converted -Errors $errors
+                }
+            } catch {
+                Write-Host "  ERROR converting $($jpg.Name): $_"
+                $errors++
                 Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $jpg.Name -Succeeded $converted -Errors $errors
             }
-        } catch {
-            Write-Host "  ERROR converting $($jpg.Name): $_"
-            $errors++
-            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $jpg.Name -Succeeded $converted -Errors $errors
         }
-    }
 
-    # Add README.md if provided
-    if ($Readme) {
-        $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
-        $readmeStream = $readmeEntry.Open()
-        $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
-        $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
-        $readmeStream.Close()
-    }
-    if ($ProjectReadme) {
-        $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
-        $projectReadmeStream = $projectReadmeEntry.Open()
-        $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
-        $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
-        $projectReadmeStream.Close()
-    }
+        # Add README.md if provided
+        if ($Readme) {
+            $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
+            $readmeEntry.LastWriteTime = $entryTime
+            $readmeStream = $readmeEntry.Open()
+            $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
+            $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
+            $readmeStream.Close()
+        }
+        if ($ProjectReadme) {
+            $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
+            $projectReadmeEntry.LastWriteTime = $entryTime
+            $projectReadmeStream = $projectReadmeEntry.Open()
+            $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
+            $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
+            $projectReadmeStream.Close()
+        }
 
+    } finally { $zip.Dispose() }
     $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     Write-Host "  Finalizing archive: $dxaName"
-    $zip.Dispose()
     Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
-    Remove-Item -Recurse -Force $tempDir
+    if ([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($tempDir)) -ne $conversionRoot) { throw 'Conversion cleanup escaped its workspace' }
+    Remove-Item -LiteralPath $tempDir -Recurse -Force
 
     if ($errors -gt 0) {
-        Remove-Item -LiteralPath $dxaPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $buildingPath -Force -ErrorAction SilentlyContinue
         throw "$errors texture conversion errors prevented publication of $dxaName"
+    }
+    if (!$converted) {
+        Remove-Item -LiteralPath $buildingPath -Force
+        throw "No textures converted for $dxaName"
+    }
+    if ((Test-Path -LiteralPath $dxaPath) -and (Get-FileHash -LiteralPath $dxaPath).Hash -eq (Get-FileHash -LiteralPath $buildingPath).Hash) {
+        Remove-Item -LiteralPath $buildingPath -Force
+    } else {
+        [IO.File]::Move($buildingPath, $dxaPath, $true)
     }
 
     $dxaSize = (Get-Item $dxaPath).Length / 1MB

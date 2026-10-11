@@ -97,11 +97,56 @@ static int test_bounds(void)
 	return 0;
 }
 
+static int test_sparse_guns(void)
+{
+	/* Retail boss02.pof has four records with IDs 0, 3, 1, 4 */
+	uint8_t bytes[236] = { 0 };
+	const unsigned ids[4] = { 0, 3, 1, 4 };
+	d1_pof_source source;
+	int i;
+	memcpy(bytes, "PSPO", 4);
+	bytes[4] = 7;
+	memcpy(bytes + 6, "OHDR", 4);
+	word(bytes + 10, 32);
+	word(bytes + 14, 1);
+	memcpy(bytes + 46, "SOBJ", 4);
+	word(bytes + 50, 48);
+	bytes[56] = bytes[57] = 0xff;
+	memcpy(bytes + 102, "IDTA", 4);
+	word(bytes + 106, 2);
+	memcpy(bytes + 112, "GUNS", 4);
+	word(bytes + 116, 116);
+	word(bytes + 120, 4);
+	for (i = 0; i < 4; ++i) {
+		bytes[124 + i * 28] = (uint8_t) ids[i];
+		word(bytes + 128 + i * 28, 100 + i);
+		word(bytes + 140 + i * 28, 200 + i);
+	}
+	CHECK(d1_pof_read(bytes, sizeof(bytes), &source) == NULL);
+	CHECK(source.gun_count == 4);
+	for (i = 0; i < 4; ++i) {
+		CHECK(source.gun_points[ids[i]].x == 100 + i);
+		CHECK(source.gun_directions[ids[i]].x == 200 + i);
+	}
+	CHECK(source.gun_points[2].x == 0 && source.gun_models[2] == 0);
+	bytes[208] = D1_POF_GUNS;
+	CHECK(d1_pof_read(bytes, sizeof(bytes), &source) != NULL);
+	bytes[208] = 3;
+	CHECK(d1_pof_read(bytes, sizeof(bytes), &source) != NULL);
+	bytes[208] = 4;
+	bytes[210] = 1;
+	CHECK(d1_pof_read(bytes, sizeof(bytes), &source) != NULL);
+	bytes[210] = 0;
+	CHECK(d1_pof_read(bytes, sizeof(bytes) - 1, &source) != NULL);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	uint8_t bytes[112] = { 0 };
 	d1_pof_source source;
 	CHECK(test_bounds() == 0);
+	CHECK(test_sparse_guns() == 0);
 	memcpy(bytes, "PSPO", 4);
 	bytes[4] = 6;
 	memcpy(bytes + 6, "OHDR", 4);
