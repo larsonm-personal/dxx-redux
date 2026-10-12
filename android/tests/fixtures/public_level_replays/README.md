@@ -1,8 +1,8 @@
 # Compact public level-start recordings
 
-Nine fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. Eight start from ordinary level-one spawns; the D2 shoot-switch case starts from the
-ordinary level-two spawn. No player
+Eleven fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
+Descent 2 v1.0 demo data. Nine start from ordinary level-one spawns; the D2 shoot-switch case starts from the
+ordinary level-two spawn, and D1 door-lifecycle starts from its ordinary level-three spawn. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. Existing retail recordings remain unchanged.
 
@@ -27,9 +27,9 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
 `game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base for the original seven scenes. Combat oracles
+revision denotes the engine base for the original seven scenes. Combat and door-lifecycle oracles
 point to an exact published source-only commit built before fixture admission;
-`capture_source_sha256` also identifies the exact capture fixture header. Combat
+`capture_source_sha256` also identifies the exact capture fixture header. Combat and door-lifecycle
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
 so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
@@ -85,6 +85,28 @@ initialization untouched, including the level-entry starfield draws.
   collateral scores, ram-only kills, reused-slot confusion and phantom drops,
   and requires the original robot's terminal retirement. Recorded controls alone
   drive replay; the target-following capture controller is never run during replay
+
+- `door-lifecycle`: use ordinary thrust to reach an authored automatic door, hold
+  the player in its doorway beyond the original close delay, clear it, allow a
+  complete close, then reopen by player contact and traverse. D1 uses level-three
+  walls 72/73 (segments 75/38); its front wall enters closing while the back wall
+  remains waiting, and obstruction freezes the active-door timer at zero. D2
+  uses level-one walls 76/77 (segments 6/4); both faces stay waiting while the
+  player obstructs the doorway. D2 additionally clears and re-enters the still
+  passable closing door to prove its automatic reopening behavior before the
+  final full close. The D1 player uses authentic starting lasers against the
+  real nearby guard and survives; D2 collects an incidental authored shield
+  pickup. Neither scene edits the world, disables robots or changes difficulty
+
+  Separate read-only door probes use the engine's actual sphere/side masks and
+  front/back collision queries. They identify every blocker by original slot,
+  signature, pose and radius, preserve the native D1/D2 weapon/fireball exclusion
+  difference, and are hashed from live capture. The semantic gate ties them to
+  full object/world state, requires twenty obstructed frames beyond the wait,
+  freezes D1 closing or prolongs D2 waiting as authored, checks both collision
+  faces, requires clearance and active-door retirement after full close, then
+  verifies ordinary reopening and traversal. Removed controls must complete
+  playback and fail this lifecycle gate, not merely fail recording admission
 
 The D2 capture startup initializes PIG bitmap flags before loading the level, just
 like the desktop game. Those transparency flags affect ambient propagation; the

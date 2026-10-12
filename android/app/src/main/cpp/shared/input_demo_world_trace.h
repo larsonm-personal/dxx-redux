@@ -10,6 +10,7 @@ extern "C" {
 
 /* Full boundary records and lossless per-frame world deltas, without mutation */
 int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size);
+int input_demo_door_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size);
 void input_demo_trace_boundary(const char *phase);
 
 #ifdef __cplusplus

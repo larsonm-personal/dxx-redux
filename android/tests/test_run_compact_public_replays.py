@@ -491,7 +491,10 @@ class RuntimeGateTests(unittest.TestCase):
         manifest = self.root / "manifest.json"
 
         def valid_pair(demo, oracle):
-            return {"game": demo.name[:2], "level": 2 if "shoot-switch" in demo.name else 1}, ({"combat_observations": {}} if "combat" in demo.name else {})
+            game = demo.name[:2]
+            level = 2 if "shoot-switch" in demo.name else 3 if game == "d1" and "door-lifecycle" in demo.name else 1
+            observations = "combat_observations" if "combat" in demo.name else "door_observations" if "door-lifecycle" in demo.name else None
+            return {"game": game, "level": level}, ({observations: {}} if observations else {})
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
             manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
@@ -548,6 +551,22 @@ class RealNegativeCorpusTests(unittest.TestCase):
             with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
                 runner.load_corpus(destination)
 
+    def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "door-lifecycle")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("door_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
+                runner.load_corpus(destination)
+
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
@@ -576,6 +595,11 @@ class RealNegativeCorpusTests(unittest.TestCase):
                             if case["scenario"] == "combat":
                                 before["input"].setdefault("s", {})["f1s"] = 0
                                 self.assertEqual(after["input"]["s"]["f1s"], 0)
+                            elif case["scenario"] == "door-lifecycle":
+                                release = next(row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2)
+                                if before["f"] >= release:
+                                    self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
+                                    before["input"] = after["input"]
                             else:
                                 self.assertEqual(after["input"], {})
                                 before["input"] = {}

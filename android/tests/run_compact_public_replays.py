@@ -12,10 +12,13 @@ import compact_public_gameplay_parity as gameplay
 import d1_replay_parity as parity
 import public_switch_replay as shoot_switch
 import public_robot_combat_replay as robot_combat
+import public_door_replay as door_lifecycle
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
 PUBLIC_CASES[("d2", "shoot-switch")] = 2
+PUBLIC_CASES[("d1", "door-lifecycle")] = 3
+PUBLIC_CASES[("d2", "door-lifecycle")] = 1
 
 
 def load_corpus(directory):
@@ -47,6 +50,8 @@ def load_corpus(directory):
         header, oracle = compact.validate(directory / case["demo"], directory / case["oracle"])
         if ("combat_observations" in oracle) != (case["scenario"] == "combat"):
             raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
+        if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
+            raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
         if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
             raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
@@ -125,6 +130,9 @@ def verify_actions(case, demo, state_trace, actual_result):
         "max_player_weapons": weapons,
         "energy_fell": energy_drop,
     }
+    if scenario == "door-lifecycle":
+        result.update(door_lifecycle.verify(actions, header, states, state_trace))
+        return result
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
         return result

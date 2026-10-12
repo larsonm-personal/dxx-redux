@@ -11,6 +11,7 @@ import compact_public_replay as compact
 import d1_replay_parity as parity
 import public_incoming_robot_hits as incoming
 import run_compact_public_replays as runner
+import public_door_replay as doors
 
 
 def corrupt_corpus(source, destination, cases, mutation):
@@ -24,10 +25,16 @@ def corrupt_corpus(source, destination, cases, mutation):
             expected["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
         elif mutation == "bad-input":
             records = [compact._json(line) for line in demo.read_bytes().splitlines() if line.strip()]
+            release = next((row["f"] + 1 for row in case["actions"].get("door_events", []) if row["stage"] == 2), None)
+            held_keys = sorted({key for row in records[1:-1] for key in row["input"].get("s", {})})
             for record in records[1:-1]:
                 if case["scenario"] == "combat":
                     # Preserve the recorded flight/aim route but remove every primary shot
                     record["input"].setdefault("s", {})["f1s"] = 0
+                elif case["scenario"] == "door-lifecycle":
+                    # Reach and obstruct the door normally, then remove the clearance controls
+                    if record["f"] >= release:
+                        record["input"] = {"s": {key: 0 for key in held_keys}} if record["f"] == release else {}
                 else:
                     # With no controls from frame zero the ship cannot follow any route
                     record["input"] = {}
@@ -62,6 +69,7 @@ def verify_failure(report, exit_code, args, cases, mutation):
         state, rng, actual = (Path(row["artifacts"][key]) for key in ("state", "rng", "result"))
         command = row["command"]
         causal_rejection = None
+        door_rejection = None
         incoming_rejection = None
         expected_runner = "headless-console" if args.run_mode == "headless" else "visual"
         if row.get("status") != "fail" or command[command.index("-Runner") + 1] != expected_runner:
@@ -104,6 +112,14 @@ def verify_failure(report, exit_code, args, cases, mutation):
                     incoming_rejection = str(error)
                 else:
                     raise parity.EvidenceError("Changed combat controls still passed the incoming projectile gate")
+            if case["scenario"] == "door-lifecycle":
+                states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
+                try:
+                    doors.verify(case["actions"], header, states, state)
+                except parity.EvidenceError as error:
+                    door_rejection = str(error)
+                else:
+                    raise parity.EvidenceError("Door without clearance controls still passed its lifecycle gate")
         evidence.append(
             {
                 "game": row["game"],
@@ -111,6 +127,7 @@ def verify_failure(report, exit_code, args, cases, mutation):
                 "repeat": row["repeat"],
                 "passed": True,
                 **({"combat_causal_rejection": causal_rejection} if causal_rejection is not None else {}),
+                **({"door_lifecycle_rejection": door_rejection} if door_rejection is not None else {}),
                 **({"incoming_hit_rejection": incoming_rejection} if incoming_rejection is not None else {}),
             }
         )
