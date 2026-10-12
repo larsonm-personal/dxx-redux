@@ -137,6 +137,98 @@
                 "loot_frame": 248,
                 "loot_count": 0
             }
+        },
+        {
+            "game": "d1",
+            "scenario": "door-lifecycle",
+            "demo": "d1-public-door-lifecycle.dximdemo",
+            "oracle": "d1-public-door-lifecycle.oracle.json",
+            "actions": {
+                "target": 72,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 35,
+                "wall_contact_frames": 0,
+                "door_back": 73,
+                "door_events": [
+                    {
+                        "f": 0,
+                        "stage": 0
+                    },
+                    {
+                        "f": 47,
+                        "stage": 1
+                    },
+                    {
+                        "f": 174,
+                        "stage": 2
+                    },
+                    {
+                        "f": 182,
+                        "stage": 4
+                    },
+                    {
+                        "f": 201,
+                        "stage": 5
+                    },
+                    {
+                        "f": 214,
+                        "stage": 6
+                    },
+                    {
+                        "f": 243,
+                        "stage": 7
+                    }
+                ]
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "door-lifecycle",
+            "demo": "d2-public-door-lifecycle.dximdemo",
+            "oracle": "d2-public-door-lifecycle.oracle.json",
+            "actions": {
+                "target": 76,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 71,
+                "wall_contact_frames": 0,
+                "door_back": 77,
+                "door_events": [
+                    {
+                        "f": 0,
+                        "stage": 0
+                    },
+                    {
+                        "f": 83,
+                        "stage": 1
+                    },
+                    {
+                        "f": 209,
+                        "stage": 2
+                    },
+                    {
+                        "f": 216,
+                        "stage": 3
+                    },
+                    {
+                        "f": 221,
+                        "stage": 4
+                    },
+                    {
+                        "f": 324,
+                        "stage": 5
+                    },
+                    {
+                        "f": 336,
+                        "stage": 6
+                    },
+                    {
+                        "f": 361,
+                        "stage": 7
+                    }
+                ]
+            }
         }
     ]
 }

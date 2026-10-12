@@ -197,7 +197,7 @@ jobs:
 
   save-integrity:
     name: Linux public native save and replay integrity
-    timeout-minutes: 50
+    timeout-minutes: 70
     needs: build-public
     runs-on: ubuntu-24.04
     env:
@@ -265,7 +265,8 @@ jobs:
 
       - name: Qualify compact public replays without a display
         # Primary native gate: actual console mains, no X server or OpenGL context
-        timeout-minutes: 40
+        # Nine cases took 33 minutes; retain headroom for eleven positive/negative cases
+        timeout-minutes: 60
         run: |
           env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
             pwsh -NoProfile -File android/tests/test_input_demo_regressions.ps1 \
@@ -294,7 +295,7 @@ jobs:
 
   headed-replay:
     name: Linux public headed replay parity
-    timeout-minutes: 65
+    timeout-minutes: 95
     needs: build-public
     runs-on: ubuntu-24.04
     env:
@@ -346,7 +347,7 @@ jobs:
 
       - name: Qualify headed rendering and existing imported parity
         # Secondary visual fidelity gate, using the same immutable capture oracles
-        timeout-minutes: 60
+        timeout-minutes: 85
         run: |
           xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
             pwsh -NoProfile -File android/tests/test_input_demo_regressions_graphics.ps1 \
