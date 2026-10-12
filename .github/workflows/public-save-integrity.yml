@@ -222,6 +222,7 @@ jobs:
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py
           python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_incoming_robot_hits.py
           python3 android/tests/test_compact_public_gameplay_parity.py
           pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
           pwsh -NoProfile -File android/tests/test_input_demo_comparison_policy.ps1

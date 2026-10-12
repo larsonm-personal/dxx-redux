@@ -3,6 +3,7 @@
 from collections import defaultdict
 
 import d1_replay_parity as parity
+import public_incoming_robot_hits as incoming
 
 # Populated only from inspected ordinary starts using pinned public asset tables
 TARGETS = {
@@ -145,7 +146,12 @@ def _verify(actions, header, states, state_trace):
         )
         _require(states[index]["player0"]["score"] == p["score"], "Frame/result score disagrees with world state")
 
-    events = [row for row in parity.records(state_trace) if row.get("type") in ("robot_damage", "robot_loot")]
+    observations = [
+        row
+        for row in parity.records(state_trace)
+        if row.get("type") in ("robot_damage", "robot_loot", "player_weapon_damage")
+    ]
+    events = [row for row in observations if row.get("type") in ("robot_damage", "robot_loot")]
     hits, loots = [], []
     for row in events:
         keys = DAMAGE_KEYS if row["type"] == "robot_damage" else LOOT_KEYS
@@ -248,6 +254,7 @@ def _verify(actions, header, states, state_trace):
             "A failed or unavailable loot rule must create no robot or powerup objects",
         )
     return {
+        **incoming.verify(header, states, objects, worlds, restored_objects, restored_world, observations),
         "robot_damage_frame": damage,
         "robot_death_frame": death,
         "robot_retirement_frame": retirement,

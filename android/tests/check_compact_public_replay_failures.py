@@ -9,6 +9,7 @@ from pathlib import Path
 
 import compact_public_replay as compact
 import d1_replay_parity as parity
+import public_incoming_robot_hits as incoming
 import run_compact_public_replays as runner
 
 
@@ -61,6 +62,7 @@ def verify_failure(report, exit_code, args, cases, mutation):
         state, rng, actual = (Path(row["artifacts"][key]) for key in ("state", "rng", "result"))
         command = row["command"]
         causal_rejection = None
+        incoming_rejection = None
         expected_runner = "headless-console" if args.run_mode == "headless" else "visual"
         if row.get("status") != "fail" or command[command.index("-Runner") + 1] != expected_runner:
             raise parity.EvidenceError("Negative run accepted a scene or selected the wrong backend")
@@ -95,6 +97,13 @@ def verify_failure(report, exit_code, args, cases, mutation):
                     causal_rejection = str(error)
                 else:
                     raise parity.EvidenceError("Combat without primary shots still passed its causal action gate")
+                states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
+                try:
+                    incoming.verify_trace(header, states, state)
+                except parity.EvidenceError as error:
+                    incoming_rejection = str(error)
+                else:
+                    raise parity.EvidenceError("Changed combat controls still passed the incoming projectile gate")
         evidence.append(
             {
                 "game": row["game"],
@@ -102,6 +111,7 @@ def verify_failure(report, exit_code, args, cases, mutation):
                 "repeat": row["repeat"],
                 "passed": True,
                 **({"combat_causal_rejection": causal_rejection} if causal_rejection is not None else {}),
+                **({"incoming_hit_rejection": incoming_rejection} if incoming_rejection is not None else {}),
             }
         )
     return evidence
