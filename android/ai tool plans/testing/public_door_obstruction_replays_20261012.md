@@ -29,3 +29,9 @@ No warps, injected poses, inventory, health, world state, embedded saves, modifi
 - All 75 Python admission/semantic tests and automation catalog validation pass locally. The master catalog's Linux child supervisor cannot read `/proc/self/task/.../children` locally; the same catalog passes in the preceding segment's exact-head CI. Scoped C++/Python formatting passes; the local Prettier executable is unavailable
 - Nine-case CI measured roughly 33 minutes headless and over 49 minutes headed; the expanded eleven-case workflow keeps bounded 60/85-minute replay step budgets with job headroom
 - Final exact-source native runs and exact-head CI remain required before claiming the draft complete
+
+## Imported scope correction after exact-head CI
+
+The first headed CI attempt at `4d747f99` passed all 22 native runs but automatically added the new level-three D1 scene to imported diagnostics. D2 import produced nondefault `wall.controlling_trigger=5`, and the unchanged D2-only-state gate correctly rejected that evidence. Run `38316349764`, artifact `11778690791`, retains the original failed comparison
+
+Keep the prior imported scope explicit with a schema-versioned manifest inventory for every D1 case, retaining required flight and the existing level-one diagnostic cases. Declare level-three lifecycle excluded with its evidence and reason, expose the exclusion in reports, and reject missing future declarations. Do not change engine behavior, native qualification, strict imported checks or any replay/oracle bytes

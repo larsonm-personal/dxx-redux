@@ -163,7 +163,16 @@ unqualified. The longer door trace also has two otherwise-identical SIM events w
 context signatures differ. Door, pickup and combat are native-only required coverage;
 their imported runs are diagnostic probes and cannot satisfy the paired gate.
 Their original and scoped comparison failures remain visible. No normalization
-hides these observations. Native console and headed fidelity is qualified only
+hides these observations. The manifest's versioned `imported_d1` inventory explicitly
+declares every D1 case as required gameplay, diagnostic-only or excluded, with a
+reason. New cases without a declaration fail admission, and required flight cannot
+be excluded. The level-three door-lifecycle case remains native-only: its D2 import
+sets `wall.controlling_trigger` to 5, violating the unchanged D2-only default-state
+gate. [PR23's first headed run](https://github.com/larsonm-personal/dxx-redux/actions/runs/38316349764)
+retains that failing diagnostic in artifact `11778690791`; all 22 native runs in
+that attempt passed. Subsequent reports list the explicit import exclusion and
+reason rather than silently broadening or weakening the prior imported scope.
+Native console and headed fidelity is qualified only
 for the admitted public scenes. No full-game, Android or imported headless-console
 fidelity claim is made.
 
