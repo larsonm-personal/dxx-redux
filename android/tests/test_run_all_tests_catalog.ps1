@@ -162,6 +162,8 @@ exit 0
             (@{ type = 'header'; game = $recordedGame } | ConvertTo-Json -Compress) + "`n")
     }
     foreach ($batchCase in @(
+            @{ Recorded = 'd1'; Game = 'd1'; Imported = $false; Graphics = $false },
+            @{ Recorded = 'd2'; Game = 'd2'; Imported = $false; Graphics = $false },
             @{ Recorded = 'd1'; Game = 'd1'; Imported = $false; Graphics = $true },
             @{ Recorded = 'd2'; Game = 'd2'; Imported = $false; Graphics = $true },
             @{ Recorded = 'd1'; Game = 'd2'; Imported = $true; Graphics = $true },
@@ -174,14 +176,14 @@ exit 0
         if ($LASTEXITCODE -ne 0) { throw 'Replay batch forwarding fixture failed' }
         $invocationPath = Join-Path $batchDemos ($batchCase.Recorded + '.dximdemo.invocation.json')
         $invocation = Get-Content -LiteralPath $invocationPath -Raw | ConvertFrom-Json
-        $expectedRunner = if ($batchCase.Graphics) { 'visual' } else { 'fast' }
+        $expectedRunner = if ($batchCase.Graphics) { 'visual' } elseif ($batchCase.Imported) { 'windowed-no-present' } else { 'headless-console' }
         if ($invocation.Runner -ne $expectedRunner -or $invocation.Game -ne $batchCase.Game -or
             [bool]$invocation.D1InD2 -ne $batchCase.Imported) {
             throw "Replay batch selected the wrong backend for $($batchCase.Recorded) under $($batchCase.Game), graphics=$($batchCase.Graphics)"
         }
         Remove-Item -LiteralPath $invocationPath -Force
     }
-    Write-Host 'Replay batches preserve visual graphics and fast imported headless selection'
+    Write-Host 'Replay batches preserve visual graphics, native console and imported no-present selection'
     Write-Host "Catalog integration passed: $($catalogs[0].tests.Count) top-level entries, $($catalogs[0].support.Count) support scripts"
 
 } finally {
