@@ -158,6 +158,23 @@ class RuntimeGateTests(unittest.TestCase):
         with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}):
             self.assertEqual(self.action("combat", {})["score_awarded"], 200)
 
+    def test_loot_proves_collection_before_generic_firing_guard(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames:
+            row["diag"]["player_weapon_count"] = 0
+        with mock.patch.object(
+            runner.robot_loot, "verify", side_effect=runner.parity.EvidenceError("identified drop remained uncollected")
+        ) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "identified drop remained uncollected"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "live player weapons"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}):
+            self.assertEqual(self.action("loot", {})["laser_level_increase"], 1)
+
     def test_pickup_requires_consecutive_gain_at_exact_next_entry(self):
         frames = copy.deepcopy(self.frames)
         for row in frames[3:]:
@@ -493,7 +510,7 @@ class RuntimeGateTests(unittest.TestCase):
         def valid_pair(demo, oracle):
             game = demo.name[:2]
             level = 2 if "shoot-switch" in demo.name else 3 if game == "d1" and "door-lifecycle" in demo.name else 1
-            observations = "combat_observations" if "combat" in demo.name else "door_observations" if "door-lifecycle" in demo.name else None
+            observations = "combat_observations" if "combat" in demo.name or "loot" in demo.name else "door_observations" if "door-lifecycle" in demo.name else None
             return {"game": game, "level": level}, ({observations: {}} if observations else {})
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
@@ -592,7 +609,10 @@ class RealNegativeCorpusTests(unittest.TestCase):
                         self.assertEqual(original_demo, changed_demo)
                     else:
                         for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
-                            if case["scenario"] == "combat":
+                            if case["scenario"] == "loot":
+                                if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
+                                    before["input"].setdefault("s", {})["f1s"] = 0
+                            elif case["scenario"] == "combat":
                                 before["input"].setdefault("s", {})["f1s"] = 0
                                 self.assertEqual(after["input"]["s"]["f1s"], 0)
                             elif case["scenario"] == "door-lifecycle":

@@ -1,7 +1,7 @@
 # Compact public level-start recordings
 
-Eleven fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. Nine start from ordinary level-one spawns; the D2 shoot-switch case starts from the
+Twelve fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
+Descent 2 v1.0 demo data. Ten start from ordinary level-one spawns; the D2 shoot-switch case starts from the
 ordinary level-two spawn, and D1 door-lifecycle starts from its ordinary level-three spawn. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. Existing retail recordings remain unchanged.
@@ -27,9 +27,9 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
 `game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base for the original seven scenes. Combat and door-lifecycle oracles
+revision denotes the engine base for the original seven scenes. Combat, loot and door-lifecycle oracles
 point to an exact published source-only commit built before fixture admission;
-`capture_source_sha256` also identifies the exact capture fixture header. Combat and door-lifecycle
+`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot and door-lifecycle
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
 so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
@@ -85,6 +85,28 @@ initialization untouched, including the level-entry starfield draws.
   collateral scores, ram-only kills, reused-slot confusion and phantom drops,
   and requires the original robot's terminal retirement. Recorded controls alone
   drive replay; the target-following capture controller is never run during replay
+
+- `loot` (D1 only): follow ordinary level-one connected passages to authored robot
+  39 / ID 20 / signature 40, kill it with starting lasers and collect its explicit
+  laser upgrade. The original robot carries one powerup ID 3, so this scene
+  exercises the authored-content path without chance/count rolls. It uses the
+  existing initial SIM seed 1234; route experiments are recorded in the plan
+
+  Admission ties every shield reduction and the 500-point award to real
+  player-owned lasers, checks the original robot's death and retirement, and
+  identifies the exact newly created powerup by slot and signature. The pickup
+  must remain live until inventory gain, acquire the native consumed flag at
+  that boundary and retire on the following frame. Other laser pickups cannot
+  explain the gain. The living player advances laser level 1 to 2 while retaining
+  primary 0, with no pending autoselection. This is an upgrade to the selected
+  starting weapon, not new-primary autoselection coverage
+
+  No-fire preserves the route but removes laser firing and must leave the
+  original carrier alive without its drop. No-collect preserves every input
+  through the physical drop, then releases flight/fire controls: the same drop
+  must remain live, score must remain 500 and the living player must retain the
+  original laser level. Both controls finish all replay frames, fail strict
+  comparison and fail the causal gate through the real native wrappers
 
 - `door-lifecycle`: use ordinary thrust to reach an authored automatic door, hold
   the player in its doorway beyond the original close delay, clear it, allow a

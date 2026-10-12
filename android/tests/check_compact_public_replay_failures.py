@@ -23,12 +23,21 @@ def corrupt_corpus(source, destination, cases, mutation):
         if mutation == "wrong-oracle":
             digest = expected["frame_sha256"][0]
             expected["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
-        elif mutation == "bad-input":
+        elif mutation in ("bad-input", "no-collect"):
+            if mutation == "no-collect" and case["scenario"] != "loot":
+                continue
             records = [compact._json(line) for line in demo.read_bytes().splitlines() if line.strip()]
             release = next((row["f"] + 1 for row in case["actions"].get("door_events", []) if row["stage"] == 2), None)
             held_keys = sorted({key for row in records[1:-1] for key in row["input"].get("s", {})})
             for record in records[1:-1]:
-                if case["scenario"] == "combat":
+                if mutation == "no-collect":
+                    if record["f"] > case["actions"]["loot_frame"]:
+                        record["input"] = {"s": {key: 0 for key in ("f", "x", "z", "h", "p", "f1s")}} if record["f"] == case["actions"]["loot_frame"] + 1 else {}
+                elif case["scenario"] == "loot":
+                    # Sparse held input: clear every fire transition without bloating the bounded replay
+                    if record["f"] == 0 or "f1s" in record["input"].get("s", {}):
+                        record["input"].setdefault("s", {})["f1s"] = 0
+                elif case["scenario"] == "combat":
                     # Preserve the recorded flight/aim route but remove every primary shot
                     record["input"].setdefault("s", {})["f1s"] = 0
                 elif case["scenario"] == "door-lifecycle":
@@ -47,6 +56,37 @@ def corrupt_corpus(source, destination, cases, mutation):
     # Negative controls must reach the engine, not fail input admission
     if runner.load_corpus(destination) != cases:
         raise parity.EvidenceError("Negative corpus changed its scenario inventory")
+
+
+
+def verify_loot_negative(actions, header, state, actual_result, mutation):
+    """Require the intended live outcome, not just rejection of a damaged trace."""
+    terminal_objects, terminal_world = None, None
+    for row in parity.world_states(state, header, "d1"):
+        if row.get("phase") == "terminal":
+            if row["type"] == "object_boundary":
+                terminal_objects = row["slots"]
+            elif row["type"] == "world_boundary":
+                terminal_world = row["state"]
+    if terminal_objects is None or terminal_world is None:
+        raise parity.EvidenceError("Loot negative lacks complete terminal world/object evidence")
+    player = terminal_world["players"][0]
+    if player["laser_level"] != 0 or actual_result["player0"]["laser_level"] != 0:
+        raise parity.EvidenceError("Loot negative unexpectedly gained the laser upgrade")
+    pickup = terminal_objects.get(str(actions["pickup"]))
+    exact_pickup = pickup is not None and tuple(pickup[key] for key in ("type", "id", "signature")) == (7, 3, actions["pickup_signature"])
+    if mutation == "no-collect":
+        if not (exact_pickup and not pickup["flags"] & 2 and pickup["lifeleft"] > 0
+                and player["shields"] >= 0 and terminal_world["death"]["active"] == 0
+                and player["score"] == actual_result["player0"]["score"] == 500):
+            raise parity.EvidenceError("No-collect must leave the exact drop unconsumed and the player alive after the kill")
+    else:
+        carrier = terminal_objects.get(str(actions["target"]))
+        if not (carrier is not None and tuple(carrier[key] for key in ("type", "id", "signature")) == (2, actions["target_id"], actions["target_signature"])
+                and carrier["shields"] >= 0 and not carrier["flags"] & 1 and not exact_pickup):
+            raise parity.EvidenceError("No-fire must leave the original carrier alive without its drop")
+        if any(row.get("type") == "robot_loot" and row.get("robot_signature") == actions["target_signature"] for row in parity.records(state)):
+            raise parity.EvidenceError("No-fire unexpectedly resolved the carrier's loot")
 
 
 def verify_failure(report, exit_code, args, cases, mutation):
@@ -98,20 +138,21 @@ def verify_failure(report, exit_code, args, cases, mutation):
             recorded_result = list(parity.records(demo))[-1]["result"]
             if compact.sha(actual_result) == compact.sha(recorded_result):
                 raise parity.EvidenceError("Changed controls did not change the actual terminal result")
-            if case["scenario"] == "combat":
+            if case["scenario"] in ("combat", "loot"):
                 try:
                     runner.verify_actions(case, demo, state, actual)
                 except parity.EvidenceError as error:
                     causal_rejection = str(error)
                 else:
-                    raise parity.EvidenceError("Combat without primary shots still passed its causal action gate")
-                states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
-                try:
-                    incoming.verify_trace(header, states, state)
-                except parity.EvidenceError as error:
-                    incoming_rejection = str(error)
-                else:
-                    raise parity.EvidenceError("Changed combat controls still passed the incoming projectile gate")
+                    raise parity.EvidenceError("Changed combat/loot controls still passed their causal action gate")
+                if case["scenario"] == "combat":
+                    states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
+                    try:
+                        incoming.verify_trace(header, states, state)
+                    except parity.EvidenceError as error:
+                        incoming_rejection = str(error)
+                    else:
+                        raise parity.EvidenceError("Changed combat controls still passed the incoming projectile gate")
             if case["scenario"] == "door-lifecycle":
                 states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
                 try:
@@ -120,6 +161,17 @@ def verify_failure(report, exit_code, args, cases, mutation):
                     door_rejection = str(error)
                 else:
                     raise parity.EvidenceError("Door without clearance controls still passed its lifecycle gate")
+            if case["scenario"] == "loot":
+                verify_loot_negative(case["actions"], header, state, actual_result, mutation)
+            if mutation == "no-collect":
+                end = case["actions"]["loot_frame"] + 2
+                expected = compact._json(oracle.read_bytes())
+                if compact._frame_hashes(state, header)[:end] != expected["frame_sha256"][:end]:
+                    raise parity.EvidenceError("No-collect control changed gameplay before the original physical drop")
+                if actual_result["player0"]["laser_level"] != 0 or actual_result["player0"]["score"] != 500:
+                    raise parity.EvidenceError("No-collect control did not preserve the kill while preventing inventory gain")
+                if "exact new laser pickup" not in (causal_rejection or ""):
+                    raise parity.EvidenceError("No-collect control failed for a reason other than physical collection")
         evidence.append(
             {
                 "game": row["game"],
@@ -189,6 +241,25 @@ def _run_controls(args, cases, originals):
             item["outer_exit_code"] = runner._run(command, args.output / (mutation + ".log"), limit, args.repo)
             original = compact._json((output / "report.json").read_bytes())
             item["evidence"] = verify_failure(original, item["outer_exit_code"], args, cases, mutation)
+            item["status"] = "pass"
+        except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+            item["error"] = str(error)
+        parity.write_json(args.output / "report.json", report)
+    # The extra loot-specific negative uses the same native/replay wrappers, twice,
+    # without rerunning every unrelated positive scene a third time
+    loot_cases = [case for case in cases if case["scenario"] == "loot"]
+    if loot_cases:
+        changed = args.output / "no-collect-corpus"
+        corrupt_corpus(args.corpus, changed, cases, "no-collect")
+        local = argparse.Namespace(**vars(args))
+        local.corpus, local.output, local.native_only = changed, args.output / "no-collect-run", True
+        local.output.mkdir()
+        item = {"mutation": "no-collect", "scope": "authored loot only", "status": "fail"}
+        report["controls"].append(item)
+        try:
+            code = runner._run_cases(local, loot_cases)
+            observed = compact._json((local.output / "report.json").read_bytes())
+            item["evidence"] = verify_failure(observed, code, args, loot_cases, "no-collect")
             item["status"] = "pass"
         except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
             item["error"] = str(error)

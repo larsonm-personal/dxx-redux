@@ -55,7 +55,7 @@ def capture(args):
                 args.output / (stem + ".oracle.json"),
                 provenance,
                 door_trace=directory / "capture-observation.jsonl" if scenario == "door-lifecycle" else None,
-                combat_trace=directory / "capture-observation.jsonl" if scenario == "combat" else None,
+                combat_trace=directory / "capture-observation.jsonl" if scenario in ("combat", "loot") else None,
             )
             actions = {
                 key: report[key]
@@ -80,6 +80,8 @@ def capture(args):
                     raise compact.parity.EvidenceError("Live combat lacks identified projectile death and loot resolution")
                 actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score")})
                 actions.update(loot_frame=loots[0]["f"], loot_count=int(loots[0]["created"] >= 0))
+            if scenario == "loot":
+                actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score", "loot_frame", "pickup", "pickup_signature", "pickup_frame", "pickup_gain_frame")})
             if scenario == "pickup":
                 observations = report["observations"]
                 gains = [
