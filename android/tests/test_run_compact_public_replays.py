@@ -638,6 +638,8 @@ class RuntimeGateTests(unittest.TestCase):
             observations = (
                 "combat_observations"
                 if "combat" in demo.name or "loot" in demo.name
+                else "guidebot_observations"
+                if "guidebot-release" in demo.name
                 else "door_observations"
                 if "door-lifecycle" in demo.name
                 else None
@@ -763,6 +765,22 @@ class RealNegativeCorpusTests(unittest.TestCase):
             with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
                 runner.load_corpus(destination)
 
+    def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "guidebot-release")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("guidebot_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live escort"):
+                runner.load_corpus(destination)
+
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
@@ -791,7 +809,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
                             if case["scenario"] == "loot":
                                 if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
                                     before["input"].setdefault("s", {})["f1s"] = 0
-                            elif case["scenario"] == "combat":
+                            elif case["scenario"] in ("combat", "guidebot-release"):
                                 before["input"].setdefault("s", {})["f1s"] = 0
                                 self.assertEqual(after["input"]["s"]["f1s"], 0)
                             elif case["scenario"] == "door-lifecycle":

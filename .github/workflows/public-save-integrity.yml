@@ -56,6 +56,10 @@ jobs:
             cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" "dxx-redux-${game}-headless" --parallel 4
           done
 
+      - name: Build public Guide-Bot arrival fixture
+        timeout-minutes: 10
+        run: cmake --build buildd2-save --target test_guidebot_live_navigation --parallel 4
+
       - name: Check headless audio shutdown on success and early failure
         timeout-minutes: 1
         run: |
@@ -68,6 +72,13 @@ jobs:
         timeout-minutes: 5
         shell: pwsh
         run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
+
+      - name: Check truthful public Guide-Bot objective arrival without video
+        timeout-minutes: 3
+        run: |
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_guidebot_live_navigation.ps1 \
+            -NoBuild -PublicDemo -BuildDir buildd2-save -HogDir "$PWD/game_data/shareware/d2"
 
       - name: Exercise native saves, endian restores and imported checkpoints
         timeout-minutes: 5
@@ -197,6 +208,36 @@ jobs:
           assert len(images) == len(frames) and all(path.stat().st_size for path in images)
           PYTHON
 
+      - name: Render and verify ordinary-start Guide-Bot cage release
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-guidebot-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario guidebot-release
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-guidebot-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          name = "d2-public-guidebot-release.oracle.json"
+          actual = json.loads((captured / name).read_bytes())
+          expected = json.loads((admitted / name).read_bytes())
+          for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                      "terminal_sha256", "guidebot_observations"):
+              assert actual[key] == expected[key], key
+          directory = captured / "d2-guidebot-release"
+          report = json.loads((directory / "capture.json").read_bytes())
+          frames = report["screenshot_frames"]
+          assert frames == sorted(set(frames))
+          assert {0, report["damage_frame"], report["blast_frame"], report["action_frame"], report["passage_frame"]} <= set(frames)
+          images = sorted((directory / "screenshots").glob("scrn*.png"))
+          assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
       - name: Package exact replay binaries and pinned public assets
         run: |
           mkdir -p "$RUNNER_TEMP/public-replay-build"
@@ -225,6 +266,8 @@ jobs:
             temp/public-save-continuation-ci/
             temp/public-combat-ci/
             temp/public-robot-combat-visual-ci/
+            temp/public-guidebot-visual-ci/
+            android/temp/guidebot_live_navigation/
             temp/public-robot-loot-visual-ci/
             temp/public-door-lifecycle-visual-ci/
             android/temp/wall-blast-profiles/
@@ -294,6 +337,7 @@ jobs:
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py
           python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_guidebot_replay.py
           python3 android/tests/test_public_loot_replay.py
           python3 android/tests/test_public_door_replay.py
           python3 android/tests/test_public_incoming_robot_hits.py
@@ -306,7 +350,7 @@ jobs:
 
       - name: Qualify compact public replays without a display
         # Primary native gate: actual console mains, no X server or OpenGL context
-        # Nine cases took 33 minutes; retain headroom for twelve cases plus the focused no-collect controls
+        # Nine cases took 33 minutes; retain headroom for thirteen cases plus the focused no-collect controls
         timeout-minutes: 80
         run: |
           env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \

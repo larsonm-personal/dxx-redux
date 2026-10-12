@@ -37,7 +37,7 @@ def corrupt_corpus(source, destination, cases, mutation):
                     # Sparse held input: clear every fire transition without bloating the bounded replay
                     if record["f"] == 0 or "f1s" in record["input"].get("s", {}):
                         record["input"].setdefault("s", {})["f1s"] = 0
-                elif case["scenario"] == "combat":
+                elif case["scenario"] in ("combat", "guidebot-release"):
                     # Preserve the recorded flight/aim route but remove every primary shot
                     record["input"].setdefault("s", {})["f1s"] = 0
                 elif case["scenario"] == "door-lifecycle":
@@ -138,13 +138,13 @@ def verify_failure(report, exit_code, args, cases, mutation):
             recorded_result = list(parity.records(demo))[-1]["result"]
             if compact.sha(actual_result) == compact.sha(recorded_result):
                 raise parity.EvidenceError("Changed controls did not change the actual terminal result")
-            if case["scenario"] in ("combat", "loot"):
+            if case["scenario"] in ("combat", "loot", "guidebot-release"):
                 try:
                     runner.verify_actions(case, demo, state, actual)
                 except parity.EvidenceError as error:
                     causal_rejection = str(error)
                 else:
-                    raise parity.EvidenceError("Changed combat/loot controls still passed their causal action gate")
+                    raise parity.EvidenceError("Changed combat, loot or Guide-Bot controls still passed their causal action gate")
                 if case["scenario"] == "combat":
                     states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
                     try:
@@ -153,6 +153,11 @@ def verify_failure(report, exit_code, args, cases, mutation):
                         incoming_rejection = str(error)
                     else:
                         raise parity.EvidenceError("Changed combat controls still passed the incoming projectile gate")
+                if (
+                    case["scenario"] == "guidebot-release"
+                    and causal_rejection != "Both cage barriers must blast at the exact declared post-frame boundary"
+                ):
+                    raise parity.EvidenceError("Guide-Bot no-fire controls did not fail the actual cage-blast proof")
             if case["scenario"] == "door-lifecycle":
                 states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
                 try:
@@ -178,7 +183,17 @@ def verify_failure(report, exit_code, args, cases, mutation):
                 "scenario": row["scenario"],
                 "repeat": row["repeat"],
                 "passed": True,
-                **({"combat_causal_rejection": causal_rejection} if causal_rejection is not None else {}),
+                **(
+                    {
+                        (
+                            "guidebot_causal_rejection"
+                            if case["scenario"] == "guidebot-release"
+                            else "combat_causal_rejection"
+                        ): causal_rejection
+                    }
+                    if causal_rejection is not None
+                    else {}
+                ),
                 **({"door_lifecycle_rejection": door_rejection} if door_rejection is not None else {}),
                 **({"incoming_hit_rejection": incoming_rejection} if incoming_rejection is not None else {}),
             }

@@ -14,6 +14,7 @@ import public_switch_replay as shoot_switch
 import public_robot_combat_replay as robot_combat
 import public_door_replay as door_lifecycle
 import public_loot_replay as robot_loot
+import public_guidebot_replay as guidebot
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
@@ -21,6 +22,7 @@ PUBLIC_CASES[("d2", "shoot-switch")] = 2
 PUBLIC_CASES[("d1", "door-lifecycle")] = 3
 PUBLIC_CASES[("d2", "door-lifecycle")] = 1
 PUBLIC_CASES[("d1", "loot")] = 1
+PUBLIC_CASES[("d2", "guidebot-release")] = 1
 
 
 def load_corpus(directory):
@@ -68,6 +70,8 @@ def load_corpus(directory):
             raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
         if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
             raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
+        if ("guidebot_observations" in oracle) != (case["scenario"] == "guidebot-release"):
+            raise parity.EvidenceError("Guide-Bot cases require their immutable live escort observation oracle")
         if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
             raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
@@ -168,7 +172,10 @@ def verify_actions(case, demo, state_trace, actual_result):
     # controls exercise causal robot outcomes rather than just weapon presence
     combat_actions = robot_combat.verify(actions, header, states, state_trace) if scenario == "combat" else None
     loot_actions = robot_loot.verify(actions, header, states, state_trace) if scenario == "loot" else None
-    if scenario in ("flight", "door", "shoot-switch", "combat", "loot") and (weapons <= 0 or not energy_drop):
+    guidebot_actions = guidebot.verify(actions, header, states, state_trace) if scenario == "guidebot-release" else None
+    if scenario in ("flight", "door", "shoot-switch", "combat", "loot", "guidebot-release") and (
+        weapons <= 0 or not energy_drop
+    ):
         raise parity.EvidenceError("Replay did not create live player weapons and spend energy")
     result = {
         "movement": True,
@@ -180,6 +187,9 @@ def verify_actions(case, demo, state_trace, actual_result):
         return result
     if scenario == "loot":
         result.update(loot_actions)
+        return result
+    if scenario == "guidebot-release":
+        result.update(guidebot_actions)
         return result
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
