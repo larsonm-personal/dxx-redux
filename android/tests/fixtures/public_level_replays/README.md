@@ -1,7 +1,7 @@
 # Compact public level-start recordings
 
-Seven fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. Six start from ordinary level-one spawns; the D2 shoot-switch case starts from the
+Nine fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
+Descent 2 v1.0 demo data. Eight start from ordinary level-one spawns; the D2 shoot-switch case starts from the
 ordinary level-two spawn. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. Existing retail recordings remain unchanged.
@@ -27,8 +27,12 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
 `game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base; `capture_source_sha256` identifies the exact
-new fixture header shipped in this segment. The protocol restores SIM RNG per
+revision denotes the engine base for the original seven scenes. Combat oracles
+point to an exact published source-only commit built before fixture admission;
+`capture_source_sha256` also identifies the exact capture fixture header. Combat
+packing and admission require the recorder's compiled Git identity to match that
+published source revision. Reconfigure CMake after selecting the capture commit
+so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
 frame; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
 
@@ -56,6 +60,32 @@ initialization untouched, including the level-entry starfield draws.
   that bypassed the passage. The current scene activates at frame 175, starts both
   sides opening at boundary 187, and crosses at frame 217 (218 total frames)
 
+- `combat`: ordinary thrust and yaw/pitch controls approach an existing robot,
+  keep firing range and use the unmodified starting lasers. D1 targets original
+  object 8 / robot ID 3 / signature 9, deals three 10-point hits to its 25 shields
+  at frames 105, 115 and 125, and retires the original object at frame 147 (148
+  total frames). D2 targets original object 11 / robot ID 37 / signature 12,
+  deals two 9-point hits to its 12 shields at frames 239 and 241, and retires it at
+  frame 262 (263 total frames). Each exact kill awards 200 points and increments
+  the real level/total kill counters once while the player stays alive
+
+  The scenes also prove the original loot rules finish after death. D1's loaded
+  definition allows one energy pickup with a 3/16 chance; its actual SIM roll
+  17896 selects bucket 8, so no count roll or physical drop occurs at frame 132.
+  D2's selected robot has a zero-count loot definition, so neither a loot roll
+  nor a physical drop occurs at frame 248. These are justified no-drop outcomes;
+  neither scene claims a positive physical loot drop. The existing controlled
+  loaded-asset combat suite retains its positive physical-drop coverage
+
+  Read-only damage observations identify the original robot, real player-owned
+  laser, shields before/after and exact award. Loot observations retain the loaded
+  rule, actual decision rolls and resulting object identity. Every observation
+  is also hashed from independent live capture into the same size-bounded oracle.
+  Admission couples these events to complete raw object/world state, rejects
+  collateral scores, ram-only kills, reused-slot confusion and phantom drops,
+  and requires the original robot's terminal retirement. Recorded controls alone
+  drive replay; the target-following capture controller is never run during replay
+
 The D2 capture startup initializes PIG bitmap flags before loading the level, just
 like the desktop game. Those transparency flags affect ambient propagation; the
 level-two scene detects an omitted startup step through its lava ambience and
@@ -63,7 +93,7 @@ strict AI diagnostic hashes. No world values are staged to make capture match
 
 The route controller is used only to create input recordings. Replays consume the
 recorded controls without navigation assistance. Captures end shortly after their
-selected action succeeds. Fixed timesteps are 1/60 second for `flight` and 1/30
+selected action succeeds; combat ends at the original robot retirement boundary. Fixed timesteps are 1/60 second for `flight` and 1/30
 second for route scenes, rounded down to engine fixed-point units.
 
 ## Reproduce
@@ -108,9 +138,20 @@ full-simulation **INCOMPLETE** status. Native D1 starts the player at signature 
 while D2 explicitly initializes its player signature to 0; derived identity
 hashes differ. Initial effect-animation phase also differs and remains
 unqualified. The longer door trace also has two otherwise-identical SIM events whose player
-context signatures differ. Door and pickup are native-only required coverage;
+context signatures differ. Door, pickup and combat are native-only required coverage;
 their imported runs are diagnostic probes and cannot satisfy the paired gate.
 Their original and scoped comparison failures remain visible. No normalization
 hides these observations. Native console and headed fidelity is qualified only
 for the admitted public scenes. No full-game, Android or imported headless-console
 fidelity claim is made.
+
+## Combat route screenshots
+
+For route inspection only, set `DXX_PUBLIC_CAPTURE_SCREENSHOTS=1` while invoking
+`test_upstream_compat --public-level-replay <public-data-directory> combat` under
+Xvfb. This invokes the actual desktop renderer every frame and saves PNG images
+at regular intervals, first damage and death; `capture.json` lists their frame
+numbers. Inspect these rendered images, and use separate fresh non-screenshot
+captures for oracle admission. Screenshot mode does not inject a player pose,
+change inventory or alter robot definitions. Candidate capture can be restricted
+with `capture_compact_public_replays.py --scenario combat`

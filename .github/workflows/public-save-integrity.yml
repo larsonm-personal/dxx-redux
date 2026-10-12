@@ -97,6 +97,37 @@ jobs:
             -ImportedExecutable "$PWD/buildd2-save/main/test_upstream_compat" \
             -Output "$PWD/temp/public-combat-ci"
 
+      - name: Render and verify compact combat capture screenshots
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-robot-combat-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario combat
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-robot-combat-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          for game in ("d1", "d2"):
+              name = f"{game}-public-combat.oracle.json"
+              actual = json.loads((captured / name).read_bytes())
+              expected = json.loads((admitted / name).read_bytes())
+              for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                          "terminal_sha256", "combat_observations"):
+                  assert actual[key] == expected[key], (game, key)
+              directory = captured / f"{game}-combat"
+              report = json.loads((directory / "capture.json").read_bytes())
+              frames = report["screenshot_frames"]
+              assert frames == sorted(set(frames))
+              assert {0, report["damage_frame"], report["action_frame"]} <= set(frames)
+              images = sorted((directory / "screenshots").glob("scrn*.png"))
+              assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
       - name: Package exact replay binaries and pinned public assets
         run: |
           mkdir -p "$RUNNER_TEMP/public-replay-build"
@@ -123,6 +154,7 @@ jobs:
             temp/wall-blast-save-shareware/
             temp/public-pickup-ci/
             temp/public-combat-ci/
+            temp/public-robot-combat-visual-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
@@ -189,6 +221,7 @@ jobs:
           python3 android/tests/test_compact_public_replay.py
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py
+          python3 android/tests/test_public_robot_combat_replay.py
           python3 android/tests/test_compact_public_gameplay_parity.py
           pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
           pwsh -NoProfile -File android/tests/test_input_demo_comparison_policy.ps1

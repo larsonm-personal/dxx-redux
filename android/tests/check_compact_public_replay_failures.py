@@ -24,8 +24,12 @@ def corrupt_corpus(source, destination, cases, mutation):
         elif mutation == "bad-input":
             records = [compact._json(line) for line in demo.read_bytes().splitlines() if line.strip()]
             for record in records[1:-1]:
-                # With no controls from frame zero the ship cannot follow any route
-                record["input"] = {}
+                if case["scenario"] == "combat":
+                    # Preserve the recorded flight/aim route but remove every primary shot
+                    record["input"].setdefault("s", {})["f1s"] = 0
+                else:
+                    # With no controls from frame zero the ship cannot follow any route
+                    record["input"] = {}
             raw = b"".join(compact.canonical(record) + b"\n" for record in records)
             demo.write_bytes(raw)
             expected["compact_sha256"] = hashlib.sha256(raw).hexdigest()
@@ -56,6 +60,7 @@ def verify_failure(report, exit_code, args, cases, mutation):
         demo, oracle = (args.corpus / case[key] for key in ("demo", "oracle"))
         state, rng, actual = (Path(row["artifacts"][key]) for key in ("state", "rng", "result"))
         command = row["command"]
+        causal_rejection = None
         expected_runner = "headless-console" if args.run_mode == "headless" else "visual"
         if row.get("status") != "fail" or command[command.index("-Runner") + 1] != expected_runner:
             raise parity.EvidenceError("Negative run accepted a scene or selected the wrong backend")
@@ -83,7 +88,22 @@ def verify_failure(report, exit_code, args, cases, mutation):
             recorded_result = list(parity.records(demo))[-1]["result"]
             if compact.sha(actual_result) == compact.sha(recorded_result):
                 raise parity.EvidenceError("Changed controls did not change the actual terminal result")
-        evidence.append({"game": row["game"], "scenario": row["scenario"], "repeat": row["repeat"], "passed": True})
+            if case["scenario"] == "combat":
+                try:
+                    runner.verify_actions(case, demo, state, actual)
+                except parity.EvidenceError as error:
+                    causal_rejection = str(error)
+                else:
+                    raise parity.EvidenceError("Combat without primary shots still passed its causal action gate")
+        evidence.append(
+            {
+                "game": row["game"],
+                "scenario": row["scenario"],
+                "repeat": row["repeat"],
+                "passed": True,
+                **({"combat_causal_rejection": causal_rejection} if causal_rejection is not None else {}),
+            }
+        )
     return evidence
 
 

@@ -2388,3 +2388,45 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 		           obj0 ? obj0->mtype.phys_info.mass : 0,
 		           obj1 ? obj1->mtype.phys_info.mass : 0);
 }
+
+// Read-only outcome evidence, emitted after ordinary projectile/loot resolution
+// Replay never executes these records or uses them to alter simulation state
+static void input_demo_write_combat_observation(const char *json)
+{
+	char error[256] = "";
+	if (!input_demo_state_trace_write_json(json, error, sizeof(error)))
+		con_printf(CON_NORMAL, "Input demo combat observation failed: %s\n", error);
+}
+
+void input_demo_trace_robot_damage(object *robot, object *weapon, int old_shields, int damage, int died)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !robot || !weapon || robot->type != OBJ_ROBOT ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+	snprintf(json, sizeof(json),
+		"{\"type\":\"robot_damage\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d,\"died\":%d,\"score_value\":%d,\"score\":%d,\"kills_level\":%d,\"kills_total\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
+		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+		old_shields, robot->shields, damage, died, Robot_info[robot->id].score_value,
+		Players[Player_num].score, Players[Player_num].num_kills_level, Players[Player_num].num_kills_total);
+	input_demo_write_combat_observation(json);
+}
+
+void input_demo_trace_robot_loot(object *robot, int chance_roll, int count_roll, int created)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !robot || robot->type != OBJ_ROBOT ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+	const robot_info *definition = &Robot_info[robot->id];
+	const object *drop = created >= 0 && created <= Highest_object_index ? &Objects[created] : NULL;
+	snprintf(json, sizeof(json),
+		"{\"type\":\"robot_loot\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"definition_type\":%d,\"definition_id\":%d,\"definition_count\":%d,\"definition_probability\":%d,\"chance_roll\":%d,\"count_roll\":%d,\"contains_type\":%d,\"contains_id\":%d,\"contains_count\":%d,\"created\":%d,\"created_type\":%d,\"created_id\":%d,\"created_signature\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
+		definition->contains_type, definition->contains_id, definition->contains_count, definition->contains_prob,
+		chance_roll, count_roll, robot->contains_type, robot->contains_id, robot->contains_count,
+		created, drop ? drop->type : -1, drop ? drop->id : -1, drop ? drop->signature : -1);
+	input_demo_write_combat_observation(json);
+}
