@@ -165,6 +165,23 @@ class RuntimeGateTests(unittest.TestCase):
         with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}):
             self.assertEqual(self.action("combat", {})["score_awarded"], 200)
 
+    def test_loot_proves_collection_before_generic_firing_guard(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames:
+            row["diag"]["player_weapon_count"] = 0
+        with mock.patch.object(
+            runner.robot_loot, "verify", side_effect=runner.parity.EvidenceError("identified drop remained uncollected")
+        ) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "identified drop remained uncollected"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "live player weapons"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}):
+            self.assertEqual(self.action("loot", {})["laser_level_increase"], 1)
+
     def test_pickup_requires_consecutive_gain_at_exact_next_entry(self):
         frames = copy.deepcopy(self.frames)
         for row in frames[3:]:
@@ -620,7 +637,7 @@ class RuntimeGateTests(unittest.TestCase):
             level = 2 if "shoot-switch" in demo.name else 3 if game == "d1" and "door-lifecycle" in demo.name else 1
             observations = (
                 "combat_observations"
-                if "combat" in demo.name
+                if "combat" in demo.name or "loot" in demo.name
                 else "door_observations"
                 if "door-lifecycle" in demo.name
                 else None
@@ -699,6 +716,21 @@ class RuntimeGateTests(unittest.TestCase):
 
 
 class RealNegativeCorpusTests(unittest.TestCase):
+    def test_real_imported_scope_retains_loot_diagnostics_and_required_flight(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        included, excluded = runner.imported_d1_scope(runner.load_corpus(source))
+        self.assertEqual(
+            {case["demo"] for case in included},
+            {f"d1-public-{scenario}.dximdemo" for scenario in ("flight", "pickup", "door", "combat", "loot")},
+        )
+        self.assertEqual([case["demo"] for case in excluded], ["d1-public-door-lifecycle.dximdemo"])
+        self.assertEqual(
+            next(case for case in included if case["scenario"] == "loot")["imported_d1"]["role"], "diagnostic-only"
+        )
+        self.assertEqual(
+            next(case for case in included if case["scenario"] == "flight")["imported_d1"]["role"], "required-gameplay"
+        )
+
     def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
@@ -756,11 +788,16 @@ class RealNegativeCorpusTests(unittest.TestCase):
                         self.assertEqual(original_demo, changed_demo)
                     else:
                         for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
-                            if case["scenario"] == "combat":
+                            if case["scenario"] == "loot":
+                                if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
+                                    before["input"].setdefault("s", {})["f1s"] = 0
+                            elif case["scenario"] == "combat":
                                 before["input"].setdefault("s", {})["f1s"] = 0
                                 self.assertEqual(after["input"]["s"]["f1s"], 0)
                             elif case["scenario"] == "door-lifecycle":
-                                release = next(row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2)
+                                release = next(
+                                    row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2
+                                )
                                 if before["f"] >= release:
                                     self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
                                     before["input"] = after["input"]

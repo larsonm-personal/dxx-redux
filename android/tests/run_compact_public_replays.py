@@ -13,12 +13,14 @@ import d1_replay_parity as parity
 import public_switch_replay as shoot_switch
 import public_robot_combat_replay as robot_combat
 import public_door_replay as door_lifecycle
+import public_loot_replay as robot_loot
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
 PUBLIC_CASES[("d2", "shoot-switch")] = 2
 PUBLIC_CASES[("d1", "door-lifecycle")] = 3
 PUBLIC_CASES[("d2", "door-lifecycle")] = 1
+PUBLIC_CASES[("d1", "loot")] = 1
 
 
 def load_corpus(directory):
@@ -62,7 +64,7 @@ def load_corpus(directory):
                 raise parity.EvidenceError("Corpus companions must have unique plain filenames")
             filenames.add(name)
         header, oracle = compact.validate(directory / case["demo"], directory / case["oracle"])
-        if ("combat_observations" in oracle) != (case["scenario"] == "combat"):
+        if ("combat_observations" in oracle) != (case["scenario"] in ("combat", "loot")):
             raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
         if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
             raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
@@ -165,7 +167,8 @@ def verify_actions(case, demo, state_trace, actual_result):
     # Prove the identified kill before the generic firing guard, so no-fire combat
     # controls exercise causal robot outcomes rather than just weapon presence
     combat_actions = robot_combat.verify(actions, header, states, state_trace) if scenario == "combat" else None
-    if scenario in ("flight", "door", "shoot-switch", "combat") and (weapons <= 0 or not energy_drop):
+    loot_actions = robot_loot.verify(actions, header, states, state_trace) if scenario == "loot" else None
+    if scenario in ("flight", "door", "shoot-switch", "combat", "loot") and (weapons <= 0 or not energy_drop):
         raise parity.EvidenceError("Replay did not create live player weapons and spend energy")
     result = {
         "movement": True,
@@ -174,6 +177,9 @@ def verify_actions(case, demo, state_trace, actual_result):
     }
     if scenario == "door-lifecycle":
         result.update(door_lifecycle.verify(actions, header, states, state_trace))
+        return result
+    if scenario == "loot":
+        result.update(loot_actions)
         return result
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
