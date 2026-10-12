@@ -1,4 +1,5 @@
-// Actual powerup acquisition, queued selection and release in both engines
+// Controlled powerup acquisition, queued selection and release with loaded assets
+// Geometry/inventory are synthesized; this is not a level traversal or input replay
 void test_quad_autoselect_runtime(bool native);
 
 static void fixture_native_primary_order(const ubyte *order)
@@ -217,9 +218,37 @@ static nlohmann::json exercise_pickup_autoselect(bool native)
 							                  { "released", released },
 							                  { "followup", snapshot() } });
 						}
+	require(trace.size() == 2112, "all pickup acquisition, release and follow-up combinations finish");
 	test_quad_autoselect_runtime(native);
 	PlayerCfg = saved_cfg;
 	Controls = {};
 	reset_auto_select();
 	return trace;
+}
+
+// Record the selected real asset bank before the controlled corridor replaces geometry
+static void write_pickup_asset_profile(bool shareware, bool ordinary_d2)
+{
+	extern int Num_sound_files;
+	using nlohmann::json;
+	if (shareware) {
+		require(std::strcmp(Level_names[0], ordinary_d2 ? "d2leva-1.sl2" : "level01.sdl") == 0,
+		        "public pickup fixture selects the pinned demo mission");
+		if (!ordinary_d2) {
+#ifdef DXX_BUILD_DESCENT_II
+			const int expected_sounds = 70; // Imported bank retains unique packaged samples
+#else
+			const int expected_sounds = 77; // Native table registration includes excluded placeholders
+#endif
+			require(N_polygon_models == 56 && Num_sound_files == expected_sounds, "public pickup fixture uses the authentic D1 shareware bank");
+		}
+	}
+	json powers = json::array();
+	for (int id : { POW_LASER, POW_QUAD_FIRE, POW_SPREADFIRE_WEAPON, POW_FUSION_WEAPON, POW_VULCAN_AMMO }) {
+		require(id >= 0 && id < N_powerup_types, "controlled pickup ID is in the loaded powerup bank");
+		powers.push_back({ { "id", id }, { "clip", +Powerup_info[id].vclip_num }, { "sound", +Powerup_info[id].hit_sound } });
+	}
+	const json profile = { { "edition", shareware ? "shareware" : "retail" }, { "content_game", ordinary_d2 ? "d2" : "d1" }, { "mission", Current_mission_filename }, { "first_level", Level_names[0] }, { "geometry", "controlled-corridor" }, { "models", N_polygon_models }, { "sounds", Num_sound_files }, { "powerups", powers } };
+	const auto text = profile.dump(2) + "\n";
+	write_fixture(ordinary_d2 ? "pickup-assets-d2.json" : "pickup-assets.json", bytes(text.begin(), text.end()));
 }
