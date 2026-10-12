@@ -229,6 +229,28 @@
                     }
                 ]
             }
+        },
+        {
+            "game": "d1",
+            "scenario": "loot",
+            "demo": "d1-public-loot.dximdemo",
+            "oracle": "d1-public-loot.oracle.json",
+            "actions": {
+                "target": 39,
+                "target_id": 20,
+                "target_signature": 40,
+                "action_frame": 542,
+                "wall_contact_frames": 0,
+                "damage_frame": 499,
+                "retirement_frame": 566,
+                "target_shields": 4587520,
+                "target_score": 500,
+                "loot_frame": 550,
+                "pickup": 79,
+                "pickup_signature": 301,
+                "pickup_frame": 581,
+                "pickup_gain_frame": 580
+            }
         }
     ]
 }
