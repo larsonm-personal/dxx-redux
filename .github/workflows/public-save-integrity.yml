@@ -79,6 +79,16 @@ jobs:
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat" \
             -Output "$PWD/temp/public-pickup-ci"
 
+      - name: Exercise public loaded-asset combat rules
+        timeout-minutes: 5
+        run: |
+          pwsh -NoProfile -File android/tests/test_public_combat_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/helpers/test_d1_gameplay_rules.ps1 \
+            -DataEdition shareware \
+            -NativeExecutable "$PWD/buildd1-save/main/test_upstream_compat" \
+            -ImportedExecutable "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-combat-ci"
+
       - name: Check compact public replay admission
         timeout-minutes: 2
         run: |
@@ -105,6 +115,7 @@ jobs:
             temp/wall-blast-save-shareware/
             temp/public-replay-ci/
             temp/public-pickup-ci/
+            temp/public-combat-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
