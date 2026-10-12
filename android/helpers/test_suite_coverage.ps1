@@ -216,6 +216,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_public_save_continuation'
             'test_compact_public_replays'
             'test_compact_public_replay_failures'
+            'test_public_matcen_stations'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'
             # Full semantic coverage is still incomplete; retain a nonzero gate

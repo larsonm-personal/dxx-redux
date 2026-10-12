@@ -11255,6 +11255,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
+#include "public_matcen_stations_fixture.hpp"
 
 static void verify_headless_audio_closed()
 {
@@ -11291,6 +11292,11 @@ int main(int argc, char **argv)
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
 		exercise_public_save_continuation(argv[3]);
+		return 0;
+	}
+	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--public-matcen-stations") == 0) {
+		require(argc == 4 || std::strcmp(argv[4], "--without-activation") == 0, "recognized matcen fixture control");
+		test_public_matcen_stations(argv[2], argv[3], argc == 4);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {

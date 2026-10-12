@@ -80,6 +80,17 @@ jobs:
             pwsh -NoProfile -File android/tests/test_guidebot_live_navigation.ps1 \
             -NoBuild -PublicDemo -BuildDir buildd2-save -HogDir "$PWD/game_data/shareware/d2"
 
+      - name: Prove actual public matcen production and suppression without video
+        timeout-minutes: 3
+        run: |
+          python3 android/tests/test_public_matcen_report.py
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_public_matcen_stations.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/public-matcen-ci"
+
       - name: Exercise native saves, endian restores and imported checkpoints
         timeout-minutes: 5
         run: |
@@ -270,6 +281,7 @@ jobs:
             android/temp/guidebot_live_navigation/
             temp/public-robot-loot-visual-ci/
             temp/public-door-lifecycle-visual-ci/
+            temp/public-matcen-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
