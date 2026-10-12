@@ -251,6 +251,26 @@
                 "pickup_frame": 581,
                 "pickup_gain_frame": 580
             }
+        },
+        {
+            "game": "d2",
+            "scenario": "guidebot-release",
+            "demo": "d2-public-guidebot-release.dximdemo",
+            "oracle": "d2-public-guidebot-release.oracle.json",
+            "actions": {
+                "target": 74,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 190,
+                "wall_contact_frames": 0,
+                "buddy": 28,
+                "buddy_id": 33,
+                "buddy_signature": 29,
+                "cage_segment": 224,
+                "exit_frame": 181,
+                "blast_frame": 177,
+                "damage_frame": 101
+            }
         }
     ],
     "imported_d1": {
