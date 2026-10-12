@@ -8,7 +8,8 @@ import subprocess
 from pathlib import Path
 
 import compact_public_replay as compact
-from run_compact_public_replays import validate_assets
+from run_compact_public_replays import validate_assets, PUBLIC_CASES
+import public_switch_replay as shoot_switch
 
 
 def capture(args):
@@ -27,7 +28,9 @@ def capture(args):
             ).hexdigest(),
             "asset_sha256": hashes,
         }
-        for scenario in ("flight", "pickup", "door"):
+        for candidate_game, scenario in PUBLIC_CASES:
+            if candidate_game != game:
+                continue
             directory = args.output / f"{game}-{scenario}"
             directory.mkdir()
             with (directory / "capture.log").open("w") as log:
@@ -56,6 +59,15 @@ def capture(args):
                 key: report[key]
                 for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
             }
+            if scenario == "shoot-switch":
+                events = [
+                    row
+                    for row in compact.parity.records(directory / "capture-observation.jsonl")
+                    if row.get("type") == "trigger_activation" and row.get("trigger") == 17
+                ]
+                if len(events) != 1 or events[0].get("shot") != 1 or events[0].get("f") != report["action_frame"]:
+                    raise compact.parity.EvidenceError("Live capture lacks a successful projectile-trigger observation")
+                actions.update(shoot_switch.SWITCH, passage_frame=report["passage_frame"])
             if scenario == "pickup":
                 observations = report["observations"]
                 gains = [

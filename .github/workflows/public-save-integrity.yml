@@ -94,12 +94,14 @@ jobs:
         run: |
           python3 android/tests/test_compact_public_replay.py
           python3 android/tests/test_run_compact_public_replays.py
+          python3 android/tests/test_public_switch_replay.py
           python3 android/tests/test_compact_public_gameplay_parity.py
           pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
           pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
 
       - name: Replay compact public level starts
-        timeout-minutes: 20
+        # Seven native scenes twice, then nine paired D1 executions
+        timeout-minutes: 30
         run: |
           xvfb-run -a -s '-screen 0 640x480x24 -noreset' pwsh -NoProfile -File android/tests/test_compact_public_replays.ps1 \
             -D1Exe "$PWD/buildd1-save/main/d1x-redux" \

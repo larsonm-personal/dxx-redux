@@ -165,13 +165,13 @@ def _records(path, full):
         or game not in PUBLIC_MISSIONS
         or header.get("mission") != PUBLIC_MISSIONS[game]
         or type(header.get("level")) is not int
-        or header["level"] != 1
+        or header["level"] not in ((1, 2) if game == "d2" else (1,))
         or header.get("start_mode") != "new_level"
         or header.get("rng_mode") != "lcg_state"
         or type(count) is not int
         or not 0 < count <= MAX_FRAMES
     ):
-        raise parity.EvidenceError("Replay must describe a bounded ordinary public level-one start")
+        raise parity.EvidenceError("Replay must describe a bounded ordinary public level start")
     if (
         type(header.get("version")) is not int
         or header["version"] not in (2, 3, 4)
@@ -259,7 +259,7 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance):
         "schema": 1,
         "game": header["game"],
         "mission": header["mission"],
-        "level": 1,
+        "level": header["level"],
         "frames": header["frame_count"],
         "full_recording_sha256": hashlib.sha256(raw).hexdigest(),
         "compact_sha256": hashlib.sha256(compact).hexdigest(),
@@ -305,7 +305,7 @@ def validate(demo, oracle):
     for key, value in (
         ("game", header["game"]),
         ("mission", header["mission"]),
-        ("level", 1),
+        ("level", header["level"]),
         ("frames", header["frame_count"]),
     ):
         if type(expected[key]) is not type(value) or expected[key] != value:

@@ -52,6 +52,7 @@ int input_demo_replay_collision_probe_active(void);
 int input_demo_trace_collision_pose_active(void);
 unsigned int input_demo_trace_collision_frame_index(void);
 const char *input_demo_trace_collision_mode_name(void);
+void input_demo_trace_trigger_activation(int segment, int side, int object, int shot, int trigger);
 void input_demo_record_wall_impact_event(struct object *weapon, int hitwall, int blew_up, int robot_escort);
 void input_demo_record_robot_damage_event(struct object *robot, int32_t damage, int32_t old_shields);
 void input_demo_record_robot_impact_event(struct object *weapon, struct object *robot);

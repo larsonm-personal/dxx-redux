@@ -117,6 +117,20 @@ class CompactReplayTests(unittest.TestCase):
         self.assertEqual(header["game"], "d2")
         self.assertIn("d2demo.dem", oracle["provenance"]["asset_sha256"])
 
+    def test_d2_level_two_is_an_ordinary_public_start(self):
+        self.header.update(game="d2", mission="d2demo", level=2)
+        self.result.update(game="d2", mission="d2demo", level=2)
+        self.provenance["asset_sha256"] = compact.pinned_assets("d2")
+        self.write(self.full, self.rows)
+        self.pack()
+        header, oracle = compact.validate(self.demo, self.oracle)
+        self.assertEqual(header["level"], 2)
+        self.assertEqual(oracle["level"], 2)
+        oracle["level"] = 1
+        self.oracle.write_bytes(compact.canonical(oracle))
+        with self.assertRaises(compact.parity.EvidenceError):
+            compact.validate(self.demo, self.oracle)
+
     def test_only_reviewed_diagnostic_events_are_removed(self):
         event = {"kind": "probe_weapon_life", "objnum": 12, "lifeleft": 999}
         path_event = {"kind": "weapon_robot_path", "weapon_obj": 12, "robot_obj": 13}
