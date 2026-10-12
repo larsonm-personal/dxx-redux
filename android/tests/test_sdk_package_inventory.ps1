@@ -48,7 +48,9 @@ try {
     New-FixturePackage 'cmdline-tools;19.0' 'cmdline-tools;latest' | Out-Null
     $externalAvd = Join-Path $root 'moved device.avd'
     New-Item -ItemType Directory -Path $externalAvd | Out-Null
-    Set-Content -LiteralPath (Join-Path $externalAvd 'config.ini') -Value 'image.sysdir.1=system-images/android-23/google_apis/x86_64/'
+    $avdConfig = Join-Path $externalAvd 'config.ini'
+    $avdConfigText = "image.sysdir.1=system-images/android-23/google_apis/x86_64/`nhw.cpu.ncore=4`nhw.cpu.ncore=2"
+    Set-Content -LiteralPath $avdConfig -Value $avdConfigText
     $descriptor = Join-Path $avdRoot 'device.ini'
     Set-Content -LiteralPath $descriptor -Value "path=$externalAvd"
     $inventory = Get-FixtureInventory
@@ -56,6 +58,13 @@ try {
     Assert-Package $inventory 'platforms;android-36' Referenced Checkout
     Assert-Package $inventory 'cmdline-tools;19.0' Referenced Checkout
     Assert-Package $inventory 'system-images;android-23;google_apis;x86_64' Referenced AVD
+    # Ignore duplicate tuning options, but reject ambiguous image and AVD references
+    Add-Content -LiteralPath $avdConfig -Value 'image.sysdir.1=system-images/android-34/google_apis/x86_64/'
+    Assert-Rejected { Get-FixtureInventory }
+    Set-Content -LiteralPath $avdConfig -Value $avdConfigText
+    Add-Content -LiteralPath $descriptor -Value "path=$(Join-Path $root 'another.avd')"
+    Assert-Rejected { Get-FixtureInventory }
+    Set-Content -LiteralPath $descriptor -Value "path=$externalAvd"
     Set-FixturePins $checkouts[1] 34 37
     $inventory = Get-FixtureInventory
     Assert-Package $inventory 'platforms;android-36' Unreferenced

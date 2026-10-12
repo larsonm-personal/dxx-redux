@@ -34,6 +34,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmerge.h"
 #include "piggy.h"
 #include "strutil.h"
+#ifdef __ANDROID__
+#include "android_mod_bitmaps.h"
+#endif
 
 char Current_level_palette[FILENAME_LEN];
 
@@ -81,6 +84,10 @@ int load_palette(char *name,int used_for_level,int no_change_screen)
 
 		d1_in_d2_presentation_resource(name, resource, sizeof(resource));
 		gr_use_palette_table(resource);
+#ifdef __ANDROID__
+		/* Indexed mod banks are resident before the new palette is installed */
+		android_mod_bitmaps_refresh_palette();
+#endif
 
 		if (Game_wind && !no_change_screen)
 			gr_remap_bitmap_good( &grd_curscreen->sc_canvas.cv_bitmap, old_pal, -1, -1 );

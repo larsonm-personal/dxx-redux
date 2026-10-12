@@ -64,6 +64,12 @@ void android_ogl_active_texture(const struct android_ogl_bind_texture_state *sta
 void android_ogl_reset_texture_bindings(const struct android_ogl_bind_texture_state *state);
 void android_ogl_enable_texture_2d(int *texture_2d_enabled);
 int android_ogl_get_texture_bytes(const struct android_ogl_texture_list_state *state);
+/* Upload authored ETC2 levels, selecting a smaller base only for device limits */
+int android_ogl_upload_ktx2(ogl_texture *texture, const etc2_file_data *data,
+                            int texfilt, int max_size, const char *filename);
+/* Authored sprite blending preserves the caller's fade and blend mode */
+int android_ogl_begin_sprite_blend(ogl_texture *texture);
+void android_ogl_end_sprite_blend(int previous);
 void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_state *state);
 void android_ogl_apply_texfilt_all(struct android_ogl_texture_texfilt_state *state);
 int android_ogl_effective_texfilt(int texfilt, int aniso_level);
@@ -72,8 +78,14 @@ void android_ogl_apply_bound_texture_filter(ogl_texture *texture, int effective_
                                             int render_context);
 void android_ogl_apply_pending_texture_options(
     struct android_ogl_texture_filter_state *state, const char *source);
-void android_ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt,
-                               android_ogl_loadtexture_fn loadtexture);
+int android_ogl_load_dxa_mask(const char *image_filename, grs_bitmap *bm, int texfilt,
+                              android_ogl_loadtexture_fn loadtexture);
+/* Search-path priority, then palette/name specificity, then format within one pack */
+int android_ogl_read_replacement(char *filename, size_t capacity,
+                                 const char *const *basenames, const int *slots, int count, int allow_ktx2,
+                                 grs_bitmap *bitmap, png_data *png, etc2_file_data *ktx,
+                                 struct android_profile_texture_lookup_metrics *lookup,
+                                 long long *ktx_us, long long *png_us);
 int android_ogl_read_texture_with_extensions(
     char *filename, const char *basename, png_data *pdata,
     struct android_profile_texture_lookup_metrics *lookup, int slot,

@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,6 +14,41 @@ import kotlin.io.path.createTempDirectory
 
 class ModManagerDetailsTest {
     private val patchPath = "patches/d2/ham_patch.rfc6902.json"
+
+    @Test
+    fun d1LevelSurfacePatchesAreAcceptedAndConflictsRemainVisible() {
+        val filesDir = createTempDirectory("mod-d1-surfaces").toFile()
+        val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+        val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+        val path = "patches/d1/level_surface_patch.rfc6902.json"
+
+        fun writeSurface(
+            filename: String,
+            level: String,
+            texture: Int,
+        ) {
+            ZipOutputStream(File(modsDir, filename).outputStream()).use { zip ->
+                zip.writeEntry(
+                    path,
+                    """[
+                        {"op":"test","path":"/levels/$level/sha256","value":"source-hash"},
+                        {"op":"test","path":"/levels/$level/surfaces/134:0","value":{"tmap1":14}},
+                        {"op":"replace","path":"/levels/$level/surfaces/134:0","value":{"tmap1":$texture}}
+                    ]""",
+                )
+            }
+        }
+        writeSurface("first.dxa", "level03.rdl", 8)
+        writeSurface("second.dxa", "level17.rdl", 9)
+        writeModManifest(filesDir, "first.dxa" to "First", "second.dxa" to "Second", game = "d1")
+        val manager = ModManager(filesDir)
+        val accepted = manager.checkEnabledModCompatibility("d1", setDir)
+        assertTrue(accepted.toUserMessage(), accepted.ok)
+        writeSurface("second.dxa", "level03.rdl", 9)
+        val conflict = manager.checkEnabledModCompatibility("d1", setDir)
+        assertFalse(conflict.ok)
+        assertTrue(conflict.toUserMessage().contains("tmap1"))
+    }
 
     @Test
     fun detailsSummarizeArchiveCategoriesPatchesAndBaseRequirements() {
@@ -307,6 +343,49 @@ class ModManagerDetailsTest {
         assertTrue(report.toUserMessage(), report.ok)
     }
 
+    @Test
+    fun mergedTextureRowPreservesSoundFieldsInBothModOrders() {
+        for (soundFirst in listOf(true, false)) {
+            val filesDir = createTempDirectory("mod-row-sound-composition").toFile()
+            val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
+            val modsDir = File(filesDir, "mods").also { it.mkdirs() }
+            val baseSha256 = sha256(File(setDir, "descent2.ham").apply { writeText("base-ham") })
+            val original =
+                JSONObject(
+                    """{"Index":5,"PlayTime":65536,"NumFrames":1,"Frames":[1],"OpenSound":146,"CloseSound":147,"Flags":0,"Filename":"door05","Pad":0}""",
+                )
+            val changed = JSONObject(original.toString()).put("PlayTime", 52428)
+            val texturePatch =
+                JSONArray()
+                    .put(JSONObject().put("op", "test").put("path", "/sections/wclips/5").put("value", original))
+                    .put(JSONObject().put("op", "replace").put("path", "/sections/wclips/5").put("value", changed))
+            val soundPatch = """[
+                {"op":"test","path":"/sections/wclips/5/OpenSound","value":146},
+                {"op":"replace","path":"/sections/wclips/5/OpenSound","value":88}
+            ]"""
+            writePatchDxa(File(modsDir, "sound.dxa"), "sound", baseSha256, soundPatch)
+            writePatchDxa(File(modsDir, "texture.dxa"), "texture", baseSha256, texturePatch.toString())
+            val order = listOf("sound.dxa" to "Sound", "texture.dxa" to "Texture")
+            writeModManifest(filesDir, *(if (soundFirst) order else order.reversed()).toTypedArray())
+            val manager = ModManager(filesDir)
+            val report = manager.checkEnabledModCompatibility("d2", setDir)
+            assertTrue(report.toUserMessage(), report.ok)
+            manager.writeEnabledModPaths("d2")
+            val root = File(filesDir, "d2x-redux/.active_mod_paths").readLines().first()
+            val merged = JSONArray(File(root, patchPath).readText())
+            val writes =
+                (0 until merged.length()).map { merged.getJSONObject(it) }.filter {
+                    it.getString("op") !=
+                        "test"
+                }
+            assertEquals(1, writes.size)
+            val row = writes.single().getJSONObject("value")
+            assertEquals(52428, row.getInt("PlayTime"))
+            assertEquals(88, row.getInt("OpenSound"))
+            assertEquals(147, row.getInt("CloseSound"))
+        }
+    }
+
     private fun ZipOutputStream.writeEntry(
         name: String,
         text: String,
@@ -354,6 +433,7 @@ class ModManagerDetailsTest {
     private fun writeModManifest(
         filesDir: File,
         vararg mods: Pair<String, String>,
+        game: String = "d2",
     ) {
         val modsDir = File(filesDir, "mods").also { it.mkdirs() }
         val modEntries =
@@ -366,7 +446,7 @@ class ModManagerDetailsTest {
                   "enabled": true,
                   "addedAt": 0,
                   "sizeBytes": $sizeBytes,
-                  "game": "d2",
+                  "game": "$game",
                   "order": $index
                 }
                 """.trimIndent()

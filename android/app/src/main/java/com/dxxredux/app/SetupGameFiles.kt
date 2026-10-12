@@ -409,32 +409,6 @@ internal val D1_FILES =
         GameFileInfo("descent.rsrc", "Mac D1 sound effects", required = false),
     )
 
-internal data class RecommendedMod(
-    val filename: String,
-    val displayName: String,
-    val description: String,
-    val downloadUrl: String,
-    val game: String,
-)
-
-internal val RECOMMENDED_MODS =
-    listOf(
-        RecommendedMod(
-            "d1xr-mac-demo-sounds.dxa",
-            "D1 Mac Demo Sounds",
-            "Sound replacements from the Mac demo",
-            "https://dxx-redux.com/dl/d1xr-mac-demo-sounds.dxa",
-            "d1",
-        ),
-        RecommendedMod(
-            "d1xr-hires.dxa",
-            "D1 High-Res Pack",
-            "High-resolution textures for D1",
-            "https://dxx-redux.com/dl/d1xr-hires.dxa",
-            "d1",
-        ),
-    )
-
 internal data class DemoPackage(
     val game: String,
     val name: String,

@@ -7,13 +7,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "u_mem.h"
+
+static void require(int condition, const char *message);
+static void *plain_midi_buffer, *tracked_midi_buffer;
+
+static void checked_music_free(void *buffer)
+{
+	require(!buffer || buffer != tracked_midi_buffer, "tracked HMP buffer requires engine free");
+	if (buffer == plain_midi_buffer) plain_midi_buffer = NULL;
+	free(buffer);
+}
+
+static void checked_music_mem_free(void *buffer)
+{
+	require(!buffer || buffer != plain_midi_buffer, "plain MIDI buffer requires ordinary free");
+	if (buffer == tracked_midi_buffer) tracked_midi_buffer = NULL;
+	d_free(buffer);
+}
 
 static pthread_mutex_t gate_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t gate_cond = PTHREAD_COND_INITIALIZER;
 static int gate_waiting, gate_release, writes_until_stop;
 static void controlled_ring_write(struct pcm_ring *, const short *, int);
 #define pcm_ring_write controlled_ring_write
+#define free           checked_music_free
+#pragma push_macro("d_free")
+#undef d_free
+#define d_free(ptr)                  \
+	do {                             \
+		checked_music_mem_free(ptr); \
+		ptr = NULL;                  \
+	} while (0)
 #include "../../app/src/main/cpp/shared/digi_tsf_music.c"
+#pragma pop_macro("d_free")
+#undef free
 #undef pcm_ring_write
 
 void music_synth_render_short(music_synth *synth, short *out, int frames, int mixing)
@@ -141,6 +169,12 @@ static int prepare(enum source source, enum scenario scenario, void (*hook)(void
 		require(g_pcm_buf != NULL, "allocate ordinary PCM fixture");
 		for (size_t i = 0; i < g_pcm_total; ++i) g_pcm_buf[i] = 1234;
 	} else {
+		require(!plain_midi_buffer && !tracked_midi_buffer, "previous MIDI bytes released");
+		if (source == HMP)
+			g_midi_buf = tracked_midi_buffer = d_malloc(16);
+		else
+			g_midi_buf = plain_midi_buffer = malloc(16);
+		require(g_midi_buf != NULL, "allocate MIDI bytes with source allocator");
 		if (scenario != EMPTY) {
 			g_midi = calloc(1, sizeof(*g_midi));
 			require(g_midi != NULL, "allocate ordinary MIDI fixture");
@@ -192,6 +226,8 @@ static void stop_at_gate(void)
 	require(pthread_join(thread, NULL) == 0, "explicit stop joins producer");
 	require(!g_render_thread && !g_pcm_buf && !g_midi && !g_midi_cur,
 	        "explicit stop releases source and worker");
+	require(!g_midi_buf && !plain_midi_buffer && !tracked_midi_buffer,
+	        "explicit stop releases MIDI bytes with matching allocator");
 	require(!tsf_atomic_load_int(&g_source_finished) && !tsf_atomic_load_int(&g_song_finished),
 	        "explicit stop clears both completion flags");
 	callback_samples(4098, 0);
@@ -279,6 +315,8 @@ int run_music_completion(const char *trace_path)
 			        record++ ? ",\n" : "", source_names[source], scenario_names[scenario],
 			        delivered, hook_count, replacement_count);
 			mix_stop_music();
+			require(!g_midi_buf && !plain_midi_buffer && !tracked_midi_buffer,
+			        "completion cleanup releases MIDI bytes with matching allocator");
 		}
 	}
 	fputs("\n]\n", trace);

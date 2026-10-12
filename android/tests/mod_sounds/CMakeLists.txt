@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22)
+project(android_mod_sounds LANGUAGES CXX)
+include(../native_engine_fixture.cmake)
+add_library(sdl SHARED IMPORTED)
+set_target_properties(sdl PROPERTIES IMPORTED_LOCATION "${ENGINE_LIB_DIR}/libSDL12.so")
+target_link_libraries(${FIXTURE_TARGET} PRIVATE sdl)

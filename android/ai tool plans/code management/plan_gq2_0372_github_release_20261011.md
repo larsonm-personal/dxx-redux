@@ -1,0 +1,28 @@
+# GQ2 chunk0372: GitHub release wrapper, 2026-10-11
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Whole469-line new authored release script; base/original absent and current exactly frozen. No release/build/tool/test/network action or product edits.
+
+- [x] Read whole assigned body and bind exact new-file diff/current correspondence
+- [x] Read whole595-line maintained fixture and named Gradle/distribution/catalog/CI contexts
+- [x] Reconcile BR0556 and simplification/inherited boundaries
+- [x] Publish canonical report/snapshot and independent audit before DONE
+
+BR-0556 OPEN remains shared BuildInfo identity owner. This wrapper writes ignored main-source BuildInfo.kt and passes skipBuildInfo for current and recursive legacy builds. Retain source-clean and remote-commit preflight, clean/assemble sequencing, inspected signature/package/version/SDK/ABI checks, saved hash/metadata validation, paired edition identity and published hash check before legacy retirement. These checks do not inspect embedded Kotlin/native identity or isolate concurrent shared source writes.
+
+Future BR0556 implementation should move identity generation into variant-specific Gradle-owned generated outputs and pass validated overrides, removing this source writer/skip handshake with the existing AAB/direct owners. Accept actual clean/incremental/current/legacy/direct/scripted/concurrent artifacts from two commits and inspect embedded metadata, manifest, native identity, logs and retained records. Preserve UploadOnly saved-commit semantics and typed sourceVerified protection; current dirty or newer checkout alone does not invalidate a previously verified saved artifact. Do not erase the documented older-metadata recovery contract during unrelated cleanup.
+
+Remove the three-line releaseTitle block284-286 in a future small cleanup: it is never consumed before return or the unconditional replacement at413. Exact six-reference census establishes the live title is used only after413 by create/edit. Retain sdkLabel for reports and notes. No new abstraction, finding or remediation ID for this dead authored block.
+
+Whole fixture uses real isolated Git and controlled gh/Gradle/apksigner/aapt substitutes. Its full scenario matrix covers source/tag/release/asset failures and saved-pair migration/recovery; it does not execute actual Android tools or GitHub, prove embedded BuildInfo/concurrent compilation, or prove remote atomic replacement. Fake remote digests are computed from local output, so source fixture coverage is not actual server-side byte observation. No fixture run now.
+
+Remote tag/asset updates are explicitly non-atomic and retriable. Preserve immutable-release refusal, draft retention, unrelated asset/notes preservation and separate legacy release until both uploaded digests verify. Review actual maintained fixture after an implementation change; no live release mutation is needed during diagnosis.
+
+All469 lines are authored tooling absent1996 original: NO_INHERITED_EFFECT/saving0. Preserve native format/schema/desktop authority; no native extraction or generic release policy rewrite. Next0373 after audited publication; broader numbered/sweep/investigation/live-head/final closure remains.
+
+## Chunk0372 canonical publication and independent audit complete, 2026-10-11
+
+GQC1201 ISSUES/GQD1081 NO_INHERITED_EFFECT; RETAIN/BR0556 REFERENCE47 (23/0/7/10/7). Whole469-line new authored GitHub release wrapper, one U0 hunk +469/-0, base/original absent/current exactly frozen.13 exact context records including whole595-line frozen-equal release fixture and whole67-line tooling smoke; selected Gradle/signing/distribution/native identity, CI/catalog and full BR0556 owner. Existing shared BuildInfo writer/skip handshake remains BR0556; no duplicate finding or historical closure. Three-line initial releaseTitle block is future small authored cleanup; live consumers follow overwrite413. Preserve both-edition verification, saved-commit recovery, draft/unrelated asset/custom note protection and observed uploaded digest before separate legacy retirement. Fake remote digest from local output is not real server-byte proof; no runtime acceptance.
+
+Source checkpoint SHA707427b56ae7c16692784af86b4d0c9749b253d61ac9a4068f189625e4f08bbf; source audit PASS63 SHAfb82cd088aa1ed375d4010245aaf564dd3de50497e2a110ab597ed5383236e35. Publication template initially retained previous chunk title/inherited prose; corrected exact new operations before independent audit, without changing prior records. Publication audit PASS4156 SHA23d28d450b9b501d7652e54227798c81abd9e5a57e3c60e16fb0968cc69253cc reconstructs all five canonical files byte-for-byte, verifies whole/current/frozen/new-file diff and source/context/manifest/plan/report/snapshot/checkpoint identities,627 numbered rows with only0372 changed,1188 terminal ranks with every prior payload preserved,284 fix ranks unchanged and every prior root/coverage/minimization definition intact. Historical BR files/statuses unchanged;298 findings/12 investigations. HEAD/product preserved. Report SHA368b598a47e4a753978c2aee4b237d9eb19e0644f2bd7bddd7c00b3f6f96c502; snapshot SHAf30bc19f74fb4a63df06223dd238742fee2d13de15d8714f5ba16f11ccf7d27c. Plan identity precedes final checked gate/closure append.
+
+GQ2 now372DONE/255TODO/627. Diagnosis/docs only; no product/test/helper source edits, builds/tests/devices/network/probes/generators/formatters/staging/commits/runtime acceptance. Retention removed0. Goal active. Next0373; remaining numbered reviews, sweeps/investigations/historical0116/live-head supplements/campaign closure remain required.

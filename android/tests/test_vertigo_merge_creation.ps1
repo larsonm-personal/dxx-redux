@@ -9,7 +9,7 @@ if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Emulator $Serial is not o
 if ($Install) {
     & $ADB -s $Serial shell am force-stop com.dxxredux.app
     & $ADB -s $Serial shell run-as com.dxxredux.app rm -rf files/d2x-redux/.mission_assets
-    & $ADB -s $Serial install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
+    & $ADB -s $Serial install -r -t (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
     if ($LASTEXITCODE -ne 0) { throw 'APK installation failed' }
 }
 $source = Join-Path $repoRoot 'game_data/extracted/VERTIGO/MISSIONS'

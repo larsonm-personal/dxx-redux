@@ -264,6 +264,12 @@ try {
     $mapped = [byte[]]$valid.Clone()
     $mapped[1] = 1
     Assert-TestTgaRejected "color-mapped.tga" $mapped
+    $unusedMapDepth = [byte[]]$valid.Clone()
+    $unusedMapDepth[7] = 24
+    $legacyResult = Read-TGA (Write-TestTga 'unused-map-depth.tga' $unusedMapDepth)
+    try {
+        if ($legacyResult.Bitmap.GetPixel(0, 0).B -ne $canonical[0][0]) { throw 'Unused color-map depth changed true-color pixels' }
+    } finally { $legacyResult.Bitmap.Dispose() }
     $contradictoryMap = [byte[]]$valid.Clone()
     Set-TestUInt16 -Bytes $contradictoryMap -Offset 5 -Value 1
     $contradictoryMap[7] = 24
@@ -286,6 +292,10 @@ try {
     $badExtension = [byte[]](Add-TestTgaFooter -Image $valid -ExtensionArea)
     Set-TestUInt16 -Bytes $badExtension -Offset $valid.Length -Value 494
     Assert-TestTgaRejected "bad-extension.tga" $badExtension
+    $legacyExtension = Read-TGA (Write-TestTga 'legacy-extension.tga' $badExtension) -D2xxlSource
+    try {
+        if ($legacyExtension.Bitmap.GetPixel(0, 0).B -ne $canonical[0][0]) { throw 'Legacy extension changed pixels' }
+    } finally { $legacyExtension.Bitmap.Dispose() }
     $badDeveloper = [byte[]](Add-TestTgaFooter -Image $valid -DeveloperArea)
     Set-TestUInt32 -Bytes $badDeveloper -Offset ($valid.Length + 4) -Value 1
     Assert-TestTgaRejected "bad-developer-tag.tga" $badDeveloper
@@ -312,6 +322,12 @@ try {
     if (-not (Test-Path -LiteralPath $batchDxa)) {
         throw "Valid TGA batch did not publish its archive"
     }
+    $originalHash = (Get-FileHash -LiteralPath $batchDxa).Hash
+    $originalTime = (Get-Item -LiteralPath $batchDxa).LastWriteTimeUtc
+    Convert-GameTextures -GameId "d1" -ArchivePath $archivePath -OutDir $batchOutput -MaxDim 0 -Readme "" -ProjectReadme "" -MagickPath "" -Etc2ToolPath $fakeEtc2
+    if ((Get-FileHash -LiteralPath $batchDxa).Hash -ne $originalHash -or (Get-Item -LiteralPath $batchDxa).LastWriteTimeUtc -ne $originalTime) {
+        throw 'Identical TGA conversion changed the existing archive'
+    }
 
     Copy-Item -LiteralPath (Write-TestTga "batch-bad.tga" ([byte[]]($valid + [byte]1))) -Destination (Join-Path $batchSource "bad.tga") -Force
     try {
@@ -322,8 +338,8 @@ try {
             throw
         }
     }
-    if (Test-Path -LiteralPath $batchDxa) {
-        throw "Failed TGA batch retained a partial archive"
+    if (!(Test-Path -LiteralPath $batchDxa) -or (Get-FileHash -LiteralPath $batchDxa).Hash -ne $originalHash -or (Get-Item -LiteralPath $batchDxa).LastWriteTimeUtc -ne $originalTime) {
+        throw "Failed TGA batch damaged the previous successful archive"
     }
 
     Write-Output "D2X-XL type-2 TGA layout tests passed"

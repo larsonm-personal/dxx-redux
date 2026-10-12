@@ -75,6 +75,9 @@ int d1_in_d2_load_mission_assets(void);
 int d1_in_d2_has_native_assets(void);
 /* Current published level's source flags, independent of renderer/paging state */
 int d1_in_d2_read_level_bitmap_flags(int *flags, int capacity);
+#ifdef __ANDROID__
+int d1_in_d2_bitmap_is_custom(int index);
+#endif
 /* Restore converted-light paging before piggy frees its replacement arena */
 void d1_in_d2_reset_bitmap_replacements(void);
 void d1_in_d2_release_assets(void);

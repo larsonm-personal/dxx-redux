@@ -2078,6 +2078,7 @@ int ReadControls(d_event *event)
 {
 #ifdef __ANDROID__
 	if (!android_pause_input_allowed()) {
+		if (android_pause_try_open_automap(event)) return 1;
 		if (event->type == EVENT_IDLE) {
 			android_music_control_apply_pending();
 			if (!(android_pause_reasons() & (ANDROID_PAUSE_OPERATION | ANDROID_PAUSE_COOP | ANDROID_PAUSE_BACKGROUND | ANDROID_PAUSE_GRAPHICS)))

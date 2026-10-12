@@ -19,6 +19,9 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+#include "android_mod_assets.h"
+#include "android_mod_bitmaps.h"
+#include "android_texture_usage.h"
 
 using json = nlohmann::json;
 
@@ -59,6 +62,7 @@ extern "C" {
 #include "laser.h"
 #include "cntrlcen.h"
 #include "coop_save.h"
+#include "multi_save_transfer_progress.h"
 #ifdef __ANDROID__
 #include "coop/coop_recovery.h"
 #endif
@@ -620,6 +624,26 @@ static json serialize_scene_point(const vms_vector &point)
 }
 
 /* Read-only scene evidence for ordinary weapon, door and destruction tests */
+static json serialize_surface_asset(int texture)
+{
+	if (texture < 0 || texture >= NumTextures) return nullptr;
+	const int index = Textures[texture].index;
+	if (index < 0 || index >= Num_bitmap_files) return nullptr;
+	const auto &bitmap = GameBitmaps[index];
+	const char *name = piggy_game_bitmap_name(&GameBitmaps[index]);
+	json asset = { { "texture", texture }, { "bitmap", index }, { "name", name ? name : "" }, { "effect", TmapInfo[texture].eclip_num }, { "damage", f2fl(TmapInfo[texture].damage) }, { "bitmap_flags", piggy_bitmap_get_flags(&GameBitmaps[index]) }, { "indexed_mod_owned", android_mod_bitmap_is_owned(index) != 0 } };
+#ifdef OGL
+	const auto *gpu = bitmap.gltexture;
+	const bool resident = gpu && gpu->handle;
+	asset["rendered"] = resident;
+	asset["render_width"] = resident ? gpu->w : 0;
+	asset["render_height"] = resident ? gpu->h : 0;
+	asset["render_source"] = resident ? android_texture_source_name(gpu->replacement_source) : "";
+	asset["mask_rendered"] = bitmap.gltexture_mask && bitmap.gltexture_mask->handle;
+#endif
+	return asset;
+}
+
 static json serialize_scene_segment(int segment_num)
 {
 	if (segment_num < 0 || segment_num > Highest_segment_index) return nullptr;
@@ -637,16 +661,18 @@ static json serialize_scene_segment(int segment_num)
 		for (int layer = 0; layer < 2; ++layer) {
 			const int texture = textures[layer];
 			if (texture < 0 || texture >= NumTextures || (layer && !texture)) continue;
-			const int bitmap = Textures[texture].index;
-			if (bitmap < 0 || bitmap >= Num_bitmap_files) continue;
-			const char *name = piggy_game_bitmap_name(&GameBitmaps[bitmap]);
-			face[roles[layer]] = { { "bitmap", bitmap }, { "name", name ? name : "" }, { "effect", TmapInfo[texture].eclip_num }, { "damage", f2fl(TmapInfo[texture].damage) } };
+			face[roles[layer]] = serialize_surface_asset(texture);
 		}
 		if (surface.wall_num >= 0 && surface.wall_num < Num_walls) {
 			const wall &barrier = Walls[surface.wall_num];
 			face["wall_type"] = barrier.type;
 			face["wall_state"] = barrier.state;
 			face["wall_flags"] = barrier.flags;
+			face["wall_clip"] = barrier.clip_num;
+			if (barrier.clip_num >= 0 && barrier.clip_num < Num_wall_anims) {
+				face["wall_play_time"] = f2fl(WallAnims[barrier.clip_num].play_time);
+				face["wall_frame_count"] = WallAnims[barrier.clip_num].num_frames;
+			}
 		}
 		result["sides"].push_back(std::move(face));
 	}
@@ -657,9 +683,39 @@ static json serialize_level_scene()
 {
 	json result = { { "segment", ConsoleObject ? serialize_scene_segment(ConsoleObject->segnum) : json(nullptr) },
 		            { "reactor_destroyed", Control_center_destroyed != 0 },
+		            { "robots", json::array() },
 		            { "reactors", json::array() } };
+	// Android mod diagnostics: collect references without forcing bitmap uploads
+	json references = json::object();
+	for (int seg = 0; seg <= Highest_segment_index; ++seg)
+		for (int side = 0; side < 6; ++side) {
+			const auto &surface = Segments[seg].sides[side];
+			const int textures[] = { surface.tmap_num, surface.tmap_num2 & 0x3fff };
+			for (int layer = 0; layer < 2; ++layer) {
+				const int texture = textures[layer];
+				if (texture < 0 || texture >= NumTextures || (layer && !texture)) continue;
+				const auto key = std::to_string(texture);
+				if (!references.contains(key)) {
+					auto asset = serialize_surface_asset(texture);
+					asset["segment"] = seg;
+					asset["side"] = side;
+					asset["layer"] = layer;
+					references[key] = std::move(asset);
+				}
+			}
+		}
+	result["mod_texture_references"] = json::object();
+	for (const auto &[key, asset] : references.items())
+		if (!asset.is_null() && asset.value("indexed_mod_owned", false))
+			result["mod_texture_references"][key] = asset;
+	result["texture_references"] = std::move(references);
 	for (int i = 0; i <= Highest_object_index; ++i) {
 		const object &obj = Objects[i];
+		if (obj.type == OBJ_ROBOT) {
+			// Locate actual combat for mod sprite acceptance without creating test objects
+			vms_vector position = obj.pos;
+			result["robots"].push_back({ { "object", i }, { "id", obj.id }, { "segment", obj.segnum }, { "position", serialize_scene_point(obj.pos) }, { "shields", f2fl(obj.shields) }, { "distance", ConsoleObject ? json(f2fl(vm_vec_dist_quick(&position, &ConsoleObject->pos))) : json(nullptr) } });
+		}
 		if (obj.type != OBJ_CNTRLCEN) continue;
 		result["reactors"].push_back({ { "object", i }, { "position", serialize_scene_point(obj.pos) }, { "radius", f2fl(obj.size) }, { "shields", f2fl(obj.shields) }, { "destroyed", (obj.flags & OF_DESTROYED) != 0 }, { "render_type", obj.render_type }, { "model", obj.render_type == RT_POLYOBJ ? json(obj.rtype.pobj_info.model_num) : json(nullptr) }, { "segment", serialize_scene_segment(obj.segnum) } });
 	}
@@ -1862,12 +1918,15 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		int is_error = 0;
 		const char *message = coop_restore_status_message(&is_error);
+		int download_percent;
+		multi_save_transfer_status(&download_percent);
 		int local_loaded;
 		uint64_t barrier_visit;
 		const char *barrier_phase = multi_save_transfer_barrier_status(&local_loaded, &barrier_visit);
 		j["coop_restore"] = {
 			{ "status", message ? (is_error ? "error" : "waiting") : "idle" },
 			{ "transfer_busy", (bool) multi_save_transfer_busy() },
+			{ "download_percent", download_percent },
 			{ "barrier_phase", barrier_phase },
 			{ "barrier_visit", barrier_visit },
 			{ "local_loaded", (bool) local_loaded },
@@ -3093,6 +3152,7 @@ extern "C" char *game_introspect_get_state(void)
 		physfs["search_path"] = std::move(search_path);
 		j["physfs"] = std::move(physfs);
 		j["mounted_mods"] = std::move(mods);
+		j["mod_usage"] = android_mod_usage_snapshot();
 		j["mission_asset_owner"] = android_mission_assets_owner();
 		j["mission_asset_generation"] = android_mission_assets_generation();
 	}
@@ -3117,7 +3177,7 @@ extern "C" char *game_introspect_get_state(void)
 			if (!t || t->w == 0)
 				continue;
 			total++;
-			if (t->is_png) {
+			if (t->handle && t->replacement_source) {
 				replaced++;
 				if (t->w > max_w) max_w = t->w;
 				if (t->h > max_h) max_h = t->h;
@@ -3133,6 +3193,7 @@ extern "C" char *game_introspect_get_state(void)
 		tex["max_hires_w"] = max_w;
 		tex["max_hires_h"] = max_h;
 		j["hires_textures"] = tex;
+		j["texture_packs"] = json::parse(android_texture_usage_json());
 	}
 #endif
 
@@ -3245,6 +3306,7 @@ extern "C" int game_introspect_dump_requested(void)
 
 extern "C" void game_introspect_check_and_dump(void)
 {
+	android_mod_usage_flush();
 	unsigned int generation = Introspect_request_generation.load();
 	if (generation == Introspect_dump_generation || !introspect_path[0])
 		return;

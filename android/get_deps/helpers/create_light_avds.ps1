@@ -122,6 +122,12 @@ foreach ($avd in $selectedAvds) {
         "hw.screenRound"             = "no"
     }
 
+    if ((Get-HostPlatform) -eq 'Windows') {
+        # WHPX HPET reads can consume the live-route budget on their own
+        # Request TSC while retaining the kernel's stability checks and fallback
+        $overrides['kernel.parameters'] = 'clocksource=tsc'
+    }
+
     # Apply overrides: replace existing lines or append
     $appliedKeys = @{}
     $newConfig = foreach ($line in $config) {

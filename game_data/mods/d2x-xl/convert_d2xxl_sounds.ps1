@@ -7,8 +7,8 @@
 .DESCRIPTION
     Extracts WAV files from the d2x-xl hires-sounds.7z archive, converts
     them to the raw 8-bit unsigned mono format loaded by each game, and
-    packages them into .dxa files. D1 loads 11025 Hz Sounds/{name}.raw;
-    D2 loads 22050 Hz Sounds/{name}.r22 in its configured 22 kHz mode.
+    packages them into .dxa files. The Android mod loader uses
+    22050 Hz Sounds/{name}.r22 in D1, D2 and native D1-in-D2.
 
     For D2: uses the 44khz subdirectory (best quality source) and
     downsamples to 22050 Hz.
@@ -132,6 +132,7 @@ function Read-WavData {
 
     if (-not $fmt) { throw "No fmt chunk found: $Path" }
     if ($null -eq $dataBytes) { throw "No data chunk found: $Path" }
+    if ($dataBytes.Length -eq 0) { throw "Empty PCM data: $Path" }
     $frameSize = ([int]$fmt.BitsPerSample / 8) * [int]$fmt.Channels
     if ($dataBytes.Length % $frameSize -ne 0) { throw "PCM data is not frame-aligned: $Path" }
 
@@ -220,17 +221,21 @@ function Convert-GameSounds {
     )
 
     if (-not (Test-Path $ArchivePath)) {
-        Write-Host "Archive not found: $ArchivePath -- skipping"
-        return
+        throw "Sound archive not found: $ArchivePath"
     }
+    $soundFormat = Get-D2xxlSoundFormat -GameId $GameId
 
-    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_snd_convert_$GameId"
-    if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
+    $repoRoot = (Resolve-Path (Join-Path $scriptDir '../../..')).Path
+    $conversionRoot = Join-Path $repoRoot 'android/temp/d2xxl-sound-convert'
+    $tempDir = Join-Path $conversionRoot ('run_' + [guid]::NewGuid().ToString('N'))
+    & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $tempDir -DirectoryPrefix run_
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     $dxaName = "${GameId}-hires-sounds.dxa"
+    New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
     $dxaPath = Join-Path $OutDir $dxaName
-    $soundFormat = Get-D2xxlSoundFormat -GameId $GameId
+    $buildingPath = "$dxaPath.building-$([guid]::NewGuid().ToString('N'))"
+    $entryTime = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
     $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     Write-Host "=== Converting $GameId sounds ==="
@@ -238,96 +243,115 @@ function Convert-GameSounds {
     Write-Host "  Output:  $dxaPath"
     Write-Host "  Format:  $($soundFormat.SampleRate) Hz $($soundFormat.Extension)"
 
-    # Extract
-    $extractDir = Join-Path $tempDir "extract"
-    Invoke-7ZipExtract -SevenZipPath $SevenZip -ArchivePath $ArchivePath -ExtractDir $extractDir
+    try {
+        # Extract
+        $extractDir = Join-Path $tempDir "extract"
+        Invoke-7ZipExtract -SevenZipPath $SevenZip -ArchivePath $ArchivePath -ExtractDir $extractDir
 
-    # Find the right source directory
-    if ($GameId -eq "d2") {
-        # Prefer 44khz, fall back to 22khz
-        $wavDir = Join-Path (Join-Path (Join-Path $extractDir "sounds") "d2") "44khz"
-        if (-not (Test-Path $wavDir)) {
-            $wavDir = Join-Path (Join-Path (Join-Path $extractDir "sounds") "d2") "22khz"
-        }
-    } else {
-        $wavDir = Join-Path (Join-Path $extractDir "sounds") "d1"
-    }
-
-    if (-not (Test-Path $wavDir)) {
-        Write-Host "  Sound directory not found: $wavDir -- skipping"
-        Remove-Item -Recurse -Force $tempDir
-        return
-    }
-
-    $inventoryStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $wavFiles = Get-ChildItem -Path $wavDir -Filter "*.wav" -File
-    $total = $wavFiles.Count
-    Write-Host "  Inventory complete: WAV=$total in $(Format-ElapsedText $inventoryStopwatch.Elapsed)"
-
-    # Create ZIP (dxa)
-    if (Test-Path $dxaPath) { Remove-Item $dxaPath }
-    Write-Host "  Creating DXA container: $dxaName"
-    $zip = [System.IO.Compression.ZipFile]::Open($dxaPath, [System.IO.Compression.ZipArchiveMode]::Create)
-    $conversionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-
-    $converted = 0
-    $errors = 0
-    $processed = 0
-
-    foreach ($wav in $wavFiles) {
-        $processed++
-        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $wav.Name
-        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($wav.Name)
-        $entryName = Get-D2xxlSoundEntryPath -GameId $GameId -BaseName $baseName
-
-        try {
-            $wavData = Read-WavData $wav.FullName
-            $rawPcm = Convert-ToUnsignedMonoPcm -Wav $wavData -TargetRate $soundFormat.SampleRate
-
-            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
-            $stream = $entry.Open()
-            $stream.Write($rawPcm, 0, $rawPcm.Length)
-            $stream.Close()
-
-            $converted++
-            if ($processed -le 3 -or $processed % 25 -eq 0 -or $processed -eq $total) {
-                Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
+        # Find the right source directory
+        if ($GameId -eq "d2") {
+            # Prefer 44khz, fall back to 22khz
+            $wavDir = Join-Path (Join-Path (Join-Path $extractDir "sounds") "d2") "44khz"
+            if (-not (Test-Path $wavDir)) {
+                $wavDir = Join-Path (Join-Path (Join-Path $extractDir "sounds") "d2") "22khz"
             }
-        } catch {
-            Write-Host "  ERROR converting $($wav.Name): $_"
-            $errors++
-            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
+        } else {
+            $wavDir = Join-Path (Join-Path $extractDir "sounds") "d1"
+        }
+
+        if (-not (Test-Path $wavDir)) {
+            throw "Sound directory not found: $wavDir"
+        }
+
+        $inventoryStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+        $wavFiles = Get-ChildItem -Path $wavDir -Filter "*.wav" -File
+        $total = @($wavFiles).Count
+        if (!$total) { throw "No source WAV files: $wavDir" }
+        Write-Host "  Inventory complete: WAV=$total in $(Format-ElapsedText $inventoryStopwatch.Elapsed)"
+
+        # Create ZIP (dxa)
+        Write-Host "  Creating DXA container: $dxaName"
+        $zip = [System.IO.Compression.ZipFile]::Open($buildingPath, [System.IO.Compression.ZipArchiveMode]::Create)
+        try {
+            $conversionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+            $converted = 0
+            $errors = 0
+            $processed = 0
+
+            foreach ($wav in $wavFiles) {
+                $processed++
+                Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $wav.Name
+                $baseName = [System.IO.Path]::GetFileNameWithoutExtension($wav.Name)
+                $entryName = Get-D2xxlSoundEntryPath -GameId $GameId -BaseName $baseName
+
+                try {
+                    $wavData = Read-WavData $wav.FullName
+                    $rawPcm = Convert-ToUnsignedMonoPcm -Wav $wavData -TargetRate $soundFormat.SampleRate
+
+                    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+                    $entry.LastWriteTime = $entryTime
+                    $stream = $entry.Open()
+                    $stream.Write($rawPcm, 0, $rawPcm.Length)
+                    $stream.Close()
+
+                    $converted++
+                    if ($processed -le 3 -or $processed % 25 -eq 0 -or $processed -eq $total) {
+                        Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
+                    }
+                } catch {
+                    Write-Host "  ERROR converting $($wav.Name): $_"
+                    $errors++
+                    Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
+                }
+            }
+
+            $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            if ($Readme) {
+                $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
+                $readmeEntry.LastWriteTime = $entryTime
+                $readmeStream = $readmeEntry.Open()
+                $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
+                $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
+                $readmeStream.Close()
+            }
+            if ($ProjectReadme) {
+                $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
+                $projectReadmeEntry.LastWriteTime = $entryTime
+                $projectReadmeStream = $projectReadmeEntry.Open()
+                $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
+                $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
+                $projectReadmeStream.Close()
+            }
+            Write-Host "  Finalizing archive: $dxaName"
+        } finally { $zip.Dispose() }
+        Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
+
+        if ($errors -gt 0 -or $converted -eq 0) { throw "Sound conversion failed: $errors errors, $converted converted" }
+        if ((Test-Path -LiteralPath $dxaPath) -and
+            (Get-FileHash -LiteralPath $dxaPath -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $buildingPath -Algorithm SHA256).Hash) {
+            Remove-Item -LiteralPath $buildingPath -Force
+        } else {
+            Move-Item -LiteralPath $buildingPath -Destination $dxaPath -Force
+        }
+
+        $dxaSize = (Get-Item $dxaPath).Length / 1MB
+        Write-Host "  Done: processed $processed / $total, converted $converted, errors $errors in $(Format-ElapsedText $totalStopwatch.Elapsed)"
+        Write-Host "  Output: $dxaPath ($([Math]::Round($dxaSize, 1)) MB)"
+    } finally {
+        if (Test-Path -LiteralPath $buildingPath) { Remove-Item -LiteralPath $buildingPath -Force }
+        if (Test-Path -LiteralPath $tempDir) {
+            $resolvedTemp = (Resolve-Path -LiteralPath $tempDir).Path
+            if ([IO.Path]::GetDirectoryName($resolvedTemp) -ne [IO.Path]::GetFullPath($conversionRoot)) {
+                throw "Sound cleanup escaped its workspace: $resolvedTemp"
+            }
+            Remove-Item -LiteralPath $resolvedTemp -Recurse -Force
         }
     }
 
-    $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    if ($Readme) {
-        $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
-        $readmeStream = $readmeEntry.Open()
-        $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
-        $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
-        $readmeStream.Close()
-    }
-    if ($ProjectReadme) {
-        $projectReadmeEntry = $zip.CreateEntry((Get-D2xxlProjectReadmeEntryName), [System.IO.Compression.CompressionLevel]::Optimal)
-        $projectReadmeStream = $projectReadmeEntry.Open()
-        $projectReadmeBytes = [System.Text.Encoding]::UTF8.GetBytes($ProjectReadme)
-        $projectReadmeStream.Write($projectReadmeBytes, 0, $projectReadmeBytes.Length)
-        $projectReadmeStream.Close()
-    }
-    Write-Host "  Finalizing archive: $dxaName"
-    $zip.Dispose()
-    Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
-
-    # Clean up temp
-    Remove-Item -Recurse -Force $tempDir
-
-    $dxaSize = (Get-Item $dxaPath).Length / 1MB
-    Write-Host "  Done: processed $processed / $total, converted $converted, errors $errors in $(Format-ElapsedText $totalStopwatch.Elapsed)"
-    Write-Host "  Output: $dxaPath ($([Math]::Round($dxaSize, 1)) MB)"
 }
 
-# ── Main ──
+# Main
 
 if ($MyInvocation.InvocationName -eq ".") { return }
 

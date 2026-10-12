@@ -264,7 +264,7 @@ Adb shell "rm -rf $SAF_DIR" | Out-Null
 # -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Installing debug APK..." -ForegroundColor Yellow
-$installResult = Adb -AdbArgs @("install", "-r", $apkPath)
+$installResult = Adb -AdbArgs @("install", "-r", "-t", $apkPath)
 if ($installResult -match "Success") {
     Write-Progress-Flush "[OK] APK installed" Green
 } else {

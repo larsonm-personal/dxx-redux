@@ -19,6 +19,7 @@
 #include "pngfile.h"
 #include "pstypes.h"
 #include "android_log.h"
+#include "android_texture_usage.h"
 
 #define KHRONOS_STATIC
 #include <ktx.h>
@@ -29,12 +30,96 @@
 #define STBI_NO_LINEAR /* no linear float output needed */
 #define STBI_NO_PSD
 #define STBI_NO_GIF
-#define STBI_MAX_DIMENSIONS 2048
+#define STBI_MAX_DIMENSIONS 16384
 #include "stb_image.h"
 
-#define ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION 2048u
+#define ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION 16384u
 #define ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES \
-	(ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION * ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION * 4u)
+	(64u * 1024u * 1024u)
+
+/* The ordinary upload path uses a bounded CPU scratch buffer, unlike ETC2 */
+#ifdef OGL
+extern int ogl_max_texture_size;
+#endif
+
+static unsigned int texture_read_le32(const unsigned char *p)
+{
+	return (uint32_t) p[0] | ((uint32_t) p[1] << 8) | ((uint32_t) p[2] << 16) | ((uint32_t) p[3] << 24);
+}
+
+static uint64_t texture_read_le64(const unsigned char *p)
+{
+	return texture_read_le32(p) | ((uint64_t) texture_read_le32(p + 4) << 32);
+}
+
+static int texture_validate_ktx2_storage(const unsigned char *data, size_t size)
+{
+	unsigned int format = texture_read_le32(data + 12);
+	unsigned int width = texture_read_le32(data + 20), height = texture_read_le32(data + 24);
+	unsigned int count = texture_read_le32(data + 40), level;
+	uint64_t total = 0;
+	if ((format != 147 && format != 151) || !width || !height ||
+	    width > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION || height > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION ||
+	    texture_read_le32(data + 28) || texture_read_le32(data + 32) || texture_read_le32(data + 36) != 1 ||
+	    texture_read_le32(data + 44) || !count || count > 15 || size < 80u + count * 24u)
+		return 0;
+	for (level = 0; level < count; ++level) {
+		const unsigned char *entry = data + 80 + level * 24;
+		uint64_t offset = texture_read_le64(entry), bytes = texture_read_le64(entry + 8);
+		uint64_t expected = ((uint64_t) width + 3) / 4 * (((uint64_t) height + 3) / 4) * (format == 151 ? 16 : 8);
+		if (bytes != expected || texture_read_le64(entry + 16) != expected ||
+		    offset < 80u + count * 24u || offset > size || bytes > size - offset)
+			return 0;
+		total += bytes;
+		if (total > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES) return 0;
+		if (width == 1 && height == 1 && level + 1 < count) return 0;
+		width = width > 1 ? width / 2 : 1;
+		height = height > 1 ? height / 2 : 1;
+	}
+	return 1;
+}
+
+static unsigned char *texture_fit_pixels(unsigned char *pixels, int *width, int *height, int channels)
+{
+#ifdef OGL
+	const int limit = ogl_max_texture_size > 0 ? ogl_max_texture_size : 2048;
+#else
+	const int limit = 2048;
+#endif
+	int w = *width, h = *height, x, y, c;
+	int divisor = (w > h ? w : h) + limit - 1;
+	divisor /= limit;
+	if (divisor <= 1) return pixels;
+	int nw = w / divisor, nh = h / divisor;
+	if (nw < 1) nw = 1;
+	if (nh < 1) nh = 1;
+	unsigned char *small = malloc((size_t) nw * nh * channels);
+	if (!small) {
+		free(pixels);
+		return NULL;
+	}
+	/* Area average in premultiplied alpha avoids dark transparent fringes */
+	for (y = 0; y < nh; ++y)
+		for (x = 0; x < nw; ++x) {
+			unsigned int sums[4] = { 0 }, alpha = 0, count = 0;
+			int sx, sy, has_alpha = channels == 2 || channels == 4;
+			for (sy = y * h / nh; sy < (y + 1) * h / nh; ++sy)
+				for (sx = x * w / nw; sx < (x + 1) * w / nw; ++sx) {
+					const unsigned char *src = pixels + ((size_t) sy * w + sx) * channels;
+					unsigned int a = has_alpha ? src[channels - 1] : 255;
+					alpha += a;
+					for (c = 0; c < channels - has_alpha; ++c) sums[c] += src[c] * a;
+					++count;
+				}
+			unsigned char *dst = small + ((size_t) y * nw + x) * channels;
+			for (c = 0; c < channels - has_alpha; ++c) dst[c] = alpha ? sums[c] / alpha : 0;
+			if (has_alpha) dst[channels - 1] = alpha / count;
+		}
+	free(pixels);
+	*width = nw;
+	*height = nh;
+	return small;
+}
 
 #define TEXTURE_LOOKUP_MISS_CACHE_SIZE      16384u
 #define TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT ((TEXTURE_LOOKUP_MISS_CACHE_SIZE * 3u) / 4u)
@@ -241,7 +326,8 @@ static PHYSFS_EnumerateCallbackResult texture_lookup_walk_entry(void *data,
 		/* Replacement lookups are either bare archive entries or paths below
 		 * textures/.  Do not recursively index unrelated mounted game data. */
 		if (!walk->current_depth &&
-		    !texture_lookup_path_equals_ci(leaf, "textures")) {
+		    !texture_lookup_path_equals_ci(leaf, "textures") &&
+		    !texture_lookup_path_equals_ci(leaf, "d1-mods")) {
 			free(child_path);
 			return PHYSFS_ENUM_OK;
 		}
@@ -345,7 +431,7 @@ static const char *texture_lookup_resolve_indexed_path(const char *filename)
 	return NULL;
 }
 
-void clear_texture_lookup_cache(void)
+static void texture_lookup_clear_misses(void)
 {
 	unsigned int i;
 
@@ -353,6 +439,13 @@ void clear_texture_lookup_cache(void)
 		free(g_texture_lookup_miss_cache[i]);
 		g_texture_lookup_miss_cache[i] = NULL;
 	}
+	g_texture_lookup_miss_cache_count = 0;
+}
+
+void clear_texture_lookup_cache(void)
+{
+	unsigned int i;
+	texture_lookup_clear_misses();
 	for (i = 0; i < TEXTURE_LOOKUP_FILE_INDEX_SIZE; i++) {
 		free(g_texture_lookup_file_index[i]);
 		g_texture_lookup_file_index[i] = NULL;
@@ -395,7 +488,7 @@ static void texture_lookup_miss_cache_add(const char *filename)
 		return;
 
 	if (g_texture_lookup_miss_cache_count >= TEXTURE_LOOKUP_MISS_CACHE_MAX_COUNT)
-		clear_texture_lookup_cache();
+		texture_lookup_clear_misses();
 
 	index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
 	for (probe = 0; probe < TEXTURE_LOOKUP_MISS_CACHE_SIZE; probe++) {
@@ -408,7 +501,7 @@ static void texture_lookup_miss_cache_add(const char *filename)
 		index = (index + 1u) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
 	}
 	if (probe >= TEXTURE_LOOKUP_MISS_CACHE_SIZE) {
-		clear_texture_lookup_cache();
+		texture_lookup_clear_misses();
 		index = texture_lookup_miss_cache_hash(filename) & (TEXTURE_LOOKUP_MISS_CACHE_SIZE - 1u);
 	}
 
@@ -419,6 +512,12 @@ static void texture_lookup_miss_cache_add(const char *filename)
 	memcpy(copy, filename, len);
 	g_texture_lookup_miss_cache[index] = copy;
 	g_texture_lookup_miss_cache_count++;
+}
+
+const char *android_texture_source(const char *filename)
+{
+	const char *resolved = texture_lookup_resolve_indexed_path(filename);
+	return resolved ? PHYSFS_getRealDir(resolved) : NULL;
 }
 
 int read_png(const char *filename, png_data *pdata)
@@ -482,6 +581,8 @@ int read_png(const char *filename, png_data *pdata)
 
 	if (!pixels)
 		return 0;
+	pixels = texture_fit_pixels(pixels, &w, &h, channels);
+	if (!pixels) return 0;
 
 	memset(pdata, 0, sizeof(*pdata));
 	pdata->width = (unsigned int) w;
@@ -557,6 +658,12 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	PHYSFS_close(fp);
 
 	/* Parse KTX2 container */
+	/* Bound allocations before libktx interprets the untrusted container.
+	 * These packs contain directly uploadable ETC2, without supercompression */
+	if (!texture_validate_ktx2_storage(fbuf, (size_t) fsize)) {
+		free(fbuf);
+		return 0;
+	}
 	ktxTexture2 *tex = NULL;
 	KTX_error_code kerr = ktxTexture2_CreateFromMemory(
 	    fbuf, (ktx_size_t) fsize,
@@ -578,7 +685,7 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 
 	ktxTexture *base = ktxTexture(tex);
 	if (base->numDimensions != 2 || base->isArray || base->numFaces != 1 ||
-	    base->numLayers != 1 || base->numLevels < 1 || base->numLevels > 12 ||
+	    base->numLayers != 1 || base->numLevels < 1 || base->numLevels > 15 ||
 	    base->baseWidth < 1 || base->baseHeight < 1 ||
 	    base->baseWidth > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION ||
 	    base->baseHeight > ANDROID_REPLACEMENT_TEXTURE_MAX_DIMENSION) {
@@ -633,7 +740,7 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 		expected_size = (size_t) ((level_width + 3u) / 4u) *
 		                (size_t) ((level_height + 3u) / 4u) *
 		                (fmt ? 16u : 8u);
-		if (image_size != expected_size || image_size > UINT_MAX ||
+		if (image_size != expected_size || image_size > ANDROID_REPLACEMENT_TEXTURE_MAX_DECODED_BYTES ||
 		    total > UINT_MAX - 4u - image_size) {
 			ktxTexture_Destroy(base);
 			return 0;

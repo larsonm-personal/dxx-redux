@@ -49,6 +49,8 @@
 #include "merged_wall_debug.h"
 #include "ogl_gpu_timer_android.h"
 #include "ogl_texture_android.h"
+#include "android_texture_usage.h"
+#include "d1_in_d2/d1_in_d2.h"
 #include "android_loading_progress.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
@@ -382,6 +384,11 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->flags = flags;
 #ifdef ANDROID
 	t->min_filter = t->mag_filter = 0;
+	t->has_mipmaps = 0;
+	t->authored_mip_count = t->mip_base_level = 0;
+	t->replacement_source = 0;
+	t->sprite_additive = 0;
+	t->additive_draws = 0;
 #endif
 }
 
@@ -1989,7 +1996,13 @@ bool g3_draw_bitmap_full(vms_vector *pos,fix width,fix height,grs_bitmap *bm,
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  
+#ifdef ANDROID
+	const int previous_blend = android_ogl_begin_sprite_blend(bm->gltexture);
+#endif
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // Replaced GL_QUADS
+#ifdef ANDROID
+	android_ogl_end_sprite_blend(previous_blend);
+#endif
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -3110,6 +3123,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 	buf=bm->bm_data;
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png)
+#ifdef ANDROID
+	    && !piggy_bitmap_is_custom(bm)
+#endif
 	)
 	{
 		char filename[256];
@@ -3117,74 +3133,38 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 		int png_loaded = 0;
 
 #ifdef ANDROID
-		const char *dxa_bitmapname = bitmapname;
 		char texture_set_bitmapname[256];
 		char prefixed_bitmapname[256];
 		int have_d2_texture_root = android_have_d2_texture_root();
 		int have_texture_set_bitmapname = have_d2_texture_root && ogl_make_d2_texture_set_name(texture_set_bitmapname, bitmapname);
 		int have_prefixed_bitmapname = have_d2_texture_root && ogl_make_d2_texture_name(prefixed_bitmapname, bitmapname);
+		if (d1_in_d2_use_d1_gameplay()) {
+			snprintf(texture_set_bitmapname, sizeof(texture_set_bitmapname), "d1-mods/textures/d1/%s", bitmapname);
+			snprintf(prefixed_bitmapname, sizeof(prefixed_bitmapname), "d1-mods/%s", bitmapname);
+			have_texture_set_bitmapname = have_prefixed_bitmapname = 1;
+		}
 
-		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
-		if (!ogl_etc2_broken)
-		{
-			etc2_file_data edata;
-			int loaded_ktx2 = 0;
-			long long lookup_elapsed_us;
-
-			if (have_texture_set_bitmapname) {
-				sprintf(filename, "%s.ktx2", texture_set_bitmapname);
-				android_perf_clock_now(&stage_start);
-				loaded_ktx2 = read_ktx2_file(filename, &edata);
-				android_perf_clock_now(&stage_end);
-				lookup_elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
-				profile_ktx2_read_us += lookup_elapsed_us;
-				android_profile_texture_lookup_note_ktx2(&lookup_metrics,
-					ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_SET,
-					lookup_elapsed_us, loaded_ktx2);
-				android_cache_profile_add_ms(&g_cache_ktx2_read_ms, &stage_start, &stage_end);
-				if (loaded_ktx2) {
-					android_cache_profile_count(&g_cache_ktx2_hits);
-					dxa_bitmapname = texture_set_bitmapname;
-				}
-			}
-			if (!loaded_ktx2 && have_prefixed_bitmapname) {
-				sprintf(filename, "%s.ktx2", prefixed_bitmapname);
-				android_perf_clock_now(&stage_start);
-				loaded_ktx2 = read_ktx2_file(filename, &edata);
-				android_perf_clock_now(&stage_end);
-				lookup_elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
-				profile_ktx2_read_us += lookup_elapsed_us;
-				android_profile_texture_lookup_note_ktx2(&lookup_metrics,
-					ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX,
-					lookup_elapsed_us, loaded_ktx2);
-				android_cache_profile_add_ms(&g_cache_ktx2_read_ms, &stage_start, &stage_end);
-				if (loaded_ktx2) {
-					android_cache_profile_count(&g_cache_ktx2_hits);
-					dxa_bitmapname = prefixed_bitmapname;
-				}
-			}
-			if (!loaded_ktx2) {
-				sprintf(filename, "%s.ktx2", bitmapname);
-				android_perf_clock_now(&stage_start);
-				loaded_ktx2 = read_ktx2_file(filename, &edata);
-				android_perf_clock_now(&stage_end);
-				lookup_elapsed_us = android_perf_elapsed_us(&stage_start, &stage_end);
-				profile_ktx2_read_us += lookup_elapsed_us;
-				android_profile_texture_lookup_note_ktx2(&lookup_metrics,
-					ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE,
-					lookup_elapsed_us, loaded_ktx2);
-				android_cache_profile_add_ms(&g_cache_ktx2_read_ms, &stage_start, &stage_end);
-				if (loaded_ktx2)
-					android_cache_profile_count(&g_cache_ktx2_hits);
-				dxa_bitmapname = bitmapname;
-			}
-			if (loaded_ktx2) {
+		const char *replacement_names[] = { have_texture_set_bitmapname ? texture_set_bitmapname : NULL, have_prefixed_bitmapname ? prefixed_bitmapname : NULL, bitmapname };
+		const int replacement_slots[] = { ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_SET, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE };
+		etc2_file_data edata;
+		int replacement = android_ogl_read_replacement(filename, sizeof(filename),
+			replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
+			!ogl_etc2_broken, bm, &pdata, &edata, &lookup_metrics,
+			&profile_ktx2_read_us, &profile_png_read_us);
+		png_loaded = replacement == 1;
+		if (g_cache_profile_active) {
+			g_cache_ktx2_read_ms += profile_ktx2_read_us / 1000;
+			g_cache_png_read_ms += profile_png_read_us / 1000;
+		}
+		if (replacement == 2) {
+			android_cache_profile_count(&g_cache_ktx2_hits);
+				r_hires_found++;
 				/* android port: if bitmap needs transparency but KTX2 has
 				 * no alpha channel (RGB-only ETC2), skip it and fall back
 				 * to the base texture which correctly handles palette
 				 * transparency via ogl_filltexbuf */
-				int needs_alpha = (bm->bm_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT));
-				if (needs_alpha && !edata.format) {
+				int needs_alpha = (piggy_bitmap_get_flags(bm) & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT));
+				if (needs_alpha && !edata.format && !edata.sprite_additive) {
 					free(edata.filedata);
 					debug_log(DLOG_TEXTURE,
 						"ETC2 skip: %s needs alpha but KTX2 is RGB-only",
@@ -3198,153 +3178,25 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(),
 						edata.width, edata.height, flags);
 
-				/* Parse mip0 data */
-				unsigned char *p = edata.filedata;
-				unsigned char *end = p + edata.filedata_size;
-				int mw = edata.width, mh = edata.height;
-				int ok = 0;
-				if (p + 4 <= end) {
-					unsigned int sz = p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24);
-					p += 4;
-					if (p + sz <= end) {
-						/* Hardware compressed upload */
-						GLenum gl_fmt = edata.format
-							? GL_COMPRESSED_RGBA8_ETC2_EAC
-							: GL_COMPRESSED_RGB8_ETC2;
-						GLenum gl_err;
-						android_perf_clock_now(&stage_start);
-						glGenTextures(1, &bm->gltexture->handle);
-						OGL_BINDTEXTURE(bm->gltexture->handle);
-						glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-						if (load_texfilt) {
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-						} else {
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-						}
-						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-						while (glGetError() != GL_NO_ERROR) {}
-						glCompressedTexImage2D(GL_TEXTURE_2D, 0, gl_fmt,
-							mw, mh, 0, (GLsizei)sz, p);
-						{
-							gl_err = glGetError();
-							int nz64 = 0;
-							unsigned int check = sz < 64 ? sz : 64;
-							unsigned int ci;
-							for (ci = 0; ci < check; ci++)
-								if (p[ci] != 0) nz64++;
-							if (gl_err != GL_NO_ERROR) {
-								con_printf(CON_URGENT, "ETC2 upload FAILED: %s %dx%d fmt=0x%x sz=%u err=0x%x\n",
-									bitmapname, mw, mh, gl_fmt, sz, gl_err);
-								__android_log_print(ANDROID_LOG_ERROR, "DXX-TEX",
-									"ETC2 upload FAILED: %s %dx%d fmt=0x%x sz=%u err=0x%x",
-									bitmapname, mw, mh, gl_fmt, sz, gl_err);
-								glDeleteTextures(1, &bm->gltexture->handle);
-								bm->gltexture->handle = 0;
-							}
-							if (nz64 == 0) {
-								__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
-									"ETC2 ALL-ZERO data: %s %dx%d sz=%u -- texture will be black",
-									bitmapname, mw, mh, sz);
-								r_etc2_zero_data++;
-							}
-							debug_log(DLOG_TEXTURE, "ETC2 upload: %s %dx%d fmt=0x%x sz=%u handle=%u err=0x%x data0=%02x%02x%02x%02x nz64=%d",
-								bitmapname, mw, mh, gl_fmt, sz, bm->gltexture->handle, gl_err,
-								sz >= 4 ? p[0] : 0, sz >= 4 ? p[1] : 0,
-								sz >= 4 ? p[2] : 0, sz >= 4 ? p[3] : 0, nz64);
-						}
-						android_perf_clock_now(&stage_end);
-						profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
-						if (gl_err == GL_NO_ERROR) {
-							tex_set_size(bm->gltexture);
-							r_texcount++;
-							android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
-							android_cache_profile_count(&g_cache_upload_count);
-							ok = 1;
-						}
-					}
-				}
+				android_perf_clock_now(&stage_start);
+				int ok = android_ogl_upload_ktx2(bm->gltexture, &edata, load_texfilt, 0, filename);
+				android_perf_clock_now(&stage_end);
+				profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
 				free(edata.filedata);
 				if (ok) {
-					bm->gltexture->u = (float)edata.orig_width / (float)edata.width;
-					bm->gltexture->v = (float)edata.orig_height / (float)edata.height;
+					r_texcount++;
+					android_cache_profile_add_ms(&g_cache_upload_ms, &stage_start, &stage_end);
+					android_cache_profile_count(&g_cache_upload_count);
 					bm->gltexture->is_png = 1;
-					r_hires_found++;
+					bm->gltexture->replacement_source = android_texture_source_id(filename);
 					r_hires_loaded++;
-					/* android port: one-shot self-test -- render from this
-					 * ETC2 texture and readback the center pixel via FBO.
-					 * Confirms whether the GPU actually decodes non-black. */
-					if (r_hires_loaded == 1) {
-						android_perf_clock_now(&stage_start);
-						GLuint fbo = 0, rbo = 0;
-						glGenFramebuffers(1, &fbo);
-						glGenRenderbuffers(1, &rbo);
-						glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-						glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 4, 4);
-						glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-						glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-						                          GL_RENDERBUFFER, rbo);
-						if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
-							int was_tex2d = GL_TEXTURE_2D_enabled;
-							OGL_ENABLE(TEXTURE_2D);
-							glViewport(0, 0, 4, 4);
-							glDisable(GL_BLEND);
-							glDisable(GL_DEPTH_TEST);
-							glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-							/* White vertex color so GL_MODULATE shows texture color */
-							GLfloat verts[] = {-1,-1, 1,-1, 1,1, -1,1};
-							GLfloat uvs[] = {0.25f,0.25f, 0.75f,0.25f, 0.75f,0.75f, 0.25f,0.75f};
-							GLfloat cols[] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1};
-							glEnableClientState(GL_VERTEX_ARRAY);
-							glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-							glEnableClientState(GL_COLOR_ARRAY);
-							OGL_BINDTEXTURE(bm->gltexture->handle);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-							glVertexPointer(2, GL_FLOAT, 0, verts);
-							glTexCoordPointer(2, GL_FLOAT, 0, uvs);
-							glColorPointer(4, GL_FLOAT, 0, cols);
-							glClearColor(0, 0, 0, 0);
-							glClear(GL_COLOR_BUFFER_BIT);
-							glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-							glDisableClientState(GL_VERTEX_ARRAY);
-							glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-							glDisableClientState(GL_COLOR_ARRAY);
-							glFinish();
-							unsigned char px[4] = {0};
-							glReadPixels(2, 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
-							__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
-							    "ETC2 self-test: %s readback=(%d,%d,%d,%d) %s",
-							    bitmapname, px[0], px[1], px[2], px[3],
-							    (px[0] || px[1] || px[2]) ? "OK" : "BLACK -- GPU decodes to black");
-							if (!was_tex2d) OGL_DISABLE(TEXTURE_2D);
-						} else {
-							__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
-							    "ETC2 self-test: FBO incomplete, skipped");
-						}
-						glBindFramebuffer(GL_FRAMEBUFFER, 0);
-						glDeleteRenderbuffers(1, &rbo);
-						glDeleteFramebuffers(1, &fbo);
-						/* Drain any stale GL errors from the self-test so
-						 * they don't pollute the next upload's error check */
-						while (glGetError() != GL_NO_ERROR) {}
-						/* Re-bind the texture and restore sensible filter state */
-						OGL_BINDTEXTURE(bm->gltexture->handle);
-						if (texfilt) {
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-						} else {
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-						}
-						android_perf_clock_now(&stage_end);
-						profile_upload_us += android_perf_elapsed_us(&stage_start, &stage_end);
-					}
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 						android_perf_clock_now(&stage_start);
-						android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt, ogl_loadtexture);
+						if (!android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture)) {
+							ogl_freebmtexture(bm);
+							goto skip_ktx2;
+						}
 						android_perf_clock_now(&stage_end);
 						profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 						android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
@@ -3360,47 +3212,19 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 						profile_upload_us, profile_mask_us, &lookup_metrics);
 					return;
 				}
-				/* Decode/upload failed -- fall through to try PNG */
-			}
+				/* Decode/upload failed -- restore stock dimensions before fallback */
+				ogl_init_texture(bm->gltexture, bm->bm_w, bm->bm_h, OGL_FLAG_ALPHA);
 		}
 		skip_ktx2:
-		/* Try multiple extensions -- stb_image handles all formats */
-		{
-			if (have_texture_set_bitmapname) {
-				android_perf_clock_now(&stage_start);
-				png_loaded = android_ogl_read_texture_with_extensions(filename, texture_set_bitmapname, &pdata,
-					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_SET, sizeof(filename));
-				android_perf_clock_now(&stage_end);
-				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
-				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
-				if (png_loaded) {
-					android_cache_profile_count(&g_cache_png_hits);
-					dxa_bitmapname = texture_set_bitmapname;
-				}
-			}
-			if (!png_loaded && have_prefixed_bitmapname) {
-				android_perf_clock_now(&stage_start);
-				png_loaded = android_ogl_read_texture_with_extensions(filename, prefixed_bitmapname, &pdata,
-					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_PREFIX, sizeof(filename));
-				android_perf_clock_now(&stage_end);
-				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
-				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
-				if (png_loaded) {
-					android_cache_profile_count(&g_cache_png_hits);
-					dxa_bitmapname = prefixed_bitmapname;
-				}
-			}
-			if (!png_loaded) {
-				android_perf_clock_now(&stage_start);
-				png_loaded = android_ogl_read_texture_with_extensions(filename, bitmapname, &pdata,
-					&lookup_metrics, ANDROID_PROFILE_TEXTURE_LOOKUP_SLOT_BASE, sizeof(filename));
-				android_perf_clock_now(&stage_end);
-				profile_png_read_us += android_perf_elapsed_us(&stage_start, &stage_end);
-				android_cache_profile_add_ms(&g_cache_png_read_ms, &stage_start, &stage_end);
-				if (png_loaded)
-					android_cache_profile_count(&g_cache_png_hits);
-			}
+		if (replacement == 2) {
+			long long previous_png_us = profile_png_read_us;
+			png_loaded = android_ogl_read_replacement(filename, sizeof(filename),
+				replacement_names, replacement_slots, sizeof(replacement_names) / sizeof(*replacement_names),
+				0, bm, &pdata, &edata, &lookup_metrics,
+				&profile_ktx2_read_us, &profile_png_read_us) == 1;
+			if (g_cache_profile_active) g_cache_png_read_ms += (profile_png_read_us - previous_png_us) / 1000;
 		}
+		if (png_loaded) android_cache_profile_count(&g_cache_png_hits);
 #else
 		sprintf(filename, /*"textures/"*/ "%s.png", bitmapname);
 		png_loaded = read_png(filename, &pdata);
@@ -3456,7 +3280,12 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
 					android_perf_clock_now(&stage_start);
-					android_ogl_load_dxa_mask(dxa_bitmapname, bm, texfilt, ogl_loadtexture);
+					if (!android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture)) {
+						free(pdata.data);
+						if (pdata.palette) free(pdata.palette);
+						ogl_freebmtexture(bm);
+						goto stock_texture;
+					}
 					android_perf_clock_now(&stage_end);
 					profile_mask_us += android_perf_elapsed_us(&stage_start, &stage_end);
 					android_cache_profile_add_ms(&g_cache_mask_ms, &stage_start, &stage_end);
@@ -3475,6 +3304,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 					free(pdata.palette);
 				bm->gltexture->is_png = 1;
 #ifdef ANDROID
+				bm->gltexture->replacement_source = android_texture_source_id(filename);
 				r_hires_loaded++;
 				profile_source = "png";
 				android_perf_clock_now(&texture_total_end);
@@ -3499,6 +3329,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 	}
 #endif
 #ifdef ANDROID
+stock_texture:
+	;
 	/* Paged-out bitmap with no PNG replacement -- page in on demand.
 	 * Desktop callers use PIGGY_PAGE_IN before rendering; on Android
 	 * some paths skip it. Page in here so gltexture is never left NULL,

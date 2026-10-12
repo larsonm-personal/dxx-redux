@@ -35,6 +35,7 @@
 #include "boss_hud.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
+#include "coop/coop_restore_hud.h"
 #endif
 
 typedef struct hudmsg
@@ -55,6 +56,7 @@ static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 2];
 #ifdef __ANDROID__
 static const char *HUD_restore_status_message;
 static int HUD_restore_status_error;
+static int HUD_restore_download_percent;
 static int HUD_restore_status_y = -1;
 #endif
 static int HUD_init_message_literal_worth_showing(int class_flag, const char *message);
@@ -112,6 +114,7 @@ void HUD_prepare_message_frame()
 	memset(&HUD_message_rects, 0, sizeof(HUD_message_rects));
 #ifdef __ANDROID__
 	HUD_restore_status_message = coop_restore_status_message(&HUD_restore_status_error);
+	multi_save_transfer_status(&HUD_restore_download_percent);
 	HUD_restore_status_y = -1;
 #endif
 	saved_font = grd_curcanv->cv_font;
@@ -142,6 +145,10 @@ void HUD_prepare_message_frame()
 		rect->w = w + 2 * pad_x;
 		rect->h = h + 2 * pad_y;
 		HUD_restore_status_y = y;
+		if (HUD_restore_download_percent >= 0) {
+			rect->h += FSPACY(5);
+			y += FSPACY(5);
+		}
 		y += LINE_SPACING;
 	}
 #endif
@@ -218,6 +225,7 @@ void HUD_render_message_frame()
 	if (HUD_restore_status_message) {
 		gr_set_fontcolor(HUD_restore_status_error ? BM_XRGB(31,0,0) : BM_XRGB(31,24,0), -1);
 		gr_string(0x8000, HUD_restore_status_y, HUD_restore_status_message);
+		coop_restore_draw_download_bar(HUD_restore_status_message, HUD_restore_status_y, HUD_restore_download_percent);
 	}
 #endif
 	gr_set_fontcolor(HUD_color, -1);

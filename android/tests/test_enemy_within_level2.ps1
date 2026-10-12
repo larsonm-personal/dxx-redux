@@ -21,16 +21,21 @@ if ((Get-FileHash -LiteralPath $enemy -Algorithm SHA256).Hash.ToLowerInvariant()
     'bf8e9f58ef6993f44df5b94f38efd0235bb407485267948a4d0eaaa0a6aa8c84') {
     throw 'Enemy Within fixture differs from the phone report'
 }
-Adb -AdbArgs @('push', $enemy, '/data/local/tmp/ewithin-rebirth.zip') -Seconds 180 | Out-Null
-Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'files/mission_zip_batch_cache') | Out-Null
-Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', '/data/local/tmp/ewithin-rebirth.zip', 'files/mission_zip_batch_cache/ewithin-rebirth.zip') -Seconds 180 | Out-Null
-$stagedSize = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'stat', '-c', '%s', 'files/mission_zip_batch_cache/ewithin-rebirth.zip')
-if ("$stagedSize".Trim() -ne "$((Get-Item -LiteralPath $enemy).Length)") { throw 'Could not stage complete mission fixture' }
+$remote = '/data/local/tmp/ewithin-rebirth.zip'
+$fixture = 'files/mission_zip_batch_cache/ewithin-rebirth.zip'
 try {
+    Adb -AdbArgs @('push', $enemy, $remote) -Seconds 180 | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', 'files/mission_zip_batch_cache') | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', $remote, $fixture) -Seconds 180 | Out-Null
+    $stagedSize = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'stat', '-c', '%s', $fixture)
+    if ("$stagedSize".Trim() -ne "$((Get-Item -LiteralPath $enemy).Length)") { throw 'Could not stage complete mission fixture' }
+    # Release the transfer copy before import and extraction allocate their working space
+    Adb -AdbArgs @('shell', 'rm', '-f', $remote) | Out-Null
     Adb -AdbArgs @('logcat', '-c') | Out-Null
     & (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -Serial $Serial -ScriptName test_enemy_within_level2.jsonc -Game d2 -TimeoutSeconds 180
     if ($LASTEXITCODE -ne 0) { throw 'Enemy Within Level 2 integration failed' }
 } finally {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
-    Adb -AdbArgs @('shell', 'rm', '-f', '/data/local/tmp/ewithin-rebirth.zip') | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', $fixture) | Out-Null
+    Adb -AdbArgs @('shell', 'rm', '-f', $remote) | Out-Null
 }

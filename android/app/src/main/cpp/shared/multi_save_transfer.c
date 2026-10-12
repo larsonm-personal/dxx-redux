@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "android_log.h"
@@ -25,6 +26,7 @@
 #include "newmenu.h"
 #include "text.h"
 #include "multi_save_transfer_policy.h"
+#include "multi_save_transfer_progress.h"
 #include "physfsx.h"
 #include "player.h"
 #include "object.h"
@@ -204,6 +206,35 @@ static int64_t multi_rewind_get_i64(const ubyte *src)
 }
 
 #include "multi_save_transfer_barrier.h"
+
+const char *multi_save_transfer_status(int *percent)
+{
+	static char message[96];
+	uint64_t started, now = multi_save_transfer_now_ms();
+	const char *label;
+	if (percent) *percent = -1;
+	if (Restore_barrier.phase == RESTORE_FAILED) return NULL;
+	if (Save_transfer_restore_active) return "Restoring save";
+	if (Rewind_save_transfer.active && Rewind_save_transfer.total_chunks > 0) {
+		int value = (int) ((uint64_t) Rewind_save_transfer.chunks_received * 100 /
+		                   Rewind_save_transfer.total_chunks);
+		if (value > 100) value = 100;
+		if (percent) *percent = value;
+		snprintf(message, sizeof(message), value == 100 ? "Save downloaded - waiting to restore" : "Downloading save: %d%%", value);
+		return message;
+	}
+	if (Save_send_transfer.active) {
+		started = Save_send_transfer.started_ms;
+		label = "Waiting for save downloads";
+	} else if (multi_save_transfer_paused()) {
+		started = Restore_barrier.started_ms;
+		label = "Waiting for players to finish restoring";
+	} else return NULL;
+
+	snprintf(message, sizeof(message), "%s: %llu seconds", label,
+	         (unsigned long long) (now >= started ? (now - started) / 1000 : 0));
+	return message;
+}
 
 static uint multi_rewind_checksum(const unsigned char *data, size_t size)
 {

@@ -64,6 +64,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "secretarea.h"
 #ifdef __ANDROID__
 #include "android_level_preview.h"
+#include "android_d1_mod_patches.h"
 #endif
 
 #ifndef NDEBUG
@@ -1244,6 +1245,9 @@ int load_level(const char * filename_passed)
 	}
 
 	(void)hostagetext_offset;
+#ifdef __ANDROID__
+	android_d1_mod_apply_level(filename);
+#endif
 	// Gray rock (or something) fallback matches the D1/D2 mapping in convert_d1_tmap_num
 	const int fallback_texture = 2;
 	// Repair invalid references before collision, rendering, or other consumers index their tables

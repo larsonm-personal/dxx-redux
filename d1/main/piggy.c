@@ -19,6 +19,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef __ANDROID__
 #include "android_sound_trace.h"
+#include "android_mod_assets.h"
+#include "android_mod_bitmaps.h"
 #endif
 
 #include <stdio.h>
@@ -590,6 +592,9 @@ void piggy_read_sounds(int pc_shareware)
 		return;
 	}
 
+#ifdef __ANDROID__
+	android_mod_sounds_reset();
+#endif
 	ptr = SoundBits;
 	sbytes = 0;
 
@@ -653,6 +658,11 @@ void piggy_read_sounds(int pc_shareware)
 	}
 	if (lastbuf)
 	  d_free(lastbuf);
+#ifdef __ANDROID__
+	for (i = 0; i < Num_sound_files; ++i)
+		android_mod_sound_apply(i, AllSounds[i].name, 1);
+#endif
+
 }
 
 extern int descent_critical_error;
@@ -1068,6 +1078,10 @@ void piggy_close()
 	int i;
 
 	custom_close();
+#ifdef __ANDROID__
+	android_mod_bitmaps_reset();
+	android_mod_sounds_reset();
+#endif
 	piggy_close_file();
 
 //added ifndef on 10/04/98 by Matt Mueller to fix crash on exit bug -- killed 2000/02/06 since they don't seem to cause crash anymore.  heh.
@@ -1194,3 +1208,23 @@ int piggy_bitmap_get_flags(grs_bitmap *bmp)
 		return GameBitmapFlags[bmp - GameBitmaps];
 	return bmp->bm_flags;
 }
+
+#ifdef __ANDROID__
+int piggy_bitmap_get_offset(int bitmap_index)
+{
+	return bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES ? GameBitmapOffset[bitmap_index] : 0;
+}
+
+ubyte piggy_bitmap_get_file_flags(int bitmap_index)
+{
+	return bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES ? GameBitmapFlags[bitmap_index] : 0;
+}
+
+void piggy_bitmap_set_file_state(int bitmap_index, int offset, ubyte flags)
+{
+	if (bitmap_index >= 0 && bitmap_index < MAX_BITMAP_FILES) {
+		GameBitmapOffset[bitmap_index] = offset;
+		GameBitmapFlags[bitmap_index] = flags;
+	}
+}
+#endif

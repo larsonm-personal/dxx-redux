@@ -208,6 +208,10 @@ void ab_load(int skip, char * filename, bitmap_index bmp[], int *nframes )
 	}
 }
 
+#ifdef __ANDROID__
+#include "android_mod_assets.h"
+#endif
+
 int ds_load(int skip, char * filename )	{
 	int i;
 	PHYSFS_file * cfp;
@@ -248,6 +252,9 @@ int ds_load(int skip, char * filename )	{
 		return 255;
 	}
 	i = piggy_register_sound( &new, fname, 0 );
+#ifdef __ANDROID__
+	android_mod_sound_loaded(i, rawname);
+#endif
 	return i;
 }
 

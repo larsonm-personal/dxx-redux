@@ -20,6 +20,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #ifdef __ANDROID__
 #include "android_sound_trace.h"
+#include "android_mod_assets.h"
+#include "android_mod_bitmaps.h"
+#include <stdint.h>
 #endif
 
 #include <stdio.h>
@@ -498,6 +501,9 @@ void piggy_init_pigfile(char *filename)
 	int data_size;
 #endif
 
+#ifdef __ANDROID__
+	android_mod_bitmaps_reset();
+#endif
 	piggy_close_file();             //close old pig if still open
 
 	Piggy_fp = PHYSFSX_openReadBuffered(filename);
@@ -596,6 +602,9 @@ void piggy_init_pigfile(char *filename)
 	Piggy_bitmap_cache_next = 0;
 
 	Pigfile_initialized=1;
+#ifdef __ANDROID__
+	android_mod_bitmaps_apply(2, filename);
+#endif
 }
 
 #define MAX_BITMAPS_PER_BRUSH 30
@@ -603,6 +612,17 @@ void piggy_init_pigfile(char *filename)
 extern int compute_average_pixel(grs_bitmap *new);
 
 ubyte *Bitmap_replacement_data = NULL;
+#ifdef __ANDROID__
+static size_t Bitmap_replacement_data_size;
+
+int piggy_bitmap_is_custom(grs_bitmap *bitmap)
+{
+	if (bitmap < GameBitmaps || bitmap >= &GameBitmaps[Num_bitmap_files]) return 0;
+	if (d1_in_d2_bitmap_is_custom(bitmap - GameBitmaps)) return 1;
+	return Bitmap_replacement_data && (uintptr_t)bitmap->bm_data >= (uintptr_t)Bitmap_replacement_data &&
+	       (uintptr_t)bitmap->bm_data - (uintptr_t)Bitmap_replacement_data < Bitmap_replacement_data_size;
+}
+#endif
 
 //reads in a new pigfile (for new palette)
 //returns the size of all the bitmap data
@@ -623,6 +643,9 @@ void piggy_new_pigfile(char *pigname)
 	    && !Bitmap_replacement_data) // no need to reload: no bitmaps were altered
 		return;
 
+#ifdef __ANDROID__
+	android_mod_bitmaps_reset();
+#endif
 	if (!Pigfile_initialized) {                     //have we ever opened a pigfile?
 		piggy_init_pigfile(pigname);            //..no, so do initialization stuff
 		return;
@@ -847,6 +870,9 @@ void piggy_new_pigfile(char *pigname)
 	}
 	#endif  //ifdef EDITOR
 
+#ifdef __ANDROID__
+	android_mod_bitmaps_apply(2, pigname);
+#endif
 }
 
 ubyte bogus_data[64*64];
@@ -1197,6 +1223,9 @@ void piggy_read_sounds(void)
 	ubyte * ptr;
 	int i, sbytes;
 
+#ifdef __ANDROID__
+	android_mod_sounds_reset();
+#endif
 	ptr = SoundBits;
 	sbytes = 0;
 
@@ -1222,6 +1251,7 @@ void piggy_read_sounds(void)
 #ifdef __ANDROID__
 				int read_ok = PHYSFS_read(fp, snd->data, snd->length, 1) == 1;
 				android_sound_trace_loaded(i, AllSounds[i].name, SoundOffset[i], read_ok);
+				if (read_ok) android_mod_sound_bank_loaded(i, DEFAULT_SNDFILE);
 #else
 				PHYSFS_read( fp, snd->data, snd->length, 1 );
 #endif
@@ -1232,6 +1262,11 @@ void piggy_read_sounds(void)
 	}
 
 	PHYSFS_close(fp);
+
+#ifdef __ANDROID__
+	for (i = 0; i < Num_sound_files; ++i)
+		android_mod_sound_apply(i, AllSounds[i].name, 2);
+#endif
 
 }
 
@@ -1693,7 +1728,13 @@ void piggy_close()
 {
 	int i;
 
+#ifdef __ANDROID__
+	android_mod_bitmaps_reset();
+#endif
 	d1_in_d2_release_assets();
+#ifdef __ANDROID__
+	android_mod_sounds_reset();
+#endif
 	piggy_close_file();
 
 	if (BitmapBits)
@@ -1839,6 +1880,9 @@ void free_bitmap_replacements()
 	if (Bitmap_replacement_data) {
 		d_free(Bitmap_replacement_data);
 		Bitmap_replacement_data = NULL;
+#ifdef __ANDROID__
+		Bitmap_replacement_data_size = 0;
+#endif
 	}
 }
 
@@ -1883,6 +1927,9 @@ int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capaci
 	}
 	PHYSFS_close(file);
 	change_filename_extension(name, level_name, ".POG");
+#ifdef __ANDROID__
+	android_mod_bitmaps_overlay_flags(flags, capacity);
+#endif
 	file = PHYSFSX_openReadBuffered(name);
 	if (!file)
 		return !PHYSFSX_exists(name, 1);
@@ -1946,6 +1993,9 @@ void load_bitmap_replacements(char *level_name)
 
 		bitmap_data_size = PHYSFS_fileLength(ifile) - PHYSFS_tell(ifile) - sizeof(DiskBitmapHeader) * n_bitmaps;
 		MALLOC( Bitmap_replacement_data, ubyte, bitmap_data_size );
+#ifdef __ANDROID__
+		Bitmap_replacement_data_size = bitmap_data_size;
+#endif
 
 		for (i=0;i<n_bitmaps;i++) {
 			DiskBitmapHeader bmh;

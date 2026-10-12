@@ -1,0 +1,45 @@
+# Chunk0377 existing-owner continuation, 2026-10-11
+
+Diagnosis and future plans only under plan_general_diagnosis_resume_20261009.md. No implementation or runtime acceptance. Both assigned files are absent1996 original; inherited saving0. Preserve engine format ownership and paired-game/desktop behavior
+
+## BR0159: complete installation identity and resumed retirement admission
+
+Discovery still trusts directory names, release-file values or version-looking output without complete payload and native-exit admission. Marker/sentinel registration and same-family replacement checks cannot prove a complete usable replacement. Reuse one exact installation validator across installers, updater discovery, consumers and replacement admission. Retain staged publication, ownership lock, multi-checkout pins, process/environment/PATH/cache protection, plain-path checks, preview and idempotence
+
+The previous plan_gq2_0376_existing_owner_continuation_20261011.md already assigns preservation of changed/new partial payloads and replacement identities during retirement to this owner. Reconcile the formerly unadmitted0377 candidate as concrete additional evidence/acceptance under BR0159, coordinated with BR0579 for pin-generation consistency; no new canonical finding/remediation. Do not rewrite the earlier candidate checkpoint as if admission was resolved then
+
+Current Complete-DependencyRetirement bypasses computed checkout pins and Test-ManagedReplacement, and its fresh path/length/mtime scan is not proof of original root/payload ownership. The journal stores Directory/Identity only. Follow the detailed actual-entry matrix in plan_gq2_0377_retirement_recovery_admission_20261011.md: restored old pins, unavailable/changed replacement, added/changed payload, replacement quarantine root, unchanged missing-marker partial-deletion control and truthful journal-preserving retry. Prior unproven journals must not authorize deletion. Protect remaining now-referenced bytes without presenting a partial tree as usable installation. Windows/Linux aggregate and updater handoffs require real acceptance during implementation
+
+## BR0575 and BR0576: native failure and bounded discovery
+
+Current Invoke-InstallerScript checks Bash LASTEXITCODE immediately and restores GET_ALL finally; retain the local repair. Full updater failures still need truthful correlated terminal notes and post-install exact target admission. The maintained runtime fixture mostly asserts source spelling for this path; it does not execute a failed real installer through the whole updater. Run actual entry with recording installer exits1/7/127 alone and in multi-selection, assert no later mutation/success/duplicate-command record after failure and correct run note
+
+Git ls-remote remains synchronous with no wall-clock/descendant bound before selection. HTTP metadata/digest calls have finite request budgets, which cannot bound a stalled Git helper. Under existing BR0576 require a bounded owned discovery wrapper or bounded metadata alternative, exact exit diagnostics, unknown/failure policy and descendant cleanup. Include credential/proxy child stall and partial/nonzero output. Current sdkmanager --list is another synchronous discovery boundary; include its hang/nonzero/matching-text controls in the same end-to-end discovery acceptance rather than treating web fallback as a deadline. Preserve restored JAVA_HOME/PATH; validate host-native separator under BR0569
+
+## BR0577 and BR0579: verified assets and complete configuration generation
+
+Current SC55 soundfont target hashes downloaded bytes before writing version/URL/hash, repairing the old unchanged-TimGM-digest witness. Shell installer keeps prior asset until verified replacement and installed discovery verifies exact hash. Gradle now declares URL/hash inputs but its direct downloader remains a separate consumer: review and validate complete prior-asset preservation, digest rejection and publication, retaining existing BR0159 contract. Catalog/version/credits/instrument coverage remain release acceptance; a computed digest does not establish trusted release approval or rendering parity
+
+Generic Update-Conf still rereads/truncates the public manifest separately per field; wrapper metadata and VSCode Java settings are separate writes. JDK validates all host metadata before seven serial writes, SC55 uses three serial writes and other decoder/source targets retain coupled serial writes. FluidSynth validates both archives/upstream GCEM declaration and replaces six pins in one local file operation; retain this repair, but it does not serialize concurrent updates or publish the full selected set atomically
+
+BR0579 future actual-entry acceptance must cut/fail every field and wrapper/settings publication, overlap disjoint/same-key updaters and observe consumers. Require complete validated prior/new generation and no truncation/lost fields/mixed identities. Coordinate ownership registration/retirement against the committed generation. Extend existing runtime fixture beyond mocked Update-Conf metadata admission: its JDK table does not exercise public disk writes or concurrent consumers; its real FluidSynth function covers prepublication download/hash/metadata rejection and success, not every crash/replace boundary
+
+## BR0578 and BR0580: maintained compatibility and one NDK release
+
+Use current distribution_versions.conf policy: current Play/GitHub min24, legacy min23 with Play SDKs omitted. Historical Play Games22/API23 trigger is not current direct incompatibility. Keep compatibility owner open for actual candidate manifest/POM/AAR, plugin/language/peer constraints across each maintained distribution. Actual updater table/all-selection fixtures must reject incompatible or unknown metadata before mutation; validate resulting manifests/builds and supported device floors during implementation
+
+NDK short tag still comes from first human-page archive match while numeric full revision comes independently from SDK package maxima. Derive short/full/channel/platform archive/source.properties/Gradle identity from one admitted release record; retain prior target when mapping is unavailable. Exercise stable/LTS/preview/reordered/staggered/missing/inconsistent metadata through real updater and installer, requiring identical admitted revision and truthful refusal
+
+## Existing selection, runtime, serializer and host owners
+
+Retain exact JDK version/build/all-host SHA metadata validation under BR0562; existing actual-function metadata fixture covers network/missing/build/checksum rejection before mocked publication. Complete immutable asset/redirect/platform and disk-publication acceptance separately. CMake directory and executable selection remains BR0558; do not remove SDK-managed suppression to conceal it. BR0565 current system updater has process-termination warnings and exact INSTALL confirmation unless Force; retain them. The runtime fixture checks source strings, so complete actual default/System/Pinned/StatusOnly/Force/cancellation launch-boundary acceptance with an unrelated-process sentinel. Do not claim a cancelled system updater was installed just because its action returned normally
+
+Archived BR0581 stays FIXED. Current safe_conf_value allowlist rejects executable shell syntax and quotes URL query punctuation while leaving ordinary cross-parser values plain. Retain safe formatting on generic and FluidSynth writes. The maintained fixture executes allowlist cases; it does not prove every remote-discovery route or complete Bash/Java consumer path. Preserve historical repair evidence without broad fresh security closure. BR0551 automatic-variable lint coverage and BR0569 native/WSL executable identity remain existing policy owners; no separate cleanup root
+
+## Optional authored simplification and retained ownership
+
+The cleaner232 array still checks obsolete fixed statePath.new, while the atomic publisher creates GUID .tmp/.bak siblings. Source census found only cleaner and SDK-cleaner preflights, no writer for that fixed name. Future simplify this operand after final caller census, preserving statePath/lock and ancestor/plain-tree checks. This removes one redundant operand, no demonstrated whole-line or inherited saving. DOSBox is intentionally absent from updater rows despite its old top Checks comment; correct that comment only when editing the owner, preserving optional manual tooling policy
+
+Do not merge configured script actions, numeric/NDK/prerelease comparators, host platform mappings or complete installer validators merely because their names overlap. Helpers have distinct input and ownership contracts. Retain handmade comments, configured command deduplication, selected-target install-all array addition, JDK/SDK priority and install retention handoff
+
+Proposed disposition RETAIN/BR0159 REFERENCE56 (32/0/7/10/7), inherited from existing same-owner0066 without reranking historical severity. No new finding/remediation/investigation or historical status change. Final report/snapshot/canonical publication audit required before0377 DONE

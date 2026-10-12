@@ -1,0 +1,58 @@
+# GQ2 chunk0330: MIDI preview and mission identity/distribution/catalog/publication, 2026-10-10
+
+Diagnosis and plans only; preserve concurrent product edits
+
+- [x] Read all assigned frozen hunks/whole source and complete current enclosing bodies
+- [x] Read complete current deltas and bind frozen/current/original/manifest identities
+- [x] Trace actual consumers, native ownership/admission/lifecycle, maintained fixtures and exact owners/minimization
+- [x] Final report, canonical publication, independent audit and handoff
+
+## Assigned scope
+
+- MidiPreviewBridge.kt: all frozen hunks 1-16
+- MissionContentIdentity.kt: frozen L1-L70
+- MissionDistributionPolicy.kt: frozen L1-L53
+- MissionLaunchCatalog.kt: frozen L1-L240
+- MissionLaunchPublication.kt: frozen L1-L155
+
+Prior chunk0329 publication independently audited PASS 2101 checks, SHA 95388427b340077189dddb9b1354689af90911d1eb84bd8f49635033451d8ff7. Chunk0330 remains TODO; queue 329 DONE / 298 TODO / 627
+
+
+## Chunk0330 assigned sources and initial publication caller checkpoint
+
+All five assigned frozen scopes/removals/current deltas and full current enclosing bodies read; current deltas empty, normalized bodies equal frozen. Saved 8 bound contexts including whole identity/publication fixtures and actual ModManager L781-919 publication caller. Preserve MIDI lifecycle reservation/monitor, nativeDataLock, package ownership, safe virtual paths, variant filtering, ambiguity rejection and descriptor-only discovery. Identity size equality and launch-resource reuse lengths do not establish same-length content generation; hardlink mutability, override coherence, native manifest/mount/cache lifecycle and actual transfer/admission require existing-owner qualification. Fixtures source-read only. Broad search output truncated and earned no source-body coverage. Scope SHA 1d730a707b19f9757510f45cc6b9687f944bc5cec5c2d04522804735973cdfbe; checkpoint SHA 9cd882a471b3e2f6449c2eeb7a98c4f19e5a3ab256d1d0232892e71b61c830c4. HEAD unchanged; external product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca recorded without unrelated coverage. No code/test/helper edits or execution, new root, status, rerating, runtime acceptance or inherited saving claimed. Native/helpers/callers/remaining fixtures/exact owners/minimization and report/publication/audit remain. Chunk0330 TODO; queue 329 DONE / 298 TODO / 627. Diagnosis/docs only; goal active
+
+
+## Chunk0330 preview session and paired mission lifecycle checkpoint
+
+Saved 21 bound contexts. Whole media session/transport, native mission reset/header and MIDI public contract plus paired mission prepare/free/activate and PhysFS init boundaries read. Preserve activity-stop/disposal transport cleanup, media focus/key ownership, guarded engine hooks and native cache retirement/base restoration. Current seek explicitly documents event-only approximation/envelope restart; archived BR-0319 records earlier linear-equivalent implementation, requiring policy/history/fixture reconciliation without reopening status. Exact BR-0276 retained; producer completion clears output before consumer drain. Truncated owner output earned no fresh body credit and targeted owners recovered bounded. Scope SHA bfb5bd0abb401c3ba06b7a0927ab5ccebb988193d926a1ca8064166d60ba05a5; checkpoint SHA e353ffb6f0527cb0d8129af98f8a638a5cbd21f08a58f9a50411d4e89a7f7804. Prior8 contexts/HEAD unchanged; external product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca captured without unrelated coverage. No code/test/helper changes or execution, new root, owner status, rerating, runtime acceptance or inherited saving. Native/dialog unsaved prior reads must be re-bound; remaining transfer/extraction/fixtures/owners/minimization and final report/publication/audit pending. Chunk0330 TODO;329 DONE/298 TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 JNI, transfer and native catalog checkpoint
+
+Saved 30 bound contexts. Whole MIDI JNI/dialog,737 transfer service,218 native catalog,174 catalog fixture and96 resume fixture plus actual identity/import/scanner boundaries read. Preserve chunk/full-file hashes, copied-identity verification, canonical host eligibility reinspection, client writer retirement, generation-gated result callbacks, mount rollback and cache restoration. Cached size/time identity, moved accepted identity, resume/header admission, late active-set finalization, dialog UI generation and immutable launch payload need existing-owner qualification. Fixtures source-read only; no runtime acceptance or blanket unbounded transfer claim. Prior21 contexts/HEAD unchanged. Scope SHA c52ec4c8d4d05f6fcbdd9c4e8b4c014e3ff8d7fe8d240827fc5a168886919192; checkpoint SHA 947fee85786496e2d194d5598402a83f08a9feebbd52b183e4e4f21a6894ccb5; product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca recorded without unrelated coverage. No code/test/helper edits or execution, new root/status/rerating/inherited saving. Remaining native playback/helper bodies, extraction/resolver/callers/fixtures/exact owners/minimization and report/publication/audit pending. Chunk0330 TODO;329 DONE/298 TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 native playback and compatibility authority checkpoint
+
+Saved 38 bound contexts. Complete908 MIDI player,222 strict HOG reader,150 timeline helper, decode limits and whole compatibility resolver/catalog read. Preserve native locking/join, checked OpenSL rollback, HOG spans/count/read cleanup and explicit wrapper mismatches. Current direct preview admission/duration work, source reopen generation and cached catalog identity remain qualified boundaries; no transitive parser/converter body credit. Exact BR0016/archived BR0102 bodies reconciled without status changes. August12 header patch proves deliberate approximate-seek contract change; current policy remains distinct from archived BR0319 linear-equivalence evidence. Scope SHA c92c528c45389de0e966bb6186e02eb37a75a04ac9d94220a552ca712d112763; checkpoint SHA ebed79640d2bc2db7a3f6ecfc88818b11e61fe8b4d66821674882715b4249665. Prior30 contexts/HEAD/product unchanged; product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca. No code/test/helper edits or execution, new root/status/rerating/runtime/inherited saving. Remaining extraction/selection/caller/fixture and exact owner/minimization reconciliation, finalreport/publication/audit pending. Chunk0330 TODO;329 DONE/298 TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 extraction integrity and launch-reuse policy checkpoint
+
+Saved 43 bound contexts. Complete771 extraction store/397 fixture and102 protocol fixture plus actual ordinary launch cache/selection helpers read. Preserve schema/digest/count/output-projection/bounded-copy/shared-lock repairs and full integrity audit. Current reusableRecord deliberately checks metadata under managed immutability premise; ordinary launch uses it, and fixture explicitly accepts same-length preserved-time output changes on that path while full audit rejects them. Preserve this policy distinction without reopening archived BR0102. Separate tree/manifest durability, cancellation/admission and source/selection generation need existing-owner plans; no actual process/native/crash/runtime acceptance. Prior38 contexts/HEAD/product unchanged. Scope SHA 1ce384ff7506eb09542d66163857c0c4c328d814bb4846a62f57369b8a4b0a97; checkpoint SHA fa7bc25f0bea985331eae2d4bcb8cba78f114b910f57743b389f2e8575e3508d; product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca. No code/test/helper edits or execution, new root/status/rerating/inherited saving. Remaining targeted callers/fixtures/exact owners/minimization and finalreport/publication/audit pending. Chunk0330 TODO;329 DONE/298 TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 maintained callers and exact owner-plan checkpoint
+
+Saved 56 bound contexts. Whole media integration fixture/protocol plus actual keyed MIDI preview/dialog metadata/dismissal and lifecycle-owned automation callers read. Keyed maintained callers narrow unkeyed remembered-state concern; preserve native locks/reservations/stop invalidation and goAsync failure/finally cleanup. Fixture snapshot transport checks do not prove audible tail/drain/equivalent seek/races. Full BR0103/0506/0440 and GQR0170/0212 definitions reconciled, with existing publication/admission/JNI/lifecycle owners and archived policy qualifications retained. Targeted implementation/acceptance directions saved without code edits or new roots/status/rerating. Scope SHA 05ad123940e216567268ed077bb5cb2e0440a52eb8dc0bd918c1cb095347f52c; checkpoint SHA f61b50dac55caa18df6d363114f1f17352d5d14e090dac0ced3c47b2cd39c80c; product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca. Prior43 contexts/HEAD/product unchanged. Final owner/generation/minimization synthesis and report/snapshot/publication/audit pending. Chunk0330 TODO;329 DONE/298 TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 final source diagnosis and immutable snapshot ready
+
+Allfive assigned frozen/current scopes, complete enclosing bodies/current deltas and56 bound contexts reconciled. RETAIN/GQR0170 REFERENCE56; allfive absent1996, NO_INHERITED_EFFECT saving0. Preserve native locking/reservation/keyed disposal, strict HOG checks, transfer hashes/writer retirement, mission ownership and mount/cache rollback. Existing lifecycle/drain/publication/admission/JNI owners retained; archived full-audit/linear-seek evidence qualified by current metadata-reuse/approximate-seek policies. No newroot/status/rerating/runtime/inheritedsaving/codechange. Report SHA d278c417f1fa30840a0eb26eb605e791e97526d43e619cc38d2e5cb83276f1ba; scope 6ad9f85d296b6b1e0da971e600e513c12ce09e440883106e2c6f1c91019beac9; snapshot SHA 4b7595fad39d04a02abe3c09f981a96531c661518a27d5f059d8e2afde11a74b; canonical-before SHA 6113472fb66e8387bdcba4321ebe14a58efcab4052d81bd73a9201c9a290c824. Source/context/history/diffs/subsets/frozen/original/manifest/prioraudit/canonical/HEAD/product verified; product diff SHA 3b0669c20077a2fd6c70f40ec0655de66f6e8e32b4cfac0c9d1d8d6a802c66ca. Canonicalpublication/independentaudit/handoff pending. Chunk0330 TODO;329DONE/298TODO/627. Diagnosis/docs only;goal active
+
+
+## Chunk0330 published and independently audited
+
+GQ2-CHUNK-0330 DONE/GQC1158 ISSUES/GQD1038 NO_INHERITED_EFFECT; RETAIN/GQR0170 REFERENCE56. Allfive assigned scopes/currentdeltas/fullbodies and56 contexts plus historical header patch reconciled. Preserve native locking/reservations/keyed disposal/HOG bounds/transfer hashing/writer retirement/mission ownership/mount rollback. Existing lifecycle/drain/publication/admission/JNI owners and archived policy qualifications retained; no newroot/fix/investigation/rerating/status/runtime/inheritedsaving/codechange. Independent audit PASS 3111 checks SHA 89fa8df6593fbfba0a48a60e237fbee71b8b8149c7574f756fc53b0468995a1c; exactfive canonicalbytes/priorrank suffixes/fullsort/fixdefs/investigations/otherqueues/sources/history/diffs/subsets/frozen/original/manifest/prioraudit/HEAD/product verified. Queue330 DONE/297 TODO/627;1145 terminal/267fix/11investigations. Report SHA d278c417f1fa30840a0eb26eb605e791e97526d43e619cc38d2e5cb83276f1ba; scope 6ad9f85d296b6b1e0da971e600e513c12ce09e440883106e2c6f1c91019beac9; snapshot SHA 4b7595fad39d04a02abe3c09f981a96531c661518a27d5f059d8e2afde11a74b. Next0331 config import/export/slot and controller axis/model/page. Remainingchunks/supplements/investigations/sweeps/historical0116auditdebt/finalclosure remain. Diagnosis/docs only;goal active

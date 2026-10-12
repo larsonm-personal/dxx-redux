@@ -48,6 +48,34 @@ try {
     [IO.File]::WriteAllBytes($path, $opaque)
     $decoded = Read-D2xxlTgaPixels -Path $path
     if ($decoded.Pixels[7] -ne 255) { throw 'Zero descriptor alpha bits did not force opaque pixels' }
+    $decoded = Read-D2xxlTgaPixels -Path $path -D2xxlSource
+    if ($decoded.Pixels[7] -ne $canonical[1][3]) { throw 'XL legacy source alpha was discarded' }
+    $originalBytes = $bytes.ToArray()
+    $rleHeader = [byte[]]$originalBytes[0..17]
+    $rleHeader[2] = 10
+    [IO.File]::WriteAllBytes($path, [byte[]]($rleHeader + [byte]3 + $originalBytes[18..($originalBytes.Length - 1)]))
+    $decoded = Read-D2xxlTgaPixels -Path $path
+    foreach ($index in 0..3) {
+        foreach ($channel in 0..3) {
+            if ($decoded.Pixels[$index * 4 + $channel] -ne $canonical[$index][$channel]) { throw 'Raw RLE packet changed oriented pixels' }
+        }
+    }
+    $rleHeader[17] = 40
+    $mixedPackets = [byte[]]($rleHeader + [byte]1 + $canonical[0] + $canonical[1] + [byte]129 + $canonical[3])
+    [IO.File]::WriteAllBytes($path, $mixedPackets)
+    $decoded = Read-D2xxlTgaPixels -Path $path
+    foreach ($index in 0..3) {
+        $expected = $canonical[$(if ($index -ge 2) { 3 } else { $index })]
+        foreach ($channel in 0..3) {
+            if ($decoded.Pixels[$index * 4 + $channel] -ne $expected[$channel]) { throw 'Mixed RLE packet changed pixels' }
+        }
+    }
+    foreach ($invalidRle in @([byte[]]$rleHeader, [byte[]]($rleHeader + [byte]132 + $canonical[0]), [byte[]]($rleHeader + [byte]131 + [byte[]](1, 2)))) {
+        [IO.File]::WriteAllBytes($path, $invalidRle)
+        $rejected = $false
+        try { Read-D2xxlTgaPixels -Path $path | Out-Null } catch { $rejected = $true }
+        if (!$rejected) { throw 'Invalid RLE packet was accepted' }
+    }
     foreach ($invalid in @([byte[]]$opaque[0..10], [byte[]]$opaque[0..($opaque.Length - 2)], [byte[]]($opaque + [byte]1))) {
         [IO.File]::WriteAllBytes($path, $invalid)
         $rejected = $false

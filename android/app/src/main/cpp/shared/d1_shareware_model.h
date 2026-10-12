@@ -169,7 +169,8 @@ static inline const char *d1_pof_read(const uint8_t *bytes, size_t size, d1_pof_
 				for (i = 0; i < result->gun_count; ++i) {
 					const uint8_t *gun = chunk + 4 + i * stride;
 					unsigned index = d1_pof_u16(gun), model = d1_pof_u16(gun + 2);
-					if (index >= (unsigned) result->gun_count || (seen & (1u << index)) || model >= D1_POF_SUBMODELS)
+					/* Retail boss02.pof uses sparse IDs 0, 3, 1, 4 for four records */
+					if (index >= D1_POF_GUNS || (seen & (1u << index)) || model >= D1_POF_SUBMODELS)
 						return "Invalid POF gun index";
 					seen |= 1u << index;
 					result->gun_models[index] = (uint8_t) model;
@@ -218,7 +219,8 @@ static inline const char *d1_pof_read(const uint8_t *bytes, size_t size, d1_pof_
 				return "Invalid POF parent tree";
 		}
 	}
-	for (i = 0; i < result->gun_count; ++i)
+	/* Validate populated slots above gun_count as well as the active gun range */
+	for (i = 0; i < D1_POF_GUNS; ++i)
 		if (result->gun_models[i] >= result->model_count)
 			return "Invalid POF gun submodel";
 	return NULL;

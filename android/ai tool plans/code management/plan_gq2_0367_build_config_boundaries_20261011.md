@@ -1,0 +1,33 @@
+# GQ2 chunk0367: build and configuration boundaries, 2026-10-11
+
+Diagnosis and plans only, serially under plan_general_diagnosis_resume_20261009.md. Preserve concurrent work; no product/test/helper edits, builds/tests/devices/network/probes/generators/formatters/staging/commits. Git ignore evaluation is a read-only policy check, not build/runtime acceptance.
+
+- [x] Read five whole current bodies and full frozen U3 diffs; verify30 exact U0 hunks and197 added/deleted review lines
+- [x] Trace sanitizer/CMake/host forwarding, compatible JSON, formatter selection, disk guard, paired registration and fixture context; reconcile prior owners
+- [x] Finish simplification/acceptance synthesis and any remaining historical-owner qualification
+- [x] Publish canonical evidence/disposition and independent audit before DONE
+
+Scope: .clang-format1hunk +3/-0; .editorconfig1hunk +1/-1; .gitignore5hunks +24/-6; run-linux-build9hunks +73/-48; run-windows-build14hunks +27/-14. Total30 hunks +128/-69,197 review lines. Current equals frozen after checkout LF normalization. Only .gitignore exists at1996 original, with +88/-0 versus original, not88 removable lines. Other four paths absent original/base-existing. Paired base-existing root CMake context +13/-0 each in2hunks,26lines/4hunks, compact NOT ANDROID sanitizer/CTest and BUILD_TESTING game-specific registrations; not a removable original engine body.
+
+Diff-minimization direction RETAIN. Root ignore rules retain natural root/runtime/data scope; moving to android/ loses semantics, broadening exclusions risks maintained sources. Read-only git check-ignore confirms ignored local runtime/config/transcripts and visible selected JSONC/data source, while large HOG payload remains ignored. Shared cmake/dxx-sanitizers.cmake already owns instrumentation; paired CMake registrations remain compact and preserve game/build guards. No measured inherited reduction candidate or policy migration.
+
+Existing BR0532 OPEN: editor C/C++ spaces still conflict with clang-format UseTab: ForIndentation; LF addition does not fix indentation. Formatter selection excludes inherited/d1d2 source; clang-format version20 pinned, no formatter executed. Existing BR0533 OPEN: same-architecture selected MSVC/toolset/SDK/preset identity still unchecked by cache freshness, including asan tree. Existing BR0534 OPEN: GetTempFileName original tmp is lost when extension changes to cmd and finally deletes only cmd. No new root admitted; preserve global cl termination removal.
+
+Both wrappers isolate address trees/stamps and forward explicit DXX_SANITIZERS and BUILD_TESTING; ordinary mode clears sanitizer and retains ordinary stamp. Configure/build/runtime-copy failure occurs before successful stamp write. Windows parallelism1..128; host helper forwards sanitizer and maps positive MaxParallel to Windows parameter/Linux jobs. Linux address disk guard requires4GiB expansion plus default4GiB reserve. Shared MSVC CRT/RTC/incremental policy and GCC/Clang flags retained. No actual compiler/build/runtime/sanitizer acceptance.
+
+Maintained fixture ranges cover JSON array enumeration, baseline/inherited formatter exclusion and runner instrumentation-cache assertion; no test executed. Future acceptance: align editor representation with intended scoped native formatter without upstream churn; requested/observed compiler/toolchain identity across same-triplet switches and unchanged reuse; owned tmp/cmd cleanup on success/failure/parallel calls; actual ordinary/address D1/D2 tree/stamp separation and build failure before stamp. Complete helper/runner lifecycle and freshness owners remain separate scheduled coverage; partial context is not full numbered credit.
+
+Source checkpoint binds five raw/frozen/base identities,30 old/new hunk ranges,20 contexts, owner blocks, original attribution, manifest, ignore evaluation and unchanged canonical/product/HEAD identities. GQ2 remains366DONE/261TODO/627; chunk0367 TODO pending synthesis/publication/audit. Remaining campaign supplements/sweeps/investigations/closure remain.
+
+## Synthesis before canonical publication
+
+ISSUES/GQC1196; RETAIN/GQD1076; RETAIN/BR0533 REFERENCE47(23/0/7/10/7). All30 assigned frozen hunks197 review lines and21 contexts complete; no new root or inherited saving. BR0532/0533/0534 OPEN retained. BR0171 also remains OPEN globally despite removed wrapper location; no global ownership/lifecycle closure. Root ignore policy/compact paired CMake registrations and existing sanitizer isolation retained. Future acceptance uses exact requested/observed toolchain identity and incremental reuse, owned temporary cleanup, scoped indentation stability and actual paired normal/address build/stamp/failure boundaries. Canonical publication audit pending.
+
+
+## Chunk0367 canonical publication and independent audit complete, 2026-10-11
+
+GQC1196 ISSUES/GQD1076 RETAIN; RETAIN/BR0533 REFERENCE47(23/0/7/10/7). Five assigned paths30 frozen hunks +128/-69,197 review lines;21 exact contexts and current=frozen normalized. Existing BR0532 editor/formatter representation, BR0533 same-triplet selected toolchain identity and BR0534 original tmp ownership remain OPEN. Wrapper global compiler termination removal preserved without closing global BR0171. No new finding/fix/investigation, inherited saving or runtime acceptance. Root original.gitignore88/0 retained policy and paired base-existing CMake26/0 across4hunks remain narrow natural boundaries.
+
+Independent publication audit PASS3888 SHAc407842534f07ea5ddff5d81429f2cf0e8235575143c3dc1e43177d721afbf15 reconstructs all5 canonical files byte-for-byte, verifies every assigned frozen/base/current/original object and old/new hunk,21 context scopes, four complete OPEN owner blocks, source checkpoint chain/manifest/scope/plan identities, repeatable read-only ignore evaluation,627 queue rows with only0367 changed, every prior exact ranked payload and1183 deterministic consecutive ranks, all prior roots and complete report/snapshot import. HEAD and product diff unchanged. Plan snapshot identity precedes final checked gate and this closure append.
+
+GQ2 now367DONE/260TODO/627;1183 terminal/281 fixes/12 investigations/295 findings. Diagnosis/docs only; no product/test/helper edits, builds/tests/devices/network/probes/generators/formatters/staging/commits. Goal active. Next0368 five Android build/tooling paths724 review lines: generate-store-assets.ps1, generate-store-boss-preview.ps1, install-aab.ps1, PSScriptAnalyzerSettings.psd1 and regenerate_all_regression_data.ps1. Remaining numbered, historical0116, sweep/investigation, final live-head supplement and campaign closure gates remain.

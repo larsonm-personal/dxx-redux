@@ -282,6 +282,29 @@
     },
     {
         "action": "key",
+        "key": "lctrl",
+        "post_delay_ms": 150,
+    },
+    {
+        "action": "key",
+        "key": "up",
+        "post_delay_ms": 150,
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "graphics_safety.phase": "challenge",
+            "time_paused": "true",
+            "automap_active": "false",
+            "fire_primary_state": "0",
+            "fire_primary_count": "0",
+            "pitch_time": "0",
+            "heading_time": "0",
+            "throttle_time": "0",
+        },
+    },
+    {
+        "action": "key",
         "key": "tab",
         "post_delay_ms": 150,
     },

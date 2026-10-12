@@ -394,10 +394,8 @@ if ($Metadata) {
             Where-Object { -not $_._info })
 }
 if ($EditionAdmission) { $steps = @(@{ action = 'enter_launcher' }, @{ action = 'enter_game'; game = 'd1-in-d2' }) }
-if ($SharewareSmoke -or $SharewareCampaign) {
-    # Insert after indexed scenario composition; calibration has separate coverage
-    $steps = @($steps[0], @{ action = 'setup_command'; command = 'graphics_first_run_offered'; value = 'true' }) + $steps[1..($steps.Count - 1)]
-}
+# Insert after indexed scenario composition; gameplay starts after separately tested calibration
+$steps = @($steps[0], @{ action = 'setup_command'; command = 'graphics_first_run_offered'; value = 'true' }) + $steps[1..($steps.Count - 1)]
 if ($SharewareLastLevel) {
     $TimeoutSeconds = [Math]::Max($TimeoutSeconds, 600)
     # Level one exercises the real trigger; subsequent levels use their authored exit tunnels

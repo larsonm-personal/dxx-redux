@@ -66,6 +66,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "secretarea.h"
 #ifdef __ANDROID__
 #include "android_level_preview.h"
+#include "android_d1_mod_patches.h"
 #endif
 
 char Gamesave_current_filename[PATH_MAX];
@@ -1397,6 +1398,10 @@ int load_level(const char * filename_passed)
 		return 3;
 	}
 
+#ifdef __ANDROID__
+	if (Gamesave_current_version <= 1)
+		android_d1_mod_apply_level(filename);
+#endif
 	// Gray rock (or something) fallback matches the legacy D1/D2 texture mapping
 	const int fallback_texture = 43;
 	// Repair invalid references before ambient sounds, collision, or rendering index their tables

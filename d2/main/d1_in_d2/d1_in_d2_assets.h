@@ -36,6 +36,10 @@
 #define D1_N_COCKPIT_BITMAPS 4
 
 typedef struct d1_sound_generation {
+#ifdef __ANDROID__
+	/* Authored mission samples take precedence over optional named overlays */
+	ubyte custom[MAX_SOUND_FILES];
+#endif
 	digi_sound samples[MAX_SOUND_FILES];
 	char names[MAX_SOUND_FILES][9];
 	ubyte *data;
@@ -50,6 +54,9 @@ int d1_in_d2_read_sound_bank(PHYSFS_file *fp, int pigsize,
 int d1_in_d2_prepare_sound_output(d1_sound_generation *bank, int target_rate);
 
 typedef struct d1_asset_generation {
+#ifdef __ANDROID__
+	ubyte custom_bitmaps[D1_MAX_BITMAP_FILES + 1];
+#endif
 	struct d1_guidebot_assets *guidebot;
 	ubyte base_identity[32], definition_identity[32];
 	d1_custom_texture_stats custom_stats;

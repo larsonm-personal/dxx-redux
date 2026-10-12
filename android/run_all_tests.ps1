@@ -407,6 +407,10 @@ $testTimeouts = @{
     "test_android_automap_route_policy" = 600
     "test_android_config_policy" = 600
     "test_android_secret_origins" = 600
+    "test_android_d1_mod_patches" = 600
+    "test_android_mod_bitmaps" = 600
+    "test_android_mod_renderer" = 600
+    "test_android_mod_sounds" = 600
     "test_android_matcen_stations" = 600
     "test_android_music_completion" = 600
     "test_android_redbook_completion" = 600
@@ -417,6 +421,14 @@ $testTimeouts = @{
     "test_android_merge_cache" = 600
     "test_android_texture_bindings" = 600
     "test_android_xmodel_mipmaps" = 600
+    "test_android_ktx2_mipmaps" = 600
+    "test_hires_pack_release" = 3600
+    "test_uud_mod_combinations" = 5400
+    "test_uud2sp" = 2400
+    "test_uud_mission_gameplay" = 5400
+    "test_uud_surface_levels" = 3600
+    "test_d2xxl_texture_merge" = 600
+    "test_d2xxl_texture_animation" = 3600
     "test_demo_import" = 2400
     "test_enemy_within_import" = 1200
     "test_android_pause_state" = 360
@@ -442,6 +454,8 @@ $testTimeouts = @{
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_disc_content_import"           = 420
+    # Real Git fixture setup and verification across the full release scenario matrix
+    "test_github_release"                 = 300
     "test_gradle_unit_tests"              = 600
     # Builds and inspects three complete APKs across every supported ABI
     "test_android_distributions"          = 1800
@@ -469,6 +483,8 @@ $testTimeouts = @{
     "test_launcher_dpad"                  = 180
     "test_slider_navigation"              = 300
     "test_mission_zip_batch"              = 3600
+    # Twelve fresh-launch scenarios, each with a 600s launcher timeout
+    "test_dxa_asset_usage"                = 7800
     # Includes the 600s child scenario, large archive staging, and cleanup
     "test_mission_asset_isolation"        = 900
     "test_enemy_within_level2"            = 420
@@ -1595,8 +1611,8 @@ function Invoke-SuitePreflight {
             return $false
         }
         if ($script:needsInstrumentation) {
-            $instrumentApk = Join-Path $scriptDir 'app/build/intermediates/apk/androidTest/debug/app-debug-androidTest.apk'
-            $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', $instrumentApk) -Seconds 180
+            $instrumentApk = Join-Path $scriptDir 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'
+            $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', '-t', $instrumentApk) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
         }
     }

@@ -51,6 +51,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "cntrlcen.h"
 #include "rle.h"
 #include "xmodel.h"
+#ifdef __ANDROID__
+#include "android_d1_mod_patches.h"
+#include "android_mod_bitmaps.h"
+#endif
 
 #ifdef EDITOR
 #include "editor/texpage.h"
@@ -130,6 +134,11 @@ int gamedata_init()
 		gamedata_read_tbl(retval == PIGGY_PC_SHAREWARE);
 
 	piggy_read_sounds(retval == PIGGY_PC_SHAREWARE);
+
+#ifdef __ANDROID__
+	android_d1_mod_apply_properties();
+	android_mod_bitmaps_apply(1, NULL);
+#endif
 
 #ifdef OGL
 	xmodel_load_all();

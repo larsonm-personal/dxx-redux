@@ -758,6 +758,19 @@ typedef struct android_overlay_snapshot {
 
 static pthread_mutex_t g_android_overlay_snapshot_mutex = PTHREAD_MUTEX_INITIALIZER;
 static android_overlay_snapshot g_android_overlay_snapshot;
+#include "android_texture_usage.h"
+static char *g_android_texture_usage;
+static Uint32 g_android_texture_usage_tick;
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetTexturePackStatus(JNIEnv *env, jobject thiz)
+{
+	(void) thiz;
+	pthread_mutex_lock(&g_android_overlay_snapshot_mutex);
+	jstring result = dxx_jni_string_from_utf8(env, g_android_texture_usage ? g_android_texture_usage : "{}");
+	pthread_mutex_unlock(&g_android_overlay_snapshot_mutex);
+	return result;
+}
 static atomic_int g_android_warp_execute_requested = ATOMIC_VAR_INIT(0);
 static atomic_uint g_android_warp_cycle_requests = ATOMIC_VAR_INIT(0);
 
@@ -1547,7 +1560,7 @@ static void android_overlay_capture_video(jint *buf)
 		if (!t || t->w == 0)
 			continue;
 		total++;
-		if (t->is_png) {
+		if (t->handle && t->replacement_source) {
 			replaced++;
 			if (t->w > max_w) max_w = t->w;
 			if (t->h > max_h) max_h = t->h;
@@ -1759,6 +1772,16 @@ void android_overlay_game_tick(void)
 		next.coop_robot[4] = player_num;
 	}
 	android_overlay_capture_video(next.video);
+	if (SDL_GetTicks() - g_android_texture_usage_tick >= 500) {
+		char *usage = strdup(android_texture_usage_json());
+		if (usage) {
+			pthread_mutex_lock(&g_android_overlay_snapshot_mutex);
+			free(g_android_texture_usage);
+			g_android_texture_usage = usage;
+			pthread_mutex_unlock(&g_android_overlay_snapshot_mutex);
+		}
+		g_android_texture_usage_tick = SDL_GetTicks();
+	}
 	coop_warp_get_status(&warp);
 	next.warp[0] = warp.available;
 	next.warp[1] = warp.target_pnum;

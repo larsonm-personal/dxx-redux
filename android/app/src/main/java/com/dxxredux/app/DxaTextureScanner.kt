@@ -7,10 +7,9 @@ import java.util.zip.ZipFile
 
 /**
  * Scans DXA (ZIP) archives for image file dimensions.
- * Used by the launcher to reject oversized textures before enabling a mod
- * (engine caps at ogl_max_texture_size = min(GL_MAX, 2048)).
+ * Large images are reported for information; the renderer adapts them to device limits.
  *
- * ENGINE_TEXTURE_CAP must match the cap in d2/arch/ogl/gr.c ogl_get_verinfo().
+ * ENGINE_TEXTURE_CAP describes the uncompressed scratch-buffer limit, not archive admission.
  */
 object DxaTextureScanner {
     private const val TAG = "DXX-DxaScan"
@@ -58,7 +57,7 @@ object DxaTextureScanner {
         val rejectedReason: String? = null,
     ) {
         val canEnable: Boolean
-            get() = rejectedReason == null && oversizedCount == 0
+            get() = rejectedReason == null
     }
 
     internal fun validateStructure(entryNames: Sequence<String>): String? {

@@ -2,6 +2,8 @@
 # Controlled startup races without launching or killing real processes
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
+$script:capturedLaunches = [Collections.Generic.List[object]]::new()
+$script:launchProcess = $null
 
 $startProcessImplementation = ${function:Start-ManagedEmulatorProcess}
 $waitBootImplementation = ${function:Wait-EmulatorBootComplete}
@@ -9,7 +11,10 @@ $waitBootImplementation = ${function:Wait-EmulatorBootComplete}
 function Test-DeviceOnline { param([string]$Serial) return $script:online }
 function Get-ManagedEmulatorProcesses {
     param([string]$Serial)
-    if ($script:existing) { [pscustomobject]@{ ProcessId = 123 } }
+    if ($script:existing) {
+        if ($script:launchProcess) { $script:launchProcess }
+        else { [pscustomobject]@{ ProcessId = 123 } }
+    }
 }
 function Wait-EmulatorBootComplete {
     param([string]$Serial, [int]$TimeoutSeconds)
@@ -25,9 +30,10 @@ function Stop-ManagedEmulator {
 function Ensure-ManagedAvdExists { param([string]$AvdName) return $true }
 function Test-EmulatorAccelerationAvailable { return $script:accelerationAvailable }
 function Start-ManagedEmulatorProcess {
-    param([string]$AvdName, [string]$Serial, [string]$GpuRenderer, [switch]$Headless, [switch]$SoftwareCpu)
+    param([string]$AvdName, [string]$Serial, [string]$GpuRenderer, [switch]$Headless, [string]$DataPath, [switch]$ReadOnly, [switch]$SoftwareCpu)
     $script:lastLaunch = @{ Renderer = $GpuRenderer; Headless = [bool]$Headless; SoftwareCpu = [bool]$SoftwareCpu }
     $script:events.Add("launch:$Serial")
+    $script:capturedLaunches.Add(@{ AvdName = $AvdName; GpuRenderer = $GpuRenderer; Headless = [bool]$Headless; DataPath = $DataPath; ReadOnly = [bool]$ReadOnly; SoftwareCpu = [bool]$SoftwareCpu })
     $script:online = $true
     return $true
 }
@@ -56,6 +62,40 @@ foreach ($case in @(
     Write-Host "PASS: $($case.Name)"
 }
 
+foreach ($fixture in @(
+        @{
+            Process = [pscustomobject]@{ ProcessId = 123; Name = 'emulator.exe'; CommandLine = '"C:\Program Files\Android\emulator.exe" -avd fixture -port 5554 -gpu host -data "C:\Test Data\private.img" -no-window -read-only' }
+            DataPath = 'C:\Test Data\private.img'
+        },
+        @{
+            Process = [pscustomobject]@{ ProcessId = 123; Arguments = @('/sdk/emulator', '-avd', 'fixture', '-port', '5554', '-gpu', 'host', '-data', '/tmp/test data/private.img', '-no-window', '-read-only') }
+            DataPath = '/tmp/test data/private.img'
+        }
+    )) {
+    $script:existing = $true
+    $script:launchProcess = $fixture.Process
+    $settings = Get-ManagedEmulatorLaunchSettings -Serial emulator-5554
+    if ($settings.AvdName -cne 'fixture' -or $settings.GpuRenderer -cne 'host' -or
+        $settings.DataPath -cne $fixture.DataPath -or -not $settings.Headless -or -not $settings.ReadOnly) {
+        throw "Recovery did not preserve the selected emulator configuration: $($settings | ConvertTo-Json -Compress)"
+    }
+    $script:existing = $false
+    $script:online = $false
+    $script:ready = [Collections.Queue]::new()
+    # Exercise both the requested renderer and the fallback launch with the same private disk
+    $script:ready.Enqueue($false)
+    $script:ready.Enqueue($true)
+    $script:capturedLaunches.Clear()
+    if (-not (Start-ManagedEmulator -Serial emulator-5554 -SoftwareCpu:$false @settings)) { throw 'Configured recovery failed' }
+    if ($script:capturedLaunches.Count -ne 2) { throw 'Expected primary and fallback launches' }
+    foreach ($launch in $script:capturedLaunches) {
+        if ($launch.AvdName -cne 'fixture' -or $launch.DataPath -cne $fixture.DataPath -or -not $launch.Headless -or -not $launch.ReadOnly) {
+            throw 'Restart or renderer fallback changed the private disk or isolation flags'
+        }
+    }
+    Write-Host "PASS: recovery and fallback preserve private data, headless and read-only settings ($($fixture.DataPath))"
+}
+
 # Software CPU mode is explicit and never changes the accelerated default
 $script:online = $false
 $script:existing = $false
@@ -66,11 +106,15 @@ if (Start-ManagedEmulator -Serial emulator-5554 -AvdName test -SoftwareCpu:$fals
 }
 if ($script:events.Count) { throw 'Hardware-only failure must not launch a process' }
 $script:ready.Enqueue($true)
-if (-not (Start-ManagedEmulator -Serial emulator-5554 -AvdName test -SoftwareCpu)) {
+if (-not (Start-ManagedEmulator -Serial emulator-5554 -AvdName test -SoftwareCpu -DataPath '/tmp/private.img' -ReadOnly)) {
     throw 'Explicit software CPU mode should work without acceleration'
 }
 if (-not $script:lastLaunch.SoftwareCpu -or -not $script:lastLaunch.Headless -or $script:lastLaunch.Renderer -ne 'swiftshader') {
     throw 'Software CPU launch did not select headless SwiftShader'
+}
+$softwareLaunch = $script:capturedLaunches[$script:capturedLaunches.Count - 1]
+if ($softwareLaunch.DataPath -cne '/tmp/private.img' -or -not $softwareLaunch.ReadOnly -or -not $softwareLaunch.SoftwareCpu) {
+    throw 'Software CPU launch lost private disk or read-only isolation'
 }
 if (($script:events -join ',') -ne 'launch:emulator-5554,wait:emulator-5554:1200') {
     throw "Software CPU boot budget was not applied: $($script:events -join ',')"
@@ -109,13 +153,19 @@ function Adb-Dev-Timeout {
     if ($AdbArgs -contains 'getprop') { return '1' }
     if ($AdbArgs -contains 'pm') { return 'package:android' }
     if ($AdbArgs[1] -match '^echo ready > /sdcard/\.dxx_ready_') { return $script:storageResult }
+    if ($AdbArgs -contains 'settings') { return $script:uiResult }
     throw "Unexpected readiness query: $AdbArgs"
 }
+$script:uiResult = 'confirmed'
 $script:storageResult = $null
 if (Wait-EmulatorBootComplete -Serial emulator-5554 -TimeoutSeconds 1) { throw 'Unavailable shared storage was reported ready' }
 $script:storageResult = 'ready'
 if (-not (Wait-EmulatorBootComplete -Serial emulator-5554 -TimeoutSeconds 1)) { throw 'Mounted writable shared storage was rejected' }
-Write-Host 'PASS: boot readiness includes writable shared storage'
+$script:uiResult = $null
+if (Wait-EmulatorBootComplete -Serial emulator-5554 -TimeoutSeconds 1) { throw 'Uninitialized fullscreen UI was reported ready' }
+$script:uiResult = 'confirmed'
+if (-not (Wait-EmulatorBootComplete -Serial emulator-5554 -TimeoutSeconds 1)) { throw 'Ready storage and fullscreen UI were rejected' }
+Write-Host 'PASS: boot readiness requires writable shared storage and fullscreen UI initialization'
 
 $script:mountCalls = 0
 function Adb-Dev-Timeout {

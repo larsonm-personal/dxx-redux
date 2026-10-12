@@ -46,6 +46,11 @@
 #include "laser.h"
 #include "weapon.h"
 #include "android_log.h"
+#ifdef __ANDROID__
+#include "android_mod_assets.h"
+#include "android_mod_bitmaps.h"
+#include "android_d1_mod_patches.h"
+#endif
 #ifdef OGL
 #include "xmodel.h"
 #endif
@@ -1111,6 +1116,13 @@ int d1_in_d2_has_native_assets(void)
 	return Active_d1_assets != NULL;
 }
 
+#ifdef __ANDROID__
+int d1_in_d2_bitmap_is_custom(int index)
+{
+	return Active_d1_assets && index > 0 && index <= D1_MAX_BITMAP_FILES && Active_d1_assets->custom_bitmaps[index];
+}
+#endif
+
 int d1_in_d2_read_level_bitmap_flags(int *flags, int capacity)
 {
 	int i;
@@ -1124,6 +1136,9 @@ int d1_in_d2_read_level_bitmap_flags(int *flags, int capacity)
 	 * when rendering, and reopening files could describe a different source */
 	for (i = 1; i <= Active_d1_assets->bitmap_data->bitmap_count; ++i)
 		flags[i] = Active_d1_assets->bitmap_data->bitmaps[i].bm_flags;
+#ifdef __ANDROID__
+	android_mod_bitmaps_overlay_flags(flags, capacity);
+#endif
 	return 1;
 }
 
@@ -1280,6 +1295,9 @@ int d1_in_d2_publish_asset_data(d1_asset_generation *generation, const char **er
 	for (i = 0; i < sounds->count; i++) {
 		SoundOffset[i] = -1;
 		piggy_register_sound(&sounds->samples[i], sounds->names[i], 1);
+#ifdef __ANDROID__
+		if (!sounds->custom[i]) android_mod_sound_apply(i, sounds->names[i], 1);
+#endif
 	}
 
 	/* Clear D2-only entries as well as copying the source counts */
@@ -1358,6 +1376,10 @@ int d1_in_d2_publish_asset_data(d1_asset_generation *generation, const char **er
 	Marker_model_num = -1;
 	d1_in_d2_publish_guidebot_extension(generation);
 	Active_d1_assets = generation;
+#ifdef __ANDROID__
+	android_d1_mod_apply_properties();
+	android_mod_bitmaps_apply(1, NULL);
+#endif
 	memset(&Last_stats, 0, sizeof(Last_stats));
 	Last_stats.effects_active = Last_stats.effects_loaded = 1;
 	Last_stats.num_effects = Num_effects;

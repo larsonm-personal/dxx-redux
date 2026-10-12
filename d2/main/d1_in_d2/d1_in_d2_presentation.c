@@ -68,8 +68,16 @@ int d1_in_d2_presentation_resource(const char *name, char *path, size_t size)
 	}
 	/* Only base archives are interchangeable names; custom content keeps precedence */
 	if (!base || !d_stricmp(base, "descent.hog") ||
-		!d_stricmp(base, "descent2.hog") || !d_stricmp(base, "d2demo.hog"))
+		!d_stricmp(base, "descent2.hog") || !d_stricmp(base, "d2demo.hog")) {
+#ifdef __ANDROID__
+		/* Scoped D1 overlays cannot change the D2 menu or authored mission assets */
+		if (d1_in_d2_use_d1_gameplay()) {
+			length = snprintf(path, size, "d1-mods/%s", name);
+			if (length > 0 && (size_t) length < size && PHYSFSX_exists(path, 1)) return 1;
+		}
+#endif
 		prefix = d1_in_d2_presentation_prefix();
+	}
 	length = snprintf(path, size, "%s%s", prefix, name);
 	if (length < 0 || (size_t)length >= size)
 		Error("Presentation resource path is too long: %s", name);

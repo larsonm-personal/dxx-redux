@@ -211,6 +211,8 @@ Start-Sleep -Milliseconds 500
 
 # --- Test 1: Initial page shows current launcher controls ---
 Info "Test 1: Verify main page buttons..."
+# Controller focus brings the controls into view on the stacked portrait page
+EnableLauncherDpadMode
 $buttons = Wait-ForMainPageDpadReady -TimeoutSeconds 15 -SettleMs 500
 Info "  Found buttons: $($buttons -join ', ')"
 if (-not (Test-ContainsButton -Buttons $buttons -Text "Controller Mapping")) {
@@ -224,7 +226,6 @@ Info "  PASS: Main page has expected buttons"
 # --- Test 2: DPAD_CENTER activates Controller Mapping (initial focus target) ---
 Info "Test 2: DPAD_CENTER on initial focus (Controller Mapping)..."
 $buttons = Wait-ForMainPageDpadReady
-EnableLauncherDpadMode
 Wait-ForSetupButtonFocus -Text "Controller Mapping"
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER

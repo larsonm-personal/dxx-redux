@@ -12,7 +12,7 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..\..")
 . (Join-Path $scriptDir "uud2sp_ham_patch_lib.ps1")
 
 if (-not $Path) {
-    $Path = Join-Path $scriptDir "UUD2SP1_4.no_ham.dxa"
+    $Path = Join-Path $scriptDir "uud2sp-sounds.dxa"
 }
 if (-not $BaselineRoot) {
     $BaselineRoot = Join-Path $repoRoot "game_data_to_copy_to_emulator\temp"

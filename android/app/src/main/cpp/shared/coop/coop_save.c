@@ -31,6 +31,7 @@
 #include "../android_rewind.h"
 #include "../state_android_shared.h"
 #include "../android_save_probe.h"
+#include "../multi_save_transfer_progress.h"
 #ifdef __ANDROID__
 #include "../state_checkpoint.h"
 #endif
@@ -835,6 +836,11 @@ void coop_restore_status_failed(void)
 
 const char *coop_restore_status_message(int *is_error)
 {
+	const char *transfer = multi_save_transfer_status(NULL);
+	if (transfer) {
+		if (is_error) *is_error = 0;
+		return transfer;
+	}
 	if (multi_save_transfer_paused()) {
 		if (is_error) *is_error = 0;
 		return "Waiting for players to finish restoring";
