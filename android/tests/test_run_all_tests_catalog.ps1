@@ -88,6 +88,15 @@ try {
             'test_compact_public_replay_failures' -notin (Get-TestSuiteCoveragePolicy).explicit) {
             throw 'Real public replay negatives must retain explicit host-only scheduling and their two-matrix timeout'
         }
+        $saveContinuation = @($catalog.tests | Where-Object name -eq 'test_public_save_continuation')
+        $saveProfiles = @($catalog.tests | Where-Object name -eq 'test_public_save_profiles')
+        if ($saveContinuation.Count -ne 1 -or $saveContinuation[0].requires -ne 'none' -or
+            $saveContinuation[0].timeout_seconds -lt 900 -or
+            'test_public_save_continuation' -notin (Get-TestSuiteCoveragePolicy).explicit -or
+            $saveProfiles.Count -ne 1 -or $saveProfiles[0].requires -ne 'none' -or
+            'test_public_save_profiles' -notin (Get-TestSuiteCoveragePolicy).core) {
+            throw 'Ordinary save persistence must retain explicit native scheduling and core rejection coverage'
+        }
         $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
         if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {
             throw 'Graphics fault scripts must run through their recovery owner'
