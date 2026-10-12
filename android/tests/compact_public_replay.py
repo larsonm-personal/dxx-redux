@@ -237,8 +237,11 @@ def _rng_hash(path):
 
 def _capture_build_identity(header, provenance):
     version = header.get("git_version")
-    if (not isinstance(version, str) or not re.fullmatch(r"[0-9a-f]{7,40}", version)
-        or not provenance["source_revision"].startswith(version)):
+    if (
+        not isinstance(version, str)
+        or not re.fullmatch(r"[0-9a-f]{7,40}", version)
+        or not provenance["source_revision"].startswith(version)
+    ):
         raise parity.EvidenceError(
             "Capture build revision differs from its exact source; reconfigure CMake and rebuild"
         )
@@ -254,7 +257,41 @@ def door_observations(path):
     return {"schema": 1, "count": len(events), "sha256": sha(events)}
 
 
-def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, combat_trace=None, door_trace=None):
+GUIDEBOT_FIELDS = (
+    "Buddy_objnum",
+    "Buddy_allowed_to_talk",
+    "Escort_goal_object",
+    "Escort_special_goal",
+    "Escort_goal_index",
+)
+
+
+def guidebot_observations(path, header=None):
+    if header is None:
+        events = [row for row in parity.records(path) if row.get("type") == "guidebot_observation"]
+    else:
+        events = []
+        for row in parity.world_states(path, header, "d2"):
+            if (
+                row["type"] == "world_state"
+                and row["f"] > 0
+                or row["type"] == "world_boundary"
+                and row["phase"] == "terminal"
+            ):
+                escort = row["state"]["ai"].get("escort", {})
+                events.append({"type": "guidebot_observation", "version": 1, "f": len(events), **escort})
+    for frame, row in enumerate(events):
+        if (
+            set(row) != {"type", "version", "f", *GUIDEBOT_FIELDS}
+            or row["version"] != 1
+            or row["f"] != frame
+            or any(type(row[key]) is not int for key in ("version", "f", *GUIDEBOT_FIELDS))
+        ):
+            raise parity.EvidenceError("Incomplete or malformed native Guide-Bot observation")
+    return {"schema": 1, "count": len(events), "sha256": sha(events)}
+
+
+def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, combat_trace=None, door_trace=None, guidebot_trace=None):
     """Derive all expectations from live capture before any replay and write new files."""
     full_recording, demo_output, oracle_output = map(Path, (full_recording, demo_output, oracle_output))
     if (
@@ -308,6 +345,13 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, comb
         oracle["door_observations"] = door_observations(door_trace)
         if oracle["door_observations"]["count"] < 2:
             raise parity.EvidenceError("Door capture requires live obstruction observations")
+    if guidebot_trace is not None:
+        if combat_trace is not None or door_trace is not None or header["game"] != "d2":
+            raise parity.EvidenceError("Guide-Bot observations require their own ordinary D2 capture")
+        _capture_build_identity(header, provenance)
+        oracle["guidebot_observations"] = guidebot_observations(guidebot_trace)
+        if oracle["guidebot_observations"]["count"] != header["frame_count"]:
+            raise parity.EvidenceError("Guide-Bot capture requires a live observation of every frame")
     encoded_oracle = (json.dumps(oracle, sort_keys=True, indent=4, ensure_ascii=False, allow_nan=False) + "\n").encode(
         "utf-8"
     )
@@ -328,16 +372,22 @@ def validate(demo, oracle):
     expected = _json(Path(oracle).read_bytes())
     if (
         not isinstance(expected, dict)
-        or set(expected) not in (ORACLE_KEYS, ORACLE_KEYS | {"combat_observations"}, ORACLE_KEYS | {"door_observations"})
+        or set(expected) not in (ORACLE_KEYS, ORACLE_KEYS | {"combat_observations"}, ORACLE_KEYS | {"door_observations"}, ORACLE_KEYS | {"guidebot_observations"})
         or type(expected["schema"]) is not int
         or expected["schema"] != 1
     ):
         raise parity.EvidenceError("Unexpected compact oracle schema")
     if "combat_observations" in expected:
         combat = expected["combat_observations"]
-        if (not isinstance(combat, dict) or set(combat) != {"schema", "count", "sha256"}
-            or type(combat["schema"]) is not int or combat["schema"] != 1
-            or type(combat["count"]) is not int or combat["count"] < 2 or not _digest(combat["sha256"])):
+        if (
+            not isinstance(combat, dict)
+            or set(combat) != {"schema", "count", "sha256"}
+            or type(combat["schema"]) is not int
+            or combat["schema"] != 1
+            or type(combat["count"]) is not int
+            or combat["count"] < 2
+            or not _digest(combat["sha256"])
+        ):
             raise parity.EvidenceError("Invalid immutable combat observation oracle")
     if "door_observations" in expected:
         doors = expected["door_observations"]
@@ -345,8 +395,22 @@ def validate(demo, oracle):
             or type(doors["schema"]) is not int or doors["schema"] != 1
             or type(doors["count"]) is not int or doors["count"] < 2 or not _digest(doors["sha256"])):
             raise parity.EvidenceError("Invalid immutable door observation oracle")
+    if "guidebot_observations" in expected:
+        guidebot = expected["guidebot_observations"]
+        if (
+            not isinstance(guidebot, dict)
+            or set(guidebot) != {"schema", "count", "sha256"}
+            or type(guidebot["schema"]) is not int
+            or guidebot["schema"] != 1
+            or type(guidebot["count"]) is not int
+            or guidebot["count"] != expected["frames"]
+            or not _digest(guidebot["sha256"])
+        ):
+            raise parity.EvidenceError("Invalid immutable Guide-Bot observation oracle")
     _no_save(expected)
     header = rows[0]
+    if "guidebot_observations" in expected and header["game"] != "d2":
+        raise parity.EvidenceError("Guide-Bot observation oracle requires ordinary D2 content")
     for key, value in (
         ("game", header["game"]),
         ("mission", header["mission"]),
@@ -356,7 +420,7 @@ def validate(demo, oracle):
         if type(expected[key]) is not type(value) or expected[key] != value:
             raise parity.EvidenceError("Oracle identity differs from the compact recording")
     _provenance(expected["provenance"], header["game"])
-    if "combat_observations" in expected or "door_observations" in expected:
+    if "combat_observations" in expected or "door_observations" in expected or "guidebot_observations" in expected:
         _capture_build_identity(header, expected["provenance"])
     telemetry = expected["removed_telemetry"]
     if (
@@ -415,4 +479,8 @@ def verify(game, demo, oracle, state_trace, rng_trace, actual_result):
         if door_observations(state_trace) != expected["door_observations"]:
             raise parity.EvidenceError("Replay door obstruction observations differ from live capture")
         report["door_observations_compared"] = expected["door_observations"]["count"]
+    if "guidebot_observations" in expected:
+        if guidebot_observations(state_trace, header) != expected["guidebot_observations"]:
+            raise parity.EvidenceError("Replay Guide-Bot observations differ from live capture")
+        report["guidebot_observations_compared"] = expected["guidebot_observations"]["count"]
     return report

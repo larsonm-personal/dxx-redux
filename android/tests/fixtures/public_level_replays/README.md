@@ -1,8 +1,8 @@
 # Compact public level-start recordings
 
-Twelve fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. Ten start from ordinary level-one spawns; the D2 shoot-switch case starts from the
-ordinary level-two spawn, and D1 door-lifecycle starts from its ordinary level-three spawn. No player
+The corpus uses fresh production-recorder captures with pinned Descent 1 v1.4
+shareware and Descent 2 v1.0 demo data. Recordings start from ordinary authored
+level spawns; each scenario declares its level in the manifest. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. Existing retail recordings remain unchanged.
 
@@ -27,9 +27,9 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
 `game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base for the original seven scenes. Combat, loot and door-lifecycle oracles
+revision denotes the engine base for the original seven scenes. Combat, loot, door-lifecycle and Guide-Bot oracles
 point to an exact published source-only commit built before fixture admission;
-`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot and door-lifecycle
+`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot, door-lifecycle and Guide-Bot
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
 so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
@@ -129,6 +129,20 @@ initialization untouched, including the level-entry starfield draws.
   faces, requires clearance and active-door retirement after full close, then
   verifies ordinary reopening and traversal. Removed controls must complete
   playback and fail this lifecycle gate, not merely fail recording admission
+- `guidebot-release` (D2 only): ordinary thrust and aiming reach the original
+  cage from the level-one spawn. Starting lasers damage the authored barrier at
+  frame 101; walls 74 and 75 blast at frame 177. The same original Guide-Bot
+  (object 28, ID 33, signature 29) physically exits segment 224 at frame 181,
+  then its native talk/release flag changes at frame 190. These are distinct
+  boundaries, not interchangeable proxies. The 221-frame scene observes another
+  second of ordinary movement while both player and Guide-Bot remain alive
+
+  Each live post-frame escort observation is hashed independently from capture
+  into `guidebot_observations`; headed and true headless playback must reproduce
+  every one. The semantic gate also requires intact authored cage walls, real
+  pre-blast damage, both wall sides blasting, the exact release flag and the
+  original bot's first physical cage exit. A no-fire negative keeps all recorded
+  route/aim controls and must fail those actual outcomes
 
 The D2 capture startup initializes PIG bitmap flags before loading the level, just
 like the desktop game. Those transparency flags affect ambient propagation; the
@@ -199,3 +213,21 @@ numbers. Inspect these rendered images, and use separate fresh non-screenshot
 captures for oracle admission. Screenshot mode does not inject a player pose,
 change inventory or alter robot definitions. Candidate capture can be restricted
 with `capture_compact_public_replays.py --scenario combat`
+
+## Public objective-arrival fixture
+
+`test_guidebot_live_navigation.ps1 -NoBuild -PublicDemo -BuildDir <D2-build>
+-HogDir <pinned-public-D2-data>` reuses the existing true-headless navigation
+fixture with the real demo level-one Guide-Bot and reactor. This is explicitly a
+controlled arrival test: it places the player and bot in adjacent segment 158,
+grants keys and 1000 player shields, and removes other robots. The ordinary NEXT
+command chooses the reactor; native escort navigation and physics must cross
+into reactor segment 159. The fixture checks every approach frame and all 720
+subsequent patrol frames, requiring the player to survive and the reactor
+objective to remain pending while the live reactor still needs player action. It is not a normal-start route recording. The default retail level-11
+grate-detour and Maximum level-16 hostage fixtures remain unchanged
+
+The Guide-Bot capture also supports `DXX_PUBLIC_CAPTURE_SCREENSHOTS=1` and
+`--scenario guidebot-release`. Its screenshot inventory includes first damage,
+both-wall blast, physical exit, talk/release, and a later clear view. Screenshot
+captures remain independent from the clean oracle-admission captures
