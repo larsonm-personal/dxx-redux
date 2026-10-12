@@ -1,8 +1,9 @@
 temp_game_logs/
 
-# Generated JVM metadata-module output
+# Generated JVM module output
 /mission-metadata-core/bin/
 /mission-metadata-cli/bin/
+/proxy-tests/bin/
 
 # Persistent soundfont installer lock and interruption recovery
 /app/src/main/.dxx-install-state/
