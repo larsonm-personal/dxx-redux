@@ -36,6 +36,7 @@ param(
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
     [switch]$StrictComparison,
+    [switch]$RequireCleanExit,
     [string]$ResultCopyPath,
     [string]$ReferenceResultPath,
     [switch]$D1InD2,
@@ -541,13 +542,10 @@ function Get-DiscoveredDataDirCandidates {
 function Get-HeadlessConsoleExe {
     param([string]$GameName)
 
-    switch ($GameName) {
-        'd2' {
-            return Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2' -PreferHeadlessConsole
-        }
+    if ($Runner -eq 'headless-console' -and $ExecutablePath) {
+        return [IO.Path]::GetFullPath($ExecutablePath)
     }
-
-    return $null
+    return Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName $GameName -PreferHeadlessConsole
 }
 
 function Resolve-DemoGame {
@@ -694,16 +692,20 @@ function Test-CanUseHeadlessConsoleRunner {
     if ($Pilot) {
         return $false
     }
-    if ($ResolvedGame -ne 'd2') {
+    if ($ResolvedGame -notin @('d1', 'd2')) {
         return $false
     }
     if ($LaunchMode.Name -ne 'accelerated') {
         return $false
     }
-    if (-not $Header.ContainsKey('start_mode') -or [string]$Header.start_mode -ne 'save_checkpoint') {
+    if (-not $Header.ContainsKey('start_mode') -or [string]$Header.start_mode -notin @('save_checkpoint', 'new_level')) {
         return $false
     }
 
+    # An explicitly selected console is built/validated below; never fall back
+    if ($Runner -eq 'headless-console') { return $true }
+    # Explicit full-game binaries keep their requested backend
+    if ($ExecutablePath) { return $false }
     $headlessExe = Get-HeadlessConsoleExe -GameName $ResolvedGame
     return $headlessExe -and (Test-Path -LiteralPath $headlessExe)
 }
@@ -758,7 +760,7 @@ function Resolve-ReplayRunnerSelection {
                 throw '-Runner headless-console cannot be combined with -NoRender'
             }
             if (-not $headlessAvailable) {
-                throw '-Runner headless-console is unavailable for this replay (requires d2 accelerated checkpoint replay with headless build present)'
+                throw '-Runner headless-console is unavailable for this replay (requires native d1/d2 accelerated new-level or checkpoint replay without a pilot)'
             }
             return @{
                 UseHeadlessConsole = $true
@@ -1473,7 +1475,7 @@ if ($DemoPath) {
 if ($Interactive) {
     $displayChoice = Select-InputDemoReplayDisplay
     if ($displayChoice -eq 'cancel') { exit 0 }
-    $Runner = if ($displayChoice -eq 'headed') { 'visual' } else { 'fast' }
+    $Runner = if ($displayChoice -eq 'headed') { 'visual' } elseif ($D1InD2) { 'windowed-no-present' } else { 'headless-console' }
     $Mode = if ($displayChoice -eq 'headed') { 'realtime' } else { 'accelerated' }
     $RenderProfile = 'default'
     $ReplayRobotLabels = 'hide'
@@ -1585,11 +1587,12 @@ if ($canShowReplayRobotLabels) {
 
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 if ($ExecutablePath) {
-    if ($useHeadlessConsole -or $BuildBeforeRun -or $RequireFreshBuild) {
-        throw 'An explicit executable requires a full-game runner without rebuild flags'
+    if ($BuildBeforeRun -or $RequireFreshBuild) {
+        throw 'An explicit executable cannot be combined with rebuild flags'
     }
-    $config.Exe = (Resolve-Path -LiteralPath $ExecutablePath).Path
-    if (-not (Test-Path -LiteralPath $config.Exe -PathType Leaf)) { throw "Executable is not a file: $ExecutablePath" }
+    $explicitExe = (Resolve-Path -LiteralPath $ExecutablePath).Path
+    if (-not (Test-Path -LiteralPath $explicitExe -PathType Leaf)) { throw "Executable is not a file: $ExecutablePath" }
+    if ($useHeadlessConsole) { $headlessConsoleExe = $explicitExe } else { $config.Exe = $explicitExe }
 } elseif ($useHeadlessConsole) {
     Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $config.Name -ExecutablePath $headlessConsoleExe -Description 'Headless executable' -BuildBeforeRun:$BuildBeforeRun -RequireFreshBuild:$RequireFreshBuild
 } else {
@@ -1625,6 +1628,7 @@ try {
     } else {
         Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
     }
+    if ($RequireCleanExit -and -not $useHeadlessConsole) { $launchArgs += '-inputdemo-exit' }
     $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
     $runnerName = $runnerSelection.Name
     $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
@@ -1769,6 +1773,9 @@ try {
         }
     }
     if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
+    if ($forcedReplayStop -and ($useHeadlessConsole -or $RequireCleanExit)) {
+        throw 'Replay wrote its result but did not exit cleanly'
+    }
     if ($null -ne $completedExitCode -and $completedExitCode -ne 0) {
         throw "Replay exited with code $completedExitCode after writing its result"
     }

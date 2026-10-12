@@ -40,7 +40,7 @@ if (-not $ListOnly) {
     }
 
     foreach ($preflightGame in ($preflightGames | Sort-Object -Unique)) {
-        $preferHeadless = $preflightGame -eq 'd2' -and $Mode -eq 'accelerated'
+        $preferHeadless = $Mode -eq 'accelerated'
         Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $preflightGame -PreferHeadlessConsole:$preferHeadless
     }
 }
@@ -53,7 +53,7 @@ $args = @(
     '-Mode', $Mode,
     '-TimeoutSeconds', [string]$TimeoutSeconds,
     '-HeadlessConsoleOutput', [string]$HeadlessConsoleOutput,
-    '-PreferHeadlessConsole'
+    '-Runner', 'headless-console'
 )
 
 if ($DemoPath) {
@@ -91,7 +91,7 @@ if ($SkipExpectedChecks) {
 }
 
 if ($HeadlessConsoleOutput -eq 2) {
-    Write-Host 'Headless stage: prefer the dedicated D2 headless console runner; unsupported cases fall back to normal replay'
+    Write-Host 'Headless stage: use the dedicated native D1/D2 console runner; unsupported cases fail without opening a window'
 }
 & $pwsh @args
 exit $LASTEXITCODE

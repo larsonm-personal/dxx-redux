@@ -82,6 +82,12 @@ try {
             'test_compact_public_replays' -notin (Get-TestSuiteCoveragePolicy).explicit) {
             throw 'Compact public replays must retain explicit host-only scheduling and their matrix timeout'
         }
+        $publicFailures = @($catalog.tests | Where-Object name -eq 'test_compact_public_replay_failures')
+        if ($publicFailures.Count -ne 1 -or $publicFailures[0].requires -ne 'none' -or
+            $publicFailures[0].timeout_seconds -lt 3600 -or
+            'test_compact_public_replay_failures' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Real public replay negatives must retain explicit host-only scheduling and their two-matrix timeout'
+        }
         $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
         if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {
             throw 'Graphics fault scripts must run through their recovery owner'

@@ -15,6 +15,7 @@ unsigned int input_demo_state_trace_hash_update(unsigned int hash,
                                                 unsigned int value);
 unsigned int input_demo_state_trace_hash_i64(unsigned int hash, int64_t value);
 void input_demo_capture_current_result(input_demo_result *result);
+int input_demo_replay_should_exit(void);
 void input_demo_delay_replay_frame_shared(fix frame_time,
                                           fix64 *replay_last_timer_value);
 int input_demo_prepare_replay_frame_shared(

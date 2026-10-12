@@ -30,6 +30,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "game.h"
 #include "input_demo_hooks.h"
+#include "input_demo_hooks_shared.h"
 #include "key.h"
 #include "object.h"
 #include "physics.h"
@@ -1358,7 +1359,8 @@ int game_handler(window *wind, d_event *event, void *data)
 #ifdef EDITOR
 			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
 #endif
-				restore_game_menus();
+				if (!input_demo_replay_should_exit())
+					restore_game_menus();
 #endif
 			Game_wind = NULL;
 #ifdef __ANDROID__

@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest import mock
 
 import run_compact_public_replays as runner
+import check_compact_public_replay_failures as negative
 
 
 class RuntimeGateTests(unittest.TestCase):
@@ -258,37 +259,113 @@ class RuntimeGateTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                 runner.check_paired_report(changed, 1 if mutation == "exit" else 2, cases, self.root)
 
-    def test_runner_attempts_all_twelve_and_preserves_failure(self):
-        corpus, output = self.root / "corpus", self.root / "output"
+    def test_both_backends_attempt_complete_inventory_and_preserve_failure(self):
+        corpus = self.root / "corpus"
         corpus.mkdir()
-        output.mkdir()
         cases = []
-        for game in ("d1", "d2"):
-            for scenario in runner.SCENARIOS:
-                demo = f"{game}-{scenario}.dximdemo"
-                (corpus / demo).write_text("fixture")
-                cases.append(
-                    {"game": game, "scenario": scenario, "demo": demo, "oracle": demo + ".oracle.json", "actions": {}}
+        for game, scenario in runner.PUBLIC_CASES:
+            demo = f"{game}-{scenario}.dximdemo"
+            (corpus / demo).write_text("fixture")
+            cases.append(
+                {"game": game, "scenario": scenario, "demo": demo, "oracle": demo + ".oracle.json", "actions": {}}
+            )
+        for backend in ("headless", "graphics"):
+            output = self.root / backend
+            output.mkdir()
+            args = argparse.Namespace(
+                repo=self.root,
+                corpus=corpus,
+                output=output,
+                data_d1=self.root,
+                data_d2=self.root,
+                exe_d1=self.demo,
+                exe_d2=self.demo,
+                run_mode=backend,
+                native_only=False,
+                pwsh="unused",
+                timeout=120,
+                minimum_free_gb=0.01,
+            )
+            with (
+                mock.patch.object(runner, "_run", return_value=1) as execute,
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(runner._run_cases(args, cases), 1)
+            self.assertEqual(execute.call_count, 2 * len(cases) + (backend == "graphics"))
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(len(report["native_runs"]), 2 * len(cases))
+            self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
+            self.assertEqual(report["paired"]["status"], "fail" if backend == "graphics" else "not_run")
+            for row in report["native_runs"]:
+                self.assertEqual(row["backend"], backend)
+                self.assertEqual(
+                    row["command"][row["command"].index("-Runner") + 1],
+                    "headless-console" if backend == "headless" else "visual",
                 )
+                self.assertIn("-StrictComparison", row["command"])
+                self.assertIn("-RequireCleanExit", row["command"])
+                suffix = row["command"][row["command"].index("-SandboxSuffix") + 1]
+                self.assertTrue(suffix.startswith(backend + "-"))
+                self.assertNotIn(str(output), suffix)
+
+    def test_same_output_basename_under_distinct_parents_has_distinct_sandbox(self):
+        suffixes = []
+        for parent in ("first", "second"):
+            output = self.root / parent / "wrong-oracle-run"
+            output.mkdir(parents=True)
+            args = argparse.Namespace(
+                repo=self.root,
+                corpus=self.root,
+                output=output,
+                data_d1=self.root,
+                data_d2=self.root,
+                exe_d1=self.demo,
+                exe_d2=self.demo,
+                run_mode="headless",
+                native_only=True,
+                pwsh="unused",
+                timeout=120,
+                minimum_free_gb=0.01,
+            )
+            case = {"game": "d1", "scenario": "flight", "demo": self.demo.name, "oracle": "unused.json"}
+            with mock.patch.object(runner, "_run", return_value=1), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner._run_cases(args, [case]), 1)
+            command = json.loads((output / "report.json").read_text())["native_runs"][0]["command"]
+            suffixes.append(command[command.index("-SandboxSuffix") + 1])
+        self.assertNotEqual(suffixes[0], suffixes[1])
+
+    def test_explicit_native_only_graphics_reports_imported_parity_not_run(self):
+        output = self.root / "native-only-graphics"
+        output.mkdir()
         args = argparse.Namespace(
             repo=self.root,
-            corpus=corpus,
+            corpus=self.root,
             output=output,
             data_d1=self.root,
             data_d2=self.root,
             exe_d1=self.demo,
             exe_d2=self.demo,
+            run_mode="graphics",
+            native_only=True,
             pwsh="unused",
             timeout=120,
             minimum_free_gb=0.01,
         )
-        with mock.patch.object(runner, "_run", return_value=1) as execute, contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(runner._run_cases(args, cases), 1)
-        self.assertEqual(execute.call_count, 13)
+        case = {"game": "d1", "scenario": "flight", "demo": self.demo.name, "oracle": "unused.json"}
+        with (
+            mock.patch.object(runner, "_run", return_value=0) as execute,
+            mock.patch.object(runner, "_run_imported") as imported,
+            mock.patch.object(runner.compact, "verify", return_value={"status": "pass"}),
+            mock.patch.object(runner, "verify_actions", return_value={}),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(runner._run_cases(args, [case]), 0)
+        imported.assert_not_called()
+        self.assertEqual(execute.call_count, 2)
         report = json.loads((output / "report.json").read_text())
-        self.assertEqual(len(report["native_runs"]), 12)
-        self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
-        self.assertEqual(report["paired"]["status"], "fail")
+        self.assertTrue(report["native_only"])
+        self.assertEqual(report["paired"]["status"], "not_run")
+        self.assertEqual(report["qualification"], "incomplete")
 
     def scoped_comparison(self, status="pass"):
         return {
@@ -383,7 +460,7 @@ class RuntimeGateTests(unittest.TestCase):
             ):
                 runner.check_paired_report(changed, 1, cases, self.root, path)
 
-    def test_corpus_requires_seven_unique_plain_filename_pairs(self):
+    def test_corpus_requires_complete_unique_plain_filename_pairs(self):
         cases = [
             {
                 "game": game,
@@ -401,7 +478,7 @@ class RuntimeGateTests(unittest.TestCase):
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
             manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
-            self.assertEqual(len(runner.load_corpus(self.root)), 7)
+            self.assertEqual(len(runner.load_corpus(self.root)), len(runner.PUBLIC_CASES))
             for mutation in (
                 "missing",
                 "duplicate_case",
@@ -425,9 +502,9 @@ class RuntimeGateTests(unittest.TestCase):
                 elif mutation == "windows_path":
                     changed[0]["oracle"] = "..\\escaped.json"
                 elif mutation == "wrong_level":
-                    changed[-1]["demo"] = "d2-other.dximdemo"
+                    next(case for case in changed if case["scenario"] == "shoot-switch")["demo"] = "d2-other.dximdemo"
                 elif mutation == "d1_switch":
-                    changed[-1]["game"] = "d1"
+                    next(case for case in changed if case["scenario"] == "shoot-switch")["game"] = "d1"
                 elif mutation == "drive_path":
                     changed[0]["demo"] = "C:escaped.dximdemo"
                 else:
@@ -435,6 +512,37 @@ class RuntimeGateTests(unittest.TestCase):
                 manifest.write_text(json.dumps({"schema": 1, "cases": changed}))
                 with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                     runner.load_corpus(self.root)
+
+
+class RealNegativeCorpusTests(unittest.TestCase):
+    def test_disposable_mutations_are_admitted_without_changing_originals(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        originals = {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()}
+        with tempfile.TemporaryDirectory() as root:
+            for mutation in ("wrong-oracle", "bad-input"):
+                destination = Path(root) / mutation
+                negative.corrupt_corpus(source, destination, cases, mutation)
+                self.assertEqual(runner.load_corpus(destination), cases)
+                for case in cases:
+                    expected = json.loads(originals[case["oracle"]])
+                    changed = json.loads((destination / case["oracle"]).read_bytes())
+                    differences = {key for key in expected if expected[key] != changed[key]}
+                    self.assertEqual(
+                        differences, {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"}
+                    )
+                    original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
+                    changed_demo = [json.loads(line) for line in (destination / case["demo"]).read_bytes().splitlines()]
+                    self.assertEqual(original_demo[0], changed_demo[0])
+                    self.assertEqual(original_demo[-1], changed_demo[-1])
+                    if mutation == "wrong-oracle":
+                        self.assertEqual(original_demo, changed_demo)
+                    else:
+                        for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
+                            self.assertEqual(after["input"], {})
+                            before["input"] = {}
+                            self.assertEqual(before, after)
+        self.assertEqual(originals, {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()})
 
 
 if __name__ == "__main__":

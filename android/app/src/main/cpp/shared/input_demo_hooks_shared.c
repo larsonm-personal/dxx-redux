@@ -30,6 +30,7 @@
 #include "object.h"
 #include "player.h"
 #include "robot.h"
+#include "strutil.h"
 #include "timer.h"
 #include "weapon.h"
 #ifndef DXX_HEADLESS_CONSOLE
@@ -63,6 +64,32 @@ static unsigned int previous_robot_anim_pose_hashes[MAX_OBJECTS];
 static int previous_robot_anim_pose_present[MAX_OBJECTS];
 static int previous_fireball_hashes_valid = 0;
 static unsigned int previous_fireball_hashes[MAX_OBJECTS];
+static int input_demo_replay_exit_requested = 0;
+static int input_demo_replay_observed_loaded = 0;
+
+static void input_demo_request_exit_after_replay(void)
+{
+	int i;
+
+	for (i = 1; i < Num_args; ++i) {
+		if (!d_stricmp(Args[i], "-inputdemo-exit")) {
+			input_demo_replay_exit_requested = 1;
+			break;
+		}
+	}
+}
+
+int input_demo_replay_should_exit(void)
+{
+	if (input_demo_replay_is_loaded())
+		input_demo_replay_observed_loaded = 1;
+	else if (input_demo_replay_observed_loaded) {
+		/* Direct-command failures also unload and finalize replay streams */
+		input_demo_replay_observed_loaded = 0;
+		input_demo_request_exit_after_replay();
+	}
+	return input_demo_replay_exit_requested;
+}
 
 typedef struct input_demo_player_bump_trace {
 	int frame;
@@ -576,7 +603,9 @@ void input_demo_stop_replay_shared(int write_result,
                                    void (*write_replay_result)(void),
                                    void (*before_stop_replay)(void))
 {
-	if (input_demo_replay_is_loaded())
+	const int replay_was_loaded = input_demo_replay_is_loaded();
+
+	if (replay_was_loaded)
 		input_demo_trace_boundary(write_result ? "terminal" : "aborted");
 	if (replay_last_timer_value)
 		*replay_last_timer_value = 0;
@@ -585,6 +614,9 @@ void input_demo_stop_replay_shared(int write_result,
 	if (write_result && write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	/* Leave the event loop only after result and trace streams are finalized */
+	if (replay_was_loaded)
+		input_demo_request_exit_after_replay();
 #ifndef DXX_HEADLESS_CONSOLE
 	if (Game_wind)
 		window_close(Game_wind);
@@ -606,6 +638,7 @@ int input_demo_finish_replay_shared(int close_window,
 	if (write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	input_demo_request_exit_after_replay();
 #ifndef DXX_HEADLESS_CONSOLE
 	if (close_window && Game_wind)
 		window_close(Game_wind);

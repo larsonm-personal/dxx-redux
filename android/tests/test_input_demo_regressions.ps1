@@ -13,6 +13,13 @@
 #>
 
 param(
+    [ValidateSet('recorded', 'public')][string]$Corpus = 'recorded',
+    [switch]$NativeOnly,
+    [string]$D1Exe,
+    [string]$D2Exe,
+    [string]$D1DataDir,
+    [string]$D2DataDir,
+    [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [string]$DemoRoot,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,
@@ -30,6 +37,29 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ($Corpus -eq 'public') {
+    if ($D1InD2 -or $Game -ne 'auto' -or $RecordedGame -ne 'all' -or $DemoFileName -or $ReferenceResultRoot -or $ListOnly -or $StopOnFirstFailure) {
+        throw 'Public qualification runs the complete admitted corpus; use the single replay runner for individual investigations'
+    }
+    $public = @{
+        RunMode = $RunMode
+        NativeOnly = $NativeOnly
+        TimeoutSeconds = $TimeoutSeconds
+        MinimumFreeSpaceGB = $MinimumFreeSpaceGB
+    }
+    foreach ($name in @('D1Exe', 'D2Exe', 'D1DataDir', 'D2DataDir')) {
+        $value = Get-Variable -Name $name -ValueOnly
+        if ($value) { $public[$name] = $value }
+    }
+    if ($DemoRoot) { $public.CorpusDirectory = $DemoRoot }
+    if ($ResultArchiveRoot) { $public.Output = $ResultArchiveRoot }
+    & "$PSScriptRoot/test_compact_public_replays.ps1" @public
+    exit $LASTEXITCODE
+}
+if ($NativeOnly -or $D1Exe -or $D2Exe -or $D1DataDir -or $D2DataDir) {
+    throw 'Native-only qualification, explicit executables and public data directories require -Corpus public'
+}
 
 $forwardedParams = @{
     Game = $Game
