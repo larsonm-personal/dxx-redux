@@ -473,7 +473,7 @@ foreach ($game in $targets) {
 
     Write-Host "Configuring $game with preset $Preset ($BuildType)"
     $sourceDir = Join-Path $repoRoot $game
-    $freshConfigure = Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $buildDir -ExpectedTriplet $vcpkgTriplet
+    $freshConfigure = Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $buildDir -ExpectedTriplet $vcpkgTriplet -ExpectedBuildType $BuildType
     $sanitizerArguments = @('-DDXX_SANITIZERS=' + $(if ($Sanitizer -eq 'none') { '' } else { $Sanitizer }))
     if ($Sanitizer -eq 'address') { $sanitizerArguments += '-DBUILD_TESTING=ON' }
     Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh:$freshConfigure -ExtraArguments $sanitizerArguments
@@ -492,6 +492,7 @@ foreach ($game in $targets) {
     if ($LASTEXITCODE -ne 0) {
         throw "CMake build failed for $game"
     }
+    Sync-RegressionWindowsRuntimeLibraries -BuildDir $buildDir -Triplet $vcpkgTriplet -BuildType $BuildType
     if ($Sanitizer -eq 'address') {
         $asanRuntime = Join-Path (Split-Path (Get-Command cl.exe).Source) $(if ($vcpkgTriplet -like 'x86-*') { 'clang_rt.asan_dynamic-i386.dll' } else { 'clang_rt.asan_dynamic-x86_64.dll' })
         if (-not (Test-Path -LiteralPath $asanRuntime)) { throw "ASan runtime missing: $asanRuntime" }

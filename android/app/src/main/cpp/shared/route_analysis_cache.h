@@ -16,6 +16,11 @@ extern "C" {
 #define ROUTE_ANALYSIS_CACHE_GENERATION       43
 #define ROUTE_ANALYSIS_TIMING_SAMPLE_CAPACITY 32
 
+/* Engine headers leave MSVC packing at one byte; preserve the shared C/C++ ABI */
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
+
 typedef struct route_analysis_cache_key {
 	unsigned int generation;
 	unsigned int game;
@@ -47,6 +52,10 @@ typedef struct route_analysis_cache_summary {
 	unsigned long long topology_hash;
 	char filename[192];
 } route_analysis_cache_summary;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 size_t route_analysis_cache_record_size(void);
 int route_analysis_cache_make_key(

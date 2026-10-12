@@ -177,6 +177,10 @@ function Get-TestSuiteCoveragePolicy {
             'test_runtime_targeted_sampling'
             'test_secret_area_baseline'
             'test_secret_area_baseline_diff'
+            'test_shareware_test_data'
+            'test_wall_blast_save_profiles'
+            'test_shareware_automation_profiles'
+            'test_secret_area_data_profiles'
             'test_server_integration'
             'test_standard_game_data_resolution'
             'test_test_helpers_process_wait'
@@ -205,6 +209,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_combined_package_identity'
             'test_d1_network_assets'
             'test_d1_wall_blast_save'
+            'test_compact_public_replays'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'
             # Full semantic coverage is still incomplete; retain a nonzero gate

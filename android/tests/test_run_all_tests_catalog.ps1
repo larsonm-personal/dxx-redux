@@ -41,7 +41,7 @@ try {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
-        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication')) {
+        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles')) {
             $entry = @($catalog.tests | Where-Object name -eq $name)
             if ($entry.Count -ne 1 -or $entry[0].type -ne 'ps1' -or $entry[0].requires -ne 'none' -or
                 $name -notin (Get-TestSuiteCoveragePolicy).core) {
@@ -66,10 +66,21 @@ try {
             $fovSupport.Count -ne 1 -or $fovSupport[0].owner -ne $fovOwner[0].base_name) {
             throw 'FOV demo support must run through its two-engine integration owner'
         }
+        $metadataWorker = @($catalog.tests | Where-Object name -eq 'test_native_metadata_worker')
+        if ($metadataWorker.Count -ne 1 -or $metadataWorker[0].requires -ne 'none' -or
+            'test_native_metadata_worker' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Native metadata lifecycle probe must remain an explicit host test without emulator provisioning'
+        }
         $packageProbe = @($catalog.tests | Where-Object name -eq 'test_combined_package_identity')
         if ($packageProbe.Count -ne 1 -or $packageProbe[0].requires -ne 'none' -or
             'test_combined_package_identity' -notin (Get-TestSuiteCoveragePolicy).explicit) {
             throw 'Combined package inspection must remain an explicit host probe with caller-selected artifacts'
+        }
+        $publicReplays = @($catalog.tests | Where-Object name -eq 'test_compact_public_replays')
+        if ($publicReplays.Count -ne 1 -or $publicReplays[0].requires -ne 'none' -or
+            $publicReplays[0].timeout_seconds -lt 1800 -or
+            'test_compact_public_replays' -notin (Get-TestSuiteCoveragePolicy).explicit) {
+            throw 'Compact public replays must retain explicit host-only scheduling and their matrix timeout'
         }
         $recoverySupport = @($catalog.support | Where-Object owner -eq 'test_graphics_recovery')
         if ($recoverySupport.Count -ne 10 -or @($catalog.tests | Where-Object name -like 'test_graphics_*_trigger').Count) {

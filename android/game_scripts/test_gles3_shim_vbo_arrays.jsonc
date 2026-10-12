@@ -4,6 +4,7 @@
 [
     {
         "_info": {
+            "_shareware": true,
             "games": ["d1", "d2"],
             "vars": {},
             "_deps": [

@@ -1,0 +1,436 @@
+"""Fail-closed gameplay and report gates for the compact public runtime runner."""
+
+import argparse
+import copy
+import contextlib
+import io
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+import run_compact_public_replays as runner
+
+
+class RuntimeGateTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "posix", "POSIX retention uses advisory file locks")
+    def test_active_capture_holds_retention_lease(self):
+        import fcntl
+
+        args = argparse.Namespace(
+            corpus=self.root,
+            data_d1=self.root,
+            data_d2=self.root,
+            exe_d1=self.demo,
+            exe_d2=self.demo,
+            output=self.root / "active-capture",
+        )
+
+        def inspect_lease(args, cases):
+            with (args.output / "producer.lock").open("r") as competing:
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(competing.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return 0
+
+        with (
+            mock.patch.object(runner, "load_corpus", return_value=[]),
+            mock.patch.object(runner, "validate_assets"),
+            mock.patch.object(runner, "_run_cases", side_effect=inspect_lease),
+        ):
+            self.assertEqual(runner.run(args), 0)
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.demo = self.root / "demo.dximdemo"
+        self.actual = self.root / "actual.json"
+        self.count = 12
+        self.header = {
+            "type": "header",
+            "game": "d1",
+            "mission": "d1",
+            "level": 1,
+            "difficulty": 2,
+            "start_mode": "new_level",
+            "frame_count": self.count,
+        }
+        self.controls = [
+            {"type": "frame", "f": i, "input": {"s": {"f": -1092} if i == 0 else {}}} for i in range(self.count)
+        ]
+        self.write_demo()
+
+        def state(index):
+            return {
+                "position": {"x": 0 if index == 0 else 131072, "y": 0, "z": 0},
+                "player0": {"energy": 100 if index == 0 else 99, "shields": 100},
+            }
+
+        self.frames = [{"state": state(i), "diag": {"player_weapon_count": 1}} for i in range(self.count)]
+        self.actual.write_text(json.dumps(state(self.count)))
+
+        def world(kind, index, phase=None):
+            row = {
+                "type": kind,
+                "f": index,
+                "state": {"death": {"active": 0}, "walls": [{"state": 0 if index < 3 else 1}]},
+            }
+            if phase:
+                row["phase"] = phase
+            return row
+
+        self.worlds = (
+            [world("world_boundary", 0, "restored")]
+            + [world("world_state", i) for i in range(self.count)]
+            + [world("world_boundary", self.count, "terminal")]
+        )
+        self.pickup_target = {"target": 4, "target_id": 1, "target_signature": 5}
+        self.objects = [
+            {"objects": {"4": {"type": 7, "id": 1, "signature": 5}} if i <= 3 else {}} for i in range(self.count)
+        ]
+
+    def write_demo(self):
+        self.demo.write_text("\n".join(json.dumps(row) for row in [self.header] + self.controls) + "\n")
+
+    def action(self, scenario, actions, frames=None, worlds=None):
+        with (
+            mock.patch.object(
+                runner.parity, "frames", return_value=iter(copy.deepcopy(self.frames if frames is None else frames))
+            ),
+            mock.patch.object(
+                runner.parity,
+                "world_states",
+                return_value=iter(copy.deepcopy(self.worlds if worlds is None else worlds)),
+            ),
+            mock.patch.object(runner.parity, "object_states", return_value=iter(copy.deepcopy(self.objects))),
+        ):
+            return runner.verify_actions(
+                {"game": "d1", "scenario": scenario, "actions": actions}, self.demo, self.demo, self.actual
+            )
+
+    def test_backward_thrust_and_delta_controls_count_real_stopping(self):
+        self.assertEqual(self.action("flight", {"wall_contact_frames": 11})["wall_contact_frames"], 11)
+        self.controls[1]["input"]["s"]["f"] = 0
+        self.write_demo()
+        with self.assertRaises(runner.parity.EvidenceError):
+            self.action("flight", {"wall_contact_frames": 11})
+
+    def test_dead_or_stationary_or_unarmed_motion_cannot_pass(self):
+        for mutation in ("dead", "stationary", "weapons", "energy", "claimed_contacts", "missing_world"):
+            frames, worlds = copy.deepcopy(self.frames), copy.deepcopy(self.worlds)
+            actions = {"wall_contact_frames": 11}
+            if mutation == "dead":
+                for row in worlds:
+                    row["state"]["death"]["active"] = 1
+            elif mutation == "stationary":
+                for row in frames:
+                    row["state"]["position"]["x"] = 131072
+            elif mutation == "weapons":
+                for row in frames:
+                    row["diag"]["player_weapon_count"] = 0
+            elif mutation == "energy":
+                for row in frames:
+                    row["state"]["player0"]["energy"] = 99
+            elif mutation == "claimed_contacts":
+                actions["wall_contact_frames"] = 0
+            else:
+                worlds.pop()
+            with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
+                self.action("flight", actions, frames, worlds)
+
+    def test_pickup_requires_consecutive_gain_at_exact_next_entry(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames[3:]:
+            row["state"]["player0"]["shields"] = 110
+        self.assertIn(
+            2,
+            self.action("pickup", {**self.pickup_target, "action_frame": 3, "pickup_gain_frame": 2}, frames)[
+                "pickup_gain_frames"
+            ],
+        )
+        for actions, rows in (
+            ({"action_frame": 3, "pickup_gain_frame": 3}, frames),
+            ({"action_frame": 1, "pickup_gain_frame": 2}, frames),
+            ({"action_frame": 3}, frames),
+            ({"action_frame": 3, "pickup_gain_frame": -1}, frames),
+            ({"action_frame": 3, "pickup_gain_frame": True}, frames),
+            ({"action_frame": 3, "pickup_gain_frame": 12}, frames),
+            ({"action_frame": 3, "pickup_gain_frame": 2}, self.frames),
+        ):
+            with self.assertRaises(runner.parity.EvidenceError):
+                self.action("pickup", actions, rows)
+
+    def test_pickup_identity_and_retirement_are_exact(self):
+        for mutation in ("slot", "id", "signature", "early", "late", "not_original"):
+            actions = {**self.pickup_target, "action_frame": 3}
+            objects = copy.deepcopy(self.objects)
+            if mutation == "slot":
+                actions["target"] += 1
+            elif mutation == "id":
+                actions["target_id"] += 1
+            elif mutation == "signature":
+                actions["target_signature"] += 1
+            elif mutation == "early":
+                objects[3]["objects"] = {}
+            elif mutation == "late":
+                objects[4]["objects"] = objects[3]["objects"]
+            else:
+                objects[0]["objects"] = {}
+            with (
+                self.subTest(mutation=mutation),
+                mock.patch.object(runner.parity, "object_states", return_value=iter(objects)),
+                self.assertRaises(runner.parity.EvidenceError),
+            ):
+                runner.verify_pickup_target(actions, self.demo, self.header, "d1")
+
+    def test_door_requires_initially_closed_target_and_exact_next_entry(self):
+        self.assertEqual(self.action("door", {"target": 0, "action_frame": 2})["door_open_entry_frames"][0], 3)
+        for actions in ({"target": 0, "action_frame": 1}, {"target": 99}, {"target": -1}):
+            with self.assertRaises(runner.parity.EvidenceError):
+                self.action("door", actions)
+        worlds = copy.deepcopy(self.worlds)
+        worlds[0]["state"]["walls"][0]["state"] = 2
+        with self.assertRaises(runner.parity.EvidenceError):
+            self.action("door", {"target": 0}, worlds=worlds)
+
+    def paired(self):
+        cases, rows = [], []
+        for scenario in runner.SCENARIOS:
+            name = f"d1-{scenario}.dximdemo"
+            (self.root / name).write_text(json.dumps(self.header) + "\n")
+            cases.append({"game": "d1", "scenario": scenario, "demo": name})
+            required = (
+                "terminal_result",
+                "checkpoint_collision_clock",
+                "frames",
+                "simulation_rng",
+                "object_states",
+                "world_states",
+            )
+            checks = {key: {"status": "pass"} for key in required}
+            checks["frames"]["frames_compared"] = self.count
+            checks["simulation_rng"]["simulation_events_compared"] = 1
+            recorded = {
+                key: {"status": "incomplete" if key in ("frames", "simulation_rng") else "pass"} for key in required[:4]
+            }
+            rows.append(
+                {
+                    "demo": name,
+                    "recording_to_native": {"status": "incomplete", "checks": recorded},
+                    "native_repeatability": {"status": "pass", "checks": copy.deepcopy(checks)},
+                    "native_to_imported": {"status": "pass", "checks": copy.deepcopy(checks)},
+                }
+            )
+        return cases, {"schema": 1, "qualification": "incomplete", "cases": rows}
+
+    def test_only_known_compact_recording_incompleteness_is_accepted(self):
+        cases, report = self.paired()
+        runner.check_paired_report(report, 2, cases, self.root)
+        for mutation in (
+            "world",
+            "rng",
+            "frames",
+            "missing",
+            "assets",
+            "harness",
+            "capture",
+            "recording_terminal",
+            "exit",
+        ):
+            changed = copy.deepcopy(report)
+            case = changed["cases"][0]
+            if mutation == "world":
+                case["native_to_imported"]["checks"]["world_states"]["status"] = "fail"
+            elif mutation == "rng":
+                case["native_repeatability"]["checks"]["simulation_rng"]["simulation_events_compared"] = 0
+            elif mutation == "frames":
+                case["native_repeatability"]["checks"]["frames"]["frames_compared"] -= 1
+            elif mutation == "missing":
+                changed["cases"].pop()
+            elif mutation in ("assets", "harness"):
+                changed["asset_error" if mutation == "assets" else "harness_error"] = "changed"
+            elif mutation == "capture":
+                case["capture_errors"] = {"imported": "failed"}
+            elif mutation == "recording_terminal":
+                case["recording_to_native"]["checks"]["terminal_result"]["status"] = "fail"
+            with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
+                runner.check_paired_report(changed, 1 if mutation == "exit" else 2, cases, self.root)
+
+    def test_runner_attempts_all_twelve_and_preserves_failure(self):
+        corpus, output = self.root / "corpus", self.root / "output"
+        corpus.mkdir()
+        output.mkdir()
+        cases = []
+        for game in ("d1", "d2"):
+            for scenario in runner.SCENARIOS:
+                demo = f"{game}-{scenario}.dximdemo"
+                (corpus / demo).write_text("fixture")
+                cases.append(
+                    {"game": game, "scenario": scenario, "demo": demo, "oracle": demo + ".oracle.json", "actions": {}}
+                )
+        args = argparse.Namespace(
+            repo=self.root,
+            corpus=corpus,
+            output=output,
+            data_d1=self.root,
+            data_d2=self.root,
+            exe_d1=self.demo,
+            exe_d2=self.demo,
+            pwsh="unused",
+            timeout=120,
+            minimum_free_gb=0.01,
+        )
+        with mock.patch.object(runner, "_run", return_value=1) as execute, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(runner._run_cases(args, cases), 1)
+        self.assertEqual(execute.call_count, 13)
+        report = json.loads((output / "report.json").read_text())
+        self.assertEqual(len(report["native_runs"]), 12)
+        self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
+        self.assertEqual(report["paired"]["status"], "fail")
+
+    def scoped_comparison(self, status="pass"):
+        return {
+            "status": status,
+            "frames_compared": self.count,
+            "checks": {
+                "frames": {"status": status},
+                "terminal_result": {"status": "pass"},
+                "simulation_rng": {"status": "pass", "simulation_events_compared": 1},
+            },
+        }
+
+    def test_unqualified_comparative_failure_is_preserved_but_invalid_evidence_fails(self):
+        cases, report = self.paired()
+        diagnostic = next(row for row in report["cases"] if "door" in row["demo"])
+        diagnostic["native_to_imported"]["status"] = "fail"
+        diagnostic["native_to_imported"]["checks"]["simulation_rng"]["status"] = "fail"
+        path = self.root / "report.json"
+        path.write_text(json.dumps(report))
+
+        def compare(path, case):
+            result = self.scoped_comparison()
+            if "door" in case["demo"]:
+                result["status"] = "fail"
+                result["checks"]["simulation_rng"]["status"] = "fail"
+            return result
+
+        with mock.patch.object(runner.gameplay, "compare_case", side_effect=compare):
+            scoped = runner.check_paired_report(report, 1, cases, self.root, path)
+        self.assertEqual(scoped["required_paired_cases"], ["d1-flight.dximdemo"])
+        self.assertEqual(scoped["status"], "pass")
+        row = next(row for row in scoped["cases"] if "door" in row["demo"])
+        self.assertFalse(row["required"])
+        self.assertEqual(row["scope_role"], "unqualified diagnostic-only")
+        self.assertEqual(row["comparison"]["checks"]["simulation_rng"]["status"], "fail")
+        for mutation in ("error", "missing", "frames", "native"):
+            changed = copy.deepcopy(report)
+            if mutation == "native":
+                changed["cases"][2]["native_repeatability"]["checks"]["world_states"]["status"] = "fail"
+
+            def broken(path, case):
+                result = compare(path, case)
+                if "door" in case["demo"]:
+                    if mutation == "error":
+                        result["checks"]["simulation_rng"]["error"] = "malformed trace"
+                    elif mutation == "missing":
+                        result["checks"].pop("terminal_result")
+                    elif mutation == "frames":
+                        result["frames_compared"] -= 1
+                return result
+
+            with (
+                self.subTest(mutation=mutation),
+                mock.patch.object(runner.gameplay, "compare_case", side_effect=broken),
+                self.assertRaises(runner.parity.EvidenceError),
+            ):
+                runner.check_paired_report(changed, 1, cases, self.root, path)
+
+    def test_imported_scope_uses_independent_artifacts_without_relaxing_native(self):
+        cases, report = self.paired()
+        for case in report["cases"]:
+            imported = case["native_to_imported"]
+            imported["status"] = "fail"
+            for key in ("frames", "object_states", "world_states"):
+                imported["checks"][key]["status"] = "fail"
+        path = self.root / "report.json"
+        path.write_text(json.dumps(report))
+        before = path.read_bytes()
+        with mock.patch.object(runner.gameplay, "compare_case", return_value=self.scoped_comparison()) as compare:
+            scoped = runner.check_paired_report(report, 1, cases, self.root, path)
+            self.assertEqual(compare.call_count, 3)
+        self.assertEqual(scoped["status"], "pass")
+        self.assertEqual(scoped["qualification"], "incomplete")
+        self.assertEqual(path.read_bytes(), before)
+        self.assertTrue(path.with_name("scoped-gameplay-report.json").is_file())
+        for mutation in ("independent", "native", "missing_world", "terminal", "sim"):
+            changed = copy.deepcopy(report)
+            case = changed["cases"][0]
+            if mutation == "native":
+                case["native_repeatability"]["checks"]["world_states"]["status"] = "fail"
+            elif mutation == "missing_world":
+                case["native_to_imported"]["checks"]["world_states"]["status"] = "incomplete"
+            elif mutation == "terminal":
+                case["native_to_imported"]["checks"]["terminal_result"]["status"] = "fail"
+            elif mutation == "sim":
+                case["native_to_imported"]["checks"]["simulation_rng"]["status"] = "fail"
+            comparison = self.scoped_comparison("fail" if mutation == "independent" else "pass")
+            with (
+                self.subTest(mutation=mutation),
+                mock.patch.object(runner.gameplay, "compare_case", return_value=comparison),
+                self.assertRaises(runner.parity.EvidenceError),
+            ):
+                runner.check_paired_report(changed, 1, cases, self.root, path)
+
+    def test_corpus_requires_six_unique_plain_filename_pairs(self):
+        cases = [
+            {
+                "game": game,
+                "scenario": scenario,
+                "demo": f"{game}-{scenario}.dximdemo",
+                "oracle": f"{game}-{scenario}.oracle.json",
+                "actions": {},
+            }
+            for game in ("d1", "d2")
+            for scenario in runner.SCENARIOS
+        ]
+        manifest = self.root / "manifest.json"
+
+        def valid_pair(demo, oracle):
+            return {"game": demo.name[:2]}, {}
+
+        with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
+            manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
+            self.assertEqual(len(runner.load_corpus(self.root)), 6)
+            for mutation in (
+                "missing",
+                "duplicate_case",
+                "duplicate_file",
+                "unix_path",
+                "windows_path",
+                "drive_path",
+                "missing_actions",
+            ):
+                changed = copy.deepcopy(cases)
+                if mutation == "missing":
+                    changed.pop()
+                elif mutation == "duplicate_case":
+                    changed[-1] = changed[0]
+                elif mutation == "duplicate_file":
+                    changed[1]["demo"] = changed[0]["demo"]
+                elif mutation == "unix_path":
+                    changed[0]["demo"] = "../escaped.dximdemo"
+                elif mutation == "windows_path":
+                    changed[0]["oracle"] = "..\\escaped.json"
+                elif mutation == "drive_path":
+                    changed[0]["demo"] = "C:escaped.dximdemo"
+                else:
+                    changed[0].pop("actions")
+                manifest.write_text(json.dumps({"schema": 1, "cases": changed}))
+                with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
+                    runner.load_corpus(self.root)
+
+
+if __name__ == "__main__":
+    unittest.main()

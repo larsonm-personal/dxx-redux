@@ -1,4 +1,15 @@
+#ifdef _MSC_VER
+/* Match callers which have already included the engine's pstypes.h */
+#pragma pack(push, 1)
+#endif
 #include "route_analysis_cache.h"
+#ifdef _MSC_VER
+typedef struct cache_caller_packing_probe {
+	char prefix;
+	unsigned long long value;
+} cache_caller_packing_probe;
+#pragma pack(pop)
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +37,15 @@ int main(void)
 	char filename[192];
 	char mutable_filename[192];
 	int failures = 0;
+
+#ifdef _MSC_VER
+	failures += expect(sizeof(route_analysis_cache_summary) == 560 &&
+	                       offsetof(route_analysis_cache_summary, live_reuse_total_us) == 48 &&
+	                       offsetof(route_analysis_cache_summary, filename) == 368,
+	                   "cache summary ABI is independent of engine header packing");
+	failures += expect(offsetof(cache_caller_packing_probe, value) == 1,
+	                   "cache header restores caller packing");
+#endif
 
 	snapshot.topology_hash = 0x1234;
 	snapshot.progression_hash = 0x2345;

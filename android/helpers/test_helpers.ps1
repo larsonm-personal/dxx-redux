@@ -44,6 +44,35 @@ $script:SECONDARY_EMULATOR_SERIAL = "emulator-5556"
 $script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
 $script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
 
+function Test-SoftwareAndroidTestTarget {
+    param([string]$Serial = $env:ANDROID_SERIAL)
+    return ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq '1' -and
+        (-not $Serial -or $Serial -match '^emulator-\d+$'))
+}
+
+function Get-AndroidInfrastructureTimeout {
+    # Host transport/lifecycle and implicit UI navigation budgets; never scale assertions
+    param(
+        [Parameter(Mandatory)][int]$DefaultSeconds,
+        [ValidateSet('Adb', 'Launcher', 'GameStartup', 'Handoff', 'Boot', 'UiNavigation')][string]$Kind = 'Adb',
+        [string]$Serial = $env:ANDROID_SERIAL
+    )
+    if (-not (Test-SoftwareAndroidTestTarget -Serial $Serial)) {
+        return $DefaultSeconds
+    }
+    $softwareSeconds = @{ Adb = 30; Launcher = 180; GameStartup = 300; Handoff = 180; Boot = 1200; UiNavigation = 60 }
+    return [Math]::Max($DefaultSeconds, $softwareSeconds[$Kind])
+}
+
+function Get-SoftwareNavigationTimeoutMilliseconds {
+    param([switch]$SoftwareNavigation)
+    # Only an explicitly selected software emulator's debug script gets this default
+    if ($SoftwareNavigation -and $env:ANDROID_SERIAL -match '^emulator-\d+$' -and (Test-SoftwareAndroidTestTarget)) {
+        return 1000 * (Get-AndroidInfrastructureTimeout -DefaultSeconds 10 -Kind UiNavigation)
+    }
+    return 0
+}
+
 function Adb {
     param([string[]]$AdbArgs, [int]$Seconds = 30)
     return (Adb-Timeout -AdbArgs $AdbArgs -Seconds $Seconds -IncludeStandardError)
@@ -159,24 +188,38 @@ function Push-VerifiedDeviceFile {
     return $true
 }
 
+function Test-EmulatorSharedStorageReady {
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [int]$TimeoutSeconds = 5
+    )
+    # Boot completion does not guarantee that user storage has unlocked and mounted
+    $marker = "/sdcard/.dxx_ready_$([guid]::NewGuid().ToString('N'))"
+    $probe = "echo ready > $marker && cat $marker; rm -f $marker"
+    $result = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", $probe) -Seconds $TimeoutSeconds
+    return ($result -and $result.Trim() -ceq "ready")
+}
+
 function Test-EmulatorHealthy {
     param([string]$Serial = $env:ANDROID_SERIAL)
     if (-not $Serial) { $Serial = $script:PRIMARY_EMULATOR_SERIAL }
     if (-not (Test-DeviceOnline -Serial $Serial)) { return $false }
-    $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+    $queryTimeout = Get-AndroidInfrastructureTimeout -DefaultSeconds 5 -Serial $Serial
+    $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds $queryTimeout
     if ($boot -ne "1") { return $false }
-    $packages = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds 5
-    return ($packages -and $packages -match '(?m)^package:android\r*$')
+    $packages = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds $queryTimeout
+    if (-not $packages -or $packages -notmatch '(?m)^package:android\r*$') { return $false }
+    return (Test-EmulatorSharedStorageReady -Serial $Serial -TimeoutSeconds $queryTimeout)
 }
 
 function Test-AppPackageInstalled {
-    $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds 10
+    $path = Adb-Timeout -AdbArgs @("shell", "pm", "path", $script:PACKAGE) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 10)
     return ($path -and $path -match '^package:')
 }
 
 function Test-AppPrivateStorageReady {
     $script:LastAppPrivateStorageReason = ""
-    $appDataDir = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "pwd") -Seconds 5 -IncludeStandardError
+    $appDataDir = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "pwd") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) -IncludeStandardError
     if (-not $appDataDir -or $appDataDir.Trim() -notmatch '^/data/(?:data|user/\d+)/[A-Za-z0-9._]+$') {
         $detail = if ($appDataDir) { ($appDataDir.Trim() -replace '\s+', ' ') } else { "no response" }
         $script:LastAppPrivateStorageReason = "run-as pwd failed: $detail"
@@ -185,9 +228,9 @@ function Test-AppPrivateStorageReady {
 
     $marker = "files/.test_ready_$([guid]::NewGuid().ToString('N'))"
     try {
-        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") -Seconds 5 -IncludeStandardError | Out-Null
-        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "touch", $marker) -Seconds 5 -IncludeStandardError | Out-Null
-        $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", $marker) -Seconds 5 -IncludeStandardError
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) -IncludeStandardError | Out-Null
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "touch", $marker) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) -IncludeStandardError | Out-Null
+        $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", $marker) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) -IncludeStandardError
         if ($published -and $published.Trim() -ceq $marker) {
             return $true
         }
@@ -195,7 +238,7 @@ function Test-AppPrivateStorageReady {
         $script:LastAppPrivateStorageReason = "app-private marker check failed: $detail"
         return $false
     } finally {
-        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", $marker) -Seconds 5 -IncludeStandardError | Out-Null
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", $marker) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) -IncludeStandardError | Out-Null
     }
 }
 
@@ -267,13 +310,14 @@ function Ensure-EmulatorHealthy {
         $forceRestart = $true
     }
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart:$forceRestart -TimeoutSeconds 120 -PreferredSerial $env:ANDROID_SERIAL
+    $recoveryTimeout = if ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1") { 1200 } else { 120 }
+    & $healthScript -Restart -Wait -ForceRestart:$forceRestart -TimeoutSeconds $recoveryTimeout -PreferredSerial $env:ANDROID_SERIAL
     $emuExit = $LASTEXITCODE
     if ($emuExit -ne 0 -and $emuExit -ne 2) {
         Write-Status "FAIL: Emulator could not be restored (exit $emuExit)" "Red"
         exit 1
     }
-    if (-not (Wait-EmulatorReadyForTests -TimeoutSeconds 30)) {
+    if (-not (Wait-EmulatorReadyForTests -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher))) {
         $detail = if ($script:LastAppPrivateStorageReason) { ": $script:LastAppPrivateStorageReason" } else { "" }
         Write-Status "FAIL: Emulator recovered but app-private storage is not ready$detail" "Red"
         exit 1
@@ -318,6 +362,9 @@ function Invoke-LauncherStartupRecovery {
         Wake-AndroidTestTarget
         return Start-PrimarySetupActivity -TimeoutSeconds $TimeoutSeconds
     }
+    if ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1" -and -not $PSBoundParameters.ContainsKey("TimeoutSeconds")) {
+        $TimeoutSeconds = 1200
+    }
     Write-Status "$Reason -- restarting emulator for launcher recovery" "Yellow"
     Reconnect-AdbDevice
 
@@ -334,7 +381,7 @@ function Invoke-LauncherStartupRecovery {
 }
 
 function Start-PrimarySetupActivity {
-    param([int]$TimeoutSeconds = 60)
+    param([int]$TimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 60 -Kind Launcher))
 
     Stop-AppAndWait
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
@@ -343,7 +390,7 @@ function Start-PrimarySetupActivity {
 }
 
 function Ensure-LauncherTestDeviceReady {
-    param([int]$TimeoutSeconds = 60)
+    param([int]$TimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 60 -Kind Launcher))
 
     Ensure-EmulatorHealthy | Out-Null
     if (-not (Test-AppPackageInstalled)) {
@@ -377,18 +424,18 @@ function Get-AppProcessId {
     $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { 'default' }
     if (-not (Test-Path variable:script:deviceApiLevels)) { $script:deviceApiLevels = @{} }
     if (-not $script:deviceApiLevels.ContainsKey($serial)) {
-        $api = Adb-Timeout -AdbArgs @('shell', 'getprop', 'ro.build.version.sdk') -Seconds 3
+        $api = Adb-Timeout -AdbArgs @('shell', 'getprop', 'ro.build.version.sdk') -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($api -match '^\d+$') { $script:deviceApiLevels[$serial] = [int]$api }
     }
     if ($script:deviceApiLevels.ContainsKey($serial) -and $script:deviceApiLevels[$serial] -le 23) {
-        $processes = Adb-Timeout -AdbArgs @('shell', 'ps') -Seconds 3
+        $processes = Adb-Timeout -AdbArgs @('shell', 'ps') -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         foreach ($line in ($processes -split "`n")) {
             $columns = $line.Trim() -split '\s+'
             if ($columns.Count -ge 2 -and $columns[-1] -eq $ProcessName) { return $columns[1] }
         }
         return $null
     }
-    return Adb-Timeout -AdbArgs @('shell', 'pidof', $ProcessName) -Seconds 3
+    return Adb-Timeout -AdbArgs @('shell', 'pidof', $ProcessName) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
 }
 
 function Wait-ProcessDead {
@@ -446,12 +493,12 @@ function Wait-SetupCondition {
         if ($Lightweight) { $broadcastArgs += @("--ez", "lightweight", "true") }
         if ($ButtonsOnly) {
             # Correlate UI polls with a new response; full dumps use a separate file
-            Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', $snapshot) -Seconds 3 | Out-Null
+            Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', $snapshot) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3) | Out-Null
             $broadcastArgs += @('--ez', 'buttons_only', 'true')
         }
-        Adb-Timeout -AdbArgs $broadcastArgs -Seconds 5 | Out-Null
+        Adb-Timeout -AdbArgs $broadcastArgs -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5) | Out-Null
         Start-Sleep -Milliseconds $PollMs
-        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $snapshot) -Seconds 3
+        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $snapshot) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($json -and $json -match '^\s*\{') {
             try {
                 $obj = $json | ConvertFrom-Json
@@ -651,7 +698,7 @@ function Wait-ForCondition {
 
 function Wait-SetupReady {
     # Wait for SetupActivity to be ready on a specific device (multi-emulator).
-    param([string]$Serial, [int]$TimeoutSec = 30)
+    param([string]$Serial, [int]$TimeoutSec = (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher -Serial $Serial))
     Adb-Dev -Serial $Serial -AdbArgs @(
         "shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json"
     ) | Out-Null
@@ -662,7 +709,7 @@ function Wait-SetupReady {
         Start-Sleep -Milliseconds 500
         $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
             "shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json"
-        ) -Seconds 5
+        ) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5)
         return ($json -and $json -match '"screen"')
     }
 }
@@ -670,7 +717,7 @@ function Wait-SetupReady {
 function Start-SetupActivity {
     # Force-stop, clear logcat, and launch SetupActivity on a specific device.
     # Returns $true if SetupActivity becomes responsive, $false on timeout.
-    param([string]$Serial, [int]$TimeoutSec = 60)
+    param([string]$Serial, [int]$TimeoutSec = (Get-AndroidInfrastructureTimeout -DefaultSeconds 60 -Kind Launcher -Serial $Serial))
     Write-Status "Force-stopping app on $Serial..."
     Adb-Dev -Serial $Serial -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
     Start-Sleep -Seconds 2
@@ -755,7 +802,7 @@ function Start-EmulatorIfNeeded {
     }
     $avd = $AvdMap[$Serial]
     if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
-    if (-not (Start-ManagedEmulator -AvdName $avd -Serial $Serial -AppearTimeoutSeconds 90 -BootTimeoutSeconds 240)) {
+    if (-not (Start-ManagedEmulator -AvdName $avd -Serial $Serial)) {
         exit 1
     }
     Install-AppAndData -Serial $Serial | Out-Null
@@ -903,7 +950,7 @@ function Reset-DeviceGameState {
 function Wait-SetupActivityReady {
     # Poll until SetupActivity's broadcast receiver is alive (writes setup_introspect.json).
     # Returns $true if ready, $false if timed out.
-    param([int]$TimeoutSeconds = 30)
+    param([int]$TimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher))
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
     return (Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 800 -Lightweight -Predicate {
             param($obj)
@@ -914,11 +961,11 @@ function Wait-SetupActivityReady {
 function Wait-GameStarted {
     # Poll logcat for "gameStarted=true" (logged by MainActivity.surfaceCreated).
     # Returns $true if detected, $false if timed out.
-    param([int]$TimeoutSeconds = 30)
+    param([int]$TimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind GameStartup))
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
         Start-Sleep -Seconds 1
-        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5)
         if ($null -ne $log -and $log -match 'gameStarted=true') {
             return $true
         }
@@ -1075,15 +1122,85 @@ function Try-ExtractLocalGameDataSources {
     return $ranAny
 }
 
+function Get-TestScriptDataEdition {
+    param(
+        [Parameter(Mandatory)][string]$ScriptPath,
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
+    )
+    $info = Get-TestScriptInfo -ScriptPath $ScriptPath
+    $supportsShareware = $info -and $info.PSObject.Properties['_shareware'] -and $info._shareware -eq $true
+    if ($supportsShareware -and (-not $info.PSObject.Properties['_deps'] -or -not $info._deps)) {
+        throw "Audited shareware scripts must retain explicit retail dependencies: $ScriptPath"
+    }
+    if ($DataEdition -eq 'shareware' -and -not $supportsShareware) {
+        throw "Script has not been audited for public shareware: $ScriptPath"
+    }
+    if ($DataEdition -eq 'default') {
+        if ($supportsShareware) { return 'shareware' }
+        return 'retail'
+    }
+    return $DataEdition
+}
+
+function Get-SharewareAutomationDeps {
+    . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+    # Keep both games present so D2 retains its mission picker
+    foreach ($game in @('d1', 'd2')) {
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $game
+        foreach ($file in $config.RequiredHashes) {
+            [pscustomobject]@{ file = $file.File; sha256 = $file.Sha256 }
+        }
+    }
+}
+
+function Initialize-SharewareAutomationData {
+    . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+    # Validate every host input before touching the disposable test set
+    $index = @{}
+    foreach ($game in @('d1', 'd2')) {
+        $directory = Resolve-SharewareTestData -RepoRoot $script:REPO_ROOT -Game $game
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $game
+        foreach ($file in $config.RequiredHashes) { $index[$file.Sha256] = Join-Path $directory $file.File }
+    }
+    Clear-AutomationDataSet
+    $script:GameDataIndex = $index
+}
+
+function Clear-AutomationDataSet {
+    Stop-AppAndWait
+    # Do not let a previous edition's archives or loose levels shadow pinned data
+    if ($script:DEFAULT_SET_DIR -cne 'files/imported/sets/default') {
+        throw 'Unexpected automation data target; refusing to clear it'
+    }
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-rf', $script:DEFAULT_SET_DIR) | Out-Null
+    $remaining = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'ls', $script:DEFAULT_SET_DIR) -Seconds 10 -IncludeStandardError
+    if ($remaining -notmatch 'No such file or directory') { throw "Could not isolate automation device data: $remaining" }
+}
+
+function Assert-AutomationDeviceData {
+    param([Parameter(Mandatory)][array]$Deps)
+    foreach ($dep in $Deps) {
+        $path = "$($script:DEFAULT_SET_DIR)/$($dep.file)"
+        $hash = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', $path) -Seconds 30
+        if (-not $hash -or ($hash -split '\s+')[0] -cne $dep.sha256) {
+            throw "Staged automation data failed SHA256 verification: $path"
+        }
+    }
+}
+
 function Get-ScriptDeps {
     # Read a .jsonc test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
     # When -Vars is provided, ${VAR} placeholders in file and sha256 fields are replaced.
     param(
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [hashtable]$Vars = @{}
+        [hashtable]$Vars = @{},
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
     )
     if (-not (Test-Path $ScriptPath)) { return $null }
+    if ((Get-TestScriptDataEdition -ScriptPath $ScriptPath -DataEdition $DataEdition) -eq 'shareware') {
+        return @(Get-SharewareAutomationDeps)
+    }
     $raw = Get-Content $ScriptPath -Raw
     try {
         $arr = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath |
@@ -1465,6 +1582,13 @@ function Ensure-GameDataOnDevice {
     $onDevice = @()
     if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
 
+    # This legacy entry point always requests retail data. Public D1 uses the
+    # same filenames, so filename presence alone cannot validate a prior demo run
+    if ('d2demo.hog' -in $onDevice) {
+        Clear-AutomationDataSet
+        $onDevice = @()
+    }
+
     $missing = $needed | Where-Object { $_ -notin $onDevice }
     if (-not $missing -or $missing.Count -eq 0) { return $true }
 
@@ -1547,7 +1671,7 @@ function Start-GameWithRetry {
         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
 
         if (-not (Wait-SetupActivityReady)) {
-            Write-Status "SetupActivity not responding after 30s" "Yellow"
+            Write-Status "SetupActivity readiness check timed out" "Yellow"
             if ($attempt -lt $MaxAttempts) {
                 if (-not (Invoke-LauncherStartupRecovery -Reason "SetupActivity launch timed out")) {
                     continue
@@ -1650,6 +1774,35 @@ function Get-PowerShellTestSupportOwner {
     return $null
 }
 
+function Wait-SoftwareLauncherHandoff {
+    # A slow in-process resume can consume the marker just before a host restart.
+    # Never force-stop that progressing executor. Unknown/timeout reads are not progress.
+    param(
+        [string]$ExpectedRunId,
+        [int]$NextStep,
+        [int]$TimeoutSeconds = (Get-AndroidInfrastructureTimeout -DefaultSeconds 15 -Kind Handoff)
+    )
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($timer.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        $remaining = [Math]::Max(1, [int][Math]::Ceiling($TimeoutSeconds - $timer.Elapsed.TotalSeconds))
+        $querySeconds = [Math]::Min($remaining, (Get-AndroidInfrastructureTimeout -DefaultSeconds 3))
+        $snapshot = Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE,
+            'cat', 'files/automation_result.json') -Seconds $querySeconds -IncludeStandardError
+        if ($snapshot -match '^cat: files/automation_result\.json: No such file or directory$') { return $true }
+        if ($snapshot -and $snapshot -match '^\s*\{') {
+            try {
+                $result = $snapshot | ConvertFrom-Json
+                if ((Test-AutomationResultRunId -Result $result -ExpectedRunId $ExpectedRunId) -and
+                    ($result.result -in @('PASS', 'FAIL') -or ($result.result -eq 'LAUNCHER_CONTINUE' -and $result.next_step -gt $NextStep))) {
+                    return $true
+                }
+            } catch {}
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    return $false
+}
+
 function Watch-AutomationResult {
     # Monitor for SCRIPT_RESULT via file-based result (primary) and logcat (fallback).
     # Handles SCRIPT_BACKGROUND markers by pressing HOME, waiting, then resuming.
@@ -1709,7 +1862,7 @@ function Watch-AutomationResult {
                 # now-absent processes as a premature exit.
                 $terminalJson = Adb-Timeout -AdbArgs @(
                     "shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json"
-                ) -Seconds 3
+                ) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
                 if ($terminalJson -and $terminalJson -match '"result"') {
                     try {
                         $terminalResult = $terminalJson | ConvertFrom-Json
@@ -1738,7 +1891,7 @@ function Watch-AutomationResult {
             }
             $lastHealthCheck = $elapsed
 
-            $cacheLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-t", "400", "-s", "DXX:*") -Seconds 10
+            $cacheLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-t", "400", "-s", "DXX:*") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 10)
             if ($cacheLog) {
                 foreach ($line in ($cacheLog -split "`n")) {
                     if ($line -notmatch 'ogl_cache:' -or -not $seenCacheLines.Add($line)) { continue }
@@ -1781,19 +1934,19 @@ function Watch-AutomationResult {
             # Stuck-at-launcher detection: after 15s, if no automation progress,
             # check if the game is actually stuck at the launcher/setup screen.
             # Skip for launcher scripts -- they're expected to be at SetupActivity.
-            if (-not $launcherChecked -and $elapsed -ge 15 -and -not $IsLauncherScript) {
+            if (-not $launcherChecked -and $elapsed -ge (Get-AndroidInfrastructureTimeout -DefaultSeconds 15 -Kind GameStartup) -and -not $IsLauncherScript) {
                 $launcherChecked = $true
                 $hasProgress = $false
                 # Check automation_log.jsonl for any step progress
                 $stepCheck = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
-                    "ls", "files/automation_log.jsonl") -Seconds 3
+                    "ls", "files/automation_log.jsonl") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
                 if ($stepCheck -and $stepCheck -notmatch 'No such file') { $hasProgress = $true }
                 if (-not $hasProgress) {
                     # No automation progress -- check if launcher is still showing
                     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
                     Start-Sleep -Milliseconds 800
                     $setupJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
-                        "cat", "files/setup_introspect.json") -Seconds 3
+                        "cat", "files/setup_introspect.json") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
                     if ($setupJson -and $setupJson -match '"screen"\s*:\s*"setup"') {
                         Write-Status "FAIL: Game stuck at launcher (SetupActivity still visible after ${elapsed}s)" "Red"
                         Write-Status "  The game engine may not have found its data files" "Yellow"
@@ -1817,7 +1970,7 @@ function Watch-AutomationResult {
         }
 
         if ($elapsed -ge ($TimeoutSeconds - 60) -or $cacheActive -or $postCacheGraceDeadlineSeconds -ge 0) {
-            $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+            $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
             if ($stepLog) {
                 $lastStepLine = ($stepLog -split "`n" | Where-Object { $_.Trim().StartsWith("{") } | Select-Object -Last 1)
                 if ($lastStepLine) {
@@ -1839,7 +1992,7 @@ function Watch-AutomationResult {
         }
 
         # Primary: check file-based result (survives logcat issues)
-        $resultJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json") -Seconds 3
+        $resultJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($resultJson -and $resultJson -match '"result"') {
             try {
                 $resultObj = $resultJson | ConvertFrom-Json
@@ -1870,11 +2023,20 @@ function Watch-AutomationResult {
                     if ($IsLauncherScript -and $nextStep -ne $lastLauncherResumeStep) {
                         $lastLauncherResumeStep = $nextStep
                         Write-Status "LAUNCHER_CONTINUE at step $nextStep -- checking launcher handoff" "Yellow"
+                        if (Test-SoftwareAndroidTestTarget) {
+                            if (-not (Wait-SoftwareLauncherHandoff -ExpectedRunId $ExpectedRunId -NextStep $nextStep)) {
+                                Write-Status "FAIL: Launcher handoff did not complete; refusing to force-stop a possibly progressing executor" "Red"
+                                return $false
+                            }
+                            Write-Status "Launcher consumed handoff -- continuing test monitoring" "Green"
+                            $lastAutomationProgressSeconds = $sw.Elapsed.TotalSeconds
+                            continue
+                        }
                         $handoffConsumed = $false
                         for ($handoffCheck = 0; $handoffCheck -lt 4; $handoffCheck++) {
                             Start-Sleep -Milliseconds 500
                             $handoffJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
-                                "cat", "files/automation_result.json") -Seconds 3
+                                "cat", "files/automation_result.json") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
                             if (-not ($handoffJson -and $handoffJson -match '"result"\s*:\s*"LAUNCHER_CONTINUE"')) {
                                 $handoffConsumed = $true
                                 break
@@ -1909,7 +2071,7 @@ function Watch-AutomationResult {
         } else {
             @("logcat", "-d", "-s", "DXX-Automate:*")
         }
-        $log = Adb-Timeout -AdbArgs $logArgs -Seconds 5
+        $log = Adb-Timeout -AdbArgs $logArgs -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5)
         if ($null -eq $log) {
             Write-Status "Warning: logcat not responding" "Yellow"
             continue
@@ -2026,18 +2188,18 @@ function Watch-AutomationResult {
         Write-Status "FAIL: Test timed out after ${TimeoutSeconds}s" "Red"
         # Dump diagnostics from files (more reliable than logcat)
         Write-Status "--- automation_log.jsonl (last 30 lines) ---" "Yellow"
-        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($stepLog) {
             ($stepLog -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
         } else {
             Write-Host "  (not available)" -ForegroundColor Gray
         }
         Write-Status "--- debug log files (last 30 lines each) ---" "Yellow"
-        $debugLogs = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/debuglogs/") -Seconds 3
+        $debugLogs = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/debuglogs/") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($debugLogs) {
             foreach ($logFile in ($debugLogs -split "`n" | Where-Object { $_.Trim() })) {
                 Write-Host "  -- $logFile --" -ForegroundColor DarkYellow
-                $content = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/debuglogs/$($logFile.Trim())") -Seconds 3
+                $content = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/debuglogs/$($logFile.Trim())") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
                 if ($content) {
                     ($content -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
                 }
@@ -2046,7 +2208,7 @@ function Watch-AutomationResult {
             Write-Host "  (no debug log files)" -ForegroundColor Gray
         }
         Write-Status "--- logcat DXX-Automate (last 30 lines) ---" "Yellow"
-        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5)
         if ($log) {
             ($log -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
         }
@@ -2056,7 +2218,7 @@ function Watch-AutomationResult {
     # On failure, dump step log for context
     if (-not $passed) {
         Write-Status "--- automation_log.jsonl (last 20 lines) ---" "Yellow"
-        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
         if ($stepLog) {
             ($stepLog -split "`n") | Select-Object -Last 20 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
         }
@@ -2216,7 +2378,9 @@ function Resolve-TestScript {
         [string]$ScriptPath,
         [Parameter(Mandatory = $true)]
         [string]$GameId,
-        [hashtable]$Params = @{}
+        [hashtable]$Params = @{},
+        [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default',
+        [switch]$SoftwareNavigation
     )
     # Fixtures use optional JSON properties; do not inherit a caller's strict property checks
     Set-StrictMode -Off
@@ -2257,6 +2421,19 @@ function Resolve-TestScript {
         }
     }
 
+    if ((Get-TestScriptDataEdition -ScriptPath $ScriptPath -DataEdition $DataEdition) -eq 'shareware') {
+        . (Join-Path $script:ANDROID_ROOT 'helpers/shareware_test_data.ps1')
+        Set-StrictMode -Off
+        $assetGame = if ($vars['GAME'] -eq 'd1-in-d2') { 'd1' } else { $GameId }
+        $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $assetGame
+        $vars['MISSION'] = $config.MissionTitle
+        if ($info._shareware_vars -and $info._shareware_vars.$GameId) {
+            foreach ($property in $info._shareware_vars.$GameId.PSObject.Properties) {
+                $vars[$property.Name] = $property.Value
+            }
+        }
+    }
+
     function Resolve-TemplateString {
         param([string]$Text, [string[]]$Stack = @())
 
@@ -2289,6 +2466,7 @@ function Resolve-TestScript {
     }
 
     # Resolve filtering first; excluded step values need no variables for this game
+    $navigationTimeoutMs = Get-SoftwareNavigationTimeoutMilliseconds -SoftwareNavigation:$SoftwareNavigation
     $filtered = @()
     foreach ($step in $arr) {
         if ($step._info) { continue }
@@ -2298,6 +2476,10 @@ function Resolve-TestScript {
         # Remove the "when" property from output
         if ($whenVal) {
             $step.PSObject.Properties.Remove('when')
+        }
+        if ($navigationTimeoutMs -gt 0 -and $step.action -eq 'tap_button' -and
+            -not $step.PSObject.Properties['timeout_ms']) {
+            $step | Add-Member -NotePropertyName timeout_ms -NotePropertyValue $navigationTimeoutMs
         }
         $filtered += Resolve-TemplateValue -Value $step
     }
@@ -2321,7 +2503,8 @@ function Get-ScriptTimeoutSeconds {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
-        [int]$BufferSeconds = 15
+        [int]$BufferSeconds = 15,
+        [switch]$SoftwareNavigation
     )
     if (-not (Test-Path $ScriptPath)) { return 60 + $BufferSeconds }
     $raw = Get-Content $ScriptPath -Raw
@@ -2329,6 +2512,16 @@ function Get-ScriptTimeoutSeconds {
     # Match all numeric values for timing keys (works on raw jsonc text)
     foreach ($m in [regex]::Matches($raw, '"(?:ms|timeout_ms|post_delay_ms)"\s*:\s*(\d+)')) {
         $totalMs += [int]$m.Groups[1].Value
+    }
+    $navigationTimeoutMs = Get-SoftwareNavigationTimeoutMilliseconds -SoftwareNavigation:$SoftwareNavigation
+    if ($navigationTimeoutMs -gt 0) {
+        $steps = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath | ConvertFrom-Json
+        foreach ($step in $steps) {
+            if ($step.PSObject.Properties['action'] -and $step.action -eq 'tap_button' -and
+                -not $step.PSObject.Properties['timeout_ms']) {
+                $totalMs += $navigationTimeoutMs
+            }
+        }
     }
     $seconds = [Math]::Ceiling($totalMs / 1000.0)
     return [Math]::Max(30, $seconds + $BufferSeconds)
@@ -2338,7 +2531,7 @@ function Get-SetupIntrospection {
     # Request and return parsed setup introspection JSON, or $null on failure.
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
     Start-Sleep -Milliseconds 800
-    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 5)
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
@@ -2448,13 +2641,17 @@ function Start-ManagedEmulatorProcess {
         [string]$GpuRenderer = "host",
         [switch]$Headless,
         [string]$DataPath,
-        [switch]$ReadOnly
+        [switch]$ReadOnly,
+        [switch]$SoftwareCpu
     )
 
     $logs = Get-ManagedEmulatorLaunchLogPaths -AvdName $AvdName
     Remove-Item -LiteralPath $logs.Stdout, $logs.Stderr -ErrorAction SilentlyContinue
     $port = Get-ManagedEmulatorPort -Serial $Serial
     $arguments = @("-avd", $AvdName, "-port", "$port", "-no-snapshot-load", "-no-snapshot-save", "-gpu", $GpuRenderer, "-crash-report-mode", "disabled")
+    if ($SoftwareCpu) {
+        $arguments += @("-accel", "off", "-cores", "2", "-memory", "1536", "-no-audio", "-no-boot-anim", "-feature", "-Vulkan")
+    }
     if ($Headless) {
         $arguments += "-no-window"
     }
@@ -2609,19 +2806,41 @@ function Test-EmulatorAccelerationAvailable {
     return $false
 }
 
+function Repair-EmulatorSharedStorageMount {
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [int]$TimeoutSeconds = 30
+    )
+    Get-ManagedEmulatorPort -Serial $Serial | Out-Null
+    $volumes = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "sm", "list-volumes", "all") -Seconds $TimeoutSeconds
+    if ($volumes -match '(?m)^emulated;0 unmountable(?: |$)') {
+        # Slow software boot can time out MediaProvider's initial FUSE session
+        Write-Status "Retrying the test emulator's unmountable shared storage volume" "Yellow"
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "sm mount 'emulated;0'") -Seconds $TimeoutSeconds | Out-Null
+    }
+}
+
 function Wait-EmulatorBootComplete {
     param(
         [Parameter(Mandatory)][string]$Serial,
-        [int]$TimeoutSeconds = 240
+        [int]$TimeoutSeconds = 240,
+        [int]$AdbTimeoutSeconds = 5,
+        [switch]$RecoverSharedStorage
     )
 
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $nextStorageRecovery = 60
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+        $boot = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds $AdbTimeoutSeconds
         if ($boot -and $boot.Trim() -eq "1") {
-            $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds 5
-            if ($packageService -and $packageService -notmatch "Can't find service: package" -and $packageService -match "package:android") {
-                if (Initialize-EmulatorTestUi -Serial $Serial) { return $true }
+            $packageService = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "pm", "list", "packages", "android") -Seconds $AdbTimeoutSeconds
+            if ($packageService -and $packageService -notmatch "Can't find service: package" -and $packageService -match '(?m)^package:android\r*$') {
+                if (Test-EmulatorSharedStorageReady -Serial $Serial -TimeoutSeconds $AdbTimeoutSeconds) {
+                    if (Initialize-EmulatorTestUi -Serial $Serial) { return $true }
+                } elseif ($RecoverSharedStorage -and $sw.Elapsed.TotalSeconds -ge $nextStorageRecovery) {
+                    Repair-EmulatorSharedStorageMount -Serial $Serial -TimeoutSeconds $AdbTimeoutSeconds
+                    $nextStorageRecovery = $sw.Elapsed.TotalSeconds + 60
+                }
             }
         }
         Start-Sleep -Seconds 1
@@ -2640,19 +2859,29 @@ function Start-ManagedEmulator {
         [string]$GpuRenderer = "host",
         [switch]$Headless,
         [string]$DataPath,
-        [switch]$ReadOnly
+        [switch]$ReadOnly,
+        [switch]$SoftwareCpu = ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1")
     )
 
+    if ($SoftwareCpu) {
+        if (-not $PSBoundParameters.ContainsKey("BootTimeoutSeconds")) { $BootTimeoutSeconds = 1200 }
+        if (-not $PSBoundParameters.ContainsKey("AppearTimeoutSeconds")) { $AppearTimeoutSeconds = 300 }
+        if (-not $PSBoundParameters.ContainsKey("ExistingProcessRecoverySeconds")) { $ExistingProcessRecoverySeconds = $BootTimeoutSeconds }
+        $GpuRenderer = "swiftshader"
+        $Headless = $true
+        Write-Status "Software CPU emulation requested; boot and tests may take several minutes" "Yellow"
+    }
+    $queryTimeout = if ($SoftwareCpu) { 30 } else { 5 }
     Get-ManagedEmulatorPort -Serial $Serial | Out-Null
     if (Test-DeviceOnline -Serial $Serial) {
-        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds) { return $true }
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds -AdbTimeoutSeconds $queryTimeout -RecoverSharedStorage:$SoftwareCpu) { return $true }
         Write-Status "Existing $Serial did not become ready; recycling it" "Yellow"
         if (-not (Stop-ManagedEmulator -Serial $Serial)) { return $false }
     }
     if (@(Get-ManagedEmulatorProcesses -Serial $Serial).Count -gt 0) {
         # ADB reconnect briefly removes a healthy emulator from the device list
         Write-Status "Waiting for existing $Serial to recover its ADB connection" "Yellow"
-        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $ExistingProcessRecoverySeconds) { return $true }
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $ExistingProcessRecoverySeconds -AdbTimeoutSeconds $queryTimeout -RecoverSharedStorage:$SoftwareCpu) { return $true }
         Write-Status "$Serial is still unresponsive; stopping its stale processes before relaunch" "Yellow"
         if (-not (Stop-ManagedEmulator -Serial $Serial)) {
             Write-Status "FAIL: Could not stop stale processes for $Serial" "Red"
@@ -2666,7 +2895,7 @@ function Start-ManagedEmulator {
     if (-not (Ensure-ManagedAvdExists -AvdName $AvdName)) {
         return $false
     }
-    if (-not (Test-EmulatorAccelerationAvailable)) {
+    if (-not $SoftwareCpu -and -not (Test-EmulatorAccelerationAvailable)) {
         return $false
     }
 
@@ -2675,9 +2904,12 @@ function Start-ManagedEmulator {
         @{ GpuRenderer = "swiftshader_indirect"; Headless = $true; Label = "swiftshader_indirect no-window" }
     )
 
+    # CPU emulation has no accelerated fallback; avoid repeating a full slow boot
+    if ($SoftwareCpu) { $launches = @($launches[0]) }
+
     foreach ($launch in $launches) {
         Write-Status "  Starting $AvdName ($Serial, $($launch.Label))..." "Yellow"
-        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -Serial $Serial -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless -DataPath $DataPath -ReadOnly:$ReadOnly)) {
+        if (-not (Start-ManagedEmulatorProcess -AvdName $AvdName -Serial $Serial -GpuRenderer $launch.GpuRenderer -Headless:$launch.Headless -DataPath $DataPath -ReadOnly:$ReadOnly -SoftwareCpu:$SoftwareCpu)) {
             Write-ManagedEmulatorLogTail -AvdName $AvdName
             continue
         }
@@ -2698,7 +2930,7 @@ function Start-ManagedEmulator {
         }
 
         Write-Status "  Waiting for $Serial to boot..."
-        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds) {
+        if (Wait-EmulatorBootComplete -Serial $Serial -TimeoutSeconds $BootTimeoutSeconds -AdbTimeoutSeconds $queryTimeout -RecoverSharedStorage:$SoftwareCpu) {
             Write-Status "  $Serial booted" "Green"
             return $true
         }
@@ -2720,7 +2952,7 @@ function Start-SecondEmulator {
     # Start EMU2 (Nexus5X_Light_2 on emulator-5556) if not already running.
     # Returns $true on success.
     if (Test-DeviceOnline -Serial $script:SECONDARY_EMULATOR_SERIAL) { return $true }
-    return Start-ManagedEmulator -AvdName $script:SECONDARY_AVD_NAME -Serial $script:SECONDARY_EMULATOR_SERIAL -AppearTimeoutSeconds 120 -BootTimeoutSeconds 240
+    return Start-ManagedEmulator -AvdName $script:SECONDARY_AVD_NAME -Serial $script:SECONDARY_EMULATOR_SERIAL -AppearTimeoutSeconds $(if ($env:DXX_ANDROID_SOFTWARE_EMULATOR -eq "1") { 300 } else { 120 })
 }
 
 function Ensure-FirewallRules {
@@ -2875,6 +3107,7 @@ function Install-ApkOnDevice {
     }
     if (-not $Serial) { $Serial = Initialize-AndroidTestTarget }
     Write-Status "Installing test APK on $Serial..."
+    # Single-ABI IDE-style debug builds declare android:testOnly
     $installArgs = @('install', '-r', '-t')
     # Restore the suite's saved debug APK after tests that install newer builds
     if ($Serial -like 'emulator-*') { $installArgs += '-d' }

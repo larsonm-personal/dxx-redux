@@ -400,6 +400,7 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_d1_wall_blast_save" = 300
     "test_async_checkpoint_unified" = 360
     "test_independent_checkpoints" = 1200
     "test_automap_objective_readiness_progress" = 600
@@ -472,6 +473,7 @@ $testTimeouts = @{
     "test_input_demo_determinism_matrix"  = 1800
     "test_input_demo_regressions"         = 1200
     "test_d1_replay_parity"               = 1800
+    "test_compact_public_replays"         = 1800
     "test_d1_in_d2_standalone"            = 900
     "test_input_demo_regressions_graphics" = 900
     "test_dos_midi_parity"                = 1500
@@ -515,7 +517,7 @@ function Get-RunTestJsoncChildTimeoutSeconds {
 
     $scriptTimeout = [Math]::Max(
         [Math]::Max(300, $TestTimeoutSeconds),
-        (Get-ScriptTimeoutSeconds -ScriptPath $ScriptPath)
+        (Get-ScriptTimeoutSeconds -ScriptPath $ScriptPath -SoftwareNavigation:(Test-SoftwareAndroidTestTarget))
     )
     if ((Get-ScriptIsLauncher -ScriptPath $ScriptPath) -and $scriptTimeout -lt 600) {
         $scriptTimeout = 600
@@ -537,6 +539,7 @@ function Get-RunAllJsoncTimeoutSeconds {
         $gameCount = 1
     }
     $perGameOverheadSeconds = if (Get-ScriptIsLauncher -ScriptPath $ScriptPath) { 90 } else { 45 }
+    $perGameOverheadSeconds = Get-AndroidInfrastructureTimeout -DefaultSeconds $perGameOverheadSeconds -Kind GameStartup
     return [int](($ChildTimeoutSeconds + $perGameOverheadSeconds) * $gameCount + 30)
 }
 
@@ -648,6 +651,7 @@ $noInfraTests = @(
     "test_vertigo_metadata_checkpoints",
     "test_vertigo_metadata",
     "test_metadata_level_headers",
+    "test_native_metadata_worker",
     "test_mission_metadata_flyouts",
     "test_flyout_safety",
     "test_mission_movies",
@@ -664,11 +668,17 @@ $noInfraTests = @(
     "test_input_demo_replay_menu",
     "test_input_demo_comparison_policy",
     "test_d1_replay_parity",
+    "test_compact_public_replays",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",
     "test_server_integration",
     "test_secret_area_baseline_diff",
+    "test_shareware_test_data",
+    "test_wall_blast_save_profiles",
+    "test_d1_wall_blast_save",
+    "test_shareware_automation_profiles",
+    "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
     "test_test_report_runtimes",
@@ -1342,7 +1352,7 @@ function Recover-SingleEmulatorEnvironment {
     Reconnect-AdbDevice
 
     $healthScript = Join-Path $helpersDir "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 180 -Kind Boot) -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
         Write-Status "Single-emulator recovery failed: emulator restart exit $healthExit" "Red"
@@ -1382,14 +1392,14 @@ function Recover-DualEmulatorEnvironment {
     }
 
     $healthScript = Join-Path $helpersDir "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 240 -Kind Boot) -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
     $healthExit = $LASTEXITCODE
     if ($healthExit -ne 0 -and $healthExit -ne 2) {
         Write-Status "Dual-emulator recovery failed: primary emulator restart exit $healthExit" "Red"
         return $false
     }
 
-    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 240 -AvdName $script:SECONDARY_AVD_NAME -PreferredSerial $script:SECONDARY_EMULATOR_SERIAL
+    & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 240 -Kind Boot) -AvdName $script:SECONDARY_AVD_NAME -PreferredSerial $script:SECONDARY_EMULATOR_SERIAL
     if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) { return $false }
 
     if (-not (Start-SecondEmulator)) {
@@ -1461,7 +1471,7 @@ function Invoke-SetupActivityPreflight {
         Reset-GameState
         Adb -AdbArgs @("logcat", "-c") | Out-Null
         Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-        if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
+        if (-not (Wait-SetupActivityReady -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 30 -Kind Launcher))) {
             return $false
         }
 
@@ -1533,7 +1543,7 @@ function Invoke-PrimaryEmulatorPreflight {
 
         if ($attempt -lt 2) {
             Write-Status "Preflight: restarting primary emulator and retrying launcher readiness" "Yellow"
-            & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds 180 -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
+            & $healthScript -Restart -Wait -ForceRestart -TimeoutSeconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 180 -Kind Boot) -AvdName $script:PRIMARY_AVD_NAME -PreferredSerial $script:PRIMARY_EMULATOR_SERIAL
             $healthExit = $LASTEXITCODE
             if ($healthExit -ne 0 -and $healthExit -ne 2) {
                 Write-Status "Preflight: emulator restart failed (exit $healthExit)" "Red"
@@ -1590,7 +1600,7 @@ function Invoke-SuitePreflight {
     }
 
     if ($needsPrimaryEmulator) {
-        if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
+        if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
             Write-Host "FAIL: Suite preflight cannot start an emulator without CPU acceleration" -ForegroundColor Red
             return $false
         }
@@ -1769,7 +1779,7 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
 $script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_enemy_within_import', 'test_demo_import', 'test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
-    if (-not (Test-PhysicalTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
+    if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
         exit 1
     }

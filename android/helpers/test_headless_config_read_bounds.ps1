@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][string]$Executable,
     [Parameter(Mandatory)][string]$HogDir,
     [Parameter(Mandatory)][string]$OutputRoot,
+    [string]$Mission = 'd2',
     [switch]$ConcurrentRewrite,
     [switch]$IsolatedDirectory
 )
@@ -65,7 +66,7 @@ public static class ConfigRewriteFixture {
     }
     $task = [pscustomobject]@{
         FilePath = $exe
-        Arguments = @('-hogdir', (Resolve-Path -LiteralPath $HogDir).Path, '-mission', 'd2', '-level', '1', '-route-confirm-json-out', (Join-Path $root 'result.json'))
+        Arguments = @('-hogdir', (Resolve-Path -LiteralPath $HogDir).Path, '-mission', $Mission, '-level', '1', '-route-confirm-json-out', (Join-Path $root 'result.json'))
         WorkingDirectory = $root
         TimeoutSeconds = 180
     }

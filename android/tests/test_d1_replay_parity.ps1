@@ -3,6 +3,10 @@
 [CmdletBinding()]
 param(
     [string]$DataDir,
+    [ValidateSet('retail', 'shareware')][string]$DataEdition = 'retail',
+    [string]$DemoDirectory,
+    [string]$NativeExe,
+    [string]$ImportedExe,
     [string[]]$DemoFileName,
     [string]$OutputPath,
     [int]$TimeoutSeconds = 300,
@@ -28,7 +32,12 @@ if ([IO.Path]::GetFileName($OutputPath).StartsWith('d1_replay_parity_', [StringC
 }
 & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') @retention
 Assert-OutputDiskSpace -Paths @($repoRoot, $OutputPath) -MinimumFreeGB $MinimumFreeSpaceGB
-$demos = @(Get-ChildItem -LiteralPath (Join-Path $repoRoot 'android/regression_demos') -Filter '*.dximdemo' -File |
+if (-not $DemoDirectory) { $DemoDirectory = Join-Path $repoRoot 'android/regression_demos' }
+if ($DataEdition -eq 'shareware') {
+    . (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
+    $DataDir = Resolve-SharewareTestData -RepoRoot $repoRoot -Game d1 -DataDir $DataDir
+}
+$demos = @(Get-ChildItem -LiteralPath $DemoDirectory -Filter '*.dximdemo' -File |
         Where-Object { (Get-InputDemoRecordedGameName -DemoPath $_.FullName) -eq 'd1' } | Sort-Object Name)
 if ($DemoFileName) {
     foreach ($name in $DemoFileName) {
@@ -47,14 +56,20 @@ if (-not $DataDir) {
     $DataDir = $line[0].Substring('Resolved d1 data dir: '.Length)
 }
 $DataDir = (Resolve-Path -LiteralPath $DataDir).Path
-foreach ($game in @('d1', 'd2')) {
-    Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName $game `
-        -ExecutablePath (Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName $game)
+if (-not $NativeExe) {
+    $NativeExe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName d1
+    Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName d1 -ExecutablePath $NativeExe
 }
+if (-not $ImportedExe) {
+    $ImportedExe = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName d2
+    Ensure-InputDemoExecutable -RepoRoot $repoRoot -GameName d2 -ExecutablePath $ImportedExe
+}
+$NativeExe = (Resolve-Path -LiteralPath $NativeExe).Path
+$ImportedExe = (Resolve-Path -LiteralPath $ImportedExe).Path
 $arguments = @(
     (Join-Path $PSScriptRoot 'd1_replay_parity.py'), '--repo', $repoRoot, '--data', $DataDir,
-    '--native', (Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName d1),
-    '--imported', (Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName d2),
+    '--native', $NativeExe,
+    '--imported', $ImportedExe,
     '--output', $OutputPath, '--pwsh', $pwsh, '--timeout', $TimeoutSeconds,
     '--minimum-free-gb', $MinimumFreeSpaceGB.ToString([Globalization.CultureInfo]::InvariantCulture)
 )

@@ -2,6 +2,47 @@
 
 This directory contains known Descent 1 and Descent 2 demo packages used for local extraction, Android import support, and regression test data setup.
 
+## Public host-test fixtures
+
+Prepare the small, pinned PC shareware corpus once from the same public GitHub
+release assets offered by the Android launcher:
+
+```powershell
+pwsh -NoProfile -File android/helpers/setup_shareware_test_data.ps1 -Download
+pwsh -NoProfile -File android/tests/test_shareware_test_data.ps1 -RequireData
+```
+
+The setup needs PowerShell 7, CMake and a C compiler. It builds only the existing
+`test_sow_direct` CLI, verifies the package sizes and SHA-256 hashes in
+`test_data_manifest.json`, expands the ZIP with the bounded archive helper, and
+assembles split SOW volumes with the production native extractor. It never runs
+`INSTALL.EXE`, the self-extracting package, or DOSBox. Final file sizes and hashes
+must match `android/tests/fixtures/demo_import_oracles.json` before publication.
+In particular, D1 uses the full 5,092,871-byte PIG from direct SOW extraction.
+
+Outputs are `game_data/shareware/d1` and `game_data/shareware/d2`; downloaded
+packages remain in `game_data/demo installers`. These binary files are ignored
+by Git. The D1 demo has seven levels (`level01.sdl` first); D2 has three
+(`d2leva-1.sl2` first), and its replay mission identity is `d2demo`.
+
+Setup without `-Download` accepts only already cached packages. Use `-Game d1`
+or `-Game d2` to prepare one game, `-ArchiveDirectory` for an offline package
+cache, `-DataRoot` for another output root, and `-ExtractorPath` for an existing
+in-tree `test_sow_direct` build. Valid extracted files are reused after hashing;
+corrupt cached packages fail closed and must be removed explicitly before a new
+download. Invalid extracted output is replaced only after a valid new tree has
+been prepared.
+
+Test callers dot-source `android/helpers/shareware_test_data.ps1`, use
+`Get-SharewareTestGameConfig -RepoRoot $repo -Game d1` for the required filenames,
+hashes and mission identity, then call
+`Resolve-SharewareTestData -RepoRoot $repo -Game d1 [-DataDir $directory]`.
+Resolution is strictly offline, verifies every required hash, rejects extra files
+or subdirectories that could override pinned content, and never falls back to
+registered game data or auto-extraction. Only the pinned files and the optional
+`.extraction-complete.json` provenance file are allowed in a fixture directory.
+`-DataDir` is the exact per-game directory, not the parent output root.
+
 ## Extraction Model
 
 The DOS demo packages are ZIP-compatible archives. `desc14sw.exe` is a PKLITE self-extracting ZIP with a DOS executable preamble, so readers must scan to the first ZIP local file header before using normal ZIP entry processing. The DOS packages contain `.sow` files, which are ARJ-style archives already handled by the native `sow_extract` code.

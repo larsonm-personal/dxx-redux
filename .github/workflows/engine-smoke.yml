@@ -15,7 +15,7 @@ jobs:
   engine:
     name: Linux ${{ matrix.game }} build and tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -34,28 +34,54 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
-            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev
+            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
+            xvfb xauth libgl1-mesa-dri
 
-      # Debug keeps assertions active; reduced debug info bounds disk/memory use
-      - name: Configure all desktop, headless and test targets
+      - name: Check the Linux build and test runner
+        timeout-minutes: 1
+        run: |
+          python3 android/tests/test_linux_build_cli.py
+          python3 android/tests/test_d1_briefing_automation.py
+
+      # Debug keeps assertions active; tests run serially with a 120-second timeout
+      - name: Build all native targets and run asset-free tests
+        timeout-minutes: 17
+        run: ./run-linux-build.sh --test --target "${{ matrix.game }}" --jobs 4 --generator Ninja
+
+      - name: Prepare pinned public shareware data
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $fixtures = if ('${{ matrix.game }}' -eq 'd2') { 'both' } else { 'd1' }
+          ./android/helpers/setup_shareware_test_data.ps1 -Game $fixtures -Download
+
+      - name: Exercise real shareware replay and metadata
+        timeout-minutes: 3
+        env:
+          SDL_VIDEODRIVER: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          game="${{ matrix.game }}"
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_input_demo_runtime_smoke.ps1 \
+            -Game "$game" -DataEdition shareware \
+            -"${game^^}Exe" "$PWD/build${game}-test/main/${game}x-redux"
+          pwsh -NoProfile -File android/tests/test_secret_area_baseline.ps1 \
+            -Game "$game" -DataEdition shareware -RequireAssets \
+            -"${game^^}Exe" "$PWD/build${game}-test/main/dxx-redux-${game}-headless-metadata"
+
+      - name: Check public metadata worker failure recovery
         timeout-minutes: 3
         run: |
-          cmake -S "${{ matrix.game }}" -B build-smoke -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug \
-            '-DCMAKE_C_FLAGS_DEBUG=-O0 -g1' '-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1' \
-            -DBUILD_TESTING=ON -DOPENGL=ON -DSDLMIXER=ON -DUDP=ON \
-            -DOpenGL_GL_PREFERENCE=LEGACY
-
-      - name: Compile and link all targets
-        timeout-minutes: 14
-        run: cmake --build build-smoke --parallel 4
-
-      # Some tests share fixture filenames, so run serially within each game
-      - name: Run asset-free engine and demo tests
-        timeout-minutes: 3
-        run: |
-          ctest --test-dir build-smoke --output-on-failure --no-tests=error \
-            --parallel 1 --timeout 120 --output-junit ctest-results.xml
+          game="${{ matrix.game }}"
+          worker="$PWD/build${game}-test/main/dxx-redux-${game}-metadata-worker"
+          pwsh -NoProfile -File android/tests/test_native_metadata_worker.ps1 \
+            -Game "$game" -DataEdition shareware -Executable "$worker"
+          pwsh -NoProfile -File android/tests/test_metadata_level_headers.ps1 \
+            -NoBuild -Game "$game" -DataEdition shareware -"${game^^}Exe" "$worker"
+          if [ "$game" = d2 ]; then
+            pwsh -NoProfile -File android/tests/test_native_metadata_worker.ps1 \
+              -Game d2 -ContentGame d1 -CheckProfileSwitch -DataEdition shareware -Executable "$worker"
+          fi
 
       - name: Keep test and configure diagnostics
         if: always()
@@ -63,9 +89,57 @@ jobs:
         with:
           name: engine-smoke-${{ matrix.game }}
           path: |
-            build-smoke/ctest-results.xml
-            build-smoke/Testing/Temporary/
-            build-smoke/CMakeFiles/CMakeConfigureLog.yaml
-            build-smoke/CMakeCache.txt
+            build${{ matrix.game }}-test/ctest-results.xml
+            build${{ matrix.game }}-test/Testing/Temporary/
+            build${{ matrix.game }}-test/CMakeFiles/CMakeConfigureLog.yaml
+            build${{ matrix.game }}-test/CMakeCache.txt
+            temp/input_demo_runtime_smoke/shareware/
+            android/temp/secret_area_shareware_baseline/
+            temp/native-metadata-worker-*/
+            android/temp/metadata-level-header-test/
+          retention-days: 3
+          if-no-files-found: ignore
+
+  public-sanitizers:
+    name: Linux public ASan runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: x11
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      POWERSHELL_TELEMETRY_OPTOUT: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libphysfs-dev libsdl1.2-dev \
+            libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
+            xvfb xauth libgl1-mesa-dri
+      - name: Check public profile orchestration
+        run: python3 android/tests/test_public_sanitizer_runner.py
+      - name: Prepare pinned public fixtures
+        shell: pwsh
+        run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
+      - name: Run instrumented public workloads
+        run: |
+          xvfb-run -a pwsh -NoProfile -File android/tests/run_engine_sanitizers.ps1 \
+            -Category Public -MaxParallel 2 -OutputRoot "$PWD/android/temp/public-sanitizers-ci"
+      - name: Keep sanitizer diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-sanitizer-diagnostics
+          path: |
+            android/temp/public-sanitizers-ci/
+            buildd1-asan/Testing/Temporary/
+            buildd2-asan/Testing/Temporary/
+            buildd1-asan/CMakeCache.txt
+            buildd2-asan/CMakeCache.txt
           retention-days: 3
           if-no-files-found: ignore

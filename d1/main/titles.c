@@ -1279,6 +1279,11 @@ static int briefing_handler(window *wind, d_event *event, briefing *br)
 }
 
 #ifdef __ANDROID__
+int android_d1_briefing_is_window(window *wind)
+{
+	return wind && window_get_callback(wind) == (int (*)(window *, d_event *, void *))briefing_handler;
+}
+
 void android_briefing_text_snapshot(android_briefing_text_state *state)
 {
 	window *front = window_get_front();

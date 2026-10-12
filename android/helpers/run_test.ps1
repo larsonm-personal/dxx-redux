@@ -24,7 +24,8 @@ param(
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
     [string]$Game,
-    [hashtable]$Params = @{}
+    [hashtable]$Params = @{},
+    [ValidateSet('default', 'retail', 'shareware')][string]$DataEdition = 'default'
 )
 
 $ErrorActionPreference = "Stop"
@@ -78,7 +79,13 @@ function Send-SetupCommand {
 function Resolve-GameDataDepsWithEmulatorRecovery {
     param([Parameter(Mandatory = $true)][array]$Deps)
 
+    if ($script:resolvedDataEdition -eq 'shareware') {
+        Initialize-SharewareAutomationData
+    } elseif ($script:isolatedDataProfile) {
+        Clear-AutomationDataSet
+    }
     if (Resolve-GameDataDeps -Deps $Deps) {
+        if ($script:isolatedDataProfile) { Assert-AutomationDeviceData -Deps $Deps }
         return $true
     }
     if (Test-EmulatorHealthy) {
@@ -88,7 +95,11 @@ function Resolve-GameDataDepsWithEmulatorRecovery {
     Write-Status "Emulator became unhealthy during game data resolution -- recovering before test start" "Yellow"
     Ensure-EmulatorHealthy | Out-Null
     Write-Status "Retrying game data resolution after emulator recovery" "Yellow"
-    return (Resolve-GameDataDeps -Deps $Deps)
+    if ($script:resolvedDataEdition -eq 'shareware') { Initialize-SharewareAutomationData }
+    elseif ($script:isolatedDataProfile) { Clear-AutomationDataSet }
+    $resolved = Resolve-GameDataDeps -Deps $Deps
+    if ($resolved -and $script:isolatedDataProfile) { Assert-AutomationDeviceData -Deps $Deps }
+    return $resolved
 }
 
 # -- Preflight script metadata --------------------------------
@@ -98,6 +109,12 @@ $scriptPath = if ([IO.Path]::IsPathRooted($ScriptName)) {
 } else {
     Join-RegressionPath $scriptDir "game_scripts" $ScriptName
 }
+$script:resolvedDataEdition = Get-TestScriptDataEdition -ScriptPath $scriptPath -DataEdition $DataEdition
+$script:isolatedDataProfile = (Get-TestScriptDataEdition -ScriptPath $scriptPath) -eq 'shareware'
+if ($script:isolatedDataProfile -and $PreserveState) {
+    throw 'Shareware automation requires a clean disposable file set; -PreserveState is not supported'
+}
+Write-Status "Game data edition: $script:resolvedDataEdition"
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 if ($Game) {
     # Explicit -Game parameter overrides _info
@@ -112,7 +129,7 @@ if (-not $isStandaloneScript) {
     Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
     if ($Params.Count -eq 0) {
         foreach ($preflightGame in $gameList) {
-            $preflightPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $preflightGame
+            $preflightPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $preflightGame -DataEdition $script:resolvedDataEdition -SoftwareNavigation:(Test-SoftwareAndroidTestTarget)
             $rawScriptText = Get-Content -LiteralPath $preflightPath -Raw
             $rawPlaceholders = @([regex]::Matches($rawScriptText, '\$\{[A-Za-z0-9_]+\}') | ForEach-Object { $_.Value } | Select-Object -Unique)
             if ($rawPlaceholders.Count -gt 0) {
@@ -216,7 +233,7 @@ try {
 
         # -- Resolve script (variable substitution + conditional filtering) --
 
-        $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
+        $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams -DataEdition $script:resolvedDataEdition -SoftwareNavigation:(Test-SoftwareAndroidTestTarget)
         $runId = [guid]::NewGuid().ToString("N")
         $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
         $pushName = "$scriptStem.run-$runId.jsonc"
@@ -256,7 +273,7 @@ try {
             }
         }
         $skipGameData = $false
-        $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
+        $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars -DataEdition $script:resolvedDataEdition
         if ($deps) {
             Write-Status "Resolving $($deps.Count) declared game data deps..."
             if (-not (Resolve-GameDataDepsWithEmulatorRecovery -Deps $deps)) {
@@ -313,7 +330,7 @@ try {
                     break
                 }
 
-                Write-Status "SetupActivity not responding after 30s" "Yellow"
+                Write-Status "SetupActivity readiness check timed out" "Yellow"
                 if ($launcherAttempt -ge 2) {
                     break
                 }

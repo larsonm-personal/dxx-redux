@@ -15,8 +15,8 @@ asset-free engine integration tests (AI, physics, weapons, triggers and save
 state), input-demo recording/replay component tests and D2's synthetic classic
 trigger demo writer/reader round trip. Tests run serially within each game
 because some fixtures share filenames. Each test has a default 120-second
-timeout, the test step has a three-minute limit, and zero discovered tests is
-an error. CTest logs/JUnit and configuration diagnostics are retained for three
+timeout, the combined configure/build/test step has a 17-minute limit, and zero
+discovered tests is an error. CTest logs/JUnit and configuration diagnostics are retained for three
 days, including on failures. Compiler output stays in the Actions job log
 
 This is Linux native coverage. It does not compile Android Kotlin/JNI-only
@@ -55,7 +55,35 @@ recorded-state comparison; repeatability alone is not recording fidelity
 
 ## Local reproduction on Ubuntu 24.04
 
-Install the packages listed in `engine-smoke.yml`, then repeat its configure,
-build and CTest commands with `d1` or `d2`. Use a different build directory for
-each game. The workflow deliberately invokes the existing CMake/CTest entry
-points directly, so there is no second test list or CI-only runner to maintain
+Install the packages listed in `engine-smoke.yml`, then run from the repo root:
+
+```sh
+./run-linux-build.sh --test
+# One CI matrix job, using the same four parallel build jobs
+./run-linux-build.sh --test --target d1 --jobs 4 --generator Ninja
+```
+
+CI and local tests share this runner and the registered CTest list. Test mode
+uses `buildd1-test` and `buildd2-test`, `BUILD_TESTING=ON`, Debug with `-O0 -g1`,
+and all normal native targets and features. It rejects non-Debug configurations
+to preserve assertions. CMake builds and CTest receive the same configuration,
+including for multi-configuration generators. CTest is resolved beside the
+selected CMake first, then from PATH
+
+Test builds do not overwrite normal host replay freshness stamps. Add
+`--sanitizer address` for independent `buildd1-test-asan` and `buildd2-test-asan`
+trees, or `--clean` to recreate only the selected trees. Build-only invocation
+without `--test` retains its existing defaults. Reports are written to
+`ctest-results.xml` inside each test build tree, alongside `Testing/Temporary/`
+and the CMake diagnostics retained by CI
+
+The workflow first runs the isolated CLI regression suite:
+
+```sh
+python3 android/tests/test_linux_build_cli.py
+```
+
+It executes the real shell runner against recording tool shims in temporary
+fixture repositories, then cleans them up. It checks argument validation,
+tool discovery, routing, configuration/build/test failures, diagnostics options,
+and separation from ordinary builds without compiling games or downloading assets

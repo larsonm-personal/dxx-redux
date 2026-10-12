@@ -11,7 +11,7 @@
 param(
     [ValidateSet('both', 'd1', 'd2')]
     [string]$Game = 'both',
-    [string]$Configuration = 'Release'
+    [string]$Configuration
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,6 +20,23 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $games = if ($Game -eq 'both') { @('d1', 'd2') } else { @($Game) }
+
+$linuxHost = [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Linux)
+if (-not $Configuration) {
+    $Configuration = if ($linuxHost) { 'Debug' } else { 'Release' }
+}
+
+if ($linuxHost) {
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python is required for Linux build CLI regression tests' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_linux_build_cli.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Linux build CLI regression tests failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_public_sanitizer_runner.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Public sanitizer runner regression tests failed' }
+    & bash (Join-Path $repoRoot 'run-linux-build.sh') --target $Game --test --build-type $Configuration
+    if ($LASTEXITCODE -ne 0) { throw "Native Linux build/tests failed with exit code $LASTEXITCODE" }
+    return
+}
 
 function Invoke-HostBuild {
     param([string]$GameName)
