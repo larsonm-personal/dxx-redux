@@ -50,6 +50,7 @@
 #include "android_mod_assets.h"
 #include "android_mod_bitmaps.h"
 #include "android_d1_mod_patches.h"
+#include "mod_save_compat.h"
 #endif
 #ifdef OGL
 #include "xmodel.h"
@@ -1378,6 +1379,7 @@ int d1_in_d2_publish_asset_data(d1_asset_generation *generation, const char **er
 	Active_d1_assets = generation;
 #ifdef __ANDROID__
 	android_d1_mod_apply_properties();
+	mod_save_capture_definitions();
 	android_mod_bitmaps_apply(1, NULL);
 #endif
 	memset(&Last_stats, 0, sizeof(Last_stats));

@@ -15,6 +15,50 @@ function Assert-Test {
     if (-not $Condition) { throw $Message }
 }
 
+# Exercise the real APK verifier with ZIP payloads and SDK-shaped DEX output
+. (Join-Path $repoRoot 'android/helpers/release-build.ps1')
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$identityApk = Join-Path $testRoot 'identity.apk'
+$identityDexdump = Join-Path $testRoot 'dexdump.ps1'
+$identityCommit = 'a' * 40
+$identityFields = @{
+    GIT_SHORT_HASH = $identityCommit.Substring(0, 12); GIT_COMMIT_COUNT = '123'
+    BUILD_DATE = '2026-10-11'; BUILD_TIME = '12:00 UTC'; BUILD_TYPE = 'release'
+}
+foreach ($identityCase in @('valid', 'stale-kotlin', 'stale-native', 'missing-engine', 'duplicate-class')) {
+    $dump = "Class descriptor  : 'Lcom/dxxredux/app/BuildInfo;'`n"
+    foreach ($field in $identityFields.Keys) {
+        $value = if ($identityCase -eq 'stale-kotlin' -and $field -eq 'GIT_SHORT_HASH') { 'old' } else { $identityFields[$field] }
+        $dump += "  name : '$field'`n  type : 'Ljava/lang/String;'`n  access : 0x0019 (PUBLIC STATIC FINAL)`n  value : `"$value`"`n"
+    }
+    [IO.File]::WriteAllText($identityDexdump, "`$global:LASTEXITCODE = 0`n@'`n$dump`n'@`n")
+    if (Test-Path -LiteralPath $identityApk) { Remove-Item -LiteralPath $identityApk }
+    $zip = [IO.Compression.ZipFile]::Open($identityApk, 'Create')
+    try {
+        $entries = @{ 'classes.dex' = 'SDK reads this fixture' }
+        if ($identityCase -eq 'duplicate-class') { $entries['classes2.dex'] = 'duplicate' }
+        foreach ($abi in @('armeabi-v7a', 'arm64-v8a', 'x86_64')) {
+            foreach ($engine in @('d1', 'd2')) {
+                if ($identityCase -eq 'missing-engine' -and $abi -eq 'x86_64' -and $engine -eq 'd2') { continue }
+                $nativeCommit = if ($identityCase -eq 'stale-native' -and $abi -eq 'arm64-v8a' -and $engine -eq 'd1') { 'b' * 40 } else { $identityCommit }
+                $entries["lib/$abi/libdxx-redux-$engine.so"] = "dxx-build:$nativeCommit`:123" + [char]0
+            }
+        }
+        foreach ($name in $entries.Keys) {
+            $writer = [IO.StreamWriter]::new($zip.CreateEntry($name).Open())
+            try { $writer.Write($entries[$name]) } finally { $writer.Dispose() }
+        }
+    } finally { $zip.Dispose() }
+    $identityFailure = $null
+    try {
+        Assert-ReleaseApkIdentity -Apk $identityApk -Dexdump $identityDexdump -Commit $identityCommit `
+            -VersionCode 123 -BuildDate '2026-10-11' -BuildTime '12:00 UTC'
+    } catch { $identityFailure = $_ }
+    Assert-Test (($null -eq $identityFailure) -eq ($identityCase -eq 'valid')) "Incorrect packaged identity result for $identityCase`: $identityFailure"
+    Assert-Test (@(Get-ChildItem $testRoot -Filter '.identity-*.dex').Count -eq 0) 'Identity verifier left extracted DEX files'
+    Write-Host "PASS packaged identity $identityCase"
+}
+
 # Functions are inherited by the release script, so gh can never reach the network
 function gh {
     $global:LASTEXITCODE = 0
@@ -174,9 +218,19 @@ if ($args -contains ':app:clean') {
 $global:dxxReleaseTestBuildNumber++
 $global:dxxReleaseTestBuildingLegacy = $args -contains '-PlegacyRelease=true'
 if ($global:dxxReleaseTestScenario -eq 'legacy-build-failure' -and $global:dxxReleaseTestBuildingLegacy) { $global:LASTEXITCODE = 1; return }
-Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'gradle *:app:clean *') 'Assemble must follow a successful clean'
-Assert-Test ($args -contains ':app:assembleRelease' -and $args -contains '--no-build-cache') 'Release must assemble without build-cache reuse'
-Assert-Test ($args -contains '-Pkotlin.incremental=false') 'Clean releases must not reuse Kotlin incremental state'
+Assert-Test ($args -contains ':app:assembleRelease') 'Release must assemble'
+Assert-Test ($args -contains '-PciApk=false' -and $args -contains '-PisolatedGithubBuild=true') 'Release must explicitly select isolated signed outputs'
+Assert-Test ($args -contains '--project-cache-dir') 'Each edition must retain its Gradle task history'
+Assert-Test ($args -contains "-PlegacyRelease=$($global:dxxReleaseTestBuildingLegacy.ToString().ToLowerInvariant())") 'Release must explicitly select its edition'
+if ($global:dxxReleaseTestScenario -like 'unclean*' -or $global:dxxReleaseTestScenario -eq 'rerun-new-commit') {
+    Assert-Test (@($global:dxxReleaseTestCalls | Where-Object { $_ -like 'gradle *:app:clean *' }).Count -eq 0) 'Unclean build must preserve outputs'
+    foreach ($option in @('--build-cache', '-Pkotlin.incremental=true', '--daemon', '--parallel', '--no-configuration-cache')) {
+        Assert-Test ($args -contains $option) "Unclean build lacks $option"
+    }
+} else {
+    Assert-Test ($global:dxxReleaseTestCalls[$global:dxxReleaseTestCalls.Count - 2] -like 'gradle *:app:clean *') 'Assemble must follow a successful clean'
+    Assert-Test ($args -contains '--no-build-cache' -and $args -contains '-Pkotlin.incremental=false') 'Clean releases must not reuse compiled task outputs'
+}
 if ($global:dxxReleaseTestScenario -eq 'build-failure' -or ($global:dxxReleaseTestScenario -eq 'rerun-build-failure' -and $global:dxxReleaseTestBuildNumber -gt 2)) {
     $global:LASTEXITCODE = 1; return
 }
@@ -189,7 +243,8 @@ if ($global:dxxReleaseTestScenario -eq 'native-warning') {
     }
 }
 $root = Split-Path $PSScriptRoot
-$output = Join-Path $root 'app/build/outputs/apk/release'
+$edition = if ($global:dxxReleaseTestBuildingLegacy) { 'legacy' } else { 'github' }
+$output = Join-Path $root "app/build/$edition/outputs/apk/release"
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 Set-Content (Join-Path $output 'app-release.apk') "fixture APK build $global:dxxReleaseTestBuildNumber legacy=$global:dxxReleaseTestBuildingLegacy"
 if ($global:dxxReleaseTestScenario -eq 'legacy-source-changed' -and $global:dxxReleaseTestBuildingLegacy) { Set-Content (Join-Path (Split-Path $root) 'source.txt') 'changed during legacy build' }
@@ -241,7 +296,7 @@ if ($global:dxxReleaseTestScenario -eq 'debuggable') { 'application-debuggable' 
 if ($global:dxxReleaseTestScenario -eq 'missing-abi') { "native-code: 'arm64-v8a'" } else { "native-code: 'armeabi-v7a' 'arm64-v8a' 'x86_64'" }
 '@
 
-$cases = @('native-warning', 'publish', 'draft', 'build-only', 'dirty', 'unpushed', 'orphan-tag', 'existing-release',
+$cases = @('unclean-build-only', 'unclean-stale-identity', 'native-warning', 'publish', 'draft', 'build-only', 'dirty', 'unpushed', 'orphan-tag', 'existing-release',
     'existing-draft', 'immutable-release', 'older-draft-target', 'release-api-failure', 'replace-failure', 'notes-update-failure', 'cleanup-failure', 'became-immutable',
     'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag', 'tag-update-failure', 'tag-create-failure', 'tag-verification-failure', 'retarget-failure',
     'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-build-failure', 'rerun-unsigned', 'rerun-upload-failure',
@@ -280,11 +335,20 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         New-Item -ItemType Directory -Path (Join-Path $androidDir $dir) -Force | Out-Null
     }
     Copy-Item (Join-Path $repoRoot 'android/release-github.ps1') $androidDir
+    Set-Content (Join-Path $androidDir 'helpers/release-build.ps1') @'
+function Read-ReleaseBuildMode { throw 'Unexpected release build prompt' }
+function Assert-ReleaseApkIdentity {
+    param($Apk, $Dexdump, $Commit, $VersionCode, $BuildDate, $BuildTime)
+    Assert-Test ($Commit -eq $global:dxxReleaseTestCommit -and $VersionCode -eq $global:dxxReleaseTestVersionCode) 'Wrong identity passed to APK verification'
+    if ($global:dxxReleaseTestScenario -eq 'unclean-stale-identity') { throw 'Packaged BuildInfo mismatch: GIT_SHORT_HASH' }
+}
+'@
     Set-Content (Join-Path $androidDir 'helpers/test_host_platform.ps1') $helperFixture
     Set-Content (Join-Path $androidDir 'helpers/retain-recent-artifacts.ps1') 'param($Artifacts)'
     Set-Content (Join-Path $androidDir 'helpers/gradle.ps1') $gradleFixture
     Set-Content (Join-Path $androidDir 'helpers/apksigner.ps1') $signerFixture
     Set-Content (Join-Path $androidDir 'helpers/aapt2.ps1') $aaptFixture
+    Set-Content (Join-Path $androidDir 'helpers/dexdump.ps1') '# Identity verification is mocked for orchestration scenarios'
     Set-Content (Join-Path $androidDir 'get_deps/tool_versions.conf') 'BUILD_TOOLS_VERSION=37.0.0'
     Set-Content (Join-Path $androidDir 'distribution_versions.conf') "CURRENT_MIN_SDK=24`nCURRENT_TARGET_SDK=36`nLEGACY_MIN_SDK=23`nLEGACY_TARGET_SDK=36"
     Set-Content (Join-Path $androidDir 'keystore.properties') '# No real credentials'
@@ -337,7 +401,9 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     if ($global:dxxReleaseTestScenario -eq 'prefix-tag') {
         & git -C $global:dxxReleaseTestRemote update-ref ($remoteTag + '-other') $oldCommit
     }
-    $parameters = @{ Version = $global:dxxReleaseTestVersion; NotesFile = (Join-Path $fixture 'notes.md') }
+    $parameters = @{ Version = $global:dxxReleaseTestVersion; NotesFile = (Join-Path $fixture 'notes.md'); BuildMode = 'Clean' }
+    if ($global:dxxReleaseTestScenario -like 'unclean*') { $parameters.BuildMode = 'Unclean'; $parameters.BuildOnly = $true }
+    if ($global:dxxReleaseTestScenario -eq 'rerun-new-commit') { $parameters.BuildMode = 'Unclean' }
     if ($global:dxxReleaseTestLegacy) { $parameters.Legacy = $true }
     if ($global:dxxReleaseTestScenario -in @('build-only', 'rerun-build-only', 'legacy-edition-build-only')) { $parameters.BuildOnly = $true }
     if ($global:dxxReleaseTestScenario -in @('draft', 'rerun-draft')) { $parameters.Draft = $true }
@@ -378,7 +444,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
         if ($global:dxxReleaseTestScenario -eq 'upload-only-dirty-build') {
             Set-Content (Join-Path $fixture 'source.txt') 'dirty source used for BuildOnly'
         }
-        $setupParameters = @{ Version = $global:dxxReleaseTestVersion; NotesFile = (Join-Path $fixture 'notes.md'); BuildOnly = $true }
+        $setupParameters = @{ Version = $global:dxxReleaseTestVersion; NotesFile = (Join-Path $fixture 'notes.md'); BuildOnly = $true; BuildMode = 'Clean' }
         if ($global:dxxReleaseTestLegacy) { $setupParameters.Legacy = $true }
         & (Join-Path $androidDir 'release-github.ps1') @setupParameters
         $parameters.Remove('NotesFile')
@@ -438,7 +504,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     }
     $failure = $null
     try { & (Join-Path $androidDir 'release-github.ps1') @parameters } catch { $failure = $_ }
-    $successExpected = $global:dxxReleaseTestScenario -in @('native-warning', 'publish', 'draft', 'build-only',
+    $successExpected = $global:dxxReleaseTestScenario -in @('unclean-build-only', 'native-warning', 'publish', 'draft', 'build-only',
         'existing-release', 'existing-draft', 'orphan-tag', 'older-tag', 'older-annotated-tag', 'current-annotated-tag', 'prefix-tag',
         'older-draft-target', 'rerun', 'rerun-new-commit', 'rerun-draft', 'rerun-build-only', 'rerun-upload-failure',
         'helper-dirty', 'helper-changed', 'docs-dirty', 'docs-changed', 'upload-only', 'upload-only-new-head', 'upload-only-dirty', 'upload-only-legacy', 'upload-only-replace',
@@ -446,6 +512,7 @@ foreach ($global:dxxReleaseTestScenario in $cases) {
     Assert-Test (($null -eq $failure) -eq $successExpected) "Unexpected result for $global:dxxReleaseTestScenario`: $failure"
     if (-not $successExpected) {
         $expectedFailure = switch ($global:dxxReleaseTestScenario) {
+            'unclean-stale-identity' { 'Packaged BuildInfo mismatch' }
             { $_ -in @('dirty', 'source-changed', 'source-staged', 'legacy-source-changed') } { 'App source has uncommitted changes' }
             { $_ -in @('unpushed', 'upload-only-unpushed') } { 'Push the branch' }
             'commit-api-failure' { 'check gh auth status' }

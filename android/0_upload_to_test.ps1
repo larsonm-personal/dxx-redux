@@ -11,7 +11,7 @@
 #   .\0_upload_to_test.ps1 -TrackName "alpha"  # Upload to alpha track instead
 #   .\0_upload_to_test.ps1 -BuildOnly          # Build through this wrapper without uploading
 #   .\0_upload_to_test.ps1 -Action 2 -ReleaseVersion 1.2.0  # GitHub release only
-#   .\0_upload_to_test.ps1 -Action 3 -ReleaseVersion 1.2.0  # Both, without prompts
+#   .\0_upload_to_test.ps1 -Action 3 -ReleaseVersion 1.2.0 -BuildMode Unclean  # Both, without prompts
 # Existing BuildType/TrackName/BuildOnly invocations keep the Play Store path unless Action is supplied
 
 param(
@@ -19,6 +19,7 @@ param(
     [string]$TrackName = "internal",  # Default: internal track
     [switch]$BuildOnly,               # Build selected destinations locally without publishing
     [ValidateSet('1', '2', '3')][string]$Action,
+    [ValidateSet('Clean', 'Unclean')][string]$BuildMode,
     [ValidatePattern('^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$')][string]$ReleaseVersion
 )
 
@@ -181,6 +182,7 @@ try {
     }
 
     if ($Action -eq '1' -and $ReleaseVersion) { throw '-ReleaseVersion requires -Action 2 or 3' }
+    if ($Action -eq '1' -and $BuildMode) { throw '-BuildMode requires -Action 2 or 3' }
     if ($Action -in @('2', '3')) {
         # Collect and validate the version before authentication, building or publishing
         while (-not $ReleaseVersion) {
@@ -192,12 +194,14 @@ try {
                 Write-Host 'Enter a version like 1.2.0 or 1.2.0-rc.1' -ForegroundColor Yellow
             }
         }
+        . (Join-Path $PSScriptRoot 'helpers/release-build.ps1')
+        if (-not $BuildMode) { $BuildMode = Read-ReleaseBuildMode }
     }
 
     if ($Action -in @('1', '3')) { Invoke-PlayBuildAndUpload }
     if ($Action -in @('2', '3')) {
         Write-Host "Building GitHub release $ReleaseVersion"
-        $releaseParameters = @{ Version = $ReleaseVersion }
+        $releaseParameters = @{ Version = $ReleaseVersion; BuildMode = $BuildMode }
         if ($BuildOnly) { $releaseParameters.BuildOnly = $true }
         & (Join-Path $PSScriptRoot 'release-github.ps1') @releaseParameters
         if ($LASTEXITCODE -ne 0) { throw "GitHub release failed with exit code $LASTEXITCODE" }

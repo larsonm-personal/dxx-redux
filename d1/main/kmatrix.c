@@ -267,7 +267,8 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_POSTLEVEL)) {
 		km->end_time = timer_query();
-		return 1;
+		if (event->type != EVENT_WINDOW_DRAW)
+			return 1;
 	}
 #endif
 	
@@ -352,6 +353,13 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 #endif
 			}
 			
+			// Cover underlying game/automap draws even on the frame that closes this window
+			kmatrix_redraw(km);
+			if (km->playing)
+				kmatrix_status_msg(Countdown_seconds_left, 1);
+			else
+				kmatrix_status_msg(f2i(timer_query()-km->end_time), 0);
+
 			// Check if end_time has been reached and exit loop
 			if (timer_query() >= km->end_time && km->end_time != -1)
 			{
@@ -365,12 +373,6 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 				break;
 			}
 
-			kmatrix_redraw(km);
-			
-			if (km->playing)
-				kmatrix_status_msg(Countdown_seconds_left, 1);
-			else
-				kmatrix_status_msg(f2i(timer_query()-km->end_time), 0);
 			break;
 			
 		case EVENT_WINDOW_CLOSE:

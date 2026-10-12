@@ -12,6 +12,7 @@ extern "C" {
 #include "gameseg.h"
 #include "gameseq.h"
 #include "guidebot_route_internal.h"
+#include "guidebot_goal_message.h"
 #include "key.h"
 #include "maths.h"
 #include "physics.h"
@@ -111,91 +112,48 @@ static bool moves_after_arrival(object *bot)
 	return maximum_distance > 20 * F1_0;
 }
 
-// Arriving at a real prerequisite must leave room for ordinary escort wandering
-static void switch_arrival(object *bot)
-{
-	const object saved_bot = *bot, saved_player = *ConsoleObject;
-	const int trigger = Escort_route_goal.objective_trigger;
-	place(bot, Escort_route_goal.target_seg);
-	place(ConsoleObject, bot->segnum);
-	Believed_player_pos = ConsoleObject->pos;
-	Believed_player_seg = ConsoleObject->segnum;
-	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
-	escort_create_path_to_goal(bot);
-	check("switch_arrival_has_short_path", bot->ctype.ai_info.path_length < 3);
-	GameTime64 += 6 * F1_0;
-	Buddy_last_seen_player = GameTime64;
-	do_escort_frame(bot, 0, 2);
-	check("switch_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
-	check("switch_arrival_keeps_moving", moves_after_arrival(bot));
-	check("switch_arrival_keeps_unfinished_objective", Escort_route_goal.active &&
-	                                                       Escort_route_goal.objective_trigger == trigger && Escort_special_goal == ESCORT_GOAL_HOSTAGE);
-	place(bot, saved_bot.segnum);
-	bot->pos = saved_bot.pos;
-	place(ConsoleObject, saved_player.segnum);
-	ConsoleObject->pos = saved_player.pos;
-	Believed_player_pos = ConsoleObject->pos;
-	Believed_player_seg = ConsoleObject->segnum;
-	escort_create_path_to_goal(bot);
-}
-
 static void hostage_request(object *bot)
 {
+	int hostage = -1;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type == OBJ_HOSTAGE) {
+			hostage = i;
+			break;
+		}
+	check("hostage_fixture_exists", hostage >= 0);
+	if (hostage < 0) return;
+	Players[Player_num].flags |= PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY;
+	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
+	check("hostages_fixture_unreachable_with_all_keys", exists_in_mine(bot->segnum, OBJ_HOSTAGE, -1, -1) == -2);
+	escort_set_goal_message_persistent(1);
+	set_escort_special_goal(KEY_6);
+	Escort_goal_object = ESCORT_GOAL_HOSTAGE;
+	// Model an existing or restored prerequisite after the red key was collected
+	Escort_route_goal.active = 1;
+	Escort_route_goal.objective_kind = LEVEL_METADATA_ROUTE_KEY;
+	Escort_route_goal.target_seg = bot->segnum;
+	std::snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "red key");
+	level_metadata_live_work_summary before = {}, after = {};
+	level_metadata_get_live_work_summary(&before);
+	escort_create_path_to_goal(bot);
+	level_metadata_get_live_work_summary(&after);
+	check("unreachable_hostages_clears_request_and_stale_route", Escort_goal_index == -2 &&
+	                                                                 Escort_special_goal == -1 && !Escort_route_goal.active);
+	const char *message = escort_goal_message();
+	check("unreachable_hostages_reports_failure", message && std::strstr(message, "Can't reach") &&
+	                                                  !std::strstr(message, "red key"));
+	check("unreachable_hostages_does_not_plan", before.full_plan_calls == after.full_plan_calls &&
+	                                                before.blocked_full_plan_calls == after.blocked_full_plan_calls &&
+	                                                before.deferred_refreshes == after.deferred_refreshes);
+	// Directly reachable hostages still use ordinary escort navigation
+	place(bot, Objects[hostage].segnum);
+	place(ConsoleObject, bot->segnum);
 	set_escort_special_goal(KEY_6);
 	Escort_goal_object = ESCORT_GOAL_HOSTAGE;
 	escort_create_path_to_goal(bot);
-	int hostages = 0;
-	for (int i = 0; i <= Highest_object_index; ++i)
-		if (Objects[i].type == OBJ_HOSTAGE) ++hostages;
-	check("hostages_command_retained", hostages && Escort_special_goal == ESCORT_GOAL_HOSTAGE);
-	check("hostages_has_physical_path", bot->ctype.ai_info.path_length > 0);
-	Results["hostage_guidance"] = escort_get_route_goal_instruction();
-	Results["hostage_objective_kind"] = Escort_route_goal.objective_kind;
-	Results["hostage_objective_segment"] = Escort_route_goal.objective_seg;
-	Results["hostage_path_endpoint"] = Point_segs[bot->ctype.ai_info.hide_index + bot->ctype.ai_info.path_length - 1].segnum;
-	check("hostages_selects_prerequisite", Escort_route_goal.active && Escort_route_goal.objective_trigger >= 0);
-	switch_arrival(bot);
-	int saved_trigger_flags[MAX_TRIGGERS];
-	for (int i = 0; i < Num_triggers; ++i) {
-		saved_trigger_flags[i] = Triggers[i].flags;
-		Triggers[i].flags |= TF_DISABLED;
-	}
-	escort_route_note_replan("test_blocked_hostage_access");
-	escort_create_path_to_goal(bot);
-	check("hostages_without_prerequisite_keeps_frontier", Escort_special_goal == ESCORT_GOAL_HOSTAGE &&
-	                                                          Escort_route_goal.active && Escort_route_goal.guidance_mode == ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT &&
-	                                                          bot->ctype.ai_info.path_length > 0);
-	for (int i = 0; i < Num_triggers; ++i)
-		Triggers[i].flags = saved_trigger_flags[i];
-	escort_route_note_replan("test_restore_hostage_access");
-	escort_create_path_to_goal(bot);
-	for (int i = 0; i <= Highest_object_index; ++i) {
-		if (Objects[i].type == OBJ_POWERUP) {
-			const int saved_id = Objects[i].id;
-			Objects[i].id = POW_KEY_RED;
-			detect_escort_goal_accomplished(i);
-			Objects[i].id = saved_id;
-			check("prerequisite_pickup_keeps_hostages_request", Escort_special_goal == ESCORT_GOAL_HOSTAGE);
-			break;
-		}
-	}
-	for (int step = 0; step < 12 && Escort_route_goal.active; ++step) {
-		const int trigger = Escort_route_goal.objective_trigger;
-		if (trigger < 0 || trigger >= Num_triggers) break;
-		Results["hostage_prerequisite_triggers"].push_back(trigger);
-		// Script the player's switch action; normal wall animation completes it
-		check_trigger_sub(trigger, Player_num, 1);
-		for (int frame = 0; frame < 120; ++frame) {
-			GameTime64 += FrameTime;
-			wall_frame_process();
-			triggers_frame_process();
-		}
-		GameTime64 += 5 * F1_0;
-		escort_create_path_to_goal(bot);
-	}
-	check("hostages_resume_ordinary_guidance_after_access", !Escort_route_goal.active &&
-	                                                            Escort_special_goal == ESCORT_GOAL_HOSTAGE && Escort_goal_index >= 0 &&
-	                                                            Objects[Escort_goal_index].type == OBJ_HOSTAGE);
+	check("reachable_hostages_use_ordinary_guidance", !Escort_route_goal.active &&
+	                                                      Escort_special_goal == ESCORT_GOAL_HOSTAGE && Escort_goal_index >= 0 &&
+	                                                      Objects[Escort_goal_index].type == OBJ_HOSTAGE && bot->ctype.ai_info.path_length > 0);
 	const int target = Escort_goal_index;
 	if (target >= 0 && target <= Highest_object_index && Objects[target].type == OBJ_HOSTAGE) {
 		detect_escort_goal_accomplished(target);

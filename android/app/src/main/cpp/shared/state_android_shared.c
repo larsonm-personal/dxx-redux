@@ -42,6 +42,7 @@
 #ifdef __ANDROID__
 #include <time.h>
 #include "state_checkpoint.h"
+#include "mod_save_compat.h"
 #include "checkpoint_file.h"
 
 static android_save_probe_lap save_probe_laps[32];
@@ -872,6 +873,10 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	struct PHYSFS_File *physfs_fp;
 	android_save_meta_write_params android_params;
 	char android_desc[STATE_ANDROID_DESC_LENGTH + 1];
+
+#ifdef __ANDROID__
+	if (!mod_save_write(fp)) return 0;
+#endif
 
 	if (rewind_file_is_memory(fp)) {
 		if ((Game_mode & GM_MULTI_COOP) && !coop_write_save_metadata_rewind(fp)) return 0;

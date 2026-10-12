@@ -22,6 +22,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cma
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
 get_filename_component(DXX_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
+if(NOT DEFINED DXX_ANDROID_BUILD_INFO_DIR)
+    set(DXX_ANDROID_BUILD_INFO_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info")
+endif()
 set(DXX_DEPENDENCY_MANIFEST "${DXX_PROJECT_ROOT}/android/get_deps/tool_versions.conf")
 
 # ──────────────────────────────────────────────────────────────
@@ -581,6 +585,7 @@ set(DXX_ANDROID_GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mod_assets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/mod_save_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mod_bitmaps.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_d1_mod_patches.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_usage.cpp
@@ -636,7 +641,7 @@ target_include_directories(
             ${D1_SRC}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/shared
             ${CMAKE_CURRENT_SOURCE_DIR}/extract
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info
+            ${DXX_ANDROID_BUILD_INFO_DIR}
             ${_TSF_DIR}
             ${_DECODERS_DIR})
 
@@ -679,7 +684,7 @@ target_link_libraries(dxx-redux-d1 PRIVATE dxx_graphics_safety)
 target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
 dxx_audio_tag_apply(dxx-redux-d1)
 dxx_input_demo_apply_codec_deps(dxx-redux-d1)
-dxx_input_demo_apply_build_metadata(dxx-redux-d1)
+# Android replay identity comes from Gradle's tracked generated header
 target_compile_definitions(dxx-redux-d1 PRIVATE KHRONOS_STATIC)
 if(DXX_STRICT_FP)
     set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
@@ -746,7 +751,7 @@ target_include_directories(
             ${D2_SRC}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/shared
             ${CMAKE_CURRENT_SOURCE_DIR}/extract
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/generated/native-build-info
+            ${DXX_ANDROID_BUILD_INFO_DIR}
             ${_TSF_DIR}
             ${_DECODERS_DIR})
 
@@ -803,7 +808,7 @@ target_link_libraries(dxx-redux-d2 PRIVATE dxx_graphics_safety)
 target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
 dxx_audio_tag_apply(dxx-redux-d2)
 dxx_input_demo_apply_codec_deps(dxx-redux-d2)
-dxx_input_demo_apply_build_metadata(dxx-redux-d2)
+# Android replay identity comes from Gradle's tracked generated header
 target_compile_definitions(dxx-redux-d2 PRIVATE KHRONOS_STATIC)
 if(DXX_STRICT_FP)
     set_property(TARGET dxx-redux-d2 PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)

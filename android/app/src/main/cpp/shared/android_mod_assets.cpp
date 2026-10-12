@@ -77,9 +77,9 @@ void android_mod_sound_loaded(int sample, const char *filename)
 	entry.played = false;
 	dirty = true;
 	android_sound_trace_loaded(sample, filename, 0, 1);
-	debug_log_force(DLOG_GAME, "[MOD] sound=%d file='%s' source='%s' bytes=%zu rate=%d hash=%s",
-	                sample, entry.path.c_str(), entry.origin.c_str(), entry.fingerprint.length,
-	                GameSounds[sample].freq, hash_text(entry.fingerprint).c_str());
+	debug_log(DLOG_GAME, "[MOD] sound=%d file='%s' source='%s' bytes=%zu rate=%d hash=%s",
+	          sample, entry.path.c_str(), entry.origin.c_str(), entry.fingerprint.length,
+	          GameSounds[sample].freq, hash_text(entry.fingerprint).c_str());
 }
 
 void android_mod_sound_bank_loaded(int sample, const char *filename)
@@ -127,7 +127,7 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 	const PHYSFS_sint64 length = PHYSFS_fileLength(file);
 	if (length <= 0 || length > SOUND_TRACE_MAX_BYTES) {
 		PHYSFS_close(file);
-		debug_log_force(DLOG_GAME, "[MOD] rejected PCM file='%s' bytes=%lld", paths[selected].c_str(), (long long) length);
+		debug_log(DLOG_GAME, "[MOD] rejected PCM file='%s' bytes=%lld", paths[selected].c_str(), (long long) length);
 		return;
 	}
 	std::vector<unsigned char> bytes(static_cast<size_t>(length));
@@ -162,15 +162,15 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 
 void android_mod_sound_played(int sample)
 {
-	if (sample < 0 || sample >= MAX_SOUND_FILES) return;
+	if (!debug_log_enabled[DLOG_GAME] || sample < 0 || sample >= MAX_SOUND_FILES) return;
 	auto &entry = sounds[sample];
 	if (entry.path.empty() || entry.played) return;
 	const auto current = sound_trace_fingerprint_bytes(GameSounds[sample].data, GameSounds[sample].length);
 	if (sound_trace_fingerprint_match(current, entry.fingerprint) != 1) return;
 	entry.played = true;
 	dirty = true;
-	debug_log_force(DLOG_GAME, "[MOD] played sound=%d file='%s' source='%s' hash=%s",
-	                sample, entry.path.c_str(), entry.origin.c_str(), hash_text(current).c_str());
+	debug_log(DLOG_GAME, "[MOD] played sound=%d file='%s' source='%s' hash=%s",
+	          sample, entry.path.c_str(), entry.origin.c_str(), hash_text(current).c_str());
 }
 
 void android_mod_asset_loaded(const char *kind, const char *filename, int width, int height)
@@ -182,24 +182,27 @@ void android_mod_asset_loaded(const char *kind, const char *filename, int width,
 	if (std::find(presentation.begin(), presentation.end(), asset) != presentation.end()) return;
 	presentation.push_back(std::move(asset));
 	dirty = true;
-	debug_log_force(DLOG_GAME, "[MOD] loaded %s='%s' source='%s' size=%dx%d", kind, path.c_str(), origin.c_str(), width, height);
+	debug_log(DLOG_GAME, "[MOD] loaded %s='%s' source='%s' size=%dx%d", kind, path.c_str(), origin.c_str(), width, height);
 }
 
 nlohmann::json android_mod_usage_snapshot()
 {
 	nlohmann::json entries = nlohmann::json::array();
+	// On-demand introspection must also respect the user's logging switch
+	if (!debug_log_enabled[DLOG_GAME])
+		return { { "schema", 1 }, { "enabled", false }, { "sounds", entries }, { "presentation", entries } };
 	for (size_t i = 0; i < sounds.size(); ++i) {
 		const auto &entry = sounds[i];
 		if (entry.path.empty()) continue;
 		const auto current = sound_trace_fingerprint_bytes(GameSounds[i].data, GameSounds[i].length);
 		entries.push_back({ { "sample", i }, { "file", entry.path }, { "source", entry.origin }, { "bytes", entry.fingerprint.length }, { "hash", hash_text(entry.fingerprint) }, { "rate", GameSounds[i].freq }, { "played", entry.played }, { "resident", sound_trace_fingerprint_match(current, entry.fingerprint) == 1 } });
 	}
-	return { { "schema", 1 }, { "sounds", std::move(entries) }, { "presentation", presentation } };
+	return { { "schema", 1 }, { "enabled", true }, { "sounds", std::move(entries) }, { "presentation", presentation } };
 }
 
 void android_mod_usage_flush(void)
 {
-	if (!dirty || SDL_GetTicks() - last_flush < 1000) return;
+	if (!debug_log_enabled[DLOG_GAME] || !dirty || SDL_GetTicks() - last_flush < 1000) return;
 	const char *dir = PHYSFS_getWriteDir();
 	if (!dir) return;
 	// Schema and filename are shared with ModUsage.kt

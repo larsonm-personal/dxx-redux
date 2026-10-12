@@ -19,6 +19,7 @@
 #include "gameseq.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "net/rejoin_diagnostics.h"
 
 static void coop_host_migration_write_metadata(void)
 {
@@ -94,6 +95,8 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 	    decision.action != COOP_HOST_MIGRATION_REMOTE_HOST)
 		return 0;
 
+	rejoin_diag_world("migration_before");
+	REJOIN_LOG("migration disconnected=%d replacement=%d action=%d", disconnected_player, decision.new_master, decision.action);
 	Multi_master_playernum = decision.new_master;
 	android_rewind_reset_level();
 	coop_level_restart_clear();
@@ -109,5 +112,6 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 		/* Kotlin replaces the client proxy with a host-mode loopback proxy. */
 		android_notify_host_migration();
 	}
+	rejoin_diag_world("migration_after");
 	return 1;
 }

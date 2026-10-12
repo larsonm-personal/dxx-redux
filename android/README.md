@@ -25,10 +25,25 @@ Run `./android/0_upload_to_test.ps1` for the publishing menu:
 3. Do both, with Play Store first and GitHub second
 
 Options 2 and 3 ask for the GitHub release version before work starts. Use
-`-Action 3 -ReleaseVersion 1.2.0` to run both without prompts. `-BuildOnly` builds
+`-Action 3 -ReleaseVersion 1.2.0 -BuildMode Unclean` to run both without prompts. `-BuildOnly` builds
 the selected destinations locally; existing `-BuildType`, `-TrackName` and
 `-BuildOnly` invocations keep the Play Store path unless `-Action` is supplied.
 GitHub publishing requires clean, pushed app source; Markdown documentation and release-helper edits are allowed.
+
+GitHub builds ask **clean or unclean** once, before either destination starts.
+Enter selects unclean (incremental). `-BuildMode Clean` rebuilds the app without
+compiled task cache reuse; `-BuildMode Unclean` preserves outputs and enables
+Gradle's build cache, Kotlin incremental compilation, daemon reuse and parallel
+project execution. `-BuildMode` also works with `release-github.ps1` directly.
+Current and legacy editions retain separate outputs under `app/build/github`
+and `app/build/legacy`, with task history in `.gradle/release-github` and
+`.gradle/release-legacy`. Downloaded dependencies and the Gradle build cache stay
+shared. The first build populates these directories; later builds
+reuse unchanged work. Clean/unclean describes build outputs, not Git source status.
+Both modes verify the APK's signing, package, versions, SDKs and packaged Kotlin
+and native build identity before accepting it. `-UploadOnly` never asks or builds.
+Configuration caching is disabled while custom tasks depend on execution-time
+Project access. Dependency verification and native compiler input checks stay enabled.
 
 Run `./android/1_build_aab_apk.ps1 -BuildType 2` to build a release AAB and a
 signed universal direct-install APK together. Release/Internal build the Play

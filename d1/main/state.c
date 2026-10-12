@@ -96,7 +96,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
+#ifdef __ANDROID__
+#define STATE_VERSION 20 /* Source definitions for presentation-compatible restores */
+#else
 #define STATE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
+#endif
 #define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
@@ -160,6 +164,7 @@ static int g_android_save_blank_thumbnail = 0;
 
 #ifdef __ANDROID__
 #include "state_android_shared.h"
+#include "mod_save_compat.h"
 
 #define PHYSFS_file rewind_file
 #define PHYSFS_read rewind_file_read
@@ -306,6 +311,9 @@ static int state_effect_has_runtime_override(int effect_num, fix64 effect_loop_t
 static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_time)
 {
 	int count, dynamic_flags, i;
+#ifdef __ANDROID__
+	mod_save_effect_offset(fp);
+#endif
 
 	count = 0;
 	state_write_fix64_value(fp, effect_loop_time);
@@ -331,6 +339,12 @@ static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_
 
 static void state_read_effect_runtime_state(PHYSFS_file *fp, int swap, int version, fix64 default_effect_loop_time)
 {
+#ifdef __ANDROID__
+	if (version >= STATE_EFFECT_RUNTIME_VERSION) {
+		mod_save_read_effects(fp, swap, 1);
+		return;
+	}
+#endif
 	fix64 effect_loop_time;
 	int count, dynamic_flags, i;
 
@@ -756,6 +770,10 @@ static int state_validate_stuck_runtime_state(PHYSFS_file *fp, int swap)
 
 static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
+#ifdef __ANDROID__
+	if (version >= STATE_EFFECT_RUNTIME_VERSION)
+		return mod_save_validate_effects(fp, swap);
+#endif
 	ubyte seen[MAX_EFFECTS];
 	int count, i;
 
@@ -2212,10 +2230,12 @@ static int state_restore_all_sub_impl(char *filename, int *world_changed);
 int state_restore_all_sub(char *filename)
 {
 	int world_changed = 0;
+	mod_save_begin();
 	android_restore_begin("d1", filename, Current_level_num,
 	                      (Game_mode & GM_MULTI_COOP) && multi_i_am_master(),
 	                      Game_wind && window_is_visible(Game_wind));
 	int result = state_restore_all_sub_impl(filename, &world_changed);
+	mod_save_finished(result);
 	if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
 	if (!result && world_changed) {
 		restore_requires_menu = 1;
@@ -2371,6 +2391,13 @@ int state_restore_all_sub(char *filename)
 //Read level info
 	current_level = PHYSFSX_readSXE32(fp, swap);
 	PHYSFS_seek(fp, PHYSFS_tell(fp) + sizeof(PHYSFS_sint32)); // skip Next_level_num
+#ifdef __ANDROID__
+	if (!mod_save_prepare(fp, current_level, version, swap)) {
+		*world_changed = Game_wind != NULL;
+		PHYSFS_close(fp);
+		return 0;
+	}
+#endif
 #ifdef __ANDROID__
 	if (Game_mode & GM_MULTI_COOP)
 		COOPLOG("restore saved level: game=d1 file='%s' saved_level=%d current_before=%d net_before=%d state_game_id=%u mission='%s'",
@@ -2861,6 +2888,8 @@ RetryObjectLoading:
 		filename, Current_level_num, Players[Player_num].callsign,
 		Highest_object_index, Game_mode);
 	{
+		if (!mod_save_adapt_world()) { PHYSFS_close(fp); return 0; }
+		mod_save_skip_trailer(fp);
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;

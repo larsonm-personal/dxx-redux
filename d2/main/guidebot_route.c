@@ -2253,64 +2253,14 @@ int escort_route_adopt_exit_command(void)
 	return 1;
 }
 
-/* Explicit Hostages intent survives prerequisite guidance and player visits.
- * Reuse the segment planner only on a slow cadence; the escort owns movement */
+/* Use ordinary hostage reachability until prerequisite planning supports live
+ * segment destinations without reusing an unrelated progression objective */
 int escort_route_prepare_hostage(object *objp)
 {
 	if (!guidebot_routing_is_enhanced())
 		return -1;
-	int reachable = exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
-	if (reachable != -2) {
-		escort_route_clear_goal();
-		return reachable;
-	}
-	if (Escort_hostage_object < 0 || Escort_hostage_object > Highest_object_index ||
-	    Objects[Escort_hostage_object].type != OBJ_HOSTAGE ||
-	    Objects[Escort_hostage_object].signature != Escort_hostage_signature) {
-		fix best_distance = 0;
-		Escort_hostage_object = -1;
-		for (int i = 0; i <= Highest_object_index; ++i) {
-			if (Objects[i].type != OBJ_HOSTAGE)
-				continue;
-			fix distance = vm_vec_dist_quick(&objp->pos, &Objects[i].pos);
-			if (Escort_hostage_object < 0 || distance < best_distance) {
-				Escort_hostage_object = i;
-				best_distance = distance;
-			}
-		}
-		if (Escort_hostage_object < 0)
-			return -1;
-		Escort_hostage_signature = Objects[Escort_hostage_object].signature;
-		Escort_hostage_next_plan = 0;
-	}
-	if (Escort_route_goal.active && !level_metadata_live_route_work_pending() &&
-	    GameTime64 < Escort_hostage_next_plan &&
-	    Escort_hostage_next_plan - GameTime64 <= 3 * F1_0)
-		return Escort_hostage_object;
-	Escort_hostage_next_plan = GameTime64 + 3 * F1_0;
-	const int target = Objects[Escort_hostage_object].segnum;
-	Escort_route_metadata_rescan_count++;
-	level_metadata_rescan_route_to_segment_from_object(objp - Objects, target);
-	if (level_metadata_live_route_work_pending() && Escort_route_goal.active)
-		return Escort_hostage_object;
-	escort_route_goal candidate;
-	escort_route_goal_initialize(&candidate);
-	if (!level_metadata_live_route_work_pending())
-		(void) escort_route_select_next_goal(&candidate, NULL);
-	/* A missing plan still has a useful physical frontier. Never replace the
-	 * Hostages command with SCRAM, or present the segment endpoint as an exit */
-	if (!candidate.active || candidate.objective_kind == LEVEL_METADATA_ROUTE_EXIT ||
-	    candidate.objective_kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
-		escort_route_goal_initialize(&candidate);
-		candidate.active = 1;
-		candidate.objective_kind = ESCORT_ROUTE_OBJECTIVE_HOSTAGE;
-		candidate.target_seg = candidate.objective_seg = target;
-		candidate.objective_object = Escort_hostage_object;
-		candidate.guidance_mode = ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
-		snprintf(candidate.label, sizeof(candidate.label), "HOSTAGES");
-	}
-	escort_route_publish_goal(&candidate);
-	return Escort_hostage_object;
+	escort_route_clear_goal();
+	return exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
 }
 
 void escort_route_refresh_metadata(void)
@@ -2413,14 +2363,8 @@ void escort_route_monitor_completion(void)
 {
 	if (!guidebot_routing_is_enhanced())
 		return;
-	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
-		/* Continue budgeted work without replacing the live movement path */
-		if (escort_route_has_local_authority() &&
-		    escort_is_companion_object(Buddy_objnum) &&
-		    level_metadata_live_route_work_pending())
-			(void) escort_route_prepare_hostage(&Objects[Buddy_objnum]);
+	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
 		return;
-	}
 	escort_route_goal previous_goal;
 	guidebot_route_decision previous_decision;
 	guidebot_route_decision next_decision;

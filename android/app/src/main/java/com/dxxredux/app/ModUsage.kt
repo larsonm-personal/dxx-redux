@@ -35,6 +35,6 @@ internal fun readModUsage(
                     "${sounds.size} sounds loaded, $played played; $images images, $fonts fonts loaded"
                 }
             val details = if (patches > 0) "$text; $patches data patches applied" else text
-            "Last ${game.uppercase()} engine run" to details
+            "Last recorded ${game.uppercase()} mod use (Game Logs)" to details
         }.getOrNull()
     }

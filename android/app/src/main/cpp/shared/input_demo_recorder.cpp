@@ -15,6 +15,15 @@
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 
+#ifdef __ANDROID__
+#include "android_native_build_info.h"
+#define DXX_INPUT_DEMO_BUILD_NUMBERi DXX_ANDROID_VERSION_CODE
+#define DXX_INPUT_DEMO_GIT_VERSION   DXX_ANDROID_GIT_COMMIT
+// Exported so release verification can inspect the stripped APK libraries
+extern "C" __attribute__((visibility("default"))) const char dxx_android_build_identity[] =
+    DXX_ANDROID_BUILD_ID;
+#endif
+
 namespace
 {
 

@@ -249,6 +249,10 @@ void bm_read_all(PHYSFS_file * fp)
 		exit_modelnum = destroyed_exit_modelnum = N_polygon_models;
 
 	dxa_metadata_patch_apply_d2_ham();
+#ifdef __ANDROID__
+	extern void mod_save_capture_definitions(void);
+	mod_save_capture_definitions();
+#endif
 }
 
 //these values are the number of each item in the release of d2
@@ -301,6 +305,8 @@ void bm_read_extra_robots(const char *fname,int type)
 
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("extra_ham", fname);
+	extern void mod_save_capture_extra_ham(const char *filename);
+	mod_save_capture_extra_ham(fname);
 #endif
 	if (type == 2) {
 		int sig;

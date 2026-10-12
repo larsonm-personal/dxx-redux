@@ -23,6 +23,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "game.h"
 #include "multi.h"
+#ifdef __ANDROID__
+#include "net/rejoin_diagnostics.h"
+#endif
 #include "multi_gameplay_options.h"
 #include "object.h"
 #include "laser.h"
@@ -3179,6 +3182,12 @@ multi_reset_stuff(void)
 void
 multi_reset_player_object(object *objp)
 {
+#ifdef __ANDROID__
+	if (objp >= Objects && objp < Objects + MAX_OBJECTS && objp->type != OBJ_PLAYER && objp->type != OBJ_GHOST) {
+		REJOIN_LOG("bad_player_object obj=%d type=%d id=%d", (int) (objp - Objects), objp->type, objp->id);
+		rejoin_diag_world("bad_player_object");
+	}
+#endif
 	int i;
 
 	//Init physics for a non-console player
@@ -4324,6 +4333,9 @@ multi_prep_level(void)
 	Assert(Game_mode & GM_MULTI);
 
 	Assert(NumNetPlayerPositions > 0);
+#ifdef __ANDROID__
+	rejoin_diag_world("multi_prep_begin");
+#endif
 
 	Bounty_target = 0;
 

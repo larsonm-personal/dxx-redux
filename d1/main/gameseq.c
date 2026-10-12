@@ -116,6 +116,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_log.h"
 #include "android_profile.h"
+#include "mod_save_compat.h"
 #include "android_route_metadata.h"
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
@@ -807,6 +808,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	}
 
 #ifdef __ANDROID__
+	mod_save_capture_level(level_name);
 	load_profile.textures_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 

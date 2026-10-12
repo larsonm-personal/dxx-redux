@@ -108,7 +108,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Version 39 binds imported D1 optional asset IDs before the object array
 // Version 40 also binds original base and custom definition sources
 // Versions 41 (D2) and 42 (D1-in-D2) preserve Guidebot runtime state
+#ifdef __ANDROID__
+#define STATE_VERSION 43 /* Source definitions for presentation-compatible restores */
+#else
 #define STATE_VERSION GUIDEBOT_RUNTIME_SAVE_VERSION
+#endif
 #define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
 #define STATE_D1_BOSS_STATE_VERSION 33
@@ -184,6 +188,7 @@ extern int Final_boss_is_dead;
 
 #ifdef __ANDROID__
 #include "state_android_shared.h"
+#include "mod_save_compat.h"
 
 static PHYSFS_sint64 state_android_physfs_raw_length(struct PHYSFS_File *file)
 {
@@ -457,6 +462,9 @@ static int state_effect_has_runtime_override(int effect_num, fix64 effect_loop_t
 static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_time)
 {
 	int count, dynamic_flags, i;
+#ifdef __ANDROID__
+	mod_save_effect_offset(fp);
+#endif
 
 	count = 0;
 	state_write_fix64_value(fp, effect_loop_time);
@@ -482,6 +490,12 @@ static void state_write_effect_runtime_state(PHYSFS_file *fp, fix64 effect_loop_
 
 static void state_read_effect_runtime_state(PHYSFS_file *fp, int swap, int apply, int version, fix64 default_effect_loop_time)
 {
+#ifdef __ANDROID__
+	if (version >= STATE_EFFECT_RUNTIME_VERSION) {
+		mod_save_read_effects(fp, swap, apply);
+		return;
+	}
+#endif
 	fix64 effect_loop_time;
 	int count, dynamic_flags, i;
 
@@ -991,6 +1005,10 @@ static int state_validate_stuck_runtime_state(PHYSFS_file *fp, int swap)
 
 static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
+#ifdef __ANDROID__
+	if (version >= STATE_EFFECT_RUNTIME_VERSION)
+		return mod_save_validate_effects(fp, swap);
+#endif
 	ubyte seen[MAX_EFFECTS];
 	int count, i;
 
@@ -2865,6 +2883,15 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	//	MK, 1/1/96
 	//	Do special secret level stuff.
 	//	If Nsecret.sgc (where N = filenum) exists, then copy it to secret.sgc.
+	#ifdef __ANDROID__
+	/* Commit the companion only after the primary and companion preflights succeed */
+	if (!secret_restore && in_game && nm_messagebox(NULL, 2, "Yes", "No", "Restore Game?") != 0) {
+		start_time();
+		return 0;
+	}
+	start_time();
+	if (!state_restore_all_sub(filename, secret_restore)) return 0;
+	#endif
 	//	If it doesn't exist, then delete secret.sgc
 	if (!secret_restore) {
 		int	rval;
@@ -2922,6 +2949,7 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 #endif
 	}
 
+#ifndef __ANDROID__
 	if ( !secret_restore && in_game ) {
 		int choice;
 		choice =  nm_messagebox( NULL, 2, "Yes", "No", "Restore Game?" );
@@ -2934,6 +2962,9 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	start_time();
 
 	return state_restore_all_sub(filename, secret_restore);
+#else
+	return 1;
+#endif
 }
 
 int state_restore_all_path(int in_game, char *filename_override)
@@ -2968,10 +2999,12 @@ static int state_restore_all_sub_impl(char *filename, int secret_restore, int *w
 int state_restore_all_sub(char *filename, int secret_restore)
 {
 	int world_changed = 0;
+	mod_save_begin();
 	android_restore_begin("d2", filename, Current_level_num,
 	                      (Game_mode & GM_MULTI_COOP) && multi_i_am_master(),
 	                      Game_wind && window_is_visible(Game_wind));
 	int result = state_restore_all_sub_impl(filename, secret_restore, &world_changed);
+	mod_save_finished(result);
 	if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
 	if (!result && world_changed) {
 		restore_requires_menu = 1;
@@ -3172,6 +3205,23 @@ int state_restore_all_sub(char *filename, int secret_restore)
 //Read level info
 	current_level = PHYSFSX_readSXE32(fp, swap);
 	PHYSFS_seek(fp, PHYSFS_tell(fp) + sizeof(PHYSFS_sint32)); // skip Next_level_num
+#ifdef __ANDROID__
+	if (!mod_save_prepare(fp, current_level, version, swap)) {
+		*world_changed = Game_wind != NULL;
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (!secret_restore) {
+		char companion[PATH_MAX];
+		int slot = state_android_slot_from_direct_restore_path(filename);
+		if (slot >= 0 && state_android_build_secret_filename(companion, sizeof(companion), slot) &&
+		    !mod_save_check_companion(companion)) {
+			*world_changed = Game_wind != NULL;
+			PHYSFS_close(fp);
+			return 0;
+		}
+	}
+#endif
 #ifdef __ANDROID__
 	if (Game_mode & GM_MULTI_COOP)
 		COOPLOG("restore saved level: game=d2 file='%s' saved_level=%d current_before=%d net_before=%d secret=%d state_game_id=%u mission='%s'",
@@ -3812,6 +3862,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		filename, Current_level_num, Players[Player_num].callsign,
 		Highest_object_index, Game_mode, secret_restore);
 	{
+		if (!mod_save_adapt_world()) { PHYSFS_close(fp); return 0; }
+		mod_save_skip_trailer(fp);
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		android_save_meta_disk android_meta;

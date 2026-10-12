@@ -14,6 +14,7 @@ extern "C" {
 #include "piggy.h"
 #include "physfsx.h"
 #include "u_mem.h"
+#include "android_log.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "wall.h"
 #include "robot.h"
@@ -87,7 +88,7 @@ static void play_events()
 		const auto usage = android_mod_usage_snapshot();
 		for (const auto &entry : usage.at("sounds"))
 			if (entry.at("sample") == sample) played = entry.at("played");
-		require(played, "actual SDL mixer accepted restored event PCM");
+		require(played == (debug_log_enabled[DLOG_GAME] != 0), "mixer playback reporting follows Game Logs");
 		digi_stop_all_channels();
 	}
 }
@@ -108,6 +109,7 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(nullptr) && PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "isolated filesystem");
 	json trace = json::array();
+	debug_log_set_enabled(DLOG_GAME, 1);
 #ifdef DXX_BUILD_DESCENT_II
 	setenv("SDL_AUDIODRIVER", "dummy", 1);
 	GameArg.SndNoMusic = GameArg.SysInputDemoNoRender = 1;
@@ -125,7 +127,25 @@ int main(int argc, char **argv)
 		reload();
 		require(WallAnims[5].open_sound == 88 && WallAnims[9].close_sound == 89 && WallAnims[9].play_time == 65536, "semantic door assignments and combined timing applied");
 		verify_bank(rate, false);
+		// Disabling reports must not disable actual mod playback or touch the report
+		debug_log_set_enabled(DLOG_GAME, 0);
+		const std::string marker = "previous diagnostic report\n";
+		std::FILE *report = std::fopen("mod_usage.json", "wb");
+		require(report != nullptr, "create previous report");
+		require(std::fwrite(marker.data(), 1, marker.size(), report) == marker.size(), "write previous report");
+		std::fclose(report);
 		play_events();
+		const auto disabled = android_mod_usage_snapshot();
+		require(!disabled.at("enabled").get<bool>() && disabled.at("sounds").empty() && disabled.at("presentation").empty(), "disabled introspection omits mod evidence");
+		SDL_Delay(1001);
+		android_mod_usage_flush();
+		const auto previous = read("mod_usage.json");
+		require(std::string(previous.begin(), previous.end()) == marker, "disabled reports perform no file write");
+		debug_log_set_enabled(DLOG_GAME, 1);
+		verify_bank(rate, false);
+		play_events();
+		android_mod_usage_flush();
+		require(json::parse(read("mod_usage.json")).at("sounds").size() == 208, "re-enabling Game Logs publishes loaded mod evidence");
 		trace.push_back({ { "case", "uud_only" }, { "rate", rate }, { "usage", android_mod_usage_snapshot() } });
 		require(PHYSFS_mount("d2-hires-sounds.dxa", nullptr, 1), "enable lower-priority high-res sounds");
 		reload();

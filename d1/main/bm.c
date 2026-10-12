@@ -53,6 +53,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "xmodel.h"
 #ifdef __ANDROID__
 #include "android_d1_mod_patches.h"
+#include "mod_save_compat.h"
 #include "android_mod_bitmaps.h"
 #endif
 
@@ -137,6 +138,7 @@ int gamedata_init()
 
 #ifdef __ANDROID__
 	android_d1_mod_apply_properties();
+	mod_save_capture_definitions();
 	android_mod_bitmaps_apply(1, NULL);
 #endif
 

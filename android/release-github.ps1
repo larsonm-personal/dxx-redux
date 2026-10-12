@@ -12,6 +12,7 @@ Reusing a version builds both editions, moves android-vVERSION and replaces both
 Only APKs are uploaded; metadata/checksums stay local for recovery and obsolete uploads are removed
 GitHub automatically includes source ZIP/tarball links; these cannot be removed by the helper
 Use -UploadOnly to verify and upload saved release files without rebuilding; the saved source commit is used
+Choose clean or unclean (incremental) once for both editions; -BuildMode skips the prompt
 Output: android/build-outputs/github/android-vVERSION/; -BuildOnly stays local, -Draft stages new releases
 Use -Legacy -BuildOnly to prepare just the API-23 edition locally; publishing always includes both
 Public filenames use android-1-recommended and android-2-only-for-android-6.0 to sort the current APK first
@@ -31,6 +32,7 @@ param(
     [ValidateRange(1, 2100000000)][int]$VersionCode,
     [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$Repository,
     [string]$NotesFile,
+    [ValidateSet('Clean', 'Unclean')][string]$BuildMode,
     [switch]$BuildOnly,
     [switch]$UploadOnly,
     [switch]$Draft,
@@ -42,6 +44,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repoRoot = Split-Path $PSScriptRoot
 . (Join-Path $PSScriptRoot 'helpers/test_host_platform.ps1')
+. (Join-Path $PSScriptRoot 'helpers/release-build.ps1')
 # Markdown documentation and release-only files are not Gradle/APK inputs
 $sourcePaths = @('.', ':(exclude,icase)*.md', ':(exclude)android/release-github.ps1',
     ':(exclude)android/tests/test_github_release.ps1', ':(exclude)android/ai tool plans')
@@ -235,6 +238,10 @@ foreach ($tool in @($signer, $aapt)) {
 }
 
 if (-not $UploadOnly) {
+    if (-not $BuildMode) { $BuildMode = Read-ReleaseBuildMode }
+    $dexdumpName = if (Test-RegressionWindowsHost) { 'dexdump.exe' } else { 'dexdump' }
+    $dexdump = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir $toolDir -ToolName $dexdumpName
+    if (-not (Get-Command $dexdump -ErrorAction SilentlyContinue)) { throw "Missing Android build tool: $dexdump" }
     & (Join-Path $PSScriptRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $outDir
     New-Item -ItemType Directory -Path $outDir -Force | Out-Null
     $builtAt = [DateTime]::UtcNow
@@ -255,17 +262,24 @@ object BuildInfo {
     $gradle = Resolve-RegressionGradleWrapper -AndroidDir $PSScriptRoot
     Write-Host "Building $tag ($VersionCode) from $commit"
     # Separate GitHub app: Play sign-in/updates disabled; single-player/LAN still require game data
-    # Clean releases do not benefit from Kotlin's incremental state across distributions
-    $gradleArgs = @('-p', $PSScriptRoot, '--no-build-cache', '-Pkotlin.incremental=false', '-PgithubRelease=true',
-        "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo', '--console=plain')
-    if ($Legacy) { $gradleArgs += '-PlegacyRelease=true' }
+    $gradleArgs = @('-p', $PSScriptRoot, '-PgithubRelease=true', '-PciApk=false',
+        '--project-cache-dir', (Join-Path $PSScriptRoot ".gradle/release-$distribution"),
+        "-PlegacyRelease=$($Legacy.IsPresent.ToString().ToLowerInvariant())", '-PisolatedGithubBuild=true',
+        "-PversionNameOverride=$Version", "-PversionCodeOverride=$VersionCode", '-PskipBuildInfo',
+        '--no-configuration-cache', '--console=plain', '--daemon', '--parallel')
+    if ($BuildMode -eq 'Clean') {
+        $gradleArgs += '--no-build-cache', '-Pkotlin.incremental=false'
+    } else {
+        $gradleArgs += '--build-cache', '-Pkotlin.incremental=true'
+    }
+    Write-Host "Build mode: $BuildMode"
     # Separate task graphs avoid clean/assemble scheduling conflicts with generated assets
-    Invoke-ReleaseTool $gradle (@(':app:clean') + $gradleArgs)
+    if ($BuildMode -eq 'Clean') { Invoke-ReleaseTool $gradle (@(':app:clean') + $gradleArgs) }
     Invoke-ReleaseTool $gradle (@(':app:assembleRelease') + $gradleArgs)
 }
 
 # Inspect the APK itself, not just Gradle's output metadata
-$sourceApk = if ($UploadOnly) { $apk } else { Join-Path $PSScriptRoot 'app/build/outputs/apk/release/app-release.apk' }
+$sourceApk = if ($UploadOnly) { $apk } else { Join-Path $PSScriptRoot "app/build/$distribution/outputs/apk/release/app-release.apk" }
 if (-not (Test-Path -LiteralPath $sourceApk)) { throw "Signed APK missing: $sourceApk" }
 $signature = (Invoke-ReleaseTool $signer @('verify', '--verbose', '--print-certs', $sourceApk)) -join "`n"
 # SDK versions label this as either "Signer #1" or "V2 Signer"
@@ -306,6 +320,8 @@ if ($UploadOnly) {
     }
     Write-Host "Verified saved APK for $tag ($VersionCode) from $commit; skipping build"
 } else {
+    Assert-ReleaseApkIdentity -Apk $sourceApk -Dexdump $dexdump -Commit $commit -VersionCode $VersionCode `
+        -BuildDate $builtAt.ToString('yyyy-MM-dd') -BuildTime ($builtAt.ToString('HH:mm') + ' UTC')
     $distributionVersions = @{}
     foreach ($line in Get-Content -LiteralPath (Join-Path $PSScriptRoot 'distribution_versions.conf')) {
         if ($line -match '^((?:CURRENT|LEGACY)_(?:MIN|TARGET)_SDK)=([0-9]+)$') {
@@ -323,6 +339,7 @@ if ($UploadOnly) {
     $metadata = [ordered]@{
         version = $Version; versionCode = $VersionCode; commit = $commit
         builtAtUtc = $builtAt.ToString('o'); applicationId = $applicationId; distribution = $distribution
+        buildMode = $BuildMode
         minSdk = $minSdk; targetSdk = $targetSdk
         certificateSha256 = $certificate; apkSha256 = $hash
         abis = @('armeabi-v7a', 'arm64-v8a', 'x86_64')
@@ -364,6 +381,7 @@ if ($UploadOnly) {
     $legacyParameters.VerifyOnly = $true
 } else {
     $legacyParameters.BuildOnly = $true
+    $legacyParameters.BuildMode = $BuildMode
 }
 & $PSCommandPath @legacyParameters
 $legacyDir = Join-Path $PSScriptRoot "build-outputs/github/android-legacy-v$Version"

@@ -10,6 +10,11 @@ def legacyRelease = (project.findProperty('legacyRelease') ?: 'false').toBoolean
 // CI packages use direct-install sources and are signed separately by the workflow
 def ciApk = (project.findProperty('ciApk') ?: 'false').toBoolean()
 def githubRelease = ciApk || legacyRelease || (project.findProperty('githubRelease') ?: 'false').toBoolean()
+// Retain each release edition's Kotlin/DEX/native outputs when switching distributions
+if ((project.findProperty('isolatedGithubBuild') ?: 'false').toBoolean()) {
+    if (!githubRelease || ciApk) { throw new GradleException('isolatedGithubBuild requires a GitHub release') }
+    layout.buildDirectory.set(file(legacyRelease ? 'build/legacy' : 'build/github'))
+}
 def appBrandName = 'DXX-Revival'
 
 // Load tool versions from central config
@@ -124,10 +129,20 @@ def gitVersionCode = {
 }()
 
 def nativeBuildInfoFile = layout.buildDirectory.file('generated/native-build-info/android_native_build_info.h')
+// Read HEAD on every invocation; CMake configuration can outlive many Git commits
+def nativeGitCommit = 'unknown'
+try {
+    def nativeGitProcess = ['git', 'rev-parse', 'HEAD'].execute(null, rootProject.projectDir.parentFile)
+    def result = nativeGitProcess.text.trim()
+    if (nativeGitProcess.waitFor() == 0 && result ==~ /[0-9a-f]{40}/) { nativeGitCommit = result }
+} catch (Exception ignored) {
+    // Source archives can still build; release-github.ps1 requires a matching Git identity
+}
 
 tasks.register('generateNativeBuildInfo') {
     description = 'Generate native build metadata without invalidating the CMake build directory'
     inputs.property('versionCode', gitVersionCode)
+    inputs.property('gitCommit', nativeGitCommit)
     outputs.file(nativeBuildInfoFile)
 
     doLast {
@@ -137,6 +152,9 @@ tasks.register('generateNativeBuildInfo') {
 #define DXX_ANDROID_NATIVE_BUILD_INFO_H
 
 #define DXX_ANDROID_VERSION_CODE ${gitVersionCode}
+#define DXX_ANDROID_GIT_COMMIT "${nativeGitCommit}"
+// Keep the marker format synchronized with helpers/release-build.ps1
+#define DXX_ANDROID_BUILD_ID "dxx-build:${nativeGitCommit}:${gitVersionCode}"
 
 #endif
 """
@@ -424,6 +442,7 @@ android {
             cmake {
                 targets 'dxx-redux-d1', 'dxx-redux-d2', 'dxx_graphics_safety'
                 arguments '-DANDROID_STL=c++_shared',
+                          "-DDXX_ANDROID_BUILD_INFO_DIR=${nativeBuildInfoFile.get().asFile.parentFile.absolutePath.replace(File.separatorChar, '/' as char)}",
                           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
                           "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"
             }

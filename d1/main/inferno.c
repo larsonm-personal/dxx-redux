@@ -75,6 +75,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "startup_resume_shared.h"
 #ifdef __ANDROID__
 #include "android_log.h"
+#include "mod_save_compat.h"
 #include "android_level_preview.h"
 #endif
 #include "collide.h"
@@ -549,6 +550,12 @@ int main(int argc, char *argv[])
 				return replay_result;
 			if (replay_result < 0) {
 				if (!startup_resume_save_from_cmdline("d1")) {
+#ifdef __ANDROID__
+					/* A failed restore can leave a mine awaiting closure
+					 * Let its handler create the menu after unlinking the mine */
+					if (Game_wind)
+						goto game_event_loop;
+#endif
 					Game_mode = GM_GAME_OVER;
 					DoMenu();
 				}
@@ -560,6 +567,7 @@ game_event_loop:
 	{
 #ifdef __ANDROID__
 		android_pause_outer_tick();
+		mod_save_show_error();
 #endif
 		// Send events to windows and the default handler
 		event_process();

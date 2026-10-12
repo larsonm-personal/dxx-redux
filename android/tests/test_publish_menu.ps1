@@ -12,6 +12,7 @@ $testRoot = Join-Path $repoRoot ('android/temp/publish_menu_tests/run_' + [guid]
 $androidDir = Join-Path $testRoot 'android'
 New-Item -ItemType Directory -Path (Join-Path $androidDir 'helpers') -Force | Out-Null
 Copy-Item (Join-Path $repoRoot 'android/0_upload_to_test.ps1') $androidDir
+Copy-Item (Join-Path $repoRoot 'android/helpers/release-build.ps1') (Join-Path $androidDir 'helpers')
 [IO.File]::WriteAllText((Join-Path $androidDir 'play-store-credentials.json'), '{}')
 
 $authFixture = @'
@@ -44,8 +45,8 @@ if ($global:publishMenuConfig.failure -eq 'deploy') { $global:LASTEXITCODE = 8 }
 '@
 [IO.File]::WriteAllText((Join-Path $androidDir '2_deploy-playstore.ps1'), $deployFixture)
 $releaseFixture = @'
-param($Version, [switch]$BuildOnly)
-Record-PublishEvent @{ event = 'release'; version = $Version; buildOnly = [bool]$BuildOnly }
+param($Version, [switch]$BuildOnly, $BuildMode)
+Record-PublishEvent @{ event = 'release'; version = $Version; buildOnly = [bool]$BuildOnly; buildMode = $BuildMode }
 $global:LASTEXITCODE = 0
 if ($global:publishMenuConfig.failure -eq 'release') { $global:LASTEXITCODE = 7 }
 '@
@@ -117,6 +118,12 @@ foreach ($case in $cases) {
     foreach ($key in @('parameters', 'responses', 'failure', 'deployedCode', 'noCredentials')) {
         if ($case.ContainsKey($key)) { $config[$key] = $case[$key] }
     }
+    if ($config.parameters.Action -in @('2', '3') -and $config.parameters.ReleaseVersion) {
+        $config.parameters.BuildMode = 'Clean'
+    } elseif ($case.name -in @('release-only', 'both', 'invalid-choices', 'early-version')) {
+        $config.responses += 'invalid', ''
+        $case.order = [regex]::new('(git|release)').Replace($case.order, 'prompt,prompt,$1', 1)
+    }
     [IO.File]::WriteAllText((Join-Path $androidDir 'play-store-credentials.json'), '{}')
     $configPath = Join-Path $testRoot ($case.name + '.json')
     [IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 4))
@@ -147,6 +154,8 @@ foreach ($case in $cases) {
         if ($deploy[0].path -ne $build[0].path -or $deploy[0].track -ne $expectedTrack) { throw "$($case.name) deployed the wrong AAB or track" }
     }
     if ($release.Count) {
+        $expectedMode = if ($config.parameters.BuildMode) { $config.parameters.BuildMode } else { 'Unclean' }
+        if ($release[0].buildMode -ne $expectedMode) { throw "$($case.name) lost build mode" }
         $expectedVersion = if ($case.name -eq 'invalid-choices') { '1.2.0-rc.1' } else { '1.2.0' }
         if ($release[0].version -ne $expectedVersion -or $release[0].buildOnly -ne [bool]$config.parameters.BuildOnly) { throw "$($case.name) lost release version or BuildOnly" }
     }

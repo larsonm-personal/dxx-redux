@@ -1307,6 +1307,31 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "set_mod_enabled" -> {
+                        val filename = intent.getStringExtra("filename") ?: return
+                        val enabled = intent.getBooleanExtra("enabled", false)
+                        runIo {
+                            val manager = ModManager.forActiveSet(filesDir, this@SetupActivity)
+                            manager.setEnabled(filename, enabled)
+                            check(manager.listMods().any { it.filename == filename && it.enabled == enabled }) {
+                                "Mod toggle failed: $filename"
+                            }
+                            Log.i("DXX-Setup", "set_mod_enabled '$filename': $enabled")
+                            requestSetupRefresh()
+                        }
+                    }
+
+                    "swap_mod_order" -> {
+                        val first = intent.getStringExtra("first") ?: return
+                        val second = intent.getStringExtra("second") ?: return
+                        runIo {
+                            val manager = ModManager.forActiveSet(filesDir, this@SetupActivity)
+                            check(manager.listMods().count { it.filename == first || it.filename == second } == 2)
+                            manager.swapOrder(first, second)
+                            requestSetupRefresh()
+                        }
+                    }
+
                     "delete_mod" -> {
                         val filename = intent.getStringExtra("filename") ?: return
                         runIo {

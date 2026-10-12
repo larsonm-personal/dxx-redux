@@ -68,6 +68,8 @@
 #include "vers_id.h"
 #include "../../android/app/src/main/cpp/shared/net/net_udp_android.h"
 #ifdef __ANDROID__
+#define REJOIN_DIAGNOSTICS_UDP
+#include "net/rejoin_diagnostics.h"
 #include "auto_net.h"
 #include "android_log.h"
 #include "android_lifecycle_actions.h"
@@ -737,6 +739,7 @@ ssize_t dxx_sendto(int sockfd, const void *msg, int len, unsigned int flags, con
 #endif
 	ssize_t rv = sendto(sockfd, msg, len, flags, to, tolen);
 #ifdef __ANDROID__
+	rejoin_diag_packet("socket_tx", msg, len, (int) rv);
 	android_profile_net_end(profile_start, ANDROID_NETWORK_SEND, sockfd,
 	                        len > 0 ? ((const ubyte *) msg)[0] : -1,
 	                        len > 0 ? msg_name(((const ubyte *) msg)[0]) : NULL, len, (int) rv);
@@ -756,6 +759,7 @@ ssize_t dxx_recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct 
 #endif
 	ssize_t rv = recvfrom(sockfd, buf, len, flags, from, fromlen);
 #ifdef __ANDROID__
+	if (rv > 0) rejoin_diag_packet("socket_rx", buf, (int) rv, (int) rv);
 	android_profile_net_end(profile_start, ANDROID_NETWORK_RECEIVE, sockfd,
 	                        rv > 0 ? ((const ubyte *) buf)[0] : -1,
 	                        rv > 0 ? msg_name(((const ubyte *) buf)[0]) : NULL,
@@ -1243,6 +1247,10 @@ int generate_token() {
 }
 
 void drop_rx_packet(ubyte  *data, const char* reason) {
+#ifdef __ANDROID__
+	if (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC)
+		REJOIN_LOG("security_reject type=%d reason=%s local=%d master=%d status=%d", data[0], reason, Player_num, multi_who_is_master(), Network_status);
+#endif
 	char comment[200];
 	snprintf(comment, 199, "Dropped %s: %s\n", msg_name(data[0]), reason); 
 	net_log_comment(comment);
@@ -2854,6 +2862,7 @@ static void net_udp_send_sync_payload(ubyte *data, int len,
                                       int player_num)
 {
 #ifdef __ANDROID__
+	rejoin_diag_packet("payload_tx", data, len, player_num);
 	ubyte envelope[UPID_MAX_SIZE + UPID_JOIN_DATA_HEADER];
 	if (UDP_sync_player.join_attempt && (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC) &&
 	    player_num == UDP_sync_player.player.connected &&
@@ -2954,6 +2963,10 @@ void net_udp_send_objects(void)
 	{
 		obj_count = 0;
 		Network_send_object_mode = 0;
+#ifdef __ANDROID__
+		REJOIN_LOG("transfer_begin target=%d attempt=%u visit=%llu", player_num, (unsigned) UDP_sync_player.join_attempt, (unsigned long long) UDP_sync_player.join_visit);
+		rejoin_diag_world("transfer_begin");
+#endif
 		PUT_INTEL_INT(object_buffer+loc, -1);                       loc += 4;
 		object_buffer[loc] = player_num;                            loc += 1;
 		/* Placeholder for remote_objnum, not used here */          loc += 4;
@@ -3021,6 +3034,9 @@ void net_udp_send_objects(void)
 			Assert(Network_send_object_mode == 1); 
 
 			// Send count so other side can make sure he got them all
+#ifdef __ANDROID__
+			REJOIN_LOG("transfer_end target=%d count=%d highest=%d", player_num, obj_count, Highest_object_index);
+#endif
 			object_buffer[0] = UPID_OBJECT_DATA;
 			PUT_INTEL_INT(object_buffer+5, 1);
 			PUT_INTEL_INT(object_buffer+UPID_OBJECT_HEADER_SIZE, -2);
@@ -3095,7 +3111,12 @@ static int net_udp_admit_assets(const ubyte *identity, int size)
 void net_udp_read_object_packet( ubyte *data, int data_len )
 {
 	if (!net_udp_admit_assets(data_len >= UPID_OBJECT_HEADER_SIZE ? data + 9 : NULL,
-	                         data_len >= UPID_OBJECT_HEADER_SIZE ? D1_IN_D2_NET_ASSET_SIZE : 0)) return;
+	                         data_len >= UPID_OBJECT_HEADER_SIZE ? D1_IN_D2_NET_ASSET_SIZE : 0)) {
+#ifdef __ANDROID__
+		REJOIN_LOG("objects_reject reason=asset_identity bytes=%d", data_len);
+#endif
+		return;
+	}
 
 	// Object from another net player we need to sync with
 	object *obj;
@@ -3105,18 +3126,41 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 	int i = 0, segnum = 0, objnum = 0, remote_objnum = 0, nobj = 0, loc = UPID_OBJECT_HEADER_SIZE;
 	
 	nobj = GET_INTEL_INT(data + 5);
+#ifdef __ANDROID__
+	REJOIN_LOG("objects_parse bytes=%d nobj=%d mode=%d received=%d allocated=%d", data_len, nobj, mode, object_count, num_objects);
+#endif
 	// Check record boundaries before a clear marker or object can change the world
-	if (nobj < 1 || nobj > (data_len - loc) / 9) return;
+	if (nobj < 1 || nobj > (data_len - loc) / 9) {
+#ifdef __ANDROID__
+		REJOIN_LOG("objects_reject reason=count bytes=%d offset=%d nobj=%d record=%d", data_len, loc, nobj, i);
+#endif
+		return;
+	}
 	for (i = 0; i < nobj; ++i) {
-		if (data_len - loc < 9) return;
+		if (data_len - loc < 9) {
+#ifdef __ANDROID__
+			REJOIN_LOG("objects_reject reason=record_header bytes=%d offset=%d nobj=%d record=%d", data_len, loc, nobj, i);
+#endif
+			return;
+		}
 		objnum = GET_INTEL_INT(data + loc);
 		loc += 9;
 		if (objnum != -1 && objnum != -2) {
-			if (data_len - loc < (int) sizeof(object_rw)) return;
+			if (data_len - loc < (int) sizeof(object_rw)) {
+#ifdef __ANDROID__
+				REJOIN_LOG("objects_reject reason=record_body bytes=%d offset=%d nobj=%d record=%d", data_len, loc, nobj, i);
+#endif
+				return;
+			}
 			loc += sizeof(object_rw);
 		}
 	}
-	if (loc != data_len) return;
+	if (loc != data_len) {
+#ifdef __ANDROID__
+		REJOIN_LOG("objects_reject reason=trailing_bytes bytes=%d offset=%d nobj=%d record=%d", data_len, loc, nobj, i);
+#endif
+		return;
+	}
 	loc = UPID_OBJECT_HEADER_SIZE;
 	multi_received_objects = 1;
 #ifdef __ANDROID__
@@ -3145,14 +3189,25 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 			if(!is_observer()) { change_playernum_to(my_pnum); }
 			mode = 1;
 			object_count = 0;
+#ifdef __ANDROID__
+			REJOIN_LOG("objects_clear assigned=%d allocated=%d", my_pnum, num_objects);
+#endif
 		}
 		else if (objnum == -2)
 		{
 			// End of object sync -- always rebuild free list from final state
+#ifdef __ANDROID__
+			REJOIN_LOG("objects_end expected=%d received=%d mode=%d", remote_objnum, object_count, mode);
+			rejoin_diag_world("objects_end_before_rebuild");
+#endif
 			{
 				special_reset_objects();
 				mode = 0;
 			}
+
+#ifdef __ANDROID__
+			rejoin_diag_world("objects_end_after_rebuild");
+#endif
 			if (remote_objnum != object_count) {
 				Int3();
 			}
@@ -3192,6 +3247,9 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 				if (mode == 1)
 				{
 					special_reset_objects();
+#ifdef __ANDROID__
+					REJOIN_LOG("objects_mode_switch received=%d allocated=%d", object_count, num_objects);
+#endif
 					mode = 0;
 				}
 				objnum = obj_allocate();
@@ -3215,6 +3273,10 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 				object_rw_swap((object_rw *)&data[loc], 1, 1);
 #endif
 				multi_object_rw_to_object((object_rw *)&data[loc], obj);
+#ifdef __ANDROID__
+				if (obj->type == OBJ_PLAYER || obj->type == OBJ_GHOST)
+					REJOIN_LOG("ship_received obj=%d type=%d id=%d owner=%d remote=%d seg=%d", objnum, obj->type, obj->id, obj_owner, remote_objnum, obj->segnum);
+#endif
 				loc += sizeof(object_rw);
 				segnum = obj->segnum;
 				obj->next = obj->prev = obj->segnum = -1;
@@ -3230,6 +3292,9 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 			}
 		} // For a standard onbject
 	} // For each object in packet
+#ifdef __ANDROID__
+	REJOIN_LOG("objects_parsed bytes=%d consumed=%d received=%d mode=%d allocated=%d highest=%d", data_len, loc, object_count, mode, num_objects, Highest_object_index);
+#endif
 }
 
 // Finished sending objects
@@ -4551,19 +4616,29 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 	memset(&their, 0, sizeof(UDP_sequence_packet));
 
 #ifdef __ANDROID__
+	rejoin_diag_packet("dispatch", data, length, is_proxy);
 	int join_payload = 0;
 	if (data[0] == UPID_JOIN_DATA) {
 		if (length <= UPID_JOIN_DATA_HEADER || !net_join_wait_active() || !is_master_ip(sender_addr) ||
 		    (uint32_t) GET_INTEL_INT(data + 1) != netgame_token ||
 		    (uint32_t) GET_INTEL_INT(data + 5) != join_query_token ||
-		    coop_world_visit_read(data + 9) != net_join_wait_visit() || net_join_wait_restart()) return;
+		    coop_world_visit_read(data + 9) != net_join_wait_visit() || net_join_wait_restart()) {
+			REJOIN_LOG("envelope_reject bytes=%d active=%d master_ip=%d restart=%d session_match=%d attempt_match=%d visit_match=%d expected_attempt=%u expected_visit=%llu", length, net_join_wait_active(), is_master_ip(sender_addr), net_join_wait_restart(), length >= UPID_JOIN_DATA_HEADER ? (uint32_t) GET_INTEL_INT(data + 1) == netgame_token : -1, length >= UPID_JOIN_DATA_HEADER ? (uint32_t) GET_INTEL_INT(data + 5) == join_query_token : -1, length >= UPID_JOIN_DATA_HEADER ? coop_world_visit_read(data + 9) == net_join_wait_visit() : -1, (unsigned) join_query_token, (unsigned long long) net_join_wait_visit());
+			return;
+		}
 		data += UPID_JOIN_DATA_HEADER;
 		length -= UPID_JOIN_DATA_HEADER;
-		if (data[0] != UPID_OBJECT_DATA && data[0] != UPID_SYNC) return;
+		if (data[0] != UPID_OBJECT_DATA && data[0] != UPID_SYNC) {
+			REJOIN_LOG("envelope_reject reason=inner_type type=%d", data[0]);
+			return;
+		}
 		join_payload = 1;
 		if (data[0] == UPID_OBJECT_DATA) net_join_wait_note_objects();
 	}
-	if (net_join_wait_active() && !join_payload && (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC)) return;
+	if (net_join_wait_active() && !join_payload && (data[0] == UPID_OBJECT_DATA || data[0] == UPID_SYNC)) {
+		REJOIN_LOG("unwrapped_reject type=%d bytes=%d", data[0], length);
+		return;
+	}
 	if (net_join_wait_active() && (data[0] == UPID_PDATA || data[0] == UPID_MDATA_PNORM ||
 	    data[0] == UPID_MDATA_PNEEDACK || data[0] == UPID_OBSDATA || data[0] == UPID_ENDLEVEL_H)) return;
 	/* Pre-admission control has no player slot; bind replies to host/session/query */
@@ -4838,9 +4913,16 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			break;
 
 		case UPID_SYNC:
+#ifdef __ANDROID__
+			rejoin_diag_world("sync_before");
+#endif
 			net_udp_read_sync_packet(data, length, sender_addr);
 #ifdef __ANDROID__
-			if (join_payload && Network_status == NETSTAT_PLAYING) net_join_wait_end();
+			rejoin_diag_world("sync_after");
+			if (join_payload && Network_status == NETSTAT_PLAYING) {
+				REJOIN_LOG("join_wait_end attempt=%u", (unsigned) join_query_token);
+				net_join_wait_end();
+			}
 #endif
 			break;
 
@@ -7638,6 +7720,9 @@ void net_udp_do_frame(int force, int listen)
 	if (VerifyPlayerJoined!=-1 && time >= last_resync_time+F1_0)
 	{
 		last_resync_time = time;
+#ifdef __ANDROID__
+		REJOIN_LOG("sync_resend verify=%d sending=%d cursor=%d mode=%d committed=%d", VerifyPlayerJoined, Network_send_objects, Network_send_objnum, Network_send_object_mode, join_transfer_committed);
+#endif
 		net_udp_resend_sync_due_to_packet_loss(); // This will resend to UDP_sync_player
 	}
 

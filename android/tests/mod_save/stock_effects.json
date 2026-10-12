@@ -1,0 +1,51 @@
+[
+    {
+        "Index": 3,
+        "PlayTime": 26214,
+        "NumFrames": 8,
+        "FrameTime": 3276,
+        "VclipFlags": 0,
+        "VclipSound": 0,
+        "Frames": [
+            1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0
+        ],
+        "Light": 0,
+        "TimeLeft": 0,
+        "FrameCount": 0,
+        "ChangingWall": 354,
+        "ChangingObject": -1,
+        "Flags": 0,
+        "CritClip": -1,
+        "DestBm": -1,
+        "DestVclip": 0,
+        "DestEclip": -1,
+        "DestSize": 0,
+        "Sound": 121,
+        "Seg": -1,
+        "Side": 0
+    },
+    {
+        "Index": 38,
+        "PlayTime": 32768,
+        "NumFrames": 3,
+        "FrameTime": 10922,
+        "VclipFlags": 0,
+        "VclipSound": 0,
+        "Frames": [1790, 1791, 1792, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "Light": 0,
+        "TimeLeft": 0,
+        "FrameCount": 0,
+        "ChangingWall": 386,
+        "ChangingObject": -1,
+        "Flags": 0,
+        "CritClip": -1,
+        "DestBm": -1,
+        "DestVclip": 0,
+        "DestEclip": -1,
+        "DestSize": 0,
+        "Sound": -1,
+        "Seg": -1,
+        "Side": 0
+    }
+]

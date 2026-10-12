@@ -20,6 +20,7 @@
 
 #include <nlohmann/json.hpp>
 #include "android_mod_assets.h"
+#include "mod_save_compat.h"
 #include "android_mod_bitmaps.h"
 #include "android_texture_usage.h"
 
@@ -3153,6 +3154,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["physfs"] = std::move(physfs);
 		j["mounted_mods"] = std::move(mods);
 		j["mod_usage"] = android_mod_usage_snapshot();
+		j["mod_save"] = { { "status", mod_save_status() }, { "reason", mod_save_reason() }, { "adapted", mod_save_adapted_count() } };
 		j["mission_asset_owner"] = android_mission_assets_owner();
 		j["mission_asset_generation"] = android_mission_assets_generation();
 	}

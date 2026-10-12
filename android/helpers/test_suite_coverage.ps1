@@ -73,6 +73,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_saf_redbook'
         )
         core = @(
+            'test_startup_restore_failure'
             'test_android_pause_state'
             'test_android_test_target'
             'test_github_release'
@@ -337,6 +338,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_android_mod_bitmaps'
             'test_android_mod_renderer'
             'test_android_mod_sounds'
+            'test_android_mod_save'
+            'test_mod_save_toggle'
             'test_compressed_music_metadata'
             'test_level_metadata_hxm_worker_reuse'
             'test_level_metadata_interactive_preemption'

@@ -298,7 +298,8 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_POSTLEVEL)) {
 		km->end_time = timer_query();
-		return 1;
+		if (event->type != EVENT_WINDOW_DRAW)
+			return 1;
 	}
 #endif
 	
@@ -364,14 +365,14 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 			timer_delay2(50);
 
 			if (km->terminal) {
-				if (km->end_time != -1) {
-					window_close(wind);
-					return 1;
-				}
 				kmatrix_redraw(km);
 				grd_curcanv->cv_font = GAME_FONT;
 				gr_set_fontcolor(BM_XRGB(63,63,63), -1);
 				gr_string(0x8000, SHEIGHT-LINE_SPACING, "Mission complete. Press Enter or Esc to continue");
+				if (km->end_time != -1) {
+					window_close(wind);
+					return 1;
+				}
 				break;
 			}
 			if (km->network)
@@ -398,6 +399,13 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 #endif
 			}
 			
+			// Cover underlying game/automap draws even on the frame that closes this window
+			kmatrix_redraw(km);
+			if (km->playing)
+				kmatrix_status_msg(Countdown_seconds_left, 1);
+			else
+				kmatrix_status_msg(f2i(timer_query()-km->end_time), 0);
+
 			// Check if end_time has been reached and exit loop
 			if (timer_query() >= km->end_time && km->end_time != -1)
 			{
@@ -428,12 +436,6 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 				break;
 			}
 
-			kmatrix_redraw(km);
-			
-			if (km->playing)
-				kmatrix_status_msg(Countdown_seconds_left, 1);
-			else
-				kmatrix_status_msg(f2i(timer_query()-km->end_time), 0);
 			break;
 			
 		case EVENT_WINDOW_CLOSE:

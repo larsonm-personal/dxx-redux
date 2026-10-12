@@ -124,6 +124,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "android_log.h"
 #include "android_profile.h"
+#include "mod_save_compat.h"
 #include "android_route_metadata.h"
 #include "merged_wall_debug.h"
 #endif
@@ -1001,6 +1002,7 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	load_level_robots(level_num);
 #ifdef __ANDROID__
+	mod_save_capture_level(level_name);
 	secret_area_prepare_current_level();
 	if (escort_route_metadata_request_allowed(
 	        (Game_mode & GM_MULTI) != 0,

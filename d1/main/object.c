@@ -65,6 +65,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newmenu.h"
 #include "gauges.h"
 #include "multi.h"
+#ifdef __ANDROID__
+#include "net/rejoin_diagnostics.h"
+#endif
 #include "menu.h"
 #include "args.h"
 #include "text.h"
@@ -1233,6 +1236,12 @@ for (i=0; i<=Highest_object_index; i++)
 //the object has been unlinked
 void obj_free(int objnum)
 {
+#ifdef __ANDROID__
+	if (num_objects <= 1 && (Game_mode & GM_MULTI_COOP)) {
+		REJOIN_LOG("allocator_low obj=%d allocated=%d", objnum, num_objects);
+		rejoin_diag_world("obj_free");
+	}
+#endif
 	free_obj_list[--num_objects] = objnum;
 	Assert(num_objects >= 0);
 
