@@ -77,6 +77,15 @@ jobs:
             -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat"
 
+      - name: Qualify runtime-generated ordinary save persistence
+        timeout-minutes: 12
+        run: |
+          pwsh -NoProfile -File android/tests/test_public_save_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_public_save_continuation.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-save-continuation-ci"
+
       - name: Exercise public loaded-asset pickup matrix
         timeout-minutes: 5
         run: |
@@ -213,6 +222,7 @@ jobs:
           path: |
             temp/wall-blast-save-shareware/
             temp/public-pickup-ci/
+            temp/public-save-continuation-ci/
             temp/public-combat-ci/
             temp/public-robot-combat-visual-ci/
             temp/public-robot-loot-visual-ci/

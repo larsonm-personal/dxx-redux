@@ -11253,6 +11253,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 }
 
 #include "public_level_replay_fixture.hpp"
+#include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 
 static void verify_headless_audio_closed()
@@ -11286,6 +11287,11 @@ int main(int argc, char **argv)
 		require(init_headless_audio(), "initialize the production headless audio runtime");
 		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
 		return std::atoi(argv[2]);
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
+		capture_public_level_replay(argv[2], argv[3]);
+		exercise_public_save_continuation(argv[3]);
+		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
