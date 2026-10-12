@@ -57,7 +57,7 @@ function Assert-ReleaseApkIdentity {
         }
     } finally {
         $archive.Dispose()
-        if (Test-Path -LiteralPath $dexPath) { Remove-Item -LiteralPath $dexPath }
+        if (Test-Path -LiteralPath $dexPath) { Remove-Item -LiteralPath $dexPath -Force }
     }
     Write-Host 'Verified packaged Kotlin and both native engines for all three ABIs'
 }
