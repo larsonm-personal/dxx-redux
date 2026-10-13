@@ -32,8 +32,8 @@ point to an exact published source-only commit built before fixture admission;
 `capture_source_sha256` also identifies the exact capture fixture header. Combat, loot, door-lifecycle and Guide-Bot
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
-so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG before each ordered input batch and checks the
-post-input boundary; it does not seed the separate FX stream. Capture leaves ordinary FX
+so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG once before the first input batch, then checks the
+carried pre-input and computed post-input boundaries; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
 
 ## Real actions
@@ -244,8 +244,8 @@ captures remain independent from the clean oracle-admission captures
 
 ## Ordered input and migration
 
-Format 5 records the actual ordered pre-simulation reset, clear, sample and direct
-command operations, each with input-time `ft`. A mandatory `input_tail` retains
+Format 5 records actual ordered pre-simulation reset, clear, sample, controls-only,
+rear-view, automap and direct-command operations, each with input-time `ft`. A mandatory `input_tail` retains
 input after the final simulation. `dispatch.pre_rng="="` references that row's
 post-input RNG; `sample.s="="` references that row's decoded residual held state;
 missing sample pulses are zero. Missing dispatch is invalid; empty ops is explicit.
@@ -265,3 +265,20 @@ input from normal level-one starts. They differ only in release/mouse order at
 frame 13, following a second press eight ticks before the cooldown. Expected concussion ammo is
 four and three respectively in both games. No cooldown or gameplay timing changes
 are made to obtain replay parity.
+
+Native modal integration coverage is separate from these small admitted scenes.
+It preserves live rear-view semantic decisions and automap lifecycle/depth effects,
+including a terminal tail with an open virtual map and signature-checked D2 marker
+deletion. Existing gameplay camera policy is unchanged. Rewind and debug map-world
+cheats explicitly stop input capture; normal rear-view/map use does not.
+
+The native modal runner compares complete visited-segment and marker observations
+in addition to the unchanged gameplay/RNG oracles. Its isolated recording-off
+checks cover rear baseline restoration and absolute-slot multiplayer marker
+semantics; these synthetic checks are explicitly excluded from public admission.
+The actual SDL captures include1,100 map redraws without input-operation growth,
+F3 and an active-map terminal tail. Default D2 missile-window discovery
+uses the same native selector and canvas geometry as the renderer; isolated
+geometry tests require main-only discovery to miss an offscreen region while the
+combined CPU pass matches the actual renderer exactly. Guided/other selected
+auxiliary cameras and endlevel special-camera map fidelity are not claimed.

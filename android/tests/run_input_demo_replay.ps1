@@ -633,6 +633,41 @@ function Resolve-DataDir {
     throw "Could not find a valid data dir for $($Config.Name)`n$($missingSummary -join "`n")"
 }
 
+function Get-NativeReplayProfileDirectory {
+    param([string]$HomeDirectory, [string]$GameName)
+
+    if ([Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::OSX)) {
+        return Join-Path $HomeDirectory ("Library/Preferences/$($GameName.ToUpperInvariant())X Redux")
+    }
+    return Join-Path $HomeDirectory (".${GameName}x-redux")
+}
+
+function Copy-RequestedReplayPilot {
+    param([string]$Name, [string]$GameName, [string]$Destination)
+
+    # Native callsigns are at most eight characters; do not import an entire profile directory
+    if ($Name -cnotmatch '^[^./\\\s]{1,8}(\.plr)?$') {
+        throw 'Pilot must be a native callsign of at most eight characters, optionally followed by .plr'
+    }
+    $baseName = $Name -creplace '\.plr$', ''
+    $sourceHome = if ($env:HOME) { $env:HOME } else { [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile) }
+    $sourceRoot = Get-NativeReplayProfileDirectory -HomeDirectory $sourceHome -GameName $GameName
+    foreach ($relative in @('', 'Players')) {
+        $sourceDirectory = if ($relative) { Join-Path $sourceRoot $relative } else { $sourceRoot }
+        $playerFile = Get-CaseInsensitiveChildFile -Directory $sourceDirectory -Name ($baseName + '.plr')
+        if (-not $playerFile) { continue }
+        $targetDirectory = if ($relative) { Join-Path $Destination $relative } else { $Destination }
+        New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+        Copy-Item -LiteralPath $playerFile.FullName -Destination (Join-Path $targetDirectory ($baseName + '.plr')) -Force
+        $extendedFile = Get-CaseInsensitiveChildFile -Directory $sourceDirectory -Name ($baseName + '.plx')
+        if ($extendedFile) {
+            Copy-Item -LiteralPath $extendedFile.FullName -Destination (Join-Path $targetDirectory ($baseName + '.plx')) -Force
+        }
+        return [bool]$relative
+    }
+    throw "Requested pilot '$Name' was not found in '$sourceRoot' or its Players directory"
+}
+
 function New-LaunchSandbox {
     param(
         [hashtable]$Config,
@@ -671,9 +706,21 @@ function New-LaunchSandbox {
 
     Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg')
 
+    $nativeHome = $null
+    $profileDirectory = $null
+    if (-not (Test-RegressionWindowsHost)) {
+        # PhysFS searches HOME, not cwd; reuse engine staging without reusing a pilot
+        $nativeHome = Join-Path $sandboxDir ('home-' + [guid]::NewGuid().ToString('N'))
+        $profileDirectory = Get-NativeReplayProfileDirectory -HomeDirectory $nativeHome -GameName $Config.Name
+        New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
+        Write-ReplayConfig -Path (Join-Path $profileDirectory 'descent.cfg')
+    }
+
     return @{
         Directory = $sandboxDir
         Exe = $sandboxExe
+        Home = $nativeHome
+        ProfileDirectory = $profileDirectory
     }
 }
 
@@ -1615,6 +1662,10 @@ $replayStopwatch = $null
 $completedExitCode = $null
 $forcedReplayStop = $false
 try {
+    $pilotUsesPlayersDirectory = $false
+    if ($sandbox.Home -and $Pilot) {
+        $pilotUsesPlayersDirectory = Copy-RequestedReplayPilot -Name $Pilot -GameName $config.Name -Destination $sandbox.ProfileDirectory
+    }
     $actualResultDirectory = Join-Path $sandbox.Directory 'results'
     if (-not (Test-Path -LiteralPath $actualResultDirectory)) {
         New-Item -ItemType Directory -Path $actualResultDirectory -Force | Out-Null
@@ -1629,6 +1680,7 @@ try {
         Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
     }
     if ($RequireCleanExit -and -not $useHeadlessConsole) { $launchArgs += '-inputdemo-exit' }
+    if ($pilotUsesPlayersDirectory) { $launchArgs += '-use_players_dir' }
     $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
     $runnerName = $runnerSelection.Name
     $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
@@ -1692,6 +1744,10 @@ try {
     $startInfo.FileName = $launchExecutable
     $startInfo.WorkingDirectory = $sandbox.Directory
     $startInfo.UseShellExecute = $false
+    if ($sandbox.Home) {
+        # Change only the child environment; selected pilot bytes were staged explicitly
+        $startInfo.EnvironmentVariables['HOME'] = $sandbox.Home
+    }
     $startInfo.RedirectStandardOutput = $false
     $startInfo.RedirectStandardError = $false
     if ($Sanitizer -eq 'address') {
@@ -1937,6 +1993,7 @@ try {
                     runner = $runnerSelection.Name
                     demo = $resolvedDemoPath
                     data_directory = $resolvedDataDir
+                    home_directory = $sandbox.Home
                     process_id = if ($process) { $process.Id } else { $null }
                     native_exit_code = $completedExitCode
                     forced_stop = $forcedReplayStop

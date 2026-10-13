@@ -95,7 +95,7 @@ jobs:
         run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
 
       - name: Qualify native ordered input phases and causal failures
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
           python3 android/tests/test_ordered_public_replay.py
           python3 android/tests/test_convert_public_replay.py

@@ -384,6 +384,9 @@ int input_demo_apply_replay_common_setup(
 {
 	if (!options)
 		return 0;
+	/* Command-line playback bypasses pilot creation in the normal menu path */
+	if (!Players[Player_num].callsign[0])
+		new_player_config();
 	input_demo_d1_in_d2_enabled = options->allow_d1_in_d2 ? 1 : 0;
 	if (options->actual_result_path)
 		input_demo_replay_set_actual_result_path(options->actual_result_path);

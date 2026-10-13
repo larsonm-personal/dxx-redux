@@ -30,11 +30,15 @@ would hide the cause and change ordinary gameplay.
 ## Format 5
 
 Each frame carries an explicit bounded ordered dispatch batch: marker reset,
-control clear, full control sample, or allowlisted direct command. Every operation
+control clear, full control sample, controls-only update, rear-view decision,
+automap phase, or allowlisted direct command. Every operation
 has its actual input-time FrameTime, separate from the later simulation timestep.
 The batch retains pre-input SIM state/count; frame RNG is the post-input boundary.
-Replay checks its computed residual controls and post-input RNG without replacing
-a mismatch. Mandatory input_tail preserves effects after the last simulation.
+Replay restores the initial SIM state/count once at frame zero, even for an empty
+first batch. Every later pre-input and tail boundary checks the carried state and
+absolute count before effects; computed residual controls and post-input RNG must
+match as well. Unexpected carry differences abort instead of being reseeded.
+External reseeding and zero-frame/tail-only recordings are unsupported. Mandatory input_tail preserves effects after the last simulation.
 Empty batches are explicit. Bounds are 1024 operations and 256 KiB per batch;
 overflow, malformed values, unsupported versions and unknown operations fail closed.
 
@@ -45,7 +49,9 @@ terminal diagnostics. Public admission excludes debug spawning and warps.
 
 Native playback accepts format 5 only and gives converter/re-record guidance for
 older input formats. General codec tests retain legacy parsing for offline tools.
-Rear-view wall-clock input and modal automap cancel ordered capture explicitly.
+Rear-view records native semantic decisions without replay timer reads. Automap
+records ordered begin/depths/active/close phases with controls-only updates and
+resolved D2 marker deletion; replay uses no modal UI.
 Android rewind also cancels companion input recording because its saved world
 boundary does not include pending ordered input history; gameplay rewind and
 classic demo recording keep their existing behavior. Continued input recording
@@ -62,13 +68,29 @@ behavioral equivalence, not reconstruction of historical SDL event order.
 Oversized candidates are size-ineligible, not semantic failures. Old oracle bytes
 remain unchanged; a sidecar binds the converted replay to its original oracle.
 
+## Approved modal completion
+
+Normal rear-view and automap use remain recordable. Current gameplay camera policy
+is preserved; any separate combat-view policy change is outside this format work.
+The rear-view reducer keeps native sticky/nonsticky decisions and cockpit effects,
+with an explicit initial baseline. Older converted format5 files without that
+baseline retain their ordinary native startup state. Automap depth recomputation
+is a real world-state effect, recorded independently of successful activation so
+partial entry/close ordering is representable. No simulation runs with a virtual
+map open; a terminal input tail may end fully active. Pure camera/redraw activity
+adds no operations. Confirmed marker deletion pins the exact marker signature.
+Debug map-reveal and Android reactor/matcen cheats cancel capture with a diagnostic
+rather than silently recording unmodeled world edits.
+
 ## Verification status
 
-- Development SDL captures: both event orders match all 25 live frame, diagnostic,
-  SIM-event and terminal expectations in D1/D2 on headed and true headless backends
+- The durable native matrix passes all94 checks on D1/D2 headed and true headless
+  backends, including both25-frame SDL orders, native rear/map/marker effects,
+  carried RNG state/count and terminal-tail negatives, and stale-profile isolation
 - All 37 size-eligible migration candidates pass the original full oracles; the
   two verbose loot candidates exceed the file limit and are not admitted
-- D1/D2 standalone codec suites pass malformed operations, aliases, duplicate
+- All six D1/D2 standalone codec suites and50 focused Python tests pass; coverage
+  includes malformed operations, aliases, duplicate
   keys, UTF-8, command domains, tail/bounds, rewind cancellation and result-write failures
 - Native stress probe covers first-input RNG, variable input/simulation time,
   command interleaving, primary/flare/bomb/cycle input, clear and reset-only
@@ -82,3 +104,50 @@ Final-source runtime matrices, existing native fixture checks, source-qualified
 capture admission, formatting/catalog checks and exact-head hosted CI remain to
 be completed before the draft can be reported fully qualified. Development
 captures are diagnostic evidence, not final provenance-qualified fixtures.
+
+## View-discovery contract and bounded support
+
+The new visited-segment oracle exposed a pre-existing omission: the headless
+candidate collector did not reproduce renderer map discovery. Discovery now has
+an explicit CPU-only pass, separate from the pure homing candidate collector.
+It uses the current main camera and native default D2 missile-window selection
+and geometry, without drawing, publishing candidate lists, waking robots, or
+querying timers/RNG. Replay applies it after simulation and before the next input
+batch or terminal tail. Ordinary live rendering retains its original behavior.
+
+F3 and the existing reverse helper preserve their resolved cockpit modes as ordered operations.
+New production captures include optional `view_projection` metadata with seven
+required fields: physical screen width/height, fixed-point screen aspect and base
+zoom, portal depth, classic-depth mode, and missile-view-enabled preference (zero
+for D1). These values verify initialized native state; replay never allocates or
+reconfigures graphics from the metadata. Bounds are 16384 per dimension, 64M total
+pixels, positive fixed-point aspect/zoom through 16*65536, and depth through9000.
+Migrated files lacking this optional object retain prior startup behavior.
+Resolution/aspect/base-zoom/depth/missile-preference changes stop companion capture
+with a diagnostic instead of producing a silently mismatched replay. The existing
+Android visual-only FoV override remains separate from base discovery semantics.
+
+Active guided-missile and other selected auxiliary cockpit cameras are outside
+this bounded qualification and stop the companion input recording with a named
+notice; normal live camera behavior and classic demo recording are unchanged.
+Cancellation discards the companion rather than claiming an unverified prefix.
+Endlevel special-camera map fidelity remains unqualified. These paths were not
+represented reliably by the old aggregate format either. Main view, rear view,
+F3 and the existing reverse helper, ordinary single-player automap and default missile view are the
+supported target of the new native checks. Dead-player camera discovery keeps
+its native predicate; it is not replaced by the living ship's view.
+
+New modal and secondary captures use native pixel-aspect defaults3:4. Earlier
+public fixture sources used4:3 factors, which were not the same screen projection
+on the true headless backend; their published original oracles remain unchanged.
+
+## Native startup isolation
+
+The Unix replay wrapper now assigns a fresh child HOME for every run, including
+reused executable sandboxes. It writes the ordinary640x480 configuration in the
+native profile directory and stages only an explicitly requested named pilot.
+It never imports the parent configuration or arbitrary nameless pilot. Native
+integration runs deliberately inherit stale external pilot/config files and
+verify their bytes stay untouched. The graphical no-pilot command-line replay
+path initializes the same native player defaults as headless and live capture;
+it does not set individual fields from expected recording metadata.

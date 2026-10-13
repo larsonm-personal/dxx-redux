@@ -60,10 +60,14 @@ def capture(args):
                 combat_trace=directory / "capture-observation.jsonl" if scenario in ("combat", "loot") else None,
                 guidebot_trace=directory / "capture-observation.jsonl" if scenario == "guidebot-release" else None,
             )
-            actions = secondary.capture_actions(report) if scenario in secondary.SCENARIOS else {
-                key: report[key]
-                for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
-            }
+            actions = (
+                secondary.capture_actions(report)
+                if scenario in secondary.SCENARIOS
+                else {
+                    key: report[key]
+                    for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
+                }
+            )
             if scenario == "door-lifecycle":
                 actions.update({key: report[key] for key in ("door_back", "door_events")})
             if scenario == "guidebot-release":
@@ -95,7 +99,22 @@ def capture(args):
                 )
                 actions.update(loot_frame=loots[0]["f"], loot_count=int(loots[0]["created"] >= 0))
             if scenario == "loot":
-                actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score", "loot_frame", "pickup", "pickup_signature", "pickup_frame", "pickup_gain_frame")})
+                actions.update(
+                    {
+                        key: report[key]
+                        for key in (
+                            "damage_frame",
+                            "retirement_frame",
+                            "target_shields",
+                            "target_score",
+                            "loot_frame",
+                            "pickup",
+                            "pickup_signature",
+                            "pickup_frame",
+                            "pickup_gain_frame",
+                        )
+                    }
+                )
             if scenario == "pickup":
                 observations = report["observations"]
                 gains = [

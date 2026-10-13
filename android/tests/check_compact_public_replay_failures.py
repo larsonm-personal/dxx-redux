@@ -34,7 +34,11 @@ def corrupt_corpus(source, destination, cases, mutation):
             for record in records[1:-1]:
                 if mutation == "no-collect":
                     if record["f"] > case["actions"]["loot_frame"]:
-                        record["input"] = {"s": {key: 0 for key in ("f", "x", "z", "h", "p", "f1s")}} if record["f"] == case["actions"]["loot_frame"] + 1 else {}
+                        record["input"] = (
+                            {"s": {key: 0 for key in ("f", "x", "z", "h", "p", "f1s")}}
+                            if record["f"] == case["actions"]["loot_frame"] + 1
+                            else {}
+                        )
                 elif case["scenario"] in ("secondary-release-first", "secondary-mouse-first"):
                     record["input"] = {"s": {"f2s": 0}}
                     for operation in record["dispatch"]["ops"]:
@@ -66,7 +70,6 @@ def corrupt_corpus(source, destination, cases, mutation):
         raise parity.EvidenceError("Negative corpus changed its scenario inventory")
 
 
-
 def verify_loot_negative(actions, header, state, actual_result, mutation):
     """Require the intended live outcome, not just rejection of a damaged trace."""
     terminal_objects, terminal_world = None, None
@@ -82,18 +85,38 @@ def verify_loot_negative(actions, header, state, actual_result, mutation):
     if player["laser_level"] != 0 or actual_result["player0"]["laser_level"] != 0:
         raise parity.EvidenceError("Loot negative unexpectedly gained the laser upgrade")
     pickup = terminal_objects.get(str(actions["pickup"]))
-    exact_pickup = pickup is not None and tuple(pickup[key] for key in ("type", "id", "signature")) == (7, 3, actions["pickup_signature"])
+    exact_pickup = pickup is not None and tuple(pickup[key] for key in ("type", "id", "signature")) == (
+        7,
+        3,
+        actions["pickup_signature"],
+    )
     if mutation == "no-collect":
-        if not (exact_pickup and not pickup["flags"] & 2 and pickup["lifeleft"] > 0
-                and player["shields"] >= 0 and terminal_world["death"]["active"] == 0
-                and player["score"] == actual_result["player0"]["score"] == 500):
-            raise parity.EvidenceError("No-collect must leave the exact drop unconsumed and the player alive after the kill")
+        if not (
+            exact_pickup
+            and not pickup["flags"] & 2
+            and pickup["lifeleft"] > 0
+            and player["shields"] >= 0
+            and terminal_world["death"]["active"] == 0
+            and player["score"] == actual_result["player0"]["score"] == 500
+        ):
+            raise parity.EvidenceError(
+                "No-collect must leave the exact drop unconsumed and the player alive after the kill"
+            )
     else:
         carrier = terminal_objects.get(str(actions["target"]))
-        if not (carrier is not None and tuple(carrier[key] for key in ("type", "id", "signature")) == (2, actions["target_id"], actions["target_signature"])
-                and carrier["shields"] >= 0 and not carrier["flags"] & 1 and not exact_pickup):
+        if not (
+            carrier is not None
+            and tuple(carrier[key] for key in ("type", "id", "signature"))
+            == (2, actions["target_id"], actions["target_signature"])
+            and carrier["shields"] >= 0
+            and not carrier["flags"] & 1
+            and not exact_pickup
+        ):
             raise parity.EvidenceError("No-fire must leave the original carrier alive without its drop")
-        if any(row.get("type") == "robot_loot" and row.get("robot_signature") == actions["target_signature"] for row in parity.records(state)):
+        if any(
+            row.get("type") == "robot_loot" and row.get("robot_signature") == actions["target_signature"]
+            for row in parity.records(state)
+        ):
             raise parity.EvidenceError("No-fire unexpectedly resolved the carrier's loot")
 
 
@@ -122,8 +145,10 @@ def verify_failure(report, exit_code, args, cases, mutation):
         expected_runner = "headless-console" if args.run_mode == "headless" else "visual"
         if row.get("status") != "fail" or command[command.index("-Runner") + 1] != expected_runner:
             raise parity.EvidenceError("Negative run accepted a scene or selected the wrong backend")
-        if mutation == "bad-input" and case["game"] == "d2" and case["scenario"] in (
-            "secondary-release-first", "secondary-mouse-first"
+        if (
+            mutation == "bad-input"
+            and case["game"] == "d2"
+            and case["scenario"] in ("secondary-release-first", "secondary-mouse-first")
         ):
             # Removing D2 secondary input removes its SIM draw. The explicit
             # post-input boundary must reject before simulation, not manufacture
@@ -131,17 +156,29 @@ def verify_failure(report, exit_code, args, cases, mutation):
             if row.get("exit_code") != 1 or actual.exists() or not state.is_file() or not rng.is_file():
                 raise parity.EvidenceError("Missing secondary input did not stop at its native boundary")
             traces = list(parity.records(state))
-            aborted = [entry for entry in traces if entry.get("type") == "world_boundary"
-                       and entry.get("phase") == "aborted"]
+            aborted = [
+                entry for entry in traces if entry.get("type") == "world_boundary" and entry.get("phase") == "aborted"
+            ]
             failures = list(actual.parent.glob(actual.name + ".failure_*/failure.json"))
             failure = compact._json(failures[0].read_bytes()) if len(failures) == 1 else {}
-            if (len(aborted) != 1 or aborted[0]["f"] != case["actions"]["first_fire_frame"]
+            if (
+                len(aborted) != 1
+                or aborted[0]["f"] != case["actions"]["first_fire_frame"]
                 or aborted[0]["state"]["players"][0]["secondary_ammo"][0] != case["actions"]["initial_ammo"]
                 or sum(entry.get("type") == "frame_state" for entry in traces) != case["actions"]["first_fire_frame"]
-                or failure.get("forced_stop") is not False or failure.get("native_exit_code") != 1):
+                or failure.get("forced_stop") is not False
+                or failure.get("native_exit_code") != 1
+            ):
                 raise parity.EvidenceError("Missing secondary input failed outside its exact causal SIM boundary")
-            evidence.append({"game": row["game"], "scenario": row["scenario"], "repeat": row["repeat"],
-                             "passed": True, "secondary_input_rng_rejection": aborted[0]["f"]})
+            evidence.append(
+                {
+                    "game": row["game"],
+                    "scenario": row["scenario"],
+                    "repeat": row["repeat"],
+                    "passed": True,
+                    "secondary_input_rng_rejection": aborted[0]["f"],
+                }
+            )
             continue
         if not all(path.is_file() and path.stat().st_size for path in (state, rng, actual)):
             raise parity.EvidenceError("Negative run lacks completed real-engine result/state/RNG artifacts")
@@ -173,7 +210,9 @@ def verify_failure(report, exit_code, args, cases, mutation):
                 except parity.EvidenceError as error:
                     causal_rejection = str(error)
                 else:
-                    raise parity.EvidenceError("Changed combat, loot or Guide-Bot controls still passed their causal action gate")
+                    raise parity.EvidenceError(
+                        "Changed combat, loot or Guide-Bot controls still passed their causal action gate"
+                    )
                 if case["scenario"] == "combat":
                     states = [row["state"] for row in parity.frames(state, header, case["game"])] + [actual_result]
                     try:
@@ -203,7 +242,9 @@ def verify_failure(report, exit_code, args, cases, mutation):
                 if compact._frame_hashes(state, header)[:end] != expected["frame_sha256"][:end]:
                     raise parity.EvidenceError("No-collect control changed gameplay before the original physical drop")
                 if actual_result["player0"]["laser_level"] != 0 or actual_result["player0"]["score"] != 500:
-                    raise parity.EvidenceError("No-collect control did not preserve the kill while preventing inventory gain")
+                    raise parity.EvidenceError(
+                        "No-collect control did not preserve the kill while preventing inventory gain"
+                    )
                 if "exact new laser pickup" not in (causal_rejection or ""):
                     raise parity.EvidenceError("No-collect control failed for a reason other than physical collection")
         evidence.append(

@@ -236,26 +236,47 @@ parity `not_run`, avoiding two redundant imported investigations. The positive
 graphics pass still requires the existing paired scope once. All mutations are
 disposable copies; checked-in fixtures stay byte-identical.
 
-
 ## Ordered input recording (format 5)
 
 New captures preserve native pre-simulation dispatch order and input-time frame
 timing, with explicit marker-reset, controls-clear, sample and direct-command
 operations. The final input tail is mandatory. Replay compares computed residual
-controls and post-input SIM RNG instead of overwriting discrepancies. Playback
+controls and SIM RNG instead of overwriting discrepancies. SIM state and absolute
+call count are restored once at frame zero, including an empty first batch. Every
+later batch and terminal tail must match the carried SIM state/count before any
+input effect, then match the computed post-input boundary. External RNG reseeding
+is not a supported input operation. Zero-frame/tail-only recordings are rejected. Playback
 accepts format 5 only; use `android/tests/convert_public_replay.py` for bounded,
 oracle-verified public-corpus conversion, or make a fresh recording. Conversion
 is not a general guarantee that missing historical event order can be recovered.
 
-Rear-view wall-clock input and modal automap cancel input capture with a diagnostic.
-Android rewind currently stops companion input recording because rewind snapshots
-do not retain pending ordered dispatch history. Gameplay rewind and classic demo
-recording still work; start a fresh input recording afterward. This limitation is
-explicit rather than emitting a recording that cannot reproduce the restored world.
+Rear-view records the live engine's toggle/hold/release decisions, and playback
+applies them without querying wall time. Its initial view/cockpit baseline is
+explicit in new production captures. Automap records ordered lifecycle and visited
+segment-depth effects; playback uses a virtual paused map, with no UI window.
+Controls-only updates do not fire weapons or flush device input. D2 confirmed
+marker deletion retains the resolved marker slot and object signature. Pure map
+camera/redraw events do not grow the recording.
 
-Current scope note: using rear-view or opening automap during an active ordered
-input recording stops and discards that companion input recording immediately.
-Gameplay and classic demo recording continue. The old format accepted these
-controls using wall-clock rear-view handling and a swallowed automap pulse, without
-a complete deterministic ordering guarantee. This new restriction is under review
-before publication; modal support is not yet qualified.
+Android rewind stops companion input recording because rewind snapshots do not
+retain pending ordered dispatch history. Gameplay rewind and classic demo
+recording still work; start a fresh input recording afterward. Map debug/reveal
+and Android reactor/matcen cheats also stop companion input recording with a clear
+diagnostic. Normal rear-view and automap use do not cancel recording.
+
+F3 and the existing reverse helper changes are ordered cockpit operations. New captures also record a
+projection contract: screen dimensions, exact fixed-point aspect/base zoom,
+portal depth, classic-depth mode and D2 missile-view preference. Replay requires
+those initialized settings to match and explains any mismatch. Changing them
+while recording cancels the companion with a notice; ordinary live settings still
+change normally. Existing Android custom visual FoV does not change its baseline
+discovery projection. A missing projection object in converted files leaves their
+old startup behavior unchanged.
+
+Map discovery is reproduced by a separate CPU pass for the actual main camera
+and default D2 missile window. It does not alter homing candidate collection or
+live camera policy. Active guided and other selected auxiliary cockpit cameras
+remain unsupported for companion capture and produce a named stop notice.
+Endlevel special-camera map fidelity is unqualified. These camera paths were
+already unmodeled in aggregate recordings; cancellation makes that limit explicit
+rather than preserving a recording that may silently diverge.

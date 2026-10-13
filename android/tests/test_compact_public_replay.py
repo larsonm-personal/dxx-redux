@@ -94,23 +94,65 @@ class CompactReplayTests(unittest.TestCase):
         for row in self.rows[1:-1]:
             row["input"] = {"s": {"f": 1092}}
             row["dispatch"] = {"pre_rng": "=", "ops": []}
-        tail = {"type": "input_tail", "f": 3, "input": {}, "rng": {"s": 7, "c": 3},
-                "dispatch": {"pre_rng": "=", "ops": []}}
+        tail = {
+            "type": "input_tail",
+            "f": 3,
+            "input": {},
+            "rng": {"s": 7, "c": 3},
+            "dispatch": {"pre_rng": "=", "ops": []},
+        }
         self.rows.insert(-1, tail)
         for target in (self.rows[1], tail):
             for command in ("guidebot_warp_to_me", "guidebot_spawn"):
-                target["dispatch"]["ops"] = [{"k": "command", "ft": 1092,
-                                              "event": {"kind": "direct_command", "command": command}}]
+                target["dispatch"]["ops"] = [
+                    {"k": "command", "ft": 1092, "event": {"kind": "direct_command", "command": command}}
+                ]
                 self.write(self.full, self.rows)
-                with self.subTest(command=command, tail=target is tail), self.assertRaisesRegex(
-                        compact.parity.EvidenceError, "Public replay forbids"):
+                with (
+                    self.subTest(command=command, tail=target is tail),
+                    self.assertRaisesRegex(compact.parity.EvidenceError, "Public replay forbids"),
+                ):
                     compact._records(self.full, full=True)
             target["dispatch"]["ops"] = []
-        self.rows[1]["dispatch"]["ops"] = [{"k": "command", "ft": 1092,
-                                            "event": {"kind": "direct_command", "command": "change_difficulty",
-                                                      "difficulty": 2}}]
+        self.rows[1]["dispatch"]["ops"] = [
+            {
+                "k": "command",
+                "ft": 1092,
+                "event": {"kind": "direct_command", "command": "change_difficulty", "difficulty": 2},
+            }
+        ]
         self.write(self.full, self.rows)
         compact._records(self.full, full=True)
+
+    def test_ordered_capture_requires_exact_compiled_source_identity(self):
+        self.header["version"] = 5
+        for row in self.rows[1:-1]:
+            row["input"] = {"s": {"f": 1092}}
+            row["dispatch"] = {"pre_rng": "=", "ops": []}
+        self.rows.insert(
+            -1,
+            {
+                "type": "input_tail",
+                "f": 3,
+                "input": {},
+                "rng": {"s": 7, "c": 3},
+                "dispatch": {"pre_rng": "=", "ops": []},
+            },
+        )
+        self.header["git_version"] = "b" * 8
+        self.write(self.full, self.rows)
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            self.pack()
+        self.assertFalse(self.demo.exists())
+        self.header["git_version"] = self.provenance["source_revision"]
+        self.write(self.full, self.rows)
+        self.pack()
+        compact.validate(self.demo, self.oracle)
+        oracle = json.loads(self.oracle.read_text())
+        oracle["provenance"]["source_revision"] = "b" * 40
+        self.oracle.write_text(json.dumps(oracle))
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            compact.validate(self.demo, self.oracle)
 
     def test_round_trip_preserves_all_except_frame_observations(self):
         original = self.full.read_bytes()
@@ -187,7 +229,12 @@ class CompactReplayTests(unittest.TestCase):
         self.write(live, events)
         compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
         self.write(self.trace, self.trace_rows + events)
-        self.assertEqual(compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)["door_observations_compared"], 2)
+        self.assertEqual(
+            compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)[
+                "door_observations_compared"
+            ],
+            2,
+        )
         events[-1]["blockers"] = []
         self.write(self.trace, self.trace_rows + events)
         with self.assertRaisesRegex(compact.parity.EvidenceError, "door obstruction"):

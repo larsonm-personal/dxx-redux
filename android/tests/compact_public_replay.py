@@ -43,6 +43,8 @@ HEADER_KEYS = {
     "frame_count",
     "classic_preview",
     "player_cfg",
+    "rear_view",
+    "view_projection",
 }
 FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag", "dispatch"}
 # Reviewed producers: d1/d2 input_demo_hooks, input_demo_energy_trace and collide
@@ -50,6 +52,7 @@ FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag", "dis
 # input_demo_replay.cpp parses only direct_command into executable replay events
 DIAGNOSTIC_EVENTS = frozenset(
     {
+        "input_view",
         "probe_weapon_life",
         "probe_log",
         "probe_ai_schedule",
@@ -225,17 +228,33 @@ def _records(path, full):
             raise parity.EvidenceError("Only explicitly reviewed diagnostic event kinds may be removed")
     if header["version"] == 5:
         events = rows[-2].get("events", [])
-        if (not isinstance(events, list)
+        if (
+            not isinstance(events, list)
             or any(not isinstance(event, dict) or event.get("kind") not in DIAGNOSTIC_EVENTS for event in events)
-            or (events and not full)):
+            or (events and not full)
+        ):
             raise parity.EvidenceError("Only reviewed diagnostic tail events may be removed")
         batches = ordered.validate(header, rows[1:-2], rows[-2])
         # Public scenes use ordinary player actions, never debug spawning or warps
-        public_commands = {"guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
-                           "drop_flag", "escort_release_control", "death_abort", "change_difficulty",
-                           "guidebot_find_secret", "guidebot_find_unexplored", "select_weapon_exact"}
-        if any(op["k"] == "command" and op["event"]["command"] not in public_commands
-               for batch in batches for op in batch["ops"]):
+        public_commands = {
+            "guidebot_goal",
+            "drop_marker",
+            "delete_marker",
+            "drop_current_weapon",
+            "drop_secondary_weapon",
+            "drop_flag",
+            "escort_release_control",
+            "death_abort",
+            "change_difficulty",
+            "guidebot_find_secret",
+            "guidebot_find_unexplored",
+            "select_weapon_exact",
+        }
+        if any(
+            op["k"] == "command" and op["event"]["command"] not in public_commands
+            for batch in batches
+            for op in batch["ops"]
+        ):
             raise parity.EvidenceError("Public replay forbids spawning, warps and unreviewed direct commands")
     parity.validate_identity(rows[-1]["result"], header, game)
     return raw, rows
@@ -310,7 +329,16 @@ def guidebot_observations(path, header=None):
     return {"schema": 1, "count": len(events), "sha256": sha(events)}
 
 
-def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, combat_trace=None, door_trace=None, guidebot_trace=None):
+def pack(
+    full_recording,
+    rng_trace,
+    demo_output,
+    oracle_output,
+    provenance,
+    combat_trace=None,
+    door_trace=None,
+    guidebot_trace=None,
+):
     """Derive all expectations from live capture before any replay and write new files."""
     full_recording, demo_output, oracle_output = map(Path, (full_recording, demo_output, oracle_output))
     if (
@@ -322,6 +350,8 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, comb
     raw, rows = _records(full_recording, full=True)
     header = rows[0]
     _provenance(provenance, header["game"])
+    if header["version"] == 5:
+        _capture_build_identity(header, provenance)
     frame_hashes = _frame_hashes(full_recording, header, recorded=True)
     rng_hash, rng_count = _rng_hash(rng_trace)
     telemetry = [{"f": row["f"], "event": event} for row in rows[1:-1] for event in row.get("events", [])]
@@ -394,7 +424,13 @@ def validate(demo, oracle):
     expected = _json(Path(oracle).read_bytes())
     if (
         not isinstance(expected, dict)
-        or set(expected) not in (ORACLE_KEYS, ORACLE_KEYS | {"combat_observations"}, ORACLE_KEYS | {"door_observations"}, ORACLE_KEYS | {"guidebot_observations"})
+        or set(expected)
+        not in (
+            ORACLE_KEYS,
+            ORACLE_KEYS | {"combat_observations"},
+            ORACLE_KEYS | {"door_observations"},
+            ORACLE_KEYS | {"guidebot_observations"},
+        )
         or type(expected["schema"]) is not int
         or expected["schema"] != 1
     ):
@@ -413,9 +449,15 @@ def validate(demo, oracle):
             raise parity.EvidenceError("Invalid immutable combat observation oracle")
     if "door_observations" in expected:
         doors = expected["door_observations"]
-        if (not isinstance(doors, dict) or set(doors) != {"schema", "count", "sha256"}
-            or type(doors["schema"]) is not int or doors["schema"] != 1
-            or type(doors["count"]) is not int or doors["count"] < 2 or not _digest(doors["sha256"])):
+        if (
+            not isinstance(doors, dict)
+            or set(doors) != {"schema", "count", "sha256"}
+            or type(doors["schema"]) is not int
+            or doors["schema"] != 1
+            or type(doors["count"]) is not int
+            or doors["count"] < 2
+            or not _digest(doors["sha256"])
+        ):
             raise parity.EvidenceError("Invalid immutable door observation oracle")
     if "guidebot_observations" in expected:
         guidebot = expected["guidebot_observations"]
@@ -442,7 +484,12 @@ def validate(demo, oracle):
         if type(expected[key]) is not type(value) or expected[key] != value:
             raise parity.EvidenceError("Oracle identity differs from the compact recording")
     _provenance(expected["provenance"], header["game"])
-    if "combat_observations" in expected or "door_observations" in expected or "guidebot_observations" in expected:
+    if (
+        header["version"] == 5
+        or "combat_observations" in expected
+        or "door_observations" in expected
+        or "guidebot_observations" in expected
+    ):
         _capture_build_identity(header, expected["provenance"])
     telemetry = expected["removed_telemetry"]
     if (
@@ -482,10 +529,22 @@ def _validate_conversion(demo, oracle, raw, header, expected):
     if header["version"] != 5 or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise parity.EvidenceError("Compact recording changed without bounded conversion provenance")
     value = _json(path.read_bytes())
-    keys = {"schema", "kind", "schedule", "original_corpus_revision", "source_demo_sha256",
-            "source_oracle_sha256", "converted_demo_sha256", "baseline_sha256"}
-    if (not isinstance(value, dict) or set(value) != keys or type(value["schema"]) is not int
-        or value["schema"] != 1 or value["kind"] != "ordered-input-candidate"
+    keys = {
+        "schema",
+        "kind",
+        "schedule",
+        "original_corpus_revision",
+        "source_demo_sha256",
+        "source_oracle_sha256",
+        "converted_demo_sha256",
+        "baseline_sha256",
+    }
+    if (
+        not isinstance(value, dict)
+        or set(value) != keys
+        or type(value["schema"]) is not int
+        or value["schema"] != 1
+        or value["kind"] != "ordered-input-candidate"
         or value["schedule"] not in ("sample-only", "reset-before-sample", "prior-held-then-current")
         or not _digest(value["original_corpus_revision"], 40)
         or value["source_demo_sha256"] != expected["compact_sha256"]
@@ -493,7 +552,8 @@ def _validate_conversion(demo, oracle, raw, header, expected):
         or value["converted_demo_sha256"] != hashlib.sha256(raw).hexdigest()
         or not isinstance(value["baseline_sha256"], dict)
         or set(value["baseline_sha256"]) != {"state", "rng", "result"}
-        or any(not _digest(item) for item in value["baseline_sha256"].values())):
+        or any(not _digest(item) for item in value["baseline_sha256"].values())
+    ):
         raise parity.EvidenceError("Invalid immutable-oracle conversion provenance")
 
 
