@@ -605,12 +605,18 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 			return 0;
 		}
 	}
-	/* Keep the existing per-frame SIM seed contract, now before input effects */
-	if (!d_rand_set_state(batch.pre_rng_state)) {
-		snprintf(error, error_size, "active RNG backend cannot restore pre-input state");
+	/* Establish the recorded start once; later boundaries are assertions, not seeds */
+	if (frame == 0 && !batch.is_tail) {
+		if (!d_rand_set_state(batch.pre_rng_state)) {
+			snprintf(error, error_size, "active RNG backend cannot restore initial input state");
+			return 0;
+		}
+		d_rand_set_call_count(batch.pre_rng_count);
+	} else if (!d_rand_get_state(&rng_state) || rng_state != batch.pre_rng_state ||
+	           d_rand_get_call_count() != batch.pre_rng_count) {
+		snprintf(error, error_size, "carried SIM RNG differs before input at frame %u", frame);
 		return 0;
 	}
-	d_rand_set_call_count(batch.pre_rng_count);
 	input_demo_rng_trace_set_context(frame, GameTime64);
 	for (index = 0; index < batch.operation_count; ++index) {
 		if (!input_demo_replay_get_input_operation(frame, index, &operation, error, error_size))
