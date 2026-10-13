@@ -51,10 +51,31 @@ jobs:
         run: |
           for game in d1 d2; do
             cmake -S "$game" -B "build${game}-save" -G Ninja \
-              -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
-              -DCMAKE_C_FLAGS_DEBUG="-O0 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g1"
+              -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DCMAKE_C_FLAGS_DEBUG="-O1 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O1 -g1"
             cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" "dxx-redux-${game}-headless" --parallel 4
           done
+
+      - name: Verify the CI-only optimized Debug profile keeps assertions and precise math
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import shlex
+          from pathlib import Path
+          for game in ("d1", "d2"):
+              build = Path(f"build{game}-save")
+              assert "CMAKE_BUILD_TYPE:STRING=Debug" in (build / "CMakeCache.txt").read_text()
+              commands = json.loads((build / "compile_commands.json").read_text())
+              for target in (f"dxx-redux-{game}", f"dxx-redux-{game}-headless", "test_upstream_compat"):
+                  selected = [row for row in commands if f"/{target}.dir/" in row["command"]]
+                  assert selected, (game, target, "missing compilation commands")
+                  for row in selected:
+                      flags = shlex.split(row["command"])
+                      assert [flag for flag in flags if flag.startswith("-O")] == ["-O1"], row
+                      assert "-g1" in flags and not any(flag.startswith("-DNDEBUG") for flag in flags), row
+                      assert "-ffp-contract=off" in flags and "-fno-fast-math" in flags, row
+                  print(f"{game}/{target}: {len(selected)} Debug commands retain assertions and precise math")
+          PYTHON
 
       - name: Build public Guide-Bot arrival fixture
         timeout-minutes: 10
@@ -312,8 +333,10 @@ jobs:
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
+            buildd1-save/compile_commands.json
             buildd2-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd2-save/CMakeCache.txt
+            buildd2-save/compile_commands.json
           retention-days: 3
           if-no-files-found: ignore
 

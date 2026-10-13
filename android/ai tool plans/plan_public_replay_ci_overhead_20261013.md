@@ -15,5 +15,6 @@ oracles, natural exits, and immutable corpus inputs. Keep retail coverage intact
    evidence; retain complete raw artifacts and separately accessible summaries
 3. Run relevant admission, mutation, wrapper and live-engine checks and compare
    reports against the baseline; obtain independent review before publication
-4. Restack after the secondary replay segment, publish a focused draft and monitor
-   the final exact-head checks without merging
+4. Stack on the verified public matcen segment, publish a focused draft and
+   monitor the final exact-head checks without merging; later gameplay segments
+   can build on this independently reviewed optimization
