@@ -1211,6 +1211,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
     def assert_missing_observation_rejected(self, scenarios, field, message):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
+        bindings = set()
         for case in cases:
             if case["scenario"] not in scenarios:
                 continue
@@ -1222,32 +1223,50 @@ class RealNegativeCorpusTests(unittest.TestCase):
                 demo, path = (destination / case[key] for key in ("demo", "oracle"))
                 original_oracle = path.read_bytes()
                 oracle = json.loads(original_oracle)
+                converted = oracle["compact_sha256"] != runner.parity.digest(demo)
+                bindings.add("converted" if converted else "live")
                 oracle.pop(field)
                 runner.parity.write_json(path, oracle)
-                # The unchanged provenance must reject even a structurally valid edited oracle
-                with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable-oracle conversion provenance"):
-                    runner.load_corpus(destination)
-                migration_path = demo.with_suffix(".migration.json")
-                migration = json.loads(migration_path.read_bytes())
-                migration["source_oracle_sha256"] = runner.parity.digest(path)
-                runner.parity.write_json(migration_path, migration)
-                # Rebind only this disposable copy so the independent semantic gate is exercised
+                if converted:
+                    # Converted inputs bind the unchanged original oracle through their sidecar
+                    with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable-oracle conversion provenance"):
+                        runner.load_corpus(destination)
+                    migration_path = demo.with_suffix(".migration.json")
+                    migration = json.loads(migration_path.read_bytes())
+                    migration["source_oracle_sha256"] = runner.parity.digest(path)
+                    runner.parity.write_json(migration_path, migration)
+                # Rebind only converted disposable copies. Fresh live pairs match their own
+                # compact digest, even when an old migration sidecar remains as history
                 _, admitted = runner.compact.validate(demo, path)
                 self.assertNotIn(field, admitted)
                 with self.assertRaisesRegex(runner.parity.EvidenceError, message):
                     runner.load_corpus(destination)
                 self.assertEqual((source / case["oracle"]).read_bytes(), original_oracle)
+        return bindings
 
     def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
-        self.assert_missing_observation_rejected(
-            {"combat", "loot"}, "combat_observations", "immutable live damage/loot"
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"combat", "loot"}, "combat_observations", "immutable live damage/loot"
+            ),
+            {"live", "converted"},
         )
 
     def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
-        self.assert_missing_observation_rejected({"door-lifecycle"}, "door_observations", "immutable live geometric")
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"door-lifecycle"}, "door_observations", "immutable live geometric"
+            ),
+            {"converted"},
+        )
 
     def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
-        self.assert_missing_observation_rejected({"guidebot-release"}, "guidebot_observations", "immutable live escort")
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"guidebot-release"}, "guidebot_observations", "immutable live escort"
+            ),
+            {"live"},
+        )
 
     def assert_changed_ordered_controls(self, case, original_demo, changed_demo):
         original = ordered.validate(original_demo[0], original_demo[1:-2], original_demo[-2])
