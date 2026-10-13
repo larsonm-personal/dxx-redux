@@ -6,7 +6,7 @@ import d1_replay_parity as parity
 # object/world playback boundaries; the nine admitted replay/oracle pairs stay unchanged
 # Each row is (impact frame, first-live boundary, projectile slot, signature)
 PROFILES = {
-    "d1": {"robot": (8, 3, 9), "weapon_id": 5, "damage": 393216, "hits": ((112, 70, 68, 76), (117, 76, 66, 78))},
+    "d1": {"robot": (8, 3, 9), "weapon_id": 5, "damage": 393216, "hits": ((112, 70, 68, 76), (116, 76, 66, 78))},
     "d2": {
         "robot": (11, 37, 12),
         "weapon_id": 41,

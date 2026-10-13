@@ -109,13 +109,13 @@
                 "target": 8,
                 "target_id": 3,
                 "target_signature": 9,
-                "action_frame": 125,
+                "action_frame": 116,
                 "wall_contact_frames": 0,
                 "damage_frame": 105,
-                "retirement_frame": 147,
+                "retirement_frame": 138,
                 "target_shields": 1638400,
                 "target_score": 200,
-                "loot_frame": 132,
+                "loot_frame": 123,
                 "loot_count": 0
             }
         },
@@ -261,13 +261,13 @@
                 "target": 74,
                 "target_id": -1,
                 "target_signature": -1,
-                "action_frame": 190,
+                "action_frame": 188,
                 "wall_contact_frames": 0,
                 "buddy": 28,
                 "buddy_id": 33,
                 "buddy_signature": 29,
                 "cage_segment": 224,
-                "exit_frame": 181,
+                "exit_frame": 179,
                 "blast_frame": 177,
                 "damage_frame": 101
             }

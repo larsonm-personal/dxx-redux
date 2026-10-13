@@ -276,12 +276,12 @@ oracles. D2 recordings are 5943/5969 bytes, with 3906/3907-byte oracles. These
 start at ordinary level spawns and contain no save payload. Optional Xvfb-rendered
 proof screenshots also leave both games' mouse-first recording/oracle bytes
 unchanged. These four native scenes are distinct from the 13 converted recordings;
-all original oracle bytes remain unchanged.
+all original oracle bytes remained unchanged at that format-only checkpoint.
 
 Native modal integration coverage is separate from these small admitted scenes.
 It preserves live rear-view semantic decisions and automap lifecycle/depth effects,
 including a terminal tail with an open virtual map and signature-checked D2 marker
-deletion. Existing gameplay camera policy is unchanged. Rewind and debug map-world
+deletion. This recording-format layer does not choose the combat view. Rewind and debug map-world
 cheats explicitly stop input capture; normal rear-view/map use does not.
 
 The native modal runner compares complete visited-segment and marker observations
@@ -294,3 +294,27 @@ uses the same native selector and canvas geometry as the renderer; isolated
 geometry tests require main-only discovery to miss an offscreen region while the
 combined CPU pass matches the actual renderer exactly. Guided/other selected
 auxiliary cameras and endlevel special-camera map fidelity are not claimed.
+
+## Fixed-forward gameplay recaptures
+
+D1 door/combat and D2 combat/Guide-Bot were independently recaptured from clean
+published source `9be53d6d74feede5b3df4cf7dda19fc10b5f9fc2`, retained on
+`capture-fixed-forward-gameplay-view`. The historical cockpit projection restores
+scaled robot warnings and makes combat visibility independent of the displayed
+camera. These four live captures replace their recording/oracle pairs; the other 13
+pairs, including all four secondary scenes, remain byte-identical.
+
+The approved causal changes preserve exact scenario objectives. D1 combat's
+warning-driven evasion moves death/loot/retirement to 116/123/138 and the second
+identified incoming hit to 116. Guide-Bot release/physical exit move to 188/179.
+Capture lengths are 426, 139, 263 and 219 frames respectively. D1 door and D2 combat
+change warning state only; Guide-Bot has a genuine downstream SIM RNG change.
+Historical migration sidecars remain as conversion evidence; the four new oracle
+pairs instead bind their fresh native source, executable, recipe and input hashes.
+
+Both native backends pass the original-oracle and action checks using the same
+unchanged-input executions that also reject deliberately damaged oracles. These
+are reused evidence, not extra independent runs. Altered-input and both partial
+and completed no-collection controls retain their strict causal gates. See the
+fixed-forward gameplay audit for the complete 142-execution accounting and the
+unchanged imported-D1 qualification limits.

@@ -6,11 +6,16 @@ causal profile comes from the original full live captures and their verified
 object/world playback boundaries:
 
 | Game | Original robot slot / ID / signature | Projectile slot / ID / signature | First-live boundary | Direct hit frame | Player shields |
-| --- | --- | --- | --- | --- | --- |
-| D1 | 8 / 3 / 9 | 68 / 5 / 76 | 70 | 112 | 100 to 94 |
-| D1 | 8 / 3 / 9 | 66 / 5 / 78 | 76 | 117 | 94 to 88 |
-| D2 | 11 / 37 / 12 | 42 / 41 / 112 | 157 | 168 | 100 to 98 |
-| D2 | 11 / 37 / 12 | 90 / 41 / 150 | 237 | 247 | 98 to 96 |
+| ---- | ------------------------------------ | -------------------------------- | ------------------- | ---------------- | -------------- |
+| D1   | 8 / 3 / 9                            | 68 / 5 / 76                      | 70                  | 112              | 100 to 94      |
+| D1   | 8 / 3 / 9                            | 66 / 5 / 78                      | 76                  | 116              | 94 to 88       |
+| D2   | 11 / 37 / 12                         | 42 / 41 / 112                    | 157                 | 168              | 100 to 98      |
+| D2   | 11 / 37 / 12                         | 90 / 41 / 150                    | 237                 | 247              | 98 to 96       |
+
+The fixed ship-forward policy was independently recaptured from clean published
+source `9be53d6d74feede5b3df4cf7dda19fc10b5f9fc2`. D1's second hit moves from frame
+117 to 116; projectile identity, first-live boundary and shield loss are unchanged.
+The refreshed combat expectations come from that live capture, not replay output.
 
 A hit frame denotes the action between that frame's pre-state and the next
 boundary. Shields are validated in raw fixed-point full-world state, not merely

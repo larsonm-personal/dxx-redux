@@ -166,7 +166,46 @@ The local recording-format restack preserves actual-camera discovery and passes
 all94 native ordered-input, modal, first-input and continuous-RNG carry/tail checks.
 Independent integrated source review is clear; the exact D1/Guide-Bot metadata
 changes also pass independent strict action verification without weakening their
-structural assertions. Final admission still depends on clean source publication,
-fresh affected-case native capture and full replay checks. Pending recording-branch admissions and previously scoped imported-D1
-baseline gaps are not represented as passing by these local checks. Software
-backend, Android device, Windows and macOS execution remain unrun here.
+structural assertions. Software backend, Android device, Windows and macOS
+execution remain unrun here.
+
+## Final clean-source admission
+
+The retained `capture-fixed-forward-gameplay-view` branch points to published
+source `9be53d6d74feede5b3df4cf7dda19fc10b5f9fc2`, tree
+`6ad9b1a1784fdc9f5539a159971c428f336e1483`. Both engines were reconfigured and
+rebuilt with `--clean-first` from that clean checkout. The capture guard verified
+matching embedded revisions and unchanged executable hashes before and after
+four fresh independent native captures. Those captures reproduce the reviewed
+causal evidence exactly, apart from build provenance; no replay output was used
+to produce their oracles.
+
+Only D1 door, D1 combat, D2 combat and D2 Guide-Bot recording/oracle pairs are
+replaced. The manifest changes exactly five action boundaries: D1 death at 116,
+loot at 123 and retirement at 138; Guide-Bot release at 188 and exit at 179. The identified D1
+second incoming projectile impact changes 117 to 116, with the same identity and
+six-shield loss. All target, damage, score, no-drop, physical-exit and survival
+assertions remain exact. The other 13 parent pairs (nine original scenes and four
+new secondary scenes) and all 14 historical migration sidecars remain byte-identical.
+The replaced pairs now bind fresh live provenance directly; the old sidecars are
+retained historical conversion evidence, not provenance for these new pairs.
+
+Final native qualification passes 142 distinct replay executions across headless
+and graphics: 68 unchanged-input runs serve both original-oracle/action positives
+and deliberately wrong-oracle rejection, 68 altered-input runs, four partial
+no-collection controls and two complete 582-frame no-collection replays of a separate live
+capture. Reused positive evidence is counted once, not as additional independent
+runs. Every early altered-input rejection retains its exact phase/frame and reconstructed
+RNG proof; no negative-profile boundary changes were needed. The complete
+no-collection scene matches its own live oracle on both backends and fails the
+unchanged physical-collection action gate, preserving meaningful negative coverage.
+Independent review reconciles every run identity and before/after corpus, verifier
+and executable hash.
+
+The final clean binaries also pass 480 D1 and 960 D2/imported display combinations,
+26 public lifecycle checks,918 actual-renderer equivalence cases and both engines'
+upstream/FoV CTests. The existing imported-D1 paired scope passes its required
+flight gameplay/SIM checks and native repeatability; broader imported diagnostics
+remain incomplete, including the retained door/loot differences. No imported
+scope or oracle was relaxed. The subsequent parent CI-budget-only changes do not
+alter the retained capture source, engine code or capture recipes.
