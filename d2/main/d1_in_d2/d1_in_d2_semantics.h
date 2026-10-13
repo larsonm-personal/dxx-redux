@@ -18,6 +18,8 @@ fix d1_in_d2_pickup_boost(fix base_boost);
 /* Refueling cadence is original D1 even when D2 assets are available */
 fix d1_in_d2_refuel_sound_delay(fix engine_delay);
 fix d1_in_d2_contact_damage(fix damage);
+/* D1 force-kill credit must not interpret non-weapon control storage */
+int d1_in_d2_force_kill_credit_allowed(const struct object *source);
 fix d1_in_d2_blast_damage(fix damage);
 /* Native objects without a supplied orientation retain D1's cleared matrix */
 void d1_in_d2_initialize_object_orientation(struct object *obj, const vms_matrix *orientation);

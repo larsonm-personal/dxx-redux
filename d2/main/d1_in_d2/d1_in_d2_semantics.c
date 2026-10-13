@@ -123,6 +123,11 @@ fix d1_in_d2_contact_damage(fix damage)
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? damage / 2 : damage;
 }
 
+int d1_in_d2_force_kill_credit_allowed(const object *source)
+{
+	return !d1_in_d2_use_d1_gameplay() || source->type == OBJ_WEAPON;
+}
+
 fix d1_in_d2_blast_damage(fix damage)
 {
 	return !d1_in_d2_use_d1_gameplay() && Difficulty_level == 0 ? damage / 4 : damage;

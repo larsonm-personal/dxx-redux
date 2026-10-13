@@ -4473,6 +4473,80 @@ static void test_boss_frame_updates()
 #endif
 }
 
+static void test_force_kill_credit()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int versions[] = { 1, 2, 1 };
+#else
+	const int versions[] = { 1 };
+#endif
+	const auto old_robot = Robot_info[0];
+	const auto old_player = Players[0];
+	for (const int version : versions) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = version;
+#endif
+		// Local contact, local weapon, foreign weapon, robot and foreign player
+		for (int source_kind = 0; source_kind < 5; ++source_kind) {
+			init_test_corridor();
+			Game_mode = 0;
+			Player_num = 0;
+			Players[0] = {};
+			Players[0].lives = 3;
+			Players[0].objnum = 0;
+			ConsoleObject = &Objects[0];
+#ifndef DXX_BUILD_DESCENT_II
+			// Native D1 level objects retain their source signature
+			ConsoleObject->signature = 1;
+#endif
+			cheats.enabled = 0;
+			Robot_info[0] = {};
+			Robot_info[0].score_value = 200;
+			vms_vector origin = {};
+			const int robot = obj_create(OBJ_ROBOT, 0, 0, &origin, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
+			require(robot > 0, "create a real force-damage victim");
+			Objects[robot].shields = F1_0;
+			Objects[robot].mtype.phys_info.mass = F1_0;
+			object *source = ConsoleObject;
+			if (source_kind) {
+				int parent = 0;
+				if (source_kind == 2) {
+					parent = obj_create(OBJ_PLAYER, 1, 0, &origin, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+					require(parent > 0 && Objects[parent].signature != ConsoleObject->signature, "create a distinct foreign player weapon owner");
+				}
+				const auto type = source_kind <= 2 ? OBJ_WEAPON : source_kind == 3 ? OBJ_ROBOT : OBJ_PLAYER;
+				const int control = type == OBJ_WEAPON ? CT_WEAPON : CT_NONE;
+				const int index = obj_create(type, type == OBJ_PLAYER ? 1 : 0, 0, &origin, &vmd_identity_matrix, F1_0, control, MT_NONE, RT_NONE);
+				require(index > 0, "create a real force-damage source");
+				source = &Objects[index];
+				if (type == OBJ_WEAPON) {
+					source->ctype.laser_info.parent_type = OBJ_PLAYER;
+					source->ctype.laser_info.parent_num = parent;
+					source->ctype.laser_info.parent_signature = Objects[parent].signature;
+				}
+			}
+			// Keep D2's legacy zeroed non-weapon-union credit outside this D1 fix
+			const bool credited = source_kind == 1 || (version == 2 && source_kind != 2);
+			apply_force_damage(&Objects[robot], 32 * F1_0, source);
+			require(Objects[robot].shields < 0 && (Objects[robot].flags & OF_EXPLODING) && Players[0].num_kills_total == 1,
+			        "force damage actually kills one robot and schedules its explosion");
+			if (Players[0].score != (credited ? 200 : 0))
+				std::fprintf(stderr, "Force credit mismatch: version=%d source=%d score=%d\n", version, source_kind, Players[0].score);
+			require(Players[0].score == (credited ? 200 : 0), "force-kill credit matches loaded-level D1 observations without changing legacy D2 policy");
+			apply_force_damage(&Objects[robot], 32 * F1_0, source);
+			require(Players[0].score == (credited ? 200 : 0) && Players[0].num_kills_total == 1,
+			        "an exploding robot cannot award force-kill credit twice");
+		}
+	}
+	Robot_info[0] = old_robot;
+	Players[0] = old_player;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
 static void test_projectile_collision_relationships()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -11527,6 +11601,7 @@ int main(int argc, char **argv)
 #endif
 	std::fprintf(stderr, "Testing native homing acquisition and retention\n");
 	test_homing_targets();
+	test_force_kill_credit();
 	test_projectile_collision_relationships();
 	test_stuck_projectiles();
 	test_autoselect();
