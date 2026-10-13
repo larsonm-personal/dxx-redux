@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "lighting.h"
 #include "newdemo.h"
 #include "weapon.h"
+#include "weapon_cheat_shared.h"
 #include "sounds.h"
 #include "args.h"
 #include "gameseq.h"
@@ -1477,6 +1478,8 @@ void kill_buddy(void)
 
 int HandleTestKey(int key)
 {
+	if (key & KEY_DEBUGGED)
+		weapon_cheat_cancel_capture("unsupported debug command");
 	switch (key)
 	{
 
@@ -1742,6 +1745,11 @@ int FinalCheats(int key)
 		Assert(cheatlen <= CHEAT_MAX_LEN);
 		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
 		{
+			if (cheat_codes[i].stateptr == &cheats.wowie) {
+				weapon_cheat_execute_live(weapon_cheat_default_grant());
+				return 1;
+			}
+			weapon_cheat_cancel_capture("unsupported native cheat");
 			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
 			cheats.enabled = 1;
 			digi_play_sample( SOUND_CHEATER, F1_0);
@@ -1758,42 +1766,6 @@ int FinalCheats(int key)
 	{
 		Players[Player_num].shields=Players[Player_num].energy=i2f(1);
 		HUD_init_message_literal(HM_DEFAULT, "Take that...cheater!");
-	}
-
-	if (cheat_codes[gotcha].stateptr == &cheats.wowie)
-	{
-		HUD_init_message_literal(HM_DEFAULT, TXT_WOWIE_ZOWIE);
-
-		if (Piggy_hamfile_version < 3) // SHAREWARE
-		{
-			Players[Player_num].primary_weapon_flags = ~((1<<PHOENIX_INDEX) | (1<<OMEGA_INDEX) | (1<<FUSION_INDEX) | HAS_FLAG(SUPER_LASER_INDEX));
-			Players[Player_num].secondary_weapon_flags = ~((1<<SMISSILE4_INDEX) | (1<<MEGA_INDEX) | (1<<SMISSILE5_INDEX));
-		}
-		else
-		{
-			Players[Player_num].primary_weapon_flags = 0xffff ^ HAS_FLAG(SUPER_LASER_INDEX); //no super laser
-			Players[Player_num].secondary_weapon_flags = 0xffff;
-		}
-
-		for (i=0; i<MAX_PRIMARY_WEAPONS; i++)
-			Players[Player_num].primary_ammo[i] = Primary_ammo_max[i];
-		for (i=0; i<MAX_SECONDARY_WEAPONS; i++)
-			Players[Player_num].secondary_ammo[i] = Secondary_ammo_max[i];
-
-		if (Piggy_hamfile_version < 3) // SHAREWARE
-		{
-			Players[Player_num].secondary_ammo[SMISSILE4_INDEX] = 0;
-			Players[Player_num].secondary_ammo[SMISSILE5_INDEX] = 0;
-			Players[Player_num].secondary_ammo[MEGA_INDEX] = 0;
-		}
-
-		if (Newdemo_state == ND_STATE_RECORDING)
-			newdemo_record_laser_level(Players[Player_num].laser_level, MAX_LASER_LEVEL);
-
-		Players[Player_num].energy = MAX_ENERGY;
-		Players[Player_num].laser_level = MAX_SUPER_LASER_LEVEL;
-		Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
-		update_laser_weapon_info();
 	}
 
 	if (cheat_codes[gotcha].stateptr == &cheats.allkeys)
@@ -1931,6 +1903,7 @@ int FinalCheats(int key)
 #ifndef RELEASE
 void do_cheat_menu()
 {
+	weapon_cheat_cancel_capture("unsupported debug cheat menu");
 	int mmn;
 	newmenu_item mm[16];
 	char score_text[21];

@@ -1098,6 +1098,51 @@ static int expect_direct_command_policy(void)
 	return 0;
 }
 
+static int expect_ordered_all_weapons_policy(void)
+{
+	direct_command_policy_test_context context;
+	input_demo_direct_command_policy policy;
+	std::vector<std::string> expected;
+	char error[256] = "";
+	direct_command_policy_context_clear(&context);
+	direct_command_policy_init(&policy, &context);
+	const int kinds[] = { INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS,
+		                  INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS };
+	for (int kind : kinds) {
+		input_demo_replay_direct_command_event event = {};
+		event.kind = kind;
+		event.value0 = kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS ? INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED : 0;
+		for (int validate_only : { 1, 0 }) {
+			if (!input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY,
+			                                           &event, validate_only, error, sizeof(error)))
+				return report_failure_string(error);
+			expected.push_back(direct_command_policy_game_call(&event, validate_only));
+		}
+	}
+	if (expect_direct_command_policy_calls(&context, expected, "ordered all-weapons") || context.mutation_count != 4)
+		return report_failure("all-weapons policy lost repetitions or adapter arguments");
+	for (int kind : { INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS }) {
+		input_demo_replay_direct_command_event event = {};
+		event.kind = kind;
+		event.value0 = kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS ? INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB : 0;
+		direct_command_policy_context_clear(&context);
+		context.reject_game_kind = kind;
+		if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &event, 1, error, sizeof(error)) ||
+		    context.calls.size() != 1 || context.mutation_count)
+			return report_failure("all-weapons policy ignored adapter preflight rejection");
+		direct_command_policy_context_clear(&context);
+		if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, &event, 0, error, sizeof(error)) ||
+		    !context.calls.empty() || context.mutation_count)
+			return report_failure("all-weapons policy accepted the death phase");
+	}
+	policy.apply_game_specific = NULL;
+	input_demo_replay_direct_command_event event = {};
+	event.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS;
+	if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &event, 1, error, sizeof(error)))
+		return report_failure("all-weapons policy accepted a missing native adapter");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_replay_loader())
@@ -1107,6 +1152,8 @@ int main(void)
 	if (expect_checkpoint_replay_loader())
 		return 1;
 	if (expect_checkpoint_replay_limits())
+		return 1;
+	if (expect_ordered_all_weapons_policy())
 		return 1;
 	if (expect_direct_command_policy())
 		return 1;

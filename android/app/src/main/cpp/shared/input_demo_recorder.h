@@ -126,6 +126,8 @@ int input_demo_recorder_stage_direct_command_select_weapon_exact(int weapon_clas
                                                                  int weapon_index,
                                                                  char *error,
                                                                  size_t error_size);
+int input_demo_recorder_stage_direct_command_enable_cheats(char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_grant_all_weapons(int grant, char *error, size_t error_size);
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size);

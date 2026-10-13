@@ -44,8 +44,13 @@ COMMANDS = {
     "guidebot_warp_to_me",
     "guidebot_find_unexplored",
     "select_weapon_exact",
+    "enable_cheats",
+    "grant_all_weapons",
 }
-D1_COMMANDS = {"death_abort", "change_difficulty", "select_weapon_exact"}
+D1_COMMANDS = {"death_abort", "change_difficulty", "select_weapon_exact", "enable_cheats", "grant_all_weapons"}
+# Synchronized with INPUT_DEMO_GRANT_ALL_WEAPONS_* in input_demo_dispatch.h
+D1_ALL_WEAPONS_GRANTS = {"d1_scourge", "d1_bigred"}
+ALL_WEAPONS_GRANTS = D1_ALL_WEAPONS_GRANTS | {"d2_honestbob"}
 # Stable native key codes: KEY_1..KEY_0, optional KEY_SHIFTED, and unshifted KEY_R
 GUIDEBOT_KEYS = set(range(0x02, 0x0C)) | set(range(0x102, 0x10C)) | {0x13}
 PLAYER_MARKER_COUNT = 9
@@ -141,6 +146,11 @@ def _command(value, game):
         _keys(value, fields | {"weapon_class", "weapon_index"}, label="weapon command")
         _integer(value["weapon_class"], 0, 1, "weapon_class")
         _integer(value["weapon_index"], 0, 4 if game == "d1" else 9, "weapon_index")
+    elif command == "grant_all_weapons":
+        _keys(value, fields | {"grant"}, label="all-weapons command")
+        # D2 also records D1-profile play; native replay checks the active profile
+        grants = D1_ALL_WEAPONS_GRANTS if game == "d1" else ALL_WEAPONS_GRANTS
+        _require(isinstance(value["grant"], str) and value["grant"] in grants, "Unsupported all-weapons grant")
     else:
         _keys(value, fields, label="input command")
     return copy.deepcopy(value)

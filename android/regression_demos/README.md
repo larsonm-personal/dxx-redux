@@ -250,6 +250,28 @@ accepts format 5 only; use `android/tests/convert_public_replay.py` for bounded,
 oracle-verified public-corpus conversion, or make a fresh recording. Conversion
 is not a general guarantee that missing historical event order can be recovered.
 
+All-weapons entry is recorded as `grant_all_weapons` with an explicit `grant`
+variant: `d1_scourge`, `d1_bigred`, or `d2_honestbob`. D1's `gabbagabbahey`
+activation is a separate `enable_cheats` command. The native live handler and
+replay use the same implementation, including score reset, cheat state, ammo,
+energy, laser level and quad lasers. Repeated grants and terminal-tail grants
+retain their exact position among weapon selection and firing operations.
+
+D1-in-D2 `honestbob` resolves the active D1 profile: PC shareware uses the
+scourge loadout; registered D1 uses bigred's D1 loadout. Native D1 bigred and
+D2 honestbob retain their existing masks and selection policy. This does not
+unlock excluded shareware weapons or supply missing retail data. Other recognized
+native cheats and debug commands stop companion input capture before changing
+state, while ordinary live gameplay still proceeds. Grants during dead input
+also stop capture; replay rejects dead/endlevel/wrong-profile grants.
+
+`android/tests/test_all_weapons_runtime.ps1` captures fresh shareware starts,
+checks native Spreadfire/Gauss use, builds immutable compact oracles, and verifies
+headed/headless replay plus missing/wrong-grant controls. D1-in-D2 live capture
+is a separate diagnostic; synthetic retail-mask tests do not claim retail-asset
+playback. Android's menu still reaches these native handlers through its existing
+text-input route; native host tests do not establish Android device fidelity.
+
 Rear-view records the live engine's toggle/hold/release decisions, and playback
 applies them without querying wall time. Its initial view/cockpit baseline is
 explicit in new production captures. Automap records ordered lifecycle and visited

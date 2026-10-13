@@ -29,6 +29,7 @@
 #include "segment.h"
 #include "wall.h"
 #include "weapon.h"
+#include "weapon_cheat_shared.h"
 
 extern int Num_awareness_events;
 #include "input_demo_hooks_shared.h"
@@ -95,6 +96,9 @@ static int input_demo_apply_d1_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
 	(void)context;
+	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS ||
+	    event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS)
+		return weapon_cheat_apply(event, validate_only, error, error_size);
 	if (event->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT ||
 	    event->value0 < 0 || event->value0 > 1 ||
 	    event->value1 < 0 || event->value1 >= MAX_PRIMARY_WEAPONS) {

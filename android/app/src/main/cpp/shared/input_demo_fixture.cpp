@@ -687,8 +687,10 @@ static const char *const dispatch_command_names[] = {
 	"", "guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
 	"drop_flag", "escort_release_control", "death_abort", "change_difficulty",
 	"guidebot_spawn", "guidebot_find_secret", "guidebot_warp_to_me",
-	"guidebot_find_unexplored", "select_weapon_exact", "delete_marker"
+	"guidebot_find_unexplored", "select_weapon_exact", "delete_marker", "enable_cheats", "grant_all_weapons"
 };
+
+static const char *const dispatch_all_weapons_grants[] = { "", "d1_scourge", "d1_bigred", "d2_honestbob" };
 
 bool input_demo_dispatch_command_from_json(const std::string &text, int game,
                                            input_demo_replay_direct_command_event *command, std::string *error)
@@ -704,7 +706,9 @@ bool input_demo_dispatch_command_from_json(const std::string &text, int game,
 	if (!command->kind) return fail(error, "unsupported input command");
 	if (game == INPUT_DEMO_GAME_D1 && command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT &&
 	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY &&
-	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT)
+	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT &&
+	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS &&
+	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS)
 		return fail(error, "D1 input rejects D2-only direct command");
 	int a = 0, b = 0;
 	if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL) {
@@ -738,6 +742,13 @@ bool input_demo_dispatch_command_from_json(const std::string &text, int game,
 		    !parse_int_field(root["weapon_index"], &b, error, "weapon_index") ||
 		    a < 0 || a > 1 || b < 0 || b >= (game == INPUT_DEMO_GAME_D1 ? 5 : 10))
 			return fail(error, "invalid exact weapon command");
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS) {
+		if (!exact_keys(root, { "kind", "command", "grant" }, error, "all-weapons command") || !root["grant"].is_string())
+			return fail(error, "invalid all-weapons command arguments");
+		for (unsigned i = 1; i < sizeof(dispatch_all_weapons_grants) / sizeof(*dispatch_all_weapons_grants); ++i)
+			if (root["grant"] == dispatch_all_weapons_grants[i]) a = static_cast<int>(i);
+		if (!input_demo_all_weapons_grant_supported_for_game(a, game))
+			return fail(error, "unsupported all-weapons grant for fixture game");
 	} else if (!exact_keys(root, { "kind", "command" }, error, "input command")) return false;
 	command->value0 = a;
 	command->value1 = b;
@@ -766,6 +777,12 @@ static bool dispatch_command_json(const input_demo_replay_direct_command_event &
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT) {
 		(*root)["weapon_class"] = command.value0;
 		(*root)["weapon_index"] = command.value1;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS) {
+		if (command.value0 || command.value1 || command.text[0]) return fail(error, "enable cheats command takes no arguments");
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS) {
+		if (!input_demo_all_weapons_grant_supported_for_game(command.value0, game) || command.value1 || command.text[0])
+			return fail(error, "invalid all-weapons command arguments");
+		(*root)["grant"] = dispatch_all_weapons_grants[command.value0];
 	}
 	input_demo_replay_direct_command_event checked;
 	try {
@@ -1300,7 +1317,16 @@ static bool validate_dispatch_version(const input_demo_file_frame &frame, int ve
 {
 	if ((version == 5) != frame.dispatch.present)
 		return fail(error, "format 5 requires ordered input on every frame; legacy frames forbid it");
-	if (version != 5) return true;
+	if (version != 5) {
+		for (const auto &event : frame.events) {
+			ordered_json parsed;
+			if (!parse_json_line(event, "frame event", &parsed, error)) return false;
+			if (parsed.contains("kind") && parsed["kind"] == "direct_command" && parsed.contains("command") &&
+			    (parsed["command"] == "enable_cheats" || parsed["command"] == "grant_all_weapons"))
+				return fail(error, "all-weapons commands require ordered input format 5");
+		}
+		return true;
+	}
 	if (!frame.rng.has_call_count) return fail(error, "ordered input requires post-input RNG count");
 	ordered_json checked;
 	if (!dispatch_batch_json(frame.dispatch, game, &checked, error)) return false;

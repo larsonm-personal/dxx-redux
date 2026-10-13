@@ -147,6 +147,12 @@ static bool input_demo_recorder_fail(std::string *error, const std::string &mess
 	return false;
 }
 
+static bool input_demo_recorder_event_requires_ordered_input(const ordered_json &event)
+{
+	return event.contains("kind") && event["kind"] == "direct_command" && event.contains("command") &&
+	       (event["command"] == "enable_cheats" || event["command"] == "grant_all_weapons");
+}
+
 static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
                                                         std::string *canonical_json,
                                                         std::string *error)
@@ -164,6 +170,8 @@ static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
 	}
 	if (!parsed.is_object())
 		return input_demo_recorder_fail(error, "frame event json must be an object");
+	if (!g_input_demo_recorder_session.ordered_input && input_demo_recorder_event_requires_ordered_input(parsed))
+		return input_demo_recorder_fail(error, "all-weapons commands require ordered input format 5");
 	*canonical_json = parsed.dump();
 	return true;
 }
@@ -224,6 +232,8 @@ static int input_demo_recorder_stage_direct_command_event(const ordered_json &ev
                                                           char *error, size_t error_size)
 {
 	auto &session = g_input_demo_recorder_session;
+	if (session.active && !session.ordered_input && input_demo_recorder_event_requires_ordered_input(event))
+		return input_demo_recorder_copy_error("all-weapons commands require ordered input format 5", error, error_size);
 	std::string encoded;
 	try {
 		encoded = event.dump();
@@ -1032,6 +1042,25 @@ int input_demo_recorder_stage_direct_command_select_weapon_exact(int weapon_clas
 	event["command"] = "select_weapon_exact";
 	event["weapon_class"] = weapon_class;
 	event["weapon_index"] = weapon_index;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_enable_cheats(char *error, size_t error_size)
+{
+	const ordered_json event = { { "kind", "direct_command" }, { "command", "enable_cheats" } };
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_grant_all_weapons(int grant, char *error, size_t error_size)
+{
+	const char *name;
+	switch (grant) {
+		case INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE: name = "d1_scourge"; break;
+		case INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED: name = "d1_bigred"; break;
+		case INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB: name = "d2_honestbob"; break;
+		default: return input_demo_recorder_input_fail("unsupported all-weapons grant", error, error_size);
+	}
+	const ordered_json event = { { "kind", "direct_command" }, { "command", "grant_all_weapons" }, { "grant", name } };
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 

@@ -121,7 +121,28 @@ static inline int input_demo_rear_view_baseline_supported(const input_demo_rear_
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED 12
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT      13
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER            14
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS            15
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS        16
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE                40
+
+#define INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE   1
+#define INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED    2
+#define INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB 3
+
+static inline int input_demo_all_weapons_grant_supported(int32_t grant)
+{
+	return grant == INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE ||
+	       grant == INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED ||
+	       grant == INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB;
+}
+
+/* D2 records D1-profile play too; native replay validates the active profile */
+static inline int input_demo_all_weapons_grant_supported_for_game(int32_t grant, int game)
+{
+	return input_demo_all_weapons_grant_supported(grant) &&
+	       (game == INPUT_DEMO_GAME_D2 ||
+	        (game == INPUT_DEMO_GAME_D1 && grant != INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB));
+}
 
 typedef struct input_demo_replay_direct_command_event {
 	int32_t kind;

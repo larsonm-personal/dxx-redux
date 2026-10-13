@@ -235,7 +235,7 @@ def _records(path, full):
         ):
             raise parity.EvidenceError("Only reviewed diagnostic tail events may be removed")
         batches = ordered.validate(header, rows[1:-2], rows[-2])
-        # Public scenes use ordinary player actions, never debug spawning or warps
+        # Public scenes preserve player actions and explicit grants, never debug spawning or warps
         public_commands = {
             "guidebot_goal",
             "drop_marker",
@@ -249,6 +249,8 @@ def _records(path, full):
             "guidebot_find_secret",
             "guidebot_find_unexplored",
             "select_weapon_exact",
+            "enable_cheats",
+            "grant_all_weapons",
         }
         if any(
             op["k"] == "command" and op["event"]["command"] not in public_commands

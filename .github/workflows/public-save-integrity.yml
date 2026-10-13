@@ -110,6 +110,16 @@ jobs:
             -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
             -Output "$PWD/temp/ordered-input-runtime-ci"
 
+      - name: Qualify live all-weapons grants and immutable compact oracles
+        timeout-minutes: 7
+        run: |
+          python3 android/tests/test_check_all_weapons_runtime.py
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_all_weapons_runtime.ps1 \
+            -D1BuildDir "$PWD/buildd1-save" -D2BuildDir "$PWD/buildd2-save" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/all-weapons-runtime-ci" -Revision "$(git rev-parse HEAD)"
+
       - name: Check truthful public Guide-Bot objective arrival without video
         timeout-minutes: 3
         run: |
@@ -347,6 +357,7 @@ jobs:
             temp/public-door-lifecycle-visual-ci/
             temp/public-matcen-ci/
             temp/ordered-input-runtime-ci/
+            temp/all-weapons-runtime-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt

@@ -65,6 +65,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "lighting.h"
 #include "newdemo.h"
 #include "weapon.h"
+#include "weapon_cheat_shared.h"
 #include "sounds.h"
 #include "args.h"
 #include "gameseq.h"
@@ -936,6 +937,8 @@ kasf_done: ;
 #ifndef RELEASE
 int HandleTestKey(int key)
 {
+	if (key & KEY_DEBUGGED)
+		weapon_cheat_cancel_capture("unsupported debug command");
 	switch (key)
 	{
 
@@ -1155,6 +1158,16 @@ int FinalCheats(int key)
 		{
 			if (!cheats.enabled && *cheat_codes[i].stateptr != cheats.enabled)
 				break;
+			if (cheat_codes[i].stateptr == &cheats.enabled) {
+				weapon_cheat_execute_live(0);
+				return 0;
+			}
+			if (cheat_codes[i].stateptr == &cheats.wowie || cheat_codes[i].stateptr == &cheats.wowie2) {
+				weapon_cheat_execute_live(cheat_codes[i].stateptr == &cheats.wowie ?
+				    INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE : INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED);
+				return 1;
+			}
+			weapon_cheat_cancel_capture("unsupported native cheat");
 			if (!cheats.enabled)
 				HUD_init_message(HM_DEFAULT, TXT_CHEATS_ENABLED);
 			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
@@ -1168,48 +1181,6 @@ int FinalCheats(int key)
 	
 	if (!gotcha)
 		return 0;
-
-	if (cheat_codes[gotcha].stateptr == &cheats.wowie)
-	{
-		HUD_init_message_literal(HM_DEFAULT, TXT_WOWIE_ZOWIE);
-
-		Players[Player_num].primary_weapon_flags |= 0xff ^ (HAS_PLASMA_FLAG | HAS_FUSION_FLAG);
-		Players[Player_num].secondary_weapon_flags |= 0xff ^ (HAS_SMART_FLAG | HAS_MEGA_FLAG);
-
-		for (i=0; i<3; i++)
-			Players[Player_num].primary_ammo[i] = Primary_ammo_max[i];
-		for (i=0; i<3; i++)
-			Players[Player_num].secondary_ammo[i] = Secondary_ammo_max[i];
-
-		if (Newdemo_state == ND_STATE_RECORDING)
-			newdemo_record_laser_level(Players[Player_num].laser_level, MAX_LASER_LEVEL);
-
-		Players[Player_num].energy = MAX_ENERGY;
-		Players[Player_num].laser_level = MAX_LASER_LEVEL;
-		Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
-		update_laser_weapon_info();
-	}
-
-	if (cheat_codes[gotcha].stateptr == &cheats.wowie2)
-	{
-		HUD_init_message(HM_DEFAULT, "SUPER %s",TXT_WOWIE_ZOWIE);
-
-		Players[Player_num].primary_weapon_flags = 0xff;
-		Players[Player_num].secondary_weapon_flags = 0xff;
-
-		for (i=0; i<MAX_PRIMARY_WEAPONS; i++)
-			Players[Player_num].primary_ammo[i] = Primary_ammo_max[i];
-		for (i=0; i<MAX_SECONDARY_WEAPONS; i++)
-			Players[Player_num].secondary_ammo[i] = Secondary_ammo_max[i];
-
-		if (Newdemo_state == ND_STATE_RECORDING)
-			newdemo_record_laser_level(Players[Player_num].laser_level, MAX_LASER_LEVEL);
-
-		Players[Player_num].energy = MAX_ENERGY;
-		Players[Player_num].laser_level = MAX_LASER_LEVEL;
-		Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
-		update_laser_weapon_info();
-	}
 
 	if (cheat_codes[gotcha].stateptr == &cheats.allkeys)
 	{
@@ -1315,6 +1286,7 @@ int FinalCheats(int key)
 #ifndef RELEASE
 void do_cheat_menu()
 {
+	weapon_cheat_cancel_capture("unsupported debug cheat menu");
 	int mmn;
 	newmenu_item mm[16];
 	char score_text[21];

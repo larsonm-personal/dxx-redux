@@ -1144,6 +1144,181 @@ static int expect_ordered_command_domains(void)
 	return 0;
 }
 
+static int expect_all_weapons_command_domains(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *names[] = { "", "d1_scourge", "d1_bigred", "d2_honestbob" };
+	std::string error, text;
+	input_demo_replay_direct_command_event command;
+	if (INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS != 15 || INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS != 16 ||
+	    INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE != 1 || INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED != 2 ||
+	    INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB != 3)
+		return report_failure("all-weapons wire constants changed");
+	for (int game : { INPUT_DEMO_GAME_D1, INPUT_DEMO_GAME_D2 }) {
+		for (int grant = -1; grant <= 4; ++grant) {
+			const bool supported = grant >= 1 && grant <= (game == INPUT_DEMO_GAME_D1 ? 2 : 3);
+			if (input_demo_all_weapons_grant_supported_for_game(grant, game) != supported)
+				return report_failure("all-weapons grant game domain mismatch");
+		}
+		for (int grant = 1; grant <= 3; ++grant) {
+			const bool supported = game == INPUT_DEMO_GAME_D2 || grant != 3;
+			const json event = { { "kind", "direct_command" }, { "command", "grant_all_weapons" }, { "grant", names[grant] } };
+			if (input_demo_dispatch_command_from_json(event.dump(), game, &command, &error) != supported)
+				return report_failure("all-weapons command accepted the wrong fixture game");
+			if (!supported) continue;
+			if (command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS || command.value0 != grant || command.value1 || command.text[0])
+				return report_failure("all-weapons command lost its semantic grant");
+			input_demo_input_operation operation = {};
+			operation.kind = INPUT_DEMO_INPUT_COMMAND;
+			operation.frame_time = 7;
+			operation.command = command;
+			const json expected = { { "k", "command" }, { "ft", 7 }, { "event", event } };
+			if (!input_demo_dispatch_operation_to_json(operation, game, &text, &error) || text != expected.dump())
+				return report_failure("all-weapons command serialization changed");
+			operation.command.value1 = 1;
+			if (input_demo_dispatch_operation_to_json(operation, game, &text, &error))
+				return report_failure("all-weapons serialization ignored an extra argument");
+			operation.command.value1 = 0;
+			operation.command.text[0] = 'x';
+			if (input_demo_dispatch_operation_to_json(operation, game, &text, &error))
+				return report_failure("all-weapons serialization ignored extra text");
+		}
+		const json enable = { { "kind", "direct_command" }, { "command", "enable_cheats" } };
+		if (!input_demo_dispatch_command_from_json(enable.dump(), game, &command, &error) ||
+		    command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS || command.value0 || command.value1 || command.text[0])
+			return report_failure("enable cheats command did not round trip");
+		input_demo_input_operation operation = {};
+		operation.kind = INPUT_DEMO_INPUT_COMMAND;
+		operation.command = command;
+		if (!input_demo_dispatch_operation_to_json(operation, game, &text, &error) ||
+		    text != json({ { "k", "command" }, { "ft", 0 }, { "event", enable } }).dump())
+			return report_failure("enable cheats command serialization changed");
+		for (int field = 0; field < 3; ++field) {
+			operation.command = command;
+			if (field == 0) operation.command.value0 = 1;
+			if (field == 1) operation.command.value1 = 1;
+			if (field == 2) operation.command.text[0] = 'x';
+			if (input_demo_dispatch_operation_to_json(operation, game, &text, &error))
+				return report_failure("enable cheats serialization ignored arguments");
+		}
+		std::vector<json> invalid = {
+			{ { "kind", "direct_command" }, { "command", "grant_all_weapons" } },
+			{ { "kind", "direct_command" }, { "command", "grant_all_weapons" }, { "grant", "d1_scourge" }, { "extra", 0 } },
+			{ { "kind", "direct_command" }, { "command", "enable_cheats" }, { "grant", "d1_scourge" } },
+			{ { "kind", "direct_command" }, { "command", "enable_cheats" }, { "enabled", true } },
+			{ { "kind", "direct_command" }, { "command", "ENABLE_CHEATS" } },
+		};
+		for (const json &value : { json(nullptr), json(false), json(1), json(1.0), json(""), json("scourge"), json("D1_SCOURGE"), json::array(), json::object() })
+			invalid.push_back({ { "kind", "direct_command" }, { "command", "grant_all_weapons" }, { "grant", value } });
+		for (const auto &event : invalid)
+			if (input_demo_dispatch_command_from_json(event.dump(), game, &command, &error))
+				return report_failure("malformed all-weapons command was accepted");
+	}
+	if (input_demo_all_weapons_grant_supported(INT32_MAX) || input_demo_all_weapons_grant_supported(INT32_MIN) ||
+	    input_demo_all_weapons_grant_supported_for_game(1, 0))
+		return report_failure("invalid all-weapons wire domain was accepted");
+	return 0;
+}
+
+static int expect_ordered_all_weapons_recording(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *path = "test_input_demo_all_weapons.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	const int first = settings.game == INPUT_DEMO_GAME_D1 ? INPUT_DEMO_GRANT_ALL_WEAPONS_D1_SCOURGE : INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB;
+	const int second = settings.game == INPUT_DEMO_GAME_D1 ? INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED : first;
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(1, 0, 7, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_enable_cheats(error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_grant_all_weapons(first, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_grant_all_weapons(first, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_sample(8, &state, &pulse, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_grant_all_weapons(second, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_enable_cheats(error, sizeof(error)) ||
+	    !input_demo_recorder_capture_frame(9, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(1, 0, 10, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_direct_command_grant_all_weapons(first, error, sizeof(error)) ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_flush(path, error, sizeof(error)))
+		return report_failure_string(error);
+	input_demo_file parsed;
+	std::string text, detail;
+	if (!input_demo_file_read(path, &parsed, &detail) || !read_text_file(path, &text)) return report_failure_string(detail);
+	const auto &ops = parsed.frames[0].dispatch.operations;
+	if (parsed.metadata.version != 5 || ops.size() != 6 || parsed.input_tail.dispatch.operations.size() != 1 ||
+	    ops[0].command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS ||
+	    ops[1].command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS || ops[1].command.value0 != first ||
+	    ops[2].command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS || ops[2].command.value0 != first ||
+	    ops[3].kind != INPUT_DEMO_INPUT_SAMPLE || ops[4].command.value0 != second ||
+	    ops[5].command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS ||
+	    parsed.input_tail.dispatch.operations[0].command.value0 != first ||
+	    parsed.input_tail.dispatch.operations[0].frame_time != 10 || !parsed.frames[0].events.empty())
+		return report_failure("all-weapons recording changed order, repetitions or tail commands");
+	if (!input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(error);
+	for (uint32_t i = 0; i < ops.size(); ++i) {
+		input_demo_input_operation actual = {};
+		if (!input_demo_replay_get_input_operation(0, i, &actual, error, sizeof(error)) ||
+		    actual.kind != ops[i].kind || actual.command.kind != ops[i].command.kind || actual.command.value0 != ops[i].command.value0)
+			return report_failure("all-weapons replay accessor lost command order");
+	}
+	input_demo_replay_unload();
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+
+	// Legacy formats cannot silently downgrade these ordered-only commands to diagnostics
+	for (const char *name : { "enable_cheats", "grant_all_weapons" }) {
+		const json event = std::string(name) == "enable_cheats" ? json({ { "kind", "direct_command" }, { "command", name } }) : json({ { "kind", "direct_command" }, { "command", name }, { "grant", "d1_scourge" } });
+		for (int version : { 2, 3, 4 }) {
+			input_demo_file legacy = parsed;
+			legacy.metadata.version = version;
+			legacy.has_input_tail = false;
+			legacy.frames[0].dispatch = input_demo_input_batch();
+			if (!input_demo_file_to_text(legacy, &text, &detail)) return report_failure_string(detail);
+			std::vector<json> rows;
+			std::istringstream lines(text);
+			for (std::string line; std::getline(lines, line);)
+				if (!line.empty()) rows.push_back(json::parse(line));
+			rows[1]["events"] = json::array({ event });
+			text.clear();
+			for (const auto &row : rows) text += row.dump() + "\n";
+			input_demo_file rejected;
+			if (input_demo_file_parse_text(text, &rejected, &detail)) return report_failure("legacy fixture accepted all-weapons command");
+			legacy.frames[0].events.push_back(event.dump());
+			if (input_demo_file_to_text(legacy, &text, &detail)) return report_failure("legacy writer accepted all-weapons command");
+		}
+	}
+	settings.ordered_input = 0;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) return report_failure_string(error);
+	if (input_demo_recorder_stage_direct_command_enable_cheats(error, sizeof(error)) ||
+	    input_demo_recorder_stage_direct_command_grant_all_weapons(first, error, sizeof(error)))
+		return report_failure("legacy recorder accepted all-weapons staging API");
+	for (const char *event : { "{\"kind\":\"direct_command\",\"command\":\"enable_cheats\"}",
+	                           "{\"kind\":\"direct_command\",\"command\":\"grant_all_weapons\",\"grant\":\"d1_scourge\"}" }) {
+		if (input_demo_recorder_stage_frame_event_json(event, error, sizeof(error)) ||
+		    input_demo_recorder_append_frame_event_json(event, error, sizeof(error)))
+			return report_failure("legacy event API accepted all-weapons command");
+	}
+	input_demo_recorder_cancel();
+	settings.ordered_input = 1;
+	for (int grant : { -1, 0, 4, INT32_MAX, settings.game == INPUT_DEMO_GAME_D1 ? 3 : -2 }) {
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+		    !input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error))) return report_failure_string(error);
+		if (input_demo_recorder_stage_direct_command_grant_all_weapons(grant, error, sizeof(error)) ||
+		    input_demo_recorder_capture_frame(1, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error)))
+			return report_failure("invalid all-weapons grant did not poison ordered recording");
+		input_demo_recorder_cancel();
+	}
+	return 0;
+}
+
 static int expect_cockpit_projection_codec(void)
 {
 	using json = nlohmann::ordered_json;
@@ -1890,6 +2065,8 @@ int main(void)
 	if (expect_cockpit_projection_codec()) return 1;
 	if (expect_ordered_input_diagnostics()) return 1;
 	if (expect_ordered_command_domains()) return 1;
+	if (expect_all_weapons_command_domains()) return 1;
+	if (expect_ordered_all_weapons_recording()) return 1;
 	if (expect_ordered_rewind_cancellation()) return 1;
 	if (expect_record_and_flush())
 		return 1;

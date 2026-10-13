@@ -39,6 +39,7 @@
 #include "automap.h"
 #include "textures.h"
 #include "weapon.h"
+#include "weapon_cheat_shared.h"
 #include "wall.h"
 
 int input_demo_disable_homing_player_bump(void)
@@ -249,6 +250,9 @@ static int input_demo_apply_d2_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
 	(void)context;
+	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS ||
+	    event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS)
+		return weapon_cheat_apply(event, validate_only, error, error_size);
 #if KEY_1 != INPUT_DEMO_GUIDEBOT_KEY_FIRST || KEY_0 != INPUT_DEMO_GUIDEBOT_KEY_LAST || KEY_R != INPUT_DEMO_GUIDEBOT_KEY_RECALL || KEY_SHIFTED != INPUT_DEMO_GUIDEBOT_KEY_SHIFTED
 #error Input demo wire keys differ from native Guide-Bot keys
 #endif

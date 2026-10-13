@@ -80,10 +80,12 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "public_fan_fault_fixture.hpp"
 
+#include "public_all_weapons_fixture.hpp"
+
 static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
 {
 	using nlohmann::json;
-	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0,
+	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "all-weapons") == 0,
 	        "imported public startup is scoped to explicit diagnostic fixtures");
 #ifdef DXX_BUILD_DESCENT_II
 	const char *game_name = "d2";
@@ -107,7 +109,8 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
 	const bool modal = std::strncmp(scenario, "ordered-modal", 13) == 0;
 	const bool secondary = std::strncmp(scenario, "secondary-", 10) == 0;
-	const bool fault_probe = std::strcmp(scenario, "fan-transparency") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "missile-self-splash") == 0 ||
+	const bool all_weapons = std::strncmp(scenario, "all-weapons", 11) == 0;
+	const bool fault_probe = all_weapons || std::strcmp(scenario, "fan-transparency") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "missile-self-splash") == 0 ||
 	                         std::strcmp(scenario, "missile-robot") == 0 || std::strcmp(scenario, "mine-blast") == 0;
 	GameCfg.AspectX = modal || secondary || fault_probe ? 3 : 4;
 	GameCfg.AspectY = modal || secondary || fault_probe ? 4 : 3;
@@ -220,6 +223,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		                               &settings.rear_view_baseline.current_cockpit, &settings.rear_view_baseline.preferred_cockpit);
 	}
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	if (all_weapons) {
+		capture_public_all_weapons(game_name, settings.mission, std::strcmp(scenario, "all-weapons-bigred") == 0);
+		return;
+	}
 	if (std::strcmp(scenario, "fan-transparency") == 0) {
 		capture_public_fan_transparency(game_name, settings.mission);
 		return;

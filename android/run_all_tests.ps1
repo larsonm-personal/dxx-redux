@@ -480,6 +480,7 @@ $testTimeouts = @{
     "test_compact_public_replays"         = 1800
     "test_compact_public_replay_failures"  = 3600
     "test_ordered_input_runtime"          = 720
+    "test_all_weapons_runtime"            = 720
     "test_d1_in_d2_standalone"            = 900
     "test_input_demo_regressions_graphics" = 900
     "test_dos_midi_parity"                = 1500
@@ -678,6 +679,7 @@ $noInfraTests = @(
     "test_compact_public_replays",
     "test_compact_public_replay_failures",
     "test_ordered_input_runtime",
+    "test_all_weapons_runtime",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",

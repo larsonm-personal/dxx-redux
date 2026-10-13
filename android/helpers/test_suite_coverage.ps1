@@ -218,6 +218,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_compact_public_replays'
             'test_compact_public_replay_failures'
             'test_ordered_input_runtime'
+            'test_all_weapons_runtime'
             'test_public_matcen_stations'
             'test_native_metadata_worker'
             'test_pickup_autoselect_parity'

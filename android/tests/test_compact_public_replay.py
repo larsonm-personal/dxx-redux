@@ -124,6 +124,53 @@ class CompactReplayTests(unittest.TestCase):
         self.write(self.full, self.rows)
         compact._records(self.full, full=True)
 
+    def test_all_weapons_commands_survive_public_compaction(self):
+        original_rows = copy.deepcopy(self.rows)
+        for game in ("d1", "d2"):
+            with self.subTest(game=game):
+                self.rows = copy.deepcopy(original_rows)
+                header, result = self.rows[0], self.rows[-1]["result"]
+                header.update(version=5, game=game, mission=compact.PUBLIC_MISSIONS[game])
+                result.update(game=game, mission=header["mission"])
+                self.provenance["asset_sha256"] = compact.pinned_assets(game)
+                for row in self.rows[1:-1]:
+                    row["input"] = {"s": {"f": 1092}}
+                    row["dispatch"] = {"pre_rng": "=", "ops": []}
+                grants = ["d1_scourge", "d1_scourge", "d1_bigred"]
+                if game == "d2":
+                    grants += ["d2_honestbob", "d2_honestbob"]
+                commands = [{"kind": "direct_command", "command": "enable_cheats"}] + [
+                    {"kind": "direct_command", "command": "grant_all_weapons", "grant": grant} for grant in grants
+                ]
+                operations = [{"k": "command", "ft": 1092, "event": event} for event in commands]
+                self.rows[1]["dispatch"]["ops"] = copy.deepcopy(operations)
+                self.rows.insert(
+                    -1,
+                    {
+                        "type": "input_tail",
+                        "f": 3,
+                        "input": {},
+                        "rng": {"s": 7, "c": 3},
+                        "dispatch": {"pre_rng": "=", "ops": copy.deepcopy(operations[:2])},
+                    },
+                )
+                self.write(self.full, self.rows)
+                original = self.full.read_bytes()
+                self.pack()
+                compact.validate(self.demo, self.oracle)
+                packed = [json.loads(line) for line in self.demo.read_text().splitlines()]
+                self.assertEqual(packed[1]["dispatch"]["ops"], operations)
+                self.assertEqual(packed[-2]["dispatch"]["ops"], operations[:2])
+                self.assertEqual(self.full.read_bytes(), original)
+                self.demo.unlink()
+                self.oracle.unlink()
+                self.rows[1]["dispatch"]["ops"][1]["event"]["grant"] = "unknown"
+                self.write(self.full, self.rows)
+                with self.assertRaisesRegex(compact.parity.EvidenceError, "all-weapons grant"):
+                    self.pack()
+                self.assertFalse(self.demo.exists())
+                self.assertFalse(self.oracle.exists())
+
     def test_ordered_capture_requires_exact_compiled_source_identity(self):
         self.header["version"] = 5
         for row in self.rows[1:-1]:

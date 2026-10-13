@@ -134,6 +134,7 @@ class OrderedInputTests(unittest.TestCase):
             "delete_marker": {"player_marker_num": 8, "expected_signature": ordered.INT32_MAX},
             "change_difficulty": {"difficulty": 4},
             "select_weapon_exact": {"weapon_class": 1, "weapon_index": 4},
+            "grant_all_weapons": {"grant": "d1_scourge"},
         }
         for game in ("d1", "d2"):
             for command in ordered.COMMANDS:
@@ -146,6 +147,62 @@ class OrderedInputTests(unittest.TestCase):
                             ordered.validate(header, frames, tail)
                     else:
                         self.assertEqual(ordered.validate(header, frames, tail)[0]["ops"][0]["event"], event)
+
+    def test_all_weapons_grant_domains_and_exact_arguments(self):
+        for game in ("d1", "d2"):
+            for grant in (*ordered.ALL_WEAPONS_GRANTS, None, False, 1, 1.0, "", "scourge", "D1_SCOURGE", {}, []):
+                with self.subTest(game=game, grant=grant):
+                    header, frames, tail = fixture(game)
+                    event = {"kind": "direct_command", "command": "grant_all_weapons", "grant": grant}
+                    frames[0]["dispatch"]["ops"] = [{"k": "command", "ft": 0, "event": event}]
+                    valid = isinstance(grant, str) and grant in (
+                        ordered.D1_ALL_WEAPONS_GRANTS if game == "d1" else ordered.ALL_WEAPONS_GRANTS
+                    )
+                    if valid:
+                        self.assertEqual(ordered.validate(header, frames, tail)[0]["ops"][0]["event"], event)
+                    else:
+                        with self.assertRaises(EvidenceError):
+                            ordered.validate(header, frames, tail)
+            for event in (
+                {"kind": "direct_command", "command": "grant_all_weapons"},
+                {"kind": "direct_command", "command": "grant_all_weapons", "grant": "d1_bigred", "extra": 0},
+                {"kind": "direct_command", "command": "enable_cheats", "grant": "d1_scourge"},
+                {"kind": "direct_command", "command": "enable_cheats", "enabled": True},
+                {"kind": "direct_command", "command": "ENABLE_CHEATS"},
+            ):
+                with self.subTest(game=game, event=event):
+                    header, frames, tail = fixture(game)
+                    tail["dispatch"]["ops"] = [{"k": "command", "ft": 0, "event": event}]
+                    with self.assertRaises(EvidenceError):
+                        ordered.compact(header, frames, tail)
+
+    def test_all_weapons_compaction_preserves_order_repetition_and_tail(self):
+        for game in ("d1", "d2"):
+            header, frames, tail = fixture(game)
+            grants = ["d1_scourge", "d1_scourge", "d1_bigred"]
+            if game == "d2":
+                grants += ["d2_honestbob", "d2_honestbob"]
+            operations = [{"k": "command", "ft": 1, "event": {"kind": "direct_command", "command": "enable_cheats"}}]
+            operations += [
+                {
+                    "k": "command",
+                    "ft": index + 2,
+                    "event": {"kind": "direct_command", "command": "grant_all_weapons", "grant": grant},
+                }
+                for index, grant in enumerate(grants)
+            ]
+            operations.insert(2, {"k": "sample", "ft": 3, "s": {}, "p": {"sw": 2}})
+            frames[0]["dispatch"]["ops"] = copy.deepcopy(operations)
+            tail["dispatch"]["ops"] = copy.deepcopy(operations[:2])
+            decoded = ordered.validate(header, frames, tail)
+            compacted, compact_tail = ordered.compact(header, frames, tail)
+            self.assertEqual(compacted[0]["dispatch"]["ops"], operations)
+            self.assertEqual(compact_tail["dispatch"]["ops"], operations[:2])
+            self.assertEqual(ordered.validate(header, compacted, compact_tail), decoded)
+            for version in (2, 3, 4):
+                header["version"] = version
+                with self.assertRaisesRegex(EvidenceError, "format 5"):
+                    ordered.validate(header, frames, tail)
 
     def test_command_key_and_marker_domains(self):
         domains = (
