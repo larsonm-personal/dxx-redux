@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# A truncated runtime tail must leave one usable menu after a cold resume
+# An obsolete save must warn before world replacement and leave a usable menu
 [CmdletBinding()]
 param([string]$Serial = $env:ANDROID_SERIAL)
 $ErrorActionPreference = 'Stop'
@@ -40,19 +40,11 @@ foreach ($game in @('d1', 'd2')) {
     $encoded = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'base64', $deviceSave)
     $bytes = [Convert]::FromBase64String(($encoded -join ''))
     [IO.File]::WriteAllBytes((Join-Path $output "$game-original.sg8"), $bytes)
-    # Native metadata footer: tag u32, version u16, trailer length u16
-    if ($bytes.Length -lt 8 -or [BitConverter]::ToUInt32($bytes, $bytes.Length - 8) -ne 0x44584153) { throw 'Missing native save footer' }
-    $nativeEnd = $bytes.Length - [BitConverter]::ToUInt16($bytes, $bytes.Length - 2)
-    if ([Text.Encoding]::ASCII.GetString($bytes, $nativeEnd - 8, 8) -eq 'DXMODS01') {
-        $nativeEnd -= 80 + [BitConverter]::ToUInt32($bytes, $nativeEnd - 16)
-        # Exercise the legacy runtime EOF path rather than the new metadata preflight
-        $legacyVersion = if ($game -eq 'd1') { 19 } else { 41 }
-        [BitConverter]::GetBytes([int]$legacyVersion).CopyTo($bytes, 4)
-    }
-    if ($nativeEnd -lt 30000 -or $nativeEnd -ge $bytes.Length) { throw 'Invalid native save boundary' }
-    # Preserve the complete core world; force checked EOF in the final runtime record
-    $broken = Join-Path $output "$game-truncated.sg8"
-    [IO.File]::WriteAllBytes($broken, $bytes[0..($nativeEnd - 5)])
+    # Keep valid metadata and payload so only the format version causes rejection
+    $oldVersion = [BitConverter]::ToInt32($bytes, 4) - 1
+    [BitConverter]::GetBytes([int]$oldVersion).CopyTo($bytes, 4)
+    $broken = Join-Path $output "$game-obsolete.sg8"
+    [IO.File]::WriteAllBytes($broken, $bytes)
     if (Get-AppProcessId "$($script:PACKAGE):game") { throw "$game did not exit before cold resume" }
     Adb -AdbArgs @('push', $broken, '/data/local/tmp/dxx-startup-restore.sg8') | Out-Null
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', '/data/local/tmp/dxx-startup-restore.sg8', $deviceSave) | Out-Null
@@ -62,15 +54,22 @@ foreach ($game in @('d1', 'd2')) {
     Send-MpCommand -Serial $env:ANDROID_SERIAL -Command 'tap_button' -Extras @('--es', 'text', "'Load Last Save'")
     $deadline = [Diagnostics.Stopwatch]::StartNew()
     $state = $null
+    $warned = $false
     while ($deadline.Elapsed.TotalSeconds -lt 45) {
         $state = Get-GameIntrospection -Serial $env:ANDROID_SERIAL -Fresh
+        if ($state -and $state.menu.title -eq 'Incompatible save') {
+            if ($state.current_level_num -ne 0) { throw "$game loaded a level before warning about the incompatible save" }
+            $warned = $true
+            $state | ConvertTo-Json -Depth 40 | Set-Content -LiteralPath (Join-Path $output "$game-warning.json") -Encoding utf8
+            Adb -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        }
         if ($state -and !$state.in_game -and @($state.menu.items | Where-Object { $_.text -eq 'Quit' }).Count) { break }
     }
     $state | ConvertTo-Json -Depth 40 | Set-Content -LiteralPath (Join-Path $output "$game-menu.json") -Encoding utf8
     $log = Adb -AdbArgs @('logcat', '-d')
     $log | Set-Content -LiteralPath (Join-Path $output "$game-restore.log") -Encoding utf8
-    if ($log -notmatch 'runtime (restore )?validation failed' -or $log -notmatch 'restore menu request consumed') {
-        throw "$game did not exercise post-world restore rejection; see $output"
+    if (!$warned) {
+        throw "$game did not warn and reject the obsolete save before world replacement; see $output"
     }
     if (!$state -or $state.in_game -or $state.window_count -ne 1) { throw "$game recovery left an incomplete or duplicate menu; see $output" }
 

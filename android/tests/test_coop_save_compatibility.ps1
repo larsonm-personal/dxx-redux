@@ -78,7 +78,7 @@ try {
     if ($hadMarker) {
         Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', $marker, "$marker.compat-backup") | Out-Null
     }
-    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
     Send-MpCommand 'lan_host_lobby' @('--es', 'callsign', 'Compat', '--es', 'game', 'd2', '--es', 'mission', 'descent', '--es', 'mode', 'coop')
 
@@ -117,26 +117,29 @@ try {
 
     Write-VersionFixture $oldSave 31
     Push-AppFixture $oldSave $save
-    $announce = Read-HostAnnouncement -ExpectedWarning 'D1-in-D2 save uses unsupported version 31'
-    if ($announce.save_compatibility_warning -notmatch 'D1-in-D2 save uses unsupported version 31') {
+    $announce = Read-HostAnnouncement -ExpectedWarning 'save uses incompatible format version 31'
+    if ($announce.save_compatibility_warning -notmatch 'save uses incompatible format version 31') {
         throw 'Current co-op trailer hid the unsupported engine save version from clients'
     }
     Adb -AdbArgs @('logcat', '-c') | Out-Null
     Send-MpCommand 'lan_start_game'
     Send-MpCommand 'lan_lobby_status'
-    if ((Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-MP:I')) -notmatch 'unsupported version 31') {
+    if ((Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-MP:I')) -notmatch 'incompatible format version 31') {
         throw 'Host did not block unsupported D1-in-D2 version 31'
     }
     if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw 'Unsupported save launched a game' }
-    foreach ($version in @(40, 42)) {
+    foreach ($version in @(40, 42, 45)) {
         Write-VersionFixture $oldSave $version
         Push-AppFixture $oldSave $save
-        $announce = Read-HostAnnouncement
-        if ($announce.PSObject.Properties.Name -contains 'save_compatibility_warning') {
-            throw "Supported D1-in-D2 version $version was rejected by header/trailer preflight"
-        }
+        $announce = Read-HostAnnouncement -ExpectedWarning "incompatible format version $version"
+        Send-MpCommand 'lan_start_game'
+        if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw "Incompatible save version $version launched a game" }
     }
-    Write-VersionFixture $oldSave 31
+    Write-VersionFixture $oldSave 44
+    Push-AppFixture $oldSave $save
+    $announce = Read-HostAnnouncement
+    if ($announce.PSObject.Properties.Name -contains 'save_compatibility_warning') { throw 'Current D1-in-D2 save version was rejected' }
+    Write-VersionFixture $oldSave 42
     Push-AppFixture $oldSave $save
 
     [IO.File]::WriteAllText($choice, '{"kind":"fresh"}')

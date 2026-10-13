@@ -97,7 +97,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 
 #ifdef __ANDROID__
-#define STATE_VERSION 20 /* Source definitions for presentation-compatible restores */
+#include "android_save_format.h"
+#define STATE_VERSION ANDROID_D1_SAVE_VERSION
 #else
 #define STATE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
 #endif

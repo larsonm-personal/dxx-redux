@@ -13,6 +13,7 @@
 #include "gameseq.h"
 #include "gr.h"
 #include "mission.h"
+#include "newmenu.h"
 #include "multi.h"
 #include "object.h"
 #include "player.h"
@@ -27,6 +28,7 @@
 #include "android_resume_pilot.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#include "android_save_format.h"
 #ifdef __ANDROID__
 #include "android_mission_assets.h"
 #endif
@@ -825,10 +827,29 @@ int state_android_load_saved_mission(rewind_file *file, char *legacy_name)
 	return load_mission_by_name(legacy_name);
 }
 
-/* Reject incompatible co-op data before either engine replaces its live level */
+/* Reject obsolete formats and incompatible co-op data before changing the world */
 int state_android_preflight_coop_restore(rewind_file *file, const char *filename)
 {
 	coop_save_metadata metadata;
+	int header[2], version, supported;
+	PHYSFS_sint64 position = rewind_file_tell(file);
+	int have_header = rewind_file_seek(file, 0) && rewind_file_read(file, header, sizeof(header), 1) == 1;
+	if (!rewind_file_seek(file, position) || !have_header || memcmp(header, "DGSS", 4))
+		return 0;
+	version = header[1];
+	if (version & 0xffff0000) version = SWAPINT(version);
+#ifdef DXX_BUILD_DESCENT_II
+	/* Mission selection has not happened yet; both current D2 formats are valid */
+	supported = android_save_version_supported(version, 0, 0) || android_save_version_supported(version, 0, 1);
+#else
+	supported = android_save_version_supported(version, 1, 1);
+#endif
+	if (!supported) {
+		char title[] = "Incompatible save";
+		debug_log_force(DLOG_GAME, "restore rejected before level load: incompatible save version=%d file='%s'", version, filename);
+		nm_messagebox(title, 1, "OK", "This save uses an incompatible format.\nChoose another save or start a new game.");
+		return 0;
+	}
 	if (!(Game_mode & GM_MULTI_COOP) ||
 	    state_android_read_coop_metadata_trailer(file, &metadata))
 		return 1;

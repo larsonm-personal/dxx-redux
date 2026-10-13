@@ -19,6 +19,7 @@
 extern "C" {
 #include "android_save_meta.h"
 #include "android_save_set.h"
+#include "android_save_format.h"
 #include "coop/coop_save_format.h"
 #include "jni_string.h"
 }
@@ -49,11 +50,11 @@ Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeCompatibilityStatu
 	if (path) env->ReleaseStringUTFChars(path_arg, path);
 	if (!file) return -1;
 	int version = 0;
-	if (!coop_save_read_version(file, &version) || version < (d1_engine ? 6 : 20)) {
+	if (!coop_save_read_version(file, &version) || version <= 0) {
 		fclose(file);
 		return -1;
 	}
-	if (!d1_engine && d1_mission && !d1_in_d2_save_version_supported(version)) {
+	if (!android_save_version_supported(version, d1_engine, d1_mission)) {
 		fclose(file);
 		return version;
 	}

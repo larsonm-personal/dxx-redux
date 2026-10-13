@@ -177,6 +177,7 @@ void ogl_smash_texture_list_internal(void);
 #ifdef DXX_BUILD_DESCENT_II
 #include "gamepal.h"
 #include "d1_in_d2/d1_in_d2.h"
+#include "d1_in_d2_save_format.h"
 #include "d1_in_d2/d1_in_d2_ai.h"
 #include "d1_in_d2/d1_in_d2_levels.h"
 #include "d1_in_d2/d1_in_d2_semantics.h"
@@ -8654,6 +8655,29 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			ConsoleObject = Viewer = &Objects[Players[Player_num].objnum];
 			FrameTime = F1_0 / 64;
 		}
+#ifdef DXX_BUILD_DESCENT_II
+		if (scenario == 0) {
+			char supported_path[] = "supported-identity-imported.sav", supported_description[] = "Save identity versions";
+			require(state_save_all_sub(supported_path, supported_description), "write imported identity version fixture");
+			const auto expected_state = checkpoint_dynamic_state();
+			PHYSFS_file *file = PHYSFS_openRead(supported_path);
+			require(file != nullptr, "open imported identity version fixture");
+			bytes supported_format(static_cast<size_t>(PHYSFS_fileLength(file)));
+			require(PHYSFS_readBytes(file, supported_format.data(), supported_format.size()) == static_cast<PHYSFS_sint64>(supported_format.size()) && PHYSFS_close(file),
+			        "read complete imported identity version fixture");
+			for (const int incompatible_version : { D1_IN_D2_SAVE_VERSION - 2, D1_IN_D2_SAVE_VERSION + 2 }) {
+				set_int(supported_format, 4, incompatible_version);
+				write_fixture(supported_path, supported_format);
+				require(!state_restore_all_sub(supported_path, 0) && checkpoint_dynamic_state() == expected_state,
+				        "incompatible imported save versions are rejected without replacing the world");
+				state_restore_take_menu_request();
+			}
+			set_int(supported_format, 4, D1_IN_D2_SAVE_VERSION);
+			write_fixture(supported_path, supported_format);
+			require(state_restore_all_sub(supported_path, 0), "current imported save version remains loadable");
+			restore(filename);
+		}
+#endif
 		json restored_weapons = json::array();
 		for (int slot = 0; slot <= Highest_object_index; ++slot) {
 			const object &shot = Objects[slot];

@@ -101,7 +101,7 @@ internal object CoopSaveCompatibility {
             val status = nativeCompatibilityStatus(path.path, game == "d1", contentGame == "d1")
             when {
                 status == 0 -> null
-                status > 0 -> "This D1-in-D2 save uses unsupported version $status. Choose another save or Start fresh."
+                status > 0 -> "This save uses incompatible format version $status. Choose another save or Start fresh."
                 else -> WARNING
             }
         }.getOrDefault(WARNING)
@@ -113,7 +113,7 @@ internal object CoopSaveCompatibility {
         slot: Int,
     ): String
 
-    // JNI contract: 0 compatible, -1 invalid header/co-op data, positive rejected D1-in-D2 version
+    // JNI contract: 0 compatible, -1 invalid header/co-op data, positive rejected save version
     private external fun nativeCompatibilityStatus(
         path: String,
         d1Engine: Boolean,

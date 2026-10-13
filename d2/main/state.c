@@ -109,7 +109,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Version 40 also binds original base and custom definition sources
 // Versions 41 (D2) and 42 (D1-in-D2) preserve Guidebot runtime state
 #ifdef __ANDROID__
-#define STATE_VERSION 43 /* Source definitions for presentation-compatible restores */
+#include "android_save_format.h"
+#define STATE_VERSION ANDROID_D2_SAVE_VERSION
 #else
 #define STATE_VERSION GUIDEBOT_RUNTIME_SAVE_VERSION
 #endif
@@ -3391,7 +3392,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
 
 	/* Definitions are now prepared, but no saved object references are installed */
-	if ((version == 40 || version == D1_IN_D2_SAVE_VERSION) && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
+	if (version == D1_IN_D2_SAVE_VERSION && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
 		PHYSFS_close(fp);
 		/* The fresh world must not run with partly restored player state */
 		if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "coop/coop_save_format.h"
+#include "android_save_format.h"
 
 static void write_save(FILE *file, unsigned version, int corrupt)
 {
@@ -38,10 +39,15 @@ int main(void)
 	assert(fwrite("DGSS\x00\x00\x00\x1f", 8, 1, file) == 1);
 	assert(coop_save_read_version(file, &version) && version == 31);
 	assert(!d1_in_d2_save_version_supported(version));
-	assert(d1_in_d2_save_version_supported(40));
+	assert(!d1_in_d2_save_version_supported(40));
 	assert(d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION));
 	assert(!d1_in_d2_save_version_supported(41));
 	assert(!d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION + 1));
+	for (version = 0; version <= 45; ++version) {
+		assert(android_save_version_supported(version, 1, 1) == (version == ANDROID_D1_SAVE_VERSION));
+		assert(android_save_version_supported(version, 0, 0) == (version == ANDROID_D2_SAVE_VERSION));
+		assert(android_save_version_supported(version, 0, 1) == (version == ANDROID_D1_IN_D2_SAVE_VERSION));
+	}
 	rewind(file);
 	assert(fwrite("BAD!\x1f\x00\x00\x00", 8, 1, file) == 1);
 	assert(!coop_save_read_version(file, &version));
