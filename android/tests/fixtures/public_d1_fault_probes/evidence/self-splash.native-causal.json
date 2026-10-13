@@ -1,0 +1,79 @@
+{
+  "actual_damage_frame": 51,
+  "actual_player_concussion_creations": {
+    "negative": [],
+    "positive": [
+      {
+        "creation_frame": 39,
+        "ctime": 104832,
+        "f": 48,
+        "flags": 0,
+        "gt": 104832,
+        "homing": false,
+        "id": 8,
+        "kind": "probe_weapon_life",
+        "last_hit": -1,
+        "lastx": 218390,
+        "lasty": -10966,
+        "lastz": 138085,
+        "life": 655360,
+        "obj": 68,
+        "parent": 0,
+        "parent_sig": 1,
+        "parent_type": 4,
+        "seg": 0,
+        "shields": 1966080,
+        "sig": 76,
+        "step": "create",
+        "track_goal": 0,
+        "vx": -5882040,
+        "vy": 322740,
+        "vz": 292320,
+        "x": 118572,
+        "y": -5490,
+        "z": 143045
+      }
+    ]
+  },
+  "control_differences": [
+    {
+      "actual": 0,
+      "expected": 1,
+      "path": "$.batches[48].ops[0].s.f2s"
+    },
+    {
+      "actual": 0,
+      "expected": 1,
+      "path": "$.batches[48].residual.s.f2s"
+    }
+  ],
+  "controls_only_withheld_concussion": true,
+  "damage_frame_scope": "first_any_player_damage",
+  "damage_loss_raw": 1103205,
+  "frames": 139,
+  "negative_damage": [],
+  "positive_damage": [
+    {
+      "after": 5450395,
+      "before": 6553600,
+      "f": 51,
+      "loss": 1103205
+    }
+  ],
+  "preintervention_all_live_frames_exact": true,
+  "preintervention_capture_observations_exact": true,
+  "preintervention_rng_exact": true,
+  "request_frame": 48,
+  "scope": "native live positive versus no-concussion intervention only",
+  "shot_frame_negative": -1,
+  "shot_frame_positive": 48,
+  "status": "pass",
+  "terminal_ammo": {
+    "negative": 5,
+    "positive": 4
+  },
+  "terminal_shields": {
+    "negative": 6553600,
+    "positive": 5450395
+  }
+}

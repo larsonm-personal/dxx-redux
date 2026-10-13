@@ -1,0 +1,142 @@
+{
+    "asset_sha256": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    },
+    "capture_executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+    "capture_invoked": true,
+    "command": [
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "--public-level-replay",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "mine-blast"
+    ],
+    "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+    "files": {
+        "build.log": {
+            "bytes": 135,
+            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+        },
+        "candidate.dximdemo": {
+            "bytes": 73166,
+            "sha256": "e91d3eb5b26d4d8351ec927f64ee377e8ee921c0ed6da19606558c20215c91c2"
+        },
+        "candidate.oracle.json": {
+            "bytes": 33571,
+            "sha256": "85c4254f58132e856b9b043a66d57cef7759631cb0950396635a7cb41ac6dca8"
+        },
+        "capture.log": {
+            "bytes": 5368,
+            "sha256": "66d782c8e4d6fca57bbf2bda7c1437303beb60b0ba498fab8896d339bfc7158e"
+        },
+        "configure.log": {
+            "bytes": 1385,
+            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+        },
+        "raw/capture-observation.jsonl.gz": {
+            "bytes": 1605,
+            "sha256": "c78cbf7192803c69d2446bbc10a1122b94e5e7a461cb13d897798d70c491fda1"
+        },
+        "raw/capture.dximdemo": {
+            "bytes": 13397973,
+            "sha256": "a596c30da54107160aee9b897a9de44d79044e3d69e3a849eb586ab4c0fa49c9"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+            "bytes": 331832,
+            "sha256": "a67e0ea1aeea1e287da3081b92a096bc3514b1572f38acd91892399206b82544"
+        },
+        "raw/capture.json": {
+            "bytes": 213178,
+            "sha256": "be6cffd00c6faa35f78b5ea6af4d1b8292ed8089f0b96b4e7b7d98cc957b9dc5"
+        },
+        "raw/demos/tmpdemo.dem": {
+            "bytes": 3497,
+            "sha256": "326c1737d21df219d2603bc057554e19085db855965d38e7156a297b22af884c"
+        },
+        "raw/descent.cfg": {
+            "bytes": 525,
+            "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+        },
+        "raw/public.plr": {
+            "bytes": 2262,
+            "sha256": "e5068b5d0c38967c37793b6b8f335e7ccb6c595bdeea0494cb421181788af99f"
+        },
+        "raw/public.plx": {
+            "bytes": 2111,
+            "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        }
+    },
+    "no_missile": true,
+    "packed": true,
+    "recorder_git_version": "8b19ab9ff",
+    "recording_header": {
+        "arch": "x86_64",
+        "build_number": 25380,
+        "difficulty": 0,
+        "frame_count": 424,
+        "game": "d1",
+        "git_version": "8b19ab9ff",
+        "level": 3,
+        "mission": "d1",
+        "player_cfg": {
+            "auto_leveling": 1,
+            "autoselect_only_once": 0,
+            "classic_autoselect_weapon": 0,
+            "cycle_autoselect_only": 0,
+            "guidebot_routing_mode": 1,
+            "no_fire_autoselect": 1,
+            "original_homing": 0,
+            "persistent_debris": 0,
+            "primary_order": [
+                4,
+                3,
+                2,
+                1,
+                0,
+                255,
+                16
+            ],
+            "secondary_order": [
+                4,
+                3,
+                1,
+                0,
+                255,
+                2
+            ],
+            "select_after_fire": 1
+        },
+        "rear_view": {
+            "active": 0,
+            "current_cockpit": 0,
+            "leave_mode": 0,
+            "preferred_cockpit": 0
+        },
+        "rng_mode": "lcg_state",
+        "start_mode": "new_level",
+        "type": "header",
+        "version": 5,
+        "view_projection": {
+            "aspect": 65536,
+            "classic_depth": 0,
+            "depth": 9000,
+            "missile_view_enabled": 0,
+            "screen_height": 480,
+            "screen_width": 640,
+            "zoom": 36864
+        }
+    },
+    "scenario": "mine-blast",
+    "schema": 1,
+    "screenshots": false,
+    "source_recipe_sha256": {
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+        "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+        "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+        "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+    },
+    "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+    "stage": "complete",
+    "status": "candidate"
+}
