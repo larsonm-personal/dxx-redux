@@ -1339,6 +1339,11 @@ int game_handler(window *wind, d_event *event, void *data)
 #ifdef NETWORK
 			multi_leave_game();
 #endif
+#ifdef __ANDROID__
+			/* Departure spew and its recovery ledger must retain the mine identity */
+			Current_level_num = 0;
+			Current_level_name[0] = '\0';
+#endif
 
 			if ( Newdemo_state == ND_STATE_PLAYBACK )
 				newdemo_stop_playback();

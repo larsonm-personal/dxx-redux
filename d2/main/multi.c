@@ -3607,6 +3607,8 @@ void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authe
 			/* Re-read after each handler: a control message may replace the world */
 			coop_gameplay_stamp current = coop_gameplay_current_stamp();
 			if (!coop_gameplay_message_allowed(type, sent, &current, current.frozen)) {
+				if (type == MULTI_PLAYER_DROP || type == MULTI_PLAYER_EXPLODE || type == MULTI_COOP_RECOVERY)
+					debug_log(DLOG_NETWORK, "[RECOVERY] world_rejected type=%u sender=%d visit=%llu/%llu level=%d/%d frozen=%u/%u", type, authenticated_sender, (unsigned long long) sent->visit, (unsigned long long) current.visit, sent->level, current.level, sent->frozen, current.frozen);
 #ifdef INTROSPECT_ON
 				if (type == MULTI_SCORE) ++android_rejected_world_scores;
 				if (type == MULTI_COOP_RECOVERY) ++android_rejected_world_recovery;

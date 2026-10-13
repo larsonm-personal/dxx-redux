@@ -66,6 +66,8 @@ int coop_recovery_pickup_count(const object *powerup, int secondary, int amount)
 void coop_recovery_note_remove(object *powerup);
 void coop_recovery_note_pickup(object *powerup, const coop_player_record *before, int used);
 int coop_recovery_rejoin_ready(const char *callsign, const char *client_id);
+int coop_recovery_rejoin_skip_object(int objnum, const char *callsign, const char *client_id);
+unsigned coop_recovery_absorptions(void);
 void coop_recovery_expire(object *powerup);
 void coop_recovery_level_leave(void);
 /* Call after the travel freeze has settled all pending collections */

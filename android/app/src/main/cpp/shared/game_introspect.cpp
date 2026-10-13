@@ -1854,7 +1854,20 @@ extern "C" char *game_introspect_get_state(void)
 		unsigned join_presentations;
 		net_join_wait_get_state(&join, &join_presentations);
 		j["join_wait"] = {
-			{ "objects_complete", (bool) net_udp_join_objects_complete() }, { "early_syncs", net_udp_join_early_syncs() }, { "active", (bool) net_join_wait_active() }, { "phase", join.phase }, { "object_packets", net_join_wait_object_packets() }, { "retries", net_join_wait_retries() }, { "level", join.level }, { "visit", join.visit }, { "briefing_generation", join.briefing }, { "remaining_ms", join.remaining_ms }, { "duration_ms", join.duration_ms }, { "presentations_started", join_presentations }
+			{ "early_ends", net_udp_join_early_ends() },
+			{ "excluded_spew", net_udp_join_excluded_spew() },
+			{ "objects_complete", (bool) net_udp_join_objects_complete() },
+			{ "early_syncs", net_udp_join_early_syncs() },
+			{ "active", (bool) net_join_wait_active() },
+			{ "phase", join.phase },
+			{ "object_packets", net_join_wait_object_packets() },
+			{ "retries", net_join_wait_retries() },
+			{ "level", join.level },
+			{ "visit", join.visit },
+			{ "briefing_generation", join.briefing },
+			{ "remaining_ms", join.remaining_ms },
+			{ "duration_ms", join.duration_ms },
+			{ "presentations_started", join_presentations }
 		};
 		coop_transition_policy state;
 		coop_presentation_progress local;
@@ -2237,9 +2250,11 @@ extern "C" char *game_introspect_get_state(void)
 			recovery["epoch"] = coop_recovery_epoch();
 			recovery["rows"] = coop_recovery_count();
 			recovery["ready_to_save"] = (bool) coop_recovery_save_ready();
-			int live = 0, dormant = 0, credit = 0, world = 0, credit_homing = 0;
+			int live = 0, dormant = 0, credit = 0, world = 0, credit_homing = 0, energy_rows = 0, shield_rows = 0;
 			const coop_recovery_item *rows = coop_recovery_data();
 			for (size_t n = 0; n < coop_recovery_count(); n++) {
+				if (rows[n].powerup == POW_ENERGY) energy_rows++;
+				if (rows[n].powerup == POW_SHIELD_BOOST) shield_rows++;
 				if (rows[n].state == COOP_RECOVERY_LIVE) live++;
 				if (rows[n].state == COOP_RECOVERY_DORMANT) dormant++;
 				if (rows[n].state == COOP_RECOVERY_CREDIT) {
@@ -2255,6 +2270,9 @@ extern "C" char *game_introspect_get_state(void)
 			recovery["credit"] = credit;
 			recovery["credit_homing"] = credit_homing;
 			recovery["world_objects"] = world;
+			recovery["absorptions"] = coop_recovery_absorptions();
+			recovery["energy_rows"] = energy_rows;
+			recovery["shield_rows"] = shield_rows;
 			mp["recovery"] = std::move(recovery);
 			mp["robot_drop_objects_received"] = multi_robot_drop_received_count();
 #endif

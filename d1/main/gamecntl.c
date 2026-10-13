@@ -563,8 +563,10 @@ int HandleSystemKey(int key)
 							debug_log(DLOG_GAME, "autosave saved: D1 slot %d", ANDROID_SAVE_META_SLOT_AUTO_ABORT);
 					#endif
 						set_screen_mode(SCREEN_MENU);
+						#ifndef __ANDROID__
 						Current_level_num = 0;
 						Current_level_name[0] = '\0';
+						#endif
 						window_close(Game_wind);
 						break;
 					case 1: // Options

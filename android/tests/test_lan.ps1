@@ -1819,10 +1819,8 @@ function Invoke-HostMigrationScenario {
         return $false
     }
 
-    Write-Status "Stopping original host $EMU1"
-    Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @(
-        "shell", "am", "force-stop", $PACKAGE
-    ) -Seconds 10 | Out-Null
+    Write-Status "Original host exits to the launcher, dropping its inventory"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_host_migration_leave.jsonc')) { return $false }
     if (-not (Wait-SoloMigratedHost -Serial $EMU2 -HostSlot 1 `
                 -PreviousGuidebotGeneration $initialGuidebotGeneration `
                 -CheckGuidebot $checkGuidebot `
@@ -1831,6 +1829,13 @@ function Invoke-HostMigrationScenario {
     }
     Write-Status "Slot 1 became host and reset object ownership$(if ($checkGuidebot) { ', with Guide-Bot authority' })" "Green"
     Assert-GuidebotRoutingSelection -Serials @($EMU2)
+    if (-not (Wait-ForCondition -Description 'Migrated host retains departure spew and recovery records' -TimeoutSec 15 -Condition {
+                $intro = Get-GameIntrospection -Serial $EMU2
+                return $intro -and $intro.multiplayer.recovery.live -gt 0 -and
+                $intro.multiplayer.recovery.world_objects -gt 0 -and
+                $intro.multiplayer.recovery.energy_rows -gt 0 -and
+                $intro.multiplayer.recovery.shield_rows -gt 0
+            })) { return $false }
 
     if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_host_migration_early_sync.jsonc')) {
         return $false
@@ -1850,9 +1855,35 @@ function Invoke-HostMigrationScenario {
                 -Description "former host rejoins slot-1 host with matching objects")) {
         return $false
     }
-    if ([int]$script:migratedJoinIntro.join_wait.early_syncs -lt 1) {
-        Write-Status 'FAIL: rejoin did not exercise an early SYNC before object completion' 'Red'
+    if ([int]$script:migratedJoinIntro.join_wait.early_syncs -lt 1 -or
+        [int]$script:migratedJoinIntro.join_wait.early_ends -lt 1) {
+        Write-Status 'FAIL: rejoin did not exercise both early SYNC and early object end' 'Red'
         return $false
+    }
+    if ([int]$script:migratedHostIntro.join_wait.excluded_spew -lt 1) {
+        Write-Status 'FAIL: returning player spew was not excluded from the world snapshot' 'Red'
+        return $false
+    }
+    if ([int]$script:migratedHostIntro.multiplayer.recovery.absorptions -ne
+        [int]$script:migratedHostIntro.join_wait.excluded_spew) {
+        Write-Status 'FAIL: reclaimed snapshot objects did not each play mine absorption' 'Red'
+        return $false
+    }
+    if ($script:migratedHostIntro.multiplayer.recovery.world_objects -ne 0 -or
+        $script:migratedJoinIntro.multiplayer.recovery.world_objects -ne 0) {
+        Write-Status 'FAIL: returned host still has spew in the mine' 'Red'
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+    # The remaining player may pick up a drop before rejoin; inventory must be conserved
+    for ($weapon = 0; $weapon -lt $initialHost.player.secondary_ammo.Count; $weapon++) {
+        $expected = [int]$initialHost.player.secondary_ammo[$weapon] + [int]$initialJoin.player.secondary_ammo[$weapon]
+        $actual = [int]$script:migratedJoinIntro.player.secondary_ammo[$weapon] + [int]$script:migratedHostIntro.player.secondary_ammo[$weapon]
+        if ($actual -ne $expected) {
+            Write-Status "FAIL: missile $weapon inventory after rejoin is $actual, expected $expected across both players" 'Red'
+            return $false
+        }
     }
     Write-Status "Deferred early SYNC; completed objects and allocator agree on both peers" 'Green'
     if (-not (Wait-BidirectionalPdata -FirstSerial $EMU2 -FirstRemoteSlot 0 `

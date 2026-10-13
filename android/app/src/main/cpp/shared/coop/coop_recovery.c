@@ -16,6 +16,9 @@
 #include "strutil.h"
 #include "timer.h"
 #include "weapon.h"
+#include "fireball.h"
+#include "digi.h"
+#include "vclip.h"
 
 enum { REC_ITEM = 1,
 	   REC_COLLECT,
@@ -34,6 +37,7 @@ static fix omega_charge[MAX_PLAYERS];
 static uint16_t armed_mines[MAX_PLAYERS][COOP_SAVE_MAX_WEAPONS];
 static uint8_t *freeze_waiting;
 static fix64 freeze_sent_at;
+static unsigned absorptions;
 
 static uint32_t equipment_flags(void)
 {
@@ -166,12 +170,28 @@ static int bound_object(const coop_recovery_item *item)
 	return -1;
 }
 
-static void remove_world(coop_recovery_item *item)
+static void absorb_object(object *obj)
+{
+	if (obj->flags & OF_SHOULD_BE_DEAD) return;
+	object_create_explosion(obj->segnum, &obj->pos, F1_0 * 7 / 2, VCLIP_POWERUP_DISAPPEARANCE);
+	if (Vclip[VCLIP_POWERUP_DISAPPEARANCE].sound_num > -1)
+		digi_link_sound_to_object(Vclip[VCLIP_POWERUP_DISAPPEARANCE].sound_num, obj - Objects, 0, F1_0);
+	absorptions++;
+	debug_log(DLOG_NETWORK, "[RECOVERY] absorb object=%d powerup=%u", (int) (obj - Objects), obj->id);
+}
+
+unsigned coop_recovery_absorptions(void)
+{
+	return absorptions;
+}
+
+static void remove_world(coop_recovery_item *item, int absorb)
 {
 	int objnum = bound_object(item);
-	COOPLOG("recovery remove epoch=%u id=%u revision=%u state=%u saved_sig=%d bound=%d remote=%d owner=%d",
-	        epoch, item->id, item->revision, item->state, item->signature, objnum, item->remote_index, item->network_owner);
+	debug_log(DLOG_NETWORK, "[RECOVERY] remove epoch=%u id=%u revision=%u state=%u saved_sig=%d bound=%d remote=%d owner=%d",
+	          epoch, item->id, item->revision, item->state, item->signature, objnum, item->remote_index, item->network_owner);
 	if (objnum >= 0) {
+		if (absorb) absorb_object(&Objects[objnum]);
 		Objects[objnum].flags |= OF_SHOULD_BE_DEAD;
 		if (multi_i_am_master())
 			multi_send_remobj(objnum);
@@ -299,6 +319,7 @@ void coop_recovery_drop(int pnum, uint32_t life)
 	coop_recovery_gear pool;
 	int i;
 	if (!coop_recovery_active() || pnum < 0 || pnum >= MAX_PLAYERS) return;
+	debug_log(DLOG_NETWORK, "[RECOVERY] drop player=%d master=%d life=%u/%u eggs=%d rows=%u", pnum, multi_who_is_master(), life, player_life[pnum], Net_create_loc, (unsigned) count);
 	if (life < player_life[pnum]) return;
 	player_life[pnum] = life + 1;
 	/* Mark death spew on every peer before the host ledger can arrive
@@ -306,7 +327,6 @@ void coop_recovery_drop(int pnum, uint32_t life)
 	for (i = 0; i < Net_create_loc; i++) {
 		int objnum = Net_create_objnums[i];
 		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
-		    Objects[objnum].id != POW_ENERGY && Objects[objnum].id != POW_SHIELD_BOOST &&
 		    Objects[objnum].id != POW_CLOAK && Objects[objnum].id != POW_INVULNERABILITY)
 			Objects[objnum].flags |= OF_COOP_RECOVERY;
 	}
@@ -339,7 +359,9 @@ void coop_recovery_drop(int pnum, uint32_t life)
 		    (Objects[objnum].flags & OF_SHOULD_BE_DEAD))
 			continue;
 		gear = allocate_egg(&Objects[objnum], &pool);
-		if (empty(&gear)) {
+		/* Energy and shield eggs track cleanup only: the absent player record
+		 * already preserves these resources, so reclaiming must not add a bonus */
+		if (empty(&gear) && Objects[objnum].id != POW_ENERGY && Objects[objnum].id != POW_SHIELD_BOOST) {
 			if (Objects[objnum].flags & OF_COOP_RECOVERY) {
 				Objects[objnum].flags |= OF_SHOULD_BE_DEAD;
 				multi_send_remobj(objnum);
@@ -510,7 +532,7 @@ void coop_recovery_note_pickup(object *powerup, const coop_player_record *before
 	item->gear = remaining;
 	if (used || empty(&remaining)) item->state = empty(&remaining) ? COOP_RECOVERY_TAKEN : COOP_RECOVERY_CREDIT;
 	send_item(item, REC_COLLECT, -1);
-	COOPLOG("spew collected id=%u used=%d remaining=%d", item->id, used, !empty(&remaining));
+	debug_log(DLOG_NETWORK, "[RECOVERY] collected player=%d id=%u used=%d remaining=%d", Player_num, item->id, used, !empty(&remaining));
 }
 
 /* A normal removal is consumption, never expiry. Keep the old contents only
@@ -519,6 +541,9 @@ void coop_recovery_note_remove(object *powerup)
 {
 	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return;
 	coop_recovery_item *item = find_object(powerup);
+	/* The freeze acknowledged by this peer distinguishes reclamation from a
+	 * normal pickup when its removal arrives before the terminal ledger row */
+	if (item && item->state == COOP_RECOVERY_RECLAIMING) absorb_object(powerup);
 	if (item && item->state == COOP_RECOVERY_LIVE) {
 		COOPLOG("recovery retire epoch=%u id=%u revision=%u sig=%d object=%d remote=%d owner=%d",
 		        epoch, item->id, item->revision, item->signature, item->object_index, item->remote_index, item->network_owner);
@@ -546,7 +571,7 @@ int coop_recovery_rejoin_ready(const char *callsign, const char *client_id)
 			for (int peer = 0; peer < N_players; peer++)
 				if (peer != Player_num && Players[peer].connected == CONNECT_PLAYING)
 					freeze_waiting[i] |= 1u << peer;
-			COOPLOG("rejoin recovery freeze: id=%u players=%d waiting=0x%x", item->id, N_players, freeze_waiting[i]);
+			debug_log(DLOG_NETWORK, "[RECOVERY] rejoin_freeze id=%u players=%d waiting=0x%x", item->id, N_players, freeze_waiting[i]);
 			send_item(item, REC_FREEZE, -1);
 		} else if (item->state != COOP_RECOVERY_RECLAIMING) continue;
 		if (freeze_waiting[i]) {
@@ -557,6 +582,21 @@ int coop_recovery_rejoin_ready(const char *callsign, const char *client_id)
 	return ready;
 }
 
+/* Reclamation commits after SYNC, but its eggs must not enter the joining mine.
+ * The host retains them until commit so an abandoned join does not consume loot */
+int coop_recovery_rejoin_skip_object(int objnum, const char *callsign, const char *client_id)
+{
+	if (!coop_recovery_active() || !multi_i_am_master()) return 0;
+	for (size_t i = 0; i < count; i++) {
+		const coop_recovery_item *item = &items[i];
+		if (item->state != COOP_RECOVERY_RECLAIMING || freeze_waiting[i] || bound_object(item) != objnum) continue;
+		if (client_id[0] && item->client_id[0] ? strcmp(client_id, item->client_id) : d_stricmp(callsign, item->callsign)) continue;
+		debug_log(DLOG_NETWORK, "[RECOVERY] snapshot_exclude id=%u object=%d powerup=%u", item->id, objnum, item->powerup);
+		return 1;
+	}
+	return 0;
+}
+
 void coop_recovery_expire(object *powerup)
 {
 	size_t i;
@@ -565,7 +605,7 @@ void coop_recovery_expire(object *powerup)
 		if (items[i].state == COOP_RECOVERY_LIVE && bound_object(&items[i]) == powerup - Objects) {
 			items[i].state = COOP_RECOVERY_CREDIT;
 			items[i].revision++;
-			remove_world(&items[i]);
+			remove_world(&items[i], 0);
 			send_item(&items[i], REC_ITEM, -1);
 		}
 }
@@ -640,19 +680,21 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 		rec->energy = i2f(100);
 	}
 	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master()) return 0;
+	debug_log(DLOG_NETWORK, "[RECOVERY] rejoin_begin player=%d rows=%u concussion=%u homing=%u", pnum, (unsigned) count, rec->secondary_ammo[CONCUSSION_INDEX], rec->secondary_ammo[HOMING_INDEX]);
 	/* A delayed death packet may have arrived after the disconnect snapshot */
 	coop_recovery_departure_record(pnum, rec);
 	/* Fence packets from the departed connection, even if no drop arrived */
 	player_life[pnum]++;
 	for (i = 0; coop_recovery_active() && i < count; i++) {
 		coop_recovery_gear taken;
+		debug_log(DLOG_NETWORK, "[RECOVERY] rejoin_row player=%d id=%u match=%d state=%u world=%d bound=%d concussion=%u homing=%u", pnum, items[i].id, same_owner(&items[i], pnum), items[i].state, items[i].world_level, bound_object(&items[i]), items[i].gear.missiles[CONCUSSION_INDEX], items[i].gear.missiles[HOMING_INDEX]);
 		if ((items[i].state != COOP_RECOVERY_LIVE && items[i].state != COOP_RECOVERY_CREDIT && items[i].state != COOP_RECOVERY_RECLAIMING && items[i].state != COOP_RECOVERY_DORMANT) ||
 		    !same_owner(&items[i], pnum)) continue;
 		if (items[i].state == COOP_RECOVERY_RECLAIMING && freeze_waiting[i]) continue;
 		taken = transfer(rec, &items[i].gear);
 		if (empty(&taken) && items[i].state == COOP_RECOVERY_CREDIT) continue;
 		if (!empty(&taken)) recovered++;
-		remove_world(&items[i]);
+		remove_world(&items[i], 1);
 		items[i].state = empty(&items[i].gear) ? COOP_RECOVERY_TAKEN : COOP_RECOVERY_CREDIT;
 		items[i].revision++;
 		send_item(&items[i], REC_ITEM, -1);
@@ -667,6 +709,7 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 		send_item(&status, REC_LIFE, -1);
 	}
 	coop_recovery_alive(pnum);
+	debug_log(DLOG_NETWORK, "[RECOVERY] rejoin_end player=%d recovered=%d concussion=%u homing=%u", pnum, recovered, rec->secondary_ammo[CONCUSSION_INDEX], rec->secondary_ammo[HOMING_INDEX]);
 	return recovered;
 }
 
@@ -715,6 +758,7 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 	if (!coop_recovery_active() || sender < 0 || sender >= MAX_PLAYERS) return;
 	memcpy(&incoming, buf + 16, sizeof(incoming));
 	int authority = sender == multi_who_is_master();
+	debug_log(DLOG_NETWORK, "[RECOVERY] receive sender=%d master=%d operation=%u epoch=%u/%u id=%u revision=%u state=%u life=%u remote=%d owner=%d rows=%u", sender, multi_who_is_master(), buf[1], incoming_epoch, epoch, incoming.id, incoming.revision, incoming.state, incoming.life, incoming.remote_index, incoming.network_owner, (unsigned) count);
 	if (!count && authority) epoch = incoming_epoch;
 	if (incoming_epoch != epoch) return;
 	if (buf[1] == REC_BEGIN || buf[1] == REC_END) return;
@@ -742,13 +786,14 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 			intersect_gear(&item->gear, &incoming.gear);
 			if (empty(&item->gear) || incoming.state == COOP_RECOVERY_TAKEN) item->state = COOP_RECOVERY_TAKEN;
 			else if (incoming.state == COOP_RECOVERY_CREDIT) item->state = COOP_RECOVERY_CREDIT;
-			if (item->state != COOP_RECOVERY_LIVE) remove_world(item);
+			if (item->state != COOP_RECOVERY_LIVE) remove_world(item, 0);
 		}
 		return;
 	}
 	if (!authority || multi_i_am_master() || (buf[1] != REC_ITEM && buf[1] != REC_FREEZE)) return;
 	if (index < count && items[index].revision > incoming.revision) return;
 	int prior_object = index < count ? bound_object(&items[index]) : -1;
+	int was_reclaiming = index < count && items[index].state == COOP_RECOVERY_RECLAIMING;
 	if (index < count) {
 		intersect_gear(&incoming.gear, &items[index].gear);
 		if (incoming.world_level == Current_level_num && has_world_gear(&items[index]) && has_world_gear(&incoming) &&
@@ -775,8 +820,8 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 		int objnum = prior_object >= 0 ? prior_object : mapped_object(&incoming);
 		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
 		    Objects[objnum].id == incoming.powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
-			COOPLOG("recovery receive bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
-			        epoch, incoming.id, incoming.revision, incoming.signature, Objects[objnum].signature, objnum, incoming.remote_index, incoming.network_owner);
+			debug_log(DLOG_NETWORK, "[RECOVERY] receive_bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
+			          epoch, incoming.id, incoming.revision, incoming.signature, Objects[objnum].signature, objnum, incoming.remote_index, incoming.network_owner);
 			incoming.object_index = (int16_t) objnum;
 			incoming.signature = Objects[objnum].signature;
 		}
@@ -787,7 +832,7 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 		/* Only retire a previously verified local binding, never a reused remote slot */
 		items[index].object_index = (int16_t) prior_object;
 		if (prior_object >= 0) items[index].signature = Objects[prior_object].signature;
-		remove_world(&items[index]);
+		remove_world(&items[index], was_reclaiming);
 	}
 	if (next_id <= incoming.id) next_id = incoming.id + 1;
 	if (buf[1] == REC_FREEZE) send_item(&items[index], REC_FROZEN, sender);
@@ -811,8 +856,8 @@ void coop_recovery_frame(void)
 		int objnum = mapped_object(item);
 		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
 		    Objects[objnum].id == item->powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
-			COOPLOG("recovery frame bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
-			        epoch, item->id, item->revision, item->signature, Objects[objnum].signature, objnum, item->remote_index, item->network_owner);
+			debug_log(DLOG_NETWORK, "[RECOVERY] frame_bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
+			          epoch, item->id, item->revision, item->signature, Objects[objnum].signature, objnum, item->remote_index, item->network_owner);
 			item->object_index = (int16_t) objnum;
 			item->signature = Objects[objnum].signature;
 		}
@@ -836,10 +881,12 @@ void coop_recovery_send_snapshot(int pnum)
 void coop_recovery_host_changed(void)
 {
 	if (!coop_recovery_active() || !multi_i_am_master()) return;
+	debug_log(DLOG_NETWORK, "[RECOVERY] host_changed player=%d rows=%u", Player_num, (unsigned) count);
 	coop_recovery_frame();
 	/* Host migration makes surviving objects locally owned for future joins */
 	for (size_t i = 0; i < count; i++) {
 		int objnum = bound_object(&items[i]);
+		debug_log(DLOG_NETWORK, "[RECOVERY] migrate_row id=%u state=%u world=%d bound=%d remote=%d owner=%d", items[i].id, items[i].state, items[i].world_level, objnum, items[i].remote_index, items[i].network_owner);
 		/* A new host must obtain its own acknowledgements before reclamation */
 		if (items[i].state == COOP_RECOVERY_RECLAIMING) {
 			items[i].state = objnum >= 0 ? COOP_RECOVERY_LIVE : (items[i].world_level != Current_level_num && items[i].remote_index >= 0 ? COOP_RECOVERY_DORMANT : COOP_RECOVERY_CREDIT);
@@ -872,6 +919,7 @@ void coop_recovery_reset(void)
 	epoch = restore_epoch ? restore_epoch : epoch + 1;
 	if (!epoch) epoch = 1;
 	freeze_sent_at = 0;
+	absorptions = 0;
 	memset(restore_serial, 0, sizeof(restore_serial));
 	memset(applied_restore_serial, 0, sizeof(applied_restore_serial));
 	memset(omega_charge, 0, sizeof(omega_charge));

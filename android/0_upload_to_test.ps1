@@ -42,7 +42,15 @@ function Get-UploadedBuildStamp {
     if (-not $timeMatch.Success) {
         return $dateMatch.Groups[1].Value
     }
-    return "$($dateMatch.Groups[1].Value) $($timeMatch.Groups[1].Value)"
+    $buildStamp = "$($dateMatch.Groups[1].Value) $($timeMatch.Groups[1].Value)"
+    $buildTime = [DateTimeOffset]::MinValue
+    if ([DateTimeOffset]::TryParseExact($buildStamp, "yyyy-MM-dd HH:mm 'UTC'",
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AssumeUniversal, [ref]$buildTime)) {
+        return $buildTime.ToLocalTime().ToString("yyyy-MM-dd h:mmtt 'UTC'zzz '(local)'",
+            [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+    return $buildStamp
 }
 
 function Invoke-PlayBuildAndUpload {

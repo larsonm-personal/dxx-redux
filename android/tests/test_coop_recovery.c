@@ -10,6 +10,9 @@
 #include "multi.h"
 #include "powerup.h"
 #include "weapon.h"
+#include "fireball.h"
+#include "digi.h"
+#include "vclip.h"
 
 #define CHECK(c)                                                    \
 	do {                                                            \
@@ -36,6 +39,21 @@ const ubyte Secondary_ammo_max[MAX_PRIMARY_WEAPONS] = { 20, 10, 10, 5, 5 };
 int Net_create_loc, Net_create_objnums[MAX_NET_CREATE_OBJECTS];
 powerup_type_info Powerup_info[MAX_POWERUP_TYPES];
 static int pickup_sounds, pickup_flashes, broadcast_sounds, last_pickup_sound;
+vclip Vclip[VCLIP_MAXNUM];
+static unsigned absorption_animations, absorption_sounds;
+object *object_create_explosion(short segnum, vms_vector *pos, fix size, int clip)
+{
+	(void) segnum;
+	CHECK(pos && size == F1_0 * 7 / 2 && clip == VCLIP_POWERUP_DISAPPEARANCE);
+	absorption_animations++;
+	return NULL;
+}
+int digi_link_sound_to_object(int sound, short objnum, int forever, fix volume)
+{
+	CHECK(sound == 123 && objnum >= 0 && !forever && volume == F1_0);
+	absorption_sounds++;
+	return 0;
+}
 void digi_play_sample(int sound, fix volume)
 {
 	CHECK(volume == F1_0);
@@ -139,6 +157,8 @@ void coop_snapshot_player(int pnum, coop_player_record *r)
 static void reset(void)
 {
 	coop_recovery_reset();
+	absorption_animations = absorption_sounds = 0;
+	Vclip[VCLIP_POWERUP_DISAPPEARANCE].sound_num = 123;
 	pickup_sounds = pickup_flashes = broadcast_sounds = 0;
 	last_pickup_sound = -1;
 	for (int i = 0; i < MAX_POWERUP_TYPES; i++) Powerup_info[i].hit_sound = 100 + i;
@@ -995,8 +1015,124 @@ static void test_absent_pickups_survive_cold_restore(void)
 	CHECK(!coop_recovery_active());
 }
 
+static void test_saved_orbs_reclaim_without_resource_bonus(void)
+{
+	for (int other_level = 0; other_level <= 1; other_level++) {
+		reset();
+		coop_player_record returning;
+		coop_snapshot_player(1, &returning);
+		returning.energy = 137 * F1_0;
+		returning.shields = 64 * F1_0;
+		egg(10, POW_ENERGY);
+		egg(11, POW_SHIELD_BOOST);
+		coop_recovery_drop(1, 0);
+		coop_recovery_departure_record(1, &returning);
+		CHECK(coop_recovery_count() == 3);
+		object energy = Objects[10], shield = Objects[11];
+		CHECK(energy.flags & OF_COOP_RECOVERY);
+		CHECK(shield.flags & OF_COOP_RECOVERY);
+		if (other_level) CHECK(coop_recovery_suspend_world());
+		coop_recovery_item saved[3];
+		memcpy(saved, coop_recovery_data(), sizeof(saved));
+		if (other_level) {
+			Current_level_num = -1;
+			memset(&Objects[10], 0, sizeof(object) * 2);
+		}
+		coop_recovery_prepare_save();
+		CHECK(coop_recovery_set_pending(coop_recovery_data(), coop_recovery_count()));
+		CHECK(coop_recovery_apply_pending());
+		CHECK(coop_recovery_restore_result().discarded == 0);
+		Players[1].connected = Players[2].connected = CONNECT_DISCONNECTED;
+		CHECK(coop_recovery_rejoin_ready(returning.callsign, returning.client_id));
+		if (!other_level) {
+			CHECK(coop_recovery_rejoin_skip_object(10, returning.callsign, returning.client_id));
+			CHECK(coop_recovery_rejoin_skip_object(11, returning.callsign, returning.client_id));
+			CHECK(!coop_recovery_rejoin_skip_object(10, Players[2].callsign, Netgame.players[2].client_id));
+			CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+			CHECK(!(Objects[11].flags & OF_SHOULD_BE_DEAD));
+		}
+		CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+		CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
+		CHECK(coop_recovery_data()[1].state == COOP_RECOVERY_TAKEN);
+		CHECK(absorption_animations == (other_level ? 0u : 2u));
+		CHECK(absorption_sounds == absorption_animations);
+		CHECK(returning.energy == 137 * F1_0 && returning.shields == 64 * F1_0);
+		CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+		if (other_level) {
+			Current_level_num = 1;
+			Objects[10] = energy;
+			Objects[11] = shield;
+			CHECK(coop_recovery_set_pending(saved, 3));
+			CHECK(coop_recovery_apply_world_pending());
+		}
+		CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+		CHECK(Objects[11].flags & OF_SHOULD_BE_DEAD);
+	}
+}
+
+static void test_reclaim_absorption_delivery_order(void)
+{
+	for (int remove_first = 0; remove_first <= 1; remove_first++) {
+		reset();
+		egg(10, POW_ENERGY);
+		coop_recovery_drop(1, 0);
+		coop_recovery_item row = coop_recovery_data()[0];
+		row.state = COOP_RECOVERY_RECLAIMING;
+		row.revision++;
+		Player_num = 2;
+		master = 0;
+		ubyte message[160] = { 0 };
+		message[1] = 3; /* REC_FREEZE */
+		PUT_INTEL_INT(message + 4, coop_recovery_epoch());
+		memcpy(message + 16, &row, sizeof(row));
+		coop_recovery_receive(message, 0);
+		CHECK(absorption_animations == 0);
+		if (remove_first) {
+			coop_recovery_note_remove(&Objects[10]);
+			Objects[10].flags |= OF_SHOULD_BE_DEAD;
+		}
+		message[1] = 1; /* REC_ITEM */
+		row.state = COOP_RECOVERY_TAKEN;
+		row.revision++;
+		row.object_index = row.remote_index = -1;
+		memcpy(message + 16, &row, sizeof(row));
+		coop_recovery_receive(message, 0);
+		coop_recovery_note_remove(&Objects[10]);
+		coop_recovery_receive(message, 0);
+		CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+		CHECK(absorption_animations == 1 && absorption_sounds == 1);
+		CHECK(coop_recovery_absorptions() == 1);
+	}
+}
+
+static void test_orb_pickup_keeps_absent_resources(void)
+{
+	reset();
+	coop_player_record returning, before;
+	coop_snapshot_player(1, &returning);
+	returning.energy = 137 * F1_0;
+	returning.shields = 64 * F1_0;
+	coop_snapshot_player(2, &before);
+	egg(10, POW_ENERGY);
+	egg(11, POW_SHIELD_BOOST);
+	coop_recovery_drop(1, 0);
+	Player_num = 2;
+	for (int n = 10; n <= 11; n++) {
+		coop_recovery_note_pickup(&Objects[n], &before, 1);
+		coop_recovery_note_remove(&Objects[n]);
+		Objects[n].flags |= OF_SHOULD_BE_DEAD;
+	}
+	Player_num = 0;
+	CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+	CHECK(returning.energy == 137 * F1_0 && returning.shields == 64 * F1_0);
+	CHECK(absorption_animations == 0 && absorption_sounds == 0);
+}
+
 int main(void)
 {
+	test_reclaim_absorption_delivery_order();
+	test_orb_pickup_keeps_absent_resources();
+	test_saved_orbs_reclaim_without_resource_bonus();
 	test_absent_pickups_survive_cold_restore();
 	test_saved_inventory_revision_without_qol();
 	test_retired_world_credit_survives_restore_and_reclaim();

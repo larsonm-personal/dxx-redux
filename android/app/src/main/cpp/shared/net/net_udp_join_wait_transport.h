@@ -11,6 +11,39 @@ static int join_transfer_committed, join_previous_connected, join_previous_net_c
 static fix64 join_test_hold_until;
 static int join_test_early_sync, join_objects_complete;
 static unsigned join_early_syncs;
+static ubyte join_pending_end[UPID_MAX_SIZE];
+static int join_pending_end_size, join_expected_objects;
+static unsigned join_early_ends;
+static int join_test_early_end;
+static unsigned join_excluded_spew;
+
+unsigned net_udp_join_excluded_spew(void)
+{
+	return join_excluded_spew;
+}
+
+int net_udp_join_wait_test_early_end(void)
+{
+	if (!multi_i_am_master() || !(Game_mode & GM_MULTI_COOP)) return 0;
+	join_test_early_end = 1;
+	return 1;
+}
+
+unsigned net_udp_join_early_ends(void)
+{
+	return join_early_ends;
+}
+
+static void net_udp_join_defer_end(const ubyte *data, int length, int expected, int received)
+{
+	if (length > (int) sizeof(join_pending_end)) return;
+	/* Keep the transfer count and allocator state intact until its tail arrives */
+	memcpy(join_pending_end, data, length);
+	join_pending_end_size = length;
+	join_expected_objects = expected;
+	++join_early_ends;
+	REJOIN_LOG("objects_end_deferred expected=%d received=%d attempt=%u", expected, received, (unsigned) join_query_token);
+}
 
 int net_udp_join_wait_test_early_sync(void)
 {
@@ -66,6 +99,7 @@ static void net_udp_join_cancel_transfer(void)
 	UDP_sync_player.join_attempt = 0;
 	join_test_hold_until = 0;
 	join_test_early_sync = 0;
+	join_test_early_end = 0;
 }
 
 static void net_udp_join_confirm_player(int player_num)
@@ -85,6 +119,8 @@ static void net_udp_join_confirm_player(int player_num)
 
 static void net_udp_join_wait_reset(void)
 {
+	join_pending_end_size = 0;
+	join_early_ends = 0;
 	join_objects_complete = 0;
 	join_early_syncs = 0;
 	join_query_token = (uint32_t) generate_token();

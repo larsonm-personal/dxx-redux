@@ -2964,6 +2964,7 @@ void net_udp_send_objects(void)
 		obj_count = 0;
 		Network_send_object_mode = 0;
 #ifdef __ANDROID__
+		join_excluded_spew = 0;
 		REJOIN_LOG("transfer_begin target=%d attempt=%u visit=%llu", player_num, (unsigned) UDP_sync_player.join_attempt, (unsigned long long) UDP_sync_player.join_visit);
 		rejoin_diag_world("transfer_begin");
 #endif
@@ -2985,6 +2986,13 @@ void net_udp_send_objects(void)
 			continue;
 		if ((Network_send_object_mode == 1) && ((object_owner[i] == -1) || (object_owner[i] == player_num)))
 			continue;
+#ifdef __ANDROID__
+		if (!UDP_sync_player.player.observer && coop_recovery_rejoin_skip_object(i,
+		    UDP_sync_player.player.callsign, UDP_sync_player.player.client_id)) {
+			++join_excluded_spew;
+			continue;
+		}
+#endif
 
 		if ( loc + sizeof(object_rw) + 9 > UPID_MAX_SIZE-1 )
 			break; // Not enough room for another object
@@ -3016,6 +3024,20 @@ void net_udp_send_objects(void)
 #ifdef __ANDROID__
 		crash_breadcrumb_v("send_objects: TX loc=%d nobj=%d", loc, obj_count_frame);
 		mpdiag_pkt_dump("TX", object_buffer, loc);
+#endif
+#ifdef __ANDROID__
+		/* Migration leaves all objects unowned: inject its end before the tail */
+		if (join_test_early_end && UDP_sync_player.join_attempt &&
+		    i > Highest_object_index && Network_send_object_mode == 0) {
+			ubyte end_buffer[UPID_OBJECT_HEADER_SIZE+9];
+			join_test_early_end = 0;
+			memcpy(end_buffer, object_buffer, UPID_OBJECT_HEADER_SIZE);
+			PUT_INTEL_INT(end_buffer+5, 1);
+			PUT_INTEL_INT(end_buffer+UPID_OBJECT_HEADER_SIZE, -2);
+			end_buffer[UPID_OBJECT_HEADER_SIZE+4] = player_num;
+			PUT_INTEL_INT(end_buffer+UPID_OBJECT_HEADER_SIZE+5, obj_count);
+			net_udp_send_sync_payload(end_buffer, sizeof(end_buffer), UDP_sync_player.player.protocol.udp.addr, player_num);
+		}
 #endif
 		net_udp_send_sync_payload(
 		    object_buffer, loc, UDP_sync_player.player.protocol.udp.addr,
@@ -3205,6 +3227,7 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 			mode = 1;
 			object_count = 0;
 #ifdef __ANDROID__
+			join_pending_end_size = 0;
 			join_objects_complete = 0;
 			REJOIN_LOG("objects_clear assigned=%d allocated=%d", my_pnum, num_objects);
 #endif
@@ -3213,6 +3236,12 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 		{
 			// End of object sync -- always rebuild free list from final state
 #ifdef __ANDROID__
+			/* The end marker can overtake the final object datagram */
+			if (net_join_wait_active() && object_count < remote_objnum) {
+				net_udp_join_defer_end(data, data_len, remote_objnum, object_count);
+				return;
+			}
+			join_pending_end_size = 0;
 			join_objects_complete = 0;
 			REJOIN_LOG("objects_end expected=%d received=%d mode=%d", remote_objnum, object_count, mode);
 			rejoin_diag_world("objects_end_before_rebuild");
@@ -3314,6 +3343,11 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 	} // For each object in packet
 #ifdef __ANDROID__
 	REJOIN_LOG("objects_parsed bytes=%d consumed=%d received=%d mode=%d allocated=%d highest=%d", data_len, loc, object_count, mode, num_objects, Highest_object_index);
+	if (join_pending_end_size && object_count >= join_expected_objects) {
+		int end_size = join_pending_end_size;
+		join_pending_end_size = 0;
+		net_udp_read_object_packet(join_pending_end, end_size);
+	}
 #endif
 }
 

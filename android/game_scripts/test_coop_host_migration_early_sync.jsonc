@@ -6,4 +6,5 @@
         "expect": { "in_game": "true", "multiplayer.i_am_master": "true" },
     },
     { "action": "set_debug", "field": "join_wait_test", "value": "early_sync" },
+    { "action": "set_debug", "field": "join_wait_test", "value": "early_end" },
 ]
