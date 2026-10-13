@@ -24,7 +24,10 @@ static void capture_public_loot_frames(const char *game_name, const char *missio
 	waypoints.push_back(Objects[target].pos);
 	size_t waypoint = 0;
 	char error[256] = {};
-	const int frame_limit = 1000;
+	// Fixture-only completed semantic negative; the admitted loot route is unchanged
+	const char *no_collect_setting = std::getenv("DXX_PUBLIC_CAPTURE_LOOT_NO_COLLECT");
+	const bool no_collect = no_collect_setting && std::strcmp(no_collect_setting, "1") == 0;
+	const int frame_limit = no_collect ? 582 : 1000;
 	require(input_demo_state_trace_start("capture-observation.jsonl", "record", game_name, mission, level, Difficulty_level, "new_level", frame_limit, error, sizeof(error)), error);
 	int damage_frame = -1, death_frame = -1, retirement_frame = -1, loot_frame = -1, pickup_frame = -1, pickup_gain_frame = -1, pickup = -1, pickup_signature = -1;
 	json observations = json::array(), screenshot_frames = json::array();
@@ -46,7 +49,7 @@ static void capture_public_loot_frames(const char *game_name, const char *missio
 				public_capture_aim(robot.pos);
 				if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 98 / 100) Controls.fire_primary_state = 1;
 			}
-		} else if (pickup >= 0 && pickup_frame < 0) {
+		} else if (pickup >= 0 && pickup_frame < 0 && !no_collect) {
 			public_capture_hold(Objects[pickup].pos, 4);
 		}
 		do_weapon_n_item_stuff();
@@ -86,9 +89,24 @@ static void capture_public_loot_frames(const char *game_name, const char *missio
 	require(PHYSFS_close(outfile), "close classic callback sink");
 	outfile = nullptr;
 	Newdemo_state = ND_STATE_NORMAL;
-	const json report = { { "game", game_name }, { "scenario", "loot" }, { "start", position(start) }, { "target", target }, { "target_id", 20 }, { "target_signature", target_signature }, { "target_shields", target_shields }, { "target_score", target_score }, { "damage_frame", damage_frame }, { "action_frame", death_frame }, { "retirement_frame", retirement_frame }, { "loot_frame", loot_frame }, { "pickup", pickup }, { "pickup_signature", pickup_signature }, { "pickup_frame", pickup_frame }, { "pickup_gain_frame", pickup_gain_frame }, { "observations", observations }, { "screenshot_frames", screenshot_frames }, { "wall_contact_frames", 0 } };
+	json report = { { "game", game_name }, { "scenario", no_collect ? "generated-loot-no-collect" : "loot" }, { "start", position(start) }, { "target", target }, { "target_id", 20 }, { "target_signature", target_signature }, { "target_shields", target_shields }, { "target_score", target_score }, { "damage_frame", damage_frame }, { "action_frame", death_frame }, { "retirement_frame", retirement_frame }, { "loot_frame", loot_frame }, { "pickup", pickup }, { "pickup_signature", pickup_signature }, { "pickup_frame", pickup_frame }, { "pickup_gain_frame", pickup_gain_frame }, { "observations", observations }, { "screenshot_frames", screenshot_frames }, { "wall_contact_frames", 0 } };
+	if (no_collect) {
+		require(observations.size() == unsigned(frame_limit) && damage_frame >= 0 && death_frame > damage_frame &&
+		            loot_frame > death_frame && retirement_frame >= loot_frame && pickup >= 0 &&
+		            pickup_frame == -1 && pickup_gain_frame == -1 && !Player_is_dead &&
+		            Players[0].score == target_score && Players[0].laser_level == 0 &&
+		            Objects[pickup].type == OBJ_POWERUP && Objects[pickup].id == pickup_id &&
+		            Objects[pickup].signature == pickup_signature && !(Objects[pickup].flags & OF_SHOULD_BE_DEAD) &&
+		            Objects[pickup].lifeleft > 0,
+		        "released ordinary controls leave the real authored drop alive without inventory gain");
+		report["public_replay_admission"] = false;
+		report["frame_count"] = frame_limit;
+		report["no_collect_after_frame"] = loot_frame;
+		report["score"] = int(Players[0].score);
+		report["remaining_pickup"] = { { "slot", pickup }, { "type", int(Objects[pickup].type) }, { "id", int(Objects[pickup].id) }, { "signature", int(Objects[pickup].signature) }, { "flags", int(Objects[pickup].flags) }, { "lifeleft", int(Objects[pickup].lifeleft) }, { "position", position(Objects[pickup].pos) }, { "segment", int(Objects[pickup].segnum) } };
+	}
 	const auto text = report.dump(2) + "\n";
 	write_fixture("capture.json", bytes(text.begin(), text.end()));
-	require(pickup_frame >= 0 && Players[0].laser_level == 1 && !Player_is_dead, "ordinary controls collected the real authored laser drop");
-	std::puts("PASS: public robot loot capture");
+	if (!no_collect) require(pickup_frame >= 0 && Players[0].laser_level == 1 && !Player_is_dead, "ordinary controls collected the real authored laser drop");
+	std::puts(no_collect ? "PASS: generated live no-collect semantic negative" : "PASS: public robot loot capture");
 }

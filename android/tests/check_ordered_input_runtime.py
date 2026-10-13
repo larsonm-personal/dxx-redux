@@ -11,7 +11,7 @@ import compact_public_replay as compact
 import d1_replay_parity as parity
 import ordered_public_replay as ordered
 import public_secondary_replay as secondary
-from run_compact_public_replays import validate_assets
+from run_compact_public_replays import validate_assets, verify_actions
 
 
 def require(condition, message):
@@ -465,13 +465,153 @@ def verify_modal_orders(args, game, report):
                 report.append({"game": game, "backend": mode, "case": "modal-" + mutation, "status": "pass"})
 
 
+def verify_live_loot_no_collect(args, report):
+    """Complete a genuine altered-input capture before exercising the original loot gate."""
+    corpus = args.repo / "android/tests/fixtures/public_level_replays"
+    manifest = json.loads((corpus / "manifest.json").read_text())
+    case = next(case for case in manifest["cases"] if case["game"] == "d1" and case["scenario"] == "loot")
+    original_demo = corpus / case["demo"]
+    original_header, oracle = compact.validate(original_demo, corpus / case["oracle"])
+    original = list(parity.records(original_demo))
+    original_batches = ordered.validate(original_header, original[1:-2], original[-2])
+    scenario = "generated-loot-no-collect"
+    capture = args.output / ("d1-" + scenario + "-capture")
+    capture.mkdir()
+    env = isolated_native_env(capture)
+    env["DXX_PUBLIC_CAPTURE_LOOT_NO_COLLECT"] = "1"
+    with (capture / "capture.log").open("w") as log:
+        subprocess.run(
+            [str(args.capture_d1), "--public-level-replay", str(args.data_d1), "loot"],
+            cwd=capture,
+            env=env,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            check=True,
+            timeout=args.timeout,
+        )
+    live = json.loads((capture / "capture.json").read_text())
+    demo = capture / "capture.dximdemo"
+    rows = list(parity.records(demo))
+    header = rows[0]
+    batches = ordered.validate(header, rows[1:-2], rows[-2])
+    actions = case["actions"]
+    drop = actions["loot_frame"]
+    require(
+        live["scenario"] == scenario
+        and live["public_replay_admission"] is False
+        and live["frame_count"] == header["frame_count"] == original_header["frame_count"]
+        and live["no_collect_after_frame"] == drop,
+        "Generated no-collect capture must remain outside admission and finish the original horizon",
+    )
+    require(
+        all(live[key] == value for key, value in actions.items() if key not in ("pickup_frame", "pickup_gain_frame"))
+        and live["pickup_frame"] == live["pickup_gain_frame"] == -1
+        and live["score"] == actions["target_score"]
+        and all(observation["laser_level"] == 0 for observation in live["observations"]),
+        "Live no-collect capture must retain the original kill/drop with no inventory gain",
+    )
+    require(batches[: drop + 1] == original_batches[: drop + 1], "Loot input/RNG prefix changed before physical drop")
+    for batch in batches[drop + 1 : -1]:
+        require(
+            not any(batch["residual"]["s"].values())
+            and not any(batch["residual"]["p"].values())
+            and len(batch["ops"]) == 1
+            and batch["ops"][0]["k"] == "sample"
+            and not any(batch["ops"][0]["s"].values())
+            and not any(batch["ops"][0]["p"].values()),
+            "No-collect capture must release movement and fire after the actual physical drop",
+        )
+    own_hashes = compact._frame_hashes(demo, header, recorded=True)
+    require(
+        own_hashes[: drop + 2] == oracle["frame_sha256"][: drop + 2],
+        "Live no-collect state/RNG/diagnostics must match the unchanged oracle through physical drop",
+    )
+    failure = "The exact new laser pickup must spawn, persist, then retire at collection"
+    for mode in ("headless", "graphics"):
+        destination = args.output / ("d1-" + mode + "-" + scenario)
+        require(replay(args, "d1", mode, demo, destination) == 0, "Live no-collect replay did not complete naturally")
+        trace = destination / "state.jsonl.gz"
+        actual_path = destination / "result.json"
+        actual = json.loads(actual_path.read_text())
+        require(
+            own_hashes == compact._frame_hashes(trace, header),
+            "Live no-collect replay full state/RNG/diagnostics differ from its own live capture",
+        )
+        require(
+            parity.compare_rng(capture / "capture.dximdemo.rngtrace.jsonl", destination / "rng.jsonl")["status"]
+            == "pass"
+            and actual == rows[-1]["result"],
+            "Live no-collect replay SIM events or terminal result differ from its own live capture",
+        )
+        terminal_objects = terminal_world = None
+        worlds = []
+        for row in parity.world_states(trace, header, "d1"):
+            if row["type"] == "world_state":
+                worlds.append(dict(row["state"]))
+            elif row["phase"] == "terminal":
+                if row["type"] == "object_boundary":
+                    terminal_objects = row["slots"]
+                else:
+                    terminal_world = row["state"]
+        require(
+            terminal_objects is not None and terminal_world is not None, "No-collect replay lacks terminal evidence"
+        )
+        worlds.append(terminal_world)
+        pickup = terminal_objects[str(actions["pickup"])]
+        expected_pickup = live["remaining_pickup"]
+        require(
+            expected_pickup["slot"] == actions["pickup"]
+            and (pickup["type"], pickup["id"], pickup["signature"]) == (7, 3, actions["pickup_signature"])
+            and all(pickup[key] == expected_pickup[key] for key in ("type", "id", "signature", "flags", "lifeleft"))
+            and not pickup["flags"] & 2
+            and pickup["lifeleft"] > 0
+            and all(
+                world["players"][0]["laser_level"] == 0
+                and world["players"][0]["primary_weapon"] == 0
+                and world["players"][0]["primary_weapon_flags"] == 1
+                and world["players"][0]["score"] == actions["target_score"] * int(index > actions["action_frame"])
+                and world["death"]["active"] == 0
+                for index, world in enumerate(worlds)
+            ),
+            "Completed replay must preserve the exact live uncollected pickup and original score without inventory gain",
+        )
+        try:
+            verify_actions(case, demo, trace, actual_path)
+        except parity.EvidenceError as error:
+            require(
+                str(error) == failure,
+                "Unchanged loot gate failed before the missed-collection requirement: " + str(error),
+            )
+        else:
+            raise parity.EvidenceError("Unchanged corpus loot requirement accepted a completed no-collect replay")
+        report.append(
+            {
+                "game": "d1",
+                "backend": mode,
+                "case": scenario,
+                "status": "pass",
+                "public_replay_admission": False,
+                "frame_count": header["frame_count"],
+                "capture_revision": header["git_version"],
+                "release_after_frame": drop,
+                "pickup": actions["pickup"],
+                "pickup_signature": actions["pickup_signature"],
+                "own_live_oracle": "pass",
+                "semantic_gate_error": failure,
+            }
+        )
+
+
 def run(args):
     require(not args.output.exists(), "Use a new ordered-input output directory")
     args.output.mkdir(parents=True)
     report = []
-    for game in ("d1", "d2"):
+    for game in ("d1",) if args.loot_no_collect_only else ("d1", "d2"):
         data = getattr(args, "data_" + game)
         validate_assets(game, data)
+        if args.loot_no_collect_only:
+            verify_live_loot_no_collect(args, report)
+            continue
         if args.modal_only:
             verify_modal_orders(args, game, report)
             (args.output / "report.json").write_text(
@@ -613,20 +753,27 @@ def run(args):
                 "Native executable reported success without writing its terminal result",
             )
             report.append({"game": game, "backend": mode, "case": "unwritable-result", "status": "pass"})
+        if game == "d1":
+            verify_live_loot_no_collect(args, report)
         verify_secondary_orders(args, game, report)
         verify_modal_orders(args, game, report)
         (args.output / "report.json").write_text(
             json.dumps({"status": "running", "complete": False, "runs": report}, indent=2) + "\n"
         )
-    expected_runs = 38 if args.modal_only else 94
+    expected_runs = 2 if args.loot_no_collect_only else 38 if args.modal_only else 96
     require(len(report) == expected_runs, "Native qualification did not execute its complete expected matrix")
     (args.output / "report.json").write_text(
         json.dumps({"status": "pass", "complete": True, "expected_runs": expected_runs, "runs": report}, indent=2)
         + "\n"
     )
-    print(
-        "PASS: native ordered input, first-input RNG, flushes, tail, native rear/map/marker effects, pause/live-input isolation and causal negatives in D1/D2"
-    )
+    if args.loot_no_collect_only:
+        print(
+            "PASS: completed live D1 no-collect replay matches its own oracle and fails the unchanged collection gate on both backends"
+        )
+    elif args.modal_only:
+        print("PASS: native rear/map/marker effects and causal negatives in D1/D2 on both backends")
+    else:
+        print("PASS: native ordered input, RNG, flushes, tail, modal effects, isolation and causal negatives in D1/D2")
 
 
 def main():
@@ -634,8 +781,12 @@ def main():
     for role in ("capture", "headless", "graphics", "data"):
         for game in ("d1", "d2"):
             parser.add_argument("--" + role + "-" + game, type=Path, required=True)
-    parser.add_argument(
+    focus = parser.add_mutually_exclusive_group()
+    focus.add_argument(
         "--modal-only", action="store_true", help="Run only native rear-view/automap cases while debugging"
+    )
+    focus.add_argument(
+        "--loot-no-collect-only", action="store_true", help="Run only the completed live D1 loot semantic negative"
     )
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--output", type=Path, required=True)
