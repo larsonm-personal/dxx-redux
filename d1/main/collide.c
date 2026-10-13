@@ -1653,7 +1653,9 @@ void collide_player_and_weapon( object * player, object * weapon, vms_vector *co
 				#endif
 			}
 
+			fix player_old_shields = Players[Player_num].shields;
 			apply_damage_to_player( player, killer, damage, 1);
+			input_demo_trace_player_weapon_damage(player, weapon, player_old_shields, damage);
 
 		}
 	}

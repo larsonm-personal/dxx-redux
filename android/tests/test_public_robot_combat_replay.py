@@ -120,6 +120,7 @@ class CombatEvidenceTests(unittest.TestCase):
             {"type": "object_boundary", "phase": "terminal", "slots": self.objects[-1]},
         ]
         with (
+            mock.patch.object(combat.incoming, "verify", return_value={}),
             mock.patch.dict(combat.TARGETS, {"d1": self.profile}),
             mock.patch.object(
                 combat.parity, "object_states", return_value=iter({"objects": row} for row in self.objects[:-1])

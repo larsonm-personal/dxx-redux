@@ -2398,6 +2398,25 @@ static void input_demo_write_combat_observation(const char *json)
 		con_printf(CON_NORMAL, "Input demo combat observation failed: %s\n", error);
 }
 
+// This hook is called only after non-radius weapon collision damage is applied
+// Wall contact, robot bumps and explosions cannot produce this observation
+void input_demo_trace_player_weapon_damage(object *player, object *weapon, int old_shields, int damage)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !player || !weapon || player->id != Player_num ||
+		weapon->type != OBJ_WEAPON || Players[Player_num].shields >= old_shields ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+
+	snprintf(json, sizeof(json),
+		"{\"type\":\"player_weapon_damage\",\"version\":1,\"f\":%u,\"player\":%d,\"player_id\":%d,\"player_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(player - Objects), player->id, player->signature,
+		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+		old_shields, Players[Player_num].shields, damage);
+	input_demo_write_combat_observation(json);
+}
+
 void input_demo_trace_robot_damage(object *robot, object *weapon, int old_shields, int damage, int died)
 {
 	char json[1024];
