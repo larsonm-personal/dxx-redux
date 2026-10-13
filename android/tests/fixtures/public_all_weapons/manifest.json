@@ -1,0 +1,109 @@
+{
+    "android_device_run": false,
+    "asset_sha256": {
+        "d1": {
+            "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+            "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+        },
+        "d2": {
+            "d2demo.dem": "8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892",
+            "d2demo.ham": "747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6",
+            "d2demo.hog": "b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e",
+            "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
+        }
+    },
+    "capture_revision": "7145f682f4dd946ce0a8019d087eba6523794c16",
+    "capture_tree": "913dcf6dea58cc505b95e5faafc385301621d342",
+    "cases": [
+        {
+            "capture": "captures/d1-scourge.json",
+            "demo": "d1-scourge.dximdemo",
+            "game": "d1",
+            "grant": "d1_scourge",
+            "id": "d1-scourge",
+            "oracle": "d1-scourge.oracle.json",
+            "profile": "d1",
+            "scope": "native-compact-replay"
+        },
+        {
+            "capture": "captures/d1-bigred.json",
+            "demo": "d1-bigred.dximdemo",
+            "game": "d1",
+            "grant": "d1_bigred",
+            "id": "d1-bigred",
+            "oracle": "d1-bigred.oracle.json",
+            "profile": "d1",
+            "scope": "native-compact-replay"
+        },
+        {
+            "capture": "captures/d2-honestbob.json",
+            "demo": "d2-honestbob.dximdemo",
+            "game": "d2",
+            "grant": "d2_honestbob",
+            "id": "d2-honestbob",
+            "oracle": "d2-honestbob.oracle.json",
+            "profile": "d2",
+            "scope": "native-compact-replay"
+        },
+        {
+            "capture": "captures/imported-d1.json",
+            "game": "d2",
+            "grant": "d1_scourge",
+            "id": "imported-d1",
+            "profile": "d1",
+            "scope": "live-diagnostic-only"
+        }
+    ],
+    "files": {
+        "captures/d1-bigred.json": {
+            "bytes": 9348,
+            "sha256": "e6ceda5f21a67836cd0a6526956bac88ae710be422f65186a27d40d26a9b9d37"
+        },
+        "captures/d1-scourge.json": {
+            "bytes": 9105,
+            "sha256": "b79ab919ace5f67552160a465576639a1a69cad4ae02223342b08a17cad92847"
+        },
+        "captures/d2-honestbob.json": {
+            "bytes": 8272,
+            "sha256": "f6470e667673cc14d21163ac99d23c695d8e27181b2f0caa032a1058387fc817"
+        },
+        "captures/imported-d1.json": {
+            "bytes": 10309,
+            "sha256": "ffc0769840dea4b9d375b4452e117b3b48f182f6f136d6e4050a6146afad29c9"
+        },
+        "d1-bigred.dximdemo": {
+            "bytes": 13902,
+            "sha256": "bd3433a27615cc8035c8e2fedd8b514c1f9f0f08f1ff2405298a17a74c88a1e2"
+        },
+        "d1-bigred.oracle.json": {
+            "bytes": 4374,
+            "sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445"
+        },
+        "d1-scourge.dximdemo": {
+            "bytes": 14270,
+            "sha256": "b83076723a0542f2acd408e285b6716f4e634336869c665586f0c5295c88db2d"
+        },
+        "d1-scourge.oracle.json": {
+            "bytes": 4374,
+            "sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d"
+        },
+        "d2-honestbob.dximdemo": {
+            "bytes": 14187,
+            "sha256": "20fea419247626799b64338cb3ae04228bd55ee08548135f9cbe402ff0cf3f52"
+        },
+        "d2-honestbob.oracle.json": {
+            "bytes": 5217,
+            "sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd"
+        },
+        "qualification.json": {
+            "bytes": 128481,
+            "sha256": "51329d86ac132c0373799737825b4b165e4dd6c8fcbc56a5b7eb76e311c80280"
+        }
+    },
+    "max_evidence_bytes": 2097152,
+    "max_input_and_oracle_bytes": 100000,
+    "native_backends": ["headless", "graphics"],
+    "qualification_report": "qualification.json",
+    "retail_assets_playback": false,
+    "schema": "public-all-weapons-v1"
+}

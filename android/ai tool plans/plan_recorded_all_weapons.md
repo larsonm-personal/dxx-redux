@@ -18,3 +18,17 @@ Record native all-weapons actions as ordered semantic input, using the same live
 ## Limits
 
 Native D1 has no Gauss. Scourge is the D1 shareware baseline; bigred remains faithfully represented without changing native selection policy. D2 shareware honestbob retains its existing exclusions. Android source routing is covered, but no Android device fidelity claim without an on-device run. Original demos, native oracles and qualified historical binaries are immutable.
+
+## Qualification status
+
+Steps 1-5 are complete. Clean source `7145f682f4dd946ce0a8019d087eba6523794c16`
+(tree `913dcf6dea58cc505b95e5faafc385301621d342`) produced four live captures and
+22 passing native replay controls: six positive runs and sixteen causal negatives.
+All three compact demo/oracle pairs remain below 100000 bytes each. The isolated
+`android/tests/fixtures/public_all_weapons` corpus preserves the exact input,
+oracle, live inventory report and full qualification report bytes. Sixteen offline
+runner/admission tests pass, including missing, corrupted and falsely resealed
+evidence controls. No retail assets or Android device were tested.
+
+Step 6 remains open: independent final evidence/admission review, draft PR
+publication, and exact-head CI through terminal status. Do not merge.

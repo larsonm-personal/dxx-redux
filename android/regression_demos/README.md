@@ -272,6 +272,11 @@ is a separate diagnostic; synthetic retail-mask tests do not claim retail-asset
 playback. Android's menu still reaches these native handlers through its existing
 text-input route; native host tests do not establish Android device fidelity.
 
+The isolated [all-weapons evidence corpus](../tests/fixtures/public_all_weapons/README.md)
+preserves three native compact pairs, four live reports, and the complete 22-run
+qualification from clean source `7145f682f4dd946ce0a8019d087eba6523794c16`.
+Its manifest pins the exact source, public assets, and unchanged evidence hashes.
+
 Rear-view records the live engine's toggle/hold/release decisions, and playback
 applies them without querying wall time. Its initial view/cockpit baseline is
 explicit in new production captures. Automap records ordered lifecycle and visited

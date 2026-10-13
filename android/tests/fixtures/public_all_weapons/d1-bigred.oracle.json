@@ -1,0 +1,72 @@
+{
+    "compact_sha256": "bd3433a27615cc8035c8e2fedd8b514c1f9f0f08f1ff2405298a17a74c88a1e2",
+    "frame_sha256": [
+        "9e8c5aeb80c29dd3c60621bcfa1af5b4a672fe418713606b7185199f68d99a15",
+        "9ae2ea89dd2009a34cc7b3bc4c114b01c56e0f4f260db8782af54961302f8fb7",
+        "0199eeec15be6c0bbb12cd5f9e79ce591daac9cbde66fc36e3bc7e348db272b5",
+        "3718de09789d1628e276e2de5e5d1bf49bb4d0a45b0f6bc90382c06d0bbab492",
+        "d6d1a113055211e4984bef14f7005fba8d74742163e36e092f6e5adcc772cd7c",
+        "5ac3fb6d858b1976dab01b9d22579bdd61e643a32bdd5986f0dd0a9891cdc058",
+        "f6c2a274b1dd9951d526022392d59a03facb4139235ea2854924f9febd8405fa",
+        "ea7b1b01643266d29feae1fd66a0e3e78cad90c1a1972790ee4b80634fcd9da0",
+        "aac140b1625578312b8acc17d73c0033460618dc6f2dc38c4bee944b85a7b555",
+        "578aa612ea6bb97e7f790a194eb91fa55545a05afb415d955b29ff690c7dc710",
+        "9458f47e268d91c2e92fa7822c7272aeb1bb515a168c73d6df172f451962ac0a",
+        "f4f895a48f9de0fb2203d77422b1c4c17bc9edc306cb0c1138e4a484da2bebb0",
+        "71f1efc0f0eb200c3764db1461d7e931cd2d0f9e7c0dd54786bfdd5323ea3163",
+        "754dc2b316a4f568545e08c03ff6d52235971fe65c4cb5b6b3d80340dcb357f8",
+        "0e637212612da8b60bd6a0518f259505d0f6a0504634539fd3f55807a8d44a67",
+        "3bce51f1d372082305b8b8a1895aa87626a64136b133d49e00d26dced0be88ac",
+        "f56f37791d9ad9f6e8d382cc4d44a5f392b7c0f604b7a53cde54d2c3ea4129dc",
+        "5340242cbfd76b272cf0410cccb9586623c4929d08db372a6636f3acbfe044e9",
+        "0dbe1c2efdea4c01ceebb30799dc060ffd9b856ec2e4df54cddd5924437f14f4",
+        "0ec7ca2b1f901fbe297e236bd5422803c47189ab73b73577a38eb8508bcae0b2",
+        "4778c47e1ac4ee0145f9a5ef5e72f0f7ba3e4ceafa01b6ac0b7b71a573dd86de",
+        "d6babe67a5af3892bc605bb68be1da2a33cee6dd495b3c4f818ed7af163529af",
+        "2b6a84f9a34141b4e409710e9d6964b09ea4c13d891479f9806d3206f7711778",
+        "453e41745812f36bf467dccbdae5f9d81b9fcca6189dfc256cec324f916643f4",
+        "f56d9787a5775505e73d715a34bf541ac589b4de4a3319c42008eb4e4289260f",
+        "4bf1646c2f61bee1e5bc2822d01a8fd759050a74dee762da9ca10f97d11aeefb",
+        "008f50df2f52a63bd3b8a6481cbf6ec7d885fa9d1b55a31e11cb76ab6bc2794a",
+        "e8960bf1000133a3d77805ffdf307557f3d670c713e6ee4218f0c8c9c9989a7b",
+        "1126eaa7beea90827c9c62a534c24913d23d9bbd3ad3f876a76c3c331230e1a4",
+        "d04b0ef613fee02fe8f4dee41c03ca4ba7ba17a4b6e7764a457953f8cd9fb212",
+        "ab12e3f230ad8b241cf20e2a74887649aef63a7d93d409a8b366113bbebb914c",
+        "8e0e6ce39131d1268c4695807eb6d64c5a5a9f4c904c2011cb879ae0607518c5",
+        "259555fcef9989f2a450d33e8f02b0eecfd2f25d6e233520ae1a71050cadee8b",
+        "7ccc19558d479958f0e9a6cc86da1680085354683f9491e5dab9ec80b355afe5",
+        "b6d389019316ddbdc3fd54290900478a6463098c215cd7aaa59b4681161da555",
+        "a6870df806b4b2d6b574d7e2c30e3e2d04e0cbe44e6865c9d5e9165bdc308748",
+        "089779507faef55a6cc4cb4279b5df645e70a132920b8011bd89df1aeacb45c7",
+        "50ba8b1c97c84732323a9e4acb067be475306d05c32993c7ec91d2abd55dec5b",
+        "2c1f0f8915da9dbc650ebb11001a9c426b619397a4f3a9f32ceb724cfd34fca8",
+        "23e598d1d674b5662637cda29b4dcf65deb24f546464284460a593b06e0b7081"
+    ],
+    "frames": 40,
+    "full_recording_sha256": "205e359e3b49683b8f0f51d7a4a03795a677dfb0319aa3608278bd21d21b01ad",
+    "game": "d1",
+    "level": 1,
+    "mission": "d1",
+    "provenance": {
+        "asset_sha256": {
+            "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+            "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+        },
+        "capture_executable_sha256": "908611737fe28ce3f51c93f27336b438611212addc31672a9ee5ae454add6660",
+        "capture_source_sha256": "9774087116dd1403afc00b37bf5f5bd5a1ed3656f6785da09d4b736de9a450bb",
+        "source_revision": "7145f682f4dd946ce0a8019d087eba6523794c16"
+    },
+    "removed_telemetry": {
+        "compared_on_replay": false,
+        "counts": {
+            "input_view": 4,
+            "probe_weapon_life": 499
+        },
+        "events": 503,
+        "sha256": "c02499a790866c1f4a35b2f0ac0abad64f5ae3b4eaa278b141ec195efb3adc46"
+    },
+    "schema": 1,
+    "simulation_rng_events": 94,
+    "simulation_rng_sha256": "69d883c8ff72733a52cd30a2ab9cfda143ab2c6095c360dfe3782cb3ed406d89",
+    "terminal_sha256": "f7b7dca74cff6cdb06e2e82ecdc167ae4e7938987cb540593970569589e41e81"
+}

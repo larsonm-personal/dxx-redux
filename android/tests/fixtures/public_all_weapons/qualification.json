@@ -1,0 +1,4428 @@
+{
+  "android_device_run": false,
+  "artifacts": {
+    "d1-bigred-capture/capture-observation.jsonl.gz": {
+      "bytes": 138,
+      "sha256": "54f0e75c40fee04986c5c7679ed814e7a83691765935059be5ce6d68b2d741eb"
+    },
+    "d1-bigred-capture/capture.dximdemo": {
+      "bytes": 1365938,
+      "sha256": "205e359e3b49683b8f0f51d7a4a03795a677dfb0319aa3608278bd21d21b01ad"
+    },
+    "d1-bigred-capture/capture.dximdemo.rngtrace.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-capture/capture.json": {
+      "bytes": 9348,
+      "sha256": "e6ceda5f21a67836cd0a6526956bac88ae710be422f65186a27d40d26a9b9d37"
+    },
+    "d1-bigred-capture/capture.log": {
+      "bytes": 744,
+      "sha256": "1e80d4bed3192712442e25e1d381e08cfd7db3dca99378a70d034951f52f7268"
+    },
+    "d1-bigred-capture/demos/tmpdemo.dem": {
+      "bytes": 956,
+      "sha256": "cf6c142bea4d1b5d44bc522773884d47a52a86fa22b4b117d89f32183fe19a66"
+    },
+    "d1-bigred-capture/descent.cfg": {
+      "bytes": 525,
+      "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+    },
+    "d1-bigred-capture/public.plr": {
+      "bytes": 2262,
+      "sha256": "c77fc92b4b349f5d326e2fd50ddac7b4fdef0f132da1bcc70547028a36a7030e"
+    },
+    "d1-bigred-capture/public.plx": {
+      "bytes": 2111,
+      "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+    },
+    "d1-bigred-graphics-missing-final-grant.dximdemo": {
+      "bytes": 13792,
+      "sha256": "e8323cd7ea0b38d90f177ff218e12b0801e5bdde84dc51dba29f71e182139ece"
+    },
+    "d1-bigred-graphics-missing-final-grant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-graphics-missing-final-grant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-graphics-missing-final-grant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-graphics-missing-final-grant/result.json": {
+      "bytes": 1040,
+      "sha256": "369f733094d275bd19ebda83b354d8e25fdb851397bab36e6c6e9db149195b21"
+    },
+    "d1-bigred-graphics-missing-final-grant/result.json.failure_20261013_092641_227/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-graphics-missing-final-grant/result.json.failure_20261013_092641_227/failure.json": {
+      "bytes": 2506,
+      "sha256": "a8e5f54967fb95eebe880d7e74f10b68623f1debfcd73f6b5c37745b4e8175d2"
+    },
+    "d1-bigred-graphics-missing-final-grant/result.json.failure_20261013_092641_227/result.actual.json": {
+      "bytes": 1040,
+      "sha256": "369f733094d275bd19ebda83b354d8e25fdb851397bab36e6c6e9db149195b21"
+    },
+    "d1-bigred-graphics-missing-final-grant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-graphics-missing-final-grant/runner.log": {
+      "bytes": 5094,
+      "sha256": "48882e5eed853ca098a1ae4f08981177b49bdd7f9a55dcd448e30d7785e33bf6"
+    },
+    "d1-bigred-graphics-missing-final-grant/state.jsonl.gz": {
+      "bytes": 973216,
+      "sha256": "bd7592e1e1296ae4f0a53d48e555d59e486f323dae5ea8bd29a00aea675cd28f"
+    },
+    "d1-bigred-graphics-wrong-profile.dximdemo": {
+      "bytes": 13914,
+      "sha256": "249f79efe37629c734eca5539207b864de156bf792513aa25b56f22b1d17c543"
+    },
+    "d1-bigred-graphics-wrong-profile/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-graphics-wrong-profile/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-graphics-wrong-profile/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-graphics-wrong-profile/result.json.failure_20261013_092635_560/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-graphics-wrong-profile/result.json.failure_20261013_092635_560/failure.json": {
+      "bytes": 3373,
+      "sha256": "b6a03a627b68a242bf038c0df71b82fef16558bea4e583c9c902e465280cf386"
+    },
+    "d1-bigred-graphics-wrong-profile/runner.log": {
+      "bytes": 4522,
+      "sha256": "dca0703563b4bfc4bcaf651d66cce5d4a9990f613b77ac11000fa34038658b95"
+    },
+    "d1-bigred-graphics-wrong-variant.dximdemo": {
+      "bytes": 13906,
+      "sha256": "d8b7b1b4860036ba6b87b024e41dc45faaac7fc2744439d6c308942ab1863c13"
+    },
+    "d1-bigred-graphics-wrong-variant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-graphics-wrong-variant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-graphics-wrong-variant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-graphics-wrong-variant/result.json": {
+      "bytes": 1041,
+      "sha256": "e3618b0ca19de81311503df6f573ba9be63a5dc2cbb799ab6b6b10bc77ea9370"
+    },
+    "d1-bigred-graphics-wrong-variant/result.json.failure_20261013_092638_223/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-graphics-wrong-variant/result.json.failure_20261013_092638_223/failure.json": {
+      "bytes": 2439,
+      "sha256": "e6a40709c34d2b1995bfd5f650017371707a7b3f95d87086a57b1342a3fbc4a1"
+    },
+    "d1-bigred-graphics-wrong-variant/result.json.failure_20261013_092638_223/result.actual.json": {
+      "bytes": 1041,
+      "sha256": "e3618b0ca19de81311503df6f573ba9be63a5dc2cbb799ab6b6b10bc77ea9370"
+    },
+    "d1-bigred-graphics-wrong-variant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-graphics-wrong-variant/runner.log": {
+      "bytes": 4983,
+      "sha256": "b4336564c40074ca02b97a0ca586faea3daca00da7f338137362f5ace86791b8"
+    },
+    "d1-bigred-graphics-wrong-variant/state.jsonl.gz": {
+      "bytes": 972887,
+      "sha256": "5b22a0d3ef2ac197c9770f20cf235ddbf196cfcc842ed0108efc45fed238e592"
+    },
+    "d1-bigred-graphics/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-graphics/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-graphics/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-graphics/result.json": {
+      "bytes": 1041,
+      "sha256": "6fe67eedb3aa67361b17c82bdcca659081e436847e1d90137db59fe0f27f45d8"
+    },
+    "d1-bigred-graphics/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-graphics/runner.log": {
+      "bytes": 3752,
+      "sha256": "7f45a6bc57c27135c5c241e82a79af97ce850e330e248b7dd4b7d8a4fd72c6e2"
+    },
+    "d1-bigred-graphics/state.jsonl.gz": {
+      "bytes": 973208,
+      "sha256": "cb414e95e9aa83f7d6d922d251a442d9970f3687f44365f6c63ed55a9f661ecc"
+    },
+    "d1-bigred-headless-missing-final-grant.dximdemo": {
+      "bytes": 13792,
+      "sha256": "e8323cd7ea0b38d90f177ff218e12b0801e5bdde84dc51dba29f71e182139ece"
+    },
+    "d1-bigred-headless-missing-final-grant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-headless-missing-final-grant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-headless-missing-final-grant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-headless-missing-final-grant/result.json": {
+      "bytes": 1040,
+      "sha256": "369f733094d275bd19ebda83b354d8e25fdb851397bab36e6c6e9db149195b21"
+    },
+    "d1-bigred-headless-missing-final-grant/result.json.failure_20261013_092631_470/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-headless-missing-final-grant/result.json.failure_20261013_092631_470/failure.json": {
+      "bytes": 2338,
+      "sha256": "95e23c493e1748f1801c86eb57b5d965fdbee68375c1dd2eb076371a393f9952"
+    },
+    "d1-bigred-headless-missing-final-grant/result.json.failure_20261013_092631_470/result.actual.json": {
+      "bytes": 1040,
+      "sha256": "369f733094d275bd19ebda83b354d8e25fdb851397bab36e6c6e9db149195b21"
+    },
+    "d1-bigred-headless-missing-final-grant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-headless-missing-final-grant/runner.log": {
+      "bytes": 4714,
+      "sha256": "37692c7e8e46d6320464aba65491e23174bf2f563bbf470f1054562288224312"
+    },
+    "d1-bigred-headless-missing-final-grant/state.jsonl.gz": {
+      "bytes": 973216,
+      "sha256": "bd7592e1e1296ae4f0a53d48e555d59e486f323dae5ea8bd29a00aea675cd28f"
+    },
+    "d1-bigred-headless-wrong-profile.dximdemo": {
+      "bytes": 13914,
+      "sha256": "249f79efe37629c734eca5539207b864de156bf792513aa25b56f22b1d17c543"
+    },
+    "d1-bigred-headless-wrong-profile/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-headless-wrong-profile/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-headless-wrong-profile/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-headless-wrong-profile/result.json.failure_20261013_092626_524/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-headless-wrong-profile/result.json.failure_20261013_092626_524/failure.json": {
+      "bytes": 2987,
+      "sha256": "3e27bd14a901a08d060d6ce1d323b9605e8890fbcf04a3ba5da518e2fbc6f12d"
+    },
+    "d1-bigred-headless-wrong-profile/runner.log": {
+      "bytes": 3543,
+      "sha256": "1c1bb83ab3dc865e89da54d0dd3ca7253f31246a5c06e6980c74bdf7282f5e2b"
+    },
+    "d1-bigred-headless-wrong-variant.dximdemo": {
+      "bytes": 13906,
+      "sha256": "d8b7b1b4860036ba6b87b024e41dc45faaac7fc2744439d6c308942ab1863c13"
+    },
+    "d1-bigred-headless-wrong-variant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-headless-wrong-variant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-headless-wrong-variant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-headless-wrong-variant/result.json": {
+      "bytes": 1041,
+      "sha256": "e3618b0ca19de81311503df6f573ba9be63a5dc2cbb799ab6b6b10bc77ea9370"
+    },
+    "d1-bigred-headless-wrong-variant/result.json.failure_20261013_092628_922/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-bigred-headless-wrong-variant/result.json.failure_20261013_092628_922/failure.json": {
+      "bytes": 2284,
+      "sha256": "496484427916530504e53dba55bc4d030f4f76dab2ece4d84d63212490262e42"
+    },
+    "d1-bigred-headless-wrong-variant/result.json.failure_20261013_092628_922/result.actual.json": {
+      "bytes": 1041,
+      "sha256": "e3618b0ca19de81311503df6f573ba9be63a5dc2cbb799ab6b6b10bc77ea9370"
+    },
+    "d1-bigred-headless-wrong-variant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-headless-wrong-variant/runner.log": {
+      "bytes": 4616,
+      "sha256": "d922be9354947cfa23d9ab7a848d63a3a57bacbc7964611fe5045f7b1bff3da9"
+    },
+    "d1-bigred-headless-wrong-variant/state.jsonl.gz": {
+      "bytes": 972887,
+      "sha256": "5b22a0d3ef2ac197c9770f20cf235ddbf196cfcc842ed0108efc45fed238e592"
+    },
+    "d1-bigred-headless/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-bigred-headless/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-bigred-headless/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-bigred-headless/result.json": {
+      "bytes": 1041,
+      "sha256": "6fe67eedb3aa67361b17c82bdcca659081e436847e1d90137db59fe0f27f45d8"
+    },
+    "d1-bigred-headless/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "a0abc95879d5b9bef1fc1a99aa702a33eeebffdda123a9e85b029e051965a8f2"
+    },
+    "d1-bigred-headless/runner.log": {
+      "bytes": 3421,
+      "sha256": "35599bfc8b3122158b4cc981d95957f592a66db0a6ea2b0642fe57c260f34502"
+    },
+    "d1-bigred-headless/state.jsonl.gz": {
+      "bytes": 973208,
+      "sha256": "cb414e95e9aa83f7d6d922d251a442d9970f3687f44365f6c63ed55a9f661ecc"
+    },
+    "d1-bigred.dximdemo": {
+      "bytes": 13902,
+      "sha256": "bd3433a27615cc8035c8e2fedd8b514c1f9f0f08f1ff2405298a17a74c88a1e2"
+    },
+    "d1-bigred.oracle.json": {
+      "bytes": 4374,
+      "sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445"
+    },
+    "d1-scourge-capture/capture-observation.jsonl.gz": {
+      "bytes": 138,
+      "sha256": "54f0e75c40fee04986c5c7679ed814e7a83691765935059be5ce6d68b2d741eb"
+    },
+    "d1-scourge-capture/capture.dximdemo": {
+      "bytes": 1354617,
+      "sha256": "0cf1093f379fcebe7cf925301668c06c450789b87fcac3dca17ce06da6cefb24"
+    },
+    "d1-scourge-capture/capture.dximdemo.rngtrace.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-capture/capture.json": {
+      "bytes": 9105,
+      "sha256": "b79ab919ace5f67552160a465576639a1a69cad4ae02223342b08a17cad92847"
+    },
+    "d1-scourge-capture/capture.log": {
+      "bytes": 667,
+      "sha256": "57f01b528246de1b9cf92f557c102fb71e8fcef41e3941388ba6871a11aa31bf"
+    },
+    "d1-scourge-capture/demos/tmpdemo.dem": {
+      "bytes": 805,
+      "sha256": "163ea3eb91f372c300dd8f8108a326c3f4a6fa47c00939adc2a16f36973d2631"
+    },
+    "d1-scourge-capture/descent.cfg": {
+      "bytes": 525,
+      "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+    },
+    "d1-scourge-capture/public.plr": {
+      "bytes": 2262,
+      "sha256": "c77fc92b4b349f5d326e2fd50ddac7b4fdef0f132da1bcc70547028a36a7030e"
+    },
+    "d1-scourge-capture/public.plx": {
+      "bytes": 2111,
+      "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+    },
+    "d1-scourge-graphics-missing-final-grant.dximdemo": {
+      "bytes": 14159,
+      "sha256": "2ce0e0a06fff308b07ba305e19eee27c27a9950e1393af095a683c7f91307e2d"
+    },
+    "d1-scourge-graphics-missing-final-grant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-graphics-missing-final-grant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-graphics-missing-final-grant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-graphics-missing-final-grant/result.json": {
+      "bytes": 1033,
+      "sha256": "4c5d53e8a2fc7c64bbdc3c2b8b99a832f3f99f664f582f45759ecb639fb63888"
+    },
+    "d1-scourge-graphics-missing-final-grant/result.json.failure_20261013_092621_844/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-graphics-missing-final-grant/result.json.failure_20261013_092621_844/failure.json": {
+      "bytes": 2461,
+      "sha256": "fa6c58b342be62a5340e890ee6285bedd306e691b39180197edb15672eba601b"
+    },
+    "d1-scourge-graphics-missing-final-grant/result.json.failure_20261013_092621_844/result.actual.json": {
+      "bytes": 1033,
+      "sha256": "4c5d53e8a2fc7c64bbdc3c2b8b99a832f3f99f664f582f45759ecb639fb63888"
+    },
+    "d1-scourge-graphics-missing-final-grant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-graphics-missing-final-grant/runner.log": {
+      "bytes": 4980,
+      "sha256": "596bbd08f47d555813d758bfee32e8df1cdaf43c320e07fb1c3ae3182c37b031"
+    },
+    "d1-scourge-graphics-missing-final-grant/state.jsonl.gz": {
+      "bytes": 955781,
+      "sha256": "e41c0287bd4882e6169dcfc8665e62c6eba9a1da216c303f7c5b4805e1d17385"
+    },
+    "d1-scourge-graphics-wrong-profile.dximdemo": {
+      "bytes": 14278,
+      "sha256": "4b759c6e2758d6735fe677229557df3b4ce5c0d6d91316482d7509671ed75a80"
+    },
+    "d1-scourge-graphics-wrong-profile/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-graphics-wrong-profile/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-graphics-wrong-profile/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-graphics-wrong-profile/result.json.failure_20261013_092616_441/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-graphics-wrong-profile/result.json.failure_20261013_092616_441/failure.json": {
+      "bytes": 3393,
+      "sha256": "ae4d1a43210c6a3c92ab4bfb931c2ad29fe05630dcaebeab1162f517bc3bf6df"
+    },
+    "d1-scourge-graphics-wrong-profile/runner.log": {
+      "bytes": 4544,
+      "sha256": "934b730c6eeb6fad174cc0be2e122a23d47b9e8c9778f649895d18918c051802"
+    },
+    "d1-scourge-graphics-wrong-variant.dximdemo": {
+      "bytes": 14266,
+      "sha256": "46e5bf2ca1fd5cc4049409f8879340708e4a2ee20fb063a3e8be996dd4519b6a"
+    },
+    "d1-scourge-graphics-wrong-variant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-graphics-wrong-variant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-graphics-wrong-variant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-graphics-wrong-variant/result.json": {
+      "bytes": 1033,
+      "sha256": "9607a04906f39436010a3b05064f0f04610dd9543ab7125902d5e927c9a3b611"
+    },
+    "d1-scourge-graphics-wrong-variant/result.json.failure_20261013_092618_985/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-graphics-wrong-variant/result.json.failure_20261013_092618_985/failure.json": {
+      "bytes": 2452,
+      "sha256": "ea44630fefc20f38a9e3d2a0f11f16e041935a55e82ccf9b6375636f5e584e33"
+    },
+    "d1-scourge-graphics-wrong-variant/result.json.failure_20261013_092618_985/result.actual.json": {
+      "bytes": 1033,
+      "sha256": "9607a04906f39436010a3b05064f0f04610dd9543ab7125902d5e927c9a3b611"
+    },
+    "d1-scourge-graphics-wrong-variant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-graphics-wrong-variant/runner.log": {
+      "bytes": 4949,
+      "sha256": "c115c04aedf5b2ffd62650e71924bb0beb4daedc4d7dc0f5aa8c079676b10283"
+    },
+    "d1-scourge-graphics-wrong-variant/state.jsonl.gz": {
+      "bytes": 955997,
+      "sha256": "867ab05d78136b1ba2c0d9b2b33c69b9a976f15b346b4547b9aeb20698585345"
+    },
+    "d1-scourge-graphics/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-graphics/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-graphics/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-graphics/result.json": {
+      "bytes": 1033,
+      "sha256": "8673dead9a54cc4d26cfd7fed1200d774774068a40bcc17e655a2683345dfe1c"
+    },
+    "d1-scourge-graphics/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-graphics/runner.log": {
+      "bytes": 3692,
+      "sha256": "20ff1fcd2bea3fdc55b781993cb5c120f8246c9afe179586051632627204cc72"
+    },
+    "d1-scourge-graphics/state.jsonl.gz": {
+      "bytes": 955761,
+      "sha256": "4e0e9ade0e223dd4fa60bb67447ca91f7fb0cc28d5eedd0a5bd64a3838c38b2f"
+    },
+    "d1-scourge-headless-missing-final-grant.dximdemo": {
+      "bytes": 14159,
+      "sha256": "2ce0e0a06fff308b07ba305e19eee27c27a9950e1393af095a683c7f91307e2d"
+    },
+    "d1-scourge-headless-missing-final-grant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-headless-missing-final-grant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-headless-missing-final-grant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-headless-missing-final-grant/result.json": {
+      "bytes": 1033,
+      "sha256": "4c5d53e8a2fc7c64bbdc3c2b8b99a832f3f99f664f582f45759ecb639fb63888"
+    },
+    "d1-scourge-headless-missing-final-grant/result.json.failure_20261013_092612_425/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-headless-missing-final-grant/result.json.failure_20261013_092612_425/failure.json": {
+      "bytes": 2291,
+      "sha256": "81674d257b9197105241ffbb0cf80da51326902413c91e320c68e6d63e130d2e"
+    },
+    "d1-scourge-headless-missing-final-grant/result.json.failure_20261013_092612_425/result.actual.json": {
+      "bytes": 1033,
+      "sha256": "4c5d53e8a2fc7c64bbdc3c2b8b99a832f3f99f664f582f45759ecb639fb63888"
+    },
+    "d1-scourge-headless-missing-final-grant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-headless-missing-final-grant/runner.log": {
+      "bytes": 4598,
+      "sha256": "a393291c86672346fe6ddaaf36de958cebea7589be3fda51e890d710fea48d3a"
+    },
+    "d1-scourge-headless-missing-final-grant/state.jsonl.gz": {
+      "bytes": 955781,
+      "sha256": "e41c0287bd4882e6169dcfc8665e62c6eba9a1da216c303f7c5b4805e1d17385"
+    },
+    "d1-scourge-headless-wrong-profile.dximdemo": {
+      "bytes": 14278,
+      "sha256": "4b759c6e2758d6735fe677229557df3b4ce5c0d6d91316482d7509671ed75a80"
+    },
+    "d1-scourge-headless-wrong-profile/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-headless-wrong-profile/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-headless-wrong-profile/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-headless-wrong-profile/result.json.failure_20261013_092607_561/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-headless-wrong-profile/result.json.failure_20261013_092607_561/failure.json": {
+      "bytes": 3003,
+      "sha256": "639d8ed361f4d46bc4505605f3df9d56bfdefbc438194bed8ea75bc5bfb003c9"
+    },
+    "d1-scourge-headless-wrong-profile/runner.log": {
+      "bytes": 3559,
+      "sha256": "e9ec113bf621e54427f8ba9becb9dd97b2caf35c306d912ab97ce8d0a426c9ed"
+    },
+    "d1-scourge-headless-wrong-variant.dximdemo": {
+      "bytes": 14266,
+      "sha256": "46e5bf2ca1fd5cc4049409f8879340708e4a2ee20fb063a3e8be996dd4519b6a"
+    },
+    "d1-scourge-headless-wrong-variant/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-headless-wrong-variant/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-headless-wrong-variant/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-headless-wrong-variant/result.json": {
+      "bytes": 1033,
+      "sha256": "9607a04906f39436010a3b05064f0f04610dd9543ab7125902d5e927c9a3b611"
+    },
+    "d1-scourge-headless-wrong-variant/result.json.failure_20261013_092609_914/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d1-scourge-headless-wrong-variant/result.json.failure_20261013_092609_914/failure.json": {
+      "bytes": 2294,
+      "sha256": "e309dbbcb534786f1c0e41800ef92a7bc26d398f0ef1549196c3a765f3f76814"
+    },
+    "d1-scourge-headless-wrong-variant/result.json.failure_20261013_092609_914/result.actual.json": {
+      "bytes": 1033,
+      "sha256": "9607a04906f39436010a3b05064f0f04610dd9543ab7125902d5e927c9a3b611"
+    },
+    "d1-scourge-headless-wrong-variant/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-headless-wrong-variant/runner.log": {
+      "bytes": 4579,
+      "sha256": "47305c74fa7325697cacf394ae49c11e147235dd3e912ea9520394901d88d676"
+    },
+    "d1-scourge-headless-wrong-variant/state.jsonl.gz": {
+      "bytes": 955997,
+      "sha256": "867ab05d78136b1ba2c0d9b2b33c69b9a976f15b346b4547b9aeb20698585345"
+    },
+    "d1-scourge-headless/inherited-home/.d1x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d1-scourge-headless/inherited-home/.d1x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d1-scourge-headless/inherited-home/.d1x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d1-scourge-headless/result.json": {
+      "bytes": 1033,
+      "sha256": "8673dead9a54cc4d26cfd7fed1200d774774068a40bcc17e655a2683345dfe1c"
+    },
+    "d1-scourge-headless/rng.jsonl": {
+      "bytes": 26542,
+      "sha256": "73b1b0fb95c45b90e9e4b665717ffb8487f58c803150613a4e572667cf08f122"
+    },
+    "d1-scourge-headless/runner.log": {
+      "bytes": 3359,
+      "sha256": "cc2ea8ed3ad452fa461819357ac91027206904cd1724dcc6d12e935025f52ec3"
+    },
+    "d1-scourge-headless/state.jsonl.gz": {
+      "bytes": 955761,
+      "sha256": "4e0e9ade0e223dd4fa60bb67447ca91f7fb0cc28d5eedd0a5bd64a3838c38b2f"
+    },
+    "d1-scourge.dximdemo": {
+      "bytes": 14270,
+      "sha256": "b83076723a0542f2acd408e285b6716f4e634336869c665586f0c5295c88db2d"
+    },
+    "d1-scourge.oracle.json": {
+      "bytes": 4374,
+      "sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d"
+    },
+    "d2-honestbob-capture/capture-observation.jsonl.gz": {
+      "bytes": 141,
+      "sha256": "61eb8564aabef6672a9f42ea1c076c48ee3d7da11c88aeabb0ca10138585e4e7"
+    },
+    "d2-honestbob-capture/capture.dximdemo": {
+      "bytes": 1563861,
+      "sha256": "dbfc1de05d8f83be4776dd9fc90f4ef6535520bd243bab600cbfd9dbeeab42e6"
+    },
+    "d2-honestbob-capture/capture.dximdemo.rngtrace.jsonl": {
+      "bytes": 806524,
+      "sha256": "185be031a67919bc0f206d2e212cce0187b2f83741442f543a80da46dfa404a5"
+    },
+    "d2-honestbob-capture/capture.json": {
+      "bytes": 8272,
+      "sha256": "f6470e667673cc14d21163ac99d23c695d8e27181b2f0caa032a1058387fc817"
+    },
+    "d2-honestbob-capture/capture.log": {
+      "bytes": 1150,
+      "sha256": "8bdf17b07a83916d3916aee048b7017ba80488d9606ad3732f2eb0cd17521ae9"
+    },
+    "d2-honestbob-capture/demos/tmpdemo.dem": {
+      "bytes": 1895,
+      "sha256": "9fcf908c8249290940d1c5250af382ae154e27196f26fcb1d01370975ebc3813"
+    },
+    "d2-honestbob-capture/descent.cfg": {
+      "bytes": 557,
+      "sha256": "f7dfed8b403c62c5343d508b26995c4e5ea35e6c196ef1ac852946a700e59db3"
+    },
+    "d2-honestbob-capture/public.plr": {
+      "bytes": 729,
+      "sha256": "c7027afec8381eb8a24b7b08fc1c3096d875ea2a4b87eaf0d45a236ee891910a"
+    },
+    "d2-honestbob-capture/public.plx": {
+      "bytes": 2103,
+      "sha256": "9dad116030deb27f3dc69809e5711a201a509042bb64c5d4d2367648f6d079d1"
+    },
+    "d2-honestbob-graphics-missing-final-grant.dximdemo": {
+      "bytes": 14074,
+      "sha256": "bd453bcbc86b5eacdcdc5e3ca4e2d677f2f87ddd5a920da6bbdf6717345f33cb"
+    },
+    "d2-honestbob-graphics-missing-final-grant/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-graphics-missing-final-grant/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-graphics-missing-final-grant/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-graphics-missing-final-grant/result.json": {
+      "bytes": 1055,
+      "sha256": "9905389ed8fed97a38c4187eabb9a0ae67f2817478dafa4fb1d993304e1bdc77"
+    },
+    "d2-honestbob-graphics-missing-final-grant/result.json.failure_20261013_092714_088/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d2-honestbob-graphics-missing-final-grant/result.json.failure_20261013_092714_088/failure.json": {
+      "bytes": 2554,
+      "sha256": "61e15edce329f6bbbc5ed13db00c6d97626d5e2f38bb897b9e1a2cf44f5538d3"
+    },
+    "d2-honestbob-graphics-missing-final-grant/result.json.failure_20261013_092714_088/result.actual.json": {
+      "bytes": 1055,
+      "sha256": "9905389ed8fed97a38c4187eabb9a0ae67f2817478dafa4fb1d993304e1bdc77"
+    },
+    "d2-honestbob-graphics-missing-final-grant/rng.jsonl": {
+      "bytes": 806524,
+      "sha256": "185be031a67919bc0f206d2e212cce0187b2f83741442f543a80da46dfa404a5"
+    },
+    "d2-honestbob-graphics-missing-final-grant/runner.log": {
+      "bytes": 6057,
+      "sha256": "aa35eb4916c1501e43fd81b2d45c626c5aeae8ecb36735f47e37a08e11b4199a"
+    },
+    "d2-honestbob-graphics-missing-final-grant/state.jsonl.gz": {
+      "bytes": 2464348,
+      "sha256": "da8d6a25f33e3e913a54b7ea6bdce5b750119b8b66f7cb5bb16d4d0367a34734"
+    },
+    "d2-honestbob-graphics-wrong-profile.dximdemo": {
+      "bytes": 14179,
+      "sha256": "136e4550eccc03a969189acc894a4c45edc6d199a244b6d853720687c97297c9"
+    },
+    "d2-honestbob-graphics-wrong-profile/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-graphics-wrong-profile/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-graphics-wrong-profile/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-graphics-wrong-profile/result.json.failure_20261013_092705_752/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d2-honestbob-graphics-wrong-profile/result.json.failure_20261013_092705_752/failure.json": {
+      "bytes": 3433,
+      "sha256": "1a795d1e9defce77b6bf9b200e9b4211a4bd7f804a71c8db4ef7073091d2d136"
+    },
+    "d2-honestbob-graphics-wrong-profile/rng.jsonl": {
+      "bytes": 110877,
+      "sha256": "fe4b9c4c7cc45f8a4e91c7a9c0a4ca1cc45d5a6fa47b962e2d4584b4f785a28a"
+    },
+    "d2-honestbob-graphics-wrong-profile/runner.log": {
+      "bytes": 5274,
+      "sha256": "7453ee13caa0395fbbd4003cabdc29cbb8219ed21ea839dcbd864ad0ae533d67"
+    },
+    "d2-honestbob-graphics-wrong-profile/state.jsonl.gz": {
+      "bytes": 220548,
+      "sha256": "7ff8dcb9e51b3eca15dc719570461daf110ad8b3a5b004458cdf8c21c34a18fd"
+    },
+    "d2-honestbob-graphics/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-graphics/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-graphics/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-graphics/result.json": {
+      "bytes": 1056,
+      "sha256": "37dd31fa73a08b5a5f513d8193be852884050bef4fd97e22843c23fd28258168"
+    },
+    "d2-honestbob-graphics/rng.jsonl": {
+      "bytes": 806524,
+      "sha256": "185be031a67919bc0f206d2e212cce0187b2f83741442f543a80da46dfa404a5"
+    },
+    "d2-honestbob-graphics/runner.log": {
+      "bytes": 4705,
+      "sha256": "f9ea3907b62b691449743bb71e477e1fe99438de99db5367fecb67dfa3f4485e"
+    },
+    "d2-honestbob-graphics/state.jsonl.gz": {
+      "bytes": 2464344,
+      "sha256": "ac865608d8a2d0dbeef7d26a2c977ae1bcc56c9dd5b543c58c708aed39c1dabb"
+    },
+    "d2-honestbob-headless-missing-final-grant.dximdemo": {
+      "bytes": 14074,
+      "sha256": "bd453bcbc86b5eacdcdc5e3ca4e2d677f2f87ddd5a920da6bbdf6717345f33cb"
+    },
+    "d2-honestbob-headless-missing-final-grant/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-headless-missing-final-grant/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-headless-missing-final-grant/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-headless-missing-final-grant/result.json": {
+      "bytes": 1055,
+      "sha256": "9905389ed8fed97a38c4187eabb9a0ae67f2817478dafa4fb1d993304e1bdc77"
+    },
+    "d2-honestbob-headless-missing-final-grant/result.json.failure_20261013_092649_018/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d2-honestbob-headless-missing-final-grant/result.json.failure_20261013_092649_018/failure.json": {
+      "bytes": 2379,
+      "sha256": "de564b5320281315355540f7e343f6f5755cbe04f8ec19dc5f3641395fc07b25"
+    },
+    "d2-honestbob-headless-missing-final-grant/result.json.failure_20261013_092649_018/result.actual.json": {
+      "bytes": 1055,
+      "sha256": "9905389ed8fed97a38c4187eabb9a0ae67f2817478dafa4fb1d993304e1bdc77"
+    },
+    "d2-honestbob-headless-missing-final-grant/rng.jsonl": {
+      "bytes": 806524,
+      "sha256": "185be031a67919bc0f206d2e212cce0187b2f83741442f543a80da46dfa404a5"
+    },
+    "d2-honestbob-headless-missing-final-grant/runner.log": {
+      "bytes": 5620,
+      "sha256": "e66cfdb290f322371081dd1305246e2c86023394f3e52686e4e5a4bab3ec0f11"
+    },
+    "d2-honestbob-headless-missing-final-grant/state.jsonl.gz": {
+      "bytes": 2464348,
+      "sha256": "da8d6a25f33e3e913a54b7ea6bdce5b750119b8b66f7cb5bb16d4d0367a34734"
+    },
+    "d2-honestbob-headless-wrong-profile.dximdemo": {
+      "bytes": 14179,
+      "sha256": "136e4550eccc03a969189acc894a4c45edc6d199a244b6d853720687c97297c9"
+    },
+    "d2-honestbob-headless-wrong-profile/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-headless-wrong-profile/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-headless-wrong-profile/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-headless-wrong-profile/result.json.failure_20261013_092646_421/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "d2-honestbob-headless-wrong-profile/result.json.failure_20261013_092646_421/failure.json": {
+      "bytes": 3033,
+      "sha256": "4d86b1deba282548d6d59797691411749a429f069a59ea90e6dfaba9f0ebb74c"
+    },
+    "d2-honestbob-headless-wrong-profile/rng.jsonl": {
+      "bytes": 110877,
+      "sha256": "fe4b9c4c7cc45f8a4e91c7a9c0a4ca1cc45d5a6fa47b962e2d4584b4f785a28a"
+    },
+    "d2-honestbob-headless-wrong-profile/runner.log": {
+      "bytes": 4388,
+      "sha256": "d36e3aaf5c1029c2c17968106193cd1a9828b261b9b502ca872fd7c993d33d79"
+    },
+    "d2-honestbob-headless-wrong-profile/state.jsonl.gz": {
+      "bytes": 220548,
+      "sha256": "7ff8dcb9e51b3eca15dc719570461daf110ad8b3a5b004458cdf8c21c34a18fd"
+    },
+    "d2-honestbob-headless/inherited-home/.d2x-redux/.plr": {
+      "bytes": 41,
+      "sha256": "23ec2f60b6dce23a42b7c6642a261799c65776de7c221dd9639178f91ca05988"
+    },
+    "d2-honestbob-headless/inherited-home/.d2x-redux/.plx": {
+      "bytes": 26,
+      "sha256": "454b2ec8c3aaeae0684e6aaa36945a14fe2820cea859ef27860fb02958bc8ccf"
+    },
+    "d2-honestbob-headless/inherited-home/.d2x-redux/descent.cfg": {
+      "bytes": 33,
+      "sha256": "c0127b7ede932ac041687d73582a059f646ad4f748e3c6e369edacddef5bd61e"
+    },
+    "d2-honestbob-headless/result.json": {
+      "bytes": 1056,
+      "sha256": "37dd31fa73a08b5a5f513d8193be852884050bef4fd97e22843c23fd28258168"
+    },
+    "d2-honestbob-headless/rng.jsonl": {
+      "bytes": 806524,
+      "sha256": "185be031a67919bc0f206d2e212cce0187b2f83741442f543a80da46dfa404a5"
+    },
+    "d2-honestbob-headless/runner.log": {
+      "bytes": 4318,
+      "sha256": "16587ba324a3ef8696b2e98d998b7cba0b5aceeb562fb4e9226d705fcf8f6ca7"
+    },
+    "d2-honestbob-headless/state.jsonl.gz": {
+      "bytes": 2464344,
+      "sha256": "ac865608d8a2d0dbeef7d26a2c977ae1bcc56c9dd5b543c58c708aed39c1dabb"
+    },
+    "d2-honestbob.dximdemo": {
+      "bytes": 14187,
+      "sha256": "20fea419247626799b64338cb3ae04228bd55ee08548135f9cbe402ff0cf3f52"
+    },
+    "d2-honestbob.oracle.json": {
+      "bytes": 5217,
+      "sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd"
+    },
+    "imported-d1-capture/capture-observation.jsonl.gz": {
+      "bytes": 142,
+      "sha256": "6b243414ce3016b87a024269a034778b3d883af6867beb65a432f9ea9e5b69ce"
+    },
+    "imported-d1-capture/capture.dximdemo": {
+      "bytes": 1475059,
+      "sha256": "9d1b80da73ee1f4fb8f7dab98842ac8dce2b77996e9594c1c23f5c0de2b7ded0"
+    },
+    "imported-d1-capture/capture.dximdemo.rngtrace.jsonl": {
+      "bytes": 26642,
+      "sha256": "04e71ca2710f72b30a8f4750bb8ed0c61f484c6bbd3243b3b5ac02be1e9d3c57"
+    },
+    "imported-d1-capture/capture.json": {
+      "bytes": 10309,
+      "sha256": "ffc0769840dea4b9d375b4452e117b3b48f182f6f136d6e4050a6146afad29c9"
+    },
+    "imported-d1-capture/capture.log": {
+      "bytes": 1032,
+      "sha256": "386901c6c9ea2498f0cdbf4d0af2a1a03dc916269a0f24e0e750b5594c656826"
+    },
+    "imported-d1-capture/demos/tmpdemo.dem": {
+      "bytes": 1322,
+      "sha256": "259e0a73d3367e9e90a8f7c51c82364893192ee04c1477533b6b3d52476605e3"
+    },
+    "imported-d1-capture/descent.cfg": {
+      "bytes": 557,
+      "sha256": "f7dfed8b403c62c5343d508b26995c4e5ea35e6c196ef1ac852946a700e59db3"
+    },
+    "imported-d1-capture/public.plr": {
+      "bytes": 729,
+      "sha256": "e588d487791f3cb4659611bbdbabc39ad8bdda87bd1ed4f7ea83a9d98931858f"
+    },
+    "imported-d1-capture/public.plx": {
+      "bytes": 2103,
+      "sha256": "9dad116030deb27f3dc69809e5711a201a509042bb64c5d4d2367648f6d079d1"
+    }
+  },
+  "builds": {
+    "d1": {
+      "compile_commands_sha256": "5f2e6a8c0e3cbe2696e3e594b41f52529c37c55f929124646b5c5305f27a37db",
+      "executables": {
+        "capture": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d1-build/main/test_upstream_compat",
+          "sha256": "908611737fe28ce3f51c93f27336b438611212addc31672a9ee5ae454add6660"
+        },
+        "graphics": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d1-build/main/d1x-redux",
+          "sha256": "6d7d5c0902086853e514836c2b20713b3d2bc93530c4ed50ee8f580b3d1fdff0"
+        },
+        "headless": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d1-build/main/dxx-redux-d1-headless",
+          "sha256": "06484e0ade77f6e511027571f9a2baccb7975ba217d4748e6db0a176c027c5ab"
+        }
+      },
+      "stamp": "7145f682f"
+    },
+    "d2": {
+      "compile_commands_sha256": "79937ff3842043fec0152b5281e94c29dd43562045a9bdf9841db0ccbb44f75c",
+      "executables": {
+        "capture": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d2-build/main/test_upstream_compat",
+          "sha256": "a3a7348c87c4c4ae1738f0e1b8a8310723c74ed7c65c0b7452b60cd41cc69b93"
+        },
+        "graphics": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d2-build/main/d2x-redux",
+          "sha256": "a429210951c435a79bed2c2aa3f38e30687c9b0d0bb67c0cdede630634161b28"
+        },
+        "headless": {
+          "path": "/workspace/scratch/334b48b99af4/all-weapons-grants/temp/native-d2-build/main/dxx-redux-d2-headless",
+          "sha256": "2e0f2d1898d2726fcb20637dfb1276cf02c42a3ea967891e18ea47b91cc6ea14"
+        }
+      },
+      "stamp": "7145f682f"
+    }
+  },
+  "cases": [
+    {
+      "capture": "d1-scourge-capture",
+      "case": "d1-scourge",
+      "demo": "d1-scourge.dximdemo",
+      "demo_bytes": 14270,
+      "evidence": {
+        "all_projectiles": [
+          {
+            "frame": 2,
+            "object": 67,
+            "selected": 0,
+            "signature": 76,
+            "weapon_id": 8
+          },
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 66,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 77,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 78,
+            "selected": 2,
+            "signature": 87,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 81,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 77,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 83,
+            "selected": 2,
+            "signature": 94,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 84,
+            "selected": 2,
+            "signature": 95,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 101,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 66,
+            "selected": 2,
+            "signature": 100,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 99,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 62,
+            "selected": 2,
+            "signature": 107,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 106,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 64,
+            "selected": 2,
+            "signature": 105,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 91,
+            "selected": 2,
+            "signature": 111,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 92,
+            "selected": 2,
+            "signature": 112,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 113,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 88,
+            "selected": 2,
+            "signature": 119,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 89,
+            "selected": 2,
+            "signature": 118,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 117,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 94,
+            "selected": 2,
+            "signature": 123,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 124,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 125,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 85,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 86,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 87,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 74,
+            "selected": 2,
+            "signature": 137,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 77,
+            "selected": 2,
+            "signature": 136,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 78,
+            "selected": 2,
+            "signature": 135,
+            "weapon_id": 20
+          }
+        ],
+        "gauss": [],
+        "initial": {
+          "cheats_enabled": 0,
+          "energy": 6553600,
+          "flags": 0,
+          "laser_level": 0,
+          "primary_ammo": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 1,
+          "primary_selected": 0,
+          "score": 0,
+          "secondary_ammo": [
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_flags": 1,
+          "secondary_selected": 0
+        },
+        "observations": [
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "first_grant"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                19,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "between_grants"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "repeated_grant"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 12713984,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "spent_inventory"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "later_grant"
+          },
+          {
+            "frame": 40,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "tail_grant"
+          }
+        ],
+        "ordered_grant_frames": [
+          2,
+          2,
+          34,
+          40
+        ],
+        "post_capture_policy_checks": "pass",
+        "spreadfire": [
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 66,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 77,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 78,
+            "selected": 2,
+            "signature": 87,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 81,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 77,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 83,
+            "selected": 2,
+            "signature": 94,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 84,
+            "selected": 2,
+            "signature": 95,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 101,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 66,
+            "selected": 2,
+            "signature": 100,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 99,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 62,
+            "selected": 2,
+            "signature": 107,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 106,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 64,
+            "selected": 2,
+            "signature": 105,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 91,
+            "selected": 2,
+            "signature": 111,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 92,
+            "selected": 2,
+            "signature": 112,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 113,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 88,
+            "selected": 2,
+            "signature": 119,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 89,
+            "selected": 2,
+            "signature": 118,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 117,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 94,
+            "selected": 2,
+            "signature": 123,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 124,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 125,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 85,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 86,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 87,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 74,
+            "selected": 2,
+            "signature": 137,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 77,
+            "selected": 2,
+            "signature": 136,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 78,
+            "selected": 2,
+            "signature": 135,
+            "weapon_id": 20
+          }
+        ],
+        "terminal": {
+          "cheats_enabled": 1,
+          "energy": 13107200,
+          "flags": 1024,
+          "laser_level": 3,
+          "primary_ammo": [
+            0,
+            784,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 231,
+          "primary_selected": 2,
+          "score": 0,
+          "secondary_ammo": [
+            20,
+            10,
+            10,
+            0,
+            0
+          ],
+          "secondary_flags": 231,
+          "secondary_selected": 0
+        }
+      },
+      "game": "d1",
+      "oracle": "d1-scourge.oracle.json",
+      "oracle_bytes": 4374,
+      "scope": "native-compact-candidate"
+    },
+    {
+      "capture": "d1-bigred-capture",
+      "case": "d1-bigred",
+      "demo": "d1-bigred.dximdemo",
+      "demo_bytes": 13902,
+      "evidence": {
+        "all_projectiles": [
+          {
+            "frame": 2,
+            "object": 66,
+            "selected": 0,
+            "signature": 77,
+            "weapon_id": 16
+          },
+          {
+            "frame": 2,
+            "object": 67,
+            "selected": 0,
+            "signature": 76,
+            "weapon_id": 8
+          },
+          {
+            "frame": 10,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 77,
+            "selected": 2,
+            "signature": 86,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 81,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 83,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 85,
+            "selected": 2,
+            "signature": 96,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 86,
+            "selected": 2,
+            "signature": 97,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 87,
+            "selected": 2,
+            "signature": 98,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 64,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 103,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 102,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 74,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 78,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 62,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 94,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 122,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 91,
+            "selected": 2,
+            "signature": 121,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 92,
+            "selected": 2,
+            "signature": 120,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 75,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 66,
+            "selected": 2,
+            "signature": 130,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 84,
+            "selected": 2,
+            "signature": 129,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 89,
+            "selected": 2,
+            "signature": 131,
+            "weapon_id": 20
+          },
+          {
+            "frame": 34,
+            "object": 83,
+            "selected": 2,
+            "signature": 136,
+            "weapon_id": 16
+          },
+          {
+            "frame": 35,
+            "object": 68,
+            "selected": 2,
+            "signature": 142,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 79,
+            "selected": 2,
+            "signature": 141,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 80,
+            "selected": 2,
+            "signature": 140,
+            "weapon_id": 20
+          }
+        ],
+        "gauss": [],
+        "initial": {
+          "cheats_enabled": 0,
+          "energy": 6553600,
+          "flags": 0,
+          "laser_level": 0,
+          "primary_ammo": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 1,
+          "primary_selected": 0,
+          "score": 0,
+          "secondary_ammo": [
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_flags": 1,
+          "secondary_selected": 0
+        },
+        "observations": [
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "first_grant"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                19,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "between_grants"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "repeated_grant"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 12713984,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "spent_inventory"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "later_grant"
+          },
+          {
+            "frame": 40,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 255,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                5
+              ],
+              "secondary_flags": 255,
+              "secondary_selected": 0
+            },
+            "phase": "tail_grant"
+          }
+        ],
+        "ordered_grant_frames": [
+          2,
+          2,
+          34,
+          40
+        ],
+        "post_capture_policy_checks": "pass",
+        "spreadfire": [
+          {
+            "frame": 10,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 77,
+            "selected": 2,
+            "signature": 86,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 81,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 83,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 85,
+            "selected": 2,
+            "signature": 96,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 86,
+            "selected": 2,
+            "signature": 97,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 87,
+            "selected": 2,
+            "signature": 98,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 64,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 103,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 102,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 74,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 78,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 62,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 94,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 122,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 91,
+            "selected": 2,
+            "signature": 121,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 92,
+            "selected": 2,
+            "signature": 120,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 75,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 66,
+            "selected": 2,
+            "signature": 130,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 84,
+            "selected": 2,
+            "signature": 129,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 89,
+            "selected": 2,
+            "signature": 131,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 68,
+            "selected": 2,
+            "signature": 142,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 79,
+            "selected": 2,
+            "signature": 141,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 80,
+            "selected": 2,
+            "signature": 140,
+            "weapon_id": 20
+          }
+        ],
+        "terminal": {
+          "cheats_enabled": 1,
+          "energy": 13107200,
+          "flags": 1024,
+          "laser_level": 3,
+          "primary_ammo": [
+            0,
+            784,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 255,
+          "primary_selected": 2,
+          "score": 0,
+          "secondary_ammo": [
+            20,
+            10,
+            10,
+            5,
+            5
+          ],
+          "secondary_flags": 255,
+          "secondary_selected": 0
+        }
+      },
+      "game": "d1",
+      "oracle": "d1-bigred.oracle.json",
+      "oracle_bytes": 4374,
+      "scope": "native-compact-candidate"
+    },
+    {
+      "capture": "d2-honestbob-capture",
+      "case": "d2-honestbob",
+      "demo": "d2-honestbob.dximdemo",
+      "demo_bytes": 14187,
+      "evidence": {
+        "all_projectiles": [
+          {
+            "frame": 2,
+            "object": 45,
+            "selected": 0,
+            "signature": 103,
+            "weapon_id": 16
+          },
+          {
+            "frame": 2,
+            "object": 46,
+            "selected": 0,
+            "signature": 102,
+            "weapon_id": 8
+          },
+          {
+            "frame": 10,
+            "object": 43,
+            "selected": 2,
+            "signature": 106,
+            "weapon_id": 12
+          },
+          {
+            "frame": 10,
+            "object": 44,
+            "selected": 2,
+            "signature": 105,
+            "weapon_id": 12
+          },
+          {
+            "frame": 10,
+            "object": 47,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 41,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 42,
+            "selected": 2,
+            "signature": 107,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 90,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 16,
+            "selected": 2,
+            "signature": 112,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 66,
+            "selected": 2,
+            "signature": 111,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 89,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 100,
+            "selected": 2,
+            "signature": 113,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 101,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 102,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 103,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 104,
+            "selected": 2,
+            "signature": 117,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 105,
+            "selected": 2,
+            "signature": 118,
+            "weapon_id": 12
+          },
+          {
+            "frame": 27,
+            "object": 66,
+            "selected": 6,
+            "signature": 129,
+            "weapon_id": 32
+          },
+          {
+            "frame": 29,
+            "object": 43,
+            "selected": 6,
+            "signature": 130,
+            "weapon_id": 32
+          },
+          {
+            "frame": 30,
+            "object": 104,
+            "selected": 6,
+            "signature": 131,
+            "weapon_id": 32
+          },
+          {
+            "frame": 31,
+            "object": 106,
+            "selected": 6,
+            "signature": 133,
+            "weapon_id": 32
+          },
+          {
+            "frame": 32,
+            "object": 44,
+            "selected": 6,
+            "signature": 135,
+            "weapon_id": 32
+          },
+          {
+            "frame": 34,
+            "object": 101,
+            "selected": 6,
+            "signature": 137,
+            "weapon_id": 16
+          },
+          {
+            "frame": 35,
+            "object": 45,
+            "selected": 6,
+            "signature": 143,
+            "weapon_id": 32
+          }
+        ],
+        "gauss": [
+          {
+            "frame": 27,
+            "object": 66,
+            "selected": 6,
+            "signature": 129,
+            "weapon_id": 32
+          },
+          {
+            "frame": 29,
+            "object": 43,
+            "selected": 6,
+            "signature": 130,
+            "weapon_id": 32
+          },
+          {
+            "frame": 30,
+            "object": 104,
+            "selected": 6,
+            "signature": 131,
+            "weapon_id": 32
+          },
+          {
+            "frame": 31,
+            "object": 106,
+            "selected": 6,
+            "signature": 133,
+            "weapon_id": 32
+          },
+          {
+            "frame": 32,
+            "object": 44,
+            "selected": 6,
+            "signature": 135,
+            "weapon_id": 32
+          },
+          {
+            "frame": 35,
+            "object": 45,
+            "selected": 6,
+            "signature": 143,
+            "weapon_id": 32
+          }
+        ],
+        "initial": {
+          "cheats_enabled": 0,
+          "energy": 6553600,
+          "flags": 0,
+          "laser_level": 0,
+          "primary_ammo": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 1,
+          "primary_selected": 0,
+          "score": 0,
+          "secondary_ammo": [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_flags": 1,
+          "secondary_selected": 0
+        },
+        "observations": [
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1568,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "first_grant"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1568,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                19,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "between_grants"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1568,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "repeated_grant"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 12943360,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1558,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 6,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "spent_inventory"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1568,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 6,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "later_grant"
+          },
+          {
+            "frame": 40,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 5,
+              "primary_ammo": [
+                0,
+                1568,
+                0,
+                0,
+                0,
+                0,
+                1568,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 64719,
+              "primary_selected": 6,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                5,
+                0,
+                20,
+                20,
+                15,
+                0,
+                0
+              ],
+              "secondary_flags": 64751,
+              "secondary_selected": 0
+            },
+            "phase": "tail_grant"
+          }
+        ],
+        "ordered_grant_frames": [
+          2,
+          2,
+          34,
+          40
+        ],
+        "post_capture_policy_checks": "pass",
+        "spreadfire": [
+          {
+            "frame": 10,
+            "object": 43,
+            "selected": 2,
+            "signature": 106,
+            "weapon_id": 12
+          },
+          {
+            "frame": 10,
+            "object": 44,
+            "selected": 2,
+            "signature": 105,
+            "weapon_id": 12
+          },
+          {
+            "frame": 10,
+            "object": 47,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 41,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 42,
+            "selected": 2,
+            "signature": 107,
+            "weapon_id": 12
+          },
+          {
+            "frame": 12,
+            "object": 90,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 16,
+            "selected": 2,
+            "signature": 112,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 66,
+            "selected": 2,
+            "signature": 111,
+            "weapon_id": 12
+          },
+          {
+            "frame": 14,
+            "object": 89,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 100,
+            "selected": 2,
+            "signature": 113,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 101,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 12
+          },
+          {
+            "frame": 15,
+            "object": 102,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 103,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 104,
+            "selected": 2,
+            "signature": 117,
+            "weapon_id": 12
+          },
+          {
+            "frame": 17,
+            "object": 105,
+            "selected": 2,
+            "signature": 118,
+            "weapon_id": 12
+          }
+        ],
+        "terminal": {
+          "cheats_enabled": 1,
+          "energy": 13107200,
+          "flags": 1024,
+          "laser_level": 5,
+          "primary_ammo": [
+            0,
+            1568,
+            0,
+            0,
+            0,
+            0,
+            1568,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 64719,
+          "primary_selected": 6,
+          "score": 0,
+          "secondary_ammo": [
+            20,
+            10,
+            10,
+            5,
+            0,
+            20,
+            20,
+            15,
+            0,
+            0
+          ],
+          "secondary_flags": 64751,
+          "secondary_selected": 0
+        }
+      },
+      "game": "d2",
+      "oracle": "d2-honestbob.oracle.json",
+      "oracle_bytes": 5217,
+      "scope": "native-compact-candidate"
+    },
+    {
+      "capture": "imported-d1-capture",
+      "case": "imported-d1",
+      "evidence": {
+        "all_projectiles": [
+          {
+            "frame": 2,
+            "object": 66,
+            "selected": 0,
+            "signature": 77,
+            "weapon_id": 16
+          },
+          {
+            "frame": 2,
+            "object": 67,
+            "selected": 0,
+            "signature": 76,
+            "weapon_id": 8
+          },
+          {
+            "frame": 10,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 77,
+            "selected": 2,
+            "signature": 86,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 81,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 83,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 85,
+            "selected": 2,
+            "signature": 96,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 86,
+            "selected": 2,
+            "signature": 97,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 87,
+            "selected": 2,
+            "signature": 98,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 64,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 103,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 102,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 74,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 78,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 62,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 94,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 122,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 91,
+            "selected": 2,
+            "signature": 121,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 92,
+            "selected": 2,
+            "signature": 120,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 75,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 66,
+            "selected": 2,
+            "signature": 130,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 84,
+            "selected": 2,
+            "signature": 129,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 89,
+            "selected": 2,
+            "signature": 131,
+            "weapon_id": 20
+          },
+          {
+            "frame": 34,
+            "object": 83,
+            "selected": 2,
+            "signature": 136,
+            "weapon_id": 16
+          },
+          {
+            "frame": 35,
+            "object": 68,
+            "selected": 2,
+            "signature": 142,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 79,
+            "selected": 2,
+            "signature": 141,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 80,
+            "selected": 2,
+            "signature": 140,
+            "weapon_id": 20
+          }
+        ],
+        "gauss": [],
+        "initial": {
+          "cheats_enabled": 0,
+          "energy": 6553600,
+          "flags": 0,
+          "laser_level": 0,
+          "primary_ammo": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 1,
+          "primary_selected": 0,
+          "score": 0,
+          "secondary_ammo": [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_flags": 1,
+          "secondary_selected": 0
+        },
+        "observations": [
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "first_grant"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                19,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "between_grants"
+          },
+          {
+            "frame": 2,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 0,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "repeated_grant"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 12713984,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "spent_inventory"
+          },
+          {
+            "frame": 34,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "later_grant"
+          },
+          {
+            "frame": 40,
+            "inventory": {
+              "cheats_enabled": 1,
+              "energy": 13107200,
+              "flags": 1024,
+              "laser_level": 3,
+              "primary_ammo": [
+                0,
+                784,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "primary_flags": 231,
+              "primary_selected": 2,
+              "score": 0,
+              "secondary_ammo": [
+                20,
+                10,
+                10,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "secondary_flags": 231,
+              "secondary_selected": 0
+            },
+            "phase": "tail_grant"
+          }
+        ],
+        "ordered_grant_frames": [
+          2,
+          2,
+          34,
+          40
+        ],
+        "post_capture_policy_checks": "pass",
+        "spreadfire": [
+          {
+            "frame": 10,
+            "object": 64,
+            "selected": 2,
+            "signature": 80,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 65,
+            "selected": 2,
+            "signature": 79,
+            "weapon_id": 20
+          },
+          {
+            "frame": 10,
+            "object": 68,
+            "selected": 2,
+            "signature": 78,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 62,
+            "selected": 2,
+            "signature": 82,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 63,
+            "selected": 2,
+            "signature": 81,
+            "weapon_id": 20
+          },
+          {
+            "frame": 12,
+            "object": 74,
+            "selected": 2,
+            "signature": 83,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 75,
+            "selected": 2,
+            "signature": 84,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 76,
+            "selected": 2,
+            "signature": 85,
+            "weapon_id": 20
+          },
+          {
+            "frame": 14,
+            "object": 77,
+            "selected": 2,
+            "signature": 86,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 79,
+            "selected": 2,
+            "signature": 88,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 80,
+            "selected": 2,
+            "signature": 89,
+            "weapon_id": 20
+          },
+          {
+            "frame": 15,
+            "object": 81,
+            "selected": 2,
+            "signature": 90,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 67,
+            "selected": 2,
+            "signature": 91,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 82,
+            "selected": 2,
+            "signature": 92,
+            "weapon_id": 20
+          },
+          {
+            "frame": 17,
+            "object": 83,
+            "selected": 2,
+            "signature": 93,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 85,
+            "selected": 2,
+            "signature": 96,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 86,
+            "selected": 2,
+            "signature": 97,
+            "weapon_id": 20
+          },
+          {
+            "frame": 21,
+            "object": 87,
+            "selected": 2,
+            "signature": 98,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 64,
+            "selected": 2,
+            "signature": 104,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 65,
+            "selected": 2,
+            "signature": 103,
+            "weapon_id": 20
+          },
+          {
+            "frame": 23,
+            "object": 68,
+            "selected": 2,
+            "signature": 102,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 63,
+            "selected": 2,
+            "signature": 110,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 74,
+            "selected": 2,
+            "signature": 109,
+            "weapon_id": 20
+          },
+          {
+            "frame": 25,
+            "object": 78,
+            "selected": 2,
+            "signature": 108,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 62,
+            "selected": 2,
+            "signature": 114,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 93,
+            "selected": 2,
+            "signature": 115,
+            "weapon_id": 20
+          },
+          {
+            "frame": 26,
+            "object": 94,
+            "selected": 2,
+            "signature": 116,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 90,
+            "selected": 2,
+            "signature": 122,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 91,
+            "selected": 2,
+            "signature": 121,
+            "weapon_id": 20
+          },
+          {
+            "frame": 28,
+            "object": 92,
+            "selected": 2,
+            "signature": 120,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 75,
+            "selected": 2,
+            "signature": 126,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 95,
+            "selected": 2,
+            "signature": 127,
+            "weapon_id": 20
+          },
+          {
+            "frame": 29,
+            "object": 96,
+            "selected": 2,
+            "signature": 128,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 66,
+            "selected": 2,
+            "signature": 130,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 84,
+            "selected": 2,
+            "signature": 129,
+            "weapon_id": 20
+          },
+          {
+            "frame": 31,
+            "object": 89,
+            "selected": 2,
+            "signature": 131,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 68,
+            "selected": 2,
+            "signature": 142,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 79,
+            "selected": 2,
+            "signature": 141,
+            "weapon_id": 20
+          },
+          {
+            "frame": 35,
+            "object": 80,
+            "selected": 2,
+            "signature": 140,
+            "weapon_id": 20
+          }
+        ],
+        "terminal": {
+          "cheats_enabled": 1,
+          "energy": 13107200,
+          "flags": 1024,
+          "laser_level": 3,
+          "primary_ammo": [
+            0,
+            784,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primary_flags": 231,
+          "primary_selected": 2,
+          "score": 0,
+          "secondary_ammo": [
+            20,
+            10,
+            10,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "secondary_flags": 231,
+          "secondary_selected": 0
+        }
+      },
+      "game": "d2",
+      "scope": "live-diagnostic-only"
+    }
+  ],
+  "complete": true,
+  "published": false,
+  "retail_assets_playback": false,
+  "reviewed_scope_statement": "Native public-shareware SDL captures and headed/headless replay only; D1-in-D2 is live diagnostic evidence, not compact replay admission. No retail assets were played and no Android device was tested. Recording-off retail policy branches do not establish retail asset playback. Publication requires separate review.",
+  "runs": [
+    {
+      "backend": "headless",
+      "case": "d1-scourge",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 94,
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-scourge",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "4b759c6e2758d6735fe677229557df3b4ce5c0d6d91316482d7509671ed75a80",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-scourge",
+      "control": "wrong-variant",
+      "first_different_frame": 2,
+      "native_exit_code": 0,
+      "negative_input_sha256": "46e5bf2ca1fd5cc4049409f8879340708e4a2ee20fb063a3e8be996dd4519b6a",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "original_oracle_rejection": "Replay frame state, RNG or diagnostics differ from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-scourge",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "2ce0e0a06fff308b07ba305e19eee27c27a9950e1393af095a683c7f91307e2d",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-scourge",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 94,
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-scourge",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "4b759c6e2758d6735fe677229557df3b4ce5c0d6d91316482d7509671ed75a80",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-scourge",
+      "control": "wrong-variant",
+      "first_different_frame": 2,
+      "native_exit_code": 0,
+      "negative_input_sha256": "46e5bf2ca1fd5cc4049409f8879340708e4a2ee20fb063a3e8be996dd4519b6a",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "original_oracle_rejection": "Replay frame state, RNG or diagnostics differ from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-scourge",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "2ce0e0a06fff308b07ba305e19eee27c27a9950e1393af095a683c7f91307e2d",
+      "oracle_resealed": false,
+      "oracle_sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-bigred",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 94,
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-bigred",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "249f79efe37629c734eca5539207b864de156bf792513aa25b56f22b1d17c543",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-bigred",
+      "control": "wrong-variant",
+      "first_different_frame": 2,
+      "native_exit_code": 0,
+      "negative_input_sha256": "d8b7b1b4860036ba6b87b024e41dc45faaac7fc2744439d6c308942ab1863c13",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "original_oracle_rejection": "Replay frame state, RNG or diagnostics differ from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d1-bigred",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "e8323cd7ea0b38d90f177ff218e12b0801e5bdde84dc51dba29f71e182139ece",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-bigred",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 94,
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-bigred",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "249f79efe37629c734eca5539207b864de156bf792513aa25b56f22b1d17c543",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-bigred",
+      "control": "wrong-variant",
+      "first_different_frame": 2,
+      "native_exit_code": 0,
+      "negative_input_sha256": "d8b7b1b4860036ba6b87b024e41dc45faaac7fc2744439d6c308942ab1863c13",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "original_oracle_rejection": "Replay frame state, RNG or diagnostics differ from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d1-bigred",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "e8323cd7ea0b38d90f177ff218e12b0801e5bdde84dc51dba29f71e182139ece",
+      "oracle_resealed": false,
+      "oracle_sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d2-honestbob",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 2795,
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d2-honestbob",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "136e4550eccc03a969189acc894a4c45edc6d199a244b6d853720687c97297c9",
+      "oracle_resealed": false,
+      "oracle_sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd",
+      "status": "pass"
+    },
+    {
+      "backend": "headless",
+      "case": "d2-honestbob",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "bd453bcbc86b5eacdcdc5e3ca4e2d677f2f87ddd5a920da6bbdf6717345f33cb",
+      "oracle_resealed": false,
+      "oracle_sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d2-honestbob",
+      "control": "original",
+      "frames_compared": 40,
+      "simulation_events_compared": 2795,
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d2-honestbob",
+      "control": "wrong-profile",
+      "evidence": "native grant/profile rejection",
+      "native_exit_code": 1,
+      "negative_input_sha256": "136e4550eccc03a969189acc894a4c45edc6d199a244b6d853720687c97297c9",
+      "oracle_resealed": false,
+      "oracle_sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd",
+      "status": "pass"
+    },
+    {
+      "backend": "graphics",
+      "case": "d2-honestbob",
+      "control": "missing-final-grant",
+      "first_different_frame": null,
+      "native_exit_code": 0,
+      "negative_input_sha256": "bd453bcbc86b5eacdcdc5e3ca4e2d677f2f87ddd5a920da6bbdf6717345f33cb",
+      "oracle_resealed": false,
+      "oracle_sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd",
+      "original_oracle_rejection": "Replay terminal result differs from live capture",
+      "status": "pass"
+    }
+  ],
+  "schema": 1,
+  "source_recipe_sha256": {
+    "android/app/src/main/cpp/shared/input_demo_direct_command_policy.c": "006091e63c13ff2ac5765d394d15b4209f7b8c407d874e1538b087406a9a6408",
+    "android/app/src/main/cpp/shared/input_demo_dispatch.h": "d60c4f66eaf97dbbc64886fb08685873ac057a49536150968e0b3b0b7febfa11",
+    "android/app/src/main/cpp/shared/input_demo_fixture.cpp": "3647337b7789f82fa9d1615faefc84a43c7a31020e6b05866cc4d0a4e961b66a",
+    "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "7be525c2dc354352e2ff1e27813879e700d5e06b0a25097a5a8d794a10060fc6",
+    "android/app/src/main/cpp/shared/weapon_cheat_shared.c": "10da273d46e9d719dcea68d2b19228db8167fc2c846e16ae1e4b554d0068791a",
+    "android/app/src/main/cpp/shared/weapon_cheat_shared.h": "b0090a567049366f16f8f0d8b9104f92888b3ac2f919d5762ebd618c09485d67",
+    "android/tests/check_all_weapons_runtime.py": "2d9eec3ddcd27e9d4177a6c9d3a50dee0a41bdadf3ba533c38ea32383bacc488",
+    "android/tests/check_ordered_input_runtime.py": "6c6a304fbb6a98cbb80a6659089191b1c33130e9fe8423f8f42c674e3be34056",
+    "android/tests/compact_public_replay.py": "3092024a0da8bf6c9795850cd04865dd868f221c6f9e75d2bc4b9582eb13b366",
+    "android/tests/ordered_public_replay.py": "db13712be69e89ab13d6f79bdb17944fe088e2c921c6d7d7aa564a20e5a0d13c",
+    "android/tests/public_all_weapons_fixture.hpp": "9774087116dd1403afc00b37bf5f5bd5a1ed3656f6785da09d4b736de9a450bb",
+    "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
+    "android/tests/test_upstream_compat.cpp": "4cb61098286a7b1e7e2a9062f958bf24c0c9612266798f61e3a69c15790d70df",
+    "d1/main/CMakeLists.txt": "14bac1f0b110d2d2ab90c92a5eb61cd9c0b0cf4812ce5572271562c4aa5f4607",
+    "d1/main/gamecntl.c": "88f1cac943a5bd88a9aea4865eee0ce2051a7dea2da3cf4f7228023fa0471dd4",
+    "d1/main/input_demo_hooks.c": "845a4e247998a67bed5c3c580132bbc1a3a6221065180992028fb2173ac8a192",
+    "d2/main/CMakeLists.txt": "5d3f7f889cbd8dcbf463608764c90d19d90f4bc00451f0f1c04ff4967c6bc9fb",
+    "d2/main/gamecntl.c": "b63a029b664d77b2ae403785452ceddd1e2db1966207fcc53773fbb0805ce0e7",
+    "d2/main/input_demo_hooks.c": "42a898820188249c7d9718342f4030c851fc5d7a7e9f48233afc582abeaf17e2"
+  },
+  "source_revision": "7145f682f4dd946ce0a8019d087eba6523794c16",
+  "status": "pass"
+}
