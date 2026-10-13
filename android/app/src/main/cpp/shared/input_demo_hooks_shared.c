@@ -1142,16 +1142,6 @@ int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void 
 			return 0;
 		}
 		input_demo_advance_replay_frame();
-		/* The next simulation step consumes the preceding main view's candidates
-		 * The windowed event path and the headless runner both advance here */
-		if (input_demo_replay_is_loaded() && GameArg.SysInputDemoNoRender
-#ifdef DXX_BUILD_DESCENT_II
-		    && d1_in_d2_use_d1_gameplay()
-#endif
-		) {
-			if (!render_update_main_view_objects())
-				Error("Input replay has no initialized main viewport for homing candidates");
-		}
 	}
 	return 1;
 }

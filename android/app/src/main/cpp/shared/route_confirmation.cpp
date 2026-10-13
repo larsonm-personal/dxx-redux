@@ -15,6 +15,7 @@ extern "C" {
 #include "fireball.h"
 #include "fvi.h"
 #include "game.h"
+#include "render_gameplay_view.h"
 #include "gameseg.h"
 #include "guidebot_extensions.h"
 #include "guidebot_route_internal.h"
@@ -1957,6 +1958,7 @@ static int start_confirmation(int from_current_state)
 	actor->orient = start_orient;
 	obj_relink(State.actor_objnum, start_seg);
 	if (ConsoleObject) {
+		render_reset_gameplay_view_objects();
 		ConsoleObject->pos = start_pos;
 		ConsoleObject->last_pos = ConsoleObject->pos;
 		ConsoleObject->orient = start_orient;
@@ -2005,6 +2007,7 @@ extern "C" int route_confirmation_commit_player_position(void)
 	    !valid_object(State.actor_objnum) || !ConsoleObject)
 		return 0;
 	const object *actor = &Objects[State.actor_objnum];
+	render_reset_gameplay_view_objects();
 	ConsoleObject->pos = actor->pos;
 	ConsoleObject->last_pos = actor->pos;
 	ConsoleObject->orient = actor->orient;

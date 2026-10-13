@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_hooks.h"
+#include "render_gameplay_view.h"
 #include "input_demo_replay.h"
 #include "input_demo_control_info.h"
 #include "input_demo_recorder.h"
@@ -273,6 +274,8 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
+
+	render_prepare_gameplay_view_objects();
 	static ubyte converter_was_pressed = 0;
 	ubyte converter_pressed;
 	unsigned int sim_state;
@@ -1425,6 +1428,7 @@ void kill_and_so_forth(void)
 	}
 
 kasf_done: ;
+	render_reset_gameplay_view_objects();
 
 }
 

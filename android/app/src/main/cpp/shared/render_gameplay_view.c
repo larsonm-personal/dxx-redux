@@ -14,6 +14,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 /* New file, largely derived from the original Parallax/Interplay Descent code */
 
 #include "render_gameplay_view.h"
+#include "gameplay_view_policy.h"
 #include <string.h>
 #include "render.h"
 #include "endlevel.h"
@@ -21,6 +22,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "screens.h"
 #include "automap.h"
+#include "gameseg.h"
 #include "config.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "gauges.h"
@@ -37,35 +39,38 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 /* The collector traverses the same prepared rows as render_mine */
 extern short render_obj_list[MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
 
-int render_collect_view_objects(fix eye_offset, short *objects)
+/* Both collectors use original reverse portal order, linked rows and overflow */
+static int collect_prepared_objects(short *objects)
 {
-	int count = 0, nn, start;
-	if (Endlevel_sequence || !Viewer || !grd_curcanv ||
-	    grd_curcanv->cv_bitmap.bm_w <= 0 || grd_curcanv->cv_bitmap.bm_h <= 0)
+	int count = 0, nn;
+	if (N_render_segs < 0 || N_render_segs > MAX_RENDER_SEGS)
 		return -1;
-	g3_start_frame_projection();
-	start = render_setup_view(eye_offset);
-	render_start_frame();
-#ifdef DXX_BUILD_DESCENT_II
-	build_segment_list(start, 0);
-#else
-	build_segment_list(start);
-#endif
-	build_object_lists(N_render_segs);
 	for (nn = N_render_segs; nn--;) {
-		int row = nn, column = 0;
+		int row = nn, column = 0, remaining = MAX_OBJECTS + N_EXTRA_OBJ_LISTS;
 		const int segnum = Render_list[nn];
-		if (segnum == -1 || visited[segnum] == 255)
+		if (segnum == -1)
+			continue;
+		if (segnum < 0 || segnum > Highest_segment_index)
+			return -1;
+		if (visited[segnum] == 255)
 			continue;
 		visited[segnum] = 255;
-		while (render_obj_list[row][column] != -1) {
-			const int objnum = render_obj_list[row][column];
+		for (;;) {
+			int objnum;
+			if (row < 0 || row >= MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS ||
+			    column >= OBJS_PER_SEG || !remaining--)
+				return -1;
+			objnum = render_obj_list[row][column];
+			if (objnum == -1)
+				break;
 			if (objnum < 0) {
 				row = -objnum;
 				column = 0;
 				continue;
 			}
 			++column;
+			if (objnum > Highest_object_index)
+				return -1;
 			if (Objects[objnum].type != OBJ_ROBOT && Objects[objnum].type != OBJ_PLAYER)
 				continue;
 			/* Preserve the renderer's historical overwrite of the upper half */
@@ -75,6 +80,143 @@ int render_collect_view_objects(fix eye_offset, short *objects)
 		}
 	}
 	return count;
+}
+
+static int collect_objects_in_view(int start)
+{
+	render_start_frame();
+#ifdef DXX_BUILD_DESCENT_II
+	build_segment_list(start, 0);
+#else
+	build_segment_list(start);
+#endif
+	build_object_lists(N_render_segs);
+	return N_render_segs;
+}
+
+int render_collect_view_objects(fix eye_offset, short *objects)
+{
+	if (Endlevel_sequence || !Viewer || !grd_curcanv ||
+	    grd_curcanv->cv_bitmap.bm_w <= 0 || grd_curcanv->cv_bitmap.bm_h <= 0)
+		return -1;
+	g3_start_frame_projection();
+	collect_objects_in_view(render_setup_view(eye_offset));
+	return collect_prepared_objects(objects);
+}
+
+/* Projection globals are saved because gameplay collection may happen between
+ * drawing and another camera consumer. Portal/object scratch is rebuilt by each
+ * collector/render; retain the public visual segment list for lighting */
+extern int Canvas_width, Canvas_height;
+extern fix Canv_w2, Canv_h2, View_zoom;
+extern vms_vector Viewer_eye, Window_scale, View_position, Matrix_scale;
+extern vms_matrix View_matrix, Unscaled_matrix;
+#ifdef __powerc
+extern double fCanv_w2, fCanv_h2;
+#endif
+
+int Gameplay_num_rendered_objects = -1;
+short Gameplay_rendered_object_list[MAX_RENDERED_OBJECTS];
+
+int render_collect_gameplay_objects(short *objects)
+{
+	grs_canvas canvas = { 0 };
+	grs_canvas *saved_canvas = grd_curcanv;
+	object *saved_viewer = Viewer;
+	const int saved_count = N_render_segs;
+	const int saved_depth = Render_depth, saved_classic = GameCfg.ClassicDepth;
+	const int saved_acid = cheats.acid;
+	const int saved_width = Canvas_width, saved_height = Canvas_height;
+	const fix saved_w2 = Canv_w2, saved_h2 = Canv_h2, saved_zoom = View_zoom;
+	const vms_vector saved_eye = Viewer_eye, saved_window = Window_scale;
+	const vms_vector saved_position = View_position, saved_scale = Matrix_scale;
+	const vms_matrix saved_matrix = View_matrix, saved_unscaled = Unscaled_matrix;
+	static short saved_segments[MAX_RENDER_SEGS];
+	int count, start;
+#ifdef __powerc
+	const double saved_fw2 = fCanv_w2, saved_fh2 = fCanv_h2;
+#endif
+	if (Endlevel_sequence || !ConsoleObject || ConsoleObject->segnum < 0 ||
+	    ConsoleObject->segnum > Highest_segment_index ||
+	    saved_count < 0 || saved_count > MAX_RENDER_SEGS)
+		return -1;
+	memcpy(saved_segments, Render_list, saved_count * sizeof(saved_segments[0]));
+	/* Reference dimensions, pixel correction and DOS zoom are documented in
+	 * gameplay_view_policy.h; no current screen/cockpit/FoV values enter here */
+	canvas.cv_bitmap.bm_w = GAMEPLAY_VIEW_WIDTH;
+	canvas.cv_bitmap.bm_h = GAMEPLAY_VIEW_HEIGHT;
+	gr_set_current_canvas(&canvas);
+	g3_start_frame_projection_size(GAMEPLAY_VIEW_WIDTH, GAMEPLAY_VIEW_HEIGHT, GAMEPLAY_VIEW_SCREEN_ASPECT);
+	Viewer = ConsoleObject;
+	Viewer_eye = ConsoleObject->pos;
+	g3_set_view_matrix(&Viewer_eye, &ConsoleObject->orient, GAMEPLAY_VIEW_ZOOM);
+	start = find_point_seg(&Viewer_eye, ConsoleObject->segnum);
+	if (start == -1)
+		start = ConsoleObject->segnum;
+	/* Use the current build-default depth and ordering, not transient options */
+	Render_depth = GAMEPLAY_VIEW_RENDER_DEPTH;
+	GameCfg.ClassicDepth = GAMEPLAY_VIEW_CLASSIC_DEPTH;
+	/* Acid is a visual vertex wobble driven by wall-clock time */
+	cheats.acid = 0;
+	collect_objects_in_view(start);
+	count = collect_prepared_objects(objects);
+	Render_depth = saved_depth;
+	GameCfg.ClassicDepth = saved_classic;
+	cheats.acid = saved_acid;
+	Viewer = saved_viewer;
+	Viewer_eye = saved_eye;
+	N_render_segs = saved_count;
+	memcpy(Render_list, saved_segments, saved_count * sizeof(saved_segments[0]));
+	Canvas_width = saved_width;
+	Canvas_height = saved_height;
+	Canv_w2 = saved_w2;
+	Canv_h2 = saved_h2;
+	Window_scale = saved_window;
+	View_zoom = saved_zoom;
+	View_position = saved_position;
+	Matrix_scale = saved_scale;
+	View_matrix = saved_matrix;
+	Unscaled_matrix = saved_unscaled;
+#ifdef __powerc
+	fCanv_w2 = saved_fw2;
+	fCanv_h2 = saved_fh2;
+#endif
+	grd_curcanv = saved_canvas;
+	return count;
+}
+
+void render_gameplay_view_orientation(vms_matrix *scaled, const vms_matrix *orientation)
+{
+	*scaled = *orientation;
+	vm_vec_scale(&scaled->rvec, GAMEPLAY_VIEW_X_SCALE);
+	vm_vec_scale(&scaled->uvec, GAMEPLAY_VIEW_Y_SCALE);
+	vm_vec_scale(&scaled->fvec, GAMEPLAY_VIEW_ZOOM);
+}
+
+void render_reset_gameplay_view_objects(void)
+{
+	Gameplay_num_rendered_objects = -1;
+}
+
+void render_update_gameplay_view_objects(void)
+{
+	const int count = render_collect_gameplay_objects(Gameplay_rendered_object_list);
+	Gameplay_num_rendered_objects = count < 0 ? 0 : count;
+}
+
+void render_prepare_gameplay_view_objects(void)
+{
+	/* Initial input preparation happens before new projectiles enter native
+	 * object rows, which can otherwise affect sort limits in dense scenes */
+	if (Gameplay_num_rendered_objects < 0)
+		render_update_gameplay_view_objects();
+}
+
+int render_get_gameplay_view_objects(const short **objects)
+{
+	render_prepare_gameplay_view_objects();
+	*objects = Gameplay_rendered_object_list;
+	return Gameplay_num_rendered_objects;
 }
 
 int render_update_main_view_objects(void)
