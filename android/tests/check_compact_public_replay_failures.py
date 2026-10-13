@@ -122,6 +122,27 @@ def verify_failure(report, exit_code, args, cases, mutation):
         expected_runner = "headless-console" if args.run_mode == "headless" else "visual"
         if row.get("status") != "fail" or command[command.index("-Runner") + 1] != expected_runner:
             raise parity.EvidenceError("Negative run accepted a scene or selected the wrong backend")
+        if mutation == "bad-input" and case["game"] == "d2" and case["scenario"] in (
+            "secondary-release-first", "secondary-mouse-first"
+        ):
+            # Removing D2 secondary input removes its SIM draw. The explicit
+            # post-input boundary must reject before simulation, not manufacture
+            # a terminal result merely to satisfy this negative-test harness
+            if row.get("exit_code") != 1 or actual.exists() or not state.is_file() or not rng.is_file():
+                raise parity.EvidenceError("Missing secondary input did not stop at its native boundary")
+            traces = list(parity.records(state))
+            aborted = [entry for entry in traces if entry.get("type") == "world_boundary"
+                       and entry.get("phase") == "aborted"]
+            failures = list(actual.parent.glob(actual.name + ".failure_*/failure.json"))
+            failure = compact._json(failures[0].read_bytes()) if len(failures) == 1 else {}
+            if (len(aborted) != 1 or aborted[0]["f"] != case["actions"]["first_fire_frame"]
+                or aborted[0]["state"]["players"][0]["secondary_ammo"][0] != case["actions"]["initial_ammo"]
+                or sum(entry.get("type") == "frame_state" for entry in traces) != case["actions"]["first_fire_frame"]
+                or failure.get("forced_stop") is not False or failure.get("native_exit_code") != 1):
+                raise parity.EvidenceError("Missing secondary input failed outside its exact causal SIM boundary")
+            evidence.append({"game": row["game"], "scenario": row["scenario"], "repeat": row["repeat"],
+                             "passed": True, "secondary_input_rng_rejection": aborted[0]["f"]})
+            continue
         if not all(path.is_file() and path.stat().st_size for path in (state, rng, actual)):
             raise parity.EvidenceError("Negative run lacks completed real-engine result/state/RNG artifacts")
         if mutation == "wrong-oracle":

@@ -16,6 +16,55 @@ import check_compact_public_replay_failures as negative
 
 
 class RuntimeGateTests(unittest.TestCase):
+    def test_secondary_rng_negative_requires_exact_causal_abort(self):
+        case = {"game": "d2", "scenario": "secondary-mouse-first", "demo": "unused.dximdemo",
+                "oracle": "unused.oracle.json", "actions": {"first_fire_frame": 2, "initial_ammo": 5}}
+        report = {"status": "fail", "backend": "headless", "native_only": True,
+                  "paired": {"status": "not_run"}, "native_runs": []}
+        for repeat in range(2):
+            directory = self.root / str(repeat)
+            directory.mkdir()
+            state, rng, result = (directory / name for name in ("state.jsonl", "rng.jsonl", "result.json"))
+            state.write_text('\n'.join(json.dumps(row) for row in [
+                {"type": "frame_state", "f": 0}, {"type": "frame_state", "f": 1},
+                {"type": "world_boundary", "phase": "aborted", "f": 2,
+                 "state": {"players": [{"secondary_ammo": [5]}]}}]) + '\n')
+            rng.write_text('{"type":"meta"}\n')
+            failure = directory / "result.json.failure_test"
+            failure.mkdir()
+            (failure / "failure.json").write_text(json.dumps({"forced_stop": False, "native_exit_code": 1}))
+            report["native_runs"].append({"game": "d2", "scenario": case["scenario"], "repeat": repeat,
+                "status": "fail", "exit_code": 1, "command": ["-Runner", "headless-console"],
+                "artifacts": {"state": str(state), "rng": str(rng), "result": str(result)}})
+        args = argparse.Namespace(run_mode="headless", corpus=self.root)
+        self.assertEqual(len(negative.verify_failure(report, 1, args, [case], "bad-input")), 2)
+        failure_path = self.root / "0/result.json.failure_test/failure.json"
+        for failure in ({"forced_stop": True, "native_exit_code": 1},
+                        {"forced_stop": False, "native_exit_code": 0}):
+            failure_path.write_text(json.dumps(failure))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "exact causal SIM boundary"):
+                negative.verify_failure(report, 1, args, [case], "bad-input")
+        failure_path.write_text(json.dumps({"forced_stop": False, "native_exit_code": 1}))
+        state_path = self.root / "0/state.jsonl"
+        original = state_path.read_text()
+        for mutation in ("frame", "ammo", "missing-frame", "extra-frame"):
+            rows = [json.loads(line) for line in original.splitlines()]
+            if mutation == "frame":
+                rows[-1]["f"] = 3
+            elif mutation == "ammo":
+                rows[-1]["state"]["players"][0]["secondary_ammo"][0] = 4
+            elif mutation == "missing-frame":
+                rows.pop(0)
+            else:
+                rows.insert(0, {"type": "frame_state", "f": 0})
+            state_path.write_text('\n'.join(json.dumps(row) for row in rows) + '\n')
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(runner.parity.EvidenceError, "exact causal SIM boundary"):
+                negative.verify_failure(report, 1, args, [case], "bad-input")
+        state_path.write_text(original)
+        (self.root / "0/result.json").write_text('{}')
+        with self.assertRaisesRegex(runner.parity.EvidenceError, "native boundary"):
+            negative.verify_failure(report, 1, args, [case], "bad-input")
+
     def test_phase_timings_include_failures_without_suppressing_them(self):
         timings = {}
         with mock.patch.object(runner.time, "perf_counter", side_effect=(10.0, 12.5, 20.0, 21.25)):
@@ -735,7 +784,8 @@ class RealNegativeCorpusTests(unittest.TestCase):
             {case["demo"] for case in included},
             {f"d1-public-{scenario}.dximdemo" for scenario in ("flight", "pickup", "door", "combat", "loot")},
         )
-        self.assertEqual([case["demo"] for case in excluded], ["d1-public-door-lifecycle.dximdemo"])
+        self.assertEqual({case["demo"] for case in excluded}, {"d1-public-door-lifecycle.dximdemo",
+            "d1-public-secondary-release-first.dximdemo", "d1-public-secondary-mouse-first.dximdemo"})
         self.assertEqual(
             next(case for case in included if case["scenario"] == "loot")["imported_d1"]["role"], "diagnostic-only"
         )
