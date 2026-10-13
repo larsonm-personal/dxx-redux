@@ -486,6 +486,8 @@ def _run_cases(args, cases):
                 "-SandboxSuffix",
                 args.run_mode + "-" + sandbox_token + "-" + directory.name,
             ]
+            if args.run_mode == "headless":
+                command += ["-HeadlessConsoleOutput", "2"]
             item["command"] = command
             try:
                 with measure_phase(item["timing_seconds"], "runner"):
