@@ -148,11 +148,6 @@ Ensure-EmulatorHealthy | Out-Null
 # -- Step 2: Install APK if requested ------------------------
 
 if ($Install) {
-    $apk = Join-RegressionPath $scriptDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
-    if (-not (Test-Path $apk)) {
-        Write-Status "FAIL: APK not found at $apk" "Red"
-        exit 1
-    }
     Write-Status "Installing APK..."
     if (-not (Install-ApkOnDevice)) {
         Write-Status "FAIL: APK install failed" "Red"

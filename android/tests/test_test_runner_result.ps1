@@ -94,6 +94,7 @@ foreach ($test in $executionTests) {
 # Recovery must return one false result when installation fails, not false plus true
 function Write-Status { param($Message, $Color) }
 function Test-PhysicalTestTarget { return $false }
+function Get-AndroidInfrastructureTimeout { param($DefaultSeconds, $Kind) return $DefaultSeconds }
 function Invoke-AutomaticStaleEmulatorCleanup { }
 function Reconnect-AdbDevice { }
 function Test-DeviceOnline { param($Serial) return $true }

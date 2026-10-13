@@ -97,7 +97,20 @@ foreach ($file in $ps1Files) {
         $ps1SupportOwners[$file.BaseName] = $supportOwner
     }
 }
+$nativeParser = Get-Content -LiteralPath (Join-Path $androidDir 'app/src/main/cpp/shared/game_automate.cpp') -Raw
+$nativeActions = @([regex]::Matches($nativeParser, 'action == "([a-z_]+)"') | ForEach-Object { $_.Groups[1].Value })
 foreach ($file in $jsonFiles) {
+    $nativeExecutor = $true
+    foreach ($step in (Read-JsoncFile -Path $file.FullName)) {
+        if ($step.action -eq 'enter_launcher') { $nativeExecutor = $false }
+        if ($step.action -eq 'enter_game') { $nativeExecutor = $true }
+        if ($step.action -and $step.action -notmatch '^\$\{' -and $step.action -notin $nativeActions) {
+            $failures.Add("$($file.Name): native parser must preserve indices for action '$($step.action)'")
+        }
+        if ($nativeExecutor -and $step.action -eq 'wait_for' -and $step.field -match '[.\[]') {
+            $failures.Add("$($file.Name): native wait_for requires expect for nested field '$($step.field)'")
+        }
+    }
     $info = Get-TestScriptInfo -ScriptPath $file.FullName
     if ($null -eq $info) {
         $failures.Add("$($file.Name): missing or unparseable first _info object")

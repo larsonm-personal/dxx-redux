@@ -24,7 +24,7 @@ try {
     Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
     $result = Adb-Dev-Timeout -Serial $clientSerial -Seconds 120 -AdbArgs @('shell', 'am', 'instrument', '-w',
         '-e', 'suite', 'engine_query', '-e', 'host', $hostIp, '-e', 'game', $Game,
-        'com.dxxredux.app.test/com.dxxredux.app.RecoveryInstrumentation')
+        "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation")
     Write-Output $result
     if ($result -notmatch 'PASS: engine query' -or $result -match 'FAIL:|INSTRUMENTATION_FAILED|Process crashed') { throw 'Engine probe checks failed' }
     $intro = Get-GameIntrospection -Serial $hostSerial

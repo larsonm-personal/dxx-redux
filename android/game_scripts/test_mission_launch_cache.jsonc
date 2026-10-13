@@ -2,7 +2,7 @@
 [
     {
         "_info": {
-            "description": "Import a mission pack and launch twice through the retained owner cache",
+            "description": "Import a mission pack and launch twice through the retained owner cache, returning before pilot creation",
             "games": ["d1", "d2"],
             "vars": {
                 "d1": {
@@ -88,6 +88,8 @@
         "action": "setup_command",
         "command": "pause_route_metadata_precompute",
     },
+    // Launcher-only actions must retain their indices in the native parser
+    { "action": "scroll", "direction": "up" },
     {
         "action": "enter_game",
         "game": "${GAME}",

@@ -9,7 +9,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-. (Join-Path $repoRoot 'android/helpers/test_env.ps1')
+. (Join-Path $repoRoot 'android/helpers/test_helpers.ps1')
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
 if (-not $Serial) { throw 'Select the Android test serial explicitly' }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot ('android/temp/matcen-stations/run_' + [guid]::NewGuid().ToString('N')) }
 if (-not [IO.Path]::IsPathRooted($OutputDirectory)) { $OutputDirectory = Join-Path $repoRoot $OutputDirectory }
@@ -24,7 +26,7 @@ foreach ($game in @('d1', 'd2')) {
     if ($LASTEXITCODE -ne 0) { throw 'Clear Android logcat failed' }
     & (Get-Command pwsh -ErrorAction Stop).Source -NoProfile -File (Join-Path $repoRoot 'android/helpers/run_test.ps1') -Serial $Serial -ScriptName test_matcen_save_restore.jsonc -Game $game *> (Join-Path $OutputDirectory "$game-save.log")
     if ($LASTEXITCODE -ne 0) { throw "$game matcen save/restore failed; see $OutputDirectory" }
-    $resultText = & $adb -s $Serial shell run-as com.dxxredux.app cat files/automation_result.json
+    $resultText = & $adb -s $Serial shell run-as $script:PACKAGE cat files/automation_result.json
     if ($LASTEXITCODE -ne 0) { throw "$game durable automation result missing" }
     $result = $resultText | ConvertFrom-Json
     if ($result.result -ne 'PASS' -or $result.steps_completed -ne $result.total_steps) { throw "$game durable save/restore result is not complete PASS" }

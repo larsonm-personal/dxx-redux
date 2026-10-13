@@ -10,7 +10,25 @@ function Assert-Equal($Expected, $Actual, [string]$Context) {
 
 $priorSerial = $env:ANDROID_SERIAL
 $priorPackage = $env:DXX_TEST_PACKAGE
+$priorAndroidRoot = $script:ANDROID_ROOT
 try {
+    # Gradle can leave a stale outputs APK beside a newer intermediates APK
+    $fixture = Join-Path $priorAndroidRoot ('temp/test_apk_resolution/run_' + [guid]::NewGuid().ToString('N'))
+    & (Join-Path $priorAndroidRoot 'helpers/retain-recent-artifacts.ps1') -Artifacts $fixture -DirectoryPrefix run_
+    $script:ANDROID_ROOT = $fixture
+    Assert-Equal $null (Get-AndroidTestApkPath) 'Missing build has no APK'
+    foreach ($relative in @('debug/app-debug.apk', 'androidTest/debug/app-debug-androidTest.apk')) {
+        foreach ($directory in @('outputs', 'intermediates')) {
+            $path = Join-Path $fixture "app/build/$directory/apk/$relative"
+            New-Item -ItemType Directory -Path (Split-Path $path) -Force | Out-Null
+            [IO.File]::WriteAllText($path, 'APK path fixture')
+            (Get-Item -LiteralPath $path).LastWriteTimeUtc = [datetime]'2000-01-01'
+        }
+        $latest = Join-Path $fixture "app/build/intermediates/apk/$relative"
+        (Get-Item -LiteralPath $latest).LastWriteTimeUtc = [datetime]'2000-01-02'
+        Assert-Equal $latest (Get-AndroidTestApkPath -Instrumentation:($relative.StartsWith('androidTest'))) 'Select fresh APK for base and instrumentation'
+    }
+    $script:ANDROID_ROOT = $priorAndroidRoot
     Assert-Equal 'SingleDevice' (Select-RunAllTestsProfile -ReadChoice { 's' }) 'Single-device suite menu'
     $env:ANDROID_SERIAL = ''
     $env:DXX_TEST_PACKAGE = ''
@@ -96,6 +114,7 @@ try {
     Assert-Equal $null (Invoke-PrimaryEmulatorPreflight -RequireStandardGameData) 'Failed device provisioning must stop preflight'
     Write-Host 'PASS: Android target selection, child inheritance and physical recovery'
 } finally {
+    $script:ANDROID_ROOT = $priorAndroidRoot
     $env:ANDROID_SERIAL = $priorSerial
     $env:DXX_TEST_PACKAGE = $priorPackage
 }

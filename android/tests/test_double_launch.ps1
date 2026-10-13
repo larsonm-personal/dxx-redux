@@ -12,13 +12,16 @@
     Phase 5: Verify the original game process is still alive and healthy
 #>
 param(
-    [string]$Game = "d2"
+    [string]$Game = "d2",
+    [string]$Serial
 )
 
 $ErrorActionPreference = "Continue"
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
-Ensure-EmulatorHealthy
+Initialize-AndroidTestTarget -Serial $Serial | Out-Null
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
     Write-Status "FAIL: Could not resolve game data deps" "Red"
     exit 1
@@ -35,7 +38,7 @@ function Log($msg) {
 }
 
 function GetGamePid {
-    $result = Adb-Timeout -AdbArgs @("shell", "pidof", "com.dxxredux.app:game") -Seconds 5
+    $result = Adb-Timeout -AdbArgs @("shell", "pidof", "$($script:PACKAGE):game") -Seconds 5
     if ($result) { return $result.Trim() } else { return "" }
 }
 
@@ -56,7 +59,7 @@ Adb -AdbArgs @("logcat", "-c") | Out-Null
 
 # Phase 1: Start the game
 Log "Phase 1: Starting game..."
-Adb -AdbArgs @("shell", "am", "start-activity", "-n", "com.dxxredux.app/.SetupActivity") | Out-Null
+Adb -AdbArgs @("shell", "am", "start-activity", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
 if (-not (Wait-SetupActivityReady)) {
     Log "FAIL: SetupActivity not responding"; exit 1
 }
@@ -83,7 +86,7 @@ $swMenu = [System.Diagnostics.Stopwatch]::StartNew()
 while ($swMenu.Elapsed.TotalSeconds -lt 10) {
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
     Start-Sleep -Milliseconds 500
-    $json = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
     if ($json -and $json -match 'screen_mode') { break }
 }
 $screenMode = if ($json -match '"screen_mode":"([^"]+)"') { $Matches[1] } else { "unknown" }
@@ -112,7 +115,7 @@ Log "OK: process stayed alive after HOME"
 
 # Phase 3: Simulate launcher autoselect edit
 Log "Phase 3: Writing autoselect orderings via broadcast..."
-Adb -AdbArgs @("shell", "am", "start-activity", "-n", "com.dxxredux.app/.SetupActivity") | Out-Null
+Adb -AdbArgs @("shell", "am", "start-activity", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
 if (-not (Wait-SetupActivityReady -TimeoutSeconds 10)) {
     Log "WARN: SetupActivity slow to respond for autoselect"
 }
@@ -160,7 +163,7 @@ Log "OK: Same PID -- double-launch guard worked"
 Log "Phase 5: Verifying game health..."
 
 # Bring the game back to foreground so introspection works
-Adb-Timeout -AdbArgs @("shell", "monkey", "-p", "com.dxxredux.app",
+Adb-Timeout -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
     "-c", "android.intent.category.LAUNCHER", "1") -Seconds 5 | Out-Null
 Start-Sleep -Milliseconds 500
 Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
@@ -170,7 +173,7 @@ $sw5 = [System.Diagnostics.Stopwatch]::StartNew()
 while ($sw5.Elapsed.TotalSeconds -lt 10) {
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
     Start-Sleep -Milliseconds 500
-    $json2 = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+    $json2 = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
     if ($json2 -and $json2 -match 'screen_mode') { break }
 }
 $screenMode2 = if ($json2 -match '"screen_mode":"([^"]+)"') { $Matches[1] } else { "unknown" }

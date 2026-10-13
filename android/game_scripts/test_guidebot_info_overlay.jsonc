@@ -43,6 +43,13 @@
     { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000 },
 
     { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    // Prepare cold route metadata before testing the guidebot status transitions
+    { "action": "key", "key": "tab" },
+    { "action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000 },
+    { "action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "guidebot.route_next_waypoint_pending": false }, "timeout_ms": 240000 },
+    { "action": "key", "key": "escape" },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000 },
     { "action": "wait_ms", "ms": 500 },
     { "action": "assert", "expect": { "guidebot.info_overlay_visible": false } },
     { "action": "set_debug", "field": "guidebot_info_overlay", "value": "true", "post_delay_ms": 500 },
@@ -63,7 +70,9 @@
     { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
     { "action": "wait_ms", "ms": 500 },
     { "action": "assert", "expect": { "guidebot.info_overlay_visible": false } },
-    { "action": "meta_action", "id": 1004, "post_delay_ms": 500 },
+    // Keep the bot near the player so catch-up behavior cannot replace the requested routing status
+    { "action": "meta_action", "id": 1037, "post_delay_ms": 0 },
+    { "action": "meta_action", "id": 1004, "post_delay_ms": 0 },
     { "action": "wait_for", "expect": { "guidebot.info_overlay_status": "BASE routing" }, "timeout_ms": 10000 },
     { "action": "set_debug", "field": "guidebot_info_overlay", "value": "true", "post_delay_ms": 500 },
     {

@@ -95,7 +95,7 @@ try {
                 if ($owners.Count -and $support.Count) { throw "Support also listed standalone: $($file.Name)" }
             }
         }
-        foreach ($name in @('test_download_verification', 'test_d2xxl_sound_format', 'test_d2xxl_tga_layout', 'test_d2xxl_tga_pixels', 'test_cd_regression_runner', 'test_extract_all_cds_batch', 'test_extract_all_gog_batch', 'test_generate_regression_specs', 'test_extract_suite_device_preflight', 'test_extract_regression_workflow', 'test_extraction_cache_provenance', 'test_extraction_publication',
+        foreach ($name in @('test_classic_trigger_demo', 'test_pickup_autoselect_parity', 'test_d1_network_assets', 'test_d2xxl_texture_merge', 'test_download_verification', 'test_d2xxl_sound_format', 'test_d2xxl_tga_layout', 'test_d2xxl_tga_pixels', 'test_cd_regression_runner', 'test_extract_all_cds_batch', 'test_extract_all_gog_batch', 'test_generate_regression_specs', 'test_extract_suite_device_preflight', 'test_extract_regression_workflow', 'test_extraction_cache_provenance', 'test_extraction_publication',
                 'test_android_test_target', 'test_android_distributions', 'test_acoustid_regeneration', 'test_active_game_data_reset',
                 'test_castaway_level2_restored_switch_route', 'test_cd_mission_hog_isolation', 'test_client_identity_backup',
                 'test_coop_start_fanout_mapset', 'test_guidebot_secret_transition', 'test_hash_assets_force_completeness',
@@ -121,6 +121,34 @@ try {
         if ('test_graphics_recovery' -notin $selectedNames) { throw 'Full coverage omitted the provisioned graphics recovery owner' }
         if ('test_emulator_recovery' -notin $selectedNames) { throw 'Full coverage omitted the provisioned two-emulator recovery test' }
         if ('test_distribution_build_info' -notin $selectedNames) { throw 'Full coverage omitted installed APK build information' }
+        # Exercise the actual timed-run eligibility block before hash-ring sampling
+        $suiteAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot 'android/run_all_tests.ps1'), [ref]$null, [ref]$null)
+        $selectionBlock = $suiteAst.Find({ param($node)
+                $node -is [Management.Automation.Language.IfStatementAst] -and
+                $node.Extent.Text -match '\$coverageSelection = @\(Select-TestSuiteCoverage'
+            }, $true)
+        if (-not $selectionBlock) { throw 'Suite coverage selection block missing' }
+        foreach ($manual in @($false, $true)) {
+            $runnableTests = @($unattended | ForEach-Object { @{ Name = $_.Name; BaseName = $_.BaseName; Type = 'ps1' } })
+            $Filter = if ($manual) { '*' } else { $null }
+            $IncludeManual = $manual
+            $Target45Minutes = $true
+            $FullSuite = $false
+            $routeSampleSeed = 0
+            $profileSkipped = @()
+            . ([scriptblock]::Create($selectionBlock.Extent.Text))
+            if (Compare-Object $expectedNames @($runnableTests.Name | Sort-Object)) { throw 'Timed sampling must exclude caller-configured probes without rotating away runnable scenarios' }
+        }
+        # Keep provisioning declarations complete as instrumentation owners grow
+        foreach ($test in $catalog.tests | Where-Object type -eq 'ps1') {
+            $sourceText = Get-Content -LiteralPath (Join-Path $repoRoot $test.path) -Raw
+            if ($sourceText -match '\.test/com\.dxxredux\.app\.RecoveryInstrumentation' -and $test.base_name -notin (Get-TestSuiteInstrumentationOwners)) {
+                throw "Instrumentation APK provisioning missing: $($test.name)"
+            }
+            $ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot $test.path), [ref]$null, [ref]$null)
+            $mandatory = @($ast.ParamBlock.Parameters | Where-Object { $_.Extent.Text -match '\bMandatory\b' })
+            if ($mandatory.Count -and $test.base_name -notin $explicitNames) { throw "Caller-configured test is eligible for unattended execution: $($test.name)" }
+        }
         $catalogs += $catalog
     }
     if (-not @($catalogs[0].tests | Where-Object name -like '*graphics_canary').Count -or @($catalogs[1].tests | Where-Object name -like '*graphics_canary').Count) { throw 'Extended replay matrix did not replace canaries' }

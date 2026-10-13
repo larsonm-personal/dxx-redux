@@ -497,6 +497,7 @@ enum step_type {
 	STEP_SETUP_COMMAND,              /* launcher-only: no-op in game engine (skip) */
 	STEP_RESET_STATE,                /* launcher-only: no-op in game engine (skip) */
 	STEP_CLEAR_MODS,                 /* launcher-only: no-op in game engine (skip) */
+	STEP_LAUNCHER_ONLY,              /* preserve indices for actions owned by Kotlin */
 	STEP_IMPORT_MISSION_ZIP,         /* launcher-only: no-op in game engine (skip) */
 	STEP_ANALYZE_LEVEL_METADATA,     /* launcher-only: no-op in game engine (skip) */
 	STEP_ANALYZE_LEVEL_METADATA_ALL, /* launcher-only: no-op in game engine (skip) */
@@ -825,6 +826,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SETUP_COMMAND: return "setup_command";
 		case STEP_RESET_STATE: return "reset_state";
 		case STEP_CLEAR_MODS: return "clear_mods";
+		case STEP_LAUNCHER_ONLY: return "launcher_only";
 		case STEP_IMPORT_MISSION_ZIP: return "import_mission_zip";
 		case STEP_ANALYZE_LEVEL_METADATA: return "analyze_level_metadata";
 		case STEP_ANALYZE_LEVEL_METADATA_ALL: return "analyze_level_metadata_all";
@@ -2597,6 +2599,11 @@ static int parse_script(const char *json_text)
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
 			else if (action == "reset_state") s.type = STEP_RESET_STATE;
 			else if (action == "clear_mods") s.type = STEP_CLEAR_MODS;
+			else if (action == "delete_mod" || action == "install_staged_demo" ||
+			         action == "launch_base_robot_preview" || action == "launch_random_level_preview" ||
+			         action == "launch_random_robot_preview" || action == "mp_command" ||
+			         action == "scroll" || action == "test_preview_media_controls" ||
+			         action == "write_set_files") s.type = STEP_LAUNCHER_ONLY;
 			else if (action == "import_mission_zip") s.type = STEP_IMPORT_MISSION_ZIP;
 			else if (action == "analyze_level_metadata") s.type = STEP_ANALYZE_LEVEL_METADATA;
 			else if (action == "analyze_level_metadata_all") s.type = STEP_ANALYZE_LEVEL_METADATA_ALL;
@@ -4020,6 +4027,7 @@ extern "C" void game_automate_tick(void)
 		case STEP_SETUP_COMMAND:
 		case STEP_RESET_STATE:
 		case STEP_CLEAR_MODS:
+		case STEP_LAUNCHER_ONLY:
 		case STEP_IMPORT_MISSION_ZIP:
 		case STEP_ANALYZE_LEVEL_METADATA:
 		case STEP_ANALYZE_LEVEL_METADATA_ALL:

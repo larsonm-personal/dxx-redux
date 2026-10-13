@@ -8,7 +8,19 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path $PSScriptRoot)
-if (!$Etc2Tool) { $Etc2Tool = Join-Path $repo 'android/tools/etc2tool/build/Release/etc2tool.exe' }
+. (Join-Path $PSScriptRoot '../helpers/test_env.ps1')
+if (!$Etc2Tool) {
+    $source = Join-Path $repo 'android/tools/etc2tool'
+    $build = Join-Path $source 'build-regression'
+    $cmake = Resolve-RegressionCMakePath -RepoRoot $repo
+    $configure = @('-S', $source, '-B', $build, '-DCMAKE_BUILD_TYPE=Release')
+    if (Test-RegressionWindowsHost) { $configure += @('-G', 'Visual Studio 17 2022', '-A', 'x64') }
+    & $cmake @configure
+    if ($LASTEXITCODE -ne 0) { throw 'etc2tool configuration failed' }
+    & $cmake --build $build --config Release --target etc2tool --parallel 4
+    if ($LASTEXITCODE -ne 0) { throw 'etc2tool build failed' }
+    $Etc2Tool = Join-Path $build $(if (Test-RegressionWindowsHost) { 'Release/etc2tool.exe' } else { 'etc2tool' })
+}
 if (!(Test-Path -LiteralPath $Etc2Tool)) { throw 'Build etc2tool or provide -Etc2Tool' }
 $root = Join-Path $repo ('android/temp/d2xxl-merge-test/run_' + [guid]::NewGuid().ToString('N'))
 & (Join-Path $repo 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $root -DirectoryPrefix run_

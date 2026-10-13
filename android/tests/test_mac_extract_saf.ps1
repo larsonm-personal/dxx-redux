@@ -100,7 +100,7 @@ function Invoke-SafMode {
         throw "Test set did not become empty before the $Mode import"
     }
     Adb -AdbArgs @("logcat", "-c") | Out-Null
-    $uris = "content://com.dxxredux.app.saf-test/$Mode/macplay.cue,content://com.dxxredux.app.saf-test/$Mode/macplay.bin"
+    $uris = "content://$($script:PACKAGE).saf-test/$Mode/macplay.cue,content://$($script:PACKAGE).saf-test/$Mode/macplay.bin"
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
         "--es", "command", "import_picked_uris", "--esa", "uris", $uris

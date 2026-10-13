@@ -1,14 +1,15 @@
 #!/usr/bin/env pwsh
 param(
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [ValidateSet('multiplayer', 'game')][string]$RetryKind = 'multiplayer'
 )
 
 $ErrorActionPreference = 'Stop'
-if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this lifecycle test only on an emulator' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 
 function Start-LanJoin {
     Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.MP_COMMAND', '-p', $script:PACKAGE,
@@ -21,7 +22,7 @@ try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
     Adb -AdbArgs @('logcat', '-c') | Out-Null
-    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
     Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '-p', $script:PACKAGE,
         '--es', 'command', 'write_probe_debug_prefs', '--ez', 'enabled', 'true') | Out-Null
@@ -33,7 +34,7 @@ try {
     if (-not $oldPid) { throw 'First join has no game process' }
 
     # Returning through the launcher must preserve a healthy, still-returnable engine
-    Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x00020000', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x00020000', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready over the healthy game' }
     Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '-p', $script:PACKAGE,
         '--es', 'command', 'launch', '--es', 'game', 'd2') | Out-Null
@@ -45,7 +46,7 @@ try {
     }
 
     # CLEAR_TOP finishes MainActivity while its native join loop is still running
-    Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x04000000', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x04000000', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not return' }
     if (-not (Wait-ForCondition -Description 'finished game activity clears its return marker' -TimeoutSec 10 -Condition {
                 (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'ls', 'files/game_activity_state.json')) -match 'No such file'

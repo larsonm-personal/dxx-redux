@@ -202,6 +202,7 @@ class MainActivity :
     private var playlistPreparation: Deferred<Unit>? = null
     private var routeMetadataJob: Job? = null
     private val routeMetadataDutyLock = Any()
+    private var routeMetadataRequestGeneration: Int? = null
 
     @Volatile
     private var routeMetadataCurrentLevelCalculating = false
@@ -813,9 +814,12 @@ class MainActivity :
         missionAssetContext: String,
         contentGame: String,
     ) {
+        synchronized(routeMetadataDutyLock) {
+            routeMetadataRequestGeneration = requestGeneration
+            routeMetadataCurrentLevelCalculating =
+                !RouteMetadataCurrentWork.forReadiness(routeReadiness).ready
+        }
         routeMetadataJob?.cancel()
-        routeMetadataCurrentLevelCalculating =
-            !RouteMetadataCurrentWork.forReadiness(routeReadiness).ready
         routeMetadataJob =
             startupScope.launch(Dispatchers.IO) {
                 publishRouteMetadataCpuDuty()
@@ -832,8 +836,18 @@ class MainActivity :
                     secretEntryLevels.toList(),
                     missionAssetContext,
                     onCurrentReady = { success ->
-                        routeMetadataCurrentLevelCalculating = false
-                        publishRouteMetadataCpuDuty()
+                        synchronized(routeMetadataDutyLock) {
+                            // Cancellation of the previous level must not complete the new request
+                            if (routeMetadataRequestGeneration == requestGeneration) {
+                                routeMetadataCurrentLevelCalculating = false
+                                publishRouteMetadataCpuDuty()
+                            } else {
+                                RouteMetadataDiagnostics.log(
+                                    "Ignoring completed route metadata duty generation=$requestGeneration " +
+                                        "current=$routeMetadataRequestGeneration success=$success",
+                                )
+                            }
+                        }
                         nativeNotifyRouteMetadataFinished(requestGeneration, success)
                     },
                     onCurrentProgress = { estimatedPermille, state ->
@@ -3594,10 +3608,13 @@ class MainActivity :
             pauseUiOwner = 0L
         }
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
+        synchronized(routeMetadataDutyLock) {
+            routeMetadataRequestGeneration = null
+            routeMetadataCurrentLevelCalculating = false
+            routeMetadataAutomapOpen = false
+            publishRouteMetadataCpuDuty()
+        }
         routeMetadataJob?.cancel()
-        routeMetadataCurrentLevelCalculating = false
-        routeMetadataAutomapOpen = false
-        publishRouteMetadataCpuDuty()
         startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()

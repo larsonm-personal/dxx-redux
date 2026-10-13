@@ -1,16 +1,16 @@
-# Merge regression on the disposable test emulator; requires local retail Vertigo files
+# Merge regression on the isolated test app; requires local retail Vertigo files
 param([switch]$Install, [string]$Serial)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
-if ($Serial -notmatch '^emulator-\d+$') { throw 'Requires a disposable test emulator' }
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 if (-not (Test-DeviceOnline -Serial $Serial)) { throw "Emulator $Serial is not online" }
 if ($Install) {
-    & $ADB -s $Serial shell am force-stop com.dxxredux.app
-    & $ADB -s $Serial shell run-as com.dxxredux.app rm -rf files/d2x-redux/.mission_assets
-    & $ADB -s $Serial install -r -t (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
-    if ($LASTEXITCODE -ne 0) { throw 'APK installation failed' }
+    & $ADB -s $Serial shell am force-stop $script:PACKAGE
+    & $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d2x-redux/.mission_assets
+    if (-not (Install-ApkOnDevice -Serial $Serial)) { throw 'APK installation failed' }
 }
 $source = Join-Path $repoRoot 'game_data/extracted/VERTIGO/MISSIONS'
 $fixture = Join-Path $repoRoot 'temp/vertigo-probe.zip'
@@ -25,8 +25,8 @@ try {
 } finally { $zip.Dispose(); $stream.Dispose() }
 & $ADB -s $Serial push $fixture /data/local/tmp/vertigo-probe.zip
 if ($LASTEXITCODE -ne 0) { throw 'Fixture push failed' }
-& $ADB -s $Serial shell run-as com.dxxredux.app mkdir -p files/imported/sets/default/.content/mods
-& $ADB -s $Serial shell run-as com.dxxredux.app cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
+& $ADB -s $Serial shell run-as $script:PACKAGE mkdir -p files/imported/sets/default/.content/mods
+& $ADB -s $Serial shell run-as $script:PACKAGE cp /data/local/tmp/vertigo-probe.zip files/imported/sets/default/.content/mods/vertigo-probe.zip
 if ($LASTEXITCODE -ne 0) { throw 'Fixture staging failed' }
 & $ADB -s $Serial logcat -c
 & (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_vertigo_merge_creation.jsonc -Game d2 -Serial $Serial -TimeoutSeconds 240

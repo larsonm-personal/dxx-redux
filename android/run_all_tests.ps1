@@ -582,6 +582,10 @@ $noInfraTests = @(
     "test_publish_menu",
     "test_download_verification",
     "test_d2xxl_sound_format",
+    "test_d2xxl_texture_merge",
+    "test_classic_trigger_demo",
+    "test_pickup_autoselect_parity",
+    "test_d1_network_assets",
     "test_d2xxl_tga_layout",
     "test_d2xxl_tga_pixels",
     "test_cd_regression_runner",
@@ -1080,8 +1084,8 @@ $runnableTests = @($runnableTests | Where-Object {
     })
 
 $suiteCoverageProfile = 'all requested scenarios'
-if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
-    $coverageSelection = @(Select-TestSuiteCoverage -Tests $runnableTests -Seed $routeSampleSeed -AllScenarios:$FullSuite)
+if ($Target45Minutes -or (-not $Filter -and -not $IncludeManual)) {
+    $coverageSelection = @(Select-TestSuiteCoverage -Tests $runnableTests -Seed $routeSampleSeed -AllScenarios:($FullSuite -or $Target45Minutes))
     $explicitTests = (Get-TestSuiteCoveragePolicy).explicit
     foreach ($test in $runnableTests) {
         if ($test.Name -notin $coverageSelection.Name) {
@@ -1095,7 +1099,7 @@ if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
         }
     }
     $runnableTests = $coverageSelection
-    if (-not $FullSuite) { $suiteCoverageProfile = "fixed integration owners + rotating scenario families; seed $routeSampleSeed" }
+    if (-not $FullSuite -and -not $Target45Minutes) { $suiteCoverageProfile = "fixed integration owners + rotating scenario families; seed $routeSampleSeed" }
 }
 
 if ($HostOnly) { $suiteCoverageProfile = "host only; $suiteCoverageProfile" }
@@ -1615,7 +1619,7 @@ function Invoke-SuitePreflight {
             return $false
         }
         if ($script:needsInstrumentation) {
-            $instrumentApk = Join-Path $scriptDir 'app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk'
+            $instrumentApk = Get-AndroidTestApkPath -Instrumentation
             $installed = Adb-Dev -Serial $preflightEmu1 -AdbArgs @('install', '-r', '-t', $instrumentApk) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
         }
@@ -1781,7 +1785,7 @@ if ($runnableTests.Count -gt 0 -and -not (Test-HostToolPrerequisites)) {
 # -- Build APK if any emulator tests will run --
 
 $needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
-$script:needsInstrumentation = @($tierSingleEmu | Where-Object Name -in @('test_enemy_within_import', 'test_demo_import', 'test_controller_overlay', 'test_host_dialog_loading', 'test_coop_session', 'test_multiplayer_recovery', 'test_lan_qr')).Count -gt 0
+$script:needsInstrumentation = @($runnableTests | Where-Object BaseName -in (Get-TestSuiteInstrumentationOwners)).Count -gt 0
 if ($runnableTests.Count -gt 0 -and $needsApk) {
     if (-not (Test-PhysicalTestTarget) -and -not (Test-SoftwareAndroidTestTarget) -and -not (Test-EmulatorAccelerationAvailable)) {
         Write-Host "FAIL: Selected tests require Android emulator CPU acceleration" -ForegroundColor Red
@@ -1809,7 +1813,7 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
     # Retain the exact APK used by this run even if another build changes outputs
     $suiteApk = Join-Path ([IO.Path]::GetFullPath($ReportDir)) "apk_$timestamp.apk"
     & (Join-Path $helpersDir 'retain-recent-artifacts.ps1') -Artifacts $suiteApk | Out-Host
-    Copy-Item -LiteralPath (Join-Path $scriptDir 'app/build/intermediates/apk/debug/app-debug.apk') -Destination $suiteApk
+    Copy-Item -LiteralPath (Get-AndroidTestApkPath) -Destination $suiteApk
     $env:DXX_TEST_APK = $suiteApk
     Write-Host ""
 }
@@ -2268,6 +2272,12 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
         $emu2Serial = $script:SECONDARY_EMULATOR_SERIAL
         Install-AppAndData -Serial $emu2Serial
+
+        if ($script:needsInstrumentation) {
+            $instrumentApk = Get-AndroidTestApkPath -Instrumentation
+            $installed = Adb-Dev -Serial $emu2Serial -AdbArgs @('install', '-r', '-t', $instrumentApk) -Seconds 180
+            if ($installed -notmatch 'Success') { throw "Client instrumentation APK install failed: $installed" }
+        }
 
         foreach ($test in $tierDualEmu) {
             if ($stopEarly) { break }

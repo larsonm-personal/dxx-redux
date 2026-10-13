@@ -2,7 +2,8 @@
 param([string]$Serial = $env:ANDROID_SERIAL)
 
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot '../helpers/test_env.ps1')
+. (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $depBase = (Get-Content (Join-Path $repoRoot 'dependency_base.txt') -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir 'platform-tools' -ToolName 'adb'
@@ -33,7 +34,7 @@ $probe = Join-Path $output 'probe.jar'
 if ($LASTEXITCODE -ne 0) { throw 'Touch layout probe dex compilation failed' }
 
 $device = if ($Serial) { @('-s', $Serial) } else { @() }
-$apk = (& $adb @device shell pm path com.dxxredux.app | Where-Object { $_ -match '/base.apk$' } | Select-Object -First 1)
+$apk = (& $adb @device shell pm path $script:PACKAGE | Where-Object { $_ -match '/base.apk$' } | Select-Object -First 1)
 if (-not $apk) { throw 'Install the current debug APK before running this probe' }
 $apk = $apk.Trim().Substring('package:'.Length)
 $remote = '/data/local/tmp/dxx-touch-layout-format.jar'

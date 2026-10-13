@@ -10,6 +10,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
+Initialize-AndroidTestTarget | Out-Null
+Assert-IsolatedPhysicalTestApp
 
 function Fail($msg) { Write-Error "FAIL: $msg"; exit 1 }
 function Info($msg) { Write-Host $msg }
@@ -198,7 +200,7 @@ Reset-GameState
 & $script:ADB shell am force-stop com.google.android.documentsui 2>$null
 
 Info "Launching SetupActivity..."
-& $script:ADB shell am start -n "com.dxxredux.app/.SetupActivity" 2>&1 | Out-Null
+Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
 Info "Waiting for SetupActivity to be ready..."
 if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
     Fail "SetupActivity did not become ready within 30s"

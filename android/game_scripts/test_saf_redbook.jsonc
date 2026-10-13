@@ -83,7 +83,6 @@
     },
 
     // Verify audio source registered via setup introspection
-    { "action": "setup_introspect" },
     {
         "action": "assert",
         "expect": {

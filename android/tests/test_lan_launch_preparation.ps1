@@ -34,14 +34,14 @@ try {
         (Read-LaunchLog $clientSerial) -match 'mp preparation role=client .*step=mission_ready'
     }
     if (-not $prepared) { throw 'Client did not prepare while host launch was pending' }
-    if (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'pidof', 'com.dxxredux.app:game') -Seconds 5) {
+    if (Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5) {
         throw 'Client entered the engine before host confirmation'
     }
     Send-MpCommand -Serial $hostSerial -Command 'launch_game'
     $launched = Wait-ForCondition -Description 'both prepared peers enter engine' -TimeoutSec 30 -PollMs 500 -Condition {
         $clientLog = Read-LaunchLog $clientSerial
-        $hostPid = Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', 'com.dxxredux.app:game') -Seconds 5
-        $clientPid = Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'pidof', 'com.dxxredux.app:game') -Seconds 5
+        $hostPid = Adb-Dev-Timeout -Serial $hostSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5
+        $clientPid = Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game") -Seconds 5
         $hostPid -and $clientPid -and $clientLog -match 'mp preparation role=client .*step=launch_released'
     }
     if (-not $launched) { throw 'Host confirmation did not release prepared client' }
@@ -51,6 +51,6 @@ try {
 } finally {
     foreach ($serial in @($hostSerial, $clientSerial)) {
         Read-LaunchLog $serial | Out-File "$PSScriptRoot/../temp/lobby_launch_$serial.log" -Encoding utf8
-        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', 'com.dxxredux.app') -Seconds 5 | Out-Null
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) -Seconds 5 | Out-Null
     }
 }

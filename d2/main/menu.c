@@ -205,6 +205,14 @@ try_again:
 	x = newmenu_do( NULL, TXT_ENTER_PILOT_NAME, 2, m, NULL, NULL );
 	Newmenu_allowed_chars = NULL;
 
+#ifdef __ANDROID__
+	/* The initial pilot prompt must also allow Android shutdown */
+	if (Quitting) {
+		crash_breadcrumb("new_player: aborted during quit");
+		return 0;
+	}
+#endif
+
 	if ( x < 0 ) {
 		if ( allow_abort ) return 0;
 		goto try_again;
@@ -482,6 +490,11 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 		case EVENT_WINDOW_ACTIVATED:
 #ifdef __ANDROID__
 			crash_breadcrumb("main_menu: ACTIVATED");
+			/* Android exit must not reopen pilot creation while unwinding menus */
+			if (Quitting) {
+				crash_breadcrumb("main_menu: skip pilot creation during quit");
+				break;
+			}
 #endif
 			load_palette(MENU_PALETTE,0,1);		//get correct palette
 

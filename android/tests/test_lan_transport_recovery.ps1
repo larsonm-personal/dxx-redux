@@ -1,11 +1,12 @@
 #!/usr/bin/env pwsh
-param([string]$Serial = 'emulator-5554')
+param([string]$Serial)
 
 $ErrorActionPreference = 'Stop'
-if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this recovery fixture only on an emulator' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
-$env:ANDROID_SERIAL = $Serial
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
 
 function Send-LanCommand([string]$Command) {
     Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.MP_COMMAND', '-p', $script:PACKAGE,
@@ -15,7 +16,7 @@ function Send-LanCommand([string]$Command) {
 try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
-    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
     Send-LanCommand 'lan_discover'
     foreach ($retry in @('automatic', 'explicit')) {

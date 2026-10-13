@@ -35,6 +35,7 @@
 
     { "action": "enter_launcher" },
     { "action": "reset_state" },
+    { "action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250 },
     { "action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250 },
     {
         "action": "setup_command",
@@ -90,6 +91,14 @@
     // the switch-completion route contract here instead of paying for another
     // launcher, intro, mission selection, and briefing sequence.
     { "action": "log", "message": "=== TEST: Counterstrike level 2 switch completion ===" },
+    // Earlier suite fixtures clear route caches. Compute the current level at
+    // automap priority before testing guidance, with a separate readiness budget
+    { "action": "key", "key": "tab" },
+    { "action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000 },
+    { "action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "guidebot.route_next_waypoint_pending": false }, "timeout_ms": 240000 },
+    { "action": "key", "key": "escape" },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000 },
     { "action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100 },
     // Fire before requesting Guide-Bot guidance so completion must be recovered
     // from the unlocked linked doors, without an active-goal trigger event.

@@ -1,19 +1,16 @@
 #!/usr/bin/env pwsh
-param([string]$Serial = 'emulator-5554', [switch]$Install)
+param([string]$Serial, [switch]$Install)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-$env:ANDROID_SERIAL = $Serial
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
-if ($Serial -notmatch '^emulator-\d+$') { throw 'Use a disposable test emulator' }
-& $ADB -s $Serial shell am force-stop com.dxxredux.app
+$Serial = Initialize-AndroidTestTarget -Serial $Serial
+Assert-IsolatedPhysicalTestApp
+Ensure-EmulatorHealthy | Out-Null
+& $ADB -s $Serial shell am force-stop $script:PACKAGE
 # Mission publications are regenerated from the test manifest; release previous large copies first
-& $ADB -s $Serial shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d1x-redux/.mission_assets /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
+& $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d1x-redux/.mission_assets files/d2x-redux/.mission_assets
 if ($Install) {
-    $apk = @('android/app/build/intermediates/apk/debug/app-debug.apk', 'android/app/build/outputs/apk/debug/app-debug.apk') |
-        ForEach-Object { Get-Item -LiteralPath (Join-Path $repoRoot $_) -ErrorAction SilentlyContinue } |
-        Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    & $ADB -s $Serial install -r -t $apk.FullName
-    if ($LASTEXITCODE -ne 0) { throw 'APK installation failed' }
+    if (-not (Install-ApkOnDevice -Serial $Serial)) { throw 'APK installation failed' }
 }
 $fixtures = Join-Path $repoRoot 'android/temp/guidebot_mission_metadata'
 & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $fixtures
@@ -27,16 +24,16 @@ try {
 } finally { $archive.Dispose() }
 $target = 'files/imported/sets/default/.content/mods'
 try {
-    & $ADB -s $Serial shell run-as com.dxxredux.app mkdir -p $target
+    & $ADB -s $Serial shell run-as $script:PACKAGE mkdir -p $target
     foreach ($file in @((Join-Path $fixtures 'ewithin-rebirth.zip'))) {
         $name = Split-Path -Leaf $file
         & $ADB -s $Serial push $file "/data/local/tmp/$name"
-        & $ADB -s $Serial shell run-as com.dxxredux.app cp "/data/local/tmp/$name" "$target/$name"
+        & $ADB -s $Serial shell run-as $script:PACKAGE cp "/data/local/tmp/$name" "$target/$name"
         if ($LASTEXITCODE -ne 0) { throw "Could not stage $name" }
         & $ADB -s $Serial shell rm -f "/data/local/tmp/$name"
     }
     # Force the in-game worker path instead of reusing a route produced by launcher analysis
-    & $ADB -s $Serial shell run-as com.dxxredux.app rm -rf files/d2x-redux/route-cache
+    & $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d2x-redux/route-cache
     & $ADB -s $Serial logcat -c
     & (Join-Path $repoRoot 'android/helpers/run_test.ps1') -ScriptName test_guidebot_mission_metadata.jsonc -Game d2 -TimeoutSeconds 360
     if ($LASTEXITCODE -ne 0) { throw 'Enemy Within route metadata regression failed' }
@@ -44,16 +41,16 @@ try {
     Write-Host 'PASS Enemy Within active mission metadata and yellow-key switch guidance'
 } finally {
     # Release this large fixture before the preview and subsequent suite tests
-    # Publications are disposable on this test emulator and are rebuilt on launch
-    & $ADB -s $Serial shell am force-stop com.dxxredux.app
+    # Publications are disposable on the isolated test app and are rebuilt on launch
+    & $ADB -s $Serial shell am force-stop $script:PACKAGE
     & $ADB -s $Serial shell rm -f /data/local/tmp/ewithin-rebirth.zip
-    & $ADB -s $Serial shell run-as com.dxxredux.app rm -f "$target/ewithin-rebirth.zip" "$target/mod_manifest.json"
+    & $ADB -s $Serial shell run-as $script:PACKAGE rm -f "$target/ewithin-rebirth.zip" "$target/mod_manifest.json"
     if ($LASTEXITCODE -ne 0) { throw 'Could not remove Enemy Within test archive' }
-    & $ADB -s $Serial shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d1x-redux/.mission_assets /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
+    & $ADB -s $Serial shell run-as $script:PACKAGE rm -rf files/d1x-redux/.mission_assets files/d2x-redux/.mission_assets
     if ($LASTEXITCODE -ne 0) { throw 'Could not release test mission publications' }
     # Metadata workers also read these generated mount references before the next game launch
     foreach ($gameDir in @('d1x-redux', 'd2x-redux')) {
-        & $ADB -s $Serial shell run-as com.dxxredux.app rm -f "files/$gameDir/.active_mod_paths" "files/$gameDir/.mission_assets.json"
+        & $ADB -s $Serial shell run-as $script:PACKAGE rm -f "files/$gameDir/.active_mod_paths" "files/$gameDir/.mission_assets.json"
         if ($LASTEXITCODE -ne 0) { throw "Could not clear test mission mounts for $gameDir" }
     }
 }

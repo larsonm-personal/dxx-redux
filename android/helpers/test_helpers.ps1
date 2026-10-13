@@ -3069,13 +3069,22 @@ function Stop-DockerNat {
     }
 }
 
+function Get-AndroidTestApkPath {
+    param([switch]$Instrumentation)
+    $relative = if ($Instrumentation) { 'androidTest/debug/app-debug-androidTest.apk' } else { 'debug/app-debug.apk' }
+    $candidates = foreach ($directory in @('intermediates', 'outputs')) {
+        $path = Join-Path $script:ANDROID_ROOT "app/build/$directory/apk/$relative"
+        if (Test-Path -LiteralPath $path -PathType Leaf) { Get-Item -LiteralPath $path }
+    }
+    $apk = $candidates | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+    if ($apk) { return $apk.FullName }
+}
+
 function Install-ApkOnDevice {
     # Install the debug APK on a specific emulator serial, or default.
     param([string]$Serial)
-    $apk = if ($env:DXX_TEST_APK) { $env:DXX_TEST_APK } else {
-        Join-RegressionPath $script:ANDROID_ROOT "app" "build" "outputs" "apk" "debug" "app-debug.apk"
-    }
-    if (-not (Test-Path $apk)) {
+    $apk = if ($env:DXX_TEST_APK) { $env:DXX_TEST_APK } else { Get-AndroidTestApkPath }
+    if (-not $apk -or -not (Test-Path -LiteralPath $apk)) {
         Write-Status "WARN: No APK at $apk" "Yellow"
         return $false
     }

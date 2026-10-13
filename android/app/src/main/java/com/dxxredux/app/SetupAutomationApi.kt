@@ -417,7 +417,8 @@ private suspend fun SetupActivity.scrollSetupContent(forward: Boolean): Boolean 
             }
             if (scrolled) {
                 delay(250)
-                if (!isLandscape) return@withContext true
+                // A second gesture can skip entire rows in a short landscape dialog
+                return@withContext true
             }
             val boundaryNodeIds = largestScrollNodeIds(oppositeScrollNodes)
             if (requestedNodeIds.isEmpty() && boundaryNodeIds.isNotEmpty()) {

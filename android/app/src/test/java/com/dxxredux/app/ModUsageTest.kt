@@ -21,11 +21,11 @@ class ModUsageTest {
                     "presentation":[{"source":"/sets/a/sounds.dxa","kind":"font"}]}""",
             )
             assertEquals(
-                listOf("Last D2 engine run" to "2 sounds loaded, 1 played; 0 images, 1 fonts loaded"),
+                listOf("Last recorded D2 mod use (Game Logs)" to "2 sounds loaded, 1 played; 0 images, 1 fonts loaded"),
                 readModUsage(root, "/sets/a/sounds.dxa"),
             )
             assertEquals(
-                listOf("Last D2 engine run" to "No sound, image or font use recorded"),
+                listOf("Last recorded D2 mod use (Game Logs)" to "No sound, image or font use recorded"),
                 readModUsage(root, "/sets/c/sounds.dxa"),
             )
             report.writeText(
@@ -36,7 +36,7 @@ class ModUsageTest {
             )
             assertEquals(
                 listOf(
-                    "Last D2 engine run" to
+                    "Last recorded D2 mod use (Game Logs)" to
                         "0 sounds loaded, 0 played; 0 images, 0 fonts loaded; 2 data patches applied",
                 ),
                 readModUsage(root, "/sets/a/uud.dxa"),

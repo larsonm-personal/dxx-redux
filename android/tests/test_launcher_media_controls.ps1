@@ -2,7 +2,7 @@
 # Stage the MP3 fixture before exercising launcher media controls
 [CmdletBinding()]
 param(
-    [string]$Serial = 'emulator-5554',
+    [string]$Serial,
     [string]$AudioFile,
     [switch]$Install
 )

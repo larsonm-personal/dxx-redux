@@ -29,6 +29,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 
 /** Exercises production settings with real controller key dispatch and focus diagnostics */
@@ -104,6 +108,14 @@ internal class SliderNavigationChecks(
             )) {
                 onMain { launcher.requestedOrientation = orientation }
                 Thread.sleep(500)
+                controllerAssignmentScrolling(launcher)
+            }
+            for (orientation in listOf(
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+            )) {
+                onMain { launcher.requestedOrientation = orientation }
+                Thread.sleep(500)
                 for (game in listOf("d1", "d2")) {
                     for (wide in listOf(true, false)) {
                         graphicsNavigation(launcher, game, wide)
@@ -119,6 +131,41 @@ internal class SliderNavigationChecks(
                 if (bytes != null) file.writeBytes(bytes) else file.delete()
             }
             onMain { launcher.requestedOrientation = originalOrientation }
+        }
+    }
+
+    private fun controllerAssignmentScrolling(launcher: SetupActivity) {
+        val script = File(launcher.cacheDir, "controller-assignment-scroll.json")
+        script.writeText(
+            """
+            [
+                {"action":"tap_button","text":"Controller Mapping","exact":true},
+                {"action":"tap_button","text":"Apply Preset","exact":true},
+                {"action":"tap_button","text":"Default Controller","exact":true},
+                {"action":"controller_input","axes":{"BRAKE":0.875},"post_delay_ms":2300},
+                {"action":"controller_input","axes":{"BRAKE":0}},
+                {"action":"tap_button","text":"Fire Primary","exact":true},
+                {"action":"assert","expect":{"controller_mapping.bindings.BRAKE":"Fire Primary"}},
+                {"action":"controller_input","axes":{"GAS":0.875},"post_delay_ms":2300},
+                {"action":"controller_input","axes":{"GAS":0}},
+                {"action":"tap_button","text":"Fire Secondary","exact":true},
+                {"action":"assert","expect":{"controller_mapping.bindings.GAS":"Fire Secondary"}},
+                {"action":"tap_button","text":"Cancel","exact":true}
+            ]
+            """.trimIndent(),
+        )
+        try {
+            runBlocking {
+                withContext(Dispatchers.Main) {
+                    LauncherScriptExecutor(launcher, "controller-assignment-scroll") { _, _, _ ->
+                        error("Controller assignment must stay in the launcher")
+                    }.execute(script.absolutePath)
+                }
+            }
+            val result = JSONObject(File(launcher.filesDir, "automation_result.json").readText())
+            check(result.getString("result") == "PASS") { "Controller assignment scrolling failed: $result" }
+        } finally {
+            script.delete()
         }
     }
 
