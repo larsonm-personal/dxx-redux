@@ -16,6 +16,25 @@ extern "C" {
 #define INPUT_DEMO_INPUT_COMMAND         3
 #define INPUT_DEMO_INPUT_CLEAR           4
 
+/* Wire key codes match d1/d2 arch/include/key.h; only digits accept Shift */
+#define INPUT_DEMO_GUIDEBOT_KEY_FIRST   0x02
+#define INPUT_DEMO_GUIDEBOT_KEY_LAST    0x0b
+#define INPUT_DEMO_GUIDEBOT_KEY_RECALL  0x13
+#define INPUT_DEMO_GUIDEBOT_KEY_SHIFTED 0x100
+#define INPUT_DEMO_PLAYER_MARKER_COUNT  9
+
+static inline int input_demo_guidebot_key_supported(int32_t key)
+{
+	const int32_t digit = key & ~INPUT_DEMO_GUIDEBOT_KEY_SHIFTED;
+	return key == INPUT_DEMO_GUIDEBOT_KEY_RECALL ||
+	       (digit >= INPUT_DEMO_GUIDEBOT_KEY_FIRST && digit <= INPUT_DEMO_GUIDEBOT_KEY_LAST);
+}
+
+static inline int input_demo_player_marker_supported(int32_t marker)
+{
+	return marker >= 0 && marker < INPUT_DEMO_PLAYER_MARKER_COUNT;
+}
+
 /* Shared C/C++ ABI must not inherit engine header packing */
 #pragma pack(push, 4)
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE                     0

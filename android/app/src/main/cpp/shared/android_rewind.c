@@ -16,6 +16,7 @@
 #include "endlevel.h"
 #include "fix.h"
 #include "game.h"
+#include "hudmsg.h"
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "mission.h"
@@ -440,16 +441,25 @@ int android_rewind_select_restore(android_rewind_authoritative_restore *restore)
 int android_rewind_restore_authoritative(const android_rewind_authoritative_restore *restore)
 {
 	int restore_ok;
+	int input_recording_stopped;
 	int64_t current_game_time64 = GameTime64;
 
 	if (!restore || !restore->buffer.data || restore->buffer.size == 0)
 		return ANDROID_REWIND_STATUS_FAILED;
+	/* Snapshots are post-input/pre-simulation, so frame counts cannot restore
+	 * an ordered recorder's pending input batch. Preserve rewind, stop capture */
+	input_recording_stopped = input_demo_recorder_cancel_for_rewind();
+	if (input_recording_stopped) {
+		debug_log(DLOG_GAME, "input replay recording stopped: rewind cannot restore ordered input history");
+	}
 	android_rewind_record_success_overlay(restore->rewound_seconds);
 	android_rewind_apply_restore_overrides(restore);
 	restore_ok = (Game_mode & GM_MULTI_COOP)
 	                 ? state_restore_coop_from_memory(&restore->buffer)
 	                 : state_restore_from_memory(&restore->buffer);
 	android_rewind_finish_restore();
+	if (input_recording_stopped)
+		HUD_init_message(HM_DEFAULT, "Input replay recording stopped for rewind");
 	if (!restore_ok) {
 		debug_log(DLOG_GAME,
 		          "rewind authoritative restore failed: gt=%lld target_gt=%lld bytes=%u",

@@ -229,7 +229,14 @@ def _records(path, full):
             or any(not isinstance(event, dict) or event.get("kind") not in DIAGNOSTIC_EVENTS for event in events)
             or (events and not full)):
             raise parity.EvidenceError("Only reviewed diagnostic tail events may be removed")
-        ordered.validate(header, rows[1:-2], rows[-2])
+        batches = ordered.validate(header, rows[1:-2], rows[-2])
+        # Public scenes use ordinary player actions, never debug spawning or warps
+        public_commands = {"guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
+                           "drop_flag", "escort_release_control", "death_abort", "change_difficulty",
+                           "guidebot_find_secret", "guidebot_find_unexplored", "select_weapon_exact"}
+        if any(op["k"] == "command" and op["event"]["command"] not in public_commands
+               for batch in batches for op in batch["ops"]):
+            raise parity.EvidenceError("Public replay forbids spawning, warps and unreviewed direct commands")
     parity.validate_identity(rows[-1]["result"], header, game)
     return raw, rows
 

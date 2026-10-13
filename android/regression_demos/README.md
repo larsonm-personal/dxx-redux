@@ -187,7 +187,7 @@ make checkpoint demos pass
 The same regression entry points select the pinned public scenes with
 `-Corpus public`. All scenes are ordinary native level starts; both backends
 run each twice and compare unchanged live-capture frame state, every diagnostic,
-terminal state and SIM-RNG oracles. Each demo plus its oracle stays below
+terminal state and SIM-RNG oracles. Each demo and each oracle file stays at or below
 100,000 uncompressed UTF-8 bytes. Playback never rewrites expectations.
 
 Prepare pinned public assets using `android/helpers/setup_shareware_test_data.ps1
@@ -235,3 +235,27 @@ Negative controls explicitly request `-NativeOnly`: their reports mark imported
 parity `not_run`, avoiding two redundant imported investigations. The positive
 graphics pass still requires the existing paired scope once. All mutations are
 disposable copies; checked-in fixtures stay byte-identical.
+
+
+## Ordered input recording (format 5)
+
+New captures preserve native pre-simulation dispatch order and input-time frame
+timing, with explicit marker-reset, controls-clear, sample and direct-command
+operations. The final input tail is mandatory. Replay compares computed residual
+controls and post-input SIM RNG instead of overwriting discrepancies. Playback
+accepts format 5 only; use `android/tests/convert_public_replay.py` for bounded,
+oracle-verified public-corpus conversion, or make a fresh recording. Conversion
+is not a general guarantee that missing historical event order can be recovered.
+
+Rear-view wall-clock input and modal automap cancel input capture with a diagnostic.
+Android rewind currently stops companion input recording because rewind snapshots
+do not retain pending ordered dispatch history. Gameplay rewind and classic demo
+recording still work; start a fresh input recording afterward. This limitation is
+explicit rather than emitting a recording that cannot reproduce the restored world.
+
+Current scope note: using rear-view or opening automap during an active ordered
+input recording stops and discards that companion input recording immediately.
+Gameplay and classic demo recording continue. The old format accepted these
+controls using wall-clock rear-view handling and a swallowed automap pulse, without
+a complete deterministic ordering guarantee. This new restriction is under review
+before publication; modal support is not yet qualified.

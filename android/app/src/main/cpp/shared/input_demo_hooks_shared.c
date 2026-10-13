@@ -499,9 +499,10 @@ void input_demo_record_reset_input_phase(void)
 void input_demo_run_game_process_frame(void (*process)(void))
 {
 	/* The wrapper also resets the guard on every ordinary early return */
-	input_demo_record_simulation_active = 1;
+	++input_demo_record_simulation_active;
 	process();
-	input_demo_record_simulation_active = 0;
+	if (input_demo_record_simulation_active)
+		--input_demo_record_simulation_active;
 }
 
 void input_demo_record_input_clear(void)
@@ -805,11 +806,11 @@ int input_demo_finish_replay_shared(int close_window,
                                     void (*before_write_replay_result)(void),
                                     void (*write_replay_result)(void))
 {
-	input_demo_record_reset_input_phase();
 	if (replay_last_timer_value)
 		*replay_last_timer_value = 0;
 	if (!input_demo_replay_is_loaded())
 		return 0;
+	input_demo_record_reset_input_phase();
 	/* A level/game exit may finish inside the final simulation step, before
 	 * advance_frame runs. Never silently discard remaining frames or input */
 	{

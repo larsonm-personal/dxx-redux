@@ -129,6 +129,29 @@ class OrderedInputTests(unittest.TestCase):
                     else:
                         self.assertEqual(ordered.validate(header, frames, tail)[0]["ops"][0]["event"], event)
 
+    def test_command_key_and_marker_domains(self):
+        domains = (
+            (
+                "guidebot_goal",
+                "special_key",
+                {"from_menu": False},
+                ordered.GUIDEBOT_KEYS,
+                [-1, 0, 1, 0x0C, 0x12, 0x113, 0x202, 0x302, ordered.INT32_MAX],
+            ),
+            ("drop_marker", "player_marker_num", {"message": "ok"}, range(9), [-1, 9, 15, 16, ordered.INT32_MAX]),
+        )
+        for command, field, extra, supported, rejected in domains:
+            for value in [*supported, *rejected]:
+                header, frames, tail = fixture("d2")
+                event = {"kind": "direct_command", "command": command, field: value, **extra}
+                frames[0]["dispatch"]["ops"] = [{"k": "command", "ft": 0, "event": event}]
+                with self.subTest(command=command, value=value):
+                    if value in supported:
+                        ordered.validate(header, frames, tail)
+                    else:
+                        with self.assertRaises(EvidenceError):
+                            ordered.validate(header, frames, tail)
+
     def test_input_order_and_repeated_dispatches_are_retained(self):
         header, frames, tail = fixture()
         operations = [
@@ -322,7 +345,7 @@ class OrderedInputTests(unittest.TestCase):
                     "event": {
                         "kind": "direct_command",
                         "command": "guidebot_goal",
-                        "special_key": 0,
+                        "special_key": 3,
                         "from_menu": value,
                     },
                 }

@@ -704,12 +704,14 @@ bool input_demo_dispatch_command_from_json(const std::string &text, int game,
 	int a = 0, b = 0;
 	if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL) {
 		if (!exact_keys(root, { "kind", "command", "special_key", "from_menu" }, error, "guidebot command") ||
-		    !parse_int_field(root["special_key"], &a, error, "special_key") || !root["from_menu"].is_boolean())
+		    !parse_int_field(root["special_key"], &a, error, "special_key") ||
+		    !input_demo_guidebot_key_supported(a) || !root["from_menu"].is_boolean())
 			return fail(error, "invalid guidebot command arguments");
 		b = root["from_menu"].get<bool>();
 	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER) {
 		if (!exact_keys(root, { "kind", "command", "player_marker_num", "message" }, error, "marker command") ||
-		    !parse_int_field(root["player_marker_num"], &a, error, "player_marker_num") || !root["message"].is_string())
+		    !parse_int_field(root["player_marker_num"], &a, error, "player_marker_num") ||
+		    !input_demo_player_marker_supported(a) || !root["message"].is_string())
 			return fail(error, "invalid marker command arguments");
 		const std::string message = root["message"].get<std::string>();
 		if (message.size() >= sizeof(command->text) || message.find('\0') != std::string::npos)

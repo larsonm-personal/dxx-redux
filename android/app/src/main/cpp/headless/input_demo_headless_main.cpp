@@ -11,6 +11,7 @@
 #include "input_demo_start.h"
 #include "input_demo_replay.h"
 #include "input_demo_state_trace.h"
+#include "input_demo_world_trace.h"
 
 extern "C" {
 #include "args.h"

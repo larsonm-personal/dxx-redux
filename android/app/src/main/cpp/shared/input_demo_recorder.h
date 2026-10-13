@@ -49,6 +49,7 @@ int input_demo_recorder_truncate(uint32_t frame_count);
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
                               char *error, size_t error_size);
 void input_demo_recorder_cancel(void);
+int input_demo_recorder_cancel_for_rewind(void);
 int input_demo_recorder_capture_frame(int32_t frame_time,
                                       const input_demo_control_state *state,
                                       const input_demo_control_pulse *pulse,

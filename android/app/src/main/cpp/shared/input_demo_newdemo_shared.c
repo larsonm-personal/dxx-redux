@@ -563,7 +563,6 @@ int maybe_start_input_demo_recording(int is_autorecord)
 			con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
 		return 0;
 	}
-	input_demo_record_reset_input_phase();
 	started = input_demo_recorder_start(&settings, error, sizeof(error));
 	input_demo_release_recorder_settings(&settings);
 	if (!started) {

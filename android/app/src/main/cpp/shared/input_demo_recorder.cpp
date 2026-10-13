@@ -540,6 +540,13 @@ void input_demo_recorder_cancel(void)
 	input_demo_recorder_reset_session();
 }
 
+int input_demo_recorder_cancel_for_rewind(void)
+{
+	if (!input_demo_recorder_uses_ordered_input()) return 0;
+	input_demo_recorder_cancel();
+	return 1;
+}
+
 int input_demo_recorder_capture_frame(int32_t frame_time,
                                       const input_demo_control_state *state,
                                       const input_demo_control_pulse *pulse,

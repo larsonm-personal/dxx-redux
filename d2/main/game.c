@@ -1579,6 +1579,7 @@ int game_handler(window *wind, d_event *event, void *data)
 			 * window is unlinked would deactivate it twice and leak a pause */
 			restore_game_menus();
 			#endif
+			input_demo_record_reset_input_phase();
 			longjmp(LeaveEvents, 0);
 			break;
 

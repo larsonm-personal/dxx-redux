@@ -88,6 +88,30 @@ class CompactReplayTests(unittest.TestCase):
     def pack(self):
         return compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance)
 
+    def test_public_ordered_commands_reject_world_injection(self):
+        self.header.update(version=5, game="d2", mission="d2demo")
+        self.result.update(game="d2", mission="d2demo")
+        for row in self.rows[1:-1]:
+            row["input"] = {"s": {"f": 1092}}
+            row["dispatch"] = {"pre_rng": "=", "ops": []}
+        tail = {"type": "input_tail", "f": 3, "input": {}, "rng": {"s": 7, "c": 3},
+                "dispatch": {"pre_rng": "=", "ops": []}}
+        self.rows.insert(-1, tail)
+        for target in (self.rows[1], tail):
+            for command in ("guidebot_warp_to_me", "guidebot_spawn"):
+                target["dispatch"]["ops"] = [{"k": "command", "ft": 1092,
+                                              "event": {"kind": "direct_command", "command": command}}]
+                self.write(self.full, self.rows)
+                with self.subTest(command=command, tail=target is tail), self.assertRaisesRegex(
+                        compact.parity.EvidenceError, "Public replay forbids"):
+                    compact._records(self.full, full=True)
+            target["dispatch"]["ops"] = []
+        self.rows[1]["dispatch"]["ops"] = [{"k": "command", "ft": 1092,
+                                            "event": {"kind": "direct_command", "command": "change_difficulty",
+                                                      "difficulty": 2}}]
+        self.write(self.full, self.rows)
+        compact._records(self.full, full=True)
+
     def test_round_trip_preserves_all_except_frame_observations(self):
         original = self.full.read_bytes()
         oracle = self.pack()

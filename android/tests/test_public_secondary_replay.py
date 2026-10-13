@@ -20,16 +20,42 @@ class SecondaryTests(unittest.TestCase):
             state = {"f2s": int(held)}
             ops = [{"k": "reset", "ft": 3276}, {"k": "sample", "ft": 3276, "s": state}]
             if index == 13:
-                ops = [{"k": "reset", "ft": 3276}, {"k": "sample", "ft": 3276,
-                        "s": {"f2s": int(scenario.endswith("mouse-first"))}},
-                       {"k": "reset", "ft": 3276}, {"k": "sample", "ft": 3276, "s": {}}]
-            rows.append({"type": "frame", "f": index, "ft": 3276, "input": {"s": state},
-                         "rng": {"s": 1234, "c": 0}, "dispatch": {"pre_rng": "=", "ops": ops}})
+                ops = [
+                    {"k": "reset", "ft": 3276},
+                    {"k": "sample", "ft": 3276, "s": {"f2s": int(scenario.endswith("mouse-first"))}},
+                    {"k": "reset", "ft": 3276},
+                    {"k": "sample", "ft": 3276, "s": {}},
+                ]
+            rows.append(
+                {
+                    "type": "frame",
+                    "f": index,
+                    "ft": 3276,
+                    "input": {"s": state},
+                    "rng": {"s": 1234, "c": 0},
+                    "dispatch": {"pre_rng": "=", "ops": ops},
+                }
+            )
             ammo = 5 if index < 2 else 4 if index < 13 else case["actions"]["terminal_ammo"]
-            frames.append({"ft": 3276, "state": {"player0": {"secondary_ammo": [ammo]}},
-                           "diag": {"player_weapon_count": 5 - ammo}})
-        rows.extend([{"type": "input_tail", "f": 25, "input": {}, "rng": {"s": 1234, "c": 0},
-                      "dispatch": {"pre_rng": "=", "ops": []}}, {"type": "result", "result": {}}])
+            frames.append(
+                {
+                    "ft": 3276,
+                    "state": {"player0": {"secondary_ammo": [ammo]}},
+                    "diag": {"player_weapon_count": 5 - ammo},
+                }
+            )
+        rows.extend(
+            [
+                {
+                    "type": "input_tail",
+                    "f": 25,
+                    "input": {},
+                    "rng": {"s": 1234, "c": 0},
+                    "dispatch": {"pre_rng": "=", "ops": []},
+                },
+                {"type": "result", "result": {}},
+            ]
+        )
         demo = root / (game + scenario + ".dximdemo")
         demo.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
         return case, demo, header, frames, copy.deepcopy(frames[-1]["state"])

@@ -750,7 +750,7 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 			input_demo_control_state controls = {};
 			input_demo_control_pulse pulse = {};
 			input_demo_result frame = {};
-			if (ok) ok = input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, 1, 0, 0, &frame, nullptr, error, sizeof(error)) != 0;
+			if (ok) ok = input_demo_recorder_capture_frame(F1_0 / 60, &controls, &pulse, 1, 1, 0, &frame, nullptr, error, sizeof(error)) != 0;
 			if (ok) ok = input_demo_recorder_finish_input_tail(&controls, &pulse, 1, 0, error, sizeof(error)) != 0;
 			if (ok) ok = input_demo_recorder_flush(replay_path.c_str(), error, sizeof(error)) != 0;
 			check(label + "_record", ok);

@@ -1,89 +1,84 @@
 # Public secondary-fire capture and playback
 
-1. Minimize the two-tap mismatch at normal public level starts in both engines
-2. Capture through ordinary keyboard/idle control dispatch with production frame ordering; inspect missile cooldown and event-boundary behavior before changing engine code
-3. Preserve immutable existing oracles and keep any new replay/oracle pair under 100000 bytes
-4. Add focused semantic and negative checks to the existing replay runner
-5. Validate independent live captures, headed and true headless replay, natural exit, and scoped formatting/catalog checks
+## Approved implementation and bounds
+
+1. Minimize the two-tap mismatch at ordinary public level starts in both engines
+2. Preserve actual native input dispatch in format 5 without changing gameplay timing
+3. Convert old public recordings using at most three whole-recording schedules, checked against every unchanged original oracle
+4. Admit four small SDL event-order scenes, keeping each replay and each oracle at or below 100000 uncompressed bytes
+5. Qualify D1/D2 headed and true headless replay, natural exit, causal negatives and existing recorder callers
 6. Publish exact source provenance and a focused stacked draft, then monitor exact-head CI
 
-No save/checkpoint payload, warp, injected world state or merge is authorized
+No embedded save/checkpoint, warp, injected world state, changed expectation or merge is authorized for the public corpus
 
 ## Diagnosis
 
-Both native D1 shareware and D2 demo level-one starts reproduce the same information
-loss through actual SDL_PushEvent, event_poll, game-window input dispatch and
-ReadControls. At a fixed 3276-tick frame, secondary presses at frames 2 and 12,
-with releases at frames 3 and 13, place the second press eight ticks before the
-loaded 32768-tick concussion cooldown. Swap an ordinary zero-motion mouse event
-before or after the frame-13 release. Both recordings have exactly the same old
-held-state/pulse input stream, yet mouse-first spends two missiles and release-first
-spends only one. Normal gameplay is event-order dependent at this boundary.
+At fixed timestep 3276, native secondary presses at frames 2 and 12 place the
+second press eight ticks before the loaded 32768-tick concussion cooldown. At
+frame 13, a zero-motion mouse event before the release causes another firing
+check and spends the second missile. Release before mouse motion spends only one.
+Both games reproduce this through SDL_PushEvent, event_poll and ReadControls from
+ordinary level-one starts. This controlled fixed-timestep native SDL dispatch
+capture explicitly drives the production input/simulation order; it is not a
+real-time event_process-loop capture.
 
-Unchanged native headless playback chooses two shots in both engines, rejecting
-the release-first terminal ammo (expected 4, actual 3). D1 mouse-first also matches
-every complete live frame state, diagnostic and SIM RNG snapshot. The first
-release-first state divergence is boundary 13. This is a production recording
-information gap, not evidence for making the capture fixture imitate replay.
+The old aggregate controls are identical for these different live outcomes. Old
+playback picks two shots and first diverges at frame 13 for release-first. This is
+missing protocol information. Altering missile cooldown or live dispatch timing
+would hide the cause and change ordinary gameplay.
 
-The existing held-secondary post-frame pass was deliberately selected for an
-opposite historical schedule. Removing it or switching its condition would merely
-choose another schedule and risk old recordings. Existing immutable expectations
-must remain unchanged.
+## Format 5
 
-## Proposed correction, pending approval
+Each frame carries an explicit bounded ordered dispatch batch: marker reset,
+control clear, full control sample, or allowlisted direct command. Every operation
+has its actual input-time FrameTime, separate from the later simulation timestep.
+The batch retains pre-input SIM state/count; frame RNG is the post-input boundary.
+Replay checks its computed residual controls and post-input RNG without replacing
+a mismatch. Mandatory input_tail preserves effects after the last simulation.
+Empty batches are explicit. Bounds are 1024 operations and 256 KiB per batch;
+overflow, malformed values, unsupported versions and unknown operations fail closed.
 
-A new format version should preserve a bounded, ordered control-dispatch timeline
-while legacy versions retain their existing playback path. The new path must not
-change ordinary gameplay timing. Capture actual input-dispatch FrameTime, preserve
-command/sample ordering and marker resets, and distinguish final residual controls
-from already-consumed event pulses. Include initial pre-input RNG context where
-needed; never regenerate expected simulation state from replay output.
+Lossless aliases refer only to the decoded current-frame/tail residual controls
+or post-input RNG. Missing sample pulses mean zero; an omitted dispatch batch is
+invalid. Diagnostic telemetry is separately allowlisted and hashed, including
+terminal diagnostics. Public admission excludes debug spawning and warps.
 
-Admission and parser tests must reject malformed, oversized, unsupported or
-mis-versioned samples. Acceptance covers both actual SDL event orders in both
-engines, hold/release/tap behavior, repeated independent captures, headed and true
-headless replay, natural exit, removed/reordered input negatives, corrupted oracle
-negatives, and every existing immutable public expectation.
+Native playback accepts format 5 only and gives converter/re-record guidance for
+older input formats. General codec tests retain legacy parsing for offline tools.
+Rear-view wall-clock input and modal automap cancel ordered capture explicitly.
+Android rewind also cancels companion input recording because its saved world
+boundary does not include pending ordered input history; gameplay rewind and
+classic demo recording keep their existing behavior. Continued input recording
+after rewind requires a new recording.
 
-### Required dispatch boundaries
+## Bounded migration
 
-- Record semantic input operations rather than raw platform-specific SDL events
-- Record ReadControls entry resets even when a key handler returns before the
-  control sample; a sample at only do_weapon_n_item_stuff is insufficient
-- Preserve direct commands in the same ordered operation stream
-- Keep the actual input-time FrameTime separate from the later simulation step
-- Verify replay-computed residual controls and post-input SIM state/count rather
-  than overwriting a divergence with the recorded values
-- Establish initial pre-input SIM state/count and trace context before the first
-  executable operation, including recording frame zero
-- Define pending operations at stop/truncate boundaries explicitly; do not report
-  a successful recording whose terminal state includes unrecorded input effects
-- Encode empty operation lists explicitly and fail closed on count/byte overflow,
-  unknown executable operations, invalid values, wrong versions or unsupported
-  command phases; no silent truncation or fallback to the legacy heuristic
-- Compact packing must retain every executable operation in order and hash it;
-  only already-reviewed observational telemetry may be stripped
+Try sample-only, reset-before-sample, and prior-held-then-current for each whole
+recording. Preserve original replay/oracle hashes and immutable full baseline
+state/RNG/terminal evidence. No per-frame search or case-specific engine heuristic.
+A candidate must reproduce every old expected frame/diagnostic/SIM event, terminal
+state and independent scene assertion. Multiple passing schedules establish
+behavioral equivalence, not reconstruction of historical SDL event order.
+Oversized candidates are size-ineligible, not semantic failures. Old oracle bytes
+remain unchanged; a sidecar binds the converted replay to its original oracle.
 
-Additional acceptance should exercise variable input/simulation timesteps,
-reset-only handled events, held/release/press ordering, repeated input events,
-queued missiles, flares/bombs, cycle/select ordering, primary-pulse nonduplication,
-first-input SIM draws, direct-command interleavings and stop/truncate behavior.
-Rear-view wall-clock timing and modal automap need honest scope boundaries or
-explicit unsupported-capture rejection; these missile scenes do not qualify all
-input determinism. Preserve the existing FX qualification boundary.
+## Verification status
 
-## Local verification checkpoint
+- Development SDL captures: both event orders match all 25 live frame, diagnostic,
+  SIM-event and terminal expectations in D1/D2 on headed and true headless backends
+- All 37 size-eligible migration candidates pass the original full oracles; the
+  two verbose loot candidates exceed the file limit and are not admitted
+- D1/D2 standalone codec suites pass malformed operations, aliases, duplicate
+  keys, UTF-8, command domains, tail/bounds, rewind cancellation and result-write failures
+- Native stress probe covers first-input RNG, variable input/simulation time,
+  command interleaving, primary/flare/bomb/cycle input, clear and reset-only
+  operations, explicit empty batch, simulation-phase guards and terminal effects
+- Review fixes prevent D1 live input leakage and paused batch reapplication;
+  completion requires an actual successfully closed result file
+- Direct recorder callers were audited; weapon-order and Guide-Bot synthetic
+  fixture captures now include their required RNG-count flag
 
-All eight native combinations completed 25 frames and exited naturally through
-the existing strict replay wrapper: D1 and D2, release-first and mouse-first,
-headed under Xvfb and true headless with no display and an invalid SDL video
-driver. Release-first fails in each backend at complete frame boundary 13 with
-expected concussion ammo 4 versus actual 3. Mouse-first passes every full live
-frame gameplay state, diagnostic and SIM RNG snapshot plus terminal result in
-both engines/backends. Optional headed capture screenshots were generated and
-inspected in each game. Scoped formatting passes.
-
-These are development diagnostics, not admitted provenance-qualified oracles.
-No production engine or recording-format code changed. Source and evidence remain
-local while the versioned-format decision is pending; no remote publication.
+Final-source runtime matrices, existing native fixture checks, source-qualified
+capture admission, formatting/catalog checks and exact-head hosted CI remain to
+be completed before the draft can be reported fully qualified. Development
+captures are diagnostic evidence, not final provenance-qualified fixtures.

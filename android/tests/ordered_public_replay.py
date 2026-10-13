@@ -41,6 +41,9 @@ COMMANDS = {
     "select_weapon_exact",
 }
 D1_COMMANDS = {"death_abort", "change_difficulty", "select_weapon_exact"}
+# Stable native key codes: KEY_1..KEY_0, optional KEY_SHIFTED, and unshifted KEY_R
+GUIDEBOT_KEYS = set(range(0x02, 0x0C)) | set(range(0x102, 0x10C)) | {0x13}
+PLAYER_MARKER_COUNT = 9
 
 
 def _require(condition, message):
@@ -106,11 +109,12 @@ def _command(value, game):
     fields = {"kind", "command"}
     if command == "guidebot_goal":
         _keys(value, fields | {"special_key", "from_menu"}, label="Guide-Bot command")
-        _integer(value["special_key"], INT32_MIN, INT32_MAX, "Guide-Bot special_key")
+        special_key = _integer(value["special_key"], INT32_MIN, INT32_MAX, "Guide-Bot special_key")
+        _require(special_key in GUIDEBOT_KEYS, "Unsupported Guide-Bot key")
         _require(type(value["from_menu"]) is bool, "Guide-Bot from_menu must be a boolean")
     elif command == "drop_marker":
         _keys(value, fields | {"player_marker_num", "message"}, label="marker command")
-        _integer(value["player_marker_num"], INT32_MIN, INT32_MAX, "player_marker_num")
+        _integer(value["player_marker_num"], 0, PLAYER_MARKER_COUNT - 1, "player_marker_num")
         message = value["message"]
         _require(isinstance(message, str) and "\0" not in message, "Invalid marker text")
         try:

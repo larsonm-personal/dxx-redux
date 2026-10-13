@@ -1069,6 +1069,72 @@ static int expect_long_recording(void)
 	return 0;
 }
 
+static int expect_ordered_rewind_cancellation(void)
+{
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	input_demo_recorder_cancel();
+	if (input_demo_recorder_cancel_for_rewind() || input_demo_recorder_is_active() || input_demo_recorder_frame_count())
+		return report_failure("rewind cancellation changed an inactive recorder");
+	for (int fire = 0; fire != 2; ++fire) {
+		state = {};
+		pulse = {};
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+		    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 1, 1, nullptr, nullptr, error, sizeof(error)) ||
+		    !input_demo_recorder_begin_input_batch(100, 1, 3276, error, sizeof(error))) return report_failure_string(error);
+		if (fire) {
+			state.fire_secondary_state = 1;
+			pulse.fire_secondary_count = 1;
+			if (!input_demo_recorder_stage_input_sample(3276, &state, &pulse, error, sizeof(error))) return report_failure_string(error);
+		}
+		if (!input_demo_recorder_cancel_for_rewind() || input_demo_recorder_is_active() || input_demo_recorder_frame_count() ||
+		    input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 1, 1, nullptr, nullptr, error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 100, 1, error, sizeof(error)) ||
+		    input_demo_recorder_flush("test_input_demo_rewind_cancelled.dximdemo", error, sizeof(error)))
+			return report_failure("rewind retained an active or flushable ordered recording");
+	}
+	// The temporary legacy writer remains unchanged by this ordered-only guard
+	settings.ordered_input = 0;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    input_demo_recorder_cancel_for_rewind() || !input_demo_recorder_is_active())
+		return report_failure("ordered rewind guard changed a legacy writer");
+	input_demo_recorder_cancel();
+	return 0;
+}
+
+static int expect_ordered_command_domains(void)
+{
+	using json = nlohmann::ordered_json;
+	std::string error;
+	input_demo_replay_direct_command_event command;
+	for (int key = -1; key <= 0x302; ++key) {
+		const bool valid = key == 0x13 || (key >= 0x02 && key <= 0x0b) || (key >= 0x102 && key <= 0x10b);
+		for (bool from_menu : { false, true }) {
+			const json event = { { "kind", "direct_command" }, { "command", "guidebot_goal" }, { "special_key", key }, { "from_menu", from_menu } };
+			if (input_demo_dispatch_command_from_json(event.dump(), INPUT_DEMO_GAME_D2, &command, &error) != valid)
+				return report_failure("Guide-Bot command accepted an unsupported key or rejected a valid one");
+		}
+	}
+	for (int marker = -1; marker <= 16; ++marker) {
+		const json event = { { "kind", "direct_command" }, { "command", "drop_marker" }, { "player_marker_num", marker }, { "message", "ok" } };
+		if (input_demo_dispatch_command_from_json(event.dump(), INPUT_DEMO_GAME_D2, &command, &error) != (marker >= 0 && marker < 9))
+			return report_failure("marker command accepted an unsupported player marker slot");
+	}
+	for (const char *name : { "guidebot_goal", "drop_marker" }) {
+		const json event = std::string(name) == "guidebot_goal" ? json({ { "kind", "direct_command" }, { "command", name }, { "special_key", INT32_MAX }, { "from_menu", false } }) : json({ { "kind", "direct_command" }, { "command", name }, { "player_marker_num", INT32_MAX }, { "message", "ok" } });
+		if (input_demo_dispatch_command_from_json(event.dump(), INPUT_DEMO_GAME_D2, &command, &error))
+			return report_failure("out-of-domain command integer was accepted");
+	}
+	return 0;
+}
+
 static int expect_ordered_input_diagnostics(void)
 {
 	const char *path = "test_input_demo_ordered_events.dximdemo";
@@ -1377,6 +1443,8 @@ int main(void)
 {
 	if (expect_ordered_input_codec()) return 1;
 	if (expect_ordered_input_diagnostics()) return 1;
+	if (expect_ordered_command_domains()) return 1;
+	if (expect_ordered_rewind_cancellation()) return 1;
 	if (expect_record_and_flush())
 		return 1;
 	if (expect_record_and_flush_checkpoint())

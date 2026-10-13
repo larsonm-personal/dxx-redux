@@ -6,6 +6,7 @@
 
 #include "3d.h"
 #include "args.h"
+#include "key.h"
 #include "ai.h"
 #include "cntrlcen.h"
 #include "collide.h"
@@ -35,6 +36,7 @@
 #include "playsave.h"
 #include "laser.h"
 #include "segment.h"
+#include "automap.h"
 #include "textures.h"
 #include "weapon.h"
 #include "wall.h"
@@ -247,6 +249,37 @@ static int input_demo_apply_d2_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
 	(void)context;
+#if KEY_1 != INPUT_DEMO_GUIDEBOT_KEY_FIRST || KEY_0 != INPUT_DEMO_GUIDEBOT_KEY_LAST || KEY_R != INPUT_DEMO_GUIDEBOT_KEY_RECALL || KEY_SHIFTED != INPUT_DEMO_GUIDEBOT_KEY_SHIFTED
+#error Input demo wire keys differ from native Guide-Bot keys
+#endif
+	/* Defensive validation also protects native callers of this C ABI */
+	switch (event->kind) {
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT:
+			if (event->value0 < 0 || event->value0 > 1 || event->value1 < 0 ||
+			    event->value1 >= (event->value0 ? MAX_SECONDARY_WEAPONS : MAX_PRIMARY_WEAPONS))
+				goto invalid_arguments;
+			break;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
+			if (!input_demo_guidebot_key_supported(event->value0) || event->value1 < 0 || event->value1 > 1)
+				goto invalid_arguments;
+			break;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
+			if (!input_demo_player_marker_supported(event->value0) || Player_num < 0 ||
+			    Player_num * 2 + event->value0 >= NUM_MARKERS || !memchr(event->text, 0, sizeof(event->text)))
+				goto invalid_arguments;
+			break;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
+			break;
+		default:
+			goto invalid_arguments;
+	}
 	if (validate_only)
 		return 1;
 
@@ -298,6 +331,11 @@ static int input_demo_apply_d2_direct_command(void *context,
 					"unsupported D2 direct command kind %d", event->kind);
 			return 0;
 	}
+invalid_arguments:
+	if (error && error_size)
+		snprintf(error, error_size, "invalid D2 direct command arguments for kind %d", event->kind);
+	return 0;
+
 }
 
 static const input_demo_direct_command_policy input_demo_native_command_policy = {

@@ -130,7 +130,7 @@ static nlohmann::json exercise_weapon_order_profile(const char *native_demo, con
 	unsigned seed = 0;
 	d_rand_get_stream_state(D_RNG_SIM, &seed);
 	char error[256] = {};
-	require(input_demo_recorder_capture_frame(F1_0 / 25, &controls, &pulse, seed, 0, 0, nullptr, nullptr, error, sizeof(error)), "record one idle frame");
+	require(input_demo_recorder_capture_frame(F1_0 / 25, &controls, &pulse, seed, 1, d_rand_get_call_count(), nullptr, nullptr, error, sizeof(error)), "record one idle frame");
 	require(input_demo_record_finish_input_tail(error, sizeof(error)), "finalize ordered input tail");
 	require(input_demo_recorder_flush_with_result("weapon-order.dximdemo", &result, error, sizeof(error)), "write actual recorder metadata");
 	input_demo_recorder_cancel();

@@ -81,6 +81,14 @@ static void capture_public_dispatch_frames(const char *game_name, const char *mi
 		require(SDL_PushEvent(&event) == 0, "queue native dispatch probe key");
 	};
 	FrameTime = 1092;
+#ifdef DXX_BUILD_DESCENT_II
+	input_demo_replay_direct_command_event invalid_command = {};
+	invalid_command.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL;
+	invalid_command.value0 = INT_MAX;
+	for (int validate_only : { 1, 0 })
+		require(!input_demo_apply_ordered_direct_command(&invalid_command, validate_only, error, sizeof(error)),
+		        "native Guide-Bot command rejects invalid keys before mutation");
+#endif
 	const unsigned int initial_rng_count = d_rand_get_call_count();
 	for (int frame = 0; frame < frames; ++frame) {
 		if (frame == 0) {
@@ -112,6 +120,12 @@ static void capture_public_dispatch_frames(const char *game_name, const char *mi
 			key(SDLK_SPACE, true);
 			key(SDLK_SPACE, false);
 		}
+		if (frame == 6) input_demo_run_game_process_frame([]() {
+			require(!input_demo_finish_replay_from_mine_exit(), "live mine-exit probe is not a replay finish");
+			game_flush_inputs();
+			input_demo_run_game_process_frame([]() { game_flush_inputs(); });
+			game_flush_inputs();
+		});
 		// Frame 6 deliberately has no dispatch; empty is distinct from an idle event
 		if (frame != 2 && frame != 6) event_poll();
 		if (frame == 3) require(difficulty_change_to(2, DIFFICULTY_CHANGE_RECORD_DEMO), "native difficulty command after input");
@@ -152,17 +166,20 @@ static void capture_public_dispatch_frames(const char *game_name, const char *mi
 	stop_time();
 	for (int attempt = 0; attempt < 2; ++attempt)
 		require(!input_demo_step_replay_frame(), "paused draw does not apply pending input");
-	key(SDLK_f, true); key(SDLK_f, false);
-	key(SDLK_LCTRL, true); key(SDLK_LCTRL, false);
+	key(SDLK_f, true);
+	key(SDLK_f, false);
+	key(SDLK_LCTRL, true);
+	key(SDLK_LCTRL, false);
 	SDL_Event motion = {};
 	motion.type = SDL_MOUSEMOTION;
 	require(SDL_PushEvent(&motion) == 0, "queue live mouse during replay");
 	event_poll();
 	require(input_demo_replay_next_frame_index() == 0 && GameTime64 == paused_time &&
-	        Players[0].energy == paused_energy && d_rand_get_call_count() == paused_rng &&
-	        std::memcmp(&Controls, &paused_controls, sizeof(Controls)) == 0,
+	            Players[0].energy == paused_energy && d_rand_get_call_count() == paused_rng &&
+	            std::memcmp(&Controls, &paused_controls, sizeof(Controls)) == 0,
 	        "paused draws and live SDL input cannot mutate recorded playback");
 	start_time();
 	input_demo_replay_unload();
+	require(!input_demo_replay_actual_result_written(), "cancelled playback has no successful terminal-write verdict");
 	std::puts("PASS: native ordered dispatch capture, paused draw and live-input isolation");
 }
