@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "args.h"
 #include "input_demo_recorder.h"
+#include "input_demo_hooks.h"
 #ifdef __ANDROID__
 #include "android_meta_actions.h"
 #include "escort.h"
@@ -601,6 +602,7 @@ static void automap_apply_android_marker_requests(automap *am)
 		{
 			char error[256] = "";
 			sprintf(MarkerMessage[marker_num], "%d", set_marker+1);
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_drop_marker(set_marker,
 			                                                       MarkerMessage[marker_num],
@@ -1842,6 +1844,7 @@ int MarkerInputMessage(int key)
 			break;
 		case KEY_ENTER:
 			strcpy (MarkerMessage[(Player_num*2)+MarkerBeingDefined],Marker_input);
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_drop_marker(MarkerBeingDefined,
 			                                                       MarkerMessage[(Player_num*2)+MarkerBeingDefined],

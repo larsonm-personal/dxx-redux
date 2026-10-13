@@ -106,6 +106,21 @@ static int input_demo_direct_command_dispatch(
 	    "unknown typed direct command is unsupported", error, error_size);
 }
 
+int input_demo_direct_command_apply_event(
+    const input_demo_direct_command_policy *policy,
+    input_demo_direct_command_phase phase,
+    const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size)
+{
+	if (!event || (phase != INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD &&
+	               phase != INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
+		return input_demo_direct_command_copy_error("invalid ordered direct command", error, error_size);
+	if ((event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT) !=
+	    (phase == INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
+		return input_demo_direct_command_copy_error("ordered direct command has the wrong native phase", error, error_size);
+	return input_demo_direct_command_dispatch(policy, phase, event, validate_only, error, error_size);
+}
+
 int input_demo_direct_command_apply_current_frame(
     const input_demo_direct_command_policy *policy,
     input_demo_direct_command_phase phase,

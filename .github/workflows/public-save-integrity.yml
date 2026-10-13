@@ -94,6 +94,22 @@ jobs:
         shell: pwsh
         run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
 
+      - name: Qualify native ordered input phases and causal failures
+        timeout-minutes: 5
+        run: |
+          python3 android/tests/test_ordered_public_replay.py
+          python3 android/tests/test_convert_public_replay.py
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_ordered_input_runtime.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -D1Headless "$PWD/buildd1-save/main/dxx-redux-d1-headless" \
+            -D2Headless "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
+            -D1Graphics "$PWD/buildd1-save/main/d1x-redux" \
+            -D2Graphics "$PWD/buildd2-save/main/d2x-redux" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/ordered-input-runtime-ci"
+
       - name: Check truthful public Guide-Bot objective arrival without video
         timeout-minutes: 3
         run: |
@@ -330,6 +346,7 @@ jobs:
             temp/public-robot-loot-visual-ci/
             temp/public-door-lifecycle-visual-ci/
             temp/public-matcen-ci/
+            temp/ordered-input-runtime-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
@@ -395,6 +412,9 @@ jobs:
       - name: Check compact public replay admission
         timeout-minutes: 4
         run: |
+          python3 android/tests/test_ordered_public_replay.py
+          python3 android/tests/test_convert_public_replay.py
+          python3 android/tests/test_public_secondary_replay.py
           python3 android/tests/test_compact_public_replay.py
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py

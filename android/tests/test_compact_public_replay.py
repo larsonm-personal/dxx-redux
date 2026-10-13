@@ -99,7 +99,7 @@ class CompactReplayTests(unittest.TestCase):
         self.assertEqual(packed, expected)
         self.assertEqual(self.full.read_bytes(), original)
         self.assertEqual(oracle["full_recording_sha256"], hashlib.sha256(original).hexdigest())
-        self.assertLessEqual(self.demo.stat().st_size + self.oracle.stat().st_size, 100000)
+        self.assertLessEqual(max(self.demo.stat().st_size, self.oracle.stat().st_size), 100000)
         self.assertEqual(
             compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual),
             {"status": "pass", "frames_compared": 3, "simulation_events_compared": 1},
@@ -302,7 +302,7 @@ class CompactReplayTests(unittest.TestCase):
                 self.pack()
             self.assertFalse(self.demo.exists())
 
-    def test_combined_size_limit_applies_to_pack_and_validate(self):
+    def test_per_file_size_limit_applies_to_pack_and_validate(self):
         with mock.patch.object(compact, "MAX_BYTES", 1), self.assertRaises(compact.parity.EvidenceError):
             self.pack()
         self.assertFalse(self.demo.exists())

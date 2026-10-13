@@ -35,6 +35,7 @@ typedef struct input_demo_recorder_settings {
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int record_per_frame_state;
+	int ordered_input;
 } input_demo_recorder_settings;
 #if defined(_MSC_VER)
 #pragma pack(pop)
@@ -43,6 +44,7 @@ typedef struct input_demo_recorder_settings {
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
 uint32_t input_demo_recorder_frame_count(void);
+uint32_t input_demo_recorder_diagnostic_frame_index(void);
 int input_demo_recorder_truncate(uint32_t frame_count);
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
                               char *error, size_t error_size);
@@ -56,6 +58,19 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       const input_demo_result *frame_state,
                                       const input_demo_state_trace_diag *frame_diag,
                                       char *error, size_t error_size);
+int input_demo_recorder_uses_ordered_input(void);
+int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count,
+                                          int32_t input_frame_time, char *error, size_t error_size);
+int input_demo_recorder_stage_input_reset(int32_t frame_time, char *error, size_t error_size);
+int input_demo_recorder_stage_input_clear(int32_t frame_time, char *error, size_t error_size);
+int input_demo_recorder_stage_input_sample(int32_t frame_time,
+                                           const input_demo_control_state *state,
+                                           const input_demo_control_pulse *pulse,
+                                           char *error, size_t error_size);
+int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
+                                          const input_demo_control_pulse *pulse,
+                                          uint32_t rng_state, uint32_t rng_count,
+                                          char *error, size_t error_size);
 void input_demo_recorder_stage_pulse(const input_demo_control_pulse *pulse);
 int input_demo_recorder_stage_frame_event_json(const char *json_text,
                                                char *error, size_t error_size);

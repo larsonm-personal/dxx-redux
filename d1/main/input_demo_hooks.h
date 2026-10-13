@@ -20,7 +20,16 @@ const char *input_demo_current_mission_id(void);
 void input_demo_record_death_abort_direct_command(void);
 void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
 	int weapon_index);
-int input_demo_apply_replay_direct_commands(input_demo_direct_command_phase phase);
+void input_demo_record_input_context(void);
+void input_demo_record_input_clear(void);
+void input_demo_record_reset_input_phase(void);
+void input_demo_run_game_process_frame(void (*process)(void));
+void input_demo_record_input_reset(void);
+void input_demo_record_input_sample(void);
+void input_demo_record_input_controls_supported(void);
+int input_demo_record_finish_input_tail(char *error, size_t error_size);
+int input_demo_apply_ordered_direct_command(const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size);
 void input_demo_record_game_frame(void);
 void input_demo_update_rng_trace_context(void);
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag);

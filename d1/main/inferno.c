@@ -607,5 +607,5 @@ game_event_loop:
 	PHYSFSX_removeArchiveContent();
 	reset_observatory_stats();
 
-	return(0);		//presumably successful exit
+	return input_demo_replay_should_exit() && !input_demo_replay_actual_result_written() ? 1 : 0;
 }

@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 import d1_replay_parity as parity
+import ordered_public_replay as ordered
 
 MAX_BYTES = 100000
 MAX_FRAMES = 1000
@@ -43,7 +44,7 @@ HEADER_KEYS = {
     "classic_preview",
     "player_cfg",
 }
-FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag"}
+FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag", "dispatch"}
 # Reviewed producers: d1/d2 input_demo_hooks, input_demo_energy_trace and collide
 # D2 gauges score and robot-damage/rotation probes are observational only
 # input_demo_replay.cpp parses only direct_command into executable replay events
@@ -178,7 +179,7 @@ def _records(path, full):
         raise parity.EvidenceError("Replay must describe a bounded ordinary public level start")
     if (
         type(header.get("version")) is not int
-        or header["version"] not in (2, 3, 4)
+        or header["version"] not in (2, 3, 4, 5)
         or type(header.get("difficulty")) is not int
         or not 0 <= header["difficulty"] < 5
         or type(header.get("build_number")) is not int
@@ -187,15 +188,19 @@ def _records(path, full):
     ):
         raise parity.EvidenceError("Incomplete or invalid production recorder metadata")
     if (
-        len(rows) != count + 2
+        len(rows) != count + (3 if header["version"] == 5 else 2)
         or set(rows[-1]) != {"type", "result"}
         or rows[-1]["type"] != "result"
         or not isinstance(rows[-1]["result"], dict)
     ):
         raise parity.EvidenceError("Replay record count or terminal result is invalid")
     frame_time = None
-    for index, row in enumerate(rows[1:-1]):
+    for index, row in enumerate(rows[1 : count + 1]):
         required = {"type", "f", "input", "rng"} | ({"state", "diag"} if full else set())
+        if header["version"] == 5:
+            required.add("dispatch")
+        elif "dispatch" in row:
+            raise parity.EvidenceError("Ordered input is forbidden in a legacy frame")
         if (
             row.get("type") != "frame"
             or type(row.get("f")) is not int
@@ -218,6 +223,13 @@ def _records(path, full):
             or (events and not full)
         ):
             raise parity.EvidenceError("Only explicitly reviewed diagnostic event kinds may be removed")
+    if header["version"] == 5:
+        events = rows[-2].get("events", [])
+        if (not isinstance(events, list)
+            or any(not isinstance(event, dict) or event.get("kind") not in DIAGNOSTIC_EVENTS for event in events)
+            or (events and not full)):
+            raise parity.EvidenceError("Only reviewed diagnostic tail events may be removed")
+        ordered.validate(header, rows[1:-2], rows[-2])
     parity.validate_identity(rows[-1]["result"], header, game)
     return raw, rows
 
@@ -308,12 +320,15 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, comb
     telemetry = [{"f": row["f"], "event": event} for row in rows[1:-1] for event in row.get("events", [])]
     compact_rows = [
         {
-            key: ([] if key == "events" and row["type"] == "frame" else value)
+            key: ([] if key == "events" and row["type"] in ("frame", "input_tail") else value)
             for key, value in row.items()
             if row["type"] != "frame" or key not in ("state", "diag")
         }
         for row in rows
     ]
+    if header["version"] == 5:
+        frames, tail = ordered.compact(header, compact_rows[1:-2], compact_rows[-2])
+        compact_rows = [header, *frames, tail, compact_rows[-1]]
     compact = b"".join(canonical(row) + b"\n" for row in compact_rows)
     oracle = {
         "schema": 1,
@@ -355,8 +370,8 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, comb
     encoded_oracle = (json.dumps(oracle, sort_keys=True, indent=4, ensure_ascii=False, allow_nan=False) + "\n").encode(
         "utf-8"
     )
-    if len(compact) + len(encoded_oracle) > MAX_BYTES:
-        raise parity.EvidenceError("Replay and oracle together exceed 100000 uncompressed UTF-8 bytes")
+    if max(len(compact), len(encoded_oracle)) > MAX_BYTES:
+        raise parity.EvidenceError("Each replay and oracle must fit 100000 uncompressed UTF-8 bytes")
     with demo_output.open("xb") as stream:
         stream.write(compact)
     with oracle_output.open("xb") as stream:
@@ -366,8 +381,8 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, comb
 
 def validate(demo, oracle):
     """Validate an immutable compact replay and its strict, hash-only oracle."""
-    if Path(demo).stat().st_size + Path(oracle).stat().st_size > MAX_BYTES:
-        raise parity.EvidenceError("Replay and oracle together exceed 100000 uncompressed UTF-8 bytes")
+    if max(Path(demo).stat().st_size, Path(oracle).stat().st_size) > MAX_BYTES:
+        raise parity.EvidenceError("Each replay and oracle must fit 100000 uncompressed UTF-8 bytes")
     raw, rows = _records(demo, full=False)
     expected = _json(Path(oracle).read_bytes())
     if (
@@ -447,12 +462,32 @@ def validate(demo, oracle):
         raise parity.EvidenceError("Missing or invalid per-frame evidence hashes")
     if type(expected["simulation_rng_events"]) is not int or expected["simulation_rng_events"] < 0:
         raise parity.EvidenceError("Invalid simulation RNG event count")
-    if (
-        hashlib.sha256(raw).hexdigest() != expected["compact_sha256"]
-        or sha(rows[-1]["result"]) != expected["terminal_sha256"]
-    ):
+    if hashlib.sha256(raw).hexdigest() != expected["compact_sha256"]:
+        _validate_conversion(demo, oracle, raw, header, expected)
+    if sha(rows[-1]["result"]) != expected["terminal_sha256"]:
         raise parity.EvidenceError("Compact recording or terminal expectation changed")
     return header, expected
+
+
+def _validate_conversion(demo, oracle, raw, header, expected):
+    """Bind converted input bytes to an unchanged original oracle, never new expectations."""
+    path = Path(demo).with_suffix(".migration.json")
+    if header["version"] != 5 or not path.is_file() or path.stat().st_size > MAX_BYTES:
+        raise parity.EvidenceError("Compact recording changed without bounded conversion provenance")
+    value = _json(path.read_bytes())
+    keys = {"schema", "kind", "schedule", "original_corpus_revision", "source_demo_sha256",
+            "source_oracle_sha256", "converted_demo_sha256", "baseline_sha256"}
+    if (not isinstance(value, dict) or set(value) != keys or type(value["schema"]) is not int
+        or value["schema"] != 1 or value["kind"] != "ordered-input-candidate"
+        or value["schedule"] not in ("sample-only", "reset-before-sample", "prior-held-then-current")
+        or not _digest(value["original_corpus_revision"], 40)
+        or value["source_demo_sha256"] != expected["compact_sha256"]
+        or value["source_oracle_sha256"] != parity.digest(oracle)
+        or value["converted_demo_sha256"] != hashlib.sha256(raw).hexdigest()
+        or not isinstance(value["baseline_sha256"], dict)
+        or set(value["baseline_sha256"]) != {"state", "rng", "result"}
+        or any(not _digest(item) for item in value["baseline_sha256"].values())):
+        raise parity.EvidenceError("Invalid immutable-oracle conversion provenance")
 
 
 def verify(game, demo, oracle, state_trace, rng_trace, actual_result):

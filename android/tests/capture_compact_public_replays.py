@@ -11,6 +11,7 @@ import compact_public_replay as compact
 from run_compact_public_replays import validate_assets, PUBLIC_CASES
 import public_switch_replay as shoot_switch
 import public_guidebot_replay as guidebot
+import public_secondary_replay as secondary
 
 
 def capture(args):
@@ -46,7 +47,7 @@ def capture(args):
             report = json.loads((directory / "capture.json").read_text())
             if scenario == "flight" and report["wall_contact_frames"] < 10:
                 raise compact.parity.EvidenceError("Capture did not contact solid geometry under thrust")
-            if scenario != "flight" and report["action_frame"] < 0:
+            if scenario != "flight" and scenario not in secondary.SCENARIOS and report["action_frame"] < 0:
                 raise compact.parity.EvidenceError("Capture did not reach its declared real action")
             stem = f"{game}-public-{scenario}"
             compact.pack(
@@ -59,7 +60,7 @@ def capture(args):
                 combat_trace=directory / "capture-observation.jsonl" if scenario in ("combat", "loot") else None,
                 guidebot_trace=directory / "capture-observation.jsonl" if scenario == "guidebot-release" else None,
             )
-            actions = {
+            actions = secondary.capture_actions(report) if scenario in secondary.SCENARIOS else {
                 key: report[key]
                 for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
             }

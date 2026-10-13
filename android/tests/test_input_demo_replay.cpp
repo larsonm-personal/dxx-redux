@@ -304,6 +304,7 @@ static int write_test_fixture(const char *path)
 	char error[256] = "";
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -350,6 +351,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	fill_test_checkpoint_data(checkpoint_data, sizeof(checkpoint_data));
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -507,6 +509,57 @@ static int expect_replay_loader(void)
 	remove(demo_path.c_str());
 	remove(trace_path.c_str());
 	remove(actual_result_path.c_str());
+	remove_test_dir(dir);
+	return 0;
+}
+
+static int expect_actual_result_write_verdict(void)
+{
+	const char *dir = "test_input_demo_result_verdict_fixture";
+	const std::string path = std::string(dir) + "/verdict.dximdemo";
+	const std::string result_path = path + ".actual.json";
+	char error[256] = "";
+	input_demo_result actual, loaded;
+	fill_test_frame_state(&actual, 0);
+	if (!make_test_dir(dir) || write_test_fixture(path.c_str())) return 1;
+	if (!input_demo_replay_load(path.c_str(), error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("new replay load retained a terminal write verdict");
+	input_demo_replay_set_actual_result_path(nullptr);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("missing output path claimed a terminal write");
+	input_demo_replay_set_actual_result_path(dir);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed output open claimed a terminal write");
+#ifdef __linux__
+	input_demo_replay_set_actual_result_path("/dev/full");
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed buffered result write claimed success");
+#endif
+	input_demo_replay_set_actual_result_path(result_path.c_str());
+	if (!input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || !input_demo_replay_actual_result_written() ||
+	    !input_demo_result_read_json_file(result_path.c_str(), &loaded, error, sizeof(error)) ||
+	    !input_demo_result_compare(&actual, &loaded, error, sizeof(error)))
+		return report_failure_string(std::string("successful terminal result write: ") + error);
+	input_demo_replay_unload();
+	if (!input_demo_replay_actual_result_written()) return report_failure("unload erased successful terminal write");
+	if (input_demo_replay_load(nullptr, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed load retained a previous terminal write verdict");
+	if (!input_demo_replay_load(path.c_str(), error, sizeof(error)) ||
+	    !input_demo_replay_write_actual_result(&actual, error, sizeof(error)) ||
+	    !input_demo_replay_actual_result_written()) return report_failure_string(error);
+	// A failed subsequent write must not leave the earlier success in place
+	input_demo_replay_set_actual_result_path(dir);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed replacement write retained a successful verdict");
+	input_demo_replay_set_actual_result_path(result_path.c_str());
+	if (!input_demo_replay_write_actual_result(&actual, error, sizeof(error)) ||
+	    !input_demo_replay_load(path.c_str(), error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("successful new load retained a previous terminal write verdict");
+	input_demo_replay_unload();
+	if (input_demo_replay_actual_result_written()) return report_failure("unload invented a terminal write");
+	remove(path.c_str());
+	remove((path + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	remove(result_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }
@@ -690,6 +743,7 @@ static int write_direct_command_policy_fixture(const char *path,
 	char error[256] = "";
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -1047,6 +1101,8 @@ static int expect_direct_command_policy(void)
 int main(void)
 {
 	if (expect_replay_loader())
+		return 1;
+	if (expect_actual_result_write_verdict())
 		return 1;
 	if (expect_checkpoint_replay_loader())
 		return 1;

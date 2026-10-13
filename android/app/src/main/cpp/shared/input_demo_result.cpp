@@ -656,6 +656,7 @@ int input_demo_result_write_json_file(const char *path,
 		return input_demo_result_copy_error(std::string("could not open result file for writing: ") + path,
 		                                    error, error_size);
 	output << text;
+	output.close();
 	if (!output.good())
 		return input_demo_result_copy_error(std::string("could not write result file: ") + path,
 		                                    error, error_size);

@@ -48,8 +48,7 @@
 
 #include "input_demo_hooks_shared.h"
 
-extern int ReadControlsReplayFrame(void);
-extern void ReadControlsReplayPostFrame(void);
+extern void do_weapon_n_item_stuff(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
 
@@ -66,6 +65,7 @@ static int previous_fireball_hashes_valid = 0;
 static unsigned int previous_fireball_hashes[MAX_OBJECTS];
 static int input_demo_replay_exit_requested = 0;
 static int input_demo_replay_observed_loaded = 0;
+static int input_demo_record_simulation_active = 0;
 
 static void input_demo_request_exit_after_replay(void)
 {
@@ -485,6 +485,174 @@ void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
 	}
 }
 
+static void input_demo_cancel_input_capture(const char *error)
+{
+	con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+	input_demo_recorder_cancel();
+}
+
+void input_demo_record_reset_input_phase(void)
+{
+	input_demo_record_simulation_active = 0;
+}
+
+void input_demo_run_game_process_frame(void (*process)(void))
+{
+	/* The wrapper also resets the guard on every ordinary early return */
+	input_demo_record_simulation_active = 1;
+	process();
+	input_demo_record_simulation_active = 0;
+}
+
+void input_demo_record_input_clear(void)
+{
+	char error[256] = "";
+	if (input_demo_record_simulation_active || !input_demo_recorder_uses_ordered_input())
+		return;
+	input_demo_record_input_context();
+	if (input_demo_recorder_uses_ordered_input() &&
+	    !input_demo_recorder_stage_input_clear(FrameTime, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+}
+
+void input_demo_record_input_context(void)
+{
+	if (input_demo_record_simulation_active && input_demo_recorder_uses_ordered_input()) {
+		input_demo_cancel_input_capture("ordered recording does not support input dispatch inside simulation");
+		return;
+	}
+	unsigned int state = 0;
+	char error[256] = "";
+	if (!input_demo_recorder_uses_ordered_input())
+		return;
+	if (!d_rand_get_state(&state) ||
+	    !input_demo_recorder_begin_input_batch(state, d_rand_get_call_count(), FrameTime, error, sizeof(error))) {
+		input_demo_cancel_input_capture(error[0] ? error : "could not capture pre-input SIM RNG");
+		return;
+	}
+	input_demo_rng_trace_set_context(input_demo_recorder_frame_count(), GameTime64);
+}
+
+void input_demo_record_input_reset(void)
+{
+	char error[256] = "";
+	input_demo_record_input_context();
+	if (input_demo_recorder_uses_ordered_input() &&
+	    !input_demo_recorder_stage_input_reset(FrameTime, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+}
+
+void input_demo_record_input_controls_supported(void)
+{
+	if (input_demo_recorder_uses_ordered_input() &&
+	    (Controls.rear_view_state || Controls.rear_view_count || Controls.automap_state || Controls.automap_count))
+		input_demo_cancel_input_capture("ordered recording does not yet support wall-clock rear view or modal automap input");
+}
+
+void input_demo_record_input_sample(void)
+{
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	char error[256] = "";
+	input_demo_record_input_context();
+	input_demo_record_input_controls_supported();
+	if (!input_demo_recorder_uses_ordered_input())
+		return;
+	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	if (!input_demo_recorder_stage_input_sample(FrameTime, &state, &pulse, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+}
+
+int input_demo_record_finish_input_tail(char *error, size_t error_size)
+{
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	unsigned int rng_state = 0;
+	if (!input_demo_recorder_uses_ordered_input())
+		return 1;
+	if (!input_demo_recorder_is_active())
+		return 0;
+	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	if (!d_rand_get_state(&rng_state))
+		return 0;
+	return input_demo_recorder_finish_input_tail(&state, &pulse, rng_state,
+	    d_rand_get_call_count(), error, error_size);
+}
+
+static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t error_size)
+{
+	input_demo_input_batch_info batch;
+	input_demo_input_operation operation;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	unsigned int rng_state = 0;
+	const fix simulation_frame_time = FrameTime;
+	uint32_t index;
+	if (!input_demo_replay_get_input_batch_info(frame, &batch, error, error_size))
+		return 0;
+	/* Validate every typed command before allowing the first world mutation */
+	for (index = 0; index < batch.operation_count; ++index) {
+		if (!input_demo_replay_get_input_operation(frame, index, &operation, error, error_size))
+			return 0;
+		if (operation.kind == INPUT_DEMO_INPUT_COMMAND &&
+		    !input_demo_apply_ordered_direct_command(&operation.command, 1, error, error_size))
+			return 0;
+		if (operation.kind == INPUT_DEMO_INPUT_SAMPLE &&
+		    (Endlevel_sequence || Player_is_dead || operation.state.rear_view_state ||
+		     operation.state.automap_state || operation.pulse.rear_view_count || operation.pulse.automap_count)) {
+			snprintf(error, error_size, "ordered control sample has an unsupported native phase or modal control");
+			return 0;
+		}
+	}
+	/* Keep the existing per-frame SIM seed contract, now before input effects */
+	if (!d_rand_set_state(batch.pre_rng_state)) {
+		snprintf(error, error_size, "active RNG backend cannot restore pre-input state");
+		return 0;
+	}
+	d_rand_set_call_count(batch.pre_rng_count);
+	input_demo_rng_trace_set_context(frame, GameTime64);
+	for (index = 0; index < batch.operation_count; ++index) {
+		if (!input_demo_replay_get_input_operation(frame, index, &operation, error, error_size))
+			goto failed;
+		FrameTime = operation.frame_time;
+		switch (operation.kind) {
+			case INPUT_DEMO_INPUT_CLEAR:
+				game_flush_inputs();
+				break;
+			case INPUT_DEMO_INPUT_RESET:
+				Player_fired_laser_this_frame = -1;
+				break;
+			case INPUT_DEMO_INPUT_SAMPLE:
+				input_demo_control_info_from_state(&Controls, &operation.state, &operation.pulse);
+				do_weapon_n_item_stuff();
+				break;
+			case INPUT_DEMO_INPUT_COMMAND:
+				if (!input_demo_apply_ordered_direct_command(&operation.command, 0, error, error_size))
+					goto failed;
+				break;
+			default:
+				snprintf(error, error_size, "unknown ordered input operation");
+				goto failed;
+		}
+	}
+	FrameTime = simulation_frame_time;
+	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	if (memcmp(&state, &batch.residual_state, sizeof(state)) ||
+	    memcmp(&pulse, &batch.residual_pulse, sizeof(pulse))) {
+		snprintf(error, error_size, "ordered input residual controls differ at frame %u", frame);
+		return 0;
+	}
+	if (!d_rand_get_state(&rng_state) || rng_state != batch.post_rng_state ||
+	    d_rand_get_call_count() != batch.post_rng_count) {
+		snprintf(error, error_size, "ordered input SIM RNG differs at frame %u", frame);
+		return 0;
+	}
+	return 1;
+failed:
+	FrameTime = simulation_frame_time;
+	return 0;
+}
+
 void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
@@ -592,9 +760,17 @@ int input_demo_prepare_replay_frame_shared(
 	}
 	input_demo_delay_replay_frame_shared((fix) replay_frame.frame_time,
 	                                     replay_last_timer_value);
-	input_demo_control_info_from_state(&Controls, &replay_frame.state,
-	                                   &replay_frame.pulse);
+	if (input_demo_replay_format_version() != 5) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: legacy format: use android/tests/convert_public_replay.py for verified public-corpus conversion, or record again\n");
+		if (stop_replay) stop_replay(0);
+		return 0;
+	}
 	FrameTime = (fix) replay_frame.frame_time;
+	if (!input_demo_apply_ordered_input(replay_frame.frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		if (stop_replay) stop_replay(0);
+		return 0;
+	}
 	return 1;
 }
 
@@ -604,6 +780,7 @@ void input_demo_stop_replay_shared(int write_result,
                                    void (*before_stop_replay)(void))
 {
 	const int replay_was_loaded = input_demo_replay_is_loaded();
+	input_demo_record_reset_input_phase();
 
 	if (replay_was_loaded)
 		input_demo_trace_boundary(write_result ? "terminal" : "aborted");
@@ -628,10 +805,25 @@ int input_demo_finish_replay_shared(int close_window,
                                     void (*before_write_replay_result)(void),
                                     void (*write_replay_result)(void))
 {
+	input_demo_record_reset_input_phase();
 	if (replay_last_timer_value)
 		*replay_last_timer_value = 0;
 	if (!input_demo_replay_is_loaded())
 		return 0;
+	/* A level/game exit may finish inside the final simulation step, before
+	 * advance_frame runs. Never silently discard remaining frames or input */
+	{
+		char error[256] = "";
+		if (input_demo_replay_next_frame_index() + 1 != input_demo_replay_frame_count() ||
+		    !input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error))) {
+			con_printf(CON_NORMAL, "Input demo replay stopped at early exit: %s\n",
+			           error[0] ? error : "unconsumed recorded simulation frames");
+			input_demo_trace_boundary("aborted");
+			input_demo_replay_unload();
+			input_demo_request_exit_after_replay();
+			return 1;
+		}
+	}
 	input_demo_trace_boundary("terminal");
 	if (before_write_replay_result)
 		before_write_replay_result();
@@ -646,37 +838,6 @@ int input_demo_finish_replay_shared(int close_window,
 	// The console runner has no menu fonts or UI event loop to return to
 	(void) close_window;
 #endif
-	return 1;
-}
-
-int input_demo_sync_replay_rng_to_current_frame_shared(
-    void (*before_sync_replay_rng)(const input_demo_replay_frame *replay_frame),
-    void (*stop_replay)(int))
-{
-	input_demo_replay_frame replay_frame;
-	char error[256] = "";
-
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
-		if (stop_replay)
-			stop_replay(0);
-		return 0;
-	}
-	if (before_sync_replay_rng)
-		before_sync_replay_rng(&replay_frame);
-	if (!d_rand_set_state(replay_frame.rng_state)) {
-		con_printf(CON_NORMAL,
-		           "Input demo replay stopped: active RNG backend cannot restore state\n");
-		if (stop_replay)
-			stop_replay(0);
-		return 0;
-	}
-	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
-		d_rand_set_call_count(replay_frame.rng_call_count);
-	else
-		d_rand_reset_call_count();
 	return 1;
 }
 
@@ -718,24 +879,17 @@ int input_demo_process_fast_replay(void)
 #endif
 }
 
-int input_demo_step_replay_frame_shared(
-    int (*prepare_replay_frame)(void),
-    int (*sync_replay_rng_to_current_frame)(void))
+int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void))
 {
-	int read_controls_result;
-
+	/* A background draw must not reapply a non-idempotent pending batch */
+	if (game_is_time_paused())
+		return 0;
 	input_demo_restore_replay_fp_environment();
 	if (!prepare_replay_frame || !prepare_replay_frame())
 		return 0;
-	read_controls_result = ReadControlsReplayFrame();
-	if (!sync_replay_rng_to_current_frame || !sync_replay_rng_to_current_frame())
-		return 0;
-	if (read_controls_result)
-		return 1;
 	if (!game_is_time_paused()) {
 		calc_game_time();
 		GameProcessFrame();
-		ReadControlsReplayPostFrame();
 		input_demo_advance_replay_frame();
 		/* The next simulation step consumes the preceding main view's candidates
 		 * The windowed event path and the headless runner both advance here */
@@ -767,8 +921,14 @@ void input_demo_advance_replay_frame_shared(
 			stop_replay(0);
 		return;
 	}
-	if (input_demo_replay_is_finished() && stop_replay)
+	if (input_demo_replay_is_finished() && stop_replay) {
+		if (!input_demo_apply_ordered_input(input_demo_replay_frame_count(), error, sizeof(error))) {
+			con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+			stop_replay(0);
+			return;
+		}
 		stop_replay(1);
+	}
 }
 
 void input_demo_write_replay_frame_state_trace_shared(
@@ -2112,11 +2272,8 @@ unsigned int input_demo_trace_collision_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
 		return (unsigned int) input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int) (frame_count - 1) : 0;
-	}
+	if (input_demo_recorder_is_active())
+		return input_demo_recorder_diagnostic_frame_index();
 	return 0;
 }
 

@@ -149,10 +149,11 @@ function New-Fixture {
     # This generated fixture checks replay/trace plumbing, not a recorded RNG oracle
     # Synthetic RNG values can produce diagnostics; determinism uses the recorded corpus
     $demoText = @"
-{"type":"header","version":2,"game":"$GameName","mission":"$($Config.Mission)","build_number":0,"git_version":"unknown","arch":"$arch","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
-{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100}}
-{"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100}}
-{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102}}
+{"type":"header","version":5,"game":"$GameName","mission":"$($Config.Mission)","build_number":0,"git_version":"unknown","arch":"$arch","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
+{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100,"c":0},"dispatch":{"pre_rng":"=","ops":[{"k":"sample","ft":3276,"s":"="}]}}
+{"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100,"c":0},"dispatch":{"pre_rng":"=","ops":[{"k":"sample","ft":3276,"s":"=","p":{"f1":1}}]}}
+{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102,"c":0},"dispatch":{"pre_rng":"=","ops":[{"k":"sample","ft":3276,"s":"="}]}}
+{"type":"input_tail","f":3,"input":{},"rng":{"s":102,"c":0},"dispatch":{"pre_rng":"=","ops":[]}}
 {"type":"result","result":{"version":2,"game":"$GameName","mission":"$($Config.Mission)","level":1,"difficulty":2,"frame_count":3}}
 "@
 

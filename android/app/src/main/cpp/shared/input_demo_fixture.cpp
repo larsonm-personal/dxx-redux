@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <utility>
+#include <unordered_set>
 
 #include <nlohmann/json.hpp>
 
@@ -603,8 +604,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
-	if (metadata.version != 2 && metadata.version != 3 && metadata.version != 4)
-		return fail(error, "metadata version must be 2, 3, or 4");
+	if (metadata.version != 2 && metadata.version != 3 && metadata.version != 4 && metadata.version != 5)
+		return fail(error, "metadata version must be 2, 3, 4, or 5");
 	if (metadata.game != "d1" && metadata.game != "d2")
 		return fail(error, "metadata game must be d1 or d2");
 	if (metadata.mission.empty())
@@ -649,12 +650,220 @@ static bool parse_json_line(const std::string &line, const char *label,
                             ordered_json *json, std::string *error)
 {
 	try {
-		*json = ordered_json::parse(line);
+		std::vector<std::unordered_set<std::string>> object_keys;
+		bool duplicate = false;
+		*json = ordered_json::parse(line, [&](int, ordered_json::parse_event_t event, ordered_json &value) {
+			if (event == ordered_json::parse_event_t::object_start) object_keys.emplace_back();
+			else if (event == ordered_json::parse_event_t::key) {
+				if (!object_keys.back().insert(value.get<std::string>()).second) duplicate = true;
+			} else if (event == ordered_json::parse_event_t::object_end) object_keys.pop_back();
+			return true;
+		});
+		if (duplicate) return fail(error, std::string(label) + " json contains a duplicate key");
 	} catch (const std::exception &e) {
 		return fail(error, std::string("invalid ") + label + " json: " + e.what());
 	}
 	if (!json->is_object())
 		return fail(error, std::string(label) + " json must be an object");
+	return true;
+}
+
+static bool exact_keys(const ordered_json &value, std::initializer_list<const char *> keys,
+                       std::string *error, const char *label)
+{
+	if (!value.is_object() || value.size() != keys.size())
+		return fail(error, std::string(label) + " has missing or unknown keys");
+	for (const char *key : keys)
+		if (!value.contains(key)) return fail(error, std::string(label) + " is missing " + key);
+	return true;
+}
+
+static const char *const dispatch_command_names[] = {
+	"", "guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
+	"drop_flag", "escort_release_control", "death_abort", "change_difficulty",
+	"guidebot_spawn", "guidebot_find_secret", "guidebot_warp_to_me",
+	"guidebot_find_unexplored", "select_weapon_exact"
+};
+
+bool input_demo_dispatch_command_from_json(const std::string &text, int game,
+                                           input_demo_replay_direct_command_event *command, std::string *error)
+{
+	ordered_json root;
+	if (!command || !parse_json_line(text, "input command", &root, error)) return false;
+	memset(command, 0, sizeof(*command));
+	if (!root.contains("kind") || root["kind"] != "direct_command" ||
+	    !root.contains("command") || !root["command"].is_string())
+		return fail(error, "input command requires direct_command kind and command");
+	for (unsigned i = 1; i < sizeof(dispatch_command_names) / sizeof(*dispatch_command_names); ++i)
+		if (root["command"] == dispatch_command_names[i]) command->kind = static_cast<int32_t>(i);
+	if (!command->kind) return fail(error, "unsupported input command");
+	if (game == INPUT_DEMO_GAME_D1 && command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT &&
+	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY &&
+	    command->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT)
+		return fail(error, "D1 input rejects D2-only direct command");
+	int a = 0, b = 0;
+	if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL) {
+		if (!exact_keys(root, { "kind", "command", "special_key", "from_menu" }, error, "guidebot command") ||
+		    !parse_int_field(root["special_key"], &a, error, "special_key") || !root["from_menu"].is_boolean())
+			return fail(error, "invalid guidebot command arguments");
+		b = root["from_menu"].get<bool>();
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER) {
+		if (!exact_keys(root, { "kind", "command", "player_marker_num", "message" }, error, "marker command") ||
+		    !parse_int_field(root["player_marker_num"], &a, error, "player_marker_num") || !root["message"].is_string())
+			return fail(error, "invalid marker command arguments");
+		const std::string message = root["message"].get<std::string>();
+		if (message.size() >= sizeof(command->text) || message.find('\0') != std::string::npos)
+			return fail(error, "marker text exceeds the supported size");
+		memcpy(command->text, message.c_str(), message.size() + 1);
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
+		if (!exact_keys(root, { "kind", "command", "difficulty" }, error, "difficulty command") ||
+		    !parse_int_field(root["difficulty"], &a, error, "difficulty") || a < 0 || a > 4)
+			return fail(error, "invalid difficulty command");
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT) {
+		if (!exact_keys(root, { "kind", "command", "weapon_class", "weapon_index" }, error, "weapon command") ||
+		    !parse_int_field(root["weapon_class"], &a, error, "weapon_class") ||
+		    !parse_int_field(root["weapon_index"], &b, error, "weapon_index") ||
+		    a < 0 || a > 1 || b < 0 || b >= (game == INPUT_DEMO_GAME_D1 ? 5 : 10))
+			return fail(error, "invalid exact weapon command");
+	} else if (!exact_keys(root, { "kind", "command" }, error, "input command")) return false;
+	command->value0 = a;
+	command->value1 = b;
+	return true;
+}
+
+static bool dispatch_command_json(const input_demo_replay_direct_command_event &command, int game,
+                                  ordered_json *root, std::string *error)
+{
+	if (command.kind <= 0 || static_cast<unsigned>(command.kind) >= sizeof(dispatch_command_names) / sizeof(*dispatch_command_names))
+		return fail(error, "unsupported input command");
+	*root = { { "kind", "direct_command" }, { "command", dispatch_command_names[command.kind] } };
+	if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL) {
+		if (command.value1 != 0 && command.value1 != 1) return fail(error, "invalid from_menu flag");
+		(*root)["special_key"] = command.value0;
+		(*root)["from_menu"] = command.value1 != 0;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER) {
+		if (!memchr(command.text, '\0', sizeof(command.text))) return fail(error, "unterminated marker text");
+		(*root)["player_marker_num"] = command.value0;
+		(*root)["message"] = command.text;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
+		(*root)["difficulty"] = command.value0;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT) {
+		(*root)["weapon_class"] = command.value0;
+		(*root)["weapon_index"] = command.value1;
+	}
+	input_demo_replay_direct_command_event checked;
+	try {
+		return input_demo_dispatch_command_from_json(root->dump(), game, &checked, error);
+	} catch (const std::exception &ex) {
+		return fail(error, std::string("invalid input command text: ") + ex.what());
+	}
+}
+
+static bool dispatch_operation_parse(const ordered_json &root, int game,
+                                     input_demo_input_operation *operation, std::string *error)
+{
+	if (!operation || !root.is_object() || !root.contains("k") || !root["k"].is_string() || !root.contains("ft"))
+		return fail(error, "input operation requires k and ft");
+	memset(operation, 0, sizeof(*operation));
+	int frame_time;
+	if (!parse_int_field(root["ft"], &frame_time, error, "input ft") || frame_time < 0 || frame_time > INPUT_DEMO_FRAME_TIME_MAX)
+		return fail(error, "input operation time is outside the supported range");
+	operation->frame_time = frame_time;
+	if (root["k"] == "reset" || root["k"] == "clear") {
+		operation->kind = root["k"] == "reset" ? INPUT_DEMO_INPUT_RESET : INPUT_DEMO_INPUT_CLEAR;
+		return exact_keys(root, { "k", "ft" }, error, "reset or clear operation");
+	}
+	if (root["k"] == "command") {
+		operation->kind = INPUT_DEMO_INPUT_COMMAND;
+		return exact_keys(root, { "k", "ft", "event" }, error, "command operation") &&
+		       input_demo_dispatch_command_from_json(root["event"].dump(), game, &operation->command, error);
+	}
+	if (root["k"] != "sample") return fail(error, "unknown executable input operation");
+	operation->kind = INPUT_DEMO_INPUT_SAMPLE;
+	if (root.contains("p") ? !exact_keys(root, { "k", "ft", "s", "p" }, error, "sample operation") : !exact_keys(root, { "k", "ft", "s" }, error, "sample operation")) return false;
+	if (root["s"].is_string()) {
+		if (root["s"] != "=") return fail(error, "invalid input residual-state alias");
+		operation->state_is_residual = 1;
+	}
+	ordered_json controls = { { "f", 0 }, { "s", operation->state_is_residual ? ordered_json::object() : root["s"] }, { "p", root.value("p", ordered_json::object()) } };
+	input_demo_control_record record;
+	if (!input_demo_control_record_parse_json_line(controls.dump(), game, &record, error)) return false;
+	input_demo_control_state_apply_update(&operation->state, &record.held, game);
+	input_demo_control_pulse_apply_update(&operation->pulse, &record.pulse, game);
+	return true;
+}
+
+bool input_demo_dispatch_operation_to_json(const input_demo_input_operation &operation, int game,
+                                           std::string *text, std::string *error)
+{
+	ordered_json root = { { "k", "" }, { "ft", operation.frame_time } };
+	if (!text) return fail(error, "missing operation output");
+	if (operation.kind == INPUT_DEMO_INPUT_RESET) root["k"] = "reset";
+	else if (operation.kind == INPUT_DEMO_INPUT_CLEAR) root["k"] = "clear";
+	else if (operation.kind == INPUT_DEMO_INPUT_COMMAND) {
+		root["k"] = "command";
+		if (!dispatch_command_json(operation.command, game, &root["event"], error)) return false;
+	} else if (operation.kind == INPUT_DEMO_INPUT_SAMPLE) {
+		root["k"] = "sample";
+		if (game == INPUT_DEMO_GAME_D1 && (operation.state.afterburner_state || operation.state.energy_to_shield_state ||
+		                                   operation.pulse.toggle_bomb_count || operation.pulse.headlight_count))
+			return fail(error, "D1 sample rejects D2-only controls");
+		input_demo_control_record record;
+		input_demo_control_record_clear(&record);
+		input_demo_control_state_update_from_state(&record.held, &operation.state, game);
+		input_demo_control_pulse_update_from_pulse(&record.pulse, &operation.pulse, game);
+		std::string controls_text;
+		if (!input_demo_control_record_to_json_line(record, game, &controls_text, error)) return false;
+		const auto controls = ordered_json::parse(controls_text);
+		if (operation.state_is_residual != 0 && operation.state_is_residual != 1)
+			return fail(error, "invalid residual-state alias flag");
+		root["s"] = operation.state_is_residual ? ordered_json("=") : controls.value("s", ordered_json::object());
+		root["p"] = controls.value("p", ordered_json::object());
+	} else return fail(error, "unknown executable input operation");
+	input_demo_input_operation checked;
+	if (!dispatch_operation_parse(root, game, &checked, error)) return false;
+	*text = root.dump();
+	return true;
+}
+
+static bool dispatch_batch_parse(const ordered_json &root, int game,
+                                 input_demo_input_batch *batch, std::string *error)
+{
+	if (!exact_keys(root, { "pre_rng", "ops" }, error, "input batch") || !root["ops"].is_array())
+		return fail(error, "invalid input batch");
+	if (root["ops"].size() > INPUT_DEMO_INPUT_OPERATION_MAX || root.dump().size() > INPUT_DEMO_INPUT_BATCH_MAX_BYTES)
+		return fail(error, "input batch exceeds the supported limit");
+	input_demo_input_batch parsed;
+	parsed.present = true;
+	if (root["pre_rng"].is_string()) {
+		if (root["pre_rng"] != "=") return fail(error, "invalid input RNG alias");
+		parsed.pre_rng_is_post = true;
+	} else if (!exact_keys(root["pre_rng"], { "s", "c" }, error, "input pre_rng") ||
+	           !parse_uint32_field(root["pre_rng"]["s"], &parsed.pre_rng_state, error, "pre_rng.s") ||
+	           !parse_uint32_field(root["pre_rng"]["c"], &parsed.pre_rng_count, error, "pre_rng.c")) return false;
+	for (const auto &row : root["ops"]) {
+		input_demo_input_operation operation;
+		if (!dispatch_operation_parse(row, game, &operation, error)) return false;
+		parsed.operations.push_back(operation);
+	}
+	*batch = std::move(parsed);
+	return true;
+}
+
+static bool dispatch_batch_json(const input_demo_input_batch &batch, int game,
+                                ordered_json *root, std::string *error)
+{
+	if (!batch.present || batch.operations.size() > INPUT_DEMO_INPUT_OPERATION_MAX)
+		return fail(error, "missing or oversized input batch");
+	*root = { { "pre_rng", batch.pre_rng_is_post ? ordered_json("=") : ordered_json({ { "s", batch.pre_rng_state }, { "c", batch.pre_rng_count } }) },
+		      { "ops", ordered_json::array() } };
+	for (const auto &operation : batch.operations) {
+		std::string text;
+		if (!input_demo_dispatch_operation_to_json(operation, game, &text, error)) return false;
+		(*root)["ops"].push_back(ordered_json::parse(text));
+	}
+	if (root->dump().size() > INPUT_DEMO_INPUT_BATCH_MAX_BYTES)
+		return fail(error, "input batch exceeds the supported byte limit");
 	return true;
 }
 
@@ -999,6 +1208,23 @@ static bool validate_frame_record(const input_demo_file_frame &frame, uint32_t e
 	return validate_rng_record(frame.rng, error);
 }
 
+static bool validate_dispatch_version(const input_demo_file_frame &frame, int version, int game, std::string *error)
+{
+	if ((version == 5) != frame.dispatch.present)
+		return fail(error, "format 5 requires ordered input on every frame; legacy frames forbid it");
+	if (version != 5) return true;
+	if (!frame.rng.has_call_count) return fail(error, "ordered input requires post-input RNG count");
+	ordered_json checked;
+	if (!dispatch_batch_json(frame.dispatch, game, &checked, error)) return false;
+	for (const auto &event : frame.events) {
+		ordered_json parsed;
+		if (!parse_json_line(event, "frame event", &parsed, error)) return false;
+		if (parsed.contains("kind") && parsed["kind"] == "direct_command")
+			return fail(error, "format 5 direct commands must be ordered input operations");
+	}
+	return true;
+}
+
 static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_count, std::string *error)
 {
 	if (!validate_metadata(demo.metadata, error))
@@ -1014,6 +1240,14 @@ static bool validate_demo_envelope(const input_demo_file &demo, size_t frame_cou
 		return fail(error, "demo frame count does not match header");
 	if (!demo.has_result)
 		return fail(error, "demo file is missing result trailer");
+	if ((demo.metadata.version == 5) != demo.has_input_tail)
+		return fail(error, "format 5 requires exactly one input tail; legacy formats forbid it");
+	if (demo.has_input_tail) {
+		if (!validate_frame_record(demo.input_tail, demo.metadata.frame_count, game_id_from_name(demo.metadata.game), error) ||
+		    !validate_dispatch_version(demo.input_tail, 5, game_id_from_name(demo.metadata.game), error)) return false;
+		if (demo.input_tail.has_state || demo.input_tail.has_diag)
+			return fail(error, "input tail must not contain simulation state or diagnostics");
+	}
 	if (demo.result.frame_count != demo.metadata.frame_count)
 		return fail(error, "demo result frame count does not match header");
 	return true;
@@ -1026,7 +1260,8 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 	const int game = game_id_from_name(demo.metadata.game);
 	size_t i;
 	for (i = 0; i != demo.frames.size(); ++i) {
-		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error))
+		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error) ||
+		    !validate_dispatch_version(demo.frames[i], demo.metadata.version, game, error))
 			return false;
 	}
 	return true;
@@ -1093,6 +1328,8 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 				return fail(error, "frame diag must be an object");
 			diag = it.value();
 			have_diag = true;
+		} else if (name == "dispatch") {
+			if (!dispatch_batch_parse(it.value(), game, &frame->dispatch, error)) return false;
 		} else if (name == "events") {
 			size_t event_index;
 
@@ -1189,6 +1426,7 @@ bool input_demo_frame_to_json_line(const input_demo_file_frame &frame, int game,
 	if (rng_record.contains("c"))
 		rng["c"] = rng_record.at("c");
 	root["rng"] = std::move(rng);
+	if (frame.dispatch.present && !dispatch_batch_json(frame.dispatch, game, &root["dispatch"], error)) return false;
 	if (frame.has_state) {
 		state = std::move(state_record);
 		root["state"] = std::move(state);
@@ -1281,6 +1519,7 @@ static bool input_demo_file_parse_stream(std::istream &input,
 		if (have_result)
 			return fail(error, "demo result trailer must be the final record");
 		if (record_type == "frame") {
+			if (parsed.has_input_tail) return fail(error, "input tail must follow all simulation frames");
 			input_demo_file_frame frame;
 
 			if (expected_frame >= parsed.metadata.frame_count)
@@ -1289,10 +1528,19 @@ static bool input_demo_file_parse_stream(std::istream &input,
 				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
 			parsed.frames.push_back(std::move(frame));
 			expected_frame++;
+		} else if (record_type == "input_tail") {
+			if (parsed.metadata.version != 5 || parsed.has_input_tail || expected_frame != parsed.metadata.frame_count)
+				return fail(error, "mis-versioned, duplicate or misplaced input tail");
+			if (root.contains("events") ? !exact_keys(root, { "type", "f", "input", "rng", "dispatch", "events" }, error, "input tail") : !exact_keys(root, { "type", "f", "input", "rng", "dispatch" }, error, "input tail")) return false;
+			root["type"] = "frame";
+			root["ft"] = 1;
+			if (!parse_frame_record(root, game_id_from_name(parsed.metadata.game), expected_frame, &parsed.input_tail, &line_error))
+				return fail(error, "input tail: " + line_error);
+			parsed.has_input_tail = true;
 		} else if (record_type == "checkpoint") {
 			if (have_checkpoint)
 				return fail(error, "demo line " + std::to_string(line_number) + ": duplicate checkpoint record");
-			if (expected_frame)
+			if (expected_frame || parsed.has_input_tail)
 				return fail(error, "demo line " + std::to_string(line_number) + ": checkpoint record must appear before frames");
 			if (!parse_checkpoint_record(root, &parsed.checkpoint, &line_error))
 				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
@@ -1378,7 +1626,15 @@ static bool input_demo_file_bookends(const input_demo_file &demo, size_t frame_c
 	}
 	result_record["type"] = "result";
 	result_record["result"] = std::move(result_json);
-	*suffix = result_record.dump();
+	suffix->clear();
+	if (demo.has_input_tail) {
+		if (!input_demo_frame_to_json_line(demo.input_tail, game_id_from_name(demo.metadata.game), &line, error)) return false;
+		auto tail = ordered_json::parse(line);
+		tail["type"] = "input_tail";
+		tail.erase("ft");
+		*suffix = tail.dump() + "\n";
+	}
+	*suffix += result_record.dump();
 	suffix->push_back('\n');
 	return true;
 }

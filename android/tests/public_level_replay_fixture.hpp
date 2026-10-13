@@ -66,6 +66,8 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "public_loot_replay_fixture.hpp"
 
+#include "public_secondary_replay_fixture.hpp"
+
 static void capture_public_level_replay(const char *directory, const char *scenario)
 {
 	using nlohmann::json;
@@ -167,6 +169,14 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	d_srand(1234);
 	d_rand_reset_call_count();
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	if (std::strcmp(scenario, "ordered-dispatch") == 0) {
+		capture_public_dispatch_frames(game_name, settings.mission);
+		return;
+	}
+	if (std::strcmp(scenario, "secondary-release-first") == 0 || std::strcmp(scenario, "secondary-mouse-first") == 0) {
+		capture_public_secondary_frames(game_name, settings.mission, std::strcmp(scenario, "secondary-mouse-first") == 0);
+		return;
+	}
 	if (std::strcmp(scenario, "loot") == 0) {
 		capture_public_loot_frames(game_name, settings.mission, level);
 		return;
@@ -495,6 +505,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	if (door_lifecycle) require(input_demo_door_trace_write(observations.size(), "terminal", error, sizeof(error)), error);
 	input_demo_result result;
 	input_demo_capture_current_result(&result);
+	require(input_demo_record_finish_input_tail(error, sizeof(error)), "finalize ordered input tail");
 	require(input_demo_recorder_flush_with_result("capture.dximdemo", &result, error, sizeof(error)), error);
 	input_demo_state_trace_stop();
 	newdemo_write_end();

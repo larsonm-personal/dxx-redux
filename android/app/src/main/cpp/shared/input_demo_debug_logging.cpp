@@ -121,11 +121,8 @@ unsigned int input_demo_debug_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
 		return (unsigned int) input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int) (frame_count - 1) : 0;
-	}
+	if (input_demo_recorder_is_active())
+		return input_demo_recorder_diagnostic_frame_index();
 	return 0;
 }
 

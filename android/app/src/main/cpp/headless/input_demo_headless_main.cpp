@@ -242,8 +242,15 @@ int main(int argc, char *argv[])
 		if (!input_demo_step_replay_frame())
 			break;
 	}
-	if (input_demo_replay_is_loaded())
-		input_demo_finish_replay_without_close();
+	if (input_demo_replay_is_loaded()) {
+		input_demo_trace_boundary("aborted");
+		input_demo_replay_unload();
+	}
+	if (!input_demo_replay_actual_result_written()) {
+		fprintf(stderr, "HEADLESS-RUN FAIL replay aborted or terminal result was not written\n");
+		args_exit();
+		return 1;
+	}
 
 	printf("HEADLESS-RUN OK game=" HEADLESS_GAME_NAME " mission=%s level=%d difficulty=%d start_mode=%s frames=%u result=%s\n",
 	       mission_name,

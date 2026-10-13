@@ -17,6 +17,7 @@ import public_robot_combat_replay as robot_combat
 import public_door_replay as door_lifecycle
 import public_loot_replay as robot_loot
 import public_guidebot_replay as guidebot
+import public_secondary_replay as secondary
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
@@ -25,6 +26,7 @@ PUBLIC_CASES[("d1", "door-lifecycle")] = 3
 PUBLIC_CASES[("d2", "door-lifecycle")] = 1
 PUBLIC_CASES[("d1", "loot")] = 1
 PUBLIC_CASES[("d2", "guidebot-release")] = 1
+PUBLIC_CASES.update({(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in secondary.SCENARIOS})
 
 
 def load_corpus(directory):
@@ -160,6 +162,8 @@ def verify_actions(case, demo, state_trace, actual_result):
     frames = list(parity.frames(state_trace, header, case["game"]))
     terminal = compact._json(Path(actual_result).read_bytes())
     states = [frame["state"] for frame in frames] + [terminal]
+    if case["scenario"] in secondary.SCENARIOS:
+        return secondary.verify(case, demo, header, frames, terminal)
     positions = [_position(state) for state in states]
     if max(_distance_squared(positions[0], point) for point in positions) <= 65536**2:
         raise parity.EvidenceError("Declared public action contains no movement beyond one world unit")

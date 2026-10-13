@@ -278,6 +278,8 @@ void do_weapon_n_item_stuff()
 	unsigned int sim_state;
 	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
 
+	input_demo_record_input_sample();
+
 	if (rng_probe) {
 		sim_state = 0;
 		d_rand_get_state(&sim_state);
@@ -1127,7 +1129,6 @@ int HandleGameKey(int key)
 	int new_obs = Current_obs_player;
 
 
-int ReadControlsReplayFrame(void);
 
 	switch (key) {
 
@@ -2015,65 +2016,6 @@ void play_test_sound()
 
 #endif  //ifndef NDEBUG
 
-static void input_demo_replay_clear_secondary_release_marker(void)
-{
-	input_demo_replay_frame frame, next_frame;
-	char error[256] = "";
-
-	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)) ||
-	    !input_demo_replay_get_next_frame(&next_frame, error, sizeof(error)))
-		return;
-	if (frame.state.fire_secondary_state && !next_frame.state.fire_secondary_state &&
-	    Player_fired_laser_this_frame >= 0 && Player_fired_laser_this_frame <= Highest_object_index &&
-	    Objects[Player_fired_laser_this_frame].type == OBJ_WEAPON &&
-	    Objects[Player_fired_laser_this_frame].id == Secondary_weapon_to_weapon_info[Players[Player_num].secondary_weapon] &&
-	    !Weapon_info[Objects[Player_fired_laser_this_frame].id].homing_flag)
-		Player_fired_laser_this_frame = -1;
-}
-
-int ReadControlsReplayFrame(void)
-{
-	Player_fired_laser_this_frame = -1;
-	if (Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
-			return 0;
-	}
-
-	if (!Endlevel_sequence && !Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
-			return 0;
-		check_rear_view();
-
-		if (Controls.automap_count > 0)
-		{
-			Controls.automap_count = 0;
-			/* Replay demos stage the automap pulse onto the next gameplay frame
-			 * after the player returns, so ignore it here instead of opening a
-			 * modal automap window or skipping the gameplay frame. */
-		}
-
-		do_weapon_n_item_stuff();
-		input_demo_replay_clear_secondary_release_marker();
-	}
-
-	return 0;
-}
-
-void ReadControlsReplayPostFrame(void)
-{
-	input_demo_replay_frame frame;
-	char error[256] = "";
-
-	if (Endlevel_sequence || Player_is_dead)
-		return;
-	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
-		return;
-	if (!frame.state.fire_secondary_state)
-		return;
-	do_weapon_n_item_stuff();
-	Player_fired_laser_this_frame = -1;
-}
-
 int ReadControls(d_event *event)
 {
 #ifdef __ANDROID__
@@ -2093,6 +2035,7 @@ int ReadControls(d_event *event)
 	int key;
 	static ubyte exploding_flag=0;
 
+	input_demo_record_input_reset();
 	Player_fired_laser_this_frame=-1;
 
 #ifdef __ANDROID__
@@ -2363,13 +2306,7 @@ int ReadControls(d_event *event)
 	{
 
 		kconfig_read_controls(event, 0);
-		if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
-			input_demo_control_state ignored_state;
-			input_demo_control_pulse pulse;
-
-			input_demo_control_state_from_control_info(&ignored_state, &pulse, &Controls);
-			input_demo_recorder_stage_pulse(&pulse);
-		}
+		input_demo_record_input_controls_supported();
 
 		check_rear_view();
 
@@ -2385,7 +2322,6 @@ int ReadControls(d_event *event)
 		}
 
 		do_weapon_n_item_stuff();
-		input_demo_replay_clear_secondary_release_marker();
 	}
 
 	return 0;

@@ -87,6 +87,7 @@ void input_demo_record_direct_command_guidebot_goal(int special_key,
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_guidebot_goal(
 	        special_key, from_menu, error, sizeof(error)))
 		input_demo_log_direct_command_record_error("guidebot goal", error);
@@ -98,6 +99,7 @@ void input_demo_record_direct_command_drop_current_weapon(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_drop_current_weapon(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("drop current weapon", error);
@@ -109,6 +111,7 @@ void input_demo_record_direct_command_drop_secondary_weapon(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_drop_secondary_weapon(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("drop secondary weapon", error);
@@ -120,6 +123,7 @@ void input_demo_record_direct_command_drop_flag(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_drop_flag(error,
 	                                                        sizeof(error)))
 		input_demo_log_direct_command_record_error("drop flag", error);
@@ -131,6 +135,7 @@ void input_demo_record_direct_command_escort_release_control(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_escort_release_control(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("escort release", error);
@@ -142,6 +147,7 @@ void input_demo_record_direct_command_guidebot_spawn(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_guidebot_spawn(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("guidebot spawn", error);
@@ -153,6 +159,7 @@ void input_demo_record_direct_command_guidebot_find_secret(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_guidebot_find_secret(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("guidebot find secret", error);
@@ -164,6 +171,7 @@ void input_demo_record_direct_command_guidebot_find_unexplored(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_guidebot_find_unexplored(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("guidebot find unexplored", error);
@@ -175,6 +183,7 @@ void input_demo_record_direct_command_guidebot_warp_to_me(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_guidebot_warp_to_me(
 	        error, sizeof(error)))
 		input_demo_log_direct_command_record_error("guidebot warp to me", error);
@@ -186,6 +195,7 @@ void input_demo_record_direct_command_death_abort(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_death_abort(error,
 	                                                          sizeof(error)))
 		input_demo_log_direct_command_record_error("death abort", error);
@@ -197,6 +207,7 @@ void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
 	char error[256] = "";
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_select_weapon_exact(
 	        weapon_class, weapon_index, error, sizeof(error)))
 		input_demo_log_direct_command_record_error("exact weapon selection", error);
@@ -289,25 +300,22 @@ static int input_demo_apply_d2_direct_command(void *context,
 	}
 }
 
-int input_demo_apply_replay_direct_commands(
-	input_demo_direct_command_phase phase)
-{
-	static const input_demo_direct_command_policy policy = {
-		NULL,
-		1,
-		input_demo_apply_death_abort_direct_command,
-		input_demo_change_difficulty_direct_command,
-		input_demo_apply_d2_direct_command
-	};
-	char error[512] = "";
+static const input_demo_direct_command_policy input_demo_native_command_policy = {
+	NULL,
+	1,
+	input_demo_apply_death_abort_direct_command,
+	input_demo_change_difficulty_direct_command,
+	input_demo_apply_d2_direct_command
+};
 
-	if (input_demo_direct_command_apply_current_frame(
-	        &policy, phase, error, sizeof(error)))
-		return 1;
-	con_printf(CON_NORMAL, "Input demo replay stopped: %s\n",
-		error[0] ? error : "direct command replay failed");
-	return 0;
+int input_demo_apply_ordered_direct_command(const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size)
+{
+	return input_demo_direct_command_apply_event(&input_demo_native_command_policy,
+	    Player_is_dead ? INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD : INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY,
+	    event, validate_only, error, error_size);
 }
+
 
 static int input_demo_trace_player_control_active(void)
 {
@@ -2670,11 +2678,8 @@ static unsigned int input_demo_weapon_trace_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
 		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
+	if (input_demo_recorder_is_active())
+		return input_demo_recorder_diagnostic_frame_index();
 	return 0;
 }
 
@@ -5450,11 +5455,8 @@ unsigned int input_demo_trace_robot_fire_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
 		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const uint32_t frame_count = input_demo_recorder_frame_count();
-
-		return frame_count ? (unsigned int)(frame_count - 1) : 0;
-	}
+	if (input_demo_recorder_is_active())
+		return input_demo_recorder_diagnostic_frame_index();
 	return 0;
 }
 
@@ -6975,7 +6977,7 @@ static void input_demo_write_replay_result(void)
 	input_demo_replay_result_game_time64_override = 0;
 	input_demo_replay_result_endlevel_completed_override = -1;
 	input_demo_replay_result_terminal_exit_override = INPUT_DEMO_RESULT_TERMINAL_EXIT_NONE;
-	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
+	if (!input_demo_replay_write_actual_result(&result, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 	else {
 		input_demo_debug_printf("Input demo replay result written: %s\n", result_path);
@@ -7070,51 +7072,6 @@ static void input_demo_stop_replay(int write_result)
 		input_demo_before_stop_replay);
 }
 
-static void input_demo_before_sync_replay_rng(
-	const input_demo_replay_frame *replay_frame)
-{
-	unsigned int actual_rng_state = 0;
-	unsigned int actual_rng_call_count = 0;
-	int have_actual_rng_state;
-	int log_mismatch = 0;
-
-	if (!replay_frame)
-		return;
-	have_actual_rng_state = d_rand_get_state(&actual_rng_state);
-	if (have_actual_rng_state && actual_rng_state != replay_frame->rng_state)
-		log_mismatch = 1;
-	if (input_demo_rng_trace_is_active() && replay_frame->has_rng_call_count) {
-		actual_rng_call_count = d_rand_get_call_count();
-		if (actual_rng_call_count != replay_frame->rng_call_count)
-			log_mismatch = 1;
-	}
-	if (log_mismatch) {
-		if (input_demo_rng_trace_is_active() && replay_frame->has_rng_call_count)
-			con_printf(CON_NORMAL,
-				"Input demo replay rng state mismatch: frame=%u gt=%lld expected=%u actual=%u expected_calls=%u actual_calls=%u\n",
-				(unsigned int)replay_frame->frame,
-				(long long)GameTime64,
-				replay_frame->rng_state,
-				actual_rng_state,
-				replay_frame->rng_call_count,
-				actual_rng_call_count);
-		else if (have_actual_rng_state)
-			con_printf(CON_NORMAL,
-				"Input demo replay rng state mismatch: frame=%u gt=%lld expected=%u actual=%u\n",
-				(unsigned int)replay_frame->frame,
-				(long long)GameTime64,
-				replay_frame->rng_state,
-				actual_rng_state);
-	}
-}
-
-static int input_demo_sync_replay_rng_to_current_frame(void)
-{
-	return input_demo_sync_replay_rng_to_current_frame_shared(
-		input_demo_before_sync_replay_rng,
-		input_demo_stop_replay);
-}
-
 int input_demo_prepare_replay_frame(void)
 {
 	return input_demo_prepare_replay_frame_shared(
@@ -7128,8 +7085,7 @@ int input_demo_prepare_replay_frame(void)
 int input_demo_step_replay_frame(void)
 {
 	return input_demo_step_replay_frame_shared(
-		input_demo_prepare_replay_frame,
-		input_demo_sync_replay_rng_to_current_frame);
+		input_demo_prepare_replay_frame);
 }
 
 static int input_demo_before_advance_replay_frame(void)

@@ -563,6 +563,7 @@ int maybe_start_input_demo_recording(int is_autorecord)
 			con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
 		return 0;
 	}
+	input_demo_record_reset_input_phase();
 	started = input_demo_recorder_start(&settings, error, sizeof(error));
 	input_demo_release_recorder_settings(&settings);
 	if (!started) {
@@ -595,7 +596,8 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 		return;
 	}
 	input_demo_capture_current_result(&result);
-	if (!input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
+	if (!input_demo_record_finish_input_tail(error, sizeof(error)) ||
+	    !input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 		return;

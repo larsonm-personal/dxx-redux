@@ -3579,6 +3579,7 @@ static int escort_menu_activate_key(window *wind, int key)
 		case KEY_7:
 		case KEY_8:
 		case KEY_9:
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_guidebot_goal(key, 1, error, sizeof(error)) &&
 			    error[0])
@@ -3606,6 +3607,7 @@ static int escort_menu_activate_key(window *wind, int key)
 			return 1;
 
 		case KEY_R:
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_guidebot_goal(key, 1, error, sizeof(error)) &&
 			    error[0])

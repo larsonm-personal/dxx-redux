@@ -12,9 +12,14 @@
 
 #include <string>
 #include <chrono>
+#include <sstream>
+#include <vector>
+#include <nlohmann/json.hpp>
+#include "input_demo_replay.h"
 
 #include "input_demo_fixture.h"
 #include "input_demo_codec.h"
+#include "input_demo_limits.h"
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
@@ -233,6 +238,7 @@ static int expect_record_and_flush(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create recorder test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -350,6 +356,7 @@ static int expect_record_and_flush_checkpoint(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create checkpoint recorder test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -439,6 +446,7 @@ static int expect_stage_consumed_pulse(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create staged pulse recorder test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -523,6 +531,7 @@ static int expect_truncate_recording(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create truncate recorder test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -743,6 +752,7 @@ static int expect_record_and_flush_events(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create recorder events test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -835,6 +845,7 @@ static int expect_record_and_flush_diag(void)
 	if (!make_test_dir(dir))
 		return report_failure("could not create recorder diag test directory");
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -996,6 +1007,7 @@ static int expect_long_recording(void)
 	char error[256] = "";
 	std::string read_error;
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 7;
@@ -1057,8 +1069,314 @@ static int expect_long_recording(void)
 	return 0;
 }
 
+static int expect_ordered_input_diagnostics(void)
+{
+	const char *path = "test_input_demo_ordered_events.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.record_per_frame_state = 1;
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	const auto event = [&](const char *kind) {
+		const std::string text = std::string("{\"kind\":\"") + kind + "\"}";
+		return input_demo_recorder_append_frame_event_json(text.c_str(), error, sizeof(error));
+	};
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 0 ||
+	    !input_demo_recorder_begin_input_batch(100, 1, 3276, error, sizeof(error)) ||
+	    !event("pre0") ||
+	    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 1, 1, nullptr, nullptr, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 0 || !event("sim0") ||
+	    !input_demo_recorder_begin_input_batch(101, 2, 3276, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 1 || !event("pre1") ||
+	    !input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 1, 2, nullptr, nullptr, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 1 || !event("sim1") ||
+	    !input_demo_recorder_begin_input_batch(102, 3, 3276, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 2 || !event("tail") ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 102, 3, error, sizeof(error)) ||
+	    input_demo_recorder_diagnostic_frame_index() != 2 ||
+	    !input_demo_recorder_flush(path, error, sizeof(error)))
+		return report_failure_string(std::string("ordered input diagnostics: ") + error);
+	input_demo_file parsed;
+	std::string detail, text;
+	if (!input_demo_file_read(path, &parsed, &detail) || !read_text_file(path, &text)) return report_failure_string(detail);
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	const std::vector<std::string> first = { "{\"kind\":\"pre0\"}", "{\"kind\":\"sim0\"}" };
+	const std::vector<std::string> second = { "{\"kind\":\"pre1\"}", "{\"kind\":\"sim1\"}" };
+	const std::vector<std::string> tail = { "{\"kind\":\"tail\"}" };
+	if (parsed.frames[0].events != first || parsed.frames[1].events != second || parsed.input_tail.events != tail)
+		return report_failure("ordered input diagnostics were dropped or attributed to the wrong frame");
+	if (!input_demo_file_to_text(parsed, &text, &detail) || !input_demo_file_parse_text(text, &parsed, &detail) ||
+	    parsed.input_tail.events != tail) return report_failure("tail diagnostic round trip failed");
+	parsed.input_tail.events.push_back("{\"kind\":\"direct_command\",\"command\":\"death_abort\"}");
+	if (input_demo_file_to_text(parsed, &text, &detail)) return report_failure("tail telemetry accepted an executable command");
+	// Both pending input diagnostics and later simulation appends remain bounded
+	const std::string oversized = "{\"kind\":\"diagnostic\",\"text\":\"" + std::string(INPUT_DEMO_RECORD_MAX_BYTES, 'x') + "\"}";
+	for (int pending = 0; pending != 2; ++pending) {
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+		    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 1, 1, nullptr, nullptr, error, sizeof(error))) return 1;
+		if (pending && !input_demo_recorder_begin_input_batch(100, 1, 3276, error, sizeof(error))) return 1;
+		if (input_demo_recorder_append_frame_event_json(oversized.c_str(), error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 100, 1, error, sizeof(error)))
+			return report_failure("diagnostic overflow did not fail closed");
+		input_demo_recorder_cancel();
+	}
+	return 0;
+}
+
+static int expect_ordered_input_codec(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *path = "test_input_demo_ordered.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	if (!settings.ordered_input) return report_failure("new recordings must default to ordered input");
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	const auto check = [&](bool success) {
+		if (!success) fprintf(stderr, "ordered input: %s\n", error);
+		return success;
+	};
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_reset(0, error, sizeof(error)))) return 1;
+	state.fire_secondary_state = 1;
+	pulse.fire_secondary_count = 1;
+	pulse.fire_primary_count = 2;
+	if (!check(input_demo_recorder_stage_input_sample(3276, &state, &pulse, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(999, 99, 4096, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_direct_command_change_difficulty(3, error, sizeof(error)))) return 1;
+	state.fire_secondary_state = 0;
+	pulse.fire_secondary_count = 0;
+	if (!check(input_demo_recorder_stage_input_sample(3276, &state, &pulse, error, sizeof(error)))) return 1;
+	input_demo_control_pulse staged = {};
+	staged.fire_primary_count = 99;
+	input_demo_recorder_stage_pulse(&staged);
+	if (!check(input_demo_recorder_capture_frame(2000, &state, &pulse, 101, 1, 3, nullptr, nullptr, error, sizeof(error))) ||
+	    !check(input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 4, nullptr, nullptr, error, sizeof(error)))) return 1;
+	if (input_demo_recorder_flush(path, error, sizeof(error))) return report_failure("ordered flush accepted missing tail");
+	if (!check(input_demo_recorder_begin_input_batch(102, 4, 4000, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_reset(4000, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_direct_command_select_weapon_exact(1, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_clear(1638, error, sizeof(error)))) return 1;
+	state = {};
+	pulse = {};
+	if (!check(input_demo_recorder_finish_input_tail(&state, &pulse, 103, 5, error, sizeof(error))) ||
+	    !check(input_demo_recorder_flush(path, error, sizeof(error)))) return 1;
+	input_demo_file parsed;
+	std::string text, detail;
+	if (!input_demo_file_read(path, &parsed, &detail) || !read_text_file(path, &text)) return report_failure_string(detail);
+	if (parsed.metadata.version != 5 || !parsed.has_input_tail || parsed.frames.size() != 2 ||
+	    parsed.frames[0].dispatch.operations.size() != 4 || parsed.frames[0].dispatch.pre_rng_state != 100 ||
+	    parsed.frames[0].dispatch.pre_rng_count != 2 || parsed.frames[0].input.pulse.fire_primary_count != 2 ||
+	    parsed.frames[1].dispatch.operations.size() || !parsed.frames[1].dispatch.present ||
+	    parsed.input_tail.dispatch.operations.size() != 3)
+		return report_failure("ordered batch round trip or residual pulse mismatch");
+	if (!check(input_demo_replay_load(path, error, sizeof(error))) || input_demo_replay_format_version() != 5) return 1;
+	input_demo_input_batch_info info = {};
+	input_demo_input_operation operation = {};
+	if (!check(input_demo_replay_get_input_batch_info(0, &info, error, sizeof(error))) ||
+	    info.operation_count != 4 || info.pre_rng_state != 100 || info.post_rng_count != 3 || info.is_tail ||
+	    info.residual_pulse.fire_primary_count != 2 || info.residual_pulse.fire_secondary_count ||
+	    !check(input_demo_replay_get_input_operation(0, 1, &operation, error, sizeof(error))) ||
+	    operation.kind != INPUT_DEMO_INPUT_SAMPLE || operation.frame_time != 3276 || operation.pulse.fire_secondary_count != 1 ||
+	    !check(input_demo_replay_get_input_operation(0, 2, &operation, error, sizeof(error))) ||
+	    operation.kind != INPUT_DEMO_INPUT_COMMAND || operation.frame_time != 4096 || operation.command.value0 != 3 ||
+	    !check(input_demo_replay_get_input_batch_info(2, &info, error, sizeof(error))) ||
+	    !info.is_tail || info.operation_count != 3 || info.pre_rng_state != 102 || info.post_rng_state != 103 ||
+	    !check(input_demo_replay_get_input_operation(2, 2, &operation, error, sizeof(error))) ||
+	    operation.kind != INPUT_DEMO_INPUT_CLEAR || operation.frame_time != 1638 ||
+	    input_demo_replay_get_input_batch_info(3, &info, error, sizeof(error)) ||
+	    input_demo_replay_get_input_operation(0, 4, &operation, error, sizeof(error)))
+		return report_failure("ordered replay accessor boundary mismatch");
+	input_demo_replay_unload();
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	std::string duplicate = text;
+	const auto duplicate_at = duplicate.find("\"k\":\"reset\",\"ft\":0");
+	if (duplicate_at == std::string::npos) return report_failure("missing reset operation for duplicate-key test");
+	duplicate.replace(duplicate_at, strlen("\"k\":\"reset\",\"ft\":0"), "\"k\":\"reset\",\"ft\":0,\"ft\":0");
+	if (input_demo_file_parse_text(duplicate, &parsed, &detail) || detail.find("duplicate key") == std::string::npos)
+		return report_failure("duplicate operation key was not rejected");
+	std::vector<json> records;
+	std::istringstream lines(text);
+	for (std::string line; std::getline(lines, line);)
+		if (!line.empty()) records.push_back(json::parse(line));
+	const auto rejects = [&](const std::vector<json> &changed) {
+		std::string candidate;
+		for (const auto &row : changed) candidate += row.dump() + "\n";
+		input_demo_file output;
+		std::string reason;
+		if (input_demo_file_parse_text(candidate, &output, &reason)) {
+			fprintf(stderr, "accepted invalid ordered input: %s\n", candidate.c_str());
+			return false;
+		}
+		return true;
+	};
+	auto bad = records;
+	bad[0]["version"] = 4;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad.erase(bad.end() - 2);
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad.insert(bad.end() - 1, bad[bad.size() - 2]);
+	if (!rejects(bad)) return 1;
+	bad = records;
+	std::swap(bad[1], bad[bad.size() - 2]);
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1].erase("dispatch");
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][0]["k"] = "unknown";
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][0]["ft"] = -1;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][0]["ft"] = INPUT_DEMO_FRAME_TIME_MAX + 1;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][0]["extra"] = true;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][1].erase("s");
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][1]["p"]["f2"] = 256;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["pre_rng"].erase("c");
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["rng"].erase("c");
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["events"] = json::array({ { { "kind", "direct_command" }, { "command", "death_abort" } } });
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][2]["event"]["difficulty"] = 2147483648ULL;
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"] = json::array();
+	for (unsigned i = 0; i <= INPUT_DEMO_INPUT_OPERATION_MAX; ++i)
+		bad[1]["dispatch"]["ops"].push_back({ { "k", "reset" }, { "ft", 1 } });
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[1]["dispatch"]["ops"][0]["padding"] = std::string(INPUT_DEMO_INPUT_BATCH_MAX_BYTES, 'x');
+	if (!rejects(bad)) return 1;
+	bad = records;
+	bad[bad.size() - 2]["ft"] = 1;
+	if (!rejects(bad)) return 1;
+	for (const auto &invalid_clear : json::array({ { { "k", "clear" }, { "ft", false } },
+	                                               { { "k", "clear" }, { "ft", -1 } },
+	                                               { { "k", "clear" }, { "ft", INPUT_DEMO_FRAME_TIME_MAX + 1 } },
+	                                               { { "k", "clear" }, { "ft", 1 }, { "s", json::object() } },
+	                                               { { "k", "clear" }, { "ft", 1 }, { "p", json::object() } },
+	                                               { { "k", "clear" } } })) {
+		bad = records;
+		bad[bad.size() - 2]["dispatch"]["ops"][2] = invalid_clear;
+		if (!rejects(bad)) return 1;
+	}
+	if (settings.game == INPUT_DEMO_GAME_D1) {
+		bad = records;
+		bad[1]["dispatch"]["ops"][1]["s"]["ab"] = 1;
+		if (!rejects(bad)) return 1;
+	}
+	// Aliases name the decoded current frame, never the previous frame or accumulated pulses
+	auto aliases = records;
+	aliases[2]["input"]["s"] = { { "f2s", 7 } };
+	aliases[2]["dispatch"]["pre_rng"] = "=";
+	aliases[2]["dispatch"]["ops"] = json::array({ { { "k", "sample" }, { "ft", 1234 }, { "s", "=" } } });
+	aliases[aliases.size() - 2]["input"]["s"] = { { "f2s", 5 } };
+	aliases[aliases.size() - 2]["dispatch"]["pre_rng"] = "=";
+	aliases[aliases.size() - 2]["dispatch"]["ops"].push_back({ { "k", "sample" }, { "ft", 4000 }, { "s", "=" } });
+	std::string alias_text;
+	for (const auto &row : aliases) alias_text += row.dump() + "\n";
+	if (!input_demo_file_parse_text(alias_text, &parsed, &detail) ||
+	    !input_demo_file_to_text(parsed, &alias_text, &detail) ||
+	    !input_demo_file_parse_text(alias_text, &parsed, &detail) ||
+	    !parsed.frames[1].dispatch.pre_rng_is_post || !parsed.frames[1].dispatch.operations[0].state_is_residual ||
+	    !input_demo_file_write(path, parsed, &detail) || !check(input_demo_replay_load(path, error, sizeof(error))))
+		return report_failure_string("ordered alias round trip: " + detail);
+	if (!check(input_demo_replay_get_input_batch_info(1, &info, error, sizeof(error))) ||
+	    info.pre_rng_state != 102 || info.pre_rng_count != 4 ||
+	    !check(input_demo_replay_get_input_operation(1, 0, &operation, error, sizeof(error))) ||
+	    operation.state.fire_secondary_state != 7 || operation.pulse.fire_primary_count || operation.pulse.fire_secondary_count ||
+	    !check(input_demo_replay_get_input_operation(2, 3, &operation, error, sizeof(error))) ||
+	    operation.state.fire_secondary_state != 5 ||
+	    !check(input_demo_replay_get_input_batch_info(2, &info, error, sizeof(error))) ||
+	    info.pre_rng_state != 103 || info.pre_rng_count != 5)
+		return report_failure("ordered alias resolved against wrong boundary");
+	input_demo_replay_unload();
+	remove(path);
+	bad = aliases;
+	bad[2]["dispatch"]["ops"][0]["s"] = "previous";
+	if (!rejects(bad)) return 1;
+	bad = aliases;
+	bad[2]["dispatch"]["ops"][0]["s"] = nullptr;
+	if (!rejects(bad)) return 1;
+	bad = aliases;
+	bad[2]["dispatch"]["ops"][0]["p"] = "=";
+	if (!rejects(bad)) return 1;
+	bad = aliases;
+	bad[2]["dispatch"]["pre_rng"] = "previous";
+	if (!rejects(bad)) return 1;
+	bad = aliases;
+	bad[2]["dispatch"]["pre_rng"] = 0;
+	if (!rejects(bad)) return 1;
+
+	// Invalid native text must fail through the C API, never throw across engine C frames
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error)))) return 1;
+	if (input_demo_recorder_stage_direct_command_drop_marker(0, "\xff", error, sizeof(error)) ||
+	    input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)))
+		return report_failure("invalid native marker text was not rejected");
+	input_demo_recorder_cancel();
+
+	// Exceeding a batch bound is sticky: callers cannot ignore failure and flush a truncated recording
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error)))) return 1;
+	for (unsigned i = 0; i < INPUT_DEMO_INPUT_OPERATION_MAX; ++i)
+		if (!check(input_demo_recorder_stage_input_reset(1, error, sizeof(error)))) return 1;
+	if (input_demo_recorder_stage_input_reset(1, error, sizeof(error)) ||
+	    input_demo_recorder_capture_frame(1, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error)) ||
+	    input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error)))
+		return report_failure("overflow did not poison ordered recording");
+	input_demo_recorder_cancel();
+	// Rewind discards pending operations and invalidates a formerly finalized tail
+	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+	    !check(input_demo_recorder_capture_frame(1, &state, &pulse, 1, 1, 0, nullptr, nullptr, error, sizeof(error))) ||
+	    !check(input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_stage_input_reset(1, error, sizeof(error))) ||
+	    !check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !input_demo_recorder_truncate(1)) return 1;
+	if (input_demo_recorder_flush(path, error, sizeof(error))) return report_failure("rewind retained a stale input tail");
+	if (!check(input_demo_recorder_finish_input_tail(&state, &pulse, 1, 0, error, sizeof(error))) ||
+	    !check(input_demo_recorder_flush(path, error, sizeof(error)))) return 1;
+	if (!input_demo_file_read(path, &parsed, &detail) || !parsed.input_tail.dispatch.operations.empty())
+		return report_failure("rewind retained discarded pending operations");
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_ordered_input_codec()) return 1;
+	if (expect_ordered_input_diagnostics()) return 1;
 	if (expect_record_and_flush())
 		return 1;
 	if (expect_record_and_flush_checkpoint())

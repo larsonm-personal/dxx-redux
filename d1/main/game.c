@@ -399,6 +399,7 @@ void android_pause_clear_legacy(void) { time_paused = 0; reset_time(); }
 void game_flush_inputs()
 {
 	int dx,dy,dz;
+	input_demo_record_input_clear();
 	event_flush();
 	key_flush();
 	joy_flush();
@@ -1215,7 +1216,7 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (multi_save_transfer_paused() &&
 			    (event->type != EVENT_KEY_COMMAND || event_key_get(event) != KEY_ESC)) return 1;
 #endif
-			if (event->type == EVENT_IDLE && input_demo_replay_is_loaded())
+			if (event->type != EVENT_KEY_COMMAND && input_demo_replay_is_loaded())
 				return 1;
 			if (event->type == EVENT_KEY_COMMAND && input_demo_replay_is_loaded()) {
 				const int replay_key = event_key_get(event) & 0xFF;
@@ -1229,6 +1230,7 @@ int game_handler(window *wind, d_event *event, void *data)
 					input_demo_replay_manual_step = 1;
 					return 1;
 				}
+				return 1;
 			}
 			return ReadControls(event);
 
@@ -1423,7 +1425,14 @@ void game_leave_menus(void)
 		window_close(wind);
 }
 
+static void game_process_frame_body(void);
+
 void GameProcessFrame(void)
+{
+	input_demo_run_game_process_frame(game_process_frame_body);
+}
+
+static void game_process_frame_body(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;

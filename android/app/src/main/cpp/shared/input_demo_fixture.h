@@ -2,6 +2,7 @@
 #define INPUT_DEMO_FIXTURE_H
 
 #include <stdint.h>
+#include "input_demo_dispatch.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -160,6 +161,15 @@ struct input_demo_checkpoint {
 	}
 };
 
+struct input_demo_input_batch {
+	bool present;
+	uint32_t pre_rng_state;
+	uint32_t pre_rng_count;
+	bool pre_rng_is_post;
+	std::vector<input_demo_input_operation> operations;
+	input_demo_input_batch() : present(false), pre_rng_state(0), pre_rng_count(0), pre_rng_is_post(false) {}
+};
+
 struct input_demo_file_frame {
 	input_demo_control_record input;
 	input_demo_rng_record rng;
@@ -168,6 +178,7 @@ struct input_demo_file_frame {
 	bool has_diag;
 	std::string diag_json;
 	std::vector<std::string> events;
+	input_demo_input_batch dispatch;
 
 	input_demo_file_frame()
 	    : has_state(false), has_diag(false)
@@ -183,15 +194,22 @@ struct input_demo_file {
 	bool has_checkpoint;
 	input_demo_checkpoint checkpoint;
 	std::vector<input_demo_file_frame> frames;
+	bool has_input_tail;
+	input_demo_file_frame input_tail;
 	bool has_result;
 	input_demo_result result;
 
 	input_demo_file()
-	    : has_checkpoint(false), has_result(false)
+	    : has_checkpoint(false), has_input_tail(false), has_result(false)
 	{
 		input_demo_result_clear(&result);
 	}
 };
+
+bool input_demo_dispatch_command_from_json(const std::string &text, int game,
+                                           input_demo_replay_direct_command_event *command, std::string *error);
+bool input_demo_dispatch_operation_to_json(const input_demo_input_operation &operation, int game,
+                                           std::string *text, std::string *error);
 
 bool input_demo_rng_record_to_json_line(const input_demo_rng_record &record,
                                         std::string *line, std::string *error);

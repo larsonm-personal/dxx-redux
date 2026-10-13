@@ -23,6 +23,8 @@ def corrupt_corpus(source, destination, cases, mutation):
         if mutation == "wrong-oracle":
             digest = expected["frame_sha256"][0]
             expected["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
+            # A disposable wrong-oracle copy deliberately rebinds its admitted input
+            expected["compact_sha256"] = parity.digest(demo)
         elif mutation in ("bad-input", "no-collect"):
             if mutation == "no-collect" and case["scenario"] != "loot":
                 continue
@@ -33,6 +35,12 @@ def corrupt_corpus(source, destination, cases, mutation):
                 if mutation == "no-collect":
                     if record["f"] > case["actions"]["loot_frame"]:
                         record["input"] = {"s": {key: 0 for key in ("f", "x", "z", "h", "p", "f1s")}} if record["f"] == case["actions"]["loot_frame"] + 1 else {}
+                elif case["scenario"] in ("secondary-release-first", "secondary-mouse-first"):
+                    record["input"] = {"s": {"f2s": 0}}
+                    for operation in record["dispatch"]["ops"]:
+                        if operation["k"] == "sample":
+                            operation["s"] = {}
+                            operation.pop("p", None)
                 elif case["scenario"] == "loot":
                     # Sparse held input: clear every fire transition without bloating the bounded replay
                     if record["f"] == 0 or "f1s" in record["input"].get("s", {}):

@@ -79,6 +79,7 @@ static void capture_public_loot_frames(const char *game_name, const char *missio
 	}
 	input_demo_result result;
 	input_demo_capture_current_result(&result);
+	require(input_demo_record_finish_input_tail(error, sizeof(error)), "finalize ordered input tail");
 	require(input_demo_recorder_flush_with_result("capture.dximdemo", &result, error, sizeof(error)), error);
 	input_demo_state_trace_stop();
 	newdemo_write_end();

@@ -74,14 +74,23 @@ struct input_demo_recorder_session {
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	bool record_per_frame_state;
+	bool ordered_input;
+	bool input_failed;
+	std::string input_error;
+	input_demo_input_batch pending_input;
+	size_t pending_input_bytes;
+	int32_t input_frame_time;
+	bool has_input_tail;
+	input_demo_file_frame input_tail;
 	std::vector<input_demo_control_frame> control_frames;
 	std::vector<std::string> frame_lines;
 	std::vector<uint8_t> extended_frames;
 	std::vector<std::string> pending_frame_events;
+	size_t pending_frame_event_bytes;
 	input_demo_control_pulse pending_pulse;
 
 	input_demo_recorder_session()
-	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), has_checkpoint_collision_delay_last_play_time(false), checkpoint_collision_delay_last_play_time(0), record_per_frame_state(false)
+	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0), has_checkpoint_collision_delay_last_play_time(false), checkpoint_collision_delay_last_play_time(0), record_per_frame_state(false), ordered_input(false), input_failed(false), pending_input_bytes(64), input_frame_time(0), has_input_tail(false), pending_frame_event_bytes(0)
 	{
 		input_demo_player_cfg_clear(&player_cfg);
 		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
@@ -154,11 +163,49 @@ static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
 	return true;
 }
 
+static int input_demo_recorder_input_fail(const std::string &message, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	session.input_failed = true;
+	session.input_error = message;
+	return input_demo_recorder_copy_error(message, error, error_size);
+}
+
+static int input_demo_recorder_append_operation(const input_demo_input_operation &operation, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!session.active) return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (!session.ordered_input) return 1;
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (!session.pending_input.present || session.has_input_tail)
+		return input_demo_recorder_input_fail("input operation requires an open batch", error, error_size);
+	std::string text, detail;
+	if (!input_demo_dispatch_operation_to_json(operation, session.game, &text, &detail))
+		return input_demo_recorder_input_fail(detail, error, error_size);
+	if (session.pending_input.operations.size() >= INPUT_DEMO_INPUT_OPERATION_MAX ||
+	    text.size() + 1 > INPUT_DEMO_INPUT_BATCH_MAX_BYTES - session.pending_input_bytes)
+		return input_demo_recorder_input_fail("input batch exceeds the supported limit", error, error_size);
+	session.pending_input_bytes += text.size() + 1;
+	session.pending_input.operations.push_back(operation);
+	return 1;
+}
+
 static int input_demo_recorder_stage_canonical_frame_event(const std::string &canonical_json,
                                                            char *error, size_t error_size)
 {
 	if (!g_input_demo_recorder_session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (g_input_demo_recorder_session.ordered_input) {
+		auto &session = g_input_demo_recorder_session;
+		if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+		if (session.has_input_tail) return input_demo_recorder_input_fail("input tail is already finalized", error, error_size);
+		const auto event = ordered_json::parse(canonical_json);
+		if (event.contains("kind") && event["kind"] == "direct_command")
+			return input_demo_recorder_input_fail("format 5 commands require the ordered command API", error, error_size);
+		if (canonical_json.size() + 1 > INPUT_DEMO_RECORD_MAX_BYTES - session.pending_frame_event_bytes)
+			return input_demo_recorder_input_fail("pending input diagnostics exceed the record limit", error, error_size);
+		session.pending_frame_event_bytes += canonical_json.size() + 1;
+	}
 	g_input_demo_recorder_session.pending_frame_events.push_back(canonical_json);
 	return 1;
 }
@@ -166,7 +213,23 @@ static int input_demo_recorder_stage_canonical_frame_event(const std::string &ca
 static int input_demo_recorder_stage_direct_command_event(const ordered_json &event,
                                                           char *error, size_t error_size)
 {
-	return input_demo_recorder_stage_canonical_frame_event(event.dump(), error, error_size);
+	auto &session = g_input_demo_recorder_session;
+	std::string encoded;
+	try {
+		encoded = event.dump();
+	} catch (const std::exception &ex) {
+		return input_demo_recorder_input_fail(std::string("invalid input command text: ") + ex.what(), error, error_size);
+	}
+	if (session.active && session.ordered_input) {
+		input_demo_input_operation operation = {};
+		operation.kind = INPUT_DEMO_INPUT_COMMAND;
+		operation.frame_time = session.input_frame_time;
+		std::string detail;
+		if (!input_demo_dispatch_command_from_json(encoded, session.game, &operation.command, &detail))
+			return input_demo_recorder_input_fail(detail, error, error_size);
+		return input_demo_recorder_append_operation(operation, error, error_size);
+	}
+	return input_demo_recorder_stage_canonical_frame_event(encoded, error, error_size);
 }
 
 static void input_demo_recorder_append_encoded_event(std::string &line, bool has_events,
@@ -309,6 +372,14 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 			demo->metadata.version = 4;
 			break;
 		}
+	if (session.ordered_input) {
+		if (session.input_failed) return input_demo_recorder_fail(error, session.input_error);
+		if (!session.has_input_tail || session.pending_input.present)
+			return input_demo_recorder_fail(error, "ordered recording requires finalized input tail");
+		demo->metadata.version = 5;
+		demo->has_input_tail = true;
+		demo->input_tail = session.input_tail;
+	}
 	demo->metadata.game = input_demo_recorder_game_name(session.game);
 	demo->metadata.mission = session.mission;
 	demo->metadata.build_number = input_demo_recorder_build_number();
@@ -365,6 +436,7 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	input_demo_checkpoint_escort_state_clear(&settings->checkpoint_escort_state);
 	input_demo_checkpoint_thief_state_clear(&settings->checkpoint_thief_state);
 	settings->record_per_frame_state = 0;
+	settings->ordered_input = 1;
 }
 
 int input_demo_recorder_is_active(void)
@@ -377,6 +449,14 @@ uint32_t input_demo_recorder_frame_count(void)
 	return static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
 }
 
+uint32_t input_demo_recorder_diagnostic_frame_index(void)
+{
+	const auto &session = g_input_demo_recorder_session;
+	const uint32_t count = static_cast<uint32_t>(session.control_frames.size());
+	if (session.ordered_input && (session.pending_input.present || session.has_input_tail)) return count;
+	return count ? count - 1 : 0;
+}
+
 int input_demo_recorder_truncate(uint32_t frame_count)
 {
 	if (!g_input_demo_recorder_session.active)
@@ -387,6 +467,11 @@ int input_demo_recorder_truncate(uint32_t frame_count)
 	g_input_demo_recorder_session.frame_lines.resize(frame_count);
 	g_input_demo_recorder_session.extended_frames.resize(frame_count);
 	g_input_demo_recorder_session.pending_frame_events.clear();
+	g_input_demo_recorder_session.pending_frame_event_bytes = 0;
+	g_input_demo_recorder_session.pending_input = input_demo_input_batch();
+	g_input_demo_recorder_session.pending_input_bytes = 64;
+	g_input_demo_recorder_session.has_input_tail = false;
+	g_input_demo_recorder_session.input_tail = input_demo_file_frame();
 	input_demo_control_pulse_clear(&g_input_demo_recorder_session.pending_pulse);
 	return 1;
 }
@@ -434,6 +519,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
 	g_input_demo_recorder_session.has_checkpoint = have_checkpoint ? true : false;
 	g_input_demo_recorder_session.record_per_frame_state = settings->record_per_frame_state ? true : false;
+	g_input_demo_recorder_session.ordered_input = settings->ordered_input != 0;
 	if (have_checkpoint) {
 		g_input_demo_recorder_session.checkpoint_save_name = settings->checkpoint_save_name;
 		g_input_demo_recorder_session.checkpoint_data.assign(settings->checkpoint_data,
@@ -479,8 +565,21 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	control_frame.frame = static_cast<uint32_t>(session.control_frames.size());
 	control_frame.frame_time = frame_time;
 	control_frame.state = *state;
-	input_demo_recorder_accumulate_pulse(&control_frame.pulse, &session.pending_pulse);
-	input_demo_recorder_accumulate_pulse(&control_frame.pulse, pulse);
+	if (session.ordered_input) {
+		if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+		if (session.has_input_tail || !has_rng_call_count)
+			return input_demo_recorder_input_fail("ordered frame requires RNG count and no finalized tail", error, error_size);
+		control_frame.pulse = *pulse;
+		frame.dispatch = session.pending_input;
+		if (!frame.dispatch.present) {
+			frame.dispatch.present = true;
+			frame.dispatch.pre_rng_state = rng_state;
+			frame.dispatch.pre_rng_count = rng_call_count;
+		}
+	} else {
+		input_demo_recorder_accumulate_pulse(&control_frame.pulse, &session.pending_pulse);
+		input_demo_recorder_accumulate_pulse(&control_frame.pulse, pulse);
+	}
 
 	input_demo_control_state previous_state;
 	input_demo_control_state_clear(&previous_state);
@@ -518,18 +617,120 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 		input_demo_recorder_append_encoded_event(line, has_events, event);
 		has_events = true;
 	}
+	if (session.ordered_input && !input_demo_record_size_supported(line.size()))
+		return input_demo_recorder_input_fail("ordered frame exceeds the record limit", error, error_size);
 	session.control_frames.push_back(control_frame);
 	session.frame_lines.push_back(std::move(line));
 	session.extended_frames.push_back((has_diag ? INPUT_DEMO_RECORDED_DIAG : 0) |
 	                                  (has_events ? INPUT_DEMO_RECORDED_EVENTS : 0));
 	session.pending_frame_events.clear();
+	session.pending_frame_event_bytes = 0;
+	session.pending_input = input_demo_input_batch();
+	session.pending_input_bytes = 64;
 	input_demo_control_pulse_clear(&session.pending_pulse);
+	return 1;
+}
+
+int input_demo_recorder_uses_ordered_input(void)
+{
+	return g_input_demo_recorder_session.active && g_input_demo_recorder_session.ordered_input;
+}
+
+int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count,
+                                          int32_t input_frame_time, char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!session.active) return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (!session.ordered_input) return 1;
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (session.has_input_tail || input_frame_time < 0 || input_frame_time > INPUT_DEMO_FRAME_TIME_MAX)
+		return input_demo_recorder_input_fail("invalid input time or already finalized tail", error, error_size);
+	if (!session.pending_input.present) {
+		session.pending_input.present = true;
+		session.pending_input.pre_rng_state = rng_state;
+		session.pending_input.pre_rng_count = rng_count;
+	}
+	session.input_frame_time = input_frame_time;
+	return 1;
+}
+
+int input_demo_recorder_stage_input_reset(int32_t frame_time, char *error, size_t error_size)
+{
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_RESET;
+	operation.frame_time = frame_time;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_stage_input_clear(int32_t frame_time, char *error, size_t error_size)
+{
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_CLEAR;
+	operation.frame_time = frame_time;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_stage_input_sample(int32_t frame_time,
+                                           const input_demo_control_state *state,
+                                           const input_demo_control_pulse *pulse,
+                                           char *error, size_t error_size)
+{
+	if (!state || !pulse) return input_demo_recorder_input_fail("missing input sample controls", error, error_size);
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_SAMPLE;
+	operation.frame_time = frame_time;
+	operation.state = *state;
+	operation.pulse = *pulse;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
+                                          const input_demo_control_pulse *pulse,
+                                          uint32_t rng_state, uint32_t rng_count,
+                                          char *error, size_t error_size)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!session.active) return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (!session.ordered_input) return 1;
+	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+	if (!state || !pulse || session.has_input_tail)
+		return input_demo_recorder_input_fail("missing tail controls or duplicate input tail", error, error_size);
+	auto &tail = session.input_tail;
+	tail.input.frame = static_cast<uint32_t>(session.control_frames.size());
+	tail.input.has_frame_time = 1;
+	tail.input.frame_time = 1;
+	input_demo_control_state_update_from_state(&tail.input.held, state, session.game);
+	input_demo_control_pulse_update_from_pulse(&tail.input.pulse, pulse, session.game);
+	tail.rng.frame = tail.input.frame;
+	tail.rng.state = rng_state;
+	tail.rng.has_call_count = 1;
+	tail.rng.call_count = rng_count;
+	tail.dispatch = session.pending_input;
+	tail.events = session.pending_frame_events;
+	if (!tail.dispatch.present) {
+		tail.dispatch.present = true;
+		tail.dispatch.pre_rng_state = rng_state;
+		tail.dispatch.pre_rng_count = rng_count;
+	}
+	std::string encoded, detail;
+	if (!input_demo_frame_to_json_line(tail, session.game, &encoded, &detail))
+		return input_demo_recorder_input_fail(detail, error, error_size);
+	if (!input_demo_record_size_supported(encoded.size()))
+		return input_demo_recorder_input_fail("ordered input tail exceeds the record limit", error, error_size);
+	session.pending_frame_events.clear();
+	session.pending_frame_event_bytes = 0;
+	session.pending_input = input_demo_input_batch();
+	session.pending_input_bytes = 64;
+	session.has_input_tail = true;
 	return 1;
 }
 
 void input_demo_recorder_stage_pulse(const input_demo_control_pulse *pulse)
 {
-	if (!g_input_demo_recorder_session.active || !pulse)
+	if (!g_input_demo_recorder_session.active || !pulse || g_input_demo_recorder_session.ordered_input)
 		return;
 	input_demo_recorder_accumulate_pulse(&g_input_demo_recorder_session.pending_pulse, pulse);
 }
@@ -552,19 +753,32 @@ int input_demo_recorder_append_frame_event_json(const char *json_text,
 {
 	std::string canonical_json;
 	std::string shared_error;
+	auto &session = g_input_demo_recorder_session;
 
-	if (!g_input_demo_recorder_session.active)
+	if (!session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
-	if (!g_input_demo_recorder_session.record_per_frame_state)
-		return 1;
-	if (g_input_demo_recorder_session.frame_lines.empty())
-		return input_demo_recorder_copy_error("input demo recorder has no current frame", error, error_size);
 	if (!input_demo_recorder_canonicalize_event_json(json_text, &canonical_json, &shared_error))
-		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	input_demo_recorder_append_encoded_event(g_input_demo_recorder_session.frame_lines.back(),
-	                                         (g_input_demo_recorder_session.extended_frames.back() & INPUT_DEMO_RECORDED_EVENTS) != 0,
-	                                         canonical_json);
-	g_input_demo_recorder_session.extended_frames.back() |= INPUT_DEMO_RECORDED_EVENTS;
+		return session.ordered_input ? input_demo_recorder_input_fail(shared_error, error, error_size) : input_demo_recorder_copy_error(shared_error, error, error_size);
+	if (session.ordered_input) {
+		if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+		if (session.has_input_tail) return input_demo_recorder_input_fail("input tail is already finalized", error, error_size);
+		const auto event = ordered_json::parse(canonical_json);
+		if (event.contains("kind") && event["kind"] == "direct_command")
+			return input_demo_recorder_input_fail("format 5 commands require ordered input operations", error, error_size);
+	}
+	if (!session.record_per_frame_state)
+		return 1;
+	// Ordered input effects precede their simulation frame, including frame zero
+	if (session.ordered_input && (session.pending_input.present || session.frame_lines.empty()))
+		return input_demo_recorder_stage_canonical_frame_event(canonical_json, error, error_size);
+	if (session.frame_lines.empty())
+		return input_demo_recorder_copy_error("input demo recorder has no current frame", error, error_size);
+	const bool has_events = (session.extended_frames.back() & INPUT_DEMO_RECORDED_EVENTS) != 0;
+	if (session.ordered_input && !input_demo_record_size_supported(
+	                                 session.frame_lines.back().size() + canonical_json.size() + (has_events ? 1 : 12)))
+		return input_demo_recorder_input_fail("ordered frame diagnostics exceed the record limit", error, error_size);
+	input_demo_recorder_append_encoded_event(session.frame_lines.back(), has_events, canonical_json);
+	session.extended_frames.back() |= INPUT_DEMO_RECORDED_EVENTS;
 	return 1;
 }
 

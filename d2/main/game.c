@@ -426,6 +426,7 @@ void android_pause_clear_legacy(void) { time_paused = 0; reset_time(); }
 void game_flush_inputs()
 {
 	int dx,dy,dz;
+	input_demo_record_input_clear();
 	event_flush();
 	key_flush();
 	joy_flush();
@@ -1678,7 +1679,14 @@ void game_leave_menus(void)
 		window_close(wind);
 }
 
+static void game_process_frame_body(void);
+
 void GameProcessFrame(void)
+{
+	input_demo_run_game_process_frame(game_process_frame_body);
+}
+
+static void game_process_frame_body(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;

@@ -41,6 +41,7 @@ void input_demo_record_death_abort_direct_command(void)
 
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_death_abort(error, sizeof(error)) &&
 		error[0])
 		con_printf(CON_NORMAL,
@@ -53,6 +54,7 @@ void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
 	char error[256] = "";
 	if (!input_demo_recorder_is_active())
 		return;
+	input_demo_record_input_context();
 	if (!input_demo_recorder_stage_direct_command_select_weapon_exact(
 	        weapon_class, weapon_index, error, sizeof(error)) && error[0])
 		con_printf(CON_NORMAL,
@@ -105,25 +107,22 @@ static int input_demo_apply_d1_direct_command(void *context,
 	return 1;
 }
 
-int input_demo_apply_replay_direct_commands(input_demo_direct_command_phase phase)
-{
-	static const input_demo_direct_command_policy policy = {
-		NULL,
-		1,
-		input_demo_apply_death_abort_d1,
-		input_demo_change_difficulty_d1,
-		input_demo_apply_d1_direct_command
-	};
-	char error[512] = "";
+static const input_demo_direct_command_policy input_demo_native_command_policy = {
+	NULL,
+	1,
+	input_demo_apply_death_abort_d1,
+	input_demo_change_difficulty_d1,
+	input_demo_apply_d1_direct_command
+};
 
-	if (input_demo_direct_command_apply_current_frame(
-		&policy, phase, error, sizeof(error)))
-		return 1;
-	if (error[0])
-		con_printf(CON_NORMAL,
-			"Input demo replay direct command failed: %s\n", error);
-	return 0;
+int input_demo_apply_ordered_direct_command(const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size)
+{
+	return input_demo_direct_command_apply_event(&input_demo_native_command_policy,
+	    Player_is_dead ? INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD : INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY,
+	    event, validate_only, error, error_size);
 }
+
 
 static unsigned int fvi_input_demo_frame_index(void)
 {
@@ -326,11 +325,8 @@ static unsigned int input_demo_trace_motion_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
 		return (unsigned int)input_demo_replay_next_frame_index();
-	if (input_demo_recorder_is_active()) {
-		const unsigned int frame_count = (unsigned int)input_demo_recorder_frame_count();
-
-		return frame_count ? frame_count - 1 : 0;
-	}
+	if (input_demo_recorder_is_active())
+		return input_demo_recorder_diagnostic_frame_index();
 	return 0;
 }
 
@@ -1265,7 +1261,7 @@ static void input_demo_write_replay_result(void)
 	if (input_demo_replay_result_frame_count_override)
 		result.frame_count = input_demo_replay_result_frame_count_override;
 	input_demo_replay_result_frame_count_override = 0;
-	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
+	if (!input_demo_replay_write_actual_result(&result, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 	else {
 		input_demo_debug_printf("Input demo replay result written: %s\n", result_path);
@@ -1305,13 +1301,6 @@ static void input_demo_stop_replay(int write_result)
 		NULL);
 }
 
-static int input_demo_sync_replay_rng_to_current_frame(void)
-{
-	return input_demo_sync_replay_rng_to_current_frame_shared(
-		NULL,
-		input_demo_stop_replay);
-}
-
 int input_demo_prepare_replay_frame(void)
 {
 	return input_demo_prepare_replay_frame_shared(
@@ -1325,8 +1314,7 @@ int input_demo_prepare_replay_frame(void)
 int input_demo_step_replay_frame(void)
 {
 	return input_demo_step_replay_frame_shared(
-		input_demo_prepare_replay_frame,
-		input_demo_sync_replay_rng_to_current_frame);
+		input_demo_prepare_replay_frame);
 }
 
 void input_demo_advance_replay_frame(void)
