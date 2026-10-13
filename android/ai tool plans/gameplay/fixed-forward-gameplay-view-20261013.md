@@ -60,10 +60,12 @@ the next visual consumer must begin its normal render frame. Explicit projection
 setup does not reset the temporary-clipping-point allocator. Existing current-
 camera collection and actual-renderer equivalence tests retain their contracts.
 
-Automap discovery remains tied to the actual displayed camera, including rear
-view. The recording-format branch separately owns current-camera discovery
-parity and its main/auxiliary-view support contract; the combat policy does not
-replace that camera with the canonical view.
+Automap discovery retains the existing camera policy, including actual rear and
+auxiliary camera orientation and viewport geometry. Android's wider custom-FoV
+draw remains visual-only: its existing base-zoom camera pass owns discovery.
+The recording-format branch separately owns current-camera discovery parity and
+its main/auxiliary-view support contract; the combat policy does not replace
+those cameras with the canonical view.
 
 ## Cache timing and invalidation
 
