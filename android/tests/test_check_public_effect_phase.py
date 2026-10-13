@@ -140,6 +140,21 @@ class EffectPhaseTests(unittest.TestCase):
         with self.assertRaisesRegex(phase.parity.EvidenceError, "Wrong screenshot landmark"):
             phase.validate_capture(capture, native=True)
 
+    def test_compact_aliases_compare_decoded_controls_and_retain_wire_differences(self):
+        original_oracle = phase.encoded(self.oracle)
+        for row in self.controls["rows"][:-1]:
+            row[3][0]["s"] = "="
+            row[3][0].pop("p")
+        result = self.compare()
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["controls"]["mismatch_count"], 0)
+        self.assertEqual(result["raw_control_encoding"]["status"], "fail")
+        self.assertEqual(phase.encoded(self.oracle), original_oracle)
+        self.controls["rows"][10][2]["s"]["f"] -= 1
+        result = self.compare()
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["controls"]["status"], "fail")
+
     def test_wrong_expected_phase_rejects_native_observation(self):
         # This changes the expected selected/frame phase, not the live capture
         wrong = self.oracle["observations"][0][1]

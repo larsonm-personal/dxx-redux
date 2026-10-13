@@ -390,7 +390,34 @@ def validate_controls(controls, capture):
         if timestep is not None:
             record["ft"] = timestep
         records.append(record)
-    ordered.validate(header, records[:-1], records[-1])
+    return ordered.validate(header, records[:-1], records[-1])
+
+
+def decoded_control_rows(controls, capture):
+    """Compare the actual format-5 operations, retaining wire spelling separately."""
+    rows = []
+    for batch in validate_controls(controls, capture):
+        def sparse(value):
+            return {kind: {key: item for key, item in value[kind].items() if item} for kind in ("s", "p")}
+
+        operations = []
+        for operation in batch["ops"]:
+            # read_controls admits flight samples only; preserve every operation
+            decoded = copy.deepcopy(operation)
+            if operation["k"] in ("sample", "controls"):
+                decoded.update(sparse(operation))
+            operations.append(decoded)
+        rows.append([batch["f"], batch["frame_time"], sparse(batch["residual"]), operations])
+    return rows
+
+
+def retain_control_encoding(result, native, observed):
+    raw = differences(native["rows"], observed["rows"])
+    if raw:
+        result["raw_control_encoding"] = {
+            **comparison_result(raw),
+            "scope": "wire spelling retained; executable control equality uses strict format-5 decoding",
+        }
 
 
 def make_oracle(capture, controls, capture_sha256, demo_sha256):
@@ -551,10 +578,13 @@ def compare(oracle, capture, controls):
         },
         "phase": comparison_result(phases),
         "camera": comparison_result(differences(camera(expected), camera(capture))),
-        "controls": comparison_result(differences(oracle["controls"]["rows"], controls["rows"])),
+        "controls": comparison_result(
+            differences(decoded_control_rows(oracle["controls"], expected), decoded_control_rows(controls, capture))
+        ),
         "recording_headers": {"native": oracle["controls"]["header"], "observed": controls["header"]},
         "native_source": oracle["source"],
     }
+    retain_control_encoding(result, oracle["controls"], controls)
     result["status"] = (
         "pass" if all(result[name]["status"] == "pass" for name in ("phase", "camera", "controls")) else "fail"
     )
@@ -696,12 +726,15 @@ def compare_trace(oracle, path, controls, engine):
         "phase_scope": comparison_result(phase_mismatches),
         "clock": comparison_result(clock_mismatches),
         "controls": {
-            **comparison_result(differences(oracle["controls"]["rows"], controls["rows"])),
+            **comparison_result(
+                differences(decoded_control_rows(oracle["controls"], native), decoded_control_rows(controls, native))
+            ),
             "scope": "companion recording input only; not independent observation of replay dispatch",
         },
         "camera": {"status": "unobserved", "reason": "bounded effect trace mode does not compare player/camera state"},
         "native_source": oracle["source"],
     }
+    retain_control_encoding(result, oracle["controls"], controls)
     result["status"] = (
         "pass" if all(result[name]["status"] == "pass" for name in ("phase_scope", "clock", "controls")) else "fail"
     )
