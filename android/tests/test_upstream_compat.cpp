@@ -10850,6 +10850,21 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		return;
 	}
 #endif
+	if (shareware && weapon_trace == 1) {
+		key_init();
+		mouse_init();
+		texmerge_init(10);
+		init_game();
+		Game_mode = 0;
+		GameArg.SysInputDemoNoRender = 1;
+		Player_num = 0;
+		N_players = 1;
+		std::strcpy(Players[0].callsign, "picktest");
+		Difficulty_level = 2;
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+	}
+	if (weapon_trace == 1) write_pickup_asset_profile(shareware, false);
 	const auto native = weapon_trace == 4 ? exercise_weapon_order_profile(native_demo, d2_directory) : weapon_trace == 3 ? exercise_classic_cutoff()
 	                                                                                               : weapon_trace == 2   ? exercise_weapon_selection(true)
 	                                                                                               : weapon_trace == 1   ? exercise_pickup_autoselect(true)
@@ -10859,10 +10874,17 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 	if (weapon_trace == 4) return;
 #ifdef DXX_BUILD_DESCENT_II
 	if (d2_directory) {
-		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
+		const std::string d2_hog = std::string(d2_directory) + (shareware ? "/d2demo.hog" : "/descent2.hog");
 		require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(d2_hog.c_str(), nullptr, 0), "mount D2 for ordinary-rule regression");
-		char d2_mission[] = "d2";
-		require(load_mission_by_name(d2_mission) && !d1_in_d2_use_d1_gameplay(), "ordinary D2 rules use an actual installed D2 bank");
+		char retail_mission[] = "d2", public_mission[] = "d2demo";
+		char *d2_mission = shareware ? public_mission : retail_mission;
+		require(load_mission_by_name(d2_mission), "select ordinary D2 mission");
+		// Built-in demo mission selection defers bank preparation to normal level loading
+		if (shareware) {
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(1);
+		}
+		require(!d1_in_d2_use_d1_gameplay(), "ordinary D2 rules use an actual installed D2 bank");
 		const std::vector<segment2> previous_segments(Segment2s, Segment2s + Highest_segment_index + 1);
 		require(!d1_in_d2_initialize_level_ambience() &&
 		            std::memcmp(Segment2s, previous_segments.data(), previous_segments.size() * sizeof(segment2)) == 0,
@@ -10871,6 +10893,7 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		for (int difficulty = 0; difficulty < NDL; ++difficulty)
 			require(boss_health_maximum_for_difficulty(2000 * F1_0, difficulty) == boss_health[difficulty],
 			        "ordinary D2 retains difficulty-scaled boss health");
+		if (weapon_trace == 1) write_pickup_asset_profile(shareware, true);
 		const auto d2 = weapon_trace == 2 ? exercise_weapon_selection(false) : weapon_trace == 1 ? exercise_pickup_autoselect(false)
 		                                                                                         : exercise_gameplay_rules(false);
 		for (size_t i = 0; !weapon_trace && i < native["damage"].size(); ++i) {
@@ -11433,8 +11456,8 @@ int main(int argc, char **argv)
 		write_gameplay_rules_trace(argv[2], argv[3], 8, argc == 5 ? argv[4] : nullptr, std::strcmp(argv[1], "--wall-blast-save-shareware-trace") == 0);
 		return 0;
 	}
-	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--pickup-autoselect-trace") == 0) {
-		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, true);
+	if ((argc == 3 || argc == 4) && (std::strcmp(argv[1], "--pickup-autoselect-trace") == 0 || std::strcmp(argv[1], "--pickup-autoselect-shareware-trace") == 0)) {
+		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, 1, nullptr, std::strcmp(argv[1], "--pickup-autoselect-shareware-trace") == 0);
 		return 0;
 	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--selection-autoselect-trace") == 0) {

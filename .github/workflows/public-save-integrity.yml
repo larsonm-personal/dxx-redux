@@ -69,6 +69,16 @@ jobs:
             -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat"
 
+      - name: Exercise public loaded-asset pickup matrix
+        timeout-minutes: 5
+        run: |
+          pwsh -NoProfile -File android/tests/test_pickup_autoselect_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_pickup_autoselect_parity.ps1 \
+            -DataEdition shareware \
+            -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-pickup-ci"
+
       - name: Check compact public replay admission
         timeout-minutes: 2
         run: |
@@ -94,6 +104,7 @@ jobs:
           path: |
             temp/wall-blast-save-shareware/
             temp/public-replay-ci/
+            temp/public-pickup-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
