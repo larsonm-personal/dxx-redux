@@ -1,7 +1,8 @@
 # Compact public level-start recordings
 
-Six fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. They start from ordinary level-one spawns. No player
+Seven fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
+Descent 2 v1.0 demo data. Six start from ordinary level-one spawns; the D2 shoot-switch case starts from the
+ordinary level-two spawn. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. Existing retail recordings remain unchanged.
 
@@ -44,6 +45,22 @@ initialization untouched, including the level-entry starfield draws.
   with firing. The selected door must start closed and actually enter opening or
   waiting state at the recorded boundary
 
+- `shoot-switch` (D2 only): start at level-two spawn segment 217, fly to the real
+  switch at segment 84 / side 2 / wall 154, and shoot trigger 17. The authored
+  forward door 116 (segment 85 / side 4) starts locked and closed; reverse wall
+  117 (segment 235 / side 5) starts unlocked but closed. Admission requires the
+  exact successful player-projectile activation, the switch overlay change and
+  forward lock removal at the same boundary, both door sides opening, and the
+  living player crossing from segment 85 into 235. It rejects a mere firing
+  sequence, an already-unlocked passage, duplicate switch activation or a route
+  that bypassed the passage. The current scene activates at frame 175, starts both
+  sides opening at boundary 187, and crosses at frame 217 (218 total frames)
+
+The D2 capture startup initializes PIG bitmap flags before loading the level, just
+like the desktop game. Those transparency flags affect ambient propagation; the
+level-two scene detects an omitted startup step through its lava ambience and
+strict AI diagnostic hashes. No world values are staged to make capture match
+
 The route controller is used only to create input recordings. Replays consume the
 recorded controls without navigation assistance. Captures end shortly after their
 selected action succeeds. Fixed timesteps are 1/60 second for `flight` and 1/30
@@ -67,6 +84,12 @@ To create candidates in a new temporary directory, use
 --engine-revision <full-engine-commit>` under the same display. Capture does not
 update this corpus. Independently repeat capture and verify clean native playback
 before admitting any new expectation.
+
+A read-only D2 trace record reports successful trigger activation with the exact
+frame, source wall, trigger, shot flag and player identity. It is emitted after
+the normal trigger handler succeeds; replay never executes this observation.
+The semantic gate couples it to the raw before/after walls, switch texture and
+player movement. Its synthetic negative tests run as `test_public_switch_replay.py`
 
 Native playback must match every live frame hash, terminal field and SIM event
 stream twice, plus the action-specific assertions. The existing paired D1 runner

@@ -383,7 +383,7 @@ class RuntimeGateTests(unittest.TestCase):
             ):
                 runner.check_paired_report(changed, 1, cases, self.root, path)
 
-    def test_corpus_requires_six_unique_plain_filename_pairs(self):
+    def test_corpus_requires_seven_unique_plain_filename_pairs(self):
         cases = [
             {
                 "game": game,
@@ -392,17 +392,16 @@ class RuntimeGateTests(unittest.TestCase):
                 "oracle": f"{game}-{scenario}.oracle.json",
                 "actions": {},
             }
-            for game in ("d1", "d2")
-            for scenario in runner.SCENARIOS
+            for game, scenario in runner.PUBLIC_CASES
         ]
         manifest = self.root / "manifest.json"
 
         def valid_pair(demo, oracle):
-            return {"game": demo.name[:2]}, {}
+            return {"game": demo.name[:2], "level": 2 if "shoot-switch" in demo.name else 1}, {}
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
             manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
-            self.assertEqual(len(runner.load_corpus(self.root)), 6)
+            self.assertEqual(len(runner.load_corpus(self.root)), 7)
             for mutation in (
                 "missing",
                 "duplicate_case",
@@ -411,6 +410,8 @@ class RuntimeGateTests(unittest.TestCase):
                 "windows_path",
                 "drive_path",
                 "missing_actions",
+                "wrong_level",
+                "d1_switch",
             ):
                 changed = copy.deepcopy(cases)
                 if mutation == "missing":
@@ -423,6 +424,10 @@ class RuntimeGateTests(unittest.TestCase):
                     changed[0]["demo"] = "../escaped.dximdemo"
                 elif mutation == "windows_path":
                     changed[0]["oracle"] = "..\\escaped.json"
+                elif mutation == "wrong_level":
+                    changed[-1]["demo"] = "d2-other.dximdemo"
+                elif mutation == "d1_switch":
+                    changed[-1]["game"] = "d1"
                 elif mutation == "drive_path":
                     changed[0]["demo"] = "C:escaped.dximdemo"
                 else:

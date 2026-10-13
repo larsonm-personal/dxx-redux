@@ -80,6 +80,25 @@
                 "action_frame": 89,
                 "wall_contact_frames": 0
             }
+        },
+        {
+            "game": "d2",
+            "scenario": "shoot-switch",
+            "demo": "d2-public-shoot-switch.dximdemo",
+            "oracle": "d2-public-shoot-switch.oracle.json",
+            "actions": {
+                "target": 154,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 175,
+                "wall_contact_frames": 0,
+                "trigger": 17,
+                "switch_segment": 84,
+                "switch_side": 2,
+                "front_wall": 116,
+                "back_wall": 117,
+                "passage_frame": 217
+            }
         }
     ]
 }

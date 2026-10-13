@@ -36,4 +36,4 @@ $pwsh = (Get-Process -Id $PID).Path
     --data-d1 $D1DataDir --data-d2 $D2DataDir --exe-d1 $D1Exe --exe-d2 $D2Exe --pwsh $pwsh `
     --timeout $TimeoutSeconds --minimum-free-gb $MinimumFreeSpaceGB.ToString([Globalization.CultureInfo]::InvariantCulture)
 if ($LASTEXITCODE -ne 0) { throw "Compact public replay fidelity or strict paired comparison failed; see $Output" }
-Write-Output 'PASS: six compact public replays twice, strict native fidelity/repeatability and exact imported D1 flight gameplay-state/SIM-RNG scope; imported pickup/door are unqualified diagnostic probes; diagnostic/object/world parity remains unqualified and full simulation qualification remains INCOMPLETE'
+Write-Output 'PASS: seven compact public replays twice, strict native fidelity/repeatability and exact imported D1 flight gameplay-state/SIM-RNG scope; imported pickup/door are unqualified diagnostic probes; diagnostic/object/world parity remains unqualified and full simulation qualification remains INCOMPLETE'
