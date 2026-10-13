@@ -179,7 +179,10 @@ static void capture_public_dispatch_frames(const char *game_name, const char *mi
 	            std::memcmp(&Controls, &paused_controls, sizeof(Controls)) == 0,
 	        "paused draws and live SDL input cannot mutate recorded playback");
 	start_time();
-	input_demo_replay_unload();
+	// Exercise the ordinary user-close handler and its nonlocal exit, not only
+	// the codec unload API; cancellation must never manufacture a final result
+	if (!setjmp(LeaveEvents)) window_close(Game_wind);
+	require(!Game_wind && !input_demo_replay_is_loaded(), "native window close cancels unfinished playback");
 	require(!input_demo_replay_actual_result_written(), "cancelled playback has no successful terminal-write verdict");
 	std::puts("PASS: native ordered dispatch capture, paused draw and live-input isolation");
 }
