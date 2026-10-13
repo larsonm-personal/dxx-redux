@@ -63,8 +63,66 @@ From the repository root, jump straight to the picker:
 .\android\run_all_tests.ps1 -ReplayDemo
 ```
 
-The existing single-demo helper also works directly. To watch the new level-14
-recording in native D1:
+The picker keeps your existing `regression_demos/` recordings first, in their
+original newest-first order, then appends the tracked public fixtures in stable
+path order. It includes all 28 compact demos from:
+
+- `android/tests/fixtures/public_level_replays/` (17)
+- `android/tests/fixtures/public_d1_fault_probes/` (5)
+- `android/tests/fixtures/public_d1_fan_probes/` (3)
+- `android/tests/fixtures/public_all_weapons/` (3, native engine only)
+
+Choose **1. Headed** to watch at recorded speed in a normal 640x480 window.
+Tracked fixtures exit the game cleanly when playback completes or aborts, so a
+known fault is reported promptly rather than leaving the game at its menu.
+Press **Space** to pause/resume, or **Right arrow** to pause and advance one frame.
+The existing render-profile and robot-label options remain available through the
+direct helper. Short ordered-input and all-weapons recordings finish quickly;
+pausing lets you inspect them. The helper allows recording duration plus startup
+time, with a five-minute minimum timeout; pass `-TimeoutSeconds` to the direct
+helper when planning a longer paused inspection.
+
+These tracked fixtures automatically select the pinned public shareware edition,
+including D1 assets for D1-in-D2. If they are missing, the interactive helper offers
+to extract a cached public package, or explicitly download and extract that public
+package. Enter or Q cancels without setup. The existing setup helper verifies
+package and extracted-file hashes, uses bounded extraction, and builds the native
+extractor if needed; it never executes the DOS installer or downloads retail data.
+You can also prepare both public editions in advance:
+
+```powershell
+.\android\helpers\setup_shareware_test_data.ps1 -Game both -Download
+```
+
+Omit `-Download` to require already cached public installers. Use `-DataDir` on the
+direct replay helper for another already extracted, hash-matching directory. The
+normal host build guard automatically builds missing or stale game executables;
+listing or cancelling the picker does not build games.
+
+Imported D1 viewing stages the checked-in native-written comparison pilot when
+its projection requires it, using only the disposable replay sandbox. Personal
+pilots and recorded projection checks stay unchanged. The monitor-phase,
+mine-blast and fan-transparency entries are visibly marked as known imported
+faults. Monitor and mine terminal summaries can match despite their detailed
+faults. Fan-transparency is expected to stop at its strict carried-RNG mismatch
+before input 301; its nonzero exit is preserved and is not a fault-verification
+pass. Causal controls and cases excluded from imported qualification are labelled
+separately. All-weapons compact replay is native-only and is omitted from the
+imported picker.
+
+The viewing helper checks the embedded terminal summary. It does not run the
+separate full-state/RNG/detail oracle checkers, so a successful viewing run is not
+full imported parity. Old recordings remain visible with a legacy-format warning;
+the current engine requires format 5, and does not silently convert them.
+
+The existing single-demo helper also works directly. For a tracked native D1
+all-weapons recording:
+
+```powershell
+.\android\tests\run_input_demo_replay.ps1 -DemoPath android\tests\fixtures\public_all_weapons\d1-bigred.dximdemo -Runner visual -Mode realtime
+```
+
+To watch the level-14 recording in native D1:
 
 ```powershell
 .\android\tests\run_input_demo_replay.ps1 -DemoPath android\regression_demos\d1_descent_level14_20260920_184354.dximdemo -Game d1 -Runner visual -Mode realtime -RenderProfile default -ReplayRobotLabels hide
@@ -206,8 +264,9 @@ Without explicit executables the existing build guard chooses/builds them.
 Headless selects `-Runner headless-console` and never falls back to a no-present
 window. Graphics selects `-Runner visual` and does run rendering/presentation.
 Both native compact backends require finalized result/traces and natural process exit.
-`-RequireCleanExit` enables opt-in unattended desktop `-inputdemo-exit`; normal
-interactive replays retain their existing menu behavior.
+`-RequireCleanExit` enables opt-in desktop `-inputdemo-exit`. The tracked public
+fixtures also use it for prompt completion/abort reporting in visible realtime
+playback; other user recordings retain their existing menu behavior.
 
 Use Xvfb and software GL on Linux for the graphics pass and for route-development
 screenshots. Xvfb is a virtual display for the headed engine, not the headless

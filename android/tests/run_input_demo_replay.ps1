@@ -57,7 +57,9 @@ $repoRoot = if ($RepositoryRoot) { [IO.Path]::GetFullPath($RepositoryRoot) } els
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/test_host_platform.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_fixture_catalog.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/output_disk_space.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/headless_process_pool.ps1')
 $script:InputDemoSanitizer = $Sanitizer
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_wrapper'
 if ($Sanitizer -eq 'address') { $outRoot = Join-Path $repoRoot 'temp/input_demo_runtime_wrapper_asan' }
@@ -272,17 +274,17 @@ function Get-SearchRoots {
     param([string]$RequestedRoot)
 
     if ($RequestedRoot) {
-        if (-not (Test-Path -LiteralPath $RequestedRoot)) {
-            throw "Search root not found: $RequestedRoot"
+        if (-not (Test-Path -LiteralPath $RequestedRoot -PathType Container)) {
+            throw "Search root not found: $RequestedRoot (expected a directory)"
         }
         return @((Resolve-Path -LiteralPath $RequestedRoot).Path)
     }
 
-    $roots = @(
-        (Join-Path $repoRoot 'android\regression_demos'),
-        (Join-Path $repoRoot 'android\temp_game_logs'),
-        (Join-Path $repoRoot 'temp')
-    )
+    $roots = @((Join-Path $repoRoot 'android/regression_demos'))
+    if (-not $Interactive) {
+        $roots += @((Join-Path $repoRoot 'android/temp_game_logs'), (Join-Path $repoRoot 'temp'))
+    }
+    $roots += @(Get-InputDemoFixtureRoots -RepoRoot $repoRoot)
     return $roots | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
 }
 
@@ -353,11 +355,13 @@ function Get-DemoApproximateReplayFps {
     $lastFrameTime = $null
 
     foreach ($line in [System.IO.File]::ReadLines($Path)) {
+        if (-not (Test-DemoJsonRecordLine -Line $line)) { continue }
         $trimmed = $line.Trim()
-        if (-not $trimmed.StartsWith('{"type":"frame"')) {
+        if ($trimmed -notmatch '"type"\s*:\s*"frame"') {
             continue
         }
         $record = ConvertFrom-JsonLine $trimmed
+        if ($record.type -ne 'frame') { continue }
         if ($record.ContainsKey('ft')) {
             $lastFrameTime = [int]$record.ft
         }
@@ -372,8 +376,8 @@ function Get-DemoApproximateReplayFps {
     }
 
     $fps = [int][Math]::Round((65536.0 * $count) / $totalFrameTime)
-    if ($fps -lt 25) {
-        $fps = 25
+    if ($fps -lt 1) {
+        $fps = 1
     }
     if ($fps -gt $MaxFps) {
         $fps = $MaxFps
@@ -589,7 +593,27 @@ function Resolve-DataDir {
     if ($DataEdition -eq 'shareware') {
         . (Join-Path (Split-Path $PSScriptRoot) 'helpers/shareware_test_data.ps1')
         $contentGame = if ($D1InD2) { 'd1' } else { $Config.Name }
-        return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $contentGame -DataDir $RequestedDataDir
+        try {
+            return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $contentGame -DataDir $RequestedDataDir
+        } catch {
+            if (-not $Interactive -or $RequestedDataDir) { throw }
+            Write-Warning $_.Exception.Message
+            $public = Get-SharewareTestGameConfig -RepoRoot $repoRoot -Game $contentGame
+            Write-Host ''
+            Write-Host "Prepare the pinned public $contentGame shareware data:"
+            Write-Host '  [1] Extract an already cached public installer'
+            Write-Host "  [2] Download and extract $($public.Archive) from $($public.DownloadUrl)"
+            Write-Host '  [Q] Cancel (or prepare data separately and rerun)'
+            Write-Host 'Uses the existing hash-verified bounded extractor (builds it if needed); DOS installers are never executed'
+            $setupChoice = Read-NumberedChoice -Prompt 'Choose data setup [Q]' -OptionCount 2 -DefaultChoice 0 -AllowCancel
+            if ($setupChoice -eq 0) {
+                Write-Host 'Replay cancelled; no game data was prepared'
+                return $null
+            }
+            Assert-OutputDiskSpace -Paths @($public.DataDir, (Join-Path $repoRoot 'android/tests/build-shareware-fixture')) -MinimumFreeGB $MinimumFreeSpaceGB
+            & (Join-Path $repoRoot 'android/helpers/setup_shareware_test_data.ps1') -Game $contentGame -Download:($setupChoice -eq 2)
+            return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $contentGame
+        }
     }
     # Paired captures supply a staged bank and must not consult live index generators
     if ($RequestedDataDir -and (Test-DataDirMatchesGame -Path $RequestedDataDir -Config $Config)) {
@@ -1069,6 +1093,7 @@ function Get-LaunchArguments {
         [switch]$ReplayDebugLog,
         [switch]$D1InD2,
         [switch]$D1InD2StartFromLevel,
+        [switch]$ExitAfterReplay,
         [string]$ResolvedStateLogPath,
         [string]$ResolvedRngLogPath
     )
@@ -1107,6 +1132,7 @@ function Get-LaunchArguments {
     if ($D1InD2StartFromLevel) {
         $launchParameters += '-inputdemo-d1-in-d2-start-from-level'
     }
+    if ($ExitAfterReplay) { $launchParameters += '-inputdemo-exit' }
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
     }
@@ -1139,11 +1165,15 @@ function Get-DemoCandidates {
     foreach ($root in (Get-SearchRoots -RequestedRoot $RequestedRoot)) {
         foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter '*.dximdemo' -File -ErrorAction SilentlyContinue)) {
             $header = Get-DemoHeader -Path $file.FullName
+            $fixture = Get-InputDemoFixtureInfo -RepoRoot $repoRoot -Path $file.FullName
+            if ($D1InD2 -and $fixture -and $fixture.NativeOnly) { continue }
             if ($RecordedGame -ne 'all' -and $header.game -ne $RecordedGame) {
                 continue
             }
             $items.Add([pscustomobject]@{
                     Path = $file.FullName
+                    Fixture = $fixture
+                    Version = if ($header.ContainsKey('version')) { [int]$header.version } else { 0 }
                     RelativePath = Get-RelativeRepoPath -Path $file.FullName
                     Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
                     Mission = if ($header.ContainsKey('mission')) { [string]$header.mission } else { '?' }
@@ -1156,7 +1186,10 @@ function Get-DemoCandidates {
         }
     }
 
-    return $items | Sort-Object -Property Modified, RelativePath -Descending
+    # Keep existing recordings in their original newest-first order and append
+    # tracked fixtures by path so a checkout's timestamps do not shuffle the menu
+    $items | Where-Object { -not $_.Fixture } | Sort-Object -Property Modified, RelativePath -Descending
+    $items | Where-Object Fixture | Sort-Object -Property RelativePath
 }
 
 function Show-DemoCandidates {
@@ -1180,7 +1213,12 @@ function Show-DemoCandidates {
             $item.RelativePath
         )
         $line = '[{0}] {1} {2} lvl={3} {4} fr={5} {6}KB {7}' -f $formatArgs
+        if ($item.Fixture) {
+            $line += ' [public shareware' + $(if ($item.Fixture.NativeOnly) { '; native only' }) + ']'
+        }
+        if ($item.Version -lt 5) { $line += " [legacy format $($item.Version)]" }
         Write-Host $line
+        if ($D1InD2 -and $item.Fixture) { Write-Host "      $($item.Fixture.ImportedNote)" -ForegroundColor Yellow }
     }
 }
 
@@ -1490,11 +1528,6 @@ if ($Interactive) {
     if ($engineChoice -eq 'cancel') { exit 0 }
     $D1InD2 = $engineChoice -eq 'd1-in-d2'
     $Game = if ($D1InD2) { 'd2' } else { $engineChoice }
-    if (-not $SearchRoot) { $SearchRoot = Join-Path $repoRoot 'android/regression_demos' }
-}
-
-if (-not (Test-Path -LiteralPath $outRoot)) {
-    New-Item -ItemType Directory -Path $outRoot -Force | Out-Null
 }
 
 $candidateList = @()
@@ -1509,7 +1542,7 @@ if ($ListOnly) {
 
 $selectedDemo = $null
 if ($DemoPath) {
-    if (-not (Test-Path -LiteralPath $DemoPath)) {
+    if (-not (Test-Path -LiteralPath $DemoPath -PathType Leaf)) {
         throw "Demo file not found: $DemoPath"
     }
     $resolvedDemoPath = (Resolve-Path -LiteralPath $DemoPath).Path
@@ -1532,6 +1565,31 @@ if ($Interactive) {
 
 $header = Get-DemoHeader -Path $resolvedDemoPath
 $recordedGame = Resolve-DemoGame -Header $header -RequestedGame 'auto'
+$fixtureInfo = Get-InputDemoFixtureInfo -RepoRoot $repoRoot -Path $resolvedDemoPath
+$useComparisonPilot = $false
+if ($fixtureInfo) {
+    if ($PSBoundParameters.ContainsKey('DataEdition') -and $DataEdition -ne $fixtureInfo.DataEdition) {
+        throw 'This tracked public fixture requires -DataEdition shareware; retail assets cannot replace its pinned data'
+    }
+    $DataEdition = $fixtureInfo.DataEdition
+    if ($D1InD2 -and $fixtureInfo.NativeOnly) {
+        throw 'All-weapons compact recordings are qualified only in their native engine; imported live capture does not qualify imported replay'
+    }
+    if (-not $D1InD2 -and $Game -ne 'auto' -and $Game -ne $recordedGame) {
+        throw "This fixture was recorded in $recordedGame; select that engine (or -D1InD2 for supported D1 diagnostics)"
+    }
+    if ($D1InD2) {
+        Write-Warning $fixtureInfo.ImportedNote
+        if (-not $Pilot -and $header.ContainsKey('view_projection') -and $header.view_projection.missile_view_enabled -eq 0) {
+            $Pilot = 'd1match'
+            $useComparisonPilot = $true
+        }
+    }
+    Write-Host 'Public fixture: pinned shareware data; playback compares the terminal summary, not the separate full-state/detail oracles'
+}
+if (-not $header.ContainsKey('version') -or [int]$header.version -lt 5) {
+    Write-Warning 'Legacy input-demo format: preserved unchanged; the current engine requires format 5. Convert with the verified public-corpus converter where supported, or record again'
+}
 if ($D1InD2) {
     if ($Game -eq 'd1') {
         throw '-D1InD2 runs the D2 executable; use -Game auto or -Game d2'
@@ -1545,7 +1603,7 @@ if ($D1InD2) {
     $resolvedGame = 'd2'
     $config = Get-D1InD2GameConfig
     if ($Runner -eq 'auto') {
-        $Runner = 'windowed-no-present'
+        $Runner = if ($fixtureInfo -and -not $NoRender) { 'visual' } else { 'windowed-no-present' }
     }
 } else {
     if ($D1InD2StartFromLevel) {
@@ -1555,6 +1613,7 @@ if ($D1InD2) {
     $config = Get-GameConfig -Name $resolvedGame
 }
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+if ($Interactive -and -not $resolvedDataDir) { exit 0 }
 if ($StrictComparison -and ($SkipExpectedChecks -or $AllowMissingActualResult -or $D1InD2StartFromLevel)) {
     throw 'Strict comparison requires the unchanged start state, an actual result and enabled comparisons'
 }
@@ -1663,7 +1722,10 @@ $completedExitCode = $null
 $forcedReplayStop = $false
 try {
     $pilotUsesPlayersDirectory = $false
-    if ($sandbox.Home -and $Pilot) {
+    if ($useComparisonPilot) {
+        $profileDestination = if ($sandbox.ProfileDirectory) { $sandbox.ProfileDirectory } else { $sandbox.Directory }
+        Copy-InputDemoComparisonPilot -RepoRoot $repoRoot -Destination $profileDestination
+    } elseif ($sandbox.Home -and $Pilot) {
         $pilotUsesPlayersDirectory = Copy-RequestedReplayPilot -Name $Pilot -GameName $config.Name -Destination $sandbox.ProfileDirectory
     }
     $actualResultDirectory = Join-Path $sandbox.Directory 'results'
@@ -1677,9 +1739,8 @@ try {
     $launchArgs = if ($useHeadlessConsole) {
         Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath -ReplayDebugLog:$ReplayDebugLog -HeadlessConsoleOutput $HeadlessConsoleOutput
     } else {
-        Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+        Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ExitAfterReplay:($RequireCleanExit -or [bool]$fixtureInfo) -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
     }
-    if ($RequireCleanExit -and -not $useHeadlessConsole) { $launchArgs += '-inputdemo-exit' }
     if ($pilotUsesPlayersDirectory) { $launchArgs += '-use_players_dir' }
     $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
     $runnerName = $runnerSelection.Name
@@ -1755,7 +1816,7 @@ try {
         $startInfo.RedirectStandardError = $true
         $startInfo.CreateNoWindow = $true
     }
-    $startInfo.Arguments = $quotedArgs
+    Set-HeadlessProcessArguments -StartInfo $startInfo -Arguments $launchArgs
 
     $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $missingActualResult = $false
@@ -1829,7 +1890,7 @@ try {
         }
     }
     if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
-    if ($forcedReplayStop -and ($useHeadlessConsole -or $RequireCleanExit)) {
+    if ($forcedReplayStop -and ($useHeadlessConsole -or $RequireCleanExit -or $fixtureInfo)) {
         throw 'Replay wrote its result but did not exit cleanly'
     }
     if ($null -ne $completedExitCode -and $completedExitCode -ne 0) {
@@ -1971,7 +2032,11 @@ try {
     if ($SkipExpectedChecks) {
         Write-Host 'RESULT: CAPTURED (expected-result comparison disabled)'
     } else {
-        Write-Host 'RESULT: PASS' -ForegroundColor Green
+        Write-Host $(if ($fixtureInfo) { 'RESULT: PASS (terminal summary comparison)' } else { 'RESULT: PASS' }) -ForegroundColor Green
+        if ($fixtureInfo) {
+            Write-Host 'Scope: terminal summary only; full-state and detailed fault oracles are not checked by this viewing helper'
+            if ($D1InD2) { Write-Warning $fixtureInfo.ImportedNote }
+        }
     }
 
     $replaySucceeded = $true

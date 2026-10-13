@@ -62,6 +62,9 @@ class ParityTests(unittest.TestCase):
             "android/tests/run_input_demo_replay.ps1",
             "android/helpers/test_host_platform.ps1",
             "android/helpers/input_demo_replay_menu.ps1",
+            "android/helpers/input_demo_fixture_catalog.ps1",
+            "android/helpers/headless_process_pool.ps1",
+            "android/helpers/process_lifetime.ps1",
             "android/helpers/retain-recent-artifacts.ps1",
         ):
             (source / name).write_text("throw 'live workspace must not execute'\n")
