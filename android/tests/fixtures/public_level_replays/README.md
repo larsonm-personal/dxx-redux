@@ -1,16 +1,15 @@
 # Compact public level-start recordings
 
-The corpus uses fresh production-recorder captures with pinned Descent 1 v1.4
+The corpus preserves production-recorder captures with pinned Descent 1 v1.4
 shareware and Descent 2 v1.0 demo data. Recordings start from ordinary authored
 level spawns; each scenario declares its level in the manifest. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
-in the replay or its companions. Existing retail recordings remain unchanged.
+in the replay or its companions. Original oracle bytes remain unchanged; converted legacy inputs have explicit migration sidecars.
 
 ## Size and evidence contract
 
-Each replay is plain uncompressed UTF-8 JSONL. Admission rejects any replay and
-oracle pair totaling more than **100000 bytes**, a stricter limit than 100 KB per
-replay alone. There is no compression, base64, split recording or hidden save.
+Each replay is plain uncompressed UTF-8 JSONL. Admission rejects any individual
+replay or oracle file larger than **100000 bytes**. There is no compression, base64, split recording or hidden save.
 
 The engine first records complete live frame state/diagnostics and actual RNG
 events into temporary capture output. The packer retains ordinary controls,
@@ -19,8 +18,9 @@ observations with a SHA-256 oracle for every complete frame. A separate digest
 covers every normalized SIM RNG event, including values, order and actor context.
 Expected hashes are never generated from replay output.
 
-Only explicitly reviewed diagnostic event kinds are removed. The engine executes
-only `direct_command` events; these recordings forbid those commands entirely.
+Only explicitly reviewed diagnostic event kinds are removed. Format 5 executes only its ordered dispatch operations. Public admission allows
+reviewed ordinary player commands and rejects debug spawning, warps and unknown
+commands, including operations in the terminal input tail.
 Removed telemetry has a provenance hash/count and is explicitly not claimed as
 replay-compared. Unknown event kinds fail admission rather than being ignored.
 
@@ -32,8 +32,8 @@ point to an exact published source-only commit built before fixture admission;
 `capture_source_sha256` also identifies the exact capture fixture header. Combat, loot, door-lifecycle and Guide-Bot
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
-so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
-frame; it does not seed the separate FX stream. Capture leaves ordinary FX
+so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG before each ordered input batch and checks the
+post-input boundary; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
 
 ## Real actions
@@ -241,3 +241,27 @@ The Guide-Bot capture also supports `DXX_PUBLIC_CAPTURE_SCREENSHOTS=1` and
 `--scenario guidebot-release`. Its screenshot inventory includes first damage,
 both-wall blast, physical exit, talk/release, and a later clear view. Screenshot
 captures remain independent from the clean oracle-admission captures
+
+## Ordered input and migration
+
+Format 5 records the actual ordered pre-simulation reset, clear, sample and direct
+command operations, each with input-time `ft`. A mandatory `input_tail` retains
+input after the final simulation. `dispatch.pre_rng="="` references that row's
+post-input RNG; `sample.s="="` references that row's decoded residual held state;
+missing sample pulses are zero. Missing dispatch is invalid; empty ops is explicit.
+Packing validates exact decoded semantics before and after these lossless aliases.
+The FX stream remains outside the qualification contract.
+
+Legacy public inputs are converted with at most three documented whole-recording
+schedules in `convert_public_replay.py`. Every candidate is checked against the
+unchanged original full frame, diagnostic, SIM-event and terminal oracles. Multiple
+passing schedules show equivalent behavior, not recovered historical event order.
+Migration sidecars bind original and converted replay hashes, unchanged oracle
+hashes, and full verified baseline evidence. The converter never edits expected
+files. Native runtime rejects old input versions with conversion/re-record guidance.
+
+The secondary-release-first and secondary-mouse-first scenes use actual queued SDL
+input from normal level-one starts. They differ only in release/mouse order at
+frame 13, following a second press eight ticks before the cooldown. Expected concussion ammo is
+four and three respectively in both games. No cooldown or gameplay timing changes
+are made to obtain replay parity.
