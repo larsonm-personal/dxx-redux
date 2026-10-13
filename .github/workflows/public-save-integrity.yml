@@ -128,6 +128,37 @@ jobs:
               assert len(images) == len(frames) and all(path.stat().st_size for path in images)
           PYTHON
 
+      - name: Render and verify compact door lifecycle screenshots
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-door-lifecycle-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario door-lifecycle
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-door-lifecycle-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          for game in ("d1", "d2"):
+              name = f"{game}-public-door-lifecycle.oracle.json"
+              actual = json.loads((captured / name).read_bytes())
+              expected = json.loads((admitted / name).read_bytes())
+              for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                          "terminal_sha256", "door_observations"):
+                  assert actual[key] == expected[key], (game, key)
+              directory = captured / f"{game}-door-lifecycle"
+              report = json.loads((directory / "capture.json").read_bytes())
+              frames = report["screenshot_frames"]
+              assert frames == sorted(set(frames))
+              assert {row["f"] for row in report["door_events"]} <= set(frames)
+              images = sorted((directory / "screenshots").glob("scrn*.png"))
+              assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
       - name: Package exact replay binaries and pinned public assets
         run: |
           mkdir -p "$RUNNER_TEMP/public-replay-build"
@@ -155,6 +186,7 @@ jobs:
             temp/public-pickup-ci/
             temp/public-combat-ci/
             temp/public-robot-combat-visual-ci/
+            temp/public-door-lifecycle-visual-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
@@ -165,7 +197,7 @@ jobs:
 
   save-integrity:
     name: Linux public native save and replay integrity
-    timeout-minutes: 50
+    timeout-minutes: 70
     needs: build-public
     runs-on: ubuntu-24.04
     env:
@@ -222,6 +254,7 @@ jobs:
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py
           python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_door_replay.py
           python3 android/tests/test_public_incoming_robot_hits.py
           python3 android/tests/test_compact_public_gameplay_parity.py
           pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
@@ -232,7 +265,8 @@ jobs:
 
       - name: Qualify compact public replays without a display
         # Primary native gate: actual console mains, no X server or OpenGL context
-        timeout-minutes: 40
+        # Nine cases took 33 minutes; retain headroom for eleven positive/negative cases
+        timeout-minutes: 60
         run: |
           env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
             pwsh -NoProfile -File android/tests/test_input_demo_regressions.ps1 \
@@ -261,7 +295,7 @@ jobs:
 
   headed-replay:
     name: Linux public headed replay parity
-    timeout-minutes: 65
+    timeout-minutes: 95
     needs: build-public
     runs-on: ubuntu-24.04
     env:
@@ -313,7 +347,7 @@ jobs:
 
       - name: Qualify headed rendering and existing imported parity
         # Secondary visual fidelity gate, using the same immutable capture oracles
-        timeout-minutes: 60
+        timeout-minutes: 85
         run: |
           xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
             pwsh -NoProfile -File android/tests/test_input_demo_regressions_graphics.ps1 \

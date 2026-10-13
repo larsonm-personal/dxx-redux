@@ -54,12 +54,15 @@ def capture(args):
                 args.output / (stem + ".dximdemo"),
                 args.output / (stem + ".oracle.json"),
                 provenance,
+                door_trace=directory / "capture-observation.jsonl" if scenario == "door-lifecycle" else None,
                 combat_trace=directory / "capture-observation.jsonl" if scenario == "combat" else None,
             )
             actions = {
                 key: report[key]
                 for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
             }
+            if scenario == "door-lifecycle":
+                actions.update({key: report[key] for key in ("door_back", "door_events")})
             if scenario == "shoot-switch":
                 events = [
                     row

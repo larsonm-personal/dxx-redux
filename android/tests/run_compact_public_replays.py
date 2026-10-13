@@ -12,10 +12,13 @@ import compact_public_gameplay_parity as gameplay
 import d1_replay_parity as parity
 import public_switch_replay as shoot_switch
 import public_robot_combat_replay as robot_combat
+import public_door_replay as door_lifecycle
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
 PUBLIC_CASES[("d2", "shoot-switch")] = 2
+PUBLIC_CASES[("d1", "door-lifecycle")] = 3
+PUBLIC_CASES[("d2", "door-lifecycle")] = 1
 
 
 def load_corpus(directory):
@@ -23,6 +26,20 @@ def load_corpus(directory):
     if not isinstance(manifest, dict) or manifest.get("schema") != 1 or not isinstance(manifest.get("cases"), list):
         raise parity.EvidenceError("Invalid public level replay manifest")
     cases = manifest["cases"]
+    imported = manifest.get("imported_d1", {})
+    if (
+        not isinstance(imported, dict)
+        or set(imported) != {"schema", "cases"}
+        or type(imported.get("schema")) is not int
+        or imported.get("schema") != 1
+        or not isinstance(imported.get("cases"), dict)
+        or set(imported["cases"]) != {case.get("demo") for case in cases if case.get("game") == "d1"}
+    ):
+        raise parity.EvidenceError("Every D1 recording requires explicit imported scope")
+    cases = [
+        {**case, "imported_d1": imported["cases"][case["demo"]]} if case.get("game") == "d1" else case for case in cases
+    ]
+    imported_d1_scope(cases)
     expected = set(PUBLIC_CASES)
     if len(cases) != len(expected) or {(row.get("game"), row.get("scenario")) for row in cases} != expected:
         raise parity.EvidenceError(f"Public corpus requires its exact {len(expected)} unique game/scenario pairs")
@@ -47,9 +64,39 @@ def load_corpus(directory):
         header, oracle = compact.validate(directory / case["demo"], directory / case["oracle"])
         if ("combat_observations" in oracle) != (case["scenario"] == "combat"):
             raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
+        if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
+            raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
         if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
             raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
+
+
+def imported_d1_scope(cases):
+    included, excluded, required = [], [], []
+    for case in cases:
+        if case.get("game") != "d1":
+            continue
+        declaration = case.get("imported_d1", {})
+        if (
+            not isinstance(declaration, dict)
+            or set(declaration) != {"role", "reason"}
+            or declaration["role"] not in ("required-gameplay", "diagnostic-only", "excluded")
+            or not isinstance(declaration["reason"], str)
+            or not declaration["reason"].strip()
+        ):
+            raise parity.EvidenceError("Invalid explicit imported D1 case scope")
+        role = declaration["role"]
+        if role == "excluded":
+            excluded.append({"demo": case["demo"], "reason": declaration["reason"]})
+        else:
+            included.append(case)
+        if role == "required-gameplay":
+            required.append(case)
+        if (case.get("scenario") == "flight") != (role == "required-gameplay"):
+            raise parity.EvidenceError("Imported D1 flight must retain its required gameplay scope")
+    if len(required) != 1:
+        raise parity.EvidenceError("Paired scope requires exactly one D1 flight case")
+    return included, excluded
 
 
 def validate_assets(game, directory):
@@ -125,6 +172,9 @@ def verify_actions(case, demo, state_trace, actual_result):
         "max_player_weapons": weapons,
         "energy_fell": energy_drop,
     }
+    if scenario == "door-lifecycle":
+        result.update(door_lifecycle.verify(actions, header, states, state_trace))
+        return result
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
         return result
@@ -214,7 +264,8 @@ def check_paired_report(report, exit_code, cases, corpus, report_path=None):
         or "harness_error" in report
     ):
         raise parity.EvidenceError("Strict paired public D1 comparison failed or changed its qualification boundary")
-    expected = {case["demo"]: case for case in cases if case["game"] == "d1"}
+    included, excluded = imported_d1_scope(cases)
+    expected = {case["demo"]: case for case in included}
     paired_required = [name for name, case in expected.items() if case.get("scenario") == "flight"]
     if len(paired_required) != 1:
         raise parity.EvidenceError("Paired scope requires exactly one D1 flight case")
@@ -236,6 +287,7 @@ def check_paired_report(report, exit_code, cases, corpus, report_path=None):
         "scope": "exact gameplay-state/SIM-RNG imported D1 flight parity",
         "required_paired_cases": paired_required,
         "unqualified_paired_cases": sorted(set(expected) - set(paired_required)),
+        "excluded_imported_cases": excluded,
         "not_qualified": list(gameplay.NOT_QUALIFIED),
         "original_report": str(report_path),
         "original_exit_code": exit_code,
@@ -437,11 +489,12 @@ def _run_cases(args, cases):
 
 
 def _run_imported(args, cases, report):
+    included, excluded = imported_d1_scope(cases)
+    report["paired"] = {"status": "pending", "excluded_imported_cases": excluded}
     staged = args.output / "d1-corpus"
     staged.mkdir()
-    for case in cases:
-        if case["game"] == "d1":
-            shutil.copyfile(args.corpus / case["demo"], staged / case["demo"])
+    for case in included:
+        shutil.copyfile(args.corpus / case["demo"], staged / case["demo"])
     paired = args.output / "paired-d1"
     command = [
         args.pwsh,
@@ -469,10 +522,10 @@ def _run_imported(args, cases, report):
         code = _run(
             command,
             args.output / "paired-runner.log",
-            3 * sum(case["game"] == "d1" for case in cases) * (args.timeout + 120) + 120,
+            3 * len(included) * (args.timeout + 120) + 120,
             args.repo,
         )
-        report["paired"] = {"status": "fail", "exit_code": code, "original_report": str(paired / "report.json")}
+        report["paired"].update(status="fail", exit_code=code, original_report=str(paired / "report.json"))
         original = compact._json((paired / "report.json").read_bytes())
         scope = check_paired_report(original, code, cases, args.corpus, paired / "report.json")
         report["paired"].update(

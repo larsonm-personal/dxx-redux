@@ -16,6 +16,13 @@ import check_compact_public_replay_failures as negative
 
 
 class RuntimeGateTests(unittest.TestCase):
+    @staticmethod
+    def imported_scope(scenario):
+        return {
+            "role": "required-gameplay" if scenario == "flight" else "diagnostic-only",
+            "reason": "Explicit test scope",
+        }
+
     @unittest.skipUnless(os.name == "posix", "POSIX retention uses advisory file locks")
     def test_active_capture_holds_retention_lease(self):
         import fcntl
@@ -218,7 +225,14 @@ class RuntimeGateTests(unittest.TestCase):
         for scenario in runner.SCENARIOS:
             name = f"d1-{scenario}.dximdemo"
             (self.root / name).write_text(json.dumps(self.header) + "\n")
-            cases.append({"game": "d1", "scenario": scenario, "demo": name})
+            cases.append(
+                {
+                    "game": "d1",
+                    "scenario": scenario,
+                    "demo": name,
+                    "imported_d1": self.imported_scope(scenario),
+                }
+            )
             required = (
                 "terminal_result",
                 "checkpoint_collision_clock",
@@ -237,8 +251,14 @@ class RuntimeGateTests(unittest.TestCase):
                 {
                     "demo": name,
                     "recording_to_native": {"status": "incomplete", "checks": recorded},
-                    "native_repeatability": {"status": "pass", "checks": copy.deepcopy(checks)},
-                    "native_to_imported": {"status": "pass", "checks": copy.deepcopy(checks)},
+                    "native_repeatability": {
+                        "status": "pass",
+                        "checks": copy.deepcopy(checks),
+                    },
+                    "native_to_imported": {
+                        "status": "pass",
+                        "checks": copy.deepcopy(checks),
+                    },
                 }
             )
         return cases, {"schema": 1, "qualification": "incomplete", "cases": rows}
@@ -276,6 +296,97 @@ class RuntimeGateTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                 runner.check_paired_report(changed, 1 if mutation == "exit" else 2, cases, self.root)
 
+    def test_imported_scope_is_explicit_and_cannot_remove_required_flight(self):
+        cases, report = self.paired()
+        future = {"game": "d1", "scenario": "future", "demo": "future.dximdemo"}
+        for mutation in (
+            "missing",
+            "unknown_role",
+            "blank_reason",
+            "excluded_flight",
+            "duplicate_flight",
+        ):
+            changed = copy.deepcopy(cases)
+            if mutation == "missing":
+                changed.append(future)
+            elif mutation == "unknown_role":
+                changed[1]["imported_d1"]["role"] = "optional"
+            elif mutation == "blank_reason":
+                changed[1]["imported_d1"]["reason"] = " "
+            elif mutation == "excluded_flight":
+                changed[0]["imported_d1"]["role"] = "excluded"
+            else:
+                changed.append(changed[0])
+            with (
+                self.subTest(mutation=mutation),
+                self.assertRaises(runner.parity.EvidenceError),
+            ):
+                runner.imported_d1_scope(changed)
+        excluded = {
+            **future,
+            "imported_d1": {
+                "role": "excluded",
+                "reason": "Retained unsupported import evidence",
+            },
+        }
+        included, omissions = runner.imported_d1_scope(cases + [excluded])
+        self.assertEqual(included, cases)
+        self.assertEqual(
+            omissions,
+            [{"demo": future["demo"], "reason": excluded["imported_d1"]["reason"]}],
+        )
+        scoped = runner.check_paired_report(report, 2, cases + [excluded], self.root)
+        self.assertEqual(scoped["excluded_imported_cases"], omissions)
+        changed = copy.deepcopy(report)
+        changed["cases"].append({"demo": excluded["demo"]})
+        with self.assertRaises(runner.parity.EvidenceError):
+            runner.check_paired_report(changed, 2, cases + [excluded], self.root)
+
+    def test_imported_staging_uses_declarations_and_retains_exclusion_on_failure(self):
+        cases, _ = self.paired()
+        excluded = {
+            "game": "d1",
+            "scenario": "door-lifecycle",
+            "demo": "level-three.dximdemo",
+            "imported_d1": {
+                "role": "excluded",
+                "reason": "Unsupported D2-only wall state",
+            },
+        }
+        # A future case is included when explicitly declared, never silently filtered by its scenario or level
+        future = {
+            "game": "d1",
+            "scenario": "future",
+            "demo": "future.dximdemo",
+            "imported_d1": self.imported_scope("future"),
+        }
+        (self.root / future["demo"]).write_text(json.dumps({**self.header, "level": 3}) + "\n")
+        output = self.root / "imported"
+        output.mkdir()
+        args = argparse.Namespace(
+            repo=self.root,
+            corpus=self.root,
+            output=output,
+            data_d1=self.root,
+            exe_d1=self.demo,
+            exe_d2=self.demo,
+            pwsh="unused",
+            timeout=120,
+            minimum_free_gb=0.01,
+        )
+        report = {}
+        with mock.patch.object(runner, "_run", return_value=1):
+            runner._run_imported(args, cases + [excluded, future], report)
+        self.assertEqual(
+            {p.name for p in (output / "d1-corpus").iterdir()},
+            {c["demo"] for c in cases + [future]},
+        )
+        self.assertEqual(report["paired"]["status"], "fail")
+        self.assertEqual(
+            report["paired"]["excluded_imported_cases"][0]["reason"],
+            excluded["imported_d1"]["reason"],
+        )
+
     def test_both_backends_attempt_complete_inventory_and_preserve_failure(self):
         corpus = self.root / "corpus"
         corpus.mkdir()
@@ -284,7 +395,14 @@ class RuntimeGateTests(unittest.TestCase):
             demo = f"{game}-{scenario}.dximdemo"
             (corpus / demo).write_text("fixture")
             cases.append(
-                {"game": game, "scenario": scenario, "demo": demo, "oracle": demo + ".oracle.json", "actions": {}}
+                {
+                    "game": game,
+                    "scenario": scenario,
+                    "demo": demo,
+                    "oracle": demo + ".oracle.json",
+                    "actions": {},
+                    "imported_d1": self.imported_scope(scenario),
+                }
             )
         for backend in ("headless", "graphics"):
             output = self.root / backend
@@ -312,7 +430,10 @@ class RuntimeGateTests(unittest.TestCase):
             report = json.loads((output / "report.json").read_text())
             self.assertEqual(len(report["native_runs"]), 2 * len(cases))
             self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
-            self.assertEqual(report["paired"]["status"], "fail" if backend == "graphics" else "not_run")
+            self.assertEqual(
+                report["paired"]["status"],
+                "fail" if backend == "graphics" else "not_run",
+            )
             for row in report["native_runs"]:
                 self.assertEqual(row["backend"], backend)
                 self.assertEqual(
@@ -489,12 +610,25 @@ class RuntimeGateTests(unittest.TestCase):
             for game, scenario in runner.PUBLIC_CASES
         ]
         manifest = self.root / "manifest.json"
+        imported = {
+            "schema": 1,
+            "cases": {case["demo"]: self.imported_scope(case["scenario"]) for case in cases if case["game"] == "d1"},
+        }
 
         def valid_pair(demo, oracle):
-            return {"game": demo.name[:2], "level": 2 if "shoot-switch" in demo.name else 1}, ({"combat_observations": {}} if "combat" in demo.name else {})
+            game = demo.name[:2]
+            level = 2 if "shoot-switch" in demo.name else 3 if game == "d1" and "door-lifecycle" in demo.name else 1
+            observations = (
+                "combat_observations"
+                if "combat" in demo.name
+                else "door_observations"
+                if "door-lifecycle" in demo.name
+                else None
+            )
+            return {"game": game, "level": level}, ({observations: {}} if observations else {})
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
-            manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
+            manifest.write_text(json.dumps({"schema": 1, "cases": cases, "imported_d1": imported}))
             self.assertEqual(len(runner.load_corpus(self.root)), len(runner.PUBLIC_CASES))
             for mutation in (
                 "missing",
@@ -526,8 +660,41 @@ class RuntimeGateTests(unittest.TestCase):
                     changed[0]["demo"] = "C:escaped.dximdemo"
                 else:
                     changed[0].pop("actions")
-                manifest.write_text(json.dumps({"schema": 1, "cases": changed}))
-                with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
+                manifest.write_text(json.dumps({"schema": 1, "cases": changed, "imported_d1": imported}))
+                with (
+                    self.subTest(mutation=mutation),
+                    self.assertRaises(runner.parity.EvidenceError),
+                ):
+                    runner.load_corpus(self.root)
+            for mutation in (
+                "missing_case",
+                "extra_case",
+                "missing_schema",
+                "missing_inventory",
+                "bool_schema",
+                "float_schema",
+                "extra_key",
+            ):
+                changed = copy.deepcopy(imported)
+                if mutation == "missing_case":
+                    changed["cases"].pop(next(iter(changed["cases"])))
+                elif mutation == "extra_case":
+                    changed["cases"]["unknown.dximdemo"] = self.imported_scope("unknown")
+                elif mutation == "missing_schema":
+                    changed.pop("schema")
+                elif mutation == "bool_schema":
+                    changed["schema"] = True
+                elif mutation == "float_schema":
+                    changed["schema"] = 1.0
+                elif mutation == "extra_key":
+                    changed["unknown"] = True
+                else:
+                    changed = None
+                manifest.write_text(json.dumps({"schema": 1, "cases": cases, "imported_d1": changed}))
+                with (
+                    self.subTest(mutation=mutation),
+                    self.assertRaises(runner.parity.EvidenceError),
+                ):
                     runner.load_corpus(self.root)
 
 
@@ -546,6 +713,22 @@ class RealNegativeCorpusTests(unittest.TestCase):
             oracle.pop("combat_observations")
             path.write_text(json.dumps(oracle))
             with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
+                runner.load_corpus(destination)
+
+    def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "door-lifecycle")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("door_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
                 runner.load_corpus(destination)
 
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
@@ -576,6 +759,11 @@ class RealNegativeCorpusTests(unittest.TestCase):
                             if case["scenario"] == "combat":
                                 before["input"].setdefault("s", {})["f1s"] = 0
                                 self.assertEqual(after["input"]["s"]["f1s"], 0)
+                            elif case["scenario"] == "door-lifecycle":
+                                release = next(row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2)
+                                if before["f"] >= release:
+                                    self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
+                                    before["input"] = after["input"]
                             else:
                                 self.assertEqual(after["input"], {})
                                 before["input"] = {}

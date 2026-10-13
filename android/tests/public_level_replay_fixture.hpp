@@ -8,6 +8,62 @@ extern PHYSFS_file *outfile;
 int input_demo_configure_startup_fp_environment(char *, size_t);
 }
 
+// Ordinary control helpers never write pose, velocity or simulation state
+static void public_capture_hold(const vms_vector &point, fix braking = 2)
+{
+	vms_vector delta;
+	vm_vec_sub(&delta, &point, &ConsoleObject->pos);
+	const auto thrust = [&](const vms_vector &axis) {
+		const fix error = vm_vec_dot(&delta, &axis) - vm_vec_dot(&ConsoleObject->mtype.phys_info.velocity, &axis) / braking;
+		return error > F1_0 / 4 ? FrameTime : error < -F1_0 / 4 ? -FrameTime : 0;
+	};
+	Controls.forward_thrust_time = thrust(ConsoleObject->orient.fvec);
+	Controls.sideways_thrust_time = thrust(ConsoleObject->orient.rvec);
+	Controls.vertical_thrust_time = thrust(ConsoleObject->orient.uvec);
+}
+
+static void public_capture_aim(vms_vector point)
+{
+	vms_vector direction;
+	vm_vec_normalized_dir(&direction, &point, &ConsoleObject->pos);
+	const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime : 0; };
+	Controls.heading_time = turn(vm_vec_dot(&direction, &ConsoleObject->orient.rvec) - ConsoleObject->mtype.phys_info.rotvel.y * 2);
+	Controls.pitch_time = turn(-vm_vec_dot(&direction, &ConsoleObject->orient.uvec) - ConsoleObject->mtype.phys_info.rotvel.x * 2);
+}
+
+static std::vector<vms_vector> public_capture_route_to(int goal)
+{
+		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ ConsoleObject->segnum };
+		const int origin = ConsoleObject->segnum;
+		parent[origin] = origin;
+		for (size_t q = 0; q < queue.size() && parent[goal] < 0; ++q)
+			for (int side = 0; side < 6; ++side) {
+				const int seg = queue[q], child = Segments[seg].children[side], wall = Segments[seg].sides[side].wall_num;
+				if (child < 0 || parent[child] >= 0) continue;
+				if (wall >= 0 && !(Walls[wall].type == WALL_OPEN || Walls[wall].type == WALL_ILLUSION || (Walls[wall].type == WALL_DOOR && !(Walls[wall].flags & WALL_DOOR_LOCKED) && Walls[wall].keys == KEY_NONE))) continue;
+				parent[child] = seg;
+				queue.push_back(child);
+			}
+		require(parent[goal] >= 0, "unlocked passage reachable with ordinary controls");
+		std::vector<int> path;
+		for (int seg = goal; seg != origin; seg = parent[seg]) path.push_back(seg);
+		std::reverse(path.begin(), path.end());
+		std::vector<vms_vector> waypoints;
+		int previous = origin;
+		for (int seg : path) {
+			vms_vector point;
+			for (int side = 0; side < 6; ++side)
+				if (Segments[previous].children[side] == seg) {
+					compute_center_point_on_side(&point, &Segments[previous], side);
+					waypoints.push_back(point);
+				}
+			compute_segment_center(&point, &Segments[seg]);
+			waypoints.push_back(point);
+			previous = seg;
+		}
+	return waypoints;
+}
+
 static void capture_public_level_replay(const char *directory, const char *scenario)
 {
 	using nlohmann::json;
@@ -24,6 +80,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount pinned public resources");
 	const bool screenshots = std::getenv("DXX_PUBLIC_CAPTURE_SCREENSHOTS") != nullptr;
 	char error[256] = "";
+	char trace_source[] = __FILE__;
 	require(input_demo_configure_startup_fp_environment(error, sizeof(error)), error);
 	Game_mode = 0;
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
@@ -60,13 +117,14 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	std::strcpy(Players[0].callsign, "public");
 	Difficulty_level = 2;
 	input_demo_set_skip_level_intro(1);
+	const bool door_lifecycle = std::strcmp(scenario, "door-lifecycle") == 0;
 	const bool combat = std::strcmp(scenario, "combat") == 0;
 	const bool shoot_switch = std::strcmp(scenario, "shoot-switch") == 0;
 #ifdef DXX_BUILD_DESCENT_II
 	const int level = shoot_switch ? 2 : 1;
 #else
 	require(!shoot_switch, "shoot-switch capture requires D2");
-	const int level = 1;
+	const int level = door_lifecycle ? 3 : 1;
 #endif
 	StartNewGame(level);
 	if (!Game_wind) ::game();
@@ -108,8 +166,8 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
 	const bool flight = std::strcmp(scenario, "flight") == 0;
 	const bool pickup = std::strcmp(scenario, "pickup") == 0;
-	require(flight || pickup || shoot_switch || combat || std::strcmp(scenario, "door") == 0, "known public scenario");
-	const int frame_count = flight ? 360 : 600;
+	require(flight || pickup || shoot_switch || combat || door_lifecycle || std::strcmp(scenario, "door") == 0, "known public scenario");
+	const int frame_count = flight ? 360 : door_lifecycle ? 900 : 600;
 	require(input_demo_state_trace_start("capture-observation.jsonl", "record", game_name, settings.mission, level, Difficulty_level, "new_level", frame_count, error, sizeof(error)), error);
 	const auto position = [](const vms_vector &p) { return json::array({ p.x, p.y, p.z }); };
 	const auto start = ConsoleObject->pos;
@@ -192,7 +250,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			previous = seg;
 		}
 		waypoints.push_back(destination);
-		if (!pickup && !shoot_switch && !combat) {
+		if (!pickup && !shoot_switch && !combat && !door_lifecycle) {
 			const int child = Segments[goal].children[Walls[target].sidenum];
 			require(child >= 0, "door has a real neighboring segment");
 			compute_segment_center(&destination, &Segments[child]);
@@ -212,38 +270,32 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	vms_vector switch_center = {};
 	if (shoot_switch) compute_center_point_on_side(&switch_center, &Segments[84], 2);
 	const auto append_route = [&](int goal) {
-		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ ConsoleObject->segnum };
-		const int origin = ConsoleObject->segnum;
-		parent[origin] = origin;
-		for (size_t q = 0; q < queue.size() && parent[goal] < 0; ++q)
-			for (int side = 0; side < 6; ++side) {
-				const int seg = queue[q], child = Segments[seg].children[side], wall = Segments[seg].sides[side].wall_num;
-				if (child < 0 || parent[child] >= 0) continue;
-				if (wall >= 0 && !(Walls[wall].type == WALL_OPEN || Walls[wall].type == WALL_ILLUSION || (Walls[wall].type == WALL_DOOR && !(Walls[wall].flags & WALL_DOOR_LOCKED) && Walls[wall].keys == KEY_NONE))) continue;
-				parent[child] = seg;
-				queue.push_back(child);
-			}
-		require(parent[goal] >= 0, "unlocked passage reachable with ordinary controls");
-		std::vector<int> path;
-		for (int seg = goal; seg != origin; seg = parent[seg]) path.push_back(seg);
-		std::reverse(path.begin(), path.end());
-		waypoints.clear();
+		waypoints = public_capture_route_to(goal);
 		waypoint = 0;
-		int previous = origin;
-		for (int seg : path) {
-			vms_vector point;
-			for (int side = 0; side < 6; ++side)
-				if (Segments[previous].children[side] == seg) {
-					compute_center_point_on_side(&point, &Segments[previous], side);
-					waypoints.push_back(point);
-				}
-			compute_segment_center(&point, &Segments[seg]);
-			waypoints.push_back(point);
-			previous = seg;
-		}
 	};
+	int door_stage = 0, blocked_frames = 0, first_wait_frame = -1, door_stage_frame = 0;
+	int door_back = -1, door_threat = -1;
+	vms_vector door_center = {}, door_clear = {}, door_destination = {};
+	json door_events = json::array();
+	if (door_lifecycle) {
+		auto &wall = Walls[target];
+		require(wall.flags & WALL_DOOR_AUTO, "selected authored door closes automatically");
+		auto &front = Segments[wall.segnum];
+		auto &back = Segments[front.children[wall.sidenum]];
+		door_back = back.sides[find_connect_side(&front, &back)].wall_num;
+		require(door_back >= 0, "authored automatic door has both wall faces");
+		compute_center_point_on_side(&door_center, &front, wall.sidenum);
+		compute_segment_center(&door_clear, &front);
+		vms_vector normal;
+		vm_vec_normalized_dir(&normal, &door_clear, &door_center);
+		vm_vec_scale_add(&door_clear, &door_center, &normal, 12 * F1_0);
+		compute_segment_center(&door_destination, &back);
+		std::printf("DOOR front=%d/%d/%d back=%d/%d/%d size=%d animation=%d frames=%d\n", target, wall.segnum, wall.sidenum, door_back, Walls[door_back].segnum, Walls[door_back].sidenum, ConsoleObject->size, WallAnims[wall.clip_num].play_time, WallAnims[wall.clip_num].num_frames);
+	}
+	if (door_lifecycle) require(input_demo_door_trace_write(0, "restored", error, sizeof(error)), error);
 	for (int frame = 0; frame < frame_count; ++frame) {
-		FrameTime = F1_0 / (flight ? 60 : 30);
+		if (door_lifecycle) require(input_demo_door_trace_write(frame, nullptr, error, sizeof(error)), error);
+		FrameTime = F1_0 / (flight ? 60 : door_lifecycle ? 20 : 30);
 		Controls = {};
 		if (flight) {
 			if (frame < 300) Controls.forward_thrust_time = -FrameTime;
@@ -262,7 +314,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				Controls.vertical_thrust_time = thrust(ConsoleObject->orient.uvec);
 			}
 		}
-		if (!pickup && !shoot_switch && !combat && frame < 180) Controls.fire_primary_state = 1;
+		if (!pickup && !shoot_switch && !combat && !door_lifecycle && frame < 180) Controls.fire_primary_state = 1;
 		if (shoot_switch && action_frame < 0 && ConsoleObject->segnum == 84) {
 			vms_vector direction;
 			vm_vec_normalized_dir(&direction, &switch_center, &ConsoleObject->pos);
@@ -296,6 +348,30 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				Controls.heading_time = turn(horizontal - ConsoleObject->mtype.phys_info.rotvel.y * 2);
 				Controls.pitch_time = turn(-vertical - ConsoleObject->mtype.phys_info.rotvel.x * 2);
 				if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 98 / 100) Controls.fire_primary_state = 1;
+			}
+		}
+		if (door_lifecycle) {
+			if (door_stage || waypoint + 1 >= waypoints.size())
+				public_capture_hold(door_stage == 2 || door_stage == 4 ? door_clear : door_stage == 6 ? door_destination : door_center);
+			public_capture_aim(door_stage == 2 || door_stage == 4 ? door_center : door_destination);
+			if (door_stage <= 1) {
+				int threat = door_threat;
+				if (threat >= 0 && (Objects[threat].type != OBJ_ROBOT || Objects[threat].shields < 0 || !object_to_object_visibility(ConsoleObject, &Objects[threat], 0))) threat = -1;
+				fix distance = 160 * F1_0;
+				for (int i = 0; threat < 0 && i <= Highest_object_index; ++i)
+					if (Objects[i].type == OBJ_ROBOT && Objects[i].shields >= 0 && !(Objects[i].flags & OF_EXPLODING) && vm_vec_dist(&Objects[i].pos, &ConsoleObject->pos) < distance && object_to_object_visibility(ConsoleObject, &Objects[i], 0)) {
+						threat = i; distance = vm_vec_dist(&Objects[i].pos, &ConsoleObject->pos);
+					}
+				if (door_threat != threat) std::printf("DOOR threat=%d frame=%d\n", threat, frame);
+				door_threat = threat;
+				if (threat >= 0) {
+					public_capture_aim(Objects[threat].pos);
+					vms_vector direction;
+					vm_vec_normalized_dir(&direction, &Objects[threat].pos, &ConsoleObject->pos);
+					if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 98 / 100) {
+						Controls.fire_primary_state = 1;
+					}
+				}
 			}
 		}
 		if (combat && action_frame >= 0) Controls = {};
@@ -332,15 +408,52 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				GameArg.SysInputDemoNoRender = 1;
 			}
 		}
+		if (door_lifecycle) {
+			const auto &wall = Walls[target];
+			require(Players[Player_num].shields >= 0, "door capture player survived ordinary combat");
+			if (frame % 40 == 0) {
+				std::printf("DOOR tick=%d state=%d/%d stage=%d position=%d/%d/%d segment=%d shields=%d\n", frame, wall.state, Walls[door_back].state, door_stage, ConsoleObject->pos.x, ConsoleObject->pos.y, ConsoleObject->pos.z, ConsoleObject->segnum, Players[0].shields);
+			}
+			const bool poke = (ConsoleObject->segnum == wall.segnum && (get_seg_masks(&ConsoleObject->pos, wall.segnum, ConsoleObject->size, trace_source, __LINE__).sidemask & (1 << wall.sidenum))) || (ConsoleObject->segnum == Walls[door_back].segnum && (get_seg_masks(&ConsoleObject->pos, Walls[door_back].segnum, ConsoleObject->size, trace_source, __LINE__).sidemask & (1 << Walls[door_back].sidenum)));
+			if (first_wait_frame < 0 && wall.state == WALL_DOOR_WAITING) first_wait_frame = frame;
+			if (door_stage == 0 && poke && wall.flags & WALL_DOOR_OPENED) door_stage = 1;
+			if (door_stage == 1) {
+				if (poke && first_wait_frame >= 0 && frame > first_wait_frame + 100) ++blocked_frames;
+				if (blocked_frames >= 20) door_stage = 2;
+			} else if (door_stage == 2 && !poke && wall.state == WALL_DOOR_CLOSING) {
+#ifdef DXX_BUILD_DESCENT_II
+				door_stage = 3;
+#else
+				door_stage = 4;
+#endif
+			} else if (door_stage == 3 && poke && wall.state == WALL_DOOR_OPENING) door_stage = 4;
+			else if (door_stage == 4 && wall.state == WALL_DOOR_CLOSED) door_stage = 5;
+			else if (door_stage == 5 && wall.state == WALL_DOOR_OPENING) door_stage = 6;
+			else if (door_stage == 6 && ConsoleObject->segnum == Walls[door_back].segnum && !poke) door_stage = 7;
+			if (door_events.empty() || door_events.back()["stage"] != door_stage) {
+				door_events.push_back({ { "f", frame }, { "stage", door_stage } });
+				door_stage_frame = frame;
+				std::printf("DOOR stage=%d frame=%d state=%d/%d poke=%d distance=%d shields=%d\n", door_stage, frame, wall.state, Walls[door_back].state, poke, vm_vec_dist(&ConsoleObject->pos, &door_center), Players[0].shields);
+			}
+			require(frame - door_stage_frame < 450, "bounded door lifecycle step made no progress");
+			if (screenshots) {
+				GameArg.SysInputDemoNoRender = 0;
+				game_render_frame_mono(1);
+				if (frame % 20 == 0 || frame == door_stage_frame) { screenshot_frames.push_back(frame); save_screen_shot(1); }
+				GameArg.SysInputDemoNoRender = 1;
+			}
+		}
 		json doors = json::array();
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].type == WALL_DOOR) doors.push_back({ i, Walls[i].state });
 		observations.push_back({ { "f", frame }, { "position", position(ConsoleObject->pos) }, { "segment", int(ConsoleObject->segnum) }, { "energy", int(Players[0].energy) }, { "shields", int(Players[0].shields) }, { "doors", doors }, { "target_shields", combat ? int(Objects[target].shields) : 0 }, { "score", int(Players[0].score) } });
-		if (shoot_switch ? passage_frame >= 0 : combat ? retirement_frame >= 0 : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
+		if (door_lifecycle ? door_stage == 7 : shoot_switch ? passage_frame >= 0 : combat ? retirement_frame >= 0 : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
 	}
+	require(!door_lifecycle || door_stage == 7, "ordinary controls completed obstruction, clearance, close, reopen and traversal");
 	require(!shoot_switch || ((Walls[116].flags & WALL_DOOR_OPENED) && (Walls[117].flags & WALL_DOOR_OPENED)), "both passage doors are open at the traversal boundary");
 	require(!shoot_switch || passage_frame >= 0, "ordinary controls traversed unlocked target passage");
 	require(flight || action_frame >= 0, "ordinary controls reached a real pickup or opened the selected door");
+	if (door_lifecycle) require(input_demo_door_trace_write(observations.size(), "terminal", error, sizeof(error)), error);
 	input_demo_result result;
 	input_demo_capture_current_result(&result);
 	require(input_demo_recorder_flush_with_result("capture.dximdemo", &result, error, sizeof(error)), error);
@@ -349,7 +462,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	require(PHYSFS_close(outfile), "close classic callback sink");
 	outfile = nullptr;
 	Newdemo_state = ND_STATE_NORMAL;
-	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "damage_frame", damage_frame }, { "retirement_frame", retirement_frame }, { "target_shields", target_shields }, { "target_score", target_score }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations }, { "screenshot_frames", screenshot_frames } };
+	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "damage_frame", damage_frame }, { "retirement_frame", retirement_frame }, { "target_shields", target_shields }, { "target_score", target_score }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations }, { "screenshot_frames", screenshot_frames }, { "door_back", door_back }, { "door_events", door_events } };
 	const auto text = report.dump(2) + "\n";
 	write_fixture("capture.json", bytes(text.begin(), text.end()));
 	std::puts("PASS: public level-start capture");

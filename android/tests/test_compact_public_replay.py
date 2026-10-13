@@ -157,6 +157,44 @@ class CompactReplayTests(unittest.TestCase):
         with self.assertRaisesRegex(compact.parity.EvidenceError, "combat observation oracle"):
             compact.validate(self.demo, self.oracle)
 
+    def test_door_observations_are_immutable_live_geometry_evidence(self):
+        live = self.root / "live-door-observations.jsonl"
+        events = [{"type": "door_probe", "f": 0, "blockers": []}, {"type": "door_probe", "f": 1, "blockers": [0]}]
+        self.write(live, events)
+        compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
+        self.write(self.trace, self.trace_rows + events)
+        self.assertEqual(compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)["door_observations_compared"], 2)
+        events[-1]["blockers"] = []
+        self.write(self.trace, self.trace_rows + events)
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "door obstruction"):
+            compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)
+
+    def test_door_observation_schema_and_source_are_strict(self):
+        live = self.root / "live-door-observations.jsonl"
+        self.write(live, [])
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "live obstruction"):
+            compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
+        self.write(live, [{"type": "door_probe"}, {"type": "door_probe"}])
+        self.provenance["source_revision"] = "b" * 40
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
+        self.provenance["source_revision"] = "a" * 40
+        compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
+        oracle = json.loads(self.oracle.read_bytes())
+        oracle["door_observations"]["count"] = True
+        self.oracle.write_text(json.dumps(oracle))
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "door observation oracle"):
+            compact.validate(self.demo, self.oracle)
+
+    def test_d1_level_three_is_an_ordinary_public_start(self):
+        self.header["level"] = 3
+        self.result["level"] = 3
+        self.write(self.full, self.rows)
+        self.pack()
+        header, oracle = compact.validate(self.demo, self.oracle)
+        self.assertEqual(header["level"], 3)
+        self.assertEqual(oracle["level"], 3)
+
     def test_d2_public_identity_and_assets(self):
         self.header.update(game="d2", mission="d2demo")
         self.result.update(game="d2", mission="d2demo")
