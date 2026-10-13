@@ -234,7 +234,7 @@ class CaptureGateTests(unittest.TestCase):
             capture.capture(self.args)
         self.assertEqual(self.manifest()["status"], "failed")
         self.assertTrue(self.manifest()["capture_invoked"])
-        self.assertIn("raw/capture.dximdemo", self.manifest()["files"])
+        self.assertIn(str(Path("raw/capture.dximdemo")), self.manifest()["files"])
 
     def test_non_native_recording_fails(self):
         self.record_game = "d2"
@@ -256,7 +256,7 @@ class CaptureGateTests(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             capture.capture(self.args)
         self.assertEqual(self.manifest()["stage"], "capture")
-        self.assertIn("raw/capture.dximdemo", self.manifest()["files"])
+        self.assertIn(str(Path("raw/capture.dximdemo")), self.manifest()["files"])
 
     def test_success_order_hashes_and_isolation(self):
         self.args.no_missile = True
@@ -273,7 +273,7 @@ class CaptureGateTests(unittest.TestCase):
         self.assertEqual(self.capture_env["DXX_PUBLIC_CAPTURE_NO_MISSILE"], "1")
         self.assertEqual(self.capture_env["DXX_PUBLIC_CAPTURE_SCREENSHOTS"], "1")
         raw = self.args.output / "raw/capture.dximdemo"
-        self.assertEqual(result["files"]["raw/capture.dximdemo"]["sha256"], capture.digest(raw))
+        self.assertEqual(result["files"][str(raw.relative_to(self.args.output))]["sha256"], capture.digest(raw))
 
     def test_effect_uses_dedicated_fixture(self):
         self.args.scenario = "effect-phase"
