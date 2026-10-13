@@ -11,8 +11,9 @@ import compact_public_replay as compact
 import compact_public_gameplay_parity as gameplay
 import d1_replay_parity as parity
 import public_switch_replay as shoot_switch
+import public_robot_combat_replay as robot_combat
 
-SCENARIOS = ("flight", "pickup", "door")
+SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
 PUBLIC_CASES[("d2", "shoot-switch")] = 2
 
@@ -43,7 +44,9 @@ def load_corpus(directory):
             ):
                 raise parity.EvidenceError("Corpus companions must have unique plain filenames")
             filenames.add(name)
-        header, _ = compact.validate(directory / case["demo"], directory / case["oracle"])
+        header, oracle = compact.validate(directory / case["demo"], directory / case["oracle"])
+        if ("combat_observations" in oracle) != (case["scenario"] == "combat"):
+            raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
         if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
             raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
@@ -112,11 +115,21 @@ def verify_actions(case, demo, state_trace, actual_result):
     action_frame = actions.get("action_frame")
     if action_frame is not None and (type(action_frame) is not int or not -1 <= action_frame < len(frames)):
         raise parity.EvidenceError("Invalid declared action frame")
-    if scenario in ("flight", "door", "shoot-switch") and (weapons <= 0 or not energy_drop):
+    # Prove the identified kill before the generic firing guard, so no-fire combat
+    # controls exercise causal robot outcomes rather than just weapon presence
+    combat_actions = robot_combat.verify(actions, header, states, state_trace) if scenario == "combat" else None
+    if scenario in ("flight", "door", "shoot-switch", "combat") and (weapons <= 0 or not energy_drop):
         raise parity.EvidenceError("Replay did not create live player weapons and spend energy")
-    result = {"movement": True, "max_player_weapons": weapons, "energy_fell": energy_drop}
+    result = {
+        "movement": True,
+        "max_player_weapons": weapons,
+        "energy_fell": energy_drop,
+    }
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
+        return result
+    if scenario == "combat":
+        result.update(combat_actions)
         return result
     if scenario == "pickup":
         gain_frame = actions.get("pickup_gain_frame")

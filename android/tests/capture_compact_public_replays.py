@@ -29,7 +29,7 @@ def capture(args):
             "asset_sha256": hashes,
         }
         for candidate_game, scenario in PUBLIC_CASES:
-            if candidate_game != game:
+            if candidate_game != game or (args.scenario and scenario != args.scenario):
                 continue
             directory = args.output / f"{game}-{scenario}"
             directory.mkdir()
@@ -54,6 +54,7 @@ def capture(args):
                 args.output / (stem + ".dximdemo"),
                 args.output / (stem + ".oracle.json"),
                 provenance,
+                combat_trace=directory / "capture-observation.jsonl" if scenario == "combat" else None,
             )
             actions = {
                 key: report[key]
@@ -68,6 +69,14 @@ def capture(args):
                 if len(events) != 1 or events[0].get("shot") != 1 or events[0].get("f") != report["action_frame"]:
                     raise compact.parity.EvidenceError("Live capture lacks a successful projectile-trigger observation")
                 actions.update(shoot_switch.SWITCH, passage_frame=report["passage_frame"])
+            if scenario == "combat":
+                observations = list(compact.parity.records(directory / "capture-observation.jsonl"))
+                hits = [row for row in observations if row.get("type") == "robot_damage"]
+                loots = [row for row in observations if row.get("type") == "robot_loot"]
+                if not hits or len(loots) != 1 or sum(row["died"] for row in hits) != 1:
+                    raise compact.parity.EvidenceError("Live combat lacks identified projectile death and loot resolution")
+                actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score")})
+                actions.update(loot_frame=loots[0]["f"], loot_count=int(loots[0]["created"] >= 0))
             if scenario == "pickup":
                 observations = report["observations"]
                 gains = [
@@ -96,6 +105,7 @@ def main():
     for name in ("repo", "output", "capture-d1", "capture-d2", "data-d1", "data-d2"):
         parser.add_argument("--" + name, required=True, type=lambda value: Path(value).resolve())
     parser.add_argument("--engine-revision", required=True)
+    parser.add_argument("--scenario", choices=sorted({scenario for _, scenario in PUBLIC_CASES}))
     capture(parser.parse_args())
 
 

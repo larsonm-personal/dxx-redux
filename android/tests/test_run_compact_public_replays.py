@@ -141,6 +141,23 @@ class RuntimeGateTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                 self.action("flight", actions, frames, worlds)
 
+    def test_combat_proves_causal_outcome_before_generic_firing_guard(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames:
+            row["diag"]["player_weapon_count"] = 0
+        with mock.patch.object(
+            runner.robot_combat, "verify", side_effect=runner.parity.EvidenceError("identified robot remained alive")
+        ) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "identified robot remained alive"):
+                self.action("combat", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "live player weapons"):
+                self.action("combat", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}):
+            self.assertEqual(self.action("combat", {})["score_awarded"], 200)
+
     def test_pickup_requires_consecutive_gain_at_exact_next_entry(self):
         frames = copy.deepcopy(self.frames)
         for row in frames[3:]:
@@ -436,7 +453,7 @@ class RuntimeGateTests(unittest.TestCase):
         before = path.read_bytes()
         with mock.patch.object(runner.gameplay, "compare_case", return_value=self.scoped_comparison()) as compare:
             scoped = runner.check_paired_report(report, 1, cases, self.root, path)
-            self.assertEqual(compare.call_count, 3)
+            self.assertEqual(compare.call_count, len(report["cases"]))
         self.assertEqual(scoped["status"], "pass")
         self.assertEqual(scoped["qualification"], "incomplete")
         self.assertEqual(path.read_bytes(), before)
@@ -474,7 +491,7 @@ class RuntimeGateTests(unittest.TestCase):
         manifest = self.root / "manifest.json"
 
         def valid_pair(demo, oracle):
-            return {"game": demo.name[:2], "level": 2 if "shoot-switch" in demo.name else 1}, {}
+            return {"game": demo.name[:2], "level": 2 if "shoot-switch" in demo.name else 1}, ({"combat_observations": {}} if "combat" in demo.name else {})
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
             manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
@@ -515,6 +532,22 @@ class RuntimeGateTests(unittest.TestCase):
 
 
 class RealNegativeCorpusTests(unittest.TestCase):
+    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "combat")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("combat_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
+                runner.load_corpus(destination)
+
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
@@ -529,7 +562,8 @@ class RealNegativeCorpusTests(unittest.TestCase):
                     changed = json.loads((destination / case["oracle"]).read_bytes())
                     differences = {key for key in expected if expected[key] != changed[key]}
                     self.assertEqual(
-                        differences, {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"}
+                        differences,
+                        {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"},
                     )
                     original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
                     changed_demo = [json.loads(line) for line in (destination / case["demo"]).read_bytes().splitlines()]
@@ -539,10 +573,17 @@ class RealNegativeCorpusTests(unittest.TestCase):
                         self.assertEqual(original_demo, changed_demo)
                     else:
                         for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
-                            self.assertEqual(after["input"], {})
-                            before["input"] = {}
+                            if case["scenario"] == "combat":
+                                before["input"].setdefault("s", {})["f1s"] = 0
+                                self.assertEqual(after["input"]["s"]["f1s"], 0)
+                            else:
+                                self.assertEqual(after["input"], {})
+                                before["input"] = {}
                             self.assertEqual(before, after)
-        self.assertEqual(originals, {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()})
+        self.assertEqual(
+            originals,
+            {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()},
+        )
 
 
 if __name__ == "__main__":

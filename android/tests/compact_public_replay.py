@@ -45,6 +45,7 @@ HEADER_KEYS = {
 }
 FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag"}
 # Reviewed producers: d1/d2 input_demo_hooks, input_demo_energy_trace and collide
+# D2 gauges score and robot-damage/rotation probes are observational only
 # input_demo_replay.cpp parses only direct_command into executable replay events
 DIAGNOSTIC_EVENTS = frozenset(
     {
@@ -71,6 +72,9 @@ DIAGNOSTIC_EVENTS = frozenset(
         "player_damage",
         "impact",
         "weapon_robot_path",
+        "robot_damage",
+        "score",
+        "probe_phys_apply_rot",
     }
 )
 
@@ -231,7 +235,21 @@ def _rng_hash(path):
     return sha(events), len(events)
 
 
-def pack(full_recording, rng_trace, demo_output, oracle_output, provenance):
+def _combat_build_identity(header, provenance):
+    version = header.get("git_version")
+    if (not isinstance(version, str) or not re.fullmatch(r"[0-9a-f]{7,40}", version)
+        or not provenance["source_revision"].startswith(version)):
+        raise parity.EvidenceError(
+            "Combat capture build revision differs from its exact source; reconfigure CMake and rebuild"
+        )
+
+
+def combat_observations(path):
+    events = [row for row in parity.records(path) if row.get("type") in ("robot_damage", "robot_loot")]
+    return {"schema": 1, "count": len(events), "sha256": sha(events)}
+
+
+def pack(full_recording, rng_trace, demo_output, oracle_output, provenance, combat_trace=None):
     """Derive all expectations from live capture before any replay and write new files."""
     full_recording, demo_output, oracle_output = map(Path, (full_recording, demo_output, oracle_output))
     if (
@@ -275,6 +293,11 @@ def pack(full_recording, rng_trace, demo_output, oracle_output, provenance):
             "compared_on_replay": False,
         },
     }
+    if combat_trace is not None:
+        _combat_build_identity(header, provenance)
+        oracle["combat_observations"] = combat_observations(combat_trace)
+        if oracle["combat_observations"]["count"] < 2:
+            raise parity.EvidenceError("Combat capture requires live damage and loot observations")
     encoded_oracle = (json.dumps(oracle, sort_keys=True, indent=4, ensure_ascii=False, allow_nan=False) + "\n").encode(
         "utf-8"
     )
@@ -295,11 +318,17 @@ def validate(demo, oracle):
     expected = _json(Path(oracle).read_bytes())
     if (
         not isinstance(expected, dict)
-        or set(expected) != ORACLE_KEYS
+        or set(expected) not in (ORACLE_KEYS, ORACLE_KEYS | {"combat_observations"})
         or type(expected["schema"]) is not int
         or expected["schema"] != 1
     ):
         raise parity.EvidenceError("Unexpected compact oracle schema")
+    if "combat_observations" in expected:
+        combat = expected["combat_observations"]
+        if (not isinstance(combat, dict) or set(combat) != {"schema", "count", "sha256"}
+            or type(combat["schema"]) is not int or combat["schema"] != 1
+            or type(combat["count"]) is not int or combat["count"] < 2 or not _digest(combat["sha256"])):
+            raise parity.EvidenceError("Invalid immutable combat observation oracle")
     _no_save(expected)
     header = rows[0]
     for key, value in (
@@ -311,6 +340,8 @@ def validate(demo, oracle):
         if type(expected[key]) is not type(value) or expected[key] != value:
             raise parity.EvidenceError("Oracle identity differs from the compact recording")
     _provenance(expected["provenance"], header["game"])
+    if "combat_observations" in expected:
+        _combat_build_identity(header, expected["provenance"])
     telemetry = expected["removed_telemetry"]
     if (
         not isinstance(telemetry, dict)
@@ -359,4 +390,9 @@ def verify(game, demo, oracle, state_trace, rng_trace, actual_result):
     parity.validate_identity(actual, header, game)
     if sha(actual) != expected["terminal_sha256"]:
         raise parity.EvidenceError("Replay terminal result differs from live capture")
-    return {"status": "pass", "frames_compared": len(hashes), "simulation_events_compared": rng_count}
+    report = {"status": "pass", "frames_compared": len(hashes), "simulation_events_compared": rng_count}
+    if "combat_observations" in expected:
+        if combat_observations(state_trace) != expected["combat_observations"]:
+            raise parity.EvidenceError("Replay combat damage/loot observations differ from live capture")
+        report["combat_observations_compared"] = expected["combat_observations"]["count"]
+    return report

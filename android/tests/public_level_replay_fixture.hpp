@@ -22,6 +22,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 #endif
 	const std::string hog = std::string(directory) + archive;
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount pinned public resources");
+	const bool screenshots = std::getenv("DXX_PUBLIC_CAPTURE_SCREENSHOTS") != nullptr;
 	char error[256] = "";
 	require(input_demo_configure_startup_fp_environment(error, sizeof(error)), error);
 	Game_mode = 0;
@@ -32,7 +33,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
 	load_text();
-	require(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0 && gr_init(Game_screen_mode) == 0, "initialize capture window");
+	const int sdl_status = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
+	if (sdl_status) std::fprintf(stderr, "SDL initialization: %s\n", SDL_GetError());
+	require(sdl_status == 0 && gr_init(Game_screen_mode) == 0, "initialize capture window");
+	if (screenshots) GameArg.DbgGlReadPixelsOk = 1;
 	key_init();
 	mouse_init();
 	char palette[] = "palette.256";
@@ -56,6 +60,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	std::strcpy(Players[0].callsign, "public");
 	Difficulty_level = 2;
 	input_demo_set_skip_level_intro(1);
+	const bool combat = std::strcmp(scenario, "combat") == 0;
 	const bool shoot_switch = std::strcmp(scenario, "shoot-switch") == 0;
 #ifdef DXX_BUILD_DESCENT_II
 	const int level = shoot_switch ? 2 : 1;
@@ -103,12 +108,13 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
 	const bool flight = std::strcmp(scenario, "flight") == 0;
 	const bool pickup = std::strcmp(scenario, "pickup") == 0;
-	require(flight || pickup || shoot_switch || std::strcmp(scenario, "door") == 0, "known public scenario");
+	require(flight || pickup || shoot_switch || combat || std::strcmp(scenario, "door") == 0, "known public scenario");
 	const int frame_count = flight ? 360 : 600;
 	require(input_demo_state_trace_start("capture-observation.jsonl", "record", game_name, settings.mission, level, Difficulty_level, "new_level", frame_count, error, sizeof(error)), error);
 	const auto position = [](const vms_vector &p) { return json::array({ p.x, p.y, p.z }); };
 	const auto start = ConsoleObject->pos;
 	json observations = json::array();
+	json screenshot_frames = json::array();
 	std::vector<vms_vector> waypoints;
 	int target = -1;
 	if (!flight) {
@@ -141,6 +147,16 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			require(Segment2s[217].s2_flags & S2F_AMBIENT_LAVA, "ordinary level startup propagated authored lava ambience");
 			compute_segment_center(&destination, &Segments[goal]);
 #endif
+		} else if (combat) {
+			for (int i = 0; i <= Highest_object_index; ++i)
+				if (Objects[i].type == OBJ_ROBOT && depth[Objects[i].segnum] >= 0 && depth[Objects[i].segnum] < best) {
+					target = i;
+					goal = Objects[i].segnum;
+					best = depth[goal];
+					destination = Objects[i].pos;
+				}
+			require(target >= 0, "reachable authentic public combat robot");
+			std::printf("COMBAT target=%d id=%d segment=%d depth=%d shields=%d score=%d contains=%d/%d/%d definition=%d/%d/%d/%d\n", target, Objects[target].id, goal, best, Objects[target].shields, Robot_info[Objects[target].id].score_value, Objects[target].contains_type, Objects[target].contains_id, Objects[target].contains_count, Robot_info[Objects[target].id].contains_type, Robot_info[Objects[target].id].contains_id, Robot_info[Objects[target].id].contains_count, Robot_info[Objects[target].id].contains_prob);
 		} else if (pickup) {
 			for (int i = 0; i <= Highest_object_index; ++i)
 				if (Objects[i].type == OBJ_POWERUP && depth[Objects[i].segnum] >= 0 && depth[Objects[i].segnum] < best) {
@@ -176,7 +192,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			previous = seg;
 		}
 		waypoints.push_back(destination);
-		if (!pickup && !shoot_switch) {
+		if (!pickup && !shoot_switch && !combat) {
 			const int child = Segments[goal].children[Walls[target].sidenum];
 			require(child >= 0, "door has a real neighboring segment");
 			compute_segment_center(&destination, &Segments[child]);
@@ -184,8 +200,12 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		}
 	}
 	size_t waypoint = 0;
-	const int target_signature = pickup ? Objects[target].signature : -1;
-	const int target_id = pickup ? Objects[target].id : -1;
+	const int target_signature = (pickup || combat) ? Objects[target].signature : -1;
+	const int target_id = (pickup || combat) ? Objects[target].id : -1;
+	const int target_shields = combat ? Objects[target].shields : 0;
+	const int target_score = combat ? Robot_info[target_id].score_value : 0;
+	int damage_frame = -1;
+	int retirement_frame = -1;
 	int action_frame = -1;
 	int contact_frames = 0;
 	int passage_frame = -1;
@@ -242,7 +262,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				Controls.vertical_thrust_time = thrust(ConsoleObject->orient.uvec);
 			}
 		}
-		if (!pickup && !shoot_switch && frame < 180) Controls.fire_primary_state = 1;
+		if (!pickup && !shoot_switch && !combat && frame < 180) Controls.fire_primary_state = 1;
 		if (shoot_switch && action_frame < 0 && ConsoleObject->segnum == 84) {
 			vms_vector direction;
 			vm_vec_normalized_dir(&direction, &switch_center, &ConsoleObject->pos);
@@ -254,13 +274,38 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			Controls.pitch_time = turn(-vertical - ConsoleObject->mtype.phys_info.rotvel.x * 2);
 			if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 99 / 100) Controls.fire_primary_state = 1;
 		}
+
+		if (combat && action_frame < 0) {
+			auto &robot = Objects[target];
+			if (vm_vec_dist(&robot.pos, &ConsoleObject->pos) < 120 * F1_0 && object_to_object_visibility(ConsoleObject, &robot, 0)) {
+				vms_vector direction;
+				vm_vec_normalized_dir(&direction, &robot.pos, &ConsoleObject->pos);
+				vms_vector delta;
+				vm_vec_sub(&delta, &robot.pos, &ConsoleObject->pos);
+				vm_vec_scale_add2(&delta, &direction, -50 * F1_0);
+				const auto hold = [&](const vms_vector &axis) {
+					const fix error = vm_vec_dot(&delta, &axis) - vm_vec_dot(&ConsoleObject->mtype.phys_info.velocity, &axis) / 2;
+					return error > F1_0 ? FrameTime : error < -F1_0 ? -FrameTime : 0;
+				};
+				Controls.forward_thrust_time = hold(ConsoleObject->orient.fvec);
+				Controls.sideways_thrust_time = hold(ConsoleObject->orient.rvec);
+				Controls.vertical_thrust_time = hold(ConsoleObject->orient.uvec);
+				const fix horizontal = vm_vec_dot(&direction, &ConsoleObject->orient.rvec);
+				const fix vertical = vm_vec_dot(&direction, &ConsoleObject->orient.uvec);
+				const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime : 0; };
+				Controls.heading_time = turn(horizontal - ConsoleObject->mtype.phys_info.rotvel.y * 2);
+				Controls.pitch_time = turn(-vertical - ConsoleObject->mtype.phys_info.rotvel.x * 2);
+				if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 98 / 100) Controls.fire_primary_state = 1;
+			}
+		}
+		if (combat && action_frame >= 0) Controls = {};
 		const auto previous_position = ConsoleObject->pos;
 		do_weapon_n_item_stuff();
 		calc_game_time();
 		GameProcessFrame();
 		require(render_update_main_view_objects(), "capture gameplay view state");
 		if (flight && frame > 30 && frame < 300 && vm_vec_dist(&previous_position, &ConsoleObject->pos) < F1_0 / 100) ++contact_frames;
-		if (!flight && !shoot_switch && action_frame < 0 && (pickup ? Objects[target].type != OBJ_POWERUP || Objects[target].signature != target_signature : Walls[target].state == WALL_DOOR_OPENING || Walls[target].state == WALL_DOOR_WAITING)) action_frame = frame;
+		if (!flight && !shoot_switch && !combat && action_frame < 0 && (pickup ? Objects[target].type != OBJ_POWERUP || Objects[target].signature != target_signature : Walls[target].state == WALL_DOOR_OPENING || Walls[target].state == WALL_DOOR_WAITING)) action_frame = frame;
 		if (shoot_switch && action_frame < 0 && !(Walls[116].flags & WALL_DOOR_LOCKED) && !(Walls[117].flags & WALL_DOOR_LOCKED)) {
 			action_frame = frame;
 			append_route(Walls[116].segnum);
@@ -271,11 +316,27 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			waypoints.push_back(point);
 		}
 		if (shoot_switch && action_frame >= 0 && ConsoleObject->segnum == Walls[117].segnum && passage_frame < 0) passage_frame = frame;
+
+		if (combat) {
+			if (frame % 30 == 0) std::printf("COMBAT frame=%d segment=%d target_segment=%d waypoints=%zu/%zu shields=%d score=%d fire=%d\n", frame, ConsoleObject->segnum, Objects[target].segnum, waypoint, waypoints.size(), Objects[target].shields, Players[0].score, Controls.fire_primary_state);
+			if (damage_frame < 0 && Objects[target].shields < target_shields) damage_frame = frame;
+			if (action_frame < 0 && Objects[target].shields < 0 && Players[0].score >= target_score) action_frame = frame;
+			if (retirement_frame < 0 && (Objects[target].type != OBJ_ROBOT || Objects[target].signature != target_signature)) retirement_frame = frame;
+			if (screenshots) {
+				GameArg.SysInputDemoNoRender = 0;
+				game_render_frame_mono(1);
+				if (frame % 30 == 0 || frame == damage_frame || frame == action_frame) {
+					screenshot_frames.push_back(frame);
+					save_screen_shot(1);
+				}
+				GameArg.SysInputDemoNoRender = 1;
+			}
+		}
 		json doors = json::array();
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].type == WALL_DOOR) doors.push_back({ i, Walls[i].state });
-		observations.push_back({ { "f", frame }, { "position", position(ConsoleObject->pos) }, { "segment", int(ConsoleObject->segnum) }, { "energy", int(Players[0].energy) }, { "shields", int(Players[0].shields) }, { "doors", doors } });
-		if (shoot_switch ? passage_frame >= 0 : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
+		observations.push_back({ { "f", frame }, { "position", position(ConsoleObject->pos) }, { "segment", int(ConsoleObject->segnum) }, { "energy", int(Players[0].energy) }, { "shields", int(Players[0].shields) }, { "doors", doors }, { "target_shields", combat ? int(Objects[target].shields) : 0 }, { "score", int(Players[0].score) } });
+		if (shoot_switch ? passage_frame >= 0 : combat ? retirement_frame >= 0 : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
 	}
 	require(!shoot_switch || ((Walls[116].flags & WALL_DOOR_OPENED) && (Walls[117].flags & WALL_DOOR_OPENED)), "both passage doors are open at the traversal boundary");
 	require(!shoot_switch || passage_frame >= 0, "ordinary controls traversed unlocked target passage");
@@ -288,7 +349,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	require(PHYSFS_close(outfile), "close classic callback sink");
 	outfile = nullptr;
 	Newdemo_state = ND_STATE_NORMAL;
-	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations } };
+	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "damage_frame", damage_frame }, { "retirement_frame", retirement_frame }, { "target_shields", target_shields }, { "target_score", target_score }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations }, { "screenshot_frames", screenshot_frames } };
 	const auto text = report.dump(2) + "\n";
 	write_fixture("capture.json", bytes(text.begin(), text.end()));
 	std::puts("PASS: public level-start capture");

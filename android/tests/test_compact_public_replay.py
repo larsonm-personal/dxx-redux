@@ -22,7 +22,7 @@ class CompactReplayTests(unittest.TestCase):
             "game": "d1",
             "mission": "d1",
             "build_number": 1,
-            "git_version": "unit",
+            "git_version": "a" * 8,
             "arch": "x86_64",
             "level": 1,
             "difficulty": 2,
@@ -106,6 +106,56 @@ class CompactReplayTests(unittest.TestCase):
         )
         with self.assertRaises(compact.parity.EvidenceError):
             self.pack()
+
+    def test_combat_observations_are_immutable_live_capture_evidence(self):
+        live = self.root / "live-observations.jsonl"
+        events = [
+            {"type": "robot_damage", "f": 1, "new_shields": -1},
+            {"type": "robot_loot", "f": 2, "chance_roll": 17896, "created": -1},
+        ]
+        self.write(live, self.trace_rows + events)
+        compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, combat_trace=live)
+        self.write(self.trace, self.trace_rows + events)
+        result = compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)
+        self.assertEqual(result["combat_observations_compared"], 2)
+        events[-1]["chance_roll"] += 1
+        self.write(self.trace, self.trace_rows + events)
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "combat damage/loot"):
+            compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)
+        self.assertEqual(compact.combat_observations(live)["count"], 2)
+
+    def test_combat_rejects_stale_or_unbound_compiled_source_identity(self):
+        live = self.root / "live-observations.jsonl"
+        self.write(live, [{"type": "robot_damage"}, {"type": "robot_loot"}])
+        for version in ("unit", "b" * 8, "a" * 6, "a" * 41, "", True):
+            self.header["git_version"] = version
+            self.write(self.full, self.rows)
+            with self.subTest(version=version), self.assertRaises(compact.parity.EvidenceError):
+                compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, combat_trace=live)
+            self.assertFalse(self.demo.exists())
+            self.assertFalse(self.oracle.exists())
+        self.header["git_version"] = self.provenance["source_revision"]
+        self.write(self.full, self.rows)
+        compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, combat_trace=live)
+        compact.validate(self.demo, self.oracle)
+        oracle = json.loads(self.oracle.read_text())
+        oracle["provenance"]["source_revision"] = "b" * 40
+        self.oracle.write_text(json.dumps(oracle))
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            compact.validate(self.demo, self.oracle)
+
+    def test_combat_observation_schema_and_live_evidence_are_required(self):
+        live = self.root / "live-observations.jsonl"
+        self.write(live, self.trace_rows)
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "live damage and loot"):
+            compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, combat_trace=live)
+        self.assertFalse(self.demo.exists())
+        self.pack()
+        oracle = json.loads(self.oracle.read_text())
+        oracle["combat_observations"] = {"schema": 1, "count": True, "sha256": "a" * 64}
+        self.oracle.write_text(json.dumps(oracle))
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "combat observation oracle"):
+            compact.validate(self.demo, self.oracle)
 
     def test_d2_public_identity_and_assets(self):
         self.header.update(game="d2", mission="d2demo")
