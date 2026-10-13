@@ -266,6 +266,18 @@ frame 13, following a second press eight ticks before the cooldown. Expected con
 four and three respectively in both games. No cooldown or gameplay timing changes
 are made to obtain replay parity.
 
+The four 25-frame secondary scenes were independently captured twice from clean
+source `eba0eee69077fd53e4aee54d04f026f8d7ac9e6c`, retained on
+`capture-public-secondary-ordered-v5`. Repeated recordings and complete oracle
+files are byte-identical. The capture executable and recipe hashes are in each
+oracle; the recorded build identity must match the pinned source revision.
+D1 release-first/mouse-first recordings are 5680/5686 bytes, with 3203-byte
+oracles. D2 recordings are 5943/5969 bytes, with 3906/3907-byte oracles. These
+start at ordinary level spawns and contain no save payload. Optional Xvfb-rendered
+proof screenshots also leave both games' mouse-first recording/oracle bytes
+unchanged. These four native scenes are distinct from the 13 converted recordings;
+all original oracle bytes remain unchanged.
+
 Native modal integration coverage is separate from these small admitted scenes.
 It preserves live rear-view semantic decisions and automap lifecycle/depth effects,
 including a terminal tail with an open virtual map and signature-checked D2 marker

@@ -271,6 +271,66 @@
                 "blast_frame": 177,
                 "damage_frame": 101
             }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-release-first",
+            "demo": "d1-public-secondary-release-first.dximdemo",
+            "oracle": "d1-public-secondary-release-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 4,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "secondary-release-first",
+            "demo": "d2-public-secondary-release-first.dximdemo",
+            "oracle": "d2-public-secondary-release-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 4,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-mouse-first",
+            "demo": "d1-public-secondary-mouse-first.dximdemo",
+            "oracle": "d1-public-secondary-mouse-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 3,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "secondary-mouse-first",
+            "demo": "d2-public-secondary-mouse-first.dximdemo",
+            "oracle": "d2-public-secondary-mouse-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 3,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
         }
     ],
     "imported_d1": {
@@ -299,6 +359,14 @@
             "d1-public-loot.dximdemo": {
                 "role": "diagnostic-only",
                 "reason": "Retain complete imported diagnostics: an earlier robot death awards 200 extra points and SIM actor-signature metadata differs; gameplay and full-simulation compatibility remain unqualified"
+            },
+            "d1-public-secondary-release-first.dximdemo": {
+                "role": "excluded",
+                "reason": "Native D1 ordered SDL dispatch and full replay fidelity are qualified separately; this new camera-contract scene is not imported D1 compatibility coverage"
+            },
+            "d1-public-secondary-mouse-first.dximdemo": {
+                "role": "excluded",
+                "reason": "Native D1 ordered SDL dispatch and full replay fidelity are qualified separately; this new camera-contract scene is not imported D1 compatibility coverage"
             }
         }
     }
