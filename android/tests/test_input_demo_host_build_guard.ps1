@@ -95,3 +95,15 @@ try {
         Remove-Item -LiteralPath $resolvedCaseRoot -Recurse -Force
     }
 }
+
+# D1 default console selection must reach the guard even if a desktop build exists
+$script:GuardedExecutable = $null
+function Ensure-InputDemoExecutable {
+    param($RepoRoot, $GameName, $ExecutablePath, $Description, [switch]$BuildBeforeRun, [switch]$RequireFreshBuild)
+    $script:GuardedExecutable = $ExecutablePath
+}
+foreach ($game in @('d1', 'd2')) {
+    Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $game -PreferHeadlessConsole
+    Assert-True ([IO.Path]::GetFileNameWithoutExtension($script:GuardedExecutable) -eq "dxx-redux-$game-headless") `
+        'The default console path must validate/build the console executable in both games'
+}

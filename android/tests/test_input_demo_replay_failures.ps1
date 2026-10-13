@@ -33,6 +33,7 @@ class ReplayChild {
         int index = Array.IndexOf(args, "-inputdemo-actual-result");
         if (index < 0 || index + 1 >= args.Length) return 24;
         File.WriteAllText(args[index + 1], "{\"frame_count\":1}");
+        if (scenario == "result-hang") { Thread.Sleep(60000); return 0; }
         return scenario == "result-error" ? 17 : 0;
     }
 }
@@ -61,6 +62,7 @@ int main(int argc, char **argv) {
     for (int i = 1; i + 1 < argc; ++i) {
         if (strcmp(argv[i], "-inputdemo-actual-result") == 0) {
             write_text(argv[i + 1], "", "{\"frame_count\":1}");
+            if (strcmp(scenario, "result-hang") == 0) { sleep(60); return 0; }
             return strcmp(scenario, "result-error") == 0 ? 17 : 0;
         }
     }
@@ -84,13 +86,14 @@ int main(int argc, char **argv) {
     $previousScenario = $env:DXX_REPLAY_RUNNER_TEST
     $report = @()
     try {
-        foreach ($scenario in @('prelaunch', 'early', 'timeout', 'result-error', 'mismatch', 'success')) {
+        foreach ($runner in @('headless-console', 'visual')) {
+        foreach ($scenario in @('prelaunch', 'early', 'timeout', 'result-error', 'result-hang', 'mismatch', 'success')) {
             $env:DXX_REPLAY_RUNNER_TEST = $scenario
             $stem = 'runner-' + [guid]::NewGuid().ToString('N')
             $demo = Join-Path $testRoot ($stem + '.dximdemo')
             $expectedFrames = if ($scenario -eq 'mismatch') { 2 } else { 1 }
             @(
-                '{"type":"header","version":4,"game":"d1","mission":"d1","level":1,"start_mode":"level_start","frame_count":1}',
+                '{"type":"header","version":4,"game":"d1","mission":"d1","level":1,"start_mode":"new_level","frame_count":1}',
                 '{"type":"frame","f":0,"ft":2621}',
                 ('{"type":"result","result":{"frame_count":' + $expectedFrames + '}}')
             ) | Set-Content -LiteralPath $demo -Encoding utf8
@@ -98,13 +101,13 @@ int main(int argc, char **argv) {
                 $headerOnly = Get-Content -LiteralPath $demo -TotalCount 1
                 Set-Content -LiteralPath $demo -Value $headerOnly -Encoding utf8
             }
-            $result = Join-Path $testRoot ($scenario + '.result.json')
-            $log = Join-Path $testRoot ($scenario + '.log')
+            $result = Join-Path $testRoot ($runner + '-' + $scenario + '.result.json')
+            $log = Join-Path $testRoot ($runner + '-' + $scenario + '.log')
             & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') `
-                -DemoPath $demo -DataDir $data -ExecutablePath $nativeExe -Runner windowed-no-present `
-                -Mode accelerated -TimeoutSeconds 2 -ResultCopyPath $result -StrictComparison *> $log
+                -DemoPath $demo -DataDir $data -ExecutablePath $nativeExe -Runner $runner `
+                -Mode accelerated -TimeoutSeconds 2 -ResultCopyPath $result -StrictComparison -RequireCleanExit *> $log
             $exitCode = $LASTEXITCODE
-            $archives = @(Get-ChildItem -LiteralPath $testRoot -Directory | Where-Object Name -Like ($scenario + '.result.json.failure_*'))
+            $archives = @(Get-ChildItem -LiteralPath $testRoot -Directory | Where-Object Name -Like ($runner + '-' + $scenario + '.result.json.failure_*'))
             $sandbox = Join-Path $repoRoot ('temp/input_demo_runtime_wrapper/d1/' + $stem)
             if (Test-Path -LiteralPath $sandbox) { throw "$scenario left its staged engine package behind" }
             if ($scenario -eq 'success') {
@@ -119,7 +122,7 @@ int main(int argc, char **argv) {
                     if ($null -ne $failure.process_id -or $null -ne $failure.native_exit_code -or $failure.error -notlike '*does not end with a result record*') {
                         throw 'Prelaunch failure invented a process outcome or lost its cause'
                     }
-                    $report += [ordered]@{ scenario = $scenario; wrapper_exit = $exitCode; passed = $true }
+                    $report += [ordered]@{ runner = $runner; scenario = $scenario; wrapper_exit = $exitCode; passed = $true }
                     continue
                 }
                 if (Get-Process -Id $failure.process_id -ErrorAction SilentlyContinue) { throw "$scenario left its replay child running" }
@@ -136,9 +139,11 @@ int main(int argc, char **argv) {
                 if ($scenario -eq 'result-error' -and ($failure.native_exit_code -ne 17 -or -not (Test-Path -LiteralPath (Join-Path $archive 'result.actual.json')))) {
                     throw 'Result-then-failure was not retained as a failure'
                 }
+                if ($scenario -eq 'result-hang' -and (-not $failure.forced_stop -or $failure.error -notlike '*did not exit cleanly*')) { throw 'Result-then-hang was incorrectly accepted' }
                 if ($scenario -eq 'mismatch' -and $failure.error -notlike '*Result compare failed*') { throw 'Comparison failure details were lost' }
             }
-            $report += [ordered]@{ scenario = $scenario; wrapper_exit = $exitCode; passed = $true }
+            $report += [ordered]@{ runner = $runner; scenario = $scenario; wrapper_exit = $exitCode; passed = $true }
+        }
         }
     } finally {
         $env:DXX_REPLAY_RUNNER_TEST = $previousScenario

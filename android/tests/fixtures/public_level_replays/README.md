@@ -69,11 +69,15 @@ second for route scenes, rounded down to engine fixed-point units.
 ## Reproduce
 
 Prepare public data with `android/helpers/setup_shareware_test_data.ps1 -Game both
--Download`. Build Debug `test_upstream_compat` and `dxx-redux-d1` / `dxx-redux-d2`
-targets. Run under a software-rendered X11 display:
+-Download`. Build the Debug `dxx-redux-d1-headless` and
+`dxx-redux-d2-headless` targets for the primary display-free pass. Build
+`dxx-redux-d1` / `dxx-redux-d2` for the headed pass, and `test_upstream_compat`
+for route capture. Both replay backends use these same immutable oracles:
 
 ```powershell
-./android/tests/test_compact_public_replays.ps1 -D1Exe ./buildd1-replay/main/d1x-redux -D2Exe ./buildd2-replay/main/d2x-redux
+./android/tests/test_input_demo_regressions.ps1 -Corpus public -D1Exe ./buildd1-replay/main/dxx-redux-d1-headless -D2Exe ./buildd2-replay/main/dxx-redux-d2-headless
+# Run this headed path under Xvfb/software-rendered X11 on a cloud machine
+./android/tests/test_input_demo_regressions_graphics.ps1 -Corpus public -D1Exe ./buildd1-replay/main/d1x-redux -D2Exe ./buildd2-replay/main/d2x-redux
 ```
 
 To create candidates in a new temporary directory, use
@@ -107,5 +111,6 @@ unqualified. The longer door trace also has two otherwise-identical SIM events w
 context signatures differ. Door and pickup are native-only required coverage;
 their imported runs are diagnostic probes and cannot satisfy the paired gate.
 Their original and scoped comparison failures remain visible. No normalization
-hides these observations. No full-game or
-Android/headless-console fidelity claim is made.
+hides these observations. Native console and headed fidelity is qualified only
+for the admitted public scenes. No full-game, Android or imported headless-console
+fidelity claim is made.

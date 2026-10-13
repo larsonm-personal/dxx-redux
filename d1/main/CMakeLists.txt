@@ -299,6 +299,10 @@ if(NOT ANDROID)
     list(REMOVE_ITEM D1X_SECRET_AREA_SOURCES inferno.c)
 
     dxx_add_headless_target(
+        dxx-redux-d1-headless
+        ../../android/app/src/main/cpp/headless/input_demo_headless_main.cpp
+        GAME_SOURCES ${D1X_SECRET_AREA_SOURCES})
+    dxx_add_headless_target(
         dxx-redux-d1-headless-metadata
         ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp
         GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}

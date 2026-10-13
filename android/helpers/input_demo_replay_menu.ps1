@@ -28,7 +28,7 @@ function Select-InputDemoReplayDisplay {
     Write-Host 'Playback:' -ForegroundColor Cyan
     Write-Host '  1. Headed - watch in a window at normal speed'
     Write-Host '  2. Headless - accelerated, without rendering'
-    Write-Host '     D1 and D1-in-D2 use the no-present windowed runner'
+    Write-Host '     Native D1/D2 use the console; D1-in-D2 requires a no-present window'
     Write-Host '  Q. Cancel'
     while ($true) {
         switch (([string](& $ReadChoice)).Trim().ToLowerInvariant()) {

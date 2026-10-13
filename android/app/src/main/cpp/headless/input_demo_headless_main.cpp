@@ -1,9 +1,11 @@
 #include "headless_diagnostics.h"
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 #include <SDL.h>
 
+#include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_start.h"
@@ -16,6 +18,9 @@ extern "C" {
 #include "config.h"
 #include "console.h"
 #include "digi.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2.h"
+#endif
 #include "dxxerror.h"
 #include "game.h"
 #include "gr.h"
@@ -24,6 +29,7 @@ extern "C" {
 #include "physfsx.h"
 #include "piggy.h"
 #include "player.h"
+#include "playsave.h"
 #include "screens.h"
 #include "songs.h"
 #include "timer.h"
@@ -36,23 +42,16 @@ extern "C" {
 #undef inline
 #endif
 
-extern "C" void piggy_init_pigfile(char *filename);
+#include "headless_audio.h"
 
-static unsigned char *headless_screen_pixels = NULL;
+#ifdef DXX_BUILD_DESCENT_II
+#define HEADLESS_GAME_NAME "d2"
+#else
+#define HEADLESS_GAME_NAME "d1"
+#endif
 
-static int init_headless_audio(void)
-{
-	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
-
-	GameArg.SndNoMusic = 1;
-	SDL_putenv(sdl_audio_driver);
-	digi_select_system(GameArg.SndDisableSdlMixer ? SDLAUDIO_SYSTEM : SDLMIXER_SYSTEM);
-	if (digi_init())
-		return 0;
-	digi_set_digi_volume(0);
-	songs_set_volume(0);
-	return 1;
-}
+static grs_screen headless_screen;
+static std::vector<unsigned char> headless_screen_pixels;
 
 static const char *find_arg_value(int argc, char *argv[], const char *name)
 {
@@ -87,6 +86,8 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 	int screen_w;
 	int screen_h;
 
+	if (!input_demo_configure_startup_fp_environment(error, error_size))
+		return 0;
 	mem_init();
 	error_init(headless_error);
 	set_warn_func(headless_warning);
@@ -102,12 +103,19 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 		snprintf(error, error_size, "%s", "archive type check failed");
 		return 0;
 	}
-	if (!PHYSFSX_contfile_init("descent2.hog", 1) &&
-	    !PHYSFSX_contfile_init("d2demo.hog", 1)) {
+#ifdef DXX_BUILD_DESCENT_II
+	if (!d1_in_d2_init_base_resources(2)) {
 		snprintf(error, error_size, "%s",
 		         "could not find descent2.hog or d2demo.hog; pass -hogdir <dir> with Descent 2 data files");
 		return 0;
 	}
+#else
+	if (!PHYSFSX_contfile_init("descent.hog", 1)) {
+		snprintf(error, error_size, "%s",
+		         "could not find descent.hog; pass -hogdir <dir> with Descent data files");
+		return 0;
+	}
+#endif
 	load_text();
 	ReadConfigFile();
 	if (!init_headless_audio()) {
@@ -115,28 +123,36 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 		return 0;
 	}
 	PHYSFSX_addArchiveContent();
+#ifdef DXX_BUILD_DESCENT_II
+	gr_use_palette_table(d1_in_d2_startup_palette());
+#else
+	{
+		char palette[] = "palette.256";
+		gr_use_palette_table(palette);
+	}
+#endif
 	gamedata_init();
 	texmerge_init(10);
-	{
-		char groupa_pig[] = "groupa.pig";
-		piggy_init_pigfile(groupa_pig);
-	}
+#ifdef DXX_BUILD_DESCENT_II
+	d1_in_d2_init_startup_bitmaps();
+#endif
 	screen_w = (int) SM_W(Game_screen_mode);
 	screen_h = (int) SM_H(Game_screen_mode);
 	if (!grd_curscreen) {
-		CALLOC(grd_curscreen, grs_screen, 1);
-		MALLOC(headless_screen_pixels, unsigned char, screen_w *screen_h);
-		memset(headless_screen_pixels, 0, (size_t) (screen_w * screen_h));
+		grd_curscreen = &headless_screen;
+		headless_screen_pixels.resize((size_t) screen_w * screen_h, 0);
 		grd_curscreen->sc_mode = Game_screen_mode;
 		grd_curscreen->sc_w = (short) screen_w;
 		grd_curscreen->sc_h = (short) screen_h;
 		grd_curscreen->sc_aspect = fixdiv(grd_curscreen->sc_w * GameCfg.AspectX,
 		                                  grd_curscreen->sc_h * GameCfg.AspectY);
-		gr_init_canvas(&grd_curscreen->sc_canvas, headless_screen_pixels, BM_LINEAR, screen_w, screen_h);
+		gr_init_canvas(&grd_curscreen->sc_canvas, headless_screen_pixels.data(), BM_LINEAR, screen_w, screen_h);
 		gr_set_current_canvas(NULL);
 	}
 	Screen_mode = SCREEN_GAME;
 	init_game();
+	// Headless runs bypass pilot selection but still need valid player defaults
+	new_player_config();
 	Players[Player_num].callsign[0] = '\0';
 	GameArg.SysUseNiceFPS = 0;
 	GameArg.SysInputDemoNoRender = 1;
@@ -164,7 +180,7 @@ int main(int argc, char *argv[])
 	unsigned int frame_count = 0;
 
 	if (!demo_path) {
-		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-actual-result <actual_result.json>] [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>] [-headless-console-output <1|2>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-actual-result <actual_result.json>] [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>] [-headless-console-output <1|2>]\n", argc > 0 ? argv[0] : "dxx-redux-" HEADLESS_GAME_NAME "-headless");
 		return 1;
 	}
 	if (actual_result_arg_index >= 0 && !actual_result_path) {
@@ -203,12 +219,6 @@ int main(int argc, char *argv[])
 		input_demo_replay_unload();
 		return 1;
 	}
-	if (strcmp(input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "", "save_checkpoint")) {
-		fprintf(stderr, "HEADLESS-RUN FAIL unsupported start_mode %s\n",
-		        input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "<missing>");
-		input_demo_replay_unload();
-		return 1;
-	}
 	snprintf(mission_name, sizeof(mission_name), "%s",
 	         input_demo_replay_mission() ? input_demo_replay_mission() : "");
 	snprintf(start_mode, sizeof(start_mode), "%s",
@@ -235,7 +245,7 @@ int main(int argc, char *argv[])
 	if (input_demo_replay_is_loaded())
 		input_demo_finish_replay_without_close();
 
-	printf("HEADLESS-RUN OK game=d2 mission=%s level=%d difficulty=%d start_mode=%s frames=%u result=%s\n",
+	printf("HEADLESS-RUN OK game=" HEADLESS_GAME_NAME " mission=%s level=%d difficulty=%d start_mode=%s frames=%u result=%s\n",
 	       mission_name,
 	       level_num,
 	       difficulty,

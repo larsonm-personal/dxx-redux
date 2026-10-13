@@ -81,6 +81,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "collide.h"
 #include "newdemo.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks_shared.h"
 #include "input_demo_start.h"
 #include "joy.h"
 #include "input_demo_fp_env.h"
@@ -563,7 +564,7 @@ int main(int argc, char *argv[])
 		}
 
 game_event_loop:
-	while (window_get_front())
+	while (window_get_front() && !input_demo_replay_should_exit())
 	{
 #ifdef __ANDROID__
 		android_pause_outer_tick();
@@ -573,6 +574,10 @@ game_event_loop:
 		event_process();
 	}
 	
+	/* Unattended teardown warnings must not open modal dialogs */
+	if (input_demo_replay_should_exit())
+		set_warn_func(warn_printf);
+
 	// Tidy up - avoids a crash on exit
 	{
 		window *wind;
@@ -583,7 +588,8 @@ game_event_loop:
 	}
 
 	WriteConfigFile();
-	show_order_form();
+	if (!input_demo_replay_should_exit())
+		show_order_form();
 
 	con_printf( CON_DEBUG, "\nCleanup...\n" );
 	close_game();

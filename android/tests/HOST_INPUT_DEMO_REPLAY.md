@@ -89,3 +89,19 @@ for separate game directories, invoke `-Game d1` and `-Game d2` separately.
 Public smoke outputs are isolated under `temp/input_demo_runtime_smoke/shareware/`,
 and retail outputs under the adjacent `retail/` directory. This host coverage does
 not test Android launcher import, device storage, or Android rendering.
+
+## True console versus headed replay
+
+`-Runner headless-console -Mode accelerated` runs native D1 and D2 new-level or
+checkpoint demos using dedicated console mains. It does not initialize SDL
+video or create an OpenGL context. Unsupported combinations fail explicitly.
+`-ExecutablePath` works with this runner as well as with desktop runners.
+`-Runner visual` retains normal drawing/presentation; on Linux cloud hosts use
+Xvfb for this headed path. `windowed-no-present` still uses a desktop window and
+is not interchangeable with the console backend.
+
+The compact public corpus is integrated through
+`test_input_demo_regressions.ps1 -Corpus public` (headless default) and
+`test_input_demo_regressions_graphics.ps1 -Corpus public`. See the
+[corpus guide](../regression_demos/README.md#compact-public-corpus-primary-headless-and-secondary-headed)
+for verification scope, runtime negative controls and explicit binary options.

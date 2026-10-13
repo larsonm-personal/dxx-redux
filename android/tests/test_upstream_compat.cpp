@@ -11277,6 +11277,25 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 }
 
 #include "public_level_replay_fixture.hpp"
+#include "../app/src/main/cpp/headless/headless_audio.h"
+
+static void verify_headless_audio_closed()
+{
+	if (SDL_WasInit(SDL_INIT_AUDIO)) {
+		std::fputs("Headless audio is still initialized at process teardown\n", stderr);
+		std::abort();
+	}
+#ifdef USE_SDLMIXER
+	int frequency, channels;
+	Uint16 format;
+	if (Mix_QuerySpec(&frequency, &format, &channels)) {
+		std::fputs("Headless mixer is still open at process teardown\n", stderr);
+		std::abort();
+	}
+#endif
+	std::puts("Headless audio is closed at process teardown");
+}
+
 
 int main(int argc, char **argv)
 {
@@ -11285,6 +11304,13 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 3 && std::strcmp(argv[1], "--headless-audio-lifecycle") == 0) {
+		// This observer runs after the production cleanup and before mem cleanup
+		require(std::atexit(verify_headless_audio_closed) == 0, "register audio teardown observer");
+		require(init_headless_audio(), "initialize the production headless audio runtime");
+		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
+		return std::atoi(argv[2]);
+	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
 		return 0;

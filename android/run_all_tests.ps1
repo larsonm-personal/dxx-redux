@@ -478,6 +478,7 @@ $testTimeouts = @{
     "test_input_demo_regressions"         = 1200
     "test_d1_replay_parity"               = 1800
     "test_compact_public_replays"         = 1800
+    "test_compact_public_replay_failures"  = 3600
     "test_d1_in_d2_standalone"            = 900
     "test_input_demo_regressions_graphics" = 900
     "test_dos_midi_parity"                = 1500
@@ -677,6 +678,7 @@ $noInfraTests = @(
     "test_input_demo_comparison_policy",
     "test_d1_replay_parity",
     "test_compact_public_replays",
+    "test_compact_public_replay_failures",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",

@@ -72,6 +72,9 @@ function Get-InputDemoExecutablePath {
     $suffix = if ($script:InputDemoSanitizer -eq 'address') { '-asan' } else { '' }
     switch ($GameName) {
         'd1' {
+            if ($PreferHeadlessConsole) {
+                return Join-RegressionPath $RepoRoot "buildd1$suffix" 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d1-headless')[0])
+            }
             return Join-RegressionPath $RepoRoot "buildd1$suffix" 'main' ((Get-RegressionHostExecutableNames -BaseName 'd1x-redux')[0])
         }
         'd2' {
@@ -272,7 +275,7 @@ function Ensure-InputDemoGameBuild {
         [switch]$RequireFreshBuild
     )
 
-    $useHeadlessConsole = $PreferHeadlessConsole -and $GameName -eq 'd2'
+    $useHeadlessConsole = $PreferHeadlessConsole
     $description = if ($useHeadlessConsole) { 'Headless executable' } else { 'Executable' }
     $executablePath = Get-InputDemoExecutablePath -RepoRoot $RepoRoot -GameName $GameName -PreferHeadlessConsole:$useHeadlessConsole
 

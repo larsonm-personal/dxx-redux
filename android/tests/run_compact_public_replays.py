@@ -1,7 +1,7 @@
-"""Run the compact public scenes twice and retain strict paired D1 evidence."""
+"""Run compact public scenes twice through the existing headless or visual replay backend."""
 
 import argparse
-import json
+import hashlib
 import os
 import shutil
 import subprocess
@@ -24,7 +24,7 @@ def load_corpus(directory):
     cases = manifest["cases"]
     expected = set(PUBLIC_CASES)
     if len(cases) != len(expected) or {(row.get("game"), row.get("scenario")) for row in cases} != expected:
-        raise parity.EvidenceError("Public corpus requires its exact seven unique game/scenario pairs")
+        raise parity.EvidenceError(f"Public corpus requires its exact {len(expected)} unique game/scenario pairs")
     filenames = set()
     for case in cases:
         if not isinstance(case.get("actions"), dict):
@@ -206,7 +206,7 @@ def check_paired_report(report, exit_code, cases, corpus, report_path=None):
     if len(paired_required) != 1:
         raise parity.EvidenceError("Paired scope requires exactly one D1 flight case")
     rows = report.get("cases", [])
-    if len(rows) != 3 or {Path(row.get("demo", "")).name for row in rows} != set(expected):
+    if len(rows) != len(expected) or {Path(row.get("demo", "")).name for row in rows} != set(expected):
         raise parity.EvidenceError("Paired D1 cases are incomplete or duplicated")
     required = {
         "terminal_result",
@@ -330,7 +330,17 @@ def run(args):
 
 
 def _run_cases(args, cases):
-    report = {"schema": 1, "qualification": "incomplete", "native_runs": [], "paired": {"status": "pending"}}
+    sandbox_token = hashlib.sha256(str(args.output).encode("utf-8")).hexdigest()[:16]
+    report = {
+        "schema": 1,
+        "qualification": "incomplete",
+        "backend": args.run_mode,
+        "native_only": args.native_only,
+        "case_count": len(cases),
+        "expected_native_runs": 2 * len(cases),
+        "native_runs": [],
+        "paired": {"status": "pending"},
+    }
     for case in cases:
         demo, oracle = (args.corpus / case[key] for key in ("demo", "oracle"))
         for repeat in range(2):
@@ -341,6 +351,7 @@ def _run_cases(args, cases):
                 "game": case["game"],
                 "scenario": case["scenario"],
                 "repeat": repeat,
+                "backend": args.run_mode,
                 "status": "fail",
                 "artifacts": {"state": str(state), "rng": str(rng), "result": str(actual)},
             }
@@ -360,10 +371,11 @@ def _run_cases(args, cases):
                 "-DemoPath",
                 str(demo),
                 "-Runner",
-                "fast",
+                "headless-console" if args.run_mode == "headless" else "visual",
                 "-Mode",
                 "accelerated",
                 "-StrictComparison",
+                "-RequireCleanExit",
                 "-StateLogPath",
                 str(state),
                 "-RngLogPath",
@@ -375,7 +387,7 @@ def _run_cases(args, cases):
                 "-MinimumFreeSpaceGB",
                 str(args.minimum_free_gb),
                 "-SandboxSuffix",
-                args.output.name + "-" + directory.name,
+                args.run_mode + "-" + sandbox_token + "-" + directory.name,
             ]
             item["command"] = command
             try:
@@ -389,6 +401,29 @@ def _run_cases(args, cases):
                 item["error"] = str(error)
             report["native_runs"].append(item)
             parity.write_json(args.output / "report.json", report)
+    if args.run_mode == "graphics" and not args.native_only:
+        _run_imported(args, cases, report)
+    else:
+        report["paired"] = {
+            "status": "not_run",
+            "qualification": "incomplete",
+            "reason": "Native-only qualification; imported D1 parity requires the separate full graphics pass",
+        }
+    report["status"] = (
+        "pass"
+        if len(report["native_runs"]) == report["expected_native_runs"]
+        and all(row["status"] == "pass" for row in report["native_runs"])
+        and (args.run_mode == "headless" or args.native_only or report["paired"]["status"] == "pass")
+        else "fail"
+    )
+    parity.write_json(args.output / "report.json", report)
+    print(
+        f"{report['status'].upper()}: compact public replay report {args.output / 'report.json'}; full simulation qualification remains incomplete"
+    )
+    return 0 if report["status"] == "pass" else 1
+
+
+def _run_imported(args, cases, report):
     staged = args.output / "d1-corpus"
     staged.mkdir()
     for case in cases:
@@ -418,7 +453,12 @@ def _run_cases(args, cases):
         str(args.minimum_free_gb),
     ]
     try:
-        code = _run(command, args.output / "paired-runner.log", 9 * (args.timeout + 120) + 120, args.repo)
+        code = _run(
+            command,
+            args.output / "paired-runner.log",
+            3 * sum(case["game"] == "d1" for case in cases) * (args.timeout + 120) + 120,
+            args.repo,
+        )
         report["paired"] = {"status": "fail", "exit_code": code, "original_report": str(paired / "report.json")}
         original = compact._json((paired / "report.json").read_bytes())
         scope = check_paired_report(original, code, cases, args.corpus, paired / "report.json")
@@ -433,22 +473,16 @@ def _run_cases(args, cases):
         )
     except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
         report["paired"].update(status="fail", error=str(error))
-    report["status"] = (
-        "pass"
-        if all(row["status"] == "pass" for row in report["native_runs"]) and report["paired"]["status"] == "pass"
-        else "fail"
-    )
-    parity.write_json(args.output / "report.json", report)
-    print(
-        f"{report['status'].upper()}: compact public replay report {args.output / 'report.json'}; full simulation qualification remains incomplete"
-    )
-    return 0 if report["status"] == "pass" else 1
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("repo", "corpus", "output", "data-d1", "data-d2", "exe-d1", "exe-d2"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument(
+        "--native-only", action="store_true", help="Omit imported parity and report it explicitly as not run"
+    )
+    parser.add_argument("--run-mode", choices=("headless", "graphics"), default="headless")
     parser.add_argument("--pwsh", default="pwsh")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--minimum-free-gb", type=float, default=4)
