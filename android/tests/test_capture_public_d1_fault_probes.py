@@ -41,6 +41,9 @@ class CaptureGateTests(unittest.TestCase):
             revision=self.revision,
             scenario="mine-blast",
             no_missile=False,
+            no_flare=False,
+            flare_delay=0,
+            no_pixel_observation=False,
             screenshots=False,
             pack=False,
             gzip_raw=False,
@@ -124,6 +127,7 @@ class CaptureGateTests(unittest.TestCase):
             "game": self.record_game,
             "mission": "d1",
             "level": 3 if self.args.scenario == "mine-blast" else 1,
+            "difficulty": 0 if self.args.scenario == "fan-transparency" else 2,
             "git_version": self.record_stamp,
             "start_mode": self.record_start,
         }
@@ -138,6 +142,9 @@ class CaptureGateTests(unittest.TestCase):
                     "game": "d1",
                     "scenario": self.args.scenario,
                     "negative_no_missile": self.args.no_missile,
+                    "no_fire": self.args.no_flare,
+                    "fire_delay": self.args.flare_delay,
+                    "pixel_observation": not self.args.no_pixel_observation,
                     "capture_role": "native_d1_reference",
                 }
             )
@@ -318,6 +325,49 @@ class CaptureGateTests(unittest.TestCase):
             capture.capture(self.args)
         self.assertTrue((self.args.output / "raw/capture.dximdemo").is_file())
         self.assertFalse((self.args.output / "raw/capture.dximdemo.gz").exists())
+
+    def test_fan_no_fire_uses_only_its_explicit_environment_option(self):
+        self.args.scenario = "fan-transparency"
+        self.args.no_flare = True
+        result = capture.capture(self.args)
+        self.assertTrue(result["no_flare"])
+        self.assertEqual(self.capture_env["DXX_PUBLIC_FAN_NO_FIRE"], "1")
+        self.assertNotIn("DXX_PUBLIC_CAPTURE_NO_MISSILE", self.capture_env)
+        self.assertNotIn("DXX_PUBLIC_FAN_DELAY", self.capture_env)
+
+    def test_fan_one_frame_delay_is_explicit(self):
+        self.args.scenario = "fan-transparency"
+        self.args.flare_delay = 1
+        result = capture.capture(self.args)
+        self.assertEqual(result["flare_delay"], 1)
+        self.assertEqual(self.capture_env["DXX_PUBLIC_FAN_DELAY"], "1")
+
+    def test_fan_pixel_observation_control_is_explicit(self):
+        self.args.scenario = "fan-transparency"
+        self.args.no_pixel_observation = True
+        result = capture.capture(self.args)
+        self.assertFalse(result["pixel_observation"])
+        self.assertEqual(self.capture_env["DXX_PUBLIC_FAN_NO_PIXEL_OBSERVATION"], "1")
+
+    def test_fan_options_reject_other_recipes_before_build(self):
+        self.args.no_flare = True
+        self.assert_blocked("only to fan-transparency")
+
+    def test_fan_missile_option_is_rejected_before_build(self):
+        self.args.scenario = "fan-transparency"
+        self.args.no_missile = True
+        self.assert_blocked("only to missile and mine")
+
+    def test_fan_combined_controls_rejected_before_build(self):
+        self.args.scenario = "fan-transparency"
+        self.args.no_flare = True
+        self.args.flare_delay = 1
+        self.assert_blocked("captured separately")
+
+    def test_fan_invalid_delay_rejected_before_build(self):
+        self.args.scenario = "fan-transparency"
+        self.args.flare_delay = 2
+        self.assert_blocked("zero or one frame")
 
     def test_existing_output_is_never_replaced(self):
         self.args.output.mkdir()

@@ -11421,6 +11421,11 @@ int main(int argc, char **argv)
 		capture_public_level_replay(argv[2], "gameplay-view-lifecycle", argc == 4);
 		return 0;
 	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-fan-observe") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized fan observation profile");
+		capture_public_level_replay(argv[2], "fan-observe", argc == 4);
+		return 0;
+	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-effect-phase") == 0) {
 		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized effect-phase diagnostic profile");
 		capture_public_level_replay(argv[2], "effect-phase", argc == 4);

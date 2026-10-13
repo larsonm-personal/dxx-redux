@@ -28,8 +28,9 @@ RECIPES = (
     "android/tests/public_effect_phase_fixture.hpp",
     "android/tests/public_missile_fault_fixture.hpp",
     RECORDER,
+    "android/tests/public_fan_fault_fixture.hpp",
 )
-SCENARIOS = ("missile-self-splash", "mine-blast", "effect-phase")
+SCENARIOS = ("missile-self-splash", "mine-blast", "effect-phase", "fan-transparency")
 Error = compact.parity.EvidenceError
 
 
@@ -110,7 +111,7 @@ def run_logged(command, log, **kwargs):
         subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, check=True, **kwargs)
 
 
-def verify_capture(raw, scenario, revision, stamp, no_missile):
+def verify_capture(raw, scenario, revision, stamp, no_missile, no_flare=False, flare_delay=0, pixel_observation=True):
     with (raw / "capture.dximdemo").open() as stream:
         header = compact._json(next(stream))
         if (
@@ -131,7 +132,17 @@ def verify_capture(raw, scenario, revision, stamp, no_missile):
     report = compact._json((raw / "capture.json").read_bytes())
     if report.get("game") != "d1" or report.get("scenario") != scenario:
         raise Error("Capture report identity differs from the requested native D1 recipe")
-    if scenario == "effect-phase":
+    if scenario == "fan-transparency":
+        if (
+            report.get("capture_role") != "native_d1_reference"
+            or report.get("no_fire") is not no_flare
+            or report.get("fire_delay") != flare_delay
+            or report.get("pixel_observation") is not pixel_observation
+        ):
+            raise Error("Fan report differs from the requested native live control and observation profile")
+        if header.get("difficulty") != 0:
+            raise Error("Fan capture must use the declared ordinary trainee start")
+    elif scenario == "effect-phase":
         if report.get("capture_role") != "native_d1_reference":
             raise Error("Effect oracle source must be native D1")
     elif report.get("negative_no_missile") is not no_missile:
@@ -154,6 +165,9 @@ def hash_evidence(output):
 
 
 def capture(args):
+    no_flare = getattr(args, "no_flare", False)
+    flare_delay = getattr(args, "flare_delay", 0)
+    pixel_observation = not getattr(args, "no_pixel_observation", False)
     args.output.mkdir(parents=True, exist_ok=False)
     manifest = {
         "schema": 1,
@@ -163,6 +177,9 @@ def capture(args):
         "source_revision": args.revision,
         "scenario": args.scenario,
         "no_missile": args.no_missile,
+        "no_flare": no_flare,
+        "flare_delay": flare_delay,
+        "pixel_observation": pixel_observation,
         "screenshots": args.screenshots,
     }
     try:
@@ -170,8 +187,14 @@ def capture(args):
             raise Error("Capture timeout must be positive")
         if args.gzip_raw and not args.pack:
             raise Error("--gzip-raw requires successful --pack; raw originals are always retained")
-        if args.no_missile and args.scenario == "effect-phase":
+        if args.no_missile and args.scenario not in ("missile-self-splash", "mine-blast"):
             raise Error("--no-missile applies only to missile and mine recipes")
+        if (no_flare or flare_delay or not pixel_observation) and args.scenario != "fan-transparency":
+            raise Error("Fan control and observation options apply only to fan-transparency")
+        if type(flare_delay) is not int or flare_delay not in (0, 1):
+            raise Error("Fan firing delay must be zero or one frame")
+        if no_flare and flare_delay:
+            raise Error("No-fire and delayed-fire controls must be captured separately")
         hashes = source_identity(args.repo, args.revision)
         build_cache(args.repo, args.build, args.revision)
         validate_assets("d1", args.assets)
@@ -224,6 +247,12 @@ def capture(args):
             environment["DXX_PUBLIC_CAPTURE_SCREENSHOTS"] = "1"
         if args.no_missile:
             environment["DXX_PUBLIC_CAPTURE_NO_MISSILE"] = "1"
+        if no_flare:
+            environment["DXX_PUBLIC_FAN_NO_FIRE"] = "1"
+        if flare_delay:
+            environment["DXX_PUBLIC_FAN_DELAY"] = str(flare_delay)
+        if not pixel_observation:
+            environment["DXX_PUBLIC_FAN_NO_PIXEL_OBSERVATION"] = "1"
         command = (
             [str(exe), "--public-effect-phase", str(args.assets)]
             if args.scenario == "effect-phase"
@@ -233,13 +262,21 @@ def capture(args):
         write_manifest(args.output, manifest)
         run_logged(command, args.output / "capture.log", cwd=raw, env=environment, timeout=args.timeout)
         manifest["stage"] = "verify_capture"
-        manifest["recording_header"] = verify_capture(raw, args.scenario, args.revision, stamp, args.no_missile)
+        manifest["recording_header"] = verify_capture(
+            raw, args.scenario, args.revision, stamp, args.no_missile, no_flare, flare_delay, pixel_observation
+        )
         if digest(exe) != manifest["capture_executable_sha256"] or source_identity(args.repo, args.revision) != hashes:
             raise Error("Source or executable changed during capture")
         validate_assets("d1", args.assets)
         if args.pack:
             manifest["stage"] = "pack"
-            recipe = RECIPES[2] if args.scenario == "effect-phase" else RECIPES[3]
+            recipe = (
+                RECIPES[5]
+                if args.scenario == "fan-transparency"
+                else RECIPES[2]
+                if args.scenario == "effect-phase"
+                else RECIPES[3]
+            )
             compact.pack(
                 raw / "capture.dximdemo",
                 raw / "capture.dximdemo.rngtrace.jsonl",
@@ -293,6 +330,9 @@ def main(argv=None):
     parser.add_argument("--scenario", choices=SCENARIOS, required=True)
     parser.add_argument("--screenshots", action="store_true")
     parser.add_argument("--no-missile", action="store_true")
+    parser.add_argument("--no-flare", action="store_true")
+    parser.add_argument("--flare-delay", type=int, choices=(0, 1), default=0)
+    parser.add_argument("--no-pixel-observation", action="store_true", help="Observation-neutrality control only")
     parser.add_argument(
         "--pack", action="store_true", help="Create new bounded compact input and native summary/RNG oracle"
     )
