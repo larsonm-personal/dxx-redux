@@ -1,5 +1,6 @@
 """All-weapons evidence gates, immutable controls and native build identity."""
 
+import argparse
 import copy
 import json
 from pathlib import Path
@@ -8,6 +9,7 @@ import unittest
 from unittest import mock
 
 import check_all_weapons_runtime as runtime
+import check_ordered_input_runtime as ordered_runtime
 from d1_replay_parity import EvidenceError
 
 
@@ -294,6 +296,37 @@ class RuntimeEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(EvidenceError, "original target"):
             runtime.build_identity(self.root, build, "d1", self.revision, exes)
 
+    def test_replay_console_output_default_and_explicit_diagnostics(self):
+        args = argparse.Namespace(
+            repo=self.root,
+            pwsh="pwsh",
+            headless_d1=self.root / "dxx-redux-d1-headless",
+            graphics_d1=self.root / "d1x-redux",
+            data_d1=self.root / "data",
+            timeout=12,
+            minimum_free_gb=1,
+        )
+        for mode in ("headless", "graphics"):
+            for requested, expected in (({}, "1"), ({"headless_console_output": 2}, "2")):
+                with self.subTest(mode=mode, expected=expected):
+                    destination = self.root / (mode + "-" + expected)
+                    with mock.patch.object(
+                        ordered_runtime.subprocess, "run", return_value=mock.Mock(returncode=0)
+                    ) as run:
+                        self.assertEqual(
+                            runtime.replay(args, "d1", mode, self.root / "capture.dximdemo", destination, **requested),
+                            0,
+                        )
+                    command_line = run.call_args.args[0]
+                    self.assertEqual(command_line.count("-HeadlessConsoleOutput"), 1)
+                    self.assertEqual(command_line[command_line.index("-HeadlessConsoleOutput") + 1], expected)
+                    self.assertEqual(
+                        command_line[command_line.index("-Runner") + 1],
+                        "headless-console" if mode == "headless" else "visual",
+                    )
+                    self.assertEqual(run.call_args.kwargs["timeout"], args.timeout + 90)
+                    self.assertEqual(run.call_args.kwargs["cwd"], self.root)
+
     def test_wrong_profile_requires_native_rejection_not_generic_failure(self):
         failure_dir = self.root / "result.json.failure_1"
         failure_dir.mkdir()
@@ -304,6 +337,24 @@ class RuntimeEvidenceTests(unittest.TestCase):
         (failure_dir / "stderr.txt").write_text("Missing assets while loading all-weapons capture: grant_all_weapons")
         with self.assertRaisesRegex(EvidenceError, "precise native grant rejection"):
             runtime.verify_negative(self.root, None, None, "wrong-profile", "d1", 1)
+
+    def test_wrong_profile_reads_native_runner_log_without_archived_text(self):
+        failure_dir = self.root / "result.json.failure_1"
+        failure_dir.mkdir()
+        (failure_dir / "failure.json").write_text(json.dumps({"forced_stop": False, "native_exit_code": 1}))
+        for game, reason in (
+            ("d1", "unsupported all-weapons grant for fixture game"),
+            ("d2", "all-weapons grant differs from the active gameplay profile"),
+        ):
+            with self.subTest(game=game):
+                log = self.root / "runner.log"
+                log.write_text("HEADLESS-RUN FAIL load demo line 4: " + reason + "\n")
+                result = runtime.verify_negative(self.root, None, None, "wrong-profile", game, 1)
+                self.assertEqual(result["status"], "pass")
+                self.assertEqual(list(failure_dir.glob("*.txt")), [])
+                log.write_text("Missing assets while loading all-weapons capture: grant_all_weapons")
+                with self.assertRaisesRegex(EvidenceError, "precise native grant rejection"):
+                    runtime.verify_negative(self.root, None, None, "wrong-profile", game, 1)
 
     def test_tail_negative_uses_original_oracle_and_preserves_all_frames(self):
         failure_dir = self.root / "result.json.failure_1"

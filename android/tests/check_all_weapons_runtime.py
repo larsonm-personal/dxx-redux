@@ -39,6 +39,7 @@ RECIPES = (
     "android/tests/test_upstream_compat.cpp",
     "android/tests/public_level_replay_fixture.hpp",
     "android/tests/check_all_weapons_runtime.py",
+    "android/tests/check_ordered_input_runtime.py",
     "android/tests/compact_public_replay.py",
     "android/tests/ordered_public_replay.py",
     *(
@@ -425,7 +426,8 @@ def verify_negative(directory, demo, oracle, mutation, game, status):
         "Negative must exit naturally",
     )
     if mutation == "wrong-profile":
-        logs = "\n".join(path.read_text(errors="replace") for path in failures[0].parent.glob("*.txt"))
+        log_paths = [directory / "runner.log", *failures[0].parent.glob("*.txt")]
+        logs = "\n".join(path.read_text(errors="replace") for path in log_paths if path.is_file())
         reason = (
             "unsupported all-weapons grant for fixture game"
             if game == "d1"
@@ -574,7 +576,10 @@ def run(args):
             rows = list(parity.records(demo))
             for mode in ("headless", "graphics"):
                 destination = args.output / f"{name}-{mode}"
-                require(replay(args, game, mode, demo, destination) == 0, "Native all-weapons replay failed")
+                require(
+                    replay(args, game, mode, demo, destination, headless_console_output=2) == 0,
+                    "Native all-weapons replay failed",
+                )
                 verdict = compact.verify(
                     game,
                     demo,
@@ -594,7 +599,7 @@ def run(args):
                     negative = args.output / f"{name}-{mode}-{mutation}.dximdemo"
                     negative.write_bytes(b"".join(compact.canonical(row) + b"\n" for row in mutate(rows, mutation)))
                     target = negative.with_suffix("")
-                    status = replay(args, game, mode, negative, target)
+                    status = replay(args, game, mode, negative, target, headless_console_output=2)
                     verdict = verify_negative(target, demo, oracle, mutation, game, status)
                     require(
                         all(digest(path) == value for path, value in immutable.items()),

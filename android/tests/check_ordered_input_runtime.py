@@ -63,7 +63,7 @@ def verify_dispatch_capture(path):
     return rows
 
 
-def replay(args, game, mode, demo, directory):
+def replay(args, game, mode, demo, directory, *, headless_console_output=1):
     directory.mkdir(parents=True)
     exe = getattr(args, mode + "_" + game)
     cmd = [
@@ -87,6 +87,8 @@ def replay(args, game, mode, demo, directory):
         "accelerated",
         "-StrictComparison",
         "-RequireCleanExit",
+        "-HeadlessConsoleOutput",
+        str(headless_console_output),
         "-StateLogPath",
         str(directory / "state.jsonl.gz"),
         "-RngLogPath",

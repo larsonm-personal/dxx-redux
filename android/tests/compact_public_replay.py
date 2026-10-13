@@ -48,7 +48,7 @@ HEADER_KEYS = {
 }
 FRAME_KEYS = {"type", "f", "ft", "input", "rng", "events", "state", "diag", "dispatch"}
 # Reviewed producers: d1/d2 input_demo_hooks, input_demo_energy_trace and collide
-# D2 gauges score and robot-damage/rotation probes are observational only
+# D2 gauges score, Spreadfire emission and robot-damage/rotation probes are observational only
 # input_demo_replay.cpp parses only direct_command into executable replay events
 DIAGNOSTIC_EVENTS = frozenset(
     {
@@ -70,6 +70,7 @@ DIAGNOSTIC_EVENTS = frozenset(
         "probe_ai_visibility",
         "weapon_create",
         "player_shot",
+        "spreadfire_emit",
         "probe_robot_fire",
         "energy_change",
         "shield_change",

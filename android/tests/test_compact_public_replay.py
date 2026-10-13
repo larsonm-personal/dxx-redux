@@ -340,23 +340,40 @@ class CompactReplayTests(unittest.TestCase):
     def test_only_reviewed_diagnostic_events_are_removed(self):
         event = {"kind": "probe_weapon_life", "objnum": 12, "lifeleft": 999}
         path_event = {"kind": "weapon_robot_path", "weapon_obj": 12, "robot_obj": 13}
-        self.rows[1]["events"] = [event, path_event]
+        spread_event = {
+            "kind": "spreadfire_emit",
+            "nfires": 1,
+            "toggle_before": 0,
+            "flags": 0,
+            "next_laser_delta": 1092,
+            "last_laser_delta": 0,
+        }
+        self.rows[1]["events"] = [event, path_event, spread_event]
         self.write(self.full, self.rows)
         oracle = self.pack()
         self.assertEqual(
             oracle["removed_telemetry"],
             {
-                "counts": {"probe_weapon_life": 1, "weapon_robot_path": 1},
-                "events": 2,
-                "sha256": compact.sha([{"f": 0, "event": event}, {"f": 0, "event": path_event}]),
+                "counts": {"probe_weapon_life": 1, "weapon_robot_path": 1, "spreadfire_emit": 1},
+                "events": 3,
+                "sha256": compact.sha(
+                    [{"f": 0, "event": event}, {"f": 0, "event": path_event}, {"f": 0, "event": spread_event}]
+                ),
                 "compared_on_replay": False,
             },
         )
         compact.validate(self.demo, self.oracle)
         self.assertEqual(json.loads(self.demo.read_text().splitlines()[1])["events"], [])
+        packed = [json.loads(line) for line in self.demo.read_text().splitlines()]
+        self.assertEqual([row["input"] for row in packed[1:-1]], [row["input"] for row in self.rows[1:-1]])
+        self.assertEqual(oracle["frame_sha256"], compact._frame_hashes(self.full, self.header, recorded=True))
+        self.assertEqual(
+            (oracle["simulation_rng_sha256"], oracle["simulation_rng_events"]), compact._rng_hash(self.rng)
+        )
+        self.assertEqual(oracle["terminal_sha256"], compact.sha(self.result))
         self.demo.unlink()
         self.oracle.unlink()
-        for kind in ("direct_command", "unknown_probe", "weapon_robot_path_unreviewed"):
+        for kind in ("direct_command", "unknown_probe", "weapon_robot_path_unreviewed", "spreadfire_emit_unreviewed"):
             self.rows[1]["events"] = [{"kind": kind}]
             self.write(self.full, self.rows)
             with self.subTest(kind=kind), self.assertRaises(compact.parity.EvidenceError):
