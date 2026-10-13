@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import itertools
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -35,10 +36,15 @@ def capture(args):
                 continue
             directory = args.output / f"{game}-{scenario}"
             directory.mkdir()
+            # Native Unix PhysFS can read HOME independently of the fixture cwd
+            home = directory / "home"
+            home.mkdir()
+            environment = {**os.environ, "HOME": str(home.resolve())}
             with (directory / "capture.log").open("w") as log:
                 subprocess.run(
                     [str(exe), "--public-level-replay", str(data), scenario],
                     cwd=directory,
+                    env=environment,
                     stdout=log,
                     stderr=subprocess.STDOUT,
                     check=True,
