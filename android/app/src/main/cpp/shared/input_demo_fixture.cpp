@@ -632,6 +632,11 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata frame_count must be positive");
 	if (metadata.has_player_cfg && !validate_player_cfg(metadata.player_cfg, metadata.game, error))
 		return false;
+	if (metadata.has_rear_view_baseline && (metadata.version != 5 || !input_demo_rear_view_baseline_supported(&metadata.rear_view_baseline)))
+		return fail(error, "invalid or mis-versioned rear-view baseline");
+	if (metadata.has_view_projection && (metadata.version != 5 || !input_demo_view_projection_supported(&metadata.view_projection) ||
+	                                     (metadata.game == "d1" && metadata.view_projection.missile_view_enabled)))
+		return fail(error, "invalid or mis-versioned view projection");
 	return true;
 }
 
@@ -682,7 +687,7 @@ static const char *const dispatch_command_names[] = {
 	"", "guidebot_goal", "drop_marker", "drop_current_weapon", "drop_secondary_weapon",
 	"drop_flag", "escort_release_control", "death_abort", "change_difficulty",
 	"guidebot_spawn", "guidebot_find_secret", "guidebot_warp_to_me",
-	"guidebot_find_unexplored", "select_weapon_exact"
+	"guidebot_find_unexplored", "select_weapon_exact", "delete_marker"
 };
 
 bool input_demo_dispatch_command_from_json(const std::string &text, int game,
@@ -717,6 +722,12 @@ bool input_demo_dispatch_command_from_json(const std::string &text, int game,
 		if (message.size() >= sizeof(command->text) || message.find('\0') != std::string::npos)
 			return fail(error, "marker text exceeds the supported size");
 		memcpy(command->text, message.c_str(), message.size() + 1);
+	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER) {
+		if (!exact_keys(root, { "kind", "command", "player_marker_num", "expected_signature" }, error, "delete marker command") ||
+		    !parse_int_field(root["player_marker_num"], &a, error, "player_marker_num") ||
+		    !input_demo_player_marker_supported(a) ||
+		    !parse_int_field(root["expected_signature"], &b, error, "expected_signature") || b < 0)
+			return fail(error, "invalid delete marker command arguments");
 	} else if (command->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
 		if (!exact_keys(root, { "kind", "command", "difficulty" }, error, "difficulty command") ||
 		    !parse_int_field(root["difficulty"], &a, error, "difficulty") || a < 0 || a > 4)
@@ -747,6 +758,9 @@ static bool dispatch_command_json(const input_demo_replay_direct_command_event &
 		if (!memchr(command.text, '\0', sizeof(command.text))) return fail(error, "unterminated marker text");
 		(*root)["player_marker_num"] = command.value0;
 		(*root)["message"] = command.text;
+	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER) {
+		(*root)["player_marker_num"] = command.value0;
+		(*root)["expected_signature"] = command.value1;
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY) {
 		(*root)["difficulty"] = command.value0;
 	} else if (command.kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT) {
@@ -760,6 +774,9 @@ static bool dispatch_command_json(const input_demo_replay_direct_command_event &
 		return fail(error, std::string("invalid input command text: ") + ex.what());
 	}
 }
+
+static const char *const dispatch_automap_phases[] = { "", "begin", "depths", "active", "close" };
+static const char *const dispatch_rear_view_actions[] = { "", "enter", "toggle_off", "arm", "release_off", "reset" };
 
 static bool dispatch_operation_parse(const ordered_json &root, int game,
                                      input_demo_input_operation *operation, std::string *error)
@@ -780,8 +797,34 @@ static bool dispatch_operation_parse(const ordered_json &root, int game,
 		return exact_keys(root, { "k", "ft", "event" }, error, "command operation") &&
 		       input_demo_dispatch_command_from_json(root["event"].dump(), game, &operation->command, error);
 	}
-	if (root["k"] != "sample") return fail(error, "unknown executable input operation");
-	operation->kind = INPUT_DEMO_INPUT_SAMPLE;
+	if (root["k"] == "automap") {
+		if (!exact_keys(root, { "k", "ft", "phase" }, error, "automap operation") || !root["phase"].is_string())
+			return fail(error, "automap operation requires a supported phase");
+		operation->kind = INPUT_DEMO_INPUT_AUTOMAP;
+		for (unsigned i = 1; i < sizeof(dispatch_automap_phases) / sizeof(*dispatch_automap_phases); ++i)
+			if (root["phase"] == dispatch_automap_phases[i]) operation->automap_phase = static_cast<int32_t>(i);
+		return operation->automap_phase != 0 || fail(error, "unsupported automap phase");
+	}
+	if (root["k"] == "rear_view") {
+		if (!exact_keys(root, { "k", "ft", "action" }, error, "rear-view operation") || !root["action"].is_string())
+			return fail(error, "rear-view operation requires a supported action");
+		operation->kind = INPUT_DEMO_INPUT_REAR_VIEW;
+		for (unsigned i = 1; i < sizeof(dispatch_rear_view_actions) / sizeof(*dispatch_rear_view_actions); ++i)
+			if (root["action"] == dispatch_rear_view_actions[i]) operation->rear_view_action = static_cast<int32_t>(i);
+		return operation->rear_view_action != 0 || fail(error, "unsupported rear-view action");
+	}
+	if (root["k"] == "cockpit") {
+		if (!exact_keys(root, { "k", "ft", "current_cockpit", "preferred_cockpit" }, error, "cockpit operation") ||
+		    !parse_int_field(root["current_cockpit"], &operation->current_cockpit, error, "current_cockpit") ||
+		    !parse_int_field(root["preferred_cockpit"], &operation->preferred_cockpit, error, "preferred_cockpit") ||
+		    !input_demo_cockpit_mode_supported(operation->current_cockpit) ||
+		    !input_demo_cockpit_mode_supported(operation->preferred_cockpit))
+			return fail(error, "invalid resolved cockpit mode");
+		operation->kind = INPUT_DEMO_INPUT_COCKPIT;
+		return true;
+	}
+	if (root["k"] != "sample" && root["k"] != "controls") return fail(error, "unknown executable input operation");
+	operation->kind = root["k"] == "sample" ? INPUT_DEMO_INPUT_SAMPLE : INPUT_DEMO_INPUT_CONTROLS;
 	if (root.contains("p") ? !exact_keys(root, { "k", "ft", "s", "p" }, error, "sample operation") : !exact_keys(root, { "k", "ft", "s" }, error, "sample operation")) return false;
 	if (root["s"].is_string()) {
 		if (root["s"] != "=") return fail(error, "invalid input residual-state alias");
@@ -802,11 +845,25 @@ bool input_demo_dispatch_operation_to_json(const input_demo_input_operation &ope
 	if (!text) return fail(error, "missing operation output");
 	if (operation.kind == INPUT_DEMO_INPUT_RESET) root["k"] = "reset";
 	else if (operation.kind == INPUT_DEMO_INPUT_CLEAR) root["k"] = "clear";
-	else if (operation.kind == INPUT_DEMO_INPUT_COMMAND) {
+	else if (operation.kind == INPUT_DEMO_INPUT_AUTOMAP) {
+		if (operation.automap_phase <= 0 || static_cast<unsigned>(operation.automap_phase) >= sizeof(dispatch_automap_phases) / sizeof(*dispatch_automap_phases))
+			return fail(error, "unsupported automap phase");
+		root["k"] = "automap";
+		root["phase"] = dispatch_automap_phases[operation.automap_phase];
+	} else if (operation.kind == INPUT_DEMO_INPUT_REAR_VIEW) {
+		if (operation.rear_view_action <= 0 || static_cast<unsigned>(operation.rear_view_action) >= sizeof(dispatch_rear_view_actions) / sizeof(*dispatch_rear_view_actions))
+			return fail(error, "unsupported rear-view action");
+		root["k"] = "rear_view";
+		root["action"] = dispatch_rear_view_actions[operation.rear_view_action];
+	} else if (operation.kind == INPUT_DEMO_INPUT_COCKPIT) {
+		root["k"] = "cockpit";
+		root["current_cockpit"] = operation.current_cockpit;
+		root["preferred_cockpit"] = operation.preferred_cockpit;
+	} else if (operation.kind == INPUT_DEMO_INPUT_COMMAND) {
 		root["k"] = "command";
 		if (!dispatch_command_json(operation.command, game, &root["event"], error)) return false;
-	} else if (operation.kind == INPUT_DEMO_INPUT_SAMPLE) {
-		root["k"] = "sample";
+	} else if (operation.kind == INPUT_DEMO_INPUT_SAMPLE || operation.kind == INPUT_DEMO_INPUT_CONTROLS) {
+		root["k"] = operation.kind == INPUT_DEMO_INPUT_SAMPLE ? "sample" : "controls";
 		if (game == INPUT_DEMO_GAME_D1 && (operation.state.afterburner_state || operation.state.energy_to_shield_state ||
 		                                   operation.pulse.toggle_bomb_count || operation.pulse.headlight_count))
 			return fail(error, "D1 sample rejects D2-only controls");
@@ -1149,6 +1206,27 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			if (!parse_player_cfg(it.value(), &parsed.player_cfg, error))
 				return false;
 			parsed.has_player_cfg = true;
+		} else if (name == "rear_view") {
+			const auto &value = it.value();
+			auto &state = parsed.rear_view_baseline;
+			if (!exact_keys(value, { "active", "leave_mode", "current_cockpit", "preferred_cockpit" }, error, "rear-view baseline") ||
+			    !parse_int_field(value["active"], &state.active, error, "rear-view active") ||
+			    !parse_int_field(value["leave_mode"], &state.leave_mode, error, "rear-view leave_mode") ||
+			    !parse_int_field(value["current_cockpit"], &state.current_cockpit, error, "rear-view current_cockpit") ||
+			    !parse_int_field(value["preferred_cockpit"], &state.preferred_cockpit, error, "rear-view preferred_cockpit")) return false;
+			parsed.has_rear_view_baseline = true;
+		} else if (name == "view_projection") {
+			const auto &value = it.value();
+			auto &state = parsed.view_projection;
+			if (!exact_keys(value, { "screen_width", "screen_height", "aspect", "zoom", "depth", "classic_depth", "missile_view_enabled" }, error, "view projection") ||
+			    !parse_int_field(value["screen_width"], &state.screen_width, error, "view screen_width") ||
+			    !parse_int_field(value["screen_height"], &state.screen_height, error, "view screen_height") ||
+			    !parse_int_field(value["aspect"], &state.aspect, error, "view aspect") ||
+			    !parse_int_field(value["zoom"], &state.zoom, error, "view zoom") ||
+			    !parse_int_field(value["depth"], &state.depth, error, "view depth") ||
+			    !parse_int_field(value["classic_depth"], &state.classic_depth, error, "view classic_depth") ||
+			    !parse_int_field(value["missile_view_enabled"], &state.missile_view_enabled, error, "view missile_view_enabled")) return false;
+			parsed.has_view_projection = true;
 		} else {
 			return fail(error, "unknown metadata key: " + name);
 		}
@@ -1189,6 +1267,14 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 
 		player_cfg_to_json(metadata.player_cfg, &player_cfg);
 		root["player_cfg"] = player_cfg;
+	}
+	if (metadata.has_rear_view_baseline) {
+		const auto &state = metadata.rear_view_baseline;
+		root["rear_view"] = { { "active", state.active }, { "leave_mode", state.leave_mode }, { "current_cockpit", state.current_cockpit }, { "preferred_cockpit", state.preferred_cockpit } };
+	}
+	if (metadata.has_view_projection) {
+		const auto &state = metadata.view_projection;
+		root["view_projection"] = { { "screen_width", state.screen_width }, { "screen_height", state.screen_height }, { "aspect", state.aspect }, { "zoom", state.zoom }, { "depth", state.depth }, { "classic_depth", state.classic_depth }, { "missile_view_enabled", state.missile_view_enabled } };
 	}
 	*line = root.dump();
 	return true;
@@ -1260,12 +1346,24 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 	if (!validate_demo_envelope(demo, demo.frames.size(), error))
 		return false;
 	const int game = game_id_from_name(demo.metadata.game);
+	int automap_phase = 0;
+	const auto validate_modal_batch = [&](const input_demo_input_batch &batch, bool is_tail) {
+		for (const auto &operation : batch.operations) {
+			if (operation.kind != INPUT_DEMO_INPUT_AUTOMAP) continue;
+			automap_phase = input_demo_automap_next_phase(automap_phase, operation.automap_phase);
+			if (automap_phase < 0) return fail(error, "invalid ordered automap transition");
+		}
+		return automap_phase == 0 || (is_tail && automap_phase == INPUT_DEMO_AUTOMAP_ACTIVE) ||
+		       fail(error, "ordered batch ends in an incomplete or unclosed automap transition");
+	};
 	size_t i;
 	for (i = 0; i != demo.frames.size(); ++i) {
 		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error) ||
-		    !validate_dispatch_version(demo.frames[i], demo.metadata.version, game, error))
+		    !validate_dispatch_version(demo.frames[i], demo.metadata.version, game, error) ||
+		    !validate_modal_batch(demo.frames[i].dispatch, false))
 			return false;
 	}
+	if (demo.has_input_tail && !validate_modal_batch(demo.input_tail.dispatch, true)) return false;
 	return true;
 }
 

@@ -14,6 +14,17 @@ int render_collect_view_objects(int32_t eye_offset, short *objects);
 /* Publish the current main-view candidates when the draw is omitted
  * Returns zero if the main viewport has not been initialized */
 int render_update_main_view_objects(void);
+/* Apply ordinary main-camera map discovery when drawing is omitted
+ * Uses Screen_3d_window, current Viewer/rear view, native projection and clipping
+ * Leaves object candidate lists and RNG untouched; updates renderer scratch
+ * Returns 1 when handled (including map-active/robot-camera no-ops), or 0 for
+ * endlevel/invalid view. Caller owns guided-big-window/subview selection and
+ * must not treat this as endlevel or auxiliary-camera rendering equivalence */
+int render_update_main_view_automap(void);
+/* Main view plus native default D2 missile window, without drawing or AI wake */
+int render_update_game_view_automap(void);
+/* Null when this bounded discovery path supports the actively selected cameras */
+const char *render_game_view_automap_unsupported_reason(void);
 #ifdef ANDROID
 /* Baseline FOV bookkeeping without starting a GPU frame or preparing lighting */
 void android_render_collect_fov_visibility(int32_t eye_offset, int window_num);

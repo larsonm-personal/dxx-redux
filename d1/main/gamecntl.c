@@ -1607,6 +1607,7 @@ int ReadControls(d_event *event)
 			Controls.automap_count = 0;
 			if (!((Game_mode & GM_MULTI) && Control_center_destroyed && (Countdown_seconds_left < 10)))
 			{
+				input_demo_record_input_controls();
 				do_automap();
 				return 1;
 			}

@@ -41,6 +41,7 @@ static void capture_public_secondary_frames(const char *game_name, const char *m
 		if (frame == 13) require(Players[0].secondary_ammo[0] == (mouse_first ? 3 : 4) && !Controls.fire_secondary_state, "ordinary SDL event order determines the second shot");
 		calc_game_time();
 		GameProcessFrame();
+		require(render_update_game_view_automap(), "capture native camera map discovery");
 		require(render_update_main_view_objects(), "capture gameplay view state");
 		if (screenshots && (frame == 1 || frame == 2 || frame == 13)) {
 			GameArg.SysInputDemoNoRender = 0;
@@ -134,6 +135,7 @@ static void capture_public_dispatch_frames(const char *game_name, const char *mi
 		FrameTime = frame % 2 ? 2184 : 3276;
 		calc_game_time();
 		GameProcessFrame();
+		require(render_update_game_view_automap(), "capture native camera map discovery");
 		require(render_update_main_view_objects(), "dispatch capture gameplay view state");
 	}
 	// Pending input after the last simulation is executable terminal evidence

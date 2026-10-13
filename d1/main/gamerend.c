@@ -36,6 +36,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fix.h"
 #include "robot.h"
 #include "game.h"
+#include "input_demo_hooks.h"
 #include "gauges.h"
 #include "gamefont.h"
 #include "newdemo.h"
@@ -554,6 +555,7 @@ void toggle_cockpit()
 	HUD_clear_messages();
 	PlayerCfg.PreferredCockpitMode = new_mode;
 	write_player_file();
+	input_demo_record_input_cockpit();
 }
 
 void toggle_cockpit_reverse()
@@ -583,6 +585,7 @@ void toggle_cockpit_reverse()
 	HUD_clear_messages();
 	PlayerCfg.PreferredCockpitMode = new_mode;
 	write_player_file();
+	input_demo_record_input_cockpit();
 }
 
 int last_drawn_cockpit = -1;

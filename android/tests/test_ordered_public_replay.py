@@ -48,6 +48,23 @@ def fixture(game="d1"):
 
 
 class OrderedInputTests(unittest.TestCase):
+    def test_zero_frame_tail_only_and_malformed_counts_are_rejected(self):
+        for game in ("d1", "d2"):
+            for count in (0, -1, False, 0.0, "0", None, 2**32):
+                for effectful in (False, True):
+                    with self.subTest(game=game, count=count, effectful=effectful):
+                        header, _, tail = fixture(game)
+                        header["frame_count"] = count
+                        tail["f"] = 0
+                        if not effectful:
+                            tail["dispatch"]["ops"] = []
+                        with self.assertRaisesRegex(EvidenceError, "frame_count"):
+                            ordered.validate(header, [], tail)
+            header, _, tail = fixture(game)
+            del header["frame_count"]
+            with self.assertRaisesRegex(EvidenceError, "frame_count"):
+                ordered.validate(header, [], tail)
+
     def test_current_frame_and_independent_tail_aliases(self):
         for game in ("d1", "d2"):
             header, frames, tail = fixture(game)
@@ -114,6 +131,7 @@ class OrderedInputTests(unittest.TestCase):
         arguments = {
             "guidebot_goal": {"special_key": 3, "from_menu": False},
             "drop_marker": {"player_marker_num": 0, "message": "turn left"},
+            "delete_marker": {"player_marker_num": 8, "expected_signature": ordered.INT32_MAX},
             "change_difficulty": {"difficulty": 4},
             "select_weapon_exact": {"weapon_class": 1, "weapon_index": 4},
         }
@@ -139,6 +157,20 @@ class OrderedInputTests(unittest.TestCase):
                 [-1, 0, 1, 0x0C, 0x12, 0x113, 0x202, 0x302, ordered.INT32_MAX],
             ),
             ("drop_marker", "player_marker_num", {"message": "ok"}, range(9), [-1, 9, 15, 16, ordered.INT32_MAX]),
+            (
+                "delete_marker",
+                "player_marker_num",
+                {"expected_signature": 42},
+                range(9),
+                [-1, 9, 15, 16, ordered.INT32_MAX],
+            ),
+            (
+                "delete_marker",
+                "expected_signature",
+                {"player_marker_num": 0},
+                (0, 42, ordered.INT32_MAX),
+                [-1, ordered.INT32_MAX + 1],
+            ),
         )
         for command, field, extra, supported, rejected in domains:
             for value in [*supported, *rejected]:
@@ -192,6 +224,196 @@ class OrderedInputTests(unittest.TestCase):
                     frames[0]["dispatch"]["ops"] = [invalid]
                     with self.assertRaises(EvidenceError):
                         ordered.validate(header, frames, tail)
+
+    def test_automap_controls_phases_and_aliases(self):
+        for game in ("d1", "d2"):
+            header, frames, tail = fixture(game)
+            operations = [
+                {"k": "controls", "ft": 1, "s": {"f2s": 7, "f": -50}, "p": {}},
+                {"k": "automap", "ft": 2, "phase": "begin"},
+                {"k": "clear", "ft": 3},
+                {"k": "automap", "ft": 4, "phase": "depths"},
+                {"k": "automap", "ft": 5, "phase": "active"},
+                {"k": "controls", "ft": 6, "s": {}},
+                {"k": "automap", "ft": 7, "phase": "close"},
+            ]
+            frames[1]["dispatch"]["ops"] = operations
+            tail["dispatch"]["ops"] = [
+                {"k": "automap", "ft": 0, "phase": phase} for phase in ("begin", "depths", "active")
+            ] + [{"k": "controls", "ft": 65536, "s": "="}]
+            decoded = ordered.validate(header, frames, tail)
+            new_frames, new_tail = ordered.compact(header, frames, tail)
+            self.assertEqual(new_frames[1]["dispatch"]["ops"][0], {"k": "controls", "ft": 1, "s": "="})
+            self.assertEqual(decoded[1]["ops"][0]["s"]["f2s"], 7)
+            self.assertFalse(any(decoded[-1]["ops"][-1]["s"].values()))
+            self.assertEqual(ordered.validate(header, new_frames, new_tail), decoded)
+            for sequence in (("begin", "close"), ("begin", "depths", "close")):
+                frames[1]["dispatch"]["ops"] = [{"k": "automap", "ft": 0, "phase": phase} for phase in sequence]
+                ordered.validate(header, frames, tail)
+
+    def test_invalid_automap_phase_and_sequence(self):
+        for game in ("d1", "d2"):
+            header, frames, tail = fixture(game)
+            for phase in (None, False, 1, "", "=", "open", "BEGIN", {}, []):
+                frames[0]["dispatch"]["ops"] = [{"k": "automap", "ft": 0, "phase": phase}]
+                with self.subTest(game=game, phase=phase), self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            for sequence in (
+                ("depths",),
+                ("active",),
+                ("close",),
+                ("begin",),
+                ("begin", "depths"),
+                ("begin", "active", "close"),
+                ("begin", "begin", "close"),
+                ("begin", "depths", "depths", "close"),
+                ("begin", "depths", "active"),
+                ("begin", "depths", "active", "active", "close"),
+                ("begin", "close", "close"),
+            ):
+                frames[0]["dispatch"]["ops"] = [{"k": "automap", "ft": 0, "phase": phase} for phase in sequence]
+                with self.subTest(game=game, sequence=sequence), self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            frames[0]["dispatch"]["ops"] = []
+            for sequence in (("begin",), ("begin", "depths"), ("close",)):
+                tail["dispatch"]["ops"] = [{"k": "automap", "ft": 0, "phase": phase} for phase in sequence]
+                with self.subTest(tail=sequence), self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+
+    def test_controls_and_automap_reject_unsupported_fields(self):
+        for operation in (
+            {"k": "controls", "ft": 0},
+            {"k": "controls", "ft": 0, "s": "previous"},
+            {"k": "controls", "ft": 0, "s": {}, "p": False},
+            {"k": "controls", "ft": 0, "s": {}, "phase": "begin"},
+            {"k": "automap", "ft": 0},
+            {"k": "automap", "ft": False, "phase": "begin"},
+            {"k": "automap", "ft": 0, "phase": "begin", "s": {}},
+            {"k": "automap", "ft": 0, "phase": "begin", "event": {}},
+        ):
+            header, frames, tail = fixture()
+            frames[0]["dispatch"]["ops"] = [operation]
+            with self.subTest(operation=operation), self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+
+    def test_rear_view_baseline_and_action_roundtrip(self):
+        for game in ("d1", "d2"):
+            header, frames, tail = fixture(game)
+            header["rear_view"] = {"active": 1, "leave_mode": 0, "current_cockpit": 1, "preferred_cockpit": 4}
+            actions = ("arm", "release_off", "enter", "toggle_off", "reset")
+            operations = [{"k": "rear_view", "ft": index, "action": action} for index, action in enumerate(actions)]
+            frames[0]["dispatch"]["ops"] = operations
+            tail["dispatch"]["ops"] = [{"k": "rear_view", "ft": 65536, "action": "enter"}]
+            decoded = ordered.validate(header, frames, tail)
+            compacted, compact_tail = ordered.compact(header, frames, tail)
+            self.assertEqual(decoded[0]["ops"], operations)
+            self.assertEqual(compacted[0]["dispatch"]["ops"], operations)
+            self.assertEqual(ordered.validate(header, compacted, compact_tail), decoded)
+            del header["rear_view"]
+            ordered.validate(header, frames, tail)
+
+    def test_rear_view_rejects_invalid_baseline_and_action(self):
+        baseline = {"active": 1, "leave_mode": 0, "current_cockpit": 1, "preferred_cockpit": 4}
+        for field in baseline:
+            for value in (-1, 5, ordered.INT32_MAX, ordered.UINT32_MAX + 1, False, 1.0, "1", None):
+                header, frames, tail = fixture()
+                header["rear_view"] = {**baseline, field: value}
+                with self.subTest(field=field, value=value), self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            header["rear_view"] = dict(baseline)
+            del header["rear_view"][field]
+            with self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+        header["rear_view"] = {**baseline, "entry_time": 1234}
+        with self.assertRaises(EvidenceError):
+            ordered.validate(header, frames, tail)
+        for action in (False, None, 1, "", "toggle", "=", "ENTER", {}, []):
+            header, frames, tail = fixture()
+            frames[0]["dispatch"]["ops"] = [{"k": "rear_view", "ft": 0, "action": action}]
+            with self.subTest(action=action), self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+        for extra in ({"phase": "active"}, {"s": {}}, {"event": {}}):
+            frames[0]["dispatch"]["ops"] = [{"k": "rear_view", "ft": 0, "action": "enter", **extra}]
+            with self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+
+    def test_resolved_cockpit_operations(self):
+        for game in ("d1", "d2"):
+            header, frames, tail = fixture(game)
+            operations = [
+                {"k": "cockpit", "ft": current * 100, "current_cockpit": current, "preferred_cockpit": preferred}
+                for current in (0, 2, 3)
+                for preferred in (0, 2, 3)
+            ]
+            frames[0]["dispatch"]["ops"] = operations
+            tail["dispatch"]["ops"] = operations[-1:]
+            decoded = ordered.validate(header, frames, tail)
+            compacted, compact_tail = ordered.compact(header, frames, tail)
+            self.assertEqual(decoded[0]["ops"], operations)
+            self.assertEqual(compacted[0]["dispatch"]["ops"], operations)
+            self.assertEqual(ordered.validate(header, compacted, compact_tail), decoded)
+            for field in ("current_cockpit", "preferred_cockpit"):
+                for value in (-1, 1, 4, 5, False, None, 1.0, "1", ordered.UINT32_MAX + 1):
+                    frames[0]["dispatch"]["ops"] = [{**operations[0], field: value}]
+                    with self.subTest(field=field, value=value), self.assertRaises(EvidenceError):
+                        ordered.validate(header, frames, tail)
+                frames[0]["dispatch"]["ops"] = [dict(operations[0])]
+                del frames[0]["dispatch"]["ops"][0][field]
+                with self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            frames[0]["dispatch"]["ops"] = [{**operations[0], "s": {}}]
+            with self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+
+    def test_view_projection_contract(self):
+        header, frames, tail = fixture()
+        normal = {
+            "screen_width": 640,
+            "screen_height": 480,
+            "aspect": 65536,
+            "zoom": 0x9000,
+            "depth": 9000,
+            "classic_depth": 0,
+            "missile_view_enabled": 0,
+        }
+        header["view_projection"] = normal
+        decoded = ordered.validate(header, frames, tail)
+        compacted, compact_tail = ordered.compact(header, frames, tail)
+        self.assertEqual(header["view_projection"], normal)
+        self.assertEqual(ordered.validate(header, compacted, compact_tail), decoded)
+        maxima = {
+            "screen_width": 16384,
+            "screen_height": 16384,
+            "aspect": 16 * 65536,
+            "zoom": 16 * 65536,
+            "depth": 9000,
+            "classic_depth": 1,
+            "missile_view_enabled": 0,
+        }
+        for field, maximum in maxima.items():
+            header["view_projection"] = {**normal, field: maximum}
+            ordered.validate(header, frames, tail)
+            for value in (-1, maximum + 1, False, None, 1.0, "1", ordered.UINT32_MAX + 1):
+                header["view_projection"] = {**normal, field: value}
+                with self.subTest(field=field, value=value), self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            if field not in {"classic_depth", "missile_view_enabled"}:
+                header["view_projection"] = {**normal, field: 0}
+                with self.assertRaises(EvidenceError):
+                    ordered.validate(header, frames, tail)
+            header["view_projection"] = dict(normal)
+            del header["view_projection"][field]
+            with self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+        for change in ({"screen_width": 16384, "screen_height": 4097}, {"main_view_fov": 110}):
+            header["view_projection"] = {**normal, **change}
+            with self.assertRaises(EvidenceError):
+                ordered.validate(header, frames, tail)
+        header["view_projection"] = {**normal, "screen_width": 16384, "screen_height": 4096}
+        ordered.validate(header, frames, tail)
+        header["game"] = "d2"
+        header["view_projection"]["missile_view_enabled"] = 1
+        ordered.validate(header, frames, tail)
 
     def test_integer_boundaries(self):
         header, frames, tail = fixture("d2")

@@ -14,6 +14,7 @@
 #include "game.h"
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks.h"
 #include "input_demo_limits.h"
 #include "input_demo_replay.h"
 #include "input_demo_rng_mode.h"
@@ -724,8 +725,24 @@ static int input_demo_restore_loaded_replay(void)
 
 int input_demo_start_loaded_replay_common(void)
 {
-	const int result = input_demo_restore_loaded_replay();
+	int result;
+	input_demo_rear_view_baseline view;
+	char projection_error[256] = "";
+	if (!input_demo_validate_replay_view_projection(projection_error, sizeof(projection_error))) {
+		printf("Input demo replay could not start: %s\n", projection_error);
+		input_demo_replay_unload();
+		return 1;
+	}
+	input_demo_reset_replay_input_state();
+	result = input_demo_restore_loaded_replay();
 	if (!result) {
+		if (input_demo_replay_get_rear_view_baseline(&view) &&
+		    !input_demo_restore_rear_view_state(view.active, view.leave_mode,
+		                                        view.current_cockpit, view.preferred_cockpit, 0)) {
+			printf("Input demo rear-view baseline is invalid\n");
+			input_demo_replay_unload();
+			return 1;
+		}
 		/* Replay metadata belongs to both native and translated checkpoint paths */
 		if (input_demo_replay_has_checkpoint()) {
 			int64_t collision_delay_last_play_time = 0;

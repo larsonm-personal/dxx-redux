@@ -62,6 +62,8 @@ int input_demo_replay_write_actual_result(const input_demo_result *result,
                                           char *error, size_t error_size);
 int input_demo_replay_has_player_cfg(void);
 int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg);
+int input_demo_replay_get_rear_view_baseline(input_demo_rear_view_baseline *state);
+int input_demo_replay_get_view_projection(input_demo_view_projection *state);
 int input_demo_replay_has_checkpoint(void);
 const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);

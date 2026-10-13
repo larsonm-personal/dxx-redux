@@ -263,6 +263,11 @@ static int input_demo_apply_d2_direct_command(void *context,
 			if (!input_demo_guidebot_key_supported(event->value0) || event->value1 < 0 || event->value1 > 1)
 				goto invalid_arguments;
 			break;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER:
+			if (!input_demo_player_marker_supported(event->value0) || event->value1 < 0 ||
+			    Player_num < 0 || Player_num * 2 + event->value0 >= NUM_MARKERS)
+				goto invalid_arguments;
+			break;
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
 			if (!input_demo_player_marker_supported(event->value0) || Player_num < 0 ||
 			    Player_num * 2 + event->value0 >= NUM_MARKERS || !memchr(event->text, 0, sizeof(event->text)))
@@ -296,6 +301,12 @@ static int input_demo_apply_d2_direct_command(void *context,
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
 			input_demo_apply_recorded_guidebot_goal(event->value0,
 				event->value1);
+			return 1;
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER:
+			if (!input_demo_apply_recorded_marker_delete(event->value0, event->value1)) {
+				snprintf(error, error_size, "marker deletion target identity differs");
+				return 0;
+			}
 			return 1;
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
 			input_demo_apply_recorded_marker_drop(event->value0,
@@ -7123,7 +7134,7 @@ int input_demo_prepare_replay_frame(void)
 int input_demo_step_replay_frame(void)
 {
 	return input_demo_step_replay_frame_shared(
-		input_demo_prepare_replay_frame);
+		input_demo_prepare_replay_frame, input_demo_stop_replay);
 }
 
 static int input_demo_before_advance_replay_frame(void)

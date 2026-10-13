@@ -36,6 +36,10 @@ typedef struct input_demo_recorder_settings {
 	input_demo_checkpoint_thief_state checkpoint_thief_state;
 	int record_per_frame_state;
 	int ordered_input;
+	int has_rear_view_baseline;
+	input_demo_rear_view_baseline rear_view_baseline;
+	int has_view_projection;
+	input_demo_view_projection view_projection;
 } input_demo_recorder_settings;
 #if defined(_MSC_VER)
 #pragma pack(pop)
@@ -44,6 +48,8 @@ typedef struct input_demo_recorder_settings {
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
 uint32_t input_demo_recorder_frame_count(void);
+uint32_t input_demo_recorder_pending_input_operation_count(void);
+int input_demo_recorder_get_view_projection(input_demo_view_projection *state);
 uint32_t input_demo_recorder_diagnostic_frame_index(void);
 int input_demo_recorder_truncate(uint32_t frame_count);
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
@@ -64,6 +70,16 @@ int input_demo_recorder_begin_input_batch(uint32_t rng_state, uint32_t rng_count
                                           int32_t input_frame_time, char *error, size_t error_size);
 int input_demo_recorder_stage_input_reset(int32_t frame_time, char *error, size_t error_size);
 int input_demo_recorder_stage_input_clear(int32_t frame_time, char *error, size_t error_size);
+int input_demo_recorder_stage_input_automap(int32_t frame_time, int32_t phase,
+                                            char *error, size_t error_size);
+int input_demo_recorder_stage_input_rear_view(int32_t frame_time, int32_t action,
+                                              char *error, size_t error_size);
+int input_demo_recorder_stage_input_cockpit(int32_t frame_time, int32_t current_cockpit, int32_t preferred_cockpit,
+                                            char *error, size_t error_size);
+int input_demo_recorder_stage_input_controls(int32_t frame_time,
+                                             const input_demo_control_state *state,
+                                             const input_demo_control_pulse *pulse,
+                                             char *error, size_t error_size);
 int input_demo_recorder_stage_input_sample(int32_t frame_time,
                                            const input_demo_control_state *state,
                                            const input_demo_control_pulse *pulse,
@@ -83,6 +99,8 @@ int input_demo_recorder_stage_direct_command_guidebot_goal(int special_key,
 int input_demo_recorder_stage_direct_command_drop_marker(int player_marker_num,
                                                          const char *message,
                                                          char *error, size_t error_size);
+int input_demo_recorder_stage_direct_command_delete_marker(int player_marker_num, int expected_signature,
+                                                           char *error, size_t error_size);
 int input_demo_recorder_stage_direct_command_drop_current_weapon(char *error,
                                                                  size_t error_size);
 int input_demo_recorder_stage_direct_command_drop_secondary_weapon(char *error,

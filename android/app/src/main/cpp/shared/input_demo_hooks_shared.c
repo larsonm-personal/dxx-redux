@@ -9,9 +9,14 @@
 #include "ai.h"
 #include "cntrlcen.h"
 #include "console.h"
+#include "config.h"
+#include "gr.h"
+#include "playsave.h"
+#include "render.h"
 #include "endlevel.h"
 #include "game.h"
 #include "gameseq.h"
+#include "hudmsg.h"
 #include "input_demo_control_info.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_fp_env.h"
@@ -33,6 +38,8 @@
 #include "strutil.h"
 #include "timer.h"
 #include "weapon.h"
+#include "segment.h"
+#include "automap.h"
 #ifndef DXX_HEADLESS_CONSOLE
 #ifndef __ANDROID__
 #include <SDL.h>
@@ -51,6 +58,9 @@
 extern void do_weapon_n_item_stuff(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
+extern int set_segment_depths(int start_seg, ubyte *segbuf);
+
+static int input_demo_replay_automap_phase;
 
 static int previous_robot_hashes_valid = 0;
 static unsigned int previous_robot_hashes[MAX_OBJECTS];
@@ -488,12 +498,180 @@ void input_demo_capture_robot_ai_local_diag(input_demo_state_trace_diag *diag)
 static void input_demo_cancel_input_capture(const char *error)
 {
 	con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+	HUD_init_message(HM_DEFAULT, "Input recording stopped: %s", error);
 	input_demo_recorder_cancel();
+}
+
+void input_demo_cancel_unsupported_input_capture(const char *reason)
+{
+	if (input_demo_recorder_uses_ordered_input())
+		input_demo_cancel_input_capture(reason);
+}
+
+void input_demo_reset_replay_input_state(void)
+{
+	if (input_demo_replay_automap_phase)
+		Automap_active = 0;
+	input_demo_replay_automap_phase = 0;
+}
+
+void input_demo_trace_view_state(const char *event, int value)
+{
+	char json[512], error[256] = "";
+	int rear, leave, cockpit, preferred, i;
+	unsigned int visited_hash = 2166136261u, marker_hash = 2166136261u, controls_hash = 0;
+	unsigned int frame;
+	const int recording = input_demo_recorder_uses_ordered_input();
+	if (!recording && !input_demo_replay_is_loaded())
+		return;
+	input_demo_get_rear_view_state(&rear, &leave, &cockpit, &preferred);
+	if (!strcmp(event, "automap")) {
+		input_demo_control_state state;
+		input_demo_control_pulse pulse;
+		const unsigned char *bytes = (const unsigned char *) &state;
+		input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+		controls_hash = 2166136261u;
+		/* Hash numeric axes portably, then the packed one-byte held/pulse fields */
+		for (i = 0; i < 6; ++i) {
+			int32_t axis;
+			memcpy(&axis, bytes + i * sizeof(axis), sizeof(axis));
+			controls_hash = input_demo_state_trace_hash_update(controls_hash, (unsigned int) axis);
+		}
+		for (i = 6 * sizeof(int32_t); i < sizeof(state); ++i)
+			controls_hash = (controls_hash ^ bytes[i]) * 16777619u;
+		bytes = (const unsigned char *) &pulse;
+		for (i = 0; i < sizeof(pulse); ++i)
+			controls_hash = (controls_hash ^ bytes[i]) * 16777619u;
+	}
+	for (i = 0; i <= Highest_segment_index; ++i)
+		visited_hash = (visited_hash ^ Automap_visited[i]) * 16777619u;
+#ifdef DXX_BUILD_DESCENT_II
+	for (i = 0; i < NUM_MARKERS; ++i) {
+		int j;
+		unsigned int object = (unsigned int) MarkerObject[i];
+		for (j = 0; j < 4; ++j)
+			marker_hash = (marker_hash ^ ((object >> (j * 8)) & 255)) * 16777619u;
+		for (j = 0; j < MARKER_MESSAGE_LEN; ++j) {
+			marker_hash = (marker_hash ^ (unsigned char) MarkerMessage[i][j]) * 16777619u;
+			if (!MarkerMessage[i][j]) break;
+		}
+	}
+#endif
+	frame = recording ? input_demo_recorder_diagnostic_frame_index() : input_demo_replay_next_frame_index();
+	snprintf(json, sizeof(json), "{\"%s\":\"input_view\",\"f\":%u,\"event\":\"%s\",\"value\":%d,\"rear\":%d,\"leave\":%d,\"cockpit\":%d,\"preferred\":%d,\"automap\":%d,\"visited_hash\":%u,\"marker_hash\":%u,\"controls_hash\":%u}",
+	         recording ? "kind" : "type", frame, event, value, rear, leave, cockpit, preferred, Automap_active, visited_hash, marker_hash, controls_hash);
+	if (recording) {
+		if (!input_demo_recorder_append_frame_event_json(json, error, sizeof(error)))
+			input_demo_cancel_input_capture(error);
+	} else if (input_demo_state_trace_is_active())
+		input_demo_state_trace_write_json(json, error, sizeof(error));
+}
+
+void input_demo_capture_view_projection(input_demo_view_projection *view)
+{
+	memset(view, 0, sizeof(*view));
+	if (!grd_curscreen) return;
+	view->screen_width = grd_curscreen->sc_w;
+	view->screen_height = grd_curscreen->sc_h;
+	view->aspect = grd_curscreen->sc_aspect;
+	view->zoom = Render_zoom;
+	view->depth = Render_depth;
+	view->classic_depth = GameCfg.ClassicDepth;
+#ifdef DXX_BUILD_DESCENT_II
+	view->missile_view_enabled = PlayerCfg.MissileViewEnabled;
+#endif
+}
+
+static int input_demo_view_projection_matches(const input_demo_view_projection *expected, char *error, size_t error_size)
+{
+	input_demo_view_projection actual;
+	input_demo_capture_view_projection(&actual);
+	if (!memcmp(expected, &actual, sizeof(actual))) return 1;
+	snprintf(error, error_size,
+	         "view projection differs: expected %dx%d aspect=%d zoom=%d depth=%d classic=%d missile=%d, actual %dx%d aspect=%d zoom=%d depth=%d classic=%d missile=%d",
+	         expected->screen_width, expected->screen_height, expected->aspect, expected->zoom, expected->depth, expected->classic_depth, expected->missile_view_enabled,
+	         actual.screen_width, actual.screen_height, actual.aspect, actual.zoom, actual.depth, actual.classic_depth, actual.missile_view_enabled);
+	return 0;
+}
+
+int input_demo_validate_replay_view_projection(char *error, size_t error_size)
+{
+	input_demo_view_projection expected;
+	const char *unsupported = render_game_view_automap_unsupported_reason();
+	if (unsupported) {
+		snprintf(error, error_size, "%s", unsupported);
+		return 0;
+	}
+	return !input_demo_replay_get_view_projection(&expected) ||
+	       input_demo_view_projection_matches(&expected, error, error_size);
+}
+
+static int input_demo_validate_record_view_projection(char *error, size_t error_size)
+{
+	input_demo_view_projection expected;
+	const char *unsupported = render_game_view_automap_unsupported_reason();
+	if (unsupported) {
+		snprintf(error, error_size, "%s", unsupported);
+		input_demo_cancel_input_capture(error);
+		return 0;
+	}
+	if (!input_demo_recorder_get_view_projection(&expected) ||
+	    input_demo_view_projection_matches(&expected, error, error_size)) return 1;
+	input_demo_cancel_input_capture(error);
+	return 0;
+}
+
+void input_demo_record_input_cockpit(void)
+{
+	char error[256] = "";
+	input_demo_record_input_context();
+	if (input_demo_recorder_uses_ordered_input() &&
+	    !input_demo_recorder_stage_input_cockpit(FrameTime, PlayerCfg.CurrentCockpitMode,
+	                                             PlayerCfg.PreferredCockpitMode, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+	input_demo_trace_view_state("cockpit", PlayerCfg.CurrentCockpitMode);
+}
+
+void input_demo_record_input_controls(void)
+{
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	char error[256] = "";
+	input_demo_record_input_context();
+	if (!input_demo_recorder_uses_ordered_input())
+		return;
+	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	if (!input_demo_recorder_stage_input_controls(FrameTime, &state, &pulse, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+}
+
+void input_demo_record_input_automap(int phase)
+{
+	char error[256] = "";
+	input_demo_record_input_context();
+	if (input_demo_recorder_uses_ordered_input() &&
+	    !input_demo_recorder_stage_input_automap(FrameTime, phase, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
+	input_demo_trace_view_state("automap", phase);
+}
+
+void input_demo_record_input_rear_view(int action)
+{
+	char error[256] = "";
+	/* Normal simulation resets reproduce themselves during playback */
+	if (input_demo_record_simulation_active)
+		return;
+	input_demo_record_input_context();
+	if (input_demo_recorder_uses_ordered_input() &&
+	    !input_demo_recorder_stage_input_rear_view(FrameTime, action, error, sizeof(error)))
+		input_demo_cancel_input_capture(error);
 }
 
 void input_demo_record_reset_input_phase(void)
 {
 	input_demo_record_simulation_active = 0;
+	if (!input_demo_replay_is_loaded())
+		input_demo_reset_replay_input_state();
 }
 
 void input_demo_run_game_process_frame(void (*process)(void))
@@ -526,6 +704,7 @@ void input_demo_record_input_context(void)
 	char error[256] = "";
 	if (!input_demo_recorder_uses_ordered_input())
 		return;
+	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
 	if (!d_rand_get_state(&state) ||
 	    !input_demo_recorder_begin_input_batch(state, d_rand_get_call_count(), FrameTime, error, sizeof(error))) {
 		input_demo_cancel_input_capture(error[0] ? error : "could not capture pre-input SIM RNG");
@@ -545,9 +724,7 @@ void input_demo_record_input_reset(void)
 
 void input_demo_record_input_controls_supported(void)
 {
-	if (input_demo_recorder_uses_ordered_input() &&
-	    (Controls.rear_view_state || Controls.rear_view_count || Controls.automap_state || Controls.automap_count))
-		input_demo_cancel_input_capture("ordered recording does not yet support wall-clock rear view or modal automap input");
+	/* Rear-view and automap effects are separate ordered semantic operations */
 }
 
 void input_demo_record_input_sample(void)
@@ -573,11 +750,12 @@ int input_demo_record_finish_input_tail(char *error, size_t error_size)
 		return 1;
 	if (!input_demo_recorder_is_active())
 		return 0;
+	if (!input_demo_validate_record_view_projection(error, error_size)) return 0;
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
 	if (!d_rand_get_state(&rng_state))
 		return 0;
 	return input_demo_recorder_finish_input_tail(&state, &pulse, rng_state,
-	    d_rand_get_call_count(), error, error_size);
+	                                             d_rand_get_call_count(), error, error_size);
 }
 
 static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t error_size)
@@ -589,6 +767,7 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 	unsigned int rng_state = 0;
 	const fix simulation_frame_time = FrameTime;
 	uint32_t index;
+	int modal_phase = input_demo_replay_automap_phase;
 	if (!input_demo_replay_get_input_batch_info(frame, &batch, error, error_size))
 		return 0;
 	/* Validate every typed command before allowing the first world mutation */
@@ -598,12 +777,28 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 		if (operation.kind == INPUT_DEMO_INPUT_COMMAND &&
 		    !input_demo_apply_ordered_direct_command(&operation.command, 1, error, error_size))
 			return 0;
+		if (operation.kind == INPUT_DEMO_INPUT_AUTOMAP) {
+			modal_phase = input_demo_automap_next_phase(modal_phase, operation.automap_phase);
+			if (modal_phase < 0) {
+				snprintf(error, error_size, "invalid ordered automap phase transition");
+				return 0;
+			}
+		}
+		if (operation.kind == INPUT_DEMO_INPUT_REAR_VIEW &&
+		    !input_demo_apply_rear_view_action(operation.rear_view_action, 1)) {
+			snprintf(error, error_size, "invalid ordered rear-view action");
+			return 0;
+		}
 		if (operation.kind == INPUT_DEMO_INPUT_SAMPLE &&
-		    (Endlevel_sequence || Player_is_dead || operation.state.rear_view_state ||
-		     operation.state.automap_state || operation.pulse.rear_view_count || operation.pulse.automap_count)) {
+		    (Endlevel_sequence || Player_is_dead || modal_phase || operation.pulse.rear_view_count || operation.pulse.automap_count)) {
 			snprintf(error, error_size, "ordered control sample has an unsupported native phase or modal control");
 			return 0;
 		}
+	}
+	if ((!batch.is_tail && modal_phase) ||
+	    (batch.is_tail && modal_phase && modal_phase != INPUT_DEMO_AUTOMAP_ACTIVE)) {
+		snprintf(error, error_size, "ordered input ends at an incomplete automap boundary");
+		return 0;
 	}
 	/* Establish the recorded start once; later boundaries are assertions, not seeds */
 	if (frame == 0 && !batch.is_tail) {
@@ -623,6 +818,39 @@ static int input_demo_apply_ordered_input(uint32_t frame, char *error, size_t er
 			goto failed;
 		FrameTime = operation.frame_time;
 		switch (operation.kind) {
+			case INPUT_DEMO_INPUT_CONTROLS:
+				input_demo_control_info_from_state(&Controls, &operation.state, &operation.pulse);
+				break;
+			case INPUT_DEMO_INPUT_REAR_VIEW:
+				if (!input_demo_apply_rear_view_action(operation.rear_view_action, 0)) {
+					snprintf(error, error_size, "rear-view decision has an invalid native precondition");
+					goto failed;
+				}
+				break;
+			case INPUT_DEMO_INPUT_COCKPIT:
+				if (Rear_view || Player_is_dead) {
+					snprintf(error, error_size, "cockpit toggle is not available in the current native view");
+					goto failed;
+				}
+				select_cockpit(operation.current_cockpit);
+				if (PlayerCfg.CurrentCockpitMode != operation.current_cockpit) {
+					snprintf(error, error_size, "native viewport cannot honor the recorded cockpit mode");
+					goto failed;
+				}
+				HUD_clear_messages();
+				PlayerCfg.PreferredCockpitMode = operation.preferred_cockpit;
+				input_demo_trace_view_state("cockpit", operation.current_cockpit);
+				break;
+			case INPUT_DEMO_INPUT_AUTOMAP:
+				input_demo_replay_automap_phase = input_demo_automap_next_phase(input_demo_replay_automap_phase, operation.automap_phase);
+				if (operation.automap_phase == INPUT_DEMO_AUTOMAP_DEPTHS)
+					set_segment_depths(Objects[Players[Player_num].objnum].segnum, Automap_visited);
+				else if (operation.automap_phase == INPUT_DEMO_AUTOMAP_ACTIVE)
+					Automap_active = 1;
+				else if (operation.automap_phase == INPUT_DEMO_AUTOMAP_CLOSE)
+					Automap_active = 0;
+				input_demo_trace_view_state("automap", operation.automap_phase);
+				break;
 			case INPUT_DEMO_INPUT_CLEAR:
 				game_flush_inputs();
 				break;
@@ -672,6 +900,7 @@ void input_demo_record_game_frame(void)
 
 	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
 		return;
+	if (!input_demo_validate_record_view_projection(error, sizeof(error))) return;
 	if (!d_rand_get_state(&rng_state)) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
 		input_demo_recorder_cancel();
@@ -772,6 +1001,11 @@ int input_demo_prepare_replay_frame_shared(
 		if (stop_replay) stop_replay(0);
 		return 0;
 	}
+	if (!input_demo_validate_replay_view_projection(error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		if (stop_replay) stop_replay(0);
+		return 0;
+	}
 	FrameTime = (fix) replay_frame.frame_time;
 	if (!input_demo_apply_ordered_input(replay_frame.frame, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
@@ -798,6 +1032,7 @@ void input_demo_stop_replay_shared(int write_result,
 	if (write_result && write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	input_demo_reset_replay_input_state();
 	/* Leave the event loop only after result and trace streams are finalized */
 	if (replay_was_loaded)
 		input_demo_request_exit_after_replay();
@@ -827,6 +1062,7 @@ int input_demo_finish_replay_shared(int close_window,
 			           error[0] ? error : "unconsumed recorded simulation frames");
 			input_demo_trace_boundary("aborted");
 			input_demo_replay_unload();
+			input_demo_reset_replay_input_state();
 			input_demo_request_exit_after_replay();
 			return 1;
 		}
@@ -837,6 +1073,7 @@ int input_demo_finish_replay_shared(int close_window,
 	if (write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	input_demo_reset_replay_input_state();
 	input_demo_request_exit_after_replay();
 #ifndef DXX_HEADLESS_CONSOLE
 	if (close_window && Game_wind)
@@ -886,7 +1123,7 @@ int input_demo_process_fast_replay(void)
 #endif
 }
 
-int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void))
+int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void (*stop_replay)(int))
 {
 	/* A background draw must not reapply a non-idempotent pending batch */
 	if (game_is_time_paused())
@@ -897,6 +1134,13 @@ int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void))
 	if (!game_is_time_paused()) {
 		calc_game_time();
 		GameProcessFrame();
+		/* Ordinary live draw discovers the current camera after simulation and
+		 * before the next input poll, including a terminal input-only tail */
+		if (input_demo_replay_is_loaded() && !Endlevel_sequence && !render_update_game_view_automap()) {
+			con_printf(CON_NORMAL, "Input demo replay stopped: unsupported or uninitialized automap camera\n");
+			if (stop_replay) stop_replay(0);
+			return 0;
+		}
 		input_demo_advance_replay_frame();
 		/* The next simulation step consumes the preceding main view's candidates
 		 * The windowed event path and the headless runner both advance here */
@@ -2568,16 +2812,16 @@ void input_demo_trace_player_weapon_damage(object *player, object *weapon, int o
 {
 	char json[1024];
 	if (!input_demo_state_trace_is_active() || !player || !weapon || player->id != Player_num ||
-		weapon->type != OBJ_WEAPON || Players[Player_num].shields >= old_shields ||
-		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+	    weapon->type != OBJ_WEAPON || Players[Player_num].shields >= old_shields ||
+	    (!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
 		return;
 
 	snprintf(json, sizeof(json),
-		"{\"type\":\"player_weapon_damage\",\"version\":1,\"f\":%u,\"player\":%d,\"player_id\":%d,\"player_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d}",
-		input_demo_trace_collision_frame_index(), (int)(player - Objects), player->id, player->signature,
-		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
-		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
-		old_shields, Players[Player_num].shields, damage);
+	         "{\"type\":\"player_weapon_damage\",\"version\":1,\"f\":%u,\"player\":%d,\"player_id\":%d,\"player_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d}",
+	         input_demo_trace_collision_frame_index(), (int) (player - Objects), player->id, player->signature,
+	         (int) (weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+	         weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+	         old_shields, Players[Player_num].shields, damage);
 	input_demo_write_combat_observation(json);
 }
 
@@ -2585,15 +2829,15 @@ void input_demo_trace_robot_damage(object *robot, object *weapon, int old_shield
 {
 	char json[1024];
 	if (!input_demo_state_trace_is_active() || !robot || !weapon || robot->type != OBJ_ROBOT ||
-		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+	    (!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
 		return;
 	snprintf(json, sizeof(json),
-		"{\"type\":\"robot_damage\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d,\"died\":%d,\"score_value\":%d,\"score\":%d,\"kills_level\":%d,\"kills_total\":%d}",
-		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
-		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
-		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
-		old_shields, robot->shields, damage, died, Robot_info[robot->id].score_value,
-		Players[Player_num].score, Players[Player_num].num_kills_level, Players[Player_num].num_kills_total);
+	         "{\"type\":\"robot_damage\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d,\"died\":%d,\"score_value\":%d,\"score\":%d,\"kills_level\":%d,\"kills_total\":%d}",
+	         input_demo_trace_collision_frame_index(), (int) (robot - Objects), robot->id, robot->signature,
+	         (int) (weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+	         weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+	         old_shields, robot->shields, damage, died, Robot_info[robot->id].score_value,
+	         Players[Player_num].score, Players[Player_num].num_kills_level, Players[Player_num].num_kills_total);
 	input_demo_write_combat_observation(json);
 }
 
@@ -2601,15 +2845,15 @@ void input_demo_trace_robot_loot(object *robot, int chance_roll, int count_roll,
 {
 	char json[1024];
 	if (!input_demo_state_trace_is_active() || !robot || robot->type != OBJ_ROBOT ||
-		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+	    (!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
 		return;
 	const robot_info *definition = &Robot_info[robot->id];
 	const object *drop = created >= 0 && created <= Highest_object_index ? &Objects[created] : NULL;
 	snprintf(json, sizeof(json),
-		"{\"type\":\"robot_loot\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"definition_type\":%d,\"definition_id\":%d,\"definition_count\":%d,\"definition_probability\":%d,\"chance_roll\":%d,\"count_roll\":%d,\"contains_type\":%d,\"contains_id\":%d,\"contains_count\":%d,\"created\":%d,\"created_type\":%d,\"created_id\":%d,\"created_signature\":%d}",
-		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
-		definition->contains_type, definition->contains_id, definition->contains_count, definition->contains_prob,
-		chance_roll, count_roll, robot->contains_type, robot->contains_id, robot->contains_count,
-		created, drop ? drop->type : -1, drop ? drop->id : -1, drop ? drop->signature : -1);
+	         "{\"type\":\"robot_loot\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"definition_type\":%d,\"definition_id\":%d,\"definition_count\":%d,\"definition_probability\":%d,\"chance_roll\":%d,\"count_roll\":%d,\"contains_type\":%d,\"contains_id\":%d,\"contains_count\":%d,\"created\":%d,\"created_type\":%d,\"created_id\":%d,\"created_signature\":%d}",
+	         input_demo_trace_collision_frame_index(), (int) (robot - Objects), robot->id, robot->signature,
+	         definition->contains_type, definition->contains_id, definition->contains_count, definition->contains_prob,
+	         chance_roll, count_roll, robot->contains_type, robot->contains_id, robot->contains_count,
+	         created, drop ? drop->type : -1, drop ? drop->id : -1, drop ? drop->signature : -1);
 	input_demo_write_combat_observation(json);
 }

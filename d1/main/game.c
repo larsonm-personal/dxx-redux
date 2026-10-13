@@ -1011,68 +1011,134 @@ extern void temp_reset_stuff_on_level();
 
 #define LEAVE_TIME 0x4000		//how long until we decide key is down	(Used to be 0x4000)
 
-//deal with rear view - switch it on, or off, or whatever
-void check_rear_view()
+static int rear_view_leave_mode;
+static fix64 rear_view_entry_time;
+
+/* Native effects shared by live decisions and clock-free input replay */
+static void apply_rear_view_action(int action, int live)
 {
-	static int leave_mode;
-	static fix64 entry_time;
-
-	if (Newdemo_state == ND_STATE_PLAYBACK)
-		return;
-
-	if ( Controls.rear_view_count > 0) {	//key/button has gone down
-		Controls.rear_view_count = 0;
-
-		if (Rear_view) {
+	switch (action) {
+		case INPUT_DEMO_REAR_VIEW_ENTER:
+			Controls.rear_view_count = 0;
+			Rear_view = 1;
+			rear_view_leave_mode = 0;		//means wait for another key
+			if (live)
+				rear_view_entry_time = timer_query();
+			if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
+				select_cockpit(CM_REAR_VIEW);
+			}
+			if (Newdemo_state == ND_STATE_RECORDING)
+				newdemo_record_rearview();
+			break;
+		case INPUT_DEMO_REAR_VIEW_TOGGLE_OFF:
+			Controls.rear_view_count = 0;
+			/* fall through */
+		case INPUT_DEMO_REAR_VIEW_RELEASE_OFF:
 			Rear_view = 0;
 			if (PlayerCfg.CurrentCockpitMode==CM_REAR_VIEW) {
 				select_cockpit(PlayerCfg.PreferredCockpitMode);
 			}
 			if (Newdemo_state == ND_STATE_RECORDING)
 				newdemo_record_restore_rearview();
-		}
-		else {
-			Rear_view = 1;
-			leave_mode = 0;		//means wait for another key
-			entry_time = timer_query();
-			if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
-				select_cockpit(CM_REAR_VIEW);
+			break;
+		case INPUT_DEMO_REAR_VIEW_ARM:
+			rear_view_leave_mode = 1;
+			break;
+		case INPUT_DEMO_REAR_VIEW_RESET:
+			if (Rear_view) {
+				if (Newdemo_state == ND_STATE_RECORDING)
+					newdemo_record_restore_rearview();
 			}
-			if (Newdemo_state == ND_STATE_RECORDING)
-				newdemo_record_rearview();
-		}
+			Rear_view = 0;
+			select_cockpit(PlayerCfg.PreferredCockpitMode);
+			/* Native reset leaves the hold decision and entry time untouched */
+			break;
+	}
+	input_demo_trace_view_state("rear_view", action);
+}
+
+int input_demo_apply_rear_view_action(int action, int validate_only)
+{
+	if (action < INPUT_DEMO_REAR_VIEW_ENTER || action > INPUT_DEMO_REAR_VIEW_RESET)
+		return 0;
+	if (validate_only)
+		return 1;
+	/* Batch prevalidation cannot inspect state changed by earlier operations */
+	if ((action == INPUT_DEMO_REAR_VIEW_ENTER && Rear_view) ||
+	    (action == INPUT_DEMO_REAR_VIEW_TOGGLE_OFF && !Rear_view) ||
+	    (action == INPUT_DEMO_REAR_VIEW_RELEASE_OFF && (!Rear_view || rear_view_leave_mode != 1)))
+		return 0;
+	apply_rear_view_action(action, 0);
+	return 1;
+}
+
+void input_demo_get_rear_view_state(int *rear_view, int *leave_mode,
+                                   int *current_cockpit, int *preferred_cockpit)
+{
+	if (rear_view)
+		*rear_view = Rear_view;
+	if (leave_mode)
+		*leave_mode = rear_view_leave_mode;
+	if (current_cockpit)
+		*current_cockpit = PlayerCfg.CurrentCockpitMode;
+	if (preferred_cockpit)
+		*preferred_cockpit = PlayerCfg.PreferredCockpitMode;
+}
+
+int input_demo_restore_rear_view_state(int rear_view, int leave_mode,
+                                       int current_cockpit, int preferred_cockpit,
+                                       int validate_only)
+{
+	if ((rear_view != 0 && rear_view != 1) || (leave_mode != 0 && leave_mode != 1) ||
+	    current_cockpit < CM_FULL_COCKPIT || current_cockpit > CM_LETTERBOX ||
+	    preferred_cockpit < CM_FULL_COCKPIT || preferred_cockpit > CM_LETTERBOX)
+		return 0;
+	if (validate_only)
+		return 1;
+	Rear_view = rear_view;
+	rear_view_leave_mode = leave_mode;
+	/* Replay decisions never consult this live-only clock */
+	rear_view_entry_time = 0;
+	PlayerCfg.PreferredCockpitMode = preferred_cockpit;
+	select_cockpit(current_cockpit);
+	return PlayerCfg.CurrentCockpitMode == current_cockpit;
+}
+
+//deal with rear view - switch it on, or off, or whatever
+void check_rear_view()
+{
+	int action = 0;
+
+	if (Newdemo_state == ND_STATE_PLAYBACK)
+		return;
+
+	if ( Controls.rear_view_count > 0) {	//key/button has gone down
+		action = Rear_view ? INPUT_DEMO_REAR_VIEW_TOGGLE_OFF : INPUT_DEMO_REAR_VIEW_ENTER;
 	}
 	else
 		if (Controls.rear_view_state) {
 			if(PlayerCfg.StickyRearview) {
-				if (leave_mode == 0 && (timer_query() - entry_time) > LEAVE_TIME)
-					leave_mode = 1;
+				if (rear_view_leave_mode == 0 && (timer_query() - rear_view_entry_time) > LEAVE_TIME)
+					action = INPUT_DEMO_REAR_VIEW_ARM;
 			} else {
-				leave_mode = 1; 
+				action = INPUT_DEMO_REAR_VIEW_ARM;
 			}
 		}
 		else
 		{
-			if (leave_mode==1 && Rear_view) {
-				Rear_view = 0;
-				if (PlayerCfg.CurrentCockpitMode==CM_REAR_VIEW) {
-					select_cockpit(PlayerCfg.PreferredCockpitMode);
-				}
-				if (Newdemo_state == ND_STATE_RECORDING)
-					newdemo_record_restore_rearview();
-			}
+			if (rear_view_leave_mode==1 && Rear_view)
+				action = INPUT_DEMO_REAR_VIEW_RELEASE_OFF;
 		}
+	if (action) {
+		input_demo_record_input_rear_view(action);
+		apply_rear_view_action(action, 1);
+	}
 }
 
 void reset_rear_view(void)
 {
-	if (Rear_view) {
-		if (Newdemo_state == ND_STATE_RECORDING)
-			newdemo_record_restore_rearview();
-	}
-
-	Rear_view = 0;
-	select_cockpit(PlayerCfg.PreferredCockpitMode);
+	input_demo_record_input_rear_view(INPUT_DEMO_REAR_VIEW_RESET);
+	apply_rear_view_action(INPUT_DEMO_REAR_VIEW_RESET, 1);
 }
 
 int Config_menu_flag;

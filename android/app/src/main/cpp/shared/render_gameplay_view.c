@@ -21,6 +21,18 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "screens.h"
 #include "automap.h"
+#include "config.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "gauges.h"
+#include "laser.h"
+#include "playsave.h"
+#endif
+#if defined(ANDROID) || defined(__ANDROID__)
+#include "android_render_fov.h"
+#endif
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+#include "guidebot_extensions.h"
+#endif
 
 /* The collector traverses the same prepared rows as render_mine */
 extern short render_obj_list[MAX_RENDER_SEGS + N_EXTRA_OBJ_LISTS][OBJS_PER_SEG];
@@ -91,9 +103,121 @@ int render_update_main_view_objects(void)
 	return 1;
 }
 
+static int render_update_view_automap(grs_canvas *canvas, int window_num)
+{
+	grs_canvas *saved_canvas;
+	int start, nn;
+	/* The automap window suppresses main-view drawing. Endlevel has a separate
+	 * camera setup and must not be approximated by the ordinary player view */
+	if (Automap_active)
+		return 1;
+	if (Endlevel_sequence || !Viewer || !grd_curscreen ||
+	    Viewer->segnum < 0 || Viewer->segnum > Highest_segment_index ||
+	    !canvas || canvas->cv_bitmap.bm_w <= 0 || canvas->cv_bitmap.bm_h <= 0)
+		return 0;
+#if defined(ANDROID) || defined(__ANDROID__)
+	/* Wider visual-only drawing must not add discoveries beyond the existing
+	 * baseline camera pass. This helper never changes the selected zoom */
+	if (!android_render_records_objects())
+		return 1;
+#endif
+	/* D1 classic/software rendering historically discovers robot-camera views;
+	 * D1's OGL three-pass path and both D2 paths deliberately exclude them */
+#ifdef DXX_BUILD_DESCENT_II
+	if (Viewer->type == OBJ_ROBOT)
+		return 1;
+#elif defined(OGL)
+	if (Viewer->type == OBJ_ROBOT && !GameCfg.ClassicDepth)
+		return 1;
+#endif
+	saved_canvas = grd_curcanv;
+	gr_set_current_canvas(canvas);
+	g3_start_frame_projection();
+	start = render_setup_view(0);
+	render_start_frame();
+#ifdef DXX_BUILD_DESCENT_II
+	build_segment_list(start, window_num);
+#else
+	(void) window_num;
+	build_segment_list(start);
+#endif
+	for (nn = N_render_segs; nn--;) {
+		const int segnum = Render_list[nn];
+		g3s_codes codes;
+		if (segnum == -1 || visited[segnum] == 255)
+			continue;
+		visited[segnum] = 255;
+		codes = rotate_list(8, Segments[segnum].verts);
+		if (!codes.uand) {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+			if (!Automap_visited[segnum])
+				escort_route_notify_automap_changed(segnum);
+#endif
+			Automap_visited[segnum] = 1;
+		}
+	}
+	/* Restore exactly, including a null headless canvas */
+	grd_curcanv = saved_canvas;
+	return 1;
+}
+
+int render_update_main_view_automap(void)
+{
+	return render_update_view_automap(&Screen_3d_window, 0);
+}
+
+const char *render_game_view_automap_unsupported_reason(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	grs_canvas canvas;
+	int window;
+	if (Guided_missile[Player_num] && Guided_missile[Player_num]->type == OBJ_WEAPON &&
+	    Guided_missile[Player_num]->id == GUIDEDMISS_ID &&
+	    Guided_missile[Player_num]->signature == Guided_missile_sig[Player_num])
+		return "guided missile camera is not supported by input recording";
+	for (window = 0; window < 2; ++window)
+		if (!(window == 1 && Missile_viewer && PlayerCfg.MissileViewEnabled &&
+		      Missile_viewer->type != OBJ_NONE && (Missile_viewer_sig == -1 || Missile_viewer->signature == Missile_viewer_sig)) &&
+		    PlayerCfg.Cockpit3DView[window] != CV_NONE &&
+		    cockpit_window_view_canvas(window, &canvas, NULL, NULL))
+			return "selected auxiliary cockpit camera is not supported by input recording";
+#endif
+	return NULL;
+}
+
+int render_update_game_view_automap(void)
+{
+	if (Automap_active) return 1;
+	if (render_game_view_automap_unsupported_reason()) return 0;
+	if (!render_update_main_view_automap()) return 0;
+#ifdef DXX_BUILD_DESCENT_II
+	{
+		object *missile = select_missile_viewer();
+		grs_canvas canvas;
+		if (missile && cockpit_window_view_canvas(1, &canvas, NULL, NULL)) {
+			object *saved_viewer = Viewer;
+			const int saved_rear = Rear_view;
+			int result;
+			Viewer = missile;
+			Rear_view = 0;
+			result = render_update_view_automap(&canvas, 2);
+			Viewer = saved_viewer;
+			Rear_view = saved_rear;
+			if (!result) return 0;
+		}
+	}
+#endif
+	return 1;
+}
+
 #ifdef ANDROID
 #include "android_render_fov.h"
 #include "config.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "gauges.h"
+#include "laser.h"
+#include "playsave.h"
+#endif
 #include "newdemo.h"
 #include "morph.h"
 #ifdef DXX_BUILD_DESCENT_II

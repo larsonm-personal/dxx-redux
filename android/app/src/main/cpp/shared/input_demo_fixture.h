@@ -129,6 +129,10 @@ struct input_demo_metadata {
 	std::string start_save;
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	bool has_rear_view_baseline = false;
+	input_demo_rear_view_baseline rear_view_baseline = {};
+	bool has_view_projection = false;
+	input_demo_view_projection view_projection = {};
 
 	input_demo_metadata()
 	    : version(0), build_number(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)

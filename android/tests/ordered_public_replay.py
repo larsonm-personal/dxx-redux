@@ -14,6 +14,10 @@ MAX_OPERATIONS = 1024
 MAX_BATCH_BYTES = 256 * 1024
 MAX_RECORD_BYTES = 8 * 1024 * 1024
 MAX_FRAME_TIME = 65536
+MAX_VIEW_DIMENSION = 16384
+MAX_VIEW_PIXELS = 67108864
+MAX_VIEW_SCALE = 16 * 65536
+MAX_VIEW_DEPTH = 9000
 UINT32_MAX = 2**32 - 1
 INT32_MIN = -(2**31)
 INT32_MAX = 2**31 - 1
@@ -28,6 +32,7 @@ FRAME_OPTIONAL = {"ft", "state", "diag", "events"}
 COMMANDS = {
     "guidebot_goal",
     "drop_marker",
+    "delete_marker",
     "drop_current_weapon",
     "drop_secondary_weapon",
     "drop_flag",
@@ -44,6 +49,9 @@ D1_COMMANDS = {"death_abort", "change_difficulty", "select_weapon_exact"}
 # Stable native key codes: KEY_1..KEY_0, optional KEY_SHIFTED, and unshifted KEY_R
 GUIDEBOT_KEYS = set(range(0x02, 0x0C)) | set(range(0x102, 0x10C)) | {0x13}
 PLAYER_MARKER_COUNT = 9
+AUTOMAP_PHASES = {"begin", "depths", "active", "close"}
+REAR_VIEW_ACTIONS = {"enter", "toggle_off", "arm", "release_off", "reset"}
+COCKPIT_MODES = {0, 2, 3}
 
 
 def _require(condition, message):
@@ -122,6 +130,10 @@ def _command(value, game):
         except UnicodeError as error:
             raise parity.EvidenceError("Marker text must be UTF-8") from error
         _require(size < 40, "Marker text exceeds the supported byte limit")
+    elif command == "delete_marker":
+        _keys(value, fields | {"player_marker_num", "expected_signature"}, label="delete marker command")
+        _integer(value["player_marker_num"], 0, PLAYER_MARKER_COUNT - 1, "player_marker_num")
+        _integer(value["expected_signature"], 0, INT32_MAX, "expected_signature")
     elif command == "change_difficulty":
         _keys(value, fields | {"difficulty"}, label="difficulty command")
         _integer(value["difficulty"], 0, 4, "difficulty")
@@ -138,16 +150,38 @@ def _operation(value, game, residual):
     _require(isinstance(value, dict), "Input operation must be an object")
     kind = value.get("k")
     _require(
-        isinstance(kind, str) and kind in {"reset", "sample", "command", "clear"}, "Unknown executable input operation"
+        isinstance(kind, str)
+        and kind in {"reset", "sample", "command", "clear", "controls", "automap", "rear_view", "cockpit"},
+        "Unknown executable input operation",
     )
-    required = {"k", "ft"} | ({"s"} if kind == "sample" else {"event"} if kind == "command" else set())
-    _keys(value, required, {"p"} if kind == "sample" else set(), "input operation")
+    is_controls = kind in {"sample", "controls"}
+    required = {"k", "ft"} | {
+        "sample": {"s"},
+        "controls": {"s"},
+        "command": {"event"},
+        "automap": {"phase"},
+        "rear_view": {"action"},
+        "cockpit": {"current_cockpit", "preferred_cockpit"},
+    }.get(kind, set())
+    _keys(value, required, {"p"} if is_controls else set(), "input operation")
     result = {"k": kind, "ft": _integer(value["ft"], 0, MAX_FRAME_TIME, "input-time ft")}
-    if kind == "sample":
+    if is_controls:
         result["s"] = dict(residual["s"]) if value["s"] == "=" else _state(value["s"], game)
         result["p"] = _pulse(value.get("p", {}), game)
     elif kind == "command":
         result["event"] = _command(value["event"], game)
+    elif kind == "automap":
+        _require(isinstance(value["phase"], str) and value["phase"] in AUTOMAP_PHASES, "Unsupported automap phase")
+        result["phase"] = value["phase"]
+    elif kind == "rear_view":
+        _require(
+            isinstance(value["action"], str) and value["action"] in REAR_VIEW_ACTIONS, "Unsupported rear-view action"
+        )
+        result["action"] = value["action"]
+    elif kind == "cockpit":
+        for field in ("current_cockpit", "preferred_cockpit"):
+            result[field] = _integer(value[field], 0, 4, field)
+            _require(result[field] in COCKPIT_MODES, "Unsupported ordinary cockpit mode")
     return result
 
 
@@ -173,11 +207,40 @@ def validate(header, frames, tail):
     )
     game = header.get("game")
     _require(isinstance(game, str) and game in {"d1", "d2"}, "Ordered input requires a known game")
+    if "rear_view" in header:
+        baseline = header["rear_view"]
+        _keys(baseline, {"active", "leave_mode", "current_cockpit", "preferred_cockpit"}, label="rear-view baseline")
+        for field, value in baseline.items():
+            _integer(value, 0, 1 if field in {"active", "leave_mode"} else 4, f"rear-view {field}")
+    if "view_projection" in header:
+        projection = header["view_projection"]
+        maxima = {
+            "screen_width": MAX_VIEW_DIMENSION,
+            "screen_height": MAX_VIEW_DIMENSION,
+            "aspect": MAX_VIEW_SCALE,
+            "zoom": MAX_VIEW_SCALE,
+            "depth": MAX_VIEW_DEPTH,
+            "classic_depth": 1,
+            "missile_view_enabled": 0 if game == "d1" else 1,
+        }
+        _keys(projection, set(maxima), label="view projection")
+        for field, value in projection.items():
+            _integer(
+                value,
+                0 if field in {"classic_depth", "missile_view_enabled"} else 1,
+                maxima[field],
+                f"view projection {field}",
+            )
+        _require(
+            projection["screen_width"] * projection["screen_height"] <= MAX_VIEW_PIXELS,
+            "View projection exceeds the supported pixel count",
+        )
     count = _integer(header.get("frame_count"), 1, UINT32_MAX, "frame_count")
     _require(isinstance(frames, list) and len(frames) == count, "Ordered frame count differs from the header")
     decoded = []
     previous = None
     frame_time = None
+    automap_phase = None
     for index, row in enumerate([*frames, tail]):
         is_tail = index == count
         _keys(
@@ -203,6 +266,22 @@ def validate(header, frames, tail):
             "p": _pulse(row["input"].get("p", {}), game),
         }
         pre_rng, post_rng, operations = _batch(row, game, residual)
+        for operation in operations:
+            if operation["k"] != "automap":
+                continue
+            phase = operation["phase"]
+            expected = {"begin": None, "depths": "begin", "active": "depths"}
+            _require(
+                automap_phase in {"begin", "depths", "active"}
+                if phase == "close"
+                else automap_phase == expected[phase],
+                "Invalid ordered automap transition",
+            )
+            automap_phase = None if phase == "close" else phase
+        _require(
+            automap_phase is None or (is_tail and automap_phase == "active"),
+            "Ordered batch ends in an incomplete or unclosed automap transition",
+        )
         decoded.append(
             {
                 "f": index,
@@ -226,7 +305,7 @@ def compact(header, frames, tail):
         if batch["pre_rng"] == batch["post_rng"]:
             row["dispatch"]["pre_rng"] = "="
         for operation, expanded in zip(row["dispatch"]["ops"], batch["ops"]):
-            if expanded["k"] == "sample":
+            if expanded["k"] in {"sample", "controls"}:
                 if expanded["s"] == batch["residual"]["s"]:
                     operation["s"] = "="
                 if not any(expanded["p"].values()):

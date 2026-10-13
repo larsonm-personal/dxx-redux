@@ -40,6 +40,10 @@ struct input_demo_replay_session {
 	std::string rng_mode;
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	bool has_rear_view_baseline = false;
+	input_demo_rear_view_baseline rear_view_baseline = {};
+	bool has_view_projection = false;
+	input_demo_view_projection view_projection = {};
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
@@ -558,6 +562,10 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.has_player_cfg = demo.metadata.has_player_cfg;
 	if (demo.metadata.has_player_cfg)
 		g_input_demo_replay_session.player_cfg = demo.metadata.player_cfg;
+	g_input_demo_replay_session.has_rear_view_baseline = demo.metadata.has_rear_view_baseline;
+	g_input_demo_replay_session.rear_view_baseline = demo.metadata.rear_view_baseline;
+	g_input_demo_replay_session.has_view_projection = demo.metadata.has_view_projection;
+	g_input_demo_replay_session.view_projection = demo.metadata.view_projection;
 	if (demo.has_checkpoint && !load_checkpoint(demo.checkpoint, &g_input_demo_replay_session, &replay_error)) {
 		reset_session();
 		return copy_error(replay_error, error, error_size);
@@ -700,6 +708,22 @@ int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg)
 	if (!input_demo_replay_has_player_cfg() || !player_cfg)
 		return 0;
 	*player_cfg = g_input_demo_replay_session.player_cfg;
+	return 1;
+}
+
+int input_demo_replay_get_rear_view_baseline(input_demo_rear_view_baseline *state)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || !session.has_rear_view_baseline || !state) return 0;
+	*state = session.rear_view_baseline;
+	return 1;
+}
+
+int input_demo_replay_get_view_projection(input_demo_view_projection *state)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || !session.has_view_projection || !state) return 0;
+	*state = session.view_projection;
 	return 1;
 }
 

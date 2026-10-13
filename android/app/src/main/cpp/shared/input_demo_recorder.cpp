@@ -65,6 +65,10 @@ struct input_demo_recorder_session {
 	std::string rng_mode;
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	bool has_rear_view_baseline = false;
+	input_demo_rear_view_baseline rear_view_baseline = {};
+	bool has_view_projection = false;
+	input_demo_view_projection view_projection = {};
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
@@ -80,6 +84,7 @@ struct input_demo_recorder_session {
 	input_demo_input_batch pending_input;
 	size_t pending_input_bytes;
 	int32_t input_frame_time;
+	int automap_phase = 0;
 	bool has_input_tail;
 	input_demo_file_frame input_tail;
 	std::vector<input_demo_control_frame> control_frames;
@@ -185,6 +190,11 @@ static int input_demo_recorder_append_operation(const input_demo_input_operation
 	if (session.pending_input.operations.size() >= INPUT_DEMO_INPUT_OPERATION_MAX ||
 	    text.size() + 1 > INPUT_DEMO_INPUT_BATCH_MAX_BYTES - session.pending_input_bytes)
 		return input_demo_recorder_input_fail("input batch exceeds the supported limit", error, error_size);
+	if (operation.kind == INPUT_DEMO_INPUT_AUTOMAP) {
+		const int next = input_demo_automap_next_phase(session.automap_phase, operation.automap_phase);
+		if (next < 0) return input_demo_recorder_input_fail("invalid ordered automap transition", error, error_size);
+		session.automap_phase = next;
+	}
 	session.pending_input_bytes += text.size() + 1;
 	session.pending_input.operations.push_back(operation);
 	return 1;
@@ -393,6 +403,10 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 	demo->metadata.has_player_cfg = session.has_player_cfg;
 	if (session.has_player_cfg)
 		demo->metadata.player_cfg = session.player_cfg;
+	demo->metadata.has_rear_view_baseline = session.has_rear_view_baseline;
+	demo->metadata.rear_view_baseline = session.rear_view_baseline;
+	demo->metadata.has_view_projection = session.has_view_projection;
+	demo->metadata.view_projection = session.view_projection;
 	if (session.has_checkpoint) {
 		demo->metadata.start_save = session.checkpoint_save_name;
 		demo->has_checkpoint = true;
@@ -437,6 +451,10 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	input_demo_checkpoint_thief_state_clear(&settings->checkpoint_thief_state);
 	settings->record_per_frame_state = 0;
 	settings->ordered_input = 1;
+	settings->has_rear_view_baseline = 0;
+	settings->rear_view_baseline = {};
+	settings->has_view_projection = 0;
+	settings->view_projection = {};
 }
 
 int input_demo_recorder_is_active(void)
@@ -447,6 +465,19 @@ int input_demo_recorder_is_active(void)
 uint32_t input_demo_recorder_frame_count(void)
 {
 	return static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
+}
+
+uint32_t input_demo_recorder_pending_input_operation_count(void)
+{
+	return static_cast<uint32_t>(g_input_demo_recorder_session.pending_input.operations.size());
+}
+
+int input_demo_recorder_get_view_projection(input_demo_view_projection *state)
+{
+	const auto &session = g_input_demo_recorder_session;
+	if (!session.active || !session.has_view_projection || !state) return 0;
+	*state = session.view_projection;
+	return 1;
 }
 
 uint32_t input_demo_recorder_diagnostic_frame_index(void)
@@ -469,6 +500,7 @@ int input_demo_recorder_truncate(uint32_t frame_count)
 	g_input_demo_recorder_session.pending_frame_events.clear();
 	g_input_demo_recorder_session.pending_frame_event_bytes = 0;
 	g_input_demo_recorder_session.pending_input = input_demo_input_batch();
+	g_input_demo_recorder_session.automap_phase = 0;
 	g_input_demo_recorder_session.pending_input_bytes = 64;
 	g_input_demo_recorder_session.has_input_tail = false;
 	g_input_demo_recorder_session.input_tail = input_demo_file_frame();
@@ -495,6 +527,11 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		return input_demo_recorder_copy_error("input demo recorder requires a real level", error, error_size);
 	if (settings->difficulty < 0 || settings->difficulty > 4)
 		return input_demo_recorder_copy_error("input demo recorder received an invalid difficulty", error, error_size);
+	if (settings->has_rear_view_baseline && (!settings->ordered_input || !input_demo_rear_view_baseline_supported(&settings->rear_view_baseline)))
+		return input_demo_recorder_copy_error("invalid or legacy rear-view baseline", error, error_size);
+	if (settings->has_view_projection && (!settings->ordered_input || !input_demo_view_projection_supported(&settings->view_projection) ||
+	                                      (settings->game == INPUT_DEMO_GAME_D1 && settings->view_projection.missile_view_enabled)))
+		return input_demo_recorder_copy_error("invalid or legacy view projection", error, error_size);
 	if (have_checkpoint) {
 		if (!settings->checkpoint_save_name || !settings->checkpoint_save_name[0])
 			return input_demo_recorder_copy_error("missing recorder checkpoint_save_name", error, error_size);
@@ -517,6 +554,10 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	g_input_demo_recorder_session.has_player_cfg = settings->has_player_cfg ? true : false;
 	if (settings->has_player_cfg)
 		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
+	g_input_demo_recorder_session.has_rear_view_baseline = settings->has_rear_view_baseline != 0;
+	g_input_demo_recorder_session.rear_view_baseline = settings->rear_view_baseline;
+	g_input_demo_recorder_session.has_view_projection = settings->has_view_projection != 0;
+	g_input_demo_recorder_session.view_projection = settings->view_projection;
 	g_input_demo_recorder_session.has_checkpoint = have_checkpoint ? true : false;
 	g_input_demo_recorder_session.record_per_frame_state = settings->record_per_frame_state ? true : false;
 	g_input_demo_recorder_session.ordered_input = settings->ordered_input != 0;
@@ -574,6 +615,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	control_frame.state = *state;
 	if (session.ordered_input) {
 		if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
+		if (session.automap_phase) return input_demo_recorder_input_fail("simulation frame cannot run while ordered automap is open", error, error_size);
 		if (session.has_input_tail || !has_rng_call_count)
 			return input_demo_recorder_input_fail("ordered frame requires RNG count and no finalized tail", error, error_size);
 		control_frame.pulse = *pulse;
@@ -679,19 +721,69 @@ int input_demo_recorder_stage_input_clear(int32_t frame_time, char *error, size_
 	return input_demo_recorder_append_operation(operation, error, error_size);
 }
 
-int input_demo_recorder_stage_input_sample(int32_t frame_time,
-                                           const input_demo_control_state *state,
-                                           const input_demo_control_pulse *pulse,
-                                           char *error, size_t error_size)
+int input_demo_recorder_stage_input_automap(int32_t frame_time, int32_t phase,
+                                            char *error, size_t error_size)
+{
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_AUTOMAP;
+	operation.frame_time = frame_time;
+	operation.automap_phase = phase;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_stage_input_rear_view(int32_t frame_time, int32_t action,
+                                              char *error, size_t error_size)
+{
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_REAR_VIEW;
+	operation.frame_time = frame_time;
+	operation.rear_view_action = action;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_stage_input_cockpit(int32_t frame_time, int32_t current_cockpit, int32_t preferred_cockpit,
+                                            char *error, size_t error_size)
+{
+	input_demo_input_operation operation = {};
+	operation.kind = INPUT_DEMO_INPUT_COCKPIT;
+	operation.frame_time = frame_time;
+	operation.current_cockpit = current_cockpit;
+	operation.preferred_cockpit = preferred_cockpit;
+	g_input_demo_recorder_session.input_frame_time = frame_time;
+	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+static int input_demo_recorder_stage_control_operation(int kind, int32_t frame_time,
+                                                       const input_demo_control_state *state,
+                                                       const input_demo_control_pulse *pulse,
+                                                       char *error, size_t error_size)
 {
 	if (!state || !pulse) return input_demo_recorder_input_fail("missing input sample controls", error, error_size);
 	input_demo_input_operation operation = {};
-	operation.kind = INPUT_DEMO_INPUT_SAMPLE;
+	operation.kind = kind;
 	operation.frame_time = frame_time;
 	operation.state = *state;
 	operation.pulse = *pulse;
 	g_input_demo_recorder_session.input_frame_time = frame_time;
 	return input_demo_recorder_append_operation(operation, error, error_size);
+}
+
+int input_demo_recorder_stage_input_sample(int32_t frame_time,
+                                           const input_demo_control_state *state,
+                                           const input_demo_control_pulse *pulse,
+                                           char *error, size_t error_size)
+{
+	return input_demo_recorder_stage_control_operation(INPUT_DEMO_INPUT_SAMPLE, frame_time, state, pulse, error, error_size);
+}
+
+int input_demo_recorder_stage_input_controls(int32_t frame_time,
+                                             const input_demo_control_state *state,
+                                             const input_demo_control_pulse *pulse,
+                                             char *error, size_t error_size)
+{
+	return input_demo_recorder_stage_control_operation(INPUT_DEMO_INPUT_CONTROLS, frame_time, state, pulse, error, error_size);
 }
 
 int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
@@ -705,6 +797,8 @@ int input_demo_recorder_finish_input_tail(const input_demo_control_state *state,
 	if (session.input_failed) return input_demo_recorder_copy_error(session.input_error, error, error_size);
 	if (!state || !pulse || session.has_input_tail)
 		return input_demo_recorder_input_fail("missing tail controls or duplicate input tail", error, error_size);
+	if (session.automap_phase != 0 && session.automap_phase != INPUT_DEMO_AUTOMAP_ACTIVE)
+		return input_demo_recorder_input_fail("input tail cannot end during incomplete automap entry", error, error_size);
 	auto &tail = session.input_tail;
 	tail.input.frame = static_cast<uint32_t>(session.control_frames.size());
 	tail.input.has_frame_time = 1;
@@ -812,6 +906,13 @@ int input_demo_recorder_stage_direct_command_drop_marker(int player_marker_num,
 	event["command"] = "drop_marker";
 	event["player_marker_num"] = player_marker_num;
 	event["message"] = message ? message : "";
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
+}
+
+int input_demo_recorder_stage_direct_command_delete_marker(int player_marker_num, int expected_signature,
+                                                           char *error, size_t error_size)
+{
+	ordered_json event = { { "kind", "direct_command" }, { "command", "delete_marker" }, { "player_marker_num", player_marker_num }, { "expected_signature", expected_signature } };
 	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 

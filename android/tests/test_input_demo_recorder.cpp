@@ -67,6 +67,15 @@ static bool read_text_file(const char *path, std::string *text)
 	return true;
 }
 
+static bool write_text_file(const char *path, const char *text)
+{
+	FILE *file = fopen(path, "wb");
+	if (!file) return false;
+	const size_t length = strlen(text);
+	const bool written = fwrite(text, 1, length, file) == length;
+	return fclose(file) == 0 && written;
+}
+
 static const char *input_demo_test_game_name(void)
 {
 #if defined(INPUT_DEMO_TEST_D2)
@@ -1135,6 +1144,396 @@ static int expect_ordered_command_domains(void)
 	return 0;
 }
 
+static int expect_cockpit_projection_codec(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *path = "test_input_demo_view_projection.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_view_projection = 1;
+	const input_demo_view_projection initial = { 640, 480, 65536, 0x9000, 9000, 0, settings.game == INPUT_DEMO_GAME_D2 ? 1 : 0 };
+	settings.view_projection = initial;
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	input_demo_view_projection actual = {};
+	char error[256] = "";
+	input_demo_recorder_cancel();
+	if (input_demo_recorder_get_view_projection(&actual)) return report_failure("inactive recorder exposed projection");
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) return report_failure_string(error);
+	settings.view_projection.screen_width = 800;
+	if (!input_demo_recorder_get_view_projection(&actual) || input_demo_recorder_get_view_projection(nullptr) ||
+	    memcmp(&actual, &initial, sizeof(initial))) return report_failure("recorder projection is absent or aliases mutable caller settings");
+	settings.view_projection = initial;
+	const int cockpit_modes[] = { 0, 2, 3 };
+	for (int current : cockpit_modes)
+		for (int preferred : cockpit_modes)
+			if (!input_demo_recorder_stage_input_cockpit(current * 1234, current, preferred, error, sizeof(error))) return report_failure_string(error);
+	if (!input_demo_recorder_capture_frame(2000, &state, &pulse, 100, 1, 2, nullptr, nullptr, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_cockpit(65536, 3, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)) ||
+	    !input_demo_recorder_flush(path, error, sizeof(error))) return report_failure_string(error);
+	input_demo_file demo;
+	std::string text, detail;
+	if (!input_demo_file_read(path, &demo, &detail) || !input_demo_file_to_text(demo, &text, &detail) ||
+	    !write_text_file(path, text.c_str()) || !input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(detail + error);
+	if (!input_demo_replay_get_view_projection(&actual) || input_demo_replay_get_view_projection(nullptr) || memcmp(&actual, &initial, sizeof(initial)))
+		return report_failure("projection replay getter changed recorded geometry");
+	for (int index = 0; index != 9; ++index) {
+		input_demo_input_operation operation = {};
+		if (!input_demo_replay_get_input_operation(0, index, &operation, error, sizeof(error)) ||
+		    operation.kind != INPUT_DEMO_INPUT_COCKPIT || operation.current_cockpit != cockpit_modes[index / 3] || operation.preferred_cockpit != cockpit_modes[index % 3] ||
+		    operation.frame_time != cockpit_modes[index / 3] * 1234) return report_failure("resolved cockpit operation round trip differs");
+	}
+	input_demo_replay_unload();
+	if (input_demo_replay_get_view_projection(&actual)) return report_failure("unloaded replay exposed projection");
+	std::vector<json> rows;
+	std::istringstream lines(text);
+	std::string line;
+	while (std::getline(lines, line)) rows.push_back(json::parse(line));
+	const auto parses = [&](const std::vector<json> &candidate) {
+		std::string encoded;
+		for (const auto &row : candidate) encoded += row.dump() + "\n";
+		input_demo_file parsed;
+		return input_demo_file_parse_text(encoded, &parsed, &detail);
+	};
+	const json maxima = { { "screen_width", 16384 }, { "screen_height", 16384 }, { "aspect", 16 * 65536 }, { "zoom", 16 * 65536 }, { "depth", 9000 }, { "classic_depth", 1 }, { "missile_view_enabled", settings.game == INPUT_DEMO_GAME_D2 ? 1 : 0 } };
+	for (auto field = maxima.begin(); field != maxima.end(); ++field) {
+		auto valid = rows;
+		valid[0]["view_projection"][field.key()] = field.value();
+		if (!parses(valid)) return report_failure_string("supported projection bound rejected: " + detail);
+		for (const auto &value : json::array({ -1, field.value().get<int>() + 1, UINT64_MAX, false, 1.0, "1", nullptr })) {
+			auto bad = rows;
+			bad[0]["view_projection"][field.key()] = value;
+			if (parses(bad)) return report_failure("invalid projection value accepted");
+		}
+		auto bad = rows;
+		bad[0]["view_projection"].erase(field.key());
+		if (parses(bad)) return report_failure("partial projection contract accepted");
+		if (field.key() != "classic_depth" && field.key() != "missile_view_enabled") {
+			bad = rows;
+			bad[0]["view_projection"][field.key()] = 0;
+			if (parses(bad)) return report_failure("zero projection field accepted");
+		}
+	}
+	auto bad = rows;
+	bad[0]["view_projection"]["screen_width"] = 16384;
+	bad[0]["view_projection"]["screen_height"] = 4096;
+	if (!parses(bad)) return report_failure("maximum projection pixel count rejected");
+	bad[0]["view_projection"]["screen_height"] = 4097;
+	if (parses(bad)) return report_failure("oversized projection pixel count accepted");
+	bad = rows;
+	bad[0]["view_projection"]["main_view_fov"] = 110;
+	if (parses(bad)) return report_failure("unknown projection field accepted");
+	for (const char *field : { "current_cockpit", "preferred_cockpit" }) {
+		for (const auto &value : json::array({ -1, 1, 4, 5, UINT64_MAX, false, 1.0, "1", nullptr })) {
+			bad = rows;
+			bad[1]["dispatch"]["ops"][0][field] = value;
+			if (parses(bad)) return report_failure("invalid resolved cockpit accepted");
+		}
+		bad = rows;
+		bad[1]["dispatch"]["ops"][0].erase(field);
+		if (parses(bad)) return report_failure("partial cockpit operation accepted");
+	}
+	bad = rows;
+	bad[1]["dispatch"]["ops"][0]["s"] = json::object();
+	if (parses(bad)) return report_failure("cockpit operation accepted controls payload");
+	demo.metadata.has_view_projection = false;
+	if (!input_demo_file_to_text(demo, &text, &detail) || !write_text_file(path, text.c_str()) ||
+	    !input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(detail + error);
+	actual = initial;
+	if (input_demo_replay_get_view_projection(&actual) || memcmp(&actual, &initial, sizeof(initial)))
+		return report_failure("absent projection changed native startup output");
+	input_demo_replay_unload();
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	input_demo_recorder_cancel();
+	settings.has_view_projection = 0;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) || input_demo_recorder_get_view_projection(&actual))
+		return report_failure("absent recorder projection was synthesized");
+	input_demo_recorder_cancel();
+	settings.has_view_projection = 1;
+	settings.view_projection.depth = 9001;
+	if (input_demo_recorder_start(&settings, error, sizeof(error))) return report_failure("recorder accepted unsupported projection");
+	settings.view_projection = initial;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) return report_failure_string(error);
+	if (input_demo_recorder_stage_input_cockpit(0, 5, 0, error, sizeof(error)) ||
+	    input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)))
+		return report_failure("invalid cockpit operation did not poison capture");
+	input_demo_recorder_cancel();
+	return 0;
+}
+
+static int expect_pending_input_operation_count(void)
+{
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	input_demo_recorder_cancel();
+	if (input_demo_recorder_pending_input_operation_count()) return report_failure("inactive recorder retained pending operation count");
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count() ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count()) return report_failure("empty active input batch is not empty");
+	if (!input_demo_recorder_stage_input_reset(0, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count() != 1 ||
+	    !input_demo_recorder_stage_input_controls(1234, &state, &pulse, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count() != 2 ||
+	    input_demo_recorder_pending_input_operation_count() != 2)
+		return report_failure("pending operation count is wrong or mutates on read");
+	if (!input_demo_recorder_capture_frame(2000, &state, &pulse, 100, 1, 2, nullptr, nullptr, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count() ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_clear(0, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count() != 1)
+		return report_failure("pending operation count did not reset at frame boundary");
+	if (!input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)) ||
+	    input_demo_recorder_pending_input_operation_count()) return report_failure("finalized tail remains pending");
+	input_demo_recorder_cancel();
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_reset(0, error, sizeof(error))) return report_failure_string(error);
+	input_demo_recorder_cancel();
+	if (input_demo_recorder_pending_input_operation_count() || input_demo_recorder_is_active())
+		return report_failure("cancellation retained pending operations");
+	return 0;
+}
+
+static int expect_ordered_rear_view_codec(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *path = "test_input_demo_ordered_rear_view.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_rear_view_baseline = 1;
+	settings.rear_view_baseline = { 1, 0, 1, 4 };
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	char error[256] = "";
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) return report_failure_string(error);
+	const int actions[] = { INPUT_DEMO_REAR_VIEW_ARM, INPUT_DEMO_REAR_VIEW_RELEASE_OFF, INPUT_DEMO_REAR_VIEW_ENTER,
+		                    INPUT_DEMO_REAR_VIEW_TOGGLE_OFF, INPUT_DEMO_REAR_VIEW_RESET };
+	for (int action : actions)
+		if (!input_demo_recorder_stage_input_rear_view(action * 1234, action, error, sizeof(error))) return report_failure_string(error);
+	if (!input_demo_recorder_capture_frame(2000, &state, &pulse, 100, 1, 2, nullptr, nullptr, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_rear_view(0, INPUT_DEMO_REAR_VIEW_ENTER, error, sizeof(error)) ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)) ||
+	    !input_demo_recorder_flush(path, error, sizeof(error))) return report_failure_string(error);
+	input_demo_file demo;
+	std::string text, detail;
+	if (!input_demo_file_read(path, &demo, &detail) || !input_demo_file_to_text(demo, &text, &detail) ||
+	    !write_text_file(path, text.c_str()) || !input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(detail + error);
+	input_demo_rear_view_baseline baseline = {};
+	if (!input_demo_replay_get_rear_view_baseline(&baseline) || input_demo_replay_get_rear_view_baseline(nullptr) ||
+	    std::memcmp(&baseline, &settings.rear_view_baseline, sizeof(baseline)))
+		return report_failure("rear-view baseline round trip differs");
+	for (unsigned i = 0; i < sizeof(actions) / sizeof(*actions); ++i) {
+		input_demo_input_operation operation = {};
+		if (!input_demo_replay_get_input_operation(0, i, &operation, error, sizeof(error)) ||
+		    operation.kind != INPUT_DEMO_INPUT_REAR_VIEW || operation.rear_view_action != actions[i] || operation.frame_time != actions[i] * 1234)
+			return report_failure("rear-view action or input-time order differs");
+	}
+	input_demo_replay_unload();
+	if (input_demo_replay_get_rear_view_baseline(&baseline)) return report_failure("unloaded replay exposed rear-view baseline");
+	std::vector<json> rows;
+	std::istringstream lines(text);
+	std::string line;
+	while (std::getline(lines, line)) rows.push_back(json::parse(line));
+	const auto parses = [&](const std::vector<json> &candidate) {
+		std::string encoded;
+		for (const auto &row : candidate) encoded += row.dump() + "\n";
+		input_demo_file parsed;
+		return input_demo_file_parse_text(encoded, &parsed, &detail);
+	};
+	for (const char *field : { "active", "leave_mode", "current_cockpit", "preferred_cockpit" }) {
+		for (const auto &value : json::array({ -1, 5, INT32_MAX, UINT64_MAX, false, 1.0, "1", nullptr })) {
+			auto bad = rows;
+			bad[0]["rear_view"][field] = value;
+			if (parses(bad)) return report_failure("invalid rear-view baseline value accepted");
+		}
+		auto bad = rows;
+		bad[0]["rear_view"].erase(field);
+		if (parses(bad)) return report_failure("partial rear-view baseline accepted");
+	}
+	for (const auto &action : json::array({ 0, 1, true, nullptr, "", "toggle", "=", "ENTER", json::object() })) {
+		auto bad = rows;
+		bad[1]["dispatch"]["ops"][0]["action"] = action;
+		if (parses(bad)) return report_failure("invalid rear-view action accepted");
+	}
+	auto bad = rows;
+	bad[1]["dispatch"]["ops"][0]["phase"] = "active";
+	if (parses(bad)) return report_failure("rear-view operation accepted unrelated fields");
+	bad = rows;
+	bad[0]["rear_view"]["entry_time"] = 0;
+	if (parses(bad)) return report_failure("rear-view baseline accepted unknown wall-clock field");
+	// An absent baseline must remain absent, not silently install a zero state
+	demo.metadata.has_rear_view_baseline = false;
+	if (!input_demo_file_to_text(demo, &text, &detail) || !write_text_file(path, text.c_str()) ||
+	    !input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(detail + error);
+	baseline = { 1, 1, 4, 3 };
+	if (input_demo_replay_get_rear_view_baseline(&baseline) || baseline.active != 1 || baseline.leave_mode != 1 || baseline.current_cockpit != 4 || baseline.preferred_cockpit != 3)
+		return report_failure("absent rear-view baseline changed output state");
+	input_demo_replay_unload();
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	for (int action : { 0, -1, 6, INT32_MAX }) {
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+		    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) return report_failure_string(error);
+		if (input_demo_recorder_stage_input_rear_view(1, action, error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)))
+			return report_failure("invalid rear-view action did not poison capture");
+		input_demo_recorder_cancel();
+	}
+	settings.rear_view_baseline.active = 2;
+	if (input_demo_recorder_start(&settings, error, sizeof(error))) return report_failure("recorder accepted invalid rear-view baseline");
+	return 0;
+}
+
+static int expect_ordered_automap_codec(void)
+{
+	using json = nlohmann::ordered_json;
+	const char *path = "test_input_demo_ordered_automap.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.rng_mode = input_demo_test_rng_mode();
+	input_demo_control_state state = {};
+	input_demo_control_pulse pulse = {};
+	state.fire_secondary_state = 3;
+	pulse.fire_secondary_count = 4;
+	char error[256] = "";
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_controls(100, &state, &pulse, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(101, INPUT_DEMO_AUTOMAP_BEGIN, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_clear(102, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(103, INPUT_DEMO_AUTOMAP_DEPTHS, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(104, INPUT_DEMO_AUTOMAP_ACTIVE, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(105, INPUT_DEMO_AUTOMAP_CLOSE, error, sizeof(error))) return report_failure_string(error);
+	if (settings.game == INPUT_DEMO_GAME_D2 && !input_demo_recorder_stage_direct_command_delete_marker(8, 12345, error, sizeof(error))) return report_failure_string(error);
+	if (!input_demo_recorder_capture_frame(2000, &state, &pulse, 100, 1, 2, nullptr, nullptr, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 2000, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(0, INPUT_DEMO_AUTOMAP_BEGIN, error, sizeof(error))) return report_failure_string(error);
+	state = {};
+	pulse = {};
+	if (!input_demo_recorder_stage_input_controls(65536, &state, &pulse, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(65536, INPUT_DEMO_AUTOMAP_DEPTHS, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(65536, INPUT_DEMO_AUTOMAP_ACTIVE, error, sizeof(error)) ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)) ||
+	    !input_demo_recorder_flush(path, error, sizeof(error))) return report_failure_string(error);
+	input_demo_file demo;
+	std::string detail, text;
+	if (!input_demo_file_read(path, &demo, &detail)) return report_failure_string(detail);
+	if (demo.frames[0].dispatch.operations[0].kind != INPUT_DEMO_INPUT_CONTROLS ||
+	    demo.frames[0].dispatch.operations[3].automap_phase != INPUT_DEMO_AUTOMAP_DEPTHS ||
+	    demo.input_tail.dispatch.operations[0].automap_phase != INPUT_DEMO_AUTOMAP_BEGIN)
+		return report_failure("automap operation round trip lost order or phase");
+	// The same alias resolves against current residual controls for either controls operation
+	demo.frames[0].dispatch.operations[0].state_is_residual = 1;
+	demo.input_tail.dispatch.operations[1].state_is_residual = 1;
+	if (!input_demo_file_to_text(demo, &text, &detail) || !write_text_file(path, text.c_str()) ||
+	    !input_demo_replay_load(path, error, sizeof(error))) return report_failure_string(detail + error);
+	input_demo_input_operation op = {};
+	if (!input_demo_replay_get_input_operation(0, 0, &op, error, sizeof(error)) ||
+	    op.kind != INPUT_DEMO_INPUT_CONTROLS || op.state.fire_secondary_state != 3 || op.pulse.fire_secondary_count != 4 ||
+	    !input_demo_replay_get_input_operation(1, 1, &op, error, sizeof(error)) ||
+	    op.kind != INPUT_DEMO_INPUT_CONTROLS || op.state.fire_secondary_state || op.pulse.fire_secondary_count || op.frame_time != 65536)
+		return report_failure("controls alias used the wrong frame or inherited pulse");
+	if (settings.game == INPUT_DEMO_GAME_D2 &&
+	    (!input_demo_replay_get_input_operation(0, 6, &op, error, sizeof(error)) ||
+	     op.command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER || op.command.value0 != 8 || op.command.value1 != 12345))
+		return report_failure("delete marker command did not retain resolved slot");
+	input_demo_replay_unload();
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	std::vector<json> rows;
+	std::istringstream lines(text);
+	std::string line;
+	while (std::getline(lines, line)) rows.push_back(json::parse(line));
+	const auto parses = [&](const std::vector<json> &candidate) {
+		std::string encoded;
+		for (const auto &row : candidate) encoded += row.dump() + "\n";
+		input_demo_file parsed;
+		return input_demo_file_parse_text(encoded, &parsed, &detail);
+	};
+	for (const auto &phase : json::array({ "", "open", "BEGIN", "=", 1, true, nullptr, json::object() })) {
+		auto bad = rows;
+		bad[1]["dispatch"]["ops"][1]["phase"] = phase;
+		if (parses(bad)) return report_failure("unsupported automap phase was accepted");
+	}
+	for (const auto &sequence : std::vector<std::vector<std::string>>{
+	         { "depths" }, { "active" }, { "close" }, { "begin" }, { "begin", "active", "close" }, { "begin", "begin", "close" }, { "begin", "depths", "depths", "close" }, { "begin", "depths", "active", "active", "close" }, { "begin", "close", "close" } }) {
+		auto bad = rows;
+		bad[1]["dispatch"]["ops"] = json::array();
+		for (const auto &phase : sequence) bad[1]["dispatch"]["ops"].push_back({ { "k", "automap" }, { "ft", 1 }, { "phase", phase } });
+		if (parses(bad)) return report_failure("invalid automap transition or open simulation frame was accepted");
+	}
+	for (const auto &sequence : std::vector<std::vector<std::string>>{ { "begin", "close" }, { "begin", "depths", "close" } }) {
+		auto valid = rows;
+		valid[1]["dispatch"]["ops"] = json::array();
+		for (const auto &phase : sequence) valid[1]["dispatch"]["ops"].push_back({ { "k", "automap" }, { "ft", 1 }, { "phase", phase } });
+		if (!parses(valid)) return report_failure_string("partial automap entry rejected: " + detail);
+	}
+	for (const char *key : { "s", "p", "event" }) {
+		auto bad = rows;
+		bad[1]["dispatch"]["ops"][1][key] = json::object();
+		if (parses(bad)) return report_failure("automap accepted an unrelated payload");
+	}
+	for (const auto &invalid : json::array({ false, 0, "previous", json::array() })) {
+		auto bad = rows;
+		bad[1]["dispatch"]["ops"][0]["s"] = invalid;
+		if (parses(bad)) return report_failure("controls operation accepted invalid state alias");
+	}
+	for (int marker : { -1, 0, 8, 9, INT32_MAX }) {
+		const json event = { { "kind", "direct_command" }, { "command", "delete_marker" }, { "player_marker_num", marker }, { "expected_signature", INT32_MAX } };
+		input_demo_replay_direct_command_event command;
+		if (input_demo_dispatch_command_from_json(event.dump(), settings.game, &command, &detail) !=
+		    (settings.game == INPUT_DEMO_GAME_D2 && marker >= 0 && marker < 9))
+			return report_failure("delete marker command accepted wrong game or slot");
+	}
+	for (const auto &signature : json::array({ -1, UINT64_MAX, false, 1.0, "1", nullptr })) {
+		const json event = { { "kind", "direct_command" }, { "command", "delete_marker" }, { "player_marker_num", 0 }, { "expected_signature", signature } };
+		input_demo_replay_direct_command_event command;
+		if (input_demo_dispatch_command_from_json(event.dump(), INPUT_DEMO_GAME_D2, &command, &detail))
+			return report_failure("delete marker accepted invalid expected signature");
+	}
+	for (int phase : { 0, -1, 5, INT32_MAX }) {
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+		    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error))) return report_failure_string(error);
+		if (input_demo_recorder_stage_input_automap(1, phase, error, sizeof(error)) ||
+		    input_demo_recorder_finish_input_tail(&state, &pulse, 100, 2, error, sizeof(error)))
+			return report_failure("invalid automap phase did not poison capture");
+		input_demo_recorder_cancel();
+	}
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 2, 0, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_input_automap(1, INPUT_DEMO_AUTOMAP_BEGIN, error, sizeof(error))) return report_failure_string(error);
+	if (input_demo_recorder_capture_frame(2000, &state, &pulse, 100, 1, 2, nullptr, nullptr, error, sizeof(error)))
+		return report_failure("recorder accepted simulation while automap is open");
+	input_demo_recorder_cancel();
+	return 0;
+}
+
 static int expect_ordered_input_diagnostics(void)
 {
 	const char *path = "test_input_demo_ordered_events.dximdemo";
@@ -1290,7 +1689,35 @@ static int expect_ordered_input_codec(void)
 		}
 		return true;
 	};
+	// A tail cannot be the initial RNG boundary: every recording has a simulation frame
+	for (const auto &invalid_count : json::array({ 0, -1, false, 0.0, "0", nullptr, 4294967296ULL })) {
+		auto tail_only = std::vector<json>{ records.front(), records[records.size() - 2], records.back() };
+		tail_only.front()["frame_count"] = invalid_count;
+		tail_only[1]["f"] = 0;
+		tail_only.back()["result"]["frame_count"] = 0;
+		if (!rejects(tail_only)) return 1;
+		if (invalid_count.is_number_integer() && invalid_count == 0) {
+			std::string candidate;
+			for (const auto &row : tail_only) candidate += row.dump() + "\n";
+			if (!write_text_file(path, candidate.c_str()) || input_demo_replay_load(path, error, sizeof(error)) ||
+			    input_demo_replay_is_loaded() || !strstr(error, "frame_count must be positive"))
+				return report_failure("zero-frame replay was not explicitly rejected before runtime");
+			remove(path);
+		}
+	}
+	input_demo_file empty_demo;
+	if (!input_demo_file_parse_text(text, &empty_demo, &detail)) return report_failure_string(detail);
+	empty_demo.metadata.frame_count = 0;
+	empty_demo.frames.clear();
+	empty_demo.result.frame_count = 0;
+	empty_demo.input_tail.input.frame = empty_demo.input_tail.rng.frame = 0;
+	std::string empty_text;
+	if (input_demo_file_to_text(empty_demo, &empty_text, &detail) || detail.find("frame_count must be positive") == std::string::npos)
+		return report_failure("writer accepted a zero-frame input-tail recording");
 	auto bad = records;
+	bad[0].erase("frame_count");
+	if (!rejects(bad)) return 1;
+	bad = records;
 	bad[0]["version"] = 4;
 	if (!rejects(bad)) return 1;
 	bad = records;
@@ -1404,6 +1831,21 @@ static int expect_ordered_input_codec(void)
 	bad[2]["dispatch"]["pre_rng"] = 0;
 	if (!rejects(bad)) return 1;
 
+	// Finalizing an empty or effectful tail must not make a no-frame capture publishable
+	for (int effectful = 0; effectful != 2; ++effectful) {
+		input_demo_control_state tail_state = {};
+		input_demo_control_pulse tail_pulse = {};
+		tail_state.fire_secondary_state = tail_pulse.fire_secondary_count = effectful;
+		if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
+		    !check(input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error)))) return 1;
+		if (effectful && !check(input_demo_recorder_stage_input_sample(1, &tail_state, &tail_pulse, error, sizeof(error)))) return 1;
+		if (!check(input_demo_recorder_finish_input_tail(&tail_state, &tail_pulse, 1, 0, error, sizeof(error))) ||
+		    input_demo_recorder_frame_count() || input_demo_recorder_flush(path, error, sizeof(error)) ||
+		    !strstr(error, "captured no frames") || read_text_file(path, &empty_text))
+			return report_failure("recorder published a zero-frame input-tail recording");
+		input_demo_recorder_cancel();
+	}
+
 	// Invalid native text must fail through the C API, never throw across engine C frames
 	if (!check(input_demo_recorder_start(&settings, error, sizeof(error))) ||
 	    !check(input_demo_recorder_begin_input_batch(1, 0, 1, error, sizeof(error)))) return 1;
@@ -1442,6 +1884,10 @@ static int expect_ordered_input_codec(void)
 int main(void)
 {
 	if (expect_ordered_input_codec()) return 1;
+	if (expect_ordered_automap_codec()) return 1;
+	if (expect_ordered_rear_view_codec()) return 1;
+	if (expect_pending_input_operation_count()) return 1;
+	if (expect_cockpit_projection_codec()) return 1;
 	if (expect_ordered_input_diagnostics()) return 1;
 	if (expect_ordered_command_domains()) return 1;
 	if (expect_ordered_rewind_cancellation()) return 1;

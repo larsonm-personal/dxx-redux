@@ -1314,7 +1314,7 @@ int input_demo_prepare_replay_frame(void)
 int input_demo_step_replay_frame(void)
 {
 	return input_demo_step_replay_frame_shared(
-		input_demo_prepare_replay_frame);
+		input_demo_prepare_replay_frame, input_demo_stop_replay);
 }
 
 void input_demo_advance_replay_frame(void)
