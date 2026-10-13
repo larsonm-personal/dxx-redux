@@ -16,6 +16,16 @@ import check_compact_public_replay_failures as negative
 
 
 class RuntimeGateTests(unittest.TestCase):
+    def test_phase_timings_include_failures_without_suppressing_them(self):
+        timings = {}
+        with mock.patch.object(runner.time, "perf_counter", side_effect=(10.0, 12.5, 20.0, 21.25)):
+            with runner.measure_phase(timings, "runner"):
+                pass
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "wrong oracle"):
+                with runner.measure_phase(timings, "fidelity"):
+                    raise runner.parity.EvidenceError("wrong oracle")
+        self.assertEqual(timings, {"runner": 2.5, "fidelity": 1.25})
+
     @staticmethod
     def imported_scope(scenario):
         return {

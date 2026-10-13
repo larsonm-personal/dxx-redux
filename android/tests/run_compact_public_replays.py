@@ -5,6 +5,8 @@ import hashlib
 import os
 import shutil
 import subprocess
+import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import compact_public_replay as compact
@@ -410,6 +412,15 @@ def run(args):
         return _run_cases(args, cases)
 
 
+@contextmanager
+def measure_phase(timings, phase):
+    started = time.perf_counter()
+    try:
+        yield
+    finally:
+        timings[phase] = round(time.perf_counter() - started, 6)
+
+
 def _run_cases(args, cases):
     sandbox_token = hashlib.sha256(str(args.output).encode("utf-8")).hexdigest()[:16]
     report = {
@@ -434,6 +445,7 @@ def _run_cases(args, cases):
                 "repeat": repeat,
                 "backend": args.run_mode,
                 "status": "fail",
+                "timing_seconds": {},
                 "artifacts": {"state": str(state), "rng": str(rng), "result": str(actual)},
             }
             command = [
@@ -472,11 +484,14 @@ def _run_cases(args, cases):
             ]
             item["command"] = command
             try:
-                item["exit_code"] = _run(command, directory / "runner.log", args.timeout + 120, args.repo)
+                with measure_phase(item["timing_seconds"], "runner"):
+                    item["exit_code"] = _run(command, directory / "runner.log", args.timeout + 120, args.repo)
                 if item["exit_code"]:
                     raise parity.EvidenceError("Replay runner failed; inspect runner.log")
-                item["fidelity"] = compact.verify(case["game"], demo, oracle, state, rng, actual)
-                item["actions"] = verify_actions(case, demo, state, actual)
+                with measure_phase(item["timing_seconds"], "fidelity"):
+                    item["fidelity"] = compact.verify(case["game"], demo, oracle, state, rng, actual)
+                with measure_phase(item["timing_seconds"], "actions"):
+                    item["actions"] = verify_actions(case, demo, state, actual)
                 item["status"] = "pass"
             except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
                 item["error"] = str(error)

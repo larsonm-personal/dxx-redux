@@ -266,6 +266,33 @@ jobs:
           retention-days: 3
           if-no-files-found: error
 
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep save integrity reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-save-reports
+          path: |
+            temp/wall-blast-save-shareware/**/*.json
+            temp/wall-blast-save-shareware/**/*.log
+            temp/wall-blast-save-shareware/**/*.txt
+            temp/wall-blast-save-shareware/**/*.png
+            temp/public-*-ci/**/*.json
+            temp/public-*-ci/**/*.log
+            temp/public-*-ci/**/*.txt
+            temp/public-*-ci/**/*.png
+            android/temp/guidebot_live_navigation/**/*.json
+            android/temp/guidebot_live_navigation/**/*.log
+            android/temp/guidebot_live_navigation/**/*.txt
+            android/temp/guidebot_live_navigation/**/*.png
+            android/temp/wall-blast-profiles/**/*.json
+            android/temp/wall-blast-profiles/**/*.log
+            android/temp/wall-blast-profiles/**/*.txt
+            android/temp/wall-blast-profiles/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
+
       - name: Keep save integrity evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -378,6 +405,29 @@ jobs:
             -D2Exe "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
             -Output "$PWD/temp/public-replay-headless-negative-ci" -TimeoutSeconds 180
 
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep primary headless replay reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headless-replay-reports
+          path: |
+            temp/public-replay-headless-ci/**/*.json
+            temp/public-replay-headless-ci/**/*.log
+            temp/public-replay-headless-ci/**/*.txt
+            temp/public-replay-headless-ci/**/*.png
+            temp/public-replay-headless-negative-ci/**/*.json
+            temp/public-replay-headless-negative-ci/**/*.log
+            temp/public-replay-headless-negative-ci/**/*.txt
+            temp/public-replay-headless-negative-ci/**/*.png
+            temp/input_demo_replay_failures_*/**/*.json
+            temp/input_demo_replay_failures_*/**/*.log
+            temp/input_demo_replay_failures_*/**/*.txt
+            temp/input_demo_replay_failures_*/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
+
       - name: Keep primary headless replay evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -458,6 +508,25 @@ jobs:
             -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
             -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
             -Output "$PWD/temp/public-replay-graphics-negative-ci" -TimeoutSeconds 180
+
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep secondary headed replay reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headed-replay-reports
+          path: |
+            temp/public-replay-graphics-ci/**/*.json
+            temp/public-replay-graphics-ci/**/*.log
+            temp/public-replay-graphics-ci/**/*.txt
+            temp/public-replay-graphics-ci/**/*.png
+            temp/public-replay-graphics-negative-ci/**/*.json
+            temp/public-replay-graphics-negative-ci/**/*.log
+            temp/public-replay-graphics-negative-ci/**/*.txt
+            temp/public-replay-graphics-negative-ci/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Keep secondary headed replay evidence
         if: always()
