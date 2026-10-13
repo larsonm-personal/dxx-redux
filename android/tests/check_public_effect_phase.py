@@ -312,8 +312,10 @@ def validate_capture(capture, native=False):
         integer(event["f"], "screenshot frame", previous_frame + 1, len(observations) - 1)
         moment = event["moment"]
         require(isinstance(moment, str), "Invalid screenshot moment")
-        if moment == "stable_animation_sample":
+        if moment in ("stable_animation_sample", "stable_animation_phase"):
             require(observations[event["f"]]["stable_view"], "Animation screenshot is not stable")
+            if moment == "stable_animation_phase":
+                require(event["f"] == 170, "Wrong stable animation phase landmark")
         else:
             require(moment in landmarks and event["f"] == landmarks[moment], "Wrong screenshot landmark")
         previous_frame = event["f"]

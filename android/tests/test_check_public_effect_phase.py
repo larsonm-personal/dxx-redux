@@ -11,7 +11,7 @@ from unittest import mock
 import check_public_effect_phase as phase
 
 
-def sample_capture():
+def sample_capture(frames=32):
     def effect(index, texture, base, frame_time, count):
         return {
             "effect": index,
@@ -39,7 +39,7 @@ def sample_capture():
         "effect26": effect(26, 352, 891, 10724, 11),
     }
     rows = []
-    for frame in range(32):
+    for frame in range(frames):
         row = copy.deepcopy(initial)
         row.update(
             game_time=(frame + 1) * 2184,
@@ -80,7 +80,7 @@ def sample_capture():
         "arrival_frame": 1,
         "first_stable_frame": 2,
         "stable_start_frame": 2,
-        "stable_frames": 30,
+        "stable_frames": frames - 2,
         "screenshot_frames": [],
         "screenshot_events": [],
         "screenshots_uncropped": True,
@@ -121,6 +121,24 @@ class EffectPhaseTests(unittest.TestCase):
         self.assertEqual(phase.unpack_oracle(self.oracle), self.capture)
         self.assertLessEqual(len(phase.encoded(self.oracle)), 100000)
         self.assertEqual(self.compare()["status"], "pass")
+
+    def test_native_fixture_animation_phase_landmark(self):
+        capture = sample_capture(181)
+        capture["screenshot_events"] = [{"f": 170, "moment": "stable_animation_phase"}]
+        capture["screenshot_frames"] = [170]
+        self.assertIs(phase.validate_capture(capture, native=True), capture)
+        controls = sample_controls(capture)
+        oracle = phase.make_oracle(capture, controls, "a" * 64, "b" * 64)
+        self.assertEqual(phase.unpack_oracle(oracle), capture)
+        self.assertEqual(phase.compare(oracle, capture, controls)["status"], "pass")
+        capture["screenshot_events"][0]["f"] = 169
+        capture["screenshot_frames"] = [169]
+        with self.assertRaisesRegex(phase.parity.EvidenceError, "phase landmark"):
+            phase.validate_capture(capture, native=True)
+        capture["screenshot_events"][0] = {"f": 170, "moment": "unknown_animation_landmark"}
+        capture["screenshot_frames"] = [170]
+        with self.assertRaisesRegex(phase.parity.EvidenceError, "Wrong screenshot landmark"):
+            phase.validate_capture(capture, native=True)
 
     def test_wrong_expected_phase_rejects_native_observation(self):
         # This changes the expected selected/frame phase, not the live capture
