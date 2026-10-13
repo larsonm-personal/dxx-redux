@@ -24,6 +24,52 @@ $infoByPath = @{}
 $ownerClosureByName = @{}
 $failures = [System.Collections.Generic.List[string]]::new()
 
+# Discovery alone does not execute the native fault checker/corpus tests in CI
+function Assert-CommonFaultToolingSelection {
+    param([Parameter(Mandatory)][string]$SmokeText)
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($SmokeText, [ref]$tokens, [ref]$parseErrors)
+    if ($parseErrors.Count) { throw 'Tooling smoke script has parse errors' }
+    $assignments = @($ast.EndBlock.Statements | Where-Object {
+            $_ -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+            $_.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+            $_.Left.VariablePath.UserPath -ceq 'tests' -and $_.Operator -eq 'Equals'
+        })
+    if ($assignments.Count -ne 1 -or
+        $assignments[0].Right.Expression -isnot [System.Management.Automation.Language.ArrayExpressionAst]) {
+        throw 'Tooling smoke must have one literal common test array'
+    }
+    $statements = @($assignments[0].Right.Expression.SubExpression.Statements)
+    if ($statements.Count -ne 1 -or $statements[0].PipelineElements.Count -ne 1 -or
+        $statements[0].PipelineElements[0].Expression -isnot [System.Management.Automation.Language.ArrayLiteralAst]) {
+        throw 'Tooling smoke common tests must be a literal string list'
+    }
+    $commonTests = @($statements[0].PipelineElements[0].Expression.SafeGetValue())
+    if (@($commonTests | Where-Object { $_ -ceq 'test_public_d1_fault_tools' }).Count -ne 1) {
+        throw 'Common platform tooling list must include the fault tools exactly once'
+    }
+}
+
+try {
+    $toolingSmokeText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run_tooling_smoke.ps1') -Raw
+    Assert-CommonFaultToolingSelection -SmokeText $toolingSmokeText
+    $omittedFaultTools = $toolingSmokeText.Replace("'test_public_d1_fault_tools',", '')
+    foreach ($negative in @(
+            ($omittedFaultTools + "`n# test_public_d1_fault_tools is mentioned but not selected`n"),
+            ($omittedFaultTools + "`nif (Test-RegressionWindowsHost) { `$tests += 'test_public_d1_fault_tools' }`n")
+        )) {
+        $rejected = $false
+        try { Assert-CommonFaultToolingSelection -SmokeText $negative } catch {
+            if ($_.Exception.Message -cne 'Common platform tooling list must include the fault tools exactly once') { throw }
+            $rejected = $true
+        }
+        if (-not $rejected) { throw 'Tooling smoke selection accepted an omitted or platform-only fault suite' }
+    }
+} catch {
+    $failures.Add("hosted fault tooling selection regression: $($_.Exception.Message)")
+}
+
 $jsoncProbe = Join-Path ([IO.Path]::GetTempPath()) ("dxx-jsonc-catalog-" + [guid]::NewGuid().ToString('N') + '.jsonc')
 try {
     $jsoncProbeText = @'
