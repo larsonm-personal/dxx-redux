@@ -13,6 +13,7 @@ from unittest import mock
 
 import run_compact_public_replays as runner
 import check_compact_public_replay_failures as negative
+import ordered_public_replay as ordered
 
 
 class RuntimeGateTests(unittest.TestCase):
@@ -831,53 +832,76 @@ class RealNegativeCorpusTests(unittest.TestCase):
             next(case for case in included if case["scenario"] == "flight")["imported_d1"]["role"], "required-gameplay"
         )
 
-    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+    def assert_missing_observation_rejected(self, scenarios, field, message):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
-        with tempfile.TemporaryDirectory() as root:
-            import shutil
+        for case in cases:
+            if case["scenario"] not in scenarios:
+                continue
+            with self.subTest(game=case["game"], scenario=case["scenario"]), tempfile.TemporaryDirectory() as root:
+                import shutil
 
-            destination = Path(root) / "corpus"
-            shutil.copytree(source, destination)
-            case = next(row for row in cases if row["scenario"] == "combat")
-            path = destination / case["oracle"]
-            oracle = json.loads(path.read_bytes())
-            oracle.pop("combat_observations")
-            path.write_text(json.dumps(oracle))
-            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
-                runner.load_corpus(destination)
+                destination = Path(root) / "corpus"
+                shutil.copytree(source, destination)
+                demo, path = (destination / case[key] for key in ("demo", "oracle"))
+                original_oracle = path.read_bytes()
+                oracle = json.loads(original_oracle)
+                oracle.pop(field)
+                runner.parity.write_json(path, oracle)
+                # The unchanged provenance must reject even a structurally valid edited oracle
+                with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable-oracle conversion provenance"):
+                    runner.load_corpus(destination)
+                migration_path = demo.with_suffix(".migration.json")
+                migration = json.loads(migration_path.read_bytes())
+                migration["source_oracle_sha256"] = runner.parity.digest(path)
+                runner.parity.write_json(migration_path, migration)
+                # Rebind only this disposable copy so the independent semantic gate is exercised
+                _, admitted = runner.compact.validate(demo, path)
+                self.assertNotIn(field, admitted)
+                with self.assertRaisesRegex(runner.parity.EvidenceError, message):
+                    runner.load_corpus(destination)
+                self.assertEqual((source / case["oracle"]).read_bytes(), original_oracle)
+
+    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+        self.assert_missing_observation_rejected(
+            {"combat", "loot"}, "combat_observations", "immutable live damage/loot"
+        )
 
     def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
-        source = Path(__file__).parent / "fixtures/public_level_replays"
-        cases = runner.load_corpus(source)
-        with tempfile.TemporaryDirectory() as root:
-            import shutil
-
-            destination = Path(root) / "corpus"
-            shutil.copytree(source, destination)
-            case = next(row for row in cases if row["scenario"] == "door-lifecycle")
-            path = destination / case["oracle"]
-            oracle = json.loads(path.read_bytes())
-            oracle.pop("door_observations")
-            path.write_text(json.dumps(oracle))
-            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
-                runner.load_corpus(destination)
+        self.assert_missing_observation_rejected({"door-lifecycle"}, "door_observations", "immutable live geometric")
 
     def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
-        source = Path(__file__).parent / "fixtures/public_level_replays"
-        cases = runner.load_corpus(source)
-        with tempfile.TemporaryDirectory() as root:
-            import shutil
+        self.assert_missing_observation_rejected({"guidebot-release"}, "guidebot_observations", "immutable live escort")
 
-            destination = Path(root) / "corpus"
-            shutil.copytree(source, destination)
-            case = next(row for row in cases if row["scenario"] == "guidebot-release")
-            path = destination / case["oracle"]
-            oracle = json.loads(path.read_bytes())
-            oracle.pop("guidebot_observations")
-            path.write_text(json.dumps(oracle))
-            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live escort"):
-                runner.load_corpus(destination)
+    def assert_changed_ordered_controls(self, case, original_demo, changed_demo):
+        original = ordered.validate(original_demo[0], original_demo[1:-2], original_demo[-2])
+        changed = ordered.validate(changed_demo[0], changed_demo[1:-2], changed_demo[-2])
+        self.assertEqual(len(original), len(changed))
+        self.assertTrue(changed[-1]["is_tail"])
+        self.assertEqual(changed[-1]["f"], original_demo[0]["frame_count"])
+        self.assertNotEqual(
+            runner.compact.sha([batch["ops"] for batch in original]),
+            runner.compact.sha([batch["ops"] for batch in changed]),
+            "Bad-input mutation must change executed operations, including resolved aliases",
+        )
+        release = next((row["f"] + 1 for row in case["actions"].get("door_events", []) if row["stage"] == 2), None)
+        for before, after in zip(original, changed):
+            expected = copy.deepcopy(before)
+            scenario = case["scenario"]
+            if scenario == "door-lifecycle" and before["f"] < release:
+                self.assertEqual(before, after)
+                continue
+            controls = [expected["residual"]] + [op for op in expected["ops"] if op["k"] in ("sample", "controls")]
+            for controls_at_dispatch in controls:
+                if scenario in ("loot", "combat", "guidebot-release"):
+                    # Remove firing while preserving the original flight/aim and all other inputs
+                    controls_at_dispatch["s"]["f1s"] = 0
+                    controls_at_dispatch["p"]["f1"] = 0
+                else:
+                    for field in ("s", "p"):
+                        controls_at_dispatch[field] = dict.fromkeys(controls_at_dispatch[field], 0)
+            # This includes each operation's kind/order/time, commands, pre/post RNG and tail boundary
+            self.assertEqual(expected, after)
 
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
@@ -889,36 +913,59 @@ class RealNegativeCorpusTests(unittest.TestCase):
                 negative.corrupt_corpus(source, destination, cases, mutation)
                 self.assertEqual(runner.load_corpus(destination), cases)
                 for case in cases:
-                    expected = json.loads(originals[case["oracle"]])
-                    changed = json.loads((destination / case["oracle"]).read_bytes())
-                    differences = {key for key in expected if expected[key] != changed[key]}
-                    self.assertEqual(
-                        differences,
-                        {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"},
-                    )
-                    original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
-                    changed_demo = [json.loads(line) for line in (destination / case["demo"]).read_bytes().splitlines()]
-                    self.assertEqual(original_demo[0], changed_demo[0])
-                    self.assertEqual(original_demo[-1], changed_demo[-1])
-                    if mutation == "wrong-oracle":
-                        self.assertEqual(original_demo, changed_demo)
-                    else:
-                        for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
-                            if case["scenario"] == "loot":
+                    with self.subTest(mutation=mutation, game=case["game"], scenario=case["scenario"]):
+                        demo_path, oracle_path = (destination / case[key] for key in ("demo", "oracle"))
+                        expected = json.loads(originals[case["oracle"]])
+                        changed = json.loads(oracle_path.read_bytes())
+                        expected_oracle = copy.deepcopy(expected)
+                        expected_oracle["compact_sha256"] = runner.parity.digest(demo_path)
+                        if mutation == "wrong-oracle":
+                            digest = expected_oracle["frame_sha256"][0]
+                            expected_oracle["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
+                        self.assertEqual(changed, expected_oracle)
+                        # Disposable controls deliberately bind directly, without rewriting old conversion history
+                        self.assertEqual(changed["compact_sha256"], runner.parity.digest(demo_path))
+                        _, admitted = runner.compact.validate(demo_path, oracle_path)
+                        self.assertEqual(admitted, changed)
+                        migration_name = demo_path.with_suffix(".migration.json").name
+                        if migration_name in originals:
+                            self.assertEqual((destination / migration_name).read_bytes(), originals[migration_name])
+                        else:
+                            self.assertFalse((destination / migration_name).exists())
+                        original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
+                        changed_demo = [json.loads(line) for line in demo_path.read_bytes().splitlines()]
+                        self.assertEqual(len(original_demo), len(changed_demo))
+                        self.assertEqual(original_demo[0], changed_demo[0])
+                        self.assertEqual(original_demo[-1], changed_demo[-1])
+                        self.assertEqual(changed_demo[-2]["type"], "input_tail")
+                        if mutation == "wrong-oracle":
+                            self.assertEqual(originals[case["demo"]], demo_path.read_bytes())
+                            continue
+                        self.assertNotEqual(originals[case["demo"]], demo_path.read_bytes())
+                        self.assert_changed_ordered_controls(case, original_demo, changed_demo)
+                        # Also pin the wire-level delta, not just its decoded gameplay meaning
+                        for before, after in zip(copy.deepcopy(original_demo[1:-1]), changed_demo[1:-1]):
+                            if case["scenario"].startswith("secondary-"):
+                                before["input"] = {"s": {"f2s": 0}}
+                                for operation in before["dispatch"]["ops"]:
+                                    if operation["k"] == "sample":
+                                        operation["s"] = {}
+                                        operation.pop("p", None)
+                            elif case["scenario"] == "loot":
                                 if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
                                     before["input"].setdefault("s", {})["f1s"] = 0
                             elif case["scenario"] in ("combat", "guidebot-release"):
                                 before["input"].setdefault("s", {})["f1s"] = 0
-                                self.assertEqual(after["input"]["s"]["f1s"], 0)
                             elif case["scenario"] == "door-lifecycle":
                                 release = next(
                                     row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2
                                 )
+                                held_keys = {key for row in original_demo[1:-1] for key in row["input"].get("s", {})}
                                 if before["f"] >= release:
-                                    self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
-                                    before["input"] = after["input"]
+                                    before["input"] = (
+                                        {"s": dict.fromkeys(held_keys, 0)} if before["f"] == release else {}
+                                    )
                             else:
-                                self.assertEqual(after["input"], {})
                                 before["input"] = {}
                             self.assertEqual(before, after)
         self.assertEqual(
