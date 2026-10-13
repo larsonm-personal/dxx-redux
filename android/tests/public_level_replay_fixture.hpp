@@ -64,6 +64,8 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 	return waypoints;
 }
 
+#include "public_loot_replay_fixture.hpp"
+
 static void capture_public_level_replay(const char *directory, const char *scenario)
 {
 	using nlohmann::json;
@@ -164,6 +166,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	d_srand(1234);
 	d_rand_reset_call_count();
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	if (std::strcmp(scenario, "loot") == 0) {
+		capture_public_loot_frames(game_name, settings.mission, level);
+		return;
+	}
 	const bool flight = std::strcmp(scenario, "flight") == 0;
 	const bool pickup = std::strcmp(scenario, "pickup") == 0;
 	require(flight || pickup || shoot_switch || combat || door_lifecycle || std::strcmp(scenario, "door") == 0, "known public scenario");
