@@ -31,7 +31,7 @@ would hide the cause and change ordinary gameplay.
 
 Each frame carries an explicit bounded ordered dispatch batch: marker reset,
 control clear, full control sample, controls-only update, rear-view decision,
-automap phase, or allowlisted direct command. Every operation
+resolved cockpit setting, automap phase, or allowlisted direct command. Every operation
 has its actual input-time FrameTime, separate from the later simulation timestep.
 The batch retains pre-input SIM state/count; frame RNG is the post-input boundary.
 Replay restores the initial SIM state/count once at frame zero, even for an empty
@@ -87,9 +87,12 @@ rather than silently recording unmodeled world edits.
 - The durable native matrix passes all94 checks on D1/D2 headed and true headless
   backends, including both25-frame SDL orders, native rear/map/marker effects,
   carried RNG state/count and terminal-tail negatives, and stale-profile isolation
-- All 37 size-eligible migration candidates pass the original full oracles; the
-  two verbose loot candidates exceed the file limit and are not admitted
-- All six D1/D2 standalone codec suites and50 focused Python tests pass; coverage
+- At the initial conversion checkpoint, all 37 size-eligible migration candidates
+  passed the original full oracles; the two verbose loot candidates exceed the
+  file limit and are not admitted. Final carried-RNG qualification reruns the
+  13 admitted choices on both backends, rather than claiming all discarded
+  candidates were rerun after later runtime hardening
+- All six D1/D2 standalone codec suites and 79 focused Python tests pass; coverage
   includes malformed operations, aliases, duplicate
   keys, UTF-8, command domains, tail/bounds, rewind cancellation and result-write failures
 - Native stress probe covers first-input RNG, variable input/simulation time,
@@ -100,10 +103,48 @@ rather than silently recording unmodeled world edits.
 - Direct recorder callers were audited; weapon-order and Guide-Bot synthetic
   fixture captures now include their required RNG-count flag
 
-Final-source runtime matrices, existing native fixture checks, source-qualified
-capture admission, formatting/catalog checks and exact-head hosted CI remain to
-be completed before the draft can be reported fully qualified. Development
-captures are diagnostic evidence, not final provenance-qualified fixtures.
+The clean source checkpoint is `eba0eee69077fd53e4aee54d04f026f8d7ac9e6c`,
+retained as `capture-public-secondary-ordered-v5`. All four secondary scenes were
+captured twice with byte-identical replay/oracle pairs from rebuilt binaries with
+that embedded revision. Their replay files are 5680-5969 bytes and full oracles
+3203-3907 bytes. Optional actual-render screenshots preserve the same bytes.
+All 68 native full-17 corpus runs pass, including every unchanged original oracle.
+The existing imported graphics scope also passes. All 68 wrong-oracle controls
+pass. Final early-abort verification and exact-head hosted CI remain pending at
+this publication checkpoint. Development captures remain
+diagnostic evidence and are not substituted for these source-qualified fixtures.
+
+## Causal rejection and completed no-collection proof
+
+The carried-RNG guard changes the expected negative-control endpoint. The fixed
+corpus verifier pins each rejection phase and frame, validates the launched
+input-only mutation, reconstructs every SIM RNG event and absolute count, and
+checks the complete partial object/world prefix plus its real gameplay effect.
+Natural exit 1 and missing terminal output alone never qualify a negative.
+Wrong-oracle controls and both D1 secondary no-fire cases keep their completed
+terminal requirements. Reports distinguish retained immutable native evidence
+from fresh runs; the original failed-verifier reports remain available.
+
+The D1 loot input mutation rejects at frame 567, before the original collection.
+It proves pre-collection divergence only. A separate generated live control keeps
+the same ordinary route through the real drop, then leaves controls zero through
+all 582 frames. Both replay backends must first match that control's own full
+live state, SIM RNG and terminal result with a natural clean exit. Only then does
+the unchanged original collection action requirement reject the missing pickup.
+The exact live pickup identity, original kill and score remain mandatory. This
+generated control is outside the admitted 17-case inventory; the full durable
+native matrix now contains 96 checks. Its first diagnostic runs pass on both
+backends, with final clean-source recapture pending. An unset-switch capture also
+preserves every original loot frame hash, SIM event, terminal result and decoded
+input; no original expected oracle was rewritten.
+
+Scoped formatting and automation-catalog checks pass. The master catalog cannot
+run in this host's process namespace (`/proc/self/task/.../children` is absent).
+Broader Python discovery is not a clean pass: its six source-contract failures
+or lookup errors reproduce on unchanged PR29, while five other errors are missing
+numpy/clang, denied Unix sockets and two unchanged process-fixture startup
+timeouts. The 79 focused replay tests pass independently. Retail-backed native
+integrations compile but were not run without their required assets.
 
 ## View-discovery contract and bounded support
 
