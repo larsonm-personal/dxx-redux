@@ -413,6 +413,7 @@ $testTimeouts = @{
     "test_android_mod_sounds" = 600
     "test_android_mod_save" = 600
     "test_mod_save_toggle" = 1200
+    "test_mod_fuzz" = 2400
     "test_startup_restore_failure" = 480
     "test_android_matcen_stations" = 600
     "test_android_music_completion" = 600

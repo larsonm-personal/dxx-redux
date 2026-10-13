@@ -1774,9 +1774,9 @@ function Get-PowerShellTestSupportOwner {
     return $null
 }
 
-function Wait-SoftwareLauncherHandoff {
-    # A slow in-process resume can consume the marker just before a host restart.
-    # Never force-stop that progressing executor. Unknown/timeout reads are not progress.
+function Wait-AutomationLauncherHandoff {
+    # A slow in-process resume can consume the marker just before a host restart
+    # Never force-stop that progressing executor; unknown/timeout reads are not progress
     param(
         [string]$ExpectedRunId,
         [int]$NextStep,
@@ -2017,43 +2017,17 @@ function Watch-AutomationResult {
                     # Unified script: game exited, launcher resumes execution
                     # If SetupActivity already consumed the handoff, let the
                     # in-process executor keep running
-                    # Otherwise restart the launcher so it can recreate the
-                    # executor from the file
                     $nextStep = $resultObj.next_step
                     if ($IsLauncherScript -and $nextStep -ne $lastLauncherResumeStep) {
                         $lastLauncherResumeStep = $nextStep
                         Write-Status "LAUNCHER_CONTINUE at step $nextStep -- checking launcher handoff" "Yellow"
-                        if (Test-SoftwareAndroidTestTarget) {
-                            if (-not (Wait-SoftwareLauncherHandoff -ExpectedRunId $ExpectedRunId -NextStep $nextStep)) {
-                                Write-Status "FAIL: Launcher handoff did not complete; refusing to force-stop a possibly progressing executor" "Red"
-                                return $false
-                            }
-                            Write-Status "Launcher consumed handoff -- continuing test monitoring" "Green"
-                            $lastAutomationProgressSeconds = $sw.Elapsed.TotalSeconds
-                            continue
+                        if (-not (Wait-AutomationLauncherHandoff -ExpectedRunId $ExpectedRunId -NextStep $nextStep)) {
+                            Write-Status "FAIL: Launcher handoff did not complete; refusing to force-stop a possibly progressing executor" "Red"
+                            return $false
                         }
-                        $handoffConsumed = $false
-                        for ($handoffCheck = 0; $handoffCheck -lt 4; $handoffCheck++) {
-                            Start-Sleep -Milliseconds 500
-                            $handoffJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
-                                "cat", "files/automation_result.json") -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
-                            if (-not ($handoffJson -and $handoffJson -match '"result"\s*:\s*"LAUNCHER_CONTINUE"')) {
-                                $handoffConsumed = $true
-                                break
-                            }
-                        }
-                        if ($handoffConsumed) {
-                            Write-Status "Launcher consumed LAUNCHER_CONTINUE -- continuing test monitoring" "Green"
-                        } else {
-                            Write-Status "LAUNCHER_CONTINUE at step $nextStep -- restarting launcher cleanly" "Yellow"
-                            Stop-AppAndWait
-                            Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
-                            if (Wait-SetupActivityReady -TimeoutSeconds 15) {
-                                Write-Status "Launcher resumed -- continuing test monitoring" "Green"
-                            } else {
-                                Write-Status "Launcher did not become ready after LAUNCHER_CONTINUE" "Yellow"
-                            }
-                        }
+                        Write-Status "Launcher consumed handoff -- continuing test monitoring" "Green"
+                        $lastAutomationProgressSeconds = $sw.Elapsed.TotalSeconds
+                        continue
                     } else {
                         Write-Status "LAUNCHER_CONTINUE at step $nextStep -- waiting for launcher to resume" "Yellow"
                     }

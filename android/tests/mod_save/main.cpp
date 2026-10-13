@@ -20,6 +20,9 @@ extern "C" {
 #include "textures.h"
 #include "u_mem.h"
 #include "wall.h"
+#include "state.h"
+#include "state_android_shared.h"
+#include "state_checkpoint.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2_assets.h"
 #endif
@@ -263,6 +266,20 @@ int main(int argc, char **argv)
 	save({}, false, "stock-companion.sg0");
 	require(restore(false, true) && mod_save_check_companion("stock-companion.sg0"), "compatible companion preserves primary restore policy");
 	passed("companion_dependency");
+	char saved_companion[1024];
+	require(state_android_build_secret_filename(saved_companion, sizeof(saved_companion), 8), "build saved companion path");
+	state_android_ensure_parent_dirs_for_path(saved_companion);
+	save({}, false, saved_companion);
+	state_android_ensure_parent_dirs_for_path(SECRETB_FILENAME);
+	state_android_ensure_parent_dirs_for_path(SECRETC_FILENAME);
+	save({}, false, SECRETB_FILENAME);
+	save({}, false, SECRETC_FILENAME);
+	require(state_checkpoint_refresh_companion(SECRETC_FILENAME), "cache the previous mission secret");
+	require(state_android_clear_new_game_secret_state(), "clear active secret state for a fresh game");
+	require(!PHYSFS_exists(SECRETB_FILENAME) && !PHYSFS_exists(SECRETC_FILENAME), "fresh game removes both active secret files");
+	require(PHYSFS_exists(saved_companion) && mod_save_check_companion(saved_companion), "fresh game preserves saved slot companions");
+	require(state_android_clear_new_game_secret_state(), "fresh game with no secret state is valid");
+	passed("new_game_secret_state");
 	world();
 	require(PHYSFS_mount("uud2tp-textures.dxa", nullptr, 0), "enable for legacy");
 	modded.use();

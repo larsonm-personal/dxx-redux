@@ -305,6 +305,12 @@ static PHYSFS_EnumerateCallbackResult texture_lookup_walk_entry(void *data,
 		texture_lookup_walk_fail(walk, origdir);
 		return PHYSFS_ENUM_STOP;
 	}
+	/* Unrelated root entries may disappear during atomic metadata writes */
+	if (!walk->current_depth &&
+	    !texture_lookup_is_indexed_extension(leaf) &&
+	    !texture_lookup_path_equals_ci(leaf, "textures") &&
+	    !texture_lookup_path_equals_ci(leaf, "d1-mods"))
+		return PHYSFS_ENUM_OK;
 	child_len = path_len ? path_len + 1u + leaf_len + 1u : leaf_len + 1u;
 	child_path = (char *) malloc(child_len);
 	if (!child_path) {

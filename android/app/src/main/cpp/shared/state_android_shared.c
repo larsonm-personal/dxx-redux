@@ -558,6 +558,25 @@ void state_android_secret_companion_changed(void)
 #endif
 }
 
+int state_android_clear_new_game_secret_state(void)
+{
+#if defined(__ANDROID__) && defined(DXX_BUILD_DESCENT_II)
+	/* A fresh campaign must not attach the previous mission's active secret
+	 * to its autosaves; saved slot companions remain available for restores */
+	state_checkpoint_drain();
+	const char *paths[] = { SECRETB_FILENAME, SECRETC_FILENAME };
+	for (unsigned i = 0; i < sizeof(paths) / sizeof(paths[0]); ++i) {
+		if (PHYSFS_exists(paths[i]) && !PHYSFS_delete(paths[i])) {
+			debug_log_force(DLOG_GAME, "Cannot clear new-game secret state: %s", paths[i]);
+			return 0;
+		}
+	}
+	return state_checkpoint_refresh_companion(SECRETC_FILENAME);
+#else
+	return 1;
+#endif
+}
+
 static void state_android_current_mission_name(char *mission_name,
                                                size_t mission_name_size)
 {

@@ -125,6 +125,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #include "android_profile.h"
 #include "mod_save_compat.h"
+#include "state_android_shared.h"
 #include "android_route_metadata.h"
 #include "merged_wall_debug.h"
 #endif
@@ -1119,6 +1120,12 @@ extern void init_seismic_disturbances(void);
 //starts a new game on the given level
 void StartNewGame(int start_level)
 {
+#ifdef __ANDROID__
+	if (!state_android_clear_new_game_secret_state()) {
+		nm_messagebox(NULL, 1, TXT_OK, "Unable to clear the previous secret-level state");
+		return;
+	}
+#endif
 	state_quick_item = -1;	// for first blind save, pick slot to save in
 
 	matcen_mode_reset_game();

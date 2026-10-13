@@ -266,18 +266,19 @@ try {
         }
         for ($i = 0; $i -lt 5; $i++) { $script:handoffSnapshots.Enqueue('{"result":"LAUNCHER_CONTINUE","next_step":14,"run_id":"ours"}') }
         $script:handoffSnapshots.Enqueue($terminal)
-        if (-not (Wait-SoftwareLauncherHandoff -ExpectedRunId ours -NextStep 14 -TimeoutSeconds 2)) { throw 'Slow valid handoff was not consumed' }
+        if (-not (Wait-AutomationLauncherHandoff -ExpectedRunId ours -NextStep 14 -TimeoutSeconds 2)) { throw 'Slow valid handoff was not consumed' }
         if ($script:handoffReads -ne 11) { throw 'Unknown/stale handoff snapshot was treated as progress' }
     }
     $script:handoffSnapshots = [System.Collections.Queue]::new()
-    if (Wait-SoftwareLauncherHandoff -ExpectedRunId ours -NextStep 14 -TimeoutSeconds 1) { throw 'Pending handoff must fail at its deadline' }
+    if (Wait-AutomationLauncherHandoff -ExpectedRunId ours -NextStep 14 -TimeoutSeconds 1) { throw 'Pending handoff must fail at its deadline' }
     Write-Host 'PASS: bounded handoff waits preserve slow progress and reject unknown/stale snapshots'
 
     function Confirm-EmulatorHealthWithAdbRecovery { return $true }
     function Test-AppAutomationProcessRunning { return $true }
     function Stop-AppAndWait { throw 'A slow handoff must never force-stop the app' }
-    function Wait-SoftwareLauncherHandoff {
+    function Wait-AutomationLauncherHandoff {
         param([string]$ExpectedRunId, [int]$NextStep)
+        $script:handoffWaits++
         [System.Threading.Thread]::Sleep(1100)
         return $true
     }
@@ -291,8 +292,14 @@ try {
         }
         return ''
     }
-    if (-not (Watch-AutomationResult -TimeoutSeconds 1 -IsLauncherScript -ExpectedRunId ours)) {
-        throw 'A handoff consumed near the overall deadline must allow reading its terminal result'
+    foreach ($target in @('emulator-5554', 'physical-handoff-fixture')) {
+        $env:ANDROID_SERIAL = $target
+        $script:terminalReads = 0
+        $script:handoffWaits = 0
+        if (-not (Watch-AutomationResult -TimeoutSeconds 1 -IsLauncherScript -ExpectedRunId ours)) {
+            throw 'A handoff consumed near the overall deadline must allow reading its terminal result'
+        }
+        if ($script:handoffWaits -ne 1) { throw 'Every target must use the bounded handoff without a force-stop fallback' }
     }
     Write-Host 'PASS: terminal result after a slow handoff wins over the expired outer deadline'
 

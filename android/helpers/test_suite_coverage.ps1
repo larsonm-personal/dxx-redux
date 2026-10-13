@@ -340,6 +340,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_android_mod_sounds'
             'test_android_mod_save'
             'test_mod_save_toggle'
+            'test_mod_fuzz'
             'test_compressed_music_metadata'
             'test_level_metadata_hxm_worker_reuse'
             'test_level_metadata_interactive_preemption'

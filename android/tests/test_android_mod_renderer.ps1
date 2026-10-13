@@ -21,4 +21,4 @@ foreach ($game in @('d1', 'd2')) {
 }
 $fixtureParams = @{} + $PSBoundParameters
 $fixtureParams.Remove('PackDirectory')
-& (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture mod_renderer -ExpectedCases 10 -ExpectedD2Cases 21 -DataFiles $dataFiles @fixtureParams
+& (Join-Path $PSScriptRoot '../helpers/run_native_engine_fixture.ps1') -Fixture mod_renderer -ExpectedCases 11 -ExpectedD2Cases 23 -DataFiles $dataFiles @fixtureParams

@@ -3,6 +3,10 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <atomic>
+#include <thread>
+#include <fcntl.h>
+#include <unistd.h>
 #include <nlohmann/json.hpp>
 #include <EGL/egl.h>
 #include "input_demo_codec.h"
@@ -329,6 +333,29 @@ static void test_mode(json &trace, GLuint program, int content_game)
 	require(only_hires["source"] != 0 && only_hires["width"] == 256 && only_hires["mask"] != "", "high-res image and mask actually loaded");
 	require(only_hires["image"] != only_uud["image"], "overlap has distinguishable authored pixels");
 	trace.push_back({ { "case", "hires_alone" }, { "game", content_game }, { "render", only_hires } });
+	{
+		std::atomic<bool> stop{ false }, failed{ false };
+		std::atomic<unsigned> writes{ 0 };
+		std::thread metadata([&]() {
+			const char *path = ".route_metadata_ingame_cpu_duty.fixture.tmp";
+			while (!stop.load(std::memory_order_relaxed)) {
+				const int file = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+				if (file < 0 || close(file) || unlink(path)) {
+					failed.store(true, std::memory_order_relaxed);
+					break;
+				}
+				writes.fetch_add(1, std::memory_order_relaxed);
+			}
+		});
+		for (int i = 0; i < 64; ++i) {
+			clear_texture_lookup_cache();
+			require(render(program, bitmap) == only_hires, "transient root metadata preserves indexed replacement pixels and mask");
+		}
+		stop.store(true, std::memory_order_relaxed);
+		metadata.join();
+		require(!failed.load() && writes.load() > 0, "exercise concurrent temporary metadata writes");
+		trace.push_back({ { "case", "transient_root_metadata" }, { "game", content_game }, { "iterations", 64 }, { "render", only_hires } });
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	if (content_game == 2) {
 		json doors = json::array();
@@ -404,6 +431,7 @@ int main(int argc, char **argv)
 	mem_init();
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(nullptr) && PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "isolated filesystem");
+	PHYSFS_permitSymbolicLinks(1);
 	require(PHYSFS_mount("DESCENT.HOG", nullptr, 1) && PHYSFS_mount("DESCENT2.HOG", nullptr, 1), "base palettes");
 	GameArg.SndNoSound = GameArg.SndNoMusic = GameArg.SysInputDemoNoRender = 1;
 #ifdef DXX_BUILD_DESCENT_II
