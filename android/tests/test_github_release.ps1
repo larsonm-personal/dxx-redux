@@ -20,6 +20,9 @@ function Assert-Test {
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $identityApk = Join-Path $testRoot 'identity.apk'
 $identityDexdump = Join-Path $testRoot 'dexdump.ps1'
+# Hidden-file cleanup must remove only this invocation's temporary DEX
+$identitySentinel = Join-Path $testRoot '.identity-unrelated.dex'
+[IO.File]::WriteAllText($identitySentinel, 'unrelated identity evidence')
 $identityCommit = 'a' * 40
 $identityFields = @{
     GIT_SHORT_HASH = $identityCommit.Substring(0, 12); GIT_COMMIT_COUNT = '123'
@@ -55,7 +58,18 @@ foreach ($identityCase in @('valid', 'stale-kotlin', 'stale-native', 'missing-en
             -VersionCode 123 -BuildDate '2026-10-11' -BuildTime '12:00 UTC'
     } catch { $identityFailure = $_ }
     Assert-Test (($null -eq $identityFailure) -eq ($identityCase -eq 'valid')) "Incorrect packaged identity result for $identityCase`: $identityFailure"
-    Assert-Test (@(Get-ChildItem $testRoot -Filter '.identity-*.dex').Count -eq 0) 'Identity verifier left extracted DEX files'
+    $expectedIdentityError = switch ($identityCase) {
+        'stale-kotlin' { 'Packaged BuildInfo mismatch: GIT_SHORT_HASH' }
+        'stale-native' { 'Packaged native build identity mismatch: lib/arm64-v8a/libdxx-redux-d1.so' }
+        'missing-engine' { 'APK lacks lib/x86_64/libdxx-redux-d2.so' }
+        'duplicate-class' { 'APK must contain exactly one BuildInfo class' }
+    }
+    if ($expectedIdentityError) {
+        Assert-Test ($identityFailure.Exception.Message -ceq $expectedIdentityError) 'Cleanup obscured the packaged identity failure'
+    }
+    $identityFiles = @(Get-ChildItem -LiteralPath $testRoot -Filter '.identity-*.dex' -Force)
+    Assert-Test ($identityFiles.Count -eq 1 -and $identityFiles[0].FullName -ceq $identitySentinel) 'Identity verifier left extracted hidden DEX files or removed unrelated evidence'
+    Assert-Test ([IO.File]::ReadAllText($identitySentinel) -ceq 'unrelated identity evidence') 'Identity verifier changed unrelated evidence'
     Write-Host "PASS packaged identity $identityCase"
 }
 
