@@ -9,6 +9,34 @@ static uint32_t join_query_token, join_query_sent, join_query_received;
 static fix64 join_query_times[16], join_query_last;
 static int join_transfer_committed, join_previous_connected, join_previous_net_connected;
 static fix64 join_test_hold_until;
+static int join_test_early_sync, join_objects_complete;
+static unsigned join_early_syncs;
+
+int net_udp_join_wait_test_early_sync(void)
+{
+	if (!multi_i_am_master() || !(Game_mode & GM_MULTI_COOP)) return 0;
+	join_test_early_sync = 1;
+	return 1;
+}
+
+int net_udp_join_objects_complete(void)
+{
+	return join_objects_complete;
+}
+unsigned net_udp_join_early_syncs(void)
+{
+	return join_early_syncs;
+}
+
+static int net_udp_join_accept_sync(void)
+{
+	if (join_objects_complete) return 1;
+	++join_early_syncs;
+	REJOIN_LOG("sync_deferred attempt=%u allocated=%d highest=%d count=%u", (unsigned) join_query_token, num_objects, Highest_object_index, join_early_syncs);
+	/* The final SYNC or its periodic resend will complete the join after the
+	 * object end marker verifies the transfer and rebuilds the allocator */
+	return 0;
+}
 
 int net_udp_join_wait_test_hold(void)
 {
@@ -37,6 +65,7 @@ static void net_udp_join_cancel_transfer(void)
 	Network_send_objnum = Player_joining_extras = VerifyPlayerJoined = -1;
 	UDP_sync_player.join_attempt = 0;
 	join_test_hold_until = 0;
+	join_test_early_sync = 0;
 }
 
 static void net_udp_join_confirm_player(int player_num)
@@ -56,6 +85,8 @@ static void net_udp_join_confirm_player(int player_num)
 
 static void net_udp_join_wait_reset(void)
 {
+	join_objects_complete = 0;
+	join_early_syncs = 0;
 	join_query_token = (uint32_t) generate_token();
 	if (!join_query_token) join_query_token = 1; /* Zero denotes an ordinary participant request */
 	join_query_sent = join_query_received = 0;

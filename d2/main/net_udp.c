@@ -3020,6 +3020,15 @@ void net_udp_send_objects(void)
 		net_udp_send_sync_payload(
 		    object_buffer, loc, UDP_sync_player.player.protocol.udp.addr,
 		    player_num);
+#ifdef __ANDROID__
+		if (join_test_early_sync && UDP_sync_player.join_attempt) {
+			join_test_early_sync = 0;
+			REJOIN_LOG("test_early_sync target=%d sent=%d", player_num, obj_count);
+			net_udp_update_netgame();
+			net_udp_send_game_info_to_player(player_num, UDP_sync_player.player.protocol.udp.addr,
+			    UPID_SYNC, 0, UDP_sync_player.token);
+		}
+#endif
 	}
 
 	if (i > Highest_object_index)
@@ -3076,6 +3085,12 @@ void net_udp_send_objects(void)
 int net_udp_verify_objects(int remote, int local)
 {
 	int i, nplayers = 0;
+#ifdef __ANDROID__
+	if (net_join_wait_active() && (!Network_rejoined || remote != local)) {
+		REJOIN_LOG("objects_incomplete expected=%d received=%d started=%d", remote, local, Network_rejoined);
+		return 2;
+	}
+#endif
 
 	if ((remote-local) > 10) {
 		MPDIAG("verify_objects: FAIL packet_loss remote=%d local=%d diff=%d\n",
@@ -3190,6 +3205,7 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 			mode = 1;
 			object_count = 0;
 #ifdef __ANDROID__
+			join_objects_complete = 0;
 			REJOIN_LOG("objects_clear assigned=%d allocated=%d", my_pnum, num_objects);
 #endif
 		}
@@ -3197,6 +3213,7 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 		{
 			// End of object sync -- always rebuild free list from final state
 #ifdef __ANDROID__
+			join_objects_complete = 0;
 			REJOIN_LOG("objects_end expected=%d received=%d mode=%d", remote_objnum, object_count, mode);
 			rejoin_diag_world("objects_end_before_rebuild");
 #endif
@@ -3231,6 +3248,9 @@ void net_udp_read_object_packet( ubyte *data, int data_len )
 				return;
 			}
 			sync_retries = 0;
+#ifdef __ANDROID__
+			join_objects_complete = 1;
+#endif
 		}
 		else 
 		{
@@ -3382,6 +3402,10 @@ void net_udp_resend_sync_due_to_packet_loss()
 {
 	int i,j;
 
+#ifdef __ANDROID__
+	/* A previous participant confirmation must not publish an unfinished world */
+	if (Network_send_objects) return;
+#endif
 	if (!multi_i_am_master())
 		return;
 
@@ -4914,6 +4938,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 
 		case UPID_SYNC:
 #ifdef __ANDROID__
+			if (join_payload && !net_udp_join_accept_sync()) break;
 			rejoin_diag_world("sync_before");
 #endif
 			net_udp_read_sync_packet(data, length, sender_addr);

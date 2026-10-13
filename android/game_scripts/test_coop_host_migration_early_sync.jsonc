@@ -1,0 +1,9 @@
+// TEST HELPER: Inject a valid SYNC after the next join's first object packet
+[
+    { "_info": { "games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan" } },
+    {
+        "action": "assert",
+        "expect": { "in_game": "true", "multiplayer.i_am_master": "true" },
+    },
+    { "action": "set_debug", "field": "join_wait_test", "value": "early_sync" },
+]

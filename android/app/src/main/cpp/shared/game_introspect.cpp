@@ -1854,7 +1854,7 @@ extern "C" char *game_introspect_get_state(void)
 		unsigned join_presentations;
 		net_join_wait_get_state(&join, &join_presentations);
 		j["join_wait"] = {
-			{ "active", (bool) net_join_wait_active() }, { "phase", join.phase }, { "object_packets", net_join_wait_object_packets() }, { "retries", net_join_wait_retries() }, { "level", join.level }, { "visit", join.visit }, { "briefing_generation", join.briefing }, { "remaining_ms", join.remaining_ms }, { "duration_ms", join.duration_ms }, { "presentations_started", join_presentations }
+			{ "objects_complete", (bool) net_udp_join_objects_complete() }, { "early_syncs", net_udp_join_early_syncs() }, { "active", (bool) net_join_wait_active() }, { "phase", join.phase }, { "object_packets", net_join_wait_object_packets() }, { "retries", net_join_wait_retries() }, { "level", join.level }, { "visit", join.visit }, { "briefing_generation", join.briefing }, { "remaining_ms", join.remaining_ms }, { "duration_ms", join.duration_ms }, { "presentations_started", join_presentations }
 		};
 		coop_transition_policy state;
 		coop_presentation_progress local;
@@ -2203,6 +2203,7 @@ extern "C" char *game_introspect_get_state(void)
 			}
 			mp["last_pdata_received"] = std::move(pdata_arr);
 			mp["active_object_count"] = active_object_count;
+			mp["allocated_object_count"] = num_objects;
 			mp["unowned_object_count"] = unowned_object_count;
 			mp["object_owner_counts"] = std::move(object_owner_arr);
 			mp["synchronized_object_count"] = synchronized_object_count;

@@ -6062,6 +6062,8 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "join_wait_test") {
 				if (s.value == "hold_transfer") {
 					if (!net_udp_join_wait_test_hold()) stop_script_fail("Join hold requires a cooperative host");
+				} else if (s.value == "early_sync") {
+					if (!net_udp_join_wait_test_early_sync()) stop_script_fail("Early join SYNC requires a cooperative host");
 				} else if (s.value == "cancel") {
 					net_join_status status;
 					unsigned started;

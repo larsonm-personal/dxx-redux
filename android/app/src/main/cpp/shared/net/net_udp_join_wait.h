@@ -60,6 +60,9 @@ void net_join_wait_get_state(net_join_status *status, unsigned *presentations);
 void net_udp_join_wait_poll(void);
 /* Android integration diagnostics: hold after the first object packet */
 int net_udp_join_wait_test_hold(void);
+int net_udp_join_wait_test_early_sync(void);
+int net_udp_join_objects_complete(void);
+unsigned net_udp_join_early_syncs(void);
 void net_join_wait_note_objects(void);
 unsigned net_join_wait_object_packets(void);
 unsigned net_join_wait_retries(void);

@@ -43,6 +43,7 @@
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -HostMigration -Game d2 -MissionFile descent -InitialLevel 8
 #   .\test_lan.ps1 -BackgroundRuntime  # Host and client keep serving while another app is visible
 #   .\test_lan.ps1 -GuidebotRoutingMode Original -HostMigration
 #   .\test_lan.ps1 -HostDevice emulator-5556 -HostAvd Nexus5X_Light_2 -JoinDevice emulator-5558 -JoinAvd DxxSdk36
@@ -1727,6 +1728,9 @@ function Wait-MigratedPairSync {
         $joinMp.players[$HostSlot].callsign -eq $HostCallsign -and
         $joinMp.players[$JoinSlot].callsign -eq $JoinCallsign -and
         [int]$hostMp.synchronized_object_count -gt 0 -and
+        [int]$hostMp.allocated_object_count -eq [int]$hostMp.active_object_count -and
+        [int]$joinMp.allocated_object_count -eq [int]$joinMp.active_object_count -and
+        [bool]$script:migratedJoinIntro.join_wait.objects_complete -and
         $hostObjects -eq $joinObjects
     }
 }
@@ -1828,6 +1832,15 @@ function Invoke-HostMigrationScenario {
     Write-Status "Slot 1 became host and reset object ownership$(if ($checkGuidebot) { ', with Guide-Bot authority' })" "Green"
     Assert-GuidebotRoutingSelection -Serials @($EMU2)
 
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_host_migration_early_sync.jsonc')) {
+        return $false
+    }
+    if (-not (Wait-ForCondition -Description 'Arm early SYNC during the former host rejoin' -TimeoutSec 15 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $EMU2
+                return $result -and $result.result -eq 'PASS'
+            })) {
+        return $false
+    }
     if (-not (Start-MigratedPeerRejoin -JoiningSerial $EMU1 -HostSerial $EMU2 -Callsign $CALLSIGN1)) {
         return $false
     }
@@ -1837,6 +1850,11 @@ function Invoke-HostMigrationScenario {
                 -Description "former host rejoins slot-1 host with matching objects")) {
         return $false
     }
+    if ([int]$script:migratedJoinIntro.join_wait.early_syncs -lt 1) {
+        Write-Status 'FAIL: rejoin did not exercise an early SYNC before object completion' 'Red'
+        return $false
+    }
+    Write-Status "Deferred early SYNC; completed objects and allocator agree on both peers" 'Green'
     if (-not (Wait-BidirectionalPdata -FirstSerial $EMU2 -FirstRemoteSlot 0 `
                 -SecondSerial $EMU1 -SecondRemoteSlot 1 `
                 -Description "PDATA after first host migration")) {
