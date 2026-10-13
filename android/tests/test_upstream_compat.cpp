@@ -11394,6 +11394,11 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 2 && std::strcmp(argv[1], "--public-d1-comparison-profile") == 0) {
+		write_public_d1_comparison_profile();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--headless-audio-lifecycle") == 0) {
 		// This observer runs after the production cleanup and before mem cleanup
 		require(std::atexit(verify_headless_audio_closed) == 0, "register audio teardown observer");
@@ -11414,6 +11419,11 @@ int main(int argc, char **argv)
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--gameplay-view-lifecycle") == 0) {
 		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized gameplay-view lifecycle profile");
 		capture_public_level_replay(argv[2], "gameplay-view-lifecycle", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-effect-phase") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized effect-phase diagnostic profile");
+		capture_public_level_replay(argv[2], "effect-phase", argc == 4);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {

@@ -673,6 +673,7 @@ $noInfraTests = @(
     "test_input_demo_regressions_graphics",
     "test_input_demo_replay_menu",
     "test_input_demo_comparison_policy",
+    "test_public_d1_fault_tools",
     "test_d1_replay_parity",
     "test_compact_public_replays",
     "test_compact_public_replay_failures",

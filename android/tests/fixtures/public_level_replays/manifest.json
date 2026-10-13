@@ -358,7 +358,7 @@
             },
             "d1-public-loot.dximdemo": {
                 "role": "diagnostic-only",
-                "reason": "Retain complete imported diagnostics: an earlier robot death awards 200 extra points and SIM actor-signature metadata differs; gameplay and full-simulation compatibility remain unqualified"
+                "reason": "Retain complete imported diagnostics: the prior extra-200-point ownership bug is fixed, but raw object/parent signatures, SIM actor context and effect startup phase still differ; full-simulation compatibility remains unqualified"
             },
             "d1-public-secondary-release-first.dximdemo": {
                 "role": "excluded",

@@ -74,11 +74,15 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "public_modal_replay_fixture.hpp"
 
+#include "public_missile_fault_fixture.hpp"
+
+#include "public_effect_phase_fixture.hpp"
+
 static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
 {
 	using nlohmann::json;
-	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0,
-	        "imported public startup is scoped to the gameplay-view lifecycle regression");
+	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0,
+	        "imported public startup is scoped to explicit diagnostic fixtures");
 #ifdef DXX_BUILD_DESCENT_II
 	const char *game_name = "d2";
 	const char *archive = imported_d1 ? "/descent.hog" : "/d2demo.hog";
@@ -101,8 +105,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
 	const bool modal = std::strncmp(scenario, "ordered-modal", 13) == 0;
 	const bool secondary = std::strncmp(scenario, "secondary-", 10) == 0;
-	GameCfg.AspectX = modal || secondary ? 3 : 4;
-	GameCfg.AspectY = modal || secondary ? 4 : 3;
+	const bool fault_probe = std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "missile-self-splash") == 0 ||
+	                         std::strcmp(scenario, "missile-robot") == 0 || std::strcmp(scenario, "mine-blast") == 0;
+	GameCfg.AspectX = modal || secondary || fault_probe ? 3 : 4;
+	GameCfg.AspectY = modal || secondary || fault_probe ? 4 : 3;
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
 #ifdef DXX_BUILD_DESCENT_II
@@ -134,7 +140,17 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	Player_num = 0;
 	N_players = 1;
 	std::strcpy(Players[0].callsign, "public");
-	Difficulty_level = 2;
+#ifdef DXX_BUILD_DESCENT_II
+	if (imported_d1 && std::strcmp(scenario, "effect-phase") == 0) {
+		// Use the same native-written comparison pilot as imported replay
+		write_public_d1_comparison_profile();
+		require(PlayerCfg.MissileViewEnabled == 0 && std::strcmp(Players[0].callsign, "d1match") == 0,
+		        "imported monitor uses the native-read matched D1 presentation profile");
+		guidebot_routing_set_default(GUIDEBOT_ROUTING_ORIGINAL);
+		guidebot_routing_set_mode(GUIDEBOT_ROUTING_ORIGINAL);
+	}
+#endif
+	Difficulty_level = std::strcmp(scenario, "mine-blast") == 0 ? 0 : 2;
 	input_demo_set_skip_level_intro(1);
 	const bool door_lifecycle = std::strcmp(scenario, "door-lifecycle") == 0;
 	const bool guidebot = std::strcmp(scenario, "guidebot-release") == 0;
@@ -144,7 +160,9 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	const int level = shoot_switch ? 2 : 1;
 #else
 	require(!shoot_switch, "shoot-switch capture requires D2");
-	const int level = door_lifecycle ? 3 : 1;
+	const char *mine_level = std::getenv("DXX_PUBLIC_MINE_LEVEL");
+	const int level = std::strcmp(scenario, "mine-blast") == 0 ? (mine_level ? std::atoi(mine_level) : 3) : door_lifecycle ? 3 : 1;
+	require(level >= 1 && level <= 3, "ordinary authored public D1 level");
 #endif
 	StartNewGame(level);
 	if (!Game_wind) ::game();
@@ -161,7 +179,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 #ifdef DXX_BUILD_DESCENT_II
 	settings.game = INPUT_DEMO_GAME_D2;
 	settings.player_cfg.guidebot_routing_mode = GUIDEBOT_ROUTING_ORIGINAL;
-	settings.mission = "d2demo";
+	settings.mission = imported_d1 ? "descent" : "d2demo";
 	settings.player_cfg.has_headlight_active_default = 1;
 	settings.player_cfg.headlight_active_default = PlayerCfg.HeadlightActiveDefault;
 #else
@@ -187,7 +205,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	std::memcpy(settings.player_cfg.secondary_order, PlayerCfg.SecondaryOrder, sizeof(PlayerCfg.SecondaryOrder));
 	d_srand(1234);
 	d_rand_reset_call_count();
-	if (modal || secondary) {
+	if (modal || secondary || fault_probe) {
 		settings.has_view_projection = 1;
 		input_demo_capture_view_projection(&settings.view_projection);
 		settings.has_rear_view_baseline = 1;
@@ -195,6 +213,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		                               &settings.rear_view_baseline.current_cockpit, &settings.rear_view_baseline.preferred_cockpit);
 	}
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	if (std::strcmp(scenario, "effect-phase") == 0) {
+		capture_public_effect_phase(game_name, settings.mission, level);
+		return;
+	}
 	if (std::strcmp(scenario, "marker-delete-native") == 0) {
 		test_native_modal_recording_off(game_name);
 		return;
@@ -213,6 +235,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	}
 	if (std::strcmp(scenario, "loot") == 0) {
 		capture_public_loot_frames(game_name, settings.mission, level);
+		return;
+	}
+	if (std::strcmp(scenario, "missile-self-splash") == 0 || std::strcmp(scenario, "missile-robot") == 0 || std::strcmp(scenario, "mine-blast") == 0) {
+		capture_public_missile_fault(game_name, settings.mission, scenario);
 		return;
 	}
 	const bool flight = std::strcmp(scenario, "flight") == 0;
