@@ -17,7 +17,8 @@ class CaptureGateTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # Match the CLI contract, including aliased Windows temporary paths
+        self.root = Path(self.temp.name).resolve()
         self.repo = self.root / "source"
         self.build = self.root / "independent-build"
         self.build.mkdir()
@@ -376,6 +377,25 @@ class CaptureGateTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             capture.capture(self.args)
         self.assertEqual(sentinel.read_text(), "old evidence")
+        self.runner.assert_not_called()
+
+    def test_cli_canonicalizes_paths_before_capture(self):
+        names = ("repo", "build", "assets", "output")
+        argv = []
+        for name in names:
+            expected = getattr(self.args, name)
+            self.assertEqual(expected, expected.resolve(), "Fixture paths must match the CLI contract")
+            lexical = expected.parent / "unused-component" / ".." / expected.name
+            self.assertNotEqual(lexical, expected)
+            argv.extend(("--" + name, str(lexical)))
+        argv.extend(("--revision", self.revision, "--scenario", self.args.scenario))
+        with mock.patch.object(capture, "capture") as invoke, mock.patch("sys.stdout"):
+            self.assertEqual(capture.main(argv), 0)
+        invoke.assert_called_once()
+        parsed = invoke.call_args.args[0]
+        for name in names:
+            self.assertEqual(getattr(parsed, name), getattr(self.args, name))
+        capture.build_cache(parsed.repo, parsed.build, parsed.revision)
         self.runner.assert_not_called()
 
     def test_cli_returns_nonzero_on_build_failure(self):
