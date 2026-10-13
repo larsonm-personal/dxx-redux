@@ -1865,6 +1865,7 @@ static int move_player_to_face_view(const auto_step &s, char *reason, size_t rea
 		new_seg = inside_seg;
 	}
 
+	render_reset_gameplay_view_objects();
 	ConsoleObject->pos = new_pos;
 	ConsoleObject->last_pos = new_pos;
 	if (ConsoleObject->segnum != new_seg)
@@ -1952,6 +1953,7 @@ static int move_player_to_pose(const auto_step &s, char *reason, size_t reason_s
 		return 0;
 	}
 
+	render_reset_gameplay_view_objects();
 	ConsoleObject->pos = new_pos;
 	ConsoleObject->last_pos = new_pos;
 	if (ConsoleObject->segnum != new_seg)
@@ -2016,6 +2018,7 @@ static int move_player_to_route_guidance(char *reason, size_t reason_size)
 	}
 	if (step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT)
 		new_seg = step->seg;
+	render_reset_gameplay_view_objects();
 	ConsoleObject->pos = activation;
 	ConsoleObject->last_pos = ConsoleObject->pos;
 	if (ConsoleObject->segnum != new_seg)
@@ -4080,6 +4083,7 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				vms_vector target, forward, up = ConsoleObject->orient.uvec;
+				render_reset_gameplay_view_objects();
 				compute_center_point_on_side(&ConsoleObject->pos, &Segments[seg], entry);
 				compute_center_point_on_side(&target, &Segments[seg], side);
 				vm_vec_normalized_dir(&forward, &target, &ConsoleObject->pos);
@@ -4525,6 +4529,7 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				obj_relink(ConsoleObject - Objects, Highest_segment_index);
+				render_reset_gameplay_view_objects();
 				compute_segment_center(&ConsoleObject->pos, &Segments[Highest_segment_index]);
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
 			} else if (s.field == "recovery_test_nearly_full_homing") {
@@ -4539,6 +4544,7 @@ extern "C" void game_automate_tick(void)
 					object *powerup = &Objects[n];
 					if (powerup->type != OBJ_POWERUP || powerup->id != POW_HOMING_AMMO_4 ||
 					    !(powerup->flags & OF_COOP_RECOVERY) || (powerup->flags & OF_SHOULD_BE_DEAD)) continue;
+					render_reset_gameplay_view_objects();
 					ConsoleObject->pos = powerup->pos;
 					obj_relink(ConsoleObject - Objects, powerup->segnum);
 					vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
@@ -4554,8 +4560,10 @@ extern "C" void game_automate_tick(void)
 						if (powerup->type != OBJ_POWERUP || powerup->id != POW_HOMING_AMMO_4 ||
 						    !(powerup->flags & OF_COOP_RECOVERY) || (powerup->flags & OF_SHOULD_BE_DEAD)) continue;
 						vms_vector position = ConsoleObject->pos;
+						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = powerup->pos;
 						collide_player_and_powerup(ConsoleObject, powerup, &powerup->pos);
+						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = position;
 						found = true;
 						break;
@@ -4620,6 +4628,7 @@ extern "C" void game_automate_tick(void)
 						Players[Player_num].invulnerable_time = GameTime64;
 						if (!multi_i_am_master()) {
 							obj_relink(Players[Player_num].objnum, 36);
+							render_reset_gameplay_view_objects();
 							compute_segment_center(&ConsoleObject->pos, &Segments[36]);
 							ConsoleObject->last_pos = ConsoleObject->pos;
 							vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
@@ -4690,6 +4699,7 @@ extern "C" void game_automate_tick(void)
 					}
 					if (s.value == "physical_prepare" || s.value == "physical_normal_prepare") {
 						obj_relink(Players[Player_num].objnum, Walls[wall].segnum);
+						render_reset_gameplay_view_objects();
 						compute_segment_center(&ConsoleObject->pos, &Segments[Walls[wall].segnum]);
 						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
 						multi_send_position(Players[Player_num].objnum);
@@ -4824,6 +4834,7 @@ extern "C" void game_automate_tick(void)
 						vms_vector center;
 						compute_segment_center(&center, &Segments[seg]);
 						if (get_seg_masks(&center, seg, ConsoleObject->size, const_cast<char *>(__FILE__), __LINE__).facemask) continue;
+						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = center;
 						obj_relink(Players[Player_num].objnum, seg);
 						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
@@ -5781,6 +5792,7 @@ extern "C" void game_automate_tick(void)
 							if (vm_vec_dist(&center, &obj->pos) < clearance) occupied = true;
 						}
 						if (occupied) continue;
+						render_reset_gameplay_view_objects();
 						ConsoleObject->pos = ConsoleObject->last_pos = center;
 						obj_relink(Players[Player_num].objnum, seg);
 						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);

@@ -74,14 +74,18 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "public_modal_replay_fixture.hpp"
 
-static void capture_public_level_replay(const char *directory, const char *scenario)
+static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
 {
 	using nlohmann::json;
+	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0,
+	        "imported public startup is scoped to the gameplay-view lifecycle regression");
 #ifdef DXX_BUILD_DESCENT_II
 	const char *game_name = "d2";
-	const char *archive = "/d2demo.hog";
-	char mission[] = "d2demo";
+	const char *archive = imported_d1 ? "/descent.hog" : "/d2demo.hog";
+	char mission[8] = "d2demo";
+	if (imported_d1) std::strcpy(mission, "descent");
 #else
+	require(!imported_d1, "imported public startup requires the D2 engine");
 	const char *game_name = "d1";
 	const char *archive = "/descent.hog";
 	char mission[] = "";
@@ -101,6 +105,9 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	GameCfg.AspectY = modal || secondary ? 4 : 3;
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
+#ifdef DXX_BUILD_DESCENT_II
+	if (imported_d1) require(d1_in_d2_init_base_resources(1), "select public imported-D1 lifecycle resources");
+#endif
 	load_text();
 	const int sdl_status = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 	if (sdl_status) std::fprintf(stderr, "SDL initialization: %s\n", SDL_GetError());
@@ -141,6 +148,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 #endif
 	StartNewGame(level);
 	if (!Game_wind) ::game();
+	if (std::strcmp(scenario, "gameplay-view-lifecycle") == 0) {
+		test_gameplay_view_lifecycle();
+		return;
+	}
 	GameArg.SysInputDemoNoRender = 1;
 	newdemo_start_recording(0);
 	require(Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active(), "initialize production record callbacks");

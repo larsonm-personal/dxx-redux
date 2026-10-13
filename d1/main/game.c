@@ -30,6 +30,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "game.h"
 #include "input_demo_hooks.h"
+#include "render_gameplay_view.h"
 #include "input_demo_hooks_shared.h"
 #include "key.h"
 #include "object.h"
@@ -585,6 +586,7 @@ void move_player_2_segment(segment *seg,int side)
 	vm_vector_2_matrix(&ConsoleObject->orient,&vp,NULL,NULL);
 
 	obj_relink( ConsoleObject-Objects, SEG_PTR_2_NUM(seg) );
+	render_reset_gameplay_view_objects();
 
 }
 
@@ -1496,7 +1498,10 @@ static void game_process_frame_body(void);
 
 void GameProcessFrame(void)
 {
+	render_prepare_gameplay_view_objects();
 	input_demo_run_game_process_frame(game_process_frame_body);
+	/* The next input batch consumes this simulation step, regardless of drawing */
+	render_update_gameplay_view_objects();
 }
 
 static void game_process_frame_body(void)

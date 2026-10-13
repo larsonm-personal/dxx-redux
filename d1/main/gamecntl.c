@@ -79,6 +79,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "input_demo_control_info.h"
 #include "input_demo_hooks.h"
+#include "render_gameplay_view.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "mouse.h"
@@ -184,6 +185,8 @@ void update_vcr_state(void)
 void do_weapon_n_item_stuff()
 {
 	int i;
+
+	render_prepare_gameplay_view_objects();
 
 	input_demo_record_input_sample();
 
@@ -926,6 +929,7 @@ void kill_and_so_forth(void)
 	}
 
 kasf_done: ;
+	render_reset_gameplay_view_objects();
 
 }
 
