@@ -1,0 +1,143 @@
+{
+  "status": "all six detailed pair comparisons match their explicit fault/control outcomes",
+  "pairs": [
+    {
+      "case": "positive",
+      "native_backend": "console",
+      "status": "known_fault_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 301
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 345,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "aborted",
+        "frames": 301,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "positive.console.pair.json",
+      "sha256": "8a8f561629ee76a282a14a1dac59c8fdc6d01b84d424b234ef9edd3e243ec708"
+    },
+    {
+      "case": "positive",
+      "native_backend": "headed",
+      "status": "known_fault_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 301
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 345,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "aborted",
+        "frames": 301,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "positive.headed.pair.json",
+      "sha256": "8a8f561629ee76a282a14a1dac59c8fdc6d01b84d424b234ef9edd3e243ec708"
+    },
+    {
+      "case": "no-fire",
+      "native_backend": "console",
+      "status": "control_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 324
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 344,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "terminal",
+        "frames": 324,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "no-fire.console.pair.json",
+      "sha256": "dff416adaa47bb91ca9a17a8a32872bcb9bb2cbd1f94092d2c9a60523ea13bf5"
+    },
+    {
+      "case": "no-fire",
+      "native_backend": "headed",
+      "status": "control_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 324
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 344,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "terminal",
+        "frames": 324,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "no-fire.headed.pair.json",
+      "sha256": "dff416adaa47bb91ca9a17a8a32872bcb9bb2cbd1f94092d2c9a60523ea13bf5"
+    },
+    {
+      "case": "delay",
+      "native_backend": "console",
+      "status": "control_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 324
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 346,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "terminal",
+        "frames": 324,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "delay.console.pair.json",
+      "sha256": "0d7eca17b2f009454f1c1055560c79f2c77b6306533b2e1218f247e3e45d29b1"
+    },
+    {
+      "case": "delay",
+      "native_backend": "headed",
+      "status": "control_reproduced",
+      "native_live": "pass",
+      "gameplay_rng_prefix": {
+        "status": "pass",
+        "frames": 324
+      },
+      "simulation_rng_value_prefix": {
+        "status": "pass",
+        "events": 346,
+        "permitted_reference_difference": "Only ctx_obj0/ctx_id0 player ctx_sig1->0, bound to each raw player object; raw SIM RNG equality remains separately reported"
+      },
+      "imported_completion": {
+        "phase": "terminal",
+        "frames": 324,
+        "expected_frames": 324
+      },
+      "raw_status": "fail",
+      "report": "delay.headed.pair.json",
+      "sha256": "0d7eca17b2f009454f1c1055560c79f2c77b6306533b2e1218f247e3e45d29b1"
+    }
+  ]
+}

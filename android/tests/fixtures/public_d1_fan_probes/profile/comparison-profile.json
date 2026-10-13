@@ -1,0 +1,15 @@
+{
+  "binary_changes": [
+    {
+      "comparison": 0,
+      "default": 1,
+      "offset": 15
+    }
+  ],
+  "comparison_missile_view": 0,
+  "default_missile_view": 1,
+  "native_readback_verified": true,
+  "profile": "d1match",
+  "purpose": "matched D1 presentation prerequisite",
+  "text_profile_unchanged": true
+}

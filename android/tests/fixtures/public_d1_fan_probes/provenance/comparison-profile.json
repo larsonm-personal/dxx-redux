@@ -1,0 +1,50 @@
+{
+  "status": "fresh native-written matched D1 presentation profile",
+  "source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "executable_sha256": "975a710c2b73c3b801d205f8e01142b12ebfbaee1aa48b68207b95a363c76cfd",
+  "writer_report": {
+    "binary_changes": [
+      {
+        "comparison": 0,
+        "default": 1,
+        "offset": 15
+      }
+    ],
+    "comparison_missile_view": 0,
+    "default_missile_view": 1,
+    "native_readback_verified": true,
+    "profile": "d1match",
+    "purpose": "matched D1 presentation prerequisite",
+    "text_profile_unchanged": true
+  },
+  "files": {
+    "run.log": {
+      "bytes": 75,
+      "sha256": "25a11ad40c183bb840bc92b24937d44236933043d380b37593c8147a2671dc2a"
+    },
+    "descent.cfg": {
+      "bytes": 558,
+      "sha256": "cf655bc69c10fa67b265bb0283f60165da961bdecfef1f01a80de249b4402c9b"
+    },
+    "default.plr": {
+      "bytes": 719,
+      "sha256": "33db995b70f977cd0eb9d035365b1cdf3e57d4159dd2e793ec4960a38837951e"
+    },
+    "default.plx": {
+      "bytes": 2103,
+      "sha256": "0e5dc9fbb0234b7e81e540d9c0b26794b60f911773b1332b05dd1a0e126f13d6"
+    },
+    "d1match.plr": {
+      "bytes": 719,
+      "sha256": "4cad08fc9eab48c3a37b1bd168d6641785110a7e15804899efe82985dbc020fb"
+    },
+    "comparison-profile.json": {
+      "bytes": 312,
+      "sha256": "7135fca2ac4e6f26873077b9a9a4f6702046c7f130b2fd1cb9b9ac00237d0f92"
+    },
+    "d1match.plx": {
+      "bytes": 2103,
+      "sha256": "0e5dc9fbb0234b7e81e540d9c0b26794b60f911773b1332b05dd1a0e126f13d6"
+    }
+  }
+}

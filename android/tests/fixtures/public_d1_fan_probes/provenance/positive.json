@@ -1,0 +1,23 @@
+{
+  "status": "clean published candidate",
+  "engine_inputs_unchanged": true,
+  "engine_source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "source_tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
+  "executable_sha256": "3183f9c095e5c11916a5a4f99303304d3c120854e381d43e75cdfb06a144c16a",
+  "source_recipe_sha256": {
+    "android/tests/test_upstream_compat.cpp": "4f00669c738d216787421f2fac85a2c8ce7b5f2f700007d8ac6a4a353bc8bd32",
+    "android/tests/public_level_replay_fixture.hpp": "fa78be239b24f9c25f2ec08abec8ca6919cd3de91a01db5e9f2d0c59d19960d0",
+    "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+    "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+    "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+    "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b"
+  },
+  "asset_sha256": {
+    "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+    "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+  },
+  "capture_manifest_sha256": "3ea048cdcfa8fcb8d76bb6d4c2ca48db7b656215473107fb4c40e1f3a0d85960",
+  "build_provenance_sha256": "3d2f78116f758a3423de295f98de820e82eb6e9b4c38f860b97eb60d91eececd",
+  "capture_files_verified": true,
+  "actual_recorder_stamp": "03f9c8523"
+}

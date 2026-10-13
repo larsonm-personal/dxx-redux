@@ -1,0 +1,541 @@
+{
+  "status": "nine clean-source executions completed with expected process outcomes; detailed oracles still independently required",
+  "source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "build_provenance_sha256": "3d2f78116f758a3423de295f98de820e82eb6e9b4c38f860b97eb60d91eececd",
+  "runs": [
+    {
+      "case": "positive",
+      "backend": "console",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/positive/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "headless-console",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/dxx-redux-d1-headless",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-console/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-console/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-console/result.json",
+        "-SandboxSuffix",
+        "final-fan-positive-console",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/dxx-redux-d1-headless",
+      "executable_sha256": "9a499151522f0f9462b84eda3249192f3494cf44f8aa095ec6ff8cd23a1673f2",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "positive",
+      "backend": "headed",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-headed/parent-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/positive/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/d1x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-headed/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-headed/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-headed/result.json",
+        "-SandboxSuffix",
+        "final-fan-positive-headed",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/d1x-redux",
+      "executable_sha256": "2d0320d8bb0a814fedf7fda6189257ab070d688880c776d68194d33dbc2bfd56",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "positive",
+      "backend": "imported",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-matched-pilot-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/positive/candidate.dximdemo",
+        "-Game",
+        "d2",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d2-build/main/d2x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-imported/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-imported/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/positive-imported/result.json",
+        "-SandboxSuffix",
+        "final-fan-positive-imported",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120",
+        "-Pilot",
+        "d1match",
+        "-D1InD2",
+        "-ReplayDebugLog",
+        "-KeepSandbox"
+      ],
+      "executable": "temp/native-d2-build/main/d2x-redux",
+      "executable_sha256": "e3a1bda1f92ebdafbeee910a6b71cbd3ba3ab64f511676ee4c86f5a7027258ff",
+      "returncode": 1,
+      "expected_returncode": 1
+    },
+    {
+      "case": "no-fire",
+      "backend": "console",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/no-fire/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "headless-console",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/dxx-redux-d1-headless",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-console/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-console/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-console/result.json",
+        "-SandboxSuffix",
+        "final-fan-no-fire-console",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/dxx-redux-d1-headless",
+      "executable_sha256": "9a499151522f0f9462b84eda3249192f3494cf44f8aa095ec6ff8cd23a1673f2",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "no-fire",
+      "backend": "headed",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-headed/parent-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/no-fire/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/d1x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-headed/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-headed/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-headed/result.json",
+        "-SandboxSuffix",
+        "final-fan-no-fire-headed",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/d1x-redux",
+      "executable_sha256": "2d0320d8bb0a814fedf7fda6189257ab070d688880c776d68194d33dbc2bfd56",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "no-fire",
+      "backend": "imported",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-matched-pilot-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/no-fire/candidate.dximdemo",
+        "-Game",
+        "d2",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d2-build/main/d2x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-imported/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-imported/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/no-fire-imported/result.json",
+        "-SandboxSuffix",
+        "final-fan-no-fire-imported",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120",
+        "-Pilot",
+        "d1match",
+        "-D1InD2"
+      ],
+      "executable": "temp/native-d2-build/main/d2x-redux",
+      "executable_sha256": "e3a1bda1f92ebdafbeee910a6b71cbd3ba3ab64f511676ee4c86f5a7027258ff",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "delay",
+      "backend": "console",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/delay/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "headless-console",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/dxx-redux-d1-headless",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-console/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-console/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-console/result.json",
+        "-SandboxSuffix",
+        "final-fan-delay-console",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/dxx-redux-d1-headless",
+      "executable_sha256": "9a499151522f0f9462b84eda3249192f3494cf44f8aa095ec6ff8cd23a1673f2",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "delay",
+      "backend": "headed",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-headed/parent-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/delay/candidate.dximdemo",
+        "-Game",
+        "d1",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d1-build/main/d1x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-headed/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-headed/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-headed/result.json",
+        "-SandboxSuffix",
+        "final-fan-delay-headed",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120"
+      ],
+      "executable": "temp/native-d1-build/main/d1x-redux",
+      "executable_sha256": "2d0320d8bb0a814fedf7fda6189257ab070d688880c776d68194d33dbc2bfd56",
+      "returncode": 0,
+      "expected_returncode": 0
+    },
+    {
+      "case": "delay",
+      "backend": "imported",
+      "command": [
+        "/workspace/scratch/334b48b99af4/replay-negative-tools/xvfb-tcp-run",
+        "env",
+        "HOME=/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-matched-pilot-home",
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "android/tests/run_input_demo_replay.ps1",
+        "-DemoPath",
+        "temp/final-fan-captures/delay/candidate.dximdemo",
+        "-Game",
+        "d2",
+        "-Mode",
+        "accelerated",
+        "-DataDir",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "-DataEdition",
+        "shareware",
+        "-Runner",
+        "visual",
+        "-ExecutablePath",
+        "temp/native-d2-build/main/d2x-redux",
+        "-StateLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-imported/state.jsonl.gz",
+        "-RngLogPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-imported/rng.jsonl",
+        "-ResultCopyPath",
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/final-fan-replays/delay-imported/result.json",
+        "-SandboxSuffix",
+        "final-fan-delay-imported",
+        "-RequireCleanExit",
+        "-TimeoutSeconds",
+        "120",
+        "-Pilot",
+        "d1match",
+        "-D1InD2"
+      ],
+      "executable": "temp/native-d2-build/main/d2x-redux",
+      "executable_sha256": "e3a1bda1f92ebdafbeee910a6b71cbd3ba3ab64f511676ee4c86f5a7027258ff",
+      "returncode": 0,
+      "expected_returncode": 0
+    }
+  ],
+  "files": {
+    "delay-console/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "delay-console/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "2514ff61bac46b89a2433dbe1df6ffcf30709990dbba9773002b4510f67e11ea"
+    },
+    "delay-console/run.log": {
+      "bytes": 1747,
+      "sha256": "eb3ecc6808bf686dda2407e851aa8a273ab7cd21af0496d97e3ba5f56c1edc07"
+    },
+    "delay-console/state.jsonl.gz": {
+      "bytes": 6893989,
+      "sha256": "934664b02f4dd3ce2690b8b772eda2907b9012760f9c73bea02270050a55282d"
+    },
+    "delay-headed/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "delay-headed/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "2514ff61bac46b89a2433dbe1df6ffcf30709990dbba9773002b4510f67e11ea"
+    },
+    "delay-headed/run.log": {
+      "bytes": 3354,
+      "sha256": "c0628a8d9dcbf02045f362c58c6876dc3b63d5e1cb6d88f8582253220b8ae712"
+    },
+    "delay-headed/state.jsonl.gz": {
+      "bytes": 6893989,
+      "sha256": "934664b02f4dd3ce2690b8b772eda2907b9012760f9c73bea02270050a55282d"
+    },
+    "delay-imported/result.json": {
+      "bytes": 1057,
+      "sha256": "68bde968c28b6ec53582c62eb7f30e0a4f5ca6c5c5d9e95e36238b021b99ed36"
+    },
+    "delay-imported/rng.jsonl": {
+      "bytes": 103534,
+      "sha256": "ff07ac8db790ed0e9f8db304508ca15fa6daf35425f693a6c0bce0f568a9db9d"
+    },
+    "delay-imported/run.log": {
+      "bytes": 37356,
+      "sha256": "04672167411dfb7e351c3deeacf99fab3228a550af4ac5898f2bac23c6876097"
+    },
+    "delay-imported/state.jsonl.gz": {
+      "bytes": 7029957,
+      "sha256": "b5b1b346c86b4f95986e42defe7872c490094d6050d1aa5c517b438bd830e055"
+    },
+    "no-fire-console/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "no-fire-console/rng.jsonl": {
+      "bytes": 101108,
+      "sha256": "d512b480a9954cfb716771b9fe4e5cfd6cf652496476c4cce4d1b78355d5bece"
+    },
+    "no-fire-console/run.log": {
+      "bytes": 1757,
+      "sha256": "b9e04dd56c5ce3da24669f1ba46449d88352261169f230aefd06e51ee8d6a566"
+    },
+    "no-fire-console/state.jsonl.gz": {
+      "bytes": 6885301,
+      "sha256": "3380c14246fb6acb1610026f1f6b62aa34ea84afd4cfd79dba59f3913c117df1"
+    },
+    "no-fire-headed/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "no-fire-headed/rng.jsonl": {
+      "bytes": 101108,
+      "sha256": "d512b480a9954cfb716771b9fe4e5cfd6cf652496476c4cce4d1b78355d5bece"
+    },
+    "no-fire-headed/run.log": {
+      "bytes": 3382,
+      "sha256": "cd18f6076a0f7b7e877ea895369c06dc731ecd663a041b153bb03c94c17f80d4"
+    },
+    "no-fire-headed/state.jsonl.gz": {
+      "bytes": 6885301,
+      "sha256": "3380c14246fb6acb1610026f1f6b62aa34ea84afd4cfd79dba59f3913c117df1"
+    },
+    "no-fire-imported/result.json": {
+      "bytes": 1057,
+      "sha256": "68bde968c28b6ec53582c62eb7f30e0a4f5ca6c5c5d9e95e36238b021b99ed36"
+    },
+    "no-fire-imported/rng.jsonl": {
+      "bytes": 102996,
+      "sha256": "459cdb6b26a18a7c9fd416735489ac0665433d73418fda6acf7c110a42919e3b"
+    },
+    "no-fire-imported/run.log": {
+      "bytes": 37385,
+      "sha256": "f954bf86f8c79886cd91bd3eb41cfd79cbbb19ab85e7e01705a69b0ce8c268ba"
+    },
+    "no-fire-imported/state.jsonl.gz": {
+      "bytes": 7022357,
+      "sha256": "783daca2302d7108f4b35baa066c490b1006b0230c27cd120690c85713be1a4a"
+    },
+    "positive-console/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "positive-console/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "789a8801e3d2ccb7d08d6709814f71f0477802a85364a781168db2d27966af4f"
+    },
+    "positive-console/run.log": {
+      "bytes": 1762,
+      "sha256": "5a19957a6c5b9a08bb5ca0f05abed0f8bae146cee9bce07b2754410847f09d6e"
+    },
+    "positive-console/state.jsonl.gz": {
+      "bytes": 6894288,
+      "sha256": "337f4be1512a1e2cdd1e209ab5bdb372a9c044f61df2255cc093c64a812b92a7"
+    },
+    "positive-headed/result.json": {
+      "bytes": 1052,
+      "sha256": "6805e348b0683cc29a7ea9985b5dbede883403530740e87d8b0f234f1e954253"
+    },
+    "positive-headed/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "789a8801e3d2ccb7d08d6709814f71f0477802a85364a781168db2d27966af4f"
+    },
+    "positive-headed/run.log": {
+      "bytes": 3396,
+      "sha256": "3901ba8bfe2a52f714e041d268a758ce96969499fccf96e434f3ab7e3947fd8e"
+    },
+    "positive-headed/state.jsonl.gz": {
+      "bytes": 6894288,
+      "sha256": "337f4be1512a1e2cdd1e209ab5bdb372a9c044f61df2255cc093c64a812b92a7"
+    },
+    "positive-imported/collision-probe.log": {
+      "bytes": 4091919,
+      "sha256": "6e7b47069a4f8612fcc3674fa81cbd023f43dda5794a594b2a246790c31df289"
+    },
+    "positive-imported/result.json.failure_20261013_034613_565/descent.cfg": {
+      "bytes": 98,
+      "sha256": "cfe483791d63b664c82f7c588f0e85131c346eaa99f7d02a0fa53545ff797cb1"
+    },
+    "positive-imported/result.json.failure_20261013_034613_565/failure.json": {
+      "bytes": 3010,
+      "sha256": "fb14f6182ace0dced4abc918bd21fbe37c3fcfd0aa2cc0ad40af85a69594cb26"
+    },
+    "positive-imported/rng.jsonl": {
+      "bytes": 103225,
+      "sha256": "5fa74e938102578981b927f4dbeb987421a5d8bd5a545ae1ce3f40afc871c3d2"
+    },
+    "positive-imported/run.log": {
+      "bytes": 2301262,
+      "sha256": "e55b664cd7b76d58b36038f83a873ee10e7ce219b95c91364aab40e077626836"
+    },
+    "positive-imported/state.jsonl.gz": {
+      "bytes": 6532674,
+      "sha256": "b7e199a8d36e8c39043df37f700bd5f34949daa7a19a216ffd1cfc912c1f8109"
+    }
+  }
+}
