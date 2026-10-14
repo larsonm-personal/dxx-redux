@@ -40,8 +40,8 @@ extern int select_demo(void);
 
 // name of background bitmap
 #include "d1_in_d2/d1_in_d2_presentation.h"
-#define Menu_pcx_name d1_in_d2_menu_resource(D1_MENU_MAIN, (PHYSFSX_exists(MENU_PCX_FULL,1)?MENU_PCX_FULL:(PHYSFSX_exists(MENU_PCX_OEM,1)?MENU_PCX_OEM:PHYSFSX_exists(MENU_PCX_SHAREWARE,1)?MENU_PCX_SHAREWARE:MENU_PCX_MAC_SHARE)))
-#define STARS_BACKGROUND d1_in_d2_menu_resource(D1_MENU_STARS, ((HIRESMODE && PHYSFSX_exists("starsb.pcx",1))?"starsb.pcx":PHYSFSX_exists("stars.pcx",1)?"stars.pcx":"starsb.pcx"))
+#define Menu_pcx_name d1_in_d2_menu_resource(D1_MENU_MAIN, (d1_in_d2_presentation_resource_exists(MENU_PCX_FULL)?MENU_PCX_FULL:(d1_in_d2_presentation_resource_exists(MENU_PCX_OEM)?MENU_PCX_OEM:d1_in_d2_presentation_resource_exists(MENU_PCX_SHAREWARE)?MENU_PCX_SHAREWARE:MENU_PCX_MAC_SHARE)))
+#define STARS_BACKGROUND d1_in_d2_menu_resource(D1_MENU_STARS, ((HIRESMODE && d1_in_d2_presentation_resource_exists("starsb.pcx"))?"starsb.pcx":d1_in_d2_presentation_resource_exists("stars.pcx")?"stars.pcx":"starsb.pcx"))
 
 extern char *menu_difficulty_text[];
 extern int Escort_view_enabled;

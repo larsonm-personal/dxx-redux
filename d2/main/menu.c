@@ -496,6 +496,8 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 				break;
 			}
 #endif
+			/* Refresh the stable background path after a D1/D2 presentation switch */
+			(void)Menu_pcx_name;
 			load_palette(MENU_PALETTE,0,1);		//get correct palette
 
 			if ( Players[Player_num].callsign[0]==0 ) {

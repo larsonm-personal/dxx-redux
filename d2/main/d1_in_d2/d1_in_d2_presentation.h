@@ -20,6 +20,7 @@ int d1_in_d2_show_order_form(void);
 const char *d1_in_d2_presentation_prefix(void);
 /* Resolve base resources by game while preserving mounted mission/loose overrides */
 int d1_in_d2_presentation_resource(const char *name, char *path, size_t size);
+int d1_in_d2_presentation_resource_exists(const char *name);
 enum d1_menu_resource {
 	D1_MENU_MAIN, D1_MENU_STARS, D1_MENU_FRAME, D1_MENU_PALETTE
 };

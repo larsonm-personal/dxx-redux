@@ -84,6 +84,13 @@ int d1_in_d2_presentation_resource(const char *name, char *path, size_t size)
 	return PHYSFSX_exists(path, 1);
 }
 
+/* Test candidates in the same content namespace used by the eventual read */
+int d1_in_d2_presentation_resource_exists(const char *name)
+{
+	char path[PATH_MAX];
+	return d1_in_d2_presentation_resource(name, path, sizeof(path));
+}
+
 char *d1_in_d2_menu_resource(enum d1_menu_resource kind, const char *default_name)
 {
 	static char paths[3][PATH_MAX];
