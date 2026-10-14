@@ -647,11 +647,11 @@ static void boss_dying_frame(object *obj)
 		if (!Boss_dying_sound_playing) {
 			Boss_dying_sound_playing = 1;
 			digi_link_sound_to_object2(SOUND_BOSS_SHARE_DIE, obj-Objects, 0, F1_0*4, F1_0*1024);
-		/* FX RNG: native cosmetic fireball cadence and scale */
-		} else if (d_rand_fx() < FrameTime*16)
-			create_small_fireball_on_object(obj, (F1_0 + d_rand_fx())*8, 0);
-	} else if (d_rand_fx() < FrameTime*8)
-		create_small_fireball_on_object(obj, (F1_0/2 + d_rand_fx())*8, 1);
+		/* SIM RNG: retain native fireball cadence, scale and world-update draw order */
+		} else if (d_rand() < FrameTime*16)
+			create_small_fireball_on_object(obj, (F1_0 + d_rand())*8, 0);
+	} else if (d_rand() < FrameTime*8)
+		create_small_fireball_on_object(obj, (F1_0/2 + d_rand())*8, 1);
 	if (Boss_dying_start_time + BOSS_DEATH_DURATION < GameTime64 || GameTime64 + F1_0*2 < Boss_dying_start_time) {
 		Boss_dying_start_time = GameTime64;
 		do_controlcen_destroyed_stuff(NULL);
