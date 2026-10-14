@@ -49,6 +49,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "endlevel.h"
 #include "cntrlcen.h"
+#include "custom.h"
 #include "rle.h"
 #include "xmodel.h"
 #ifdef __ANDROID__
@@ -116,6 +117,8 @@ int tmap_info_read_n(tmap_info *ti, int n, PHYSFS_file *fp)
 
 void gamedata_close()
 {
+	/* Restore retained originals before freeing the live model registry */
+	custom_restore_definitions();
 	free_polygon_models();
 	free_endlevel_data();
 	rle_cache_close();
