@@ -36,8 +36,6 @@ const char *d1_in_d2_presentation_prefix(void)
 	const int index = d1 ? 0 : 1;
 	const char *prefix = d1 ? "d1-original/" : "d2-original/";
 	PHYSFS_file *file;
-	if (!d1 && !D1_text)
-		return ""; /* Preserve normal D2 resource overrides until a profile switch */
 	if (!PHYSFS_getMountPoint(Presentation_mounts[index])) {
 		file = PHYSFSX_openReadBuffered(d1 ? "descent.hog" :
 			PHYSFSX_exists("descent2.hog", 1) ? "descent2.hog" : "d2demo.hog");
@@ -82,6 +80,13 @@ int d1_in_d2_presentation_resource(const char *name, char *path, size_t size)
 	if (length < 0 || (size_t)length >= size)
 		Error("Presentation resource path is too long: %s", name);
 	return PHYSFSX_exists(path, 1);
+}
+
+/* Test candidates in the same content namespace used by the eventual read */
+int d1_in_d2_presentation_resource_exists(const char *name)
+{
+	char path[PATH_MAX];
+	return d1_in_d2_presentation_resource(name, path, sizeof(path));
 }
 
 char *d1_in_d2_menu_resource(enum d1_menu_resource kind, const char *default_name)

@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 #include "pstypes.h"
 #include "songs.h"
+#include "d1_in_d2/d1_in_d2_presentation.h"
 #include "digi.h"
 #include "rbaudio.h"
 #ifdef USE_SDLMIXER
@@ -96,7 +97,10 @@ void songs_init()
 	    && android_music_get_prefer_mission_soundtrack()
 #endif
 	   ) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
-		fp = PHYSFSX_openReadBuffered( "dxx-r.sng" );
+	{
+		d1_in_d2_presentation_resource("dxx-r.sng", sng_file, sizeof(sng_file));
+		fp = PHYSFSX_openReadBuffered(sng_file);
+	}
 	if (fp != NULL)
 		loaded_sng = "dxx-r.sng";
 
@@ -106,7 +110,8 @@ void songs_init()
 #endif
 	   ) // try to open regular descent.sng
 	{
-		fp = PHYSFSX_openReadBuffered( "descent.sng" );
+		d1_in_d2_presentation_resource("descent.sng", sng_file, sizeof(sng_file));
+		fp = PHYSFSX_openReadBuffered(sng_file);
 		if (fp != NULL)
 			loaded_sng = "descent.sng";
 	}
@@ -127,9 +132,9 @@ void songs_init()
 
 		for (i = SONG_FIRST_LEVEL_SONG; i < predef; i++) {
 			snprintf(BIMSongs[i].filename, sizeof(BIMSongs[i].filename), "game%02d.hmp", i - SONG_FIRST_LEVEL_SONG + 1);
-			if (!PHYSFSX_exists(BIMSongs[i].filename,1))
+			if (!d1_in_d2_presentation_resource_exists(BIMSongs[i].filename))
 				snprintf(BIMSongs[i].filename, sizeof(BIMSongs[i].filename), "game%d.hmp", i - SONG_FIRST_LEVEL_SONG);
-			if (!PHYSFSX_exists(BIMSongs[i].filename,1))
+			if (!d1_in_d2_presentation_resource_exists(BIMSongs[i].filename))
 			{
 				memset(BIMSongs[i].filename, '\0', sizeof(BIMSongs[i].filename)); // music not available
 				break;
@@ -329,8 +334,13 @@ void play_credits_track(void)
 // play a filename as music, depending on filename extension.
 int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void))
 {
+	char resource[PATH_MAX];
 	char *fptr = strrchr(filename, '.');
 
+	/* Resolve base songs by content without changing jukebox filesystem paths */
+	if (GameCfg.MusicType == MUSIC_TYPE_BUILTIN &&
+		(d1_in_d2_presentation_resource(filename, resource, sizeof(resource)) || PHYSFSX_exists(filename, 1)))
+		filename = resource;
 	songs_stop_all();
 	
 	if (fptr == NULL)
@@ -374,7 +384,7 @@ int songs_play_song( int songnum, int repeat )
 		case MUSIC_TYPE_BUILTIN:
 		{
 			// EXCEPTION: If SONG_ENDLEVEL is not available, continue playing level song.
-			if (Song_playing >= SONG_FIRST_LEVEL_SONG && songnum == SONG_ENDLEVEL && !PHYSFSX_exists(BIMSongs[songnum].filename, 1))
+			if (Song_playing >= SONG_FIRST_LEVEL_SONG && songnum == SONG_ENDLEVEL && !d1_in_d2_presentation_resource_exists(BIMSongs[songnum].filename))
 				return Song_playing;
 
 			Song_playing = -1;
