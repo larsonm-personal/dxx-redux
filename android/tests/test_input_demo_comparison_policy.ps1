@@ -77,3 +77,53 @@ if (-not $python) { throw 'Python 3 is required for paired replay evidence tests
 $pythonPrefix = @($python.PrefixArguments)
 & $python.Path @pythonPrefix -m unittest discover -s $PSScriptRoot -p test_d1_replay_parity_compare.py
 if ($LASTEXITCODE -ne 0) { throw 'Paired replay evidence tests failed' }
+
+# An explicit native console backend is a capability choice, never a fallback
+foreach ($name in @('Get-HeadlessConsoleExe', 'Test-CanUseHeadlessConsoleRunner', 'Resolve-ReplayRunnerSelection')) {
+    $function = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name }, $true)
+    . ([scriptblock]::Create($function.Extent.Text))
+}
+$Runner = 'headless-console'
+$ExecutablePath = Join-Path $PSScriptRoot 'deliberately-not-built-console'
+foreach ($game in @('d1', 'd2')) {
+    foreach ($start in @('new_level', 'save_checkpoint')) {
+        $selected = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $game -Header @{ start_mode = $start } -LaunchMode @{ Name = 'accelerated' }
+        if (-not $selected.UseHeadlessConsole -or $selected.UseNoRender) { throw 'Explicit console selection must stay display-free' }
+    }
+}
+foreach ($case in @('imported', 'realtime', 'pilot', 'unsupported')) {
+    $options = @{
+        RequestedRunner = $Runner
+        ResolvedGame = 'd1'
+        Header = @{ start_mode = 'new_level' }
+        LaunchMode = @{ Name = 'accelerated' }
+    }
+    if ($case -eq 'imported') { $options.D1InD2 = $true }
+    if ($case -eq 'realtime') { $options.LaunchMode.Name = 'realtime' }
+    if ($case -eq 'pilot') { $options.Pilot = 'test' }
+    if ($case -eq 'unsupported') { $options.Header.start_mode = 'unsupported' }
+    $rejected = $false
+    try { Resolve-ReplayRunnerSelection @options | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw "Console backend silently accepted $case" }
+}
+$Runner = 'fast'
+$selected = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame d2 -Header @{ start_mode = 'new_level' } -LaunchMode @{ Name = 'accelerated' }
+if ($selected.UseHeadlessConsole) { throw 'An explicit full-game executable must not accidentally select a different console binary' }
+Write-Host 'PASS: explicit native console routing fails closed for unsupported combinations'
+
+# A single optional native argument must remain an array, not splat into characters
+$publicAst = [Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $PSScriptRoot 'test_compact_public_replays.ps1'), [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw ($errors | Out-String) }
+$nativeAssignment = $publicAst.Find({ param($node)
+    $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -like '*nativeArguments'
+}, $true)
+if (-not $nativeAssignment) { throw 'Missing public native-only argument construction' }
+foreach ($NativeOnly in @($true, $false)) {
+    . ([scriptblock]::Create($nativeAssignment.Extent.Text))
+    $received = & $python.Path @pythonPrefix -c 'import json,sys; print(json.dumps(sys.argv[1:]))' @nativeArguments
+    if ($LASTEXITCODE -ne 0) { throw 'Public native-only argument probe failed' }
+    $expectedArguments = if ($NativeOnly) { '["--native-only"]' } else { '[]' }
+    if ($received -cne $expectedArguments) { throw "Public native-only argument was not passed intact: $received" }
+}
+Write-Host 'PASS: public native-only selection preserves the exact Python argument'

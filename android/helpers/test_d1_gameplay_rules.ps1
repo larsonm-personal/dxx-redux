@@ -2,19 +2,38 @@
 # Compare native/imported door, pickup, damage and replacement-drop operations
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][string]$D1DataDirectory,
+    [string]$D1DataDirectory,
     [string]$D2DataDirectory,
     [string]$NativeExecutable = "buildd1/main/test_upstream_compat.exe",
-    [string]$ImportedExecutable = "buildd2/main/test_upstream_compat.exe"
+    [string]$ImportedExecutable = "buildd2/main/test_upstream_compat.exe",
+    [ValidateSet('retail', 'shareware')][string]$DataEdition = 'retail',
+    [string]$Output,
+    [ValidateRange(1, 3600)][int]$TimeoutSeconds = 120
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $repository = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $repository 'android/tests/gameplay_fixture_helpers.ps1')
+if ($DataEdition -eq 'shareware') {
+    . (Join-Path $repository 'android/tests/public_combat_report.ps1')
+    if (-not $Output) { $Output = Join-Path $repository 'temp/public-combat' }
+    $nativePath = (Resolve-Path -LiteralPath $NativeExecutable).Path
+    $importedPath = (Resolve-Path -LiteralPath $ImportedExecutable).Path
+    $run = Initialize-GameplayFixtureRun -Repository $repository -Output $Output -DataEdition shareware -D1Assets $D1DataDirectory -D2Assets $D2DataDirectory
+    Get-FileHash -LiteralPath $nativePath, $importedPath | ConvertTo-Json | Set-Content "$($run.Output)/binaries.json"
+    foreach ($case in @(@{ Name = 'native'; Exe = $nativePath }, @{ Name = 'imported'; Exe = $importedPath })) {
+        Invoke-GameplayFixtureProcess -Executable $case.Exe -Arguments @('--public-combat-rules-trace', $run.D1Assets, $run.D2Assets) -Directory (Join-Path $run.Output $case.Name) -TimeoutSeconds $TimeoutSeconds
+    }
+    Assert-PublicCombatReport -Directory $run.Output | Out-Null
+    Write-Output "PASS: public native/imported combat, contact and drop matrices plus ordinary D2 controls; $($run.Output)/report.json"
+    return
+}
+if (-not $D1DataDirectory) { throw 'Retail gameplay rules require -D1DataDirectory' }
 $assets = (Resolve-Path -LiteralPath $D1DataDirectory).Path
 $nativePath = (Resolve-Path -LiteralPath $NativeExecutable).Path
 $importedPath = (Resolve-Path -LiteralPath $ImportedExecutable).Path
-$outputPath = Join-Path $repository "temp/d1-gameplay-rules-comparison"
+$outputPath = if ($Output) { [IO.Path]::GetFullPath($Output) } else { Join-Path $repository "temp/d1-gameplay-rules-comparison" }
 & "$PSScriptRoot/retain-recent-artifacts.ps1" -Artifacts $outputPath
 $importArguments = @($assets)
 if ($D2DataDirectory) { $importArguments += (Resolve-Path -LiteralPath $D2DataDirectory).Path }
@@ -28,16 +47,8 @@ foreach ($run in @(
         $file = Join-Path $runDirectory $name
         if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
     }
-    Push-Location $runDirectory
-    try {
-        $arguments = $run.Arguments
-        & $run.Executable --gameplay-rules-trace @arguments *> output.log
-        if ($LASTEXITCODE -ne 0) {
-            throw "$($run.Name) gameplay rules failed (exit $LASTEXITCODE); see $runDirectory/output.log"
-        }
-    } finally {
-        Pop-Location
-    }
+    Invoke-GameplayFixtureProcess -Executable $run.Executable -Arguments (@('--gameplay-rules-trace') + $run.Arguments) -Directory $runDirectory -TimeoutSeconds $TimeoutSeconds
+    Set-Content (Join-Path $runDirectory 'output.log') -Value ((Get-Content "$runDirectory/stdout.log", "$runDirectory/stderr.log") -join [Environment]::NewLine)
 }
 $native = Get-Content -LiteralPath (Join-Path $outputPath "native/rules.json") -Raw
 $imported = Get-Content -LiteralPath (Join-Path $outputPath "imported/rules.json") -Raw

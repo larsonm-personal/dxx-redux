@@ -65,7 +65,9 @@ when returning to the saved base level or revisiting the saved secret level.
 Run `android/run_all_tests.ps1` without arguments and choose **R. Replay a demo**.
 Choose D1, D2 or D1-in-D2, then the recording, then headed or headless playback.
 Headed playback uses normal speed and a visible game window. Headless playback
-runs accelerated; D1 and D1-in-D2 currently use the no-present windowed runner.
+runs accelerated through native D1/D2 console binaries without initializing a
+video device. D1-in-D2 still uses the no-present windowed runner and needs a
+display; it is not a true-headless backend.
 This menu starts only the selected replay, not the test suite
 
 From the repository root, jump straight to the picker:
@@ -197,3 +199,57 @@ replay in D2, exact frame-zero/per-frame/terminal semantic state and RNG
 comparison, and separate recorded-versus-native and native-versus-imported
 verdicts. Do not use fresh-level startup or expected-result substitutions to
 make checkpoint demos pass
+
+# Compact public corpus: primary headless and secondary headed
+
+The same regression entry points select the pinned public scenes with
+`-Corpus public`. All scenes are ordinary native level starts; both backends
+run each twice and compare unchanged live-capture frame state, every diagnostic,
+terminal state and SIM-RNG oracles. Each demo plus its oracle stays below
+100,000 uncompressed UTF-8 bytes. Playback never rewrites expectations.
+
+Prepare pinned public assets using `android/helpers/setup_shareware_test_data.ps1
+-Game both -Download`, then run:
+
+```powershell
+# Primary native CI path: no window, video driver or X server needed
+./android/tests/test_input_demo_regressions.ps1 -Corpus public
+# Secondary rendered path, using the same oracles
+./android/tests/test_input_demo_regressions_graphics.ps1 -Corpus public
+```
+
+Explicit `-D1Exe` and `-D2Exe` select matching console or desktop binaries;
+`-D1DataDir` and `-D2DataDir` select the respective pinned shareware directories.
+Without explicit executables the existing build guard chooses/builds them.
+Headless selects `-Runner headless-console` and never falls back to a no-present
+window. Graphics selects `-Runner visual` and does run rendering/presentation.
+Both native compact backends require finalized result/traces and natural process exit.
+`-RequireCleanExit` enables opt-in unattended desktop `-inputdemo-exit`; normal
+interactive replays retain their existing menu behavior.
+
+Use Xvfb and software GL on Linux for the graphics pass and for route-development
+screenshots. Xvfb is a virtual display for the headed engine, not the headless
+implementation. CI runs the console pass with DISPLAY/WAYLAND_DISPLAY absent
+and an intentionally invalid video driver. A separate graphics job runs under
+Xvfb in parallel, reusing the same hashed binaries and pinned assets from one
+build job. Both remain automated PR checks.
+
+Only the graphics pass also runs the existing paired D1 investigation. Required
+imported scope remains exact D1 flight gameplay-state/SIM-RNG; other imported
+scenes remain diagnostic probes. Imported diagnostic/object/world differences
+and full simulation qualification remain explicitly incomplete. The headless
+report says imported parity was not run rather than treating it as a pass. The
+paired imported harness retains its existing process-lifetime policy; the new
+natural-exit assertion covers the native compact paths.
+
+`test_compact_public_replay_failures.ps1 -RunMode headless|graphics -D1Exe ...
+-D2Exe ...` runs deliberately wrong frame expectations and changed controls
+through the same full regression-wrapper chain and real engines. It requires
+all admitted scenes/repeats to fail at the intended runtime comparisons. The
+wrong-oracle run's actual traces must still pass against the original immutable
+oracles, providing matched positive evidence. Setup/admission failure, missing
+artifacts or an incomplete inventory cannot count as a successful negative.
+Negative controls explicitly request `-NativeOnly`: their reports mark imported
+parity `not_run`, avoiding two redundant imported investigations. The positive
+graphics pass still requires the existing paired scope once. All mutations are
+disposable copies; checked-in fixtures stay byte-identical.

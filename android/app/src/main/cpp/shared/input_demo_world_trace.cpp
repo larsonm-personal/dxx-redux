@@ -17,6 +17,7 @@ extern "C" {
 #include "fireball.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gameseg.h"
 #include "laser.h"
 #include "morph.h"
 #include "player.h"
@@ -402,6 +403,44 @@ nlohmann::ordered_json input_demo_endlevel_trace_snapshot()
 	return endlevel_state();
 }
 
+// Separate read-only observations preserve the immutable world schema and hashes
+int input_demo_door_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size)
+{
+	if (!ConsoleObject) return 1;
+	char trace_source[] = __FILE__;
+	for (int index = 0; index < Num_walls; ++index) {
+		const auto &wall = Walls[index];
+		if (wall.type != WALL_DOOR || !(wall.flags & WALL_DOOR_AUTO)) continue;
+		auto &front = Segments[wall.segnum];
+		const int child = front.children[wall.sidenum];
+		if (child < 0) continue;
+		auto &back = Segments[child];
+		const int back_side = find_connect_side(&front, &back);
+		if (back_side < 0) continue;
+		const int back_wall = back.sides[back_side].wall_num;
+		if (back_wall < 0 || back_wall < index) continue;
+		const active_door *active = nullptr;
+		for (int i = 0; i < Num_open_doors; ++i)
+			if (ActiveDoors[i].front_wallnum[0] == index || ActiveDoors[i].back_wallnum[0] == index) active = &ActiveDoors[i];
+		if (!active && ConsoleObject->segnum != wall.segnum && ConsoleObject->segnum != child) continue;
+		json blockers = json::array();
+		for (const int segment : { wall.segnum, child }) {
+			const int side = segment == wall.segnum ? wall.sidenum : back_side;
+			for (int slot = Segments[segment].objects; slot != -1; slot = Objects[slot].next) {
+				const auto &object = Objects[slot];
+#ifdef DXX_BUILD_DESCENT_II
+				if (object.type == OBJ_WEAPON || object.type == OBJ_FIREBALL) continue;
+#endif
+				if (!object.size || !(get_seg_masks(&object.pos, segment, object.size, trace_source, __LINE__).sidemask & (1 << side))) continue;
+				blockers.push_back({ { "slot", slot }, { "type", int(object.type) }, { "id", int(object.id) }, { "signature", int(object.signature) }, { "segment", segment }, { "position", vector(object.pos) }, { "radius", int(object.size) } });
+			}
+		}
+		json record = { { "type", "door_probe" }, { "version", 1 }, { "f", frame }, { "phase", phase ? phase : "frame" }, { "front", index }, { "back", back_wall }, { "front_doorway", WALL_IS_DOORWAY(&front, wall.sidenum) }, { "back_doorway", WALL_IS_DOORWAY(&back, back_side) }, { "blockers", blockers } };
+		if (!input_demo_state_trace_write_json(record.dump().c_str(), error, error_size)) return 0;
+	}
+	return 1;
+}
+
 int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error, size_t error_size)
 {
 	static json previous;
@@ -413,5 +452,5 @@ int input_demo_world_trace_write(uint32_t frame, const char *phase, char *error,
 	for (auto it = current.begin(); it != current.end(); ++it)
 		if (boundary || frame == 0 || !previous.contains(it.key()) || previous[it.key()] != it.value()) record["state"][it.key()] = it.value();
 	if (!boundary) previous = std::move(current);
-	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size);
+	return input_demo_state_trace_write_json(record.dump().c_str(), error, error_size) && input_demo_door_trace_write(frame, phase, error, error_size);
 }

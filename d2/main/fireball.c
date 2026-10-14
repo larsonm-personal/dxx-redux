@@ -1500,21 +1500,24 @@ void do_explosion_sequence(object *obj)
 		input_demo_log_secondary_explosion_spawn("secondary_spawn",
 			obj, del_obj, expl_obj, vclip_num);
 
+		int loot_chance_roll = -1, loot_count_roll = -1, loot_created = -1;
 		if ((del_obj->contains_count > 0) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside of this code!!
 			//	If dropping a weapon that the player has, drop energy instead, unless it's vulcan, in which case drop vulcan ammo.
 			if (del_obj->contains_type == OBJ_POWERUP)
 				maybe_replace_powerup_with_energy(del_obj);
-			object_create_egg(del_obj);
+			loot_created = object_create_egg(del_obj);
 		} else if ((del_obj->type == OBJ_ROBOT) && !(Game_mode & GM_MULTI)) { // Multiplayer handled outside this code!!
 			robot_info	*robptr = &Robot_info[del_obj->id];
 			if (robptr->contains_count) {
 				// SIM RNG: this decides whether robot loot spawns and how much drops
-				if (((d_rand() * 16) >> 15) < robptr->contains_prob) {
-					del_obj->contains_count = ((d_rand() * robptr->contains_count) >> 15) + 1;
+				loot_chance_roll = d_rand();
+				if (((loot_chance_roll * 16) >> 15) < robptr->contains_prob) {
+					loot_count_roll = d_rand();
+					del_obj->contains_count = ((loot_count_roll * robptr->contains_count) >> 15) + 1;
 					del_obj->contains_type = robptr->contains_type;
 					del_obj->contains_id = robptr->contains_id;
 					maybe_replace_powerup_with_energy(del_obj);
-					object_create_egg(del_obj);
+					loot_created = object_create_egg(del_obj);
 				}
 			}
 
@@ -1525,6 +1528,8 @@ void do_explosion_sequence(object *obj)
 				DropBuddyMarker(del_obj);
 			}
 		}
+
+		input_demo_trace_robot_loot(del_obj, loot_chance_roll, loot_count_roll, loot_created);
 
 		if ( Robot_info[del_obj->id].exp2_sound_num > -1 )
 			digi_link_sound_to_pos( Robot_info[del_obj->id].exp2_sound_num, del_obj->segnum, 0, spawn_pos, 0, F1_0 );

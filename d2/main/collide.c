@@ -1949,6 +1949,7 @@ input_demo_debug_log_weapon_robot_reason_probe("accept", (void *)weapon, (void *
 				coop_record_robot_kill(Player_num, Robot_info[robot->id].score_value);
 				detect_escort_goal_accomplished(robot-Objects);
 			}
+			input_demo_trace_robot_damage(robot, weapon, robot_old_shields, damage, robot_died);
 		}
 
 
@@ -2824,7 +2825,9 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 				#endif
 			}
 
+			fix player_old_shields = Players[Player_num].shields;
 			apply_damage_to_player( playerobj, killer, damage, 1);
+			input_demo_trace_player_weapon_damage(playerobj, weapon, player_old_shields, damage);
 
 		}
 

@@ -73,6 +73,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "mission.h"
 #include "maths.h"
 #include "input_demo_debug_logging.h"
+#include "input_demo_hooks_shared.h"
 #include "titles.h"
 #include "text.h"
 #include "gauges.h"
@@ -678,6 +679,7 @@ int main(int argc, char *argv[])
 
 game_event_loop:
 	while (window_get_front()
+	       && !input_demo_replay_should_exit()
 #ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
 	       && !route_confirmation_desktop_should_exit()
 #endif
@@ -691,6 +693,10 @@ game_event_loop:
 		event_process();
 	}
 	
+	/* Unattended teardown warnings must not open modal dialogs */
+	if (input_demo_replay_should_exit())
+		set_warn_func(warn_printf);
+
 	// Tidy up - avoids a crash on exit
 	{
 		window *wind;
@@ -701,7 +707,8 @@ game_event_loop:
 	}
 
 	WriteConfigFile();
-	show_order_form();
+	if (!input_demo_replay_should_exit())
+		show_order_form();
 
 	con_printf( CON_DEBUG, "\nCleanup...\n" );
 	close_game();

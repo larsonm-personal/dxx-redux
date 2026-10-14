@@ -749,10 +749,12 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	gr_use_palette_table( "palette.256" );
 
-	show_boxed_message(TXT_LOADING, 0);
+	if (!GameArg.SysInputDemoNoRender) {
+		show_boxed_message(TXT_LOADING, 0);
 #ifdef RELEASE
-	timer_delay(F1_0);
+		timer_delay(F1_0);
 #endif
+	}
 
 #ifdef __ANDROID__
 	load_profile.presentation_us = android_profile_take_elapsed_us(&load_profile_phase_us);
@@ -801,7 +803,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	ogl_invalidate_game_palette_textures();
 #endif
 
-	if ( page_in_textures ) {
+	if (page_in_textures && !GameArg.SysInputDemoNoRender) {
 		piggy_load_level_data();
 #ifdef OGL
 		ogl_cache_level_textures();

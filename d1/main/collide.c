@@ -1065,6 +1065,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 				// android port: coop QoL -- track local player robot kill
 				coop_record_robot_kill(Player_num, Robot_info[robot->id].score_value);
 			}
+			input_demo_trace_robot_damage(robot, weapon, robot_old_shields, damage, robot_died);
 		}
 
 	}
@@ -1652,7 +1653,9 @@ void collide_player_and_weapon( object * player, object * weapon, vms_vector *co
 				#endif
 			}
 
+			fix player_old_shields = Players[Player_num].shields;
 			apply_damage_to_player( player, killer, damage, 1);
+			input_demo_trace_player_weapon_damage(player, weapon, player_old_shields, damage);
 
 		}
 	}

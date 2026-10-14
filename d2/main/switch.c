@@ -756,6 +756,7 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 		}
 
 		input_demo_log_trigger_probe("handled", seg, side, objnum, shot, trigger_num);
+		input_demo_trace_trigger_activation(seg - Segments, side, objnum, shot, trigger_num);
 
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI)

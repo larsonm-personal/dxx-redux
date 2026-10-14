@@ -29,11 +29,16 @@
 
 #include "input_demo_start_shared.h"
 
-static int input_demo_load_replay_from_path(const char *demo_path, char *error,
+int input_demo_load_replay_from_path(const char *demo_path, char *error,
 	size_t error_size)
 {
 	return input_demo_load_replay_from_path_common(demo_path, INPUT_DEMO_GAME_D1,
 		"D1", error, error_size);
+}
+
+int input_demo_start_loaded_replay(void)
+{
+	return input_demo_start_loaded_replay_common();
 }
 
 int input_demo_maybe_start_replay_from_cmdline(void)
@@ -68,5 +73,5 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	if (!input_demo_start_replay_state_trace_and_log_paths(&cmdline, replay_error,
 		sizeof(replay_error)))
 		return 1;
-	return input_demo_start_loaded_replay_common();
+	return input_demo_start_loaded_replay();
 }

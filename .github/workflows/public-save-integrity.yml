@@ -12,10 +12,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  save-integrity:
-    name: Linux public native save and replay integrity
+  build-public:
+    name: Linux public build and save integrity
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 45
     env:
       SDL_AUDIODRIVER: dummy
       SDL_VIDEODRIVER: x11
@@ -53,7 +53,15 @@ jobs:
             cmake -S "$game" -B "build${game}-save" -G Ninja \
               -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
               -DCMAKE_C_FLAGS_DEBUG="-O0 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g1"
-            cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" --parallel 4
+            cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" "dxx-redux-${game}-headless" --parallel 4
+          done
+
+      - name: Check headless audio shutdown on success and early failure
+        timeout-minutes: 1
+        run: |
+          for game in d1 d2; do
+            env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+              ctest --test-dir "build${game}-save" -R '^test_headless_audio_lifecycle$' --output-on-failure --no-tests=error
           done
 
       - name: Prepare pinned public shareware data
@@ -69,22 +77,133 @@ jobs:
             -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat"
 
-      - name: Check compact public replay admission
-        timeout-minutes: 2
+      - name: Exercise public loaded-asset pickup matrix
+        timeout-minutes: 5
         run: |
-          python3 android/tests/test_compact_public_replay.py
-          python3 android/tests/test_run_compact_public_replays.py
-          python3 android/tests/test_compact_public_gameplay_parity.py
-          pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
-          pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
+          pwsh -NoProfile -File android/tests/test_pickup_autoselect_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_pickup_autoselect_parity.ps1 \
+            -DataEdition shareware \
+            -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-pickup-ci"
 
-      - name: Replay compact public level starts
-        timeout-minutes: 20
+      - name: Exercise public loaded-asset combat rules
+        timeout-minutes: 5
         run: |
-          xvfb-run -a -s '-screen 0 640x480x24 -noreset' pwsh -NoProfile -File android/tests/test_compact_public_replays.ps1 \
-            -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
-            -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
-            -Output "$PWD/temp/public-replay-ci"
+          pwsh -NoProfile -File android/tests/test_public_combat_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/helpers/test_d1_gameplay_rules.ps1 \
+            -DataEdition shareware \
+            -NativeExecutable "$PWD/buildd1-save/main/test_upstream_compat" \
+            -ImportedExecutable "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-combat-ci"
+
+      - name: Render and verify compact combat capture screenshots
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-robot-combat-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario combat
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-robot-combat-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          for game in ("d1", "d2"):
+              name = f"{game}-public-combat.oracle.json"
+              actual = json.loads((captured / name).read_bytes())
+              expected = json.loads((admitted / name).read_bytes())
+              for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                          "terminal_sha256", "combat_observations"):
+                  assert actual[key] == expected[key], (game, key)
+              directory = captured / f"{game}-combat"
+              report = json.loads((directory / "capture.json").read_bytes())
+              frames = report["screenshot_frames"]
+              assert frames == sorted(set(frames))
+              assert {0, report["damage_frame"], report["action_frame"]} <= set(frames)
+              images = sorted((directory / "screenshots").glob("scrn*.png"))
+              assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
+      - name: Render and verify compact door lifecycle screenshots
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-door-lifecycle-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario door-lifecycle
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-door-lifecycle-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          for game in ("d1", "d2"):
+              name = f"{game}-public-door-lifecycle.oracle.json"
+              actual = json.loads((captured / name).read_bytes())
+              expected = json.loads((admitted / name).read_bytes())
+              for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                          "terminal_sha256", "door_observations"):
+                  assert actual[key] == expected[key], (game, key)
+              directory = captured / f"{game}-door-lifecycle"
+              report = json.loads((directory / "capture.json").read_bytes())
+              frames = report["screenshot_frames"]
+              assert frames == sorted(set(frames))
+              assert {row["f"] for row in report["door_events"]} <= set(frames)
+              images = sorted((directory / "screenshots").glob("scrn*.png"))
+              assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
+      - name: Render and verify authored robot-loot capture
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-robot-loot-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario loot
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-robot-loot-visual-ci")
+          name = "d1-public-loot.oracle.json"
+          actual = json.loads((captured / name).read_bytes())
+          expected = json.loads((Path("android/tests/fixtures/public_level_replays") / name).read_bytes())
+          for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                      "terminal_sha256", "combat_observations"):
+              assert actual[key] == expected[key], key
+          directory = captured / "d1-loot"
+          report = json.loads((directory / "capture.json").read_bytes())
+          frames = report["screenshot_frames"]
+          assert frames == sorted(set(frames))
+          assert {0, report["damage_frame"], report["action_frame"], report["pickup_frame"]} <= set(frames)
+          images = sorted((directory / "screenshots").glob("scrn*.png"))
+          assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
+      - name: Package exact replay binaries and pinned public assets
+        run: |
+          mkdir -p "$RUNNER_TEMP/public-replay-build"
+          git rev-parse HEAD > "$RUNNER_TEMP/public-replay-build/source-commit.txt"
+          paths=(buildd1-save/main/d1x-redux buildd2-save/main/d2x-redux
+                 buildd1-save/main/dxx-redux-d1-headless buildd2-save/main/dxx-redux-d2-headless)
+          sha256sum "${paths[@]}" > "$RUNNER_TEMP/public-replay-build/binaries.sha256"
+          tar -czf "$RUNNER_TEMP/public-replay-build/runtime.tgz" "${paths[@]}" game_data/shareware
+
+      - name: Share the verified build with both replay backends
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-replay-build
+          path: ${{ runner.temp }}/public-replay-build/
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Keep save integrity evidence
         if: always()
@@ -93,11 +212,194 @@ jobs:
           name: public-save-integrity
           path: |
             temp/wall-blast-save-shareware/
-            temp/public-replay-ci/
+            temp/public-pickup-ci/
+            temp/public-combat-ci/
+            temp/public-robot-combat-visual-ci/
+            temp/public-robot-loot-visual-ci/
+            temp/public-door-lifecycle-visual-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
             buildd2-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd2-save/CMakeCache.txt
+          retention-days: 3
+          if-no-files-found: ignore
+
+  save-integrity:
+    name: Linux public native save and replay integrity
+    timeout-minutes: 90
+    needs: build-public
+    runs-on: ubuntu-24.04
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: invalid
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      POWERSHELL_TELEMETRY_OPTOUT: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install native runtime and test tools
+        timeout-minutes: 3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev \
+            libpng-dev libglew-dev zlib1g-dev xvfb xauth libgl1-mesa-dri
+
+      - name: Prepare host helper workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-public-runtime-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-public-runtime-deps" > dependency_base.txt
+
+      - name: Download this workflow's exact replay build
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: public-replay-build
+          path: ${{ runner.temp }}/public-replay-build
+
+      - name: Verify build identity and restore executable permissions
+        run: |
+          test "$(cat "$RUNNER_TEMP/public-replay-build/source-commit.txt")" = "$(git rev-parse HEAD)"
+          tar -xzf "$RUNNER_TEMP/public-replay-build/runtime.tgz"
+          sha256sum -c "$RUNNER_TEMP/public-replay-build/binaries.sha256"
+          test -x buildd1-save/main/d1x-redux
+          test -x buildd2-save/main/d2x-redux
+          test -x buildd1-save/main/dxx-redux-d1-headless
+          test -x buildd2-save/main/dxx-redux-d2-headless
+          for binary in buildd{1,2}-save/main/*; do
+            ldd "$binary" | tee "$RUNNER_TEMP/$(basename "$binary").ldd"
+            if grep -q 'not found' "$RUNNER_TEMP/$(basename "$binary").ldd"; then
+              echo "Missing shared dependency for $binary" >&2
+              exit 1
+            fi
+          done
+
+      - name: Check compact public replay admission
+        timeout-minutes: 4
+        run: |
+          python3 android/tests/test_compact_public_replay.py
+          python3 android/tests/test_run_compact_public_replays.py
+          python3 android/tests/test_public_switch_replay.py
+          python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_loot_replay.py
+          python3 android/tests/test_public_door_replay.py
+          python3 android/tests/test_public_incoming_robot_hits.py
+          python3 android/tests/test_compact_public_gameplay_parity.py
+          pwsh -NoProfile -File android/tests/test_input_demo_host_build_guard.ps1
+          pwsh -NoProfile -File android/tests/test_input_demo_comparison_policy.ps1
+          pwsh -NoProfile -File android/tests/test_input_demo_replay_failures.ps1
+          pwsh -NoProfile -File android/tests/test_validate_automation_catalog.ps1
+          pwsh -NoProfile -File android/tests/test_run_all_tests_catalog.ps1
+
+      - name: Qualify compact public replays without a display
+        # Primary native gate: actual console mains, no X server or OpenGL context
+        # Nine cases took 33 minutes; retain headroom for twelve cases plus the focused no-collect controls
+        timeout-minutes: 80
+        run: |
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_input_demo_regressions.ps1 \
+            -Corpus public -RunMode headless \
+            -D1Exe "$PWD/buildd1-save/main/dxx-redux-d1-headless" \
+            -D2Exe "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
+            -ResultArchiveRoot "$PWD/temp/public-replay-headless-ci"
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_compact_public_replay_failures.ps1 \
+            -RunMode headless \
+            -D1Exe "$PWD/buildd1-save/main/dxx-redux-d1-headless" \
+            -D2Exe "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
+            -Output "$PWD/temp/public-replay-headless-negative-ci" -TimeoutSeconds 180
+
+      - name: Keep primary headless replay evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headless-replay-integrity
+          path: |
+            temp/public-replay-headless-ci/
+            temp/public-replay-headless-negative-ci/
+            temp/input_demo_replay_failures_*/
+          retention-days: 3
+          if-no-files-found: ignore
+
+  headed-replay:
+    name: Linux public headed replay parity
+    timeout-minutes: 120
+    needs: build-public
+    runs-on: ubuntu-24.04
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: x11
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      POWERSHELL_TELEMETRY_OPTOUT: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install native runtime and test tools
+        timeout-minutes: 3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev \
+            libpng-dev libglew-dev zlib1g-dev xvfb xauth libgl1-mesa-dri
+
+      - name: Prepare host helper workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-public-runtime-deps"
+          printf '%s\n' "$RUNNER_TEMP/dxx-public-runtime-deps" > dependency_base.txt
+
+      - name: Download this workflow's exact replay build
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: public-replay-build
+          path: ${{ runner.temp }}/public-replay-build
+
+      - name: Verify build identity and restore executable permissions
+        run: |
+          test "$(cat "$RUNNER_TEMP/public-replay-build/source-commit.txt")" = "$(git rev-parse HEAD)"
+          tar -xzf "$RUNNER_TEMP/public-replay-build/runtime.tgz"
+          sha256sum -c "$RUNNER_TEMP/public-replay-build/binaries.sha256"
+          test -x buildd1-save/main/d1x-redux
+          test -x buildd2-save/main/d2x-redux
+          test -x buildd1-save/main/dxx-redux-d1-headless
+          test -x buildd2-save/main/dxx-redux-d2-headless
+          for binary in buildd{1,2}-save/main/*; do
+            ldd "$binary" | tee "$RUNNER_TEMP/$(basename "$binary").ldd"
+            if grep -q 'not found' "$RUNNER_TEMP/$(basename "$binary").ldd"; then
+              echo "Missing shared dependency for $binary" >&2
+              exit 1
+            fi
+          done
+
+      - name: Qualify headed rendering and existing imported parity
+        # Secondary visual fidelity gate, using the same immutable capture oracles
+        timeout-minutes: 110
+        run: |
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_input_demo_regressions_graphics.ps1 \
+            -Corpus public \
+            -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
+            -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
+            -ResultArchiveRoot "$PWD/temp/public-replay-graphics-ci"
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_compact_public_replay_failures.ps1 \
+            -RunMode graphics \
+            -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
+            -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
+            -Output "$PWD/temp/public-replay-graphics-negative-ci" -TimeoutSeconds 180
+
+      - name: Keep secondary headed replay evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headed-replay-integrity
+          path: |
+            temp/public-replay-graphics-ci/
+            temp/public-replay-graphics-negative-ci/
           retention-days: 3
           if-no-files-found: ignore

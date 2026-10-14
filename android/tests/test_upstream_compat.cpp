@@ -9863,10 +9863,10 @@ static void write_briefing_trace(const char *directory, const char *d2_directory
 	std::puts("Native briefing render/window trace passed");
 }
 
-static nlohmann::json exercise_robot_pairs(bool native)
+static nlohmann::json exercise_robot_pairs(bool native, int first_id = 0, int second_id = 1)
 {
 	auto result = nlohmann::json::array();
-	const robot_info saved[] = { Robot_info[0], Robot_info[1] };
+	const robot_info saved[] = { Robot_info[first_id], Robot_info[second_id] };
 	for (const int first_attack : { 0, 1 })
 		for (const int second_attack : { 0, 1 })
 			for (const int direction : { -1, 1 })
@@ -9874,12 +9874,12 @@ static nlohmann::json exercise_robot_pairs(bool native)
 					init_test_corridor();
 					ConsoleObject->pos = { 8 * F1_0, 8 * F1_0, 0 };
 					ConsoleObject->size = F1_0 / 4;
-					Robot_info[0].attack_type = first_attack;
-					Robot_info[1].attack_type = second_attack;
+					Robot_info[first_id].attack_type = first_attack;
+					Robot_info[second_id].attack_type = second_attack;
 					vms_vector start = { 0, 0, -6 * direction * F1_0 }, end = { 0, 0, 8 * direction * F1_0 };
 					vms_vector point = { offset * F1_0, 0, 5 * direction * F1_0 };
-					const int first = obj_create(OBJ_ROBOT, 0, 0, &start, &vmd_identity_matrix, F1_0, CT_AI, MT_NONE, RT_NONE);
-					const int second = obj_create(OBJ_ROBOT, 1, 0, &point, &vmd_identity_matrix, F1_0, CT_AI, MT_NONE, RT_NONE);
+					const int first = obj_create(OBJ_ROBOT, first_id, 0, &start, &vmd_identity_matrix, F1_0, CT_AI, MT_NONE, RT_NONE);
+					const int second = obj_create(OBJ_ROBOT, second_id, 0, &point, &vmd_identity_matrix, F1_0, CT_AI, MT_NONE, RT_NONE);
 					require(first > 0 && second > 0, "create actual robot-pair intersection actors");
 					fvi_query query = {};
 					query.p0 = &start;
@@ -9895,18 +9895,18 @@ static nlohmann::json exercise_robot_pairs(bool native)
 					                   fate == HIT_OBJECT ? hit.hit_object : -1, d_rand_get_call_count() - sim });
 #ifdef DXX_BUILD_DESCENT_II
 					if (native) {
-						Robot_info[1].companion = 1;
+						Robot_info[second_id].companion = 1;
 						require(find_vector_intersection(&query, &hit) == HIT_NONE, "an optional companion keeps D2 robot-pair eligibility");
-						Robot_info[1].companion = 0;
+						Robot_info[second_id].companion = 0;
 					}
 #endif
 				}
-	Robot_info[0] = saved[0];
-	Robot_info[1] = saved[1];
+	Robot_info[first_id] = saved[0];
+	Robot_info[second_id] = saved[1];
 	return result;
 }
 
-static nlohmann::json exercise_resource_drops(bool native)
+static nlohmann::json exercise_resource_drops(bool native, int robot_id = 0)
 {
 	auto result = nlohmann::json::array();
 	Game_mode = 0;
@@ -9919,7 +9919,7 @@ static nlohmann::json exercise_resource_drops(bool native)
 					Players[0].objnum = 0;
 					Players[0].energy = Players[0].shields = inventory * F1_0;
 					vms_vector point = {};
-					const int source = type == OBJ_PLAYER ? 0 : obj_create(type, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+					const int source = type == OBJ_PLAYER ? 0 : obj_create(type, robot_id, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
 					require(source >= 0, "create real resource-drop source");
 					object &container = Objects[source];
 					container.contains_type = OBJ_POWERUP;
@@ -9946,16 +9946,17 @@ static nlohmann::json exercise_resource_drops(bool native)
 	return result;
 }
 
-static nlohmann::json exercise_weapon_drops(bool native)
+static nlohmann::json exercise_weapon_drops(bool native, int robot_id = 0, bool public_assets = false)
 {
 	auto result = nlohmann::json::array();
 	std::vector<int> ids = { POW_VULCAN_WEAPON };
 #ifdef DXX_BUILD_DESCENT_II
 	if (!native) {
 		ids.push_back(POW_GAUSS_WEAPON);
-		ids.push_back(POW_OMEGA_WEAPON);
+		if (!public_assets) ids.push_back(POW_OMEGA_WEAPON);
 	}
 #endif
+	(void) public_assets;
 	Game_mode = 0;
 	Player_num = 0;
 	for (const auto type : { OBJ_PLAYER, OBJ_ROBOT })
@@ -9963,7 +9964,7 @@ static nlohmann::json exercise_weapon_drops(bool native)
 			for (const int count : { 1, 2 }) {
 				init_test_corridor();
 				vms_vector point = {};
-				const int source = type == OBJ_PLAYER ? 0 : obj_create(type, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+				const int source = type == OBJ_PLAYER ? 0 : obj_create(type, robot_id, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
 				require(source >= 0, "create weapon-drop source");
 				object &container = Objects[source];
 				container.contains_type = OBJ_POWERUP;
@@ -10002,12 +10003,12 @@ static nlohmann::json exercise_weapon_drops(bool native)
 	return result;
 }
 
-static nlohmann::json exercise_robot_drops(bool native)
+static nlohmann::json exercise_robot_drops(bool native, const std::vector<int> &ids = { 0, 14, 20 })
 {
 	auto result = nlohmann::json::array();
 	Game_mode = 0;
 	Player_num = 0;
-	for (const int id : { 0, 14, 20 })
+	for (const int id : ids)
 		for (const int count : { 0, 1, 3 })
 			for (const int seed : { 1, 123, 456 }) {
 				init_test_corridor();
@@ -10055,13 +10056,14 @@ static nlohmann::json exercise_robot_drops(bool native)
 	return result;
 }
 
-static nlohmann::json exercise_secondary_explosions(bool native)
+static nlohmann::json exercise_secondary_explosions(bool native, const std::vector<int> &ids = {})
 {
 	auto result = nlohmann::json::array();
 	Game_mode = 0;
 	Player_num = 0;
 	Difficulty_level = 2;
-	for (int id = 0; id < N_robot_types; ++id) {
+	for (size_t slot = 0; slot < (ids.empty() ? static_cast<size_t>(N_robot_types) : ids.size()); ++slot) {
+		const int id = ids.empty() ? static_cast<int>(slot) : ids[slot];
 #ifdef DXX_BUILD_DESCENT_II
 		if (native) require(Robot_info[id].badass == 0, "published native robots have no D2 death-blast metadata");
 		if (Robot_info[id].companion || Robot_info[id].thief) continue;
@@ -10099,7 +10101,7 @@ static nlohmann::json exercise_secondary_explosions(bool native)
 	return result;
 }
 
-static nlohmann::json exercise_robot_blasts(bool native)
+static nlohmann::json exercise_robot_blasts(bool native, const std::vector<int> &ids = {})
 {
 	auto result = nlohmann::json::array();
 	Game_mode = 0;
@@ -10111,9 +10113,10 @@ static nlohmann::json exercise_robot_blasts(bool native)
 	const int old_flash = Weapon_info[0].flash;
 	Weapon_info[0].flash = 1; // Exercise native rejection even with an optional flash source
 #endif
-	for (int id = 0; id < N_robot_types; ++id)
+	for (size_t slot = 0; slot < (ids.empty() ? static_cast<size_t>(N_robot_types) : ids.size()); ++slot)
 		for (const int distance : { 2, 8 })
 			for (const int flash : { 0, 1 }) {
+				const int id = ids.empty() ? static_cast<int>(slot) : ids[slot];
 				init_test_corridor();
 				Players[0].objnum = 0;
 				Players[0].flags = PLAYER_FLAGS_INVULNERABLE;
@@ -10153,7 +10156,7 @@ static nlohmann::json exercise_robot_blasts(bool native)
 	return result;
 }
 
-static nlohmann::json exercise_contact_motion(bool native)
+static nlohmann::json exercise_contact_motion(bool native, int robot_id = 0)
 {
 	using nlohmann::json;
 	json motion = json::array(), contacts = json::array();
@@ -10177,8 +10180,9 @@ static nlohmann::json exercise_contact_motion(bool native)
 					Players[0].shields = 100 * F1_0;
 					Players[0].flags = PLAYER_FLAGS_INVULNERABLE;
 					vms_vector point = { direction * 8 * F1_0, 0, 20 * F1_0 };
-					const int id = type == OBJ_WEAPON ? FLARE_ID : 0;
-					const int index = type == OBJ_PLAYER ? 0 : obj_create(type, id, 1, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+					const int id = type == OBJ_WEAPON ? FLARE_ID : type == OBJ_ROBOT ? robot_id
+					                                                                 : 0;
+					const int index = type == OBJ_PLAYER ? 0 : obj_create(type, id, 1, &point, &vmd_identity_matrix, F1_0, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_PHYSICS, RT_NONE);
 					require(index >= 0, "create a real motion actor");
 					object &actor = Objects[index];
 					actor.pos = actor.last_pos = point;
@@ -10228,7 +10232,7 @@ static nlohmann::json exercise_contact_motion(bool native)
 				ConsoleObject->mtype.phys_info.mass = F1_0;
 				ConsoleObject->mtype.phys_info.velocity.z = speed * F1_0;
 				vms_vector point = { 0, 0, 2 * F1_0 };
-				const int index = obj_create(OBJ_ROBOT, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
+				const int index = obj_create(OBJ_ROBOT, robot_id, 0, &point, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
 				require(index > 0, "create actual contact robot");
 				object &robot = Objects[index];
 				robot.flags = exploding ? OF_EXPLODING : 0;
@@ -10255,7 +10259,7 @@ static nlohmann::json exercise_contact_motion(bool native)
 
 // Compare complete shared-engine operations, including wall state and RNG, in
 // registered native/imported content. D2 also exercises its own installed bank.
-static nlohmann::json exercise_volatile_impacts(bool native)
+static nlohmann::json exercise_volatile_impacts(bool native, int robot_id = 0, bool public_assets = false)
 {
 	auto result = nlohmann::json::array();
 	const tmap_info original = TmapInfo[1];
@@ -10264,7 +10268,7 @@ static nlohmann::json exercise_volatile_impacts(bool native)
 	Game_mode = 0;
 	Player_num = 0;
 	collide_init();
-	for (const int id : { LASER_ID_L1, CONCUSSION_ID, MEGA_ID })
+	for (const int id : { LASER_ID_L1, CONCUSSION_ID, public_assets ? HOMING_ID : MEGA_ID })
 		for (int difficulty = 0; difficulty < NDL; ++difficulty)
 			for (const int exploding : { 0, 1 }) {
 				init_test_corridor();
@@ -10274,7 +10278,7 @@ static nlohmann::json exercise_volatile_impacts(bool native)
 				Players[0].shields = ConsoleObject->shields = 100 * F1_0;
 				ConsoleObject->mtype.phys_info.mass = F1_0;
 				vms_vector point = { 0, 0, -5 * F1_0 };
-				const int target = obj_create(OBJ_ROBOT, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
+				const int target = obj_create(OBJ_ROBOT, robot_id, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_PHYSICS, RT_NONE);
 				require(target > 0, "create lava blast target");
 				object &robot = Objects[target];
 				robot.flags = exploding ? OF_EXPLODING : 0;
@@ -10497,6 +10501,8 @@ static nlohmann::json exercise_reactor_frames(bool native)
 	return result;
 }
 
+#include "gameplay_rule_matrix_fixture.hpp"
+
 static nlohmann::json exercise_gameplay_rules(bool native)
 {
 	using nlohmann::json;
@@ -10696,96 +10702,15 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 							require(Walls[i].state == WALL_DOOR_CLOSED && !(Walls[i].flags & WALL_DOOR_OPENED), "all linked front/back walls finish closed");
 						doors.push_back(frame);
 					}
-	for (int difficulty = 0; difficulty < NDL; ++difficulty) {
-		Difficulty_level = difficulty;
-		for (const int id : { POW_ENERGY, POW_SHIELD_BOOST })
-			for (const fix start : { 100 * F1_0, MAX_ENERGY - F1_0 / 2, MAX_ENERGY }) {
-				init_test_corridor();
-				Players[0].objnum = 0;
-				Players[0].energy = Players[0].shields = start;
-				Players[0].score = 0;
-				Players[0].lives = 3;
-				Players[0].flags = 0;
-				object pickup = {};
-				pickup.type = OBJ_POWERUP;
-				pickup.id = id;
-				const int used = do_powerup(&pickup);
-				const fix result = id == POW_ENERGY ? Players[0].energy : Players[0].shields;
-				const fix amount = (difficulty == 0 && !native ? 27 : 18 - 3 * difficulty) * F1_0;
-				require(result == (std::min) (MAX_ENERGY, start + amount) && used == (start < MAX_ENERGY), "real pickup uses native or D2 difficulty amount and retains saturation/consumption");
-				pickups.push_back({ difficulty, id, start, used, result, +Players[0].score });
-			}
-		for (const int invulnerable : { 0, 1 })
-			for (int kind = 0; kind < 3; ++kind) {
-				init_test_corridor();
-				Players[0].objnum = 0;
-				Players[0].flags = invulnerable ? PLAYER_FLAGS_INVULNERABLE : 0;
-				Players[0].shields = ConsoleObject->shields = 100 * F1_0;
-				ConsoleObject->mtype.phys_info.mass = F1_0;
-				vms_vector origin = {};
-				const int other = obj_create(OBJ_CLUTTER, 0, 0, &origin, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
-				require(other > 0, "create contact source");
-				d_srand(13);
-				if (kind == 0) apply_force_damage(ConsoleObject, 64 * F1_0 + 7, &Objects[other]);
-				else if (kind == 1) {
-					TmapInfo[1].damage = 20 * F1_0 + 7;
-					TmapInfo[1].flags = 0;
-					vms_vector point = { 0, 0, -10 * F1_0 };
-					scrape_player_on_wall(ConsoleObject, 0, 5, &point);
-				} else {
-					vms_vector point = { 0, 0, 2 * F1_0 };
-					require(object_create_badass_explosion(nullptr, 0, &point, F1_0, VCLIP_SMALL_EXPLOSION, 20 * F1_0, 10 * F1_0, 0, 0) != nullptr, "create actual area-damage explosion");
-				}
-				const fix delta = 100 * F1_0 - Players[0].shields;
-				require(invulnerable ? delta == 0 : delta > 0, "real contact/lava/blast honors invulnerability");
-				const auto &physics = ConsoleObject->mtype.phys_info;
-				// Equal RNG counts do not prove equal order: lava shove and spin share the stream
-				damage.push_back({ difficulty, invulnerable, kind, delta, d_rand_get_call_count(), { physics.velocity.x, physics.velocity.y, physics.velocity.z }, { physics.rotvel.x, physics.rotvel.y, physics.rotvel.z } });
-			}
-	}
-	for (const int id : { POW_CLOAK, POW_VULCAN_WEAPON, POW_SPREADFIRE_WEAPON, POW_PLASMA_WEAPON, POW_FUSION_WEAPON, POW_QUAD_FIRE, POW_VULCAN_AMMO, POW_ENERGY, POW_EXTRA_LIFE })
-		for (int flags = 0; flags < 8; ++flags)
-			for (int nearby = -1; nearby < 4; ++nearby)
-				for (const unsigned seed : { 1u, 7u, 1000u }) {
-					init_test_corridor(4);
-					Players[0].objnum = 0;
-					Players[0].primary_weapon_flags = flags & 1 ? 0x1f : 1;
-					Players[0].flags = flags & 1 ? PLAYER_FLAGS_QUAD_LASERS : 0;
-					Players[0].primary_ammo[VULCAN_INDEX] = flags & 2 ? VULCAN_AMMO_MAX : 0;
-					Game_mode = flags & 4 ? GM_MULTI : 0;
-					if (nearby >= 0) {
-						vms_vector point = { 0, 0, nearby * 20 * F1_0 };
-						require(obj_create(OBJ_POWERUP, id, nearby, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE) > 0, "create actual nearby pickup");
-					}
-					for (const int gated : { 0, 1 }) {
-						object container = {};
-						container.type = OBJ_ROBOT;
-						container.segnum = 0;
-						container.matcen_creator = gated ? BOSS_GATE_MATCEN_NUM : 0;
-						container.contains_type = OBJ_POWERUP;
-						container.contains_id = id;
-						container.contains_count = 3;
-						d_srand(seed);
-#ifdef DXX_BUILD_DESCENT_II
-						if (!native) {
-							const object original = container;
-							const auto draws = d_rand_get_call_count();
-							require(!d1_in_d2_replace_powerup(&container) && std::memcmp(&original, &container, sizeof(container)) == 0 && d_rand_get_call_count() == draws,
-							        "inactive native drop operation leaves D2 object bytes and RNG intact");
-						}
-#endif
-						maybe_replace_powerup_with_energy(&container);
-						if (!native && (flags & 1) && !gated &&
-						    (id == POW_SPREADFIRE_WEAPON || id == POW_PLASMA_WEAPON || id == POW_FUSION_WEAPON || id == POW_QUAD_FIRE))
-							require(container.contains_count == 3 && (container.contains_id == POW_ENERGY || container.contains_id == POW_SHIELD_BOOST),
-							        "ordinary D2 duplicate drops retain their count and energy/shield choice");
-						drops.push_back({ id, flags, nearby, seed, gated, container.contains_type, container.contains_id, container.contains_count, d_rand_get_call_count() });
-					}
-				}
+	const auto resources = exercise_player_resource_damage(native);
+	pickups = resources["pickups"];
+	damage = resources["damage"];
+	drops = exercise_replacement_drops(native);
 	Game_mode = 0;
 	return { { "opening_doors", opening_doors }, { "exploding_walls", exploding_walls }, { "reactor_impacts", reactor_impacts }, { "doors", doors }, { "pickups", pickups }, { "vulcan", vulcan }, { "powerup_animation", powerup_animation }, { "object_orientations", object_orientations }, { "small_fireballs", small_fireballs }, { "reactor_fireballs", reactor_fireballs }, { "volatile_impacts", volatile_impacts }, { "damage", damage }, { "drops", drops }, { "surfaces", surfaces }, { "contact_motion", contact_motion }, { "robot_blasts", robot_blasts }, { "robot_pairs", robot_pairs }, { "resource_drops", resource_drops }, { "weapon_drops", weapon_drops }, { "robot_drops", robot_drops }, { "reactor_frames", reactor_frames }, { "secondary_explosions", secondary_explosions } };
 }
 
+#include "public_combat_fixture.hpp"
 #include "pickup_autoselect_fixture.hpp"
 #include "coop_pickup_reward_fixture.hpp"
 #include "config_policy_fixture.hpp"
@@ -10850,19 +10775,42 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		return;
 	}
 #endif
-	const auto native = weapon_trace == 4 ? exercise_weapon_order_profile(native_demo, d2_directory) : weapon_trace == 3 ? exercise_classic_cutoff()
-	                                                                                               : weapon_trace == 2   ? exercise_weapon_selection(true)
-	                                                                                               : weapon_trace == 1   ? exercise_pickup_autoselect(true)
-	                                                                                                                     : exercise_gameplay_rules(true);
+	if (shareware && (weapon_trace == 1 || weapon_trace == 9)) {
+		key_init();
+		mouse_init();
+		texmerge_init(10);
+		init_game();
+		Game_mode = 0;
+		GameArg.SysInputDemoNoRender = 1;
+		Player_num = 0;
+		N_players = 1;
+		std::strcpy(Players[0].callsign, "picktest");
+		Difficulty_level = 2;
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+	}
+	if (weapon_trace == 1) write_pickup_asset_profile(shareware, false);
+	const auto native = weapon_trace == 9 ? exercise_public_combat_rules(true) : weapon_trace == 4 ? exercise_weapon_order_profile(native_demo, d2_directory)
+	                                                                         : weapon_trace == 3   ? exercise_classic_cutoff()
+	                                                                         : weapon_trace == 2   ? exercise_weapon_selection(true)
+	                                                                         : weapon_trace == 1   ? exercise_pickup_autoselect(true)
+	                                                                                               : exercise_gameplay_rules(true);
 	const std::string result = native.dump(2) + "\n";
 	write_fixture("rules.json", bytes(result.begin(), result.end()));
 	if (weapon_trace == 4) return;
 #ifdef DXX_BUILD_DESCENT_II
 	if (d2_directory) {
-		const std::string d2_hog = std::string(d2_directory) + "/descent2.hog";
+		const std::string d2_hog = std::string(d2_directory) + (shareware ? "/d2demo.hog" : "/descent2.hog");
 		require(PHYSFS_mount(d2_directory, nullptr, 0) && PHYSFS_mount(d2_hog.c_str(), nullptr, 0), "mount D2 for ordinary-rule regression");
-		char d2_mission[] = "d2";
-		require(load_mission_by_name(d2_mission) && !d1_in_d2_use_d1_gameplay(), "ordinary D2 rules use an actual installed D2 bank");
+		char retail_mission[] = "d2", public_mission[] = "d2demo";
+		char *d2_mission = shareware ? public_mission : retail_mission;
+		require(load_mission_by_name(d2_mission), "select ordinary D2 mission");
+		// Built-in demo mission selection defers bank preparation to normal level loading
+		if (shareware) {
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(1);
+		}
+		require(!d1_in_d2_use_d1_gameplay(), "ordinary D2 rules use an actual installed D2 bank");
 		const std::vector<segment2> previous_segments(Segment2s, Segment2s + Highest_segment_index + 1);
 		require(!d1_in_d2_initialize_level_ambience() &&
 		            std::memcmp(Segment2s, previous_segments.data(), previous_segments.size() * sizeof(segment2)) == 0,
@@ -10871,9 +10819,11 @@ static void write_gameplay_rules_trace(const char *directory, const char *d2_dir
 		for (int difficulty = 0; difficulty < NDL; ++difficulty)
 			require(boss_health_maximum_for_difficulty(2000 * F1_0, difficulty) == boss_health[difficulty],
 			        "ordinary D2 retains difficulty-scaled boss health");
-		const auto d2 = weapon_trace == 2 ? exercise_weapon_selection(false) : weapon_trace == 1 ? exercise_pickup_autoselect(false)
-		                                                                                         : exercise_gameplay_rules(false);
-		for (size_t i = 0; !weapon_trace && i < native["damage"].size(); ++i) {
+		if (weapon_trace == 1) write_pickup_asset_profile(shareware, true);
+		const auto d2 = weapon_trace == 9 ? exercise_public_combat_rules(false) : weapon_trace == 2 ? exercise_weapon_selection(false)
+		                                                                      : weapon_trace == 1   ? exercise_pickup_autoselect(false)
+		                                                                                            : exercise_gameplay_rules(false);
+		for (size_t i = 0; (!weapon_trace || weapon_trace == 9) && i < native["damage"].size(); ++i) {
 			const auto &entry = native["damage"][i];
 			const int divisor = entry[0] == 0 ? (entry[2] == 2 ? 4 : 2) : 1;
 			require(d2["damage"][i][3] == entry[3].get<int>() / divisor, "ordinary D2 retains its contact and explosion trainee reductions");
@@ -11327,6 +11277,25 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 }
 
 #include "public_level_replay_fixture.hpp"
+#include "../app/src/main/cpp/headless/headless_audio.h"
+
+static void verify_headless_audio_closed()
+{
+	if (SDL_WasInit(SDL_INIT_AUDIO)) {
+		std::fputs("Headless audio is still initialized at process teardown\n", stderr);
+		std::abort();
+	}
+#ifdef USE_SDLMIXER
+	int frequency, channels;
+	Uint16 format;
+	if (Mix_QuerySpec(&frequency, &format, &channels)) {
+		std::fputs("Headless mixer is still open at process teardown\n", stderr);
+		std::abort();
+	}
+#endif
+	std::puts("Headless audio is closed at process teardown");
+}
+
 
 int main(int argc, char **argv)
 {
@@ -11335,6 +11304,13 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 3 && std::strcmp(argv[1], "--headless-audio-lifecycle") == 0) {
+		// This observer runs after the production cleanup and before mem cleanup
+		require(std::atexit(verify_headless_audio_closed) == 0, "register audio teardown observer");
+		require(init_headless_audio(), "initialize the production headless audio runtime");
+		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
+		return std::atoi(argv[2]);
+	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
 		return 0;
@@ -11425,6 +11401,10 @@ int main(int argc, char **argv)
 		write_render_candidates_trace(argv[2]);
 		return 0;
 	}
+	if (argc == 4 && std::strcmp(argv[1], "--public-combat-rules-trace") == 0) {
+		write_gameplay_rules_trace(argv[2], argv[3], 9, nullptr, true);
+		return 0;
+	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--gameplay-rules-trace") == 0) {
 		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
@@ -11433,8 +11413,8 @@ int main(int argc, char **argv)
 		write_gameplay_rules_trace(argv[2], argv[3], 8, argc == 5 ? argv[4] : nullptr, std::strcmp(argv[1], "--wall-blast-save-shareware-trace") == 0);
 		return 0;
 	}
-	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--pickup-autoselect-trace") == 0) {
-		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, true);
+	if ((argc == 3 || argc == 4) && (std::strcmp(argv[1], "--pickup-autoselect-trace") == 0 || std::strcmp(argv[1], "--pickup-autoselect-shareware-trace") == 0)) {
+		write_gameplay_rules_trace(argv[2], argc == 4 ? argv[3] : nullptr, 1, nullptr, std::strcmp(argv[1], "--pickup-autoselect-shareware-trace") == 0);
 		return 0;
 	}
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--selection-autoselect-trace") == 0) {

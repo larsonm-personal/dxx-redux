@@ -12,9 +12,17 @@ from pathlib import Path
 from unittest import mock
 
 import run_compact_public_replays as runner
+import check_compact_public_replay_failures as negative
 
 
 class RuntimeGateTests(unittest.TestCase):
+    @staticmethod
+    def imported_scope(scenario):
+        return {
+            "role": "required-gameplay" if scenario == "flight" else "diagnostic-only",
+            "reason": "Explicit test scope",
+        }
+
     @unittest.skipUnless(os.name == "posix", "POSIX retention uses advisory file locks")
     def test_active_capture_holds_retention_lease(self):
         import fcntl
@@ -140,6 +148,40 @@ class RuntimeGateTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                 self.action("flight", actions, frames, worlds)
 
+    def test_combat_proves_causal_outcome_before_generic_firing_guard(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames:
+            row["diag"]["player_weapon_count"] = 0
+        with mock.patch.object(
+            runner.robot_combat, "verify", side_effect=runner.parity.EvidenceError("identified robot remained alive")
+        ) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "identified robot remained alive"):
+                self.action("combat", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "live player weapons"):
+                self.action("combat", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_combat, "verify", return_value={"score_awarded": 200}):
+            self.assertEqual(self.action("combat", {})["score_awarded"], 200)
+
+    def test_loot_proves_collection_before_generic_firing_guard(self):
+        frames = copy.deepcopy(self.frames)
+        for row in frames:
+            row["diag"]["player_weapon_count"] = 0
+        with mock.patch.object(
+            runner.robot_loot, "verify", side_effect=runner.parity.EvidenceError("identified drop remained uncollected")
+        ) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "identified drop remained uncollected"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}) as verify:
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "live player weapons"):
+                self.action("loot", {}, frames)
+            verify.assert_called_once()
+        with mock.patch.object(runner.robot_loot, "verify", return_value={"laser_level_increase": 1}):
+            self.assertEqual(self.action("loot", {})["laser_level_increase"], 1)
+
     def test_pickup_requires_consecutive_gain_at_exact_next_entry(self):
         frames = copy.deepcopy(self.frames)
         for row in frames[3:]:
@@ -200,7 +242,14 @@ class RuntimeGateTests(unittest.TestCase):
         for scenario in runner.SCENARIOS:
             name = f"d1-{scenario}.dximdemo"
             (self.root / name).write_text(json.dumps(self.header) + "\n")
-            cases.append({"game": "d1", "scenario": scenario, "demo": name})
+            cases.append(
+                {
+                    "game": "d1",
+                    "scenario": scenario,
+                    "demo": name,
+                    "imported_d1": self.imported_scope(scenario),
+                }
+            )
             required = (
                 "terminal_result",
                 "checkpoint_collision_clock",
@@ -219,8 +268,14 @@ class RuntimeGateTests(unittest.TestCase):
                 {
                     "demo": name,
                     "recording_to_native": {"status": "incomplete", "checks": recorded},
-                    "native_repeatability": {"status": "pass", "checks": copy.deepcopy(checks)},
-                    "native_to_imported": {"status": "pass", "checks": copy.deepcopy(checks)},
+                    "native_repeatability": {
+                        "status": "pass",
+                        "checks": copy.deepcopy(checks),
+                    },
+                    "native_to_imported": {
+                        "status": "pass",
+                        "checks": copy.deepcopy(checks),
+                    },
                 }
             )
         return cases, {"schema": 1, "qualification": "incomplete", "cases": rows}
@@ -258,37 +313,214 @@ class RuntimeGateTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
                 runner.check_paired_report(changed, 1 if mutation == "exit" else 2, cases, self.root)
 
-    def test_runner_attempts_all_twelve_and_preserves_failure(self):
-        corpus, output = self.root / "corpus", self.root / "output"
-        corpus.mkdir()
+    def test_imported_scope_is_explicit_and_cannot_remove_required_flight(self):
+        cases, report = self.paired()
+        future = {"game": "d1", "scenario": "future", "demo": "future.dximdemo"}
+        for mutation in (
+            "missing",
+            "unknown_role",
+            "blank_reason",
+            "excluded_flight",
+            "duplicate_flight",
+        ):
+            changed = copy.deepcopy(cases)
+            if mutation == "missing":
+                changed.append(future)
+            elif mutation == "unknown_role":
+                changed[1]["imported_d1"]["role"] = "optional"
+            elif mutation == "blank_reason":
+                changed[1]["imported_d1"]["reason"] = " "
+            elif mutation == "excluded_flight":
+                changed[0]["imported_d1"]["role"] = "excluded"
+            else:
+                changed.append(changed[0])
+            with (
+                self.subTest(mutation=mutation),
+                self.assertRaises(runner.parity.EvidenceError),
+            ):
+                runner.imported_d1_scope(changed)
+        excluded = {
+            **future,
+            "imported_d1": {
+                "role": "excluded",
+                "reason": "Retained unsupported import evidence",
+            },
+        }
+        included, omissions = runner.imported_d1_scope(cases + [excluded])
+        self.assertEqual(included, cases)
+        self.assertEqual(
+            omissions,
+            [{"demo": future["demo"], "reason": excluded["imported_d1"]["reason"]}],
+        )
+        scoped = runner.check_paired_report(report, 2, cases + [excluded], self.root)
+        self.assertEqual(scoped["excluded_imported_cases"], omissions)
+        changed = copy.deepcopy(report)
+        changed["cases"].append({"demo": excluded["demo"]})
+        with self.assertRaises(runner.parity.EvidenceError):
+            runner.check_paired_report(changed, 2, cases + [excluded], self.root)
+
+    def test_imported_staging_uses_declarations_and_retains_exclusion_on_failure(self):
+        cases, _ = self.paired()
+        excluded = {
+            "game": "d1",
+            "scenario": "door-lifecycle",
+            "demo": "level-three.dximdemo",
+            "imported_d1": {
+                "role": "excluded",
+                "reason": "Unsupported D2-only wall state",
+            },
+        }
+        # A future case is included when explicitly declared, never silently filtered by its scenario or level
+        future = {
+            "game": "d1",
+            "scenario": "future",
+            "demo": "future.dximdemo",
+            "imported_d1": self.imported_scope("future"),
+        }
+        (self.root / future["demo"]).write_text(json.dumps({**self.header, "level": 3}) + "\n")
+        output = self.root / "imported"
         output.mkdir()
-        cases = []
-        for game in ("d1", "d2"):
-            for scenario in runner.SCENARIOS:
-                demo = f"{game}-{scenario}.dximdemo"
-                (corpus / demo).write_text("fixture")
-                cases.append(
-                    {"game": game, "scenario": scenario, "demo": demo, "oracle": demo + ".oracle.json", "actions": {}}
-                )
         args = argparse.Namespace(
             repo=self.root,
-            corpus=corpus,
+            corpus=self.root,
             output=output,
             data_d1=self.root,
-            data_d2=self.root,
             exe_d1=self.demo,
             exe_d2=self.demo,
             pwsh="unused",
             timeout=120,
             minimum_free_gb=0.01,
         )
-        with mock.patch.object(runner, "_run", return_value=1) as execute, contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(runner._run_cases(args, cases), 1)
-        self.assertEqual(execute.call_count, 13)
-        report = json.loads((output / "report.json").read_text())
-        self.assertEqual(len(report["native_runs"]), 12)
-        self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
+        report = {}
+        with mock.patch.object(runner, "_run", return_value=1):
+            runner._run_imported(args, cases + [excluded, future], report)
+        self.assertEqual(
+            {p.name for p in (output / "d1-corpus").iterdir()},
+            {c["demo"] for c in cases + [future]},
+        )
         self.assertEqual(report["paired"]["status"], "fail")
+        self.assertEqual(
+            report["paired"]["excluded_imported_cases"][0]["reason"],
+            excluded["imported_d1"]["reason"],
+        )
+
+    def test_both_backends_attempt_complete_inventory_and_preserve_failure(self):
+        corpus = self.root / "corpus"
+        corpus.mkdir()
+        cases = []
+        for game, scenario in runner.PUBLIC_CASES:
+            demo = f"{game}-{scenario}.dximdemo"
+            (corpus / demo).write_text("fixture")
+            cases.append(
+                {
+                    "game": game,
+                    "scenario": scenario,
+                    "demo": demo,
+                    "oracle": demo + ".oracle.json",
+                    "actions": {},
+                    "imported_d1": self.imported_scope(scenario),
+                }
+            )
+        for backend in ("headless", "graphics"):
+            output = self.root / backend
+            output.mkdir()
+            args = argparse.Namespace(
+                repo=self.root,
+                corpus=corpus,
+                output=output,
+                data_d1=self.root,
+                data_d2=self.root,
+                exe_d1=self.demo,
+                exe_d2=self.demo,
+                run_mode=backend,
+                native_only=False,
+                pwsh="unused",
+                timeout=120,
+                minimum_free_gb=0.01,
+            )
+            with (
+                mock.patch.object(runner, "_run", return_value=1) as execute,
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(runner._run_cases(args, cases), 1)
+            self.assertEqual(execute.call_count, 2 * len(cases) + (backend == "graphics"))
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(len(report["native_runs"]), 2 * len(cases))
+            self.assertTrue(all(row["status"] == "fail" for row in report["native_runs"]))
+            self.assertEqual(
+                report["paired"]["status"],
+                "fail" if backend == "graphics" else "not_run",
+            )
+            for row in report["native_runs"]:
+                self.assertEqual(row["backend"], backend)
+                self.assertEqual(
+                    row["command"][row["command"].index("-Runner") + 1],
+                    "headless-console" if backend == "headless" else "visual",
+                )
+                self.assertIn("-StrictComparison", row["command"])
+                self.assertIn("-RequireCleanExit", row["command"])
+                suffix = row["command"][row["command"].index("-SandboxSuffix") + 1]
+                self.assertTrue(suffix.startswith(backend + "-"))
+                self.assertNotIn(str(output), suffix)
+
+    def test_same_output_basename_under_distinct_parents_has_distinct_sandbox(self):
+        suffixes = []
+        for parent in ("first", "second"):
+            output = self.root / parent / "wrong-oracle-run"
+            output.mkdir(parents=True)
+            args = argparse.Namespace(
+                repo=self.root,
+                corpus=self.root,
+                output=output,
+                data_d1=self.root,
+                data_d2=self.root,
+                exe_d1=self.demo,
+                exe_d2=self.demo,
+                run_mode="headless",
+                native_only=True,
+                pwsh="unused",
+                timeout=120,
+                minimum_free_gb=0.01,
+            )
+            case = {"game": "d1", "scenario": "flight", "demo": self.demo.name, "oracle": "unused.json"}
+            with mock.patch.object(runner, "_run", return_value=1), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner._run_cases(args, [case]), 1)
+            command = json.loads((output / "report.json").read_text())["native_runs"][0]["command"]
+            suffixes.append(command[command.index("-SandboxSuffix") + 1])
+        self.assertNotEqual(suffixes[0], suffixes[1])
+
+    def test_explicit_native_only_graphics_reports_imported_parity_not_run(self):
+        output = self.root / "native-only-graphics"
+        output.mkdir()
+        args = argparse.Namespace(
+            repo=self.root,
+            corpus=self.root,
+            output=output,
+            data_d1=self.root,
+            data_d2=self.root,
+            exe_d1=self.demo,
+            exe_d2=self.demo,
+            run_mode="graphics",
+            native_only=True,
+            pwsh="unused",
+            timeout=120,
+            minimum_free_gb=0.01,
+        )
+        case = {"game": "d1", "scenario": "flight", "demo": self.demo.name, "oracle": "unused.json"}
+        with (
+            mock.patch.object(runner, "_run", return_value=0) as execute,
+            mock.patch.object(runner, "_run_imported") as imported,
+            mock.patch.object(runner.compact, "verify", return_value={"status": "pass"}),
+            mock.patch.object(runner, "verify_actions", return_value={}),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(runner._run_cases(args, [case]), 0)
+        imported.assert_not_called()
+        self.assertEqual(execute.call_count, 2)
+        report = json.loads((output / "report.json").read_text())
+        self.assertTrue(report["native_only"])
+        self.assertEqual(report["paired"]["status"], "not_run")
+        self.assertEqual(report["qualification"], "incomplete")
 
     def scoped_comparison(self, status="pass"):
         return {
@@ -359,7 +591,7 @@ class RuntimeGateTests(unittest.TestCase):
         before = path.read_bytes()
         with mock.patch.object(runner.gameplay, "compare_case", return_value=self.scoped_comparison()) as compare:
             scoped = runner.check_paired_report(report, 1, cases, self.root, path)
-            self.assertEqual(compare.call_count, 3)
+            self.assertEqual(compare.call_count, len(report["cases"]))
         self.assertEqual(scoped["status"], "pass")
         self.assertEqual(scoped["qualification"], "incomplete")
         self.assertEqual(path.read_bytes(), before)
@@ -383,7 +615,7 @@ class RuntimeGateTests(unittest.TestCase):
             ):
                 runner.check_paired_report(changed, 1, cases, self.root, path)
 
-    def test_corpus_requires_six_unique_plain_filename_pairs(self):
+    def test_corpus_requires_complete_unique_plain_filename_pairs(self):
         cases = [
             {
                 "game": game,
@@ -392,17 +624,29 @@ class RuntimeGateTests(unittest.TestCase):
                 "oracle": f"{game}-{scenario}.oracle.json",
                 "actions": {},
             }
-            for game in ("d1", "d2")
-            for scenario in runner.SCENARIOS
+            for game, scenario in runner.PUBLIC_CASES
         ]
         manifest = self.root / "manifest.json"
+        imported = {
+            "schema": 1,
+            "cases": {case["demo"]: self.imported_scope(case["scenario"]) for case in cases if case["game"] == "d1"},
+        }
 
         def valid_pair(demo, oracle):
-            return {"game": demo.name[:2]}, {}
+            game = demo.name[:2]
+            level = 2 if "shoot-switch" in demo.name else 3 if game == "d1" and "door-lifecycle" in demo.name else 1
+            observations = (
+                "combat_observations"
+                if "combat" in demo.name or "loot" in demo.name
+                else "door_observations"
+                if "door-lifecycle" in demo.name
+                else None
+            )
+            return {"game": game, "level": level}, ({observations: {}} if observations else {})
 
         with mock.patch.object(runner.compact, "validate", side_effect=valid_pair):
-            manifest.write_text(json.dumps({"schema": 1, "cases": cases}))
-            self.assertEqual(len(runner.load_corpus(self.root)), 6)
+            manifest.write_text(json.dumps({"schema": 1, "cases": cases, "imported_d1": imported}))
+            self.assertEqual(len(runner.load_corpus(self.root)), len(runner.PUBLIC_CASES))
             for mutation in (
                 "missing",
                 "duplicate_case",
@@ -411,6 +655,8 @@ class RuntimeGateTests(unittest.TestCase):
                 "windows_path",
                 "drive_path",
                 "missing_actions",
+                "wrong_level",
+                "d1_switch",
             ):
                 changed = copy.deepcopy(cases)
                 if mutation == "missing":
@@ -423,13 +669,146 @@ class RuntimeGateTests(unittest.TestCase):
                     changed[0]["demo"] = "../escaped.dximdemo"
                 elif mutation == "windows_path":
                     changed[0]["oracle"] = "..\\escaped.json"
+                elif mutation == "wrong_level":
+                    next(case for case in changed if case["scenario"] == "shoot-switch")["demo"] = "d2-other.dximdemo"
+                elif mutation == "d1_switch":
+                    next(case for case in changed if case["scenario"] == "shoot-switch")["game"] = "d1"
                 elif mutation == "drive_path":
                     changed[0]["demo"] = "C:escaped.dximdemo"
                 else:
                     changed[0].pop("actions")
-                manifest.write_text(json.dumps({"schema": 1, "cases": changed}))
-                with self.subTest(mutation=mutation), self.assertRaises(runner.parity.EvidenceError):
+                manifest.write_text(json.dumps({"schema": 1, "cases": changed, "imported_d1": imported}))
+                with (
+                    self.subTest(mutation=mutation),
+                    self.assertRaises(runner.parity.EvidenceError),
+                ):
                     runner.load_corpus(self.root)
+            for mutation in (
+                "missing_case",
+                "extra_case",
+                "missing_schema",
+                "missing_inventory",
+                "bool_schema",
+                "float_schema",
+                "extra_key",
+            ):
+                changed = copy.deepcopy(imported)
+                if mutation == "missing_case":
+                    changed["cases"].pop(next(iter(changed["cases"])))
+                elif mutation == "extra_case":
+                    changed["cases"]["unknown.dximdemo"] = self.imported_scope("unknown")
+                elif mutation == "missing_schema":
+                    changed.pop("schema")
+                elif mutation == "bool_schema":
+                    changed["schema"] = True
+                elif mutation == "float_schema":
+                    changed["schema"] = 1.0
+                elif mutation == "extra_key":
+                    changed["unknown"] = True
+                else:
+                    changed = None
+                manifest.write_text(json.dumps({"schema": 1, "cases": cases, "imported_d1": changed}))
+                with (
+                    self.subTest(mutation=mutation),
+                    self.assertRaises(runner.parity.EvidenceError),
+                ):
+                    runner.load_corpus(self.root)
+
+
+class RealNegativeCorpusTests(unittest.TestCase):
+    def test_real_imported_scope_retains_loot_diagnostics_and_required_flight(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        included, excluded = runner.imported_d1_scope(runner.load_corpus(source))
+        self.assertEqual(
+            {case["demo"] for case in included},
+            {f"d1-public-{scenario}.dximdemo" for scenario in ("flight", "pickup", "door", "combat", "loot")},
+        )
+        self.assertEqual([case["demo"] for case in excluded], ["d1-public-door-lifecycle.dximdemo"])
+        self.assertEqual(
+            next(case for case in included if case["scenario"] == "loot")["imported_d1"]["role"], "diagnostic-only"
+        )
+        self.assertEqual(
+            next(case for case in included if case["scenario"] == "flight")["imported_d1"]["role"], "required-gameplay"
+        )
+
+    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "combat")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("combat_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
+                runner.load_corpus(destination)
+
+    def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        with tempfile.TemporaryDirectory() as root:
+            import shutil
+
+            destination = Path(root) / "corpus"
+            shutil.copytree(source, destination)
+            case = next(row for row in cases if row["scenario"] == "door-lifecycle")
+            path = destination / case["oracle"]
+            oracle = json.loads(path.read_bytes())
+            oracle.pop("door_observations")
+            path.write_text(json.dumps(oracle))
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
+                runner.load_corpus(destination)
+
+    def test_disposable_mutations_are_admitted_without_changing_originals(self):
+        source = Path(__file__).parent / "fixtures/public_level_replays"
+        cases = runner.load_corpus(source)
+        originals = {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()}
+        with tempfile.TemporaryDirectory() as root:
+            for mutation in ("wrong-oracle", "bad-input"):
+                destination = Path(root) / mutation
+                negative.corrupt_corpus(source, destination, cases, mutation)
+                self.assertEqual(runner.load_corpus(destination), cases)
+                for case in cases:
+                    expected = json.loads(originals[case["oracle"]])
+                    changed = json.loads((destination / case["oracle"]).read_bytes())
+                    differences = {key for key in expected if expected[key] != changed[key]}
+                    self.assertEqual(
+                        differences,
+                        {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"},
+                    )
+                    original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
+                    changed_demo = [json.loads(line) for line in (destination / case["demo"]).read_bytes().splitlines()]
+                    self.assertEqual(original_demo[0], changed_demo[0])
+                    self.assertEqual(original_demo[-1], changed_demo[-1])
+                    if mutation == "wrong-oracle":
+                        self.assertEqual(original_demo, changed_demo)
+                    else:
+                        for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
+                            if case["scenario"] == "loot":
+                                if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
+                                    before["input"].setdefault("s", {})["f1s"] = 0
+                            elif case["scenario"] == "combat":
+                                before["input"].setdefault("s", {})["f1s"] = 0
+                                self.assertEqual(after["input"]["s"]["f1s"], 0)
+                            elif case["scenario"] == "door-lifecycle":
+                                release = next(
+                                    row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2
+                                )
+                                if before["f"] >= release:
+                                    self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
+                                    before["input"] = after["input"]
+                            else:
+                                self.assertEqual(after["input"], {})
+                                before["input"] = {}
+                            self.assertEqual(before, after)
+        self.assertEqual(
+            originals,
+            {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()},
+        )
 
 
 if __name__ == "__main__":

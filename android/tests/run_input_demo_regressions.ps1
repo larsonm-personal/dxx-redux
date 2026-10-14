@@ -218,7 +218,7 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
         $args += '-PreferHeadlessConsole'
     }
     if ($RunMode -eq 'headless') {
-        $args += @('-Runner', 'fast')
+        $args += @('-Runner', $(if ($D1InD2) { 'windowed-no-present' } else { 'headless-console' }))
     } else {
         # D1-under-D2 automatic selection otherwise defaults to no rendering
         $args += @('-Runner', 'visual')

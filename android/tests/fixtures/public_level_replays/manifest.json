@@ -80,6 +80,206 @@
                 "action_frame": 89,
                 "wall_contact_frames": 0
             }
+        },
+        {
+            "game": "d2",
+            "scenario": "shoot-switch",
+            "demo": "d2-public-shoot-switch.dximdemo",
+            "oracle": "d2-public-shoot-switch.oracle.json",
+            "actions": {
+                "target": 154,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 175,
+                "wall_contact_frames": 0,
+                "trigger": 17,
+                "switch_segment": 84,
+                "switch_side": 2,
+                "front_wall": 116,
+                "back_wall": 117,
+                "passage_frame": 217
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "combat",
+            "demo": "d1-public-combat.dximdemo",
+            "oracle": "d1-public-combat.oracle.json",
+            "actions": {
+                "target": 8,
+                "target_id": 3,
+                "target_signature": 9,
+                "action_frame": 125,
+                "wall_contact_frames": 0,
+                "damage_frame": 105,
+                "retirement_frame": 147,
+                "target_shields": 1638400,
+                "target_score": 200,
+                "loot_frame": 132,
+                "loot_count": 0
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "combat",
+            "demo": "d2-public-combat.dximdemo",
+            "oracle": "d2-public-combat.oracle.json",
+            "actions": {
+                "target": 11,
+                "target_id": 37,
+                "target_signature": 12,
+                "action_frame": 241,
+                "wall_contact_frames": 0,
+                "damage_frame": 239,
+                "retirement_frame": 262,
+                "target_shields": 786432,
+                "target_score": 200,
+                "loot_frame": 248,
+                "loot_count": 0
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "door-lifecycle",
+            "demo": "d1-public-door-lifecycle.dximdemo",
+            "oracle": "d1-public-door-lifecycle.oracle.json",
+            "actions": {
+                "target": 72,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 35,
+                "wall_contact_frames": 0,
+                "door_back": 73,
+                "door_events": [
+                    {
+                        "f": 0,
+                        "stage": 0
+                    },
+                    {
+                        "f": 47,
+                        "stage": 1
+                    },
+                    {
+                        "f": 174,
+                        "stage": 2
+                    },
+                    {
+                        "f": 182,
+                        "stage": 4
+                    },
+                    {
+                        "f": 201,
+                        "stage": 5
+                    },
+                    {
+                        "f": 214,
+                        "stage": 6
+                    },
+                    {
+                        "f": 243,
+                        "stage": 7
+                    }
+                ]
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "door-lifecycle",
+            "demo": "d2-public-door-lifecycle.dximdemo",
+            "oracle": "d2-public-door-lifecycle.oracle.json",
+            "actions": {
+                "target": 76,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 71,
+                "wall_contact_frames": 0,
+                "door_back": 77,
+                "door_events": [
+                    {
+                        "f": 0,
+                        "stage": 0
+                    },
+                    {
+                        "f": 83,
+                        "stage": 1
+                    },
+                    {
+                        "f": 209,
+                        "stage": 2
+                    },
+                    {
+                        "f": 216,
+                        "stage": 3
+                    },
+                    {
+                        "f": 221,
+                        "stage": 4
+                    },
+                    {
+                        "f": 324,
+                        "stage": 5
+                    },
+                    {
+                        "f": 336,
+                        "stage": 6
+                    },
+                    {
+                        "f": 361,
+                        "stage": 7
+                    }
+                ]
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "loot",
+            "demo": "d1-public-loot.dximdemo",
+            "oracle": "d1-public-loot.oracle.json",
+            "actions": {
+                "target": 39,
+                "target_id": 20,
+                "target_signature": 40,
+                "action_frame": 542,
+                "wall_contact_frames": 0,
+                "damage_frame": 499,
+                "retirement_frame": 566,
+                "target_shields": 4587520,
+                "target_score": 500,
+                "loot_frame": 550,
+                "pickup": 79,
+                "pickup_signature": 301,
+                "pickup_frame": 581,
+                "pickup_gain_frame": 580
+            }
         }
-    ]
+    ],
+    "imported_d1": {
+        "schema": 1,
+        "cases": {
+            "d1-public-flight.dximdemo": {
+                "role": "required-gameplay",
+                "reason": "Exact gameplay-state and SIM RNG parity is required; full simulation remains unqualified"
+            },
+            "d1-public-pickup.dximdemo": {
+                "role": "diagnostic-only",
+                "reason": "Retain complete imported diagnostics without claiming gameplay or full-simulation qualification"
+            },
+            "d1-public-door.dximdemo": {
+                "role": "diagnostic-only",
+                "reason": "Retain complete imported diagnostics without claiming gameplay or full-simulation qualification"
+            },
+            "d1-public-combat.dximdemo": {
+                "role": "diagnostic-only",
+                "reason": "Retain complete imported diagnostics without claiming gameplay or full-simulation qualification"
+            },
+            "d1-public-door-lifecycle.dximdemo": {
+                "role": "excluded",
+                "reason": "Native D1 level-three lifecycle is qualified independently; D2 import has nondefault wall.controlling_trigger=5, rejected by the unchanged D2-only-state gate in PR23 run38316349764 artifact11778690791"
+            },
+            "d1-public-loot.dximdemo": {
+                "role": "diagnostic-only",
+                "reason": "Retain complete imported diagnostics: an earlier robot death awards 200 extra points and SIM actor-signature metadata differs; gameplay and full-simulation compatibility remain unqualified"
+            }
+        }
+    }
 }

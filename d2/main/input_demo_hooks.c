@@ -2834,6 +2834,22 @@ static void input_demo_record_frame_event_json(const char *json_text)
 	}
 }
 
+// Read-only outcome evidence; replay never executes these observations
+void input_demo_trace_trigger_activation(int segment, int side, int object, int shot, int trigger)
+{
+	char json[384], error[256] = "";
+	if (!input_demo_state_trace_is_active() ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()) ||
+		object < 0 || object > Highest_object_index)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"type\":\"trigger_activation\",\"version\":1,\"f\":%u,\"segment\":%d,\"side\":%d,\"trigger\":%d,\"shot\":%d,\"activator\":%d,\"activator_type\":%d,\"activator_signature\":%d}",
+		input_demo_weapon_trace_frame_index(), segment, side, trigger, shot,
+		object, Objects[object].type, Objects[object].signature);
+	if (!input_demo_state_trace_write_json(json, error, sizeof(error)))
+		con_printf(CON_NORMAL, "Input demo trigger observation failed: %s\n", error);
+}
+
 void input_demo_record_wall_impact_event(object *weapon, int hitwall, int blew_up, int robot_escort)
 {
 	char json[256];

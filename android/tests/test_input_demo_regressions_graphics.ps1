@@ -13,6 +13,13 @@
 #>
 
 param(
+    [ValidateSet('recorded', 'public')][string]$Corpus = 'recorded',
+    [switch]$NativeOnly,
+    [string]$D1Exe,
+    [string]$D2Exe,
+    [string]$D1DataDir,
+    [string]$D2DataDir,
+    [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [string]$DemoRoot,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,

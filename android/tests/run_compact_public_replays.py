@@ -1,7 +1,7 @@
-"""Run the six compact public scenes twice and retain strict paired D1 evidence."""
+"""Run compact public scenes twice through the existing headless or visual replay backend."""
 
 import argparse
-import json
+import hashlib
 import os
 import shutil
 import subprocess
@@ -10,8 +10,17 @@ from pathlib import Path
 import compact_public_replay as compact
 import compact_public_gameplay_parity as gameplay
 import d1_replay_parity as parity
+import public_switch_replay as shoot_switch
+import public_robot_combat_replay as robot_combat
+import public_door_replay as door_lifecycle
+import public_loot_replay as robot_loot
 
-SCENARIOS = ("flight", "pickup", "door")
+SCENARIOS = ("flight", "pickup", "door", "combat")
+PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
+PUBLIC_CASES[("d2", "shoot-switch")] = 2
+PUBLIC_CASES[("d1", "door-lifecycle")] = 3
+PUBLIC_CASES[("d2", "door-lifecycle")] = 1
+PUBLIC_CASES[("d1", "loot")] = 1
 
 
 def load_corpus(directory):
@@ -19,9 +28,23 @@ def load_corpus(directory):
     if not isinstance(manifest, dict) or manifest.get("schema") != 1 or not isinstance(manifest.get("cases"), list):
         raise parity.EvidenceError("Invalid public level replay manifest")
     cases = manifest["cases"]
-    expected = {(game, scenario) for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
-    if len(cases) != 6 or {(row.get("game"), row.get("scenario")) for row in cases} != expected:
-        raise parity.EvidenceError("Public corpus requires exactly six unique game/scenario pairs")
+    imported = manifest.get("imported_d1", {})
+    if (
+        not isinstance(imported, dict)
+        or set(imported) != {"schema", "cases"}
+        or type(imported.get("schema")) is not int
+        or imported.get("schema") != 1
+        or not isinstance(imported.get("cases"), dict)
+        or set(imported["cases"]) != {case.get("demo") for case in cases if case.get("game") == "d1"}
+    ):
+        raise parity.EvidenceError("Every D1 recording requires explicit imported scope")
+    cases = [
+        {**case, "imported_d1": imported["cases"][case["demo"]]} if case.get("game") == "d1" else case for case in cases
+    ]
+    imported_d1_scope(cases)
+    expected = set(PUBLIC_CASES)
+    if len(cases) != len(expected) or {(row.get("game"), row.get("scenario")) for row in cases} != expected:
+        raise parity.EvidenceError(f"Public corpus requires its exact {len(expected)} unique game/scenario pairs")
     filenames = set()
     for case in cases:
         if not isinstance(case.get("actions"), dict):
@@ -40,10 +63,42 @@ def load_corpus(directory):
             ):
                 raise parity.EvidenceError("Corpus companions must have unique plain filenames")
             filenames.add(name)
-        header, _ = compact.validate(directory / case["demo"], directory / case["oracle"])
-        if header["game"] != case["game"]:
-            raise parity.EvidenceError("Manifest game disagrees with its recording")
+        header, oracle = compact.validate(directory / case["demo"], directory / case["oracle"])
+        if ("combat_observations" in oracle) != (case["scenario"] in ("combat", "loot")):
+            raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
+        if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
+            raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
+        if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
+            raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
+
+
+def imported_d1_scope(cases):
+    included, excluded, required = [], [], []
+    for case in cases:
+        if case.get("game") != "d1":
+            continue
+        declaration = case.get("imported_d1", {})
+        if (
+            not isinstance(declaration, dict)
+            or set(declaration) != {"role", "reason"}
+            or declaration["role"] not in ("required-gameplay", "diagnostic-only", "excluded")
+            or not isinstance(declaration["reason"], str)
+            or not declaration["reason"].strip()
+        ):
+            raise parity.EvidenceError("Invalid explicit imported D1 case scope")
+        role = declaration["role"]
+        if role == "excluded":
+            excluded.append({"demo": case["demo"], "reason": declaration["reason"]})
+        else:
+            included.append(case)
+        if role == "required-gameplay":
+            required.append(case)
+        if (case.get("scenario") == "flight") != (role == "required-gameplay"):
+            raise parity.EvidenceError("Imported D1 flight must retain its required gameplay scope")
+    if len(required) != 1:
+        raise parity.EvidenceError("Paired scope requires exactly one D1 flight case")
+    return included, excluded
 
 
 def validate_assets(game, directory):
@@ -109,9 +164,29 @@ def verify_actions(case, demo, state_trace, actual_result):
     action_frame = actions.get("action_frame")
     if action_frame is not None and (type(action_frame) is not int or not -1 <= action_frame < len(frames)):
         raise parity.EvidenceError("Invalid declared action frame")
-    if scenario in ("flight", "door") and (weapons <= 0 or not energy_drop):
+    # Prove the identified kill before the generic firing guard, so no-fire combat
+    # controls exercise causal robot outcomes rather than just weapon presence
+    combat_actions = robot_combat.verify(actions, header, states, state_trace) if scenario == "combat" else None
+    loot_actions = robot_loot.verify(actions, header, states, state_trace) if scenario == "loot" else None
+    if scenario in ("flight", "door", "shoot-switch", "combat", "loot") and (weapons <= 0 or not energy_drop):
         raise parity.EvidenceError("Replay did not create live player weapons and spend energy")
-    result = {"movement": True, "max_player_weapons": weapons, "energy_fell": energy_drop}
+    result = {
+        "movement": True,
+        "max_player_weapons": weapons,
+        "energy_fell": energy_drop,
+    }
+    if scenario == "door-lifecycle":
+        result.update(door_lifecycle.verify(actions, header, states, state_trace))
+        return result
+    if scenario == "loot":
+        result.update(loot_actions)
+        return result
+    if scenario == "shoot-switch":
+        result.update(shoot_switch.verify(actions, header, states, state_trace))
+        return result
+    if scenario == "combat":
+        result.update(combat_actions)
+        return result
     if scenario == "pickup":
         gain_frame = actions.get("pickup_gain_frame")
         if (
@@ -195,12 +270,13 @@ def check_paired_report(report, exit_code, cases, corpus, report_path=None):
         or "harness_error" in report
     ):
         raise parity.EvidenceError("Strict paired public D1 comparison failed or changed its qualification boundary")
-    expected = {case["demo"]: case for case in cases if case["game"] == "d1"}
+    included, excluded = imported_d1_scope(cases)
+    expected = {case["demo"]: case for case in included}
     paired_required = [name for name, case in expected.items() if case.get("scenario") == "flight"]
     if len(paired_required) != 1:
         raise parity.EvidenceError("Paired scope requires exactly one D1 flight case")
     rows = report.get("cases", [])
-    if len(rows) != 3 or {Path(row.get("demo", "")).name for row in rows} != set(expected):
+    if len(rows) != len(expected) or {Path(row.get("demo", "")).name for row in rows} != set(expected):
         raise parity.EvidenceError("Paired D1 cases are incomplete or duplicated")
     required = {
         "terminal_result",
@@ -217,6 +293,7 @@ def check_paired_report(report, exit_code, cases, corpus, report_path=None):
         "scope": "exact gameplay-state/SIM-RNG imported D1 flight parity",
         "required_paired_cases": paired_required,
         "unqualified_paired_cases": sorted(set(expected) - set(paired_required)),
+        "excluded_imported_cases": excluded,
         "not_qualified": list(gameplay.NOT_QUALIFIED),
         "original_report": str(report_path),
         "original_exit_code": exit_code,
@@ -324,7 +401,17 @@ def run(args):
 
 
 def _run_cases(args, cases):
-    report = {"schema": 1, "qualification": "incomplete", "native_runs": [], "paired": {"status": "pending"}}
+    sandbox_token = hashlib.sha256(str(args.output).encode("utf-8")).hexdigest()[:16]
+    report = {
+        "schema": 1,
+        "qualification": "incomplete",
+        "backend": args.run_mode,
+        "native_only": args.native_only,
+        "case_count": len(cases),
+        "expected_native_runs": 2 * len(cases),
+        "native_runs": [],
+        "paired": {"status": "pending"},
+    }
     for case in cases:
         demo, oracle = (args.corpus / case[key] for key in ("demo", "oracle"))
         for repeat in range(2):
@@ -335,6 +422,7 @@ def _run_cases(args, cases):
                 "game": case["game"],
                 "scenario": case["scenario"],
                 "repeat": repeat,
+                "backend": args.run_mode,
                 "status": "fail",
                 "artifacts": {"state": str(state), "rng": str(rng), "result": str(actual)},
             }
@@ -354,10 +442,11 @@ def _run_cases(args, cases):
                 "-DemoPath",
                 str(demo),
                 "-Runner",
-                "fast",
+                "headless-console" if args.run_mode == "headless" else "visual",
                 "-Mode",
                 "accelerated",
                 "-StrictComparison",
+                "-RequireCleanExit",
                 "-StateLogPath",
                 str(state),
                 "-RngLogPath",
@@ -369,7 +458,7 @@ def _run_cases(args, cases):
                 "-MinimumFreeSpaceGB",
                 str(args.minimum_free_gb),
                 "-SandboxSuffix",
-                args.output.name + "-" + directory.name,
+                args.run_mode + "-" + sandbox_token + "-" + directory.name,
             ]
             item["command"] = command
             try:
@@ -383,11 +472,35 @@ def _run_cases(args, cases):
                 item["error"] = str(error)
             report["native_runs"].append(item)
             parity.write_json(args.output / "report.json", report)
+    if args.run_mode == "graphics" and not args.native_only:
+        _run_imported(args, cases, report)
+    else:
+        report["paired"] = {
+            "status": "not_run",
+            "qualification": "incomplete",
+            "reason": "Native-only qualification; imported D1 parity requires the separate full graphics pass",
+        }
+    report["status"] = (
+        "pass"
+        if len(report["native_runs"]) == report["expected_native_runs"]
+        and all(row["status"] == "pass" for row in report["native_runs"])
+        and (args.run_mode == "headless" or args.native_only or report["paired"]["status"] == "pass")
+        else "fail"
+    )
+    parity.write_json(args.output / "report.json", report)
+    print(
+        f"{report['status'].upper()}: compact public replay report {args.output / 'report.json'}; full simulation qualification remains incomplete"
+    )
+    return 0 if report["status"] == "pass" else 1
+
+
+def _run_imported(args, cases, report):
+    included, excluded = imported_d1_scope(cases)
+    report["paired"] = {"status": "pending", "excluded_imported_cases": excluded}
     staged = args.output / "d1-corpus"
     staged.mkdir()
-    for case in cases:
-        if case["game"] == "d1":
-            shutil.copyfile(args.corpus / case["demo"], staged / case["demo"])
+    for case in included:
+        shutil.copyfile(args.corpus / case["demo"], staged / case["demo"])
     paired = args.output / "paired-d1"
     command = [
         args.pwsh,
@@ -412,8 +525,13 @@ def _run_cases(args, cases):
         str(args.minimum_free_gb),
     ]
     try:
-        code = _run(command, args.output / "paired-runner.log", 9 * (args.timeout + 120) + 120, args.repo)
-        report["paired"] = {"status": "fail", "exit_code": code, "original_report": str(paired / "report.json")}
+        code = _run(
+            command,
+            args.output / "paired-runner.log",
+            3 * len(included) * (args.timeout + 120) + 120,
+            args.repo,
+        )
+        report["paired"].update(status="fail", exit_code=code, original_report=str(paired / "report.json"))
         original = compact._json((paired / "report.json").read_bytes())
         scope = check_paired_report(original, code, cases, args.corpus, paired / "report.json")
         report["paired"].update(
@@ -427,22 +545,16 @@ def _run_cases(args, cases):
         )
     except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
         report["paired"].update(status="fail", error=str(error))
-    report["status"] = (
-        "pass"
-        if all(row["status"] == "pass" for row in report["native_runs"]) and report["paired"]["status"] == "pass"
-        else "fail"
-    )
-    parity.write_json(args.output / "report.json", report)
-    print(
-        f"{report['status'].upper()}: compact public replay report {args.output / 'report.json'}; full simulation qualification remains incomplete"
-    )
-    return 0 if report["status"] == "pass" else 1
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("repo", "corpus", "output", "data-d1", "data-d2", "exe-d1", "exe-d2"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument(
+        "--native-only", action="store_true", help="Omit imported parity and report it explicitly as not run"
+    )
+    parser.add_argument("--run-mode", choices=("headless", "graphics"), default="headless")
     parser.add_argument("--pwsh", default="pwsh")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--minimum-free-gb", type=float, default=4)

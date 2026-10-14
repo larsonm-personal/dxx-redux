@@ -32,6 +32,7 @@
 #include "object.h"
 #include "player.h"
 #include "robot.h"
+#include "strutil.h"
 #include "timer.h"
 #include "weapon.h"
 #ifndef DXX_HEADLESS_CONSOLE
@@ -64,6 +65,32 @@ static unsigned int previous_robot_anim_pose_hashes[MAX_OBJECTS];
 static int previous_robot_anim_pose_present[MAX_OBJECTS];
 static int previous_fireball_hashes_valid = 0;
 static unsigned int previous_fireball_hashes[MAX_OBJECTS];
+static int input_demo_replay_exit_requested = 0;
+static int input_demo_replay_observed_loaded = 0;
+
+static void input_demo_request_exit_after_replay(void)
+{
+	int i;
+
+	for (i = 1; i < Num_args; ++i) {
+		if (!d_stricmp(Args[i], "-inputdemo-exit")) {
+			input_demo_replay_exit_requested = 1;
+			break;
+		}
+	}
+}
+
+int input_demo_replay_should_exit(void)
+{
+	if (input_demo_replay_is_loaded())
+		input_demo_replay_observed_loaded = 1;
+	else if (input_demo_replay_observed_loaded) {
+		/* Direct-command failures also unload and finalize replay streams */
+		input_demo_replay_observed_loaded = 0;
+		input_demo_request_exit_after_replay();
+	}
+	return input_demo_replay_exit_requested;
+}
 
 typedef struct input_demo_player_bump_trace {
 	int frame;
@@ -584,7 +611,9 @@ void input_demo_stop_replay_shared(int write_result,
                                    void (*write_replay_result)(void),
                                    void (*before_stop_replay)(void))
 {
-	if (input_demo_replay_is_loaded())
+	const int replay_was_loaded = input_demo_replay_is_loaded();
+
+	if (replay_was_loaded)
 		input_demo_trace_boundary(write_result ? "terminal" : "aborted");
 	if (replay_last_timer_value)
 		*replay_last_timer_value = 0;
@@ -593,6 +622,9 @@ void input_demo_stop_replay_shared(int write_result,
 	if (write_result && write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	/* Leave the event loop only after result and trace streams are finalized */
+	if (replay_was_loaded)
+		input_demo_request_exit_after_replay();
 #ifndef DXX_HEADLESS_CONSOLE
 	if (Game_wind)
 		window_close(Game_wind);
@@ -614,6 +646,7 @@ int input_demo_finish_replay_shared(int close_window,
 	if (write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+	input_demo_request_exit_after_replay();
 #ifndef DXX_HEADLESS_CONSOLE
 	if (close_window && Game_wind)
 		window_close(Game_wind);
@@ -2369,4 +2402,65 @@ void input_demo_record_cheat(int cheat)
 	if (input_demo_recorder_is_active() && !input_demo_replay_is_loaded() &&
 	    !input_demo_recorder_stage_cheat(cheat, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo cheat event failed: %s\n", error);
+}
+
+// Read-only outcome evidence, emitted after ordinary projectile/loot resolution
+// Replay never executes these records or uses them to alter simulation state
+static void input_demo_write_combat_observation(const char *json)
+{
+	char error[256] = "";
+	if (!input_demo_state_trace_write_json(json, error, sizeof(error)))
+		con_printf(CON_NORMAL, "Input demo combat observation failed: %s\n", error);
+}
+
+// This hook is called only after non-radius weapon collision damage is applied
+// Wall contact, robot bumps and explosions cannot produce this observation
+void input_demo_trace_player_weapon_damage(object *player, object *weapon, int old_shields, int damage)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !player || !weapon || player->id != Player_num ||
+		weapon->type != OBJ_WEAPON || Players[Player_num].shields >= old_shields ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+
+	snprintf(json, sizeof(json),
+		"{\"type\":\"player_weapon_damage\",\"version\":1,\"f\":%u,\"player\":%d,\"player_id\":%d,\"player_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(player - Objects), player->id, player->signature,
+		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+		old_shields, Players[Player_num].shields, damage);
+	input_demo_write_combat_observation(json);
+}
+
+void input_demo_trace_robot_damage(object *robot, object *weapon, int old_shields, int damage, int died)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !robot || !weapon || robot->type != OBJ_ROBOT ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+	snprintf(json, sizeof(json),
+		"{\"type\":\"robot_damage\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"weapon\":%d,\"weapon_id\":%d,\"weapon_signature\":%d,\"parent\":%d,\"parent_type\":%d,\"parent_signature\":%d,\"old_shields\":%d,\"new_shields\":%d,\"damage\":%d,\"died\":%d,\"score_value\":%d,\"score\":%d,\"kills_level\":%d,\"kills_total\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
+		(int)(weapon - Objects), weapon->id, weapon->signature, weapon->ctype.laser_info.parent_num,
+		weapon->ctype.laser_info.parent_type, weapon->ctype.laser_info.parent_signature,
+		old_shields, robot->shields, damage, died, Robot_info[robot->id].score_value,
+		Players[Player_num].score, Players[Player_num].num_kills_level, Players[Player_num].num_kills_total);
+	input_demo_write_combat_observation(json);
+}
+
+void input_demo_trace_robot_loot(object *robot, int chance_roll, int count_roll, int created)
+{
+	char json[1024];
+	if (!input_demo_state_trace_is_active() || !robot || robot->type != OBJ_ROBOT ||
+		(!input_demo_recorder_is_active() && !input_demo_replay_is_loaded()))
+		return;
+	const robot_info *definition = &Robot_info[robot->id];
+	const object *drop = created >= 0 && created <= Highest_object_index ? &Objects[created] : NULL;
+	snprintf(json, sizeof(json),
+		"{\"type\":\"robot_loot\",\"version\":1,\"f\":%u,\"robot\":%d,\"robot_id\":%d,\"robot_signature\":%d,\"definition_type\":%d,\"definition_id\":%d,\"definition_count\":%d,\"definition_probability\":%d,\"chance_roll\":%d,\"count_roll\":%d,\"contains_type\":%d,\"contains_id\":%d,\"contains_count\":%d,\"created\":%d,\"created_type\":%d,\"created_id\":%d,\"created_signature\":%d}",
+		input_demo_trace_collision_frame_index(), (int)(robot - Objects), robot->id, robot->signature,
+		definition->contains_type, definition->contains_id, definition->contains_count, definition->contains_prob,
+		chance_roll, count_roll, robot->contains_type, robot->contains_id, robot->contains_count,
+		created, drop ? drop->type : -1, drop ? drop->id : -1, drop ? drop->signature : -1);
+	input_demo_write_combat_observation(json);
 }
