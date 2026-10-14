@@ -1,202 +1,187 @@
 {
-    "schema": "public-d1-fault-corpus-v1",
-    "scope": "ordinary-start known-fault diagnostics; separate from existing public and retail gates",
-    "max_input_and_oracle_bytes": 100000,
-    "capture_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
-    "capture_tree": "5d9d3efb3b07d54fec189eaef6ec8dfaa7355fb8",
-    "capture_ref": "capture-public-d1-fault-probes",
-    "checker_revision": "c1b8099733abd602ceca60afa5669f1937233cba",
     "asset_sha256": {
         "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
         "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
     },
-    "comparison_profile": {
-        "pilot": "d1match",
-        "creation": "native D2 writer and reader; only MissileViewEnabled changes from1 to0",
-        "production_default_unchanged": true,
-        "headless_imported_profile_limitation": "native console runtime does not load pilots; these unchanged D1 projection contracts require headed imported playback"
-    },
+    "capture_ref": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "capture_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "capture_tree": "0880df2ccbc35d334b4151803e841e6a0f8bc625",
     "cases": [
         {
-            "id": "d1-monitor-phase",
-            "input": "d1-monitor-phase.dximdemo",
-            "summary_oracle": "d1-monitor-phase.summary.oracle.json",
-            "role": "known-imported-animation-startup-fault",
-            "frames": 181,
-            "level": 1,
-            "difficulty": 2,
             "capture_id": "monitor-native-on",
-            "native_backends": ["headless-console", "headed"],
-            "imported_backend": "headed",
+            "detail_oracle": "d1-monitor-phase.detail.oracle.json",
+            "difficulty": 2,
+            "frames": 181,
             "full_imported_parity": "unqualified",
-            "detail_oracle": "d1-monitor-phase.detail.oracle.json"
+            "id": "d1-monitor-phase",
+            "imported_backend": "headed",
+            "input": "d1-monitor-phase.dximdemo",
+            "level": 1,
+            "native_backends": [
+                "headless-console",
+                "headed"
+            ],
+            "role": "known-imported-animation-startup-fault",
+            "summary_oracle": "d1-monitor-phase.summary.oracle.json"
         },
         {
-            "id": "d1-self-splash",
-            "input": "d1-self-splash.dximdemo",
-            "summary_oracle": "d1-self-splash.summary.oracle.json",
-            "role": "passing-bounded-gameplay-coverage",
-            "frames": 139,
-            "level": 1,
-            "difficulty": 2,
             "capture_id": "self-splash",
-            "native_backends": ["headless-console", "headed"],
-            "imported_backend": "headed",
-            "full_imported_parity": "unqualified"
-        },
-        {
-            "id": "d1-self-splash-no-fire",
-            "input": "d1-self-splash-no-fire.dximdemo",
-            "summary_oracle": "d1-self-splash-no-fire.summary.oracle.json",
-            "role": "causal-no-fire-control",
-            "frames": 139,
-            "level": 1,
             "difficulty": 2,
+            "frames": 139,
+            "full_imported_parity": "unqualified",
+            "id": "d1-self-splash",
+            "imported_backend": "headed",
+            "input": "d1-self-splash.dximdemo",
+            "level": 1,
+            "native_backends": [
+                "headless-console",
+                "headed"
+            ],
+            "role": "passing-bounded-gameplay-coverage",
+            "summary_oracle": "d1-self-splash.summary.oracle.json"
+        },
+        {
             "capture_id": "self-splash-no-fire",
-            "native_backends": ["headless-console", "headed"],
+            "difficulty": 2,
+            "frames": 139,
+            "full_imported_parity": "unqualified",
+            "id": "d1-self-splash-no-fire",
             "imported_backend": "headed",
-            "full_imported_parity": "unqualified"
+            "input": "d1-self-splash-no-fire.dximdemo",
+            "level": 1,
+            "native_backends": [
+                "headless-console",
+                "headed"
+            ],
+            "role": "causal-no-fire-control",
+            "summary_oracle": "d1-self-splash-no-fire.summary.oracle.json"
         },
         {
-            "id": "d1-mine-blast",
-            "input": "d1-mine-blast.dximdemo",
-            "summary_oracle": "d1-mine-blast.summary.oracle.json",
-            "role": "known-imported-mine-force-fault",
-            "frames": 424,
-            "level": 3,
-            "difficulty": 0,
             "capture_id": "mine-blast",
-            "native_backends": ["headless-console", "headed"],
-            "imported_backend": "headed",
+            "detail_oracle": "d1-mine-blast.detail.oracle.json",
+            "difficulty": 0,
+            "frames": 424,
             "full_imported_parity": "unqualified",
-            "detail_oracle": "d1-mine-blast.detail.oracle.json"
+            "id": "d1-mine-blast",
+            "imported_backend": "headed",
+            "input": "d1-mine-blast.dximdemo",
+            "level": 3,
+            "native_backends": [
+                "headless-console",
+                "headed"
+            ],
+            "role": "known-imported-mine-force-fault",
+            "summary_oracle": "d1-mine-blast.summary.oracle.json"
         },
         {
-            "id": "d1-mine-no-concussion",
-            "input": "d1-mine-no-concussion.dximdemo",
-            "summary_oracle": "d1-mine-no-concussion.summary.oracle.json",
-            "role": "causal-no-concussion-control",
-            "frames": 424,
-            "level": 3,
-            "difficulty": 0,
             "capture_id": "mine-no-concussion",
-            "native_backends": ["headless-console", "headed"],
-            "imported_backend": "headed",
+            "detail_oracle": "d1-mine-no-concussion.detail.oracle.json",
+            "difficulty": 0,
+            "frames": 424,
             "full_imported_parity": "unqualified",
-            "detail_oracle": "d1-mine-no-concussion.detail.oracle.json"
+            "id": "d1-mine-no-concussion",
+            "imported_backend": "headed",
+            "input": "d1-mine-no-concussion.dximdemo",
+            "level": 3,
+            "native_backends": [
+                "headless-console",
+                "headed"
+            ],
+            "role": "causal-no-concussion-control",
+            "summary_oracle": "d1-mine-no-concussion.summary.oracle.json"
         }
     ],
-    "known_faults": {
-        "animation_startup_phase": {
-            "native_initial_time_left": 4369,
-            "imported_initial_time_left": 0,
-            "first_post_sim_effect24_bitmaps": [881, 882],
-            "full_live_phase_mismatches": 1812,
-            "replay_phase_scope_mismatches": 728,
-            "collision_consequences": "unproven",
-            "not_a_full_parity_pass": true
-        },
-        "concussion_mine_force": {
-            "first_physical_raw_frame": 410,
-            "causal_sim_frame": 409,
-            "native_velocity": [79237, -44531, 89760],
-            "imported_velocity": [-353071, 99215, -21970],
-            "summary_rng_boundary_frames_equal": 424,
-            "no_concussion_physical_samples_equal": 25,
-            "raw_identity_and_sim_context": "failed and retained",
-            "not_a_full_parity_pass": true
-        }
-    },
-    "raw_evidence": {
-        "preservation": "Full live recordings, compressed world traces, RNG events, logs and screenshots retained unchanged in the capture workspace; this package includes their hashes and full bounded comparison reports",
-        "capture_root": "temp/final-fault-captures",
-        "replay_root": "temp/final-fault-replays",
-        "analysis_root": "temp/final-fault-analysis"
+    "checker_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "comparison_profile": {
+        "creation": "native D2 writer and reader; only MissileViewEnabled changes from1 to0",
+        "headless_imported_profile_limitation": "native console runtime does not load pilots; these unchanged D1 projection contracts require headed imported playback",
+        "pilot": "d1match",
+        "production_default_unchanged": true
     },
     "files": {
         "d1-mine-blast.detail.oracle.json": {
             "bytes": 72522,
-            "sha256": "c9e499f1ea9c8af966efa81f042f2861c0d65d02bbf7cb929b26d72edc7959cb"
+            "sha256": "fce28af3a9649a467c57fa8e8190fdb9bee237298bbc165668bbb31c43caac17"
         },
         "d1-mine-blast.dximdemo": {
             "bytes": 73186,
-            "sha256": "57eb6b8e452d8741b2ed804b7a83c1084a077c6d58b449f4d54f938c40add697"
+            "sha256": "44e78d350da5a4e45cd72b98ff1a03b957c0ca1cc342e7c2a3de51b7a5187e0a"
         },
         "d1-mine-blast.summary.oracle.json": {
             "bytes": 33571,
-            "sha256": "dda665876de6ff23dcad6b8b17350736347ddeba554d4991e8d6615882d6e137"
+            "sha256": "05b7da8a5aa3059428847cb8aca0cd4dfd2c90a80c7ee45970defdc84c139948"
         },
         "d1-mine-no-concussion.detail.oracle.json": {
             "bytes": 72520,
-            "sha256": "e4aff905441ea747be8111ebc69c7b0b22da8fa49dbed1397589a2e4ab86bff5"
+            "sha256": "7eb9fa04e03e0ced3c222949d035dd125108758b67f5b0623f33360c1cedc706"
         },
         "d1-mine-no-concussion.dximdemo": {
             "bytes": 73166,
-            "sha256": "e91d3eb5b26d4d8351ec927f64ee377e8ee921c0ed6da19606558c20215c91c2"
+            "sha256": "6928861dadc84a061be08a87c16fd812222779147a53fd4aca49bd0479158b4e"
         },
         "d1-mine-no-concussion.summary.oracle.json": {
             "bytes": 33571,
-            "sha256": "85c4254f58132e856b9b043a66d57cef7759631cb0950396635a7cb41ac6dca8"
+            "sha256": "80030a2f4af9bc0379df2a028163dd8353f9a034b1fc527b8db1fc9f6cee9495"
         },
         "d1-monitor-phase.detail.oracle.json": {
             "bytes": 74805,
-            "sha256": "a8ef8ce186dbb000efa690fb6a1c81b27302043db635e6ea17125a16a792efb8"
+            "sha256": "82d060e247da9f5b0d38e5080de3287673f853174ae0eb5ffc002f16f027310e"
         },
         "d1-monitor-phase.dximdemo": {
             "bytes": 31665,
-            "sha256": "5a7a1ed2239c9f285e01b00c167c9f24674042e67afe2e96ab3934d83bd99b02"
+            "sha256": "67aed1e5c36a7e8407e8eba7fc017081052dfb38599088e48b14838d706d7c31"
         },
         "d1-monitor-phase.summary.oracle.json": {
             "bytes": 15063,
-            "sha256": "cefa781c23c943c3b54b3090afe3abf36e28c54be724bf2973e22dc7600d2140"
+            "sha256": "dbf087efa47937159a44be68253e0c0cbb19cb8144ad4af3caa65f5226c13caa"
         },
         "d1-self-splash-no-fire.dximdemo": {
             "bytes": 21768,
-            "sha256": "e1c738d3cba79262aee4a308f06d8fe7e075fbb14ca99bdb8486812332f0e0a3"
+            "sha256": "90c9185e0bed45fae0efea0040bd718339ffa20f83c389917b11b8ae8d980267"
         },
         "d1-self-splash-no-fire.summary.oracle.json": {
             "bytes": 11822,
-            "sha256": "5460be83f05fea8625a8dcdf1e798222c6541cf0303116a3fa02270912b3ecff"
+            "sha256": "9b6cca2c34e7848aa2cc17fd35d47f90c07007733b4a68f0e0b719a84c1eb70b"
         },
         "d1-self-splash.dximdemo": {
             "bytes": 21824,
-            "sha256": "4e7e7fce6966e7c4ab366685c37efbb0f8bc58fdf344b3b3c1e526bd0c4e96ea"
+            "sha256": "720836cf7bd3dcf79aefcd4224b1c35717b2e9b49480b69fe7c5f2aa394e48b0"
         },
         "d1-self-splash.summary.oracle.json": {
             "bytes": 11866,
-            "sha256": "ae2042baa77cf0d003cfc5cdff6e7b5539c5a77e9fb855a4ca2c32a24ebc0d3a"
+            "sha256": "2b1d477fca1ce56f53e38d451c354bb264d2f999022876b433b097455a0d4c9e"
         },
         "evidence/final-live-validation.json": {
-            "bytes": 37595,
-            "sha256": "f742c9ceba28927b77d975fcd392cc4b0c420f17f9a8e6ea2cd29a134365a4c1"
+            "bytes": 11235,
+            "sha256": "5467f5a433dbc808cfbdbb653a4ffc9444a0679bf35ee2955ec3d98b770d6fb1"
         },
         "evidence/mine-blast.console.pair.json": {
             "bytes": 84690,
-            "sha256": "ad64b2c8d338b35a86e9be71955f26fde3c76a8fc88a70c18c7ce7aa86ebbb30"
+            "sha256": "82fcb1f402fd444581b031fa49878f5e6ffee12177f8aa9e2a8da57707d6f11c"
         },
         "evidence/mine-blast.headed.pair.json": {
             "bytes": 84690,
-            "sha256": "ad64b2c8d338b35a86e9be71955f26fde3c76a8fc88a70c18c7ce7aa86ebbb30"
+            "sha256": "82fcb1f402fd444581b031fa49878f5e6ffee12177f8aa9e2a8da57707d6f11c"
         },
         "evidence/mine-causal.console.json": {
             "bytes": 2209,
-            "sha256": "b22cfbb5f1961a9276f3f57f15c85341285cf7d59773a77989262a1c62f88b91"
+            "sha256": "0adfab0cdcdf230afdc4a4abfd0b69aa87ca668ad7cbb226b29c1a41a6d0fdf3"
         },
         "evidence/mine-causal.headed.json": {
             "bytes": 2209,
-            "sha256": "b22cfbb5f1961a9276f3f57f15c85341285cf7d59773a77989262a1c62f88b91"
+            "sha256": "0adfab0cdcdf230afdc4a4abfd0b69aa87ca668ad7cbb226b29c1a41a6d0fdf3"
         },
         "evidence/mine-no-concussion.console.pair.json": {
             "bytes": 56979,
-            "sha256": "b015f355bd0189e42a18ec3484b9bfa197ee65d5cbb153fc438d1c6076ad722b"
+            "sha256": "1521096fb96e8d51138ecb76a584fc499ce958c195d6a80d64969bf8ca42c521"
         },
         "evidence/mine-no-concussion.headed.pair.json": {
             "bytes": 56979,
-            "sha256": "b015f355bd0189e42a18ec3484b9bfa197ee65d5cbb153fc438d1c6076ad722b"
+            "sha256": "1521096fb96e8d51138ecb76a584fc499ce958c195d6a80d64969bf8ca42c521"
         },
         "evidence/monitor-pixels.json": {
-            "bytes": 1085,
-            "sha256": "3668cedae3cb5e3edeea5f0fd6471ee611871fdb3fed4cc4249a019a70e37a17"
+            "bytes": 661,
+            "sha256": "38f612202632f61caf9c2443a0620c288739e77a3186b66d3ffe70b1b198d051"
         },
         "evidence/monitor.absent-fault.control.json.gz": {
             "bytes": 6088,
@@ -205,24 +190,24 @@
             "uncompressed_sha256": "cfe45ca24e28928571f3baec18a3da895d990d1b8759f1fd3e99091f7bc63dcb"
         },
         "evidence/monitor.console.trace.json": {
-            "bytes": 1398,
-            "sha256": "0f79f3093476f285ed4c75e305429e1b0074032ddb6d6cd93b3b8c21a2681bd5"
+            "bytes": 27381,
+            "sha256": "f6ab1b234373e8f8a7f82cfb206d843f44180563fc35127948dc0a6a9f063cc3"
         },
         "evidence/monitor.headed.trace.json": {
-            "bytes": 1398,
-            "sha256": "0f79f3093476f285ed4c75e305429e1b0074032ddb6d6cd93b3b8c21a2681bd5"
+            "bytes": 27381,
+            "sha256": "f6ab1b234373e8f8a7f82cfb206d843f44180563fc35127948dc0a6a9f063cc3"
         },
         "evidence/monitor.imported-live.json.gz": {
-            "bytes": 15292,
-            "sha256": "f0e5f389ab48c1eb58d82b9cb163a8b8ad1a2481947f3b02e886bcf53914c10d",
-            "uncompressed_bytes": 280375,
-            "uncompressed_sha256": "f084f98d463fad1165787ff47bfbd1bd228218b6b5914f825271cf8cf3464ea4"
+            "bytes": 15402,
+            "sha256": "5bf397199d1a0268729ec320adf07087ec77cef0364636d6a1c6723b1a1495d1",
+            "uncompressed_bytes": 280560,
+            "uncompressed_sha256": "062b2cffb9e91b2d996b6a072637142fdace41c4c9c8fc8d9c98ed240d3bcc59"
         },
         "evidence/monitor.imported.trace.json.gz": {
-            "bytes": 4802,
-            "sha256": "90b2267c5bc71815bfd738755a3b2850a2b945f56634d17b3a27a196f93b63b6",
-            "uncompressed_bytes": 112251,
-            "uncompressed_sha256": "1985a05f295edfd686a33b62882becdd338aa785d17066eaa7e73d1f487daa1a"
+            "bytes": 6405,
+            "sha256": "e6866e01e93f9ae85a072edbd3a305be504a3cce326b8d2d828f19b43396e4d6",
+            "uncompressed_bytes": 138234,
+            "uncompressed_sha256": "297b489dd57aa8ab38dfc3a2a621756b6a2ce7b651812d6436c9f948a89d968a"
         },
         "evidence/monitor.wrong-magnitude.control.json.gz": {
             "bytes": 5990,
@@ -231,94 +216,183 @@
             "uncompressed_sha256": "b830962fa68326a1fd1af735e385af5a2eacea42a0791f4c08d9205d18208554"
         },
         "evidence/monitor.wrong-phase.console.json": {
-            "bytes": 1991,
-            "sha256": "fec637a16a482a4c215de6d1a53ecbcf7bd3ab44c34b73d53a93220771343364"
+            "bytes": 27791,
+            "sha256": "f6aff6ceb7f35e63ad366f6392a8693e1ae5552df9591aaddd2ddd8e7db1eedc"
         },
         "evidence/monitor.wrong-phase.live.json": {
             "bytes": 3364,
-            "sha256": "606ba78fa6d2ee4c573ed9691d00633849caba55ad1de9587ac7654ef67c07a2"
+            "sha256": "c2076371c1f7112220c729eef0ed2e120aa97716a026129276256c8f3d325e95"
         },
         "evidence/native-live-parity.json": {
             "bytes": 1238,
-            "sha256": "291d994a1a7924924e62264d3ed610905320b61b716977866c8190825ae868f4"
+            "sha256": "bbafdf6f21c9446ec5c2199fcafc3d3bb41774c337b192bcf090012077ffe3a2"
         },
-        "evidence/self-splash.native-causal.json": {
-            "bytes": 1766,
-            "sha256": "003d67d8f3b67e50590ceabf23f4b7aa8c745480849378318f1d1462d499ff1f"
-        },
-        "provenance/mine-blast.capture-manifest.json": {
-            "bytes": 8132,
-            "sha256": "ac81433b0ac0a2d822f9bdedb101e78bddb6ff9246cc86c7158595112f869e63"
-        },
-        "provenance/mine-blast.json": {
-            "bytes": 2164,
-            "sha256": "bcc92e6f039e29c38de18aa985a8ebab95bf659d05331b7e6646dff2a5c1a90e"
-        },
-        "provenance/mine-no-concussion.capture-manifest.json": {
-            "bytes": 5232,
-            "sha256": "3c721098d5b8f0243504b84d2e180e6e27019e6085d3120c3f0fcfe68227a2df"
-        },
-        "provenance/mine-no-concussion.json": {
-            "bytes": 2172,
-            "sha256": "8ce15459117196a23531d0e7fab210b51088631ce4350833d3e5d4cf7c6f0b69"
-        },
-        "provenance/monitor-imported.capture-manifest.json": {
-            "bytes": 4352,
-            "sha256": "50bb61a78844d9138dca51114474a1b8b81ee937d88be4338ec438321ecd96b0"
-        },
-        "provenance/monitor-native-off.capture-manifest.json": {
-            "bytes": 5210,
-            "sha256": "2d3c30b5de925db89fa0efd1838a3a4e413949eb6b2b32b121c544cd16dc4403"
-        },
-        "provenance/monitor-native-off.json": {
-            "bytes": 2172,
-            "sha256": "5b0a15fb60808fd38a336951e677e46a4b48b895a0de19f10fd05ff4c52149ba"
-        },
-        "provenance/monitor-native-on.capture-manifest.json": {
-            "bytes": 6064,
-            "sha256": "4c990d173ee63754fb402b1aa8b1563385ace551773c0f5e28da3922b92f22e8"
-        },
-        "provenance/monitor-native-on.json": {
-            "bytes": 2171,
-            "sha256": "b56fe06e9422e3a49008fc83b5f17c2406199278d3ef00979ed6a4c315d41640"
-        },
-        "provenance/native-build.json": {
-            "bytes": 1056,
-            "sha256": "620ee39978e6ad8416824ab26442aefae78e3ac17bcabca49f272ad1b62388e9"
-        },
-        "provenance/self-splash-no-fire.capture-manifest.json": {
-            "bytes": 5245,
-            "sha256": "ef2e6b89491aedf50683c93060dd71a779286555dd71eac8766553b529bae376"
-        },
-        "provenance/self-splash-no-fire.json": {
-            "bytes": 2173,
-            "sha256": "a05c40c8ca7d2e2b7cdfe59d4203c0cf972b8569b0693e4069bcab208e3258de"
-        },
-        "provenance/self-splash.capture-manifest.json": {
-            "bytes": 6437,
-            "sha256": "58a7a5c6413550c5809cbc7ae513c599290eb7ebdaeb538db292fd8e959d41e9"
-        },
-        "provenance/self-splash.json": {
-            "bytes": 2165,
-            "sha256": "ba0cc6101dfbacaec2679d638f81f03bca40ed8a7480a297660c553c504a88eb"
-        },
-        "screenshots/d1-monitor-frame170.png": {
-            "bytes": 121588,
-            "sha256": "425c4b7652a59c4901ed3bf590c95e93f0845475582db289d0fccfc4bd5b0647"
-        },
-        "screenshots/imported-d1-monitor-frame170.png": {
-            "bytes": 121522,
-            "sha256": "669b6da11fc9aa75bf62066559a01571ecc9548d123e23a071bb77a7978add5a"
+        "evidence/repeatability.json": {
+            "bytes": 6088,
+            "sha256": "9a100298949f81a539f6ac7706b78f63f8d7aa13b1ccd950aa587d4c2a947286"
         },
         "evidence/self-splash.imported-parity.json.gz": {
-            "bytes": 10587,
-            "sha256": "437d2e849c9a029c2e3612d6cd39af07f6de141cc077248ba4d268b798636c49",
-            "uncompressed_bytes": 235745,
-            "uncompressed_sha256": "5d9f35eb9b4d69de6bdc12156c206e46730b4c64ba8f32b5749af1c6907dd47d"
+            "bytes": 9837,
+            "sha256": "d315fb6199e9cd1bd0566341184672236b0df976b66b33f93a94487db2dee27f",
+            "uncompressed_bytes": 143793,
+            "uncompressed_sha256": "24eabba0cac7bce4d42c254a8f03ddfc65713480b99eefe510798abde6a2fa4e"
+        },
+        "evidence/self-splash.native-causal.json": {
+            "bytes": 1229,
+            "sha256": "57cba47501c4a75aa57da587aa89295866dc9f3b55977d7fb2cee9bf562e7c12"
         },
         "evidence/self-splash.wrong-oracle.json": {
-            "bytes": 252,
-            "sha256": "25da9342793ee484b1be8e6147551d5a7c6dbea90c857c0c6c4cc9e3f14e7f2d"
+            "bytes": 213,
+            "sha256": "614d7f762766697b9021e225a54938ecb2eb7c0a2abe9f73b11bf9629785b92d"
+        },
+        "provenance/mine-blast-repeat.capture-manifest.json": {
+            "bytes": 8343,
+            "sha256": "eaa6c156b991fd51502f96f467b01be7cc2ce237d48f225f056ed993e45b69d8"
+        },
+        "provenance/mine-blast-repeat.json": {
+            "bytes": 2186,
+            "sha256": "2fd0fa66542f32a26de78841885256308fc88b8d7ddab9f028e12e3cbe64e8de"
+        },
+        "provenance/mine-blast.capture-manifest.json": {
+            "bytes": 8343,
+            "sha256": "0a6246a94f35532b9aad44ad0efe638b72ae744cae9e2d875a0c1423e0f9c453"
+        },
+        "provenance/mine-blast.json": {
+            "bytes": 2179,
+            "sha256": "43207298e6bd32217f06b101e4c64645cfe708523238e76c0118daeb1546a86c"
+        },
+        "provenance/mine-no-concussion-repeat.capture-manifest.json": {
+            "bytes": 8342,
+            "sha256": "947e5c04d401d11073ac2df03ac502f84d3d87933eea889d7ed913454342a4ff"
+        },
+        "provenance/mine-no-concussion-repeat.json": {
+            "bytes": 2194,
+            "sha256": "17cdb4955ef8369bf16c417056697c396406752d27431bfac6c74d99b20a17d0"
+        },
+        "provenance/mine-no-concussion.capture-manifest.json": {
+            "bytes": 8342,
+            "sha256": "952ee53f522a6bc777ed49f83da17ec0579887b8c8fa3e3c06caecfcd694e5d5"
+        },
+        "provenance/mine-no-concussion.json": {
+            "bytes": 2187,
+            "sha256": "c2d5eddf6b40260bcf52e9a1997a1c1ff5ef7141cfedf1a98adef752791900bb"
+        },
+        "provenance/monitor-imported.capture-manifest.json": {
+            "bytes": 4220,
+            "sha256": "227521c381eff29e0fd1a8e7bc43c843ee02a0c807ac219e4b6134b4bbf35f9c"
+        },
+        "provenance/monitor-native-off.capture-manifest.json": {
+            "bytes": 5421,
+            "sha256": "aa291fdd1ad498b5b1db2d013d217786e8b5222e2445ef35917fe26744f54798"
+        },
+        "provenance/monitor-native-off.json": {
+            "bytes": 2187,
+            "sha256": "2bad6c7182c8f4c48dbf153969865ee2c348d3a0b7304d7a97442c3b95d47fb5"
+        },
+        "provenance/monitor-native-on-repeat.capture-manifest.json": {
+            "bytes": 6275,
+            "sha256": "b5ff653e6ab999b2f28e894aaff68392d45f53bdf0f667a591a660e3ab1d3a9d"
+        },
+        "provenance/monitor-native-on-repeat.json": {
+            "bytes": 2193,
+            "sha256": "423c12dbf6206cfbe053ca4308c2a612cba4d24245eb0ebc4b2b09aa42dbf949"
+        },
+        "provenance/monitor-native-on.capture-manifest.json": {
+            "bytes": 6275,
+            "sha256": "bea8e4501b8687eba21367066656ff57a30091818edf260472b9eaff83a1a2b7"
+        },
+        "provenance/monitor-native-on.json": {
+            "bytes": 2186,
+            "sha256": "93bf21298072e8b37f7e3d9fe84fb483f19fed359d1cd20e44a94603609e4228"
+        },
+        "provenance/native-build.json": {
+            "bytes": 1063,
+            "sha256": "e0806e6d9612d38ff4ece7c5c8c6168a5c35d138314b333a597e1d9c8b8a5e1b"
+        },
+        "provenance/replay-manifest.json": {
+            "bytes": 26913,
+            "sha256": "a06027a308ac29199fbbce20d08c11ee12d71f58a5c17017731ebef5f79738a5"
+        },
+        "provenance/self-splash-no-fire-repeat.capture-manifest.json": {
+            "bytes": 6477,
+            "sha256": "94508df01eaec04acd065ce18c1a612493013cc425504dcff03e2f3f8d73c83a"
+        },
+        "provenance/self-splash-no-fire-repeat.json": {
+            "bytes": 2195,
+            "sha256": "a1d9624f7e1d9dbfd7151b8acba09302a1997bb3ac8af251e5e2e25eaf16ccc5"
+        },
+        "provenance/self-splash-no-fire.capture-manifest.json": {
+            "bytes": 6477,
+            "sha256": "94508df01eaec04acd065ce18c1a612493013cc425504dcff03e2f3f8d73c83a"
+        },
+        "provenance/self-splash-no-fire.json": {
+            "bytes": 2188,
+            "sha256": "cd5aa58d92a94fc4905d9231d8cc0c22482d57415721d0ee7a0e995b2dc85519"
+        },
+        "provenance/self-splash-repeat.capture-manifest.json": {
+            "bytes": 6648,
+            "sha256": "e7527f9a2ec61edbd6c38dd0b96a50b603e312bb01c1cff8fc8d9834c810e828"
+        },
+        "provenance/self-splash-repeat.json": {
+            "bytes": 2187,
+            "sha256": "de309b669fee1b9d509036c491a759d67480d9a3d62e18c5dcd2ae0fac01d80c"
+        },
+        "provenance/self-splash.capture-manifest.json": {
+            "bytes": 6648,
+            "sha256": "c6def7cba717d4bc646b59186e4772ea9ddf6c749e1335cd4828ce773fcc2934"
+        },
+        "provenance/self-splash.json": {
+            "bytes": 2180,
+            "sha256": "d6129af9b010cd48ba14ec0ccbb7c29e600cd35dd2793e668c99f3a14b7d806c"
+        },
+        "screenshots/d1-monitor-frame170.png": {
+            "bytes": 121271,
+            "sha256": "6f1f1cafd21cd8dcbf5d6bae5d8495a64b7e1e52d15ed4ab3ac5924c8e6748ac"
+        },
+        "screenshots/imported-d1-monitor-frame170.png": {
+            "bytes": 121104,
+            "sha256": "4e4e92a80dd3f60d171759bd00fb7c339e78a1f044e1ca47d14af76023f35c0e"
         }
-    }
+    },
+    "known_faults": {
+        "animation_startup_phase": {
+            "collision_consequences": "unproven",
+            "first_post_sim_effect24_bitmaps": [
+                881,
+                882
+            ],
+            "full_live_phase_mismatches": 1812,
+            "imported_initial_time_left": 0,
+            "native_initial_time_left": 4369,
+            "not_a_full_parity_pass": true,
+            "replay_phase_scope_mismatches": 728
+        },
+        "concussion_mine_force": {
+            "causal_sim_frame": 409,
+            "first_physical_raw_frame": 410,
+            "imported_velocity": [
+                -353071,
+                99215,
+                -21970
+            ],
+            "native_velocity": [
+                79237,
+                -44531,
+                89760
+            ],
+            "no_concussion_physical_samples_equal": 25,
+            "not_a_full_parity_pass": true,
+            "raw_identity_and_sim_context": "failed and retained",
+            "summary_rng_boundary_frames_equal": 424
+        }
+    },
+    "max_input_and_oracle_bytes": 100000,
+    "raw_evidence": {
+        "analysis_root": "temp/fault-refresh/package/evidence",
+        "capture_root": "temp/fault-refresh/captures",
+        "preservation": "Full native live recordings, raw world and RNG traces, capture and replay logs and route screenshots retained unchanged in capture workspace; only native captures supply expectations",
+        "replay_root": "temp/fault-refresh/replays"
+    },
+    "schema": "public-d1-fault-corpus-v1",
+    "scope": "ordinary-start known-fault diagnostics; separate from existing public and retail gates"
 }

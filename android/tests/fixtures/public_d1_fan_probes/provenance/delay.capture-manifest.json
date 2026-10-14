@@ -3,47 +3,47 @@
         "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
         "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
     },
-    "capture_executable_sha256": "3183f9c095e5c11916a5a4f99303304d3c120854e381d43e75cdfb06a144c16a",
+    "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
     "capture_invoked": true,
     "command": [
-        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/buildd1-refresh/main/test_upstream_compat",
         "--public-level-replay",
-        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "/workspace/scratch/334b48b99af4/dxx-redux/game_data/shareware/d1",
         "fan-transparency"
     ],
-    "compile_commands_sha256": "e78e181fc7760c30b4e4dd975d3891557f9c38f8c3bdec19055857a2395a3133",
+    "compile_commands_sha256": "1b9ab23a1c2372f4817b9fe3ac753b21e8b64a3aaf915b739bf0b325a00a60f8",
     "files": {
         "build.log": {
-            "bytes": 135,
-            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+            "bytes": 141,
+            "sha256": "3555968c887624ead72fa68d2424856d5be30abe3814ab49285c89699eeee27d"
         },
         "candidate.dximdemo": {
             "bytes": 56604,
-            "sha256": "0dee7847ae00e3cbe4d326a83e98b6b2b08dea3e3a6cbb53ec7f6c93010b2319"
+            "sha256": "5d3989ca75f751f71da7d29d500f4b58ae7344eb878f6a1ff94680df1ca97ec3"
         },
         "candidate.oracle.json": {
             "bytes": 25970,
-            "sha256": "36f092da4206ca0631a09a8a26b018fd220fc196e6951ff9f3229ce452c08392"
+            "sha256": "297f29a7f5ba5af8addd88b276869444540a6fe5f95ec5081f4f7548d459cff4"
         },
         "capture.log": {
-            "bytes": 1749,
-            "sha256": "e21ed42d262ae498f317e5007b6796b48ac8c721860aa6cca11358f716968d21"
+            "bytes": 1762,
+            "sha256": "9f86b64a097d000e571c740d76b5fb856f1f4bc04f65644b3ca6b6084a5b2f39"
         },
         "configure.log": {
-            "bytes": 1385,
-            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+            "bytes": 1420,
+            "sha256": "100573be8d0f36f54556d7d314636965fa4c897a3a18d47c5048ff9f1b5c01bf"
         },
         "raw/capture-observation.jsonl.gz": {
             "bytes": 1219,
             "sha256": "cd9b289566f4e1ffec8268123dfadb6ec4cc6261cbeb40baab5aee9cf3cf2319"
         },
         "raw/capture.dximdemo": {
-            "bytes": 9920694,
-            "sha256": "9bd1088282ac29d3145a3e6b7e1226e0f9f50c924d3900ec3322a22516e91452"
+            "bytes": 9920708,
+            "sha256": "e3b9ac19e5dc3caac67442103c686d9b3d415a17c2b80cbebeaabae65f1bbd9c"
         },
         "raw/capture.dximdemo.rngtrace.jsonl": {
-            "bytes": 101636,
-            "sha256": "2514ff61bac46b89a2433dbe1df6ffcf30709990dbba9773002b4510f67e11ea"
+            "bytes": 84356,
+            "sha256": "2017942fb690cd42045e41ea872d6e72e50faaf6f8b4bb5c50bc275772fe88ef"
         },
         "raw/capture.json": {
             "bytes": 171315,
@@ -70,16 +70,16 @@
             "sha256": "161734b9c51e2bc4e4abbc1aa507ab0820f8e494e8229c7206a10fbad3543eac"
         },
         "raw/screenshots/scrn0001.png": {
-            "bytes": 150919,
-            "sha256": "e8856a642d6ca1b8963939176936e02a752a3d1ee8cf60521f2f0126c777a299"
+            "bytes": 150845,
+            "sha256": "4b4fad394d8f6a671241f3b6e620dfa6ecbce1b038b5b362efa8af011fac6d42"
         },
         "raw/screenshots/scrn0002.png": {
-            "bytes": 69018,
-            "sha256": "4636e79c82272331ef0679dbc276f931c6e4e64dc1fc9cc34313ae0c157e9866"
+            "bytes": 68544,
+            "sha256": "309ec51b0428bdb5113edb0a52ce3545fe744e6e63a8beca6da63b1daad26a03"
         },
         "raw/screenshots/scrn0003.png": {
-            "bytes": 69927,
-            "sha256": "0feede510bbc1285d8bf1d929122808cd0c12a3b117c2904f93978b756094042"
+            "bytes": 69625,
+            "sha256": "260ab870250f5489d84031554a0adc8d705ff62ae45ab3a60e141ed2968060e4"
         }
     },
     "flare_delay": 1,
@@ -87,14 +87,14 @@
     "no_missile": false,
     "packed": true,
     "pixel_observation": true,
-    "recorder_git_version": "03f9c8523",
+    "recorder_git_version": "7253def84",
     "recording_header": {
         "arch": "x86_64",
-        "build_number": 25420,
+        "build_number": 25690,
         "difficulty": 0,
         "frame_count": 324,
         "game": "d1",
-        "git_version": "03f9c8523",
+        "git_version": "7253def84",
         "level": 1,
         "mission": "d1",
         "player_cfg": {
@@ -149,14 +149,14 @@
     "schema": 1,
     "screenshots": true,
     "source_recipe_sha256": {
-        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
         "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
         "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
-        "android/tests/public_level_replay_fixture.hpp": "fa78be239b24f9c25f2ec08abec8ca6919cd3de91a01db5e9f2d0c59d19960d0",
+        "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
         "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
-        "android/tests/test_upstream_compat.cpp": "4f00669c738d216787421f2fac85a2c8ce7b5f2f700007d8ac6a4a353bc8bd32"
+        "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
     },
-    "source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+    "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
     "stage": "complete",
     "status": "candidate"
 }

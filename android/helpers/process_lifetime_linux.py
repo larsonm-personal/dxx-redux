@@ -11,6 +11,30 @@ import sys
 import time
 
 
+def read_children():
+    children_path = Path(f"/proc/self/task/{os.getpid()}/children")
+    try:
+        values = children_path.read_text(encoding="ascii").split()
+        if any(not value.isdecimal() or int(value) <= 0 for value in values):
+            raise ValueError("invalid child process ID")
+        return [int(value) for value in values]
+    except (OSError, UnicodeError, ValueError) as error:
+        raise RuntimeError(
+            f"unsupported Linux host: cannot read child process IDs from {children_path}: {error}"
+        ) from error
+
+
+def enable_subreaper():
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+        libc.prctl.argtypes = [ctypes.c_int] + [ctypes.c_ulong] * 4
+        # PR_SET_CHILD_SUBREAPER, from linux/prctl.h
+        if libc.prctl(36, 1, 0, 0, 0) != 0:
+            raise OSError(ctypes.get_errno(), "cannot become a child subreaper")
+    except (AttributeError, OSError) as error:
+        raise RuntimeError(f"unsupported Linux host: child subreaper support is required: {error}") from error
+
+
 def stop_children(leader):
     # The leader has not been reaped, so its process-group ID cannot be reused
     try:
@@ -18,10 +42,9 @@ def stop_children(leader):
     except ProcessLookupError:
         pass
     deadline = time.monotonic() + 5
-    children_path = Path(f"/proc/self/task/{os.getpid()}/children")
     while True:
         # Subreaper adoption also finds descendants that created another session
-        children = [int(value) for value in children_path.read_text().split()]
+        children = read_children()
         if not children:
             return
         for child in children:
@@ -56,11 +79,9 @@ def run(parent, command):
     try:
         if os.getppid() != parent:
             raise RuntimeError("requesting process exited during supervisor startup")
-        libc = ctypes.CDLL(None, use_errno=True)
-        libc.prctl.argtypes = [ctypes.c_int] + [ctypes.c_ulong] * 4
-        # PR_SET_CHILD_SUBREAPER, from linux/prctl.h
-        if libc.prctl(36, 1, 0, 0, 0) != 0:
-            raise OSError(ctypes.get_errno(), "cannot become a child subreaper")
+        # Verify all required descendant tracking before starting any workload
+        read_children()
+        enable_subreaper()
         child = subprocess.Popen(command, start_new_session=True)
         child_descriptor = os.pidfd_open(child.pid)
         with selectors.DefaultSelector() as events:
@@ -72,9 +93,7 @@ def run(parent, command):
                     break
                 # An active worker may wait for an orphaned grandchild to exit
                 # Reap adopted zombies now, preserving the main child's status
-                children_path = Path(f"/proc/self/task/{os.getpid()}/children")
-                for adopted in children_path.read_text().split():
-                    adopted = int(adopted)
+                for adopted in read_children():
                     if adopted != child.pid:
                         try:
                             os.waitpid(adopted, os.WNOHANG)
@@ -97,11 +116,15 @@ def run(parent, command):
             os.close(parent_descriptor)
 
 
-if __name__ == "__main__":
+def main():
     try:
         if len(sys.argv) < 4 or sys.argv[2] != "--":
             raise ValueError("usage: process_lifetime_linux.py PARENT_PID -- COMMAND [ARG...]")
-        sys.exit(run(int(sys.argv[1]), sys.argv[3:]))
+        return run(int(sys.argv[1]), sys.argv[3:])
     except Exception as error:
         print(f"Linux child supervisor: {error}", file=sys.stderr)
-        sys.exit(125)
+        return 125
+
+
+if __name__ == "__main__":
+    sys.exit(main())

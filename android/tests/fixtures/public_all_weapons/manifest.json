@@ -12,8 +12,8 @@
             "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
         }
     },
-    "capture_revision": "7145f682f4dd946ce0a8019d087eba6523794c16",
-    "capture_tree": "913dcf6dea58cc505b95e5faafc385301621d342",
+    "capture_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "capture_tree": "0880df2ccbc35d334b4151803e841e6a0f8bc625",
     "cases": [
         {
             "capture": "captures/d1-scourge.json",
@@ -73,36 +73,39 @@
         },
         "d1-bigred.dximdemo": {
             "bytes": 13902,
-            "sha256": "bd3433a27615cc8035c8e2fedd8b514c1f9f0f08f1ff2405298a17a74c88a1e2"
+            "sha256": "c6dac9ae55f9365d853cf7332b38dc02e35e819f1750e1c4f3a6c4740b099cc1"
         },
         "d1-bigred.oracle.json": {
             "bytes": 4374,
-            "sha256": "b1e8fbc0ab0399e3532cf1c1eff866a6d84ae1e2337eebe379fc3a0f07922445"
+            "sha256": "eb7536b783ca2964b0bf7e132eb50701fc4b50319645136f44dbd46be0aea1de"
         },
         "d1-scourge.dximdemo": {
             "bytes": 14270,
-            "sha256": "b83076723a0542f2acd408e285b6716f4e634336869c665586f0c5295c88db2d"
+            "sha256": "550594c8dd71f3028ad33202e366cfdf520c1e4336c2cbdc791d0ddfc765a8a4"
         },
         "d1-scourge.oracle.json": {
             "bytes": 4374,
-            "sha256": "4bc74b2587dd83da39d35da45928efc3f994dcd7133c449effabf6c06690366d"
+            "sha256": "56e4d6a763f83f4a79503ca53dd8be601dfaad88b55421a83ffac2250cf01f23"
         },
         "d2-honestbob.dximdemo": {
             "bytes": 14187,
-            "sha256": "20fea419247626799b64338cb3ae04228bd55ee08548135f9cbe402ff0cf3f52"
+            "sha256": "d4981606b183669a3c9f6ede4e785a33d20ec171a4fbc05f52b67cd103653a3d"
         },
         "d2-honestbob.oracle.json": {
             "bytes": 5217,
-            "sha256": "c075284051ef63679997bdad7d9ba35471f097f744249ff56c4bf8ca4955d9fd"
+            "sha256": "cf3ebbc287a043a1fb7d8456de0319590543db8206df4c69b589f57da0c6f2ec"
         },
         "qualification.json": {
-            "bytes": 128481,
-            "sha256": "51329d86ac132c0373799737825b4b165e4dd6c8fcbc56a5b7eb76e311c80280"
+            "bytes": 128497,
+            "sha256": "e79088677af3851f351b20f6d4007c936e8d49d036188aa963ecccd35779405a"
         }
     },
     "max_evidence_bytes": 2097152,
     "max_input_and_oracle_bytes": 100000,
-    "native_backends": ["headless", "graphics"],
+    "native_backends": [
+        "headless",
+        "graphics"
+    ],
     "qualification_report": "qualification.json",
     "retail_assets_playback": false,
     "schema": "public-all-weapons-v1"
