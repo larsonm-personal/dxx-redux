@@ -11,6 +11,7 @@ extern ubyte * Piggy_bitmap_cache_data;
 
 void load_custom_data(char *level_file);
 
+void custom_restore_definitions(void);
 void custom_close();
 
 #endif

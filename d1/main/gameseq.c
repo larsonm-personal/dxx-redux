@@ -715,6 +715,8 @@ void LoadLevel(int level_num,int page_in_textures)
 	Assert(level_num <= Last_level  && level_num >= Last_secret_level  && level_num != 0);
 
 	level_name = get_level_file(level_num);
+	/* New objects must not inherit the previous level's custom definitions */
+	custom_restore_definitions();
 
 	if (!load_level(level_name)) {
 		Current_level_num=level_num;
