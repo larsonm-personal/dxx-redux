@@ -2512,6 +2512,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	ai_local		*ailp = &Ai_local_info[objnum];
 	unsigned int replay_rng_state = 0;
 	unsigned int replay_rng_call_count = 0;
+	int player_rejoined = 0;
 	int replay_should_visit_player = 0;
 	fix64 replay_since_seen = 0;
 	fix64 replay_since_player_path = 0;
@@ -2646,6 +2647,17 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			replay_visit_goto_player_gate, replay_visit_same_seg_gate,
 			replay_visit_early_path_gate);
 
+	if (ailp->mode == AIM_GOTO_PLAYER) {
+		player_rejoined = dist_to_player < MIN_ESCORT_DISTANCE;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		/* Meeting the player ends the return trip, regardless of path progress */
+		if (guidebot_routing_is_enhanced())
+			player_rejoined = player_visibility &&
+			    vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos) < MIN_ESCORT_DISTANCE - F1_0/4 &&
+			    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &ConsoleObject->pos);
+#endif
+	}
+
 	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && (replay_state_probe_active ? replay_should_visit_player : time_to_visit_player(objp, ailp, aip))) {
 		int	max_len;
 
@@ -2678,15 +2690,13 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	} else if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) {
 		//	This is to prevent buddy from looking for a goal, which he will do because we only allow path creation once/second.
 		return;
-	} else if ((ailp->mode == AIM_GOTO_PLAYER) &&
-		(!guidebot_routing_is_enhanced() || aip->cur_path_index >= aip->path_length/2) &&
-		(dist_to_player < MIN_ESCORT_DISTANCE - (guidebot_routing_is_enhanced() ? F1_0/4 : 0))) {
+	} else if (player_rejoined) {
 		Escort_goal_object = escort_set_goal_object();
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 			return;
 		if (Escort_route_goal.active &&
-		    !escort_route_path_recalc_begin("player_path_midpoint"))
+		    !escort_route_path_recalc_begin("player_rejoined"))
 			return;
 #endif
 		ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
@@ -2708,9 +2718,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		}
 		ailp->mode = AIM_GOTO_OBJECT;
 	} else if (Escort_goal_object == ESCORT_GOAL_UNSPECIFIED) {
-		if ((ailp->mode != AIM_GOTO_PLAYER) ||
-			((!guidebot_routing_is_enhanced() || aip->cur_path_index >= aip->path_length/2) &&
-			 (dist_to_player < MIN_ESCORT_DISTANCE - (guidebot_routing_is_enhanced() ? F1_0/4 : 0)))) {
+		if ((ailp->mode != AIM_GOTO_PLAYER) || player_rejoined) {
 			Escort_goal_object = escort_set_goal_object();
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))

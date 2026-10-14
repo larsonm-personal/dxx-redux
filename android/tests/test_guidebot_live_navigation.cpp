@@ -289,8 +289,13 @@ static void reactor_arrival(object *bot)
 	set_escort_special_goal(KEY_0);
 	GameTime64 += 6 * F1_0;
 	Buddy_last_seen_player = GameTime64;
-	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
+	create_n_segment_path(bot, 5, -1);
+	Ai_local_info[bot - Objects].mode = AIM_GOTO_PLAYER;
+	check("rejoin_before_return_path_midpoint", bot->ctype.ai_info.cur_path_index < bot->ctype.ai_info.path_length / 2);
+	do_escort_frame(bot, 0, 0);
+	check("unseen_player_does_not_end_return", Ai_local_info[bot - Objects].mode == AIM_GOTO_PLAYER);
 	do_escort_frame(bot, 0, 2);
+	check("meeting_player_ends_return_before_midpoint", Ai_local_info[bot - Objects].mode == AIM_GOTO_OBJECT);
 	check("reactor_arrival_keeps_reactor_objective", Escort_route_goal.active &&
 	                                                     Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
 	check("reactor_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
