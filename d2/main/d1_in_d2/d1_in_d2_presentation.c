@@ -36,8 +36,6 @@ const char *d1_in_d2_presentation_prefix(void)
 	const int index = d1 ? 0 : 1;
 	const char *prefix = d1 ? "d1-original/" : "d2-original/";
 	PHYSFS_file *file;
-	if (!d1 && !D1_text)
-		return ""; /* Preserve normal D2 resource overrides until a profile switch */
 	if (!PHYSFS_getMountPoint(Presentation_mounts[index])) {
 		file = PHYSFSX_openReadBuffered(d1 ? "descent.hog" :
 			PHYSFSX_exists("descent2.hog", 1) ? "descent2.hog" : "d2demo.hog");
