@@ -15,6 +15,7 @@
 #include "gamefont.h"
 #include "gamepal.h"
 #include "newmenu.h"
+#include "mission.h"
 #include "d1_in_d2.h"
 #include "d1_in_d2_presentation.h"
 
@@ -65,8 +66,8 @@ int d1_in_d2_presentation_resource(const char *name, char *path, size_t size)
 				base = p + 1;
 	}
 	/* Only base archives are interchangeable names; custom content keeps precedence */
-	if (!base || !d_stricmp(base, "descent.hog") ||
-		!d_stricmp(base, "descent2.hog") || !d_stricmp(base, "d2demo.hog")) {
+	if (!mission_owns_resource_archive(source) && (!base || !d_stricmp(base, "descent.hog") ||
+	                                               !d_stricmp(base, "descent2.hog") || !d_stricmp(base, "d2demo.hog"))) {
 #ifdef __ANDROID__
 		/* Scoped D1 overlays cannot change the D2 menu or authored mission assets */
 		if (d1_in_d2_use_d1_gameplay()) {
