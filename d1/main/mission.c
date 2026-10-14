@@ -61,6 +61,8 @@ typedef struct mle {
 static int num_missions = -1;
 
 Mission *Current_mission = NULL; // currently loaded mission
+/* Keep the exact successfully mounted custom archive for teardown */
+static char Current_mission_hog[PATH_MAX];
 
 // Allocate the Level_names, Secret_level_names and Secret_level_table arrays
 static int allocate_levels(void)
@@ -448,13 +450,9 @@ void free_mission(void)
     // May become more complex with the editor
     if (Current_mission)
 	{
-		if (Current_mission->path && !PLAYING_BUILTIN_MISSION)
-		{
-			char hogpath[PATH_MAX];
-
-			sprintf(hogpath, MISSION_DIR "%s.hog", Current_mission->path);
-			PHYSFSX_contfile_close(hogpath);
-		}
+		if (Current_mission_hog[0])
+			PHYSFS_removeFromSearchPath(Current_mission_hog);
+		Current_mission_hog[0] = '\0';
 
 		if (Current_mission->path)
 			d_free(Current_mission->path);
@@ -625,8 +623,9 @@ int load_mission(mle *mission)
 	//for non-builtin missions, load HOG
 	strcpy(buf+strlen(buf)-4,".hog");		//change extension
 	PHYSFSEXT_locateCorrectCase(buf);
-	if (PHYSFSX_exists(buf,1))
-		PHYSFSX_contfile_init(buf, 0);
+	if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog))
+		if (!PHYSFS_addToSearchPath(Current_mission_hog, 0))
+			Current_mission_hog[0] = '\0';
 
 	snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.tex",Current_mission_filename);
 	if (!PHYSFSX_exists(Briefing_text_filename,1))
