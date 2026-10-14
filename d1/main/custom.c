@@ -74,6 +74,15 @@ struct custom_info
 	int width, height;
 };
 
+/* HX1 overrides retain only the definition slots they replace */
+static robot_info *RobotOriginal[MAX_ROBOT_TYPES];
+static jointpos *JointOriginal[MAX_ROBOT_JOINTS];
+static bitmap_index *ObjectBitmapOriginal[MAX_OBJ_BITMAPS];
+static struct custom_model_original {
+	polymodel model;
+	int dying, dead;
+} *ModelOriginal[MAX_POLYGON_MODELS];
+
 grs_bitmap BitmapOriginal[MAX_BITMAP_FILES];
 #ifdef __ANDROID__
 int piggy_bitmap_is_custom(grs_bitmap *bitmap)
@@ -621,6 +630,14 @@ void load_hxm(char *hxmname)
 			}
 			else
 			{
+				if (!RobotOriginal[repl_num]) {
+					RobotOriginal[repl_num] = d_malloc(sizeof(*RobotOriginal[repl_num]));
+					if (!RobotOriginal[repl_num]) {
+						PHYSFS_close(f);
+						return;
+					}
+					*RobotOriginal[repl_num] = Robot_info[repl_num];
+				}
 				if (!(read_d2_robot_info(f, &Robot_info[repl_num])))
 				{
 					PHYSFS_close(f);
@@ -641,6 +658,14 @@ void load_hxm(char *hxmname)
 				PHYSFSX_fseek(f, sizeof(jointpos), SEEK_CUR);
 			else
 			{
+				if (!JointOriginal[repl_num]) {
+					JointOriginal[repl_num] = d_malloc(sizeof(*JointOriginal[repl_num]));
+					if (!JointOriginal[repl_num]) {
+						PHYSFS_close(f);
+						return;
+					}
+					*JointOriginal[repl_num] = Robot_joints[repl_num];
+				}
 				if (PHYSFS_read(f, &Robot_joints[repl_num], sizeof(jointpos), 1) < 1)
 				{
 					PHYSFS_close(f);
@@ -666,10 +691,21 @@ void load_hxm(char *hxmname)
 			else
 			{
 				pm = &Polygon_models[repl_num];
-				if (pm->model_data)
+				if (!ModelOriginal[repl_num]) {
+					ModelOriginal[repl_num] = d_malloc(sizeof(*ModelOriginal[repl_num]));
+					if (!ModelOriginal[repl_num]) {
+						PHYSFS_close(f);
+						return;
+					}
+					/* Transfer ownership; do not free the retained stock model bytes */
+					ModelOriginal[repl_num]->model = *pm;
+					ModelOriginal[repl_num]->dying = Dying_modelnums[repl_num];
+					ModelOriginal[repl_num]->dead = Dead_modelnums[repl_num];
+				} else if (pm->model_data)
 					d_free(pm->model_data);
 
 				polymodel_read_n(pm, 1, f);
+				pm->model_data = NULL; // the disk pointer does not own memory
 
 				if (!(pm->model_data = d_malloc(pm->model_data_size)))
 				{
@@ -679,7 +715,7 @@ void load_hxm(char *hxmname)
 
 				if (PHYSFS_read(f, pm->model_data, pm->model_data_size, 1) < 1)
 				{
-					pm->model_data = NULL;
+					d_free(pm->model_data);
 					PHYSFS_close(f);
 					return;
 				}
@@ -698,12 +734,52 @@ void load_hxm(char *hxmname)
 			repl_num = PHYSFSX_readInt(f);
 			if (repl_num >= MAX_OBJ_BITMAPS)
 				PHYSFSX_fseek(f, 2, SEEK_CUR);
-			else
+			else {
+				if (!ObjectBitmapOriginal[repl_num]) {
+					ObjectBitmapOriginal[repl_num] = d_malloc(sizeof(*ObjectBitmapOriginal[repl_num]));
+					if (!ObjectBitmapOriginal[repl_num]) {
+						PHYSFS_close(f);
+						return;
+					}
+					*ObjectBitmapOriginal[repl_num] = ObjBitmaps[repl_num];
+				}
 				ObjBitmaps[repl_num].index = PHYSFSX_readShort(f);
+			}
 		}
 	}
 
 	PHYSFS_close(f);
+}
+
+/* Restore HX1 definitions without changing bitmap or sound ownership */
+void custom_restore_definitions(void)
+{
+	int i;
+	for (i = 0; i < MAX_ROBOT_TYPES; ++i)
+		if (RobotOriginal[i]) {
+			Robot_info[i] = *RobotOriginal[i];
+			d_free(RobotOriginal[i]);
+		}
+	for (i = 0; i < MAX_ROBOT_JOINTS; ++i)
+		if (JointOriginal[i]) {
+			Robot_joints[i] = *JointOriginal[i];
+			d_free(JointOriginal[i]);
+		}
+	for (i = 0; i < MAX_POLYGON_MODELS; ++i)
+		if (ModelOriginal[i]) {
+			if (Polygon_models[i].model_data)
+				d_free(Polygon_models[i].model_data);
+			Polygon_models[i] = ModelOriginal[i]->model;
+			Dying_modelnums[i] = ModelOriginal[i]->dying;
+			Dead_modelnums[i] = ModelOriginal[i]->dead;
+			d_free(ModelOriginal[i]);
+		}
+	for (i = 0; i < MAX_OBJ_BITMAPS; ++i)
+		if (ObjectBitmapOriginal[i]) {
+			ObjBitmaps[i] = *ObjectBitmapOriginal[i];
+			d_free(ObjectBitmapOriginal[i]);
+		}
+
 }
 
 // undo customized items
@@ -712,6 +788,8 @@ void custom_remove()
 	int i;
 	grs_bitmap *bmo = BitmapOriginal;
 	grs_bitmap *bmp = GameBitmaps;
+
+	custom_restore_definitions();
 
 	for (i = 0; i < MAX_BITMAP_FILES; bmo++, bmp++, i++)
 		if (bmo->bm_flags & 0x80)
