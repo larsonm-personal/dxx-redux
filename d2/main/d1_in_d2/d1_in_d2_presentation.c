@@ -19,7 +19,7 @@
 #include "d1_in_d2.h"
 #include "d1_in_d2_presentation.h"
 
-#define D1_TEXT_COUNT 622
+#define D1_TEXT_COUNT 621
 #define D1_TEXT_MIN 514
 
 static char *D1_text;
@@ -143,7 +143,7 @@ static int d1_text_index(int d2)
 		{0, 108, 0}, {114, 118, -5}, {124, 128, -10}, {134, 138, -15},
 		{144, 168, -20}, {170, 173, -21}, {192, 376, -20},
 		{379, 489, -20}, {490, 490, -18}, {491, 492, -21},
-		{493, 565, -20}, {567, 640, -20}, {644, 644, -23}
+		{493, 565, -20}, {567, 640, -20}
 	};
 	unsigned i;
 	/* D2's help message expects a program-name argument; D1's does not */
