@@ -18,6 +18,9 @@
 #include "pstypes.h"
 #include "songs.h"
 #include "track_names.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2/d1_in_d2_presentation.h"
+#endif
 
 #include "android_jni_overlay.h"
 #include "music_name_table.h"
@@ -85,6 +88,13 @@ static void mission_embedded_names_load(void)
 	                s_mission_embedded_name_count < MAX_MISSION_EMBEDDED_NAMES;
 	     ++index) {
 		const char *filename = BIMSongs[index].filename;
+		const char *metadata_filename = filename;
+#ifdef DXX_BUILD_DESCENT_II
+		char resource[PATH_MAX];
+		/* Read the playback owner while retaining the logical name as the lookup key */
+		if (!d1_in_d2_presentation_resource(filename, resource, sizeof(resource))) continue;
+		metadata_filename = resource;
+#endif
 		const char *extension = strrchr(filename, '.');
 		char display_name[sizeof(s_mission_embedded_names[0].display_name)] = "";
 		if (extension && (!strcasecmp(extension, ".ogg") ||
@@ -92,7 +102,7 @@ static void mission_embedded_names_load(void)
 		                  !strcasecmp(extension, ".flac"))) {
 			audio_tag_metadata metadata;
 			audio_tag_metadata_init(&metadata);
-			audio_tag_metadata_parse_physfs(filename, &metadata);
+			audio_tag_metadata_parse_physfs(metadata_filename, &metadata);
 			if (metadata.artist[0] && metadata.title[0])
 				snprintf(display_name, sizeof(display_name), "%s - %s", metadata.artist, metadata.title);
 			else
@@ -103,7 +113,7 @@ static void mission_embedded_names_load(void)
 			char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
 			int inherited;
 			midi_metadata_init(&metadata);
-			midi_metadata_resolve_physfs(filename, &metadata, source, sizeof(source), &inherited);
+			midi_metadata_resolve_physfs(metadata_filename, &metadata, source, sizeof(source), &inherited);
 			if (midi_metadata_has_useful_summary(&metadata))
 				snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
 			midi_metadata_free(&metadata);
