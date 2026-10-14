@@ -802,7 +802,7 @@ int briefing_process_char(briefing *br)
 				fname2[i++]='x';
 				fname2[i++]=0;
 
-				if ((HIRESMODE && PHYSFSX_exists(fname2,1)) || !PHYSFSX_exists(fname,1))
+				if ((HIRESMODE && d1_in_d2_presentation_resource_exists(fname2)) || !d1_in_d2_presentation_resource_exists(fname))
 					strcpy(fname,fname2);
 				load_briefing_screen (br, fname);
 			}
