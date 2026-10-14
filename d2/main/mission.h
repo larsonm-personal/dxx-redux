@@ -143,6 +143,9 @@ int load_mission_by_name (char *mission_name);
 int load_mission_by_name_from_current_dir(char *mission_name);
 int load_mission_from_current_dir(char *descriptor);
 
+/* Whether a resource comes from the active custom mission HOG */
+int mission_owns_resource_archive(const char *source);
+
 /* D2 HAM/sound/extra-robot loading service; caller owns profile transition and
  * has released old polygon models. Does not select or prepare D1 assets */
 int load_mission_ham(void);

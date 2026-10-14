@@ -66,6 +66,7 @@ typedef char mission_display_name_buf[MISSION_NAME_LEN + 6];
 static int num_missions = -1;
 
 Mission *Current_mission = NULL; // currently loaded mission
+static char Current_mission_hog[PATH_MAX];
 
 // Allocate the Level_names, Secret_level_names and Secret_level_table arrays
 static int allocate_levels(void)
@@ -605,6 +606,12 @@ void promote (mle *mission_list, char * mission_name, int * top_place)
 		}
 }
 
+/* Compare the exact mounted path, including current-directory and nested missions */
+int mission_owns_resource_archive(const char *source)
+{
+	return source && Current_mission && Current_mission_hog[0] && !strcmp(source, Current_mission_hog);
+}
+
 void free_mission(void)
 {
 #ifdef __ANDROID__
@@ -614,13 +621,9 @@ void free_mission(void)
     // May become more complex with the editor
     if (Current_mission)
 	{
-		if (Current_mission->path && !PLAYING_BUILTIN_MISSION)
-		{
-			char hogpath[PATH_MAX];
-
-			sprintf(hogpath, MISSION_DIR "%s.hog", Current_mission->path);
-			PHYSFSX_contfile_close(hogpath);
-		}
+		if (Current_mission_hog[0])
+			PHYSFS_removeFromSearchPath(Current_mission_hog);
+		Current_mission_hog[0] = '\0';
 
 		if (Current_mission->path)
 			d_free(Current_mission->path);
@@ -871,8 +874,9 @@ int load_mission(mle *mission)
 	{
 		strcpy(buf+strlen(buf)-4,".hog");		//change extension
 		PHYSFSEXT_locateCorrectCase(buf);
-		if (PHYSFSX_exists(buf,1))
-			PHYSFSX_contfile_init(buf, 0);
+		if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog))
+			if (!PHYSFS_addToSearchPath(Current_mission_hog, 0))
+				Current_mission_hog[0] = '\0';
 
 		snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.tex",Current_mission_filename);
 		if (!PHYSFSX_exists(Briefing_text_filename,1))

@@ -240,7 +240,7 @@ static char *select_screen_resolution(char *low, char *high)
 {
 	char *preferred = HIRESMODE ? high : low;
 	char *alternate = HIRESMODE ? low : high;
-	return PHYSFSX_exists(preferred, 1) || !PHYSFSX_exists(alternate, 1) ? preferred : alternate;
+	return d1_in_d2_presentation_resource_exists(preferred) || !d1_in_d2_presentation_resource_exists(alternate) ? preferred : alternate;
 }
 
 void show_titles(void)
