@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include "input_demo_recorder.h"
 
 #include <stdio.h>
@@ -63,6 +64,8 @@ struct input_demo_recorder_session {
 	int level;
 	int difficulty;
 	std::string rng_mode;
+	bool has_level_start = false;
+	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
 	bool has_checkpoint;
@@ -319,6 +322,8 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 	demo->metadata.start_mode = session.has_checkpoint ? "save_checkpoint" : "new_level";
 	demo->metadata.rng_mode = session.rng_mode;
 	demo->metadata.frame_count = static_cast<uint32_t>(session.control_frames.size());
+	demo->metadata.has_level_start = session.has_level_start;
+	demo->metadata.level_start = session.level_start;
 	demo->metadata.has_player_cfg = session.has_player_cfg;
 	if (session.has_player_cfg)
 		demo->metadata.player_cfg = session.player_cfg;
@@ -353,6 +358,7 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->level = 0;
 	settings->difficulty = 0;
 	settings->rng_mode = NULL;
+	settings->level_start = NULL;
 	settings->has_player_cfg = 0;
 	input_demo_player_cfg_clear(&settings->player_cfg);
 	settings->checkpoint_save_name = NULL;
@@ -421,8 +427,13 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 			return input_demo_recorder_copy_error("missing recorder checkpoint_start_gt", error, error_size);
 	}
 
+	if (have_checkpoint && settings->level_start)
+		return input_demo_recorder_copy_error("level start cannot contain a checkpoint", error, error_size);
 	input_demo_recorder_reset_session();
 	input_demo_rng_trace_start();
+	g_input_demo_recorder_session.has_level_start = settings->level_start != NULL;
+	if (settings->level_start)
+		g_input_demo_recorder_session.level_start = *settings->level_start;
 	g_input_demo_recorder_session.active = true;
 	g_input_demo_recorder_session.game = settings->game;
 	g_input_demo_recorder_session.mission = settings->mission;
@@ -566,6 +577,17 @@ int input_demo_recorder_append_frame_event_json(const char *json_text,
 	                                         canonical_json);
 	g_input_demo_recorder_session.extended_frames.back() |= INPUT_DEMO_RECORDED_EVENTS;
 	return 1;
+}
+
+int input_demo_recorder_stage_cheat(int cheat, char *error, size_t error_size)
+{
+	if (cheat < INPUT_DEMO_CHEAT_D1_ENABLE || cheat > INPUT_DEMO_CHEAT_D2_ALL_WEAPONS)
+		return input_demo_recorder_copy_error("unsupported demo cheat", error, error_size);
+	ordered_json event;
+	event["kind"] = "direct_command";
+	event["command"] = "cheat";
+	event["cheat"] = cheat;
+	return input_demo_recorder_stage_direct_command_event(event, error, error_size);
 }
 
 int input_demo_recorder_stage_direct_command_guidebot_goal(int special_key,

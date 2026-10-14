@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include "input_demo_replay.h"
 
 #include <stdio.h>
@@ -35,6 +36,8 @@ struct input_demo_replay_session {
 	int difficulty;
 	std::string start_mode;
 	std::string rng_mode;
+	bool has_level_start = false;
+	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
 	bool has_checkpoint;
@@ -131,6 +134,15 @@ static bool parse_direct_command_event_json(const std::string &json_text,
 	if (!it->is_string())
 		return fail(error, "direct command event command must be a string");
 	command = it->get<std::string>();
+	if (command == "cheat") {
+		it = parsed.find("cheat");
+		if (parsed.size() != 3 || it == parsed.end() || !it->is_number_integer() ||
+		    *it < INPUT_DEMO_CHEAT_D1_ENABLE || *it > INPUT_DEMO_CHEAT_D2_ALL_WEAPONS)
+			return fail(error, "invalid demo cheat command");
+		event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT;
+		event->value0 = it->get<int32_t>();
+		return true;
+	}
 	if (command == "guidebot_goal") {
 		it = parsed.find("special_key");
 		if (it == parsed.end() || !it->is_number_integer())
@@ -522,6 +534,8 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.difficulty = demo.metadata.difficulty;
 	g_input_demo_replay_session.start_mode = demo.metadata.start_mode;
 	g_input_demo_replay_session.rng_mode = demo.metadata.rng_mode;
+	g_input_demo_replay_session.has_level_start = demo.metadata.has_level_start;
+	g_input_demo_replay_session.level_start = demo.metadata.level_start;
 	g_input_demo_replay_session.has_player_cfg = demo.metadata.has_player_cfg;
 	if (demo.metadata.has_player_cfg)
 		g_input_demo_replay_session.player_cfg = demo.metadata.player_cfg;
@@ -612,6 +626,13 @@ void input_demo_replay_set_actual_result_path(const char *path)
 		g_input_demo_replay_session.actual_result_path = path;
 	else
 		g_input_demo_replay_session.actual_result_path.clear();
+}
+
+const input_demo_level_start *input_demo_replay_level_start(void)
+{
+	return g_input_demo_replay_session.loaded && g_input_demo_replay_session.has_level_start
+	           ? &g_input_demo_replay_session.level_start
+	           : NULL;
 }
 
 int input_demo_replay_has_player_cfg(void)

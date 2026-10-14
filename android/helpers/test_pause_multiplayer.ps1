@@ -48,7 +48,7 @@ function Invoke-MultiplayerPauseScenario {
         param([string]$Serial, [string]$Case)
         $first = Wait-PauseState $Serial { param($s) -not $s.pause.input_allowed } "$Case did not block local input"
         Start-Sleep -Milliseconds 500
-        $second = Get-GameIntrospection -Serial $Serial -Fresh
+        $second = Wait-PauseState $Serial { param($s) $null -ne $s.PSObject.Properties['time_paused'] } "Fresh game state unavailable during $Case"
         $ui = Invoke-PauseDevice $Serial @('shell', 'run-as', $PACKAGE, 'cat', 'files/introspect_ui.json') | ConvertFrom-Json
         $remoteSlot = if ($Serial -eq $EMU1) { 1 } else { 0 }
         @($first, $second) | ConvertTo-Json -Depth 60 | Set-Content (Join-Path $directory "$Serial-$Case.json")

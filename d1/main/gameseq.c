@@ -32,6 +32,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
+#include "input_demo_newdemo_shared.h"
 #include "input_demo_replay.h"
 #include "input_demo_start.h"
 #include "game.h"
@@ -856,6 +857,7 @@ void StartNewGame(int start_level)
 {
 	state_quick_item = -1;	// for first blind save, pick slot to save in
 
+	game_disable_cheats();
 	matcen_mode_reset_game();
 
 	Game_mode = GM_NORMAL;
@@ -869,12 +871,9 @@ void StartNewGame(int start_level)
 	N_players = 1;
 
 	difficulty_reset_history();
-
-	StartNewLevel(start_level);
-
 	Players[Player_num].starting_level = start_level;		// Mark where they started
 
-	game_disable_cheats();
+	StartNewLevel(start_level);
 }
 
 //	-----------------------------------------------------------------------------
@@ -1573,7 +1572,8 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	int autodemo_enabled_for_game_mode =
 		(!(Game_mode & GM_MULTI) && PlayerCfg.AutoDemoSp) ||
 		((Game_mode & GM_MULTI) && PlayerCfg.AutoDemoMp);
-	if (autodemo_enabled_for_game_mode && Newdemo_state != ND_STATE_RECORDING) {
+	if (autodemo_enabled_for_game_mode && !input_demo_new_level_pending() &&
+	    !input_demo_replay_is_loaded() && Newdemo_state == ND_STATE_NORMAL) {
 		newdemo_start_recording(1);
 	}
 
@@ -1625,6 +1625,7 @@ static void coop_show_level_intro(int level_num)
 //called when the player is starting a new level for normal game model
 void StartNewLevel(int level_num)
 {
+	input_demo_stop_quick_recording_common();
 	hide_menus();
 
 	GameTime64 = 0;
@@ -1636,7 +1637,9 @@ void StartNewLevel(int level_num)
 	#ifdef __ANDROID__
 	coop_briefing_arm(coop_show_level_intro, level_num);
 	#endif
+	input_demo_begin_new_level(level_num);
 	StartNewLevelSub(level_num, 1, 0 );
+	input_demo_end_new_level(level_num);
 #ifdef __ANDROID__
 	if (net_join_wait_restart()) return;
 	coop_briefing_run(coop_show_level_intro, level_num);

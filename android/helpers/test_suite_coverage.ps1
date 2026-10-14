@@ -237,6 +237,7 @@ function Get-TestSuiteCoveragePolicy {
         )
         gameplay_scenarios = @(
             'test_pc_d2_demo_music'
+            'test_auto_level_demos'
             'test_fov_demo_compatibility'
             'test_endgame_singleplayer_d1'
             'test_endgame_singleplayer_d2'

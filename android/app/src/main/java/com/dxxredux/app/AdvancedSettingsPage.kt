@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1761,6 +1763,9 @@ private fun RecordedInputDemosSection(
     var shareFailure by remember { mutableStateOf<String?>(null) }
 
     val sharedPrefs = remember { ctx.getSharedPreferences("launcher_prefs", android.content.Context.MODE_PRIVATE) }
+    var recordEachLevel by remember {
+        mutableStateOf(sharedPrefs.getBoolean(PREF_DEMO_RECORD_EACH_LEVEL, false))
+    }
     var recordPerFrameState by remember {
         mutableStateOf(
             sharedPrefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false),
@@ -1774,11 +1779,45 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from Descent 1 and Descent 2. " +
+        "Recorded .dximdemo files from Descent 1 and Descent 2. " +
             "Play launches the staged input demo directly, and paired .rngtrace.jsonl " +
             "and .dem sidecars still export with the demo and follow it into the " +
             "active set ($activeSetName)",
         fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier =
+            Modifier.fillMaxWidth().padding(vertical = 4.dp).tvFocusable().toggleable(
+                value = recordEachLevel,
+                role = Role.Checkbox,
+                onValueChange = { enabled ->
+                    recordEachLevel = enabled
+                    sharedPrefs.edit().putBoolean(PREF_DEMO_RECORD_EACH_LEVEL, enabled).apply()
+                },
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Record a demo for each level", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(
+                "Record from the start of each new single-player level without an embedded save game. " +
+                    "Loaded saves and restored secret levels are skipped. Stop demo ends only the current recording",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Checkbox(
+            checked = recordEachLevel,
+            onCheckedChange = null,
+            modifier = Modifier.size(24.dp),
+        )
+    }
+    Text(
+        "Each game keeps its newest 10 staged recordings. Save or add recordings to a file set to keep them",
+        fontSize = 10.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 

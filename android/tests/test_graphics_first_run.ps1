@@ -61,7 +61,19 @@ function Invoke-Case([string]$Name, [string]$Engine, [object[]]$Steps) {
     & pwsh -NoProfile -File "$PSScriptRoot/../helpers/run_test.ps1" -ScriptName $path -Game $Engine -Serial $Serial -LeaveRunning -TimeoutSeconds 180 @extra *> $log
     $result = $LASTEXITCODE
     Get-Content -LiteralPath $log | Select-String '^\[.*\] (PASS|FAIL)|SCRIPT_RESULT:' | Select-Object -Last 6 | ForEach-Object { Write-Output $_.Line }
-    if ($result -ne 0) { throw "$Engine $Name failed: $log" }
+    if ($result -ne 0) {
+        try {
+            Adb-Timeout -AdbArgs @('logcat', '-d', '-v', 'threadtime', 'DXX-Setup:I', 'DXX-RouteMetadata:I', 'AndroidRuntime:E', '*:S') -Seconds 30 |
+                Set-Content (Join-Path $output "$Engine-$Name-launch-failure.log") -Encoding utf8NoBOM
+            Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/setup_introspect.json') | Out-Null
+            $failureSetup = Get-SetupIntrospection
+            if ($failureSetup) {
+                $failureSetup | ConvertTo-Json -Depth 40 | Set-Content (Join-Path $output "$Engine-$Name-setup-failure.json") -Encoding utf8NoBOM
+                Write-Output ($failureSetup | Select-Object launch_preparation, launch_error, game_running, running_game_pid | ConvertTo-Json -Depth 5 -Compress)
+            }
+        } catch { Write-Warning "Setup failure snapshot unavailable: $_" }
+        throw "$Engine $Name failed: $log"
+    }
     Write-Output "PASS $Engine $Name ($log)"
 }
 
@@ -127,9 +139,8 @@ foreach ($engine in $games) {
             $steps.Add((New-ExpectStep @{ 'fire_primary_state' = '0'; 'fire_primary_count' = '0' }))
             if ($case -eq 'Rearm') {
                 $steps.Add(@{ action = 'log'; message = 'SCRIPT_BACKGROUND: rearm-chooser duration_s=4 rearm_graphics_chooser=true' })
-                $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'graphics_safety.phase' = 'idle'; 'graphics_safety.first_run_pending' = 'true' }))
-                $steps.Add(@{ action = 'key'; key = 'escape'; post_delay_ms = 100 })
-                $steps.Add((New-ExpectStep -Wait @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
+                # The first presented gameplay frame opens the rearmed chooser automatically
+                $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
                 $steps.Add(@{ action = 'wait_ms'; ms = 5500 })
                 $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.deadline_ms' = '0' }))
                 $steps.Add((New-TouchStep 'cancel'))

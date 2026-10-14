@@ -189,6 +189,7 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
+extern void do_weapon_n_item_stuff(void);
 extern void do_final_boss_frame(void);
 
 static int input_demo_replay_manual_paused = 0;
@@ -1693,6 +1694,10 @@ void GameProcessFrame(void)
 	input_demo_debug_log_player_motion_state("entry");
 	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
+	// Consume gameplay input once per simulation frame, independent of input event rate
+	Player_fired_laser_this_frame = -1;
+	if (!Endlevel_sequence && !Player_is_dead && Newdemo_state != ND_STATE_PLAYBACK)
+		do_weapon_n_item_stuff();
 	update_player_stats();
 	if (Newdemo_state != ND_STATE_PLAYBACK && ConsoleObject)
 		secret_area_note_segment_entered(ConsoleObject->segnum);

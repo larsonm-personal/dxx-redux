@@ -1,8 +1,8 @@
 param([ValidateSet('d1', 'd2')][string]$Game = 'd2')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
-$hostSerial = 'emulator-5554'
-$clientSerial = 'emulator-5556'
+$hostSerial = $script:PRIMARY_EMULATOR_SERIAL
+$clientSerial = $script:SECONDARY_EMULATOR_SERIAL
 try {
     foreach ($serial in @($hostSerial, $clientSerial)) {
         if (-not (Test-DeviceOnline -Serial $serial)) { throw "$serial is offline" }

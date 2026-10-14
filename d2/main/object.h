@@ -551,6 +551,7 @@ extern void extract_uncompressedpos(object *objp, uncompressed_pos *upp, int swa
 void clear_transient_objects(int clear_all);
 
 // Returns a new, unique signature for a new object
+void object_clear_level_objects(void);
 int obj_get_signature();
 
 // returns the number of a free object, updating Highest_object_index.

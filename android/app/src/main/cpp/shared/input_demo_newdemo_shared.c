@@ -16,6 +16,7 @@
 #include "input_demo_hooks_shared.h"
 #include "input_demo_limits.h"
 #include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 #include "input_demo_result.h"
 #include "input_demo_rng_mode.h"
 #include "input_demo_rng_trace.h"
@@ -436,8 +437,9 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->record_per_frame_state = g_demo_record_per_frame_state ? 1 : 0;
 #endif
 		input_demo_fill_recorder_player_cfg(settings);
+		settings->level_start = input_demo_recording_level_start();
 	}
-	if (input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
+	if (!input_demo_recording_level_start() && input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
 		return 0;
 	return 1;
 }
@@ -674,7 +676,6 @@ int input_demo_stop_quick_recording_common(void)
 
 int input_demo_toggle_quick_recording_common(void)
 {
-	char error[256] = "";
 
 	if (Newdemo_state == ND_STATE_RECORDING) {
 		if (!input_demo_stop_quick_recording_common()) {
@@ -683,7 +684,13 @@ int input_demo_toggle_quick_recording_common(void)
 		}
 		return 1;
 	}
-	if (Newdemo_state != ND_STATE_NORMAL)
+	return input_demo_start_quick_recording_common();
+}
+
+int input_demo_start_quick_recording_common(void)
+{
+	char error[256] = "";
+	if (Newdemo_state != ND_STATE_NORMAL || input_demo_replay_is_loaded())
 		return 0;
 	if (!input_demo_prepare_recorder_settings(NULL, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);

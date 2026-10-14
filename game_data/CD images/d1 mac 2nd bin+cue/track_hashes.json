@@ -1,5 +1,5 @@
 [
-  {"track": 1, "type": "data", "sha1": "06b5db780b3e0c9949efec242e973c5d9d9e6412", "filesystem": "hfs", "files_extracted": 8},
+  {"track": 1, "type": "data", "sha1": "06b5db780b3e0c9949efec242e973c5d9d9e6412", "filesystem": "hfs", "files_extracted": 9},
   {"track": 2, "type": "audio", "sha1": "52e9e7150c8ba5ad937fb9580b4d05465ff14df0"},
   {"track": 3, "type": "audio", "sha1": "50e509ffc8a9279a605daeae692ba64c6cee93d3"},
   {"track": 4, "type": "audio", "sha1": "40577da3bccc3172294920f50fef2ceeb4f7683e"},

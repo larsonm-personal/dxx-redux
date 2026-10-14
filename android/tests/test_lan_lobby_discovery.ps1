@@ -37,15 +37,13 @@ $ADB = $script:ADB
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
-# Dynamically detect two emulators instead of hard-coding serials
-$devices = & $ADB devices 2>&1 | Out-String
-$emus = [regex]::Matches($devices, "emulator-(\d+)\s+device")
-if ($emus.Count -lt 2) {
-    Write-Host "SKIP: Need 2 emulators, found $($emus.Count)"
+# Use the suite's pair so unrelated connected emulators are never selected
+$EMU1 = $script:PRIMARY_EMULATOR_SERIAL
+$EMU2 = $script:SECONDARY_EMULATOR_SERIAL
+if (-not (Test-DeviceOnline -Serial $EMU1) -or -not (Test-DeviceOnline -Serial $EMU2)) {
+    Write-Host "SKIP: Need configured emulators $EMU1 and $EMU2"
     exit 0
 }
-$EMU1 = "emulator-$($emus[0].Groups[1].Value)"
-$EMU2 = "emulator-$($emus[1].Groups[1].Value)"
 
 $script:LogFile = Join-RegressionPath $REPO_ROOT "temp" "lan_discovery_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }

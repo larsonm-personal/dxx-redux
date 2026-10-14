@@ -42,6 +42,7 @@ static int input_demo_direct_command_callback_error(const char *operation,
 static int input_demo_direct_command_is_game_specific(int kind)
 {
 	switch (kind) {
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:

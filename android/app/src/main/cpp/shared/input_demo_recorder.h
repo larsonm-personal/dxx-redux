@@ -23,6 +23,7 @@ typedef struct input_demo_recorder_settings {
 	int level;
 	int difficulty;
 	const char *rng_mode;
+	const input_demo_level_start *level_start;
 	int has_player_cfg;
 	input_demo_player_cfg player_cfg;
 	const char *checkpoint_save_name;

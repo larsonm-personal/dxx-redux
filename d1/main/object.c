@@ -1173,6 +1173,17 @@ void obj_unlink(int objnum)
 	Assert(Objects[0].prev != 0);
 }
 
+/* A fresh authored level replaces every object, including signature identity */
+void object_clear_level_objects(void)
+{
+	int i;
+	object_signature_seed = 0;
+	for (i = 0; i < MAX_OBJECTS; ++i) {
+		Objects[i].type = OBJ_NONE;
+		Objects[i].signature = 0;
+	}
+}
+
 // Returns a new, unique signature for a new object
 int obj_get_signature()
 {

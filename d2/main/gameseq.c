@@ -32,6 +32,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "inferno.h"
 #include "input_demo_hooks.h"
 #include "input_demo_recorder.h"
+#include "input_demo_newdemo_shared.h"
 #include "input_demo_replay.h"
 #include "input_demo_start.h"
 #include "game.h"
@@ -1128,6 +1129,7 @@ void StartNewGame(int start_level)
 #endif
 	state_quick_item = -1;	// for first blind save, pick slot to save in
 
+	game_disable_cheats();
 	matcen_mode_reset_game();
 
 	Game_mode = GM_NORMAL;
@@ -1142,16 +1144,12 @@ void StartNewGame(int start_level)
 	N_players = 1;
 
 	difficulty_reset_history();
+	Players[Player_num].starting_level = start_level;		// Mark where they started
 
 	if (start_level < 0)
 		StartNewLevelSecret(start_level, 0);
 	else
 		StartNewLevel(start_level);
-
-	Players[Player_num].starting_level = start_level;		// Mark where they started
-
-	game_disable_cheats();
-
 	init_seismic_disturbances();
 }
 
@@ -1387,6 +1385,9 @@ void do_screen_message(char *fmt, ...)
 //	robots, powerups, walls, doors, etc.
 void StartNewLevelSecret(int level_num, int page_in_textures)
 {
+	const int fresh_secret = First_secret_visit;
+	const int skip_level_intro = input_demo_consume_skip_level_intro();
+	input_demo_stop_quick_recording_common();
         ThisLevelTime=0;
 
 	last_drawn_cockpit = -1;
@@ -1397,7 +1398,7 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 	if (Newdemo_state == ND_STATE_RECORDING) {
 		newdemo_set_new_level(level_num);
 		newdemo_record_start_frame(FrameTime );
-	} else if (Newdemo_state != ND_STATE_PLAYBACK) {
+	} else if (Newdemo_state != ND_STATE_PLAYBACK && !skip_level_intro) {
 
 		set_screen_mode(SCREEN_MENU);
 
@@ -1413,6 +1414,8 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 		}
 	}
 
+	if (fresh_secret)
+		input_demo_begin_new_level(level_num);
 	LoadLevel(level_num,page_in_textures);
 
 	Assert(Current_level_num == level_num); // make sure level set right
@@ -1479,6 +1482,10 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 	Last_level_path_created = -1;
 
 	First_secret_visit = 0;
+	if (!Game_wind)
+		game();
+	if (fresh_secret)
+		input_demo_end_new_level(level_num);
 }
 
 int	Entered_from_level;
@@ -2190,7 +2197,8 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	int autodemo_enabled_for_game_mode =
 		(!(Game_mode & GM_MULTI) && PlayerCfg.AutoDemoSp) ||
 		((Game_mode & GM_MULTI) && PlayerCfg.AutoDemoMp);
-	if (autodemo_enabled_for_game_mode && Newdemo_state != ND_STATE_RECORDING) {
+	if (autodemo_enabled_for_game_mode && !input_demo_new_level_pending() &&
+	    !input_demo_replay_is_loaded() && Newdemo_state == ND_STATE_NORMAL) {
 		newdemo_start_recording(1);
 	}
 
@@ -2358,6 +2366,7 @@ void maybe_set_first_secret_visit(int level_num)
 //	secret_flag if came from a secret level
 void StartNewLevel(int level_num)
 {
+	input_demo_stop_quick_recording_common();
 	hide_menus();
 
 	GameTime64 = 0;
@@ -2373,7 +2382,9 @@ void StartNewLevel(int level_num)
 	coop_campaign_note_normal_level(level_num);
 	coop_briefing_arm(ShowLevelIntro, level_num);
 	#endif
+	input_demo_begin_new_level(level_num);
 	StartNewLevelSub(level_num, 1, 0 );
+	input_demo_end_new_level(level_num);
 #ifdef __ANDROID__
 	if (net_join_wait_restart()) return;
 	coop_briefing_run(ShowLevelIntro, level_num);

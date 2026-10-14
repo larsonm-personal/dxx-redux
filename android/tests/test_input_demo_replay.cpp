@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1044,8 +1045,78 @@ static int expect_direct_command_policy(void)
 	return 0;
 }
 
+static int expect_cheat_commands(void)
+{
+	const char *path = "test_input_demo_cheats.dximdemo";
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	char error[256] = "";
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+		return report_failure(error);
+	if (input_demo_recorder_stage_cheat(-1, error, sizeof(error)) ||
+	    input_demo_recorder_stage_cheat(4, error, sizeof(error)))
+		return report_failure("invalid cheat was accepted by recorder");
+	for (int cheat = 0; cheat <= 3; ++cheat)
+		if (!input_demo_recorder_stage_cheat(cheat, error, sizeof(error)))
+			return report_failure(error);
+	// A repeated grant is another refill, so retain it in event order
+	if (!input_demo_recorder_stage_cheat(3, error, sizeof(error)) ||
+	    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0,
+	                                       NULL, NULL, error, sizeof(error)) ||
+	    !input_demo_recorder_flush(path, error, sizeof(error)) ||
+	    !input_demo_replay_load(path, error, sizeof(error)))
+		return report_failure(error);
+	uint32_t count = 0;
+	if (!input_demo_replay_get_current_frame_direct_command_count(&count, error, sizeof(error)) || count != 5)
+		return report_failure("cheat event count mismatch");
+	for (uint32_t i = 0; i < count; ++i) {
+		input_demo_replay_direct_command_event event;
+		if (!input_demo_replay_get_current_frame_direct_command_event(i, &event, error, sizeof(error)) ||
+		    event.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT || event.value0 != (int) (i < 4 ? i : 3))
+			return report_failure("cheat command order mismatch");
+	}
+	direct_command_policy_test_context context;
+	input_demo_direct_command_policy policy;
+	direct_command_policy_context_clear(&context);
+	direct_command_policy_init(&policy, &context);
+	if (!input_demo_direct_command_apply_current_frame(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)) ||
+	    context.mutation_count != 5)
+		return report_failure("cheat commands did not reach engine adapter");
+	input_demo_replay_unload();
+	const char *invalid[] = { "-1", "4", "18446744073709551615", "1.5", "true", "\"1\"", "null" };
+	for (const char *value : invalid) {
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+			return report_failure(error);
+		const std::string event = std::string("{\"kind\":\"direct_command\",\"command\":\"cheat\",\"cheat\":") + value + "}";
+		if (!input_demo_recorder_stage_frame_event_json(event.c_str(), error, sizeof(error)) ||
+		    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, NULL, NULL, error, sizeof(error)) ||
+		    !input_demo_recorder_flush(path, error, sizeof(error)) ||
+		    !input_demo_replay_load(path, error, sizeof(error)))
+			return report_failure(error);
+		direct_command_policy_context_clear(&context);
+		if (input_demo_direct_command_apply_current_frame(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)) ||
+		    !context.calls.empty())
+			return report_failure("malformed cheat reached engine adapter");
+		input_demo_replay_unload();
+	}
+	remove(path);
+	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_cheat_commands())
+		return 1;
 	if (expect_replay_loader())
 		return 1;
 	if (expect_checkpoint_replay_loader())

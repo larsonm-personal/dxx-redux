@@ -99,6 +99,8 @@ extern "C" {
 void multi_save_game(ubyte slot, uint id, char *desc);
 #include "window.h"
 #include "newmenu.h"
+#include "newdemo.h"
+#include "laser.h"
 #include "gameseg.h"
 #include "endlevel.h"
 #include "gameseq.h"
@@ -147,6 +149,31 @@ void EnterSecretLevel(void);
 void android_automation_start_endlevel_sequence(void);
 #endif
 }
+
+#ifdef __ANDROID__
+static int automation_capture_checkpoint_reference(rewind_memory_buffer *buffer, const char *description, int disk)
+{
+	if (!disk) return state_save_to_memory(buffer, description, ANDROID_SAVE_META_KIND_MANUAL, 1);
+	/* Disk saves include mod definitions which compact rewind buffers omit */
+	const char *filename = "automation-checkpoint-reference.bin";
+	int ok = state_android_save_to_path(filename, description, ANDROID_SAVE_META_KIND_MANUAL, 1);
+	PHYSFS_file *source = ok ? PHYSFS_openRead(filename) : nullptr;
+	const PHYSFS_sint64 size = source ? PHYSFS_fileLength(source) : 0;
+	rewind_file output;
+	rewind_file_init_memory_write(&output, buffer);
+	ok = source && size > (PHYSFS_sint64) sizeof(android_save_meta_disk) &&
+	     rewind_file_memory_reserve(&output, (size_t) size);
+	if (ok) {
+		ok = PHYSFS_readBytes(source, buffer->data, (PHYSFS_uint64) size) == size;
+		/* The wall-clock launcher trailer is validated separately on publication */
+		output.position = (size_t) size - sizeof(android_save_meta_disk);
+	}
+	if (source && !PHYSFS_close(source)) ok = 0;
+	if (!rewind_file_close(&output)) ok = 0;
+	PHYSFS_delete(filename);
+	return ok;
+}
+#endif
 
 #if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
 static bool automation_capture_secret_campaign(std::vector<unsigned char> &archive)
@@ -5837,6 +5864,64 @@ extern "C" void game_automate_tick(void)
 				Players[Player_num].laser_level = 2;
 				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
 				multi_send_ship_status();
+			} else if (s.field == "level_demo_secret") {
+#ifdef DXX_BUILD_DESCENT_II
+				if (!ConsoleObject || !Game_wind || (Game_mode & GM_MULTI) || Player_is_dead ||
+				    input_demo_replay_is_loaded() || Last_secret_level >= 0) {
+					stop_script_fail("level_demo_secret requires a live single-player campaign with secret levels");
+					break;
+				}
+				if (s.value == "prepare") {
+					if (Newdemo_state != ND_STATE_NORMAL) {
+						stop_script_fail("Stop recording before preparing the secret entrance");
+						break;
+					}
+					// Position the test campaign at its first authored secret entrance
+					StartNewLevelSub(Secret_level_table[0], 1, 0);
+					First_secret_visit = 1;
+				} else if (s.value == "enter" && Current_level_num > 0) {
+					// Advance before the modal transition so the script can dismiss it
+					advance_step();
+					EnterSecretLevel();
+					break;
+				} else if (s.value == "exit" && Current_level_num < 0) {
+					advance_step();
+					ExitSecretLevel();
+					break;
+				} else {
+					stop_script_fail("Invalid level_demo_secret transition");
+					break;
+				}
+#else
+				stop_script_fail("level_demo_secret requires D2");
+#endif
+			} else if (s.field == "level_demo_inventory") {
+				if (!ConsoleObject || !Game_wind || (Game_mode & GM_MULTI) ||
+				    Newdemo_state != ND_STATE_NORMAL || input_demo_replay_is_loaded()) {
+					stop_script_fail("level_demo_inventory requires idle single-player recording");
+					break;
+				}
+				player *p = &Players[Player_num];
+				p->primary_weapon_flags = 1 | (1 << VULCAN_INDEX) | (1 << SPREADFIRE_INDEX);
+				p->primary_weapon = SPREADFIRE_INDEX;
+				p->primary_ammo[VULCAN_INDEX] = 777;
+				p->secondary_weapon_flags = 1 | (1 << HOMING_INDEX);
+				p->secondary_weapon = HOMING_INDEX;
+				p->secondary_ammo[HOMING_INDEX] = 6;
+				p->laser_level = 2;
+				p->flags |= PLAYER_FLAGS_QUAD_LASERS;
+				p->energy = i2f(150);
+				p->shields = i2f(150);
+				ConsoleObject->shields = p->shields;
+				p->lives = 5;
+				p->score = 12345;
+#ifdef DXX_BUILD_DESCENT_II
+				p->flags |= PLAYER_FLAGS_AFTERBURNER | PLAYER_FLAGS_AMMO_RACK | PLAYER_FLAGS_CONVERTER | PLAYER_FLAGS_HEADLIGHT;
+				p->afterburner_charge = F1_0 / 2;
+				Omega_charge = F1_0 / 3;
+				Primary_last_was_super[VULCAN_INDEX] = 1;
+				Secondary_last_was_super[PROXIMITY_INDEX] = 1;
+#endif
 			} else if (s.field == "player_energy") {
 				if (Screen_mode != SCREEN_GAME || !Game_wind || !ConsoleObject) {
 					stop_script_fail("player_energy: game is not running");
@@ -6317,7 +6402,7 @@ extern "C" void game_automate_tick(void)
 						break;
 					}
 					stop_time();
-					if (!state_save_to_memory(&reference, "CHECKPOINT TEST", ANDROID_SAVE_META_KIND_MANUAL, 1))
+					if (!automation_capture_checkpoint_reference(&reference, "CHECKPOINT TEST", disk))
 						stop_script_fail("Checkpoint reference save failed");
 					start_time();
 				} else if (s.value == "roundtrip") {
@@ -6497,7 +6582,7 @@ extern "C" void game_automate_tick(void)
 					                                  : state_checkpoint_submit("ARCHIVE TEST", ANDROID_SAVE_META_KIND_MANUAL, 1, completed);
 					rewind_memory_buffer reference = {};
 					stop_time();
-					const int saved = state_save_to_memory(&reference, "ARCHIVE TEST", ANDROID_SAVE_META_KIND_MANUAL, 1);
+					const int saved = automation_capture_checkpoint_reference(&reference, "ARCHIVE TEST", archive_disk);
 					start_time();
 					archive_reference.assign(reference.data, reference.data + reference.size);
 					rewind_memory_buffer_discard(&reference);

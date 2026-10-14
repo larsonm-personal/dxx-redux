@@ -846,6 +846,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 		if (PHYSFSX_fseek( LoadFile, object_offset, SEEK_SET ))
 			Error( "Error seeking to object_offset in gamesave.c" );
 
+		object_clear_level_objects();
 		for (i = 0; i < gs_num_objects; i++) {
 
 			read_object(&Objects[i], LoadFile, game_top_fileinfo_version);

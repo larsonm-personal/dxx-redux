@@ -163,9 +163,9 @@ static int expect_frame_time_domain(void)
 {
 	input_demo_control_record record;
 	std::string error;
-	const int valid_values[] = { 1, 3276, INPUT_DEMO_FRAME_TIME_MAX };
+	const int valid_values[] = { 1, 3276, 65536, 65537, 94110, INPUT_DEMO_FRAME_TIME_MAX };
 	const char *invalid_values[] = {
-		"-2147483648", "-1", "0", "65537", "2147483647",
+		"-2147483648", "-1", "0",
 		"2147483648", "4294967295", "9223372036854775808", "18446744073709551615"
 	};
 	size_t i;
@@ -177,6 +177,12 @@ static int expect_frame_time_domain(void)
 			return report_failure_string(std::string("valid frame time failed: ") + error);
 		if (!record.has_frame_time || record.frame_time != valid_values[i])
 			return report_failure("valid frame time changed during parsing");
+		std::string encoded;
+		input_demo_control_record decoded;
+		if (!input_demo_control_record_to_json_line(record, input_demo_control_info_game(), &encoded, &error) ||
+		    !input_demo_control_record_parse_json_line(encoded, input_demo_control_info_game(), &decoded, &error) ||
+		    decoded.frame_time != valid_values[i])
+			return report_failure_string(std::string("frame time round trip failed: ") + error);
 	}
 	for (i = 0; i != sizeof(invalid_values) / sizeof(invalid_values[0]); ++i) {
 		const std::string line = std::string("{\"f\":1,\"ft\":") + invalid_values[i] + "}";

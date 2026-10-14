@@ -1,6 +1,25 @@
 #!/usr/bin/env pwsh
 
 # Shared by direct automation runners and the suite; children inherit ANDROID_SERIAL
+function Get-AndroidTestEmulatorSettings {
+    $settings = @{
+        PrimarySerial = if ($env:DXX_TEST_PRIMARY_SERIAL) { $env:DXX_TEST_PRIMARY_SERIAL } else { 'emulator-5554' }
+        SecondarySerial = if ($env:DXX_TEST_SECONDARY_SERIAL) { $env:DXX_TEST_SECONDARY_SERIAL } else { 'emulator-5556' }
+        PrimaryAvd = if ($env:DXX_TEST_PRIMARY_AVD) { $env:DXX_TEST_PRIMARY_AVD } else { 'Nexus5X_Light_1' }
+        SecondaryAvd = if ($env:DXX_TEST_SECONDARY_AVD) { $env:DXX_TEST_SECONDARY_AVD } else { 'Nexus5X_Light_2' }
+    }
+    foreach ($serial in @($settings.PrimarySerial, $settings.SecondarySerial)) {
+        if ($serial -notmatch '^emulator-\d+$') { throw "Invalid managed test emulator serial: $serial" }
+    }
+    foreach ($avd in @($settings.PrimaryAvd, $settings.SecondaryAvd)) {
+        if ($avd -notmatch '^[A-Za-z0-9_.-]+$') { throw "Invalid managed test AVD name: $avd" }
+    }
+    if ($settings.PrimarySerial -eq $settings.SecondarySerial -or $settings.PrimaryAvd -eq $settings.SecondaryAvd) {
+        throw 'Managed test emulators require distinct serials and AVDs'
+    }
+    return $settings
+}
+
 function Test-PhysicalTestTarget {
     param([string]$Serial = $env:ANDROID_SERIAL)
     return [bool]($Serial -and $Serial -notmatch '^emulator-\d+$')
@@ -9,7 +28,7 @@ function Test-PhysicalTestTarget {
 function Get-AndroidTestTargets {
     param([Parameter(Mandatory)][string]$AdbPath)
 
-    $targets = @([pscustomobject]@{ Serial = 'emulator-5554'; Label = 'emulator' })
+    $targets = @([pscustomobject]@{ Serial = (Get-AndroidTestEmulatorSettings).PrimarySerial; Label = 'emulator' })
     foreach ($line in @(& $AdbPath devices -l 2>$null)) {
         if ($line -notmatch '^(\S+)\s+device\s') { continue }
         $serial = $Matches[1]
@@ -50,13 +69,13 @@ function Initialize-AndroidTestTarget {
         $redirected = try { [Console]::IsInputRedirected } catch { $true }
         $unattended = $NonInteractive -or $redirected -or -not [Environment]::UserInteractive -or
         ([Environment]::GetCommandLineArgs() -match '^-NonInteractive$')
-        $Serial = 'emulator-5554'
+        $Serial = (Get-AndroidTestEmulatorSettings).PrimarySerial
         if (-not $unattended) {
             $targets = @(Get-AndroidTestTargets -AdbPath $script:ADB)
             if ($targets.Count -gt 1) { $Serial = Select-AndroidTestTarget -Targets $targets }
         }
     }
-    if ($Serial -eq 'emulator') { $Serial = 'emulator-5554' }
+    if ($Serial -eq 'emulator') { $Serial = (Get-AndroidTestEmulatorSettings).PrimarySerial }
     $env:ANDROID_SERIAL = $Serial
     if (Test-PhysicalTestTarget -Serial $Serial) {
         # Existing diagnostic build stays separate from the user's Play/sideload apps

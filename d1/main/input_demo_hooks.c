@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -93,6 +94,14 @@ static int input_demo_apply_d1_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
 	(void)context;
+	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT) {
+		if (game_apply_demo_cheat(event->value0, validate_only))
+			return 1;
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "cheat is unsupported for this game or mode");
+		return 0;
+	}
+
 	if (event->kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT ||
 	    event->value0 < 0 || event->value0 > 1 ||
 	    event->value1 < 0 || event->value1 >= MAX_PRIMARY_WEAPONS) {

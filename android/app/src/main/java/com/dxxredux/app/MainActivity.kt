@@ -564,6 +564,8 @@ class MainActivity :
 
     external fun nativeSetDemoRecordPerFrameState(enabled: Boolean)
 
+    external fun nativeSetDemoRecordEachLevel(enabled: Boolean)
+
     external fun nativeIsDemoRecordingActive(): Boolean
 
     external fun nativeIsSaveLoadMenuActive(): Boolean
@@ -2849,6 +2851,7 @@ class MainActivity :
         try {
             val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
             nativeSetDemoRecordPerFrameState(prefs.getBoolean(PREF_DEMO_RECORD_PER_FRAME_STATE, false))
+            nativeSetDemoRecordEachLevel(prefs.getBoolean(PREF_DEMO_RECORD_EACH_LEVEL, false))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

@@ -11,6 +11,10 @@ function Assert-Equal($Expected, $Actual, [string]$Context) {
 $priorSerial = $env:ANDROID_SERIAL
 $priorPackage = $env:DXX_TEST_PACKAGE
 $priorAndroidRoot = $script:ANDROID_ROOT
+$emulatorEnvironment = @{}
+foreach ($key in @('DXX_TEST_PRIMARY_SERIAL', 'DXX_TEST_SECONDARY_SERIAL', 'DXX_TEST_PRIMARY_AVD', 'DXX_TEST_SECONDARY_AVD')) {
+    $emulatorEnvironment[$key] = [Environment]::GetEnvironmentVariable($key)
+}
 try {
     # Gradle can leave a stale outputs APK beside a newer intermediates APK
     $fixture = Join-Path $priorAndroidRoot ('temp/test_apk_resolution/run_' + [guid]::NewGuid().ToString('N'))
@@ -32,8 +36,18 @@ try {
     Assert-Equal 'SingleDevice' (Select-RunAllTestsProfile -ReadChoice { 's' }) 'Single-device suite menu'
     $env:ANDROID_SERIAL = ''
     $env:DXX_TEST_PACKAGE = ''
-    Assert-Equal 'emulator-5554' (Initialize-AndroidTestTarget -NonInteractive) 'Unattended default'
+    Assert-Equal (Get-AndroidTestEmulatorSettings).PrimarySerial (Initialize-AndroidTestTarget -NonInteractive) 'Unattended default'
     Assert-Equal 'com.dxxredux.app' $script:PACKAGE 'Emulator package'
+    $env:DXX_TEST_PRIMARY_SERIAL = 'emulator-5678'
+    $env:DXX_TEST_SECONDARY_SERIAL = 'emulator-5680'
+    $env:DXX_TEST_PRIMARY_AVD = 'FixturePrimary'
+    $env:DXX_TEST_SECONDARY_AVD = 'FixtureSecondary'
+    $configured = Get-AndroidTestEmulatorSettings
+    Assert-Equal 'emulator-5678' (Initialize-AndroidTestTarget -Serial emulator -NonInteractive) 'Configured emulator alias'
+    Assert-Equal 'emulator-5680' $configured.SecondarySerial 'Configured secondary'
+    Assert-Equal 'FixturePrimary' $configured.PrimaryAvd 'Configured primary AVD'
+    Assert-Equal 'FixtureSecondary' $configured.SecondaryAvd 'Configured secondary AVD'
+    foreach ($key in $emulatorEnvironment.Keys) { [Environment]::SetEnvironmentVariable($key, $emulatorEnvironment[$key]) }
     function Get-FakeAdbDevices {
         'List of devices attached'
         'retroid device product:RP4Pro model:Retroid_Pocket_4_Pro transport_id:1'
@@ -44,7 +58,7 @@ try {
         'phone2 device model:Second_Phone transport_id:6'
     }
     $discovered = @(Get-AndroidTestTargets -AdbPath Get-FakeAdbDevices)
-    Assert-Equal 'emulator-5554,retroid,phone2' ($discovered.Serial -join ',') 'Discovery excludes unavailable transports and duplicate emulator choices'
+    Assert-Equal "$((Get-AndroidTestEmulatorSettings).PrimarySerial),retroid,phone2" ($discovered.Serial -join ',') 'Discovery excludes unavailable transports and duplicate emulator choices'
     Assert-Equal 'Retroid Pocket 4 Pro [retroid]' $discovered[1].Label 'Device label'
     $targets = @(
         [pscustomobject]@{ Serial = 'emulator-5554'; Label = 'emulator' },
@@ -114,6 +128,7 @@ try {
     Assert-Equal $null (Invoke-PrimaryEmulatorPreflight -RequireStandardGameData) 'Failed device provisioning must stop preflight'
     Write-Host 'PASS: Android target selection, child inheritance and physical recovery'
 } finally {
+    foreach ($key in $emulatorEnvironment.Keys) { [Environment]::SetEnvironmentVariable($key, $emulatorEnvironment[$key]) }
     $script:ANDROID_ROOT = $priorAndroidRoot
     $env:ANDROID_SERIAL = $priorSerial
     $env:DXX_TEST_PACKAGE = $priorPackage

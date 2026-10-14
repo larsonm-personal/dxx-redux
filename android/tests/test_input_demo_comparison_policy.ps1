@@ -23,6 +23,11 @@ if ($config.Name -cne 'd2' -or $config.RequiredFiles[0] -cne 'd1.hog' -or $confi
 $arguments = Get-LaunchArguments -Config @{ TitleArg = '-nomovies' } -ResolvedDataDir 'd1 data' -ResolvedDemoPath 'recording' `
     -ActualResultPath 'result' -LaunchMode @{ MaxFps = 200; ExtraArgs = @() } -RenderProfileSelection @{ ExtraArgs = @() } -D1InD2
 if ('-d1' -cnotin $arguments -or '-inputdemo-d1-in-d2' -cnotin $arguments) { throw 'Imported replay must explicitly select D1 startup and checkpoint translation' }
+$arguments = Get-LaunchArguments -Config @{ TitleArg = '-nomovies'; D1Mission = $true } -ResolvedDataDir 'd1 data' -ResolvedDemoPath 'recording' `
+    -ActualResultPath 'result' -LaunchMode @{ MaxFps = 200; ExtraArgs = @() } -RenderProfileSelection @{ ExtraArgs = @() }
+if ('-d1' -cnotin $arguments -or '-inputdemo-d1-in-d2' -cin $arguments) {
+    throw 'Native D2 recordings of D1 missions must select D1 assets without translating demo state'
+}
 $header = @{ game = 'd1'; mission = 'd1' }
 $expected = @{ game = 'd1'; mission = 'd1'; player0 = @{ shields = 30 }; position = @{ x = 10 } }
 $normalized = Normalize-D1InD2ExpectedResult -Expected $expected -Header $header

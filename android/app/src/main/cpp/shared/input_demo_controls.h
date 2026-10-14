@@ -16,9 +16,10 @@ extern "C" {
 #define INPUT_DEMO_PACKED
 #endif
 
-#define INPUT_DEMO_GAME_D1        1
-#define INPUT_DEMO_GAME_D2        2
-#define INPUT_DEMO_FRAME_TIME_MAX 65536
+#define INPUT_DEMO_GAME_D1 1
+#define INPUT_DEMO_GAME_D2 2
+// Preserve positive engine fix values, including slow frames after level loading
+#define INPUT_DEMO_FRAME_TIME_MAX INT32_MAX
 
 typedef struct input_demo_control_state {
 	int32_t pitch_time;

@@ -153,6 +153,21 @@ static void write_json_string(FILE *out, const char *text)
 static void write_json_path_string(FILE *out, const char *text)
 {
 	const unsigned char *cursor = (const unsigned char *) (text ? text : "");
+	const unsigned char *part;
+
+	/* Compiler diagnostics may use absolute paths on desktop and relative paths
+	 * on Android; persist the same repository-relative source identity */
+	for (part = cursor; *part; ++part) {
+		if (part != cursor && part[-1] != '/' && part[-1] != '\\')
+			continue;
+		if ((part[0] == 'd' && (part[1] == '1' || part[1] == '2') &&
+		     (part[2] == '/' || part[2] == '\\')) ||
+		    (!strncmp((const char *) part, "android", 7) &&
+		     (part[7] == '/' || part[7] == '\\'))) {
+			cursor = part;
+			break;
+		}
+	}
 
 	fputc('"', out);
 	for (; *cursor; ++cursor) {

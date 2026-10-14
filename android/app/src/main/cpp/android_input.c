@@ -1372,6 +1372,14 @@ Java_com_dxxredux_app_MainActivity_nativeSetHeadlightOffByDefaultQol(JNIEnv *env
 }
 
 JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetDemoRecordEachLevel(JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	(void) env;
+	(void) thiz;
+	input_demo_set_record_each_level(enabled ? 1 : 0);
+}
+
+JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDemoRecordPerFrameState(JNIEnv *env, jobject thiz, jboolean enabled)
 {
 	g_demo_record_per_frame_state = enabled ? 1 : 0;

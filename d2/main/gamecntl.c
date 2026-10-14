@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 /*
 THE COMPUTER CODE CONTAINED HEREIN IS THE SOLE PROPERTY OF PARALLAX
 SOFTWARE CORPORATION ("PARALLAX").  PARALLAX, IN DISTRIBUTING THE CODE TO
@@ -1722,42 +1723,18 @@ cheat_code cheat_codes[NUM_CHEATS] = {
 	{ "bittersweet", &cheats.acid },
 };
 
-int FinalCheats(int key)
+int game_apply_demo_cheat(int cheat, int validate_only)
 {
-	static char cheat_buffer[CHEAT_MAX_LEN] = "AAAAAAAAAAAAAAA";
-	int i = 0, gotcha = 0;
-
-	if (Game_mode & GM_MULTI)
+	int i;
+	if ((Game_mode & GM_MULTI) || (cheat != INPUT_DEMO_CHEAT_D2_ALL_WEAPONS))
 		return 0;
-
-	for (i = 1; i < CHEAT_MAX_LEN; i++)
-		cheat_buffer[i-1] = cheat_buffer[i];
-	cheat_buffer[CHEAT_MAX_LEN-1] = key_ascii();
-	for (i = 0; i < NUM_CHEATS; i++)
-	{
-		int cheatlen = strlen(cheat_codes[i].string);
-		Assert(cheatlen <= CHEAT_MAX_LEN);
-		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
-		{
-			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
-			cheats.enabled = 1;
-			digi_play_sample( SOUND_CHEATER, F1_0);
-			Players[Player_num].score = 0;
-			gotcha = i;
-			break;
-		}
-	}
-	
-	if (!gotcha)
-		return 0;
-
-	if (cheat_codes[gotcha].stateptr == &cheats.lamer)
-	{
-		Players[Player_num].shields=Players[Player_num].energy=i2f(1);
-		HUD_init_message_literal(HM_DEFAULT, "Take that...cheater!");
-	}
-
-	if (cheat_codes[gotcha].stateptr == &cheats.wowie)
+	if (validate_only)
+		return 1;
+	cheats.wowie = !cheats.wowie;
+	cheats.enabled = 1;
+	digi_play_sample(SOUND_CHEATER, F1_0);
+	Players[Player_num].score = 0;
+	if (cheat == INPUT_DEMO_CHEAT_D2_ALL_WEAPONS)
 	{
 		HUD_init_message_literal(HM_DEFAULT, TXT_WOWIE_ZOWIE);
 
@@ -1791,6 +1768,49 @@ int FinalCheats(int key)
 		Players[Player_num].laser_level = MAX_SUPER_LASER_LEVEL;
 		Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
 		update_laser_weapon_info();
+	}
+
+	return 1;
+}
+
+int FinalCheats(int key)
+{
+	static char cheat_buffer[CHEAT_MAX_LEN] = "AAAAAAAAAAAAAAA";
+	int i = 0, gotcha = 0;
+
+	if (Game_mode & GM_MULTI)
+		return 0;
+
+	for (i = 1; i < CHEAT_MAX_LEN; i++)
+		cheat_buffer[i-1] = cheat_buffer[i];
+	cheat_buffer[CHEAT_MAX_LEN-1] = key_ascii();
+	for (i = 0; i < NUM_CHEATS; i++)
+	{
+		int cheatlen = strlen(cheat_codes[i].string);
+		Assert(cheatlen <= CHEAT_MAX_LEN);
+		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
+		{
+			if (cheat_codes[i].stateptr == &cheats.wowie) {
+				input_demo_record_cheat(INPUT_DEMO_CHEAT_D2_ALL_WEAPONS);
+				game_apply_demo_cheat(INPUT_DEMO_CHEAT_D2_ALL_WEAPONS, 0);
+				return 1;
+			}
+			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
+			cheats.enabled = 1;
+			digi_play_sample( SOUND_CHEATER, F1_0);
+			Players[Player_num].score = 0;
+			gotcha = i;
+			break;
+		}
+	}
+
+	if (!gotcha)
+		return 0;
+
+	if (cheat_codes[gotcha].stateptr == &cheats.lamer)
+	{
+		Players[Player_num].shields=Players[Player_num].energy=i2f(1);
+		HUD_init_message_literal(HM_DEFAULT, "Take that...cheater!");
 	}
 
 	if (cheat_codes[gotcha].stateptr == &cheats.allkeys)
@@ -2017,25 +2037,8 @@ void play_test_sound()
 
 #endif  //ifndef NDEBUG
 
-static void input_demo_replay_clear_secondary_release_marker(void)
-{
-	input_demo_replay_frame frame, next_frame;
-	char error[256] = "";
-
-	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)) ||
-	    !input_demo_replay_get_next_frame(&next_frame, error, sizeof(error)))
-		return;
-	if (frame.state.fire_secondary_state && !next_frame.state.fire_secondary_state &&
-	    Player_fired_laser_this_frame >= 0 && Player_fired_laser_this_frame <= Highest_object_index &&
-	    Objects[Player_fired_laser_this_frame].type == OBJ_WEAPON &&
-	    Objects[Player_fired_laser_this_frame].id == Secondary_weapon_to_weapon_info[Players[Player_num].secondary_weapon] &&
-	    !Weapon_info[Objects[Player_fired_laser_this_frame].id].homing_flag)
-		Player_fired_laser_this_frame = -1;
-}
-
 int ReadControlsReplayFrame(void)
 {
-	Player_fired_laser_this_frame = -1;
 	if (Player_is_dead) {
 		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
 			return 0;
@@ -2054,26 +2057,9 @@ int ReadControlsReplayFrame(void)
 			 * modal automap window or skipping the gameplay frame. */
 		}
 
-		do_weapon_n_item_stuff();
-		input_demo_replay_clear_secondary_release_marker();
 	}
 
 	return 0;
-}
-
-void ReadControlsReplayPostFrame(void)
-{
-	input_demo_replay_frame frame;
-	char error[256] = "";
-
-	if (Endlevel_sequence || Player_is_dead)
-		return;
-	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
-		return;
-	if (!frame.state.fire_secondary_state)
-		return;
-	do_weapon_n_item_stuff();
-	Player_fired_laser_this_frame = -1;
 }
 
 int ReadControls(d_event *event)
@@ -2095,7 +2081,6 @@ int ReadControls(d_event *event)
 	int key;
 	static ubyte exploding_flag=0;
 
-	Player_fired_laser_this_frame=-1;
 
 #ifdef __ANDROID__
 	if (Endlevel_sequence &&
@@ -2366,10 +2351,13 @@ int ReadControls(d_event *event)
 
 		kconfig_read_controls(event, 0);
 		if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
-			input_demo_control_state ignored_state;
 			input_demo_control_pulse pulse;
 
-			input_demo_control_state_from_control_info(&ignored_state, &pulse, &Controls);
+			// Gameplay pulses remain pending until the simulation frame consumes them
+			// Only these UI pulses are consumed below, before frame capture
+			input_demo_control_pulse_clear(&pulse);
+			pulse.rear_view_count = Controls.rear_view_count;
+			pulse.automap_count = Controls.automap_count;
 			input_demo_recorder_stage_pulse(&pulse);
 		}
 
@@ -2386,8 +2374,6 @@ int ReadControls(d_event *event)
 			}
 		}
 
-		do_weapon_n_item_stuff();
-		input_demo_replay_clear_secondary_release_marker();
 	}
 
 	return 0;

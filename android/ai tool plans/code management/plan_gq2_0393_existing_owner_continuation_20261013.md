@@ -1,0 +1,59 @@
+# GuideBot simulation runner existing-owner continuation, 2026-10-13
+
+Diagnosis/plan only for GQ2-CHUNK-0393. Assigned generator L1-L750, whole1003/extra253 kept separate; original path absent/saving0. No implementation, tests, devices, builds, probes or new canonical root/status. Complete review/rating/publication pending.
+
+## Preserve current repairs and different execution policies
+
+Keep the standard data resolver's measured pinned hashes, isolated mixed-source stage, copied-byte reverification and refusal to replace an existing directory. ZIP variant selection delegates to the shared Kotlin policy; do not duplicate Rebirth/DOS/D2X precedence or unsupported XL rules in this runner. Keep shared JSONC parsing and FIXED GQF0238. Explicit HogDir/D1InD2HogDir overrides use different admission; default provenance success is not proof of arbitrary override identity. BR0008 source identity acceptance must state reviewed override policy and bind actual consumed bytes, not declared filenames alone.
+
+Native mission/level and route parsing remain in the engine. Core canonical60Hz/seed1/authored pose and restored-world/objective-only distinctions are required; keep saved-world and objective-only rejection in the compact converter. BR0009 exact loaded mission/level acceptance remains separate from browser target selection GQF0301/GQR0287 and duplicate corpus identity BR0668. The browser's optional exact selector must preserve default corpus expansion and current level0->engine1 mapping.
+
+Retain controlled native exit2 route outcomes as data; crash/start/timeout/missing-result failures remain infrastructure outcomes. Known Uneasy4 timeout exception is exact and rejects other repeated failures. Preserve unsupported-level diagnostics and authored metadata empty-level failure, not a blanket minimum-ok rule for an intentionally recorded routing corpus. BR0162 meaningful coverage and BR0169 final failure propagation need actual declared batch accounting and every selected identity disposition; route failure data must not be relabelled as an infrastructure crash.
+
+## Owned process, staging and snapshot acceptance: BR0173/0543/0233
+
+Keep private producer lock, engine image/library/symbol snapshot and changed-image refusal, per-worker isolated user directory and actual pool supervision. Default seconds-only runRoot, reused outputRoot, sanitized identities, flattening/basename collisions and shared Desktop sandbox require invocation/source-bound acquired ownership. No prior sentinel directory or file may be erased, mixed or consumed as the current run. Retain diagnostics and report owned residue after failed cleanup; lock presence alone is not a source-generation identity.
+
+Desktop remains a visible native game with a different timeout and process policy from the hidden headless pool. Its process wait/kill paths and handles need guaranteed finite retirement/disposal on startup/read/log/convert failure. Manual Desktop command-line quoting is a simplification candidate: use an existing compatible argument encoder or ArgumentList with actual WindowsPowerShell5.1/modern Windows/Linux child round trips for empty, spaces, embedded quotes, backslash-before-quote and trailing separator inputs. Preserve the visible-game window and native stdout/stderr artifacts; do not simply route it through hidden headless execution or claim a quote failure without exact caller admission.
+
+Headed invokes the real run_test helper, which now has finally and Exiting cleanup with explicit LeaveRunning. Preserve that current repair. Cleanup marks done before power restore and attempts power restore before app stop; a thrown earlier operation can prevent later attempts and make retry ineffective. Use independent acquired cleanup attempts with primary/secondary diagnostics. Respect explicit final LeaveHeadedRunning opt-out while default failures stop only owned package/recording/state resources. Retain device/package/serial correlation and do not stop unrelated infrastructure.
+
+Terminal automation result matching already requires ExpectedRunId; uncorrelated logcat PASS is disabled with that ID. Introspection is separately asynchronous: STEP_INTROSPECT requests and advances, current publisher updates its generation before checked temporary write/rename, default final Get-GameIntrospection does not request Fresh, and parent reads cached privateJSON after child cleanup. Preserve existing flush/close/temp repairs, but require a positively fresh correlated snapshot before stopping the producer. Use the current Fresh request before cleanup when appropriate and materialize a checked, invocation-owned host snapshot; if an optional helper output is needed, correlate it with the request and validate actual mission/level/status/contract. Do not try to request a fresh native snapshot only after the helper has stopped the app.
+
+Raw native file writer truncates its final destination and does not explicitly observe final flush/close before success. Desktop can print a write failure without exposing it as its caller's checked publication result. Canonical simulation writer is already different: it uses a unique sibling and preserves equivalent bytes/mtime. Keep this repair and extend actual write/close/replacement/reader-sharing/prior-generation tests where needed, without labelling every managed canonical write a direct-final overwrite. Preserve raw process/log/native state as separate evidence from canonical accepted records.
+
+## Sampling and contract cleanup
+
+Fraction selection advances its persistent ring during selection before DryRun return. BR0622 retains preview mutation ownership; GQF0305/GQR0291 retains readable malformed cursor validation. Preserve the established selection-time advancement contract in ordinary runs and valid seeded resume. Do not redefine cursor progress as only completed engine work. Existing superseded policy cleanup and fixture simplification are already proposed in0389; do not admit another dead-policy root here.
+
+Generated headed support metadata should identify its integration owner consistently with repository automation instructions. Any implementation fixture additions require catalog registration and adequate master timeout; static generated JSON alone is not actual headed acceptance.
+
+## Recovery projection candidate is separate
+
+plan_gq2_0393_headed_recovery_projection_candidate_20261013.md records a concrete source-static native field omission. File producer emits recovery/access/trigger fields that current Android introspection omits; compact objective matching can therefore label valid confirmed recovery route_mismatch. Fix the native projection rather than loosening the converter or moving engine-format policy into scripts. Distinguish it from GQF0186 producer exceptions, GQF0301 target filtering, BR0668 duplicates and existing lifetime/publication roots. Admission/rating remain pending final dedup/consolidation.
+
+## Actual-entry future controls and simplification
+
+Exercise actual runner modes, selective and repeated runs, selected-target/default corpus behavior, expected/unsupported/controlled outcome and invalid native result states, source replacement, stale current-looking result/introspection, same basename/sanitization/output races, callback failure, timeout, Ctrl-C, denied stop, failed power restore and multiple cleanup failures. Require exact selected/requested coverage, source/native identity, fresh native result, failure propagation, finite owned retirement, preserved sentinels/previous records, reproducible engine artifacts and no uncorrelated success. Preserve existing batching32/time/final-partial rules, collection snapshot of untouched compatible levels, normalized failure diagnostics and unchanged bytes/mtime.
+
+Retain the required discovery, staging, native/headed/Desktop execution and incremental publication seams. Prefer a small existing-helper cleanup/argument/native projection correction over a new generic runner or serializer framework. Reuse standard dependency declarations for generated headed scripts only if subset and D1-in-D2 distinctions remain explicit and byte/schema compatible; do not import all dependencies accidentally. No proved dead assigned block, numerical authored removal or inherited saving yet. All required fixtures and native policies reviewed here are source evidence, not fresh runtime proof.
+
+
+## Final assessment and controlling reference
+
+Retain all750assigned lines and253extra caller context separately. No proven dead assigned block, numerical authored reduction or inherited saving. Prefer existing standard dependency declarations, safe Desktop argument handling and shared native recovery projection where they preserve different mode contracts; no new generic runner/framework. All implementation and runtime acceptance remains future work.
+
+Current bounded runtime pin/tree/executable/version admission and7zip cache/archive/bootstrap/staged/final hashes remain repaired; GQF0125/GQR0112 and GQF0128/GQR0115 statuses FIXED/DONE preserved. Complete GQR0114 plan distinguishes historical passes from current OPEN0127/TODO0114 setup cancellation gap. Assigned RAR call reaches Invoke-BoundedExtractor and actual driver owner acquisition/thread setup before its protectedtry. Keep that direct existing-root acceptance, not a duplicate finding; quota reason oracle0157 remainsOPEN and no quota/backend runtime claim is made here.
+
+Controlling unit GQR0114REFERENCE56MEDIUM-HIGH (32/0/10/10/4), exact same-owner GQ2-CHUNK-0038. This references the existing common extractor root reached by the actual RAR route; it is not a new broad engine impact score. Additional lifetime/publication/provenance/coverage/cursor/selection owners retain separate acceptance. New proposed recovery projection GQF0306/GQR0292 has local47MEDIUM and requires canonical admission after consolidated qualification. No unrelated acquisition P1 uplift or score summation.
+
+Complete current ordinary owner blocks and canonical root descriptions remain qualified through the source/entry/native/staging/headed/dependency checkpoints. Consolidated consumer audit, report/snapshot/canonical root/remediation/ranks/queue and independent publication replay still required. Diagnosis completion never implies remediation completion.
+
+
+## Chunk 0393 published and independently audited, 2026-10-13
+
+GQC1222ISSUES/GQD1102NO_INHERITED_EFFECT;newOPENGQF0306/TODOGQR0292 headed recovery projection47MEDIUM source-static finding and actionable native producer/parity plan. No prior finding/remediation/investigation status changes. All750assignedRETAIN/1003wholecurrent/253extra separated/raw=frozen/wholeadded1003/baseoriginalabsent/saving0. Controlling same-owner GQR0114REFERENCE56 retained; no rating sum.
+
+Report SHA4e543d9b52542430cce5b9cf7105d137a796f866f77e7ce8c34c8e40ad6e84af; immutable snapshot SHAa49eb80ad307443273054a5aa82fd6326fe407a68e74f0fe714ad510898a7470; independent publication PASS4442 SHA354a3eab9cb575d6bdd48f8dc4d7e61b97f588ce11266b0c7fdc9ef909009799 proves nine-operation/five-ledger replay, all prior entire root/queue bytes and rank suffix/sorts, exact report/snapshot/154qualification artifacts/current mapped contexts/full definitions/assigned source/frozen/baseoriginal/manifest/pre-finalplans/HEADproduct. No runtime execution. Final primary gate checked only afterPASS and five current canonical identities reverified. Published snapshot/mutation immutable.
+
+GQ2now393DONE234TODO627;1209terminal ranks292fix ranks306findings292remediations12numbered investigations. Supplemental investigation resume rows are preserved separately, not additional numbered investigations. NextGQ2-CHUNK-0394 regenerate_all_guidebot_simulations.ps1L751-L1003/253assigned tail. Broader remaining queue/sweeps/investigations/current-head supplements/finalclosure pending;goalactive.

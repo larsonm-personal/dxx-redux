@@ -39,10 +39,11 @@ $script:ADB = Resolve-RegressionAndroidSdkTool -DepBase $script:DEP_BASE -Subdir
 $script:PACKAGE = if ($env:DXX_TEST_PACKAGE) { $env:DXX_TEST_PACKAGE } else { "com.dxxredux.app" }
 $script:ACTIVITY = "com.dxxredux.app.SetupActivity"
 $script:DEFAULT_SET_DIR = "files/imported/sets/default"
-$script:PRIMARY_EMULATOR_SERIAL = "emulator-5554"
-$script:SECONDARY_EMULATOR_SERIAL = "emulator-5556"
-$script:PRIMARY_AVD_NAME = "Nexus5X_Light_1"
-$script:SECONDARY_AVD_NAME = "Nexus5X_Light_2"
+$emulatorSettings = Get-AndroidTestEmulatorSettings
+$script:PRIMARY_EMULATOR_SERIAL = $emulatorSettings.PrimarySerial
+$script:SECONDARY_EMULATOR_SERIAL = $emulatorSettings.SecondarySerial
+$script:PRIMARY_AVD_NAME = $emulatorSettings.PrimaryAvd
+$script:SECONDARY_AVD_NAME = $emulatorSettings.SecondaryAvd
 
 function Test-SoftwareAndroidTestTarget {
     param([string]$Serial = $env:ANDROID_SERIAL)
@@ -2126,21 +2127,35 @@ function Watch-AutomationResult {
                         Write-Status 'FAIL: Responsive graphics lifecycle transition unexpectedly closed the game' 'Red'
                         return $false
                     }
-                    # Bring app back to foreground via launcher intent (re-opens
-                    # existing task with SetupActivity on top), then press BACK
-                    # to get back to the running game's MainActivity, triggering
-                    # onResume and surface recreation.
+                    # Explicitly put SetupActivity on top before returning to the game
+                    # A launcher intent can restore MainActivity directly,
+                    # where BACK would open the game menu instead of resuming
                     Write-Status "Resuming app..."
-                    Adb -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
-                        "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
-                    Start-Sleep -Seconds 1
-                    # BACK dismisses the new SetupActivity, revealing the
-                    # running game's MainActivity underneath
+                    # REORDER_TO_FRONT selects SetupActivity inside the existing task
+                    # NEW_TASK alone can bring the task's MainActivity to the top
+                    $resumeLaunch = Adb -AdbArgs @('shell', 'am', 'start', '-f', '0x00020000', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)")
+                    $resumeWait = [Diagnostics.Stopwatch]::StartNew()
+                    $setupForeground = $false
+                    do {
+                        $activities = Adb-Timeout -AdbArgs @('shell', 'dumpsys', 'activity', 'activities') -Seconds 5
+                        $setupForeground = $activities -match '(?:mResumedActivity|topResumedActivity|ResumedActivity:).*[/\.]SetupActivity(?:\s|\})'
+                        if ($setupForeground) { break }
+                        Start-Sleep -Milliseconds 100
+                    } while ($resumeWait.Elapsed.TotalSeconds -lt 10)
+                    if (-not $setupForeground) {
+                        Write-Status 'FAIL: SetupActivity did not become foreground before returning to the game' 'Red'
+                        Write-Host $resumeLaunch
+                        ($activities -split "`n") | Where-Object { $_ -match 'ResumedActivity|topResumedActivity' } | ForEach-Object { Write-Host $_ }
+                        return $false
+                    }
+                    # Return through the launcher action instead of sending BACK
+                    # during the handoff, which can also open the native game menu
                     if ($line -match 'rearm_graphics_chooser=(true|1)') {
                         Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
                             '--es', 'command', 'graphics_first_run_offered', '--ez', 'value', 'false') | Out-Null
                     }
-                    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
+                    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                        '--es', 'command', 'launch') | Out-Null
                     Start-Sleep -Seconds 2
                     Write-Status "App resumed -- continuing test monitoring" "Green"
                 } elseif (

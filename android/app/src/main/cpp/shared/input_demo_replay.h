@@ -43,6 +43,7 @@ typedef struct input_demo_replay_frame {
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME      11
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED 12
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT      13
+#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT                    14
 #define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE                40
 
 typedef struct input_demo_replay_direct_command_event {
@@ -73,6 +74,7 @@ const char *input_demo_replay_start_mode(void);
 const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
 void input_demo_replay_set_actual_result_path(const char *path);
+const input_demo_level_start *input_demo_replay_level_start(void);
 int input_demo_replay_has_player_cfg(void);
 int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg);
 int input_demo_replay_has_checkpoint(void);

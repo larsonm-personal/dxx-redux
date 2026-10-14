@@ -112,8 +112,10 @@ function Invoke-SafMode {
     }
 
     $stageLine = Adb -AdbArgs @("logcat", "-d", "-v", "brief", "DXX-SAF-Stage:I", "DXX-DiscImport:I", "*:S")
-    if ($stageLine -notmatch "Mac import extracted 7 files from HFS volume 'Descent'") {
-        throw "Mac extraction did not report all seven source files before runtime filtering"
+    # Seven archive files plus the native Mac sound resource bank
+    if ($stageLine -notmatch "Mac import extracted 8 files from HFS volume 'Descent'") {
+        Write-Output $stageLine
+        throw "Mac extraction did not report all eight source files before runtime filtering"
     }
     if ($Mode -eq "pipe" -and $stageLine -notmatch 'Staged nonseekable SAF source macplay.bin \(718912320 bytes\)') {
         throw "Pipe extraction succeeded without the expected descriptor staging evidence"

@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 #include "input_demo_debug_logging.h"
 #include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
+#include "input_demo_newdemo_shared.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #include "input_demo_result.h"
@@ -48,7 +50,6 @@
 #include "input_demo_hooks_shared.h"
 
 extern int ReadControlsReplayFrame(void);
-extern void ReadControlsReplayPostFrame(void);
 extern void GameProcessFrame(void);
 extern int game_is_time_paused(void);
 
@@ -188,6 +189,11 @@ void input_demo_reset_object_state_diag_history(void)
 	previous_robot_ai_static_hashes_valid = 0;
 	previous_robot_anim_pose_hashes_valid = 0;
 	previous_fireball_hashes_valid = 0;
+	// Slots absent from frame zero must not retain another recording's history
+	memset(previous_robot_hashes, 0, sizeof(previous_robot_hashes));
+	memset(previous_robot_ai_static_hashes, 0, sizeof(previous_robot_ai_static_hashes));
+	memset(previous_robot_anim_pose_hashes, 0, sizeof(previous_robot_anim_pose_hashes));
+	memset(previous_fireball_hashes, 0, sizeof(previous_fireball_hashes));
 	memset(previous_robot_ai_static_present, 0,
 	       sizeof(previous_robot_ai_static_present));
 	memset(previous_robot_anim_pose_present, 0,
@@ -397,9 +403,8 @@ static unsigned int input_demo_hash_robot_ai_local(unsigned int hash,
 	hash = input_demo_state_trace_hash_update(
 	    hash, (unsigned int) ailp->player_awareness_time);
 	hash = input_demo_state_trace_hash_i64(hash, ailp->time_player_seen);
-	hash = input_demo_state_trace_hash_i64(hash,
-	                                       ailp->time_player_sound_attacked);
-	hash = input_demo_state_trace_hash_i64(hash, ailp->next_misc_sound_time);
+	/* Sound deadlines use the cosmetic RNG and do not affect AI decisions
+	 * Keep them in expanded object traces, outside the simulation hash */
 	hash = input_demo_state_trace_hash_update(
 	    hash, (unsigned int) ailp->time_since_processed);
 	hash = input_demo_hash_ai_local_angles(hash, ailp->goal_angles);
@@ -473,6 +478,7 @@ void input_demo_record_game_frame(void)
 	if (!d_rand_get_state(&rng_state)) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
 		input_demo_recorder_cancel();
+		input_demo_stop_quick_recording_common();
 		return;
 	}
 	rng_call_count = d_rand_get_call_count();
@@ -486,8 +492,10 @@ void input_demo_record_game_frame(void)
 	                                       rng_state, 1, rng_call_count,
 	                                       &frame_state, &diag,
 	                                       error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+		con_printf(CON_NORMAL, "Input demo recording stopped at frame %u (ft=%d): %s\n",
+		           (unsigned int) input_demo_recorder_frame_count(), (int) FrameTime, error);
 		input_demo_recorder_cancel();
+		input_demo_stop_quick_recording_common();
 	}
 	android_profile_bucket_end(ANDROID_PROFILE_BUCKET_RECORD);
 }
@@ -702,7 +710,6 @@ int input_demo_step_replay_frame_shared(
 	if (!game_is_time_paused()) {
 		calc_game_time();
 		GameProcessFrame();
-		ReadControlsReplayPostFrame();
 		input_demo_advance_replay_frame();
 		/* The next simulation step consumes the preceding main view's candidates
 		 * The windowed event path and the headless runner both advance here */
@@ -2354,4 +2361,12 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 		           obj1 ? obj1->mtype.phys_info.velocity.z : 0,
 		           obj0 ? obj0->mtype.phys_info.mass : 0,
 		           obj1 ? obj1->mtype.phys_info.mass : 0);
+}
+
+void input_demo_record_cheat(int cheat)
+{
+	char error[256] = "";
+	if (input_demo_recorder_is_active() && !input_demo_replay_is_loaded() &&
+	    !input_demo_recorder_stage_cheat(cheat, error, sizeof(error)))
+		con_printf(CON_NORMAL, "Input demo cheat event failed: %s\n", error);
 }

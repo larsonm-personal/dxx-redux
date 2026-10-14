@@ -701,8 +701,65 @@ static int expect_metadata_level_validation(void)
 	return 0;
 }
 
+static int expect_level_start_metadata(void)
+{
+	input_demo_metadata metadata, parsed;
+	std::string text, error;
+	metadata.version = 4;
+	metadata.game = input_demo_test_game_name();
+	metadata.mission = "test";
+	metadata.git_version = "test";
+	metadata.arch = "test";
+	metadata.level = 2;
+	metadata.difficulty = 2;
+	metadata.frame_count = 1;
+	metadata.start_mode = "new_level";
+	metadata.rng_mode = "lcg_state";
+	metadata.has_level_start = true;
+	metadata.level_start.cheats_enabled = 1;
+	metadata.level_start.primary_weapon_flags = metadata.game == "d1" ? 255 : 65535;
+	metadata.level_start.secondary_weapon_flags = metadata.level_start.primary_weapon_flags;
+	metadata.level_start.energy = 123 * 65536;
+	metadata.level_start.primary_ammo[1] = 777;
+	metadata.level_start.secondary_ammo[4] = 8;
+	metadata.level_start.rng_state = UINT32_MAX;
+	metadata.level_start.collision_sound_time = -1234567890123LL;
+	if (!input_demo_metadata_to_header_line(metadata, &text, &error) ||
+	    !input_demo_metadata_parse_header_line(text, &parsed, &error))
+		return report_failure_string("level-start round trip: " + error);
+	if (!parsed.has_level_start || parsed.level_start.cheats_enabled != 1 ||
+	    parsed.level_start.primary_weapon_flags != metadata.level_start.primary_weapon_flags ||
+	    parsed.level_start.secondary_weapon_flags != metadata.level_start.secondary_weapon_flags || parsed.level_start.energy != 123 * 65536 ||
+	    parsed.level_start.primary_ammo[1] != 777 || parsed.level_start.secondary_ammo[4] != 8 ||
+	    parsed.level_start.rng_state != UINT32_MAX ||
+	    parsed.level_start.collision_sound_time != -1234567890123LL)
+		return report_failure("level-start fields changed during round trip");
+	const char *invalid_values[] = { "-1", "4294967296", "18446744073709551615", "1.5", "true" };
+	for (const char *value : invalid_values) {
+		std::string invalid = text;
+		const size_t offset = invalid.find("\"rng_state\":4294967295");
+		if (offset == std::string::npos)
+			return report_failure("missing level-start RNG test field");
+		invalid.replace(offset, strlen("\"rng_state\":4294967295"), std::string("\"rng_state\":") + value);
+		if (input_demo_metadata_parse_header_line(invalid, &parsed, &error))
+			return report_failure("invalid level-start RNG accepted");
+	}
+	std::string missing = text;
+	const size_t offset = missing.find("\"level_start\":{");
+	missing.insert(offset + strlen("\"level_start\":{"), "\"unknown\":0,");
+	if (input_demo_metadata_parse_header_line(missing, &parsed, &error))
+		return report_failure("unknown level-start field accepted");
+	metadata.start_mode = "save_checkpoint";
+	metadata.start_save = "start.dgss";
+	if (input_demo_metadata_to_header_line(metadata, &text, &error))
+		return report_failure("level-start data accepted with a save checkpoint");
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_level_start_metadata())
+		return 1;
 	if (expect_rng_coalescer())
 		return 1;
 	if (expect_rng_file_round_trip())

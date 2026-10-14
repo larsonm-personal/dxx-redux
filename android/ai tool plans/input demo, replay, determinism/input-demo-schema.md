@@ -64,6 +64,37 @@ Key order:
 9. `frame_count`: total replay frames
 10. `classic_preview`: optional provenance payload name
 11. `start_save`: optional checkpoint name, required for checkpoint starts
+12. `level_start`: optional compact initialization state for automatic recordings
+
+### Automatic level-start recordings
+
+Automatic recordings use `start_mode:"new_level"` and a `level_start` object
+They contain no `start_save` or checkpoint record. The object is independent of
+the optional per-frame diagnostic snapshots
+
+The authoritative field names, types, array lengths, and bounds are defined in
+`android/app/src/main/cpp/shared/input_demo_level_start.h`. Every field in this
+object is required; unknown fields, invalid ranges, and wrong array lengths are
+rejected. Existing new-level fixtures without this object retain the ordinary
+new-game starting state
+
+Player values are captured before fresh level initialization: weapons, ammo,
+equipment flags, selected weapons, energy, shields, lives, laser level, campaign
+statistics, and timed powerups. The normal engine initialization applies resource
+minimums, clears level-specific flags, and creates the fresh world. Initialization
+uses the captured RNG state and call count
+
+Persistent runtime values are captured at the end of initialization: weapon
+selection history, D2 equipment charges, firing patterns and clocks, sound
+cadence clocks, the 20 Hz tick state, homing cadence, difficulty history, and
+matcen mode, and cheat enablement/weapon-grant state. Replay restores these before
+the first gameplay frame. Weapon ownership masks preserve the full engine storage
+width, including unused bits set by the built-in weapon cheats. World
+objects, doors, AI, and map geometry are reconstructed from the mission assets
+
+Only genuine fresh-level entry points supply this object. Save restoration,
+including revisiting an existing D2 secret world, does not arm automatic recording
+Stopping a demo manually does not rearm it until the next fresh level entry
 
 Validation:
 
@@ -95,6 +126,13 @@ record and every frame record includes both `input` and `rng` objects. Version
 `3` recordings also include `state` on every frame. Version `4` recordings may
 add an `events` array on frames that observed durable gameplay events. Older
 version `2` demos omit `state` and still load.
+
+Live play and replay consume weapon/item controls once per simulation frame,
+after capturing the frame's starting state and RNG. Gameplay pulse counts remain
+pending until that boundary. Rear-view and automap pulses consumed in the UI
+event handler are staged separately. Replay does not synthesize a second weapon
+processing call after the frame. Older recordings from event-driven weapon
+scheduling remain diagnostic evidence; they are not compatibility targets.
 
 ### Input Object
 
@@ -136,6 +174,8 @@ Validation:
 
 - `f` values must be contiguous and match physical file order
 - frame `0` must include `ft`
+- `ft` preserves a positive signed 32-bit engine fixed-point value (1 through
+  2147483647); slow frames above one second are valid and are not clamped
 - `input` must be an object, even if empty
 - unknown `input`, `s`, or `p` keys fail validation
 - D1 demos reject D2-only control keys
@@ -221,6 +261,13 @@ Common D1/D2 commands:
 - `death_abort`: no payload; applied only while the replayed player is dead
 - `change_difficulty`: integer `difficulty` in `0..4`; applied before live frame
   simulation without re-recording the event or rewriting the user's default
+- `cheat`: integer `cheat` identifier; `0` enables D1 cheats, `1` applies D1
+  `scourge`, `2` applies D1 `bigred`, and `3` applies D2 `honestbob`. The engine
+  rejects identifiers belonging to another game. These commands reproduce score
+  reset/scoring suppression as well as inventory changes, preserve shareware
+  restrictions, and remain present with diagnostic recording disabled. Repeated
+  grants are separate refill commands. Unknown fields and invalid identifiers
+  are rejected
 
 D2-only commands:
 

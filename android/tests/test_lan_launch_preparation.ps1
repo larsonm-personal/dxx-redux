@@ -1,8 +1,8 @@
 param([string]$Mission = 'descent')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
-$hostSerial = 'emulator-5554'
-$clientSerial = 'emulator-5556'
+$hostSerial = $script:PRIMARY_EMULATOR_SERIAL
+$clientSerial = $script:SECONDARY_EMULATOR_SERIAL
 function Read-LaunchLog([string]$Serial) {
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d', '-s', 'DXX-Launcher:I', 'DXX-MP:I', 'LobbyService:I') -Seconds 5
 }

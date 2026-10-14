@@ -21,7 +21,17 @@ Ensure-EmulatorHealthy | Out-Null
 $repo = Split-Path (Split-Path $PSScriptRoot)
 & python (Join-Path $PSScriptRoot 'test_mod_fuzz_controls.py')
 if ($LASTEXITCODE -ne 0) { throw 'Fuzz controller checks failed' }
-if (!$OutputDirectory) { $OutputDirectory = Join-Path $repo "android/temp/mod-fuzz-$Profile" }
+if (!$OutputDirectory) {
+    $campaignRoot = Join-Path $repo "android/temp/mod-fuzz-$Profile"
+    if ($Resume) {
+        $latestCampaign = if (Test-Path -LiteralPath $campaignRoot) {
+            Get-ChildItem -LiteralPath $campaignRoot -Directory -Filter 'run_*' |
+                Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'journal.jsonl') } |
+                Sort-Object Name -Descending | Select-Object -First 1
+        }
+        $OutputDirectory = if ($latestCampaign) { $latestCampaign.FullName } else { $campaignRoot }
+    } else { $OutputDirectory = Join-Path $campaignRoot "run_$(Get-Date -Format 'yyyyMMdd_HHmmssfff')" }
+}
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 if (!$Resume) {
     if (Test-Path -LiteralPath (Join-Path $OutputDirectory 'journal.jsonl')) { throw 'Existing campaign requires -Resume or a new output directory' }

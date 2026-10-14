@@ -47,6 +47,19 @@ state on immediate playback, repeated clean playback, and the supported headed
 and headless paths. Include Android-to-host checks for recordings captured on
 Android. Repeated replay results alone do not establish recording fidelity
 
+# Create and verify automatic level recordings
+
+The automatic level-recording integration runner is
+`android/tests/test_auto_level_demos.ps1`. Select `-Game d1`, `d2`, or `d1-in-d2`
+and the owned device with `-Serial`. Add `-DataEdition shareware` for public data,
+`-Cheats` to exercise recorded weapon grants, or `-RecordState` for per-frame
+diagnostic comparison. General D2 gameplay scenarios select Original routing
+before recording and verify that setting in the exported header.
+
+`-Game d2 -DataEdition retail -Secret` checks fresh secret-level recording,
+independent replay without a save checkpoint, and automatic-recording suppression
+when returning to the saved base level or revisiting the saved secret level.
+
 # Watch one recording
 
 Run `android/run_all_tests.ps1` without arguments and choose **R. Replay a demo**.
@@ -67,6 +80,11 @@ recording in native D1:
 ```powershell
 .\android\tests\run_input_demo_replay.ps1 -DemoPath android\regression_demos\d1_descent_level14_20260920_184354.dximdemo -Game d1 -Runner visual -Mode realtime -RenderProfile default -ReplayRobotLabels hide
 ```
+
+For demos recorded by D2 while playing D1 missions, use `-Game d2 -D1Mission`
+with D1 data. The built-in `descent` mission is recognized automatically. This
+keeps the recorded D2 state and comparison rules; it does not translate a D1
+engine recording. `-DataEdition shareware` uses the pinned public D1 assets.
 
 Use `-Game d2 -D1InD2` to watch that D1 recording in D2. The helper's
 `-Interactive` switch opens the same picker; add `-SearchRoot <directory>` for

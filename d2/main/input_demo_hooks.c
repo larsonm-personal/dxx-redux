@@ -1,3 +1,4 @@
+#include "input_demo_cheats.h"
 #include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -236,6 +237,14 @@ static int input_demo_apply_d2_direct_command(void *context,
 	int validate_only, char *error, size_t error_size)
 {
 	(void)context;
+	if (event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT) {
+		if (game_apply_demo_cheat(event->value0, validate_only))
+			return 1;
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "cheat is unsupported for this game or mode");
+		return 0;
+	}
+
 	if (validate_only)
 		return 1;
 

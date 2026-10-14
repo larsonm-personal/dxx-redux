@@ -1119,7 +1119,14 @@ class SetupActivity : ComponentActivity() {
                         val key = intent.getStringExtra("key") ?: return
                         val value = intent.getBooleanExtra("value", false)
                         // Demo diagnostics are a launcher preference, unlike engine options
-                        val prefsName = if (key == PREF_DEMO_RECORD_PER_FRAME_STATE) "launcher_prefs" else "dxx_prefs"
+                        val prefsName =
+                            if (key == PREF_DEMO_RECORD_PER_FRAME_STATE ||
+                                key == PREF_DEMO_RECORD_EACH_LEVEL
+                            ) {
+                                "launcher_prefs"
+                            } else {
+                                "dxx_prefs"
+                            }
                         val editor = getSharedPreferences(prefsName, MODE_PRIVATE).edit().putBoolean(key, value)
                         if (key == PREF_SHOW_RESUME_OFFER) {
                             editor.putBoolean(PREF_SAVE_EXPLORER_PANEL_EXPANDED, value)
@@ -2556,9 +2563,16 @@ class SetupActivity : ComponentActivity() {
             }
             // Controller config page normally consumes controller buttons and
             // drives its own polling-based navigation. While a picker dialog
-            // is open, let D-pad and A flow through so the dialog can use
+            // is open, let D-pad, A and B flow through so the dialog can use
             // Compose focus navigation directly.
             if (controllerConfigActive) {
+                if (event.keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                    Log.d(
+                        "DXX-Focus",
+                        "Controller config B action=${event.action} dialog=$controllerConfigDialogOpen " +
+                            "view=${controllerConfigDialogView != null}",
+                    )
+                }
                 val allowPickerNavigation =
                     controllerConfigDialogOpen &&
                         event.keyCode in
@@ -2568,6 +2582,7 @@ class SetupActivity : ComponentActivity() {
                             KeyEvent.KEYCODE_DPAD_LEFT,
                             KeyEvent.KEYCODE_DPAD_RIGHT,
                             KeyEvent.KEYCODE_BUTTON_A,
+                            KeyEvent.KEYCODE_BUTTON_B,
                         )
                 if (!allowPickerNavigation) return true
                 val dialogView = controllerConfigDialogView

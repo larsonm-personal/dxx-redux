@@ -21,6 +21,10 @@
             8. Two-emulator tests (multiplayer and LAN)
             9. Cleanup in reverse order
 
+    An existing dedicated pair can be selected through DXX_TEST_PRIMARY_SERIAL,
+    DXX_TEST_SECONDARY_SERIAL, DXX_TEST_PRIMARY_AVD and DXX_TEST_SECONDARY_AVD.
+    Provision both AVD names first; -Serial emulator still runs the full profile.
+
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
 
@@ -435,7 +439,8 @@ $testTimeouts = @{
     "test_d2xxl_texture_animation" = 3600
     "test_demo_import" = 2400
     "test_enemy_within_import" = 1200
-    "test_android_pause_state" = 360
+    # Both retail save/load fixtures precede the live pause and presentation probes
+    "test_android_pause_state" = 1200
     "test_audio_mix" = 900
     "test_macplay_audio" = 600
     "test_store_asset_pipeline" = 7200
@@ -443,6 +448,7 @@ $testTimeouts = @{
     "test_controller_response" = 600
     "test_controller_touch_hotplug" = 600
     # Record and play classic demos in both engines with a 240s child timeout each
+    "test_auto_level_demos" = 900
     "test_fov_demo_compatibility" = 900
     "test_graphics_recovery" = 7200
     "test_graphics_preview" = 600
@@ -1905,6 +1911,19 @@ function Invoke-SingleTest {
     if ($Test.Requires -eq 'emulator' -and (Get-Command $psScript).Parameters.ContainsKey('Serial') -and '-Serial' -notin $psArguments) {
         $psArguments += @('-Serial', $script:singleTestSerial)
     }
+    if ($Test.Requires -eq 'two_emulators') {
+        $pairArguments = @{
+            HostDevice = $script:PRIMARY_EMULATOR_SERIAL; JoinDevice = $script:SECONDARY_EMULATOR_SERIAL
+            HostAvd = $script:PRIMARY_AVD_NAME; JoinAvd = $script:SECONDARY_AVD_NAME
+            RestartSerial = $script:PRIMARY_EMULATOR_SERIAL; GuardSerial = $script:SECONDARY_EMULATOR_SERIAL
+        }
+        $parameters = (Get-Command $psScript).Parameters
+        foreach ($parameter in $pairArguments.Keys) {
+            if ($parameters.ContainsKey($parameter) -and "-$parameter" -notin $psArguments) {
+                $psArguments += @("-$parameter", $pairArguments[$parameter])
+            }
+        }
+    }
 
     $quotedScript = if ($psScript -match '[\s"]') {
         '"' + ($psScript -replace '"', '\"') + '"'
@@ -1923,6 +1942,10 @@ function Invoke-SingleTest {
     $powerSession = $null
     try {
         if ($Test.Requires -eq 'emulator') {
+            # Shareware owners replace the disposable default set; restore retail prerequisites between owners
+            if (-not (Ensure-StandardGameDataOnDevice -Serial $script:singleTestSerial)) {
+                throw "Could not restore standard game data before $name"
+            }
             $powerSession = Start-AndroidTestPowerSession
             $script:activePowerSession = $powerSession
         }

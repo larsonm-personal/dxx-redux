@@ -225,7 +225,11 @@ if ($BuildAndInstall) {
         Write-Host "FAIL: Debug APK build failed with exit code $LASTEXITCODE" -ForegroundColor Red
         exit 97
     }
-
+    # Explicit rebuilds must supersede an APK inherited from a parent suite
+    # Retain this build while other workspace tasks can replace Gradle outputs
+    $extractionApk = Join-Path $ReportDir 'app-debug.apk'
+    Copy-Item -LiteralPath (Get-AndroidTestApkPath) -Destination $extractionApk
+    $env:DXX_TEST_APK = $extractionApk
 }
 
 if ($RestartDevice) {

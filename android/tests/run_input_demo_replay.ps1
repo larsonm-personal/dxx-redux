@@ -39,6 +39,8 @@ param(
     [string]$ResultCopyPath,
     [string]$ReferenceResultPath,
     [switch]$D1InD2,
+    # D2-native recording made with D1 assets; no cross-engine translation
+    [switch]$D1Mission,
     [switch]$D1InD2StartFromLevel,
     [switch]$AllowMissingActualResult,
     [ValidateSet(1, 2)]
@@ -590,7 +592,7 @@ function Resolve-DataDir {
 
     if ($DataEdition -eq 'shareware') {
         . (Join-Path (Split-Path $PSScriptRoot) 'helpers/shareware_test_data.ps1')
-        $contentGame = if ($D1InD2) { 'd1' } else { $Config.Name }
+        $contentGame = if ($D1InD2 -or $D1Mission) { 'd1' } else { $Config.Name }
         return Resolve-SharewareTestData -RepoRoot $repoRoot -Game $contentGame -DataDir $RequestedDataDir
     }
     # Paired captures supply a staged bank and must not consult live index generators
@@ -841,7 +843,7 @@ function Get-HeadlessConsoleLaunchArguments {
         $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
     if ($ReplayDebugLog) {
-        $launchParameters += '-inputdemo-debug-log'
+        $launchParameters += @('-inputdemo-debug-log', '-safelog')
     }
     $launchParameters += @('-headless-console-output', [string]$HeadlessConsoleOutput)
     return $launchParameters
@@ -1050,7 +1052,11 @@ function Get-LaunchArguments {
         $launchParameters += '-inputdemo-replay-labels'
     }
     if ($ReplayDebugLog) {
-        $launchParameters += '-inputdemo-debug-log'
+        # The wrapper can stop the process after its result, before buffered logs flush
+        $launchParameters += @('-inputdemo-debug-log', '-safelog')
+    }
+    if ($Config.ContainsKey('D1Mission') -and $Config.D1Mission) {
+        $launchParameters += '-d1'
     }
     if ($D1InD2) {
         $launchParameters += @('-d1', '-inputdemo-d1-in-d2')
@@ -1483,6 +1489,10 @@ if ($Interactive) {
 
 $header = Get-DemoHeader -Path $resolvedDemoPath
 $recordedGame = Resolve-DemoGame -Header $header -RequestedGame 'auto'
+if ($recordedGame -eq 'd2' -and $header.mission -in @('d1', 'descent')) { $D1Mission = $true }
+if ($D1Mission -and ($D1InD2 -or $recordedGame -ne 'd2' -or $Game -eq 'd1')) {
+    throw '-D1Mission requires a D2 recording replayed in D2 without translation'
+}
 if ($D1InD2) {
     if ($Game -eq 'd1') {
         throw '-D1InD2 runs the D2 executable; use -Game auto or -Game d2'
@@ -1503,7 +1513,8 @@ if ($D1InD2) {
         throw '-D1InD2StartFromLevel requires -D1InD2'
     }
     $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
-    $config = Get-GameConfig -Name $resolvedGame
+    $config = if ($D1Mission) { Get-D1InD2GameConfig } else { Get-GameConfig -Name $resolvedGame }
+    $config.D1Mission = [bool]$D1Mission
 }
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 if ($StrictComparison -and ($SkipExpectedChecks -or $AllowMissingActualResult -or $D1InD2StartFromLevel)) {
@@ -1552,7 +1563,7 @@ if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
         New-Item -ItemType Directory -Path $rngLogDirectory -Force | Out-Null
     }
 }
-$runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole -D1InD2:$D1InD2
+$runnerSelection = Resolve-ReplayRunnerSelection -RequestedRunner $Runner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole -D1InD2:($D1InD2 -or $D1Mission)
 $useHeadlessConsole = $runnerSelection.UseHeadlessConsole
 $effectiveNoRender = $runnerSelection.UseNoRender
 $headlessQuietConsole = $useHeadlessConsole -and ($HeadlessConsoleOutput -eq 1)

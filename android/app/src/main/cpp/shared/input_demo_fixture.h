@@ -2,6 +2,7 @@
 #define INPUT_DEMO_FIXTURE_H
 
 #include <stdint.h>
+#include "input_demo_level_start.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,6 +127,8 @@ struct input_demo_metadata {
 	uint32_t frame_count;
 	std::string classic_preview;
 	std::string start_save;
+	bool has_level_start = false;
+	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
 

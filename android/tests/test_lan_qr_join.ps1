@@ -6,8 +6,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
-$hostSerial = 'emulator-5554'
-$clientSerial = 'emulator-5556'
+$hostSerial = $script:PRIMARY_EMULATOR_SERIAL
+$clientSerial = $script:SECONDARY_EMULATOR_SERIAL
 function Send-QrCommand {
     param([string]$Serial, [string]$Command, [string[]]$Extras = @())
     Adb-Dev-Timeout -Serial $Serial -AdbArgs (@('shell', 'am', 'broadcast', '-p', $script:PACKAGE,

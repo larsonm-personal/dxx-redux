@@ -3,10 +3,10 @@
 Diagnosis and plans only, serial under plan_general_diagnosis_resume_20261009.md. Preserve concurrent work. No product/test/helper edits, builds/tests/devices/network/probes/generators/formatters/staging/commits.
 
 - [x] Read exact frozen/base assigned scopes and current correspondence
-- [ ] Read named consumers and maintained fixtures
-- [ ] Reconcile prior roots/current repairs and actual-entry future acceptance
-- [ ] Finish authored simplification and inherited boundary assessment
-- [ ] Publish canonical report/snapshot/dispositions and independent audit before DONE
+- [x] Read named consumers and maintained fixtures
+- [x] Reconcile prior roots/current repairs and actual-entry future acceptance
+- [x] Finish authored simplification and inherited boundary assessment
+- [x] Publish canonical report/snapshot/dispositions and independent audit before DONE
 
 Eight assigned paths704reviewlines: run-ktlint.ps1 hunks1-8/new5-88; run-prettier.ps1 whole1-25; run-psscriptanalyzer.ps1 hunks1-9/new5-159; run-ruff.ps1 whole1-27; run-rustfmt.ps1 whole1-19; run-shellcheck.ps1 hunks1-8/new2-86; run-shfmt.ps1 hunks1-9/new2-97; runtime_targeted_sampling.ps1 whole1-356. Whole current bodies857lines. Prior0388 COMPLETE/publicationPASS5755;388DONE239TODO627. Conclusions pending.
 
@@ -45,3 +45,19 @@ Readable numeric rings survives sampler loading then dictionary Contains occurs 
 Additional complete tracked executable-source census finds three old selection policies only in maintained fixture and definitions. August17 plans read whole; completed August18 contract supersedes random sampling. Existing-owner continuation plan_gq2_0389_existing_owner_continuation_20261011.md SHA85d2c2fb4eb5ee31ec71d5fd7c9e817aa054d6dd285c4b62ed772b9af070afbf records actual-entry ownership/status/provenance/scope acceptance and authored simplification candidate removing superseded166-356/191helperlines while preserving required current behavior coverage. This is proposed authored reduction, not implemented or inherited saving. New historical-doc/census context must enter final consolidated checkpoint before complete assessment credit. Retention removed0.
 
 0389TODO/source gate only/388DONE239TODO627. Next final candidate dedup/admission/rating, consolidated consumers/current-owner continuation/simplification audit, then report/immutable snapshot/canonical queue and rank publication with independent audit. No product/test/helper edits, execution, new canonical finding/status or inherited saving; goal active.
+
+## Chunk 0389 complete consumer and assessment checkpoint, 2026-10-12
+
+35 exact contexts2959range-lines, including192fresh current master1070-1218 and two historical August17 plans; prior complete contexts qualified through three audited checkpoints.13complete current owners12OPEN1FIXED retained. Current master previous exact ranges map uniquely, including1110-1200 to1128-1218. Complete current649c1e8f-to-b72ef956 master delta reviewed; no whole2459line master semantic claim. Active ledger raw bytes changed only in line endings, all complete normalized owner definitions/statuses preserved. Current canonical hashes rebound without rewriting line endings.
+
+Proposed new GQF0305/GQR0291 readable malformed cursor validation47 MEDIUM (23/0/4/10/10), not yet canonical. Distinct from BR0622 preview/unselected-family advancement, BR0233 publication, BR0173 private temporary ownership and completedGQR0230 exact selection. Current Target45 policy now applies AllScenarios eligibility before ring; GQF0299/GQR0285 actual-entry acceptance remains pending, no status closure. All8assigned RETAIN/absent1996/saving0; three superseded fixture-only policies191authoredlines are a simplification proposal, not implemented savings.
+
+Consumer SHAe1babc729a22618c9c9b38d9d4774063e93b4f88c0fbfd117902e7b70944e632; independent static audit PASS1010 SHA2807fc5b905b5feb37258ea324590a8816cf632b383f96b9344e7ae0c1bc34bd verifies exact current ranges/creditbounds/direct-parent qualification/mapped master/normalized EOL-only owner transition/statuses/currentplans/priorroots/assignedsources/originalabsence/manifest/census/currentHEADproduct/counts/proposedrating/IDs/388DONE239TODO627. Retention removed0. Consumer/reconciliation/simplification gates checked after PASS; final publication gate remains open.
+
+Next exact report/immutable snapshot/canonical admission/dispositions/ranks/queue and independent publication audit. CurrentHEADb72ef956d4b224df48d9dc3fe4cb2d6286083e24/productdiffempty. No product/test/helper edit or execution; goal active and broader diagnosis/final-head coverage pending.
+
+## Chunk 0389 published and independently audited, verified 2026-10-13
+
+GQC1218 ISSUES/GQD1098 NO_INHERITED_EFFECT; NEW GQF0305 OPEN/GQR0291 TODO readable malformed cursor state47 MEDIUM. Existing owner/root statuses preserved. Report SHAcd7580d91ad7d09266f6b81579638e3a8883353cce09eba89f2737e8466db8e7; immutable snapshot SHAeebb88955db29a879fa3cb84619b45c6043dc15e33748ec4b8cde601ce0f71f4; independent publication PASS4242 SHA871199436d43254c8a9195c42a95518dc6f4ad70aa3d6f6a4820f63d92e5995b proves nine-operation/five-ledger replay, prior root/queue/rank suffix preservation, exact report/snapshot/119qualification artifacts/current definitions/source/manifest/plans/HEADproduct. Current five canonical SHA identities reverified before final gate.
+
+GQ2 now389DONE238TODO627;1205terminal ranks291fix ranks305findings291remediations12investigations. Final gate checked only after PASS; no product/test/helper edit, runtime acceptance or inherited saving. Next GQ2-CHUNK-0390 eight process/workspace/helper paths632reviewlines; broader queue/sweeps/investigations/final-head supplements and closure remain required. Goal active.

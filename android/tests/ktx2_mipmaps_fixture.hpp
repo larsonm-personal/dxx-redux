@@ -32,15 +32,15 @@ static std::vector<unsigned char> ktx_sample(GLuint program, GLuint texture, int
 
 static void test_ktx2_mipmaps(nlohmann::json &results, int generation)
 {
-	// Exercise the actual decoder with the oversized entry that blocked D2 128
+	// Exercise the actual decoder with the cockpit entry that blocked D2 128
 	require(PHYSFS_mount("d2-hires-128-textures-ktx2.dxa", nullptr, 0), "mount real release candidate");
 	clear_texture_lookup_cache();
 	etc2_file_data real{};
-	require(read_ktx2_file("textures/d2/cockpitbx2.ktx2", &real), "decode real 4096px pack entry");
-	require(real.width == 4096 && real.mip_count > 1, "retain source dimensions and authored levels");
+	require(read_ktx2_file("textures/d2/cockpitbx2.ktx2", &real), "decode real 2048px pack entry");
+	require(real.width == 2048 && real.mip_count > 1, "retain source dimensions and authored levels");
 	ogl_texture real_texture{};
-	require(android_ogl_upload_ktx2(&real_texture, &real, 2, 2048, "cockpitbx2"), "adapt actual release texture to 2048px device");
-	require(real_texture.w == 2048 && real_texture.mip_base_level == 1 && real_texture.authored_mip_count == real.mip_count - 1, "real pack mip selection");
+	require(android_ogl_upload_ktx2(&real_texture, &real, 2, 1024, "cockpitbx2"), "adapt actual release texture to 1024px device");
+	require(real_texture.w == 1024 && real_texture.mip_base_level == 1 && real_texture.authored_mip_count == real.mip_count - 1, "real pack mip selection");
 	glDeleteTextures(1, &real_texture.handle);
 	std::free(real.filedata);
 	require(PHYSFS_unmount("d2-hires-128-textures-ktx2.dxa"), "unmount release candidate");

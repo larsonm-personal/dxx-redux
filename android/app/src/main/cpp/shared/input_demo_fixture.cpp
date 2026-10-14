@@ -108,6 +108,8 @@ static bool parse_int64_field(const ordered_json &value, int64_t *out, std::stri
 
 	if (!value.is_number_integer())
 		return fail(error, std::string(field_name) + " must be an integer");
+	if (value.is_number_unsigned() && value.get<uint64_t>() > INT64_MAX)
+		return fail(error, std::string(field_name) + " is out of range");
 	parsed = value.get<long long>();
 	*out = (int64_t) parsed;
 	return true;
@@ -601,6 +603,53 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 	return true;
 }
 
+static ordered_json level_start_to_json(const input_demo_level_start &state)
+{
+	ordered_json json = ordered_json::object();
+#define WRITE_FIELD(type, name, low, high) json[#name] = state.name;
+	INPUT_DEMO_LEVEL_PLAYER_FIELDS(WRITE_FIELD)
+	INPUT_DEMO_LEVEL_RUNTIME_FIELDS(WRITE_FIELD)
+#undef WRITE_FIELD
+#define WRITE_ARRAY(name, count, high) json[#name] = state.name;
+	INPUT_DEMO_LEVEL_ARRAY_FIELDS(WRITE_ARRAY)
+#undef WRITE_ARRAY
+	return json;
+}
+
+static bool parse_level_start(const ordered_json &json, input_demo_level_start *state,
+                              std::string *error)
+{
+	if (!json.is_object())
+		return fail(error, "level_start must be an object");
+	input_demo_level_start parsed{};
+	size_t fields = 0;
+	int64_t value;
+#define READ_FIELD(type, name, low, high)                                                    \
+	if (!json.contains(#name) || !parse_int64_field(json.at(#name), &value, error, #name) || \
+	    value < (int64_t) (low) || value > (int64_t) (high))                                 \
+		return fail(error, "invalid level_start " #name);                                    \
+	parsed.name = (type) value;                                                              \
+	++fields;
+	INPUT_DEMO_LEVEL_PLAYER_FIELDS(READ_FIELD)
+	INPUT_DEMO_LEVEL_RUNTIME_FIELDS(READ_FIELD)
+#undef READ_FIELD
+#define READ_ARRAY(name, count, high)                                                                 \
+	if (!json.contains(#name) || !json.at(#name).is_array() || json.at(#name).size() != count)        \
+		return fail(error, "invalid level_start " #name);                                             \
+	for (size_t i = 0; i < count; ++i) {                                                              \
+		if (!parse_int64_field(json.at(#name)[i], &value, error, #name) || value < 0 || value > high) \
+			return fail(error, "invalid level_start " #name);                                         \
+		parsed.name[i] = (uint16_t) value;                                                            \
+	}                                                                                                 \
+	++fields;
+	INPUT_DEMO_LEVEL_ARRAY_FIELDS(READ_ARRAY)
+#undef READ_ARRAY
+	if (json.size() != fields || parsed.difficulty_min > parsed.difficulty_max)
+		return fail(error, "invalid level_start fields");
+	*state = parsed;
+	return true;
+}
+
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
 	if (metadata.version != 2 && metadata.version != 3 && metadata.version != 4)
@@ -629,6 +678,16 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata rng_mode is required");
 	if (!metadata.frame_count)
 		return fail(error, "metadata frame_count must be positive");
+	if (metadata.has_level_start) {
+		input_demo_level_start checked{};
+		if (metadata.start_mode != "new_level" ||
+		    !parse_level_start(level_start_to_json(metadata.level_start), &checked, error))
+			return fail(error, "invalid level_start metadata");
+		if (metadata.game == "d1" && (checked.laser_level > 3 ||
+		                              checked.primary_weapon > 4 || checked.secondary_weapon > 4 ||
+		                              checked.primary_weapon_flags > 255 || checked.secondary_weapon_flags > 255))
+			return fail(error, "invalid D1 level_start weapons");
+	}
 	if (metadata.has_player_cfg && !validate_player_cfg(metadata.player_cfg, metadata.game, error))
 		return false;
 	return true;
@@ -934,6 +993,10 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			if (!it.value().is_string())
 				return fail(error, "metadata start_save must be a string");
 			parsed.start_save = it.value().get<std::string>();
+		} else if (name == "level_start") {
+			if (!parse_level_start(it.value(), &parsed.level_start, error))
+				return false;
+			parsed.has_level_start = true;
 		} else if (name == "player_cfg") {
 			if (!parse_player_cfg(it.value(), &parsed.player_cfg, error))
 				return false;
@@ -973,6 +1036,8 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 		root["classic_preview"] = metadata.classic_preview;
 	if (!metadata.start_save.empty())
 		root["start_save"] = metadata.start_save;
+	if (metadata.has_level_start)
+		root["level_start"] = level_start_to_json(metadata.level_start);
 	if (metadata.has_player_cfg) {
 		ordered_json player_cfg = ordered_json::object();
 

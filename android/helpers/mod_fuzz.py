@@ -321,6 +321,7 @@ def script_for(config, case, manifest):
         steps.append(setup("set_mod_enabled", filename=name, enabled=False))
     for name in case["mods"]:
         steps.append(setup("set_mod_enabled", filename=name, enabled=True))
+    steps.append(setup("clear_pilot_files"))
     steps += launch_steps(config, case)
     steps += [
         dict(action="send_axis", axis=2, axis_value=0.25),

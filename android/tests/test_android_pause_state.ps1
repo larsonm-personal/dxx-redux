@@ -85,7 +85,7 @@ try {
     foreach ($gameId in $games) {
         Device @('logcat', '-c') | Out-Null
         $arguments = @('-NoProfile', '-File', (Join-Path $PSScriptRoot '../helpers/run_test.ps1'),
-            '-ScriptName', 'test_android_saveload_dispatch_unified.jsonc', '-Game', $gameId, '-Serial', $Serial, '-LeaveRunning')
+            '-ScriptName', 'test_android_saveload_dispatch_unified.jsonc', '-Game', $gameId, '-DataEdition', 'retail', '-Serial', $Serial, '-LeaveRunning')
         if ($Install) { $arguments += '-Install'; $Install = $false }
         & pwsh @arguments *> (Join-Path $outputDirectory "$gameId-fixture.txt")
         if ($LASTEXITCODE -ne 0) { throw "$gameId save/load fixture failed" }

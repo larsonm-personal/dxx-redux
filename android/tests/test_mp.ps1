@@ -47,9 +47,9 @@ $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulator" -ToolName "emulator"
-$EMU1 = "emulator-5554"  # Player 1 (host)
-$EMU2 = "emulator-5556"  # Player 2 (joiner)
-$AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
+$EMU1 = $script:PRIMARY_EMULATOR_SERIAL  # Player 1 (host)
+$EMU2 = $script:SECONDARY_EMULATOR_SERIAL  # Player 2 (joiner)
+$AVD_MAP = @{ $EMU1 = $script:PRIMARY_AVD_NAME; $EMU2 = $script:SECONDARY_AVD_NAME }
 $CALLSIGN1 = "HostPlt"
 $CALLSIGN2 = "JoinPlt"
 
