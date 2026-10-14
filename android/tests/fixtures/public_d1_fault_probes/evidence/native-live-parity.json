@@ -1,0 +1,52 @@
+{
+  "monitor-native-on-console": {
+    "status": "pass",
+    "frames_compared": 181,
+    "simulation_events_compared": 129
+  },
+  "self-splash-console": {
+    "status": "pass",
+    "frames_compared": 139,
+    "simulation_events_compared": 85
+  },
+  "self-splash-no-fire-console": {
+    "status": "pass",
+    "frames_compared": 139,
+    "simulation_events_compared": 84
+  },
+  "mine-blast-console": {
+    "status": "pass",
+    "frames_compared": 424,
+    "simulation_events_compared": 1153
+  },
+  "mine-no-concussion-console": {
+    "status": "pass",
+    "frames_compared": 424,
+    "simulation_events_compared": 1153
+  },
+  "monitor-native-on-headed": {
+    "status": "pass",
+    "frames_compared": 181,
+    "simulation_events_compared": 129
+  },
+  "self-splash-headed": {
+    "status": "pass",
+    "frames_compared": 139,
+    "simulation_events_compared": 85
+  },
+  "self-splash-no-fire-headed": {
+    "status": "pass",
+    "frames_compared": 139,
+    "simulation_events_compared": 84
+  },
+  "mine-blast-headed": {
+    "status": "pass",
+    "frames_compared": 424,
+    "simulation_events_compared": 1153
+  },
+  "mine-no-concussion-headed": {
+    "status": "pass",
+    "frames_compared": 424,
+    "simulation_events_compared": 1153
+  }
+}

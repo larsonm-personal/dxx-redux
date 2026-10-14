@@ -1,0 +1,488 @@
+{
+  "android_device_run": false,
+  "frames": 40,
+  "game": "d2",
+  "grant": 3,
+  "initial": {
+    "cheats_enabled": 0,
+    "energy": 6553600,
+    "flags": 0,
+    "laser_level": 0,
+    "primary_ammo": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "primary_flags": 1,
+    "primary_selected": 0,
+    "score": 0,
+    "secondary_ammo": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "secondary_flags": 1,
+    "secondary_selected": 0
+  },
+  "mission": "d2demo",
+  "native_code": "honestbob",
+  "observations": [
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1568,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "first_grant"
+    },
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1568,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          19,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "between_grants"
+    },
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1568,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "repeated_grant"
+    },
+    {
+      "frame": 34,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 12943360,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1558,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 6,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "spent_inventory"
+    },
+    {
+      "frame": 34,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1568,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 6,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "later_grant"
+    },
+    {
+      "frame": 40,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 5,
+        "primary_ammo": [
+          0,
+          1568,
+          0,
+          0,
+          0,
+          0,
+          1568,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 64719,
+        "primary_selected": 6,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          0,
+          20,
+          20,
+          15,
+          0,
+          0
+        ],
+        "secondary_flags": 64751,
+        "secondary_selected": 0
+      },
+      "phase": "tail_grant"
+    }
+  ],
+  "post_capture_policy_checks": "pass",
+  "profile": "d2",
+  "retail_assets_playback": false,
+  "scenario": "all-weapons",
+  "shots": [
+    {
+      "frame": 2,
+      "object": 45,
+      "selected": 0,
+      "signature": 103,
+      "weapon_id": 16
+    },
+    {
+      "frame": 2,
+      "object": 46,
+      "selected": 0,
+      "signature": 102,
+      "weapon_id": 8
+    },
+    {
+      "frame": 10,
+      "object": 43,
+      "selected": 2,
+      "signature": 106,
+      "weapon_id": 12
+    },
+    {
+      "frame": 10,
+      "object": 44,
+      "selected": 2,
+      "signature": 105,
+      "weapon_id": 12
+    },
+    {
+      "frame": 10,
+      "object": 47,
+      "selected": 2,
+      "signature": 104,
+      "weapon_id": 12
+    },
+    {
+      "frame": 12,
+      "object": 41,
+      "selected": 2,
+      "signature": 108,
+      "weapon_id": 12
+    },
+    {
+      "frame": 12,
+      "object": 42,
+      "selected": 2,
+      "signature": 107,
+      "weapon_id": 12
+    },
+    {
+      "frame": 12,
+      "object": 90,
+      "selected": 2,
+      "signature": 109,
+      "weapon_id": 12
+    },
+    {
+      "frame": 14,
+      "object": 16,
+      "selected": 2,
+      "signature": 112,
+      "weapon_id": 12
+    },
+    {
+      "frame": 14,
+      "object": 66,
+      "selected": 2,
+      "signature": 111,
+      "weapon_id": 12
+    },
+    {
+      "frame": 14,
+      "object": 89,
+      "selected": 2,
+      "signature": 110,
+      "weapon_id": 12
+    },
+    {
+      "frame": 15,
+      "object": 100,
+      "selected": 2,
+      "signature": 113,
+      "weapon_id": 12
+    },
+    {
+      "frame": 15,
+      "object": 101,
+      "selected": 2,
+      "signature": 114,
+      "weapon_id": 12
+    },
+    {
+      "frame": 15,
+      "object": 102,
+      "selected": 2,
+      "signature": 115,
+      "weapon_id": 12
+    },
+    {
+      "frame": 17,
+      "object": 103,
+      "selected": 2,
+      "signature": 116,
+      "weapon_id": 12
+    },
+    {
+      "frame": 17,
+      "object": 104,
+      "selected": 2,
+      "signature": 117,
+      "weapon_id": 12
+    },
+    {
+      "frame": 17,
+      "object": 105,
+      "selected": 2,
+      "signature": 118,
+      "weapon_id": 12
+    },
+    {
+      "frame": 27,
+      "object": 66,
+      "selected": 6,
+      "signature": 129,
+      "weapon_id": 32
+    },
+    {
+      "frame": 29,
+      "object": 43,
+      "selected": 6,
+      "signature": 130,
+      "weapon_id": 32
+    },
+    {
+      "frame": 30,
+      "object": 104,
+      "selected": 6,
+      "signature": 131,
+      "weapon_id": 32
+    },
+    {
+      "frame": 31,
+      "object": 106,
+      "selected": 6,
+      "signature": 133,
+      "weapon_id": 32
+    },
+    {
+      "frame": 32,
+      "object": 44,
+      "selected": 6,
+      "signature": 135,
+      "weapon_id": 32
+    },
+    {
+      "frame": 34,
+      "object": 101,
+      "selected": 6,
+      "signature": 137,
+      "weapon_id": 16
+    },
+    {
+      "frame": 35,
+      "object": 45,
+      "selected": 6,
+      "signature": 143,
+      "weapon_id": 32
+    }
+  ],
+  "terminal": {
+    "cheats_enabled": 1,
+    "energy": 13107200,
+    "flags": 1024,
+    "laser_level": 5,
+    "primary_ammo": [
+      0,
+      1568,
+      0,
+      0,
+      0,
+      0,
+      1568,
+      0,
+      0,
+      0
+    ],
+    "primary_flags": 64719,
+    "primary_selected": 6,
+    "score": 0,
+    "secondary_ammo": [
+      20,
+      10,
+      10,
+      5,
+      0,
+      20,
+      20,
+      15,
+      0,
+      0
+    ],
+    "secondary_flags": 64751,
+    "secondary_selected": 0
+  }
+}

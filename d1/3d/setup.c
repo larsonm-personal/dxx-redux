@@ -33,21 +33,21 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 // Set up CPU projection without calling a graphics backend
-void g3_start_frame_projection(void)
+void g3_start_frame_projection_size(int width, int height, fix aspect)
 {
 	fix s;
 
 	//set int w,h & fixed-point w,h/2
-	Canv_w2 = (Canvas_width  = grd_curcanv->cv_bitmap.bm_w)<<15;
-	Canv_h2 = (Canvas_height = grd_curcanv->cv_bitmap.bm_h)<<15;
+	Canv_w2 = (Canvas_width  = width)<<15;
+	Canv_h2 = (Canvas_height = height)<<15;
 #ifdef __powerc
-	fCanv_w2 = f2fl((Canvas_width  = grd_curcanv->cv_bitmap.bm_w)<<15);
-	fCanv_h2 = f2fl((Canvas_height = grd_curcanv->cv_bitmap.bm_h)<<15);
+	fCanv_w2 = f2fl((Canvas_width  = width)<<15);
+	fCanv_h2 = f2fl((Canvas_height = height)<<15);
 #endif
 
 	//compute aspect ratio for this canvas
 
-	s = fixmuldiv(grd_curscreen->sc_aspect,Canvas_height,Canvas_width);
+	s = fixmuldiv(aspect,Canvas_height,Canvas_width);
 
 	if (s <= f1_0) {	   //scale x
 		Window_scale.x = s;
@@ -60,6 +60,12 @@ void g3_start_frame_projection(void)
 	
 	Window_scale.z = f1_0;		//always 1
 
+}
+
+void g3_start_frame_projection(void)
+{
+	g3_start_frame_projection_size(grd_curcanv->cv_bitmap.bm_w,
+	                               grd_curcanv->cv_bitmap.bm_h, grd_curscreen->sc_aspect);
 	init_free_points();
 }
 

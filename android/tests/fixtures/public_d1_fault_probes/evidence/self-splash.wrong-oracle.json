@@ -1,0 +1,10 @@
+{
+  "console": {
+    "status": "rejected",
+    "error": "Replay frame state, RNG or diagnostics differ from live capture"
+  },
+  "headed": {
+    "status": "rejected",
+    "error": "Replay frame state, RNG or diagnostics differ from live capture"
+  }
+}

@@ -18,6 +18,7 @@
 #include "fvi.h"
 #include "dxxerror.h"
 #include "homing_compat.h"
+#include "render_gameplay_view.h"
 #include "input_demo_hooks.h"
 #include "game.h"
 #include "hudmsg.h"
@@ -470,11 +471,11 @@ int d1_in_d2_acquire_homing_target(vms_vector *position, object *tracker)
 	}
 	if (tracker->ctype.laser_info.parent_num != Players[Player_num].objnum)
 		return (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) ? -1 : (int)(ConsoleObject - Objects);
-	/* Native D1 consumes the last main-view list, including rear/external views
-	 * Window zero is the main view; HUD cameras and elapsed wall time cannot
-	 * replace its candidates with another view or a complete-object scan */
-	for (i = Window_rendered_data[0].num_objects - 1; i >= 0; --i) {
-		const int target = Window_rendered_data[0].rendered_objects[i];
+	/* Match native D1's bounded ship-forward list and uncapped acquisition */
+	const short *candidates;
+	const int count = render_get_gameplay_view_objects(&candidates);
+	for (i = count - 1; i >= 0; --i) {
+		const int target = candidates[i];
 		vms_vector direction;
 		fix dot;
 		if (target == Players[Player_num].objnum ||

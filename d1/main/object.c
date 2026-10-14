@@ -76,10 +76,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h" 
 #include "timer.h"
+#include "render_gameplay_view.h"
 #ifdef __ANDROID__
 #include "android_profile.h"
 #include "android_render_fov.h"
-#include "render_gameplay_view.h"
 #include "android_screen_advance.h"
 #include "coop/coop_powerup_duplication.h"
 #endif
@@ -584,9 +584,13 @@ int	Player_fired_laser_this_frame=-1;
 void update_all_robot_location_info(void)
 {
 	int i;
+	vms_matrix gameplay_orientation;
 
 	if (Player_fired_laser_this_frame == -1 || !ConsoleObject)
 		return;
+
+	/* Original warning coordinates used the scaled g3 matrix, not raw axes */
+	render_gameplay_view_orientation(&gameplay_orientation, &ConsoleObject->orient);
 
 	for (i = 0; i <= Highest_object_index; i++) {
 		object *objp = &Objects[i];
@@ -597,14 +601,11 @@ void update_all_robot_location_info(void)
 			continue;
 
 		vm_vec_sub(&vec_to_obj, &objp->pos, &ConsoleObject->pos);
-		view_x = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.rvec);
-		view_y = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.uvec);
-		view_z = vm_vec_dot(&vec_to_obj, &ConsoleObject->orient.fvec);
+		view_x = vm_vec_dot(&vec_to_obj, &gameplay_orientation.rvec);
+		view_y = vm_vec_dot(&vec_to_obj, &gameplay_orientation.uvec);
+		view_z = vm_vec_dot(&vec_to_obj, &gameplay_orientation.fvec);
 
-		if (Rear_view) {
-			view_x = -view_x;
-			view_z = -view_z;
-		}
+		/* Fire warnings follow the ship, independently of the visual camera */
 
 		if (view_z <= 0)
 			continue;
@@ -830,6 +831,7 @@ void check_and_fix_matrix(vms_matrix *m);
 
 void reset_player_object()
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	//Init physics
@@ -881,6 +883,7 @@ void init_player_object()
 //sets up the free list & init player & whatever else
 void init_objects()
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	collide_init();
@@ -912,6 +915,7 @@ void init_objects()
 //the free list, then set the apporpriate globals
 void special_reset_objects(void)
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	num_objects=MAX_OBJECTS;
@@ -2207,6 +2211,7 @@ void compress_objects(void)
 //compressed.  resets free list, marks unused objects as unused
 void reset_objects(int n_objs)
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	num_objects = n_objs;

@@ -15,7 +15,8 @@ static void public_capture_hold(const vms_vector &point, fix braking = 2)
 	vm_vec_sub(&delta, &point, &ConsoleObject->pos);
 	const auto thrust = [&](const vms_vector &axis) {
 		const fix error = vm_vec_dot(&delta, &axis) - vm_vec_dot(&ConsoleObject->mtype.phys_info.velocity, &axis) / braking;
-		return error > F1_0 / 4 ? FrameTime : error < -F1_0 / 4 ? -FrameTime : 0;
+		return error > F1_0 / 4 ? FrameTime : error < -F1_0 / 4 ? -FrameTime
+		                                                        : 0;
 	};
 	Controls.forward_thrust_time = thrust(ConsoleObject->orient.fvec);
 	Controls.sideways_thrust_time = thrust(ConsoleObject->orient.rvec);
@@ -26,54 +27,73 @@ static void public_capture_aim(vms_vector point)
 {
 	vms_vector direction;
 	vm_vec_normalized_dir(&direction, &point, &ConsoleObject->pos);
-	const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime : 0; };
+	const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime
+		                                                                                         : 0; };
 	Controls.heading_time = turn(vm_vec_dot(&direction, &ConsoleObject->orient.rvec) - ConsoleObject->mtype.phys_info.rotvel.y * 2);
 	Controls.pitch_time = turn(-vm_vec_dot(&direction, &ConsoleObject->orient.uvec) - ConsoleObject->mtype.phys_info.rotvel.x * 2);
 }
 
 static std::vector<vms_vector> public_capture_route_to(int goal)
 {
-		std::vector<int> parent(Highest_segment_index + 1, -1), queue{ ConsoleObject->segnum };
-		const int origin = ConsoleObject->segnum;
-		parent[origin] = origin;
-		for (size_t q = 0; q < queue.size() && parent[goal] < 0; ++q)
-			for (int side = 0; side < 6; ++side) {
-				const int seg = queue[q], child = Segments[seg].children[side], wall = Segments[seg].sides[side].wall_num;
-				if (child < 0 || parent[child] >= 0) continue;
-				if (wall >= 0 && !(Walls[wall].type == WALL_OPEN || Walls[wall].type == WALL_ILLUSION || (Walls[wall].type == WALL_DOOR && !(Walls[wall].flags & WALL_DOOR_LOCKED) && Walls[wall].keys == KEY_NONE))) continue;
-				parent[child] = seg;
-				queue.push_back(child);
-			}
-		require(parent[goal] >= 0, "unlocked passage reachable with ordinary controls");
-		std::vector<int> path;
-		for (int seg = goal; seg != origin; seg = parent[seg]) path.push_back(seg);
-		std::reverse(path.begin(), path.end());
-		std::vector<vms_vector> waypoints;
-		int previous = origin;
-		for (int seg : path) {
-			vms_vector point;
-			for (int side = 0; side < 6; ++side)
-				if (Segments[previous].children[side] == seg) {
-					compute_center_point_on_side(&point, &Segments[previous], side);
-					waypoints.push_back(point);
-				}
-			compute_segment_center(&point, &Segments[seg]);
-			waypoints.push_back(point);
-			previous = seg;
+	std::vector<int> parent(Highest_segment_index + 1, -1), queue{ ConsoleObject->segnum };
+	const int origin = ConsoleObject->segnum;
+	parent[origin] = origin;
+	for (size_t q = 0; q < queue.size() && parent[goal] < 0; ++q)
+		for (int side = 0; side < 6; ++side) {
+			const int seg = queue[q], child = Segments[seg].children[side], wall = Segments[seg].sides[side].wall_num;
+			if (child < 0 || parent[child] >= 0) continue;
+			if (wall >= 0 && !(Walls[wall].type == WALL_OPEN || Walls[wall].type == WALL_ILLUSION || (Walls[wall].type == WALL_DOOR && !(Walls[wall].flags & WALL_DOOR_LOCKED) && Walls[wall].keys == KEY_NONE))) continue;
+			parent[child] = seg;
+			queue.push_back(child);
 		}
+	require(parent[goal] >= 0, "unlocked passage reachable with ordinary controls");
+	std::vector<int> path;
+	for (int seg = goal; seg != origin; seg = parent[seg]) path.push_back(seg);
+	std::reverse(path.begin(), path.end());
+	std::vector<vms_vector> waypoints;
+	int previous = origin;
+	for (int seg : path) {
+		vms_vector point;
+		for (int side = 0; side < 6; ++side)
+			if (Segments[previous].children[side] == seg) {
+				compute_center_point_on_side(&point, &Segments[previous], side);
+				waypoints.push_back(point);
+			}
+		compute_segment_center(&point, &Segments[seg]);
+		waypoints.push_back(point);
+		previous = seg;
+	}
 	return waypoints;
 }
 
 #include "public_loot_replay_fixture.hpp"
 
-static void capture_public_level_replay(const char *directory, const char *scenario)
+#include "public_secondary_replay_fixture.hpp"
+
+#include "public_missile_view_fixture.hpp"
+
+#include "public_modal_replay_fixture.hpp"
+
+#include "public_missile_fault_fixture.hpp"
+
+#include "public_effect_phase_fixture.hpp"
+
+#include "public_fan_fault_fixture.hpp"
+
+#include "public_all_weapons_fixture.hpp"
+
+static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
 {
 	using nlohmann::json;
+	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "all-weapons") == 0,
+	        "imported public startup is scoped to explicit diagnostic fixtures");
 #ifdef DXX_BUILD_DESCENT_II
 	const char *game_name = "d2";
-	const char *archive = "/d2demo.hog";
-	char mission[] = "d2demo";
+	const char *archive = imported_d1 ? "/descent.hog" : "/d2demo.hog";
+	char mission[8] = "d2demo";
+	if (imported_d1) std::strcpy(mission, "descent");
 #else
+	require(!imported_d1, "imported public startup requires the D2 engine");
 	const char *game_name = "d1";
 	const char *archive = "/descent.hog";
 	char mission[] = "";
@@ -87,10 +107,18 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	Game_mode = 0;
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
-	GameCfg.AspectX = 4;
-	GameCfg.AspectY = 3;
+	const bool modal = std::strncmp(scenario, "ordered-modal", 13) == 0;
+	const bool secondary = std::strncmp(scenario, "secondary-", 10) == 0;
+	const bool all_weapons = std::strncmp(scenario, "all-weapons", 11) == 0;
+	const bool fault_probe = all_weapons || std::strcmp(scenario, "fan-transparency") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "missile-self-splash") == 0 ||
+	                         std::strcmp(scenario, "missile-robot") == 0 || std::strcmp(scenario, "mine-blast") == 0;
+	GameCfg.AspectX = modal || secondary || fault_probe ? 3 : 4;
+	GameCfg.AspectY = modal || secondary || fault_probe ? 4 : 3;
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
+#ifdef DXX_BUILD_DESCENT_II
+	if (imported_d1) require(d1_in_d2_init_base_resources(1), "select public imported-D1 lifecycle resources");
+#endif
 	load_text();
 	const int sdl_status = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 	if (sdl_status) std::fprintf(stderr, "SDL initialization: %s\n", SDL_GetError());
@@ -117,19 +145,41 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	Player_num = 0;
 	N_players = 1;
 	std::strcpy(Players[0].callsign, "public");
-	Difficulty_level = 2;
+#ifdef DXX_BUILD_DESCENT_II
+	if (imported_d1 && (std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0)) {
+		// Use the same native-written comparison pilot as imported replay
+		write_public_d1_comparison_profile();
+		require(PlayerCfg.MissileViewEnabled == 0 && std::strcmp(Players[0].callsign, "d1match") == 0,
+		        "imported monitor uses the native-read matched D1 presentation profile");
+		guidebot_routing_set_default(GUIDEBOT_ROUTING_ORIGINAL);
+		guidebot_routing_set_mode(GUIDEBOT_ROUTING_ORIGINAL);
+	}
+#endif
+	Difficulty_level = std::strcmp(scenario, "mine-blast") == 0 || std::strcmp(scenario, "fan-transparency") == 0 ? 0 : 2;
 	input_demo_set_skip_level_intro(1);
 	const bool door_lifecycle = std::strcmp(scenario, "door-lifecycle") == 0;
+	const bool guidebot = std::strcmp(scenario, "guidebot-release") == 0;
 	const bool combat = std::strcmp(scenario, "combat") == 0;
 	const bool shoot_switch = std::strcmp(scenario, "shoot-switch") == 0;
 #ifdef DXX_BUILD_DESCENT_II
 	const int level = shoot_switch ? 2 : 1;
 #else
 	require(!shoot_switch, "shoot-switch capture requires D2");
-	const int level = door_lifecycle ? 3 : 1;
+	const char *mine_level = std::getenv("DXX_PUBLIC_MINE_LEVEL");
+	const int level = std::strcmp(scenario, "mine-blast") == 0 ? (mine_level ? std::atoi(mine_level) : 3) : door_lifecycle ? 3
+	                                                                                                                       : 1;
+	require(level >= 1 && level <= 3, "ordinary authored public D1 level");
 #endif
 	StartNewGame(level);
 	if (!Game_wind) ::game();
+	if (std::strcmp(scenario, "fan-observe") == 0) {
+		observe_public_fan_resources(game_name);
+		return;
+	}
+	if (std::strcmp(scenario, "gameplay-view-lifecycle") == 0) {
+		test_gameplay_view_lifecycle();
+		return;
+	}
 	GameArg.SysInputDemoNoRender = 1;
 	newdemo_start_recording(0);
 	require(Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active(), "initialize production record callbacks");
@@ -139,7 +189,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 #ifdef DXX_BUILD_DESCENT_II
 	settings.game = INPUT_DEMO_GAME_D2;
 	settings.player_cfg.guidebot_routing_mode = GUIDEBOT_ROUTING_ORIGINAL;
-	settings.mission = "d2demo";
+	settings.mission = imported_d1 ? "descent" : "d2demo";
 	settings.player_cfg.has_headlight_active_default = 1;
 	settings.player_cfg.headlight_active_default = PlayerCfg.HeadlightActiveDefault;
 #else
@@ -165,15 +215,55 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	std::memcpy(settings.player_cfg.secondary_order, PlayerCfg.SecondaryOrder, sizeof(PlayerCfg.SecondaryOrder));
 	d_srand(1234);
 	d_rand_reset_call_count();
+	if (modal || secondary || fault_probe) {
+		settings.has_view_projection = 1;
+		input_demo_capture_view_projection(&settings.view_projection);
+		settings.has_rear_view_baseline = 1;
+		input_demo_get_rear_view_state(&settings.rear_view_baseline.active, &settings.rear_view_baseline.leave_mode,
+		                               &settings.rear_view_baseline.current_cockpit, &settings.rear_view_baseline.preferred_cockpit);
+	}
 	require(input_demo_recorder_start(&settings, error, sizeof(error)), error);
+	if (all_weapons) {
+		capture_public_all_weapons(game_name, settings.mission, std::strcmp(scenario, "all-weapons-bigred") == 0);
+		return;
+	}
+	if (std::strcmp(scenario, "fan-transparency") == 0) {
+		capture_public_fan_transparency(game_name, settings.mission);
+		return;
+	}
+	if (std::strcmp(scenario, "effect-phase") == 0) {
+		capture_public_effect_phase(game_name, settings.mission, level);
+		return;
+	}
+	if (std::strcmp(scenario, "marker-delete-native") == 0) {
+		test_native_modal_recording_off(game_name);
+		return;
+	}
+	if (std::strcmp(scenario, "ordered-modal") == 0 || std::strcmp(scenario, "ordered-modal-tail") == 0) {
+		capture_public_modal_frames(game_name, settings.mission, std::strcmp(scenario, "ordered-modal-tail") == 0);
+		return;
+	}
+	if (std::strcmp(scenario, "ordered-dispatch") == 0) {
+		capture_public_dispatch_frames(game_name, settings.mission);
+		return;
+	}
+	if (std::strcmp(scenario, "secondary-release-first") == 0 || std::strcmp(scenario, "secondary-mouse-first") == 0) {
+		capture_public_secondary_frames(game_name, settings.mission, std::strcmp(scenario, "secondary-mouse-first") == 0);
+		return;
+	}
 	if (std::strcmp(scenario, "loot") == 0) {
 		capture_public_loot_frames(game_name, settings.mission, level);
 		return;
 	}
+	if (std::strcmp(scenario, "missile-self-splash") == 0 || std::strcmp(scenario, "missile-robot") == 0 || std::strcmp(scenario, "mine-blast") == 0) {
+		capture_public_missile_fault(game_name, settings.mission, scenario);
+		return;
+	}
 	const bool flight = std::strcmp(scenario, "flight") == 0;
 	const bool pickup = std::strcmp(scenario, "pickup") == 0;
-	require(flight || pickup || shoot_switch || combat || door_lifecycle || std::strcmp(scenario, "door") == 0, "known public scenario");
-	const int frame_count = flight ? 360 : door_lifecycle ? 900 : 600;
+	require(flight || pickup || shoot_switch || combat || door_lifecycle || guidebot || std::strcmp(scenario, "door") == 0, "known public scenario");
+	const int frame_count = flight ? 360 : door_lifecycle ? 900
+	                                                      : 600;
 	require(input_demo_state_trace_start("capture-observation.jsonl", "record", game_name, settings.mission, level, Difficulty_level, "new_level", frame_count, error, sizeof(error)), error);
 	const auto position = [](const vms_vector &p) { return json::array({ p.x, p.y, p.z }); };
 	const auto start = ConsoleObject->pos;
@@ -199,7 +289,17 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		}
 		int goal = -1, best = INT_MAX;
 		vms_vector destination = {};
-		if (shoot_switch) {
+		if (guidebot) {
+#ifdef DXX_BUILD_DESCENT_II
+			require(Buddy_objnum == 28 && Objects[28].id == 33 && Objects[28].segnum == 224 && !Buddy_allowed_to_talk, "authored caged guidebot exists");
+			require(Walls[74].segnum == 222 && Walls[74].sidenum == 4 && Walls[74].type == WALL_BLASTABLE && !(Walls[74].flags & WALL_BLASTED), "authored intact cage barrier");
+			target = 74;
+			goal = 221;
+			compute_segment_center(&destination, &Segments[goal]);
+#else
+			require(false, "guidebot requires D2");
+#endif
+		} else if (shoot_switch) {
 #ifdef DXX_BUILD_DESCENT_II
 			require(Num_walls > 154 && Num_triggers > 17 && ConsoleObject->segnum == 217, "expected normal public level-two spawn and authored switch");
 			require(Walls[154].segnum == 84 && Walls[154].sidenum == 2 && Walls[154].trigger == 17, "expected authored shoot-switch wall");
@@ -256,7 +356,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			previous = seg;
 		}
 		waypoints.push_back(destination);
-		if (!pickup && !shoot_switch && !combat && !door_lifecycle) {
+		if (!pickup && !shoot_switch && !combat && !door_lifecycle && !guidebot) {
 			const int child = Segments[goal].children[Walls[target].sidenum];
 			require(child >= 0, "door has a real neighboring segment");
 			compute_segment_center(&destination, &Segments[child]);
@@ -269,12 +369,14 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	const int target_shields = combat ? Objects[target].shields : 0;
 	const int target_score = combat ? Robot_info[target_id].score_value : 0;
 	int damage_frame = -1;
+	int blast_frame = -1;
 	int retirement_frame = -1;
 	int action_frame = -1;
 	int contact_frames = 0;
 	int passage_frame = -1;
 	vms_vector switch_center = {};
 	if (shoot_switch) compute_center_point_on_side(&switch_center, &Segments[84], 2);
+	if (guidebot) compute_center_point_on_side(&switch_center, &Segments[222], 4);
 	const auto append_route = [&](int goal) {
 		waypoints = public_capture_route_to(goal);
 		waypoint = 0;
@@ -301,12 +403,13 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	if (door_lifecycle) require(input_demo_door_trace_write(0, "restored", error, sizeof(error)), error);
 	for (int frame = 0; frame < frame_count; ++frame) {
 		if (door_lifecycle) require(input_demo_door_trace_write(frame, nullptr, error, sizeof(error)), error);
-		FrameTime = F1_0 / (flight ? 60 : door_lifecycle ? 20 : 30);
+		FrameTime = F1_0 / (flight ? 60 : door_lifecycle ? 20
+		                                                 : 30);
 		Controls = {};
 		if (flight) {
 			if (frame < 300) Controls.forward_thrust_time = -FrameTime;
 		} else {
-			while (waypoint < waypoints.size() && vm_vec_dist(&ConsoleObject->pos, &waypoints[waypoint]) < (shoot_switch && action_frame >= 0 && waypoint + 1 == waypoints.size() ? F1_0 : 8 * F1_0)) ++waypoint;
+			while (waypoint < waypoints.size() && !(guidebot && waypoint + 1 == waypoints.size()) && vm_vec_dist(&ConsoleObject->pos, &waypoints[waypoint]) < (shoot_switch && action_frame >= 0 && waypoint + 1 == waypoints.size() ? F1_0 : 8 * F1_0)) ++waypoint;
 			if (waypoint < waypoints.size()) {
 				vms_vector delta;
 				vm_vec_sub(&delta, &waypoints[waypoint], &ConsoleObject->pos);
@@ -320,8 +423,8 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				Controls.vertical_thrust_time = thrust(ConsoleObject->orient.uvec);
 			}
 		}
-		if (!pickup && !shoot_switch && !combat && !door_lifecycle && frame < 180) Controls.fire_primary_state = 1;
-		if (shoot_switch && action_frame < 0 && ConsoleObject->segnum == 84) {
+		if (!pickup && !shoot_switch && !combat && !guidebot && !door_lifecycle && frame < 180) Controls.fire_primary_state = 1;
+		if ((shoot_switch || guidebot) && action_frame < 0 && (guidebot ? vm_vec_dist(&ConsoleObject->pos, &switch_center) < 60 * F1_0 : ConsoleObject->segnum == 84)) {
 			vms_vector direction;
 			vm_vec_normalized_dir(&direction, &switch_center, &ConsoleObject->pos);
 			const fix horizontal = vm_vec_dot(&direction, &ConsoleObject->orient.rvec);
@@ -330,7 +433,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				                                                                                         : 0; };
 			Controls.heading_time = turn(horizontal - ConsoleObject->mtype.phys_info.rotvel.y * 2);
 			Controls.pitch_time = turn(-vertical - ConsoleObject->mtype.phys_info.rotvel.x * 2);
-			if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 99 / 100) Controls.fire_primary_state = 1;
+			if ((!guidebot || Walls[74].hps > 0) && vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 99 / 100) Controls.fire_primary_state = 1;
 		}
 
 		if (combat && action_frame < 0) {
@@ -343,14 +446,16 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				vm_vec_scale_add2(&delta, &direction, -50 * F1_0);
 				const auto hold = [&](const vms_vector &axis) {
 					const fix error = vm_vec_dot(&delta, &axis) - vm_vec_dot(&ConsoleObject->mtype.phys_info.velocity, &axis) / 2;
-					return error > F1_0 ? FrameTime : error < -F1_0 ? -FrameTime : 0;
+					return error > F1_0 ? FrameTime : error < -F1_0 ? -FrameTime
+					                                                : 0;
 				};
 				Controls.forward_thrust_time = hold(ConsoleObject->orient.fvec);
 				Controls.sideways_thrust_time = hold(ConsoleObject->orient.rvec);
 				Controls.vertical_thrust_time = hold(ConsoleObject->orient.uvec);
 				const fix horizontal = vm_vec_dot(&direction, &ConsoleObject->orient.rvec);
 				const fix vertical = vm_vec_dot(&direction, &ConsoleObject->orient.uvec);
-				const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime : 0; };
+				const auto turn = [&](fix error) { return error > F1_0 / 64 ? FrameTime : error < -F1_0 / 64 ? -FrameTime
+					                                                                                         : 0; };
 				Controls.heading_time = turn(horizontal - ConsoleObject->mtype.phys_info.rotvel.y * 2);
 				Controls.pitch_time = turn(-vertical - ConsoleObject->mtype.phys_info.rotvel.x * 2);
 				if (vm_vec_dot(&direction, &ConsoleObject->orient.fvec) > F1_0 * 98 / 100) Controls.fire_primary_state = 1;
@@ -358,7 +463,8 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		}
 		if (door_lifecycle) {
 			if (door_stage || waypoint + 1 >= waypoints.size())
-				public_capture_hold(door_stage == 2 || door_stage == 4 ? door_clear : door_stage == 6 ? door_destination : door_center);
+				public_capture_hold(door_stage == 2 || door_stage == 4 ? door_clear : door_stage == 6 ? door_destination
+				                                                                                      : door_center);
 			public_capture_aim(door_stage == 2 || door_stage == 4 ? door_center : door_destination);
 			if (door_stage <= 1) {
 				int threat = door_threat;
@@ -366,7 +472,8 @@ static void capture_public_level_replay(const char *directory, const char *scena
 				fix distance = 160 * F1_0;
 				for (int i = 0; threat < 0 && i <= Highest_object_index; ++i)
 					if (Objects[i].type == OBJ_ROBOT && Objects[i].shields >= 0 && !(Objects[i].flags & OF_EXPLODING) && vm_vec_dist(&Objects[i].pos, &ConsoleObject->pos) < distance && object_to_object_visibility(ConsoleObject, &Objects[i], 0)) {
-						threat = i; distance = vm_vec_dist(&Objects[i].pos, &ConsoleObject->pos);
+						threat = i;
+						distance = vm_vec_dist(&Objects[i].pos, &ConsoleObject->pos);
 					}
 				if (door_threat != threat) std::printf("DOOR threat=%d frame=%d\n", threat, frame);
 				door_threat = threat;
@@ -387,7 +494,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		GameProcessFrame();
 		require(render_update_main_view_objects(), "capture gameplay view state");
 		if (flight && frame > 30 && frame < 300 && vm_vec_dist(&previous_position, &ConsoleObject->pos) < F1_0 / 100) ++contact_frames;
-		if (!flight && !shoot_switch && !combat && action_frame < 0 && (pickup ? Objects[target].type != OBJ_POWERUP || Objects[target].signature != target_signature : Walls[target].state == WALL_DOOR_OPENING || Walls[target].state == WALL_DOOR_WAITING)) action_frame = frame;
+		if (!flight && !shoot_switch && !combat && !guidebot && action_frame < 0 && (pickup ? Objects[target].type != OBJ_POWERUP || Objects[target].signature != target_signature : Walls[target].state == WALL_DOOR_OPENING || Walls[target].state == WALL_DOOR_WAITING)) action_frame = frame;
 		if (shoot_switch && action_frame < 0 && !(Walls[116].flags & WALL_DOOR_LOCKED) && !(Walls[117].flags & WALL_DOOR_LOCKED)) {
 			action_frame = frame;
 			append_route(Walls[116].segnum);
@@ -399,6 +506,24 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		}
 		if (shoot_switch && action_frame >= 0 && ConsoleObject->segnum == Walls[117].segnum && passage_frame < 0) passage_frame = frame;
 
+#ifdef DXX_BUILD_DESCENT_II
+		if (guidebot) {
+			const json observation = { { "type", "guidebot_observation" }, { "version", 1 }, { "f", frame }, { "Buddy_objnum", Buddy_objnum }, { "Buddy_allowed_to_talk", Buddy_allowed_to_talk }, { "Escort_goal_object", Escort_goal_object }, { "Escort_special_goal", Escort_special_goal }, { "Escort_goal_index", Escort_goal_index } };
+			require(input_demo_state_trace_write_json(observation.dump().c_str(), error, sizeof(error)), error);
+			if (damage_frame < 0 && Walls[74].hps < 100 * F1_0) damage_frame = frame;
+			if (blast_frame < 0 && (Walls[74].flags & WALL_BLASTED) && (Walls[75].flags & WALL_BLASTED)) blast_frame = frame;
+			if (action_frame < 0 && Buddy_allowed_to_talk && (Walls[74].flags & WALL_BLASTED) && (Walls[75].flags & WALL_BLASTED)) action_frame = frame;
+			if (blast_frame >= 0 && passage_frame < 0 && Objects[28].segnum != 224) passage_frame = frame;
+			if (frame % 30 == 0) std::printf("GUIDEBOT frame=%d seg=%d waypoints=%zu/%zu barrier=%d/%d talk=%d bot_seg=%d\n", frame, ConsoleObject->segnum, waypoint, waypoints.size(), Walls[74].hps, Walls[74].flags, Buddy_allowed_to_talk, Objects[28].segnum);
+			if (screenshots && (frame % 30 == 0 || frame == damage_frame || frame == blast_frame || frame == action_frame || frame == passage_frame || (action_frame >= 0 && passage_frame >= 0 && frame == (std::max) (passage_frame, action_frame) + 30))) {
+				GameArg.SysInputDemoNoRender = 0;
+				game_render_frame_mono(1);
+				screenshot_frames.push_back(frame);
+				save_screen_shot(1);
+				GameArg.SysInputDemoNoRender = 1;
+			}
+		}
+#endif
 		if (combat) {
 			if (frame % 30 == 0) std::printf("COMBAT frame=%d segment=%d target_segment=%d waypoints=%zu/%zu shields=%d score=%d fire=%d\n", frame, ConsoleObject->segnum, Objects[target].segnum, waypoint, waypoints.size(), Objects[target].shields, Players[0].score, Controls.fire_primary_state);
 			if (damage_frame < 0 && Objects[target].shields < target_shields) damage_frame = frame;
@@ -445,7 +570,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 			if (screenshots) {
 				GameArg.SysInputDemoNoRender = 0;
 				game_render_frame_mono(1);
-				if (frame % 20 == 0 || frame == door_stage_frame) { screenshot_frames.push_back(frame); save_screen_shot(1); }
+				if (frame % 20 == 0 || frame == door_stage_frame) {
+					screenshot_frames.push_back(frame);
+					save_screen_shot(1);
+				}
 				GameArg.SysInputDemoNoRender = 1;
 			}
 		}
@@ -453,7 +581,10 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		for (int i = 0; i < Num_walls; ++i)
 			if (Walls[i].type == WALL_DOOR) doors.push_back({ i, Walls[i].state });
 		observations.push_back({ { "f", frame }, { "position", position(ConsoleObject->pos) }, { "segment", int(ConsoleObject->segnum) }, { "energy", int(Players[0].energy) }, { "shields", int(Players[0].shields) }, { "doors", doors }, { "target_shields", combat ? int(Objects[target].shields) : 0 }, { "score", int(Players[0].score) } });
-		if (door_lifecycle ? door_stage == 7 : shoot_switch ? passage_frame >= 0 : combat ? retirement_frame >= 0 : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
+		if (guidebot ? passage_frame >= 0 && action_frame >= 0 && frame >= (std::max) (passage_frame, action_frame) + 30 : door_lifecycle ? door_stage == 7
+		                                                                                                               : shoot_switch     ? passage_frame >= 0
+		                                                                                                               : combat           ? retirement_frame >= 0
+		                                                                                                                                  : action_frame >= 0 && frame >= action_frame + (pickup ? 30 : 60)) break;
 	}
 	require(!door_lifecycle || door_stage == 7, "ordinary controls completed obstruction, clearance, close, reopen and traversal");
 	require(!shoot_switch || ((Walls[116].flags & WALL_DOOR_OPENED) && (Walls[117].flags & WALL_DOOR_OPENED)), "both passage doors are open at the traversal boundary");
@@ -462,13 +593,14 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	if (door_lifecycle) require(input_demo_door_trace_write(observations.size(), "terminal", error, sizeof(error)), error);
 	input_demo_result result;
 	input_demo_capture_current_result(&result);
+	require(input_demo_record_finish_input_tail(error, sizeof(error)), "finalize ordered input tail");
 	require(input_demo_recorder_flush_with_result("capture.dximdemo", &result, error, sizeof(error)), error);
 	input_demo_state_trace_stop();
 	newdemo_write_end();
 	require(PHYSFS_close(outfile), "close classic callback sink");
 	outfile = nullptr;
 	Newdemo_state = ND_STATE_NORMAL;
-	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "damage_frame", damage_frame }, { "retirement_frame", retirement_frame }, { "target_shields", target_shields }, { "target_score", target_score }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations }, { "screenshot_frames", screenshot_frames }, { "door_back", door_back }, { "door_events", door_events } };
+	json report = { { "game", game_name }, { "scenario", scenario }, { "start", position(start) }, { "target", target }, { "target_id", target_id }, { "target_signature", target_signature }, { "action_frame", action_frame }, { "damage_frame", damage_frame }, { "blast_frame", blast_frame }, { "retirement_frame", retirement_frame }, { "target_shields", target_shields }, { "target_score", target_score }, { "passage_frame", passage_frame }, { "wall_contact_frames", contact_frames }, { "waypoints_reached", waypoint }, { "waypoints_total", waypoints.size() }, { "observations", observations }, { "screenshot_frames", screenshot_frames }, { "door_back", door_back }, { "door_events", door_events } };
 	const auto text = report.dump(2) + "\n";
 	write_fixture("capture.json", bytes(text.begin(), text.end()));
 	std::puts("PASS: public level-start capture");

@@ -16,6 +16,7 @@
 #include "gameseg.h"
 #include "multi.h"
 #include "game.h"
+#include "render_gameplay_view.h"
 #include "ai.h"
 #include "hudmsg.h"
 #include "vecmat.h"
@@ -151,6 +152,7 @@ int coop_warp_execute(void)
 
 	/* move local player */
 	my_obj->pos = candidate;
+	render_reset_gameplay_view_objects();
 	obj_relink(Players[Player_num].objnum, dest_seg);
 
 	/* send to other players */

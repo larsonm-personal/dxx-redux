@@ -1,0 +1,157 @@
+{
+  "status": "clean published imported diagnostic capture",
+  "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+  "capture_executable_sha256": "5306986a2605b47404339f01dccff10d56fa6037bcdcc60939a79f45bf1316bc",
+  "recording_header": {
+    "type": "header",
+    "version": 5,
+    "game": "d2",
+    "mission": "descent",
+    "build_number": 25380,
+    "git_version": "8b19ab9ff",
+    "arch": "x86_64",
+    "level": 1,
+    "difficulty": 2,
+    "start_mode": "new_level",
+    "rng_mode": "lcg_state",
+    "frame_count": 181,
+    "player_cfg": {
+      "auto_leveling": 1,
+      "persistent_debris": 0,
+      "headlight_active_default": 1,
+      "no_fire_autoselect": 0,
+      "cycle_autoselect_only": 0,
+      "select_after_fire": 1,
+      "classic_autoselect_weapon": 0,
+      "autoselect_only_once": 0,
+      "original_homing": 0,
+      "guidebot_routing_mode": 0,
+      "primary_order": [
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0,
+        255
+      ],
+      "secondary_order": [
+        9,
+        4,
+        3,
+        8,
+        1,
+        5,
+        0,
+        255,
+        7,
+        6,
+        2
+      ]
+    },
+    "rear_view": {
+      "active": 0,
+      "leave_mode": 0,
+      "current_cockpit": 0,
+      "preferred_cockpit": 0
+    },
+    "view_projection": {
+      "screen_width": 640,
+      "screen_height": 480,
+      "aspect": 65536,
+      "zoom": 36864,
+      "depth": 9000,
+      "classic_depth": 0,
+      "missile_view_enabled": 0
+    }
+  },
+  "profile": {
+    "binary_changes": [
+      {
+        "comparison": 0,
+        "default": 1,
+        "offset": 15
+      }
+    ],
+    "comparison_missile_view": 0,
+    "default_missile_view": 1,
+    "native_readback_verified": true,
+    "profile": "d1match",
+    "purpose": "matched D1 presentation prerequisite",
+    "text_profile_unchanged": true
+  },
+  "files": {
+    "capture.log": {
+      "bytes": 1354,
+      "sha256": "86d4b3caf02a24b0d8c4f3dba079b5175b800c2c2a29633dcb246c7d30897d7e"
+    },
+    "raw/capture-observation.jsonl.gz": {
+      "bytes": 403,
+      "sha256": "7bb573f2117ae035966de57302bde8c5dd1babd18309fb46134cb528181d3210"
+    },
+    "raw/descent.cfg": {
+      "bytes": 558,
+      "sha256": "40c99277ceabdf4b05eac5c6cb9aadabd36d1bf90f46c431313f930ab58a4887"
+    },
+    "raw/default.plr": {
+      "bytes": 719,
+      "sha256": "33db995b70f977cd0eb9d035365b1cdf3e57d4159dd2e793ec4960a38837951e"
+    },
+    "raw/default.plx": {
+      "bytes": 2103,
+      "sha256": "0e5dc9fbb0234b7e81e540d9c0b26794b60f911773b1332b05dd1a0e126f13d6"
+    },
+    "raw/capture.dximdemo.rngtrace.jsonl": {
+      "bytes": 85408,
+      "sha256": "a8301c8453f59fd6a7285c279381ed5c303653ced686275bdf12130be4f670ab"
+    },
+    "raw/d1match.plr": {
+      "bytes": 729,
+      "sha256": "42d606ed2ab1fafae08ab05363e91c45efd56c012fbec900d679578eb05120c3"
+    },
+    "raw/comparison-profile.json": {
+      "bytes": 312,
+      "sha256": "7135fca2ac4e6f26873077b9a9a4f6702046c7f130b2fd1cb9b9ac00237d0f92"
+    },
+    "raw/d1match.plx": {
+      "bytes": 2104,
+      "sha256": "49f0eab954369e02605968c591835764de63ade1a52c77f8df4c929b2299b6aa"
+    },
+    "raw/capture.dximdemo": {
+      "bytes": 5779747,
+      "sha256": "9df7d73563f9a9b5326b208a906ccc11495dfc19e02a3e6a3161cc7fe4240707"
+    },
+    "raw/capture.json": {
+      "bytes": 263034,
+      "sha256": "ec21d4a7bdb6cdea6d9a142cb0341605f393e6ae4ee1150202036f128d50bf7e"
+    },
+    "raw/demos/tmpdemo.dem": {
+      "bytes": 3805,
+      "sha256": "60fc60cdedfc946f6c6b54e7c2ca1e6ed1b885df38b80c0ac009ea6c2c1d03fc"
+    },
+    "raw/screenshots/scrn0000.png": {
+      "bytes": 109876,
+      "sha256": "005ac93d3a0ce2c4f58fff25026942c72e97f3376b61ca548898ff674cb5f44e"
+    },
+    "raw/screenshots/scrn0001.png": {
+      "bytes": 117033,
+      "sha256": "6fad7ed03eb6814d4e7132a31cfa601337c1d73c22ae4fcc4833bdc4d6f28a92"
+    },
+    "raw/screenshots/scrn0003.png": {
+      "bytes": 121522,
+      "sha256": "669b6da11fc9aa75bf62066559a01571ecc9548d123e23a071bb77a7978add5a"
+    },
+    "raw/screenshots/scrn0004.png": {
+      "bytes": 122676,
+      "sha256": "5ef5be3341f385f10cdc239f34830c94f712d75c06444cd3e14ebb8ace76b8ba"
+    },
+    "raw/screenshots/scrn0002.png": {
+      "bytes": 107125,
+      "sha256": "c4b48dc8fcb4ddb9f6b4a0ca7f5e62bf3a8a90c3a533dcc84ef74a2bca701c02"
+    }
+  }
+}

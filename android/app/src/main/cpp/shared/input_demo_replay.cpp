@@ -28,6 +28,9 @@ using ordered_json = nlohmann::ordered_json;
 struct input_demo_replay_session {
 	bool loaded;
 	int game;
+	int format_version;
+	std::vector<input_demo_input_batch_info> input_batches;
+	std::vector<std::vector<input_demo_input_operation>> input_operations;
 	std::string actual_result_path;
 	bool has_expected_result;
 	input_demo_result expected_result;
@@ -40,6 +43,10 @@ struct input_demo_replay_session {
 	input_demo_level_start level_start{};
 	bool has_player_cfg;
 	input_demo_player_cfg player_cfg;
+	bool has_rear_view_baseline = false;
+	input_demo_rear_view_baseline rear_view_baseline = {};
+	bool has_view_projection = false;
+	input_demo_view_projection view_projection = {};
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
@@ -58,7 +65,7 @@ struct input_demo_replay_session {
 	std::vector<std::vector<std::string>> frame_events;
 
 	input_demo_replay_session()
-	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false),
+	    : loaded(false), game(0), format_version(0), has_expected_result(false), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false),
 	      checkpoint_start_gt(0), has_checkpoint_collision_delay_last_play_time(false), checkpoint_collision_delay_last_play_time(0),
 	      has_legacy_fx_rng_state(false), legacy_fx_rng_state(0), has_legacy_fx_rng_call_count(false), legacy_fx_rng_call_count(0),
 	      final_game_time64(0), next_frame_index(0)
@@ -71,6 +78,7 @@ struct input_demo_replay_session {
 };
 
 input_demo_replay_session g_input_demo_replay_session;
+bool g_input_demo_actual_result_written = false;
 
 static int copy_error(const std::string &message, char *error, size_t error_size)
 {
@@ -474,6 +482,33 @@ void input_demo_replay_direct_command_event_clear(input_demo_replay_direct_comma
 	event->kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE;
 }
 
+int input_demo_replay_format_version(void)
+{
+	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.format_version : 0;
+}
+
+int input_demo_replay_get_input_batch_info(uint32_t frame_index, input_demo_input_batch_info *info,
+                                           char *error, size_t error_size)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 5 || !info || frame_index >= session.input_batches.size())
+		return copy_error("ordered input batch is unavailable or index is out of range", error, error_size);
+	*info = session.input_batches[frame_index];
+	return 1;
+}
+
+int input_demo_replay_get_input_operation(uint32_t frame_index, uint32_t operation_index,
+                                          input_demo_input_operation *operation, char *error, size_t error_size)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.format_version != 5 || !operation || frame_index >= session.input_operations.size() ||
+	    operation_index >= session.input_operations[frame_index].size())
+		return copy_error("ordered input operation is unavailable or index is out of range", error, error_size);
+	*operation = session.input_operations[frame_index][operation_index];
+	if (operation->state_is_residual) operation->state = session.input_batches[frame_index].residual_state;
+	return 1;
+}
+
 int input_demo_replay_is_loaded(void)
 {
 	return g_input_demo_replay_session.loaded ? 1 : 0;
@@ -486,6 +521,7 @@ void input_demo_replay_unload(void)
 
 int input_demo_replay_load(const char *demo_path, char *error, size_t error_size)
 {
+	g_input_demo_actual_result_written = false;
 	input_demo_file demo;
 	std::vector<input_demo_control_record> control_records;
 	std::vector<input_demo_rng_record> rng_records;
@@ -526,6 +562,7 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	reset_session();
 	g_input_demo_replay_session.loaded = true;
 	g_input_demo_replay_session.game = game;
+	g_input_demo_replay_session.format_version = demo.metadata.version;
 	g_input_demo_replay_session.has_expected_result = demo.has_result;
 	g_input_demo_replay_session.expected_result = demo.result;
 	g_input_demo_replay_session.actual_result_path = actual_result_path_from_demo_path(demo_path);
@@ -539,6 +576,10 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.has_player_cfg = demo.metadata.has_player_cfg;
 	if (demo.metadata.has_player_cfg)
 		g_input_demo_replay_session.player_cfg = demo.metadata.player_cfg;
+	g_input_demo_replay_session.has_rear_view_baseline = demo.metadata.has_rear_view_baseline;
+	g_input_demo_replay_session.rear_view_baseline = demo.metadata.rear_view_baseline;
+	g_input_demo_replay_session.has_view_projection = demo.metadata.has_view_projection;
+	g_input_demo_replay_session.view_projection = demo.metadata.view_projection;
 	if (demo.has_checkpoint && !load_checkpoint(demo.checkpoint, &g_input_demo_replay_session, &replay_error)) {
 		reset_session();
 		return copy_error(replay_error, error, error_size);
@@ -557,6 +598,31 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.frame_events.resize(g_input_demo_replay_session.frames.size());
 	for (i = 0; i != demo.frames.size() && i != g_input_demo_replay_session.frame_events.size(); ++i)
 		g_input_demo_replay_session.frame_events[i] = std::move(demo.frames[i].events);
+	if (demo.metadata.version == 5) {
+		auto &session = g_input_demo_replay_session;
+		session.input_batches.resize(demo.frames.size() + 1);
+		session.input_operations.resize(demo.frames.size() + 1);
+		for (size_t index = 0; index <= demo.frames.size(); ++index) {
+			const bool is_tail = index == demo.frames.size();
+			auto &source = is_tail ? demo.input_tail : demo.frames[index];
+			auto &info = session.input_batches[index];
+			memset(&info, 0, sizeof(info));
+			info.operation_count = static_cast<uint32_t>(source.dispatch.operations.size());
+			info.pre_rng_state = source.dispatch.pre_rng_is_post ? source.rng.state : source.dispatch.pre_rng_state;
+			info.pre_rng_count = source.dispatch.pre_rng_is_post ? source.rng.call_count : source.dispatch.pre_rng_count;
+			info.post_rng_state = source.rng.state;
+			info.post_rng_count = source.rng.call_count;
+			info.is_tail = is_tail;
+			if (is_tail) {
+				input_demo_control_state_apply_update(&info.residual_state, &source.input.held, game);
+				input_demo_control_pulse_apply_update(&info.residual_pulse, &source.input.pulse, game);
+			} else {
+				info.residual_state = session.frames[index].state;
+				info.residual_pulse = session.frames[index].pulse;
+			}
+			session.input_operations[index] = std::move(source.dispatch.operations);
+		}
+	}
 	g_input_demo_replay_session.final_game_time64 = replay_duration;
 	return 1;
 }
@@ -635,6 +701,24 @@ const input_demo_level_start *input_demo_replay_level_start(void)
 	           : NULL;
 }
 
+int input_demo_replay_actual_result_written(void)
+{
+	return g_input_demo_actual_result_written ? 1 : 0;
+}
+
+int input_demo_replay_write_actual_result(const input_demo_result *result,
+                                          char *error, size_t error_size)
+{
+	g_input_demo_actual_result_written = false;
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || session.actual_result_path.empty())
+		return copy_error("replay has no active result output path", error, error_size);
+	if (!input_demo_result_write_json_file(session.actual_result_path.c_str(), result, error, error_size))
+		return 0;
+	g_input_demo_actual_result_written = true;
+	return 1;
+}
+
 int input_demo_replay_has_player_cfg(void)
 {
 	return g_input_demo_replay_session.loaded && g_input_demo_replay_session.has_player_cfg ? 1 : 0;
@@ -645,6 +729,22 @@ int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg)
 	if (!input_demo_replay_has_player_cfg() || !player_cfg)
 		return 0;
 	*player_cfg = g_input_demo_replay_session.player_cfg;
+	return 1;
+}
+
+int input_demo_replay_get_rear_view_baseline(input_demo_rear_view_baseline *state)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || !session.has_rear_view_baseline || !state) return 0;
+	*state = session.rear_view_baseline;
+	return 1;
+}
+
+int input_demo_replay_get_view_projection(input_demo_view_projection *state)
+{
+	const auto &session = g_input_demo_replay_session;
+	if (!session.loaded || !session.has_view_projection || !state) return 0;
+	*state = session.view_projection;
 	return 1;
 }
 

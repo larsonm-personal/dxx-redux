@@ -1,0 +1,58 @@
+{
+  "frame": 170,
+  "unmodified_images": true,
+  "regions": [
+    {
+      "scope": "full",
+      "box": [
+        0,
+        0,
+        640,
+        480
+      ],
+      "different_pixels": 63901,
+      "high_contrast_pixels": 3764,
+      "difference_bounds": [
+        0,
+        0,
+        639,
+        318
+      ]
+    },
+    {
+      "scope": "monitor",
+      "box": [
+        244,
+        120,
+        365,
+        238
+      ],
+      "different_pixels": 5931,
+      "high_contrast_pixels": 3764,
+      "difference_bounds": [
+        244,
+        120,
+        364,
+        237
+      ]
+    },
+    {
+      "scope": "cockpit",
+      "box": [
+        0,
+        280,
+        640,
+        480
+      ],
+      "different_pixels": 2630,
+      "high_contrast_pixels": 0,
+      "difference_bounds": [
+        0,
+        280,
+        639,
+        318
+      ]
+    }
+  ],
+  "scope_note": "All 3764 high-contrast pixels differ inside the authored monitor region; lower-contrast differences outside it remain unnormalized. Pixels below row318 are identical. Full screenshot parity is not claimed."
+}

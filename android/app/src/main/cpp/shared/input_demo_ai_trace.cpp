@@ -8,6 +8,7 @@ extern "C" {
 #include "ai.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_in_d2_ai.h"
+#include "d1_in_d2/d1_in_d2.h"
 #endif
 }
 
@@ -90,6 +91,15 @@ nlohmann::ordered_json input_demo_ai_trace_snapshot()
 #ifdef DXX_BUILD_DESCENT_II
 	GLOBAL(out, Believed_player_seg);
 	GLOBAL(out, Ai_last_missile_camera);
+	// Additive ordinary-D2 observation; imported-D1 parity has no escort state
+	if (!d1_in_d2_use_d1_gameplay()) {
+		auto &escort = out["escort"];
+		GLOBAL(escort, Buddy_objnum);
+		GLOBAL(escort, Buddy_allowed_to_talk);
+		GLOBAL(escort, Escort_goal_object);
+		GLOBAL(escort, Escort_special_goal);
+		GLOBAL(escort, Escort_goal_index);
+	}
 #endif
 	// Slot zero defines the encoding default, including its nonzero saved clocks
 	// Every other slot is either field-identical to it or emitted in full

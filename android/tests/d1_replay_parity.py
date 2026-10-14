@@ -33,6 +33,9 @@ HARNESS_FILES = (
     "android/helpers/verified_dependencies.ps1",
     "android/helpers/powershell_compat.ps1",
     "android/helpers/input_demo_replay_menu.ps1",
+    "android/helpers/input_demo_fixture_catalog.ps1",
+    "android/helpers/headless_process_pool.ps1",
+    "android/helpers/process_lifetime.ps1",
     "android/helpers/output_disk_space.ps1",
     "android/helpers/retain-recent-artifacts.ps1",
     "android/helpers/clean-old-artifacts.ps1",
@@ -1030,12 +1033,24 @@ def validate_world_value(value, schema, path):
             for key, child in schema.items():
                 if key not in value:
                     raise EvidenceError(f"Missing world field: {path}.{key}")
-                validate_world_value(value[key], child, f"{path}.{key}")
+                # Trace pools contain millions of integer leaves; retain exact
+                # typing without a recursive call or diagnostic path per value
+                if child is int:
+                    if type(value[key]) is not int:
+                        raise EvidenceError(f"World field must be an integer: {path}.{key}")
+                else:
+                    validate_world_value(value[key], child, f"{path}.{key}")
     else:
-        if not isinstance(value, list) or (isinstance(schema, tuple) and len(value) != len(schema)):
+        fixed = isinstance(schema, tuple)
+        if not isinstance(value, list) or (fixed and len(value) != len(schema)):
             raise EvidenceError(f"World field has an invalid array shape: {path}")
         for index, item in enumerate(value):
-            validate_world_value(item, schema[index] if isinstance(schema, tuple) else schema[0], f"{path}[{index}]")
+            child = schema[index] if fixed else schema[0]
+            if child is int:
+                if type(item) is not int:
+                    raise EvidenceError(f"World field must be an integer: {path}[{index}]")
+            else:
+                validate_world_value(item, child, f"{path}[{index}]")
 
 
 def validate_world_state(state, engine=None):

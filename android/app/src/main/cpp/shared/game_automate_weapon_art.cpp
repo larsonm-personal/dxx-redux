@@ -18,6 +18,7 @@ extern "C" {
 #include "endlevel.h"
 #include "fuelcen.h"
 #include "game.h"
+#include "render_gameplay_view.h"
 #include "gameseg.h"
 #include "laser.h"
 #include "object.h"
@@ -147,6 +148,7 @@ int game_automate_weapon_art(char *reason, size_t reason_size)
 #endif
 		require(PHYSFS_mkdir("weapon-art") != 0, "cannot create weapon art output directory");
 		require(Primary_weapon_to_weapon_info[SPREADFIRE_INDEX] == 12, "Spreadfire accounting identity changed");
+		render_reset_gameplay_view_objects();
 		ConsoleObject->pos = ConsoleObject->last_pos = vmd_zero_vector;
 		const int segment = find_point_seg(&ConsoleObject->pos, 0);
 		require(segment >= 0, "weapon art fixture origin is outside the loaded mine");

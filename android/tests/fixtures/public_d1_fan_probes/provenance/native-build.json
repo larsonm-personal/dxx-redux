@@ -1,0 +1,30 @@
+{
+  "status": "clean published source minimal target rebuild succeeded",
+  "revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
+  "recorder_stamp": "03f9c8523",
+  "targets": {
+    "temp/native-d1-build/main/test_upstream_compat": {
+      "sha256": "3183f9c095e5c11916a5a4f99303304d3c120854e381d43e75cdfb06a144c16a",
+      "bytes": 13189400
+    },
+    "temp/native-d1-build/main/d1x-redux": {
+      "sha256": "2d0320d8bb0a814fedf7fda6189257ab070d688880c776d68194d33dbc2bfd56",
+      "bytes": 9761592
+    },
+    "temp/native-d1-build/main/dxx-redux-d1-headless": {
+      "sha256": "9a499151522f0f9462b84eda3249192f3494cf44f8aa095ec6ff8cd23a1673f2",
+      "bytes": 9812864
+    },
+    "temp/native-d2-build/main/test_upstream_compat": {
+      "sha256": "975a710c2b73c3b801d205f8e01142b12ebfbaee1aa48b68207b95a363c76cfd",
+      "bytes": 16468832
+    },
+    "temp/native-d2-build/main/d2x-redux": {
+      "sha256": "e3a1bda1f92ebdafbeee910a6b71cbd3ba3ab64f511676ee4c86f5a7027258ff",
+      "bytes": 12547936
+    }
+  },
+  "prior_binaries": "temp/qualified-8b-executable-archives/manifest.json",
+  "free_bytes_after": 4491452416
+}

@@ -14,6 +14,7 @@ $tests = @(
     'test_host_process_cleanup', 'test_headless_process_pool', 'test_managed_dependencies',
     'test_standard_game_data_resolution', 'test_sdk_package_inventory', 'test_sdk_package_cleanup', 'test_sdk_writer_lock', 'test_test_process_output_capture',
     'test_code_quality_files', 'test_formatter_process_cleanup', 'test_input_demo_comparison_policy', 'test_run_all_tests_catalog', 'test_validate_automation_catalog',
+    'test_public_d1_fault_tools', 'test_input_demo_replay_menu',
     'test_github_release', 'test_shareware_test_data', 'test_secret_area_data_profiles'
 )
 # These shell fixtures simulate Linux installations and Windows archive packages

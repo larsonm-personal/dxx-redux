@@ -61,6 +61,7 @@ extern char Marker_input[40];
 extern void do_automap();
 extern void automap_clear_visited();
 extern void input_demo_apply_recorded_marker_drop(int player_marker_num, const char *message);
+extern int input_demo_apply_recorded_marker_delete(int player_marker_num, int signature);
 extern ubyte Automap_visited[MAX_SEGMENTS];
 void DropBuddyMarker(object *objp);
 

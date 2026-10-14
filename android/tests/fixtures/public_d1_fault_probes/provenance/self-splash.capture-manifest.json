@@ -1,0 +1,170 @@
+{
+    "asset_sha256": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    },
+    "capture_executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+    "capture_invoked": true,
+    "command": [
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "--public-level-replay",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "missile-self-splash"
+    ],
+    "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+    "files": {
+        "build.log": {
+            "bytes": 135,
+            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+        },
+        "candidate.dximdemo": {
+            "bytes": 21824,
+            "sha256": "4e7e7fce6966e7c4ab366685c37efbb0f8bc58fdf344b3b3c1e526bd0c4e96ea"
+        },
+        "candidate.oracle.json": {
+            "bytes": 11866,
+            "sha256": "ae2042baa77cf0d003cfc5cdff6e7b5539c5a77e9fb855a4ca2c32a24ebc0d3a"
+        },
+        "capture.log": {
+            "bytes": 1445,
+            "sha256": "9b9e35381910542ad919783c2f9f23813151393e3ec514015fb317b96b744a2b"
+        },
+        "configure.log": {
+            "bytes": 1385,
+            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+        },
+        "raw/capture-observation.jsonl.gz": {
+            "bytes": 139,
+            "sha256": "acd25786201dc835b62784e1f9afb63999d0b90c195afaf56176bd118354a703"
+        },
+        "raw/capture.dximdemo": {
+            "bytes": 4039631,
+            "sha256": "c1f4015f1f80fdba49cb347aef89a0289248518fc711862a94dce001d6770cb4"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+            "bytes": 60853,
+            "sha256": "4f7996d2ef24e64b062efa02098ec48ec9bf0e80789a95f9a2a1b038a80a09e8"
+        },
+        "raw/capture.json": {
+            "bytes": 40422,
+            "sha256": "60dad0382842b2b54f9138cff1f6217fd2b78b84e399150fc4e485945e54b8d7"
+        },
+        "raw/demos/tmpdemo.dem": {
+            "bytes": 1844,
+            "sha256": "c19d5806476d6b5e3d70fc7e3d5006160028f8f57190c5adf33ea61bddad02ff"
+        },
+        "raw/descent.cfg": {
+            "bytes": 525,
+            "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+        },
+        "raw/public.plr": {
+            "bytes": 2262,
+            "sha256": "c77fc92b4b349f5d326e2fd50ddac7b4fdef0f132da1bcc70547028a36a7030e"
+        },
+        "raw/public.plx": {
+            "bytes": 2111,
+            "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        },
+        "raw/screenshots/scrn0000.png": {
+            "bytes": 113230,
+            "sha256": "011d5ef54a56d71c65dee68c5b33b15f454d5be2f6fba592611fee1c320ce3be"
+        },
+        "raw/screenshots/scrn0001.png": {
+            "bytes": 73633,
+            "sha256": "0a1ece5339e8aae6959defa32a8b73ed39e12f1634cfd971190e400a02689bee"
+        },
+        "raw/screenshots/scrn0002.png": {
+            "bytes": 63897,
+            "sha256": "0c79d5d08934d5278f809f6ef83f4f46db300a22a4258a8dd317588a7e71ea85"
+        },
+        "raw/screenshots/scrn0003.png": {
+            "bytes": 49299,
+            "sha256": "19de79092fad88010b682405215db490b59b174fdcf3d77886ca19a3b425a9ef"
+        },
+        "raw/screenshots/scrn0004.png": {
+            "bytes": 65176,
+            "sha256": "5198b9366af59679ee2d97086ca80c5ddd8f72c518d79f582bd6af7b9036ddcd"
+        },
+        "raw/screenshots/scrn0005.png": {
+            "bytes": 69275,
+            "sha256": "34921ec58a7944c44d28760cb1570f537118c9ee39334093aba33118efcce939"
+        },
+        "raw/screenshots/scrn0006.png": {
+            "bytes": 69353,
+            "sha256": "a1c785475a4891556b92487df6ae31d653333eff181d59759fbf55fc4fe8a8c9"
+        }
+    },
+    "no_missile": false,
+    "packed": true,
+    "recorder_git_version": "8b19ab9ff",
+    "recording_header": {
+        "arch": "x86_64",
+        "build_number": 25380,
+        "difficulty": 2,
+        "frame_count": 139,
+        "game": "d1",
+        "git_version": "8b19ab9ff",
+        "level": 1,
+        "mission": "d1",
+        "player_cfg": {
+            "auto_leveling": 1,
+            "autoselect_only_once": 0,
+            "classic_autoselect_weapon": 0,
+            "cycle_autoselect_only": 0,
+            "guidebot_routing_mode": 1,
+            "no_fire_autoselect": 1,
+            "original_homing": 0,
+            "persistent_debris": 0,
+            "primary_order": [
+                4,
+                3,
+                2,
+                1,
+                0,
+                255,
+                16
+            ],
+            "secondary_order": [
+                4,
+                3,
+                1,
+                0,
+                255,
+                2
+            ],
+            "select_after_fire": 1
+        },
+        "rear_view": {
+            "active": 0,
+            "current_cockpit": 0,
+            "leave_mode": 0,
+            "preferred_cockpit": 0
+        },
+        "rng_mode": "lcg_state",
+        "start_mode": "new_level",
+        "type": "header",
+        "version": 5,
+        "view_projection": {
+            "aspect": 65536,
+            "classic_depth": 0,
+            "depth": 9000,
+            "missile_view_enabled": 0,
+            "screen_height": 480,
+            "screen_width": 640,
+            "zoom": 36864
+        }
+    },
+    "scenario": "missile-self-splash",
+    "schema": 1,
+    "screenshots": true,
+    "source_recipe_sha256": {
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+        "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+        "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+        "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+    },
+    "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+    "stage": "complete",
+    "status": "candidate"
+}

@@ -1,16 +1,15 @@
 # Compact public level-start recordings
 
-Twelve fresh production-recorder captures use pinned Descent 1 v1.4 shareware and
-Descent 2 v1.0 demo data. Ten start from ordinary level-one spawns; the D2 shoot-switch case starts from the
-ordinary level-two spawn, and D1 door-lifecycle starts from its ordinary level-three spawn. No player
+The corpus preserves production-recorder captures with pinned Descent 1 v1.4
+shareware and Descent 2 v1.0 demo data. Recordings start from ordinary authored
+level spawns; each scenario declares its level in the manifest. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
-in the replay or its companions. Existing retail recordings remain unchanged.
+in the replay or its companions. Original oracle bytes remain unchanged; converted legacy inputs have explicit migration sidecars.
 
 ## Size and evidence contract
 
-Each replay is plain uncompressed UTF-8 JSONL. Admission rejects any replay and
-oracle pair totaling more than **100000 bytes**, a stricter limit than 100 KB per
-replay alone. There is no compression, base64, split recording or hidden save.
+Each replay is plain uncompressed UTF-8 JSONL. Admission rejects any individual
+replay or oracle file larger than **100000 bytes**. There is no compression, base64, split recording or hidden save.
 
 The engine first records complete live frame state/diagnostics and actual RNG
 events into temporary capture output. The packer retains ordinary controls,
@@ -19,21 +18,22 @@ observations with a SHA-256 oracle for every complete frame. A separate digest
 covers every normalized SIM RNG event, including values, order and actor context.
 Expected hashes are never generated from replay output.
 
-Only explicitly reviewed diagnostic event kinds are removed. The engine executes
-only `direct_command` events; these recordings forbid those commands entirely.
+Only explicitly reviewed diagnostic event kinds are removed. Format 5 executes only its ordered dispatch operations. Public admission allows
+reviewed ordinary player commands and rejects debug spawning, warps and unknown
+commands, including operations in the terminal input tail.
 Removed telemetry has a provenance hash/count and is explicitly not claimed as
 replay-compared. Unknown event kinds fail admission rather than being ignored.
 
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
 `game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base for the original seven scenes. Combat, loot and door-lifecycle oracles
+revision denotes the engine base for the original seven scenes. Combat, loot, door-lifecycle and Guide-Bot oracles
 point to an exact published source-only commit built before fixture admission;
-`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot and door-lifecycle
+`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot, door-lifecycle and Guide-Bot
 packing and admission require the recorder's compiled Git identity to match that
 published source revision. Reconfigure CMake after selecting the capture commit
-so stale generated build metadata cannot be admitted. The protocol restores SIM RNG per
-frame; it does not seed the separate FX stream. Capture leaves ordinary FX
+so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG once before the first input batch, then checks the
+carried pre-input and computed post-input boundaries; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
 
 ## Real actions
@@ -130,6 +130,21 @@ initialization untouched, including the level-entry starfield draws.
   verifies ordinary reopening and traversal. Removed controls must complete
   playback and fail this lifecycle gate, not merely fail recording admission
 
+- `guidebot-release` (D2 only): ordinary thrust and aiming reach the original
+  cage from the level-one spawn. Starting lasers damage the authored barrier at
+  frame 101; walls 74 and 75 blast at frame 177. The same original Guide-Bot
+  (object 28, ID 33, signature 29) physically exits segment 224 at frame 181,
+  then its native talk/release flag changes at frame 190. These are distinct
+  boundaries, not interchangeable proxies. The 221-frame scene observes another
+  second of ordinary movement while both player and Guide-Bot remain alive
+
+  Each live post-frame escort observation is hashed independently from capture
+  into `guidebot_observations`; headed and true headless playback must reproduce
+  every one. The semantic gate also requires intact authored cage walls, real
+  pre-blast damage, both wall sides blasting, the exact release flag and the
+  original bot's first physical cage exit. A no-fire negative keeps all recorded
+  route/aim controls and must fail those actual outcomes
+
 The D2 capture startup initializes PIG bitmap flags before loading the level, just
 like the desktop game. Those transparency flags affect ambient propagation; the
 level-two scene detects an omitted startup step through its lava ambience and
@@ -208,3 +223,98 @@ numbers. Inspect these rendered images, and use separate fresh non-screenshot
 captures for oracle admission. Screenshot mode does not inject a player pose,
 change inventory or alter robot definitions. Candidate capture can be restricted
 with `capture_compact_public_replays.py --scenario combat`
+
+## Public objective-arrival fixture
+
+`test_guidebot_live_navigation.ps1 -NoBuild -PublicDemo -BuildDir <D2-build>
+-HogDir <pinned-public-D2-data>` reuses the existing true-headless navigation
+fixture with the real demo level-one Guide-Bot and reactor. This is explicitly a
+controlled arrival test: it places the player and bot in adjacent segment 158,
+grants keys and 1000 player shields, and removes other robots. The ordinary NEXT
+command chooses the reactor; native escort navigation and physics must cross
+into reactor segment 159. The fixture checks every approach frame and all 720
+subsequent patrol frames, requiring the player to survive and the reactor
+objective to remain pending while the live reactor still needs player action. It is not a normal-start route recording. The default retail level-11
+grate-detour and Maximum level-16 hostage fixtures remain unchanged
+
+The Guide-Bot capture also supports `DXX_PUBLIC_CAPTURE_SCREENSHOTS=1` and
+`--scenario guidebot-release`. Its screenshot inventory includes first damage,
+both-wall blast, physical exit, talk/release, and a later clear view. Screenshot
+captures remain independent from the clean oracle-admission captures
+
+## Ordered input and migration
+
+Format 5 records actual ordered pre-simulation reset, clear, sample, controls-only,
+rear-view, automap and direct-command operations, each with input-time `ft`. A mandatory `input_tail` retains
+input after the final simulation. `dispatch.pre_rng="="` references that row's
+post-input RNG; `sample.s="="` references that row's decoded residual held state;
+missing sample pulses are zero. Missing dispatch is invalid; empty ops is explicit.
+Packing validates exact decoded semantics before and after these lossless aliases.
+The FX stream remains outside the qualification contract.
+
+Legacy public inputs are converted with at most three documented whole-recording
+schedules in `convert_public_replay.py`. Every candidate is checked against the
+unchanged original full frame, diagnostic, SIM-event and terminal oracles. Multiple
+passing schedules show equivalent behavior, not recovered historical event order.
+Migration sidecars bind original and converted replay hashes, unchanged oracle
+hashes, and full verified baseline evidence. The converter never edits expected
+files. Native runtime rejects old input versions with conversion/re-record guidance.
+
+The secondary-release-first and secondary-mouse-first scenes use actual queued SDL
+input from normal level-one starts. They differ only in release/mouse order at
+frame 13, following a second press eight ticks before the cooldown. Expected concussion ammo is
+four and three respectively in both games. No cooldown or gameplay timing changes
+are made to obtain replay parity.
+
+The four 25-frame secondary scenes were independently captured twice from clean
+source `eba0eee69077fd53e4aee54d04f026f8d7ac9e6c`, retained on
+`capture-public-secondary-ordered-v5`. Repeated recordings and complete oracle
+files are byte-identical. The capture executable and recipe hashes are in each
+oracle; the recorded build identity must match the pinned source revision.
+D1 release-first/mouse-first recordings are 5680/5686 bytes, with 3203-byte
+oracles. D2 recordings are 5943/5969 bytes, with 3906/3907-byte oracles. These
+start at ordinary level spawns and contain no save payload. Optional Xvfb-rendered
+proof screenshots also leave both games' mouse-first recording/oracle bytes
+unchanged. These four native scenes are distinct from the 13 converted recordings;
+all original oracle bytes remained unchanged at that format-only checkpoint.
+
+Native modal integration coverage is separate from these small admitted scenes.
+It preserves live rear-view semantic decisions and automap lifecycle/depth effects,
+including a terminal tail with an open virtual map and signature-checked D2 marker
+deletion. This recording-format layer does not choose the combat view. Rewind and debug map-world
+cheats explicitly stop input capture; normal rear-view/map use does not.
+
+The native modal runner compares complete visited-segment and marker observations
+in addition to the unchanged gameplay/RNG oracles. Its isolated recording-off
+checks cover rear baseline restoration and absolute-slot multiplayer marker
+semantics; these synthetic checks are explicitly excluded from public admission.
+The actual SDL captures include1,100 map redraws without input-operation growth,
+F3 and an active-map terminal tail. Default D2 missile-window discovery
+uses the same native selector and canvas geometry as the renderer; isolated
+geometry tests require main-only discovery to miss an offscreen region while the
+combined CPU pass matches the actual renderer exactly. Guided/other selected
+auxiliary cameras and endlevel special-camera map fidelity are not claimed.
+
+## Fixed-forward gameplay recaptures
+
+D1 door/combat and D2 combat/Guide-Bot were independently recaptured from clean
+published source `9be53d6d74feede5b3df4cf7dda19fc10b5f9fc2`, retained on
+`capture-fixed-forward-gameplay-view`. The historical cockpit projection restores
+scaled robot warnings and makes combat visibility independent of the displayed
+camera. These four live captures replace their recording/oracle pairs; the other 13
+pairs, including all four secondary scenes, remain byte-identical.
+
+The approved causal changes preserve exact scenario objectives. D1 combat's
+warning-driven evasion moves death/loot/retirement to 116/123/138 and the second
+identified incoming hit to 116. Guide-Bot release/physical exit move to 188/179.
+Capture lengths are 426, 139, 263 and 219 frames respectively. D1 door and D2 combat
+change warning state only; Guide-Bot has a genuine downstream SIM RNG change.
+Historical migration sidecars remain as conversion evidence; the four new oracle
+pairs instead bind their fresh native source, executable, recipe and input hashes.
+
+Both native backends pass the original-oracle and action checks using the same
+unchanged-input executions that also reject deliberately damaged oracles. These
+are reused evidence, not extra independent runs. Altered-input and both partial
+and completed no-collection controls retain their strict causal gates. See the
+fixed-forward gameplay audit for the complete 142-execution accounting and the
+unchanged imported-D1 qualification limits.

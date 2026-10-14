@@ -51,10 +51,35 @@ jobs:
         run: |
           for game in d1 d2; do
             cmake -S "$game" -B "build${game}-save" -G Ninja \
-              -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
-              -DCMAKE_C_FLAGS_DEBUG="-O0 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O0 -g1"
+              -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+              -DCMAKE_C_FLAGS_DEBUG="-O1 -g1" -DCMAKE_CXX_FLAGS_DEBUG="-O1 -g1"
             cmake --build "build${game}-save" --target test_upstream_compat "dxx-redux-${game}" "dxx-redux-${game}-headless" --parallel 4
           done
+
+      - name: Verify the CI-only optimized Debug profile keeps assertions and precise math
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import shlex
+          from pathlib import Path
+          for game in ("d1", "d2"):
+              build = Path(f"build{game}-save")
+              assert "CMAKE_BUILD_TYPE:STRING=Debug" in (build / "CMakeCache.txt").read_text()
+              commands = json.loads((build / "compile_commands.json").read_text())
+              for target in (f"dxx-redux-{game}", f"dxx-redux-{game}-headless", "test_upstream_compat"):
+                  selected = [row for row in commands if f"/{target}.dir/" in row["command"]]
+                  assert selected, (game, target, "missing compilation commands")
+                  for row in selected:
+                      flags = shlex.split(row["command"])
+                      assert [flag for flag in flags if flag.startswith("-O")] == ["-O1"], row
+                      assert "-g1" in flags and not any(flag.startswith("-DNDEBUG") for flag in flags), row
+                      assert "-ffp-contract=off" in flags and "-fno-fast-math" in flags, row
+                  print(f"{game}/{target}: {len(selected)} Debug commands retain assertions and precise math")
+          PYTHON
+
+      - name: Build public Guide-Bot arrival fixture
+        timeout-minutes: 10
+        run: cmake --build buildd2-save --target test_guidebot_live_navigation --parallel 4
 
       - name: Check headless audio shutdown on success and early failure
         timeout-minutes: 1
@@ -69,6 +94,50 @@ jobs:
         shell: pwsh
         run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
 
+      - name: Qualify native ordered input phases and causal failures
+        timeout-minutes: 12
+        run: |
+          python3 android/tests/test_ordered_public_replay.py
+          python3 android/tests/test_convert_public_replay.py
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_ordered_input_runtime.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -D1Headless "$PWD/buildd1-save/main/dxx-redux-d1-headless" \
+            -D2Headless "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
+            -D1Graphics "$PWD/buildd1-save/main/d1x-redux" \
+            -D2Graphics "$PWD/buildd2-save/main/d2x-redux" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/ordered-input-runtime-ci"
+
+      - name: Qualify live all-weapons grants and immutable compact oracles
+        timeout-minutes: 7
+        run: |
+          python3 android/tests/test_check_all_weapons_runtime.py
+          xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            pwsh -NoProfile -File android/tests/test_all_weapons_runtime.ps1 \
+            -D1BuildDir "$PWD/buildd1-save" -D2BuildDir "$PWD/buildd2-save" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/all-weapons-runtime-ci" -Revision "$(git rev-parse HEAD)"
+
+      - name: Check truthful public Guide-Bot objective arrival without video
+        timeout-minutes: 3
+        run: |
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_guidebot_live_navigation.ps1 \
+            -NoBuild -PublicDemo -BuildDir buildd2-save -HogDir "$PWD/game_data/shareware/d2"
+
+      - name: Prove actual public matcen production and suppression without video
+        timeout-minutes: 3
+        run: |
+          python3 android/tests/test_public_matcen_report.py
+          env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
+            pwsh -NoProfile -File android/tests/test_public_matcen_stations.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -D1DataDir "$PWD/game_data/shareware/d1" -D2DataDir "$PWD/game_data/shareware/d2" \
+            -Output "$PWD/temp/public-matcen-ci"
+
       - name: Exercise native saves, endian restores and imported checkpoints
         timeout-minutes: 5
         run: |
@@ -76,6 +145,15 @@ jobs:
             -DataEdition shareware \
             -NativeExe "$PWD/buildd1-save/main/test_upstream_compat" \
             -ImportedExe "$PWD/buildd2-save/main/test_upstream_compat"
+
+      - name: Qualify runtime-generated ordinary save persistence
+        timeout-minutes: 12
+        run: |
+          pwsh -NoProfile -File android/tests/test_public_save_profiles.ps1
+          xvfb-run -a pwsh -NoProfile -File android/tests/test_public_save_continuation.ps1 \
+            -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \
+            -D2Exe "$PWD/buildd2-save/main/test_upstream_compat" \
+            -Output "$PWD/temp/public-save-continuation-ci"
 
       - name: Exercise public loaded-asset pickup matrix
         timeout-minutes: 5
@@ -188,6 +266,36 @@ jobs:
           assert len(images) == len(frames) and all(path.stat().st_size for path in images)
           PYTHON
 
+      - name: Render and verify ordinary-start Guide-Bot cage release
+        timeout-minutes: 3
+        run: |
+          DXX_PUBLIC_CAPTURE_SCREENSHOTS=1 xvfb-run -a -s '-screen 0 640x480x24 -noreset' \
+            python3 android/tests/capture_compact_public_replays.py \
+            --repo "$PWD" --output "$PWD/temp/public-guidebot-visual-ci" \
+            --capture-d1 "$PWD/buildd1-save/main/test_upstream_compat" \
+            --capture-d2 "$PWD/buildd2-save/main/test_upstream_compat" \
+            --data-d1 "$PWD/game_data/shareware/d1" --data-d2 "$PWD/game_data/shareware/d2" \
+            --engine-revision "$(git rev-parse HEAD)" --scenario guidebot-release
+          python3 - <<'PYTHON'
+          import json
+          from pathlib import Path
+          captured = Path("temp/public-guidebot-visual-ci")
+          admitted = Path("android/tests/fixtures/public_level_replays")
+          name = "d2-public-guidebot-release.oracle.json"
+          actual = json.loads((captured / name).read_bytes())
+          expected = json.loads((admitted / name).read_bytes())
+          for key in ("frames", "frame_sha256", "simulation_rng_events", "simulation_rng_sha256",
+                      "terminal_sha256", "guidebot_observations"):
+              assert actual[key] == expected[key], key
+          directory = captured / "d2-guidebot-release"
+          report = json.loads((directory / "capture.json").read_bytes())
+          frames = report["screenshot_frames"]
+          assert frames == sorted(set(frames))
+          assert {0, report["damage_frame"], report["blast_frame"], report["action_frame"], report["passage_frame"]} <= set(frames)
+          images = sorted((directory / "screenshots").glob("scrn*.png"))
+          assert len(images) == len(frames) and all(path.stat().st_size for path in images)
+          PYTHON
+
       - name: Package exact replay binaries and pinned public assets
         run: |
           mkdir -p "$RUNNER_TEMP/public-replay-build"
@@ -205,6 +313,33 @@ jobs:
           retention-days: 3
           if-no-files-found: error
 
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep save integrity reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-save-reports
+          path: |
+            temp/wall-blast-save-shareware/**/*.json
+            temp/wall-blast-save-shareware/**/*.log
+            temp/wall-blast-save-shareware/**/*.txt
+            temp/wall-blast-save-shareware/**/*.png
+            temp/public-*-ci/**/*.json
+            temp/public-*-ci/**/*.log
+            temp/public-*-ci/**/*.txt
+            temp/public-*-ci/**/*.png
+            android/temp/guidebot_live_navigation/**/*.json
+            android/temp/guidebot_live_navigation/**/*.log
+            android/temp/guidebot_live_navigation/**/*.txt
+            android/temp/guidebot_live_navigation/**/*.png
+            android/temp/wall-blast-profiles/**/*.json
+            android/temp/wall-blast-profiles/**/*.log
+            android/temp/wall-blast-profiles/**/*.txt
+            android/temp/wall-blast-profiles/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
+
       - name: Keep save integrity evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -213,15 +348,23 @@ jobs:
           path: |
             temp/wall-blast-save-shareware/
             temp/public-pickup-ci/
+            temp/public-save-continuation-ci/
             temp/public-combat-ci/
             temp/public-robot-combat-visual-ci/
+            temp/public-guidebot-visual-ci/
+            android/temp/guidebot_live_navigation/
             temp/public-robot-loot-visual-ci/
             temp/public-door-lifecycle-visual-ci/
+            temp/public-matcen-ci/
+            temp/ordered-input-runtime-ci/
+            temp/all-weapons-runtime-ci/
             android/temp/wall-blast-profiles/
             buildd1-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd1-save/CMakeCache.txt
+            buildd1-save/compile_commands.json
             buildd2-save/CMakeFiles/CMakeConfigureLog.yaml
             buildd2-save/CMakeCache.txt
+            buildd2-save/compile_commands.json
           retention-days: 3
           if-no-files-found: ignore
 
@@ -280,10 +423,14 @@ jobs:
       - name: Check compact public replay admission
         timeout-minutes: 4
         run: |
+          python3 android/tests/test_ordered_public_replay.py
+          python3 android/tests/test_convert_public_replay.py
+          python3 android/tests/test_public_secondary_replay.py
           python3 android/tests/test_compact_public_replay.py
           python3 android/tests/test_run_compact_public_replays.py
           python3 android/tests/test_public_switch_replay.py
           python3 android/tests/test_public_robot_combat_replay.py
+          python3 android/tests/test_public_guidebot_replay.py
           python3 android/tests/test_public_loot_replay.py
           python3 android/tests/test_public_door_replay.py
           python3 android/tests/test_public_incoming_robot_hits.py
@@ -296,7 +443,7 @@ jobs:
 
       - name: Qualify compact public replays without a display
         # Primary native gate: actual console mains, no X server or OpenGL context
-        # Nine cases took 33 minutes; retain headroom for twelve cases plus the focused no-collect controls
+        # Nine cases took 33 minutes; retain headroom for thirteen cases plus the focused no-collect controls
         timeout-minutes: 80
         run: |
           env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
@@ -311,6 +458,29 @@ jobs:
             -D1Exe "$PWD/buildd1-save/main/dxx-redux-d1-headless" \
             -D2Exe "$PWD/buildd2-save/main/dxx-redux-d2-headless" \
             -Output "$PWD/temp/public-replay-headless-negative-ci" -TimeoutSeconds 180
+
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep primary headless replay reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headless-replay-reports
+          path: |
+            temp/public-replay-headless-ci/**/*.json
+            temp/public-replay-headless-ci/**/*.log
+            temp/public-replay-headless-ci/**/*.txt
+            temp/public-replay-headless-ci/**/*.png
+            temp/public-replay-headless-negative-ci/**/*.json
+            temp/public-replay-headless-negative-ci/**/*.log
+            temp/public-replay-headless-negative-ci/**/*.txt
+            temp/public-replay-headless-negative-ci/**/*.png
+            temp/input_demo_replay_failures_*/**/*.json
+            temp/input_demo_replay_failures_*/**/*.log
+            temp/input_demo_replay_failures_*/**/*.txt
+            temp/input_demo_replay_failures_*/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Keep primary headless replay evidence
         if: always()
@@ -392,6 +562,25 @@ jobs:
             -D1Exe "$PWD/buildd1-save/main/d1x-redux" \
             -D2Exe "$PWD/buildd2-save/main/d2x-redux" \
             -Output "$PWD/temp/public-replay-graphics-negative-ci" -TimeoutSeconds 180
+
+      # Keep the small review surface downloadable when complete traces exceed
+      # the artifact client's download limit; the full evidence below is retained
+      - name: Keep secondary headed replay reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: public-headed-replay-reports
+          path: |
+            temp/public-replay-graphics-ci/**/*.json
+            temp/public-replay-graphics-ci/**/*.log
+            temp/public-replay-graphics-ci/**/*.txt
+            temp/public-replay-graphics-ci/**/*.png
+            temp/public-replay-graphics-negative-ci/**/*.json
+            temp/public-replay-graphics-negative-ci/**/*.log
+            temp/public-replay-graphics-negative-ci/**/*.txt
+            temp/public-replay-graphics-negative-ci/**/*.png
+          retention-days: 3
+          if-no-files-found: ignore
 
       - name: Keep secondary headed replay evidence
         if: always()

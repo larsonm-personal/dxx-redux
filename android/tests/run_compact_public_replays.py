@@ -5,6 +5,8 @@ import hashlib
 import os
 import shutil
 import subprocess
+import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import compact_public_replay as compact
@@ -14,6 +16,8 @@ import public_switch_replay as shoot_switch
 import public_robot_combat_replay as robot_combat
 import public_door_replay as door_lifecycle
 import public_loot_replay as robot_loot
+import public_guidebot_replay as guidebot
+import public_secondary_replay as secondary
 
 SCENARIOS = ("flight", "pickup", "door", "combat")
 PUBLIC_CASES = {(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in SCENARIOS}
@@ -21,6 +25,8 @@ PUBLIC_CASES[("d2", "shoot-switch")] = 2
 PUBLIC_CASES[("d1", "door-lifecycle")] = 3
 PUBLIC_CASES[("d2", "door-lifecycle")] = 1
 PUBLIC_CASES[("d1", "loot")] = 1
+PUBLIC_CASES[("d2", "guidebot-release")] = 1
+PUBLIC_CASES.update({(game, scenario): 1 for game in compact.PUBLIC_MISSIONS for scenario in secondary.SCENARIOS})
 
 
 def load_corpus(directory):
@@ -68,6 +74,8 @@ def load_corpus(directory):
             raise parity.EvidenceError("Combat cases require their immutable live damage/loot observation oracle")
         if ("door_observations" in oracle) != (case["scenario"] == "door-lifecycle"):
             raise parity.EvidenceError("Door lifecycle cases require immutable live geometric observation oracles")
+        if ("guidebot_observations" in oracle) != (case["scenario"] == "guidebot-release"):
+            raise parity.EvidenceError("Guide-Bot cases require their immutable live escort observation oracle")
         if header["game"] != case["game"] or header["level"] != PUBLIC_CASES[(case["game"], case["scenario"])]:
             raise parity.EvidenceError("Manifest game or authored scenario level disagrees with its recording")
     return cases
@@ -154,6 +162,8 @@ def verify_actions(case, demo, state_trace, actual_result):
     frames = list(parity.frames(state_trace, header, case["game"]))
     terminal = compact._json(Path(actual_result).read_bytes())
     states = [frame["state"] for frame in frames] + [terminal]
+    if case["scenario"] in secondary.SCENARIOS:
+        return secondary.verify(case, demo, header, frames, terminal)
     positions = [_position(state) for state in states]
     if max(_distance_squared(positions[0], point) for point in positions) <= 65536**2:
         raise parity.EvidenceError("Declared public action contains no movement beyond one world unit")
@@ -168,7 +178,10 @@ def verify_actions(case, demo, state_trace, actual_result):
     # controls exercise causal robot outcomes rather than just weapon presence
     combat_actions = robot_combat.verify(actions, header, states, state_trace) if scenario == "combat" else None
     loot_actions = robot_loot.verify(actions, header, states, state_trace) if scenario == "loot" else None
-    if scenario in ("flight", "door", "shoot-switch", "combat", "loot") and (weapons <= 0 or not energy_drop):
+    guidebot_actions = guidebot.verify(actions, header, states, state_trace) if scenario == "guidebot-release" else None
+    if scenario in ("flight", "door", "shoot-switch", "combat", "loot", "guidebot-release") and (
+        weapons <= 0 or not energy_drop
+    ):
         raise parity.EvidenceError("Replay did not create live player weapons and spend energy")
     result = {
         "movement": True,
@@ -180,6 +193,9 @@ def verify_actions(case, demo, state_trace, actual_result):
         return result
     if scenario == "loot":
         result.update(loot_actions)
+        return result
+    if scenario == "guidebot-release":
+        result.update(guidebot_actions)
         return result
     if scenario == "shoot-switch":
         result.update(shoot_switch.verify(actions, header, states, state_trace))
@@ -400,6 +416,15 @@ def run(args):
         return _run_cases(args, cases)
 
 
+@contextmanager
+def measure_phase(timings, phase):
+    started = time.perf_counter()
+    try:
+        yield
+    finally:
+        timings[phase] = round(time.perf_counter() - started, 6)
+
+
 def _run_cases(args, cases):
     sandbox_token = hashlib.sha256(str(args.output).encode("utf-8")).hexdigest()[:16]
     report = {
@@ -424,6 +449,7 @@ def _run_cases(args, cases):
                 "repeat": repeat,
                 "backend": args.run_mode,
                 "status": "fail",
+                "timing_seconds": {},
                 "artifacts": {"state": str(state), "rng": str(rng), "result": str(actual)},
             }
             command = [
@@ -460,13 +486,18 @@ def _run_cases(args, cases):
                 "-SandboxSuffix",
                 args.run_mode + "-" + sandbox_token + "-" + directory.name,
             ]
+            if args.run_mode == "headless":
+                command += ["-HeadlessConsoleOutput", "2"]
             item["command"] = command
             try:
-                item["exit_code"] = _run(command, directory / "runner.log", args.timeout + 120, args.repo)
+                with measure_phase(item["timing_seconds"], "runner"):
+                    item["exit_code"] = _run(command, directory / "runner.log", args.timeout + 120, args.repo)
                 if item["exit_code"]:
                     raise parity.EvidenceError("Replay runner failed; inspect runner.log")
-                item["fidelity"] = compact.verify(case["game"], demo, oracle, state, rng, actual)
-                item["actions"] = verify_actions(case, demo, state, actual)
+                with measure_phase(item["timing_seconds"], "fidelity"):
+                    item["fidelity"] = compact.verify(case["game"], demo, oracle, state, rng, actual)
+                with measure_phase(item["timing_seconds"], "actions"):
+                    item["actions"] = verify_actions(case, demo, state, actual)
                 item["status"] = "pass"
             except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
                 item["error"] = str(error)

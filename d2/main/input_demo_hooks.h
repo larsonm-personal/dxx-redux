@@ -27,6 +27,25 @@ extern "C" {
 #endif
 
 int input_demo_disable_homing_player_bump(void);
+void input_demo_record_input_context(void);
+void input_demo_record_input_clear(void);
+void input_demo_record_reset_input_phase(void);
+void input_demo_run_game_process_frame(void (*process)(void));
+void input_demo_record_input_reset(void);
+void input_demo_record_input_sample(void);
+void input_demo_record_input_controls_supported(void);
+void input_demo_record_input_controls(void);
+void input_demo_record_input_cockpit(void);
+void input_demo_capture_view_projection(input_demo_view_projection *view);
+int input_demo_validate_replay_view_projection(char *error, size_t error_size);
+void input_demo_record_input_automap(int phase);
+void input_demo_record_input_rear_view(int action);
+void input_demo_trace_view_state(const char *event, int value);
+void input_demo_cancel_unsupported_input_capture(const char *reason);
+void input_demo_reset_replay_input_state(void);
+int input_demo_record_finish_input_tail(char *error, size_t error_size);
+int input_demo_apply_ordered_direct_command(const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size);
 void input_demo_record_game_frame(void);
 void input_demo_record_direct_command_guidebot_goal(int special_key,
 	int from_menu);
@@ -41,8 +60,6 @@ void input_demo_record_direct_command_guidebot_warp_to_me(void);
 void input_demo_record_direct_command_death_abort(void);
 void input_demo_record_direct_command_select_weapon_exact(int weapon_class,
 	int weapon_index);
-int input_demo_apply_replay_direct_commands(
-	input_demo_direct_command_phase phase);
 void input_demo_update_rng_trace_context(void);
 void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag);
 void input_demo_capture_current_result(input_demo_result *result);

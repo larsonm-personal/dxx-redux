@@ -32,12 +32,7 @@ int input_demo_finish_replay_shared(int close_window,
                                     fix64 *replay_last_timer_value,
                                     void (*before_write_replay_result)(void),
                                     void (*write_replay_result)(void));
-int input_demo_sync_replay_rng_to_current_frame_shared(
-    void (*before_sync_replay_rng)(const input_demo_replay_frame *replay_frame),
-    void (*stop_replay)(int));
-int input_demo_step_replay_frame_shared(
-    int (*prepare_replay_frame)(void),
-    int (*sync_replay_rng_to_current_frame)(void));
+int input_demo_step_replay_frame_shared(int (*prepare_replay_frame)(void), void (*stop_replay)(int));
 void input_demo_advance_replay_frame_shared(
     int (*before_advance_replay_frame)(void),
     void (*stop_replay)(int));

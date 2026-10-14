@@ -1,0 +1,585 @@
+{
+  "scope": "Read-only independent provenance, capture, packing and native-oracle audit; no games, builds or replays executed",
+  "revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
+  "status": "pass",
+  "checks": [
+    {
+      "check": "clean exact HEAD",
+      "pass": true
+    },
+    {
+      "check": "published source tree and parent",
+      "pass": true
+    },
+    {
+      "check": "remote retained capture ref",
+      "pass": true
+    },
+    {
+      "check": "published source identical to reviewed source tree",
+      "pass": true
+    },
+    {
+      "check": "source commit changes limited to test and audit harness",
+      "pass": true,
+      "details": [
+        "android/ai tool plans/plan_public_fan_transparency_20261013.md",
+        "android/tests/capture_public_d1_fault_probes.py",
+        "android/tests/check_public_fan_transparency.py",
+        "android/tests/public_fan_fault_fixture.hpp",
+        "android/tests/public_level_replay_fixture.hpp",
+        "android/tests/test_capture_public_d1_fault_probes.py",
+        "android/tests/test_check_public_fan_transparency.py",
+        "android/tests/test_public_d1_fault_tools.ps1",
+        "android/tests/test_upstream_compat.cpp"
+      ]
+    },
+    {
+      "check": "built target identity temp/native-d1-build/main/test_upstream_compat",
+      "pass": true
+    },
+    {
+      "check": "built target identity temp/native-d1-build/main/d1x-redux",
+      "pass": true
+    },
+    {
+      "check": "built target identity temp/native-d1-build/main/dxx-redux-d1-headless",
+      "pass": true
+    },
+    {
+      "check": "built target identity temp/native-d2-build/main/test_upstream_compat",
+      "pass": true
+    },
+    {
+      "check": "built target identity temp/native-d2-build/main/d2x-redux",
+      "pass": true
+    },
+    {
+      "check": "d1 configured source home",
+      "pass": true
+    },
+    {
+      "check": "d1 actual fixture/recorder/native effects compile labels",
+      "pass": true,
+      "details": {
+        "main/CMakeFiles/dxx-redux-d1-headless.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/effects.c",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/dxx-redux-d1-headless.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/fireball.c",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/dxx-redux-d1-headless.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/effects.c",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/fireball.c",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "03f9c8523",
+          "d2_define": false
+        }
+      }
+    },
+    {
+      "check": "d2 configured source home",
+      "pass": true
+    },
+    {
+      "check": "d2 actual fixture/recorder/native effects compile labels",
+      "pass": true,
+      "details": {
+        "main/CMakeFiles/test_upstream_compat.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d2/main/effects.c",
+          "stamp": "03f9c8523",
+          "d2_define": true
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d2/main/fireball.c",
+          "stamp": "03f9c8523",
+          "d2_define": true
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp",
+          "stamp": "03f9c8523",
+          "d2_define": true
+        },
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "03f9c8523",
+          "d2_define": true
+        }
+      }
+    },
+    {
+      "check": "actual D1 shareware asset hashes pinned",
+      "pass": true,
+      "details": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+      }
+    },
+    {
+      "check": "temp/final-fan-captures/positive all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 17,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "positive capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "positive actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "positive compile commands current",
+      "pass": true
+    },
+    {
+      "check": "positive actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "positive ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "positive actual native projection",
+      "pass": true
+    },
+    {
+      "check": "positive complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "positive compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "positive separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56604,
+        "oracle": 25970
+      }
+    },
+    {
+      "check": "positive independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 346,
+        "all_rng_events": 360
+      }
+    },
+    {
+      "check": "positive oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "positive raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "positive sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
+      "check": "temp/final-fan-captures/positive-observation-off all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 13,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "positive-observation-off capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off compile commands current",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off actual native projection",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56604,
+        "oracle": 25970
+      }
+    },
+    {
+      "check": "positive-observation-off independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 346,
+        "all_rng_events": 360
+      }
+    },
+    {
+      "check": "positive-observation-off oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "positive-observation-off sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
+      "check": "temp/final-fan-captures/no-fire all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 17,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "no-fire capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "no-fire actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "no-fire compile commands current",
+      "pass": true
+    },
+    {
+      "check": "no-fire actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "no-fire ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "no-fire actual native projection",
+      "pass": true
+    },
+    {
+      "check": "no-fire complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "no-fire compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "no-fire separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56570,
+        "oracle": 25968
+      }
+    },
+    {
+      "check": "no-fire independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 344,
+        "all_rng_events": 358
+      }
+    },
+    {
+      "check": "no-fire oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "no-fire raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "no-fire sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
+      "check": "temp/final-fan-captures/delay all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 17,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "delay capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "delay actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "delay compile commands current",
+      "pass": true
+    },
+    {
+      "check": "delay actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "delay ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "delay actual native projection",
+      "pass": true
+    },
+    {
+      "check": "delay complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "delay compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "delay separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56604,
+        "oracle": 25970
+      }
+    },
+    {
+      "check": "delay independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 346,
+        "all_rng_events": 360
+      }
+    },
+    {
+      "check": "delay oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "delay raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "delay sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
+      "check": "joint screenshots and both pixel probes on/off byte neutrality raw/capture.dximdemo",
+      "pass": true
+    },
+    {
+      "check": "joint screenshots and both pixel probes on/off byte neutrality raw/capture.dximdemo.rngtrace.jsonl",
+      "pass": true
+    },
+    {
+      "check": "joint screenshots and both pixel probes on/off byte neutrality candidate.dximdemo",
+      "pass": true
+    },
+    {
+      "check": "joint screenshots and both pixel probes on/off byte neutrality candidate.oracle.json",
+      "pass": true
+    },
+    {
+      "check": "observation on/off every gameplay report field equal",
+      "pass": true
+    },
+    {
+      "check": "no-fire only decoded flare request intervention",
+      "pass": true,
+      "details": [
+        {
+          "path": "$[299].ops[0].p.fl",
+          "positive": 1,
+          "control": 0
+        }
+      ]
+    },
+    {
+      "check": "delay only decoded flare request intervention",
+      "pass": true,
+      "details": [
+        {
+          "path": "$[299].ops[0].p.fl",
+          "positive": 1,
+          "control": 0
+        },
+        {
+          "path": "$[300].ops[0].p.fl",
+          "positive": 0,
+          "control": 1
+        }
+      ]
+    },
+    {
+      "check": "all flight held inputs released at common arm 299",
+      "pass": true
+    },
+    {
+      "check": "native positive flare crosses authored fan",
+      "pass": true
+    },
+    {
+      "check": "native same exact collision point opens phase 0 and closes phase 1",
+      "pass": true
+    },
+    {
+      "check": "no-fire never creates flare",
+      "pass": true
+    },
+    {
+      "check": "delay has naturally distinct launch and native closed collision",
+      "pass": true
+    },
+    {
+      "check": "temp/final-fan-profile all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 7,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "native matched pilot only documented camera byte differs",
+      "pass": true,
+      "details": [
+        {
+          "offset": 15,
+          "default": 1,
+          "comparison": 0
+        }
+      ]
+    },
+    {
+      "check": "matched pilot source and writer identity",
+      "pass": true
+    },
+    {
+      "check": "copied matched pilot bytes unchanged",
+      "pass": true
+    },
+    {
+      "check": "nine replay process outcomes complete",
+      "pass": true
+    },
+    {
+      "check": "temp/final-fan-replays all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 38,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "replay build provenance exact",
+      "pass": true
+    },
+    {
+      "check": "positive native headed/console complete raw equality",
+      "pass": true
+    },
+    {
+      "check": "no-fire native headed/console complete raw equality",
+      "pass": true
+    },
+    {
+      "check": "delay native headed/console complete raw equality",
+      "pass": true
+    },
+    {
+      "check": "reserve retained",
+      "pass": true,
+      "details": {
+        "free_bytes": 4359258112
+      }
+    }
+  ],
+  "notes": [
+    "The sparse capture-observation.jsonl.gz carries a 600-frame cap and combat events, with no complete per-frame records. Full recorder and capture.json were used instead.",
+    "On/off equality tests the combined removal of screenshots and both pixel observers. It does not separately isolate the three instrumentation switches.",
+    "Delay is a one-input scheduling intervention with naturally evolving muzzle geometry, not a frozen-geometry phase-only experiment.",
+    "Detailed paired imported mismatch and admission analysis remains a separate review."
+  ]
+}

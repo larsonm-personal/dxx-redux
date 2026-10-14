@@ -1,0 +1,39 @@
+{
+  "asset_sha256": {
+    "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+    "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+  },
+  "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+  "engine_inputs_unchanged": true,
+  "engine_source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+  "executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+  "helper_manifest_bytes": 5232,
+  "helper_manifest_path": "temp/final-fault-captures/mine-no-concussion/manifest.json",
+  "helper_manifest_sha256": "3c721098d5b8f0243504b84d2e180e6e27019e6085d3120c3f0fcfe68227a2df",
+  "helper_manifest_stage": "complete",
+  "helper_manifest_status": "candidate",
+  "independent_checks": {
+    "all_manifest_files_sha256_and_sizes": true,
+    "analyzer_only_changes_excluded_from_engine_inputs": true,
+    "compact_decoded_input_and_terminal": true,
+    "compact_live_frame_hashes": true,
+    "compact_live_sim_hash_and_carried_chain": true,
+    "current_assets_match_capture": true,
+    "current_engine_recipes_exact_capture_revision": true,
+    "current_executable_matches_capture": true,
+    "native_live_recording_header": true,
+    "source_clean_at_capture_verified_by_helper": true
+  },
+  "recorder_git_version": "8b19ab9ff",
+  "schema": 1,
+  "source_recipe_sha256": {
+    "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+    "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+    "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+    "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+    "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+  },
+  "source_tree": "5d9d3efb3b07d54fec189eaef6ec8dfaa7355fb8",
+  "status": "clean published candidate",
+  "verified_at": "2026-10-13T09:02:07.002931+00:00"
+}

@@ -1,0 +1,127 @@
+{
+  "schema": "public-d1-fan-checker-rejections-v1",
+  "status": "all_expected_rejections",
+  "source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
+  "matched_positive": "known_fault_reproduced",
+  "raw_evidence_unchanged": true,
+  "controls_are_separate_live_captures": true,
+  "checks": [
+    {
+      "id": "wrong-phase",
+      "status": "rejected",
+      "error": "Wrong imported collision phase",
+      "scope": "Synthetic in-memory checker mutation of the verified final decoded imported trace; raw evidence and oracle unchanged",
+      "intervention": "wrong-phase at aborted boundary301 only"
+    },
+    {
+      "id": "wrong-magnitude",
+      "status": "rejected",
+      "error": "Wrong imported collision magnitude/trajectory",
+      "scope": "Synthetic in-memory checker mutation of the verified final decoded imported trace; raw evidence and oracle unchanged",
+      "intervention": "wrong-magnitude at aborted boundary301 only"
+    },
+    {
+      "id": "absent-physical-fault",
+      "status": "rejected",
+      "error": "Wrong imported collision magnitude/trajectory",
+      "scope": "Synthetic in-memory checker mutation of the verified final decoded imported trace; raw evidence and oracle unchanged",
+      "intervention": "absent-physical-fault at aborted boundary301 only"
+    },
+    {
+      "id": "no-fire-is-not-positive-fault",
+      "status": "rejected",
+      "error": "Unexpected imported process exit",
+      "scope": "Actual complete unmodified control execution supplied to positive fault gate",
+      "intervention": "Choose existing no-fire imported run; preserve its actual exit0"
+    },
+    {
+      "id": "delay-is-not-positive-fault",
+      "status": "rejected",
+      "error": "Unexpected imported process exit",
+      "scope": "Actual complete unmodified control execution supplied to positive fault gate",
+      "intervention": "Choose existing delay imported run; preserve its actual exit0"
+    }
+  ],
+  "inputs": {
+    "temp/final-fan-analysis/positive.detail.oracle.json": {
+      "bytes": 66992,
+      "sha256": "a609fc1da7760cf4c6e4c0316a477ad834babb84647e0cb9bc76186735a8d826"
+    },
+    "temp/final-fan-captures/positive/candidate.dximdemo": {
+      "bytes": 56604,
+      "sha256": "5136cecd6ccd287ad3af71a0ebaf00551d7a50b4800e640b1b86697f5fe18228"
+    },
+    "temp/final-fan-replays/positive-console/state.jsonl.gz": {
+      "bytes": 6894288,
+      "sha256": "337f4be1512a1e2cdd1e209ab5bdb372a9c044f61df2255cc093c64a812b92a7"
+    },
+    "temp/final-fan-replays/positive-console/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "789a8801e3d2ccb7d08d6709814f71f0477802a85364a781168db2d27966af4f"
+    },
+    "temp/final-fan-replays/positive-console/run.log": {
+      "bytes": 1762,
+      "sha256": "5a19957a6c5b9a08bb5ca0f05abed0f8bae146cee9bce07b2754410847f09d6e"
+    },
+    "temp/final-fan-replays/positive-imported/state.jsonl.gz": {
+      "bytes": 6532674,
+      "sha256": "b7e199a8d36e8c39043df37f700bd5f34949daa7a19a216ffd1cfc912c1f8109"
+    },
+    "temp/final-fan-replays/positive-imported/rng.jsonl": {
+      "bytes": 103225,
+      "sha256": "5fa74e938102578981b927f4dbeb987421a5d8bd5a545ae1ce3f40afc871c3d2"
+    },
+    "temp/final-fan-replays/positive-imported/run.log": {
+      "bytes": 2301262,
+      "sha256": "e55b664cd7b76d58b36038f83a873ee10e7ce219b95c91364aab40e077626836"
+    },
+    "temp/final-fan-replays/no-fire-console/state.jsonl.gz": {
+      "bytes": 6885301,
+      "sha256": "3380c14246fb6acb1610026f1f6b62aa34ea84afd4cfd79dba59f3913c117df1"
+    },
+    "temp/final-fan-replays/no-fire-console/rng.jsonl": {
+      "bytes": 101108,
+      "sha256": "d512b480a9954cfb716771b9fe4e5cfd6cf652496476c4cce4d1b78355d5bece"
+    },
+    "temp/final-fan-replays/no-fire-console/run.log": {
+      "bytes": 1757,
+      "sha256": "b9e04dd56c5ce3da24669f1ba46449d88352261169f230aefd06e51ee8d6a566"
+    },
+    "temp/final-fan-replays/no-fire-imported/state.jsonl.gz": {
+      "bytes": 7022357,
+      "sha256": "783daca2302d7108f4b35baa066c490b1006b0230c27cd120690c85713be1a4a"
+    },
+    "temp/final-fan-replays/no-fire-imported/rng.jsonl": {
+      "bytes": 102996,
+      "sha256": "459cdb6b26a18a7c9fd416735489ac0665433d73418fda6acf7c110a42919e3b"
+    },
+    "temp/final-fan-replays/no-fire-imported/run.log": {
+      "bytes": 37385,
+      "sha256": "f954bf86f8c79886cd91bd3eb41cfd79cbbb19ab85e7e01705a69b0ce8c268ba"
+    },
+    "temp/final-fan-replays/delay-console/state.jsonl.gz": {
+      "bytes": 6893989,
+      "sha256": "934664b02f4dd3ce2690b8b772eda2907b9012760f9c73bea02270050a55282d"
+    },
+    "temp/final-fan-replays/delay-console/rng.jsonl": {
+      "bytes": 101636,
+      "sha256": "2514ff61bac46b89a2433dbe1df6ffcf30709990dbba9773002b4510f67e11ea"
+    },
+    "temp/final-fan-replays/delay-console/run.log": {
+      "bytes": 1747,
+      "sha256": "eb3ecc6808bf686dda2407e851aa8a273ab7cd21af0496d97e3ba5f56c1edc07"
+    },
+    "temp/final-fan-replays/delay-imported/state.jsonl.gz": {
+      "bytes": 7029957,
+      "sha256": "b5b1b346c86b4f95986e42defe7872c490094d6050d1aa5c517b438bd830e055"
+    },
+    "temp/final-fan-replays/delay-imported/rng.jsonl": {
+      "bytes": 103534,
+      "sha256": "ff07ac8db790ed0e9f8db304508ca15fa6daf35425f693a6c0bce0f568a9db9d"
+    },
+    "temp/final-fan-replays/delay-imported/run.log": {
+      "bytes": 37356,
+      "sha256": "04672167411dfb7e351c3deeacf99fab3228a550af4ac5898f2bac23c6876097"
+    }
+  }
+}

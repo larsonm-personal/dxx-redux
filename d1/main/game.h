@@ -212,6 +212,12 @@ void show_boxed_message(char *msg, int RenderFlag);
 
 // turns off rear view & rear view cockpit
 void reset_rear_view(void);
+int input_demo_apply_rear_view_action(int action, int validate_only);
+void input_demo_get_rear_view_state(int *rear_view, int *leave_mode,
+                                   int *current_cockpit, int *preferred_cockpit);
+int input_demo_restore_rear_view_state(int rear_view, int leave_mode,
+                                       int current_cockpit, int preferred_cockpit,
+                                       int validate_only);
 
 void game_init_render_buffers (int render_max_w, int render_max_h);
 void game_render_frame_mono(int flip);

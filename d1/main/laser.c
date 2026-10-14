@@ -33,6 +33,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmap.h"
 #include "textures.h"
 #include "render.h"
+#include "render_gameplay_view.h"
 #include "vclip.h"
 #include "fireball.h"
 #include "polyobj.h"
@@ -573,10 +574,12 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 				best_objnum = ConsoleObject - Objects;
 		} else {
 			//	Not in network mode and fired by player.
-			for (i=Num_rendered_objects-1; i>=0; i--) {
+			const short *candidates;
+			const int count = render_get_gameplay_view_objects(&candidates);
+			for (i=count-1; i>=0; i--) {
 				fix			dot; //, dist;
 				vms_vector	vec_to_curobj;
-				int			objnum = Ordered_rendered_object_list[i];
+				int			objnum = candidates[i];
 				object		*curobjp = &Objects[objnum];
 
 				if (objnum == Players[Player_num].objnum)

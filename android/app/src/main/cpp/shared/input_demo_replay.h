@@ -6,6 +6,7 @@
 
 #include "input_demo_fixture.h"
 #include "input_demo_controls.h"
+#include "input_demo_dispatch.h"
 #include "input_demo_result.h"
 
 #ifdef __cplusplus
@@ -29,36 +30,17 @@ typedef struct input_demo_replay_frame {
 	input_demo_result state_result;
 } input_demo_replay_frame;
 
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_NONE                     0
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL            1
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER              2
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON      3
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON    4
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_FLAG                5
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_ESCORT_RELEASE_CONTROL   6
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT              7
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHANGE_DIFFICULTY        8
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_SPAWN           9
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_SECRET     10
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME      11
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED 12
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT      13
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT                    14
-#define INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE                40
-
-typedef struct input_demo_replay_direct_command_event {
-	int32_t kind;
-	int32_t value0;
-	int32_t value1;
-	char text[INPUT_DEMO_REPLAY_DIRECT_COMMAND_TEXT_SIZE];
-} input_demo_replay_direct_command_event;
-
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
 #pragma pack(pop)
 #endif
 
 void input_demo_replay_frame_clear(input_demo_replay_frame *frame);
 void input_demo_replay_direct_command_event_clear(input_demo_replay_direct_command_event *event);
+int input_demo_replay_format_version(void);
+int input_demo_replay_get_input_batch_info(uint32_t frame_index, input_demo_input_batch_info *info,
+                                           char *error, size_t error_size);
+int input_demo_replay_get_input_operation(uint32_t frame_index, uint32_t operation_index,
+                                          input_demo_input_operation *operation, char *error, size_t error_size);
 int input_demo_replay_is_loaded(void);
 void input_demo_replay_unload(void);
 int input_demo_replay_load(const char *demo_path, char *error, size_t error_size);
@@ -75,8 +57,14 @@ const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
 void input_demo_replay_set_actual_result_path(const char *path);
 const input_demo_level_start *input_demo_replay_level_start(void);
+/* Last terminal write verdict survives unload, but every load attempt clears it */
+int input_demo_replay_actual_result_written(void);
+int input_demo_replay_write_actual_result(const input_demo_result *result,
+                                          char *error, size_t error_size);
 int input_demo_replay_has_player_cfg(void);
 int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg);
+int input_demo_replay_get_rear_view_baseline(input_demo_rear_view_baseline *state);
+int input_demo_replay_get_view_projection(input_demo_view_projection *state);
 int input_demo_replay_has_checkpoint(void);
 const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);

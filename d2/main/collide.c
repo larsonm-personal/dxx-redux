@@ -232,7 +232,8 @@ void apply_force_damage(object *obj,fix force,object *other_obj)
 					result = apply_damage_to_robot(obj,damage/2, other_obj-Objects);
 			}
 
-			if (result && (other_obj->ctype.laser_info.parent_signature == ConsoleObject->signature)) {
+			if (result && d1_in_d2_force_kill_credit_allowed(other_obj) &&
+			    (other_obj->ctype.laser_info.parent_signature == ConsoleObject->signature)) {
 				add_points_to_score(Robot_info[obj->id].score_value);
 				// android port: coop QoL -- track local player robot kill
 				coop_record_robot_kill(Player_num, Robot_info[obj->id].score_value);

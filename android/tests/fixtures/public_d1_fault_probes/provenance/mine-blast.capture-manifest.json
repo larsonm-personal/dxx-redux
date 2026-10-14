@@ -1,0 +1,210 @@
+{
+    "asset_sha256": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    },
+    "capture_executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+    "capture_invoked": true,
+    "command": [
+        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "--public-level-replay",
+        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "mine-blast"
+    ],
+    "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+    "files": {
+        "build.log": {
+            "bytes": 135,
+            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+        },
+        "candidate.dximdemo": {
+            "bytes": 73186,
+            "sha256": "57eb6b8e452d8741b2ed804b7a83c1084a077c6d58b449f4d54f938c40add697"
+        },
+        "candidate.oracle.json": {
+            "bytes": 33571,
+            "sha256": "dda665876de6ff23dcad6b8b17350736347ddeba554d4991e8d6615882d6e137"
+        },
+        "capture.log": {
+            "bytes": 5440,
+            "sha256": "51b5088eb957f057ea48818057a99bf23597162ddc1b251d2eccb74621d43490"
+        },
+        "configure.log": {
+            "bytes": 1385,
+            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+        },
+        "raw/capture-observation.jsonl.gz": {
+            "bytes": 1605,
+            "sha256": "c78cbf7192803c69d2446bbc10a1122b94e5e7a461cb13d897798d70c491fda1"
+        },
+        "raw/capture.dximdemo": {
+            "bytes": 13400422,
+            "sha256": "f22f680be2bcce4470452b8e5f414bc7393cc88f62f97897f85b1b9c6bebda18"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+            "bytes": 331844,
+            "sha256": "07965e4c15583a7755e874079ecf4a03ba4697408ad57ad457de898980cebc7a"
+        },
+        "raw/capture.json": {
+            "bytes": 213331,
+            "sha256": "12045633fc5eab5f5b3bcb53e73ccf900bb3dd17ee94b95afafac228b7be1c1d"
+        },
+        "raw/demos/tmpdemo.dem": {
+            "bytes": 18846,
+            "sha256": "68435877494cdfd0ff2c0d39f3fde264f6c40a09cd0be0325f39882eef9a9a62"
+        },
+        "raw/descent.cfg": {
+            "bytes": 525,
+            "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+        },
+        "raw/public.plr": {
+            "bytes": 2262,
+            "sha256": "e5068b5d0c38967c37793b6b8f335e7ccb6c595bdeea0494cb421181788af99f"
+        },
+        "raw/public.plx": {
+            "bytes": 2111,
+            "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        },
+        "raw/screenshots/scrn0000.png": {
+            "bytes": 127745,
+            "sha256": "8ee8c281764bf3cd4be4f9100217af0f7ce523efb9d2a8954f4ef9e4b63c92a1"
+        },
+        "raw/screenshots/scrn0001.png": {
+            "bytes": 37079,
+            "sha256": "22681aaff315c331f9da1284f278a8d14b203522ee6dd282eb3bf2b469d0db54"
+        },
+        "raw/screenshots/scrn0002.png": {
+            "bytes": 99461,
+            "sha256": "9460444c7ec76ce04d590f00f971a9e2116648bb7a6bddb3ea176baa36c121de"
+        },
+        "raw/screenshots/scrn0003.png": {
+            "bytes": 131758,
+            "sha256": "5afcc9a2fe5269f195483add6bba88bd8f62c1f6e158294414cb9fb133ad17f1"
+        },
+        "raw/screenshots/scrn0004.png": {
+            "bytes": 86159,
+            "sha256": "08630c9dd6f6aef7658c2cff175210ee13c978fa98199f211326bbfc3421efcf"
+        },
+        "raw/screenshots/scrn0005.png": {
+            "bytes": 66073,
+            "sha256": "852c0af9a6033f8ebcfddb369c0b215c6f92c3632a38c1eab6dd4e387f52f0ad"
+        },
+        "raw/screenshots/scrn0006.png": {
+            "bytes": 76884,
+            "sha256": "d5d39fdbd1c8b84d5638f327238633604fef766457ea19edf5d15780a647e441"
+        },
+        "raw/screenshots/scrn0007.png": {
+            "bytes": 144289,
+            "sha256": "c18d41f77232791daaf759af4d68370c537da1a529f7d961e8d5491f8bf34636"
+        },
+        "raw/screenshots/scrn0008.png": {
+            "bytes": 55876,
+            "sha256": "34aef07d76b848fecbe3d999e076a083d4723209a8280ef43dda4d91125c0a35"
+        },
+        "raw/screenshots/scrn0009.png": {
+            "bytes": 84684,
+            "sha256": "b2782f72fb0c4f38e1d83ad28e2001382c537296819f3edefd701dd61d9dd2c1"
+        },
+        "raw/screenshots/scrn0010.png": {
+            "bytes": 115171,
+            "sha256": "48c087eb82014c17859d6018a68a06091458b445faa7f32cc43a93617b2a1a7e"
+        },
+        "raw/screenshots/scrn0011.png": {
+            "bytes": 241989,
+            "sha256": "4f2e9ae48735b30dcd97b54dcf4cf703abfb06d07300e668eddfa339c0383ad1"
+        },
+        "raw/screenshots/scrn0012.png": {
+            "bytes": 124386,
+            "sha256": "fefcc61defd308ab36d44650a249e4731e612e44279808c99a6d1dddb5fedbf7"
+        },
+        "raw/screenshots/scrn0013.png": {
+            "bytes": 150979,
+            "sha256": "fea5eb5aac16b8f2c6595a36e2db75f0d6bb5b06c8c019af4f341e5c9f07b15c"
+        },
+        "raw/screenshots/scrn0014.png": {
+            "bytes": 97989,
+            "sha256": "ef8aeb2064769809cd0dbb627cf8f673bca5a0abfc235b8939b352dfafb7da65"
+        },
+        "raw/screenshots/scrn0015.png": {
+            "bytes": 113097,
+            "sha256": "c72b218435c029a482a3bdbdd2796fca123d1be901c0ea310c09f007d3ff48c7"
+        },
+        "raw/screenshots/scrn0016.png": {
+            "bytes": 122049,
+            "sha256": "96a3995fc0365dd1607258e26dca346cab831806b972eda7a98af6543cc17be3"
+        }
+    },
+    "no_missile": false,
+    "packed": true,
+    "recorder_git_version": "8b19ab9ff",
+    "recording_header": {
+        "arch": "x86_64",
+        "build_number": 25380,
+        "difficulty": 0,
+        "frame_count": 424,
+        "game": "d1",
+        "git_version": "8b19ab9ff",
+        "level": 3,
+        "mission": "d1",
+        "player_cfg": {
+            "auto_leveling": 1,
+            "autoselect_only_once": 0,
+            "classic_autoselect_weapon": 0,
+            "cycle_autoselect_only": 0,
+            "guidebot_routing_mode": 1,
+            "no_fire_autoselect": 1,
+            "original_homing": 0,
+            "persistent_debris": 0,
+            "primary_order": [
+                4,
+                3,
+                2,
+                1,
+                0,
+                255,
+                16
+            ],
+            "secondary_order": [
+                4,
+                3,
+                1,
+                0,
+                255,
+                2
+            ],
+            "select_after_fire": 1
+        },
+        "rear_view": {
+            "active": 0,
+            "current_cockpit": 0,
+            "leave_mode": 0,
+            "preferred_cockpit": 0
+        },
+        "rng_mode": "lcg_state",
+        "start_mode": "new_level",
+        "type": "header",
+        "version": 5,
+        "view_projection": {
+            "aspect": 65536,
+            "classic_depth": 0,
+            "depth": 9000,
+            "missile_view_enabled": 0,
+            "screen_height": 480,
+            "screen_width": 640,
+            "zoom": 36864
+        }
+    },
+    "scenario": "mine-blast",
+    "schema": 1,
+    "screenshots": true,
+    "source_recipe_sha256": {
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+        "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+        "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+        "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+    },
+    "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+    "stage": "complete",
+    "status": "candidate"
+}

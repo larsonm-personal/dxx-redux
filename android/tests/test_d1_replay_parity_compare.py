@@ -25,6 +25,32 @@ def schema_example(schema):
 
 
 class ParityTests(unittest.TestCase):
+    def test_integer_leaf_fast_path_preserves_types_paths_and_rechecks_mutations(self):
+        schema = {"counter": int, "vector": {"x": int}, "pool": [int], "fixed": (int, int, int)}
+        value = {"counter": 1, "vector": {"x": 2}, "pool": list(range(1000)), "fixed": [3, 4, 5]}
+        parity.validate_world_value(value, schema, "$.state")
+        for container, key, path in (
+            (value, "counter", "$.state.counter"),
+            (value["vector"], "x", "$.state.vector.x"),
+            *((value["pool"], index, f"$.state.pool[{index}]") for index in (0, 500, 999)),
+            *((value["fixed"], index, f"$.state.fixed[{index}]") for index in range(3)),
+        ):
+            original = container[key]
+            for invalid in (True, False, None, 1.0, "1", [], {}):
+                container[key] = invalid
+                with self.subTest(path=path, invalid=invalid), self.assertRaises(parity.EvidenceError) as error:
+                    parity.validate_world_value(value, schema, "$.state")
+                self.assertEqual(str(error.exception), f"World field must be an integer: {path}")
+            container[key] = original
+            parity.validate_world_value(value, schema, "$.state")
+        del value["vector"]["x"]
+        with self.assertRaisesRegex(parity.EvidenceError, r"Missing world field: \$\.state\.vector\.x"):
+            parity.validate_world_value(value, schema, "$.state")
+        value["vector"]["x"] = 2
+        value["fixed"].append(0)
+        with self.assertRaisesRegex(parity.EvidenceError, r"World field has an invalid array shape: \$\.state\.fixed"):
+            parity.validate_world_value(value, schema, "$.state")
+
     def test_frozen_runner_loads_its_helpers_after_workspace_edits(self):
         pwsh = parity.shutil.which("pwsh")
         if not pwsh:
@@ -36,6 +62,9 @@ class ParityTests(unittest.TestCase):
             "android/tests/run_input_demo_replay.ps1",
             "android/helpers/test_host_platform.ps1",
             "android/helpers/input_demo_replay_menu.ps1",
+            "android/helpers/input_demo_fixture_catalog.ps1",
+            "android/helpers/headless_process_pool.ps1",
+            "android/helpers/process_lifetime.ps1",
             "android/helpers/retain-recent-artifacts.ps1",
         ):
             (source / name).write_text("throw 'live workspace must not execute'\n")
