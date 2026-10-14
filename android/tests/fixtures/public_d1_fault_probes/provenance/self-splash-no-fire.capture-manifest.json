@@ -3,55 +3,55 @@
         "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
         "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
     },
-    "capture_executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+    "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
     "capture_invoked": true,
     "command": [
-        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/buildd1-refresh/main/test_upstream_compat",
         "--public-level-replay",
-        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1",
+        "/workspace/scratch/334b48b99af4/dxx-redux/game_data/shareware/d1",
         "missile-self-splash"
     ],
-    "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+    "compile_commands_sha256": "1b9ab23a1c2372f4817b9fe3ac753b21e8b64a3aaf915b739bf0b325a00a60f8",
     "files": {
         "build.log": {
-            "bytes": 135,
-            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+            "bytes": 141,
+            "sha256": "3555968c887624ead72fa68d2424856d5be30abe3814ab49285c89699eeee27d"
         },
         "candidate.dximdemo": {
             "bytes": 21768,
-            "sha256": "e1c738d3cba79262aee4a308f06d8fe7e075fbb14ca99bdb8486812332f0e0a3"
+            "sha256": "90c9185e0bed45fae0efea0040bd718339ffa20f83c389917b11b8ae8d980267"
         },
         "candidate.oracle.json": {
             "bytes": 11822,
-            "sha256": "5460be83f05fea8625a8dcdf1e798222c6541cf0303116a3fa02270912b3ecff"
+            "sha256": "9b6cca2c34e7848aa2cc17fd35d47f90c07007733b4a68f0e0b719a84c1eb70b"
         },
         "capture.log": {
-            "bytes": 1235,
-            "sha256": "9ee68ca92e26d986eebe18fcfe4afcf31c14a575332eca871e052e8782477d17"
+            "bytes": 1248,
+            "sha256": "bde94384d519559d90d7575e27586fd181956511632e1f301b6a906a1ce3b392"
         },
         "configure.log": {
-            "bytes": 1385,
-            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+            "bytes": 1420,
+            "sha256": "100573be8d0f36f54556d7d314636965fa4c897a3a18d47c5048ff9f1b5c01bf"
         },
         "raw/capture-observation.jsonl.gz": {
             "bytes": 139,
             "sha256": "acd25786201dc835b62784e1f9afb63999d0b90c195afaf56176bd118354a703"
         },
         "raw/capture.dximdemo": {
-            "bytes": 4035308,
-            "sha256": "1dd7ad587bec3442cc9d36c0f6dd2e43d21479ddaebb062717e5a52142827ac7"
+            "bytes": 4035298,
+            "sha256": "69936069e86b7f6f8eea528a6ab80d28706084211d279664a56cc2bfe72865a2"
         },
         "raw/capture.dximdemo.rngtrace.jsonl": {
-            "bytes": 60571,
-            "sha256": "69f3636e9b161b870a9108322115f3d54eb89e26e92ab85198f5b90e5fb85168"
+            "bytes": 49867,
+            "sha256": "cbbe64b45503d7b42f7511f336ee6da0660882698dc1120fa69212ce9ba0b39e"
         },
         "raw/capture.json": {
-            "bytes": 40214,
-            "sha256": "a30648775f5573f99c973b1cd010ea30641bd73bd2b928afe4e3bb0c54d30adf"
+            "bytes": 40264,
+            "sha256": "1cf7a4d67c8b6f5c20226c99d104dc2b1373eb70b8a2ffa03b5ebf92c8746650"
         },
         "raw/demos/tmpdemo.dem": {
-            "bytes": 400,
-            "sha256": "ad85dda7369bea1b94fd11b92d3496fb7194069b53f3a25e6761e4f8faf256ed"
+            "bytes": 1045,
+            "sha256": "b8bb49b3121256c83c89b1bffa4b6efe0a248066762c483e4539d22bb61f61d1"
         },
         "raw/descent.cfg": {
             "bytes": 525,
@@ -64,18 +64,45 @@
         "raw/public.plx": {
             "bytes": 2111,
             "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        },
+        "raw/screenshots/scrn0000.png": {
+            "bytes": 113230,
+            "sha256": "011d5ef54a56d71c65dee68c5b33b15f454d5be2f6fba592611fee1c320ce3be"
+        },
+        "raw/screenshots/scrn0001.png": {
+            "bytes": 73633,
+            "sha256": "0a1ece5339e8aae6959defa32a8b73ed39e12f1634cfd971190e400a02689bee"
+        },
+        "raw/screenshots/scrn0002.png": {
+            "bytes": 65328,
+            "sha256": "6d8597d3375b5a66af4065f9975cf89de366685a1555d0420443d3945a195279"
+        },
+        "raw/screenshots/scrn0003.png": {
+            "bytes": 64542,
+            "sha256": "514f85b1228d0d38bd3fed9fd5eb733caef9b0c906c1a75171c0b67c11fd7da5"
+        },
+        "raw/screenshots/scrn0004.png": {
+            "bytes": 65745,
+            "sha256": "8880220d6c410965b42849ea21cb60a8126e794b4a90fd879e5fd825a00249c1"
+        },
+        "raw/screenshots/scrn0005.png": {
+            "bytes": 65879,
+            "sha256": "dadd8b34150e08b2661941400958c323f1f55b2f2963687750c8960b6db20c9c"
         }
     },
+    "flare_delay": 0,
+    "no_flare": false,
     "no_missile": true,
     "packed": true,
-    "recorder_git_version": "8b19ab9ff",
+    "pixel_observation": true,
+    "recorder_git_version": "7253def84",
     "recording_header": {
         "arch": "x86_64",
-        "build_number": 25380,
+        "build_number": 25690,
         "difficulty": 2,
         "frame_count": 139,
         "game": "d1",
-        "git_version": "8b19ab9ff",
+        "git_version": "7253def84",
         "level": 1,
         "mission": "d1",
         "player_cfg": {
@@ -128,15 +155,16 @@
     },
     "scenario": "missile-self-splash",
     "schema": 1,
-    "screenshots": false,
+    "screenshots": true,
     "source_recipe_sha256": {
-        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
         "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
-        "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+        "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+        "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
         "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
-        "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+        "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
     },
-    "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+    "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
     "stage": "complete",
     "status": "candidate"
 }

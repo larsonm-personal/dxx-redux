@@ -1,8 +1,8 @@
 # Recorded all-weapons qualification
 
 These three format-5 compact recordings and their immutable live-derived oracles
-were captured from clean source `7145f682f4dd946ce0a8019d087eba6523794c16`
-(tree `913dcf6dea58cc505b95e5faafc385301621d342`), using pinned public shareware assets.
+were captured from clean source `7253def84bda52401731cc36ecffc2d1468503c5`
+(tree `0880df2ccbc35d334b4151803e841e6a0f8bc625`), using pinned public shareware assets.
 Every demo and oracle is at most 100000 uncompressed UTF-8 bytes.
 
 Native D1 scourge, native D1 bigred, and native D2 honestbob each pass all 40
@@ -10,7 +10,9 @@ frame-state/diagnostic comparisons, the complete SIM RNG stream, and the termina
 result on headed and headless native backends. All 16 negative replay controls
 retain the original oracle: wrong-profile rejection, D1 variant substitution,
 and deletion of the final input-tail grant. Missing-tail controls preserve every
-simulation frame while changing the terminal resource result.
+simulation frame while changing the terminal resource result. Independent repeat
+captures of all three native cases produced byte-identical full recordings, SIM
+RNG traces, inventory summaries, compact inputs, and oracles.
 
 The four `captures/*.json` files preserve the live six-phase inventory and actual
 Spreadfire/Gauss projectile observations. Imported D1 is a live diagnostic only;

@@ -1,0 +1,165 @@
+{
+    "asset_sha256": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    },
+    "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
+    "capture_invoked": true,
+    "command": [
+        "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/buildd1-refresh/main/test_upstream_compat",
+        "--public-effect-phase",
+        "/workspace/scratch/334b48b99af4/dxx-redux/game_data/shareware/d1"
+    ],
+    "compile_commands_sha256": "1b9ab23a1c2372f4817b9fe3ac753b21e8b64a3aaf915b739bf0b325a00a60f8",
+    "files": {
+        "build.log": {
+            "bytes": 141,
+            "sha256": "3555968c887624ead72fa68d2424856d5be30abe3814ab49285c89699eeee27d"
+        },
+        "candidate.dximdemo": {
+            "bytes": 31665,
+            "sha256": "67aed1e5c36a7e8407e8eba7fc017081052dfb38599088e48b14838d706d7c31"
+        },
+        "candidate.oracle.json": {
+            "bytes": 15063,
+            "sha256": "dbf087efa47937159a44be68253e0c0cbb19cb8144ad4af3caa65f5226c13caa"
+        },
+        "capture.log": {
+            "bytes": 1461,
+            "sha256": "65e0539a2d18c729f1fcf417b354632439ea9d4689095a9f6aebaeb2a8945211"
+        },
+        "configure.log": {
+            "bytes": 1420,
+            "sha256": "100573be8d0f36f54556d7d314636965fa4c897a3a18d47c5048ff9f1b5c01bf"
+        },
+        "raw/capture-observation.jsonl.gz": {
+            "bytes": 398,
+            "sha256": "24426df825c7b5a90b889b85415973e1c10474c887d3be7294a8a993ee134960"
+        },
+        "raw/capture.dximdemo": {
+            "bytes": 5378506,
+            "sha256": "749afb7980c22d3aa7b578b3f8e6385a28664cf6940c2bc23dcecf5c86829c7b"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+            "bytes": 69954,
+            "sha256": "4ca0b311baac7a04ad0ad6e128f0cb4d12477a04a85e40bfeff0174fa2273515"
+        },
+        "raw/capture.json": {
+            "bytes": 263033,
+            "sha256": "54bc599cd090d338f6fe48d080695b26f05c5be28824c0d8725eea009b877b14"
+        },
+        "raw/demos/tmpdemo.dem": {
+            "bytes": 2747,
+            "sha256": "df886489daf10417bc5aceff4b461135743e8060b2b457c85c5c8f862b9130c5"
+        },
+        "raw/descent.cfg": {
+            "bytes": 525,
+            "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+        },
+        "raw/public.plr": {
+            "bytes": 2262,
+            "sha256": "c77fc92b4b349f5d326e2fd50ddac7b4fdef0f132da1bcc70547028a36a7030e"
+        },
+        "raw/public.plx": {
+            "bytes": 2111,
+            "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        },
+        "raw/screenshots/scrn0000.png": {
+            "bytes": 109661,
+            "sha256": "eef9f82a69e7d0d4a3fada3b963198f621b8682538614d71bd37520d41327aae"
+        },
+        "raw/screenshots/scrn0001.png": {
+            "bytes": 116846,
+            "sha256": "0f6002c981cb6f6761e351f1a03c03bdd129f335cd9f4313235e7c94fbfece42"
+        },
+        "raw/screenshots/scrn0002.png": {
+            "bytes": 112252,
+            "sha256": "480ffc6f84e86b8aea7def8ab628a117ad2b8efaf63766a0cb0666145a6daaec"
+        },
+        "raw/screenshots/scrn0003.png": {
+            "bytes": 121454,
+            "sha256": "dfbafc9d8752d1097006605a600b19225eab1ad289217692c2c3797d09269f4e"
+        },
+        "raw/screenshots/scrn0004.png": {
+            "bytes": 122039,
+            "sha256": "6a0d58a248c7be9b996456900a2a1903944561415644acfdd2dcccb10318435e"
+        }
+    },
+    "flare_delay": 0,
+    "no_flare": false,
+    "no_missile": false,
+    "packed": true,
+    "pixel_observation": true,
+    "recorder_git_version": "7253def84",
+    "recording_header": {
+        "arch": "x86_64",
+        "build_number": 25690,
+        "difficulty": 2,
+        "frame_count": 181,
+        "game": "d1",
+        "git_version": "7253def84",
+        "level": 1,
+        "mission": "d1",
+        "player_cfg": {
+            "auto_leveling": 1,
+            "autoselect_only_once": 0,
+            "classic_autoselect_weapon": 0,
+            "cycle_autoselect_only": 0,
+            "guidebot_routing_mode": 1,
+            "no_fire_autoselect": 1,
+            "original_homing": 0,
+            "persistent_debris": 0,
+            "primary_order": [
+                4,
+                3,
+                2,
+                1,
+                0,
+                255,
+                16
+            ],
+            "secondary_order": [
+                4,
+                3,
+                1,
+                0,
+                255,
+                2
+            ],
+            "select_after_fire": 1
+        },
+        "rear_view": {
+            "active": 0,
+            "current_cockpit": 0,
+            "leave_mode": 0,
+            "preferred_cockpit": 0
+        },
+        "rng_mode": "lcg_state",
+        "start_mode": "new_level",
+        "type": "header",
+        "version": 5,
+        "view_projection": {
+            "aspect": 65536,
+            "classic_depth": 0,
+            "depth": 9000,
+            "missile_view_enabled": 0,
+            "screen_height": 480,
+            "screen_width": 640,
+            "zoom": 36864
+        }
+    },
+    "scenario": "effect-phase",
+    "schema": 1,
+    "screenshots": true,
+    "source_recipe_sha256": {
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
+        "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+        "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+        "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
+        "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+        "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
+    },
+    "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "stage": "complete",
+    "status": "candidate"
+}

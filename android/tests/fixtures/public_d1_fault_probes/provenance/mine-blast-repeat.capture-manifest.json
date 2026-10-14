@@ -1,0 +1,214 @@
+{
+    "asset_sha256": {
+        "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+        "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    },
+    "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
+    "capture_invoked": true,
+    "command": [
+        "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/buildd1-refresh/main/test_upstream_compat",
+        "--public-level-replay",
+        "/workspace/scratch/334b48b99af4/dxx-redux/game_data/shareware/d1",
+        "mine-blast"
+    ],
+    "compile_commands_sha256": "1b9ab23a1c2372f4817b9fe3ac753b21e8b64a3aaf915b739bf0b325a00a60f8",
+    "files": {
+        "build.log": {
+            "bytes": 141,
+            "sha256": "3555968c887624ead72fa68d2424856d5be30abe3814ab49285c89699eeee27d"
+        },
+        "candidate.dximdemo": {
+            "bytes": 73186,
+            "sha256": "44e78d350da5a4e45cd72b98ff1a03b957c0ca1cc342e7c2a3de51b7a5187e0a"
+        },
+        "candidate.oracle.json": {
+            "bytes": 33571,
+            "sha256": "05b7da8a5aa3059428847cb8aca0cd4dfd2c90a80c7ee45970defdc84c139948"
+        },
+        "capture.log": {
+            "bytes": 5453,
+            "sha256": "448ac2899d25a4bd868c51ea5c013f4ed5c5a903c1e3c34a32532b9980100dd5"
+        },
+        "configure.log": {
+            "bytes": 1420,
+            "sha256": "100573be8d0f36f54556d7d314636965fa4c897a3a18d47c5048ff9f1b5c01bf"
+        },
+        "raw/capture-observation.jsonl.gz": {
+            "bytes": 1605,
+            "sha256": "c78cbf7192803c69d2446bbc10a1122b94e5e7a461cb13d897798d70c491fda1"
+        },
+        "raw/capture.dximdemo": {
+            "bytes": 13400417,
+            "sha256": "d2ea50ff2c7211768bcfd3971cfbb92de76397debbdbc774cd2791affcbe5019"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+            "bytes": 275156,
+            "sha256": "6a63806be3a7966317b491e6753cdb0fc519a5cc3bd09cb8de4b8bfe566be6ac"
+        },
+        "raw/capture.json": {
+            "bytes": 213331,
+            "sha256": "12045633fc5eab5f5b3bcb53e73ccf900bb3dd17ee94b95afafac228b7be1c1d"
+        },
+        "raw/demos/tmpdemo.dem": {
+            "bytes": 18846,
+            "sha256": "68435877494cdfd0ff2c0d39f3fde264f6c40a09cd0be0325f39882eef9a9a62"
+        },
+        "raw/descent.cfg": {
+            "bytes": 525,
+            "sha256": "d79c7b1f9c0e2a004205851e79c8c76373560d69d958a5be7c495b516bafac34"
+        },
+        "raw/public.plr": {
+            "bytes": 2262,
+            "sha256": "e5068b5d0c38967c37793b6b8f335e7ccb6c595bdeea0494cb421181788af99f"
+        },
+        "raw/public.plx": {
+            "bytes": 2111,
+            "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
+        },
+        "raw/screenshots/scrn0000.png": {
+            "bytes": 127745,
+            "sha256": "8ee8c281764bf3cd4be4f9100217af0f7ce523efb9d2a8954f4ef9e4b63c92a1"
+        },
+        "raw/screenshots/scrn0001.png": {
+            "bytes": 37073,
+            "sha256": "405646fc8e0b61a1c2a0555a14ed89a367cf2c7c427ef4a56ed82544f7c73ad6"
+        },
+        "raw/screenshots/scrn0002.png": {
+            "bytes": 99453,
+            "sha256": "8fa4eb72b6b1c5882c0d79d32286b38ee3ed6085c397250c7fdf16f35b9e5213"
+        },
+        "raw/screenshots/scrn0003.png": {
+            "bytes": 131814,
+            "sha256": "7c5afdb9e60b3ec46414188649df97e4b74b6456575630f827daa6e4bf671029"
+        },
+        "raw/screenshots/scrn0004.png": {
+            "bytes": 86229,
+            "sha256": "337bfb3db96254c8f7985f561561df9e90d95651af3d4637e9108b3ae6dfe719"
+        },
+        "raw/screenshots/scrn0005.png": {
+            "bytes": 66150,
+            "sha256": "ee2479e32e1f8af421f3e15b627376b1caca955436ee20bd913324b532f8edaf"
+        },
+        "raw/screenshots/scrn0006.png": {
+            "bytes": 76698,
+            "sha256": "e33b202008310eefd838dcaa2348eb0b8179cffe91e901001d9ce48d670d9fb7"
+        },
+        "raw/screenshots/scrn0007.png": {
+            "bytes": 144426,
+            "sha256": "f923d988a415dcae7b65c252841daec2be567c8015851d04e0a594fe94dfa849"
+        },
+        "raw/screenshots/scrn0008.png": {
+            "bytes": 55595,
+            "sha256": "6d75c4dd4727aeb5ac48fd7cdb43c7b329ff0b9c4d8613d519f71823bedeea76"
+        },
+        "raw/screenshots/scrn0009.png": {
+            "bytes": 84508,
+            "sha256": "c2e8336f2f45d93df71e79c2ed8a72f4bda546356dee3005fd2f30f227b88abb"
+        },
+        "raw/screenshots/scrn0010.png": {
+            "bytes": 115271,
+            "sha256": "271829a1b00ac08b7eeebe1866c62ff22cbc16ba3e39053cc7feacc544d8ff65"
+        },
+        "raw/screenshots/scrn0011.png": {
+            "bytes": 242178,
+            "sha256": "99a0ca03d655bfaa61382478a842ab18778d7b74fee79dfa7d1043615e7ddc6f"
+        },
+        "raw/screenshots/scrn0012.png": {
+            "bytes": 123847,
+            "sha256": "2aa1754dce82aa0cf1020cc7139a61bafc3e740b4a75a484bf616b4501003875"
+        },
+        "raw/screenshots/scrn0013.png": {
+            "bytes": 150722,
+            "sha256": "e7cb48ac0d9cf937af177b25864bbd497bdf6850036ae5f5cdee98bf0c3be702"
+        },
+        "raw/screenshots/scrn0014.png": {
+            "bytes": 98392,
+            "sha256": "0c83e006c8286bc3ea0f87298436f55c944eb35a70430967d3551d77fe0e03ff"
+        },
+        "raw/screenshots/scrn0015.png": {
+            "bytes": 112795,
+            "sha256": "a12330b2c2b35553ca04a8d738958d64992b79c266d31f1f28e33a24da0cd4c6"
+        },
+        "raw/screenshots/scrn0016.png": {
+            "bytes": 122047,
+            "sha256": "5a1a135955210ead70916ec64d7a59e8876399670b0d897dd47d215a6144e2f7"
+        }
+    },
+    "flare_delay": 0,
+    "no_flare": false,
+    "no_missile": false,
+    "packed": true,
+    "pixel_observation": true,
+    "recorder_git_version": "7253def84",
+    "recording_header": {
+        "arch": "x86_64",
+        "build_number": 25690,
+        "difficulty": 0,
+        "frame_count": 424,
+        "game": "d1",
+        "git_version": "7253def84",
+        "level": 3,
+        "mission": "d1",
+        "player_cfg": {
+            "auto_leveling": 1,
+            "autoselect_only_once": 0,
+            "classic_autoselect_weapon": 0,
+            "cycle_autoselect_only": 0,
+            "guidebot_routing_mode": 1,
+            "no_fire_autoselect": 1,
+            "original_homing": 0,
+            "persistent_debris": 0,
+            "primary_order": [
+                4,
+                3,
+                2,
+                1,
+                0,
+                255,
+                16
+            ],
+            "secondary_order": [
+                4,
+                3,
+                1,
+                0,
+                255,
+                2
+            ],
+            "select_after_fire": 1
+        },
+        "rear_view": {
+            "active": 0,
+            "current_cockpit": 0,
+            "leave_mode": 0,
+            "preferred_cockpit": 0
+        },
+        "rng_mode": "lcg_state",
+        "start_mode": "new_level",
+        "type": "header",
+        "version": 5,
+        "view_projection": {
+            "aspect": 65536,
+            "classic_depth": 0,
+            "depth": 9000,
+            "missile_view_enabled": 0,
+            "screen_height": 480,
+            "screen_width": 640,
+            "zoom": 36864
+        }
+    },
+    "scenario": "mine-blast",
+    "schema": 1,
+    "screenshots": true,
+    "source_recipe_sha256": {
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
+        "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+        "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+        "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
+        "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
+        "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
+    },
+    "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+    "stage": "complete",
+    "status": "candidate"
+}

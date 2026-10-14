@@ -37,7 +37,7 @@ At frame 170, both cameras are in segment 11 at position
 - [Native D1 frame 170](screenshots/d1-monitor-frame170.png)
 - [Imported D1 frame 170](screenshots/imported-d1-monitor-frame170.png)
 
-All 3764 high-contrast differing pixels lie in the monitor region. Lower-contrast
+All 2337 high-contrast differing pixels (maximum RGB channel difference at least 64) lie in the monitor region. Lower-contrast
 image differences elsewhere remain untouched; complete pixel parity is not
 claimed. Collision and transparency consequences are unproven.
 
@@ -134,13 +134,17 @@ Malformed evidence or a runner failure cannot stand in for a reproduced fault.
 
 ## Provenance and limits
 
-All recordings came from independently rebuilt published source
-`8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb`, retained at branch
-`capture-public-d1-fault-probes`. The followup checker revision
-`c1b8099733abd602ceca60afa5669f1937233cba` corrects acceptance of the actual frame
-170 screenshot landmark; no native source, recording, oracle expectation or
-engine behavior changed for that correction.
+All recordings came from fresh independent D1 and D2 builds of the published
+merged source `7253def84bda52401731cc36ecffc2d1468503c5`, with source tree
+`0880df2ccbc35d334b4151803e841e6a0f8bc625`. The source was clean throughout
+configuration, build and capture. Native expectations were rebuilt from those
+live native captures before any replay.
 
+Each of the five native cases was captured twice. Full recordings, actual RNG
+traces, capture observations, compact inputs and summary oracles matched byte for
+byte. An additional monitor capture with screenshots disabled also retained
+identical recording, RNG and compact bytes. The package preserves both capture
+manifests and the repeatability check.
 Fifteen executions cover five inputs with native true-console, native headed and
 matched-profile imported headed runtimes. All ten native executions match their
 independent live summary/RNG oracles. Both native backends reproduce the same

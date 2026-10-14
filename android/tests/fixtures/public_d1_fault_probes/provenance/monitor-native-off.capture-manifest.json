@@ -3,46 +3,46 @@
         "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
         "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
     },
-    "capture_executable_sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+    "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
     "capture_invoked": true,
     "command": [
-        "/workspace/scratch/334b48b99af4/d1-fault-probes/temp/native-d1-build/main/test_upstream_compat",
+        "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/buildd1-refresh/main/test_upstream_compat",
         "--public-effect-phase",
-        "/workspace/scratch/334b48b99af4/replay-negative/assets/d1"
+        "/workspace/scratch/334b48b99af4/dxx-redux/game_data/shareware/d1"
     ],
-    "compile_commands_sha256": "ffd16452275ed6fafe5f6681452a8915dd4ac550ac7f54e6abfb53ec28deeba1",
+    "compile_commands_sha256": "1b9ab23a1c2372f4817b9fe3ac753b21e8b64a3aaf915b739bf0b325a00a60f8",
     "files": {
         "build.log": {
-            "bytes": 135,
-            "sha256": "5634cfae4a583fe7a8341316b7614bf49a556653b478d7fe776eaa8db0e00683"
+            "bytes": 141,
+            "sha256": "3555968c887624ead72fa68d2424856d5be30abe3814ab49285c89699eeee27d"
         },
         "candidate.dximdemo": {
             "bytes": 31665,
-            "sha256": "5a7a1ed2239c9f285e01b00c167c9f24674042e67afe2e96ab3934d83bd99b02"
+            "sha256": "67aed1e5c36a7e8407e8eba7fc017081052dfb38599088e48b14838d706d7c31"
         },
         "candidate.oracle.json": {
             "bytes": 15063,
-            "sha256": "cefa781c23c943c3b54b3090afe3abf36e28c54be724bf2973e22dc7600d2140"
+            "sha256": "dbf087efa47937159a44be68253e0c0cbb19cb8144ad4af3caa65f5226c13caa"
         },
         "capture.log": {
-            "bytes": 1448,
-            "sha256": "1fb1fe558d8c16116fbf531102830ca80d113e7ad3661b551cab39914da35f69"
+            "bytes": 1461,
+            "sha256": "58d17541fa1d7e930582d28b7ea66a02b473adbd5a6049424abadade25419aa2"
         },
         "configure.log": {
-            "bytes": 1385,
-            "sha256": "63fd763534c95e1c2f20399c5dab5ace3d56ede923bec431dad15bcc842945f8"
+            "bytes": 1420,
+            "sha256": "2f1a422388387b7dc211f128670c2574bcd8f7b4879ea83ed6b48fd317988bb5"
         },
         "raw/capture-observation.jsonl.gz": {
             "bytes": 398,
             "sha256": "24426df825c7b5a90b889b85415973e1c10474c887d3be7294a8a993ee134960"
         },
         "raw/capture.dximdemo": {
-            "bytes": 5378512,
-            "sha256": "43ac57fbc18d87fab85d3de271228959b3db17ba38a7706aa083b87e906ad7bc"
+            "bytes": 5378506,
+            "sha256": "749afb7980c22d3aa7b578b3f8e6385a28664cf6940c2bc23dcecf5c86829c7b"
         },
         "raw/capture.dximdemo.rngtrace.jsonl": {
-            "bytes": 84930,
-            "sha256": "034f760de58cefc31a1eb6d026637487af07d77a6138be94fd9970bfe973ede3"
+            "bytes": 69954,
+            "sha256": "4ca0b311baac7a04ad0ad6e128f0cb4d12477a04a85e40bfeff0174fa2273515"
         },
         "raw/capture.json": {
             "bytes": 262688,
@@ -65,16 +65,19 @@
             "sha256": "29b285abbc1e780b41802843e00cb29d6f317cf52487f1a2ee9ec14d4a95ebfa"
         }
     },
+    "flare_delay": 0,
+    "no_flare": false,
     "no_missile": false,
     "packed": true,
-    "recorder_git_version": "8b19ab9ff",
+    "pixel_observation": true,
+    "recorder_git_version": "7253def84",
     "recording_header": {
         "arch": "x86_64",
-        "build_number": 25380,
+        "build_number": 25690,
         "difficulty": 2,
         "frame_count": 181,
         "game": "d1",
-        "git_version": "8b19ab9ff",
+        "git_version": "7253def84",
         "level": 1,
         "mission": "d1",
         "player_cfg": {
@@ -129,13 +132,14 @@
     "schema": 1,
     "screenshots": false,
     "source_recipe_sha256": {
-        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
+        "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
         "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
-        "android/tests/public_level_replay_fixture.hpp": "ff016b50f11edd0b7d80108d2afb6f896f2721e29a712fb3c4cc695a903d0ba5",
+        "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+        "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
         "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
-        "android/tests/test_upstream_compat.cpp": "dabad878468e260e895aaef2925f9e4675b50ba9881793854bfb6e43d58c7baf"
+        "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
     },
-    "source_revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+    "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
     "stage": "complete",
     "status": "candidate"
 }

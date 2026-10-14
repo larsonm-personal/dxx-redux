@@ -1186,6 +1186,27 @@ class RuntimeGateTests(unittest.TestCase):
 
 
 class RealNegativeCorpusTests(unittest.TestCase):
+    def test_capture_manifest_preserves_every_reviewed_imported_scope(self):
+        import capture_compact_public_replays as capture
+
+        repo = Path(__file__).resolve().parents[2]
+        source = repo / "android/tests/fixtures/public_level_replays"
+        original = json.loads((source / "manifest.json").read_text())
+        actual = capture.candidate_manifest(repo, original["cases"])
+        self.assertEqual(actual, original)
+        selected = [case for case in original["cases"] if case["scenario"] == "combat"]
+        actual = capture.candidate_manifest(repo, selected)
+        self.assertEqual(actual["cases"], selected)
+        self.assertEqual(
+            actual["imported_d1"],
+            {
+                "schema": 1,
+                "cases": {"d1-public-combat.dximdemo": original["imported_d1"]["cases"]["d1-public-combat.dximdemo"]},
+            },
+        )
+        with self.assertRaises(KeyError):
+            capture.candidate_manifest(repo, [{"game": "d1", "demo": "undeclared.dximdemo"}])
+
     def test_real_imported_scope_retains_loot_diagnostics_and_required_flight(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         included, excluded = runner.imported_d1_scope(runner.load_corpus(source))
@@ -1223,20 +1244,11 @@ class RealNegativeCorpusTests(unittest.TestCase):
                 demo, path = (destination / case[key] for key in ("demo", "oracle"))
                 original_oracle = path.read_bytes()
                 oracle = json.loads(original_oracle)
-                converted = oracle["compact_sha256"] != runner.parity.digest(demo)
-                bindings.add("converted" if converted else "live")
+                self.assertEqual(oracle["compact_sha256"], runner.parity.digest(demo))
+                self.assertFalse(demo.with_suffix(".migration.json").exists())
+                bindings.add("live")
                 oracle.pop(field)
                 runner.parity.write_json(path, oracle)
-                if converted:
-                    # Converted inputs bind the unchanged original oracle through their sidecar
-                    with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable-oracle conversion provenance"):
-                        runner.load_corpus(destination)
-                    migration_path = demo.with_suffix(".migration.json")
-                    migration = json.loads(migration_path.read_bytes())
-                    migration["source_oracle_sha256"] = runner.parity.digest(path)
-                    runner.parity.write_json(migration_path, migration)
-                # Rebind only converted disposable copies. Fresh live pairs match their own
-                # compact digest, even when an old migration sidecar remains as history
                 _, admitted = runner.compact.validate(demo, path)
                 self.assertNotIn(field, admitted)
                 with self.assertRaisesRegex(runner.parity.EvidenceError, message):
@@ -1249,7 +1261,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
             self.assert_missing_observation_rejected(
                 {"combat", "loot"}, "combat_observations", "immutable live damage/loot"
             ),
-            {"live", "converted"},
+            {"live"},
         )
 
     def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
@@ -1257,7 +1269,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
             self.assert_missing_observation_rejected(
                 {"door-lifecycle"}, "door_observations", "immutable live geometric"
             ),
-            {"converted"},
+            {"live"},
         )
 
     def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
@@ -1318,15 +1330,13 @@ class RealNegativeCorpusTests(unittest.TestCase):
                             digest = expected_oracle["frame_sha256"][0]
                             expected_oracle["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
                         self.assertEqual(changed, expected_oracle)
-                        # Disposable controls deliberately bind directly, without rewriting old conversion history
+                        # Disposable controls bind directly to their own explicitly mutated input
                         self.assertEqual(changed["compact_sha256"], runner.parity.digest(demo_path))
                         _, admitted = runner.compact.validate(demo_path, oracle_path)
                         self.assertEqual(admitted, changed)
                         migration_name = demo_path.with_suffix(".migration.json").name
-                        if migration_name in originals:
-                            self.assertEqual((destination / migration_name).read_bytes(), originals[migration_name])
-                        else:
-                            self.assertFalse((destination / migration_name).exists())
+                        self.assertNotIn(migration_name, originals)
+                        self.assertFalse((destination / migration_name).exists())
                         original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
                         changed_demo = [json.loads(line) for line in demo_path.read_bytes().splitlines()]
                         self.assertEqual(len(original_demo), len(changed_demo))

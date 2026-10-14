@@ -42,65 +42,6 @@
             }
         },
         {
-            "game": "d2",
-            "scenario": "flight",
-            "demo": "d2-public-flight.dximdemo",
-            "oracle": "d2-public-flight.oracle.json",
-            "actions": {
-                "target": -1,
-                "target_id": -1,
-                "target_signature": -1,
-                "action_frame": -1,
-                "wall_contact_frames": 51
-            }
-        },
-        {
-            "game": "d2",
-            "scenario": "pickup",
-            "demo": "d2-public-pickup.dximdemo",
-            "oracle": "d2-public-pickup.oracle.json",
-            "actions": {
-                "target": 99,
-                "target_id": 2,
-                "target_signature": 100,
-                "action_frame": 114,
-                "wall_contact_frames": 0,
-                "pickup_gain_frame": 113
-            }
-        },
-        {
-            "game": "d2",
-            "scenario": "door",
-            "demo": "d2-public-door.dximdemo",
-            "oracle": "d2-public-door.oracle.json",
-            "actions": {
-                "target": 76,
-                "target_id": -1,
-                "target_signature": -1,
-                "action_frame": 89,
-                "wall_contact_frames": 0
-            }
-        },
-        {
-            "game": "d2",
-            "scenario": "shoot-switch",
-            "demo": "d2-public-shoot-switch.dximdemo",
-            "oracle": "d2-public-shoot-switch.oracle.json",
-            "actions": {
-                "target": 154,
-                "target_id": -1,
-                "target_signature": -1,
-                "action_frame": 175,
-                "wall_contact_frames": 0,
-                "trigger": 17,
-                "switch_segment": 84,
-                "switch_side": 2,
-                "front_wall": 116,
-                "back_wall": 117,
-                "passage_frame": 217
-            }
-        },
-        {
             "game": "d1",
             "scenario": "combat",
             "demo": "d1-public-combat.dximdemo",
@@ -116,25 +57,6 @@
                 "target_shields": 1638400,
                 "target_score": 200,
                 "loot_frame": 123,
-                "loot_count": 0
-            }
-        },
-        {
-            "game": "d2",
-            "scenario": "combat",
-            "demo": "d2-public-combat.dximdemo",
-            "oracle": "d2-public-combat.oracle.json",
-            "actions": {
-                "target": 11,
-                "target_id": 37,
-                "target_signature": 12,
-                "action_frame": 241,
-                "wall_contact_frames": 0,
-                "damage_frame": 239,
-                "retirement_frame": 262,
-                "target_shields": 786432,
-                "target_score": 200,
-                "loot_frame": 248,
                 "loot_count": 0
             }
         },
@@ -180,6 +102,136 @@
                         "stage": 7
                     }
                 ]
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "loot",
+            "demo": "d1-public-loot.dximdemo",
+            "oracle": "d1-public-loot.oracle.json",
+            "actions": {
+                "target": 39,
+                "target_id": 20,
+                "target_signature": 40,
+                "action_frame": 542,
+                "wall_contact_frames": 0,
+                "damage_frame": 499,
+                "retirement_frame": 566,
+                "target_shields": 4587520,
+                "target_score": 500,
+                "loot_frame": 550,
+                "pickup": 79,
+                "pickup_signature": 301,
+                "pickup_frame": 581,
+                "pickup_gain_frame": 580
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-release-first",
+            "demo": "d1-public-secondary-release-first.dximdemo",
+            "oracle": "d1-public-secondary-release-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 4,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-mouse-first",
+            "demo": "d1-public-secondary-mouse-first.dximdemo",
+            "oracle": "d1-public-secondary-mouse-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 3,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "flight",
+            "demo": "d2-public-flight.dximdemo",
+            "oracle": "d2-public-flight.oracle.json",
+            "actions": {
+                "target": -1,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": -1,
+                "wall_contact_frames": 51
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "pickup",
+            "demo": "d2-public-pickup.dximdemo",
+            "oracle": "d2-public-pickup.oracle.json",
+            "actions": {
+                "target": 99,
+                "target_id": 2,
+                "target_signature": 100,
+                "action_frame": 114,
+                "wall_contact_frames": 0,
+                "pickup_gain_frame": 113
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "door",
+            "demo": "d2-public-door.dximdemo",
+            "oracle": "d2-public-door.oracle.json",
+            "actions": {
+                "target": 76,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 89,
+                "wall_contact_frames": 0
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "combat",
+            "demo": "d2-public-combat.dximdemo",
+            "oracle": "d2-public-combat.oracle.json",
+            "actions": {
+                "target": 11,
+                "target_id": 37,
+                "target_signature": 12,
+                "action_frame": 241,
+                "wall_contact_frames": 0,
+                "damage_frame": 239,
+                "retirement_frame": 262,
+                "target_shields": 786432,
+                "target_score": 200,
+                "loot_frame": 248,
+                "loot_count": 0
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "shoot-switch",
+            "demo": "d2-public-shoot-switch.dximdemo",
+            "oracle": "d2-public-shoot-switch.oracle.json",
+            "actions": {
+                "target": 154,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 175,
+                "wall_contact_frames": 0,
+                "trigger": 17,
+                "switch_segment": 84,
+                "switch_side": 2,
+                "front_wall": 116,
+                "back_wall": 117,
+                "passage_frame": 217
             }
         },
         {
@@ -231,28 +283,6 @@
             }
         },
         {
-            "game": "d1",
-            "scenario": "loot",
-            "demo": "d1-public-loot.dximdemo",
-            "oracle": "d1-public-loot.oracle.json",
-            "actions": {
-                "target": 39,
-                "target_id": 20,
-                "target_signature": 40,
-                "action_frame": 542,
-                "wall_contact_frames": 0,
-                "damage_frame": 499,
-                "retirement_frame": 566,
-                "target_shields": 4587520,
-                "target_score": 500,
-                "loot_frame": 550,
-                "pickup": 79,
-                "pickup_signature": 301,
-                "pickup_frame": 581,
-                "pickup_gain_frame": 580
-            }
-        },
-        {
             "game": "d2",
             "scenario": "guidebot-release",
             "demo": "d2-public-guidebot-release.dximdemo",
@@ -273,21 +303,6 @@
             }
         },
         {
-            "game": "d1",
-            "scenario": "secondary-release-first",
-            "demo": "d1-public-secondary-release-first.dximdemo",
-            "oracle": "d1-public-secondary-release-first.oracle.json",
-            "actions": {
-                "first_fire_frame": 2,
-                "second_press_frame": 12,
-                "release_frame": 13,
-                "initial_ammo": 5,
-                "terminal_ammo": 4,
-                "cooldown_ticks": 32768,
-                "second_press_ticks_early": 8
-            }
-        },
-        {
             "game": "d2",
             "scenario": "secondary-release-first",
             "demo": "d2-public-secondary-release-first.dximdemo",
@@ -298,21 +313,6 @@
                 "release_frame": 13,
                 "initial_ammo": 5,
                 "terminal_ammo": 4,
-                "cooldown_ticks": 32768,
-                "second_press_ticks_early": 8
-            }
-        },
-        {
-            "game": "d1",
-            "scenario": "secondary-mouse-first",
-            "demo": "d1-public-secondary-mouse-first.dximdemo",
-            "oracle": "d1-public-secondary-mouse-first.oracle.json",
-            "actions": {
-                "first_fire_frame": 2,
-                "second_press_frame": 12,
-                "release_frame": 13,
-                "initial_ammo": 5,
-                "terminal_ammo": 3,
                 "cooldown_ticks": 32768,
                 "second_press_ticks_early": 8
             }
