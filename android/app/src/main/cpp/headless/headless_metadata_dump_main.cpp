@@ -51,6 +51,7 @@ extern "C" {
 #include "wall.h"
 }
 
+#include "headless_audio.h"
 #include "level_statistics.hpp"
 #include "flyout_metadata.hpp"
 #include "route_planner.h"
@@ -209,20 +210,6 @@ static const char *find_arg_value(int argc, char *argv[], const char *name)
 		if (!strcmp(argv[index], name))
 			return argv[index + 1];
 	return NULL;
-}
-
-static int init_headless_audio(void)
-{
-	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
-
-	GameArg.SndNoMusic = 1;
-	SDL_putenv(sdl_audio_driver);
-	digi_select_system(GameArg.SndDisableSdlMixer ? SDLAUDIO_SYSTEM : SDLMIXER_SYSTEM);
-	if (digi_init())
-		return 0;
-	digi_set_digi_volume(0);
-	songs_set_volume(0);
-	return 1;
 }
 
 static int init_headless_screen(char *error, size_t error_size)
