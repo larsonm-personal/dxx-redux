@@ -1386,7 +1386,7 @@ void ai_move_relative_to_player(object *objp, ai_local *ailp, fix dist_to_player
 //	Compute a somewhat random, normalized vector.
 void make_random_vector(vms_vector *vec)
 {
-	// SIM RNG: this builds live AI motion and aim vectors
+	// SIM RNG: this builds world geometry, live AI motion and aim vectors
 	vec->x = (d_rand() - 16384) | 1;	// make sure we don't create null vector
 	vec->y = d_rand() - 16384;
 	vec->z = d_rand() - 16384;
@@ -2147,11 +2147,11 @@ int do_robot_dying_frame(object *objp, fix64 start_time, fix roll_duration, sbyt
 		if (!*dying_sound_playing) {
 			*dying_sound_playing = 1;
 			digi_link_sound_to_object2( death_sound, objp-Objects, 0, sound_scale, sound_scale*256 );	//	F1_0*512 means play twice as loud
-		// FX RNG: graphics only, this only controls cosmetic death fireballs
-		} else if (d_rand_fx() < FrameTime*16)
-			create_small_fireball_on_object(objp, (F1_0 + d_rand_fx()) * (16 * expl_scale/F1_0)/8, 0);
-	} else if (d_rand_fx() < FrameTime*8)
-		create_small_fireball_on_object(objp, (F1_0/2 + d_rand_fx()) * (16 * expl_scale/F1_0)/8, 1);
+		// SIM RNG: retain original fireball cadence, scale and world-update draw order
+		} else if (d_rand() < FrameTime*16)
+			create_small_fireball_on_object(objp, (F1_0 + d_rand()) * (16 * expl_scale/F1_0)/8, 0);
+	} else if (d_rand() < FrameTime*8)
+		create_small_fireball_on_object(objp, (F1_0/2 + d_rand()) * (16 * expl_scale/F1_0)/8, 1);
 
 	if (start_time + roll_duration < GameTime64 || GameTime64+(F1_0*2) < start_time)
 		return 1;
