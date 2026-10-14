@@ -34,6 +34,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "iff.h"
 #include "u_mem.h"
 #include "kconfig.h"
+#include "host_config_probe.h"
 #ifdef ANDROID
 #include "android_menu_navigation.h"
 #endif
@@ -620,6 +621,18 @@ static void kconfig_draw_contents(kc_menu *menu, grs_canvas *canvas)
 		kc_drawitem( &menu->items[i], 0 );
 	}
 	kc_drawitem( &menu->items[menu->citem], 1 );
+#ifdef DXX_HOST_CONFIG_PROBE
+	if (window_get_front() == menu->wind) {
+		void *snapshot = host_config_probe_bindings_begin(menu->title, menu->citem, menu->changing);
+		for (i = 0; i < menu->nitems; ++i) {
+			char binding[32];
+			kc_item *item = &menu->items[i];
+			kc_get_binding_text(binding, sizeof(binding), item);
+			host_config_probe_binding(snapshot, i, item->text, binding, item->value, item->u, item->d, item->l, item->r);
+		}
+		host_config_probe_bindings_end(snapshot);
+	}
+#endif
 	
 	if (menu->changing)
 	{

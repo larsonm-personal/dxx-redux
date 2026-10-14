@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "event.h"
+#include "host_config_probe.h"
 #include "key.h"
 #include "mouse.h"
 #include "window.h"
@@ -262,6 +263,7 @@ void event_process(void)
 #ifdef ANDROID
 	android_profile_outer_mark(ANDROID_OUTER_INPUT);
 #endif
+	host_config_probe_tick();
 	event_poll();	// send input events first
 #ifdef ANDROID
 	android_pause_publish();

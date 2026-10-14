@@ -146,8 +146,15 @@ unsigned long long ogl_get_egl_window_generation(void)
 }
 #endif /* OGLES && ANDROID */
 
+#if defined(DXX_HOST_CONFIG_PROBE) && !defined(OGLES)
+#include "../../../android/tests/host_render_probe.h"
+#endif
+
 void ogl_swap_buffers_internal(void)
 {
+#if defined(DXX_HOST_CONFIG_PROBE) && !defined(OGLES)
+	host_render_probe_capture();
+#endif
 #ifdef OGLES
 #ifdef ANDROID
 	android_egl_surface_swap(&ogl_android_egl_state);

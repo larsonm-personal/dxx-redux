@@ -71,6 +71,7 @@ set(D2X_MAIN_SOURCES
     multibot.c
     newdemo.c
     newmenu.c
+    ../../android/tests/host_config_probe.c
     object.c
     paging.c
     physics.c

@@ -636,6 +636,7 @@ $noInfraTests = @(
     "test_sdk_package_cleanup",
     "test_sdk_writer_lock",
     "test_bounded_python_runtime",
+    "test_host_campaign_oracles",
     "test_bounded_extraction",
     "test_guidebot_simulation_schema",
     "test_guidebot_simulation_runner",

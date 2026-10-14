@@ -51,6 +51,12 @@ try {
         foreach ($support in $catalog.support) {
             if ($support.owner -notin @($catalog.tests.base_name)) { throw "Support owner absent from catalog: $($support.name)" }
         }
+        $hostOracles = @($catalog.tests | Where-Object name -eq 'test_host_campaign_oracles')
+        if ($hostOracles.Count -ne 1 -or $hostOracles[0].type -ne 'ps1' -or
+            $hostOracles[0].requires -ne 'none' -or
+            'test_host_campaign_oracles' -notin (Get-TestSuiteCoveragePolicy).core) {
+            throw 'Offline host campaign controls must retain one host-only core owner'
+        }
         $fovOwner = @($catalog.tests | Where-Object name -eq 'test_fov_demo_compatibility')
         $controllerOwner = @($catalog.tests | Where-Object name -eq 'test_controller_response')
         $controllerSupport = @($catalog.support | Where-Object { $_.type -eq 'jsonc' -and $_.name -eq 'test_controller_response' })

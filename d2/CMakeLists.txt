@@ -14,6 +14,11 @@ if(NOT ANDROID)
 endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../android/app/src/main/cpp/shared)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../android/tests)
+option(DXX_HOST_CONFIG_PROBE "Enable isolated desktop configuration test bridge" OFF)
+if(DXX_HOST_CONFIG_PROBE AND NOT ANDROID)
+    add_compile_definitions(DXX_HOST_CONFIG_PROBE=1)
+endif()
 
 option(OPENGL "Build with OpenGL support [default: ON]" ON)
 option(SDLMIXER "Build with SDL_Mixer support for sound and music (includes external music support) [default: ON]" ON)

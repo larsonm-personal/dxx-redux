@@ -23,6 +23,10 @@ extern int digi_win32_play_midi_song( char * filename, int loop );
 Mix_Music *current_music = NULL;
 static unsigned char *current_music_hndlbuf = NULL;
 
+#ifdef DXX_HOST_CONFIG_PROBE
+#include "../../../android/tests/host_music_probe.h"
+#endif
+
 
 /*
  *  Plays a music file from an absolute path or a relative path
@@ -36,6 +40,9 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	char *fptr;
 	unsigned int bufsize = 0;
 
+#ifdef DXX_HOST_CONFIG_PROBE
+	host_music_probe_request(filename);
+#endif
 	mix_free_music();	// stop and free what we're already playing, if anything
 
 	fptr = strrchr(filename, '.');
@@ -47,6 +54,9 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	if (!d_stricmp(fptr, ".hmp") || !d_stricmp(fptr, ".hmq"))
 	{
 		hmp2mid(filename, &current_music_hndlbuf, &bufsize);
+#ifdef DXX_HOST_CONFIG_PROBE
+		host_music_probe_midi(current_music_hndlbuf, bufsize);
+#endif
 		rw = SDL_RWFromConstMem(current_music_hndlbuf,bufsize*sizeof(char));
 		current_music = Mix_LoadMUS_RW(rw);
 	}
@@ -93,12 +103,19 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 	if (current_music)
 	{
+#ifdef DXX_HOST_CONFIG_PROBE
+		host_music_play_result = Mix_PlayMusic(current_music, (loop ? -1 : 1));
+#else
 		Mix_PlayMusic(current_music, (loop ? -1 : 1));
+#endif
 		Mix_HookMusicFinished(hook_finished_track ? hook_finished_track : mix_free_music);
 		return 1;
 	}
 	else
 	{
+#ifdef DXX_HOST_CONFIG_PROBE
+		host_music_play_result = -1;
+#endif
 		con_printf(CON_CRITICAL,"Music %s could not be loaded: %s\n", filename, Mix_GetError());
 		mix_stop_music();
 	}

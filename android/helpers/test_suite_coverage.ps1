@@ -79,6 +79,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_saf_redbook'
         )
         core = @(
+            'test_host_campaign_oracles'
             'test_startup_restore_failure'
             'test_android_pause_state'
             'test_android_test_target'

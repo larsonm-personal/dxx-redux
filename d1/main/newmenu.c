@@ -36,6 +36,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "menu.h"
 #include "newmenu.h"
+#include "host_config_probe.h"
 #include "gamefont.h"
 #include "iff.h"
 #include "pcx.h"
@@ -2179,6 +2180,11 @@ int newmenu_draw(window *wind, newmenu *menu)
 
 int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 {
+#ifdef DXX_HOST_CONFIG_PROBE
+	if (event->type == EVENT_WINDOW_DRAW && wind == window_get_front())
+		host_config_probe_menu(menu->title, menu->subtitle, menu->citem, menu->nitems, menu->items);
+#endif
+
 	if (event->type == EVENT_WINDOW_CLOSED)
 		return 0;
 
@@ -3298,6 +3304,11 @@ int listbox_draw(window *wind, listbox *lb)
 
 int listbox_handler(window *wind, d_event *event, listbox *lb)
 {
+#ifdef DXX_HOST_CONFIG_PROBE
+	if (event->type == EVENT_WINDOW_DRAW && wind == window_get_front())
+		host_config_probe_listbox(lb->title, lb->citem, lb->nitems, lb->item);
+#endif
+
 	if (event->type == EVENT_WINDOW_CLOSED) {
 	#ifdef ANDROID
 		android_pilot_listbox_hold_clear(lb);
