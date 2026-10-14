@@ -1090,9 +1090,14 @@ int load_mission_by_name(char *mission_name)
 	if (ambiguous) Warning("Mission name '%s' is ambiguous; select its package in the mission menu", mission_name);
 	else if (match >= 0) found = load_mission(mission_list + match);
 #else
+	int match = -1, ambiguous = 0;
 	for (i = 0; i < num_missions; i++)
-		if (!d_stricmp(mission_name, mission_list[i].filename))
-			found = load_mission(mission_list + i);
+		if (!d_stricmp(mission_name, mission_list[i].filename)) {
+			if (match >= 0) ambiguous = 1;
+			match = i;
+		}
+	if (ambiguous) Warning("Mission name '%s' is ambiguous; remove or rename duplicate missions", mission_name);
+	else if (match >= 0) found = load_mission(mission_list + match);
 #endif
 
 	free_mission_list(mission_list);
