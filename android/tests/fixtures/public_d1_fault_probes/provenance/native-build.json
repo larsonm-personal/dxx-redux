@@ -1,0 +1,28 @@
+{
+  "status": "independent clean published source build",
+  "revision": "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb",
+  "tree": "5d9d3efb3b07d54fec189eaef6ec8dfaa7355fb8",
+  "targets": {
+    "temp/native-d1-build/main/test_upstream_compat": {
+      "sha256": "b6c9f6d75fdbeee6e3370e9c583720818c3ed9b11a44ba13ca5e8f98fd7d78e7",
+      "bytes": 13076784
+    },
+    "temp/native-d1-build/main/d1x-redux": {
+      "sha256": "3e488061ee2f0071a3c5c1e23431ed6248394fc4b5f3f712ff3404301f0e9dc7",
+      "bytes": 9761592
+    },
+    "temp/native-d1-build/main/dxx-redux-d1-headless": {
+      "sha256": "612c23ed9712cfd14e772851ba856e42b53eff2da77f1771f65fd3a8212f7cc7",
+      "bytes": 9812864
+    },
+    "temp/native-d2-build/main/test_upstream_compat": {
+      "sha256": "5306986a2605b47404339f01dccff10d56fa6037bcdcc60939a79f45bf1316bc",
+      "bytes": 16345464
+    },
+    "temp/native-d2-build/main/d2x-redux": {
+      "sha256": "63be73a2b4740d1dca07d8ca87fcdde54627fd80a9167cdc71b935892b5aef83",
+      "bytes": 12547936
+    }
+  },
+  "free_bytes_after": 4866899968
+}

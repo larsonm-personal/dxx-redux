@@ -57,6 +57,12 @@ INPUT_DEMO_POLICY_ASSERT(total_size,
                              (sizeof(void *) == 8 ? 40 : 20));
 #undef INPUT_DEMO_POLICY_ASSERT
 
+int input_demo_direct_command_apply_event(
+    const input_demo_direct_command_policy *policy,
+    input_demo_direct_command_phase phase,
+    const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size);
+
 int input_demo_direct_command_apply_current_frame(
     const input_demo_direct_command_policy *policy,
     input_demo_direct_command_phase phase,

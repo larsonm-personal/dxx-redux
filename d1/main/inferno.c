@@ -547,8 +547,11 @@ int main(int argc, char *argv[])
 		{
 			int replay_result = input_demo_maybe_start_replay_from_cmdline();
 
-			if (replay_result > 0)
+			if (replay_result > 0) {
+				/* Startup failures must not open modal teardown warnings */
+				set_warn_func(warn_printf);
 				return replay_result;
+			}
 			if (replay_result < 0) {
 				if (!startup_resume_save_from_cmdline("d1")) {
 #ifdef __ANDROID__
@@ -607,5 +610,5 @@ game_event_loop:
 	PHYSFSX_removeArchiveContent();
 	reset_observatory_stats();
 
-	return(0);		//presumably successful exit
+	return input_demo_replay_should_exit() && !input_demo_replay_actual_result_written() ? 1 : 0;
 }

@@ -109,13 +109,13 @@
                 "target": 8,
                 "target_id": 3,
                 "target_signature": 9,
-                "action_frame": 125,
+                "action_frame": 116,
                 "wall_contact_frames": 0,
                 "damage_frame": 105,
-                "retirement_frame": 147,
+                "retirement_frame": 138,
                 "target_shields": 1638400,
                 "target_score": 200,
-                "loot_frame": 132,
+                "loot_frame": 123,
                 "loot_count": 0
             }
         },
@@ -251,6 +251,86 @@
                 "pickup_frame": 581,
                 "pickup_gain_frame": 580
             }
+        },
+        {
+            "game": "d2",
+            "scenario": "guidebot-release",
+            "demo": "d2-public-guidebot-release.dximdemo",
+            "oracle": "d2-public-guidebot-release.oracle.json",
+            "actions": {
+                "target": 74,
+                "target_id": -1,
+                "target_signature": -1,
+                "action_frame": 188,
+                "wall_contact_frames": 0,
+                "buddy": 28,
+                "buddy_id": 33,
+                "buddy_signature": 29,
+                "cage_segment": 224,
+                "exit_frame": 179,
+                "blast_frame": 177,
+                "damage_frame": 101
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-release-first",
+            "demo": "d1-public-secondary-release-first.dximdemo",
+            "oracle": "d1-public-secondary-release-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 4,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "secondary-release-first",
+            "demo": "d2-public-secondary-release-first.dximdemo",
+            "oracle": "d2-public-secondary-release-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 4,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d1",
+            "scenario": "secondary-mouse-first",
+            "demo": "d1-public-secondary-mouse-first.dximdemo",
+            "oracle": "d1-public-secondary-mouse-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 3,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
+        },
+        {
+            "game": "d2",
+            "scenario": "secondary-mouse-first",
+            "demo": "d2-public-secondary-mouse-first.dximdemo",
+            "oracle": "d2-public-secondary-mouse-first.oracle.json",
+            "actions": {
+                "first_fire_frame": 2,
+                "second_press_frame": 12,
+                "release_frame": 13,
+                "initial_ammo": 5,
+                "terminal_ammo": 3,
+                "cooldown_ticks": 32768,
+                "second_press_ticks_early": 8
+            }
         }
     ],
     "imported_d1": {
@@ -278,7 +358,15 @@
             },
             "d1-public-loot.dximdemo": {
                 "role": "diagnostic-only",
-                "reason": "Retain complete imported diagnostics: an earlier robot death awards 200 extra points and SIM actor-signature metadata differs; gameplay and full-simulation compatibility remain unqualified"
+                "reason": "Retain complete imported diagnostics: the prior extra-200-point ownership bug is fixed, but raw object/parent signatures, SIM actor context and effect startup phase still differ; full-simulation compatibility remains unqualified"
+            },
+            "d1-public-secondary-release-first.dximdemo": {
+                "role": "excluded",
+                "reason": "Native D1 ordered SDL dispatch and full replay fidelity are qualified separately; this new camera-contract scene is not imported D1 compatibility coverage"
+            },
+            "d1-public-secondary-mouse-first.dximdemo": {
+                "role": "excluded",
+                "reason": "Native D1 ordered SDL dispatch and full replay fidelity are qualified separately; this new camera-contract scene is not imported D1 compatibility coverage"
             }
         }
     }

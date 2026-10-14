@@ -1,0 +1,14 @@
+{
+  "baseline_sha256": {
+    "result": "aecc06db94ea6afcac63a31578f46032faf0621f01fada36cb3a5dd638982518",
+    "rng": "f800cd15f83d8bf7e457e875e70d1e23db1a52dbd7d8193972df78134944c70f",
+    "state": "bdf0586733be54eeec739797df4f701a23dcf78a2d9ca86675c0733e7e66dc4d"
+  },
+  "converted_demo_sha256": "27d2c453b009265ea329091a3a9db49df80c687e3ec4dc75d8cd963f6f813112",
+  "kind": "ordered-input-candidate",
+  "original_corpus_revision": "423689514af9fb0d9b34698e345a8ae829d25370",
+  "schedule": "sample-only",
+  "schema": 1,
+  "source_demo_sha256": "d75918653dfd6de32b18b037bc59e0eb829bb0dcfb3d866df2bf2a8888eb1036",
+  "source_oracle_sha256": "381b966df32429e020d689535a837304074822186c10d1e6d860dcfe8954b518"
+}

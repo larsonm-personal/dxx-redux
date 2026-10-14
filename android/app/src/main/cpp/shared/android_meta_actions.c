@@ -21,6 +21,7 @@
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "android_rewind.h"
+#include "input_demo_hooks.h"
 #include "coop/coop_level_restart.h"
 #include "coop/coop_save.h"
 #include "cntrlcen.h"
@@ -492,6 +493,7 @@ int android_reactor_pause_toggle_apply_pending(void)
 		return 1;
 	}
 #endif
+	input_demo_cancel_unsupported_input_capture("automap reactor cheat is not recorded");
 	if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer))
 		HUD_init_message_literal(HM_DEFAULT, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
 	return 1;
@@ -513,6 +515,7 @@ int android_matcen_mode_apply_pending(void)
 		return 1;
 	}
 #endif
+	input_demo_cancel_unsupported_input_capture("automap matcen cheat is not recorded");
 	matcen_set_mode(mode);
 	return 1;
 }

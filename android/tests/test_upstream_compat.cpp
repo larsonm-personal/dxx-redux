@@ -4474,6 +4474,81 @@ static void test_boss_frame_updates()
 #endif
 }
 
+static void test_force_kill_credit()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+	const int versions[] = { 1, 2, 1 };
+#else
+	const int versions[] = { 1 };
+#endif
+	const auto old_robot = Robot_info[0];
+	const auto old_player = Players[0];
+	for (const int version : versions) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = version;
+#endif
+		// Local contact, local weapon, foreign weapon, robot and foreign player
+		for (int source_kind = 0; source_kind < 5; ++source_kind) {
+			init_test_corridor();
+			Game_mode = 0;
+			Player_num = 0;
+			Players[0] = {};
+			Players[0].lives = 3;
+			Players[0].objnum = 0;
+			ConsoleObject = &Objects[0];
+#ifndef DXX_BUILD_DESCENT_II
+			// Native D1 level objects retain their source signature
+			ConsoleObject->signature = 1;
+#endif
+			cheats.enabled = 0;
+			Robot_info[0] = {};
+			Robot_info[0].score_value = 200;
+			vms_vector origin = {};
+			const int robot = obj_create(OBJ_ROBOT, 0, 0, &origin, &vmd_identity_matrix, F1_0, CT_AI, MT_PHYSICS, RT_NONE);
+			require(robot > 0, "create a real force-damage victim");
+			Objects[robot].shields = F1_0;
+			Objects[robot].mtype.phys_info.mass = F1_0;
+			object *source = ConsoleObject;
+			if (source_kind) {
+				int parent = 0;
+				if (source_kind == 2) {
+					parent = obj_create(OBJ_PLAYER, 1, 0, &origin, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
+					require(parent > 0 && Objects[parent].signature != ConsoleObject->signature, "create a distinct foreign player weapon owner");
+				}
+				const auto type = source_kind <= 2 ? OBJ_WEAPON : source_kind == 3 ? OBJ_ROBOT
+				                                                                   : OBJ_PLAYER;
+				const int control = type == OBJ_WEAPON ? CT_WEAPON : CT_NONE;
+				const int index = obj_create(type, type == OBJ_PLAYER ? 1 : 0, 0, &origin, &vmd_identity_matrix, F1_0, control, MT_NONE, RT_NONE);
+				require(index > 0, "create a real force-damage source");
+				source = &Objects[index];
+				if (type == OBJ_WEAPON) {
+					source->ctype.laser_info.parent_type = OBJ_PLAYER;
+					source->ctype.laser_info.parent_num = parent;
+					source->ctype.laser_info.parent_signature = Objects[parent].signature;
+				}
+			}
+			// Keep D2's legacy zeroed non-weapon-union credit outside this D1 fix
+			const bool credited = source_kind == 1 || (version == 2 && source_kind != 2);
+			apply_force_damage(&Objects[robot], 32 * F1_0, source);
+			require(Objects[robot].shields < 0 && (Objects[robot].flags & OF_EXPLODING) && Players[0].num_kills_total == 1,
+			        "force damage actually kills one robot and schedules its explosion");
+			if (Players[0].score != (credited ? 200 : 0))
+				std::fprintf(stderr, "Force credit mismatch: version=%d source=%d score=%d\n", version, source_kind, Players[0].score);
+			require(Players[0].score == (credited ? 200 : 0), "force-kill credit matches loaded-level D1 observations without changing legacy D2 policy");
+			apply_force_damage(&Objects[robot], 32 * F1_0, source);
+			require(Players[0].score == (credited ? 200 : 0) && Players[0].num_kills_total == 1,
+			        "an exploding robot cannot award force-kill credit twice");
+		}
+	}
+	Robot_info[0] = old_robot;
+	Players[0] = old_player;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
 static void test_projectile_collision_relationships()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -4652,13 +4727,17 @@ static void test_homing_targets()
 			Num_rendered_objects = 1;
 			Ordered_rendered_object_list[0] = target;
 #endif
+			Gameplay_num_rendered_objects = 1;
+			Gameplay_rendered_object_list[0] = target;
 			require(find_homing_object(&origin, &homer) == (version == 1 ? target : -1), "D1 rendered acquisition retains its original range while D2 keeps its distance cap");
-			if (version == 1) {
-				// Native D1 consumes the last main-view list, even after a pause or rear view
+			{
+				// All initial local-player acquisition uses the preceding fixed gameplay view
 				Objects[target].pos = { F1_0, 0, 8 * F1_0 };
 				Objects[better].pos = { 0, 0, 9 * F1_0 };
 				obj_relink(better, 0);
 				auto main_candidates = [&](std::initializer_list<int> candidates) {
+					Gameplay_num_rendered_objects = static_cast<int>(candidates.size());
+					std::copy(candidates.begin(), candidates.end(), Gameplay_rendered_object_list);
 #ifdef DXX_BUILD_DESCENT_II
 					Window_rendered_data[0].num_objects = static_cast<int>(candidates.size());
 					std::copy(candidates.begin(), candidates.end(), Window_rendered_data[0].rendered_objects);
@@ -10997,30 +11076,38 @@ static void write_weapon_art_trace(const char *directory, const char *d2_directo
 	std::puts("Weapon art trace passed");
 }
 
+#include "fixed_gameplay_view_fixture.hpp"
+
 // Compare CPU collection against the actual draw, then export native/imported lists
-static void write_render_candidates_trace(const char *directory)
+static void write_render_candidates_trace(const char *directory, bool public_assets = false, bool native_d2 = false)
 {
 	using nlohmann::json;
-	const std::string hog = std::string(directory) + "/DESCENT.HOG";
+#ifndef DXX_BUILD_DESCENT_II
+	require(!native_d2, "native D2 renderer fixture requires the D2 engine");
+#endif
+	const std::string hog = std::string(directory) + (native_d2 ? "/d2demo.hog" : public_assets ? "/descent.hog"
+	                                                                                            : "/DESCENT.HOG");
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount original candidate-test resources");
 	GameArg.SndNoSound = GameArg.SndNoMusic = 1;
 	GameArg.SysWindow = GameCfg.WindowMode = 1;
-	GameCfg.AspectX = 4;
-	GameCfg.AspectY = 3;
+	GameCfg.AspectX = native_d2 ? 3 : 4;
+	GameCfg.AspectY = native_d2 ? 4 : 3;
 	GameCfg.TexFilt = 0;
 	Game_screen_mode = SM(640, 480);
 	digi_select_system(SDLAUDIO_SYSTEM);
 #ifdef DXX_BUILD_DESCENT_II
-	require(d1_in_d2_init_base_resources(1), "select D1 candidate-test resources");
+	if (!native_d2) require(d1_in_d2_init_base_resources(1), "select D1 candidate-test resources");
 #endif
 	load_text();
 	require(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0 && gr_init(Game_screen_mode) == 0, "initialize candidate-test renderer");
-	gr_use_palette_table("palette.256");
+	char palette[] = "palette.256";
+	gr_use_palette_table(palette);
 	gamefont_init();
 	gamedata_init();
 #ifdef DXX_BUILD_DESCENT_II
 	d1_in_d2_init_startup_bitmaps();
-	char mission[] = "descent";
+	char mission[8] = "descent";
+	if (native_d2) std::strcpy(mission, "d2demo");
 #else
 	char mission[] = "";
 #endif
@@ -11042,6 +11129,7 @@ static void write_render_candidates_trace(const char *directory)
 		GameCfg.ClassicDepth = classic;
 		Endlevel_sequence = 0;
 		Player_fired_laser_this_frame = -1;
+		std::memset(Automap_visited, 0, sizeof(Automap_visited));
 #ifdef DXX_BUILD_DESCENT_II
 		update_rendered_data(0, Viewer, rear, 0);
 		render_frame(offset, 0);
@@ -11051,6 +11139,7 @@ static void write_render_candidates_trace(const char *directory)
 		render_frame(offset);
 		const std::vector<short> drawn(Ordered_rendered_object_list, Ordered_rendered_object_list + Num_rendered_objects);
 #endif
+		const std::vector<ubyte> actual_map(Automap_visited, Automap_visited + MAX_SEGMENTS);
 		const std::vector<object> before(Objects, Objects + Highest_object_index + 1);
 		const auto sim_calls = d_rand_get_call_count(), fx_calls = d_rand_get_stream_call_count(D_RNG_FX);
 		unsigned sim_state = 0, fx_state = 0;
@@ -11063,10 +11152,14 @@ static void write_render_candidates_trace(const char *directory)
 		require(d_rand_get_state(&after_sim) == has_sim && d_rand_get_stream_state(D_RNG_FX, &after_fx) == has_fx &&
 		            after_sim == sim_state && after_fx == fx_state && sim_calls == d_rand_get_call_count() && fx_calls == d_rand_get_stream_call_count(D_RNG_FX),
 		        "CPU candidate preparation preserves both RNG states and counts");
+		short gameplay[MAX_RENDERED_OBJECTS];
+		require(render_collect_gameplay_objects(gameplay) >= 0 && std::equal(actual_map.begin(), actual_map.end(), Automap_visited),
+		        "fixed gameplay collection preserves map discovery produced by the actual camera render");
 		trace.push_back({ { "scene", scene }, { "pose", pose }, { "width", width }, { "height", height }, { "rear", rear }, { "classic", classic }, { "offset", offset }, { "candidates", drawn }, { "segments", std::vector<short>(Render_list, Render_list + N_render_segs) } });
 		gr_set_current_canvas(nullptr);
 	};
-	for (const int level : { 1, 14, 27 }) {
+	for (const int level : native_d2 ? std::vector<int>{ 1, 2, 3 } : public_assets ? std::vector<int>{ 1, 4, 7 }
+	                                                                               : std::vector<int>{ 1, 14, 27 }) {
 		std::fprintf(stderr, "Candidate level load %d\n", level);
 #ifdef DXX_BUILD_DESCENT_II
 		input_demo_set_skip_level_intro(1);
@@ -11102,12 +11195,26 @@ static void write_render_candidates_trace(const char *directory)
 			position.z += (i % 7 - 3) * F1_0;
 			const auto type = i % 4 == 0 ? OBJ_ROBOT : i % 4 == 1 ? OBJ_FIREBALL
 			                                                      : OBJ_WEAPON;
-			require(obj_create(type, 0, segment, &position, &vmd_identity_matrix, (i % 3 + 1) * 4 * F1_0, CT_NONE, MT_NONE, RT_NONE) > 0, "create dense candidate scene");
+			require(obj_create(type, 0, segment, &position, &vmd_identity_matrix, (i % 3 + 1) * 4 * F1_0,
+			                   type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_NONE, RT_NONE) > 0,
+			        "create dense candidate scene");
 		}
 		for (const int classic : { 0, 1 })
 			for (const int rear : { 0, 1 })
 				check_view(-density, 0, 640, 480, rear, classic, 0);
 	}
+	// Actual forward and rear draws must continue to discover their own mine.
+	init_test_corridor(5);
+	Viewer = ConsoleObject = &Objects[0];
+	ConsoleObject->type = OBJ_PLAYER;
+	ConsoleObject->orient = vmd_identity_matrix;
+	compute_segment_center(&ConsoleObject->pos, &Segments[2]);
+	obj_relink(0, 2);
+	Players[0].objnum = 0;
+	check_view(-200, 0, 640, 480, 0, 0, 0);
+	require(Automap_visited[4] && !Automap_visited[0], "actual forward camera discovers its forward corridor");
+	check_view(-200, 0, 640, 480, 1, 0, 0);
+	require(Automap_visited[0] && !Automap_visited[4], "actual rear camera still discovers the rear corridor under fixed-forward gameplay policy");
 	short untouched[MAX_RENDERED_OBJECTS];
 	std::fill(std::begin(untouched), std::end(untouched), static_cast<short>(123));
 	Endlevel_sequence = 1;
@@ -11276,8 +11383,11 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 	std::puts("PASS: mission movie dependency scan");
 }
 
+#include "gameplay_view_lifecycle_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
+#include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
+#include "public_matcen_stations_fixture.hpp"
 
 static void verify_headless_audio_closed()
 {
@@ -11296,20 +11406,59 @@ static void verify_headless_audio_closed()
 	std::puts("Headless audio is closed at process teardown");
 }
 
-
 int main(int argc, char **argv)
 {
+	if (argc == 2 && std::strcmp(argv[1], "--capture-build-revision") == 0) {
+		std::printf("%s\n", DXX_INPUT_DEMO_GIT_VERSION);
+		return 0;
+	}
+
 	(void) argc;
 	mem_init();
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 2 && std::strcmp(argv[1], "--public-d1-comparison-profile") == 0) {
+		write_public_d1_comparison_profile();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 3 && std::strcmp(argv[1], "--headless-audio-lifecycle") == 0) {
 		// This observer runs after the production cleanup and before mem cleanup
 		require(std::atexit(verify_headless_audio_closed) == 0, "register audio teardown observer");
 		require(init_headless_audio(), "initialize the production headless audio runtime");
 		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
 		return std::atoi(argv[2]);
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
+		capture_public_level_replay(argv[2], argv[3]);
+		exercise_public_save_continuation(argv[3]);
+		return 0;
+	}
+	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--public-matcen-stations") == 0) {
+		require(argc == 4 || std::strcmp(argv[4], "--without-activation") == 0, "recognized matcen fixture control");
+		test_public_matcen_stations(argv[2], argv[3], argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--gameplay-view-lifecycle") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized gameplay-view lifecycle profile");
+		capture_public_level_replay(argv[2], "gameplay-view-lifecycle", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-fan-observe") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized fan observation profile");
+		capture_public_level_replay(argv[2], "fan-observe", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-effect-phase") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized effect-phase diagnostic profile");
+		capture_public_level_replay(argv[2], "effect-phase", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-all-weapons") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized all-weapons profile");
+		capture_public_level_replay(argv[2], "all-weapons", argc == 4);
+		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
@@ -11397,8 +11546,14 @@ int main(int argc, char **argv)
 		write_weapon_art_trace(argv[2], argc == 4 ? argv[3] : nullptr);
 		return 0;
 	}
-	if (argc == 3 && std::strcmp(argv[1], "--render-candidates-trace") == 0) {
-		write_render_candidates_trace(argv[2]);
+	if (argc == 2 && std::strcmp(argv[1], "--fixed-gameplay-view") == 0) {
+		test_fixed_gameplay_view();
+		return 0;
+	}
+	if ((argc >= 3 && argc <= 5) && std::strcmp(argv[1], "--render-candidates-trace") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--public-assets") == 0, "recognized renderer-equivalence resource selection");
+		require(argc < 5 || std::strcmp(argv[4], "--native-d2") == 0, "recognized native D2 renderer profile");
+		write_render_candidates_trace(argv[2], argc >= 4, argc == 5);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-combat-rules-trace") == 0) {
@@ -11537,8 +11692,11 @@ int main(int argc, char **argv)
 #ifdef DXX_BUILD_DESCENT_II
 	test_boss_sound_storage();
 #endif
+	std::fprintf(stderr, "Testing fixed forward gameplay view\n");
+	test_fixed_gameplay_view();
 	std::fprintf(stderr, "Testing native homing acquisition and retention\n");
 	test_homing_targets();
+	test_force_kill_credit();
 	test_projectile_collision_relationships();
 	test_stuck_projectiles();
 	test_autoselect();

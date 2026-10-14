@@ -76,6 +76,10 @@ extern const rgb* selected_player_rgb;
 #define WBU_MARKER      6       // a dropped marker
 #define WBU_STATIC      7       // playing static after missile hits
 
+// Initialize native subview geometry without drawing or updating gauge state
+// Returns zero when no window is drawable; optional x/y are full-screen offsets
+int cockpit_window_view_canvas(int win, grs_canvas *canvas, int *window_x, int *window_y);
+
 // draws a 3d view into one of the cockpit windows.  win is 0 for
 // left, 1 for right.  viewer is object.  NULL object means give up
 // window user is one of the WBU_ constants.  If rear_view_flag is

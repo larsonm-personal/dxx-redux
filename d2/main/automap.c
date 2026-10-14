@@ -71,6 +71,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "args.h"
 #include "input_demo_recorder.h"
+#include "input_demo_hooks.h"
 #ifdef __ANDROID__
 #include "android_meta_actions.h"
 #include "escort.h"
@@ -401,6 +402,7 @@ void DropMarker (int player_marker_num)
 		obj_delete(MarkerObject[marker_num]);
 
 	MarkerObject[marker_num] = drop_marker_object(&playerp->pos,playerp->segnum,&playerp->orient,marker_num);
+	input_demo_trace_view_state("drop_marker", player_marker_num);
 
 #ifdef NETWORK
 	if (Game_mode & GM_MULTI)
@@ -421,6 +423,37 @@ void input_demo_apply_recorded_marker_drop(int player_marker_num, const char *me
 	MarkerMessage[marker_num][MARKER_MESSAGE_LEN - 1] = '\0';
 	DropMarker(player_marker_num);
 	LastMarkerDropped = (ubyte)player_marker_num;
+}
+
+static void delete_marker(int marker_num)
+{
+	const int player_marker_num = marker_num - Player_num * 2;
+	char error[256] = "";
+	/* The native UI highlights absolute slots, including other players' markers */
+	input_demo_record_input_context();
+	if (input_demo_recorder_is_active() &&
+	    !input_demo_recorder_stage_direct_command_delete_marker(player_marker_num,
+	        Objects[MarkerObject[marker_num]].signature, error, sizeof(error)))
+		input_demo_cancel_unsupported_input_capture(error);
+	obj_delete(MarkerObject[marker_num]);
+	MarkerObject[marker_num] = -1;
+	MarkerMessage[marker_num][0] = 0;
+	HighlightMarker = -1;
+	input_demo_trace_view_state("delete_marker", player_marker_num);
+}
+
+int input_demo_apply_recorded_marker_delete(int player_marker_num, int signature)
+{
+	const int marker_num = Player_num * 2 + player_marker_num;
+	int object_num;
+	if (!input_demo_player_marker_supported(player_marker_num) || marker_num < 0 || marker_num >= NUM_MARKERS)
+		return 0;
+	object_num = MarkerObject[marker_num];
+	if (object_num < 0 || object_num > Highest_object_index || Objects[object_num].type != OBJ_MARKER ||
+	    Objects[object_num].id != marker_num || Objects[object_num].signature != signature)
+		return 0;
+	delete_marker(marker_num);
+	return 1;
 }
 
 void DropBuddyMarker(object *objp)
@@ -601,6 +634,7 @@ static void automap_apply_android_marker_requests(automap *am)
 		{
 			char error[256] = "";
 			sprintf(MarkerMessage[marker_num], "%d", set_marker+1);
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_drop_marker(set_marker,
 			                                                       MarkerMessage[marker_num],
@@ -943,6 +977,7 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 			
 #ifndef NDEBUG
 		case KEY_DEBUGGED+KEY_F: 	{
+				input_demo_cancel_unsupported_input_capture("automap debug reveal is not recorded");
 				int i;
 				int changed = 0;
 				
@@ -1001,10 +1036,7 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 			if (HighlightMarker > -1 && MarkerObject[HighlightMarker] != -1) {
 				gr_set_current_canvas(NULL);
 				if (nm_messagebox( NULL, 2, TXT_YES, TXT_NO, "Delete Marker?" ) == 0) {
-					obj_delete(MarkerObject[HighlightMarker]);
-					MarkerObject[HighlightMarker]=-1;
-					MarkerMessage[HighlightMarker][0]=0;
-					HighlightMarker = -1;
+					delete_marker(HighlightMarker);
 				}
 				set_screen_mode(SCREEN_GAME);
 			}
@@ -1027,10 +1059,14 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 
 int automap_process_input(window *wind, d_event *event, automap *am)
 {
+	const control_info empty_controls = { 0 };
+	const int cleared_gameplay_controls = memcmp(&Controls, &empty_controls, sizeof(Controls)) != 0;
 	Controls = am->controls;
 	kconfig_read_controls(event, 1);
 	am->controls = Controls;
 	memset(&Controls, 0, sizeof(control_info));
+	if (cleared_gameplay_controls)
+		input_demo_record_input_controls();
 
 	if ( !am->controls.automap_state && (am->leave_mode==1) )
 	{
@@ -1126,6 +1162,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 			window_set_visible(Game_wind, 1);
 			g_active_automap = NULL;
 			Automap_active = 0;
+			input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_CLOSE);
 			return 0;	// continue closing
 			break;
 
@@ -1144,6 +1181,8 @@ void do_automap()
 	window *automap_wind = NULL;
 	automap *am;
 
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_BEGIN);
+
 #ifdef __ANDROID__
 	automap_metadata_begin();
 #endif
@@ -1161,6 +1200,7 @@ void do_automap()
 
 	if (automap_wind == NULL)
 	{
+		input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_CLOSE);
 		AUTOMAP_LOGE("automap window creation failed — out of memory");
 		Warning("Out of memory");
 		d_free(am);
@@ -1232,6 +1272,7 @@ void do_automap()
 
 	//Fill in Automap_visited from Objects[Players[Player_num].objnum].segnum
 	am->max_segments_away = set_segment_depths(Objects[Players[Player_num].objnum].segnum, Automap_visited);
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_DEPTHS);
 	am->segment_limit = am->max_segments_away;
 	AUTOMAP_LOGI("Segment depths: max_segments_away=%d", am->max_segments_away);
 
@@ -1272,6 +1313,7 @@ void do_automap()
 	gr_palette_load( gr_palette );
 	g_active_automap = am;
 	Automap_active = 1;
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_ACTIVE);
 	AUTOMAP_LOGI("do_automap() completed successfully — automap is active");
 }
 
@@ -1842,6 +1884,7 @@ int MarkerInputMessage(int key)
 			break;
 		case KEY_ENTER:
 			strcpy (MarkerMessage[(Player_num*2)+MarkerBeingDefined],Marker_input);
+			input_demo_record_input_context();
 			if (input_demo_recorder_is_active() &&
 			    !input_demo_recorder_stage_direct_command_drop_marker(MarkerBeingDefined,
 			                                                       MarkerMessage[(Player_num*2)+MarkerBeingDefined],

@@ -1,0 +1,534 @@
+{
+  "android_device_run": false,
+  "frames": 40,
+  "game": "d1",
+  "grant": 2,
+  "initial": {
+    "cheats_enabled": 0,
+    "energy": 6553600,
+    "flags": 0,
+    "laser_level": 0,
+    "primary_ammo": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "primary_flags": 1,
+    "primary_selected": 0,
+    "score": 0,
+    "secondary_ammo": [
+      5,
+      0,
+      0,
+      0,
+      0
+    ],
+    "secondary_flags": 1,
+    "secondary_selected": 0
+  },
+  "mission": "d1",
+  "native_code": "bigred",
+  "observations": [
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "first_grant"
+    },
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          19,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "between_grants"
+    },
+    {
+      "frame": 2,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 0,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "repeated_grant"
+    },
+    {
+      "frame": 34,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 12713984,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 2,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "spent_inventory"
+    },
+    {
+      "frame": 34,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 2,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "later_grant"
+    },
+    {
+      "frame": 40,
+      "inventory": {
+        "cheats_enabled": 1,
+        "energy": 13107200,
+        "flags": 1024,
+        "laser_level": 3,
+        "primary_ammo": [
+          0,
+          784,
+          0,
+          0,
+          0
+        ],
+        "primary_flags": 255,
+        "primary_selected": 2,
+        "score": 0,
+        "secondary_ammo": [
+          20,
+          10,
+          10,
+          5,
+          5
+        ],
+        "secondary_flags": 255,
+        "secondary_selected": 0
+      },
+      "phase": "tail_grant"
+    }
+  ],
+  "post_capture_policy_checks": "pass",
+  "profile": "d1",
+  "retail_assets_playback": false,
+  "scenario": "all-weapons-bigred",
+  "shots": [
+    {
+      "frame": 2,
+      "object": 66,
+      "selected": 0,
+      "signature": 77,
+      "weapon_id": 16
+    },
+    {
+      "frame": 2,
+      "object": 67,
+      "selected": 0,
+      "signature": 76,
+      "weapon_id": 8
+    },
+    {
+      "frame": 10,
+      "object": 64,
+      "selected": 2,
+      "signature": 80,
+      "weapon_id": 20
+    },
+    {
+      "frame": 10,
+      "object": 65,
+      "selected": 2,
+      "signature": 79,
+      "weapon_id": 20
+    },
+    {
+      "frame": 10,
+      "object": 68,
+      "selected": 2,
+      "signature": 78,
+      "weapon_id": 20
+    },
+    {
+      "frame": 12,
+      "object": 62,
+      "selected": 2,
+      "signature": 82,
+      "weapon_id": 20
+    },
+    {
+      "frame": 12,
+      "object": 63,
+      "selected": 2,
+      "signature": 81,
+      "weapon_id": 20
+    },
+    {
+      "frame": 12,
+      "object": 74,
+      "selected": 2,
+      "signature": 83,
+      "weapon_id": 20
+    },
+    {
+      "frame": 14,
+      "object": 75,
+      "selected": 2,
+      "signature": 84,
+      "weapon_id": 20
+    },
+    {
+      "frame": 14,
+      "object": 76,
+      "selected": 2,
+      "signature": 85,
+      "weapon_id": 20
+    },
+    {
+      "frame": 14,
+      "object": 77,
+      "selected": 2,
+      "signature": 86,
+      "weapon_id": 20
+    },
+    {
+      "frame": 15,
+      "object": 79,
+      "selected": 2,
+      "signature": 88,
+      "weapon_id": 20
+    },
+    {
+      "frame": 15,
+      "object": 80,
+      "selected": 2,
+      "signature": 89,
+      "weapon_id": 20
+    },
+    {
+      "frame": 15,
+      "object": 81,
+      "selected": 2,
+      "signature": 90,
+      "weapon_id": 20
+    },
+    {
+      "frame": 17,
+      "object": 67,
+      "selected": 2,
+      "signature": 91,
+      "weapon_id": 20
+    },
+    {
+      "frame": 17,
+      "object": 82,
+      "selected": 2,
+      "signature": 92,
+      "weapon_id": 20
+    },
+    {
+      "frame": 17,
+      "object": 83,
+      "selected": 2,
+      "signature": 93,
+      "weapon_id": 20
+    },
+    {
+      "frame": 21,
+      "object": 85,
+      "selected": 2,
+      "signature": 96,
+      "weapon_id": 20
+    },
+    {
+      "frame": 21,
+      "object": 86,
+      "selected": 2,
+      "signature": 97,
+      "weapon_id": 20
+    },
+    {
+      "frame": 21,
+      "object": 87,
+      "selected": 2,
+      "signature": 98,
+      "weapon_id": 20
+    },
+    {
+      "frame": 23,
+      "object": 64,
+      "selected": 2,
+      "signature": 104,
+      "weapon_id": 20
+    },
+    {
+      "frame": 23,
+      "object": 65,
+      "selected": 2,
+      "signature": 103,
+      "weapon_id": 20
+    },
+    {
+      "frame": 23,
+      "object": 68,
+      "selected": 2,
+      "signature": 102,
+      "weapon_id": 20
+    },
+    {
+      "frame": 25,
+      "object": 63,
+      "selected": 2,
+      "signature": 110,
+      "weapon_id": 20
+    },
+    {
+      "frame": 25,
+      "object": 74,
+      "selected": 2,
+      "signature": 109,
+      "weapon_id": 20
+    },
+    {
+      "frame": 25,
+      "object": 78,
+      "selected": 2,
+      "signature": 108,
+      "weapon_id": 20
+    },
+    {
+      "frame": 26,
+      "object": 62,
+      "selected": 2,
+      "signature": 114,
+      "weapon_id": 20
+    },
+    {
+      "frame": 26,
+      "object": 93,
+      "selected": 2,
+      "signature": 115,
+      "weapon_id": 20
+    },
+    {
+      "frame": 26,
+      "object": 94,
+      "selected": 2,
+      "signature": 116,
+      "weapon_id": 20
+    },
+    {
+      "frame": 28,
+      "object": 90,
+      "selected": 2,
+      "signature": 122,
+      "weapon_id": 20
+    },
+    {
+      "frame": 28,
+      "object": 91,
+      "selected": 2,
+      "signature": 121,
+      "weapon_id": 20
+    },
+    {
+      "frame": 28,
+      "object": 92,
+      "selected": 2,
+      "signature": 120,
+      "weapon_id": 20
+    },
+    {
+      "frame": 29,
+      "object": 75,
+      "selected": 2,
+      "signature": 126,
+      "weapon_id": 20
+    },
+    {
+      "frame": 29,
+      "object": 95,
+      "selected": 2,
+      "signature": 127,
+      "weapon_id": 20
+    },
+    {
+      "frame": 29,
+      "object": 96,
+      "selected": 2,
+      "signature": 128,
+      "weapon_id": 20
+    },
+    {
+      "frame": 31,
+      "object": 66,
+      "selected": 2,
+      "signature": 130,
+      "weapon_id": 20
+    },
+    {
+      "frame": 31,
+      "object": 84,
+      "selected": 2,
+      "signature": 129,
+      "weapon_id": 20
+    },
+    {
+      "frame": 31,
+      "object": 89,
+      "selected": 2,
+      "signature": 131,
+      "weapon_id": 20
+    },
+    {
+      "frame": 34,
+      "object": 83,
+      "selected": 2,
+      "signature": 136,
+      "weapon_id": 16
+    },
+    {
+      "frame": 35,
+      "object": 68,
+      "selected": 2,
+      "signature": 142,
+      "weapon_id": 20
+    },
+    {
+      "frame": 35,
+      "object": 79,
+      "selected": 2,
+      "signature": 141,
+      "weapon_id": 20
+    },
+    {
+      "frame": 35,
+      "object": 80,
+      "selected": 2,
+      "signature": 140,
+      "weapon_id": 20
+    }
+  ],
+  "terminal": {
+    "cheats_enabled": 1,
+    "energy": 13107200,
+    "flags": 1024,
+    "laser_level": 3,
+    "primary_ammo": [
+      0,
+      784,
+      0,
+      0,
+      0
+    ],
+    "primary_flags": 255,
+    "primary_selected": 2,
+    "score": 0,
+    "secondary_ammo": [
+      20,
+      10,
+      10,
+      5,
+      5
+    ],
+    "secondary_flags": 255,
+    "secondary_selected": 0
+  }
+}

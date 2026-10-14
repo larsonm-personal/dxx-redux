@@ -4,6 +4,7 @@
 #include "game.h"
 #include "hudmsg.h"
 #include "input_demo_recorder.h"
+#include "input_demo_hooks.h"
 #include "input_demo_replay.h"
 #include "multi.h"
 #include "newdemo.h"
@@ -110,6 +111,7 @@ int difficulty_change_to(int difficulty, int flags)
 	if (difficulty == old_difficulty)
 		return 1;
 
+	if (flags & DIFFICULTY_CHANGE_RECORD_DEMO) input_demo_record_input_context();
 	difficulty_health_rescale_live_robots(old_difficulty, difficulty);
 	Difficulty_level = difficulty;
 	difficulty_refresh_runtime_parameters();

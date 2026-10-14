@@ -35,6 +35,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "texmap.h"
 #include "textures.h"
 #include "render.h"
+#include "render_gameplay_view.h"
 #include "vclip.h"
 #include "fireball.h"
 #include "polyobj.h"
@@ -1167,45 +1168,23 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 					tracker->id,
 					tracker->ctype.laser_info.parent_num,
 					input_demo_replay_is_loaded());
-			if (input_demo_replay_is_loaded()) {
-				if (homing_path_probe)
-					con_printf(CON_NORMAL,
-						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_replay\n",
-						input_demo_trace_frame_index(),
-						tracker - Objects);
-				return call_find_homing_object_complete(tracker, curpos);
-			}
-			int	window_num = -1;
-			fix	dist, max_trackable_dist;
-
-			//	Find the window which has the forward view.
-			for (i=0; i<MAX_RENDERED_WINDOWS; i++)
-				if (Window_rendered_data[i].time >= timer_query()-1)
-					if (Window_rendered_data[i].viewer == ConsoleObject)
-						if (!Window_rendered_data[i].rear_view) {
-							window_num = i;
-							break;
-						}
-
-			//	Couldn't find suitable view from this frame, so do complete search.
-			if (window_num == -1) {
-				if (homing_path_probe)
-					con_printf(CON_NORMAL,
-						"Input demo homing path: frame=%u tracker_obj=%d branch=complete_no_window\n",
-						input_demo_trace_frame_index(),
-						tracker - Objects);
-				return call_find_homing_object_complete(tracker, curpos);
-			}
+			const short *candidates;
+			const int count = render_get_gameplay_view_objects(&candidates);
+			fix dist, max_trackable_dist;
+			if (homing_path_probe)
+				con_printf(CON_NORMAL,
+					"Input demo homing path: frame=%u tracker_obj=%d branch=fixed_forward\n",
+					input_demo_trace_frame_index(), tracker - Objects);
 
 			max_trackable_dist = MAX_TRACKABLE_DIST;
 			if (tracker->id == OMEGA_ID)
 				max_trackable_dist = OMEGA_MAX_TRACKABLE_DIST;
 
 			//	Not in network mode and fired by player.
-			for (i=Window_rendered_data[window_num].num_objects-1; i>=0; i--) {
+			for (i=count-1; i>=0; i--) {
 				fix			dot; //, dist;
 				vms_vector	vec_to_curobj;
-				int			objnum = Window_rendered_data[window_num].rendered_objects[i];
+				int			objnum = candidates[i];
 				object		*curobjp = &Objects[objnum];
 
 				if (objnum == Players[Player_num].objnum)
@@ -1254,10 +1233,9 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 
 			if (homing_path_probe)
 				con_printf(CON_NORMAL,
-					"Input demo homing path: frame=%u tracker_obj=%d branch=rendered_window window=%d result=%d max_dot=%d\n",
+					"Input demo homing path: frame=%u tracker_obj=%d branch=fixed_forward_result result=%d max_dot=%d\n",
 					input_demo_trace_frame_index(),
 					tracker - Objects,
-					window_num,
 					best_objnum,
 					max_dot);
 		}

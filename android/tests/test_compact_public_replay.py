@@ -88,6 +88,119 @@ class CompactReplayTests(unittest.TestCase):
     def pack(self):
         return compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance)
 
+    def test_public_ordered_commands_reject_world_injection(self):
+        self.header.update(version=5, game="d2", mission="d2demo")
+        self.result.update(game="d2", mission="d2demo")
+        for row in self.rows[1:-1]:
+            row["input"] = {"s": {"f": 1092}}
+            row["dispatch"] = {"pre_rng": "=", "ops": []}
+        tail = {
+            "type": "input_tail",
+            "f": 3,
+            "input": {},
+            "rng": {"s": 7, "c": 3},
+            "dispatch": {"pre_rng": "=", "ops": []},
+        }
+        self.rows.insert(-1, tail)
+        for target in (self.rows[1], tail):
+            for command in ("guidebot_warp_to_me", "guidebot_spawn"):
+                target["dispatch"]["ops"] = [
+                    {"k": "command", "ft": 1092, "event": {"kind": "direct_command", "command": command}}
+                ]
+                self.write(self.full, self.rows)
+                with (
+                    self.subTest(command=command, tail=target is tail),
+                    self.assertRaisesRegex(compact.parity.EvidenceError, "Public replay forbids"),
+                ):
+                    compact._records(self.full, full=True)
+            target["dispatch"]["ops"] = []
+        self.rows[1]["dispatch"]["ops"] = [
+            {
+                "k": "command",
+                "ft": 1092,
+                "event": {"kind": "direct_command", "command": "change_difficulty", "difficulty": 2},
+            }
+        ]
+        self.write(self.full, self.rows)
+        compact._records(self.full, full=True)
+
+    def test_all_weapons_commands_survive_public_compaction(self):
+        original_rows = copy.deepcopy(self.rows)
+        for game in ("d1", "d2"):
+            with self.subTest(game=game):
+                self.rows = copy.deepcopy(original_rows)
+                header, result = self.rows[0], self.rows[-1]["result"]
+                header.update(version=5, game=game, mission=compact.PUBLIC_MISSIONS[game])
+                result.update(game=game, mission=header["mission"])
+                self.provenance["asset_sha256"] = compact.pinned_assets(game)
+                for row in self.rows[1:-1]:
+                    row["input"] = {"s": {"f": 1092}}
+                    row["dispatch"] = {"pre_rng": "=", "ops": []}
+                grants = ["d1_scourge", "d1_scourge", "d1_bigred"]
+                if game == "d2":
+                    grants += ["d2_honestbob", "d2_honestbob"]
+                commands = [{"kind": "direct_command", "command": "enable_cheats"}] + [
+                    {"kind": "direct_command", "command": "grant_all_weapons", "grant": grant} for grant in grants
+                ]
+                operations = [{"k": "command", "ft": 1092, "event": event} for event in commands]
+                self.rows[1]["dispatch"]["ops"] = copy.deepcopy(operations)
+                self.rows.insert(
+                    -1,
+                    {
+                        "type": "input_tail",
+                        "f": 3,
+                        "input": {},
+                        "rng": {"s": 7, "c": 3},
+                        "dispatch": {"pre_rng": "=", "ops": copy.deepcopy(operations[:2])},
+                    },
+                )
+                self.write(self.full, self.rows)
+                original = self.full.read_bytes()
+                self.pack()
+                compact.validate(self.demo, self.oracle)
+                packed = [json.loads(line) for line in self.demo.read_text().splitlines()]
+                self.assertEqual(packed[1]["dispatch"]["ops"], operations)
+                self.assertEqual(packed[-2]["dispatch"]["ops"], operations[:2])
+                self.assertEqual(self.full.read_bytes(), original)
+                self.demo.unlink()
+                self.oracle.unlink()
+                self.rows[1]["dispatch"]["ops"][1]["event"]["grant"] = "unknown"
+                self.write(self.full, self.rows)
+                with self.assertRaisesRegex(compact.parity.EvidenceError, "all-weapons grant"):
+                    self.pack()
+                self.assertFalse(self.demo.exists())
+                self.assertFalse(self.oracle.exists())
+
+    def test_ordered_capture_requires_exact_compiled_source_identity(self):
+        self.header["version"] = 5
+        for row in self.rows[1:-1]:
+            row["input"] = {"s": {"f": 1092}}
+            row["dispatch"] = {"pre_rng": "=", "ops": []}
+        self.rows.insert(
+            -1,
+            {
+                "type": "input_tail",
+                "f": 3,
+                "input": {},
+                "rng": {"s": 7, "c": 3},
+                "dispatch": {"pre_rng": "=", "ops": []},
+            },
+        )
+        self.header["git_version"] = "b" * 8
+        self.write(self.full, self.rows)
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            self.pack()
+        self.assertFalse(self.demo.exists())
+        self.header["git_version"] = self.provenance["source_revision"]
+        self.write(self.full, self.rows)
+        self.pack()
+        compact.validate(self.demo, self.oracle)
+        oracle = json.loads(self.oracle.read_text())
+        oracle["provenance"]["source_revision"] = "b" * 40
+        self.oracle.write_text(json.dumps(oracle))
+        with self.assertRaisesRegex(compact.parity.EvidenceError, "build revision differs"):
+            compact.validate(self.demo, self.oracle)
+
     def test_round_trip_preserves_all_except_frame_observations(self):
         original = self.full.read_bytes()
         oracle = self.pack()
@@ -99,7 +212,7 @@ class CompactReplayTests(unittest.TestCase):
         self.assertEqual(packed, expected)
         self.assertEqual(self.full.read_bytes(), original)
         self.assertEqual(oracle["full_recording_sha256"], hashlib.sha256(original).hexdigest())
-        self.assertLessEqual(self.demo.stat().st_size + self.oracle.stat().st_size, 100000)
+        self.assertLessEqual(max(self.demo.stat().st_size, self.oracle.stat().st_size), 100000)
         self.assertEqual(
             compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual),
             {"status": "pass", "frames_compared": 3, "simulation_events_compared": 1},
@@ -163,7 +276,12 @@ class CompactReplayTests(unittest.TestCase):
         self.write(live, events)
         compact.pack(self.full, self.rng, self.demo, self.oracle, self.provenance, door_trace=live)
         self.write(self.trace, self.trace_rows + events)
-        self.assertEqual(compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)["door_observations_compared"], 2)
+        self.assertEqual(
+            compact.verify("d1", self.demo, self.oracle, self.trace, self.rng, self.actual)[
+                "door_observations_compared"
+            ],
+            2,
+        )
         events[-1]["blockers"] = []
         self.write(self.trace, self.trace_rows + events)
         with self.assertRaisesRegex(compact.parity.EvidenceError, "door obstruction"):
@@ -222,23 +340,40 @@ class CompactReplayTests(unittest.TestCase):
     def test_only_reviewed_diagnostic_events_are_removed(self):
         event = {"kind": "probe_weapon_life", "objnum": 12, "lifeleft": 999}
         path_event = {"kind": "weapon_robot_path", "weapon_obj": 12, "robot_obj": 13}
-        self.rows[1]["events"] = [event, path_event]
+        spread_event = {
+            "kind": "spreadfire_emit",
+            "nfires": 1,
+            "toggle_before": 0,
+            "flags": 0,
+            "next_laser_delta": 1092,
+            "last_laser_delta": 0,
+        }
+        self.rows[1]["events"] = [event, path_event, spread_event]
         self.write(self.full, self.rows)
         oracle = self.pack()
         self.assertEqual(
             oracle["removed_telemetry"],
             {
-                "counts": {"probe_weapon_life": 1, "weapon_robot_path": 1},
-                "events": 2,
-                "sha256": compact.sha([{"f": 0, "event": event}, {"f": 0, "event": path_event}]),
+                "counts": {"probe_weapon_life": 1, "weapon_robot_path": 1, "spreadfire_emit": 1},
+                "events": 3,
+                "sha256": compact.sha(
+                    [{"f": 0, "event": event}, {"f": 0, "event": path_event}, {"f": 0, "event": spread_event}]
+                ),
                 "compared_on_replay": False,
             },
         )
         compact.validate(self.demo, self.oracle)
         self.assertEqual(json.loads(self.demo.read_text().splitlines()[1])["events"], [])
+        packed = [json.loads(line) for line in self.demo.read_text().splitlines()]
+        self.assertEqual([row["input"] for row in packed[1:-1]], [row["input"] for row in self.rows[1:-1]])
+        self.assertEqual(oracle["frame_sha256"], compact._frame_hashes(self.full, self.header, recorded=True))
+        self.assertEqual(
+            (oracle["simulation_rng_sha256"], oracle["simulation_rng_events"]), compact._rng_hash(self.rng)
+        )
+        self.assertEqual(oracle["terminal_sha256"], compact.sha(self.result))
         self.demo.unlink()
         self.oracle.unlink()
-        for kind in ("direct_command", "unknown_probe", "weapon_robot_path_unreviewed"):
+        for kind in ("direct_command", "unknown_probe", "weapon_robot_path_unreviewed", "spreadfire_emit_unreviewed"):
             self.rows[1]["events"] = [{"kind": kind}]
             self.write(self.full, self.rows)
             with self.subTest(kind=kind), self.assertRaises(compact.parity.EvidenceError):
@@ -302,7 +437,7 @@ class CompactReplayTests(unittest.TestCase):
                 self.pack()
             self.assertFalse(self.demo.exists())
 
-    def test_combined_size_limit_applies_to_pack_and_validate(self):
+    def test_per_file_size_limit_applies_to_pack_and_validate(self):
         with mock.patch.object(compact, "MAX_BYTES", 1), self.assertRaises(compact.parity.EvidenceError):
             self.pack()
         self.assertFalse(self.demo.exists())

@@ -13,9 +13,475 @@ from unittest import mock
 
 import run_compact_public_replays as runner
 import check_compact_public_replay_failures as negative
+import ordered_public_replay as ordered
+
+
+class EarlyAbortTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+
+    @staticmethod
+    def schema_value(schema):
+        if schema is int:
+            return 0
+        if isinstance(schema, dict):
+            return {key: EarlyAbortTests.schema_value(value) for key, value in schema.items() if key != "*"}
+        if isinstance(schema, tuple):
+            return [EarlyAbortTests.schema_value(value) for value in schema]
+        return []
+
+    def world(self):
+        parity = runner.parity
+        state = self.schema_value(parity.WORLD_SCHEMA)
+        state["exploding_walls"]["capacity"] = 10
+        ai = state["ai"]
+        ai.update(local_capacity=1000, Believed_player_seg=-1, Ai_last_missile_camera=-1)
+        ai["path_runtime"]["last_buddy_polish_path_tick"] = 0
+        ai["boss"].update(Boss_hit_time=0, d1_hit_pending=0, d1_been_hit=0, teleport_segments=[0] * 100)
+        for key, count in (("paths", 2500), ("cloak", 8), ("awareness", 64)):
+            ai[key] = [self.schema_value(parity.WORLD_SCHEMA["ai"][key][0]) for _ in range(count)]
+        for row in ai["cloak"]:
+            row["last_segment"] = -1
+        local = ai["local_default"]
+        local.update(
+            next_action_time=0,
+            next_fire2=0,
+            d1_saved=dict.fromkeys("last_see_time last_attack_time wait_time".split(), 0),
+        )
+        for key in ("goal_angles", "delta_angles", "goal_state", "achieved_state"):
+            local[key] = [self.schema_value(parity.AI_LOCAL_SCHEMA[key][0]) for _ in range(10)]
+        player = self.schema_value(parity.WORLD_SCHEMA["players"][0])
+        player.update(shields=100 * 65536, energy=100 * 65536, primary_ammo=[0] * 10, secondary_ammo=[5] + [0] * 9)
+        state["players"] = [player]
+        return state
+
+    def fixture(self, phase="post-input"):
+        frame = 2 if phase == "post-input" else 1
+        scenario = "secondary-mouse-first" if phase == "post-input" else "flight"
+        case = {
+            "game": "d2",
+            "scenario": scenario,
+            "demo": "test.dximdemo",
+            "oracle": "test.oracle.json",
+            "actions": {"first_fire_frame": 2, "initial_ammo": 5},
+        }
+        header = {
+            "game": "d2",
+            "mission": "d2demo",
+            "difficulty": 2,
+            "frame_count": 3,
+            "level": 1,
+            "start_mode": "new_level",
+        }
+        seeds = [100]
+        for _ in range(3):
+            seeds.append((seeds[-1] * 0x41C64E6D + 0x3039) & 0xFFFFFFFF)
+        batches = [
+            {"pre_rng": {"s": seeds[i], "c": i}, "post_rng": {"s": seeds[i], "c": i}, "frame_time": 1} for i in range(3)
+        ]
+        if phase == "post-input":
+            batches[frame]["post_rng"] = {"s": seeds[frame + 1], "c": frame + 1}
+        else:
+            batches[frame]["pre_rng"] = {"s": seeds[frame + 1], "c": frame + 1}
+        world = self.world()
+        ship = self.schema_value(runner.parity.OBJECT_SCHEMA)
+        ship.update(type=4, signature=1, movement_type=1, physics=self.schema_value(runner.parity.PHYSICS_SCHEMA))
+
+        def boundary(kind, at, phase_name):
+            row = {
+                "type": kind,
+                "version": 2 if kind == "object_boundary" else 10,
+                "f": at,
+                "phase": phase_name,
+                "reset": True,
+            }
+            if kind == "object_boundary":
+                row.update(self.schema_value(runner.parity.OBJECT_STORAGE_SCHEMA))
+                row.update(
+                    capacity=1000,
+                    slots={"0": copy.deepcopy(ship)},
+                    rng=[{"available": 1, "state": seeds[at], "calls": at}, {"available": 1, "state": 99, "calls": 0}],
+                )
+                row["allocator"].update(num_objects=1, free_obj_list=list(range(1000)))
+                row["clock"].update(game_time=at, frame_time=1 if at else 0)
+            else:
+                row["state"] = copy.deepcopy(world)
+                row["state"]["globals"].update(GameTime64=at, FrameTime=1 if at else 0)
+            return row
+
+        rows = [
+            {
+                "type": "meta",
+                "version": 1,
+                "source": "replay",
+                "diag_version": runner.parity.FRAME_DIAGNOSTIC_VERSION,
+                **header,
+            }
+        ]
+        rows += [boundary(kind, 0, "restored") for kind in ("object_boundary", "world_boundary")]
+        for i in range(frame):
+            for kind in ("object", "world"):
+                snapshot = boundary(kind + "_boundary", i + 1, "unused")
+                snapshot.update(type=kind + "_state", f=i, reset=i == 0)
+                del snapshot["phase"]
+                rows.append(snapshot)
+            state = self.schema_value(negative.PARTIAL_FRAME_SCHEMA)
+            state["game_time64"] = i + 1
+            state["player0"].update(energy=100, shields=100, secondary_ammo=[5] + [0] * 15)
+            state["level_summary"].update(control_center_destroyed=False, endlevel_completed=False)
+            diag = {key: [0] * length if length else 0 for key, length in runner.parity.FRAME_DIAGNOSTIC_FIELDS.items()}
+            rows.append(
+                {
+                    "type": "frame_state",
+                    "source": "replay",
+                    "f": i,
+                    "ft": 1,
+                    "rng": batches[i]["post_rng"],
+                    "diag": diag,
+                    "state": state,
+                }
+            )
+        rows += [boundary(kind, frame, "aborted") for kind in ("object_boundary", "world_boundary")]
+        events = [{"type": "meta", "version": 1, "events": frame, "truncated": False}]
+        for i in range(frame):
+            events.append(
+                {
+                    "type": "rand",
+                    "seq": i,
+                    "frame": i,
+                    "gt": i + 1,
+                    "call_count": i + 1,
+                    "state_before": seeds[i],
+                    "state_after": seeds[i + 1],
+                    "result": (seeds[i + 1] >> 16) & 0x7FFF,
+                }
+            )
+        directory = self.root / phase
+        directory.mkdir(exist_ok=True)
+        state, rng, result = (directory / name for name in ("state.jsonl", "rng.jsonl", "result.json"))
+        failure = directory / "result.json.failure_test"
+        failure.mkdir(exist_ok=True)
+        runner.parity.write_json(failure / "failure.json", {"forced_stop": False, "native_exit_code": 1})
+        reason = (
+            f"ordered input SIM RNG differs at frame {frame}"
+            if phase == "post-input"
+            else f"carried SIM RNG differs before input at frame {frame}"
+        )
+        (directory / "runner.log").write_text(f"Input demo replay stopped: {reason}\n")
+        self.write_rows(state, rows)
+        self.write_rows(rng, events)
+        row = {
+            "exit_code": 1,
+            "command": [],
+            "artifacts": {"state": str(state), "rng": str(rng), "result": str(result)},
+        }
+        return case, header, batches, rows, events, row
+
+    @staticmethod
+    def write_rows(path, rows):
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    def verify(self, fixture, phase="post-input"):
+        case, header, batches, _, _, row = fixture
+        with mock.patch.object(negative, "verify_declared_mutation", return_value=(header, {}, [], batches)):
+            return negative.verify_early_abort(
+                row, None, case, "bad-input", negative.early_abort_spec(case, "bad-input")
+            )
+
+    def test_exact_carry_and_post_input_proofs_pass(self):
+        for phase in ("carry", "post-input"):
+            with self.subTest(phase=phase):
+                result = self.verify(self.fixture(phase), phase)
+                self.assertEqual(result["phase"], phase)
+                self.assertEqual(result["rng"]["count"], 1 if phase == "carry" else 2)
+
+    def test_wrong_boundaries_process_outcomes_and_effects_reject(self):
+        for mutation in (
+            "frame",
+            "missing-boundary",
+            "missing-frame",
+            "extra-frame",
+            "terminal",
+            "reason",
+            "exit-zero",
+            "native-zero",
+            "force",
+            "result",
+            "archived-result",
+            "ammo",
+        ):
+            with self.subTest(mutation=mutation):
+                fixture = self.fixture()
+                *_, rows, events, run = fixture
+                directory = Path(run["artifacts"]["result"]).parent
+                if mutation == "frame":
+                    rows[-1]["f"] = 3
+                elif mutation == "missing-boundary":
+                    rows.pop(-2)
+                elif mutation == "missing-frame":
+                    rows[:] = [r for r in rows if not (r["type"] == "frame_state" and r["f"] == 0)]
+                elif mutation == "extra-frame":
+                    rows.insert(-2, next(r for r in rows if r["type"] == "frame_state"))
+                elif mutation == "terminal":
+                    rows[-1]["phase"] = "terminal"
+                elif mutation == "reason":
+                    (directory / "runner.log").write_text("Input demo replay stopped: invalid input\n")
+                elif mutation == "exit-zero":
+                    run["exit_code"] = 0
+                elif mutation in ("native-zero", "force"):
+                    runner.parity.write_json(
+                        directory / "result.json.failure_test/failure.json",
+                        {"forced_stop": mutation == "force", "native_exit_code": 0 if mutation == "native-zero" else 1},
+                    )
+                elif mutation == "result":
+                    Path(run["artifacts"]["result"]).write_text("{}")
+                elif mutation == "archived-result":
+                    (directory / "result.json.failure_test/result.actual.json").write_text("{}")
+                else:
+                    rows[-1]["state"]["players"][0]["secondary_ammo"][0] = 4
+                self.write_rows(Path(run["artifacts"]["state"]), rows)
+                with self.assertRaises(runner.parity.EvidenceError):
+                    self.verify(fixture)
+                # Each subcase starts without any fabricated terminal file
+                Path(run["artifacts"]["result"]).unlink(missing_ok=True)
+                (directory / "result.json.failure_test/result.actual.json").unlink(missing_ok=True)
+        fixture = self.fixture("carry")
+        fixture[3][-2]["slots"]["0"]["physics"]["thrust"][2] = 1
+        self.write_rows(Path(fixture[-1]["artifacts"]["state"]), fixture[3])
+        with self.assertRaisesRegex(runner.parity.EvidenceError, "player thrust"):
+            self.verify(fixture, "carry")
+
+    def test_stripped_payloads_sources_and_wrong_clocks_reject(self):
+        for mutation in (
+            "object-payload",
+            "world-payload",
+            "frame-payload",
+            "object-count",
+            "object-delete",
+            "meta-source",
+            "frame-source",
+            "clock",
+            "position",
+            "inventory",
+            "summary",
+        ):
+            with self.subTest(mutation=mutation):
+                fixture = self.fixture()
+                rows, run = fixture[3], fixture[-1]
+                if mutation.endswith("payload"):
+                    kind = mutation.split("-")[0] + "_state"
+                    row = next(row for row in rows if row["type"] == kind)
+                    if kind == "object_state":
+                        row.pop("slots")
+                    else:
+                        row["state"] = {}
+                elif mutation == "object-count":
+                    next(row for row in rows if row["type"] == "object_state")["allocator"]["num_objects"] = 2
+                elif mutation == "object-delete":
+                    [row for row in rows if row["type"] == "object_state"][1]["slots"]["999"] = None
+                elif mutation == "meta-source":
+                    rows[0]["source"] = "record"
+                elif mutation == "frame-source":
+                    next(row for row in rows if row["type"] == "frame_state")["source"] = "record"
+                elif mutation == "clock":
+                    rows[-2]["clock"]["game_time"] += 1
+                else:
+                    state = next(row for row in rows if row["type"] == "frame_state")["state"]
+                    if mutation == "position":
+                        state["position"]["x"] = 1
+                    elif mutation == "inventory":
+                        state["player0"]["secondary_ammo"][0] = 4
+                    else:
+                        del state["level_summary"]["endlevel_completed"]
+                self.write_rows(Path(run["artifacts"]["state"]), rows)
+                with self.assertRaises(runner.parity.EvidenceError):
+                    self.verify(fixture)
+
+    def test_missing_reordered_forged_rng_or_wrong_endpoint_reject(self):
+        for mutation in (
+            "missing",
+            "reordered",
+            "duplicate-seq",
+            "bool-seq",
+            "truncated",
+            "before",
+            "after",
+            "count",
+            "result",
+            "srand-count",
+            "context",
+            "time",
+            "endpoint",
+            "extra-batch",
+        ):
+            with self.subTest(mutation=mutation):
+                fixture = self.fixture()
+                _, _, _, rows, events, run = fixture
+                if mutation == "missing":
+                    events.pop()
+                elif mutation == "reordered":
+                    events[1], events[2] = events[2], events[1]
+                elif mutation == "duplicate-seq":
+                    events[2]["seq"] = 0
+                elif mutation == "bool-seq":
+                    events[2]["seq"] = True
+                elif mutation == "truncated":
+                    events[0]["truncated"] = True
+                elif mutation in ("before", "after"):
+                    events[1]["state_" + mutation] += 1
+                elif mutation == "count":
+                    events[1]["call_count"] += 1
+                elif mutation == "result":
+                    events[1]["result"] += 1
+                elif mutation == "srand-count":
+                    events[1].update(type="srand", seed=events[1]["state_after"])
+                elif mutation == "context":
+                    events[1]["frame"] = 1
+                elif mutation == "time":
+                    events[1]["gt"] = 100
+                elif mutation == "endpoint":
+                    rows[-2]["rng"][0]["calls"] += 1
+                else:
+                    last = events[-1]
+                    state = (last["state_after"] * 0x41C64E6D + 0x3039) & 0xFFFFFFFF
+                    events.append(
+                        {
+                            **last,
+                            "seq": 2,
+                            "frame": 2,
+                            "gt": 2,
+                            "call_count": 3,
+                            "state_before": last["state_after"],
+                            "state_after": state,
+                            "result": (state >> 16) & 0x7FFF,
+                        }
+                    )
+                    events[0]["events"] += 1
+                self.write_rows(Path(run["artifacts"]["state"]), rows)
+                self.write_rows(Path(run["artifacts"]["rng"]), events)
+                with self.assertRaises(runner.parity.EvidenceError):
+                    self.verify(fixture)
+
+    def test_srand_preserves_call_count_and_rand_resumes_from_seed(self):
+        fixture = self.fixture("carry")
+        _, _, batches, rows, events, run = fixture
+        seed = 777
+        state = (seed * 0x41C64E6D + 0x3039) & 0xFFFFFFFF
+        events = [
+            {"type": "meta", "version": 1, "events": 2, "truncated": False},
+            {
+                "type": "srand",
+                "seq": 0,
+                "frame": 0,
+                "gt": 1,
+                "call_count": 0,
+                "state_before": 100,
+                "state_after": seed,
+                "seed": seed,
+            },
+            {
+                "type": "rand",
+                "seq": 1,
+                "frame": 0,
+                "gt": 1,
+                "call_count": 1,
+                "state_before": seed,
+                "state_after": state,
+                "result": (state >> 16) & 0x7FFF,
+            },
+        ]
+        rows[-2]["rng"][0].update(state=state, calls=1)
+        self.write_rows(Path(run["artifacts"]["state"]), rows)
+        self.write_rows(Path(run["artifacts"]["rng"]), events)
+        self.assertEqual(self.verify(fixture, "carry")["rng"]["state"], state)
+
+    def test_no_collect_requires_original_drop_prefix_and_live_uncollected_identity(self):
+        case = {
+            "game": "d1",
+            "scenario": "loot",
+            "actions": {"loot_frame": 1, "target_score": 500, "target": 39, "pickup": 79, "pickup_signature": 301},
+        }
+        frames = [{"f": i, "ft": 1, "state": {"score": 500}, "rng": {}, "diag": {}} for i in range(3)]
+        expected = {"frame_sha256": [runner.compact.sha(row) for row in frames]}
+        world = {"players": [{"objnum": 0, "shields": 1, "score": 500, "laser_level": 0}], "death": {"active": 0}}
+        ship = {"type": 4, "signature": 1}
+        pickup = {"type": 7, "id": 3, "signature": 301, "flags": 0, "lifeleft": 100}
+        boundaries = {
+            ("object_boundary", "restored"): {"slots": {"0": ship}},
+            ("object_boundary", "aborted"): {"slots": {"0": ship, "79": pickup}},
+            ("world_boundary", "restored"): {"state": world},
+            ("world_boundary", "aborted"): {"state": world},
+        }
+        label = negative.verify_partial_effect(case, "no-collect", frames, boundaries, expected)
+        self.assertEqual(label, "pre-collection divergence; no completed non-collection claim")
+        for mutation in (
+            "prefix",
+            "short",
+            "signature",
+            "type",
+            "id",
+            "consumed",
+            "expired",
+            "score",
+            "gain",
+            "carrier",
+        ):
+            with self.subTest(mutation=mutation):
+                changed, prefix = copy.deepcopy(boundaries), copy.deepcopy(frames)
+                objects = changed["object_boundary", "aborted"]["slots"]
+                player = changed["world_boundary", "aborted"]["state"]["players"][0]
+                if mutation == "prefix":
+                    prefix[0]["state"]["score"] = 0
+                elif mutation == "short":
+                    prefix.pop()
+                elif mutation in ("signature", "type", "id"):
+                    objects["79"][mutation] += 1
+                elif mutation == "consumed":
+                    objects["79"]["flags"] = 2
+                elif mutation == "expired":
+                    objects["79"]["lifeleft"] = 0
+                elif mutation == "score":
+                    player["score"] = 0
+                elif mutation == "gain":
+                    player["laser_level"] = 1
+                else:
+                    objects["39"] = {"type": 2}
+                with self.assertRaises(runner.parity.EvidenceError):
+                    negative.verify_partial_effect(case, "no-collect", prefix, changed, expected)
+
+    def test_repeat_rng_evidence_must_match(self):
+        case, _, _, _, _, row = self.fixture("carry")
+        row.update(game="d2", scenario="flight", status="fail", command=["-Runner", "headless-console"])
+        report = {
+            "status": "fail",
+            "backend": "headless",
+            "native_only": True,
+            "paired": {"status": "not_run"},
+            "native_runs": [{**row, "repeat": i} for i in range(2)],
+        }
+        args = argparse.Namespace(run_mode="headless", corpus=self.root)
+        with mock.patch.object(negative, "verify_early_abort", return_value={"rng": {"count": 1}}):
+            self.assertEqual(len(negative.verify_failure(report, 1, args, [case], "bad-input")), 2)
+        with mock.patch.object(
+            negative, "verify_early_abort", side_effect=[{"rng": {"count": 1}}, {"rng": {"count": 2}}]
+        ):
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "Repeated partial"):
+                negative.verify_failure(report, 1, args, [case], "bad-input")
 
 
 class RuntimeGateTests(unittest.TestCase):
+    def test_phase_timings_include_failures_without_suppressing_them(self):
+        timings = {}
+        with mock.patch.object(runner.time, "perf_counter", side_effect=(10.0, 12.5, 20.0, 21.25)):
+            with runner.measure_phase(timings, "runner"):
+                pass
+            with self.assertRaisesRegex(runner.parity.EvidenceError, "wrong oracle"):
+                with runner.measure_phase(timings, "fidelity"):
+                    raise runner.parity.EvidenceError("wrong oracle")
+        self.assertEqual(timings, {"runner": 2.5, "fidelity": 1.25})
+
     @staticmethod
     def imported_scope(scenario):
         return {
@@ -459,6 +925,8 @@ class RuntimeGateTests(unittest.TestCase):
                 )
                 self.assertIn("-StrictComparison", row["command"])
                 self.assertIn("-RequireCleanExit", row["command"])
+                if backend == "headless":
+                    self.assertEqual(row["command"][row["command"].index("-HeadlessConsoleOutput") + 1], "2")
                 suffix = row["command"][row["command"].index("-SandboxSuffix") + 1]
                 self.assertTrue(suffix.startswith(backend + "-"))
                 self.assertNotIn(str(output), suffix)
@@ -638,6 +1106,8 @@ class RuntimeGateTests(unittest.TestCase):
             observations = (
                 "combat_observations"
                 if "combat" in demo.name or "loot" in demo.name
+                else "guidebot_observations"
+                if "guidebot-release" in demo.name
                 else "door_observations"
                 if "door-lifecycle" in demo.name
                 else None
@@ -723,7 +1193,14 @@ class RealNegativeCorpusTests(unittest.TestCase):
             {case["demo"] for case in included},
             {f"d1-public-{scenario}.dximdemo" for scenario in ("flight", "pickup", "door", "combat", "loot")},
         )
-        self.assertEqual([case["demo"] for case in excluded], ["d1-public-door-lifecycle.dximdemo"])
+        self.assertEqual(
+            {case["demo"] for case in excluded},
+            {
+                "d1-public-door-lifecycle.dximdemo",
+                "d1-public-secondary-release-first.dximdemo",
+                "d1-public-secondary-mouse-first.dximdemo",
+            },
+        )
         self.assertEqual(
             next(case for case in included if case["scenario"] == "loot")["imported_d1"]["role"], "diagnostic-only"
         )
@@ -731,37 +1208,95 @@ class RealNegativeCorpusTests(unittest.TestCase):
             next(case for case in included if case["scenario"] == "flight")["imported_d1"]["role"], "required-gameplay"
         )
 
-    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+    def assert_missing_observation_rejected(self, scenarios, field, message):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
-        with tempfile.TemporaryDirectory() as root:
-            import shutil
+        bindings = set()
+        for case in cases:
+            if case["scenario"] not in scenarios:
+                continue
+            with self.subTest(game=case["game"], scenario=case["scenario"]), tempfile.TemporaryDirectory() as root:
+                import shutil
 
-            destination = Path(root) / "corpus"
-            shutil.copytree(source, destination)
-            case = next(row for row in cases if row["scenario"] == "combat")
-            path = destination / case["oracle"]
-            oracle = json.loads(path.read_bytes())
-            oracle.pop("combat_observations")
-            path.write_text(json.dumps(oracle))
-            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live damage/loot"):
-                runner.load_corpus(destination)
+                destination = Path(root) / "corpus"
+                shutil.copytree(source, destination)
+                demo, path = (destination / case[key] for key in ("demo", "oracle"))
+                original_oracle = path.read_bytes()
+                oracle = json.loads(original_oracle)
+                converted = oracle["compact_sha256"] != runner.parity.digest(demo)
+                bindings.add("converted" if converted else "live")
+                oracle.pop(field)
+                runner.parity.write_json(path, oracle)
+                if converted:
+                    # Converted inputs bind the unchanged original oracle through their sidecar
+                    with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable-oracle conversion provenance"):
+                        runner.load_corpus(destination)
+                    migration_path = demo.with_suffix(".migration.json")
+                    migration = json.loads(migration_path.read_bytes())
+                    migration["source_oracle_sha256"] = runner.parity.digest(path)
+                    runner.parity.write_json(migration_path, migration)
+                # Rebind only converted disposable copies. Fresh live pairs match their own
+                # compact digest, even when an old migration sidecar remains as history
+                _, admitted = runner.compact.validate(demo, path)
+                self.assertNotIn(field, admitted)
+                with self.assertRaisesRegex(runner.parity.EvidenceError, message):
+                    runner.load_corpus(destination)
+                self.assertEqual((source / case["oracle"]).read_bytes(), original_oracle)
+        return bindings
+
+    def test_combat_cannot_drop_its_immutable_causal_observation_oracle(self):
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"combat", "loot"}, "combat_observations", "immutable live damage/loot"
+            ),
+            {"live", "converted"},
+        )
 
     def test_door_cannot_drop_its_immutable_geometric_observation_oracle(self):
-        source = Path(__file__).parent / "fixtures/public_level_replays"
-        cases = runner.load_corpus(source)
-        with tempfile.TemporaryDirectory() as root:
-            import shutil
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"door-lifecycle"}, "door_observations", "immutable live geometric"
+            ),
+            {"converted"},
+        )
 
-            destination = Path(root) / "corpus"
-            shutil.copytree(source, destination)
-            case = next(row for row in cases if row["scenario"] == "door-lifecycle")
-            path = destination / case["oracle"]
-            oracle = json.loads(path.read_bytes())
-            oracle.pop("door_observations")
-            path.write_text(json.dumps(oracle))
-            with self.assertRaisesRegex(runner.parity.EvidenceError, "immutable live geometric"):
-                runner.load_corpus(destination)
+    def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
+        self.assertEqual(
+            self.assert_missing_observation_rejected(
+                {"guidebot-release"}, "guidebot_observations", "immutable live escort"
+            ),
+            {"live"},
+        )
+
+    def assert_changed_ordered_controls(self, case, original_demo, changed_demo):
+        original = ordered.validate(original_demo[0], original_demo[1:-2], original_demo[-2])
+        changed = ordered.validate(changed_demo[0], changed_demo[1:-2], changed_demo[-2])
+        self.assertEqual(len(original), len(changed))
+        self.assertTrue(changed[-1]["is_tail"])
+        self.assertEqual(changed[-1]["f"], original_demo[0]["frame_count"])
+        self.assertNotEqual(
+            runner.compact.sha([batch["ops"] for batch in original]),
+            runner.compact.sha([batch["ops"] for batch in changed]),
+            "Bad-input mutation must change executed operations, including resolved aliases",
+        )
+        release = next((row["f"] + 1 for row in case["actions"].get("door_events", []) if row["stage"] == 2), None)
+        for before, after in zip(original, changed):
+            expected = copy.deepcopy(before)
+            scenario = case["scenario"]
+            if scenario == "door-lifecycle" and before["f"] < release:
+                self.assertEqual(before, after)
+                continue
+            controls = [expected["residual"]] + [op for op in expected["ops"] if op["k"] in ("sample", "controls")]
+            for controls_at_dispatch in controls:
+                if scenario in ("loot", "combat", "guidebot-release"):
+                    # Remove firing while preserving the original flight/aim and all other inputs
+                    controls_at_dispatch["s"]["f1s"] = 0
+                    controls_at_dispatch["p"]["f1"] = 0
+                else:
+                    for field in ("s", "p"):
+                        controls_at_dispatch[field] = dict.fromkeys(controls_at_dispatch[field], 0)
+            # This includes each operation's kind/order/time, commands, pre/post RNG and tail boundary
+            self.assertEqual(expected, after)
 
     def test_disposable_mutations_are_admitted_without_changing_originals(self):
         source = Path(__file__).parent / "fixtures/public_level_replays"
@@ -769,40 +1304,74 @@ class RealNegativeCorpusTests(unittest.TestCase):
         originals = {path.name: path.read_bytes() for path in source.iterdir() if path.is_file()}
         with tempfile.TemporaryDirectory() as root:
             for mutation in ("wrong-oracle", "bad-input"):
-                destination = Path(root) / mutation
+                destination = Path(root) / (mutation + "-corpus")
                 negative.corrupt_corpus(source, destination, cases, mutation)
                 self.assertEqual(runner.load_corpus(destination), cases)
                 for case in cases:
-                    expected = json.loads(originals[case["oracle"]])
-                    changed = json.loads((destination / case["oracle"]).read_bytes())
-                    differences = {key for key in expected if expected[key] != changed[key]}
-                    self.assertEqual(
-                        differences,
-                        {"frame_sha256"} if mutation == "wrong-oracle" else {"compact_sha256"},
-                    )
-                    original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
-                    changed_demo = [json.loads(line) for line in (destination / case["demo"]).read_bytes().splitlines()]
-                    self.assertEqual(original_demo[0], changed_demo[0])
-                    self.assertEqual(original_demo[-1], changed_demo[-1])
-                    if mutation == "wrong-oracle":
-                        self.assertEqual(original_demo, changed_demo)
-                    else:
-                        for before, after in zip(original_demo[1:-1], changed_demo[1:-1]):
-                            if case["scenario"] == "loot":
+                    with self.subTest(mutation=mutation, game=case["game"], scenario=case["scenario"]):
+                        demo_path, oracle_path = (destination / case[key] for key in ("demo", "oracle"))
+                        expected = json.loads(originals[case["oracle"]])
+                        changed = json.loads(oracle_path.read_bytes())
+                        expected_oracle = copy.deepcopy(expected)
+                        expected_oracle["compact_sha256"] = runner.parity.digest(demo_path)
+                        if mutation == "wrong-oracle":
+                            digest = expected_oracle["frame_sha256"][0]
+                            expected_oracle["frame_sha256"][0] = ("1" if digest[0] == "0" else "0") + digest[1:]
+                        self.assertEqual(changed, expected_oracle)
+                        # Disposable controls deliberately bind directly, without rewriting old conversion history
+                        self.assertEqual(changed["compact_sha256"], runner.parity.digest(demo_path))
+                        _, admitted = runner.compact.validate(demo_path, oracle_path)
+                        self.assertEqual(admitted, changed)
+                        migration_name = demo_path.with_suffix(".migration.json").name
+                        if migration_name in originals:
+                            self.assertEqual((destination / migration_name).read_bytes(), originals[migration_name])
+                        else:
+                            self.assertFalse((destination / migration_name).exists())
+                        original_demo = [json.loads(line) for line in originals[case["demo"]].splitlines()]
+                        changed_demo = [json.loads(line) for line in demo_path.read_bytes().splitlines()]
+                        self.assertEqual(len(original_demo), len(changed_demo))
+                        self.assertEqual(original_demo[0], changed_demo[0])
+                        self.assertEqual(original_demo[-1], changed_demo[-1])
+                        self.assertEqual(changed_demo[-2]["type"], "input_tail")
+                        if mutation == "wrong-oracle":
+                            self.assertEqual(originals[case["demo"]], demo_path.read_bytes())
+                            continue
+                        self.assertNotEqual(originals[case["demo"]], demo_path.read_bytes())
+                        self.assert_changed_ordered_controls(case, original_demo, changed_demo)
+                        spec = negative.early_abort_spec(case, mutation)
+                        if spec is not None:
+                            phase, frame = spec
+                            args = argparse.Namespace(corpus=source, output=Path(root))
+                            negative.verify_declared_mutation(
+                                args, case, ["-DemoPath", str(demo_path)], mutation, frame, phase
+                            )
+                            with self.assertRaisesRegex(runner.parity.EvidenceError, "unintended recording"):
+                                negative.verify_declared_mutation(
+                                    args, case, ["-DemoPath", str(source / case["demo"])], mutation, frame, phase
+                                )
+                        # Also pin the wire-level delta, not just its decoded gameplay meaning
+                        for before, after in zip(copy.deepcopy(original_demo[1:-1]), changed_demo[1:-1]):
+                            if case["scenario"].startswith("secondary-"):
+                                before["input"] = {"s": {"f2s": 0}}
+                                for operation in before["dispatch"]["ops"]:
+                                    if operation["k"] == "sample":
+                                        operation["s"] = {}
+                                        operation.pop("p", None)
+                            elif case["scenario"] == "loot":
                                 if before["f"] == 0 or "f1s" in before["input"].get("s", {}):
                                     before["input"].setdefault("s", {})["f1s"] = 0
-                            elif case["scenario"] == "combat":
+                            elif case["scenario"] in ("combat", "guidebot-release"):
                                 before["input"].setdefault("s", {})["f1s"] = 0
-                                self.assertEqual(after["input"]["s"]["f1s"], 0)
                             elif case["scenario"] == "door-lifecycle":
                                 release = next(
                                     row["f"] + 1 for row in case["actions"]["door_events"] if row["stage"] == 2
                                 )
+                                held_keys = {key for row in original_demo[1:-1] for key in row["input"].get("s", {})}
                                 if before["f"] >= release:
-                                    self.assertTrue(all(value == 0 for value in after["input"].get("s", {}).values()))
-                                    before["input"] = after["input"]
+                                    before["input"] = (
+                                        {"s": dict.fromkeys(held_keys, 0)} if before["f"] == release else {}
+                                    )
                             else:
-                                self.assertEqual(after["input"], {})
                                 before["input"] = {}
                             self.assertEqual(before, after)
         self.assertEqual(

@@ -1,0 +1,71 @@
+{
+    "compact_sha256": "8bbc18c0b0cb2533fd13a33cd63493541b2a2871602e820145f37958cb7ae174",
+    "frame_sha256": [
+        "9be3d8d5f1af7e6b93e88137b8f6e2c283f93743dc3394dbf3f48d18b5cab6ac",
+        "a1e3295cae8d1d1005a19b0024fdaabc28dd997dc6fa8353ee632e14e6a8fc47",
+        "9b0f2b716d66ce9e2d6fb60adce2d7476cfc349542303704706d7a0a80bc697d",
+        "b1e5b9ac8a3418b3f2fb95ecf01aaf27d133f7af9a29e718fcfc1a88464dda50",
+        "ea159ee2294b25cdb6e30fd23cdc8cdb0101f59f610c5daecde11b04de6d87c6",
+        "43b5e2f0f570393681e5f9b9b8285864bf067458e96a743093d2d4edc70bd151",
+        "b339dd0ce2769663493e8dc84d5a3e1e2b1febfcb714ecb8994ef635f16cfa81",
+        "8ec21c80ba26f58133a5434b814a4f425851db268ede108f0f1585c35a33103a",
+        "afebec5be959c3bbfe74153411d8f7514a8ae08092752215018bfb298108cb79",
+        "cf7ec5ba46f08482ec4add7f2e235776100dd04617ecfea6601cca44c4af767c",
+        "e4f72911543c3343ffbee20c065bbf7959e9661e29ea145b02bb88f9e4331613",
+        "64969874b5b61b275daf2e952c59e097d6d63fcc1f600d521f053d7a1b720547",
+        "d230b28ae229fc93473b8a24562bfe4d62328a6b456c7d0c674ea8f7ce018ffd",
+        "78e7e5bd799cc14df3ea9a8d522ce7e898235497d08007bd776ea43b6f2b91e9",
+        "75fa012999651a1daf54e619a60064554493d192ba8818ef0a1da36e2ff6ae22",
+        "f34547d42c158b82c33dc2335142f764694cd61911a285b5729b5870328699e6",
+        "c3944b8f66f3303ec090c7ba794060c5d4331ea52f1814ed3d86643eb2b9480d",
+        "6a22ebf4cf4d1366059ec79251d3248ac544dc6fdaa016f0afda21caf09113df",
+        "10e1b803bb696c2552c15bce0ec4ac3af0272a680c7cd503eb6f3a67c74fb005",
+        "59d574bd65a0e626bb902c29ce1933a2ebf5caa90a70d4de3d65eb2037887bef",
+        "adb31aee719dec68e4d28a89c3d79c669746ce878376dcf2c6277853fb897e99",
+        "372639330f9ec0da75d63df7e569714c06044763e45d2b9e2ac5720ee9fd92b7",
+        "4800b91d92d2b3e9400437021dc90d5c23128a13c0c7cc892b6b918d931691fc",
+        "b637c56841597ebda1ff945ddcc6cefbb702779ca8e97abf49188b5607ba8764",
+        "cba148516620fafd601d9195bfd971c2814d1a305d66f94a52aab7a31d751225"
+    ],
+    "frames": 25,
+    "full_recording_sha256": "4db0842c7883adcd82309e06adaf897d08c18d9ba95609795bd4ca40efcdba1a",
+    "game": "d2",
+    "level": 1,
+    "mission": "d2demo",
+    "provenance": {
+        "asset_sha256": {
+            "d2demo.dem": "8c6e2d43ba88166d17759d90e3817edd0c3ef0a33861ef35a51a8cd4db89c892",
+            "d2demo.ham": "747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6",
+            "d2demo.hog": "b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e",
+            "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
+        },
+        "capture_executable_sha256": "941b8ae81952711198a2d137726df895fed7633f62f8e74b8b90bd40e49b8c15",
+        "capture_source_sha256": "8054cb96e2666d90d6e8e684888a2afa5310ea1b65056d814086e2f29bd6d4b2",
+        "source_revision": "eba0eee69077fd53e4aee54d04f026f8d7ac9e6c"
+    },
+    "removed_telemetry": {
+        "compared_on_replay": false,
+        "counts": {
+            "player_shot": 1,
+            "probe_ai_awareness_roll": 15,
+            "probe_ai_follow_path_transition": 7,
+            "probe_ai_schedule": 72,
+            "probe_awareness_add_return": 1,
+            "probe_awareness_entry": 1,
+            "probe_awareness_gate": 1,
+            "probe_awareness_object": 1,
+            "probe_awareness_post_add": 1,
+            "probe_awareness_result": 1,
+            "probe_awareness_source": 1,
+            "probe_log": 97,
+            "probe_weapon_life": 24,
+            "weapon_create": 1
+        },
+        "events": 224,
+        "sha256": "aad311a388e3cd5990ab4689cad13d914c65623ddcbe3c85fef66f2c2b9492ae"
+    },
+    "schema": 1,
+    "simulation_rng_events": 478,
+    "simulation_rng_sha256": "6e392cb2d3cb1cf7f780b6d3b3202a53e63ed1eda5b257facde5ac6d6f8e5aff",
+    "terminal_sha256": "e931adddc7ca5ddf10d2ae201a68c9d31d0bad3488845b8cd00e229107008d06"
+}

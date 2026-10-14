@@ -46,6 +46,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_collision.c
     game.c
     gamecntl.c
+    ../../android/app/src/main/cpp/shared/weapon_cheat_shared.c
     gamefont.c
     gamemine.c
     gamepal.c

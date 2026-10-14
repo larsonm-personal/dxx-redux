@@ -5005,6 +5005,46 @@ void update_laser_weapon_info(void)
 }
 
 
+int cockpit_window_view_canvas(int win, grs_canvas *canvas, int *window_x, int *window_y)
+{
+	int boxnum;
+	gauge_box *box;
+	int w,h,dx,x,y;
+
+	if (PlayerCfg.CurrentCockpitMode == CM_FULL_SCREEN)
+	{
+		// If we're drawing the kill graph in observer mode, we don't have space for the extra views
+		if (is_observer() && PlayerCfg.ObsShowKillGraph[get_observer_game_mode()] && GameTime64 < Show_graph_until)
+			return 0;
+
+		w = HUD_SCALE_X_AR(HIRESMODE?106:44);
+		h = HUD_SCALE_Y_AR(HIRESMODE?106:44);
+
+		dx = (win==0)?-(w+(w/10)):(w/10);
+
+		x = grd_curscreen->sc_w/2+dx;
+		y = grd_curscreen->sc_h-h-(SHEIGHT/15);
+
+		gr_init_sub_canvas(canvas,&grd_curscreen->sc_canvas,x,y,w,h);
+		if (window_x)
+			*window_x = x;
+		if (window_y)
+			*window_y = y;
+	}
+	else if (!d1_in_d2_cockpit_window_canvas(win, canvas)) {
+		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
+			boxnum = (COCKPIT_PRIMARY_BOX)+win;
+		else if (PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR)
+			boxnum = (SB_PRIMARY_BOX)+win;
+		else
+			return 0;
+
+		box = &gauge_boxes[boxnum];
+		gr_init_sub_canvas(canvas,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
+	}
+	return 1;
+}
+
 //draws a 3d view into one of the cockpit windows.  win is 0 for left,
 //1 for right.  viewer is object.  NULL object means give up window
 //user is one of the WBU_ constants.  If rear_view_flag is set, show a
@@ -5016,13 +5056,8 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 	static grs_canvas overlap_canv;
 	object *viewer_save = Viewer;
 	static int overlap_dirty[2]={0,0};
-	int boxnum;
 	static int window_x,window_y;
-	gauge_box *box;
 	int rear_view_save = Rear_view;
-	int w,h,dx;
-
-	box = NULL;
 
 	if (viewer == NULL) {								//this user is done
 
@@ -5051,33 +5086,8 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 	Viewer = viewer;
 	Rear_view = rear_view_flag;
 
-	if (PlayerCfg.CurrentCockpitMode == CM_FULL_SCREEN)
-	{
-		// If we're drawing the kill graph in observer mode, we don't have space for the extra views
-		if (is_observer() && PlayerCfg.ObsShowKillGraph[get_observer_game_mode()] && GameTime64 < Show_graph_until)
-			goto abort;
-
-		w = HUD_SCALE_X_AR(HIRESMODE?106:44);
-		h = HUD_SCALE_Y_AR(HIRESMODE?106:44);
-
-		dx = (win==0)?-(w+(w/10)):(w/10);
-
-		window_x = grd_curscreen->sc_w/2+dx;
-		window_y = grd_curscreen->sc_h-h-(SHEIGHT/15);
-
-		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,window_x,window_y,w,h);
-	}
-	else if (!d1_in_d2_cockpit_window_canvas(win, &window_canv)) {
-		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT)
-			boxnum = (COCKPIT_PRIMARY_BOX)+win;
-		else if (PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR)
-			boxnum = (SB_PRIMARY_BOX)+win;
-		else
-			goto abort;
-
-		box = &gauge_boxes[boxnum];
-		gr_init_sub_canvas(&window_canv,&grd_curscreen->sc_canvas,HUD_SCALE_X(box->left),HUD_SCALE_Y(box->top),HUD_SCALE_X(box->right-box->left+1),HUD_SCALE_Y(box->bot-box->top+1));
-	}
+	if (!cockpit_window_view_canvas(win, &window_canv, &window_x, &window_y))
+		goto abort;
 
 	gr_set_current_canvas(&window_canv);
 

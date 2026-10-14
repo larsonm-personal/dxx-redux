@@ -76,8 +76,66 @@ From the repository root, jump straight to the picker:
 .\android\run_all_tests.ps1 -ReplayDemo
 ```
 
-The existing single-demo helper also works directly. To watch the new level-14
-recording in native D1:
+The picker keeps your existing `regression_demos/` recordings first, in their
+original newest-first order, then appends the tracked public fixtures in stable
+path order. It includes all 28 compact demos from:
+
+- `android/tests/fixtures/public_level_replays/` (17)
+- `android/tests/fixtures/public_d1_fault_probes/` (5)
+- `android/tests/fixtures/public_d1_fan_probes/` (3)
+- `android/tests/fixtures/public_all_weapons/` (3, native engine only)
+
+Choose **1. Headed** to watch at recorded speed in a normal 640x480 window.
+Tracked fixtures exit the game cleanly when playback completes or aborts, so a
+known fault is reported promptly rather than leaving the game at its menu.
+Press **Space** to pause/resume, or **Right arrow** to pause and advance one frame.
+The existing render-profile and robot-label options remain available through the
+direct helper. Short ordered-input and all-weapons recordings finish quickly;
+pausing lets you inspect them. The helper allows recording duration plus startup
+time, with a five-minute minimum timeout; pass `-TimeoutSeconds` to the direct
+helper when planning a longer paused inspection.
+
+These tracked fixtures automatically select the pinned public shareware edition,
+including D1 assets for D1-in-D2. If they are missing, the interactive helper offers
+to extract a cached public package, or explicitly download and extract that public
+package. Enter or Q cancels without setup. The existing setup helper verifies
+package and extracted-file hashes, uses bounded extraction, and builds the native
+extractor if needed; it never executes the DOS installer or downloads retail data.
+You can also prepare both public editions in advance:
+
+```powershell
+.\android\helpers\setup_shareware_test_data.ps1 -Game both -Download
+```
+
+Omit `-Download` to require already cached public installers. Use `-DataDir` on the
+direct replay helper for another already extracted, hash-matching directory. The
+normal host build guard automatically builds missing or stale game executables;
+listing or cancelling the picker does not build games.
+
+Imported D1 viewing stages the checked-in native-written comparison pilot when
+its projection requires it, using only the disposable replay sandbox. Personal
+pilots and recorded projection checks stay unchanged. The monitor-phase,
+mine-blast and fan-transparency entries are visibly marked as known imported
+faults. Monitor and mine terminal summaries can match despite their detailed
+faults. Fan-transparency is expected to stop at its strict carried-RNG mismatch
+before input 301; its nonzero exit is preserved and is not a fault-verification
+pass. Causal controls and cases excluded from imported qualification are labelled
+separately. All-weapons compact replay is native-only and is omitted from the
+imported picker.
+
+The viewing helper checks the embedded terminal summary. It does not run the
+separate full-state/RNG/detail oracle checkers, so a successful viewing run is not
+full imported parity. Old recordings remain visible with a legacy-format warning;
+the current engine requires format 5, and does not silently convert them.
+
+The existing single-demo helper also works directly. For a tracked native D1
+all-weapons recording:
+
+```powershell
+.\android\tests\run_input_demo_replay.ps1 -DemoPath android\tests\fixtures\public_all_weapons\d1-bigred.dximdemo -Runner visual -Mode realtime
+```
+
+To watch the level-14 recording in native D1:
 
 ```powershell
 .\android\tests\run_input_demo_replay.ps1 -DemoPath android\regression_demos\d1_descent_level14_20260920_184354.dximdemo -Game d1 -Runner visual -Mode realtime -RenderProfile default -ReplayRobotLabels hide
@@ -205,7 +263,7 @@ make checkpoint demos pass
 The same regression entry points select the pinned public scenes with
 `-Corpus public`. All scenes are ordinary native level starts; both backends
 run each twice and compare unchanged live-capture frame state, every diagnostic,
-terminal state and SIM-RNG oracles. Each demo plus its oracle stays below
+terminal state and SIM-RNG oracles. Each demo and each oracle file stays at or below
 100,000 uncompressed UTF-8 bytes. Playback never rewrites expectations.
 
 Prepare pinned public assets using `android/helpers/setup_shareware_test_data.ps1
@@ -224,8 +282,9 @@ Without explicit executables the existing build guard chooses/builds them.
 Headless selects `-Runner headless-console` and never falls back to a no-present
 window. Graphics selects `-Runner visual` and does run rendering/presentation.
 Both native compact backends require finalized result/traces and natural process exit.
-`-RequireCleanExit` enables opt-in unattended desktop `-inputdemo-exit`; normal
-interactive replays retain their existing menu behavior.
+`-RequireCleanExit` enables opt-in desktop `-inputdemo-exit`. The tracked public
+fixtures also use it for prompt completion/abort reporting in visible realtime
+playback; other user recordings retain their existing menu behavior.
 
 Use Xvfb and software GL on Linux for the graphics pass and for route-development
 screenshots. Xvfb is a virtual display for the headed engine, not the headless
@@ -253,3 +312,75 @@ Negative controls explicitly request `-NativeOnly`: their reports mark imported
 parity `not_run`, avoiding two redundant imported investigations. The positive
 graphics pass still requires the existing paired scope once. All mutations are
 disposable copies; checked-in fixtures stay byte-identical.
+
+## Ordered input recording (format 5)
+
+New captures preserve native pre-simulation dispatch order and input-time frame
+timing, with explicit marker-reset, controls-clear, sample and direct-command
+operations. The final input tail is mandatory. Replay compares computed residual
+controls and SIM RNG instead of overwriting discrepancies. SIM state and absolute
+call count are restored once at frame zero, including an empty first batch. Every
+later batch and terminal tail must match the carried SIM state/count before any
+input effect, then match the computed post-input boundary. External RNG reseeding
+is not a supported input operation. Zero-frame/tail-only recordings are rejected. Playback
+accepts format 5 only; use `android/tests/convert_public_replay.py` for bounded,
+oracle-verified public-corpus conversion, or make a fresh recording. Conversion
+is not a general guarantee that missing historical event order can be recovered.
+
+All-weapons entry is recorded as `grant_all_weapons` with an explicit `grant`
+variant: `d1_scourge`, `d1_bigred`, or `d2_honestbob`. D1's `gabbagabbahey`
+activation is a separate `enable_cheats` command. The native live handler and
+replay use the same implementation, including score reset, cheat state, ammo,
+energy, laser level and quad lasers. Repeated grants and terminal-tail grants
+retain their exact position among weapon selection and firing operations.
+
+D1-in-D2 `honestbob` resolves the active D1 profile: PC shareware uses the
+scourge loadout; registered D1 uses bigred's D1 loadout. Native D1 bigred and
+D2 honestbob retain their existing masks and selection policy. This does not
+unlock excluded shareware weapons or supply missing retail data. Other recognized
+native cheats and debug commands stop companion input capture before changing
+state, while ordinary live gameplay still proceeds. Grants during dead input
+also stop capture; replay rejects dead/endlevel/wrong-profile grants.
+
+`android/tests/test_all_weapons_runtime.ps1` captures fresh shareware starts,
+checks native Spreadfire/Gauss use, builds immutable compact oracles, and verifies
+headed/headless replay plus missing/wrong-grant controls. D1-in-D2 live capture
+is a separate diagnostic; synthetic retail-mask tests do not claim retail-asset
+playback. Android's menu still reaches these native handlers through its existing
+text-input route; native host tests do not establish Android device fidelity.
+
+The isolated [all-weapons evidence corpus](../tests/fixtures/public_all_weapons/README.md)
+preserves three native compact pairs, four live reports, and the complete 22-run
+qualification from clean source `7145f682f4dd946ce0a8019d087eba6523794c16`.
+Its manifest pins the exact source, public assets, and unchanged evidence hashes.
+
+Rear-view records the live engine's toggle/hold/release decisions, and playback
+applies them without querying wall time. Its initial view/cockpit baseline is
+explicit in new production captures. Automap records ordered lifecycle and visited
+segment-depth effects; playback uses a virtual paused map, with no UI window.
+Controls-only updates do not fire weapons or flush device input. D2 confirmed
+marker deletion retains the resolved marker slot and object signature. Pure map
+camera/redraw events do not grow the recording.
+
+Android rewind stops companion input recording because rewind snapshots do not
+retain pending ordered dispatch history. Gameplay rewind and classic demo
+recording still work; start a fresh input recording afterward. Map debug/reveal
+and Android reactor/matcen cheats also stop companion input recording with a clear
+diagnostic. Normal rear-view and automap use do not cancel recording.
+
+F3 and the existing reverse helper changes are ordered cockpit operations. New captures also record a
+projection contract: screen dimensions, exact fixed-point aspect/base zoom,
+portal depth, classic-depth mode and D2 missile-view preference. Replay requires
+those initialized settings to match and explains any mismatch. Changing them
+while recording cancels the companion with a notice; ordinary live settings still
+change normally. Existing Android custom visual FoV does not change its baseline
+discovery projection. A missing projection object in converted files leaves their
+old startup behavior unchanged.
+
+Map discovery is reproduced by a separate CPU pass for the actual main camera
+and default D2 missile window. It does not alter homing candidate collection or
+live camera policy. Active guided and other selected auxiliary cockpit cameras
+remain unsupported for companion capture and produce a named stop notice.
+Endlevel special-camera map fidelity is unqualified. These camera paths were
+already unmodeled in aggregate recordings; cancellation makes that limit explicit
+rather than preserving a recording that may silently diverge.

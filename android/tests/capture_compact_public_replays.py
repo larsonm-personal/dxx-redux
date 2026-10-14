@@ -4,12 +4,15 @@ import argparse
 import hashlib
 import itertools
 import json
+import os
 import subprocess
 from pathlib import Path
 
 import compact_public_replay as compact
 from run_compact_public_replays import validate_assets, PUBLIC_CASES
 import public_switch_replay as shoot_switch
+import public_guidebot_replay as guidebot
+import public_secondary_replay as secondary
 
 
 def capture(args):
@@ -33,10 +36,15 @@ def capture(args):
                 continue
             directory = args.output / f"{game}-{scenario}"
             directory.mkdir()
+            # Native Unix PhysFS can read HOME independently of the fixture cwd
+            home = directory / "home"
+            home.mkdir()
+            environment = {**os.environ, "HOME": str(home.resolve())}
             with (directory / "capture.log").open("w") as log:
                 subprocess.run(
                     [str(exe), "--public-level-replay", str(data), scenario],
                     cwd=directory,
+                    env=environment,
                     stdout=log,
                     stderr=subprocess.STDOUT,
                     check=True,
@@ -45,7 +53,7 @@ def capture(args):
             report = json.loads((directory / "capture.json").read_text())
             if scenario == "flight" and report["wall_contact_frames"] < 10:
                 raise compact.parity.EvidenceError("Capture did not contact solid geometry under thrust")
-            if scenario != "flight" and report["action_frame"] < 0:
+            if scenario != "flight" and scenario not in secondary.SCENARIOS and report["action_frame"] < 0:
                 raise compact.parity.EvidenceError("Capture did not reach its declared real action")
             stem = f"{game}-public-{scenario}"
             compact.pack(
@@ -56,13 +64,25 @@ def capture(args):
                 provenance,
                 door_trace=directory / "capture-observation.jsonl" if scenario == "door-lifecycle" else None,
                 combat_trace=directory / "capture-observation.jsonl" if scenario in ("combat", "loot") else None,
+                guidebot_trace=directory / "capture-observation.jsonl" if scenario == "guidebot-release" else None,
             )
-            actions = {
-                key: report[key]
-                for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
-            }
+            actions = (
+                secondary.capture_actions(report)
+                if scenario in secondary.SCENARIOS
+                else {
+                    key: report[key]
+                    for key in ("target", "target_id", "target_signature", "action_frame", "wall_contact_frames")
+                }
+            )
             if scenario == "door-lifecycle":
                 actions.update({key: report[key] for key in ("door_back", "door_events")})
+            if scenario == "guidebot-release":
+                actions.update(
+                    guidebot.PROFILE,
+                    exit_frame=report["passage_frame"],
+                    blast_frame=report["blast_frame"],
+                    damage_frame=report["damage_frame"],
+                )
             if scenario == "shoot-switch":
                 events = [
                     row
@@ -77,11 +97,30 @@ def capture(args):
                 hits = [row for row in observations if row.get("type") == "robot_damage"]
                 loots = [row for row in observations if row.get("type") == "robot_loot"]
                 if not hits or len(loots) != 1 or sum(row["died"] for row in hits) != 1:
-                    raise compact.parity.EvidenceError("Live combat lacks identified projectile death and loot resolution")
-                actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score")})
+                    raise compact.parity.EvidenceError(
+                        "Live combat lacks identified projectile death and loot resolution"
+                    )
+                actions.update(
+                    {key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score")}
+                )
                 actions.update(loot_frame=loots[0]["f"], loot_count=int(loots[0]["created"] >= 0))
             if scenario == "loot":
-                actions.update({key: report[key] for key in ("damage_frame", "retirement_frame", "target_shields", "target_score", "loot_frame", "pickup", "pickup_signature", "pickup_frame", "pickup_gain_frame")})
+                actions.update(
+                    {
+                        key: report[key]
+                        for key in (
+                            "damage_frame",
+                            "retirement_frame",
+                            "target_shields",
+                            "target_score",
+                            "loot_frame",
+                            "pickup",
+                            "pickup_signature",
+                            "pickup_frame",
+                            "pickup_gain_frame",
+                        )
+                    }
+                )
             if scenario == "pickup":
                 observations = report["observations"]
                 gains = [

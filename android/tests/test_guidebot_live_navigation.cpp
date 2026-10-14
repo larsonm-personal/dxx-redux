@@ -15,6 +15,7 @@ extern "C" {
 #include "guidebot_goal_message.h"
 #include "key.h"
 #include "maths.h"
+#include "mission.h"
 #include "physics.h"
 #include "powerup.h"
 #include "robot.h"
@@ -96,19 +97,31 @@ static void endpoint_isolation(object *bot)
 	ai_reset_all_paths();
 }
 
-static bool moves_after_arrival(object *bot)
+static bool moves_after_arrival(object *bot, int reactor, bool require_live_player)
 {
 	const vms_vector start = bot->pos;
 	fix maximum_distance = 0;
+	bool truthful = true;
+	bool player_alive = true;
+	int patrol_frame = -1;
 	for (int frame = 0; frame < 12 * 60; ++frame) {
 		GameTime64 += FrameTime;
 		Believed_player_pos = ConsoleObject->pos;
 		Believed_player_seg = ConsoleObject->segnum;
 		GameProcessFrame();
 		if (frame % 3 == 0) ++d_tick_count;
+		truthful = truthful && Objects[reactor].type == OBJ_CNTRLCEN &&
+		    Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR;
+		player_alive = player_alive && !Player_is_dead && Players[Player_num].shields > 0;
+		if (patrol_frame < 0 && bot->ctype.ai_info.path_length >= 3 && Ai_local_info[bot - Objects].mode == AIM_GOTO_OBJECT)
+			patrol_frame = frame;
 		const fix distance = vm_vec_dist(&start, &bot->pos);
 		if (distance > maximum_distance) maximum_distance = distance;
 	}
+	if (require_live_player) check("reactor_player_survives_entire_patrol", player_alive);
+	Results["reactor_local_patrol_frame"] = patrol_frame;
+	check("reactor_arrival_starts_local_patrol", patrol_frame >= 0);
+	check("reactor_objective_remains_pending_every_patrol_frame", truthful);
 	return maximum_distance > 20 * F1_0;
 }
 
@@ -271,7 +284,7 @@ static void grate_detour(object *bot, int moving_target)
 	check("return_repaths_to_moving_player", rejoined());
 }
 
-static void reactor_arrival(object *bot)
+static void reactor_arrival(object *bot, bool public_demo)
 {
 	int reactor = -1;
 	for (int i = 0; i <= Highest_object_index; ++i)
@@ -281,8 +294,15 @@ static void reactor_arrival(object *bot)
 		}
 	check("reactor_fixture_exists", reactor >= 0);
 	if (reactor < 0) return;
-	place(bot, Objects[reactor].segnum);
+	// Public coverage starts in an adjacent authored segment and lets native
+	// physics perform the arrival; retail retains its existing endpoint fixture.
+	place(bot, public_demo ? 158 : Objects[reactor].segnum);
 	place(ConsoleObject, bot->segnum);
+	if (public_demo) {
+		// Keep reactor fire from ending this explicitly controlled navigation test.
+		Players[Player_num].shields = 1000 * F1_0;
+		Results["controlled_player_shields"] = +Players[Player_num].shields;
+	}
 	Players[Player_num].flags |= PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY;
 	Believed_player_pos = ConsoleObject->pos;
 	Believed_player_seg = ConsoleObject->segnum;
@@ -296,16 +316,45 @@ static void reactor_arrival(object *bot)
 	check("unseen_player_does_not_end_return", Ai_local_info[bot - Objects].mode == AIM_GOTO_PLAYER);
 	do_escort_frame(bot, 0, 2);
 	check("meeting_player_ends_return_before_midpoint", Ai_local_info[bot - Objects].mode == AIM_GOTO_OBJECT);
+	if (public_demo) {
+		Results["reactor_approach_start_segment"] = +bot->segnum;
+		check("reactor_approach_has_pending_objective", Escort_route_goal.active &&
+		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
+		bool truthful = true;
+		bool player_alive = true;
+		int frames = 0;
+		for (; frames < 30 * 60 && bot->segnum != Objects[reactor].segnum; ++frames) {
+			GameTime64 += FrameTime;
+			Believed_player_pos = ConsoleObject->pos;
+			Believed_player_seg = ConsoleObject->segnum;
+			GameProcessFrame();
+			if (frames % 3 == 0) ++d_tick_count;
+			player_alive = player_alive && !Player_is_dead && Players[Player_num].shields > 0;
+			truthful = truthful && Objects[reactor].type == OBJ_CNTRLCEN &&
+			    Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR;
+		}
+		Results["reactor_approach_frames"] = frames;
+		Results["reactor_approach_final_segment"] = +bot->segnum;
+		check("reactor_approach_arrives_through_native_physics", frames > 0 && frames < 30 * 60 && bot->segnum == Objects[reactor].segnum);
+		check("reactor_objective_remains_pending_every_approach_frame", truthful);
+		check("reactor_player_survives_entire_approach", player_alive);
+	}
 	check("reactor_arrival_keeps_reactor_objective", Escort_route_goal.active &&
 	                                                     Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
-	check("reactor_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
-	check("reactor_arrival_keeps_moving", moves_after_arrival(bot));
+	if (!public_demo) check("reactor_arrival_immediately_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
+	check("reactor_arrival_keeps_moving", moves_after_arrival(bot, reactor, public_demo));
 	check("reactor_still_requires_player_action", Objects[reactor].type == OBJ_CNTRLCEN &&
 	                                                  Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
 }
 
 int test_guidebot_live_navigation(const char *output, const char *return_target)
 {
+	const bool public_demo = !std::strcmp(Current_mission_filename, "d2demo");
+	Results["scope"] = public_demo ? "controlled_public_objective_arrival" : "controlled_live_navigation";
+	if (public_demo) {
+		check("public_authored_guidebot_exists", Buddy_objnum == 28 && Objects[28].type == OBJ_ROBOT && Objects[28].id == 33 && Objects[28].segnum == 224);
+		check("public_authored_reactor_exists", Objects[19].type == OBJ_CNTRLCEN && Objects[19].segnum == 159);
+	}
 	FrameTime = F1_0 / 60;
 	GameTime64 = 20 * F1_0;
 	Buddy_messages_suppressed = 1;
@@ -322,7 +371,7 @@ int test_guidebot_live_navigation(const char *output, const char *return_target)
 	if (Current_level_num == 11)
 		grate_detour(bot, return_target ? std::atoi(return_target) : 35);
 	else if (Current_level_num == 1)
-		reactor_arrival(bot);
+		reactor_arrival(bot, public_demo);
 	else
 		hostage_request(bot);
 	Results["passed"] = Passed;

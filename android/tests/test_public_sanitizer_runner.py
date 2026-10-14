@@ -120,6 +120,10 @@ exit 0
             self.assertIn("log_path=", record["asan"])
             self.assertEqual(record["lsan"], "exitcode=23")
             args = record["arguments"]
+            if record["name"] == "test_input_demo_runtime_smoke":
+                self.assertEqual(args[args.index("-TimeoutSeconds") + 1], "240")
+            else:
+                self.assertNotIn("-TimeoutSeconds", args)
             self.assertTrue(any("buildd2-asan/main" in a for a in args), record)
             if record in configs:
                 self.assertEqual(args[args.index("-Mission") + 1], "d2demo")
@@ -135,6 +139,9 @@ exit 0
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(len(records), 4)
         self.assertNotIn("--target d2", builds)
+        replay = next(record for record in records if record["name"] == "test_input_demo_runtime_smoke")
+        args = replay["arguments"]
+        self.assertEqual(args[args.index("-TimeoutSeconds") + 1], "240")
 
     def test_stage_failure_still_runs_remaining_categories(self):
         result, records, _, _ = self.run_profile(

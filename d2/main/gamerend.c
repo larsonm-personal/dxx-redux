@@ -674,6 +674,19 @@ char DemoWBUType[]={0,WBU_GUIDED,WBU_MISSILE,WBU_REAR,WBU_ESCORT,WBU_MARKER,0};
 char DemoRearCheck[]={0,0,0,1,0,0,0};
 static const char *const DemoExtraMessage[]={"PLAYER","GUIDED","MISSILE","REAR","GUIDE-BOT","MARKER","SHIP"};
 
+object *select_missile_viewer(void)
+{
+	if (Missile_viewer) {
+		if (Missile_viewer_sig == -1)
+			Missile_viewer_sig = Missile_viewer->signature;
+		if (PlayerCfg.MissileViewEnabled && Missile_viewer->type != OBJ_NONE && Missile_viewer->signature == Missile_viewer_sig)
+			return Missile_viewer;
+		Missile_viewer = NULL;
+		Missile_viewer_sig = -1;
+	}
+	return NULL;
+}
+
 void show_extra_views()
 {
 	int did_missile_view=0;
@@ -738,16 +751,12 @@ void show_extra_views()
 
 		if (Missile_viewer) //do missile view
 		{
-			if (Missile_viewer_sig == -1)
-				Missile_viewer_sig = Missile_viewer->signature;
-			if (PlayerCfg.MissileViewEnabled && Missile_viewer->type!=OBJ_NONE && Missile_viewer->signature == Missile_viewer_sig) {
+			if (select_missile_viewer()) {
   				RenderingType=2+(1<<4);
 				do_cockpit_window_view(1,Missile_viewer,0,WBU_MISSILE,"MISSILE");
 				did_missile_view=1;
 			}
 			else {
-				Missile_viewer = NULL;
-				Missile_viewer_sig = -1;
 				RenderingType=255;
 				do_cockpit_window_view(1,NULL,0,WBU_STATIC,NULL);
 			}
@@ -1025,6 +1034,7 @@ void toggle_cockpit()
 	HUD_clear_messages();
 	PlayerCfg.PreferredCockpitMode = new_mode;
 	write_player_file();
+	input_demo_record_input_cockpit();
 }
 
 void toggle_cockpit_reverse()
@@ -1054,6 +1064,7 @@ void toggle_cockpit_reverse()
 	HUD_clear_messages();
 	PlayerCfg.PreferredCockpitMode = new_mode;
 	write_player_file();
+	input_demo_record_input_cockpit();
 }
 
 int last_drawn_cockpit = -1;

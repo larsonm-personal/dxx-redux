@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "switch.h"
 #include "automap.h"
+#include "input_demo_hooks.h"
 #include "automap_metadata_overlay.h"
 #include "secretarea.h"
 #include "cntrlcen.h"
@@ -629,12 +630,14 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 		case KEY_ALTED+KEY_F:           // Alt+F shows full map, if cheats enabled
 			if (cheats.enabled) 	 
 			{
+				input_demo_cancel_unsupported_input_capture("automap reveal cheat is not recorded");
 				cheats.fullautomap = !cheats.fullautomap;
 				automap_build_edge_list(am);
 			}
 			return 1;
 #ifndef NDEBUG
 		case KEY_DEBUGGED+KEY_F: 	{
+				input_demo_cancel_unsupported_input_capture("automap debug reveal is not recorded");
 				int i;
 				
 				for (i=0; i<=Highest_segment_index; i++ )
@@ -666,10 +669,14 @@ int automap_key_command(window *wind, d_event *event, automap *am)
 
 int automap_process_input(window *wind, d_event *event, automap *am)
 {
+	const control_info empty_controls = { 0 };
+	const int cleared_gameplay_controls = memcmp(&Controls, &empty_controls, sizeof(Controls)) != 0;
 	Controls = am->controls;
 	kconfig_read_controls(event, 1);
 	am->controls = Controls;
 	memset(&Controls, 0, sizeof(control_info));
+	if (cleared_gameplay_controls)
+		input_demo_record_input_controls();
 
 	if ( !am->controls.automap_state && (am->leave_mode==1) )
 	{
@@ -752,6 +759,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 			window_set_visible(Game_wind, 1);
 			g_active_automap = NULL;
 			Automap_active = 0;
+			input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_CLOSE);
 			return 0;	// continue closing
 			break;
 
@@ -770,6 +778,8 @@ void do_automap()
 	window *automap_wind = NULL;
 	automap *am;
 
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_BEGIN);
+
 #ifdef __ANDROID__
 	level_metadata_rescan_route_from_object(Players[Player_num].objnum);
 	automap_metadata_begin();
@@ -785,6 +795,7 @@ void do_automap()
 
 	if (automap_wind == NULL)
 	{
+		input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_CLOSE);
 		Warning("Out of memory");
 		return;
 	}
@@ -805,6 +816,7 @@ void do_automap()
 		if (am->drawingListBright)
 			d_free(am->drawingListBright);
 
+		input_demo_cancel_unsupported_input_capture("automap allocation failed after window creation");
 		Warning("Out of memory");
 		return;
 	}
@@ -850,6 +862,7 @@ void do_automap()
 
 	//Fill in Automap_visited from Objects[Players[Player_num].objnum].segnum
 	am->max_segments_away = set_segment_depths(Objects[Players[Player_num].objnum].segnum, Automap_visited);
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_DEPTHS);
 	am->segment_limit = am->max_segments_away;
 
 	adjust_segment_limit(am, am->segment_limit);
@@ -869,6 +882,7 @@ void do_automap()
 	gr_palette_load( gr_palette );
 	g_active_automap = am;
 	Automap_active = 1;
+	input_demo_record_input_automap(INPUT_DEMO_AUTOMAP_ACTIVE);
 }
 
 void adjust_segment_limit(automap *am, int SegmentLimit)

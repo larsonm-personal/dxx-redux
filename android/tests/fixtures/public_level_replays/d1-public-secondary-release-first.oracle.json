@@ -1,0 +1,56 @@
+{
+    "compact_sha256": "b17e2b9a01a6c0e5fc818415b8a737c1fd6a5ea094591b2722ca306f7432a207",
+    "frame_sha256": [
+        "c180da7e4b0caf60a0d73ff92df10602ffb1635a1e090320e7f0113b1ad74ad8",
+        "60d01cc665a3f025e89a24272fd8425ded73770a99949066ef6d731464ea29e3",
+        "e510f1219ca1ca600791a925e52b71090feb28e3954a9ab34d9c447a4a8e4396",
+        "c4f1eecaabb765a66a25f7f26589928fd522c57712cf58a729d84c025bbef543",
+        "b5964f7b69fef70a37272da7c06148a0831e918f3b3f2a73e5221372f326a696",
+        "56ab7d64a01389c1159f614ece8b17e5558da1ed036cc704d3fbf127cfdaf8e4",
+        "5ce9790e64618182a9400aa9f72a920c602478ab39d928e978b5c3b6ac5db852",
+        "f93c09758e606f13d850891e6f7cb2f2daa8ef3b989a05b106a36a01826dec72",
+        "6dae88e075c4a7c2716a30336f7e2934b0a53bde0cdea86c2376a20eddb2e4e1",
+        "f2d4904cbc180f89c65519b261e263addbb0d430af4e06f46644ea255b769427",
+        "35f873745de4fff4da8b7ad7624faedf82d3ab4e9b5f09dbc5a95b6780ad5935",
+        "9a0f596bb4aa3695761081d0165ae6046dc34720148d669701681b2dce6da8dd",
+        "943843b6ca0e7455914dc269694128458cee31a90938bdfc4fa0b1799cbad24c",
+        "50663db3421953b9c81df6701696c445f587526208dad4baee72b7068ecf7109",
+        "b6c2e1ca53d563c1255a7a0ca335179c5ee0a847f9f8564ad00116b17daa10d7",
+        "cf19903ba8f1879fd48042e5389f18970a2426b26bbbf53b8e876564399ac9c8",
+        "e4ec0d89a3cabf1c9e4657efbf24b6beca3381da2af61773d8d39accc6e422ef",
+        "7a9287c626368f98ff1c0b3fb4471f87d5bae0864a7894520bbf0d608c2e806c",
+        "8fd59c3a98f4010ae35512beb3e5e3acc2049073fd69be4f5bfd9c2c2e79367f",
+        "a921350f16fa6dac7aa5127d154e6743a74f0ed7bdc1d2899c3fd0b31d27e2a5",
+        "96ec5d06c6efdab50cbe49523e9ca17ad76c86267f678af439e00ec0330f00d4",
+        "8f2156cfe40b00df0f85cddef994e99831054aa5d9acbde1594f74737999c72a",
+        "9755d02f99cb9b57467768e563102083ad111aa55ca1024a258652c8de1d4e5e",
+        "80e7c50cdb1d05d665ff4e69b260879590f9fffc01a9fa2fb44eb8c33a0566d2",
+        "ae607016aed0e47ce4bd11ce34223b943f5791c42d9bd52a9f69bf7019cdf13d"
+    ],
+    "frames": 25,
+    "full_recording_sha256": "01eec33ae88221f3217d70df0da1bade6994f4d471b958131074ad983f7c12f5",
+    "game": "d1",
+    "level": 1,
+    "mission": "d1",
+    "provenance": {
+        "asset_sha256": {
+            "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+            "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+        },
+        "capture_executable_sha256": "225d709ad3bd7e9aaa2a69314d6a44bc8f3d6a30fd814a1acd86b598ecc8597f",
+        "capture_source_sha256": "8054cb96e2666d90d6e8e684888a2afa5310ea1b65056d814086e2f29bd6d4b2",
+        "source_revision": "eba0eee69077fd53e4aee54d04f026f8d7ac9e6c"
+    },
+    "removed_telemetry": {
+        "compared_on_replay": false,
+        "counts": {
+            "probe_weapon_life": 24
+        },
+        "events": 24,
+        "sha256": "9940713bdbaa6ebeb128174b36edcba26e06fc4ff9aba8f28b9c572841bd5ae9"
+    },
+    "schema": 1,
+    "simulation_rng_events": 12,
+    "simulation_rng_sha256": "28ac87dba59e9f1fad8bf81487e62f7088f4214a869441e87cb3c386d88e015e",
+    "terminal_sha256": "723f7d5939b08a3b50adbe91f5dfe36db23178a709710b65f587f1dc93a46709"
+}

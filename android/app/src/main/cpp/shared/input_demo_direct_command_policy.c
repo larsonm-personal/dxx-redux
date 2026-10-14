@@ -44,6 +44,7 @@ static int input_demo_direct_command_is_game_specific(int kind)
 	switch (kind) {
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_GOAL:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DELETE_MARKER:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_MARKER:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_CURRENT_WEAPON:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_DROP_SECONDARY_WEAPON:
@@ -54,6 +55,8 @@ static int input_demo_direct_command_is_game_specific(int kind)
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_FIND_UNEXPLORED:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GUIDEBOT_WARP_TO_ME:
 		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_SELECT_WEAPON_EXACT:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS:
+		case INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS:
 			return 1;
 		default:
 			return 0;
@@ -105,6 +108,21 @@ static int input_demo_direct_command_dispatch(
 	}
 	return input_demo_direct_command_copy_error(
 	    "unknown typed direct command is unsupported", error, error_size);
+}
+
+int input_demo_direct_command_apply_event(
+    const input_demo_direct_command_policy *policy,
+    input_demo_direct_command_phase phase,
+    const input_demo_replay_direct_command_event *event,
+    int validate_only, char *error, size_t error_size)
+{
+	if (!event || (phase != INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD &&
+	               phase != INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
+		return input_demo_direct_command_copy_error("invalid ordered direct command", error, error_size);
+	if ((event->kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_DEATH_ABORT) !=
+	    (phase == INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
+		return input_demo_direct_command_copy_error("ordered direct command has the wrong native phase", error, error_size);
+	return input_demo_direct_command_dispatch(policy, phase, event, validate_only, error, error_size);
 }
 
 int input_demo_direct_command_apply_current_frame(

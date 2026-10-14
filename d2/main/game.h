@@ -58,6 +58,8 @@ typedef struct game_d_tick_state {
 
 extern struct object *Missile_viewer;
 extern int Missile_viewer_sig;
+// Select or retire the existing non-guided missile view without drawing
+extern struct object *select_missile_viewer(void);
 
 #define CV_NONE     0
 #define CV_ESCORT   1
@@ -227,6 +229,12 @@ void show_boxed_message(char *msg, int RenderFlag);
 
 // turns off rear view & rear view cockpit
 void reset_rear_view(void);
+int input_demo_apply_rear_view_action(int action, int validate_only);
+void input_demo_get_rear_view_state(int *rear_view, int *leave_mode,
+                                   int *current_cockpit, int *preferred_cockpit);
+int input_demo_restore_rear_view_state(int rear_view, int leave_mode,
+                                       int current_cockpit, int preferred_cockpit,
+                                       int validate_only);
 
 // returns ptr to escort robot, or NULL
 struct object *find_escort();

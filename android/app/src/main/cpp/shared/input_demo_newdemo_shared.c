@@ -27,7 +27,9 @@
 #include "palette.h"
 #include "physfsx.h"
 #include "player.h"
+#include "render_gameplay_view.h"
 #include "segment.h"
+#include "automap.h"
 #include "state.h"
 #include "text.h"
 #include "timer.h"
@@ -405,6 +407,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
                                                 char *error, size_t error_size)
 {
 	const char *rng_mode;
+	const char *unsupported_view;
 	int replay_mode;
 
 	if (settings)
@@ -412,6 +415,18 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 	if (Game_mode & GM_MULTI) {
 		if (error && error_size)
 			snprintf(error, error_size, "%s", "multiplayer input demo recording is not supported");
+		return 0;
+	}
+	unsupported_view = render_game_view_automap_unsupported_reason();
+	if (unsupported_view) {
+		if (error && error_size) snprintf(error, error_size, "%s", unsupported_view);
+		return 0;
+	}
+	/* Current UI requests are deferred until map close; reject direct callers
+	 * rather than inventing an unrecorded modal-entry baseline */
+	if (Automap_active) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "close the automap before starting an input recording");
 		return 0;
 	}
 	if (Current_level_num == 0) {
@@ -438,6 +453,12 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 #endif
 		input_demo_fill_recorder_player_cfg(settings);
 		settings->level_start = input_demo_recording_level_start();
+		settings->has_view_projection = 1;
+		input_demo_capture_view_projection(&settings->view_projection);
+		settings->has_rear_view_baseline = 1;
+		input_demo_get_rear_view_state(&settings->rear_view_baseline.active,
+		                               &settings->rear_view_baseline.leave_mode, &settings->rear_view_baseline.current_cockpit,
+		                               &settings->rear_view_baseline.preferred_cockpit);
 	}
 	if (!input_demo_recording_level_start() && input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
 		return 0;
@@ -597,7 +618,8 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 		return;
 	}
 	input_demo_capture_current_result(&result);
-	if (!input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
+	if (!input_demo_record_finish_input_tail(error, sizeof(error)) ||
+	    !input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 		return;

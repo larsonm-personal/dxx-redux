@@ -11,8 +11,10 @@
 #include <unistd.h>
 #endif
 
+#include <sstream>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "input_demo_direct_command_policy.h"
 #include "input_demo_limits.h"
@@ -305,6 +307,7 @@ static int write_test_fixture(const char *path)
 	char error[256] = "";
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -351,6 +354,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	fill_test_checkpoint_data(checkpoint_data, sizeof(checkpoint_data));
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -508,6 +512,57 @@ static int expect_replay_loader(void)
 	remove(demo_path.c_str());
 	remove(trace_path.c_str());
 	remove(actual_result_path.c_str());
+	remove_test_dir(dir);
+	return 0;
+}
+
+static int expect_actual_result_write_verdict(void)
+{
+	const char *dir = "test_input_demo_result_verdict_fixture";
+	const std::string path = std::string(dir) + "/verdict.dximdemo";
+	const std::string result_path = path + ".actual.json";
+	char error[256] = "";
+	input_demo_result actual, loaded;
+	fill_test_frame_state(&actual, 0);
+	if (!make_test_dir(dir) || write_test_fixture(path.c_str())) return 1;
+	if (!input_demo_replay_load(path.c_str(), error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("new replay load retained a terminal write verdict");
+	input_demo_replay_set_actual_result_path(nullptr);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("missing output path claimed a terminal write");
+	input_demo_replay_set_actual_result_path(dir);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed output open claimed a terminal write");
+#ifdef __linux__
+	input_demo_replay_set_actual_result_path("/dev/full");
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed buffered result write claimed success");
+#endif
+	input_demo_replay_set_actual_result_path(result_path.c_str());
+	if (!input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || !input_demo_replay_actual_result_written() ||
+	    !input_demo_result_read_json_file(result_path.c_str(), &loaded, error, sizeof(error)) ||
+	    !input_demo_result_compare(&actual, &loaded, error, sizeof(error)))
+		return report_failure_string(std::string("successful terminal result write: ") + error);
+	input_demo_replay_unload();
+	if (!input_demo_replay_actual_result_written()) return report_failure("unload erased successful terminal write");
+	if (input_demo_replay_load(nullptr, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed load retained a previous terminal write verdict");
+	if (!input_demo_replay_load(path.c_str(), error, sizeof(error)) ||
+	    !input_demo_replay_write_actual_result(&actual, error, sizeof(error)) ||
+	    !input_demo_replay_actual_result_written()) return report_failure_string(error);
+	// A failed subsequent write must not leave the earlier success in place
+	input_demo_replay_set_actual_result_path(dir);
+	if (input_demo_replay_write_actual_result(&actual, error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("failed replacement write retained a successful verdict");
+	input_demo_replay_set_actual_result_path(result_path.c_str());
+	if (!input_demo_replay_write_actual_result(&actual, error, sizeof(error)) ||
+	    !input_demo_replay_load(path.c_str(), error, sizeof(error)) || input_demo_replay_actual_result_written())
+		return report_failure("successful new load retained a previous terminal write verdict");
+	input_demo_replay_unload();
+	if (input_demo_replay_actual_result_written()) return report_failure("unload invented a terminal write");
+	remove(path.c_str());
+	remove((path + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	remove(result_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }
@@ -691,6 +746,7 @@ static int write_direct_command_policy_fixture(const char *path,
 	char error[256] = "";
 
 	input_demo_recorder_settings_clear(&settings);
+	settings.ordered_input = 0; // Existing tests exercise the aggregate legacy codec
 	settings.game = input_demo_test_game_id();
 	settings.mission = input_demo_test_game_name();
 	settings.level = 1;
@@ -1047,6 +1103,7 @@ static int expect_direct_command_policy(void)
 
 static int expect_cheat_commands(void)
 {
+	using json = nlohmann::ordered_json;
 	const char *path = "test_input_demo_cheats.dximdemo";
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
@@ -1060,56 +1117,155 @@ static int expect_cheat_commands(void)
 	settings.rng_mode = input_demo_test_rng_mode();
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
-	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+	if (!input_demo_recorder_start(&settings, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 0, 3276, error, sizeof(error)))
 		return report_failure(error);
 	if (input_demo_recorder_stage_cheat(-1, error, sizeof(error)) ||
 	    input_demo_recorder_stage_cheat(4, error, sizeof(error)))
 		return report_failure("invalid cheat was accepted by recorder");
-	for (int cheat = 0; cheat <= 3; ++cheat)
+	for (int cheat = 0; cheat <= 3; ++cheat) {
+		if (cheat == 2 && !input_demo_recorder_stage_input_sample(4000, &state, &pulse, error, sizeof(error)))
+			return report_failure(error);
 		if (!input_demo_recorder_stage_cheat(cheat, error, sizeof(error)))
 			return report_failure(error);
+	}
 	// A repeated grant is another refill, so retain it in event order
 	if (!input_demo_recorder_stage_cheat(3, error, sizeof(error)) ||
-	    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0,
+	    !input_demo_recorder_capture_frame(4000, &state, &pulse, 100, 1, 0,
 	                                       NULL, NULL, error, sizeof(error)) ||
+	    !input_demo_recorder_begin_input_batch(100, 0, 5000, error, sizeof(error)) ||
+	    !input_demo_recorder_stage_cheat(1, error, sizeof(error)) ||
+	    !input_demo_recorder_finish_input_tail(&state, &pulse, 100, 0, error, sizeof(error)) ||
 	    !input_demo_recorder_flush(path, error, sizeof(error)) ||
 	    !input_demo_replay_load(path, error, sizeof(error)))
 		return report_failure(error);
-	uint32_t count = 0;
-	if (!input_demo_replay_get_current_frame_direct_command_count(&count, error, sizeof(error)) || count != 5)
-		return report_failure("cheat event count mismatch");
-	for (uint32_t i = 0; i < count; ++i) {
-		input_demo_replay_direct_command_event event;
-		if (!input_demo_replay_get_current_frame_direct_command_event(i, &event, error, sizeof(error)) ||
-		    event.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT || event.value0 != (int) (i < 4 ? i : 3))
-			return report_failure("cheat command order mismatch");
-	}
+	if (input_demo_replay_format_version() != 5)
+		return report_failure("cheats did not use ordered format 5");
 	direct_command_policy_test_context context;
 	input_demo_direct_command_policy policy;
+	std::vector<std::string> expected;
 	direct_command_policy_context_clear(&context);
 	direct_command_policy_init(&policy, &context);
-	if (!input_demo_direct_command_apply_current_frame(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)) ||
-	    context.mutation_count != 5)
+	for (uint32_t frame = 0; frame != 2; ++frame) {
+		input_demo_input_batch_info batch = {};
+		if (!input_demo_replay_get_input_batch_info(frame, &batch, error, sizeof(error)) ||
+		    batch.operation_count != (frame ? 1u : 6u) || batch.is_tail != (int) frame)
+			return report_failure("cheat batch or tail mismatch");
+		for (uint32_t i = 0; i < batch.operation_count; ++i) {
+			input_demo_input_operation operation = {};
+			if (!input_demo_replay_get_input_operation(frame, i, &operation, error, sizeof(error)))
+				return report_failure(error);
+			if (!frame && i == 2) {
+				if (operation.kind != INPUT_DEMO_INPUT_SAMPLE || operation.frame_time != 4000)
+					return report_failure("cheat command lost interleaved input sample");
+				continue;
+			}
+			const int cheat = frame ? 1 : i < 2 ? (int) i : i < 5 ? (int) i - 1 : 3;
+			const int frame_time = frame ? 5000 : i < 2 ? 3276 : 4000;
+			if (operation.kind != INPUT_DEMO_INPUT_COMMAND || operation.frame_time != frame_time ||
+			    operation.command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT || operation.command.value0 != cheat)
+				return report_failure("cheat command order or arguments mismatch");
+			for (int validate_only : { 1, 0 }) {
+				if (!input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY,
+				                                           &operation.command, validate_only, error, sizeof(error)))
+					return report_failure(error);
+				expected.push_back(direct_command_policy_game_call(&operation.command, validate_only));
+			}
+		}
+	}
+	if (expect_direct_command_policy_calls(&context, expected, "ordered cheats") || context.mutation_count != 6)
 		return report_failure("cheat commands did not reach engine adapter");
 	input_demo_replay_unload();
-	const char *invalid[] = { "-1", "4", "18446744073709551615", "1.5", "true", "\"1\"", "null" };
-	for (const char *value : invalid) {
-		if (!input_demo_recorder_start(&settings, error, sizeof(error)))
-			return report_failure(error);
-		const std::string event = std::string("{\"kind\":\"direct_command\",\"command\":\"cheat\",\"cheat\":") + value + "}";
-		if (!input_demo_recorder_stage_frame_event_json(event.c_str(), error, sizeof(error)) ||
-		    !input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, NULL, NULL, error, sizeof(error)) ||
-		    !input_demo_recorder_flush(path, error, sizeof(error)) ||
-		    !input_demo_replay_load(path, error, sizeof(error)))
-			return report_failure(error);
-		direct_command_policy_context_clear(&context);
-		if (input_demo_direct_command_apply_current_frame(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, error, sizeof(error)) ||
-		    !context.calls.empty())
-			return report_failure("malformed cheat reached engine adapter");
-		input_demo_replay_unload();
+
+	input_demo_replay_direct_command_event command = {};
+	command.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT;
+	command.value0 = INPUT_DEMO_CHEAT_D1_ENABLE;
+	direct_command_policy_context_clear(&context);
+	context.reject_game_kind = command.kind;
+	if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &command, 1, error, sizeof(error)) ||
+	    context.calls.size() != 1 || context.mutation_count)
+		return report_failure("cheat command ignored adapter preflight rejection");
+	direct_command_policy_context_clear(&context);
+	if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, &command, 0, error, sizeof(error)) ||
+	    !context.calls.empty() || context.mutation_count)
+		return report_failure("cheat command accepted the death phase");
+	policy.apply_game_specific = NULL;
+	if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &command, 1, error, sizeof(error)))
+		return report_failure("cheat command accepted a missing native adapter");
+
+	std::string text;
+	if (!read_text_file(path, &text))
+		return report_failure("could not read ordered cheat fixture");
+	std::vector<json> rows;
+	std::istringstream lines(text);
+	for (std::string line; std::getline(lines, line);)
+		if (!line.empty()) rows.push_back(json::parse(line));
+	std::vector<json> invalid;
+	for (const json &value : { json(-1), json(4), json(UINT64_MAX), json(1.5), json(true), json("1"),
+	                          json(nullptr), json::array(), json::object() })
+		invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" }, { "cheat", value } });
+	invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" } });
+	invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" }, { "cheat", 1 }, { "extra", 0 } });
+	for (const auto &event : invalid) {
+		// Check both simulation-frame and input-tail parsing before any engine dispatch
+		for (size_t row : { size_t(1), rows.size() - 2 }) {
+			auto malformed = rows;
+			malformed[row]["dispatch"]["ops"][0]["event"] = event;
+			text.clear();
+			for (const auto &record : malformed) text += record.dump() + "\n";
+			if (!write_text_file(path, text))
+				return report_failure("could not write malformed cheat fixture");
+			if (input_demo_replay_load(path, error, sizeof(error)) || input_demo_replay_is_loaded())
+				return report_failure("malformed cheat was accepted by ordered replay");
+		}
 	}
 	remove(path);
 	remove((std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX).c_str());
+	return 0;
+}
+
+static int expect_ordered_all_weapons_policy(void)
+{
+	direct_command_policy_test_context context;
+	input_demo_direct_command_policy policy;
+	std::vector<std::string> expected;
+	char error[256] = "";
+	direct_command_policy_context_clear(&context);
+	direct_command_policy_init(&policy, &context);
+	const int kinds[] = { INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS,
+		                  INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS };
+	for (int kind : kinds) {
+		input_demo_replay_direct_command_event event = {};
+		event.kind = kind;
+		event.value0 = kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS ? INPUT_DEMO_GRANT_ALL_WEAPONS_D1_BIGRED : 0;
+		for (int validate_only : { 1, 0 }) {
+			if (!input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY,
+			                                           &event, validate_only, error, sizeof(error)))
+				return report_failure_string(error);
+			expected.push_back(direct_command_policy_game_call(&event, validate_only));
+		}
+	}
+	if (expect_direct_command_policy_calls(&context, expected, "ordered all-weapons") || context.mutation_count != 4)
+		return report_failure("all-weapons policy lost repetitions or adapter arguments");
+	for (int kind : { INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS, INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS }) {
+		input_demo_replay_direct_command_event event = {};
+		event.kind = kind;
+		event.value0 = kind == INPUT_DEMO_REPLAY_DIRECT_COMMAND_GRANT_ALL_WEAPONS ? INPUT_DEMO_GRANT_ALL_WEAPONS_D2_HONESTBOB : 0;
+		direct_command_policy_context_clear(&context);
+		context.reject_game_kind = kind;
+		if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &event, 1, error, sizeof(error)) ||
+		    context.calls.size() != 1 || context.mutation_count)
+			return report_failure("all-weapons policy ignored adapter preflight rejection");
+		direct_command_policy_context_clear(&context);
+		if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD, &event, 0, error, sizeof(error)) ||
+		    !context.calls.empty() || context.mutation_count)
+			return report_failure("all-weapons policy accepted the death phase");
+	}
+	policy.apply_game_specific = NULL;
+	input_demo_replay_direct_command_event event = {};
+	event.kind = INPUT_DEMO_REPLAY_DIRECT_COMMAND_ENABLE_CHEATS;
+	if (input_demo_direct_command_apply_event(&policy, INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY, &event, 1, error, sizeof(error)))
+		return report_failure("all-weapons policy accepted a missing native adapter");
 	return 0;
 }
 
@@ -1119,9 +1275,13 @@ int main(void)
 		return 1;
 	if (expect_replay_loader())
 		return 1;
+	if (expect_actual_result_write_verdict())
+		return 1;
 	if (expect_checkpoint_replay_loader())
 		return 1;
 	if (expect_checkpoint_replay_limits())
+		return 1;
+	if (expect_ordered_all_weapons_policy())
 		return 1;
 	if (expect_direct_command_policy())
 		return 1;

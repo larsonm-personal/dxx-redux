@@ -80,6 +80,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "homing_compat.h"
 #include "d1_in_d2/d1_in_d2_weapons.h"
 #include "input_demo_hooks.h"
+#include "render_gameplay_view.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
@@ -89,7 +90,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "android_profile.h"
 #include "android_render_fov.h"
-#include "render_gameplay_view.h"
 #include "android_screen_advance.h"
 #include "coop/coop_powerup_duplication.h"
 #include "escort.h"
@@ -776,9 +776,13 @@ int	Player_fired_laser_this_frame=-1;
 void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, const vms_matrix *view_orient)
 {
 	int i;
+	vms_matrix gameplay_orientation;
 
 	if (Player_fired_laser_this_frame == -1)
 		return;
+
+	/* Original warning coordinates used the scaled g3 matrix, not raw axes */
+	render_gameplay_view_orientation(&gameplay_orientation, view_orient);
 
 	for (i = 0; i <= Highest_object_index; i++) {
 		object *obj = &Objects[i];
@@ -795,9 +799,9 @@ void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, cons
 		prev_danger_sig = obj->ctype.ai_info.danger_laser_signature;
 
 		vm_vec_sub(&vec_to_obj, &obj->pos, viewer_eye);
-		view_x = vm_vec_dot(&vec_to_obj, &view_orient->rvec);
-		view_y = vm_vec_dot(&vec_to_obj, &view_orient->uvec);
-		view_z = vm_vec_dot(&vec_to_obj, &view_orient->fvec);
+		view_x = vm_vec_dot(&vec_to_obj, &gameplay_orientation.rvec);
+		view_y = vm_vec_dot(&vec_to_obj, &gameplay_orientation.uvec);
+		view_z = vm_vec_dot(&vec_to_obj, &gameplay_orientation.fvec);
 
 		if (view_z <= 0) {
 			input_demo_debug_log_warning_probe("headless_view", (void *)obj, (int)view_x, (int)view_y, (int)view_z, 0, prev_danger_obj, prev_danger_sig);
@@ -1038,6 +1042,7 @@ void check_and_fix_matrix(vms_matrix *m);
 
 void reset_player_object()
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	//Init physics
@@ -1092,6 +1097,7 @@ void init_player_object()
 //sets up the free list & init player & whatever else
 void init_objects()
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	collide_init();
@@ -1122,6 +1128,7 @@ void init_objects()
 //the free list, then set the apporpriate globals
 void special_reset_objects(void)
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	num_objects=MAX_OBJECTS;
@@ -2732,6 +2739,7 @@ void compress_objects(void)
 //compressed.  resets free list, marks unused objects as unused
 void reset_objects(int n_objs)
 {
+	render_reset_gameplay_view_objects();
 	int i;
 
 	num_objects = n_objs;

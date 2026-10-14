@@ -405,6 +405,7 @@ $tierServerManagedDualEmuTests = @()
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
     "test_d1_wall_blast_save" = 300
+    "test_public_save_continuation" = 900
     "test_async_checkpoint_unified" = 360
     "test_independent_checkpoints" = 1200
     "test_automap_objective_readiness_progress" = 600
@@ -485,6 +486,8 @@ $testTimeouts = @{
     "test_d1_replay_parity"               = 1800
     "test_compact_public_replays"         = 1800
     "test_compact_public_replay_failures"  = 3600
+    "test_ordered_input_runtime"          = 720
+    "test_all_weapons_runtime"            = 720
     "test_d1_in_d2_standalone"            = 900
     "test_input_demo_regressions_graphics" = 900
     "test_dos_midi_parity"                = 1500
@@ -682,9 +685,12 @@ $noInfraTests = @(
     "test_input_demo_regressions_graphics",
     "test_input_demo_replay_menu",
     "test_input_demo_comparison_policy",
+    "test_public_d1_fault_tools",
     "test_d1_replay_parity",
     "test_compact_public_replays",
     "test_compact_public_replay_failures",
+    "test_ordered_input_runtime",
+    "test_all_weapons_runtime",
     "test_input_demo_runtime_smoke",
     "test_level_metadata_benchmark",
     "test_native_host_unit_tests",
@@ -694,6 +700,8 @@ $noInfraTests = @(
     "test_wall_blast_save_profiles",
     "test_pickup_autoselect_profiles",
     "test_public_combat_profiles",
+    "test_public_save_profiles",
+    "test_public_save_continuation",
     "test_d1_wall_blast_save",
     "test_shareware_automation_profiles",
     "test_secret_area_data_profiles",

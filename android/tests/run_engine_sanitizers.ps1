@@ -114,7 +114,8 @@ try {
                     $workerExe = Join-Path $main (Get-RegressionHostExecutableNames -BaseName "dxx-redux-$testGame-metadata-worker")[0]
                     $exeOption = "-$($testGame.ToUpperInvariant())Exe"
                     $null = Invoke-SanitizerStage "public-replay-$testGame" {
-                        & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'test_input_demo_runtime_smoke.ps1') -Game $testGame -DataEdition shareware $exeOption $engineExe -OutputDirectory (Join-Path $OutputRoot "replay-$testGame")
+                        # Hosted Debug ASan reached 139 of 360 frames in 60 seconds; keep the full capture with margin
+                        & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'test_input_demo_runtime_smoke.ps1') -Game $testGame -DataEdition shareware $exeOption $engineExe -TimeoutSeconds 240 -OutputDirectory (Join-Path $OutputRoot "replay-$testGame")
                     }
                     $null = Invoke-SanitizerStage "public-metadata-$testGame" {
                         & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'test_secret_area_baseline.ps1') -Game $testGame -DataEdition shareware -RequireAssets $exeOption $metadataExe -OutputDir (Join-Path $OutputRoot "metadata-$testGame")

@@ -1,0 +1,332 @@
+{
+  "status": "pass",
+  "scope": "Independent detail oracle reconstruction and read-only existing replay trace verification; no game/build/replay executed",
+  "checks": [
+    {
+      "check": "six pair report hashes exact",
+      "pass": true
+    },
+    {
+      "check": "positive detail source/provenance bridge hashes",
+      "pass": true
+    },
+    {
+      "check": "positive detail exact native observations and terminal",
+      "pass": true
+    },
+    {
+      "check": "positive independent detail frame and carried RNG fingerprints",
+      "pass": true
+    },
+    {
+      "check": "positive independent detail decoded control hash",
+      "pass": true
+    },
+    {
+      "check": "positive independent native replay matches entire live full+gameplay frames",
+      "pass": true
+    },
+    {
+      "check": "positive imported complete expected prefix and boundaries",
+      "pass": true,
+      "details": {
+        "counts": {
+          "meta": 1,
+          "input_view": 1,
+          "object_boundary": 2,
+          "world_boundary": 2,
+          "frame_state": 301,
+          "object_state": 301,
+          "world_state": 301,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 2
+        },
+        "boundaries": [
+          [
+            "object_boundary",
+            "restored",
+            0
+          ],
+          [
+            "world_boundary",
+            "restored",
+            0
+          ],
+          [
+            "object_boundary",
+            "aborted",
+            301
+          ],
+          [
+            "world_boundary",
+            "aborted",
+            301
+          ]
+        ]
+      }
+    },
+    {
+      "check": "positive native replay whole RNG matches native capture",
+      "pass": true
+    },
+    {
+      "check": "positive imported RNG value prefix independently equal",
+      "pass": true,
+      "details": {
+        "events": 345,
+        "imported_events": 346,
+        "raw_exact": false
+      }
+    },
+    {
+      "check": "positive report source integrity and raw failure retained",
+      "pass": true
+    },
+    {
+      "check": "positive raw pre-collision clock and RNG identical",
+      "pass": true
+    },
+    {
+      "check": "positive actual crossing versus blocked flare state",
+      "pass": true,
+      "details": {
+        "native": {
+          "signature": 179,
+          "segnum": 142,
+          "pos": [
+            8216206,
+            -2905300,
+            30439592
+          ]
+        },
+        "imported": {
+          "signature": 179,
+          "segnum": 135,
+          "pos": [
+            8208474,
+            -3156161,
+            30042682
+          ]
+        }
+      }
+    },
+    {
+      "check": "positive raw imported effect one phase ahead after collision",
+      "pass": true
+    },
+    {
+      "check": "positive imported extra wall collision RNG exact carried event",
+      "pass": true,
+      "details": {
+        "type": "rand",
+        "frame": 300,
+        "gt": 1232896,
+        "call_count": 346,
+        "ctx_obj": 77,
+        "ctx_sig": 179,
+        "ctx_id": 9,
+        "state_before": 2301841099,
+        "state_after": 2296157864,
+        "result": 2268
+      }
+    },
+    {
+      "check": "positive strict abort visible in raw run log",
+      "pass": true
+    },
+    {
+      "check": "positive actual collision probes retained",
+      "pass": true,
+      "details": [
+        "frame=300 gt=1232896 kind=trans_wall_pixel obj=77 sig=179 id=9 seg=135 seg=135 side=4 face=0 tmap=83 tmap2=329 wall=5 clip=-1 clip_flags=0x0 clip_frame0=-1 num_wall_anims=26 u=-17056 v=35286 bmx=47 bmy=34 bm_w=64 bm_h=64 rowsize=64 flags=0x1 type=0 direct=59 gpixel=59 transparent=0 p=(8208474,-3156161,30042682)",
+        "frame=300 gt=1232896 kind=physics_fvi_fate obj=77 sig=179 id=9 seg=135 fate=wall start_seg=135 hit_seg=135 hit_side=4 hit_side_seg=135 child=142 wall=5 wall_type=5 wall_state=0 wall_flags=0x0 hit_obj=-1 hit_type=-1 hit_id=-1 hit_sig=-1 hit_obj_seg=-1 hit_size=0 hit_obj_pos=(0,0,0) pos=(8208114,-3167867,30024160) last=(8208114,-3167867,30024160) target=(8216206,-2905300,30439592) target_find_seg=142 hit_find_seg=135 target_mask_hit_seg=0x1c target_mask_254=0x22 target_mask_255=0x28 target_mask_254_rad=0x22 target_mask_255_rad=0x28 d254s4=(5411499,0) v0_254=(15184541,-4277151,28589662) v0_255=(16161114,-5596574,21881209) v0_168=(11973804,-4476565,15949164) frame_vec=(8092,262567,415432) vel=(129480,4201080,6646920) size=26709 flags=0x0 phys_flags=0x10 parent_type=4 parent=0 parent_sig=0 life=263372 sim_time=4096 ignore_count=0",
+        "frame=300 gt=1232896 kind=awareness_rng_gate obj=77 sig=179 id=9 seg=135 source=collide_weapon_wall source_obj=77 aux_obj=135 type=2 added=1 awareness_before=0 awareness_after=1 agitation_before=14 agitation_after=14 rng=0 pass=0 calls=345->346 state=2301841099->2296157864"
+      ]
+    },
+    {
+      "check": "positive detail oracle byte cap",
+      "pass": true,
+      "details": {
+        "bytes": 66992
+      }
+    },
+    {
+      "check": "no-fire detail source/provenance bridge hashes",
+      "pass": true
+    },
+    {
+      "check": "no-fire detail exact native observations and terminal",
+      "pass": true
+    },
+    {
+      "check": "no-fire independent detail frame and carried RNG fingerprints",
+      "pass": true
+    },
+    {
+      "check": "no-fire independent detail decoded control hash",
+      "pass": true
+    },
+    {
+      "check": "no-fire independent native replay matches entire live full+gameplay frames",
+      "pass": true
+    },
+    {
+      "check": "no-fire imported complete expected prefix and boundaries",
+      "pass": true,
+      "details": {
+        "counts": {
+          "meta": 1,
+          "input_view": 1,
+          "object_boundary": 2,
+          "world_boundary": 2,
+          "frame_state": 324,
+          "object_state": 324,
+          "world_state": 324,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        },
+        "boundaries": [
+          [
+            "object_boundary",
+            "restored",
+            0
+          ],
+          [
+            "world_boundary",
+            "restored",
+            0
+          ],
+          [
+            "object_boundary",
+            "terminal",
+            324
+          ],
+          [
+            "world_boundary",
+            "terminal",
+            324
+          ]
+        ]
+      }
+    },
+    {
+      "check": "no-fire native replay whole RNG matches native capture",
+      "pass": true
+    },
+    {
+      "check": "no-fire imported RNG value prefix independently equal",
+      "pass": true,
+      "details": {
+        "events": 344,
+        "imported_events": 344,
+        "raw_exact": false
+      }
+    },
+    {
+      "check": "no-fire report source integrity and raw failure retained",
+      "pass": true
+    },
+    {
+      "check": "no-fire imported control terminal RNG equals native",
+      "pass": true
+    },
+    {
+      "check": "no-fire detail oracle byte cap",
+      "pass": true,
+      "details": {
+        "bytes": 62181
+      }
+    },
+    {
+      "check": "delay detail source/provenance bridge hashes",
+      "pass": true
+    },
+    {
+      "check": "delay detail exact native observations and terminal",
+      "pass": true
+    },
+    {
+      "check": "delay independent detail frame and carried RNG fingerprints",
+      "pass": true
+    },
+    {
+      "check": "delay independent detail decoded control hash",
+      "pass": true
+    },
+    {
+      "check": "delay independent native replay matches entire live full+gameplay frames",
+      "pass": true
+    },
+    {
+      "check": "delay imported complete expected prefix and boundaries",
+      "pass": true,
+      "details": {
+        "counts": {
+          "meta": 1,
+          "input_view": 1,
+          "object_boundary": 2,
+          "world_boundary": 2,
+          "frame_state": 324,
+          "object_state": 324,
+          "world_state": 324,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        },
+        "boundaries": [
+          [
+            "object_boundary",
+            "restored",
+            0
+          ],
+          [
+            "world_boundary",
+            "restored",
+            0
+          ],
+          [
+            "object_boundary",
+            "terminal",
+            324
+          ],
+          [
+            "world_boundary",
+            "terminal",
+            324
+          ]
+        ]
+      }
+    },
+    {
+      "check": "delay native replay whole RNG matches native capture",
+      "pass": true
+    },
+    {
+      "check": "delay imported RNG value prefix independently equal",
+      "pass": true,
+      "details": {
+        "events": 346,
+        "imported_events": 346,
+        "raw_exact": false
+      }
+    },
+    {
+      "check": "delay report source integrity and raw failure retained",
+      "pass": true
+    },
+    {
+      "check": "delay imported control terminal RNG equals native",
+      "pass": true
+    },
+    {
+      "check": "delay detail oracle byte cap",
+      "pass": true,
+      "details": {
+        "bytes": 66784
+      }
+    }
+  ],
+  "caveat": "Passing the focused fault/control checks does not establish native/imported raw parity; every raw pair remains failed and positive imported run remains aborted."
+}

@@ -2,6 +2,12 @@
 
 Use `android/tests/run_input_demo_replay.ps1` for manual host replays.
 
+For the existing interactive picker, run `android/run_all_tests.ps1 -ReplayDemo`
+from the repository root. It includes user recordings and all 28 tracked public
+fixtures, automatically chooses their shareware data, and defaults to a visible
+realtime window. See [Watch one recording](../regression_demos/README.md#watch-one-recording)
+for data setup, pause/step controls, native/imported choices and known-fault labels.
+
 Do not launch `buildd1/main/dxx-redux-d1.exe` or `buildd2/main/dxx-redux-d2.exe` directly for replay checks unless you are debugging launcher args.
 
 Why:

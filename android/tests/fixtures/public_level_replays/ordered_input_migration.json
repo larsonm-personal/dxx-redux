@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "source_corpus_revision": "423689514af9fb0d9b34698e345a8ae829d25370",
+  "qualification": "Every size-eligible candidate passed unchanged full frame, diagnostic, SIM-event, terminal and action oracles in native headless playback. Final selected corpus backend matrix is separate.",
+  "candidate_limit_per_recording": 3,
+  "candidate_scope": "whole-recording",
+  "cases": [
+    {
+      "demo": "d1-public-flight.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "f0b98ede76afbd98a5858058f21eeb2e33ddc85339fd076ec6eab223974fa271",
+      "original_oracle_sha256": "1494f22ce680e0b91993300583d87dd68d9ccfabf71317dcc4eba99675f95c32",
+      "selected_demo_bytes": 53964,
+      "oracle_bytes": 28668,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d1-public-pickup.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "e3bc7915627bec25fc6076fadd794aa911e8beaed910a7b8794f7e5d4f66ca73",
+      "original_oracle_sha256": "3999806b0198ef044bf8ea1ecca60d9bd1a59735b7b7367fc6d920647416699a",
+      "selected_demo_bytes": 40150,
+      "oracle_bytes": 20991,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d1-public-door.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "dbc5191d8ccaa22dd06548b624eacca2b2c3025ed4b291c8135614dfed1a50b2",
+      "original_oracle_sha256": "9f36f8765a77f6885408698e8e5779eabfb5df4caf300e62e55cb18b1c9f31cf",
+      "selected_demo_bytes": 67115,
+      "oracle_bytes": 33721,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-flight.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "640328cf05970f718afa810b2a17f91a10642a2b4bd9a12c29453fd47c58b909",
+      "original_oracle_sha256": "986b9b4296a11ff860b887505ff26fe5721587c07210dfafb8fcb4edb1558ce9",
+      "selected_demo_bytes": 56218,
+      "oracle_bytes": 29445,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-pickup.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "2efb9ecfac9f6d913f8ef056e22de57cf5278d37d8cebd494db57fa9b4db5b06",
+      "original_oracle_sha256": "11de6051d6cbd7bcb720401ddcc3ffabf5e4a08fb275c8394a91fae692f8ca78",
+      "selected_demo_bytes": 23465,
+      "oracle_bytes": 13037,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-door.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "29e45cc0bef8765af33e4d2143bebc7aee68b68835c2c97d51212e82e2f8421d",
+      "original_oracle_sha256": "740595ebbade18b8537a7790d609f8ab7e2b3cd00f0af6d6a77bf94964361f69",
+      "selected_demo_bytes": 24319,
+      "oracle_bytes": 13676,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-shoot-switch.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "d75918653dfd6de32b18b037bc59e0eb829bb0dcfb3d866df2bf2a8888eb1036",
+      "original_oracle_sha256": "381b966df32429e020d689535a837304074822186c10d1e6d860dcfe8954b518",
+      "selected_demo_bytes": 35182,
+      "oracle_bytes": 18777,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d1-public-combat.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "f0f13c38952ab92a173a6b3dda4c2c1b978778cd2320a016b52bd3fb0db19c8a",
+      "original_oracle_sha256": "ef5dded7543c10cd5f7bb36db49f4b3ef6effc127d19888b56e8e370fa2aefb1",
+      "selected_demo_bytes": 23867,
+      "oracle_bytes": 12753,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-combat.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "711f6908c6515aea1e4ca31ceb8f0d1216d528e768258274259a2e088e3f2406",
+      "original_oracle_sha256": "cb4313ac70887a57768a07d2025b351a0ed0a0b1ee4e102794567cb9f37e3875",
+      "selected_demo_bytes": 44204,
+      "oracle_bytes": 22508,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d1-public-door-lifecycle.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "7a57aa0ee7b5c771d752315a4bc775e8b7c839ef61596c9c0f3c9a3cf71f7b71",
+      "original_oracle_sha256": "90ae955556d68dbdf9fc1e540ce2f0ee2b735ac98eecf1b7469460baf02b31ff",
+      "selected_demo_bytes": 43994,
+      "oracle_bytes": 20015,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d2-public-door-lifecycle.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "4374eafb16919ba384304fb05e2a5fe073cb598afbf0d32d07126e8a2dca8935",
+      "original_oracle_sha256": "b08191ad5f94ae31fbd2306d560de845f4963fbec3d3373782e5326ca2cb96ac",
+      "selected_demo_bytes": 67585,
+      "oracle_bytes": 29372,
+      "size_ineligible": []
+    },
+    {
+      "demo": "d1-public-loot.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "215da55965561a190608714e4b64d9752321bea3b8fbdd825ac682fc756a6856",
+      "original_oracle_sha256": "0f029110a914b5bfec334f91dce7e5613d9da2803a0451f857f984428bba832b",
+      "selected_demo_bytes": 94354,
+      "oracle_bytes": 45742,
+      "size_ineligible": [
+        {
+          "schedule": "reset-before-sample",
+          "bytes": 108322,
+          "status": "size-ineligible",
+          "semantic_verdict": "not-run"
+        },
+        {
+          "schedule": "prior-held-then-current",
+          "bytes": 108322,
+          "status": "size-ineligible",
+          "semantic_verdict": "not-run"
+        }
+      ]
+    },
+    {
+      "demo": "d2-public-guidebot-release.dximdemo",
+      "selected_schedule": "sample-only",
+      "passing_schedules": [
+        "sample-only",
+        "reset-before-sample",
+        "prior-held-then-current"
+      ],
+      "historical_event_order_recovered": false,
+      "original_demo_sha256": "61b87aead9b451a95823b6ba093e53830a13993fd0a3a738a7d0743a68d17aa2",
+      "original_oracle_sha256": "62a6966ddb2e88b5b94402d67dbd134209c57da2ea9ef742a629fcc3ae11ed46",
+      "selected_demo_bytes": 38768,
+      "oracle_bytes": 19188,
+      "size_ineligible": []
+    }
+  ]
+}

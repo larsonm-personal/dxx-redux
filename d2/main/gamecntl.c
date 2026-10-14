@@ -52,6 +52,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_hooks.h"
+#include "render_gameplay_view.h"
 #include "input_demo_replay.h"
 #include "input_demo_control_info.h"
 #include "input_demo_recorder.h"
@@ -71,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "lighting.h"
 #include "newdemo.h"
 #include "weapon.h"
+#include "weapon_cheat_shared.h"
 #include "sounds.h"
 #include "args.h"
 #include "gameseq.h"
@@ -274,10 +276,14 @@ int which_bomb()
 void do_weapon_n_item_stuff()
 {
 	int i;
+
+	render_prepare_gameplay_view_objects();
 	static ubyte converter_was_pressed = 0;
 	ubyte converter_pressed;
 	unsigned int sim_state;
 	const int rng_probe = input_demo_replay_is_loaded() && input_demo_debug_is_enabled();
+
+	input_demo_record_input_sample();
 
 	if (rng_probe) {
 		sim_state = 0;
@@ -1130,7 +1136,6 @@ int HandleGameKey(int key)
 	int new_obs = Current_obs_player;
 
 
-int ReadControlsReplayFrame(void);
 
 	switch (key) {
 
@@ -1427,6 +1432,7 @@ void kill_and_so_forth(void)
 	}
 
 kasf_done: ;
+	render_reset_gameplay_view_objects();
 
 }
 
@@ -1475,6 +1481,8 @@ void kill_buddy(void)
 
 int HandleTestKey(int key)
 {
+	if (key & KEY_DEBUGGED)
+		weapon_cheat_cancel_capture("unsupported debug command");
 	switch (key)
 	{
 
@@ -1791,10 +1799,10 @@ int FinalCheats(int key)
 		if (d_strnicmp(cheat_codes[i].string, cheat_buffer+CHEAT_MAX_LEN-cheatlen, cheatlen)==0)
 		{
 			if (cheat_codes[i].stateptr == &cheats.wowie) {
-				input_demo_record_cheat(INPUT_DEMO_CHEAT_D2_ALL_WEAPONS);
-				game_apply_demo_cheat(INPUT_DEMO_CHEAT_D2_ALL_WEAPONS, 0);
+				weapon_cheat_execute_live(weapon_cheat_default_grant());
 				return 1;
 			}
+			weapon_cheat_cancel_capture("unsupported native cheat");
 			*cheat_codes[i].stateptr = !*cheat_codes[i].stateptr;
 			cheats.enabled = 1;
 			digi_play_sample( SOUND_CHEATER, F1_0);
@@ -1948,6 +1956,7 @@ int FinalCheats(int key)
 #ifndef RELEASE
 void do_cheat_menu()
 {
+	weapon_cheat_cancel_capture("unsupported debug cheat menu");
 	int mmn;
 	newmenu_item mm[16];
 	char score_text[21];
@@ -2037,31 +2046,6 @@ void play_test_sound()
 
 #endif  //ifndef NDEBUG
 
-int ReadControlsReplayFrame(void)
-{
-	if (Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_DEAD))
-			return 0;
-	}
-
-	if (!Endlevel_sequence && !Player_is_dead) {
-		if (!input_demo_apply_replay_direct_commands(INPUT_DEMO_DIRECT_COMMAND_PHASE_GAMEPLAY))
-			return 0;
-		check_rear_view();
-
-		if (Controls.automap_count > 0)
-		{
-			Controls.automap_count = 0;
-			/* Replay demos stage the automap pulse onto the next gameplay frame
-			 * after the player returns, so ignore it here instead of opening a
-			 * modal automap window or skipping the gameplay frame. */
-		}
-
-	}
-
-	return 0;
-}
-
 int ReadControls(d_event *event)
 {
 #ifdef __ANDROID__
@@ -2081,6 +2065,8 @@ int ReadControls(d_event *event)
 	int key;
 	static ubyte exploding_flag=0;
 
+	input_demo_record_input_reset();
+	Player_fired_laser_this_frame=-1;
 
 #ifdef __ANDROID__
 	if (Endlevel_sequence &&
@@ -2350,16 +2336,7 @@ int ReadControls(d_event *event)
 	{
 
 		kconfig_read_controls(event, 0);
-		if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
-			input_demo_control_pulse pulse;
-
-			// Gameplay pulses remain pending until the simulation frame consumes them
-			// Only these UI pulses are consumed below, before frame capture
-			input_demo_control_pulse_clear(&pulse);
-			pulse.rear_view_count = Controls.rear_view_count;
-			pulse.automap_count = Controls.automap_count;
-			input_demo_recorder_stage_pulse(&pulse);
-		}
+		input_demo_record_input_controls_supported();
 
 		check_rear_view();
 
@@ -2369,11 +2346,13 @@ int ReadControls(d_event *event)
 			Controls.automap_count = 0;
 			if (!((Game_mode & GM_MULTI) && Control_center_destroyed && (Countdown_seconds_left < 10)))
 			{
+				input_demo_record_input_controls();
 				do_automap();
 				return 1;
 			}
 		}
 
+		do_weapon_n_item_stuff();
 	}
 
 	return 0;
