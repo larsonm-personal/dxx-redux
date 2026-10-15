@@ -2,6 +2,7 @@
 
 import copy
 import json
+import re
 import tempfile
 import unittest
 from unittest import mock
@@ -36,6 +37,80 @@ class RuntimeRunnerRegistrationTests(unittest.TestCase):
         self.assertIn("if ($testProcess.ExitCode -ne 0) { throw", runner)
         workflow = Path(__file__).parents[2] / ".github/workflows/public-save-integrity.yml"
         self.assertIn("-File android/tests/test_public_save_continuation.ps1", workflow.read_text())
+
+
+class SaveRuntimeExtensionRunnerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.runner = Path(__file__).with_suffix(".ps1").read_text()
+        cls.entries = re.findall(r"@\{Name = '([^']+)'; ([^\n]+) \}", cls.runner)
+        cls.cases = dict(cls.entries)
+
+    def assert_case(self, name, game, scenario, mode, assets=None, work=None):
+        entry = self.cases[name]
+        self.assertIn(f"Exe = ${game}ExePath; Assets = ${assets or game}Path;", entry)
+        self.assertIn(f"Scenario = {scenario}; Mode = '--{mode}'", entry)
+        if work:
+            self.assertIn(f"WorkDirectory = '{work}'", entry)
+            self.assertLess(list(self.cases).index(work), list(self.cases).index(name))
+        else:
+            self.assertNotIn("WorkDirectory", entry)
+
+    def test_guided_edge_cases_and_separate_process_restores(self):
+        for scenario in ("active", "released", "multiple", "stale", "parent", "none", "format"):
+            self.assert_case(f"d2-guided-{scenario}", "d2", f"'{scenario}'", "guided-save-runtime")
+        for scenario in ("active", "released"):
+            self.assert_case(
+                f"d2-guided-load-{scenario}", "d2", f"'load-{scenario}'", "guided-save-runtime",
+                work=f"d2-guided-{scenario}",
+            )
+
+    def test_wiggle_controls_and_cold_loads_share_producer_directory(self):
+        for game in ("d1", "d2"):
+            for scenario in ("normal", "no-wiggle"):
+                name = f"{game}-wiggle-{scenario}"
+                self.assert_case(name, game, f"'{scenario}'", "wiggle-save-runtime")
+                self.assert_case(f"{name}-load", game, "'load'", "wiggle-save-runtime", work=name)
+        self.assert_case("d2-wiggle-level-record", "d2", "'level-record'", "wiggle-save-runtime")
+        self.assert_case(
+            "d2-wiggle-level-load", "d2", "'level-load'", "wiggle-save-runtime",
+            work="d2-wiggle-level-record",
+        )
+
+    def test_fusion_optional_timer_matrix_in_both_engines(self):
+        for game in ("d1", "d2"):
+            for scenario in ("idle", "due", "past", "soon", "future", "inactive-charged", "nonfusion"):
+                self.assert_case(f"{game}-fusion-{scenario}", game, f"'{scenario}'", "fusion-save-runtime")
+
+    def test_native_d1_producer_feeds_imported_d1_consumer(self):
+        producer = "d1-translation-record"
+        consumer = "d2-translation-load"
+        self.assert_case(producer, "d1", "'.'", "d1-save-translation-runtime")
+        self.assert_case(
+            consumer, "d2", f"(Join-Path $outputPath '{producer}')", "d1-save-translation-runtime",
+            assets="d1",
+        )
+        self.assertLess(list(self.cases).index(producer), list(self.cases).index(consumer))
+
+    def test_cases_keep_bounded_process_checks_and_distinct_logs(self):
+        self.assertEqual(len(self.entries), len(self.cases), "Each process needs its own log directory")
+        for game, scenario, _ in save.CASES:
+            self.assertIn(f"{game}-{scenario}", self.cases)
+        for required in (
+            "$directory = Join-Path $outputPath $case.Name",
+            "$workingDirectory = if ($case.ContainsKey('WorkDirectory')) { Join-Path $outputPath $case.WorkDirectory } else { $directory }",
+            "Test-Path -LiteralPath $workingDirectory -PathType Container",
+            "$mode = if ($case.ContainsKey('Mode')) { $case.Mode } else { '--public-save-continuation' }",
+            "$traceArgs = @($mode, $case.Assets, $case.Scenario)",
+            "WorkingDirectory = $workingDirectory; PassThru = $true",
+            'RedirectStandardOutput = "$directory/stdout.log"; RedirectStandardError = "$directory/stderr.log"',
+            "$testProcess.WaitForExit($TimeoutSeconds * 1000)",
+            "Stop-Process -Id $testProcess.Id -Force",
+            'Set-Content "$directory/exit.txt" $testProcess.ExitCode',
+            "if ($testProcess.ExitCode -ne 0) { throw",
+        ):
+            self.assertIn(required, self.runner)
+        self.assertLess(self.runner.index("Assert-SharewareTestDataDirectory"), self.runner.index("foreach ($case in $cases)"))
 
 
 class SavePersistenceTests(unittest.TestCase):

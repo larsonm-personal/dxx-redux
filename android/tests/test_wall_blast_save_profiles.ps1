@@ -16,7 +16,7 @@ function Write-Evidence([string]$Edition) {
                 $frames = @($elapsed..32 | ForEach-Object { @{ frame = $_; flags = 1; hps = 0; doorway = 1; objects = 40; rng = 42; draws = 0 } })
                 $imports = @{}
                 $rejections = @{}
-                foreach ($source in @("wall-blast-$elapsed.sav", "opposite-wall-blast-$elapsed.sav")) { $imports[$source] = @(); $rejections[$source] = 126 }
+                foreach ($source in @("wall-blast-$elapsed.sav", "opposite-wall-blast-$elapsed.sav")) { $imports[$source] = @(); $rejections[$source] = 134 }
                 @{
                     elapsed = $elapsed; uninterrupted = $frames; restored = $frames; differences = @(); endian_differences = @()
                     import_differences = $imports; rejected_mutations = $rejections; legacy_cleared = $true
@@ -46,7 +46,8 @@ function Assert-Rejected([string]$Label, [scriptblock]$Change) {
 
 foreach ($edition in @('shareware', 'retail')) {
     Write-Evidence $edition
-    Assert-WallBlastSaveReport -Directory $directory -DataEdition $edition | Out-Null
+    $report = Assert-WallBlastSaveReport -Directory $directory -DataEdition $edition
+    if ($report.rejectedMutations -ne 1340) { throw 'Incomplete native v21 corruption total' }
     Write-Host "PASS: $edition report profile remains supported"
 }
 Assert-Rejected 'wrong edition' { param($rows) $rows[0].selection.edition = 'retail' }
@@ -61,6 +62,7 @@ Assert-Rejected 'opposite-endian divergence' { param($rows) $rows[0].endian_diff
 Assert-Rejected 'missing imported byte order' { param($rows) $rows[0].import_differences.PSObject.Properties.Remove('opposite-wall-blast-0.sav') }
 Assert-Rejected 'native checkpoint divergence' { param($rows) $rows[0].import_differences.'wall-blast-0.sav' = @(@{ op = 'replace'; path = '/0/rng'; value = 99 }) }
 Assert-Rejected 'incomplete corruption checks' { param($rows) $rows[0].rejected_mutations.'wall-blast-0.sav' = 6 }
+Assert-Rejected 'missing native v21 tail checks' { param($rows) $rows[0].rejected_mutations.'wall-blast-0.sav' = 126 }
 Assert-Rejected 'missing corruption byte order' { param($rows) $rows[0].rejected_mutations.PSObject.Properties.Remove('opposite-wall-blast-0.sav') }
 Assert-Rejected 'missing legacy clearing' { param($rows) $rows[0].legacy_cleared = $false }
 Write-Host 'PASS: wall-blast evidence rejects incomplete profiles and weakened persistence oracles'

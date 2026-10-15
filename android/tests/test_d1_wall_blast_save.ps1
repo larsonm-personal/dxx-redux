@@ -80,5 +80,5 @@ foreach ($case in @(@{Name = 'native'; Exe = $nativePath }, @{Name = 'imported';
         $testProcess.Dispose()
     }
 }
-Assert-WallBlastSaveReport -Directory $outputPath -DataEdition $DataEdition | Out-Null
-Write-Output "PASS: native, imported and ordinary D2 wall-blast saves, both byte orders and 1260 atomic corruption checks; $outputPath/report.json"
+$report = Assert-WallBlastSaveReport -Directory $outputPath -DataEdition $DataEdition
+Write-Output "PASS: native, imported and ordinary D2 wall-blast saves, both byte orders and $($report.rejectedMutations) atomic corruption checks; $outputPath/report.json"

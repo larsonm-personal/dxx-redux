@@ -8,6 +8,7 @@ function Assert-WallBlastSaveReport {
     Set-StrictMode -Version Latest
     $failures = @()
     $reports = @{}
+    $rejectedMutations = 0
     foreach ($name in @('native/wall-blast.json', 'imported/wall-blast.json', 'imported/wall-blast-d2.json')) {
         $rows = @(Get-Content -LiteralPath (Join-Path $Directory $name) -Raw | ConvertFrom-Json)
         if (($rows.elapsed -join ',') -cne '0,8,24,25,31') { throw "Incomplete wall-blast cases: $name" }
@@ -51,8 +52,9 @@ function Assert-WallBlastSaveReport {
                 }
                 foreach ($source in $sources) {
                     if ($row.import_differences.$source.Count) { $failures += "$name elapsed=$($row.elapsed) $source import divergence" }
-                    # Ten slots * three 32-bit words, plus six invalid field/late-slot cases
-                    if ($row.rejected_mutations.$source -ne 126) { throw "Incomplete atomic corruption checks: $name $source" }
+                    # Native v21: 120 pool bytes + eight phase/Fusion tail bytes + six invalid field/late-slot cases
+                    if ($row.rejected_mutations.$source -ne 134) { throw "Incomplete atomic corruption checks: $name $source" }
+                    $rejectedMutations += $row.rejected_mutations.$source
                 }
                 if ($row.legacy_cleared -ne $true) { throw "Missing legacy wall-state clearing: $name" }
             }
@@ -68,7 +70,7 @@ function Assert-WallBlastSaveReport {
     }
     $report = [ordered]@{
         dataEdition = $DataEdition; phases = $native.elapsed; failures = $failures
-        nativeImportByteOrders = 2; ordinaryD2Control = $true; rejectedMutations = 1260; legacyClearedPhases = 5
+        nativeImportByteOrders = 2; ordinaryD2Control = $true; rejectedMutations = $rejectedMutations; legacyClearedPhases = 5
     }
     $report | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $Directory 'report.json')
     if ($failures.Count) { throw "Wall-blast persistence failed; see $Directory/report.json" }
