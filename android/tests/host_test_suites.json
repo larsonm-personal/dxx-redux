@@ -1236,6 +1236,33 @@
         "Compile command provenance and all original clean-revision checks retained."
       ],
       "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:public-matcen",
+      "kind": "public-powershell",
+      "profile": "public-matcen",
+      "path": "android/tests/test_public_matcen_stations.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat"
+      ],
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 180,
+      "coverage_scope": "Existing controlled native public matcen production and suppression owner; aggregate receipt, no player-route coverage claim.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": []
     }
   ],
   "owned_elsewhere": [

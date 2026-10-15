@@ -120,3 +120,5 @@ checks remain intact, including its exact clean-HEAD requirement. These visual
 profiles use Xvfb and explicit x11 video; original timeout and assertion defaults
 remain unchanged. Retail pickup modes and secret-area baselines remain excluded
 from their explicitly public profiles.
+
+The `host-profile:public-matcen` owner invokes the existing controlled native station-production wrapper with both fixture executables and explicit verified shareware directories. Its historical master `emulator` category does not describe its actual prerequisites: no ADB or Android device is used. This profile makes no normal-player-route claim.

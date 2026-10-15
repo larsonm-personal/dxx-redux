@@ -230,6 +230,19 @@ def public_profile_arguments(suite, repo, build_root, work):
             "-Output",
             str(work / "save"),
         ]
+    if profile == "public-matcen":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1DataDir",
+            str(repo / "game_data/shareware/d1"),
+            "-D2DataDir",
+            str(repo / "game_data/shareware/d2"),
+            "-Output",
+            str(work / "matcen"),
+        ]
     if profile == "public-pickup":
         return [
             "-DataEdition",

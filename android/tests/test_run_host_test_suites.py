@@ -280,6 +280,23 @@ class PublicProfileTests(unittest.TestCase):
                     self.assertIn("shareware", argv)
                     self.assertIn("pickup", argv)
 
+    def test_public_matcen_is_native_with_explicit_verified_inputs(self):
+        code, receipt, calls = self.run_profile("public-matcen")
+        self.assertEqual(code, 0)
+        self.assertTrue(receipt["attempted_tests"])
+        argv = calls[-1][0]
+        self.assertEqual(argv[0], "pwsh")
+        for game in ("d1", "d2"):
+            flag = "-" + game.upper() + "Exe"
+            self.assertEqual(
+                Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat"
+            )
+            flag = "-" + game.upper() + "DataDir"
+            self.assertTrue(
+                argv[argv.index(flag) + 1].endswith("game_data/shareware/" + game)
+            )
+        self.assertTrue(any("-Download" in command for command, _ in calls))
+
     def test_secret_and_shareware_profiles_cannot_succeed_on_missing_assets(self):
         for profile, required in (
             ("public-secret-baseline", "-RequireAssets"),
