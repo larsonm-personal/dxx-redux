@@ -42,6 +42,10 @@ $toolMediaFreeOwners = @('test_pcm_ring', 'test_touch_layout_format', 'test_dist
 foreach ($name in $toolMediaFreeOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 }
+$generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file_set_content', 'test_soundfont_download_catalog')
+foreach ($name in $generatedJsoncOwners) {
+    $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
+}
 foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test $entry)) { throw "Missing media-free owner: $($entry.Name)" }
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
@@ -77,6 +81,11 @@ foreach ($name in $toolMediaFreeOwners) {
     $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-FutureVariant') }
     $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @() }
 }
+foreach ($name in $generatedJsoncOwners) {
+    $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600', '-FutureVariant') }
+    $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+}
+$deniedMediaFree += @{ Name = 'test_pc_d2_demo_music'; BaseName = 'test_pc_d2_demo_music'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @() }
 foreach ($entry in $deniedMediaFree) {
     if (Test-SuiteMediaIndependentTest -Test $entry) { throw "Overbroad media-free admission: $($entry.Name)" }
     if (-not (Test-SuiteNeedsStandardGameData -Tests @($entry))) { throw 'Non-exempt Android test lost its media requirement' }

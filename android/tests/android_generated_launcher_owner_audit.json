@@ -1,0 +1,1207 @@
+{
+  "schema": 1,
+  "status": "source_review_proposal_only_no_edits_or_execution",
+  "source_commit": "cf0fe171413fdb17542aa447689ca0a20f54461d",
+  "created_utc": "2026-10-15T19:35:07.914273+00:00",
+  "scope": "Exactly three original JSONC owners; 4 original game variants total (d2, d2, d1+d2).",
+  "recommendation": "Add exact-name jsonc/emulator media-independent exemptions and corresponding master android-single policy entries. No selected-owner public corpus provisioner is needed. Preserve every original action and game variant.",
+  "owners": [
+    {
+      "owner": "test_demo_group_file_set_content",
+      "id": "master:test_demo_group_file_set_content",
+      "source_path": "android/game_scripts/test_demo_group_file_set_content.jsonc",
+      "source_sha256": "922e4c7f786a0fe21a1d347e4c3277b4fea098f4efe2564e7ff4ddec62377792",
+      "original_games": [
+        "d2"
+      ],
+      "original_metadata": {
+        "games": [
+          "d2"
+        ],
+        "_standalone": true
+      },
+      "source_unchanged_required": true,
+      "original_actions": [
+        {
+          "action": "enter_launcher"
+        },
+        {
+          "action": "setup_command",
+          "command": "delete_set",
+          "args": {
+            "name": "automation-demo-group"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "setup_command",
+          "command": "create_set",
+          "args": {
+            "name": "automation-demo-group"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "automation-demo-group"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "write_set_files",
+          "files": [
+            {
+              "file": "demos/automation_classic.dem",
+              "content": "classic-demo\n"
+            },
+            {
+              "file": "demos/automation_input.dximdemo",
+              "content": "input-demo\n"
+            },
+            {
+              "file": "demos/automation_input.dximdemo.rngtrace.jsonl",
+              "content": "{}\n"
+            },
+            {
+              "file": "demos/automation_input.dem",
+              "content": "classic-sidecar\n"
+            }
+          ]
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "automation-demo-group"
+          },
+          "post_delay_ms": 750
+        },
+        {
+          "action": "wait_for",
+          "field": "content_entry_count",
+          "value": "2",
+          "timeout_ms": 10000
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "active_set": "automation-demo-group",
+            "content_entries_by_id.d09a92ef2576e7555c480d19.kind": "demo",
+            "content_entries_by_id.d09a92ef2576e7555c480d19.files": [
+              "demos/automation_classic.dem"
+            ],
+            "content_entries_by_id.71e5fc5e34122c947ec74900.kind": "demo",
+            "content_entries_by_id.71e5fc5e34122c947ec74900.files": [
+              "demos/automation_input.dem",
+              "demos/automation_input.dximdemo",
+              "demos/automation_input.dximdemo.rngtrace.jsonl"
+            ]
+          }
+        },
+        {
+          "action": "tap_button",
+          "text": "Show Files",
+          "exact": true,
+          "post_delay_ms": 200
+        },
+        {
+          "action": "tap_button",
+          "text": "Show Files",
+          "exact": true,
+          "post_delay_ms": 200
+        },
+        {
+          "action": "tap_button",
+          "text": "Show Files",
+          "exact": true,
+          "post_delay_ms": 300
+        },
+        {
+          "action": "tap_button",
+          "text": "Show Files",
+          "exact": true,
+          "post_delay_ms": 300
+        },
+        {
+          "action": "assert_button",
+          "text": "Demos"
+        },
+        {
+          "action": "setup_command",
+          "command": "delete_set",
+          "args": {
+            "name": "automation-demo-group"
+          },
+          "post_delay_ms": 500
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "active_set": "default"
+          }
+        }
+      ],
+      "action_kinds_with_counts": {
+        "enter_launcher": 1,
+        "setup_command": 5,
+        "write_set_files": 1,
+        "wait_for": 1,
+        "assert": 2,
+        "tap_button": 4,
+        "assert_button": 1
+      },
+      "all_actions_have_real_launcher_handlers": true,
+      "action_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 226,
+          "text": "\"assert\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 797,
+          "text": "\"assert_button\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 177,
+          "text": "\"enter_launcher\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 261,
+          "text": "\"setup_command\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 736,
+          "text": "\"tap_button\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 204,
+          "text": "\"wait_for\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 323,
+          "text": "\"write_set_files\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        }
+      ],
+      "setup_command_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1218,
+          "text": "\"create_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1263,
+          "text": "\"delete_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1232,
+          "text": "\"switch_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        }
+      ],
+      "proposed_policy_entry": {
+        "id": "master:test_demo_group_file_set_content",
+        "owner": "master",
+        "lane": "android-single",
+        "args": {
+          "suite": "test_demo_group_file_set_content"
+        },
+        "estimated_seconds": 180
+      },
+      "estimate_note": "Conservative planning estimate, not measured runtime. Retain runner-computed child timeout.",
+      "helper_exemption": {
+        "function": "Test-SuiteMediaIndependentTest",
+        "exact_name": "test_demo_group_file_set_content",
+        "base_name": "test_demo_group_file_set_content",
+        "type": "jsonc",
+        "requires": "emulator",
+        "permitted_arguments": "Existing no-argument or exact computed -TimeoutSeconds <1..86400> rule only; no new arbitrary arguments"
+      },
+      "master_command": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "android/run_all_tests.ps1",
+        "-Filter",
+        "test_demo_group_file_set_content",
+        "-FullSuite"
+      ],
+      "variant_preservation": "No -Game override; existing metadata determines all original runs. No -DataEdition or -Params override.",
+      "needs_selected_owner_public_fixture_provisioning": false,
+      "needs_guest_network": false,
+      "fixture_package_downloads": [],
+      "transitive_native_requirement": "Launcher introspection calls MidiPreviewBridge, CdPreviewBridge and MidiEnumerationBridge, which load dxx-redux-d2. Use the existing full ABI-compatible debug APK; this is not host-only/JVM-only coverage.",
+      "storage_and_permissions": "Run only in dedicated disposable emulator app storage. Named set mutations delete fixture payloads; no SAF picker, external storage grant, or new persistent permission is requested.",
+      "preserve_assertions": "Use exact original JSONC source and all actions/assertions; no pruning, mocked callbacks, or capability-only substitution.",
+      "generated_payloads": [
+        {
+          "file": "demos/automation_classic.dem",
+          "content": "classic-demo\n",
+          "sha256_of_utf8_content": "cd442e1c8059e4a097d74fe4ae85765fcb647b7bc923745d85483520db6a3153"
+        },
+        {
+          "file": "demos/automation_input.dximdemo",
+          "content": "input-demo\n",
+          "sha256_of_utf8_content": "cd295109e96b75543f0405a6d4b7f4eca88e838f8dc7bb9958dabc0c46764018"
+        },
+        {
+          "file": "demos/automation_input.dximdemo.rngtrace.jsonl",
+          "content": "{}\n",
+          "sha256_of_utf8_content": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        },
+        {
+          "file": "demos/automation_input.dem",
+          "content": "classic-sidecar\n",
+          "sha256_of_utf8_content": "a8bfbaee92ae57e2e54920f71fc4e952cd0c0c5a50ba94bd1ddbc8a5e37f272e"
+        }
+      ],
+      "fixture_sets": [
+        "automation-demo-group"
+      ],
+      "transitive_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 93,
+          "text": "fun createSet(",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 71,
+          "text": "fun setActive(name: String) {",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 122,
+          "text": "fun deleteSet(",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 193,
+          "text": "fun writeActiveSetPath() {",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 185,
+          "text": "fun writeSourceFiles(files: List<Pair<String, String>>) =",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 53,
+          "text": "fun reconcile(): FileSetContentReconcileResult =",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 88,
+          "text": "fun scan(setDir: File): List<FileSetContentEntry> {",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 139,
+          "text": "for (demo in managedFiles.filter { it.name.endsWith(InputDemoManager.INPUT_DEMO_EXTENSION, true) }) {",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 214,
+          "text": "private fun parseDescriptor(file: File): GameFileFormats.MissionDescriptor? =",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        }
+      ],
+      "why_no_media": "Every payload is explicit UTF-8 content in write_set_files. Catalog groups by filename/descriptor/sidecar relationship, then manages local state and projections; no engine launch, private game archive, or playable demo decoding is required."
+    },
+    {
+      "owner": "test_unified_file_set_content",
+      "id": "master:test_unified_file_set_content",
+      "source_path": "android/game_scripts/test_unified_file_set_content.jsonc",
+      "source_sha256": "9b269d3465bc3ccf7b1c641c8a35e3bdc8bea9306f391b194293d82a156e4f8b",
+      "original_games": [
+        "d2"
+      ],
+      "original_metadata": {
+        "games": [
+          "d2"
+        ],
+        "_standalone": true
+      },
+      "source_unchanged_required": true,
+      "original_actions": [
+        {
+          "action": "enter_launcher"
+        },
+        {
+          "action": "setup_command",
+          "command": "delete_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "setup_command",
+          "command": "create_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "write_set_files",
+          "files": [
+            {
+              "file": "panic.mn2",
+              "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"
+            },
+            {
+              "file": "panic.hog",
+              "content": "automation-test-payload\n"
+            }
+          ]
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 750
+        },
+        {
+          "action": "wait_for",
+          "field": "content_entries[0].managed",
+          "value": "true",
+          "timeout_ms": 10000
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "active_set": "automation-unified-content",
+            "content_entry_count": "1",
+            "content_entries[0].id": "1b46f9d7a5eaf6db07e963a6",
+            "content_entries[0].kind": "loose_mission",
+            "content_entries[0].enabled": "true",
+            "content_entries[0].managed": "true",
+            "content_entries[0].files[0]": "missions/panic.hog",
+            "content_entries[0].files[1]": "missions/panic.mn2"
+          }
+        },
+        {
+          "action": "setup_command",
+          "command": "set_content_enabled",
+          "args": {
+            "id": "1b46f9d7a5eaf6db07e963a6",
+            "enabled": false
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "content_entries[0].enabled": "false"
+          }
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "default"
+          },
+          "post_delay_ms": 250
+        },
+        {
+          "action": "setup_command",
+          "command": "switch_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 500
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "content_entries[0].enabled": "false"
+          }
+        },
+        {
+          "action": "setup_command",
+          "command": "delete_content",
+          "args": {
+            "id": "1b46f9d7a5eaf6db07e963a6"
+          },
+          "post_delay_ms": 500
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "content_entry_count": "0"
+          }
+        },
+        {
+          "action": "setup_command",
+          "command": "delete_set",
+          "args": {
+            "name": "automation-unified-content"
+          },
+          "post_delay_ms": 500
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "active_set": "default"
+          }
+        }
+      ],
+      "action_kinds_with_counts": {
+        "enter_launcher": 1,
+        "setup_command": 9,
+        "write_set_files": 1,
+        "wait_for": 1,
+        "assert": 5
+      },
+      "all_actions_have_real_launcher_handlers": true,
+      "action_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 226,
+          "text": "\"assert\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 177,
+          "text": "\"enter_launcher\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 261,
+          "text": "\"setup_command\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 204,
+          "text": "\"wait_for\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 323,
+          "text": "\"write_set_files\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        }
+      ],
+      "setup_command_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1218,
+          "text": "\"create_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1286,
+          "text": "\"delete_content\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1263,
+          "text": "\"delete_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1274,
+          "text": "\"set_content_enabled\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1232,
+          "text": "\"switch_set\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        }
+      ],
+      "proposed_policy_entry": {
+        "id": "master:test_unified_file_set_content",
+        "owner": "master",
+        "lane": "android-single",
+        "args": {
+          "suite": "test_unified_file_set_content"
+        },
+        "estimated_seconds": 180
+      },
+      "estimate_note": "Conservative planning estimate, not measured runtime. Retain runner-computed child timeout.",
+      "helper_exemption": {
+        "function": "Test-SuiteMediaIndependentTest",
+        "exact_name": "test_unified_file_set_content",
+        "base_name": "test_unified_file_set_content",
+        "type": "jsonc",
+        "requires": "emulator",
+        "permitted_arguments": "Existing no-argument or exact computed -TimeoutSeconds <1..86400> rule only; no new arbitrary arguments"
+      },
+      "master_command": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "android/run_all_tests.ps1",
+        "-Filter",
+        "test_unified_file_set_content",
+        "-FullSuite"
+      ],
+      "variant_preservation": "No -Game override; existing metadata determines all original runs. No -DataEdition or -Params override.",
+      "needs_selected_owner_public_fixture_provisioning": false,
+      "needs_guest_network": false,
+      "fixture_package_downloads": [],
+      "transitive_native_requirement": "Launcher introspection calls MidiPreviewBridge, CdPreviewBridge and MidiEnumerationBridge, which load dxx-redux-d2. Use the existing full ABI-compatible debug APK; this is not host-only/JVM-only coverage.",
+      "storage_and_permissions": "Run only in dedicated disposable emulator app storage. Named set mutations delete fixture payloads; no SAF picker, external storage grant, or new persistent permission is requested.",
+      "preserve_assertions": "Use exact original JSONC source and all actions/assertions; no pruning, mocked callbacks, or capability-only substitution.",
+      "generated_payloads": [
+        {
+          "file": "panic.mn2",
+          "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n",
+          "sha256_of_utf8_content": "d1c2411daacdba45a3dc121d0b74cda7c436699a3d453e842b3812077884390a"
+        },
+        {
+          "file": "panic.hog",
+          "content": "automation-test-payload\n",
+          "sha256_of_utf8_content": "c81526974e75bfdbf86a3cf297950af8bb2a6a80eb3422d0cc18254eb6e66f35"
+        }
+      ],
+      "fixture_sets": [
+        "automation-unified-content",
+        "default"
+      ],
+      "transitive_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 93,
+          "text": "fun createSet(",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 71,
+          "text": "fun setActive(name: String) {",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 122,
+          "text": "fun deleteSet(",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetManager.kt",
+          "line": 193,
+          "text": "fun writeActiveSetPath() {",
+          "source_sha256": "d9f91be0cc5b0686096e68a9fd378396c09876db6316b4d8ee3e01f003fffecf"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 185,
+          "text": "fun writeSourceFiles(files: List<Pair<String, String>>) =",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 53,
+          "text": "fun reconcile(): FileSetContentReconcileResult =",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 88,
+          "text": "fun scan(setDir: File): List<FileSetContentEntry> {",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 139,
+          "text": "for (demo in managedFiles.filter { it.name.endsWith(InputDemoManager.INPUT_DEMO_EXTENSION, true) }) {",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentCatalog.kt",
+          "line": 214,
+          "text": "private fun parseDescriptor(file: File): GameFileFormats.MissionDescriptor? =",
+          "source_sha256": "f15702e67952ae1383d422ea0835091960fd5ab65dfa2c0a6d92919ead41702b"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 194,
+          "text": "fun setEnabled(",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 234,
+          "text": "fun deleteEntry(id: String): Boolean =",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/FileSetContentManager.kt",
+          "line": 245,
+          "text": "for (game in listOf(GameFileFormats.GAME_D1, GameFileFormats.GAME_D2)) buildProjection(game)",
+          "source_sha256": "7ee1d805100379725541308381c598314f7290107034b19ecde85d39bd4db1d1"
+        }
+      ],
+      "why_no_media": "Every payload is explicit UTF-8 content in write_set_files. Catalog groups by filename/descriptor/sidecar relationship, then manages local state and projections; no engine launch, private game archive, or playable demo decoding is required."
+    },
+    {
+      "owner": "test_soundfont_download_catalog",
+      "id": "master:test_soundfont_download_catalog",
+      "source_path": "android/game_scripts/test_soundfont_download_catalog.jsonc",
+      "source_sha256": "1b2f084d68f0d46b7173c69e6d0ade55e5a6609b7e99e1ba39a7fd07d7218f2a",
+      "original_games": [
+        "d1",
+        "d2"
+      ],
+      "original_metadata": {
+        "games": [
+          "d1",
+          "d2"
+        ]
+      },
+      "source_unchanged_required": true,
+      "original_actions": [
+        {
+          "action": "enter_launcher"
+        },
+        {
+          "action": "setup_command",
+          "command": "music_preferences_reset",
+          "args": {
+            "preset": "DEFAULTS"
+          }
+        },
+        {
+          "action": "wait_for",
+          "field": "soundfont.renderer",
+          "value": "sf2",
+          "timeout_ms": 10000
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "soundfont.selected": "",
+            "soundfont.renderer": "sf2"
+          }
+        },
+        {
+          "action": "tap_button",
+          "text": "Settings",
+          "exact": true,
+          "post_delay_ms": 500
+        },
+        {
+          "action": "tap_button",
+          "text": "MIDI",
+          "exact": true,
+          "post_delay_ms": 500
+        },
+        {
+          "action": "assert_button",
+          "text": "Download soundfonts",
+          "enabled": true,
+          "timeout_ms": 10000
+        },
+        {
+          "action": "assert_button",
+          "text": "Import SF2 soundfont",
+          "enabled": true,
+          "timeout_ms": 10000
+        },
+        {
+          "action": "assert_button",
+          "text": "choose soundfont",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Manage soundfonts"
+        },
+        {
+          "action": "tap_button",
+          "text": "Included with app - Info"
+        },
+        {
+          "action": "assert_button",
+          "text": "https://github.com/nitro-shoe/sc-55-soundfont",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Close",
+          "exact": true
+        },
+        {
+          "action": "assert_button",
+          "text": "nitro-shoe SC-55-style 1.34 (bundled)",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Close",
+          "exact": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Download soundfonts"
+        },
+        {
+          "action": "tap_button",
+          "text": "Included with app - Info"
+        },
+        {
+          "action": "assert_button",
+          "text": "https://github.com/nitro-shoe/sc-55-soundfont",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Close",
+          "exact": true
+        },
+        {
+          "action": "tap_button",
+          "text": "GeneralUser GS 2.0.3"
+        },
+        {
+          "action": "assert_button",
+          "text": "https://github.com/mrbumpy409/GeneralUser-GS",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Cancel",
+          "exact": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Download soundfonts"
+        },
+        {
+          "action": "tap_button",
+          "text": "TimGM6mb"
+        },
+        {
+          "action": "assert_button",
+          "text": "https://github.com/arbruijn/TimGM6mb",
+          "enabled": true
+        },
+        {
+          "action": "tap_button",
+          "text": "Cancel",
+          "exact": true
+        },
+        {
+          "action": "assert",
+          "expect": {
+            "soundfont.selected": "",
+            "soundfont.renderer": "sf2"
+          }
+        },
+        {
+          "action": "tap_button",
+          "text": "< Back",
+          "post_delay_ms": 250
+        },
+        {
+          "action": "log",
+          "message": "Soundfont download catalog checks passed"
+        }
+      ],
+      "action_kinds_with_counts": {
+        "enter_launcher": 1,
+        "setup_command": 1,
+        "wait_for": 1,
+        "assert": 2,
+        "tap_button": 15,
+        "assert_button": 8,
+        "log": 1
+      },
+      "all_actions_have_real_launcher_handlers": true,
+      "action_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 226,
+          "text": "\"assert\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 797,
+          "text": "\"assert_button\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 177,
+          "text": "\"enter_launcher\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 191,
+          "text": "\"log\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 261,
+          "text": "\"setup_command\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 736,
+          "text": "\"tap_button\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+          "line": 204,
+          "text": "\"wait_for\" -> {",
+          "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+        }
+      ],
+      "setup_command_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+          "line": 1540,
+          "text": "\"music_preferences_reset\" -> {",
+          "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+        }
+      ],
+      "proposed_policy_entry": {
+        "id": "master:test_soundfont_download_catalog",
+        "owner": "master",
+        "lane": "android-single",
+        "args": {
+          "suite": "test_soundfont_download_catalog"
+        },
+        "estimated_seconds": 180
+      },
+      "estimate_note": "Conservative planning estimate, not measured runtime. Retain runner-computed child timeout.",
+      "helper_exemption": {
+        "function": "Test-SuiteMediaIndependentTest",
+        "exact_name": "test_soundfont_download_catalog",
+        "base_name": "test_soundfont_download_catalog",
+        "type": "jsonc",
+        "requires": "emulator",
+        "permitted_arguments": "Existing no-argument or exact computed -TimeoutSeconds <1..86400> rule only; no new arbitrary arguments"
+      },
+      "master_command": [
+        "pwsh",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "android/run_all_tests.ps1",
+        "-Filter",
+        "test_soundfont_download_catalog",
+        "-FullSuite"
+      ],
+      "variant_preservation": "No -Game override; existing metadata determines all original runs. No -DataEdition or -Params override.",
+      "needs_selected_owner_public_fixture_provisioning": false,
+      "needs_guest_network": false,
+      "fixture_package_downloads": [],
+      "transitive_native_requirement": "Launcher introspection calls MidiPreviewBridge, CdPreviewBridge and MidiEnumerationBridge, which load dxx-redux-d2. Use the existing full ABI-compatible debug APK; this is not host-only/JVM-only coverage.",
+      "storage_and_permissions": "Run only in dedicated disposable emulator app storage. Named set mutations delete fixture payloads; no SAF picker, external storage grant, or new persistent permission is requested.",
+      "preserve_assertions": "Use exact original JSONC source and all actions/assertions; no pruning, mocked callbacks, or capability-only substitution.",
+      "why_no_media": "Catalog entries and licenses come from APK assets/Kotlin. Script asserts link buttons but never taps URLs; opens GeneralUser/TimGM dialogs then taps Cancel. No confirmed Download button or Import SF2 picker is invoked.",
+      "fixture_sets": [],
+      "bundled_asset_requirement": {
+        "file": "android/app/src/main/assets/gm.sf2",
+        "sha256": "2f68d824f456e3367fe24105d590ee77b7e28faa9f622723b478fa90647d8a1a",
+        "version": "1.34",
+        "url": "https://github.com/nitro-shoe/sc-55-soundfont/releases/download/v1.34/Roland.SC-55.sf2",
+        "licenses": [
+          "android/app/src/main/assets/licenses/nitro-shoe-sc55.txt",
+          "android/app/src/main/assets/licenses/TimGM6mb.txt"
+        ],
+        "scope": "Existing APK build prerequisite; no runtime fixture download. A missing asset invokes the existing host Gradle downloadSoundfont task and needs that existing network authorization or a verified cache."
+      },
+      "transitive_handler_evidence": [
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/MidiPreviewBridge.kt",
+          "line": 128,
+          "text": "internal fun resetPreferences(",
+          "source_sha256": "93b8426c76c9594f615e6eae12170e9e187ca03f55766b0d5aa34bbe7035273c"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontStore.kt",
+          "line": 237,
+          "text": "check(activate(\"\", DEFAULT_RENDERER == \"ymfm\")) { \"Could not load default MIDI profile\" }",
+          "source_sha256": "ac2aaecd4df5eaea702674a35c1ba0a19f2da8d4e82a19603aefa2bc1eea89e1"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontSelector.kt",
+          "line": 34,
+          "text": "val downloads = remember(context) { SoundfontCatalog.entries(context) }",
+          "source_sha256": "a43e2c7df5f56b9bccc7eed43dc58966233ca09560ef2ae6d9ce75727684ba17"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontSelector.kt",
+          "line": 463,
+          "text": "pendingDownload = entry",
+          "source_sha256": "a43e2c7df5f56b9bccc7eed43dc58966233ca09560ef2ae6d9ce75727684ba17"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontSelector.kt",
+          "line": 499,
+          "text": "TextButton(onClick = { pendingDownload = null }, modifier = Modifier.tvFocusBorder()) { Text(\"Cancel\") }",
+          "source_sha256": "a43e2c7df5f56b9bccc7eed43dc58966233ca09560ef2ae6d9ce75727684ba17"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt",
+          "line": 9,
+          "text": "fun bundled(context: Context): SoundfontStore.Font =",
+          "source_sha256": "891e8a5eac7940a6986998a426928932ce575285436fa3e99e1ec4b0ae35ef3c"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt",
+          "line": 90,
+          "text": "fun entries(context: Context): List<SoundfontDownload> =",
+          "source_sha256": "891e8a5eac7940a6986998a426928932ce575285436fa3e99e1ec4b0ae35ef3c"
+        },
+        {
+          "path": "android/app/src/main/java/com/dxxredux/app/SoundfontCatalog.kt",
+          "line": 114,
+          "text": "name = \"GeneralUser GS 2.0.3 beta\",",
+          "source_sha256": "891e8a5eac7940a6986998a426928932ce575285436fa3e99e1ec4b0ae35ef3c"
+        },
+        {
+          "path": "android/app/src/main/cpp/shared/music_soundfont.c",
+          "line": 152,
+          "text": "AAsset *asset = assets ? AAssetManager_open(assets, \"gm.sf2\", AASSET_MODE_BUFFER) : NULL;",
+          "source_sha256": "ac8fc41c98df54c1d77d762d2daa5aa8efe073b87a32ac3fbe714e426cef13e6"
+        },
+        {
+          "path": "android/app/build.gradle",
+          "line": 179,
+          "text": "tasks.register('downloadSoundfont') {",
+          "source_sha256": "464a551f3851e1507beee42ef09348fcb4d529e0f735cc5901ef9fc22a8801f3"
+        },
+        {
+          "path": "android/app/build.gradle",
+          "line": 262,
+          "text": "task.dependsOn('downloadSoundfont')",
+          "source_sha256": "464a551f3851e1507beee42ef09348fcb4d529e0f735cc5901ef9fc22a8801f3"
+        },
+        {
+          "path": "android/get_deps/tool_versions.conf",
+          "line": 78,
+          "text": "TINYSOUNDFONT_SHA256=76c356df524f71f2a34f67fa0cb2cb946036fe7a65d2930a849569c5e742fa57",
+          "source_sha256": "c8f16490604b4106f1378d24e0024a31fffd1f872034536ff51fd6c284107b58"
+        }
+      ],
+      "selector_note": "Existing GeneralUser text is a substring selector (no exact=true), so current \"GeneralUser GS 2.0.3 beta\" label remains covered without modifying the script."
+    }
+  ],
+  "common_evidence": [
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+      "line": 887,
+      "text": "private suspend fun sendOrderedBroadcastAndWait(intent: Intent) {",
+      "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+      "line": 991,
+      "text": "private suspend fun runSetupAssertions(expect: JSONObject): String? {",
+      "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/LauncherScriptExecutor.kt",
+      "line": 967,
+      "text": "private suspend fun checkSetupCondition(",
+      "source_sha256": "4e979fa7952a2c9a015caac0d109cb7e6bf6d7f43af33840e8127dd7f42cfc91"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+      "line": 911,
+      "text": "private fun runIo(block: () -> Unit) {",
+      "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+      "line": 922,
+      "text": "pendingResult.resultCode = SETUP_COMMAND_RESULT_FAILED",
+      "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt",
+      "line": 1073,
+      "text": "root.put(\"content_entries\", JSONArray(contentEntries))",
+      "source_sha256": "88c9b71ff6a4608a5f59abb6497bb2d3a53e425fa12840ddb002dca9690983dd"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt",
+      "line": 1076,
+      "text": "root.put(\"content_entries_by_id\", contentEntriesById)",
+      "source_sha256": "88c9b71ff6a4608a5f59abb6497bb2d3a53e425fa12840ddb002dca9690983dd"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/SetupAutomationApi.kt",
+      "line": 1240,
+      "text": "val soundfont = SoundfontStore(this).read()",
+      "source_sha256": "88c9b71ff6a4608a5f59abb6497bb2d3a53e425fa12840ddb002dca9690983dd"
+    },
+    {
+      "path": "android/helpers/run_test.ps1",
+      "line": 116,
+      "text": "$mediaIndependentLauncher = $scriptPath -ceq $mediaIndependentPath -and $Params.Count -eq 0 -and",
+      "source_sha256": "8fcf3fddf4619023454e7c44fddb223630e245d5acd8ebbecdda21ad4da48aaa"
+    },
+    {
+      "path": "android/helpers/run_test.ps1",
+      "line": 353,
+      "text": "} elseif (-not $mediaIndependentLauncher -and -not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {",
+      "source_sha256": "8fcf3fddf4619023454e7c44fddb223630e245d5acd8ebbecdda21ad4da48aaa"
+    },
+    {
+      "path": "android/run_all_tests.ps1",
+      "line": 2014,
+      "text": "if (-not (Test-SuiteMediaIndependentTest -Test $Test) -and -not (Ensure-StandardGameDataOnDevice -Serial $script:singleTestSerial)) {",
+      "source_sha256": "38221d12da62a71363dfeb05f614622dc5ba1a6c4482f1154d1796da619c1e94"
+    },
+    {
+      "path": "android/run_all_tests.ps1",
+      "line": 786,
+      "text": "Arguments = @(\"-TimeoutSeconds\", $childTimeoutSeconds.ToString())",
+      "source_sha256": "38221d12da62a71363dfeb05f614622dc5ba1a6c4482f1154d1796da619c1e94"
+    },
+    {
+      "path": "android/helpers/nightly_public_fixture_policy.ps1",
+      "line": 45,
+      "text": "'jsonc:emulator' {",
+      "source_sha256": "bc79d491f49ff51b29c86da535db0ffd0a51c0da5193c20c2480a0277f9e639a"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/ImportLocationManager.kt",
+      "line": 89,
+      "text": "private val defaultDir get() = File(filesDir, DEFAULT_DIR_NAME)",
+      "source_sha256": "f51501f83df8f3ce7d02416a9f06df3e84f3a5bcddc5755077ac6beef1a12f74"
+    }
+  ],
+  "common_packaging_evidence": [
+    {
+      "path": "android/app/build.gradle",
+      "line": 453,
+      "text": "targets 'dxx-redux-d1', 'dxx-redux-d2', 'dxx_graphics_safety'",
+      "source_sha256": "464a551f3851e1507beee42ef09348fcb4d529e0f735cc5901ef9fc22a8801f3"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/MidiPreviewBridge.kt",
+      "line": 23,
+      "text": "System.loadLibrary(\"dxx-redux-d2\")",
+      "source_sha256": "93b8426c76c9594f615e6eae12170e9e187ca03f55766b0d5aa34bbe7035273c"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/MidiEnumerationBridge.kt",
+      "line": 15,
+      "text": "System.loadLibrary(\"dxx-redux-d2\")",
+      "source_sha256": "5435f88f79676496736a6f82ec53b8b454203c9b7f3312b0503956015607ab73"
+    },
+    {
+      "path": "android/app/src/main/java/com/dxxredux/app/CdPreviewBridge.kt",
+      "line": 25,
+      "text": "System.loadLibrary(\"dxx-redux-d2\")",
+      "source_sha256": "72250e4872c98095909a3a43d320a9c8b57075706e2abb1b8a56c0cdd219d4ae"
+    },
+    {
+      "path": ".github/workflows/android-nightly-tooling.yml",
+      "line": 216,
+      "text": "bash android/gradlew -p android assembleDebug assembleDebugAndroidTest \\",
+      "source_sha256": "7d5c253acd94e2f2080555bc856b23d5263eca38d1cba910898bb4c6b06168be"
+    }
+  ],
+  "expected_changes_after_gate": [
+    "Add exactly these three names to nightly_public_fixture_policy.ps1 jsonc:emulator allowlist. Preserve Name==BaseName, Type, Requires and argument guards.",
+    "Add exactly three master/android-single policy entries, args suite only; do not change games or JSONC contents.",
+    "Extend test_run_all_tests_catalog.ps1 positive dictionary/object tests for each owner with empty arguments and computed timeout, and negative wrong-Type/wrong-Requires/extra-flag/alias tests.",
+    "Run existing source-policy tests and then actual owners on repaired disposable hosted emulator, reporting pass/fail/blocked honestly. Runtime evidence is still outstanding."
+  ],
+  "permission_and_network_conditions": [
+    "This source-only proposal grants no execution, download, new OS/app permission, or persistent access. Parent applies current user authorization and gate review before changes/runs.",
+    "No guest network or new Android runtime permissions are required by these three original scripts. They do not follow source-site links or accept soundfont downloads.",
+    "Existing normal APK build can fetch pinned gm.sf2 plus ordinary build dependencies on the host if absent. Reuse verified caches or ensure approved host network access; do not silently broaden egress to satisfy a failed build.",
+    "Require disposable emulator with app-private import root and fixture-owned named sets; do not run destructive fixture cleanup against user production app data."
+  ],
+  "deferred_owner": {
+    "name": "test_pc_d2_demo_music",
+    "status": "deferred_no_assertion_changes",
+    "concrete_conditions": [
+      "Live guest HTTPS download is intrinsic to the unchanged scenario; host shareware setup would not replace that step. Require explicit allowed egress for verified GitHub release and redirects, or a separately reviewed exact response fixture that preserves the download/import path.",
+      "DEMO_DOWNLOADS points to d2demo10.zip and DemoInstallerPackages declares SHA-256 f8d005670fe5cd17e07ca9bf4022f1045aed436639c37f1e83dd647e14fcec1f, but setupDownloadFile + installDemoArchive currently check HTTP/copy, required filenames, extraction bounds and output hashes without comparing downloaded archive hash to that declared identity. Add a verified in-app archive-identity gate/fixture before admission; do not weaken music assertions."
+    ],
+    "evidence": [
+      {
+        "path": "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt",
+        "line": 5275,
+        "text": "url = demo.url,",
+        "source_sha256": "906102b7c9817488b42275d9dca99a1aa1d6a3f6fd2bb39917a482e522d50a04"
+      },
+      {
+        "path": "android/app/src/main/java/com/dxxredux/app/SetupDialogs.kt",
+        "line": 255,
+        "text": "internal suspend fun setupDownloadFile(",
+        "source_sha256": "9926c51cf540bf50f096c2611f763f19d400fa185ae02fd7cd081c1570a43a29"
+      },
+      {
+        "path": "android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt",
+        "line": 789,
+        "text": "internal suspend fun installDemoArchive(",
+        "source_sha256": "d1c40fbd7e783af98203407dba7372ce904069300e1665bbc8bfdf4ce9ca7e44"
+      },
+      {
+        "path": "android/app/src/main/java/com/dxxredux/app/SetupFileImport.kt",
+        "line": 229,
+        "text": "val demoPackage = archiveName?.let { DemoInstallerPackages.matchByName(it) }",
+        "source_sha256": "d1c40fbd7e783af98203407dba7372ce904069300e1665bbc8bfdf4ce9ca7e44"
+      },
+      {
+        "path": "android/app/src/main/java/com/dxxredux/app/DemoInstallerPackages.kt",
+        "line": 73,
+        "text": "sha256 = \"f8d005670fe5cd17e07ca9bf4022f1045aed436639c37f1e83dd647e14fcec1f\",",
+        "source_sha256": "58eba87e6a3fc6a600de8b4ac7cfc8c80e03f7e8ec08f90fb7fa79cde09338e0"
+      }
+    ]
+  }
+}

@@ -45,7 +45,10 @@ function Test-SuiteMediaIndependentTest {
         'jsonc:emulator' {
             @('test_compute_faster_dialog', 'test_debug_log_refresh_button',
                 'test_controller_raw_inputs', 'test_controller_trigger_axis_priority',
-                'test_launcher_media_controls')
+                'test_launcher_media_controls',
+                'test_demo_group_file_set_content',
+                'test_unified_file_set_content',
+                'test_soundfont_download_catalog')
         }
         default { @() }
     }

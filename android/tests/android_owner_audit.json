@@ -14,7 +14,7 @@
   ],
   "disposition_counts": {
     "admitted-default": 7,
-    "concrete_porting_gap": 2,
+    "concrete_porting_gap": 3,
     "exact-local-media": 21,
     "explicit-retail-gameplay": 2,
     "explicit-standard-media": 3,
@@ -34,7 +34,6 @@
     "profile-network-gap": 1,
     "profile-porting-gap": 1,
     "profile-private-fixture-gap": 1,
-    "provisionable_public": 4,
     "public-host-profile-gap": 1,
     "public-package-provisioning": 1,
     "public-profile-porting-gap": 3,
@@ -46,6 +45,7 @@
     "retail-network-gameplay": 7,
     "retail-network-permission": 1,
     "runnable_admitted": 30,
+    "source-approved-generated-launcher": 3,
     "source-approved-media-free": 8,
     "unavailable-public-originals": 1
   },
@@ -5268,9 +5268,9 @@
       "games": [
         "d2"
       ],
-      "disposition": "provisionable_public",
+      "disposition": "source-approved-generated-launcher",
       "reason": "All four demo/sidecar payloads are generated inline by write_set_files; only launcher grouping/reconciliation is exercised.",
-      "next_action": "Add this exact owner to Test-SuiteMediaIndependentTest and nightly policy, then validate direct runner execution without a retail set; current master path still restores standard retail prerequisites.",
+      "next_action": "Run original complete game variants through admitted master profile; see android_generated_launcher_owner_audit.json.",
       "runner_default_data_edition": "retail",
       "master_default_requires_standard_data": true,
       "admitted_policy_entries": [],
@@ -5308,7 +5308,8 @@
         }
       ],
       "parameter_variants": [],
-      "effective_public_dependency_profiles": []
+      "effective_public_dependency_profiles": [],
+      "admission_status": "Exact default-only gate source-reviewed; runtime qualification pending"
     },
     {
       "name": "test_demo_import",
@@ -5772,7 +5773,7 @@
       "path": "android/tests/test_emulator_recovery.ps1",
       "declared_infrastructure": "two_emulators",
       "disposition": "source-approved-media-free",
-      "reason": "Two isolated AVDs, restarts selected emulator while checking guard boot ID/temporary marker and rejecting unscoped cleanup. No game media, but destructive lifecycle test must remain isolated. Independently source-reviewed as media-independent; narrow policy admission and actual hosted execution are tracked separately.",
+      "reason": "Two isolated AVDs, restarts selected emulator while checking guard boot ID/temporary marker and rejecting unscoped cleanup. No game media, but destructive lifecycle test must remain isolated. Independently source-reviewed as media-independent; narrow policy admission and actual hosted execution are tracked separately. Timing gap: unchanged outer120-second owner timeout is not source-proven sufficient; helper may wait90 seconds for ADB plus120 seconds for boot and renderer fallback. Scheduling estimate alone does not extend timeout.",
       "source_evidence": [],
       "child_scripts": [],
       "referenced_runners": [
@@ -15795,9 +15796,9 @@
       "games": [
         "d2"
       ],
-      "disposition": "provisionable_public",
-      "reason": "Fresh pc-demo-music set downloads the pinned public PC D2 archive through SetupGameFiles, then verifies generated audio sample state on launch/relaunch.",
-      "next_action": "Add this exact owner to Test-SuiteMediaIndependentTest and nightly policy, then validate direct runner execution without a retail set; current master path still restores standard retail prerequisites.",
+      "disposition": "concrete_porting_gap",
+      "reason": "Unchanged owner performs a live guest GitHub download. setupDownloadFile/installDemoArchive does not enforce the declared original archive SHA-256 before import. Needs a verified in-app archive identity gate/response fixture and guest egress; preserve full music assertions.",
+      "next_action": "Resolve live archive identity validation/provisioning explicitly before admission; no broad download search or assertion substitution.",
       "runner_default_data_edition": "retail",
       "master_default_requires_standard_data": true,
       "admitted_policy_entries": [],
@@ -17502,9 +17503,9 @@
         "d1",
         "d2"
       ],
-      "disposition": "provisionable_public",
+      "disposition": "source-approved-generated-launcher",
       "reason": "The app-bundled SoundfontCatalog defines the entries and license dialogs; this script cancels both download confirmations, so it needs no downloaded SF2 or retail game.",
-      "next_action": "Add this exact owner to Test-SuiteMediaIndependentTest and nightly policy, then validate direct runner execution without a retail set; current master path still restores standard retail prerequisites.",
+      "next_action": "Run original complete game variants through admitted master profile; see android_generated_launcher_owner_audit.json.",
       "runner_default_data_edition": "retail",
       "master_default_requires_standard_data": true,
       "admitted_policy_entries": [],
@@ -17542,7 +17543,8 @@
         }
       ],
       "parameter_variants": [],
-      "effective_public_dependency_profiles": []
+      "effective_public_dependency_profiles": [],
+      "admission_status": "Exact default-only gate source-reviewed; runtime qualification pending"
     },
     {
       "name": "test_startup_restore_failure",
@@ -18232,9 +18234,9 @@
       "games": [
         "d2"
       ],
-      "disposition": "provisionable_public",
+      "disposition": "source-approved-generated-launcher",
       "reason": "Inline panic.mn2 and placeholder panic.hog are used for launcher ownership/toggle/delete checks; no engine launch occurs.",
-      "next_action": "Add this exact owner to Test-SuiteMediaIndependentTest and nightly policy, then validate direct runner execution without a retail set; current master path still restores standard retail prerequisites.",
+      "next_action": "Run original complete game variants through admitted master profile; see android_generated_launcher_owner_audit.json.",
       "runner_default_data_edition": "retail",
       "master_default_requires_standard_data": true,
       "admitted_policy_entries": [],
@@ -18272,7 +18274,8 @@
         }
       ],
       "parameter_variants": [],
-      "effective_public_dependency_profiles": []
+      "effective_public_dependency_profiles": [],
+      "admission_status": "Exact default-only gate source-reviewed; runtime qualification pending"
     },
     {
       "name": "test_uud2sp",
