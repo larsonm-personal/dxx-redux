@@ -1,0 +1,21 @@
+# Chunk0435 native metadata continuation, 2026-10-14
+
+Diagnosis and plans only. Explicit native request/initialization/mount/scan/serialization/result boundaries and paired engine header limits were read; no complete engine loader/planner, native run or JNI exception fixture.
+
+Current CMake compiles jni_level_metadata.cpp separately into both game libraries; D2 has DXX_BUILD_DESCENT_II. Scan header maxima match paired gamesave.c constants1/8. Native runtime admits content_game d1/d2, disallows D2 content in D1, and requires process retirement if an initialized data-dir/content-game context changes. Partial initialization is poisoned before engine initialization and cleared only after success. Keep these repairs and desktop/Android branches.
+
+Request mounts snapshot original PhysFS search paths, track loaded mission and activated assets, retire explicit and mission-added mounts, reset assets and reject cleanup failure through a poisoned-worker result. Preserve the transaction boundary and restart protocol. This read does not establish exception/cleanup failure containment for every engine callee, and no mount fault was injected.
+
+Extra directory and explicit assets/HOGs are mounted in declared sequence; do not sort away priority or collapse into one rediscovered path. Active-level context snapshots selected pack mounts/descriptor; native code uses that explicit context and current-directory mission loading. Vertigo ensures embedded d2x.ham visibility before mission loading. Parent target/store pairing and native mount scope need existing identity-owner reconciliation, not another parser or compatibility layer.
+
+JNI uses shared UTF8 conversion, parses JSON and calls analyze_request, emits request IDs in ordinary results and handles standard exceptions through failed_result. Typed access still assumes internal request field shapes; absence of an explicit schema check is not a new admitted external-input defect here. Review existing JNI/budget/identity owners before any claim of complete rejection or boundary containment.
+
+scan_level validates header, invokes native load_level, obtains engine statistics/state and installs progress/cancel/FVI policy for secret-area analysis before serializing. Cancellation callback checks its request marker and throttles background work; it does not cover all prior engine loading merely because the later scan has a callback. Preserve completed work controls while completing the existing whole-attempt admission/cancellation acceptance.
+
+Route serialization clamps route-step count, keeps native indices, guided-missile requirement, uncalculated trigger, key carrier and label position, bypassability, and opened/closed link identity. Row projection preserves scan statistics, secret-area completeness, navigation readiness and failure_kind, replacement groups and native cache/visibility summaries. Ordinary row status does not mean a route is complete; cancellation/budget/unroutable classification remains distinct. Kotlin display numbering and completed-partial cache policy must not overwrite native route identity.
+
+Current analyze_hog_entries aggregates scan failures separately from referenced missing secrets. analyze_loaded_mission ignores scan enum outcomes and unconditionally sets root ok/problems empty. Whole BR-0077 already owns this contradiction. Keep cache per-row rejection of unsuccessful scans, but do not treat cache admission as a fix for live root status or automation success. Require consistent normal/secret/all-failed/partial policy across native request modes and actual launcher consumers, without duplicate finding or owner status mutation.
+
+Complete fixture projection still does not prove finite positions, all native bounds, route-file identity, peak-live memory, current source freshness or safe JNI exception containment. Shared progress/provenance/audio/replacement implementations and engine/native format authority stay with their existing owners. No new root, rerating, product edit or inherited reduction is proposed.
+
+Next: reconcile whole shared budget/JNI/identity/route owners and historical direct source reports; complete any necessary engine API boundary checks, then direct unpooled report/snapshot and exact publication/replay/Drive. Preserve all current mount/runtime/worker/cache repairs. Broader diagnosis closure remains open.

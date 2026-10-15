@@ -34,7 +34,7 @@ internal val RECOMMENDED_MODS =
                     "Place above high-res packs to retain its corrected artwork " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d1",
-            sizeBytes = 472_576L,
+            sizeBytes = 473_084L,
         ),
         RecommendedMod(
             filename = "uud2tp-textures.dxa",
@@ -45,7 +45,7 @@ internal val RECOMMENDED_MODS =
                     "Place above high-res packs to retain its corrected artwork " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d2",
-            sizeBytes = 3_242_446L,
+            sizeBytes = 3_243_334L,
         ),
         RecommendedMod(
             filename = "uud2sp-sounds.dxa",
@@ -55,7 +55,7 @@ internal val RECOMMENDED_MODS =
                     "Place above D2 High-Res Sounds to retain these effects " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d2",
-            sizeBytes = 6_962_535L,
+            sizeBytes = 6_962_917L,
         ),
         RecommendedMod(
             filename = "d1-hires-256-textures-ktx2.dxa",
@@ -64,7 +64,7 @@ internal val RECOMMENDED_MODS =
                 "Sharper wall and object textures for D1 and D1-in-D2. " +
                     "This is the recommended balance of detail and memory use; enable only one D1 texture pack",
             game = "d1",
-            sizeBytes = 61_767_015L,
+            sizeBytes = 61_767_022L,
         ),
         RecommendedMod(
             filename = "d2-hires-256-textures-ktx2.dxa",
@@ -73,7 +73,7 @@ internal val RECOMMENDED_MODS =
                 "Sharper wall and object textures for D2. " +
                     "This is the recommended balance of detail and memory use; enable only one D2 texture pack",
             game = "d2",
-            sizeBytes = 118_746_521L,
+            sizeBytes = 118_746_528L,
         ),
         RecommendedMod(
             filename = "d1-hires-sounds.dxa",
@@ -82,14 +82,14 @@ internal val RECOMMENDED_MODS =
                 "Higher-quality 22 kHz sound effects for D1 and D1-in-D2. " +
                     "Can be combined with the texture and menu packs",
             game = "d1",
-            sizeBytes = 1_859_830L,
+            sizeBytes = 1_859_837L,
         ),
         RecommendedMod(
             filename = "d2-hires-sounds.dxa",
             displayName = "D2 High-Res Sounds",
             description = "Higher-quality 22 kHz sound effects for D2. Can be combined with the D2 texture pack",
             game = "d2",
-            sizeBytes = 3_669_893L,
+            sizeBytes = 3_669_899L,
         ),
         RecommendedMod(
             filename = "d1xr-hires.dxa",

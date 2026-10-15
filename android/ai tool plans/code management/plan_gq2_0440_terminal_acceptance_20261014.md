@@ -1,0 +1,13 @@
+# Chunk0440 native verdict and deadline continuation, 2026-10-14
+
+Diagnosis and plans only. Native stop_script_fail/advance_step, result-file publication and wait/screen-advance handler windows freshly read. No tests or fault injection.
+
+Current stop_script_fail clears held axes, writes FAIL, closes log, sets inactive/failed. Current advance_step returns immediately if inactive or failed. Preserve that guard: a set_debug handler continuing to advance after failure does not now overwrite FAIL with PASS. Completion writes PASS only after final active step. This does not establish every callback/replacement/cancellation boundary or external artifact publication succeeds.
+
+Result JSON includes active run_id, step totals and elapsed time. Writer builds temp pathname, fprintf, fflush/fclose, then rename; rename failure removes temp. It does not fall back to direct visible result write. Unchecked snprintf/stdio/flush/close and encoding/allocation boundaries remain existing artifact/result-owner reconciliation, not a new admitted per-file sink root. Current paired GUID result filter qualifies old stale-result hypotheses; no prior-run PASS acceptance asserted here.
+
+WAIT_FOR evaluates expectation set or field condition and records timeout FAIL; its elapsed tick duration is measured from g_step_start. WAIT_MS also compares elapsed ticks. Screen advance submits the current or previous native generation and advances; it does not acknowledge the display transition, which the assigned scripts check separately through subsequent waits. Full assertion numeric/typed grammar, every deadline phase, script replacement and run publication/receiver/native request lifecycle remain pending consumers, not implied by these windows.
+
+Next actual resolver, start/broadcast/native acceptance, assertion/field schema and paired runner failure/cleanup; remaining setup and native world advance/briefing/rewind/score reset/packet-size and restore bodies; whole existing owners/history and direct unpooled disposition. Keep maintained fake-loss/native assertions and playable input checks. No weakened verdict, hidden capability or new compatibility path proposed.
+
+Source gate can close after source auditPASS191; other four0440gates stay open. No new finding/remediation/investigation/status/rating/runtime/inherited saving. Canonical439DONE188TODO627 unchanged,0440TODO. No product/test/helper edit/execution/build/probe/formatter/generator/network/device/provider/media/payload/staging/commit. Broader queue/preflights/sweeps/investigations/recovery/finalHEAD-dirty-untracked/closure remain required.

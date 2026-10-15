@@ -1,0 +1,15 @@
+# Chunk 0440 fixture and introspection acceptance, 2026-10-14
+
+Diagnosis and plans only. No product, helper or test changes or execution.
+
+The four delegated scripts are now read in full. Rewind mutation explicitly arms the countdown pause fixture before requesting team rewind. The whole included barrier fixture resets its state when armed, captures the source and loaded game clocks, holds source and loaded phases, and requires both verification bits, no drift, all selected delivered-message drops, and at least two receipts for each selected phase. The host additionally requires five seconds waiting for a slower peer. The actual local-done callback captures stage 2 after successful load. The rewind verifier reads that captured clock and compares the host value with the selected restore target. Preserve these controls; do not report a zero-default loaded-clock defect without this actual calling sequence.
+
+Selected introspection fields come from native travel, campaign, restore, briefing and window state. The in_game field means a game window exists and screen mode is game; game_window_is_front separately checks the front window. Neither alone proves successful network convergence or all-peer atomic restore. Restore busy, phase, visit and local-loaded are separate observations. Screen advance activation/generation is separate from transition completion.
+
+The delegated countdown download wait requests two operator members for the same percent field: gt 0 and lt 100. Current native assertion parsing retains only the first operator and does not reject extra members. This is the existing BR-0224 schema root, whose whole current definition was reread from the audited owner checkpoint. Do not add a duplicate root or claim that both comparisons execute.
+
+Do not infer a demonstrated false verdict from that parser fact alone. The download status producer clamps its value to 100 and replaces the downloading message at 100 with a completed-download message. The script also requires a downloading-message substring. The restore message wrapper prioritizes that transfer producer. Those current source constraints qualify the effect of the ignored upper bound in this particular fixture. No malformed-script run, runtime false pass, or complete concurrency oracle was executed.
+
+Conditional continuation: under BR-0224, define and validate whether compound operators are supported or rejected before effects, preserve the intended strict interior download interval, and check valid single-operator behavior in both runtimes. Preserve pause/retry/drop and actual native restored-state checks. Under the native restore owner, retain explicit distinctions between loaded, released and all acknowledged, with controlled failure/retirement acceptance before closure.
+
+This checkpoint binds source evidence only. Consumer synthesis, prior-plan and quality reconciliation, direct unpooled disposition, canonical publication, independent replay and mounted Drive proof remain open. No finding, remediation, investigation, status, rating or inherited-line saving changes. Canonical 439 DONE / 188 TODO / 627 unchanged; 0440 remains TODO.

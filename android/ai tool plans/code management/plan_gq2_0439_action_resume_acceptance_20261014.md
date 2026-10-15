@@ -1,0 +1,29 @@
+# Chunk0439 actual action and Resume consumer continuation, 2026-10-14
+
+Diagnosis and plans only. Explicit View/Main/preferences/native ranges, whole ResumeSaveBridge, complete SetupResumePanel using exact parent ranges plus fresh complements, whole native rewind policy and startup resume source read. All source bindings describe actual boundaries; no product/test/helper execution or media/provider/device access.
+
+## Actions and rewind
+
+Actual remaining-actions list delegates shared policy with current layout, multiplayer, weapon, controller binding/connected state, rewind and Guidebot options. Ordinary sources use InputMixer source tags; meta actions bypass mixer through MainActivity callback. Held EnergyShield activation has matching release on confirmation release/finish/close; touch cancellation follows its tracked pointer contract. Other actions dispatch down plus delayed up. MainActivity currently captures controller child destinations so release does not activate newly exposed menu. Preserve these repairs. This is not a complete disappearance/cancellation/pulse-frame or every dynamic-list mutation proof; existing input owners require whole reconciliation before final disposition.
+
+MainActivity applies rewind preferences at setup and resume. Kotlin options and native sanitizer preserve5/10/20 with default10. Radio amount persists directly; enable switch follows the explicit Save flow. Meta rewind queues a pending game-thread request; host/client/unavailable messages remain native. JNI enable and amount setters directly touch session state; disabling resets history. Whole prior BR0029 includes lifecycle/rewind mutation in R1-0152; retain it under that engine-affinity owner, not a new per-setting root. Current music command queues and pause snapshot repairs in the same owner remain repaired.
+
+Native snapshot choice uses GameTime64 and target seconds, requires recorder timeline when recording, and chooses newest qualifying snapshot with a one-viable-snapshot fallback. Preference tests prove option/helper semantics only; they do not validate capture scheduling, restore rollback, world/recorder/RNG transaction or cooperative all-peer commit. Whole prior0073 keeps these boundaries with existing BR0206. No new compatibility reader, engine format copy or inherited extraction saving proposed.
+
+## Resume admission, thumbnail and launch
+
+Whole bridge parses native candidate/options and separately reopens the selected path for thumbnail bytes. Native JNI now uses standard UTF8 conversion helpers in these entry points; preserve this repair, while C ABI allocation/exception/first-exception lifetime remains existing0170 acceptance. Candidate strings are descriptive and native-owned. UI labels/phase helpers and synthetic test DTOs are not proof of native startup restoration.
+
+Actual save discovery invokes checkpoint recovery before scanning, bounds recursive depth8 and path buffer, then selects metadata-backed non-cooperative candidates after path/game/scope/kind/pilot/mission identity checks. Recovery internals and all helper semantic bodies are not reread here; do not claim recoverability complete or restore historical no-recovery prose. Rank newest by timestamp/kind/path and progress by level/total/level seconds. Whole BR0082 confirmed: current metadata read checks trailer tag/version/size/enums/thumbnail, not DGSS prefix/body. Cooperative exclusion repairs its old ordinary cooperative instance; full native side-effect-free admission remains open. Do not revive old legacy migration/compatibility advice under current disposable Android formats.
+
+Native thumbnail checks format and fixed dimensions and returns fixed bytes. Parent Kotlin admission checks exact200x100/60000bytes/visible pixels before Bitmap. Separate candidate and thumbnail path reads are not a pinned complete save generation. Preserve native complete-generation/source-identity acceptance; no executed replacement race or new root admitted.
+
+Setup finds options in produceState, retries null20times at500ms, filters by required game data, keys preview by path/time, and uses actual panel callbacks. These synchronous native/thumbnail calls remain source-backed UI work to reconcile with existing admission/worker owners, not proof of measured jank. Actual onLaunch validates nonblank game-root-relative path, refuses Resume into returnable game, runs owned preflight and route handoff, builds transient intent/pending resume record and starts Activity. UI phase and startActivity success are not engine restore acknowledgement. Deep pending-record/process/target helper correctness remains prior-bound, not transitively verified.
+
+MainActivity reads extras or pending resume file and token, and native startup prepares pilot, calls state_restore_all_path, reports result and flushes input on success. Full pilot/paired restore/parser bodies are outside these fresh windows. Existing native format and rollback/identity owners remain authoritative; no Kotlin parser or trial mutating restore proposed.
+
+## Remaining work
+
+Whole prior0314/0434-routing/0073 read. BR0082 fresh whole; BR0029 exact prior whole read reused after unchanged current bytes. No new finding/status/rating/runtime/saving. Consumer gate stays open for remaining analyzer/process/generation/background tracker and complete cache/progress UI wiring, then whole remaining owners/current quality/history and direct unpooled disposition. Existing source/worker/log-retention questions remain to reconcile; no pooled severity or new lifecycle root from helper-only suspicion.
+
+Canonical438DONE189TODO627/1254terminalranks316findings302remediations302fixranks12investigations unchanged;0439TODO. No product/test/helper edit/execution/build/probe/formatter/generator/network/device/provider/media/payload/staging/commit. Broader queue/preflights/sweeps/investigations/recovery/finalHEAD-dirty-untracked/closure remain required.

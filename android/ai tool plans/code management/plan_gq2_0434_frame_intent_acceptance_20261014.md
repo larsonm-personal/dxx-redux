@@ -1,0 +1,17 @@
+# Chunk0434 frame and original-intent continuation, 2026-10-14
+
+Diagnosis and plans only. Preserve current shared Android input ownership and native engine semantics.
+
+Current MainActivity adds MIXER_BTN_BASE to action indices before JNI publication. ControllerConfigStore fills identity values for primary button slots and separately maps physical buttons/axes, so preserve that source-to-action translation instead of replacing native equality matching with hard-coded index matching. The reviewed JNI settings builder delegates current layout geometry to kconfig_android_fill_joy_settings. Its admission and table implementation remain dependencies; this checkpoint does not infer safety from the caller.
+
+Current radial action dispatch still calls down and up synchronously, while fireTouchPulse posts delayed release. Paired game event cases route ordinary admitted input to ReadControls with replay/travel guards; ReadControls gates kconfig on game state. Object CT_FLYING invokes read_flying_controls, and D2 afterburner physics samples Controls.afterburner_state for thrust/charge. Existing BR-0530 is therefore not obsolete merely because another producer uses a 50ms delay. Frame-observed press, teardown and simultaneous source preservation remain acceptance requirements. No runtime simulation or delivery test ran.
+
+Current axis drain takes a snapshot, processes recorded transitions through that snapshot's generation, suppresses duplicate final-axis dispatch and marks the snapshot applied. Preserve discrete crossings and the continuous-axis/transition distinction. Disabled-joystick handling is explicit; this read does not prove every mode handoff or retirement.
+
+The complete original extreme-action design specifies pre-clamp ordinary updateStickFromTouch travel measured in stick radii, threshold hysteresis, release on lift/deactivation/filter/steal, shared source tags and separate held versus enter-pulse behavior. It intentionally permits runtime lists with an initially singleton editor. It does not specify mouse-mode reference origins or thresholds. Historical axis-inversion wording predates the plan's own upward-positive follow-up; do not restore an obsolete direction rule from an earlier section.
+
+Current editor places Extreme Action outside its mouse-specific block and labels it available for all modes. Together with the prior checkpoint's sole ordinary-path dispatch call, this is a real source capability discrepancy. Original intent does not authorize inventing mouse geometry. Keep the candidate unallocated until whole existing typed-routing/lifecycle/admission owners and original overlay/editor reports are reconciled. The eventual fix must make advertised capability and runtime behavior agree with an explicit coordinate contract.
+
+Whole imported GQ1-CHUNK-0653 and0558 were reread. They preserve shared geometry, finite parsing, upward extreme polarity and existing typed/per-game/retirement owners; neither establishes mouse-mode extreme dispatch. These are historical reports, not fresh runtime acceptance or fresh reads of their dependencies.
+
+Next: finish actual controller dispatch, current native table/admission and paired axis consumers; read whole existing typed-routing/per-game/retirement owners and original overlay/editor reports; resolve the capability candidate; then direct disposition and complete chunk publication/replay/Drive. No product edit, canonical mutation or inherited reduction is claimed.

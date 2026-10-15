@@ -1,0 +1,35 @@
+# Chunk0438 platform, format, fingerprint and input consumers, 2026-10-14
+
+Diagnosis and plans only. Complete current FileSetManager456, GameFileFormats511, shared MissionDescriptorPolicy202 and its83line fixture, ControllerKeyDispatch111line fixture, NavigationRepeat61 and native extension89 read. FingerprintBridge510 complete cumulatively through exact parent1-105/168-198 plus fresh106-167/199-510, not fresh whole-file display. Native snippets and Activity/cache/import windows remain explicitly partial.
+
+## File-set and grants
+
+FileSetManager holds process-local publication monitor for create/select and content-before-publication for delete. Delete snapshots removed game/CD/custom references and other-set retained references plus extras, publishes reduced config, checks directory deletion then revokes unused grants if Context exists. clearSet/global preserving-player clear still ignore some delete outcomes and can publish partial ownership; loadConfig returns empty object on parse/read failure. Existing BR0472 remains precise owner; retain current atomic leaf/paired marker/retained-aware repairs. Pure tracked URI fixture does not execute a real provider, and deleteSet withoutContext does not revoke access.
+
+Old default-set v0/v1 migration APIs are absent; removed tests must not restore disposable launcher schemas. Current pilot-location moves/deletion still concern original player data and engine Players layout; do not infer their removal from the disposable launcher policy. Whole FileSetManager read is source evidence, not a successful migration/recovery/device test.
+
+## Shared format and native mission policy
+
+GameFileFormats owns role/label/import/runtime/companion facts and delegates mission parsing to shared policy. Provider labels reject path/control/reserved names; exact DXA suffix handling and original secret extensions remain. Archive admission is zip/7z/rar/sit/hqx with case-normalized extension; actual Setup classifies7z/rar separately and other accepted archives to extraction, while ImportTreeScanner reuses the helper. Filename acceptance is not payload decoder validation. Native generic/disc/companion/Mac lists preserve their explicitly different domains.
+
+Shared byte decoder uses strict UTF8 then Windows1252 fallback; whole parser retains first origin and rejects any invalid declared origin, explicit modes, count/list validity and owned metadata fields. Paired inherited mission readers take atoi of the first suffix; valid multi-origin first-token identity agrees, without claiming native malformed-token/overflow semantics are fully strict. Preserve completed GQF0232FIXED/GQR0217DONE; actual earlier fixture/build/device results are historical. Current tests protect the repair and do not reopen it from old finding prose. Catalog/disc readText bypass remains separate existing0268; no new Kotlin native parser or inherited change.
+
+## Fingerprint settings and cache
+
+Current JSONC asset and parser supply0.65threshold/0.1tolerance. Native threshold setter mutex-validates finite(0,1], clears configured state on invalid input and reports Boolean through JNI; Kotlin checks it. Duration setter is mutex-protected, conditionally updates valid positive<=1 values and returns no acknowledgement. This is actual fixed-asset behavior, not proof of arbitrary numeric-toFloat representation or one atomic acknowledged settings generation.
+
+Whole bridge loads config before flattened DB, marks dbLoaded only for positive exact expected entry count, owns ordinary local/SAF descriptor finally cleanup and retains full-track/physical ordinal mapping. Complete native DB parser/matcher/load-transaction correctness is not freshly reread here. Actual matching overloads call ensureDbLoaded but do not use its count. Cache identifyLocal similarly computes asset identity after ensure without checking successful DB admission; existing BR0099 still owns treating failed admission as completed no-match. No failed load was executed.
+
+Qualify historical BR0099 normal-dialog bypass: current pending selector now compares cached local DB identity for nonblank chromaprints, and actual dialog passes its remembered fingerprintDbIdentity. Preserve that repair; do not repeat the old blanket identity-ignored account or close complete cache/sidecar/admission lifecycle. Current asset readers use .use; no stale unclosed-reader accusation.
+
+## Replacement controller routing and lifecycle
+
+The deleted dispatch/edge helper tests describe superseded APIs. Whole current replacement fixture tests captured press destination/release after route changes, duplicate/orphan suppression, scheduled navigation repeats and releaseAll cancellation using a fake scheduler; no Android input event executed. Navigation timing reads platform repeat settings with fallbacks; actual Main scheduler uses overlayPoller. Source-only fixture is not device cadence/engine application acceptance.
+
+Actual dispatchKeyEvent delivers matching release to captured controller owner before current overlay/keyboard routing. Controller branch retains source-tagged mixer/native joystick, captured menu child or meta action. Device refresh and onStop release held key/axis owners and reset mixer/menu state; graphics confirmation captures/releases inputs. onPause records interruption/cancels safety UI, while focus-only callback currently hides bars only. Do not infer universal focus/lifecycle retirement or new fault from that distinction; retain existing source-lifetime/event/JNI owners and acceptance. Config rebinding clears controller axis/mixer maps; captured button release remains tied to its admitted destination.
+
+Native key and joystick entrypoints construct/push SDL events and track cutscene suppression/release gates. Push acceptance and applied game-thread state are distinct; partial native snippets do not revalidate all queues, masks or concurrency. Preserve paired/guarded engine authority and desktop behavior. No newly admitted lifecycle/queue/thread/identity defect or test success.
+
+Explicit actual consumer trace for all eight assigned test paths is complete at these recorded boundaries. Consumer gate may close after separate audit. Whole owner/history/current quality synthesis, direct unpooled disposition, exact final report/snapshot/publication/replay and mounted Drive proof remain. No new root/status/rating/runtime/inherited saving/product/test/helper change or execution/build/probe/formatter/network/media/device/provider/payload/staging/commit. Canonical437DONE190TODO627 unchanged;0438TODO. Broader queue/preflights/sweeps/investigations/recovery/finalHEAD-dirty-untracked/closure remain open.
+
+Guessed GameFileSetup, shared game_file_extensions, identifier and analysis-policy paths failed and were recovered by actual directory searches/real SetupSections and extract paths. Failed paths confer no absence/source credit. One earlier native/Activity read includes trailing unrelated lines, bound exactly without whole-file claims. All source-display outputs used for credit were complete.
