@@ -6,6 +6,9 @@ extern "C" {
 #endif
 void android_mod_sounds_reset(void);
 void android_mod_sound_apply(int sample, const char *name, int content_game);
+#ifdef DXX_BUILD_DESCENT_II
+void android_mod_sound_timing_apply(int sample);
+#endif
 void android_mod_sound_loaded(int sample, const char *filename);
 void android_mod_sound_bank_loaded(int sample, const char *filename);
 void android_mod_sound_played(int sample);

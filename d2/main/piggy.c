@@ -108,6 +108,41 @@ int Num_bitmap_files = 0;
 int Num_sound_files = 0;
 
 digi_sound GameSounds[MAX_SOUND_FILES];
+/* Authored timing is independent of playback rate, low-memory substitutions and PCM conversion */
+static char Sound_duration_bank[PATH_MAX], Sound_duration_origin[PATH_MAX];
+static char Sound_duration_names[MAX_SOUND_FILES][13];
+static int Sound_duration_count;
+
+const char *piggy_sound_duration_name(int sample)
+{
+	return sample >= 0 && sample < Sound_duration_count ? Sound_duration_names[sample] : NULL;
+}
+static int canonical_sound_file(char *filename);
+
+const char *piggy_sound_duration_bank(void) { return Sound_duration_bank; }
+
+static fix Sound_duration[MAX_SOUND_FILES], Sound_duration_override[MAX_SOUND_FILES];
+static ubyte Sound_duration_valid[MAX_SOUND_FILES], Sound_duration_override_valid[MAX_SOUND_FILES];
+
+static int authored_sound_duration(int length, int rate, fix *duration)
+{
+	if (length < 0 || rate <= 0 || ((int64_t)length * F1_0) / rate > 0x7fffffff) return 0;
+	*duration = fixdiv(length, rate);
+	return 1;
+}
+
+fix piggy_sound_duration(int sample)
+{
+	if (sample < 0 || sample >= Sound_duration_count) return F1_0;
+	if (Sound_duration_override_valid[sample]) return Sound_duration_override[sample];
+	return Sound_duration_valid[sample] ? Sound_duration[sample] : F1_0;
+}
+
+void piggy_sound_duration_override(int sample, int length, int rate)
+{
+	if (sample < 0 || sample >= MAX_SOUND_FILES) return;
+	Sound_duration_override_valid[sample] = authored_sound_duration(length, rate, &Sound_duration_override[sample]);
+}
 int SoundOffset[MAX_SOUND_FILES];
 grs_bitmap GameBitmaps[MAX_BITMAP_FILES];
 
@@ -343,6 +378,12 @@ int piggy_register_sound( digi_sound * snd, char * name, int in_file )
 	strncpy( AllSounds[Num_sound_files].name, name, 12 );
 	hashtable_insert( &AllDigiSndNames, AllSounds[Num_sound_files].name, Num_sound_files );
 	GameSounds[Num_sound_files] = *snd;
+	if (Num_sound_files >= Sound_duration_count) {
+		Sound_duration_count = Num_sound_files + 1;
+		snprintf(Sound_duration_names[Num_sound_files], sizeof(Sound_duration_names[0]), "%s", name);
+		Sound_duration_valid[Num_sound_files] = authored_sound_duration(snd->length, snd->freq, &Sound_duration[Num_sound_files]);
+	}
+	Sound_duration_override_valid[Num_sound_files] = 0;
 	if ( !in_file ) {
 		SoundOffset[Num_sound_files] = 0;       
 	}
@@ -987,6 +1028,7 @@ int read_hamfile()
 			return 1;
 		}
 		ham_sound_headers_once = 0;
+		snprintf(Sound_duration_bank, sizeof(Sound_duration_bank), "%s", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED);
 
 		PHYSFSX_fseek(ham_fp, sound_offset, SEEK_SET);
 		N_sounds = PHYSFSX_readInt(ham_fp);
@@ -1038,7 +1080,68 @@ int sndfile_dir_changed()
 	if (!dir)
 		dir = "";
 
-	return strcmp(LastSndfileDir, dir) != 0;
+	if (strcmp(LastSndfileDir, dir)) return 1;
+	canonical_sound_file(filename);
+	dir = filename[0] ? PHYSFS_getRealDir(filename) : NULL;
+	return strcmp(Sound_duration_bank, filename) || strcmp(Sound_duration_origin, dir ? dir : "");
+}
+
+/* Prefer the original high-memory bank within the winning archive, without loading PCM */
+static int canonical_sound_file(char *filename)
+{
+	const char *files[] = { "descent2.s22", "descent2.s11" };
+	const char *origins[2];
+	char names[2][PATH_MAX];
+	int selected = -1, i;
+	char **search, **entry;
+	for (i = 0; i < 2; ++i) {
+		snprintf(names[i], sizeof(names[i]), "%s", files[i]);
+		PHYSFSEXT_locateCorrectCase(names[i]);
+		origins[i] = PHYSFS_getRealDir(names[i]);
+	}
+	search = PHYSFS_getSearchPath();
+	if (search) {
+		for (entry = search; *entry && selected < 0; ++entry)
+			for (i = 0; i < 2; ++i)
+				if (origins[i] && !strcmp(origins[i], *entry)) { selected = i; break; }
+		PHYSFS_freeList(search);
+	}
+	filename[0] = 0;
+	if (selected < 0) return 0;
+	snprintf(filename, PATH_MAX, "%s", names[selected]);
+	return selected == 0 ? SAMPLE_RATE_22K : SAMPLE_RATE_11K;
+}
+
+static void read_sound_durations(void)
+{
+	const int rate = canonical_sound_file(Sound_duration_bank);
+	const char *origin = rate ? PHYSFS_getRealDir(Sound_duration_bank) : NULL;
+	PHYSFS_file *fp;
+	int count, i;
+	snprintf(Sound_duration_origin, sizeof(Sound_duration_origin), "%s", origin ? origin : "");
+	Sound_duration_count = 0;
+	memset(Sound_duration_valid, 0, sizeof(Sound_duration_valid));
+	if (!rate || !(fp = PHYSFSX_openReadBuffered(Sound_duration_bank))) return;
+	if (PHYSFSX_readInt(fp) != SNDFILE_ID || PHYSFSX_readInt(fp) != SNDFILE_VERSION) {
+		PHYSFS_close(fp);
+		return;
+	}
+	count = PHYSFSX_readInt(fp);
+	if (count < 0 || count > MAX_SOUND_FILES || PHYSFS_fileLength(fp) < 12 + (PHYSFS_sint64)count * 20) {
+		PHYSFS_close(fp);
+		return;
+	}
+	Sound_duration_count = count;
+	for (i = 0; i < count; ++i) {
+		DiskSoundHeader header;
+		DiskSoundHeader_read(&header, fp);
+		memcpy(Sound_duration_names[i], header.name, 8); Sound_duration_names[i][8] = 0;
+		/* HAM sound references index the canonical bank, not the selected playback bank */
+		if (header.length >= 0 && header.offset >= 0 &&
+		    (PHYSFS_sint64)header.offset + header.length <= PHYSFS_fileLength(fp) - (12 + (PHYSFS_sint64)count * 20))
+			Sound_duration_valid[i] = authored_sound_duration(header.length, rate, &Sound_duration[i]);
+	}
+	PHYSFS_close(fp);
 }
 
 int read_sndfile()
@@ -1125,6 +1228,7 @@ int read_sndfile()
 		Error( "Not enough memory to load sounds\n" );
 
 	PHYSFS_close(snd_fp);
+	read_sound_durations();
 
 	return 1;
 }
@@ -1133,10 +1237,13 @@ static void piggy_init_registry(void)
 {
 	int i;
 
+	Sound_duration_bank[0] = Sound_duration_origin[0] = 0;
+	Sound_duration_count = 0;
 	hashtable_init( &AllBitmapsNames, MAX_BITMAP_FILES );
 	hashtable_init( &AllDigiSndNames, MAX_SOUND_FILES );
 
 	for (i=0; i<MAX_SOUND_FILES; i++ )	{
+		Sound_duration_valid[i] = Sound_duration_override_valid[i] = 0;
 		GameSounds[i].length = 0;
 		GameSounds[i].data = NULL;
 		SoundOffset[i] = 0;
@@ -1266,6 +1373,9 @@ void piggy_read_sounds(void)
 #ifdef __ANDROID__
 	for (i = 0; i < Num_sound_files; ++i)
 		android_mod_sound_apply(i, AllSounds[i].name, 2);
+	/* Canonical-only slots still need mod timing when the playback bank is shorter */
+	for (; piggy_sound_duration_name(i); ++i)
+		android_mod_sound_timing_apply(i);
 #endif
 
 }
@@ -1787,6 +1897,10 @@ void piggy_reset_asset_registry(void)
 #ifdef __ANDROID__
 void piggy_android_reset_tables(void)
 {
+	memset(Sound_duration_valid, 0, sizeof(Sound_duration_valid));
+	memset(Sound_duration_override_valid, 0, sizeof(Sound_duration_override_valid));
+	Sound_duration_bank[0] = Sound_duration_origin[0] = 0;
+	Sound_duration_count = 0;
 	Num_bitmap_files = Num_sound_files = 0;
 	Num_bitmap_files_new = Num_sound_files_new = 0;
 	bogus_bitmap_initialized = 0;

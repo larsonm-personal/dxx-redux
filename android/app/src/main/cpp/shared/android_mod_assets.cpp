@@ -54,6 +54,21 @@ std::string hash_text(sound_trace_fingerprint fingerprint)
 	std::snprintf(value, sizeof(value), "%016llx", (unsigned long long) fingerprint.hash);
 	return value;
 }
+
+int select_sound_source(const std::string (&origins)[2], const std::string &bank_origin)
+{
+	int selected = -1;
+	char **search = PHYSFS_getSearchPath();
+	if (search) {
+		for (char **p = search; *p && selected == -1; ++p) {
+			for (int i = 0; i < 2; ++i)
+				if (!origins[i].empty() && origins[i] == *p) { selected = i; break; }
+			if (selected == -1 && !bank_origin.empty() && bank_origin == *p) selected = -2;
+		}
+		PHYSFS_freeList(search);
+	}
+	return selected;
+}
 } // namespace
 
 void android_mod_sounds_reset(void)
@@ -62,6 +77,9 @@ void android_mod_sounds_reset(void)
 		auto &entry = sounds[i];
 		if (!entry.bytes.empty() && GameSounds[i].data == entry.bytes.data())
 			GameSounds[i] = entry.original;
+#ifdef DXX_BUILD_DESCENT_II
+		piggy_sound_duration_override(i, -1, 0);
+#endif
 		entry = sound_overlay{};
 	}
 	dirty = true;
@@ -90,12 +108,36 @@ void android_mod_sound_bank_loaded(int sample, const char *filename)
 		android_mod_sound_loaded(sample, filename);
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+void android_mod_sound_timing_apply(int sample)
+{
+	const char *name = piggy_sound_duration_name(sample);
+	if (!name || !*name) return;
+	// Numeric HAM references and loose PCM names come from the canonical bank
+	std::string paths[] = { real_path((std::string("Sounds/") + name + ".r22").c_str()),
+	                        real_path((std::string("Sounds/") + name + ".raw").c_str()) };
+	std::string origins[] = { origin_of(paths[0]), origin_of(paths[1]) };
+	const int selected = select_sound_source(origins, origin_of(piggy_sound_duration_bank()));
+	if (selected < 0) return;
+	PHYSFS_file *metadata = PHYSFS_openRead(paths[selected].c_str());
+	if (!metadata) return;
+	const PHYSFS_sint64 length = PHYSFS_fileLength(metadata);
+	PHYSFS_close(metadata);
+	// Timing is an authored property even if the playback backend cannot convert PCM
+	if (length > 0 && length <= SOUND_TRACE_MAX_BYTES)
+		piggy_sound_duration_override(sample, static_cast<int>(length), selected == 0 ? 22050 : 11025);
+}
+#endif
+
 void android_mod_sound_apply(int sample, const char *name, int content_game)
 {
 	if (sample < 0 || sample >= MAX_SOUND_FILES || !name || !*name) return;
 	auto &entry = sounds[sample];
 	auto &sound = GameSounds[sample];
-	if (!entry.bytes.empty() || !sound.data || sound.data == (void *) -1 || !sound.length) return;
+	if (!entry.bytes.empty()) return;
+#ifndef DXX_BUILD_DESCENT_II
+	if (!sound.data || sound.data == (void *) -1 || !sound.length) return;
+#endif
 	const char *prefix = "";
 #ifdef DXX_BUILD_DESCENT_II
 	if (content_game == 1) prefix = "d1-mods/";
@@ -106,21 +148,10 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 	std::string paths[] = { real_path((std::string(prefix) + "Sounds/" + name + ".r22").c_str()),
 		                    real_path((std::string(prefix) + "Sounds/" + name + ".raw").c_str()) };
 	std::string origins[] = { origin_of(paths[0]), origin_of(paths[1]) };
-	int selected = -1;
-	char **search = PHYSFS_getSearchPath();
-	if (search) {
-		for (char **p = search; *p && selected == -1; ++p) {
-			for (int i = 0; i < 2; ++i)
-				if (!origins[i].empty() && origins[i] == *p) {
-					selected = i;
-					break;
-				}
-			// A higher-priority bank must also win over lower-priority loose PCM
-			if (selected == -1 && !entry.origin.empty() && entry.origin == *p)
-				selected = -2;
-		}
-		PHYSFS_freeList(search);
-	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (content_game == 2) android_mod_sound_timing_apply(sample);
+#endif
+	const int selected = select_sound_source(origins, entry.origin);
 	if (selected < 0) return;
 	PHYSFS_file *file = PHYSFS_openRead(paths[selected].c_str());
 	if (!file) return;
@@ -130,6 +161,13 @@ void android_mod_sound_apply(int sample, const char *name, int content_game)
 		debug_log(DLOG_GAME, "[MOD] rejected PCM file='%s' bytes=%lld", paths[selected].c_str(), (long long) length);
 		return;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	// Timing was read independently above, including low-memory omitted samples
+	if (!sound.data || sound.data == (void *) -1 || !sound.length) {
+		PHYSFS_close(file);
+		return;
+	}
+#endif
 	std::vector<unsigned char> bytes(static_cast<size_t>(length));
 	const bool complete = PHYSFS_readBytes(file, bytes.data(), length) == length;
 	PHYSFS_close(file);

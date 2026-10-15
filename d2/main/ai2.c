@@ -46,6 +46,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "effects.h"
 #include "timer.h"
 #include "sounds.h"
+#include "piggy.h"
 #include "cntrlcen.h"
 #include "multibot.h"
 #ifdef NETWORK
@@ -2120,10 +2121,9 @@ void start_boss_death_sequence(object *objp)
 //	scale: F1_0*4 for boss, much smaller for much smaller guys
 int do_robot_dying_frame(object *objp, fix64 start_time, fix roll_duration, sbyte *dying_sound_playing, int death_sound, fix expl_scale, fix sound_scale)
 {
-	extern int Num_sound_files;
 	fix	roll_val, temp;
 	fix	sound_duration;
-	int translated_death_sound = death_sound >= 0 && death_sound < MAX_SOUNDS ? digi_xlat_sound(death_sound) : -1;
+	int translated_death_sound = death_sound >= 0 && death_sound < MAX_SOUNDS && Sounds[death_sound] != 255 ? Sounds[death_sound] : -1;
 
 	if (!roll_duration)
 		roll_duration = F1_0/4;
@@ -2138,10 +2138,8 @@ int do_robot_dying_frame(object *objp, fix64 start_time, fix roll_duration, sbyt
 	objp->mtype.phys_info.rotvel.y = (GameTime64 - start_time)/5;
 	objp->mtype.phys_info.rotvel.z = (GameTime64 - start_time)/7;
 
-	if (GameArg.SndDigiSampleRate && translated_death_sound >= 0 && translated_death_sound < Num_sound_files)
-		sound_duration = fixdiv(GameSounds[translated_death_sound].length,GameArg.SndDigiSampleRate);
-	else
-		sound_duration = F1_0;
+	/* Original sound-derived cadence uses authored metadata, never playback settings */
+	sound_duration = piggy_sound_duration(translated_death_sound);
 
 	if (start_time + roll_duration - sound_duration < GameTime64) {
 		if (!*dying_sound_playing) {

@@ -20,6 +20,10 @@ extern "C" {
 #include "robot.h"
 #include "weapon.h"
 #include "sounds.h"
+#include "object.h"
+#include "game.h"
+#include "rng_shared.h"
+int do_robot_dying_frame(object *, fix64, fix, sbyte *, int, fix, fix);
 extern int Num_sound_files;
 #endif
 }
@@ -75,6 +79,65 @@ static void verify_bank(int rate, bool hires)
 	}
 	if (hires) require(overlays > 100, "substantial high-res overlay coverage");
 }
+static void verify_authored_timing()
+{
+	const std::string root = PHYSFS_getWriteDir();
+	const std::string directory = root + "/authored-timing";
+	require(PHYSFS_mkdir("authored-timing") && PHYSFS_mkdir("authored-timing/Sounds") && PHYSFS_mount(directory.c_str(), nullptr, 0), "isolate authored duration overlay");
+	const char *name = piggy_sound_duration_name(0);
+	require(name && *name, "canonical authored sound identity");
+	const auto path = directory + "/Sounds/" + name + ".r22";
+	FILE *file = std::fopen(path.c_str(), "wb");
+	std::vector<unsigned char> pcm(22051, 128);
+	require(file && std::fwrite(pcm.data(), 1, pcm.size(), file) == pcm.size() && std::fclose(file) == 0, "write odd-length authored PCM");
+	const auto arguments = GameArg;
+	const auto object = Objects[0];
+	const fix old_frame_time = FrameTime;
+	const fix64 old_game_time = GameTime64;
+	const ubyte logical = Sounds[0], alternate = AltSounds[0];
+	Sounds[0] = 0; AltSounds[0] = 255;
+	GameArg.SysLowMem = 1; GameArg.SndNoSound = 1;
+	const auto original = GameSounds[0];
+	const fix original_duration = piggy_sound_duration(0);
+	for (int rate : { 11025, 22050 }) for (int legacy : { 0, 1 }) for (int omitted : { 0, 1 }) {
+		GameArg.SndDigiSampleRate = rate;
+		GameArg.SndDisableSdlMixer = legacy;
+		GameSounds[0] = original;
+		if (omitted) GameSounds[0].data = reinterpret_cast<unsigned char *>(-1);
+		android_mod_sound_apply(0, name, 2);
+		require(piggy_sound_duration(0) == fixdiv(22051, 22050), "authored duration survives output rate, legacy rounding and lowmem omission");
+		if (!omitted) require(GameSounds[0].length == (legacy && rate == 11025 ? 11025 : 22051), "production loader actually exercises odd-length resampling");
+		for (int after_boundary : { 0, 1 }) {
+			FrameTime = 0;
+			GameTime64 = 12 * F1_0 - fixdiv(22051, 22050) + after_boundary;
+			sbyte playing = 0;
+			d_srand(1234); d_srand_fx(5678);
+			d_rand_reset_call_count(); d_rand_set_stream_call_count(D_RNG_FX, 0);
+			do_robot_dying_frame(&Objects[0], 10 * F1_0, 2 * F1_0, &playing, 0, F1_0, F1_0);
+			require(playing == after_boundary, "real loaded overlay retains exact original strict death-roll boundary");
+			require(d_rand_get_call_count() + d_rand_get_stream_call_count(D_RNG_FX) == static_cast<unsigned>(1 - after_boundary), "death cadence retains original one-draw early branch and zero-draw first late branch");
+		}
+		android_mod_sounds_reset();
+		require(piggy_sound_duration(0) == original_duration, "overlay reset restores canonical metadata");
+	}
+	GameSounds[0] = original;
+	android_mod_sound_apply(0, "_timing_missing_playback_", 2);
+	require(piggy_sound_duration(0) == fixdiv(22051, 22050) && GameSounds[0].data == original.data && GameSounds[0].length == original.length,
+	        "canonical-name metadata is independent of playback name and does not replace PCM");
+	android_mod_sounds_reset();
+	const int playback_count = Num_sound_files;
+	Num_sound_files = 0;
+	android_mod_sound_timing_apply(0);
+	require(piggy_sound_duration(0) == fixdiv(22051, 22050) && GameSounds[0].data == original.data,
+	        "canonical-only metadata remains available without a playback slot");
+	Num_sound_files = playback_count;
+	android_mod_sounds_reset();
+	GameSounds[0] = original; GameArg = arguments;
+	Objects[0] = object; FrameTime = old_frame_time; GameTime64 = old_game_time;
+	Sounds[0] = logical; AltSounds[0] = alternate;
+	require(PHYSFS_unmount(directory.c_str()) && std::remove(path.c_str()) == 0, "release authored timing fixture");
+}
+
 static void play_events()
 {
 	// Exercise the real logical-sound mapping and SDL mixer for restored event assignments
@@ -119,6 +182,7 @@ int main(int argc, char **argv)
 	require(PHYSFS_mount("UUD2SP1_4.dxa", "author", 1), "original author archive for independent PCM comparison");
 	require(properties_init(), "stock properties");
 	piggy_read_sounds();
+	verify_authored_timing();
 	require(android_mod_usage_snapshot().at("sounds").empty(), "stock sounds are not reported as mods");
 	trace.push_back({ { "case", "stock" } });
 	for (int rate : { 11025, 22050 }) {
