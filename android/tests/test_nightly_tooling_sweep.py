@@ -55,6 +55,28 @@ class SweepTests(unittest.TestCase):
             state = sweep.reconcile(plan, self.policy, state, [receipt])
         self.assertEqual(set(seen), set(sweep.policy_entries(self.policy)))
 
+    def test_each_of_four_lanes_has_its_own_bounded_budget(self):
+        policy = {'schema': 1, 'suites': []}
+        catalog = {'schema': 1, 'tests': []}
+        for lane in sweep.LANES:
+            for i in range(2):
+                name = lane.replace('-', '_') + str(i)
+                policy['suites'].append({'id': 'master:' + name, 'owner': 'master', 'lane': lane,
+                                         'args': {'suite': name}, 'estimated_seconds': 100})
+                catalog['tests'].append({'name': name})
+        plan, _ = sweep.plan_batch(SHA, catalog, policy, budget=100)
+        self.assertEqual(len(plan['tests']), 4)
+        self.assertEqual(plan['estimated_seconds'], 400)
+        self.assertEqual(plan['budget_scope'], 'per-lane')
+        sweep.validate_plan(plan, policy)
+        for lane in sweep.LANES:
+            self.assertEqual(sum(e['estimated_seconds'] for e in plan['tests'] if e['lane'] == lane), 100)
+        extra = next(e for e in policy['suites'] if e['lane'] == 'host' and e not in plan['tests'])
+        plan['tests'].append(extra)
+        plan['batch_id'] = sweep.digest({k: plan[k] for k in ('target_sha', 'catalog_hash', 'tests')})
+        with self.assertRaises(ValueError):
+            sweep.validate_plan(plan, policy)
+
     def test_partial_interruption_advances_only_completed(self):
         state = sweep.reconcile(self.plan, self.policy, self.state,
             [self.receipt(), self.receipt('RUNNING', 'master:second')])

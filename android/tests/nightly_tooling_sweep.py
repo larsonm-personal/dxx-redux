@@ -94,7 +94,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700):
     selected, excluded = [], list(policy.get('exclusions', []))
     admitted = {e['args']['suite'] for e in entries.values() if e['owner'] == 'master'}
     excluded.extend({'id': row['name'], 'reason': 'not yet admitted: public prerequisites/host support require qualification', 'requires': row.get('requires'), 'manual': row.get('manual')} for row in catalog['tests'] if row['name'] not in admitted)
-    used = 0
+    used = {lane: 0 for lane in LANES}
     # Untried work precedes repeatedly blocked setup, so one lane cannot starve the rest.
     ordered = sorted(entries.items(), key=lambda item: (
         state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
@@ -104,12 +104,12 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700):
             continue
         if ident in state['records'] or ident in state.get('excluded', {}):
             continue
-        if used + entry['estimated_seconds'] <= budget:
+        if used[entry['lane']] + entry['estimated_seconds'] <= budget:
             selected.append(entry)
-            used += entry['estimated_seconds']
+            used[entry['lane']] += entry['estimated_seconds']
     identity = {'target_sha': sha, 'catalog_hash': catalog_hash, 'tests': selected}
     plan = {'schema': SCHEMA, **identity, 'batch_id': digest(identity), 'budget_seconds': budget,
-            'estimated_seconds': used, 'exclusions': excluded,
+            'estimated_seconds': sum(used.values()), 'budget_scope': 'per-lane', 'exclusions': excluded,
             'lanes': [lane for lane in LANES if any(e['lane'] == lane for e in selected)]}
     return plan, state
 
@@ -129,8 +129,10 @@ def validate_plan(plan, policy):
         if ident in seen or entries.get(ident) != entry:
             raise ValueError('Unapproved or duplicate plan entry')
         seen.add(ident)
-    if sum(e['estimated_seconds'] for e in selected) > plan.get('budget_seconds', 0) or not 1 <= plan.get('budget_seconds', 0) <= 2700:
-        raise ValueError('Plan exceeds budget')
+    if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:
+        raise ValueError('Invalid per-lane budget')
+    if any(sum(e['estimated_seconds'] for e in selected if e['lane'] == lane) > plan['budget_seconds'] for lane in LANES):
+        raise ValueError('Plan exceeds lane budget')
     identity = {key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')}
     if digest(identity) != plan.get('batch_id'):
         raise ValueError('Plan batch identity mismatch')

@@ -23,7 +23,7 @@ Retail campaigns/media, physical GPU/audio/touch behavior and physical multi-dev
 
 ## Budget and progress
 
-A nightly batch has at most 2700 estimated test seconds across lanes. Setup, downloads, native/Gradle builds and cleanup are reported separately and are not included in this test estimate. Each hosted lane has a finite 90-minute ceiling. A running owner may finish beyond its estimate; before another owner starts, the executor/master checks consumed test time. This is an approximate 45-minute test budget, not a promise of 45-minute total wall time.
+Each of the four fixed lanes (host, JVM, Android single, Android dual) has at most 2700 estimated test seconds per nightly batch. At most four test jobs run in parallel; GitHub account capacity may queue them. Setup, downloads, native/Gradle builds and cleanup are reported separately and are not included in this test estimate. Each hosted lane has a finite 90-minute ceiling. A running owner may finish beyond its estimate; before another owner starts, the executor/master checks consumed test time. This is an approximate 45-minute test budget per lane, not a promise of 45-minute total wall time.
 
 Planning never advances coverage. A per-test JSONL journal records running/terminal observations. The always-run collector recovers completed observations after a failed/interrupted batch. Missing, running and cancellation records remain pending. Actual test assertion failures and test timeouts are retained as failed attempts and do not rerun indefinitely; unresolved failures remain in subsequent summaries.
 
