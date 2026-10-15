@@ -261,6 +261,71 @@ class PublicProfileTests(unittest.TestCase):
                 {"profile": "untrusted"}, Path("repo"), Path("build"), Path("work")
             )
 
+    def test_public_save_and_pickup_bind_existing_fixture_binaries(self):
+        for profile, flags in (
+            ("public-save", ("-D1Exe", "-D2Exe")),
+            ("public-pickup", ("-NativeExe", "-ImportedExe")),
+        ):
+            with self.subTest(profile=profile):
+                code, _receipt, calls = self.run_profile(profile)
+                self.assertEqual(code, 0)
+                argv = calls[-1][0]
+                for flag in flags:
+                    self.assertEqual(
+                        Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat"
+                    )
+                self.assertIn("-Output", argv)
+                self.assertEqual(argv[:2], ["xvfb-run", "-a"])
+                if profile == "public-pickup":
+                    self.assertIn("shareware", argv)
+                    self.assertIn("pickup", argv)
+
+    def test_secret_and_shareware_profiles_cannot_succeed_on_missing_assets(self):
+        for profile, required in (
+            ("public-secret-baseline", "-RequireAssets"),
+            ("shareware-data", "-RequireData"),
+        ):
+            with self.subTest(profile=profile):
+                code, _receipt, calls = self.run_profile(profile)
+                self.assertEqual(code, 0)
+                self.assertIn(required, calls[-1][0])
+                self.assertTrue(any("-Download" in argv for argv, _ in calls))
+
+    def test_ordered_and_all_weapons_build_all_backends_with_compile_provenance(self):
+        for profile in ("public-ordered-input", "public-all-weapons"):
+            with self.subTest(profile=profile):
+                code, _receipt, calls = self.run_profile(profile)
+                self.assertEqual(code, 0)
+                self.assertIn("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON", calls[0][0])
+                for index, game in ((1, "d1"), (3, "d2")):
+                    argv = calls[index][0]
+                    self.assertEqual(
+                        argv[argv.index("--target") + 1 :],
+                        [
+                            "test_upstream_compat",
+                            "dxx-redux-" + game,
+                            "dxx-redux-" + game + "-headless",
+                        ],
+                    )
+                argv = calls[-1][0]
+                self.assertEqual(argv[:2], ["xvfb-run", "-a"])
+                if profile == "public-ordered-input":
+                    for flag in (
+                        "-D1Exe",
+                        "-D2Exe",
+                        "-D1Headless",
+                        "-D2Headless",
+                        "-D1Graphics",
+                        "-D2Graphics",
+                    ):
+                        self.assertIn(flag, argv)
+                else:
+                    self.assertIn("-D1BuildDir", argv)
+                    self.assertIn("-D2BuildDir", argv)
+                    self.assertNotIn(
+                        "-Revision", argv
+                    )  # Existing owner binds exact clean HEAD itself.
+
 
 class StandaloneCMakeTests(unittest.TestCase):
     def test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts(self):

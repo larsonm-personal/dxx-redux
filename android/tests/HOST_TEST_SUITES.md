@@ -108,3 +108,15 @@ retail-audio experiments. `cmake:etc2-limits` builds the existing
 assets; the unchanged full project configure still fetches its normal ETC2/KTX
 build dependencies. Both profiles reuse original CMake flags and assertions and
 produce actual CTest leaf receipts. Their setup/download failures remain retryable.
+
+Further public runtime profiles bind the existing public-save-integrity recipes:
+`public-save` and `public-pickup` build both `test_upstream_compat` fixtures;
+`public-secret-baseline` builds both headless metadata executables and requires
+actual assets; `shareware-data` requires the prepared data instead of accepting
+missing-data skips. `public-ordered-input` and `public-all-weapons` build the
+capture, full graphics, and headless replay targets for both engines. Compile
+commands are exported so the existing all-weapons source/build/binary provenance
+checks remain intact, including its exact clean-HEAD requirement. These visual
+profiles use Xvfb and explicit x11 video; original timeout and assertion defaults
+remain unchanged. Retail pickup modes and secret-area baselines remain excluded
+from their explicitly public profiles.

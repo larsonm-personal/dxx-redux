@@ -151,6 +151,7 @@ def native_configure_arguments(repo, build, game):
         str(build),
         "-DCMAKE_BUILD_TYPE=Debug",
         "-DBUILD_TESTING=ON",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
         "-DCMAKE_C_FLAGS_DEBUG=-O0 -g1",
         "-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1",
         "-DOPENGL=ON",
@@ -209,6 +210,78 @@ def public_profile_arguments(suite, repo, build_root, work):
             binary("d2", ""),
             "-OutputDirectory",
             str(work / "flight"),
+        ]
+
+    def fixture(game):
+        return str(build_root / ("engine-" + game) / "main" / "test_upstream_compat")
+
+    if profile == "shareware-data":
+        return ["-RequireData"]
+    if profile == "public-save":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1Assets",
+            str(repo / "game_data/shareware/d1"),
+            "-D2Assets",
+            str(repo / "game_data/shareware/d2"),
+            "-Output",
+            str(work / "save"),
+        ]
+    if profile == "public-pickup":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Mode",
+            "pickup",
+            "-NativeExe",
+            fixture("d1"),
+            "-ImportedExe",
+            fixture("d2"),
+            "-Output",
+            str(work / "pickup"),
+        ]
+    if profile == "public-secret-baseline":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-RequireAssets",
+            "-D1Exe",
+            binary("d1", "-headless-metadata"),
+            "-D2Exe",
+            binary("d2", "-headless-metadata"),
+            "-OutputDir",
+            str(work / "secret-baseline"),
+        ]
+    if profile == "public-ordered-input":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1Headless",
+            binary("d1", "-headless"),
+            "-D2Headless",
+            binary("d2", "-headless"),
+            "-D1Graphics",
+            binary("d1", ""),
+            "-D2Graphics",
+            binary("d2", ""),
+            "-Output",
+            str(work / "ordered-input"),
+        ]
+    if profile == "public-all-weapons":
+        return [
+            "-D1BuildDir",
+            str(build_root / "engine-d1"),
+            "-D2BuildDir",
+            str(build_root / "engine-d2"),
+            "-Output",
+            str(work / "all-weapons"),
         ]
     if profile == "benchmark-policy":
         return ["-PolicySelfTest"]
@@ -345,7 +418,12 @@ def run_suite(suite, repo, build_root, output, timeout):
                         code,
                         retryable=True,
                     )
-                target = "dxx-redux-" + game + suite["target_suffix"]
+                targets = [
+                    name.format(game=game)
+                    for name in suite.get(
+                        "build_targets", ["dxx-redux-" + game + suite["target_suffix"]]
+                    )
+                ]
                 code = run(
                     [
                         "cmake",
@@ -354,7 +432,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                         "--parallel",
                         "2",
                         "--target",
-                        target,
+                        *targets,
                     ],
                     setup=True,
                 )
