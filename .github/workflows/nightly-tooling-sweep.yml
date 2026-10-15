@@ -54,7 +54,7 @@ jobs:
           persist-credentials: false
       - name: Prepare host dependency location
         run: |
-          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps"
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
       - name: Export authoritative master catalog
         shell: pwsh
@@ -127,7 +127,7 @@ jobs:
           echo "$RUNNER_TEMP/dxx-nightly-python/bin" >> "$GITHUB_PATH"
       - name: Prepare host dependency location
         run: |
-          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps"
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
       - name: Execute admitted host owners
         id: execute

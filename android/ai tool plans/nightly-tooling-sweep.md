@@ -40,3 +40,7 @@ Local PowerShell execution remains unavailable by prior instruction. Portable Py
 The initial 158 selections are a first runnable slice, not all repository tests. [Source reconciliation](../tests/NIGHTLY_COVERAGE_RECONCILIATION.md) distinguishes admitted owners, their children, explicit manual exclusions, and the still-unreviewed backlog. Pending audit does not imply unavailable.
 
 Read-only PR validation selects seven existing owners (2,610 estimated test seconds): catalog contracts, controller UI, D1 public death scenario, full JVM owner, full extractor, strict audio fingerprint, and the lazy D1 native CTest adapter. Cold setup/build time is additional and bounded by job timeouts. These hosted paths remain unqualified until their actual jobs pass.
+
+## First admission expansion
+
+The current policy contains 220 selections: the original 158 plus 55 source-reviewed, no-extra-argument host owners and seven narrowly reviewed media-independent Android owners. The [148-owner host audit](../tests/HOST_OWNER_AUDIT.md) records concrete prerequisites and remaining blockers; the original reconciliation remains a labelled initial snapshot. New eligibility is not a runtime pass. The real-network 7-Zip installation owner is held until setup phases are separated. Twelve additional host recommendations requiring extra provisioning remain held, and the destructive cue/ISO wrapper is covered through its existing extractor CTests instead.
