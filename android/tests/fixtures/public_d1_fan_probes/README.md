@@ -82,14 +82,16 @@ They do not replace the actual no-fire/delay captures or alter raw evidence.
 
 Full native recordings, RNG, compact inputs and summary oracles are byte-identical
 with screenshots and both pixel observers jointly enabled versus jointly disabled.
-The switches were tested jointly, not independently. The sparse capture-observation
+The switches were tested jointly, not independently. Separate fresh no-fire
+and delay repeats also reproduce the complete native recordings, RNG, compact
+inputs, summary oracles and live observations byte for byte. The sparse capture-observation
 log contains combat events and a 600-frame cap, not a complete 324-frame trace.
 
 ## Reproduce and check
 
-Build the required native fixture/game/console targets from retained source
-`03f9c85239dbbaeae668693bb82186452179bbd8` on branch
-`capture-public-d1-fan-transparency`. The capture helper checks clean source,
+Build the required native fixture/game/console targets from retained merged-source commit
+`7253def84bda52401731cc36ecffc2d1468503c5`
+in `cmake` history. Use a clean checkout of that exact revision. The capture helper checks clean source,
 successful build exit, compiled source identity, assets and executable hashes
 before invoking the fixture. From the repository root, with a working display
 or Xvfb:
@@ -98,7 +100,7 @@ or Xvfb:
 python3 android/tests/capture_public_d1_fault_probes.py \
   --repo "$PWD" --build "$D1_BUILD" --assets "$D1_DATA" \
   --output "$OUTPUT/new-positive" \
-  --revision 03f9c85239dbbaeae668693bb82186452179bbd8 \
+  --revision 7253def84bda52401731cc36ecffc2d1468503c5 \
   --scenario fan-transparency --pack --screenshots
 ```
 
@@ -135,8 +137,8 @@ Use the `causal` subcommand to compare all three decoded input sequences.
 corpus admission tests. It does not execute the games. Nine real executions cover
 native true console, native headed and imported headed. Native console/headed
 state, RNG and result bytes are identical; all six detailed pair comparisons
-match their explicit fault/control expectations. The independent audit passed
-133 checks. Existing retail/public cases and earlier fault probes remain intact.
+match their explicit fault/control expectations. The independent audits verify the refreshed capture provenance and detailed
+replay evidence. Existing retail/public cases and earlier fault probes remain intact.
 
 ## Evidence
 
@@ -152,5 +154,5 @@ match their explicit fault/control expectations. The independent audit passed
   are retained unchanged at the capture workspace paths in the manifest. The
   excerpt is explicitly a subset; no full trace has been replaced by it
 
-No engine repair is included. This branch documents a specific animation-phase
+No engine repair is included. This corpus documents a specific animation-phase
 collision fault while keeping broader imported-D1 fidelity unqualified.

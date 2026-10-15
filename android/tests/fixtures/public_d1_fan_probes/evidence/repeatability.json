@@ -1,0 +1,68 @@
+{
+  "schema": "public-d1-fan-repeatability-v1",
+  "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+  "status": "pass",
+  "scope": "Independent clean-source repeat of both causal controls; positive is independently repeated by joint observation-off capture",
+  "cases": [
+    {
+      "case": "no-fire",
+      "reference": "temp/merged-fan-refresh_20261014_0202/captures/no-fire",
+      "repeat": "temp/merged-fan-refresh_20261014_0202/captures/no-fire-repeat",
+      "status": "byte_identical",
+      "files": {
+        "raw/capture.dximdemo": {
+          "bytes": 9910489,
+          "sha256": "88d70c39ae721ae8e3c25e11e889800c054b2dac92a7fc0000b91411b0161d4a"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+          "bytes": 83924,
+          "sha256": "a865752cefc4f3204e6efc68b2ff1ff61d27b2043cb5b56dc33ba61b18e98774"
+        },
+        "raw/capture.json": {
+          "bytes": 161384,
+          "sha256": "b0e3794094d08a6f57916d3e02d9840e1cdc8205fe3d870b3be43114f70543df"
+        },
+        "candidate.dximdemo": {
+          "bytes": 56570,
+          "sha256": "bf0818b33b8273d17cf7f8bc253710bbd5fcb86b1287170aca9e9b5f807d5ce5"
+        },
+        "candidate.oracle.json": {
+          "bytes": 25968,
+          "sha256": "47c5207403d27e0be68528f966660f042cfa6ed2434f9b4c26ccc771ab4c7392"
+        }
+      },
+      "reference_manifest_sha256": "b955065e146e62a41eac79b631f279c5963b0d1de3230bd432d0ad7f073926f2",
+      "repeat_manifest_sha256": "5ac927781ce845e7e0f308be6f783cbe28e0d43600321ed1e3e1cd50fa1e8054"
+    },
+    {
+      "case": "delay",
+      "reference": "temp/merged-fan-refresh_20261014_0202/captures/delay",
+      "repeat": "temp/merged-fan-refresh_20261014_0202/captures/delay-repeat",
+      "status": "byte_identical",
+      "files": {
+        "raw/capture.dximdemo": {
+          "bytes": 9920708,
+          "sha256": "e3b9ac19e5dc3caac67442103c686d9b3d415a17c2b80cbebeaabae65f1bbd9c"
+        },
+        "raw/capture.dximdemo.rngtrace.jsonl": {
+          "bytes": 84356,
+          "sha256": "2017942fb690cd42045e41ea872d6e72e50faaf6f8b4bb5c50bc275772fe88ef"
+        },
+        "raw/capture.json": {
+          "bytes": 171315,
+          "sha256": "0311499327471afbffd010ae1458c633c1300ab4f211151de88502d6c4d10f0c"
+        },
+        "candidate.dximdemo": {
+          "bytes": 56604,
+          "sha256": "5d3989ca75f751f71da7d29d500f4b58ae7344eb878f6a1ff94680df1ca97ec3"
+        },
+        "candidate.oracle.json": {
+          "bytes": 25970,
+          "sha256": "297f29a7f5ba5af8addd88b276869444540a6fe5f95ec5081f4f7548d459cff4"
+        }
+      },
+      "reference_manifest_sha256": "0a3d39abc418df8768805ea0a21b77ddfd3ac9a80274876e2c88e686b0c7669e",
+      "repeat_manifest_sha256": "96d3097041c92b663c7aa27bbc4f87c778d638b6fd64a0fd00f111e541774970"
+    }
+  ]
+}

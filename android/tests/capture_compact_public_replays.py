@@ -9,26 +9,31 @@ import subprocess
 from pathlib import Path
 
 import compact_public_replay as compact
-from run_compact_public_replays import validate_assets, load_corpus, PUBLIC_CASES
+from run_compact_public_replays import load_corpus, validate_assets, PUBLIC_CASES
 import public_switch_replay as shoot_switch
 import public_guidebot_replay as guidebot
 import public_secondary_replay as secondary
 
 
-def capture_manifest(cases, reference_cases):
-    scopes = {case["demo"]: case["imported_d1"] for case in reference_cases if case["game"] == "d1"}
+def candidate_manifest(repo, cases):
+    """Carry forward each reviewed imported scope without inferring new coverage."""
+    reviewed = {
+        case["demo"]: case["imported_d1"]
+        for case in load_corpus(repo / "android/tests/fixtures/public_level_replays")
+        if case["game"] == "d1"
+    }
     return {
         "schema": 1,
         "cases": cases,
         "imported_d1": {
             "schema": 1,
-            "cases": {case["demo"]: scopes[case["demo"]] for case in cases if case["game"] == "d1"},
+            "cases": {case["demo"]: reviewed[case["demo"]] for case in cases if case["game"] == "d1"},
         },
     }
 
 
 def capture(args):
-    reference_cases = load_corpus(args.repo / "android/tests/fixtures/public_level_replays")
+    load_corpus(args.repo / "android/tests/fixtures/public_level_replays")
     args.output.mkdir(parents=True, exist_ok=False)
     cases = []
     for game in ("d1", "d2"):
@@ -153,7 +158,7 @@ def capture(args):
                     "actions": actions,
                 }
             )
-    (args.output / "manifest.json").write_text(json.dumps(capture_manifest(cases, reference_cases), indent=4) + "\n")
+    (args.output / "manifest.json").write_text(json.dumps(candidate_manifest(args.repo, cases), indent=4) + "\n")
     print("Captured candidates only; replay and repeated-capture checks are required before admission")
 
 

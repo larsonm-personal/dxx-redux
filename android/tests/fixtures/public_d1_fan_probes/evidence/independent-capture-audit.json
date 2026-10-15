@@ -1,58 +1,51 @@
 {
-  "scope": "Read-only independent provenance, capture, packing and native-oracle audit; no games, builds or replays executed",
-  "revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
-  "tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
+  "scope": "Independent read-only audit of newly recorded merged-source captures, native oracle reconstruction, build identity, controls and replay bytes; no games/builds/replays executed",
+  "revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+  "tree": "0880df2ccbc35d334b4151803e841e6a0f8bc625",
   "status": "pass",
+  "source_snapshot_sha256": "40501345bb9cf2af90fdb5e4b5dfbdb7c206e1e677e6803107b44ea69e3563c7",
   "checks": [
     {
       "check": "clean exact HEAD",
       "pass": true
     },
     {
-      "check": "published source tree and parent",
-      "pass": true
-    },
-    {
-      "check": "remote retained capture ref",
-      "pass": true
-    },
-    {
-      "check": "published source identical to reviewed source tree",
-      "pass": true
-    },
-    {
-      "check": "source commit changes limited to test and audit harness",
+      "check": "merged source tree and parents",
       "pass": true,
       "details": [
-        "android/ai tool plans/plan_public_fan_transparency_20261013.md",
-        "android/tests/capture_public_d1_fault_probes.py",
-        "android/tests/check_public_fan_transparency.py",
-        "android/tests/public_fan_fault_fixture.hpp",
-        "android/tests/public_level_replay_fixture.hpp",
-        "android/tests/test_capture_public_d1_fault_probes.py",
-        "android/tests/test_check_public_fan_transparency.py",
-        "android/tests/test_public_d1_fault_tools.ps1",
-        "android/tests/test_upstream_compat.cpp"
+        "1561c58ba7e03ca4755f2a536bffb2c8ea6447f3",
+        "de8edfc7201b6afc18c79f3af16e36c3067c2410"
       ]
     },
     {
-      "check": "built target identity temp/native-d1-build/main/test_upstream_compat",
+      "check": "origin/cmake retains exact merged capture source",
+      "pass": true,
+      "details": {
+        "remote_ref": "7253def84bda52401731cc36ecffc2d1468503c5\trefs/heads/cmake"
+      }
+    },
+    {
+      "check": "merged source identical to independently reviewed clean tree",
       "pass": true
     },
     {
-      "check": "built target identity temp/native-d1-build/main/d1x-redux",
+      "check": "built target identity buildd1-refresh/main/test_upstream_compat",
       "pass": true
     },
     {
-      "check": "built target identity temp/native-d1-build/main/dxx-redux-d1-headless",
+      "check": "built target identity buildd1-refresh/main/d1x-redux",
       "pass": true
     },
     {
-      "check": "built target identity temp/native-d2-build/main/test_upstream_compat",
+      "check": "built target identity buildd1-refresh/main/dxx-redux-d1-headless",
       "pass": true
     },
     {
-      "check": "built target identity temp/native-d2-build/main/d2x-redux",
+      "check": "built target identity buildd2-refresh/main/test_upstream_compat",
+      "pass": true
+    },
+    {
+      "check": "built target identity buildd2-refresh/main/d2x-redux",
       "pass": true
     },
     {
@@ -63,39 +56,54 @@
       "check": "d1 actual fixture/recorder/native effects compile labels",
       "pass": true,
       "details": {
+        "main/CMakeFiles/dxx-redux-d1.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/effects.c",
+          "stamp": "7253def84",
+          "d2_define": false
+        },
+        "main/CMakeFiles/dxx-redux-d1.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/fireball.c",
+          "stamp": "7253def84",
+          "d2_define": false
+        },
+        "main/CMakeFiles/dxx-redux-d1.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
+          "d2_define": false
+        },
         "main/CMakeFiles/dxx-redux-d1-headless.dir/effects.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/effects.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/effects.c",
+          "stamp": "7253def84",
           "d2_define": false
         },
         "main/CMakeFiles/dxx-redux-d1-headless.dir/fireball.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/fireball.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/fireball.c",
+          "stamp": "7253def84",
           "d2_define": false
         },
-        "main/CMakeFiles/dxx-redux-d1-headless.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
-          "stamp": "03f9c8523",
+        "main/CMakeFiles/dxx-redux-d1-headless.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
           "d2_define": false
         },
         "main/CMakeFiles/test_upstream_compat.dir/effects.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/effects.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/effects.c",
+          "stamp": "7253def84",
           "d2_define": false
         },
         "main/CMakeFiles/test_upstream_compat.dir/fireball.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d1/main/fireball.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d1/main/fireball.c",
+          "stamp": "7253def84",
           "d2_define": false
         },
-        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp",
-          "stamp": "03f9c8523",
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/tests/test_upstream_compat.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/tests/test_upstream_compat.cpp",
+          "stamp": "7253def84",
           "d2_define": false
         },
-        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
-          "stamp": "03f9c8523",
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
           "d2_define": false
         }
       }
@@ -108,24 +116,54 @@
       "check": "d2 actual fixture/recorder/native effects compile labels",
       "pass": true,
       "details": {
+        "main/CMakeFiles/dxx-redux-d2.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/effects.c",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
+        "main/CMakeFiles/dxx-redux-d2.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/fireball.c",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
+        "main/CMakeFiles/dxx-redux-d2.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
+        "main/CMakeFiles/dxx-redux-d2-headless.dir/effects.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/effects.c",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
+        "main/CMakeFiles/dxx-redux-d2-headless.dir/fireball.c.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/fireball.c",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
+        "main/CMakeFiles/dxx-redux-d2-headless.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
+          "d2_define": true
+        },
         "main/CMakeFiles/test_upstream_compat.dir/effects.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d2/main/effects.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/effects.c",
+          "stamp": "7253def84",
           "d2_define": true
         },
         "main/CMakeFiles/test_upstream_compat.dir/fireball.c.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/d2/main/fireball.c",
-          "stamp": "03f9c8523",
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/d2/main/fireball.c",
+          "stamp": "7253def84",
           "d2_define": true
         },
-        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/tests/test_upstream_compat.cpp",
-          "stamp": "03f9c8523",
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/tests/test_upstream_compat.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/tests/test_upstream_compat.cpp",
+          "stamp": "7253def84",
           "d2_define": true
         },
-        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
-          "source": "/workspace/scratch/334b48b99af4/d1-fault-probes/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
-          "stamp": "03f9c8523",
+        "main/CMakeFiles/test_upstream_compat.dir/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp.o": {
+          "source": "/workspace/scratch/334b48b99af4/refresh-merged-demo-corpus/android/app/src/main/cpp/shared/input_demo_recorder.cpp",
+          "stamp": "7253def84",
           "d2_define": true
         }
       }
@@ -139,7 +177,7 @@
       }
     },
     {
-      "check": "temp/final-fan-captures/positive all declared artifact hashes",
+      "check": "positive all declared artifact hashes",
       "pass": true,
       "details": {
         "artifacts": 17,
@@ -216,7 +254,7 @@
       }
     },
     {
-      "check": "temp/final-fan-captures/positive-observation-off all declared artifact hashes",
+      "check": "positive-observation-off all declared artifact hashes",
       "pass": true,
       "details": {
         "artifacts": 13,
@@ -293,7 +331,7 @@
       }
     },
     {
-      "check": "temp/final-fan-captures/no-fire all declared artifact hashes",
+      "check": "no-fire all declared artifact hashes",
       "pass": true,
       "details": {
         "artifacts": 17,
@@ -370,7 +408,7 @@
       }
     },
     {
-      "check": "temp/final-fan-captures/delay all declared artifact hashes",
+      "check": "delay all declared artifact hashes",
       "pass": true,
       "details": {
         "artifacts": 17,
@@ -447,6 +485,160 @@
       }
     },
     {
+      "check": "no-fire-repeat all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 17,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "no-fire-repeat capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat compile commands current",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat actual native projection",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56570,
+        "oracle": 25968
+      }
+    },
+    {
+      "check": "no-fire-repeat independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 344,
+        "all_rng_events": 358
+      }
+    },
+    {
+      "check": "no-fire-repeat oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "no-fire-repeat sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
+      "check": "delay-repeat all declared artifact hashes",
+      "pass": true,
+      "details": {
+        "artifacts": 17,
+        "mismatches": []
+      }
+    },
+    {
+      "check": "delay-repeat capture identity and complete candidate",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat actual source recipe hashes",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat compile commands current",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat actual raw compact manifest headers identical",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat ordinary trainee level one 324 frames",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat actual native projection",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat complete decoded orders and controls retained",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat compact contains no telemetry/state/save/checkpoint or opaque payload",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat separate compact size caps",
+      "pass": true,
+      "details": {
+        "input": 56604,
+        "oracle": 25970
+      }
+    },
+    {
+      "check": "delay-repeat independent native-only oracle reconstruction",
+      "pass": true,
+      "details": {
+        "frames": 324,
+        "sim_rng_events": 346,
+        "all_rng_events": 360
+      }
+    },
+    {
+      "check": "delay-repeat oracle provenance native source only",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat raw observation frame evidence contiguous",
+      "pass": true
+    },
+    {
+      "check": "delay-repeat sparse event log is not treated as full frame trace",
+      "pass": true,
+      "details": {
+        "record_types": {
+          "meta": 1,
+          "robot_damage": 7,
+          "robot_loot": 3,
+          "player_weapon_damage": 4
+        }
+      }
+    },
+    {
       "check": "joint screenshots and both pixel probes on/off byte neutrality raw/capture.dximdemo",
       "pass": true
     },
@@ -472,8 +664,8 @@
       "details": [
         {
           "path": "$[299].ops[0].p.fl",
-          "positive": 1,
-          "control": 0
+          "expected": 1,
+          "actual": 0
         }
       ]
     },
@@ -483,13 +675,13 @@
       "details": [
         {
           "path": "$[299].ops[0].p.fl",
-          "positive": 1,
-          "control": 0
+          "expected": 1,
+          "actual": 0
         },
         {
           "path": "$[300].ops[0].p.fl",
-          "positive": 0,
-          "control": 1
+          "expected": 0,
+          "actual": 1
         }
       ]
     },
@@ -514,7 +706,7 @@
       "pass": true
     },
     {
-      "check": "temp/final-fan-profile all declared artifact hashes",
+      "check": "matched pilot all declared artifact hashes",
       "pass": true,
       "details": {
         "artifacts": 7,
@@ -538,17 +730,20 @@
     },
     {
       "check": "copied matched pilot bytes unchanged",
-      "pass": true
+      "pass": true,
+      "details": {
+        "copied_files": 18
+      }
     },
     {
       "check": "nine replay process outcomes complete",
       "pass": true
     },
     {
-      "check": "temp/final-fan-replays all declared artifact hashes",
+      "check": "nine replay all declared artifact hashes",
       "pass": true,
       "details": {
-        "artifacts": 38,
+        "artifacts": 39,
         "mismatches": []
       }
     },
@@ -569,17 +764,19 @@
       "pass": true
     },
     {
-      "check": "reserve retained",
-      "pass": true,
-      "details": {
-        "free_bytes": 4359258112
-      }
+      "check": "no-fire fresh native control repeat exact bytes",
+      "pass": true
+    },
+    {
+      "check": "delay fresh native control repeat exact bytes",
+      "pass": true
     }
   ],
   "notes": [
-    "The sparse capture-observation.jsonl.gz carries a 600-frame cap and combat events, with no complete per-frame records. Full recorder and capture.json were used instead.",
-    "On/off equality tests the combined removal of screenshots and both pixel observers. It does not separately isolate the three instrumentation switches.",
-    "Delay is a one-input scheduling intervention with naturally evolving muzzle geometry, not a frozen-geometry phase-only experiment.",
-    "Detailed paired imported mismatch and admission analysis remains a separate review."
+    "Audit source/build snapshot was taken while exact merged source tree was clean, before admission-only edits.",
+    "Native full recording and live observations are sole oracle inputs; replay traces are checked against them, never used to make expectations.",
+    "Combined observer-off comparison removes screenshots and both pixel observers together.",
+    "Delayed input changes naturally evolving muzzle geometry and is not a frozen-geometry phase-only intervention.",
+    "Focused fault/control success is not full native/imported raw parity."
   ]
 }

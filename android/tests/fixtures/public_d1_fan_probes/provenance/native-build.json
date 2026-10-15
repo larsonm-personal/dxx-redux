@@ -1,30 +1,28 @@
 {
-  "status": "clean published source minimal target rebuild succeeded",
-  "revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
-  "tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
-  "recorder_stamp": "03f9c8523",
+  "status": "clean merged source minimal target rebuild succeeded",
+  "revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+  "tree": "0880df2ccbc35d334b4151803e841e6a0f8bc625",
+  "recorder_stamp": "7253def84",
   "targets": {
-    "temp/native-d1-build/main/test_upstream_compat": {
-      "sha256": "3183f9c095e5c11916a5a4f99303304d3c120854e381d43e75cdfb06a144c16a",
-      "bytes": 13189400
+    "buildd1-refresh/main/test_upstream_compat": {
+      "bytes": 13451864,
+      "sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec"
     },
-    "temp/native-d1-build/main/d1x-redux": {
-      "sha256": "2d0320d8bb0a814fedf7fda6189257ab070d688880c776d68194d33dbc2bfd56",
-      "bytes": 9761592
+    "buildd1-refresh/main/d1x-redux": {
+      "bytes": 9956144,
+      "sha256": "c551beb0e10e9da71d488340ecc8144180aaa80b2b6344cd0941d6c567daed63"
     },
-    "temp/native-d1-build/main/dxx-redux-d1-headless": {
-      "sha256": "9a499151522f0f9462b84eda3249192f3494cf44f8aa095ec6ff8cd23a1673f2",
-      "bytes": 9812864
+    "buildd1-refresh/main/dxx-redux-d1-headless": {
+      "bytes": 10007424,
+      "sha256": "247a96f3fa5540cdc132bdb9ade707dccec9a4cd5e565827c2e54215e51ec138"
     },
-    "temp/native-d2-build/main/test_upstream_compat": {
-      "sha256": "975a710c2b73c3b801d205f8e01142b12ebfbaee1aa48b68207b95a363c76cfd",
-      "bytes": 16468832
+    "buildd2-refresh/main/test_upstream_compat": {
+      "bytes": 16724040,
+      "sha256": "2ec168e3c8ecf2bebb89f60822e1b570c0d2f6e77c7f67977c8ba22ee9b60a7a"
     },
-    "temp/native-d2-build/main/d2x-redux": {
-      "sha256": "e3a1bda1f92ebdafbeee910a6b71cbd3ba3ab64f511676ee4c86f5a7027258ff",
-      "bytes": 12547936
+    "buildd2-refresh/main/d2x-redux": {
+      "bytes": 12747416,
+      "sha256": "cb610ff1dea56b6e0bae89aabc5fd9510ef1f4143c71510f03f0ce9c070f8f18"
     }
-  },
-  "prior_binaries": "temp/qualified-8b-executable-archives/manifest.json",
-  "free_bytes_after": 4491452416
+  }
 }

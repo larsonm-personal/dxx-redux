@@ -17,12 +17,12 @@ import compact_public_replay as compact
 import d1_replay_parity as parity
 
 ROOT = Path(__file__).parent / "fixtures/public_d1_fan_probes"
-REVISION = "03f9c85239dbbaeae668693bb82186452179bbd8"
-TREE = "9dabc259cdd19c143dc00e082101a75688acc6d6"
+REVISION = "7253def84bda52401731cc36ecffc2d1468503c5"
+TREE = "0880df2ccbc35d334b4151803e841e6a0f8bc625"
 CASES = {
-    "d1-fan-transparency": ("positive", "known-imported-fan-transparency-fault", 56604, 66992),
-    "d1-fan-no-fire": ("no-fire", "causal-no-fire-control", 56570, 62181),
-    "d1-fan-delay": ("delay", "causal-delayed-flare-control", 56604, 66784),
+    "d1-fan-transparency": ("positive", "known-imported-fan-transparency-fault", 56604, 66996),
+    "d1-fan-no-fire": ("no-fire", "causal-no-fire-control", 56570, 62185),
+    "d1-fan-delay": ("delay", "causal-delayed-flare-control", 56604, 66788),
 }
 BACKENDS = ("console", "headed")
 MAX_EVIDENCE_BYTES = 8 * 1024 * 1024
@@ -132,7 +132,7 @@ class PublicD1FanCorpusTests(unittest.TestCase):
         build_name = "provenance/native-build.json"
         build = self.read(build_name)
         self.assertEqual((build["revision"], build["tree"], build["recorder_stamp"]), (REVISION, TREE, REVISION[:9]))
-        executable = build["targets"]["temp/native-d1-build/main/test_upstream_compat"]["sha256"]
+        executable = build["targets"]["buildd1-refresh/main/test_upstream_compat"]["sha256"]
         for name, case in self.cases.items():
             with self.subTest(case=name):
                 header, summary = compact.validate(ROOT / case["input"], ROOT / case["summary_oracle"])
@@ -155,7 +155,10 @@ class PublicD1FanCorpusTests(unittest.TestCase):
                 self.assertEqual(source["capture_manifest_sha256"], parity.digest(ROOT / helper_name))
                 self.assertEqual(source["build_provenance_sha256"], parity.digest(ROOT / build_name))
                 self.assertEqual(source["source_recipe_sha256"], helper["source_recipe_sha256"])
-                self.assertEqual(helper["source_recipe_sha256"]["android/tests/public_fan_fault_fixture.hpp"], "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b")
+                self.assertEqual(
+                    helper["source_recipe_sha256"]["android/tests/public_fan_fault_fixture.hpp"],
+                    "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+                )
                 self.assertEqual(source["asset_sha256"], compact.pinned_assets("d1"))
                 self.assertEqual(
                     (helper["status"], helper["stage"], helper["capture_invoked"]), ("candidate", "complete", True)
@@ -309,7 +312,7 @@ class PublicD1FanCorpusTests(unittest.TestCase):
         self.assertEqual(replay["build_provenance_sha256"], parity.digest(ROOT / "provenance/native-build.json"))
         self.assertEqual(profile["source_revision"], REVISION)
         self.assertEqual(
-            profile["executable_sha256"], build["targets"]["temp/native-d2-build/main/test_upstream_compat"]["sha256"]
+            profile["executable_sha256"], build["targets"]["buildd2-refresh/main/test_upstream_compat"]["sha256"]
         )
         writer = profile["writer_report"]
         self.assertEqual(writer["profile"], "d1match")
@@ -352,7 +355,8 @@ class PublicD1FanCorpusTests(unittest.TestCase):
                     "headless-console" if run["backend"] == "console" else "visual",
                 )
                 self.assertEqual(
-                    command[command.index("-DemoPath") + 1], f"temp/final-fan-captures/{run['case']}/candidate.dximdemo"
+                    command[command.index("-DemoPath") + 1],
+                    f"temp/merged-fan-refresh_20261014_0202/captures/{run['case']}/candidate.dximdemo",
                 )
                 if imported:
                     self.assertIn("-D1InD2", command)
@@ -516,16 +520,18 @@ class PublicD1FanCorpusTests(unittest.TestCase):
                     "Synthetic in-memory checker mutation of the verified final decoded imported trace; raw evidence and oracle unchanged",
                 )
         sources = {
-            "temp/final-fan-analysis/positive.detail.oracle.json": self.manifest["files"][
+            "temp/merged-fan-refresh_20261014_0202/analysis/positive.detail.oracle.json": self.manifest["files"][
                 self.cases["positive"]["detail_oracle"]
             ],
-            "temp/final-fan-captures/positive/candidate.dximdemo": self.manifest["files"][
+            "temp/merged-fan-refresh_20261014_0202/captures/positive/candidate.dximdemo": self.manifest["files"][
                 self.cases["positive"]["input"]
             ],
         }
         sources.update(
             {
-                f"temp/final-fan-replays/{name}-{backend}/{file}": replay["files"][f"{name}-{backend}/{file}"]
+                f"temp/merged-fan-refresh_20261014_0202/replays/{name}-{backend}/{file}": replay["files"][
+                    f"{name}-{backend}/{file}"
+                ]
                 for name in self.cases
                 for backend in ("console", "imported")
                 for file in ("state.jsonl.gz", "rng.jsonl", "run.log")
@@ -537,18 +543,53 @@ class PublicD1FanCorpusTests(unittest.TestCase):
         capture = self.read("evidence/independent-capture-audit.json")
         detail = self.read("evidence/independent-detail-audit.json")
         self.assertEqual((capture["revision"], capture["tree"]), (REVISION, TREE))
+        snapshot_name = "provenance/independent-source-snapshot.json"
+        snapshot = self.read(snapshot_name)
+        self.assertEqual(capture["source_snapshot_sha256"], parity.digest(ROOT / snapshot_name))
+        self.assertEqual((snapshot["head"], snapshot["tree"], snapshot["origin_cmake"]), (REVISION, TREE, REVISION))
+        self.assertEqual(snapshot["status"], "")
+        self.assertEqual(len(snapshot["parents"]), 2)
         for audit, minimum in ((capture, 90), (detail, 39)):
             self.assertEqual(audit["status"], "pass")
             self.assertGreaterEqual(len(audit["checks"]), minimum)
             self.assertEqual(len({c["check"] for c in audit["checks"]}), len(audit["checks"]))
             self.assertTrue(all(c["pass"] is True for c in audit["checks"]))
         capture_checks = {c["check"] for c in capture["checks"]}
-        self.assertTrue({"published source tree and parent", "remote retained capture ref", "published source identical to reviewed source tree", "d1 actual fixture/recorder/native effects compile labels", "d2 actual fixture/recorder/native effects compile labels", "actual D1 shareware asset hashes pinned", "native matched pilot only documented camera byte differs", "matched pilot source and writer identity", "copied matched pilot bytes unchanged", "nine replay process outcomes complete", "replay build provenance exact"} <= capture_checks)
+        self.assertTrue(
+            {
+                "merged source tree and parents",
+                "origin/cmake retains exact merged capture source",
+                "merged source identical to independently reviewed clean tree",
+                "d1 actual fixture/recorder/native effects compile labels",
+                "d2 actual fixture/recorder/native effects compile labels",
+                "actual D1 shareware asset hashes pinned",
+                "native matched pilot only documented camera byte differs",
+                "matched pilot source and writer identity",
+                "copied matched pilot bytes unchanged",
+                "nine replay process outcomes complete",
+                "replay build provenance exact",
+            }
+            <= capture_checks
+        )
         checks = {c["check"]: c for c in detail["checks"]}
         for name in self.cases:
-            for suffix in ("actual source recipe hashes", "actual raw compact manifest headers identical", "compact contains no telemetry/state/save/checkpoint or opaque payload", "independent native-only oracle reconstruction", "native headed/console complete raw equality"):
+            for suffix in (
+                "actual source recipe hashes",
+                "actual raw compact manifest headers identical",
+                "compact contains no telemetry/state/save/checkpoint or opaque payload",
+                "independent native-only oracle reconstruction",
+                "native headed/console complete raw equality",
+            ):
                 self.assertIn(f"{name} {suffix}", capture_checks)
-            for suffix in ("detail source/provenance bridge hashes", "detail exact native observations and terminal", "independent detail frame and carried RNG fingerprints", "independent detail decoded control hash", "independent native replay matches entire live full+gameplay frames", "native replay whole RNG matches native capture", "report source integrity and raw failure retained"):
+            for suffix in (
+                "detail source/provenance bridge hashes",
+                "detail exact native observations and terminal",
+                "independent detail frame and carried RNG fingerprints",
+                "independent detail decoded control hash",
+                "independent native replay matches entire live full+gameplay frames",
+                "native replay whole RNG matches native capture",
+                "report source integrity and raw failure retained",
+            ):
                 self.assertIn(f"{name} {suffix}", checks)
             completed = checks[f"{name} imported complete expected prefix and boundaries"]["details"]
             count, phase_name = (301, "aborted") if name == "positive" else (324, "terminal")
@@ -581,6 +622,42 @@ class PublicD1FanCorpusTests(unittest.TestCase):
                 "result": 2268,
             },
         )
+
+    def test_native_causal_control_captures_repeat_byte_for_byte(self):
+        report = self.read("evidence/repeatability.json")
+        self.assertEqual(report["schema"], "public-d1-fan-repeatability-v1")
+        self.assertEqual((report["status"], report["source_revision"]), ("pass", REVISION))
+        self.assertEqual({row["case"] for row in report["cases"]}, {"no-fire", "delay"})
+        self.assertEqual(len(report["cases"]), 2)
+        expected_files = {
+            "raw/capture.dximdemo",
+            "raw/capture.dximdemo.rngtrace.jsonl",
+            "raw/capture.json",
+            "candidate.dximdemo",
+            "candidate.oracle.json",
+        }
+        for row in report["cases"]:
+            name = row["case"]
+            with self.subTest(case=name):
+                self.assertEqual(row["status"], "byte_identical")
+                reference_name = f"provenance/{name}.capture-manifest.json"
+                repeat_name = f"provenance/{name}-repeat.capture-manifest.json"
+                reference, repeat = self.read(reference_name), self.read(repeat_name)
+                self.assertEqual(row["reference_manifest_sha256"], parity.digest(ROOT / reference_name))
+                self.assertEqual(row["repeat_manifest_sha256"], parity.digest(ROOT / repeat_name))
+                self.assertEqual((repeat["status"], repeat["stage"]), ("candidate", "complete"))
+                self.assertIs(repeat["capture_invoked"], True)
+                self.assertIs(repeat["screenshots"], True)
+                self.assertIs(repeat["pixel_observation"], True)
+                self.assertEqual(repeat["source_revision"], REVISION)
+                self.assertEqual(repeat["recording_header"], reference["recording_header"])
+                self.assertEqual(repeat["source_recipe_sha256"], reference["source_recipe_sha256"])
+                self.assertEqual(repeat["capture_executable_sha256"], reference["capture_executable_sha256"])
+                self.assertEqual((repeat["no_flare"], repeat["flare_delay"]), (name == "no-fire", int(name == "delay")))
+                self.assertEqual(set(row["files"]), expected_files)
+                for file in expected_files:
+                    self.assertEqual(row["files"][file], reference["files"][file])
+                    self.assertEqual(row["files"][file], repeat["files"][file])
 
 
 if __name__ == "__main__":

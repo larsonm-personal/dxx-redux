@@ -1,23 +1,23 @@
 {
-  "status": "clean published candidate",
+  "status": "clean merged source candidate",
   "engine_inputs_unchanged": true,
-  "engine_source_revision": "03f9c85239dbbaeae668693bb82186452179bbd8",
-  "source_tree": "9dabc259cdd19c143dc00e082101a75688acc6d6",
-  "executable_sha256": "3183f9c095e5c11916a5a4f99303304d3c120854e381d43e75cdfb06a144c16a",
+  "engine_source_revision": "7253def84bda52401731cc36ecffc2d1468503c5",
+  "source_tree": "0880df2ccbc35d334b4151803e841e6a0f8bc625",
+  "executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
   "source_recipe_sha256": {
-    "android/tests/test_upstream_compat.cpp": "4f00669c738d216787421f2fac85a2c8ce7b5f2f700007d8ac6a4a353bc8bd32",
-    "android/tests/public_level_replay_fixture.hpp": "fa78be239b24f9c25f2ec08abec8ca6919cd3de91a01db5e9f2d0c59d19960d0",
+    "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a820de84a8ca8a9e834c002965a9b2924c43ea4e2545bb5f6f7f7af2a53e6a0d",
     "android/tests/public_effect_phase_fixture.hpp": "231e8cb14ab2be2adc1bcdaea033b7a2216a47a3db3422cf6639a84aa1b54efc",
+    "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b",
+    "android/tests/public_level_replay_fixture.hpp": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
     "android/tests/public_missile_fault_fixture.hpp": "24d910d646fe7a289ba58fc76821bc39d225df98d801be03e4bb476c05a95b60",
-    "android/app/src/main/cpp/shared/input_demo_recorder.cpp": "a42dd71e9bc39cd489a7d906c307f0357b9f845b1ad4bca8d9e50cc399ca42b6",
-    "android/tests/public_fan_fault_fixture.hpp": "40eb1f6fed8757d1eeaea4bc85967227afc504291f44c805ccfd087b21772c2b"
+    "android/tests/test_upstream_compat.cpp": "73fb5151e09319f2200e5fc4700807fee07abb3472157e4a371a485c1495cdb3"
   },
   "asset_sha256": {
     "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
     "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
   },
-  "capture_manifest_sha256": "18377aac5282dcb4719509fc151b4c5f37f52b4d7e1a1766bd117a6443c72da9",
-  "build_provenance_sha256": "3d2f78116f758a3423de295f98de820e82eb6e9b4c38f860b97eb60d91eececd",
+  "capture_manifest_sha256": "0a3d39abc418df8768805ea0a21b77ddfd3ac9a80274876e2c88e686b0c7669e",
+  "build_provenance_sha256": "c139ad383ab345c8a0df5c68fdd52676a02085827aeb5c1e60c179905abffb47",
   "capture_files_verified": true,
-  "actual_recorder_stamp": "03f9c8523"
+  "actual_recorder_stamp": "7253def84"
 }

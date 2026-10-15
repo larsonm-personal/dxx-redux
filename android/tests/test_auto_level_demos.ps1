@@ -31,7 +31,7 @@ try {
         $missionMode = if ($scenario -eq 'd1-in-d2') { 'd1-in-d2' } else { 'native' }
         $destination = Join-Path $OutputDirectory $scenario
         New-Item -ItemType Directory -Force -Path $destination | Out-Null
-        if ($Cheats -and $gameName -eq 'd2') {
+        if ($Cheats -and $scenario -eq 'd2') {
             # Use the same grants and live firing sequence through the guided shot
             # Keep the recorder's explicit camera rejection covered independently
             $steps = @(Read-JsoncFile -Path (Join-Path $script:ANDROID_ROOT 'game_scripts/test_auto_level_cheats.jsonc'))
@@ -105,25 +105,30 @@ try {
             }
             if ($Cheats) {
                 if ($header.level -eq 1) {
-                    $commands = @(foreach ($line in [IO.File]::ReadLines($local)) {
-                            $row = $line | ConvertFrom-Json
-                            if ($row.type -notin @('frame', 'input_tail')) { continue }
-                            foreach ($operation in $row.dispatch.ops) {
-                                if ($operation.k -ne 'command') { continue }
-                                $event = $operation.event
-                                if ($event.command -eq 'enable_cheats') { 'enable_cheats' }
-                                elseif ($event.command -eq 'grant_all_weapons') { "grant_all_weapons:$($event.grant)" }
+                    $cheatCommands = @(Get-Content -LiteralPath $local | ForEach-Object {
+                            $row = $_ | ConvertFrom-Json
+                            if ($row.type -in @('frame', 'input_tail')) {
+                                if ($row.events | Where-Object command -eq 'cheat') { throw 'Unexpected legacy weapon cheat event' }
+                                foreach ($op in $row.dispatch.ops) {
+                                    $command = $op.event
+                                    if ($command.command -eq 'cheat') { throw 'Unexpected legacy weapon cheat command' }
+                                    if ($command.command -in @('enable_cheats', 'grant_all_weapons')) {
+                                        if ($op.k -cne 'command' -or $command.kind -cne 'direct_command') { throw 'Malformed weapon cheat operation' }
+                                        if ($command.command -eq 'grant_all_weapons') { "$($command.command):$($command.grant)" } else { $command.command }
+                                    }
+                                }
                             }
                         })
-                    $expectedCommands = if ($gameName -eq 'd1') {
+                    $expectedCheats = if ($gameName -eq 'd1') {
                         @('enable_cheats', 'grant_all_weapons:d1_scourge', 'grant_all_weapons:d1_bigred', 'grant_all_weapons:d1_bigred')
                     } else {
+                        # honestbob resolves the active gameplay profile in weapon_cheat_shared.c
                         $grant = if ($scenario -eq 'd1-in-d2') {
                             if ($DataEdition -eq 'shareware') { 'd1_scourge' } else { 'd1_bigred' }
                         } else { 'd2_honestbob' }
                         @("grant_all_weapons:$grant", "grant_all_weapons:$grant")
                     }
-                    if (($commands -join ',') -cne ($expectedCommands -join ',')) { throw 'Missing, reordered or wrong-profile weapon grant commands' }
+                    if (($cheatCommands -join ',') -cne ($expectedCheats -join ',')) { throw 'Missing or reordered weapon cheat commands' }
                 } elseif ($header.level_start.cheats_enabled -ne 1 -or $header.level_start.score -ne 0) {
                     throw 'Next level lost cheat scoring state'
                 }

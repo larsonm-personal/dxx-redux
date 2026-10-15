@@ -4,7 +4,11 @@ The corpus preserves production-recorder captures with pinned Descent 1 v1.4
 shareware and Descent 2 v1.0 demo data. Recordings start from ordinary authored
 level spawns; each scenario declares its level in the manifest. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
-in the replay or its companions. Original oracle bytes remain unchanged; converted legacy inputs have explicit migration sidecars.
+in the replay or its companions. All seventeen scenes were freshly recorded twice from
+merged source `7253def84bda52401731cc36ecffc2d1468503c5`. Their native
+recordings, compact inputs, RNG traces, summary reports and observation oracles
+were byte-identical across the independent captures. These are direct format-5
+captures; obsolete conversion sidecars have been removed.
 
 ## Size and evidence contract
 
@@ -26,12 +30,10 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
-`game_data/test_data_manifest.json` identify the source distributions. The source
-revision denotes the engine base for the original seven scenes. Combat, loot, door-lifecycle and Guide-Bot oracles
-point to an exact published source-only commit built before fixture admission;
-`capture_source_sha256` also identifies the exact capture fixture header. Combat, loot, door-lifecycle and Guide-Bot
-packing and admission require the recorder's compiled Git identity to match that
-published source revision. Reconfigure CMake after selecting the capture commit
+`game_data/test_data_manifest.json` identify the source distributions. Every oracle points to the same published merged source commit, built before
+fixture admission; `capture_source_sha256` identifies the exact capture fixture
+header. Ordered-input packing and admission require the recorder's compiled Git
+identity to match that published source revision. Reconfigure CMake after selecting the capture commit
 so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG once before the first input batch, then checks the
 carried pre-input and computed post-input boundaries; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
@@ -133,9 +135,9 @@ initialization untouched, including the level-entry starfield draws.
 - `guidebot-release` (D2 only): ordinary thrust and aiming reach the original
   cage from the level-one spawn. Starting lasers damage the authored barrier at
   frame 101; walls 74 and 75 blast at frame 177. The same original Guide-Bot
-  (object 28, ID 33, signature 29) physically exits segment 224 at frame 181,
-  then its native talk/release flag changes at frame 190. These are distinct
-  boundaries, not interchangeable proxies. The 221-frame scene observes another
+  (object 28, ID 33, signature 29) physically exits segment 224 at frame 179,
+  then its native talk/release flag changes at frame 188. These are distinct
+  boundaries, not interchangeable proxies. The 219-frame scene observes another
   second of ordinary movement while both player and Guide-Bot remain alive
 
   Each live post-frame escort observation is hashed independently from capture

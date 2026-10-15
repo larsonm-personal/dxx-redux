@@ -1,3 +1,5 @@
+import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -20,14 +22,51 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
-    def test_mission_batch_and_health_use_selected_emulator(self) -> None:
-        batch = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(encoding="utf-8")
+    def test_health_uses_selected_emulator(self) -> None:
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
-        self.assertIn("if (-not $env:ANDROID_SERIAL)", batch)
-        self.assertIn("$env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL", batch)
         self.assertIn("test_helpers.ps1", health)
         self.assertIn("[string]$PreferredSerial = $env:ANDROID_SERIAL", health)
         self.assertIn("Test-EmulatorHealthy -Serial $PreferredSerial", health)
+
+    def test_mission_batch_forwards_serial_to_shared_target_policy(self) -> None:
+        pwsh = shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("PowerShell is required for the source AST wiring check")
+        source = ROOT / "android/helpers/run_mission_zip_batch.ps1"
+        # Parse without executing the batch or contacting an emulator
+        parser = r"""
+param([string]$SourcePath)
+$tokens = $null
+$parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($SourcePath, [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+$calls = @($ast.FindAll({ param($node)
+    $node -is [System.Management.Automation.Language.CommandAst] -and
+    $node.GetCommandName() -eq 'Initialize-AndroidTestTarget'
+}, $true))
+$wired = $false
+if ($calls.Count -eq 1) {
+    $elements = $calls[0].CommandElements
+    $wired = $elements.Count -eq 3 -and
+        $elements[1] -is [System.Management.Automation.Language.CommandParameterAst] -and
+        $elements[1].ParameterName -eq 'Serial' -and
+        $elements[2] -is [System.Management.Automation.Language.VariableExpressionAst] -and
+        $elements[2].VariablePath.UserPath -eq 'Serial'
+}
+@{ calls = $calls.Count; forwards_serial = $wired } | ConvertTo-Json -Compress
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "check-target-wiring.ps1"
+            script.write_text(parser, encoding="utf-8")
+            result = subprocess.run(
+                [pwsh, "-NoProfile", "-File", str(script), str(source)],
+                text=True,
+                capture_output=True,
+                check=False,
+                timeout=30,
+            )
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual({"calls": 1, "forwards_serial": True}, json.loads(result.stdout))
 
     def test_host_uses_shared_mission_variant_policy(self) -> None:
         policy = (

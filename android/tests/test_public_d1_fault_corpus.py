@@ -16,8 +16,8 @@ import d1_replay_parity as parity
 import ordered_public_replay as ordered
 
 ROOT = Path(__file__).parent / "fixtures/public_d1_fault_probes"
-REVISION = "8b19ab9ff29c5f54d815cc735b37c8e1ddf3c3fb"
-TREE = "5d9d3efb3b07d54fec189eaef6ec8dfaa7355fb8"
+REVISION = "7253def84bda52401731cc36ecffc2d1468503c5"
+TREE = "0880df2ccbc35d334b4151803e841e6a0f8bc625"
 CASES = {
     "d1-monitor-phase": (181, 1, 2, "known-imported-animation-startup-fault"),
     "d1-self-splash": (139, 1, 2, "passing-bounded-gameplay-coverage"),
@@ -89,7 +89,7 @@ class PublicD1FaultCorpusTests(unittest.TestCase):
             (verified["status"], verified["source_revision"], verified["source_tree"]), ("pass", REVISION, TREE)
         )
         self.assertEqual((build["revision"], build["tree"]), (REVISION, TREE))
-        executable = build["targets"]["temp/native-d1-build/main/test_upstream_compat"]["sha256"]
+        executable = build["targets"]["buildd1-refresh/main/test_upstream_compat"]["sha256"]
         for case in self.manifest["cases"]:
             with self.subTest(case=case["id"]):
                 header, oracle = compact.validate(ROOT / case["input"], ROOT / case["summary_oracle"])
@@ -139,6 +139,25 @@ class PublicD1FaultCorpusTests(unittest.TestCase):
                 self.assertEqual(live["compact_sha256"], oracle["compact_sha256"])
                 self.assertEqual(live["live_recording_sha256"], oracle["full_recording_sha256"])
                 self.assertEqual(live["live_frame_hash_list_sha256"], compact.sha(oracle["frame_sha256"]))
+
+    def test_clean_repeat_captures_preserve_native_evidence(self):
+        repeat = self.read("evidence/repeatability.json")
+        self.assertEqual((repeat["status"], repeat["source_revision"]), ("pass", REVISION))
+        self.assertEqual(repeat["monitor_screenshot_observation_neutrality"], "pass")
+        self.assertEqual(set(repeat["captures"]), {case["capture_id"] for case in self.manifest["cases"]})
+        for capture_id, report in repeat["captures"].items():
+            with self.subTest(capture=capture_id):
+                self.assertEqual(report["status"], "pass")
+                first = self.read(f"provenance/{capture_id}.capture-manifest.json")
+                second = self.read(f"provenance/{capture_id}-repeat.capture-manifest.json")
+                self.assertEqual((second["status"], second["source_revision"]), ("candidate", REVISION))
+                self.assertEqual(first["source_recipe_sha256"], second["source_recipe_sha256"])
+                self.assertEqual(first["capture_executable_sha256"], second["capture_executable_sha256"])
+                for name, hashes in report["files"].items():
+                    self.assertEqual(hashes["first"], hashes["repeat"])
+                    self.assertEqual(hashes["first"], first["files"][name]["sha256"])
+                    self.assertEqual(hashes["repeat"], second["files"][name]["sha256"])
+                    self.assertEqual(first["files"][name], second["files"][name])
 
     def test_detail_oracles_are_native_only_and_bound_to_companions(self):
         for case in self.manifest["cases"]:

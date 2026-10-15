@@ -1,5 +1,5 @@
 {
-    "compact_sha256": "98bdc289fe57c9caad531bfeda0caa32a413c9749dabd7f35a531f12fcad5e98",
+    "compact_sha256": "3ebf83b3a2e20376eff8486ed1a70d06296a038f7a86b57b7b929327a2ee65de",
     "frame_sha256": [
         "d35d9bbe1775c2b8689f71761f6ba16f1cc747b91c6d4e2a389c149be3f1d240",
         "8fe694646dfb840a5cc6e8e9736d01951ddce7178974ebe3cf4de9a564017d9a",
@@ -429,7 +429,7 @@
         "d918c38db968281793e2d49ddaee1af2d741f13f07211c494f8bb21379936c0e"
     ],
     "frames": 426,
-    "full_recording_sha256": "f2b4306f3dcc3b37f56573f91dea430995eab4b94269ef43b24b57c6e3b1953f",
+    "full_recording_sha256": "712a0c523adafe1bb47ffa2183352a323500de4db8095f5b77cb5767e42fc06e",
     "game": "d1",
     "level": 1,
     "mission": "d1",
@@ -438,7 +438,7 @@
             "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
             "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
         },
-        "capture_executable_sha256": "63fbb5839b7b4d6550a5b7c25e246b3ff000ef1ab7234b78431e845dd27744d9",
+        "capture_executable_sha256": "a322b5333f403f2864a9cc0631518ea0656ed39eb7620d00e2c69436d13868ec",
         "capture_source_sha256": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
         "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5"
     },
