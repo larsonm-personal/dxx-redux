@@ -32,6 +32,7 @@ class HostAdapterTests(unittest.TestCase):
                     "extractor",
                     "configured-ctest",
                     "public-powershell",
+                    "standalone-cmake",
                 },
             )
 
@@ -259,6 +260,51 @@ class PublicProfileTests(unittest.TestCase):
             adapter.public_profile_arguments(
                 {"profile": "untrusted"}, Path("repo"), Path("build"), Path("work")
             )
+
+
+class StandaloneCMakeTests(unittest.TestCase):
+    def test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts(self):
+        for name, target, public_soundfont in (
+            ("etc2-limits", "test_etc2_limits", False),
+            ("fluidsynth-contracts", "fluid_render", True),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                suite = adapter.load_suites()["cmake:" + name]
+                source = root / suite["source"]
+                source.mkdir(parents=True)
+                (source / "CMakeLists.txt").touch()
+                calls = []
+
+                class Process:
+                    def __init__(self, argv, observed=calls, **kwargs):
+                        observed.append(argv)
+                        if argv[0] == "ctest":
+                            Path(argv[argv.index("--output-junit") + 1]).write_text(
+                                '<testsuite><testcase name="existing-contract"/></testsuite>'
+                            )
+
+                    def wait(self, **kwargs):
+                        return 0
+
+                with (
+                    patch.object(adapter.sys, "platform", "linux"),
+                    patch.object(adapter.shutil, "which", return_value="tool"),
+                    patch.object(adapter.subprocess, "Popen", Process),
+                ):
+                    code = adapter.run_suite(
+                        suite, root, root / "build", root / "receipt.json", 30
+                    )
+                self.assertEqual(code, 0)
+                self.assertEqual(calls[0][0] == "bash", public_soundfont)
+                if public_soundfont:
+                    self.assertTrue(calls[0][1].endswith("get_soundfont.sh"))
+                build = next(argv for argv in calls if "--build" in argv)
+                self.assertEqual(build[build.index("--target") + 1], target)
+                self.assertEqual(calls[-1][0], "ctest")
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(receipt["cases"][0]["id"], "existing-contract")
+                self.assertTrue(receipt["coverage_complete"])
 
 
 class EvidenceAndCancellationTests(unittest.TestCase):

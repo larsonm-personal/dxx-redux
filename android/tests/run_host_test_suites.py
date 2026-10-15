@@ -486,7 +486,65 @@ def run_suite(suite, repo, build_root, output, timeout):
                 code,
             )
 
-        if suite["kind"] == "extractor":
+        if suite["kind"] == "standalone-cmake":
+            light = False
+            source = target_file(repo, suite["source"])
+            if not (source / "CMakeLists.txt").is_file():
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake owner absent from target commit",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
+            if suite.get("public_soundfont"):
+                helper = target_file(repo, "android/get_deps/helpers/get_soundfont.sh")
+                code = run(["bash", str(helper)], setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public SoundFont setup failed",
+                        code,
+                        retryable=True,
+                    )
+            build = build_root / suite["build_subdirectory"]
+            code = run(
+                [
+                    "cmake",
+                    "-S",
+                    str(source),
+                    "-B",
+                    str(build),
+                    "-DCMAKE_BUILD_TYPE=Release",
+                ],
+                setup=True,
+            )
+            if code:
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake configuration failed; see log",
+                    code,
+                    retryable=True,
+                )
+            code = run(
+                [
+                    "cmake",
+                    "--build",
+                    str(build),
+                    "--parallel",
+                    "2",
+                    "--target",
+                    suite["build_target"],
+                ],
+                setup=True,
+            )
+            if code:
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake build failed; see log",
+                    code,
+                    retryable=True,
+                )
+        elif suite["kind"] == "extractor":
             source = target_file(repo, "android/app/src/main/cpp/extract")
             cmake_file = source / "CMakeLists.txt"
             if not cmake_file.is_file():

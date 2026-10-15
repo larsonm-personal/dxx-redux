@@ -1009,6 +1009,57 @@
           "reason": "Only benchmark policy self-test runs. Native performance measurements and corpus digest assertions remain unexecuted."
         }
       ]
+    },
+    {
+      "id": "cmake:fluidsynth-contracts",
+      "kind": "standalone-cmake",
+      "source": "android/tests/fluidsynth_quality",
+      "build_target": "fluid_render",
+      "build_subdirectory": "contract-fluidsynth-contracts",
+      "public_soundfont": true,
+      "executables": [
+        "cmake",
+        "ctest",
+        "bash"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "All existing CTest registrations from this standalone CMake project; excludes unregistered audition/experiment scripts.",
+      "constraints": [
+        "Pinned dependency downloads may be needed; setup failures remain retryable.",
+        "Public pinned gm.sf2 downloaded through existing verified helper; no retail audio."
+      ]
+    },
+    {
+      "id": "cmake:etc2-limits",
+      "kind": "standalone-cmake",
+      "source": "android/tools/etc2tool",
+      "build_target": "test_etc2_limits",
+      "build_subdirectory": "contract-etc2-limits",
+      "public_soundfont": false,
+      "executables": [
+        "cmake",
+        "ctest"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "All existing CTest registrations from this standalone CMake project; excludes unregistered audition/experiment scripts.",
+      "constraints": [
+        "Pinned dependency downloads may be needed; setup failures remain retryable.",
+        "Existing full project config fetches ETC2/KTX dependencies even though limit assertions are asset-free."
+      ]
+    },
+    {
+      "id": "python:test_nightly_android_fixtures.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_nightly_android_fixtures.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All discovered fixture controls; optional FFmpeg/ffprobe test skip remains an explicit excluded leaf.",
+      "constraints": [
+        "Install ffmpeg and ffprobe for the real repeatability/overwrite test; otherwise mock controls still run."
+      ]
     }
   ],
   "owned_elsewhere": [

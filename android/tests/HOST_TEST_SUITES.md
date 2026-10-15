@@ -97,3 +97,14 @@ exclude retail/custom-asset variants. These owners currently provide aggregate
 assertion receipts, not invented internal leaf counts. Optional variants are not
 silently included. Local qualification covers adapter argument/phase contracts;
 actual PowerShell/native profile execution requires the hosted lane.
+
+## Additional standalone CTest owners
+
+`cmake:fluidsynth-contracts` runs the existing `fluid_render_contracts` test. Its
+public bundled SoundFont is provisioned by the existing hash-verifying
+`get_soundfont.sh` helper, separately timed as setup. It does not run audition or
+retail-audio experiments. `cmake:etc2-limits` builds the existing
+`test_etc2_limits` target and runs its CTest registration. The assertions need no
+assets; the unchanged full project configure still fetches its normal ETC2/KTX
+build dependencies. Both profiles reuse original CMake flags and assertions and
+produce actual CTest leaf receipts. Their setup/download failures remain retryable.
