@@ -15,6 +15,7 @@
 #include "maths.h"
 #include "newdemo.h"
 #include "object.h"
+#include "controls.h"
 #include "player.h"
 #include "weapon.h"
 
@@ -75,6 +76,7 @@ static void capture_runtime(input_demo_level_start *s)
 	s->cheat_wowie2 = cheats.wowie2;
 #endif
 	s->game_time = GameTime64;
+	s->wiggle_phase = controls_get_wiggle_phase();
 	s->next_laser = Next_laser_fire_time;
 	s->last_laser = Last_laser_fired_time;
 	s->next_missile = Next_missile_fire_time;
@@ -158,6 +160,7 @@ void input_demo_begin_new_level(int level)
 		apply_player(replay);
 		apply_runtime(replay);
 		GameTime64 = replay->game_time;
+		controls_restore_wiggle_phase(replay->wiggle_phase);
 		d_rand_set_state(replay->rng_state);
 		d_rand_set_call_count(replay->rng_calls);
 		return;

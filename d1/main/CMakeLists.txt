@@ -323,6 +323,17 @@ if(NOT ANDROID)
             ../../android/tests/test_upstream_compat.cpp
             GAME_SOURCES ../../android/tests/test_autoselect.cpp ${D1X_SECRET_AREA_SOURCES}
             INCLUDE_GAME_DIR)
+        if(UNIX AND NOT APPLE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+            dxx_add_headless_target(
+                test_d1_level_load_failure
+                ../../android/tests/test_d1_level_load_failure.c
+                GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}
+                INCLUDE_GAME_DIR)
+            target_link_options(test_d1_level_load_failure PRIVATE
+                "-Wl,--wrap=load_level" "-Wl,--wrap=Error"
+                "-Wl,--wrap=gr_use_palette_table" "-Wl,--wrap=secret_area_rescan_current_level")
+            add_test(NAME test_d1_level_load_failure COMMAND test_d1_level_load_failure)
+        endif()
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
         add_test(NAME test_upstream_compat COMMAND test_upstream_compat)
         set_tests_properties(test_upstream_compat PROPERTIES

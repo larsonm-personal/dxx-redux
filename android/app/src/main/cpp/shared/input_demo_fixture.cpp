@@ -616,6 +616,7 @@ static ordered_json level_start_to_json(const input_demo_level_start &state)
 #define WRITE_ARRAY(name, count, high) json[#name] = state.name;
 	INPUT_DEMO_LEVEL_ARRAY_FIELDS(WRITE_ARRAY)
 #undef WRITE_ARRAY
+	json["wiggle_phase"] = state.wiggle_phase;
 	return json;
 }
 
@@ -647,6 +648,15 @@ static bool parse_level_start(const ordered_json &json, input_demo_level_start *
 	++fields;
 	INPUT_DEMO_LEVEL_ARRAY_FIELDS(READ_ARRAY)
 #undef READ_ARRAY
+	/* Old level-start recordings had no offset, not an effective phase of zero */
+	parsed.wiggle_phase = (uint32_t)parsed.game_time & 0xffffu;
+	if (json.contains("wiggle_phase")) {
+		if (!parse_int64_field(json.at("wiggle_phase"), &value, error, "wiggle_phase") ||
+		    value < 0 || value > 65535)
+			return fail(error, "invalid level_start wiggle_phase");
+		parsed.wiggle_phase = (uint32_t)value;
+		++fields;
+	}
 	if (json.size() != fields || parsed.difficulty_min > parsed.difficulty_max)
 		return fail(error, "invalid level_start fields");
 	*state = parsed;

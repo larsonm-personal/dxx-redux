@@ -8469,8 +8469,8 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				if (!invalid)
 					damaged.pop_back();
 				else if (invalid < 4) {
-					// Current native save appends cadence and wall state after autoselect
-					const size_t offset = damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
+					// Current native save appends cadence, wall, phase and Fusion state after autoselect
+					const size_t offset = damaged.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
 					                                                                                                                                          : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
 				} else {
@@ -8496,7 +8496,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 		if (dynamic && std::strcmp(filename, "route-0.sav") == 0) {
 			const json current = checkpoint_dynamic_state();
 			auto legacy = data;
-			legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
+			legacy.resize(legacy.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
 			set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 			d1_save_translate_checkpoint_start legacy_start = {};
 			require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start) &&
@@ -8541,7 +8541,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 			}
 			require(found_effect, "malformed effect fixtures start with a one-shot effect");
 			const size_t effect_offset = locate_record(effect_record);
-			const size_t secret_offset = data.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
+			const size_t secret_offset = data.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - 16 - SECRET_AREA_IDENTITY_SAVE_SIZE;
 			const std::pair<size_t, int> corruptions[] = {
 				{ morph_offset + 8, -1 }, { active_offset, 3 }, { stuck_offset + 8, -1 }, { effect_offset, Num_effects }, { effect_offset + 8, 9999 }, { effect_offset + 20, MAX_SIDES_PER_SEGMENT }, { secret_offset, 0 }, { secret_offset + 8, SECRET_AREA_MAX_GENERATED + 1 }
 			};
@@ -8783,7 +8783,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				legacy.resize(legacy.size() - CADENCE_RUNTIME_DISK_BYTES - 4); // Guidebot mode follows cadence
 				set_int(legacy, 4, CADENCE_D2_SAVE_VERSION - 1);
 #else
-				legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
+				legacy.resize(legacy.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES);
 				set_int(legacy, 4, CADENCE_D1_SAVE_VERSION - 1);
 #endif
 				char legacy_name[] = "cadence-prior-format.sav";
@@ -11587,6 +11587,11 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
+#include "active_save_runtime_fixture.hpp"
+#include "wiggle_save_runtime_fixture.hpp"
+#include "fusion_save_runtime_fixture.hpp"
+#include "guided_save_runtime_fixture.hpp"
+#include "d1_save_translation_runtime_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 #include "public_matcen_stations_fixture.hpp"
 #ifdef DXX_BUILD_DESCENT_II
@@ -11671,6 +11676,34 @@ int main(int argc, char **argv)
 		require(init_headless_audio(), "initialize the production headless audio runtime");
 		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
 		return std::atoi(argv[2]);
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--active-save-runtime") == 0) {
+		capture_public_level_replay(argv[2], "flight");
+		exercise_active_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--d1-save-translation-runtime") == 0) {
+		exercise_d1_save_translation_runtime(argv[2], argv[3]);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--guided-save-runtime") == 0) {
+		capture_public_level_replay(argv[2], "flight");
+		exercise_guided_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--fusion-save-runtime") == 0) {
+		capture_public_level_replay(argv[2], "flight");
+		exercise_fusion_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--wiggle-save-runtime") == 0) {
+#ifdef DXX_BUILD_DESCENT_II
+		capture_public_level_replay(argv[2], "flight");
+#else
+		capture_public_level_replay(argv[2], "door");
+#endif
+		exercise_wiggle_save_runtime(argv[3]);
+		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);

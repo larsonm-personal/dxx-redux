@@ -7,6 +7,7 @@
 #include "byteswap.h"
 #include "cntrlcen.h"
 #include "collide.h"
+#include "controls.h"
 #include "console.h"
 #include "d1_save_translate.h"
 #include "d1_in_d2_ai.h"
@@ -33,8 +34,9 @@
 #include "cadence_runtime.h"
 #include "fireball.h"
 #include "exploding_wall_runtime.h"
+#include "wiggle_phase_runtime.h"
 
-#define D1_SAVE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
+#define D1_SAVE_VERSION WIGGLE_PHASE_D1_SAVE_VERSION
 #define D1_SAVE_COMPATIBLE_VERSION 15
 #define D1_SAVE_SECRET_IDENTITY_VERSION 16
 #define D1_SAVE_AUTOSELECT_VERSION 17
@@ -126,6 +128,9 @@ typedef struct d1_save_translate_runtime_state {
 	fix last_laser_fired_delta;
 	fix next_flare_fire_delta;
 	fix auto_fire_fusion_delta;
+	int auto_fire_fusion_active;
+	int has_wiggle_phase;
+	int wiggle_phase;
 	int global_laser_firing_count;
 	int global_missile_firing_count;
 	int has_rng_state;
@@ -507,7 +512,9 @@ int d1_save_translate_read_checkpoint_start(const uint8_t *data, size_t size,
 		reader.swap = 1;
 	}
 	start->checkpoint_swap = reader.swap;
-	if (version < D1_SAVE_COMPATIBLE_VERSION || version > D1_SAVE_VERSION)
+	/* Version 20 is an Android layout, not a native checkpoint */
+	if (version < D1_SAVE_COMPATIBLE_VERSION || version > D1_SAVE_VERSION ||
+	    version == 20)
 		return 0;
 	start->version = version;
 	if (!d1_save_translate_skip(&reader, D1_SAVE_DESC_LENGTH) ||
@@ -1633,6 +1640,7 @@ static int d1_save_translate_read_runtime_state(
 	if (!reader || !objects || !state)
 		return 0;
 	memset(state, 0, sizeof(*state));
+	state->auto_fire_fusion_active = -1;
 	if (!d1_save_translate_read_fix(reader, &state->next_laser_fire_delta) ||
 	    !d1_save_translate_read_fix(reader, &state->next_missile_fire_delta) ||
 	    !d1_save_translate_read_fix(reader, &state->last_laser_fired_delta) ||
@@ -1737,6 +1745,14 @@ static int d1_save_translate_read_runtime_state(
 		                                  reader->swap, state->exploding_walls))
 			return 0;
 	}
+	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION) {
+		if (!d1_save_translate_read_s32(reader, &state->wiggle_phase) ||
+		    state->wiggle_phase < 0 || state->wiggle_phase > 0xffff ||
+		    !d1_save_translate_read_s32(reader, &state->auto_fire_fusion_active) ||
+		    state->auto_fire_fusion_active < 0 || state->auto_fire_fusion_active > 1)
+			return 0;
+		state->has_wiggle_phase = 1;
+	}
 	if (!d1_save_translate_validate_runtime_allocator(
 	        &state->object_state, objects, object_count))
 		return 0;
@@ -1786,6 +1802,14 @@ static void d1_save_translate_commit_runtime_state(
 	Next_flare_fire_time = GameTime64 + (fix64)state->next_flare_fire_delta;
 	Auto_fire_fusion_cannon_time = GameTime64 +
 	                               (fix64)state->auto_fire_fusion_delta;
+	if (!state->auto_fire_fusion_active)
+		Auto_fire_fusion_cannon_time = 0;
+	else if (state->auto_fire_fusion_active == 1 && !Auto_fire_fusion_cannon_time)
+		Auto_fire_fusion_cannon_time = -1;
+	if (state->has_wiggle_phase)
+		controls_restore_wiggle_phase((unsigned int)state->wiggle_phase);
+	else
+		controls_reset_wiggle_phase();
 	Global_laser_firing_count = state->global_laser_firing_count;
 	Global_missile_firing_count = state->global_missile_firing_count;
 	if (state->has_rng_state)

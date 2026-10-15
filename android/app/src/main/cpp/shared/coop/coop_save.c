@@ -41,6 +41,7 @@
 #include "endlevel.h"
 #include "cntrlcen.h"
 #include "game.h"
+#include "controls.h"
 #include "gameseq.h"
 #include "gameseg.h"
 #include "hudmsg.h"
@@ -322,6 +323,7 @@ static int coop_load_world(const rewind_memory_buffer *buffer, int fresh_level)
 		/* Keep the campaign uncommitted while the ordinary network load runs */
 		if (Game_wind) window_set_visible(Game_wind, 0);
 		GameTime64 = 0;
+		controls_reset_wiggle_phase();
 		ThisLevelTime = 0;
 		StartNewLevelSub(fresh_level, 1, fresh_level < 0);
 		result = Current_level_num == fresh_level && Game_wind &&

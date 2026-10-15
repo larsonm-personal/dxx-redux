@@ -40,6 +40,24 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //look at keyboard, mouse, joystick, CyberMan, whatever, and set 
 //physics vars rotvel, velocity
 
+/* Only the phase survives ordinary save clock rebasing; fresh play keeps offset zero */
+static unsigned int Wiggle_phase_offset;
+
+unsigned int controls_get_wiggle_phase(void)
+{
+	return ((unsigned int)GameTime64 + Wiggle_phase_offset) & 0xffffu;
+}
+
+void controls_restore_wiggle_phase(unsigned int phase)
+{
+	Wiggle_phase_offset = (phase - (unsigned int)GameTime64) & 0xffffu;
+}
+
+void controls_reset_wiggle_phase(void)
+{
+	Wiggle_phase_offset = 0;
+}
+
 void read_flying_controls( object * obj )
 {
 #ifdef ANDROID
@@ -79,7 +97,7 @@ void read_flying_controls( object * obj )
 	
 	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE) {
 		fix swiggle;
-		fix_fastsincos(((fix)GameTime64), &swiggle, NULL);
+		fix_fastsincos((fix)controls_get_wiggle_phase(), &swiggle, NULL);
 		if (FrameTime < F1_0) // Only scale wiggle if getting at least 1 FPS, to avoid causing the opposite problem.
 			swiggle = fixmul(swiggle*30, FrameTime); //make wiggle fps-independant (based on pre-scaled amount of wiggle at 30 FPS)
 		vm_vec_scale_add2(&obj->mtype.phys_info.velocity,&obj->orient.uvec,fixmul(swiggle,Player_ship->wiggle));

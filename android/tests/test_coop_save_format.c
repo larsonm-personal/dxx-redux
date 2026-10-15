@@ -42,8 +42,13 @@ int main(void)
 	assert(!d1_in_d2_save_version_supported(40));
 	assert(d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION));
 	assert(!d1_in_d2_save_version_supported(41));
+#ifndef __ANDROID__
+	assert(d1_in_d2_save_version_supported(42));
+#else
+	assert(!d1_in_d2_save_version_supported(42));
+#endif
 	assert(!d1_in_d2_save_version_supported(D1_IN_D2_SAVE_VERSION + 1));
-	for (version = 0; version <= 45; ++version) {
+	for (version = 0; version <= ANDROID_D1_IN_D2_SAVE_VERSION + 1; ++version) {
 		assert(android_save_version_supported(version, 1, 1) == (version == ANDROID_D1_SAVE_VERSION));
 		assert(android_save_version_supported(version, 0, 0) == (version == ANDROID_D2_SAVE_VERSION));
 		assert(android_save_version_supported(version, 0, 1) == (version == ANDROID_D1_IN_D2_SAVE_VERSION));

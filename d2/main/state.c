@@ -108,11 +108,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // Version 39 binds imported D1 optional asset IDs before the object array
 // Version 40 also binds original base and custom definition sources
 // Versions 41 (D2) and 42 (D1-in-D2) preserve Guidebot runtime state
+// Versions 45 (D2) and 46 (D1-in-D2) preserve active guided missile ownership
+#define STATE_GUIDED_RUNTIME_VERSION 45
 #ifdef __ANDROID__
 #include "android_save_format.h"
 #define STATE_VERSION ANDROID_D2_SAVE_VERSION
 #else
-#define STATE_VERSION GUIDEBOT_RUNTIME_SAVE_VERSION
+#define STATE_VERSION STATE_GUIDED_RUNTIME_VERSION
 #endif
 #define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
@@ -343,6 +345,8 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 
 #include "autoselect_runtime.h"
 #include "cadence_runtime.h"
+#include "wiggle_phase_runtime.h"
+#include "fusion_autofire_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -798,6 +802,62 @@ static void state_log_checkpoint_allocator_snapshot(const char *label,
 		message);
 }
 
+/* The player map is captured before coop restore replaces player objects */
+typedef struct state_guided_owner {
+	int player, objnum, signature;
+} state_guided_owner;
+
+static int state_guided_object_valid(int objnum, int signature, int parent_num, int parent_signature)
+{
+	object *obj;
+	if (objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	obj = &Objects[objnum];
+	return obj->type == OBJ_WEAPON && obj->id == GUIDEDMISS_ID &&
+	       !(obj->flags & OF_SHOULD_BE_DEAD) && obj->signature == signature &&
+	       obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+	       obj->ctype.laser_info.parent_num == parent_num &&
+	       obj->ctype.laser_info.parent_signature == parent_signature;
+}
+
+static void state_restore_guided_identity(int objnum, int signature, const state_guided_owner *owner)
+{
+	int player = owner->player, parent;
+	if (player < 0 || player >= MAX_PLAYERS ||
+	    !state_guided_object_valid(objnum, signature, owner->objnum, owner->signature))
+		return;
+	parent = Players[player].objnum;
+	if (parent < 0 || parent > Highest_object_index ||
+	    Objects[parent].type != OBJ_PLAYER || Objects[parent].id != player)
+		return;
+	Objects[objnum].ctype.laser_info.parent_num = parent;
+	Objects[objnum].ctype.laser_info.parent_signature = Objects[parent].signature;
+	Guided_missile[player] = &Objects[objnum];
+	Guided_missile_sig[player] = signature;
+}
+
+static int state_write_guided_state(PHYSFS_file *fp)
+{
+	int player;
+	for (player = 0; player < MAX_PLAYERS; player++) {
+		int objnum, saved_objnum = -1, signature = -1;
+		int parent = Players[player].objnum;
+		if (parent >= 0 && parent <= Highest_object_index &&
+		    Objects[parent].type == OBJ_PLAYER && Objects[parent].id == player) {
+			for (objnum = 0; objnum <= Highest_object_index; objnum++)
+				if (Guided_missile[player] == &Objects[objnum] &&
+				    state_guided_object_valid(objnum, Guided_missile_sig[player], parent, Objects[parent].signature)) {
+					saved_objnum = objnum;
+					signature = Objects[objnum].signature;
+					break;
+				}
+		}
+		if (!PHYSFS_writeSLE32(fp, saved_objnum) || !PHYSFS_writeSLE32(fp, signature))
+			return 0;
+	}
+	return 1;
+}
+
 static int state_write_runtime_state(PHYSFS_file *fp)
 {
 	object_runtime_state object_state;
@@ -872,8 +932,10 @@ static int state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_writeSLE32(fp, guidebot_routing_mode());
 	{
 		guidebot_save_stream stream = { fp, 1, 0, 1, GameTime64, 0 };
-		return escort_save_runtime(&stream);
+		if (!escort_save_runtime(&stream)) return 0;
 	}
+	return state_write_guided_state(fp) && wiggle_phase_runtime_write(fp) &&
+		fusion_autofire_runtime_write(fp, Auto_fire_fusion_cannon_time);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1161,6 +1223,27 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		guidebot_save_stream stream = { fp, 0, 0, 1, GameTime64, 0 };
 		if (!escort_save_runtime(&stream)) goto done;
 	}
+	validation_stage = "Guided missile ownership";
+	if (version >= STATE_GUIDED_RUNTIME_VERSION) {
+		int player;
+		for (player = 0; player < MAX_PLAYERS; player++) {
+			int objnum, signature;
+			/* Explicitly little-endian, independent of the save header */
+			if (!state_runtime_read_s32(fp, 0, &objnum) ||
+			    !state_runtime_read_s32(fp, 0, &signature)) goto done;
+			objnum = INTEL_INT(objnum);
+			signature = INTEL_INT(signature);
+			if (objnum < -1 || objnum >= MAX_OBJECTS || (objnum == -1 && signature != -1)) goto done;
+		}
+	}
+	validation_stage = "wiggle phase";
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
+	    !wiggle_phase_runtime_read(fp, swap, 0))
+		goto done;
+	validation_stage = "Fusion autofire active";
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
+	    !fusion_autofire_runtime_read(fp, swap, NULL))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1178,7 +1261,7 @@ done:
 	return valid;
 }
 
-static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode)
+static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode, const state_guided_owner owners[MAX_PLAYERS])
 {
 	object_runtime_state object_state;
 	ai_path_runtime_state ai_path_state;
@@ -1274,8 +1357,28 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		escort_save_runtime(&stream);
 	}
 
-	if (secret_restore)
+	if (version >= STATE_GUIDED_RUNTIME_VERSION) {
+		for (i = 0; i < MAX_PLAYERS; i++) {
+			Guided_missile[i] = NULL;
+			Guided_missile_sig[i] = -1;
+		}
+		for (i = 0; i < MAX_PLAYERS; i++) {
+			int objnum = PHYSFSX_readInt(fp), signature = PHYSFSX_readInt(fp);
+			if (!secret_restore)
+				state_restore_guided_identity(objnum, signature, &owners[i]);
+		}
+	}
+
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
+		wiggle_phase_runtime_read(fp, swap, !secret_restore);
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
+		fusion_autofire_runtime_read(fp, swap, &auto_fire_fusion_cannon_time);
+
+	if (secret_restore) {
+		/* Preserve the existing secret-return phase reset, not saved player runtime */
+		controls_reset_wiggle_phase();
 		return;
+	}
 
 	Next_laser_fire_time = next_laser_fire_time;
 	Next_missile_fire_time = next_missile_fire_time;
@@ -1305,7 +1408,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION)
 		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
-	rebuild_guided_missile_state();
+	if (version < STATE_GUIDED_RUNTIME_VERSION)
+		rebuild_guided_missile_state();
 	if (input_demo_replay_has_checkpoint())
 		input_demo_log_checkpoint_runtime_restore(
 			GameTime64,
@@ -1586,8 +1690,12 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.ai_info.danger_laser_signature = obj->ctype.ai_info.danger_laser_signature;
 			if (obj->ctype.ai_info.dying_start_time == 0) // if bot not dead, anything but 0 will kill it
 				obj_rw->ctype.ai_info.dying_start_time = 0;
-			else
+			else {
 				obj_rw->ctype.ai_info.dying_start_time = obj->ctype.ai_info.dying_start_time - GameTime64;
+				// Preserve the active death sequence when its relative start time is zero
+				if (obj_rw->ctype.ai_info.dying_start_time == 0)
+					obj_rw->ctype.ai_info.dying_start_time = -1;
+			}
 			break;
 		}
 			
@@ -3022,6 +3130,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 {
 	int version,i, j, segnum, coop_player_got[MAX_PLAYERS], coop_org_objnum = Players[Player_num].objnum;
 	int saved_guidebot_mode = -1;
+	state_guided_owner guided_owners[MAX_PLAYERS];
 	object * obj;
 	PHYSFS_file *fp;
 	int swap = 0;	// if file is not endian native, have to swap all shorts and ints
@@ -3392,7 +3501,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	cheats.enabled = PHYSFSX_readSXE32(fp, swap);
 
 	/* Definitions are now prepared, but no saved object references are installed */
-	if (version == D1_IN_D2_SAVE_VERSION && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
+	if (d1_in_d2_save_version_supported(version) && !d1_in_d2_read_saved_asset_identity(fp, swap)) {
 		PHYSFS_close(fp);
 		/* The fresh world must not run with partly restored player state */
 		if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
@@ -3542,6 +3651,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	Control_center_destroyed = PHYSFSX_readSXE32(fp, swap);
 	reactor_countdown_reset_pause();
 	Countdown_timer = PHYSFSX_readSXE32(fp, swap);
+	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
 	Num_robot_centers = PHYSFSX_readSXE32(fp, swap);
 	matcen_info_read_n_swap(RobotCenters, Num_robot_centers, swap, fp);
 	if (!control_center_triggers_read_n_swap(&ControlCenterTriggers, 1, swap, fp)) {
@@ -3685,6 +3795,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			PHYSFSX_readSXE32(fp, swap);
 	}
 
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		int parent = Players[i].objnum;
+		guided_owners[i].player = (Game_mode & GM_MULTI_COOP) ? -1 : i;
+		guided_owners[i].objnum = parent;
+		guided_owners[i].signature = parent >= 0 && parent <= Highest_object_index ? Objects[parent].signature : -1;
+	}
+
 // Read Coop Info
 	if (Game_mode & GM_MULTI_COOP)
 	{
@@ -3719,6 +3836,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				obj = &Objects[restore_players[i].objnum];
 			if (restore_players[i].connected == CONNECT_PLAYING && obj && obj->type == OBJ_PLAYER)
 			{
+				guided_owners[i].objnum = restore_players[i].objnum;
+				guided_owners[i].signature = obj->signature;
 				memcpy(&restore_objects[i], obj, sizeof(object));
 				restore_object_valid[i] = 1;
 				obj->type = OBJ_GHOST;
@@ -3739,6 +3858,18 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #ifdef __ANDROID__
 		coop_got_nplayers = coop_remap_restored_players(fp, restore_players,
 			restore_objects, restore_object_valid, coop_player_got);
+		{
+			coop_save_metadata meta;
+			if (state_android_read_coop_metadata_trailer(fp, &meta))
+				for (i = 0; i < MAX_PLAYERS; i++) {
+					int index, saved;
+					if (!coop_player_got[i]) continue;
+					index = coop_find_player_in_metadata(Players[i].callsign, Netgame.players[i].client_id, &meta);
+					if (index < 0 || index >= meta.num_active_players) continue;
+					saved = meta.active_players[index].original_slot;
+					if (saved >= 0 && saved < MAX_PLAYERS) guided_owners[saved].player = i;
+				}
+		}
 #else
 		for (i = 0; i < MAX_PLAYERS; i++) // copy restored players to the current slots
 		{
@@ -3753,6 +3884,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 					memcpy(&Players[i], &restore_players[j], sizeof(player));
 					Players[i].objnum = sav_objnum;
 					
+					guided_owners[j].player = i;
 					coop_player_got[i] = 1;
 					coop_got_nplayers++;
 
@@ -3850,9 +3982,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			PHYSFS_close(fp);
 			return 0;
 		}
-		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode);
+		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
+	if (version < WIGGLE_PHASE_D2_SAVE_VERSION || secret_restore)
+		controls_reset_wiggle_phase();
 	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
 		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();
