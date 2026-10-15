@@ -670,6 +670,16 @@ def run_suite(suite, repo, build_root, output, timeout):
                     retryable=False,
                     blocker_kind="target-capability",
                 )
+            if not light and not suite.get("extra_test"):
+                helper = target_file(repo, "android/get_deps/helpers/get_soundfont.sh")
+                code = run(["bash", str(helper)], setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public SoundFont setup failed",
+                        code,
+                        retryable=True,
+                    )
             build = (
                 build_root
                 / ("extractor-light" if light else "extractor-full")

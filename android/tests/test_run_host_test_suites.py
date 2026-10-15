@@ -134,6 +134,78 @@ class HostAdapterTests(unittest.TestCase):
             self.assertFalse(data["retryable"])
             self.assertEqual(data["blocker_kind"], "target-capability")
 
+    def test_verified_soundfont_helper_is_present_in_target_source(self):
+        repo = Path(__file__).resolve().parents[2]
+        helper = repo / "android/get_deps/helpers/get_soundfont.sh"
+        self.assertTrue(
+            helper.is_file(), "Full checkout must contain the existing SoundFont helper"
+        )
+        source = helper.read_text(encoding="utf-8")
+        self.assertIn('verify_sha256 "$TMPFILE" "$SOUNDFONT_SHA256"', source)
+        self.assertIn('DEST="$ASSETS_DIR/gm.sf2"', source)
+        for relative in (
+            "tool_versions.conf",
+            "helpers/platform.sh",
+            "helpers/verify_sha256.sh",
+        ):
+            self.assertTrue((repo / "android/get_deps" / relative).is_file())
+
+    def test_extractor_soundfont_setup_is_full_only_and_failure_is_retryable(self):
+        for profile, setup_code in (("full", 0), ("full", 7), ("light", 0)):
+            with (
+                self.subTest(profile=profile, setup_code=setup_code),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory).resolve()
+                source = root / "android/app/src/main/cpp/extract"
+                source.mkdir(parents=True)
+                (source / "CMakeLists.txt").write_text("# DXX_EXTRACT_DEPENDENCY_LIGHT")
+                calls = []
+
+                class Process:
+                    def __init__(self, argv, calls=calls, **kwargs):
+                        self.argv = argv
+                        calls.append(argv)
+                        if argv[0] == "ctest":
+                            Path(argv[argv.index("--output-junit") + 1]).write_text(
+                                '<testsuite><testcase name="one"/></testsuite>'
+                            )
+
+                    def wait(self, setup_code=setup_code, **kwargs):
+                        return setup_code if self.argv[0] == "bash" else 0
+
+                suite = {
+                    "id": "extractor:" + profile,
+                    "kind": "extractor",
+                    "profile": profile,
+                    "coverage_scope": profile,
+                }
+                with patch.object(adapter.subprocess, "Popen", Process):
+                    code = adapter.run_suite(
+                        suite, root, root / "build", root / "result.json", 10
+                    )
+                result = json.loads((root / "result.json").read_text())
+                if profile == "full":
+                    self.assertEqual(
+                        calls[0],
+                        [
+                            "bash",
+                            str(root / "android/get_deps/helpers/get_soundfont.sh"),
+                        ],
+                    )
+                else:
+                    self.assertFalse(any(argv[0] == "bash" for argv in calls))
+                if setup_code:
+                    self.assertEqual(code, 2)
+                    self.assertEqual(len(calls), 1)
+                    self.assertEqual(result["status"], "BLOCKED")
+                    self.assertTrue(result["retryable"])
+                    self.assertFalse(result["attempted_tests"])
+                    self.assertEqual(result["cases"], [])
+                else:
+                    self.assertEqual(code, 0)
+                    self.assertEqual(calls[-1][0], "ctest")
+
     def test_native_lazy_setup_preserves_debug_and_serial_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
