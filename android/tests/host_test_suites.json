@@ -841,6 +841,174 @@
       "executables": [],
       "coverage_scope": "Host adapter and portable fingerprint CLI contracts with mocked execution.",
       "constraints": []
+    },
+    {
+      "id": "host-profile:metadata-d1",
+      "kind": "public-powershell",
+      "profile": "metadata-d1",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d1"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-d1 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-d2",
+      "kind": "public-powershell",
+      "profile": "metadata-d2",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-d2 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-imported-d1",
+      "kind": "public-powershell",
+      "profile": "metadata-imported-d1",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-imported-d1 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-headers",
+      "kind": "public-powershell",
+      "profile": "metadata-headers",
+      "path": "android/tests/test_metadata_level_headers.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-headers profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:public-flight",
+      "kind": "public-powershell",
+      "profile": "public-flight",
+      "path": "android/tests/test_input_demo_runtime_smoke.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit public-flight profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:benchmark-policy",
+      "kind": "public-powershell",
+      "profile": "benchmark-policy",
+      "path": "android/tests/test_level_metadata_benchmark.ps1",
+      "games": [],
+      "target_suffix": "",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "pwsh"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 30,
+      "coverage_scope": "Existing owner assertions for explicit benchmark-policy profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Only benchmark policy self-test runs. Native performance measurements and corpus digest assertions remain unexecuted."
+        }
+      ]
     }
   ],
   "owned_elsewhere": [

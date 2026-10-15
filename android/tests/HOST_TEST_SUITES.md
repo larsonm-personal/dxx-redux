@@ -75,3 +75,25 @@ playback needs a compiled exporter and must not be run by bare unittest discover
 `unsupported_entrypoints` retains concrete constraints for remaining standalone scripts.
 Android instrumentation, physical hardware checks, Windows GUI checks, device audio probes,
 interactive tools, and exact licensed mission media remain distinct from this Linux owner.
+
+## Public native and scoped PowerShell profiles
+
+Six additional `host-profile:` selections invoke existing assertion owners with
+reviewed, explicit arguments. Plans cannot inject executable paths or commands.
+`metadata-d1`, `metadata-d2`, and `metadata-imported-d1` build the corresponding
+native metadata worker; the imported profile also checks retirement/recovery on
+D1/D2 content-profile changes. `metadata-headers` runs malformed-header recovery
+for both engines. `public-flight` builds both full games and executes their
+existing public-flight replay smoke under `xvfb-run` (Mesa/Xvfb/xauth required).
+All use verified public shareware prepared by the existing setup script; its
+pinned dependency requirements and downloads are setup, separately timed from
+assertions. Default retail data is never substituted. Build failures and public
+fixture preparation failures remain retryable and earn no test coverage.
+
+`benchmark-policy` runs only the existing `-PolicySelfTest` branch. It does not
+measure native performance, validate corpus digests, or update history. Those
+unexecuted portions are explicit exclusions. Public native receipts similarly
+exclude retail/custom-asset variants. These owners currently provide aggregate
+assertion receipts, not invented internal leaf counts. Optional variants are not
+silently included. Local qualification covers adapter argument/phase contracts;
+actual PowerShell/native profile execution requires the hosted lane.

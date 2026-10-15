@@ -141,6 +141,80 @@ def unittest_worker(repo, relative, output):
     return 0 if result.wasSuccessful() else 1
 
 
+def native_configure_arguments(repo, build, game):
+    """Match run-linux-build.sh Debug test flags in a caller-owned cache."""
+    return [
+        "cmake",
+        "-S",
+        str(target_file(repo, game)),
+        "-B",
+        str(build),
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DBUILD_TESTING=ON",
+        "-DCMAKE_C_FLAGS_DEBUG=-O0 -g1",
+        "-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1",
+        "-DOPENGL=ON",
+        "-DSDLMIXER=ON",
+        "-DUDP=ON",
+        "-DOpenGL_GL_PREFERENCE=LEGACY",
+    ]
+
+
+def public_profile_arguments(suite, repo, build_root, work):
+    """Only reviewed profile names construct argv; plans cannot supply commands."""
+    profile = suite["profile"]
+
+    def binary(game, suffix):
+        name = "dxx-redux-" + game + suffix if suffix else game + "x-redux"
+        return str(build_root / ("engine-" + game) / "main" / name)
+
+    if profile in {"metadata-d1", "metadata-d2", "metadata-imported-d1"}:
+        game = "d1" if profile == "metadata-d1" else "d2"
+        args = [
+            "-Executable",
+            binary(game, "-metadata-worker"),
+            "-Game",
+            game,
+            "-DataEdition",
+            "shareware",
+            "-OutputDirectory",
+            str(work / "metadata"),
+        ]
+        if profile == "metadata-imported-d1":
+            args += ["-ContentGame", "d1", "-CheckProfileSwitch"]
+        return args
+    if profile == "metadata-headers":
+        return [
+            "-NoBuild",
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-D1Exe",
+            binary("d1", "-metadata-worker"),
+            "-D2Exe",
+            binary("d2", "-metadata-worker"),
+            "-OutputDirectory",
+            str(work / "headers"),
+        ]
+    if profile == "public-flight":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-D1Exe",
+            binary("d1", ""),
+            "-D2Exe",
+            binary("d2", ""),
+            "-OutputDirectory",
+            str(work / "flight"),
+        ]
+    if profile == "benchmark-policy":
+        return ["-PolicySelfTest"]
+    raise ValueError("Unknown reviewed PowerShell profile: " + profile)
+
+
 def run_suite(suite, repo, build_root, output, timeout):
     started = time.monotonic()
     result = {
@@ -186,7 +260,7 @@ def run_suite(suite, repo, build_root, output, timeout):
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
 
-    def run(argv, *, native=False, setup=False):
+    def run(argv, *, native=False, setup=False, virtual_display=False):
         nonlocal setup_seconds
         command_started = time.monotonic()
         result["phase"] = "setup" if setup else "tests"
@@ -206,6 +280,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                     "TMPDIR": str(temporary_root),
                     "TEMP": str(temporary_root),
                     "TMP": str(temporary_root),
+                    **({"SDL_VIDEODRIVER": "x11"} if virtual_display else {}),
                     **(
                         {"SDL_AUDIODRIVER": "dummy", "SDL_VIDEODRIVER": "dummy"}
                         if native
@@ -251,6 +326,101 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
+        if suite["kind"] == "public-powershell":
+            script = target_file(repo, suite["path"])
+            if not script.is_file():
+                return finish(
+                    "BLOCKED",
+                    "Profile script absent from target commit",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
+            for game in suite.get("games", []):
+                build = build_root / ("engine-" + game)
+                code = run(native_configure_arguments(repo, build, game), setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Native profile configuration failed; see log",
+                        code,
+                        retryable=True,
+                    )
+                target = "dxx-redux-" + game + suite["target_suffix"]
+                code = run(
+                    [
+                        "cmake",
+                        "--build",
+                        str(build),
+                        "--parallel",
+                        "2",
+                        "--target",
+                        target,
+                    ],
+                    setup=True,
+                )
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Native profile build failed; see log",
+                        code,
+                        retryable=True,
+                    )
+            if suite.get("public_data"):
+                setup = target_file(
+                    repo, "android/helpers/setup_shareware_test_data.ps1"
+                )
+                code = run(
+                    [
+                        "pwsh",
+                        "-NoProfile",
+                        "-NonInteractive",
+                        "-File",
+                        str(setup),
+                        "-Game",
+                        "both",
+                        "-Download",
+                        "-BuildDirectory",
+                        str(build_root / "shareware-fixture"),
+                    ],
+                    setup=True,
+                )
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public fixture preparation failed; see log",
+                        code,
+                        retryable=True,
+                    )
+            argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
+            argv += public_profile_arguments(suite, repo, build_root, work)
+            if suite.get("virtual_display"):
+                argv = ["xvfb-run", "-a"] + argv
+            code = run(argv, virtual_display=suite.get("virtual_display", False))
+            status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
+            result["cases"] = [
+                {
+                    "id": suite["id"],
+                    "status": status,
+                    "reason": "Existing owner assertions for the selected public profile; aggregate receipt",
+                }
+            ]
+            result["exclusions"] = [
+                {
+                    "id": suite["id"] + ":" + item["id"],
+                    "status": "SKIP",
+                    "reason": item["reason"],
+                }
+                for item in suite.get("profile_exclusions", [])
+            ]
+            if code == 2:
+                result["exclusions"] += result["cases"]
+            return finish(
+                status,
+                "Reviewed profile completed; other profiles remain explicit exclusions",
+                code,
+                retryable=code == 2,
+            )
+
         if suite["kind"] == "python-script":
             script = target_file(repo, suite["path"])
             if not script.is_file():
@@ -424,21 +594,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 )
             # Same assertion-preserving options as run-linux-build.sh --test, with a
             # caller-owned build directory and separately captured leaf results.
-            args = [
-                "cmake",
-                "-S",
-                str(source),
-                "-B",
-                str(build),
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DBUILD_TESTING=ON",
-                "-DCMAKE_C_FLAGS_DEBUG=-O0 -g1",
-                "-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1",
-                "-DOPENGL=ON",
-                "-DSDLMIXER=ON",
-                "-DUDP=ON",
-                "-DOpenGL_GL_PREFERENCE=LEGACY",
-            ]
+            args = native_configure_arguments(repo, build, game)
             code = run(args, setup=True)
             if code:
                 text = log.read_text(encoding="utf-8", errors="replace")

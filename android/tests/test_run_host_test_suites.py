@@ -26,7 +26,13 @@ class HostAdapterTests(unittest.TestCase):
             self.assertNotIn("command", suite)
             self.assertIn(
                 suite["kind"],
-                {"python-unittest", "python-script", "extractor", "configured-ctest"},
+                {
+                    "python-unittest",
+                    "python-script",
+                    "extractor",
+                    "configured-ctest",
+                    "public-powershell",
+                },
             )
 
     def test_unsupported_windows_host_blocks_before_launch(self):
@@ -168,6 +174,91 @@ class HostAdapterTests(unittest.TestCase):
             result = json.loads((root / "result.json").read_text())
             self.assertIn("setup_seconds", result)
             self.assertEqual(result["cases"][0]["id"], "one")
+
+
+class PublicProfileTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise Linux-only contracts with mocked subprocesses on every CI host.
+        self.enterContext(patch.object(adapter.sys, "platform", "linux"))
+        self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
+
+    def run_profile(self, profile, setup_failure=False):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            suite = adapter.load_suites()["host-profile:" + profile]
+            script = root / suite["path"]
+            script.parent.mkdir(parents=True)
+            script.touch()
+            calls = []
+
+            class Process:
+                def __init__(self, argv, **kwargs):
+                    calls.append((argv, kwargs))
+
+                def wait(self, **kwargs):
+                    return 9 if setup_failure else 0
+
+            with (
+                patch.object(adapter.shutil, "which", return_value="tool"),
+                patch.object(adapter.subprocess, "Popen", Process),
+            ):
+                code = adapter.run_suite(
+                    suite, root, root / "build", root / "receipt.json", 30
+                )
+            receipt = json.loads((root / "receipt.json").read_text())
+            return code, receipt, calls
+
+    def test_imported_profile_has_explicit_worker_and_public_assets(self):
+        code, receipt, calls = self.run_profile("metadata-imported-d1")
+        self.assertEqual(code, 0)
+        self.assertIn("dxx-redux-d2-metadata-worker", calls[1][0])
+        self.assertIn("-Download", calls[2][0])
+        self.assertIn("-CheckProfileSwitch", calls[3][0])
+        self.assertIn("-NonInteractive", calls[3][0])
+        self.assertIn("shareware", calls[3][0])
+        self.assertFalse(receipt["coverage_complete"])
+        self.assertTrue(receipt["attempted_tests"])
+        self.assertEqual(receipt["cases"][0]["status"], "PASS")
+
+    def test_header_profile_builds_both_workers_and_disables_inner_build(self):
+        code, _receipt, calls = self.run_profile("metadata-headers")
+        self.assertEqual(code, 0)
+        self.assertIn("dxx-redux-d1-metadata-worker", calls[1][0])
+        self.assertIn("dxx-redux-d2-metadata-worker", calls[3][0])
+        self.assertIn("-NoBuild", calls[-1][0])
+        self.assertIn("-D1Exe", calls[-1][0])
+        self.assertIn("-D2Exe", calls[-1][0])
+
+    def test_visual_profile_uses_virtual_display_not_dummy_video(self):
+        code, _receipt, calls = self.run_profile("public-flight")
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[-1][0][:2], ["xvfb-run", "-a"])
+        self.assertEqual(calls[-1][1]["env"].get("SDL_VIDEODRIVER"), "x11")
+        argv = calls[-1][0]
+        self.assertEqual(Path(argv[argv.index("-D1Exe") + 1]).name, "d1x-redux")
+        self.assertEqual(Path(argv[argv.index("-D2Exe") + 1]).name, "d2x-redux")
+
+    def test_benchmark_policy_does_not_build_or_claim_performance(self):
+        code, receipt, calls = self.run_profile("benchmark-policy")
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0][-1], "-PolicySelfTest")
+        self.assertFalse(receipt["coverage_complete"])
+        self.assertIn("performance", receipt["exclusions"][0]["reason"])
+
+    def test_setup_failure_is_retryable_and_has_no_assertion_receipt(self):
+        code, receipt, calls = self.run_profile("metadata-d1", setup_failure=True)
+        self.assertEqual(code, 2)
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(receipt["retryable"])
+        self.assertFalse(receipt["attempted_tests"])
+        self.assertEqual(receipt["cases"], [])
+
+    def test_unknown_profile_does_not_construct_an_arbitrary_command(self):
+        with self.assertRaises(ValueError):
+            adapter.public_profile_arguments(
+                {"profile": "untrusted"}, Path("repo"), Path("build"), Path("work")
+            )
 
 
 class EvidenceAndCancellationTests(unittest.TestCase):
