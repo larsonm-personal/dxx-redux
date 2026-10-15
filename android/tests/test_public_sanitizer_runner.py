@@ -50,6 +50,7 @@ printf 'DXX_SANITIZERS:STRING=address\\n' > "build${game}-asan/CMakeCache.txt"
             ctest.chmod(0o755)
             for name in (
                 "test_input_demo_runtime_smoke",
+                "test_host_metadata_worker",
                 "test_secret_area_baseline",
                 "test_native_metadata_worker",
                 "test_metadata_level_headers",
@@ -111,7 +112,8 @@ exit 0
         self.assertIn("--sanitizer address --build-type Debug", builds)
         self.assertNotIn("--target d1", builds)
         self.assertIn("--parallel 1", ctests)
-        self.assertEqual(len(records), 8)
+        self.assertEqual(len(records), 9)
+        self.assertEqual(sum(r["name"] == "test_host_metadata_worker" for r in records), 1)
         configs = [r for r in records if r["name"] == "test_headless_config_read_bounds"]
         self.assertEqual(len(configs), 3)
         for record in records:
@@ -120,6 +122,9 @@ exit 0
             self.assertIn("log_path=", record["asan"])
             self.assertEqual(record["lsan"], "exitcode=23")
             args = record["arguments"]
+            if record["name"] == "test_host_metadata_worker":
+                self.assertEqual(args, [])
+                continue
             if record["name"] == "test_input_demo_runtime_smoke":
                 self.assertEqual(args[args.index("-TimeoutSeconds") + 1], "240")
             else:
@@ -137,7 +142,7 @@ exit 0
     def test_public_d1_does_not_require_d2_or_config_routes(self):
         result, records, builds, _ = self.run_profile("-Category", "Public", "-Game", "d1")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(len(records), 4)
+        self.assertEqual(len(records), 5)
         self.assertNotIn("--target d2", builds)
         replay = next(record for record in records if record["name"] == "test_input_demo_runtime_smoke")
         args = replay["arguments"]
@@ -148,17 +153,25 @@ exit 0
             "-Category", "Public", "-Game", "d1", failing="test_secret_area_baseline"
         )
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(len(records), 4)
+        self.assertEqual(len(records), 5)
+
+    def test_worker_shutdown_contract_failure_fails_suite(self):
+        result, records, _, _ = self.run_profile(
+            "-Category", "Public", "-Game", "d1", failing="test_host_metadata_worker"
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(len(records), 5)
+        self.assertEqual(sum(r["name"] == "test_host_metadata_worker" for r in records), 1)
 
     def test_swallowed_sanitizer_diagnostic_fails_suite(self):
         result, records, _, _ = self.run_profile("-Category", "Public", "-Game", "d1", finding=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(len(records), 4)
+        self.assertEqual(len(records), 5)
 
     def test_swallowed_sanitizer_runtime_fatal_fails_suite(self):
         result, records, _, _ = self.run_profile("-Category", "Public", "-Game", "d1", fatal=True)
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(len(records), 4)
+        self.assertEqual(len(records), 5)
 
 
 if __name__ == "__main__":
