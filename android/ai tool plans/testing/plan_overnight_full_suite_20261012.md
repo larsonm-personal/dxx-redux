@@ -1290,3 +1290,12 @@
 - Full current-source public replay workflow terminal exit0: headless34/34 native; graphics34/34 native; exact gameplay-state/SIM-RNG imported D1 flight parity pass. Raw paired diagnostic exit1 retained, full imported diag/object/world qualification incomplete, four diagnostic-only paired cases and three explicit exclusions unchanged
 - Latest catalogue pair exit0. Fixed APK hash verified and install terminal0 on owned emulator5574, under explicit private adb127.0.0.1:5038. D1 retail cheat+RecordState capture exported both levels; strict independent replay now live
 - Generation/graphics and Obsidian frontier queues remain behind fixed-recording PID4084. No master repeat claimed or goal marked complete
+
+## 08:40 user-requested merge resolution
+
+- Merge HEAD d30fa3cf6 (local test/engine repairs) with incoming d3ad539503d4ca051bb435bf5654c7a570d12ead (other-machine native28 fixture refresh and test repairs),51 conflicts. User explicitly requested resolution
+- Saved140 index-stage blobs and every conflicted worktree file under temp/merge_resolution_20261014_0836 with SHA256 manifest before mutations
+- Stopped owned recording/generation/Obsidian waiters and captured descendants before editing; no shared devices/jobs touched. Goal remains active, tests interrupted by merge not treated as pass/fail completion
+- Incoming17 recording/oracle pairs selected together, preserving independently captured expectations and reviewed incoming manifest. Thirteen obsolete migration conflicts follow incoming removal; all local stages retained in backup. Superseded local capture-qualification/ordered-migration provenance archived outside active corpus instead of leaving stale file hashes
+- Combined incoming imported weapon-profile gates and stronger ordered cheat command validation with local guided-rejection proof/failure logs/globalv5 checks. Guided rejection applies to nativeD2, since importedD1 grants do not include guided missiles. Incoming capture-manifest API/tests retained with early admission preflight
+- Formatting, admission/semantic tests, catalogues and native builds still required before resolution claim; no merge commit created
