@@ -1,0 +1,6 @@
+// SDK-free entry selected by -PhostJvmOnly=true in settings.gradle
+// Share Kotlin plugin classes across the existing JVM module builds
+plugins {
+    id 'org.jetbrains.kotlin.jvm' apply false
+    id 'org.jetbrains.kotlin.plugin.serialization' apply false
+}
