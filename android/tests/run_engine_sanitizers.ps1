@@ -32,6 +32,9 @@ $results = [Collections.Generic.List[object]]::new()
 $pwsh = (Get-Process -Id $PID).Path
 $oldAsanOptions = $env:ASAN_OPTIONS
 $oldLsanOptions = $env:LSAN_OPTIONS
+$oldWorkerDiagnostics = $env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR
+$oldSanitizerStage = $env:DXX_SANITIZER_STAGE
+$env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR = Join-Path $OutputRoot 'worker-lifecycle'
 # Fail on the first memory error, with allocation stacks and no user-supplied suppression options
 $env:ASAN_OPTIONS = 'halt_on_error=1:allocator_may_return_null=0:log_path="' + (Join-Path $OutputRoot 'asan') + '"'
 $env:LSAN_OPTIONS = 'exitcode=23'
@@ -42,11 +45,15 @@ function Invoke-SanitizerStage {
     Write-Host "Sanitizer stage: $Name (log: $log)"
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $exitCode = 1
+    $previousStage = $env:DXX_SANITIZER_STAGE
+    $env:DXX_SANITIZER_STAGE = $Name
     try {
         & $Action *>&1 | Tee-Object -FilePath $log | Out-Host
         $exitCode = $LASTEXITCODE
     } catch {
         $_ | Out-String | Tee-Object -FilePath $log -Append | Out-Host
+    } finally {
+        $env:DXX_SANITIZER_STAGE = $previousStage
     }
     $results.Add([pscustomobject][ordered]@{ name = $Name; exit_code = $exitCode; seconds = [int]$watch.Elapsed.TotalSeconds; log = $log })
     $results | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputRoot 'summary.json') -Encoding utf8
@@ -106,6 +113,9 @@ try {
                 }
             }
             'PublicRuntime' {
+                $null = Invoke-SanitizerStage 'public-worker-shutdown-contract' {
+                    & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'test_host_metadata_worker.ps1')
+                }
                 . (Join-Path $repoRoot 'android/helpers/shareware_test_data.ps1')
                 foreach ($testGame in $games) {
                     $main = Join-Path $repoRoot "build$testGame-asan/main"
@@ -168,12 +178,25 @@ try {
 } finally {
     $env:ASAN_OPTIONS = $oldAsanOptions
     $env:LSAN_OPTIONS = $oldLsanOptions
+    $env:DXX_METADATA_WORKER_DIAGNOSTICS_DIR = $oldWorkerDiagnostics
+    $env:DXX_SANITIZER_STAGE = $oldSanitizerStage
     if ($producerLock) { $producerLock.Dispose() }
 }
 # Native diagnostics are failures even if an expected-error test swallowed its child's exit status
 $diagnosticFiles = @(Get-ChildItem -LiteralPath $OutputRoot -Recurse -File)
 # ASan log_path is quiet on success; fatal runtime setup/teardown errors also fail
 $runtimeDiagnostics = @($diagnosticFiles | Where-Object { $_.Name -like 'asan.*' -and $_.Length -gt 0 })
+# Keep every original report; the index correlates ASan's PID suffix with its stage.
+$diagnosticIndex = @(foreach ($report in $runtimeDiagnostics) {
+    $nativePid = $report.Name.Substring(5)
+    $startedPath = Join-Path $OutputRoot "worker-lifecycle/$nativePid.start.json"
+    $started = if (Test-Path -LiteralPath $startedPath) { Get-Content -LiteralPath $startedPath -Raw | ConvertFrom-Json } else { $null }
+    $stageName = if ($null -ne $started) { $started.stage } else { 'unmapped' }
+    [pscustomobject]@{ path = $report.FullName; bytes = $report.Length; pid = $nativePid; stage = $stageName }
+    Write-Host "Sanitizer diagnostic: $($report.FullName) ($($report.Length) bytes, pid=$nativePid, stage=$stageName); full report retained in artifacts"
+    Get-Content -LiteralPath $report.FullName -TotalCount 80 | Out-Host
+})
+$diagnosticIndex | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputRoot 'diagnostic-index.json') -Encoding utf8
 $findings = @($diagnosticFiles | Where-Object Extension -eq '.log' | Select-String -Pattern 'ERROR: (Address|Leak)Sanitizer|SUMMARY: (Address|Leak)Sanitizer|AddressSanitizer:DEADLYSIGNAL|LeakSanitizer has encountered a fatal error')
 $results | Format-Table name, exit_code, seconds | Out-Host
 Write-Host "Sanitizer reports: $OutputRoot"
