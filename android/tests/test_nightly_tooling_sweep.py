@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 import nightly_tooling_sweep as sweep
 
-SHA = 'a' * 40
+SHA = '0000000000000000000000000000000000000008'  # Stable first/second/third fixture ordering.
 
 
 class SweepTests(unittest.TestCase):
@@ -30,6 +30,30 @@ class SweepTests(unittest.TestCase):
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)
         self.assertEqual(again, self.plan)
         self.assertEqual(old, self.state)
+
+    def test_sha_seed_changes_order_without_reusing_certification(self):
+        full, _ = sweep.plan_batch(SHA, self.catalog, self.policy, budget=300)
+        certified = sweep.reconcile(self.plan, self.policy, self.state, [self.receipt()])
+        self.assertIn('master:first', certified['records'])
+        other, state = sweep.plan_batch('b' * 40, self.catalog, self.policy, certified, 300)
+        self.assertNotEqual([e['id'] for e in full['tests']], [e['id'] for e in other['tests']])
+        self.assertEqual(state['records'], {})
+        self.assertEqual(other, sweep.plan_batch('b' * 40, self.catalog, self.policy, budget=300)[0])
+
+    def test_seeded_sweep_resume_is_finite_and_never_repeats_terminal(self):
+        state = self.state
+        seen = []
+        while True:
+            plan, state = sweep.plan_batch(SHA, self.catalog, self.policy, state, 100)
+            if not plan['tests']:
+                break
+            ident = plan['tests'][0]['id']
+            self.assertNotIn(ident, seen)
+            seen.append(ident)
+            receipt = {**{k: plan[k] for k in ('schema', 'target_sha', 'catalog_hash', 'batch_id')},
+                       'lane': 'host', 'results': [{'id': ident, 'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}]}
+            state = sweep.reconcile(plan, self.policy, state, [receipt])
+        self.assertEqual(set(seen), set(sweep.policy_entries(self.policy)))
 
     def test_partial_interruption_advances_only_completed(self):
         state = sweep.reconcile(self.plan, self.policy, self.state,

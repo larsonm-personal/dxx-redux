@@ -96,7 +96,8 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700):
     excluded.extend({'id': row['name'], 'reason': 'not yet admitted: public prerequisites/host support require qualification', 'requires': row.get('requires'), 'manual': row.get('manual')} for row in catalog['tests'] if row['name'] not in admitted)
     used = 0
     # Untried work precedes repeatedly blocked setup, so one lane cannot starve the rest.
-    ordered = sorted(entries.items(), key=lambda item: state.get('retryable', {}).get(item[0], {}).get('attempts', 0))
+    ordered = sorted(entries.items(), key=lambda item: (
+        state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
     for ident, entry in ordered:
         if entry['owner'] == 'master' and entry['args']['suite'] not in names:
             excluded.append({'id': ident, 'reason': 'not present in pinned master catalog'})
