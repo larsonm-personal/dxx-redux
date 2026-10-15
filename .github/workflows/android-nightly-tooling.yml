@@ -80,11 +80,10 @@ jobs:
           mkdir -p results/setup "$RUNNER_TEMP/dxx-nightly-deps"
           source target/android/get_deps/tool_versions.conf
           dep_base="$RUNNER_TEMP/dxx-nightly-deps"
-          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$dep_base/android-sdk}}"
+          # Managed SDK writers require a real directory, not a hosted-SDK symlink.
+          sdk_root="$dep_base/android-sdk"
+          mkdir -p "$sdk_root"
           printf '%s\n' "$dep_base" > target/dependency_base.txt
-          if [[ "$sdk_root" != "$dep_base/android-sdk" ]]; then
-            ln -s "$sdk_root" "$dep_base/android-sdk"
-          fi
           {
             echo "DXX_LANE_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "DXX_NIGHTLY_DEPS=$dep_base"

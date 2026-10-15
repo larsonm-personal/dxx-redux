@@ -21,6 +21,21 @@ corpus = module('setup_demo_import_corpus')
 audio = module('generate_preview_test_audio')
 
 
+class SdkWorkflowContractTests(unittest.TestCase):
+    def test_managed_sdk_uses_plain_private_directory(self):
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        setup = source.split('- name: Prepare dependency locations', 1)[1].split('- name: Require accelerated', 1)[0]
+        self.assertIn('sdk_root="$dep_base/android-sdk"', setup)
+        self.assertIn('mkdir -p "$sdk_root"', setup)
+        self.assertNotIn('ln -s', setup)
+        self.assertNotIn('${ANDROID_HOME:-', setup)
+        self.assertIn('echo "ANDROID_HOME=$sdk_root"', setup)
+        self.assertIn('echo "DXX_NIGHTLY_SDK_CACHE=$sdk_root"', setup)
+        inventory = (ROOT / 'android/helpers/sdk_package_inventory.ps1').read_text()
+        self.assertIn('Assert-DxxPlainSdkPath $sdkRoot', inventory)
+        self.assertIn('Cannot assess linked SDK/reference path:', inventory)
+
+
 class KvmWorkflowContractTests(unittest.TestCase):
     def test_grant_is_only_existing_runner_user_on_real_kvm(self):
         source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
