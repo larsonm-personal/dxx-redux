@@ -118,13 +118,21 @@ class AndroidRendererContractsTest(unittest.TestCase):
         self.assertIn("(end->tv_sec - start->tv_sec) * 1000000", shared)
         self.assertIn("(end->tv_nsec - start->tv_nsec) / 1000", shared)
 
+        replacement = shared[shared.index("int android_ogl_read_replacement(") : shared.index("static void apply_bound_min_mag_filter")]
+        self.assertLess(replacement.index("android_ogl_texture_filename("), replacement.index("read_png("))
+        self.assertIn("if (strlen(item->path) >= capacity) continue;", replacement)
+        self.assertIn("candidates[position - 1].rank > item.rank", replacement)
+        self.assertLess(replacement.index("png_slot_us[item->slot]"), replacement.index("png_hit_slot = item->slot"))
+        self.assertLess(replacement.index("png_ext_us[item->extension - 1]"), replacement.index("png_hit_ext = item->extension - 1"))
+
         profile = (REPO / "android/app/src/main/cpp/shared/android_profile.c").read_text(encoding="utf-8")
         self.assertEqual(profile.count("void android_profile_texture_lookup_note_ktx2("), 1)
         for game in ("d1", "d2"):
             source = (REPO / game / "arch/ogl/ogl.c").read_text(encoding="utf-8")
             self.assertNotIn("static int ogl_read_texture_with_extensions", source)
             self.assertNotIn("static void android_profile_texture_lookup_note_ktx2", source)
-            self.assertIn("android_ogl_read_texture_with_extensions", source)
+            self.assertIn("android_ogl_read_replacement(filename, sizeof(filename),", source)
+            self.assertIn("android_ogl_load_dxa_mask(filename, bm, texfilt, ogl_loadtexture)", source)
             self.assertIn("sizeof(filename)", source)
             self.assertIn("clock_gettime(CLOCK_MONOTONIC, ts);", source)
             self.assertIn("(end->tv_sec - start->tv_sec) * 1000000", source)
@@ -132,15 +140,22 @@ class AndroidRendererContractsTest(unittest.TestCase):
 
     def test_dxa_mask_name_is_checked_before_png_lookup(self) -> None:
         shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(encoding="utf-8")
-        start = shared.index("void android_ogl_load_dxa_mask(")
+        start = shared.index("int android_ogl_load_dxa_mask(")
         body = shared[start : shared.index("\n#endif", start)]
-        construction = body.index("android_ogl_texture_filename(")
-        lookup = body.index("read_png(")
+        construction = body.index("replacement_mask_name(image_filename, maskname, sizeof(maskname))")
+        lookup = body.index("read_png(maskname, &mdata)")
         self.assertLess(construction, lookup)
-        self.assertIn("maskname, sizeof(maskname), bitmapname", body)
-        self.assertIn('"_mask.png"', body)
-        self.assertIn("return;", body[construction:lookup])
+        self.assertIn("return 0;", body[construction:lookup])
         self.assertNotIn("sprintf(", body)
+
+        start = shared.index("static int replacement_mask_name(")
+        mask = shared[start : shared.index("static void android_ogl_texture_clock_now", start)]
+        guard = mask.index('(size_t) (dot - image) + sizeof("_mask.png") > capacity')
+        self.assertLess(guard, mask.index("memcpy(mask, image, dot - image)"))
+        self.assertIn("return 0;", mask[guard:mask.index("memcpy(")])
+        self.assertIn('strcpy(mask + (dot - image), "_mask.png")', mask)
+        self.assertIn("mask_owner && !strcmp(owner, mask_owner)", mask)
+
 
 
 if __name__ == "__main__":

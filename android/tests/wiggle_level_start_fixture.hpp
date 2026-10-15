@@ -62,9 +62,11 @@ static void exercise_wiggle_level_start(const char *scenario)
 		return;
 	}
 	char save[] = "wiggle-before-secret.sav", description[21] = "Before secret";
+	const fix64 saved_epoch = GameTime64;
+	controls_restore_wiggle_phase(controls_get_wiggle_phase() + 321u);
 	stop_time();
 	require(state_save_all_sub(save, description) && state_restore_all_sub(save, 0), "ordinary restore before secret entry");
-	require(GameTime64 == 0 && controls_get_wiggle_phase() != 0, "ordinary restore creates nonzero phase at zero clock");
+	require(GameTime64 == saved_epoch && controls_get_wiggle_phase() != ((unsigned int)GameTime64 & 0xffffu), "ordinary restore preserves an existing nonzero phase offset");
 	prepare_secret();
 	input_demo_set_record_each_level(1);
 	GameArg.SysInputDemoNoRender = 0;

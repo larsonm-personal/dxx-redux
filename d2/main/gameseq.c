@@ -1448,7 +1448,7 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 		Players[Player_num].hostages_on_board = 0;
 		init_robots_for_level();
 		init_ai_objects();
-		init_smega_detonates();
+		weapon_reset_seismic_runtime_state();
 		init_morphs();
 		init_all_matcens();
 		reset_special_effects();
@@ -2118,7 +2118,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	init_cockpit();
 	init_robots_for_level();
 	init_ai_objects();
-	init_smega_detonates();
+	weapon_reset_seismic_runtime_state();
 	init_morphs();
 	init_all_matcens();
 	reset_palette_add();

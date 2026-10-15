@@ -143,6 +143,10 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 				if (source == filename) {
 					auto legacy = data;
 					legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - trailing_runtime_bytes);
+					if (start.version >= 23) {
+						constexpr size_t epoch_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 12;
+						legacy.erase(legacy.begin() + epoch_offset, legacy.begin() + epoch_offset + 8);
+					}
 					set_int(legacy, 4, 18);
 					d1_save_translate_checkpoint_start legacy_start = {};
 					require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start), "decode prior native save format");

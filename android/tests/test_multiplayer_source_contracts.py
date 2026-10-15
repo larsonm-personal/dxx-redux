@@ -38,10 +38,14 @@ class MultiplayerSourceContractsTest(unittest.TestCase):
         source = (
             ROOT / "android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerForegroundService.kt"
         ).read_text(encoding="utf-8")
+        self.assertIn("MultiplayerSessionNotification.promote(this, serviceLeases.gameActive)", source)
+        source = (
+            ROOT / "android/app/src/main/java/com/dxxredux/app/multiplayer/MultiplayerSessionNotification.kt"
+        ).read_text(encoding="utf-8")
         builder = source[source.index("val builder =") : source.index("val notification =")]
         self.assertIn("Build.VERSION.SDK_INT >= Build.VERSION_CODES.O", builder)
-        self.assertLess(builder.index("Notification.Builder(this, CHANNEL_ID)"), builder.index("} else {"))
-        self.assertGreater(builder.index("Notification.Builder(this)"), builder.index("} else {"))
+        self.assertLess(builder.index("Notification.Builder(service, CHANNEL_ID)"), builder.index("} else {"))
+        self.assertGreater(builder.index("Notification.Builder(service)"), builder.index("} else {"))
 
     def test_reactor_pause_is_consumed_while_automap_is_front(self) -> None:
         actions = (ROOT / "android/app/src/main/cpp/shared/android_meta_actions.c").read_text(encoding="utf-8")

@@ -59,11 +59,11 @@ static void exercise_fusion_save_runtime(const char *scenario)
 	require(restore(filename), "restore optional Fusion timer");
 	require((Auto_fire_fusion_cannon_time != 0) == active, "restore the optional timer's explicit active state");
 	require(Fusion_charge == saved_charge, "restore Fusion charge independently of optional timer activity");
-	if (due) require(Auto_fire_fusion_cannon_time == -1, "active due-now deadline uses established nonzero convention");
-	// A second save at the rebased epoch must preserve the same active/inactive state
+	if (due) require(Auto_fire_fusion_cannon_time == GameTime64, "active due-now deadline retains the saved epoch");
+	// A second save at the restored epoch must preserve the same active/inactive state
 	char repeated[] = "fusion-runtime-repeated.sav";
 	stop_time();
-	require(state_save_all_sub(repeated, description) && restore(repeated), "repeat ordinary save at rebased epoch");
+	require(state_save_all_sub(repeated, description) && restore(repeated), "repeat ordinary save at restored epoch");
 	require((Auto_fire_fusion_cannon_time != 0) == active, "repeated saves preserve optional timer activity");
 	const bytes opposite_endian = save_endian_fixture(read_save_fixture(repeated)).convert();
 	char swapped[] = "fusion-runtime-swapped.sav";
@@ -78,11 +78,16 @@ static void exercise_fusion_save_runtime(const char *scenario)
 	        "resumed no-input projectile creation and energy match uninterrupted continuation");
 	// Native fixtures have no Android launcher metadata, so the active flag is the last four bytes
 	const bytes valid = read_save_fixture(repeated);
+#ifdef DXX_BUILD_DESCENT_II
+	const size_t trailing_runtime = 56;
+#else
+	const size_t trailing_runtime = 0;
+#endif
 	require(valid.size() >= 4, "complete Fusion flag bytes");
 	for (int corruption = 0; corruption < 6; ++corruption) {
 		bytes damaged = valid;
-		if (corruption < 2) set_int(damaged, damaged.size() - 4, corruption == 0 ? 2 : -1);
-		else damaged.resize(damaged.size() - (corruption - 1));
+		if (corruption < 2) set_int(damaged, damaged.size() - trailing_runtime - 4, corruption == 0 ? 2 : -1);
+		else damaged.resize(damaged.size() - trailing_runtime - (corruption - 1));
 		char bad[] = "fusion-runtime-invalid.sav";
 		write_fixture(bad, damaged);
 		stop_time();

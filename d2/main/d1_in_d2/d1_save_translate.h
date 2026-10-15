@@ -19,7 +19,10 @@ typedef struct d1_save_translate_checkpoint_start {
 	int version;
 	int current_level;
 	int next_level;
+	/* The replay clock still adds its checkpoint start to this legacy field */
 	fix game_time;
+	int has_saved_epoch;
+	fix64 saved_epoch;
 	int difficulty;
 	int difficulty_changed;
 	int difficulty_min;

@@ -26,11 +26,16 @@ def main() -> None:
     writer = jni.split("JNI_FUNC(nativeWriteEnginePrefs)", 1)[1].split("JNI_FUNC(nativeReadVisualPrefs)", 1)[0]
     validation = writer.index("cockpit_mode_is_persistable")
     assert validation < writer.index("GetStringUTFChars")
-    assert validation < writer.index("for_each_pilot")
+    assert validation < writer.index("append_pilots(")
+    assert validation < writer.index("patch_pilots(targets)")
 
     kotlin = read("android/app/src/main/java/com/dxxredux/app/NativePilotPreferences.kt")
     assert "mode == 0 || mode == 2 || mode == 3" in kotlin
-    assert kotlin.count("if (!validCockpitMode(cockpitMode)) return -1") == 2
+    for name in ("writeEnginePrefs", "writeEnginePrefsToAll", "writeEngineAndHomingPrefsToAll"):
+        body = kotlin.split(f"    fun {name}(", 1)[1].split("\n    fun ", 1)[0]
+        guard = body.index("if (!validCockpitMode(cockpitMode)) return -1")
+        publication = body.index("nativeWriteEnginePrefs") if "nativeWriteEnginePrefs" in body else body.index("writeEnginePrefs(")
+        assert guard < publication, f"{name} publishes before validating cockpit mode"
 
     print("cockpit mode validation guards passed")
 

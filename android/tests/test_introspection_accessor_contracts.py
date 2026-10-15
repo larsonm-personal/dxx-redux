@@ -84,8 +84,12 @@ class IntrospectionAccessorContractsTest(unittest.TestCase):
             self.assertIn(symbol, menu_header + window_header)
 
         cmake = (REPO / "android/app/src/main/cpp/CMakeLists.txt").read_text(encoding="utf-8")
-        self.assertEqual(cmake.count("shared/game_menu_introspect_accessors.c"), 2)
-        self.assertEqual(cmake.count("shared/game_window_introspect_accessors.c"), 2)
+        common = cmake[cmake.index("set(DXX_ANDROID_GAME_SOURCES") : cmake.index("set(_d1_android_game_sources")]
+        for source in ("game_menu_introspect_accessors.c", "game_window_introspect_accessors.c"):
+            self.assertEqual(common.count("shared/" + source), 1)
+        for game in ("d1", "d2"):
+            self.assertIn(f"set(_{game}_android_game_sources ${{DXX_ANDROID_GAME_SOURCES}})", cmake)
+            self.assertIn(f"target_sources(dxx-redux-{game} PRIVATE ${{_{game}_android_game_sources}})", cmake)
 
 
 if __name__ == "__main__":

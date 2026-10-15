@@ -77,7 +77,7 @@ try {
         throw 'Native worker repeated partial initialization instead of returning a structured failure'
     }
 } finally {
-    Stop-MetadataWorkerProcess -Worker $worker
+    Stop-MetadataWorkerProcess -Worker $worker -OutputTask $outputTask
     # Retain shutdown diagnostics on success and timeout, including sanitizer output
     $outputTask.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $OutputDirectory 'native-guard.log') -Encoding utf8
     $worker.ErrorTask.GetAwaiter().GetResult() | Set-Content -LiteralPath (Join-Path $OutputDirectory 'native-guard.stderr.log') -Encoding utf8

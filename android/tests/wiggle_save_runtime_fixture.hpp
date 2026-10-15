@@ -106,7 +106,7 @@ static void exercise_wiggle_save_runtime(const char *scenario)
 		bytes data(static_cast<size_t>(PHYSFS_fileLength(fp)));
 		require(PHYSFS_read(fp, data.data(), 1, data.size()) == data.size() && PHYSFS_close(fp), "read previous-process reference");
 		const json reference = json::parse(data.begin(), data.end());
-		require(restore(filename) && GameTime64 == 0, "cold ordinary phase restore");
+		require(restore(filename) && GameTime64 == reference["epoch"].get<fix64>(), "cold ordinary phase restore");
 		require(snapshot() == reference["initial"], "cold restore phase and player state");
 		for (const auto &expected : reference["frames"]) {
 			step();
@@ -117,10 +117,11 @@ static void exercise_wiggle_save_runtime(const char *scenario)
 	}
 	const bool no_wiggle = std::strcmp(scenario, "no-wiggle") == 0;
 	if (no_wiggle) ConsoleObject->mtype.phys_info.flags &= ~PF_WIGGLE;
-	// The second generation saves again after a zero-based restore and seven real frames
+	// The second generation saves again after a saved-epoch restore and seven real frames
 	for (int generation = 0; generation < 2; ++generation) {
 		if (generation) for (int f = 0; f < 7; ++f) step();
 		const auto initial = snapshot();
+		const fix64 saved_epoch = GameTime64;
 		stop_time();
 		require(state_save_all_sub(filename, description), "write ordinary phase save");
 		std::vector<json> expected;
@@ -128,10 +129,10 @@ static void exercise_wiggle_save_runtime(const char *scenario)
 			step();
 			expected.push_back(snapshot());
 		}
-		const std::string reference = json { { "initial", initial }, { "frames", expected } }.dump();
+		const std::string reference = json { { "initial", initial }, { "frames", expected }, { "epoch", saved_epoch } }.dump();
 		write_fixture("wiggle-reference.json", bytes(reference.begin(), reference.end()));
 		require(restore(filename), "restore ordinary phase save");
-		require(GameTime64 == 0, "ordinary restore retains zero-based timer semantics");
+		require(GameTime64 == saved_epoch, "ordinary restore preserves saved epoch");
 		require(snapshot() == initial, "restore exact player phase, state and RNG");
 		for (size_t f = 0; f < expected.size(); ++f) {
 			step();

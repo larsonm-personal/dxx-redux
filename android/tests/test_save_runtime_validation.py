@@ -141,7 +141,7 @@ class SaveRuntimeValidationTest(unittest.TestCase):
         for source in (D1_STATE, D2_STATE):
             validator = function_body(source, "state_validate_runtime_state")
             self.assertIn("PHYSFS_seek(fp, start)", validator)
-            restore_call = source.index("!state_validate_runtime_state(fp, swap, version)")
+            restore_call = source.index("!state_validate_runtime_state(fp, swap, version")
             apply_call = source.index("state_read_runtime_state(fp, swap", restore_call)
             self.assertLess(restore_call, apply_call)
 

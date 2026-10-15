@@ -2348,6 +2348,8 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	Gate_interval = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_start_time = tmptime32 ? GameTime64 + (fix64)tmptime32 : 0;
+	if (tmptime32 && !Boss_dying_start_time)
+		Boss_dying_start_time = -1;
 	Boss_dying = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
 	// Before state version 35, the writer read four bytes from a byte global

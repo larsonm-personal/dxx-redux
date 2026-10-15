@@ -62,6 +62,10 @@ extern "C" {
 #endif
 }
 
+#ifndef __ANDROID__
+#include "headless/headless_audio.h"
+#endif
+
 #include "level_statistics.hpp"
 #include "flyout_metadata.hpp"
 #include "level_texture_diagnostics.h"
@@ -381,6 +385,9 @@ static void levelmeta_progress(void *user, const char *stage,
 
 static int init_levelmeta_audio(void)
 {
+#ifndef __ANDROID__
+	return init_headless_audio();
+#else
 	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
 
 	GameArg.SndNoMusic = 1;
@@ -391,6 +398,7 @@ static int init_levelmeta_audio(void)
 	digi_set_digi_volume(0);
 	songs_set_volume(0);
 	return 1;
+#endif
 }
 
 static int init_levelmeta_screen(char *error, size_t error_size)

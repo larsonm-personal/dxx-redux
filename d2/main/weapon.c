@@ -1027,7 +1027,7 @@ int pick_up_ammo(int class_flag,int weapon_index,int ammo_count)
 }
 
 #define	SMEGA_SHAKE_TIME		(F1_0*2)
-#define	MAX_SMEGA_DETONATES	4
+#define	MAX_SMEGA_DETONATES	SEISMIC_RUNTIME_DETONATION_SLOTS
 fix64	Smega_detonate_times[MAX_SMEGA_DETONATES];
 
 //	Call this to initialize for a new level.
@@ -1116,6 +1116,30 @@ extern void multi_send_seismic (fix64,fix64);
 
 #define	SEISMIC_DISTURBANCE_DURATION	(F1_0*5)
 fix64	Seismic_disturbance_start_time = 0, Seismic_disturbance_end_time;
+
+// Absolute timestamps retain the original zero-inactive convention
+void weapon_get_seismic_runtime_state(seismic_runtime_state *state)
+{
+	memcpy(state->detonation_times, Smega_detonate_times, sizeof(Smega_detonate_times));
+	state->disturbance_start_time = Seismic_disturbance_start_time;
+	state->disturbance_end_time = Seismic_disturbance_end_time;
+	state->tremor_magnitude = Seismic_tremor_magnitude;
+}
+
+void weapon_set_seismic_runtime_state(const seismic_runtime_state *state)
+{
+	memcpy(Smega_detonate_times, state->detonation_times, sizeof(Smega_detonate_times));
+	Seismic_disturbance_start_time = state->disturbance_start_time;
+	Seismic_disturbance_end_time = state->disturbance_end_time;
+	Seismic_tremor_magnitude = state->tremor_magnitude;
+}
+
+// Fresh mines cannot inherit events or previous-frame forces from the old clock
+void weapon_reset_seismic_runtime_state(void)
+{
+	const seismic_runtime_state empty = { { 0 }, 0, 0, 0 };
+	weapon_set_seismic_runtime_state(&empty);
+}
 
 int Seismic_level=0;
 
