@@ -108,6 +108,7 @@ jobs:
         if: inputs.lane != 'jvm'
         shell: bash
         run: |
+          set -euo pipefail
           {
             id
             if [[ -e /dev/kvm ]]; then
@@ -117,10 +118,25 @@ jobs:
               echo 'KVM device is absent'
             fi
           } 2>&1 | tee results/setup/kvm-access.log
-          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
-            echo 'BLOCKED: readable/writable KVM is required; no security settings changed' | tee results/setup/kvm.log
+          if [[ ! -c /dev/kvm ]]; then
+            echo 'BLOCKED: KVM character device is absent' | tee results/setup/kvm.log
             exit 1
           fi
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            # Approved ephemeral access for this existing runner user only.
+            command -v getfacl
+            command -v setfacl
+            getfacl -p -n /dev/kvm > "$RUNNER_TEMP/dxx-kvm-before.acl"
+            # A new shared mask must not unmask another named user's/group's rights.
+            if grep -Eq '^(mask::|user:[^:]+:|group:[^:]+:)' "$RUNNER_TEMP/dxx-kvm-before.acl"; then
+              echo 'BLOCKED: existing extended KVM ACL requires separate review' | tee results/setup/kvm.log
+              exit 1
+            fi
+            touch "$RUNNER_TEMP/dxx-kvm-acl-changed"
+            sudo setfacl -m "u:$(id -u):rw" /dev/kvm
+          fi
+          [[ -r /dev/kvm && -w /dev/kvm ]]
+          getfacl -p -n /dev/kvm | tee results/setup/kvm-effective.acl
       - name: Restore pinned toolchain components
         id: tools
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -297,6 +313,18 @@ jobs:
               timeout 15 adb -s "$serial" logcat -d -t 2000 > "results/setup/$serial-logcat.log" 2>&1 || true
               timeout 15 adb -s "$serial" emu kill >/dev/null 2>&1 || true
             done
+          fi
+      - name: Restore original KVM access
+        if: always() && inputs.lane != 'jvm'
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/dxx-kvm-acl-changed" ]]; then
+            sudo setfacl --restore="$RUNNER_TEMP/dxx-kvm-before.acl"
+            getfacl -p -n /dev/kvm > results/setup/kvm-restored.acl
+            cmp "$RUNNER_TEMP/dxx-kvm-before.acl" results/setup/kvm-restored.acl
+            echo 'Original KVM ACL restored' | tee results/setup/kvm-cleanup.log
           fi
       - name: Record lane lifecycle
         if: always()

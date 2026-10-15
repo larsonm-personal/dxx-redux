@@ -21,6 +21,32 @@ corpus = module('setup_demo_import_corpus')
 audio = module('generate_preview_test_audio')
 
 
+class KvmWorkflowContractTests(unittest.TestCase):
+    def test_grant_is_only_existing_runner_user_on_real_kvm(self):
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        grant = source.split('- name: Require accelerated emulator access', 1)[1].split('- name: Restore pinned', 1)[0]
+        self.assertIn('[[ ! -c /dev/kvm ]]', grant)
+        self.assertIn('[[ ! -r /dev/kvm || ! -w /dev/kvm ]]', grant)
+        self.assertIn('sudo setfacl -m "u:$(id -u):rw" /dev/kvm', grant)
+        self.assertLess(grant.index('getfacl -p -n /dev/kvm >'), grant.index('sudo setfacl -m'))
+        self.assertIn("grep -Eq '^(mask::|user:[^:]+:|group:[^:]+:)'", grant)
+        self.assertLess(grant.index('grep -Eq'), grant.index('touch'))
+        self.assertLess(grant.index('touch "$RUNNER_TEMP/dxx-kvm-acl-changed"'), grant.index('sudo setfacl -m'))
+        for forbidden in ('chmod', '0666', 'usermod', 'useradd', 'groupadd'):
+            self.assertNotIn(forbidden, grant)
+
+    def test_cleanup_is_unconditional_and_restores_prior_acl(self):
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        cleanup = source.split('- name: Restore original KVM access', 1)[1].split('- name: Record lane lifecycle', 1)[0]
+        self.assertIn("if: always() && inputs.lane != 'jvm'", cleanup)
+        self.assertIn('timeout-minutes: 1', cleanup)
+        self.assertIn('[[ -f "$RUNNER_TEMP/dxx-kvm-acl-changed" ]]', cleanup)
+        self.assertIn('sudo setfacl --restore="$RUNNER_TEMP/dxx-kvm-before.acl"', cleanup)
+        self.assertIn('cmp "$RUNNER_TEMP/dxx-kvm-before.acl" results/setup/kvm-restored.acl', cleanup)
+        self.assertLess(source.index('- name: Collect emulator diagnostics'), source.index('- name: Restore original KVM access'))
+        self.assertLess(source.index('- name: Restore original KVM access'), source.index('- name: Upload execution evidence'))
+
+
 class FixtureTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
