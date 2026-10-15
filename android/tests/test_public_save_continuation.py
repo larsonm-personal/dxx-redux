@@ -15,7 +15,8 @@ class RuntimeRunnerRegistrationTests(unittest.TestCase):
     def test_report_ignores_runtime_directories_without_trace_files(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for case in ("d2-countdown", "d2-robot-death"):
+            for case in ("d2-countdown", "d2-robot-death", "d1-epoch-ordinary", "d2-epoch-load",
+                         "d2-timer-seismic", "imported-d1-timer-pickup"):
                 (root / case).mkdir()
                 (root / case / "exit.txt").write_text("0")
             with mock.patch.object(save, "qualify_case", return_value={"status": "pass"}) as qualify:
@@ -46,7 +47,7 @@ class SaveRuntimeExtensionRunnerTests(unittest.TestCase):
         cls.entries = re.findall(r"@\{Name = '([^']+)'; ([^\n]+) \}", cls.runner)
         cls.cases = dict(cls.entries)
 
-    def assert_case(self, name, game, scenario, mode, assets=None, work=None):
+    def assert_case(self, name, game, scenario, mode, assets=None, work=None, extra=None):
         entry = self.cases[name]
         self.assertIn(f"Exe = ${game}ExePath; Assets = ${assets or game}Path;", entry)
         self.assertIn(f"Scenario = {scenario}; Mode = '--{mode}'", entry)
@@ -55,6 +56,10 @@ class SaveRuntimeExtensionRunnerTests(unittest.TestCase):
             self.assertLess(list(self.cases).index(work), list(self.cases).index(name))
         else:
             self.assertNotIn("WorkDirectory", entry)
+        if extra:
+            self.assertIn(f"ExtraArguments = @('{extra}')", entry)
+        else:
+            self.assertNotIn("ExtraArguments", entry)
 
     def test_guided_edge_cases_and_separate_process_restores(self):
         for scenario in ("active", "released", "multiple", "stale", "parent", "none", "format"):
@@ -92,7 +97,38 @@ class SaveRuntimeExtensionRunnerTests(unittest.TestCase):
         )
         self.assertLess(list(self.cases).index(producer), list(self.cases).index(consumer))
 
+    def test_epoch_matrix_and_cold_loads_share_producer_directory(self):
+        for game in ("d1", "d2"):
+            for scenario in ("ordinary", "high", "repeat", "endian", "malformed", "replay", "save"):
+                self.assert_case(f"{game}-epoch-{scenario}", game, f"'{scenario}'", "save-epoch-runtime")
+            self.assert_case(
+                f"{game}-epoch-load", game, "'load'", "save-epoch-runtime", work=f"{game}-epoch-save",
+            )
+        for scenario in ("ai-phase", "secret", "flash"):
+            self.assert_case(f"d2-epoch-{scenario}", "d2", f"'{scenario}'", "save-epoch-runtime")
+        self.assertEqual(sum("Mode = '--save-epoch-runtime'" in entry for entry in self.cases.values()), 19)
+
+    def test_timer_matrix_selects_native_and_imported_assets(self):
+        self.assert_case("d1-timer-cooldowns", "d1", "'cooldowns'", "timer-save-runtime")
+        for scenario in ("pickup", "cooldowns", "seismic", "ambient", "seismic-level"):
+            self.assert_case(f"d2-timer-{scenario}", "d2", f"'{scenario}'", "timer-save-runtime")
+        for scenario in ("pickup", "cooldowns"):
+            self.assert_case(
+                f"imported-d1-timer-{scenario}", "d2", f"'{scenario}'", "timer-save-runtime",
+                assets="d1", extra="--imported-d1",
+            )
+        self.assertEqual(sum("Mode = '--timer-save-runtime'" in entry for entry in self.cases.values()), 8)
+
+    def test_optional_arguments_follow_scenario_before_quoting(self):
+        base = "$traceArgs = @($mode, $case.Assets, $case.Scenario)"
+        extra = "if ($case.ContainsKey('ExtraArguments')) { $traceArgs += @($case.ExtraArguments) }"
+        quote = "$quotedArgs = @($traceArgs | ForEach-Object"
+        self.assertIn(extra, self.runner)
+        self.assertLess(self.runner.index(base), self.runner.index(extra))
+        self.assertLess(self.runner.index(extra), self.runner.index(quote))
+
     def test_cases_keep_bounded_process_checks_and_distinct_logs(self):
+        self.assertEqual(len(self.entries), 67, "Keep the original 40 processes plus 19 epoch and 8 timer processes")
         self.assertEqual(len(self.entries), len(self.cases), "Each process needs its own log directory")
         for game, scenario, _ in save.CASES:
             self.assertIn(f"{game}-{scenario}", self.cases)
@@ -148,8 +184,6 @@ class SavePersistenceTests(unittest.TestCase):
         self.saved = copy.deepcopy(self.before)
         self.restored = copy.deepcopy(self.before)
         self.restored[0]["rng"][0]["calls"] = 0
-        self.restored[0]["clock"]["game_time"] = 0
-        self.restored[1]["globals"]["GameTime64"] = 0
 
     def test_exact_bounded_contract(self):
         save.assert_persistence(self.before, self.saved, self.restored)
@@ -202,8 +236,8 @@ class SavePersistenceTests(unittest.TestCase):
             lambda o, w: o["rng"][0].update(available=0),
             lambda o, w: o["rng"][0].update(calls=96),
             lambda o, w: o["rng"][1].update(calls=0),
-            lambda o, w: o["clock"].update(game_time=393120),
-            lambda o, w: w["globals"].update(GameTime64=393120),
+            lambda o, w: o["clock"].update(game_time=0),
+            lambda o, w: w["globals"].update(GameTime64=0),
         ):
             restored = copy.deepcopy(self.restored)
             mutate(*restored)

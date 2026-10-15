@@ -91,8 +91,9 @@ def assert_persistence(before, saved, restored):
     require(ro["rng"][0]["calls"] == 0, "Ordinary load must reset the absolute SIM counter")
     require(so["rng"][1]["calls"] > 0, "FX persistence witness is vacuous")
     equal(so["rng"][1]["calls"], ro["rng"][1]["calls"], "FX count must persist")
-    require(so["clock"]["game_time"] > 0 and ro["clock"]["game_time"] == 0, "Ordinary load clock rebase missing")
-    require(sw["globals"]["GameTime64"] > 0 and rw["globals"]["GameTime64"] == 0, "World clock rebase missing")
+    require(so["clock"]["game_time"] > 0, "Saved clock witness is vacuous")
+    equal(so["clock"]["game_time"], ro["clock"]["game_time"], "Ordinary load saved epoch")
+    equal(sw["globals"]["GameTime64"], rw["globals"]["GameTime64"], "World saved epoch")
 
 
 def assert_flight_step(left, right, previous_left, previous_right, lw, rw):
@@ -295,7 +296,7 @@ def qualify_case(directory, game, scenario, count):
         if any(value.startswith("Frame ") for value in failures)
         else "pass",
         "full_trajectory": "UNQUALIFIED",
-        "reason": "Ordinary saves reset GameTime and the absolute SIM draw count; raw object/world trajectories differ",
+        "reason": "Ordinary saves preserve GameTime but reset the absolute SIM draw count; raw object/world trajectories differ",
         "promised_fields": {
             "player": PLAYER_FIELDS,
             "object": OBJECT_FIELDS,

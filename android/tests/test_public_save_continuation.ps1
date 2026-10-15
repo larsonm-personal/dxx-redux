@@ -89,6 +89,35 @@ $cases = @(
     # The D2 consumer uses only public D1 assets and the native D1 producer checkpoints
     @{Name = 'd1-translation-record'; Exe = $d1ExePath; Assets = $d1Path; Scenario = '.'; Mode = '--d1-save-translation-runtime' }
     @{Name = 'd2-translation-load'; Exe = $d2ExePath; Assets = $d1Path; Scenario = (Join-Path $outputPath 'd1-translation-record'); Mode = '--d1-save-translation-runtime' }
+    # Native epoch cold loads consume the checkpoint and reference from their producer process
+    @{Name = 'd1-epoch-ordinary'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'ordinary'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-high'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'high'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-repeat'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'repeat'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-endian'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'endian'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-malformed'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'malformed'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-replay'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'replay'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-save'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'save'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-epoch-load'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'load'; Mode = '--save-epoch-runtime'; WorkDirectory = 'd1-epoch-save' }
+    @{Name = 'd2-epoch-ordinary'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'ordinary'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-high'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'high'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-repeat'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'repeat'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-endian'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'endian'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-malformed'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'malformed'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-replay'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'replay'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-save'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'save'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-load'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'load'; Mode = '--save-epoch-runtime'; WorkDirectory = 'd2-epoch-save' }
+    @{Name = 'd2-epoch-ai-phase'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'ai-phase'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-secret'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'secret'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd2-epoch-flash'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'flash'; Mode = '--save-epoch-runtime' }
+    @{Name = 'd1-timer-cooldowns'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'cooldowns'; Mode = '--timer-save-runtime' }
+    @{Name = 'd2-timer-pickup'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'pickup'; Mode = '--timer-save-runtime' }
+    @{Name = 'd2-timer-cooldowns'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'cooldowns'; Mode = '--timer-save-runtime' }
+    @{Name = 'd2-timer-seismic'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'seismic'; Mode = '--timer-save-runtime' }
+    @{Name = 'd2-timer-ambient'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'ambient'; Mode = '--timer-save-runtime' }
+    # Imported D1 timer boundaries run in D2 with only the staged public D1 assets
+    @{Name = 'imported-d1-timer-pickup'; Exe = $d2ExePath; Assets = $d1Path; Scenario = 'pickup'; Mode = '--timer-save-runtime'; ExtraArguments = @('--imported-d1') }
+    @{Name = 'imported-d1-timer-cooldowns'; Exe = $d2ExePath; Assets = $d1Path; Scenario = 'cooldowns'; Mode = '--timer-save-runtime'; ExtraArguments = @('--imported-d1') }
+    @{Name = 'd2-timer-seismic-level'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'seismic-level'; Mode = '--timer-save-runtime' }
 )
 foreach ($case in $cases) {
     $directory = Join-Path $outputPath $case.Name
@@ -97,6 +126,7 @@ foreach ($case in $cases) {
     if (-not (Test-Path -LiteralPath $workingDirectory -PathType Container)) { throw "Missing checkpoint directory for $($case.Name): $workingDirectory" }
     $mode = if ($case.ContainsKey('Mode')) { $case.Mode } else { '--public-save-continuation' }
     $traceArgs = @($mode, $case.Assets, $case.Scenario)
+    if ($case.ContainsKey('ExtraArguments')) { $traceArgs += @($case.ExtraArguments) }
     $quotedArgs = @($traceArgs | ForEach-Object { '"' + $_ + '"' })
     $parameters = @{
         FilePath = $case.Exe; ArgumentList = $quotedArgs; WorkingDirectory = $workingDirectory; PassThru = $true
@@ -123,4 +153,4 @@ if (-not $python) { throw 'Python 3 is required for save continuation verificati
 $prefix = @($python.PrefixArguments)
 & $python.Path @prefix (Join-Path $PSScriptRoot 'public_save_continuation.py') --output $outputPath
 if ($LASTEXITCODE -ne 0) { throw "Ordinary save persistence failed; see $outputPath/report.json" }
-Write-Output "PASS: D2 countdown/robot-death runtime, guided/wiggle/Fusion runtime and native D1 translation; D1/D2 immediate ordinary-save persistence and selected flight continuation; full trajectories UNQUALIFIED; $outputPath/report.json"
+Write-Output "PASS: D2 countdown/robot-death runtime, guided/wiggle/Fusion runtime, native D1 translation and epoch/timer boundaries; D1/D2 immediate ordinary-save persistence and selected flight continuation; full trajectories UNQUALIFIED; $outputPath/report.json"

@@ -233,6 +233,18 @@ extern void rock_the_mine_frame(void);
 extern void smega_rock_stuff(void);
 extern void init_smega_detonates(void);
 
+#define SEISMIC_RUNTIME_DETONATION_SLOTS 4
+typedef struct seismic_runtime_state {
+	fix64 detonation_times[SEISMIC_RUNTIME_DETONATION_SLOTS];
+	fix64 disturbance_start_time, disturbance_end_time;
+	fix tremor_magnitude;
+} seismic_runtime_state;
+
+void weapon_get_seismic_runtime_state(seismic_runtime_state *state);
+void weapon_set_seismic_runtime_state(const seismic_runtime_state *state);
+void weapon_reset_seismic_runtime_state(void);
+
+
 extern void reset_auto_select();
 
 /*

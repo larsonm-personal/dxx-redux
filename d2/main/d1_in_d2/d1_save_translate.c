@@ -35,8 +35,9 @@
 #include "fireball.h"
 #include "exploding_wall_runtime.h"
 #include "wiggle_phase_runtime.h"
+#include "save_epoch_format.h"
 
-#define D1_SAVE_VERSION WIGGLE_PHASE_D1_SAVE_VERSION
+#define D1_SAVE_VERSION SAVE_EPOCH_D1_VERSION
 #define D1_SAVE_COMPATIBLE_VERSION 15
 #define D1_SAVE_SECRET_IDENTITY_VERSION 16
 #define D1_SAVE_AUTOSELECT_VERSION 17
@@ -512,9 +513,9 @@ int d1_save_translate_read_checkpoint_start(const uint8_t *data, size_t size,
 		reader.swap = 1;
 	}
 	start->checkpoint_swap = reader.swap;
-	/* Version 20 is an Android layout, not a native checkpoint */
+	/* Versions 20 and 22 are Android layouts, not native checkpoints */
 	if (version < D1_SAVE_COMPATIBLE_VERSION || version > D1_SAVE_VERSION ||
-	    version == 20)
+	    version == 20 || version == 22)
 		return 0;
 	start->version = version;
 	if (!d1_save_translate_skip(&reader, D1_SAVE_DESC_LENGTH) ||
@@ -524,8 +525,16 @@ int d1_save_translate_read_checkpoint_start(const uint8_t *data, size_t size,
 	                                    sizeof(start->mission_name)) ||
 	    !d1_save_translate_read_s32(&reader, &start->current_level) ||
 	    !d1_save_translate_read_s32(&reader, &start->next_level) ||
-	    !d1_save_translate_read_fix(&reader, &start->game_time) ||
-	    !d1_save_translate_read_player(&reader, start) ||
+	    !d1_save_translate_read_fix(&reader, &start->game_time))
+		return 0;
+	if (version >= SAVE_EPOCH_D1_VERSION) {
+		if (!d1_save_translate_read_fix64(&reader, &start->saved_epoch) ||
+		    !save_epoch_valid(start->saved_epoch))
+			return 0;
+		/* Metadata only: the caller owns the replay's authoritative clock */
+		start->has_saved_epoch = 1;
+	}
+	if (!d1_save_translate_read_player(&reader, start) ||
 	    !d1_save_translate_read_s8(&reader, &start->primary_weapon) ||
 	    !d1_save_translate_read_s8(&reader, &start->secondary_weapon) ||
 	    !d1_save_translate_read_s32(&reader, &start->difficulty))
@@ -1036,6 +1045,8 @@ static int d1_save_translate_read_d1_ai_state(
 	    !d1_save_translate_read_fix(reader, &time_delta))
 		return 0;
 	state->boss_dying_start_time = time_delta ? GameTime64 + (fix64) time_delta : 0;
+	if (time_delta && !state->boss_dying_start_time)
+		state->boss_dying_start_time = -1;
 	if (!d1_save_translate_read_s32(reader, &state->boss_dying) ||
 	    !d1_save_translate_read_s32(reader, &state->boss_dying_sound_playing))
 		return 0;

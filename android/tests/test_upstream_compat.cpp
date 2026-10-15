@@ -11588,7 +11588,9 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
 #include "active_save_runtime_fixture.hpp"
+#include "timer_save_runtime_fixture.hpp"
 #include "wiggle_save_runtime_fixture.hpp"
+#include "save_epoch_runtime_fixture.hpp"
 #include "fusion_save_runtime_fixture.hpp"
 #include "guided_save_runtime_fixture.hpp"
 #include "d1_save_translation_runtime_fixture.hpp"
@@ -11676,6 +11678,18 @@ int main(int argc, char **argv)
 		require(init_headless_audio(), "initialize the production headless audio runtime");
 		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
 		return std::atoi(argv[2]);
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--save-epoch-runtime") == 0) {
+		capture_public_level_replay(argv[2], "flight");
+		exercise_save_epoch_runtime(argv[3]);
+		return 0;
+	}
+	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--timer-save-runtime") == 0) {
+		const bool imported = argc == 5;
+		require(!imported || std::strcmp(argv[4], "--imported-d1") == 0, "known timer fixture content selection");
+		capture_public_level_replay(argv[2], imported ? "effect-phase" : "flight", imported);
+		exercise_timer_save_runtime(argv[3]);
+		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--active-save-runtime") == 0) {
 		capture_public_level_replay(argv[2], "flight");

@@ -114,7 +114,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_save_format.h"
 #define STATE_VERSION ANDROID_D2_SAVE_VERSION
 #else
-#define STATE_VERSION STATE_GUIDED_RUNTIME_VERSION
+#include "save_epoch_format.h"
+#define STATE_VERSION SAVE_EPOCH_D2_VERSION
 #endif
 #define STATE_GUIDEBOT_ROUTING_VERSION 38
 #define STATE_D1_TRIGGER_STORAGE_VERSION       34
@@ -346,6 +347,10 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 #include "autoselect_runtime.h"
 #include "cadence_runtime.h"
 #include "wiggle_phase_runtime.h"
+#include "save_epoch_runtime.h"
+#include "seismic_runtime.h"
+
+extern fix64 Time_flash_last_played;
 #include "fusion_autofire_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
@@ -935,7 +940,8 @@ static int state_write_runtime_state(PHYSFS_file *fp)
 		if (!escort_save_runtime(&stream)) return 0;
 	}
 	return state_write_guided_state(fp) && wiggle_phase_runtime_write(fp) &&
-		fusion_autofire_runtime_write(fp, Auto_fire_fusion_cannon_time);
+		fusion_autofire_runtime_write(fp, Auto_fire_fusion_cannon_time) &&
+		seismic_runtime_write(fp) && save_timer_active_write(fp, Time_flash_last_played);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1106,7 +1112,7 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 	return 1;
 }
 
-static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
+static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version, fix64 saved_epoch)
 {
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
 	const char *validation_stage = "header";
@@ -1244,6 +1250,11 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
 	    !fusion_autofire_runtime_read(fp, swap, NULL))
 		goto done;
+	validation_stage = "seismic and flash runtime";
+	if (version >= SAVE_EPOCH_D2_VERSION &&
+	    (!seismic_runtime_read(fp, swap, 0, saved_epoch, GameTime64) ||
+	     !save_timer_active_read(fp, swap, NULL)))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1261,7 +1272,7 @@ done:
 	return valid;
 }
 
-static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode, const state_guided_owner owners[MAX_PLAYERS])
+static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_restore, int version, int *saved_guidebot_mode, const state_guided_owner owners[MAX_PLAYERS], fix64 saved_epoch)
 {
 	object_runtime_state object_state;
 	ai_path_runtime_state ai_path_state;
@@ -1373,6 +1384,13 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		wiggle_phase_runtime_read(fp, swap, !secret_restore);
 	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
 		fusion_autofire_runtime_read(fp, swap, &auto_fire_fusion_cannon_time);
+	if (version >= SAVE_EPOCH_D2_VERSION) {
+		seismic_runtime_read(fp, swap, !secret_restore, saved_epoch, GameTime64);
+		save_timer_active_read(fp, swap, secret_restore ? NULL : &Time_flash_last_played);
+	} else {
+		const seismic_runtime_state empty = { { 0 }, 0, 0, 0 };
+		weapon_set_seismic_runtime_state(&empty);
+	}
 
 	if (secret_restore) {
 		/* Preserve the existing secret-return phase reset, not saved player runtime */
@@ -1856,7 +1874,10 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj, int native_ai_for
 			obj->ctype.ai_info.dying_sound_playing    = obj_rw->ctype.ai_info.dying_sound_playing;
 			obj->ctype.ai_info.danger_laser_num       = obj_rw->ctype.ai_info.danger_laser_num;
 			obj->ctype.ai_info.danger_laser_signature = obj_rw->ctype.ai_info.danger_laser_signature;
-			obj->ctype.ai_info.dying_start_time       = obj_rw->ctype.ai_info.dying_start_time;
+			obj->ctype.ai_info.dying_start_time = obj_rw->ctype.ai_info.dying_start_time ?
+				GameTime64 + obj_rw->ctype.ai_info.dying_start_time : 0;
+			if (obj_rw->ctype.ai_info.dying_start_time && !obj->ctype.ai_info.dying_start_time)
+				obj->ctype.ai_info.dying_start_time = -1;
 			break;
 		}
 			
@@ -2509,6 +2530,11 @@ int state_save_all_sub(char *filename, char *desc)
 #endif
 	fix tmptime32 = 0;
 
+	if (!save_epoch_valid(GameTime64)) {
+		start_time();
+		return 0;
+	}
+
 	/* Active flyouts and deaths are not resumable gameplay checkpoints */
 	if (Endlevel_sequence || Player_is_dead) {
 #ifdef __ANDROID__
@@ -2660,9 +2686,16 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, &Next_level_num, sizeof(int), 1);
 
 //Save GameTime
-// NOTE: GameTime now is GameTime64 with fix64 since GameTime could only last 9 hrs. To even help old Savegames, we do not increment Savegame version but rather RESET GameTime64 to 0 on every save! ALL variables based on GameTime64 now will get the current GameTime64 value substracted and saved to fix size as well.
+// Legacy fixed32 clock stays zero: existing timestamp fields remain relative.
+// New saves carry an authoritative fixed64 epoch immediately afterward, so
+// ordinary restore preserves simulation phase without changing those codecs.
 	tmptime32 = 0;
 	PHYSFS_write(fp, &tmptime32, sizeof(fix), 1);
+	if (!save_epoch_write(fp, GameTime64)) {
+		PHYSFS_close(fp);
+		start_time();
+		return 0;
+	}
 
 //Save player info
 	//PHYSFS_write(fp, &Players[Player_num], sizeof(player), 1);
@@ -3141,6 +3174,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	char org_callsign[CALLSIGN_LEN+16];
 	fix tmptime32 = 0;
 	fix64	old_gametime = GameTime64;
+	fix64 saved_epoch = 0;
 	short TempTmapNum[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	short TempTmapNum2[MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 #ifdef __ANDROID__
@@ -3288,6 +3322,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			memmove(mission, p + 1, strlen(p + 1) + 1);
 	}
 
+	if (version >= SAVE_EPOCH_D2_VERSION && !save_epoch_preflight(fp, swap)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
 #ifdef __ANDROID__
 	if (!state_android_load_saved_mission(fp, mission)) {
 #else
@@ -3341,6 +3380,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 //Restore GameTime
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
+	if (version >= SAVE_EPOCH_D2_VERSION && !save_epoch_read(fp, swap, &saved_epoch)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 	#ifdef __ANDROID__
 	if (android_rewind_restore_game_time64_active())
 		GameTime64 = (fix64) android_rewind_restore_game_time64();
@@ -3349,6 +3392,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		GameTime64 = (fix64)tmptime32;
 		if (input_demo_replay_has_checkpoint())
 			GameTime64 += input_demo_replay_checkpoint_start_gt();
+		else if (version >= SAVE_EPOCH_D2_VERSION && !secret_restore)
+			GameTime64 = saved_epoch;
 	#ifdef __ANDROID__
 	}
 	#endif
@@ -3746,6 +3791,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		Flash_effect = PHYSFSX_readSXE32(fp, swap);
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
 		Time_flash_last_played = (fix64)tmptime32;
+		if (version >= SAVE_EPOCH_D2_VERSION)
+			Time_flash_last_played += GameTime64;
 		PaletteRedAdd = PHYSFSX_readSXE32(fp, swap);
 		PaletteGreenAdd = PHYSFSX_readSXE32(fp, swap);
 		PaletteBlueAdd = PHYSFSX_readSXE32(fp, swap);
@@ -3978,11 +4025,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 
 	if (version >= STATE_RUNTIME_VERSION) {
-		if (!state_validate_runtime_state(fp, swap, version)) {
+		if (!state_validate_runtime_state(fp, swap, version, saved_epoch)) {
 			PHYSFS_close(fp);
 			return 0;
 		}
-		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners);
+		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners, saved_epoch);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
 	if (version < WIGGLE_PHASE_D2_SAVE_VERSION || secret_restore)
@@ -4114,9 +4161,19 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	if (!secret_restore && !(Game_mode & GM_MULTI) && !input_demo_replay_is_loaded())
 		guidebot_routing_start_session();
 
-	if (Game_wind)
-		if (!window_is_visible(Game_wind))
+	if (Game_wind && !window_is_visible(Game_wind)) {
+		/* Activation restores the menu palette and clears its flash clock.
+		 * Keep the newly loaded state across that presentation transition. */
+		if (version >= SAVE_EPOCH_D2_VERSION && !secret_restore) {
+			const int red = PaletteRedAdd, green = PaletteGreenAdd, blue = PaletteBlueAdd;
+			const fix64 flash_time = Time_flash_last_played;
 			window_set_visible(Game_wind, 1);
+			PaletteRedAdd = red; PaletteGreenAdd = green; PaletteBlueAdd = blue;
+			Time_flash_last_played = flash_time;
+			gr_palette_step_up(red, green, blue);
+		} else
+			window_set_visible(Game_wind, 1);
+	}
 	reset_time();
 
 	#ifdef __ANDROID__

@@ -101,7 +101,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_save_format.h"
 #define STATE_VERSION ANDROID_D1_SAVE_VERSION
 #else
-#define STATE_VERSION WIGGLE_PHASE_D1_SAVE_VERSION
+#include "save_epoch_format.h"
+#define STATE_VERSION SAVE_EPOCH_D1_VERSION
 #endif
 #define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
@@ -200,6 +201,7 @@ static int g_android_save_blank_thumbnail = 0;
 #include "exploding_wall_runtime.h"
 #include "cadence_runtime.h"
 #include "wiggle_phase_runtime.h"
+#include "save_epoch_runtime.h"
 #include "fusion_autofire_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
@@ -1955,6 +1957,11 @@ int state_save_all_sub(char *filename, char *desc)
 	char mission_filename[9];
 	fix tmptime32 = 0;
 
+	if (!save_epoch_valid(GameTime64)) {
+		start_time();
+		return 0;
+	}
+
 	/* Active flyouts and deaths are not resumable gameplay checkpoints */
 	if (Endlevel_sequence || Player_is_dead) {
 #ifdef __ANDROID__
@@ -2020,9 +2027,16 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, &Next_level_num, sizeof(int), 1);
 
 //Save GameTime
-// NOTE: GameTime now is GameTime64 with fix64 since GameTime could only last 9 hrs. To even help old Savegames, we do not increment Savegame version but rather RESET GameTime64 to 0 on every save! ALL variables based on GameTime64 now will get the current GameTime64 value substracted and saved to fix size as well.
+// Legacy fixed32 clock stays zero: existing timestamp fields remain relative.
+// New saves carry an authoritative fixed64 epoch immediately afterward, so
+// ordinary restore preserves simulation phase without changing those codecs.
 	tmptime32 = 0;
 	PHYSFS_write(fp, &tmptime32, sizeof(fix), 1);
+	if (!save_epoch_write(fp, GameTime64)) {
+		PHYSFS_close(fp);
+		start_time();
+		return 0;
+	}
 
 //Save player info
 	//PHYSFS_write(fp, &Players[Player_num], sizeof(player), 1);
@@ -2281,6 +2295,7 @@ int state_restore_all_sub(char *filename)
 	char org_callsign[CALLSIGN_LEN+16];
 	fix tmptime32 = 0;
 	int rebirth = 0;
+	fix64 saved_epoch = 0;
 #ifdef __ANDROID__
 	struct android_profile_restore_metrics restore_profile = { 0 };
 	const long long restore_profile_start_us = android_profile_monotonic_us();
@@ -2390,6 +2405,11 @@ int state_restore_all_sub(char *filename)
 			memmove(mission, p + 1, strlen(p + 1) + 1);
 	}
 
+	if (version >= SAVE_EPOCH_D1_VERSION && !save_epoch_preflight(fp, swap)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
 #ifdef __ANDROID__
 	if (!state_android_load_saved_mission(fp, mission)) {
 #else
@@ -2425,6 +2445,10 @@ int state_restore_all_sub(char *filename)
 
 //Restore GameTime
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
+	if (version >= SAVE_EPOCH_D1_VERSION && !save_epoch_read(fp, swap, &saved_epoch)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 	#ifdef __ANDROID__
 	if (android_rewind_restore_game_time64_active())
 		GameTime64 = (fix64) android_rewind_restore_game_time64();
@@ -2433,6 +2457,8 @@ int state_restore_all_sub(char *filename)
 		GameTime64 = (fix64)tmptime32;
 		if (input_demo_replay_has_checkpoint())
 			GameTime64 += input_demo_replay_checkpoint_start_gt();
+		else if (version >= SAVE_EPOCH_D1_VERSION)
+			GameTime64 = saved_epoch;
 	#ifdef __ANDROID__
 	}
 	#endif

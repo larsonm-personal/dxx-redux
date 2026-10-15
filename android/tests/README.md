@@ -229,3 +229,18 @@ checkpoints, raw traces, process logs, exit status and `report.json`. The public
 save-integrity CI job builds both fixtures and retains this evidence even on
 failure. `test_wall_blast_save_profiles.ps1` separately checks report admission
 and rejection; passing it does not establish runtime persistence correctness.
+
+## Ordinary-save timer and seismic continuation
+
+`run_timer_save_runtime.py` runs eight native processes using the existing
+`test_upstream_compat` executables and public D1/D2 resource directories. Supply
+`--d1-exe`, `--d2-exe`, `--d1-assets`, `--d2-assets`, and `--output`; configure the
+normal native SDL/library environment before running it. Each process has a
+180-second timeout, writes `stdout.log`, and contributes to `results.json`.
+
+Coverage includes actual concussion-drop pickup grace, laser/missile/flare
+admission, cloak/invulnerability expiry, zero/positive/64-bit clock epochs,
+Earthshaker slots, ambient seismic state, real new-level resets, different FX seed independence, and atomic endian/invalid-record
+controls. Seismic events and level parameters are synthetic on public levels;
+these cases do not claim retail Earthshaker weapon or campaign coverage. Only
+simulation RNG and gameplay state are compared, not cosmetic effects RNG.

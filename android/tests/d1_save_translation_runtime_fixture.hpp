@@ -1,5 +1,6 @@
-// Actual native D1 save -> imported D1 gameplay, including the finalized version 21 tail
+// Actual native D1 save -> imported D1 gameplay, including the early version 23 epoch
 #include "controls.h"
+#include "save_epoch_format.h"
 
 static void exercise_d1_save_translation_runtime(const char *directory, const char *checkpoints)
 {
@@ -99,11 +100,11 @@ static void exercise_d1_save_translation_runtime(const char *directory, const ch
 		char description[21] = "Phase Fusion import";
 		std::string filename = stem + ".sav";
 		stop_time();
-		require(state_save_all_sub(&filename[0], description), "write actual native version21 phase/Fusion checkpoint");
+		require(state_save_all_sub(&filename[0], description), "write actual native version23 epoch/phase/Fusion checkpoint");
 		const auto saved = read_save_fixture(filename);
-		require(saved[4] == 21, "native producer writes finalized version21");
+		require(saved[4] == SAVE_EPOCH_D1_VERSION, "native producer writes version23");
 		write_fixture((stem + "-opposite.sav").c_str(), save_endian_fixture(saved).convert());
-		json expected = { { "initial", snapshot() }, { "frames", json::array() } };
+		json expected = { { "saved_epoch", GameTime64 }, { "initial", snapshot() }, { "frames", json::array() } };
 		for (int frame = 0; frame < 16; ++frame) {
 			step();
 			expected["frames"].push_back(snapshot());
@@ -121,20 +122,47 @@ static void exercise_d1_save_translation_runtime(const char *directory, const ch
 		for (const char *suffix : { ".sav", "-opposite.sav" }) {
 			const bytes saved = read_save_fixture("checkpoints/" + stem + suffix);
 			d1_save_translate_checkpoint_start start = {};
-			require(d1_save_translate_read_checkpoint_start(saved.data(), saved.size(), &start) && start.version == 21,
-			        "decode actual native version21 checkpoint");
+			require(d1_save_translate_read_checkpoint_start(saved.data(), saved.size(), &start) && start.version == SAVE_EPOCH_D1_VERSION,
+			        "decode actual native version23 checkpoint");
+			require(start.game_time == 0 && start.has_saved_epoch && start.saved_epoch > 0 &&
+			            start.saved_epoch == expected["saved_epoch"].get<fix64>(),
+			        "keep the legacy replay clock separate from validated epoch metadata");
+			const size_t epoch_offset = 8 + 20 + 100 * 50 * 3 + 4 + 9 + 3 * 4;
 			input_demo_set_skip_level_intro(1);
 			StartNewGame(start.current_level);
-			GameTime64 = start.game_time;
+			GameTime64 = start.saved_epoch;
 			Difficulty_level = start.difficulty;
 			Weapon_info[FUSION_ID] = Weapon_info[LASER_ID_L1];
-			if (!scenario && !start.checkpoint_swap) {
-				for (int version : { 20, 22, 23 }) {
+			if (!scenario) {
+				for (int version : { 14, 20, 22, 24, 25 }) {
 					bytes damaged = saved;
-					set_int(damaged, 4, version);
+					set_int(damaged, 4, start.checkpoint_swap ? SWAPINT(version) : version);
 					d1_save_translate_checkpoint_start rejected = {};
 					require(!d1_save_translate_read_checkpoint_start(damaged.data(), damaged.size(), &rejected),
 					        "reject Android and unknown checkpoint layouts");
+				}
+				for (size_t length = 0; length < SAVE_EPOCH_DISK_BYTES; ++length) {
+					d1_save_translate_checkpoint_start rejected = {};
+					require(!d1_save_translate_read_checkpoint_start(saved.data(), epoch_offset + length, &rejected),
+					        "reject every incomplete early epoch before player decoding");
+				}
+				for (uint64_t epoch : { uint64_t(0), uint64_t(SAVE_EPOCH_MAX), uint64_t(SAVE_EPOCH_MAX) + 1, UINT64_MAX }) {
+					bytes changed = saved;
+					uint32_t words[2] = { uint32_t(epoch), uint32_t(epoch >> 32) };
+					if (start.checkpoint_swap) {
+						words[0] = SWAPINT(words[0]);
+						words[1] = SWAPINT(words[1]);
+					}
+					std::memcpy(changed.data() + epoch_offset, words, sizeof(words));
+					d1_save_translate_checkpoint_start decoded = {};
+					const bool valid = epoch <= uint64_t(SAVE_EPOCH_MAX);
+					require(bool(d1_save_translate_read_checkpoint_start(changed.data(), changed.size(), &decoded)) == valid,
+					        "validate the complete epoch range in both byte orders");
+					if (valid)
+						require(decoded.has_saved_epoch && decoded.saved_epoch == fix64(epoch) &&
+						            decoded.game_time == 0 && decoded.object_stream_offset == start.object_stream_offset &&
+						            decoded.energy == start.energy && GameTime64 == start.saved_epoch,
+						        "epoch metadata neither shifts the player/object stream nor publishes a replay clock");
 				}
 			}
 			controls_restore_wiggle_phase(12345);
@@ -156,8 +184,8 @@ static void exercise_d1_save_translation_runtime(const char *directory, const ch
 			require(d1_save_translate_apply_checkpoint_objects(saved.data(), saved.size(), &start), "apply actual native checkpoint through translator");
 			d1_save_translate_apply_checkpoint_player(&start, "phase");
 			ConsoleObject = Viewer = &Objects[Players[Player_num].objnum];
-			require(GameTime64 == 0 && snapshot() == expected["initial"], "translation preserves initial phase/Fusion state at zero-based epoch");
-			if (scenario == 1) require(Auto_fire_fusion_cannon_time == -1, "translated active due-now deadline uses nonzero sentinel");
+			require(GameTime64 == start.saved_epoch && snapshot() == expected["initial"], "translation preserves the caller-selected epoch and initial phase/Fusion state");
+			if (scenario == 1) require(Auto_fire_fusion_cannon_time == GameTime64, "translated active due-now deadline follows the caller clock");
 			for (int frame = 0; frame < 16; ++frame) {
 				step();
 				if (snapshot() != expected["frames"][frame])
@@ -165,22 +193,77 @@ static void exercise_d1_save_translation_runtime(const char *directory, const ch
 					             expected["frames"][frame].dump().c_str(), snapshot().dump().c_str());
 				require(snapshot() == expected["frames"][frame], "translated gameplay matches native phase/Fusion continuation");
 			}
-			// Native19 has no phase/active words; preserve the historical delta
-			// interpretation while clearing phase left by a newer checkpoint
+			// An external replay may deliberately select a different clock
+			GameTime64 = 0;
+			require(d1_save_translate_apply_checkpoint_objects(saved.data(), saved.size(), &start), "translate version23 at an external zero epoch");
+			d1_save_translate_apply_checkpoint_player(&start, "phase");
+			require(GameTime64 == 0 && snapshot() == expected["initial"], "saved epoch metadata never overrides the external replay clock");
+			if (scenario == 1) require(Auto_fire_fusion_cannon_time == -1, "translated active due-now deadline uses nonzero sentinel at zero epoch");
+			// Native21 has the phase/active tail, but no early epoch field
 			bytes legacy = saved;
+			legacy.erase(legacy.begin() + epoch_offset, legacy.begin() + epoch_offset + SAVE_EPOCH_DISK_BYTES);
+			d1_save_translate_checkpoint_start legacy_start = {};
+			for (int version : { 15, 16, 17, 18, 19, 21 }) {
+				set_int(legacy, 4, start.checkpoint_swap ? SWAPINT(version) : version);
+				require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start) &&
+				            !legacy_start.has_saved_epoch && legacy_start.game_time == 0 &&
+				            legacy_start.object_stream_offset + SAVE_EPOCH_DISK_BYTES == start.object_stream_offset,
+				        "decode every supported native legacy header without an epoch field");
+			}
+			require(d1_save_translate_apply_checkpoint_objects(legacy.data(), legacy.size(), &legacy_start), "preserve native21 translation with its original header and tail");
+			require(GameTime64 == 0 && snapshot() == expected["initial"], "native21 retains phase/Fusion state at the external epoch");
+			// Native19 also lacks phase/active words; preserve its historical delta
+			// interpretation while clearing phase left by a newer checkpoint
 			legacy.resize(legacy.size() - 8);
 			set_int(legacy, 4, start.checkpoint_swap ? SWAPINT(19) : 19);
-			d1_save_translate_checkpoint_start legacy_start = {};
 			require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start), "decode genuine native19 prefix");
 			GameTime64 = 1234;
 			controls_restore_wiggle_phase(54321);
 			require(d1_save_translate_apply_checkpoint_objects(legacy.data(), legacy.size(), &legacy_start), "preserve native19 translation");
-			require(controls_get_wiggle_phase() == 1234, "legacy translation clears previously restored phase offset");
+			require(GameTime64 == 1234 && controls_get_wiggle_phase() == 1234, "legacy translation preserves the caller clock and clears previously restored phase offset");
 			if (scenario == 1) require(Auto_fire_fusion_cannon_time == GameTime64, "legacy translation retains unflagged deadline behavior");
 			report.push_back({ { "scenario", name }, { "endian", start.checkpoint_swap ? "opposite" : "native" }, { "frames", 16 } });
 		}
 #endif
 		++scenario;
+	}
+	// The native writer reserves a zero boss-death delta by emitting -1
+	// At epoch 1 that active delta must not decode back into the inactive zero
+	for (int active : { 0, 1 }) {
+		const std::string stem = active ? "boss-tiny-epoch-active" : "boss-tiny-epoch-inactive";
+#ifndef DXX_BUILD_DESCENT_II
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(1);
+		GameTime64 = 1;
+		Boss_dying = active;
+		Boss_dying_start_time = active;
+		Boss_dying_sound_playing = 0;
+		std::string filename = stem + ".sav";
+		char description[21] = "Tiny boss epoch";
+		stop_time();
+		require(state_save_all_sub(&filename[0], description), "write actual native tiny-epoch boss checkpoint");
+		const auto saved = read_save_fixture(filename);
+		write_fixture((stem + "-opposite.sav").c_str(), save_endian_fixture(saved).convert());
+		report.push_back({ { "scenario", stem }, { "saved_epoch", GameTime64 }, { "boss_start", Boss_dying_start_time } });
+#else
+		for (const char *suffix : { ".sav", "-opposite.sav" }) {
+			const bytes saved = read_save_fixture("checkpoints/" + stem + suffix);
+			d1_save_translate_checkpoint_start start = {};
+			require(d1_save_translate_read_checkpoint_start(saved.data(), saved.size(), &start) &&
+			            start.has_saved_epoch && start.saved_epoch == 1 && start.game_time == 0,
+			        "decode native tiny-epoch boss checkpoint in both byte orders");
+			input_demo_set_skip_level_intro(1);
+			StartNewGame(start.current_level);
+			GameTime64 = start.saved_epoch;
+			Boss_dying = !active;
+			Boss_dying_start_time = 12345;
+			require(d1_save_translate_apply_checkpoint_objects(saved.data(), saved.size(), &start), "translate native tiny-epoch boss checkpoint");
+			require(GameTime64 == 1 && Boss_dying == active && Boss_dying_start_time == (active ? -1 : 0),
+			        "tiny-epoch translation preserves active boss death and the inactive-zero sentinel");
+			report.push_back({ { "scenario", stem }, { "endian", start.checkpoint_swap ? "opposite" : "native" },
+			                   { "restored_epoch", GameTime64 }, { "boss_start", Boss_dying_start_time } });
+		}
+#endif
 	}
 	const std::string result = report.dump(2) + "\n";
 	write_fixture("d1-phase-fusion-translation.json", bytes(result.begin(), result.end()));
