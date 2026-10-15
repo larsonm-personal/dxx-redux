@@ -725,6 +725,8 @@ static int expect_level_start_metadata(void)
 	metadata.level_start.secondary_ammo[4] = 8;
 	metadata.level_start.rng_state = UINT32_MAX;
 	metadata.level_start.collision_sound_time = -1234567890123LL;
+	metadata.level_start.game_time = 930384;
+	metadata.level_start.wiggle_phase = 65001;
 	if (!input_demo_metadata_to_header_line(metadata, &text, &error) ||
 	    !input_demo_metadata_parse_header_line(text, &parsed, &error))
 		return report_failure_string("level-start round trip: " + error);
@@ -733,8 +735,22 @@ static int expect_level_start_metadata(void)
 	    parsed.level_start.secondary_weapon_flags != metadata.level_start.secondary_weapon_flags || parsed.level_start.energy != 123 * 65536 ||
 	    parsed.level_start.primary_ammo[1] != 777 || parsed.level_start.secondary_ammo[4] != 8 ||
 	    parsed.level_start.rng_state != UINT32_MAX ||
-	    parsed.level_start.collision_sound_time != -1234567890123LL)
+	    parsed.level_start.collision_sound_time != -1234567890123LL || parsed.level_start.wiggle_phase != 65001)
 		return report_failure("level-start fields changed during round trip");
+	std::string old_phase = text;
+	const size_t phase_offset = old_phase.find(",\"wiggle_phase\":65001");
+	if (phase_offset == std::string::npos)
+		return report_failure("missing level-start phase test field");
+	old_phase.erase(phase_offset, strlen(",\"wiggle_phase\":65001"));
+	if (!input_demo_metadata_parse_header_line(old_phase, &parsed, &error) ||
+	    parsed.level_start.wiggle_phase != (930384u & 0xffffu))
+		return report_failure("legacy level-start phase must follow its recorded clock");
+	for (const char *value : { "-1", "65536", "1.5", "true" }) {
+		std::string invalid = text;
+		invalid.replace(phase_offset, strlen(",\"wiggle_phase\":65001"), std::string(",\"wiggle_phase\":") + value);
+		if (input_demo_metadata_parse_header_line(invalid, &parsed, &error))
+			return report_failure("invalid level-start phase accepted");
+	}
 	const char *invalid_values[] = { "-1", "4294967296", "18446744073709551615", "1.5", "true" };
 	for (const char *value : invalid_values) {
 		std::string invalid = text;

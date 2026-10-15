@@ -82,6 +82,8 @@ typedef struct input_demo_level_start {
 #define INPUT_DEMO_DECLARE_ARRAY(name, count, high) uint16_t name[count];
 	INPUT_DEMO_LEVEL_ARRAY_FIELDS(INPUT_DEMO_DECLARE_ARRAY)
 #undef INPUT_DEMO_DECLARE_ARRAY
+	/* Optional in older new_level metadata, which used the unshifted game clock */
+	uint32_t wiggle_phase;
 } input_demo_level_start;
 #pragma pack(pop)
 

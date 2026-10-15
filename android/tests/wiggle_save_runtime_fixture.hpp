@@ -3,6 +3,7 @@ extern "C" {
 #include "controls.h"
 }
 #include "wiggle_phase_runtime.h"
+#include "wiggle_level_start_fixture.hpp"
 
 static void test_wiggle_phase_runtime(void)
 {
@@ -65,6 +66,10 @@ static void test_wiggle_phase_runtime(void)
 static void exercise_wiggle_save_runtime(const char *scenario)
 {
 	using nlohmann::json;
+	if (std::strncmp(scenario, "level-", 6) == 0) {
+		exercise_wiggle_level_start(scenario);
+		return;
+	}
 	test_wiggle_phase_runtime();
 	const auto snapshot = []() {
 		const object &o = *ConsoleObject;
