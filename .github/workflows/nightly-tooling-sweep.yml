@@ -121,7 +121,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential clang cmake ninja-build \
             libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
-            xvfb xauth libgl1-mesa-dri python3-numpy python3-scipy python3-venv
+            xvfb xauth libgl1-mesa-dri ffmpeg python3-numpy python3-scipy python3-venv
           python3 -m venv --system-site-packages "$RUNNER_TEMP/dxx-nightly-python"
           "$RUNNER_TEMP/dxx-nightly-python/bin/python" -m pip install imageio-ffmpeg==0.6.0
           echo "$RUNNER_TEMP/dxx-nightly-python/bin" >> "$GITHUB_PATH"
@@ -129,6 +129,13 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
           printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+      - name: Prepare verified public fixture runtime
+        id: public_prerequisites
+        timeout-minutes: 8
+        run: |
+          bash target/android/get_deps/helpers/get_bounded_python.sh
+          command -v ffmpeg
+          command -v ffprobe
       - name: Execute admitted host owners
         id: execute
         timeout-minutes: 65
@@ -139,7 +146,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ steps.prerequisites.outcome == 'failure' && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
