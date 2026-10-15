@@ -99,6 +99,8 @@ int check_lsegments_validity(void);
 //      Search up to a maximum depth of max_depth.
 //      Return the distance.
 extern fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag);
+// Positional audio uses the same distance policy without changing gameplay query state
+extern fix find_connected_distance_for_sound(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag);
 
 //create a matrix that describes the orientation of the given segment
 extern void extract_orient_from_segment(vms_matrix *m,segment *seg);
