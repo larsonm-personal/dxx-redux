@@ -21,6 +21,22 @@ $mediaFree = @(
     @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator' },
     @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 )
+$nativeMediaFreeOwners = @(
+    'test_android_automap_route_policy',
+    'test_android_cd_preview_completion',
+    'test_android_config_policy',
+    'test_android_merge_cache',
+    'test_android_merged_wrap',
+    'test_android_music_completion',
+    'test_android_ogl_batches',
+    'test_android_redbook_completion',
+    'test_android_texture_bindings',
+    'test_android_texture_labels',
+    'test_android_xmodel_mipmaps'
+)
+foreach ($name in $nativeMediaFreeOwners) {
+    $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+}
 foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test $entry)) { throw "Missing media-free owner: $($entry.Name)" }
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
@@ -43,6 +59,15 @@ $deniedMediaFree = @(
     @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'two_emulators' },
     @{ Name = 'test_launch'; BaseName = 'test_launch'; Type = 'ps1'; Requires = 'emulator' }
 )
+foreach ($name in $nativeMediaFreeOwners) {
+    foreach ($variant in @('-Baseline', '-NoEngineBuild', '-NativeBuildDir', '-DataFiles', '-FutureVariant')) {
+        $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @($variant) }
+    }
+}
+foreach ($name in @('test_android_matcen_stations', 'test_android_secret_origins', 'test_android_ktx2_mipmaps',
+    'test_android_d1_mod_patches', 'test_android_mod_bitmaps', 'test_android_mod_renderer', 'test_android_mod_sounds', 'test_android_mod_save')) {
+    $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+}
 foreach ($entry in $deniedMediaFree) {
     if (Test-SuiteMediaIndependentTest -Test $entry) { throw "Overbroad media-free admission: $($entry.Name)" }
     if (-not (Test-SuiteNeedsStandardGameData -Tests @($entry))) { throw 'Non-exempt Android test lost its media requirement' }

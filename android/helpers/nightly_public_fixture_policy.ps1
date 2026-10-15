@@ -23,7 +23,18 @@ function Test-SuiteMediaIndependentTest {
     $allowed = switch -CaseSensitive ("$($Test.Type):$($Test.Requires)") {
         'ps1:emulator' {
             @('test_controller_overlay', 'test_package_documents', 'test_slider_navigation',
-                'test_lobby_latency', 'test_host_dialog_loading')
+                'test_lobby_latency', 'test_host_dialog_loading',
+                'test_android_automap_route_policy',
+                'test_android_cd_preview_completion',
+                'test_android_config_policy',
+                'test_android_merge_cache',
+                'test_android_merged_wrap',
+                'test_android_music_completion',
+                'test_android_ogl_batches',
+                'test_android_redbook_completion',
+                'test_android_texture_bindings',
+                'test_android_texture_labels',
+                'test_android_xmodel_mipmaps')
         }
         'ps1:two_emulators' { @('test_lan_lobby_discovery', 'test_lan_broadcast') }
         'jsonc:emulator' {
