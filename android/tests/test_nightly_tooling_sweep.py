@@ -167,6 +167,45 @@ class SweepTests(unittest.TestCase):
             result = sweep.collect(self.plan, self.policy, 'host', d)
             self.assertTrue(all(r['status'] == 'NOT_RUN' for r in result['results']))
 
+    def test_failed_master_without_receipts_is_pending_with_diagnostic(self):
+        with tempfile.TemporaryDirectory() as d:
+            sweep.write(Path(d, 'master-process.json'), {'exit_code': 1})
+            result = sweep.collect(self.plan, self.policy, 'host', d)
+            self.assertTrue(all(row['status'] == 'NOT_RUN' for row in result['results']))
+            self.assertTrue(all('Master runner exited 1' in row['reason'] for row in result['results']))
+            self.assertTrue(all(not row['attempted_tests'] for row in result['results']))
+            self.assertEqual(sweep.reconcile(self.plan, self.policy, self.state, [result])['records'], {})
+
+    def test_nonzero_master_exit_fails_lane_even_without_test_failures(self):
+        argv = ['sweep', 'execute', '--plan', 'plan', '--policy', 'policy', '--repo', 'repo', '--output', 'out', '--lane', 'host']
+        with patch.object(sys, 'argv', argv), patch.object(sweep, 'read', return_value={}), patch.object(sweep, 'execute', return_value={'runner_failed': True, 'results': []}):
+            self.assertEqual(sweep.main(), 1)
+
+    def test_zero_runner_missing_required_receipts_fails_only_pr_validation(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for name, value in (('plan', self.plan), ('policy', self.policy), ('state', self.state)):
+                sweep.write(root / name, value)
+            sweep.write(root / 'master-process.json', {'exit_code': 0})
+            receipt = sweep.collect(self.plan, self.policy, 'host', root)
+            self.assertTrue(all(row['status'] == 'NOT_RUN' for row in receipt['results']))
+            argv = ['sweep', 'reconcile', '--plan', str(root / 'plan'), '--policy', str(root / 'policy'), '--state', str(root / 'state'), '--output', str(root / 'out'), '--receipts', str(root / 'results.json')]
+            with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 0)
+            with patch.object(sys, 'argv', argv + ['--require-selected']), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 1)
+            self.assertEqual(sweep.read(root / 'out')['records'], {})
+
+    def test_required_selection_rejects_missing_blocked_and_failed_receipts(self):
+        self.assertEqual(set(sweep.selected_without_pass(self.plan, self.state)), {e['id'] for e in self.plan['tests']})
+        for status in ('FAIL', 'BLOCKED', 'TIMEOUT'):
+            state = sweep.reconcile(self.plan, self.policy, self.state, [self.receipt(status)])
+            self.assertIn('master:first', sweep.selected_without_pass(self.plan, state))
+        state = sweep.reconcile(self.plan, self.policy, self.state, [self.receipt()])
+        self.assertEqual(sweep.selected_without_pass(self.plan, state), ['master:second'])
+        state = sweep.reconcile(self.plan, self.policy, state, [self.receipt(ident='master:second')])
+        self.assertEqual(sweep.selected_without_pass(self.plan, state), [])
+
     def test_partial_journal_retains_terminal_and_ignores_torn_append(self):
         with tempfile.TemporaryDirectory() as d:
             Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'commit': SHA, 'status': 'PASS'}) + '\n{"name":')

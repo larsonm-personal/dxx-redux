@@ -206,11 +206,15 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
+          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' }}
         run: |
+          qualification=()
+          if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
+          status=0
           mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py reconcile \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
-            --state plan/state.json --output summary-state.json --receipts "${receipts[@]}" > summary.json
+            --state plan/state.json --output summary-state.json "${qualification[@]}" --receipts "${receipts[@]}" > summary.json || status=$?
           {
             echo '## Nightly tooling sweep'
             echo 'Exact target, completed owners, unresolved failures, blocked suites and exclusions:'
@@ -220,6 +224,7 @@ jobs:
             echo 'No result means pending. Infrastructure blockages are not coverage and retry next night; stable exclusions remain explicit.'
             echo 'A completed sweep stops selecting tests until the target or admitted catalog changes.'
           } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: always()
         with:

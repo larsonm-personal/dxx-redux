@@ -215,6 +215,11 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if entry['owner'] == 'master':
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
+            process_path = output / 'master-process.json'
+            if not row and process_path.exists():
+                exit_code = read(process_path).get('exit_code')
+                if exit_code:
+                    row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
             if status == 'SKIP':
                 status = 'BLOCKED'
         else:
@@ -297,6 +302,7 @@ def execute(plan, policy, lane, repo, output):
         with (output / 'master.log').open('w') as log:
             process = run_command(command, repo, log)
         write(output / 'master-process.json', {'exit_code': process.returncode})
+        receipt['runner_failed'] = process.returncode != 0
         observations = {}
         if journal.exists():
             for line in journal.read_text().splitlines():
@@ -412,6 +418,11 @@ def publish_state(plan, policy, receipts):
     raise RuntimeError('State publication conflict')
 
 
+def selected_without_pass(plan, state):
+    return [entry['id'] for entry in plan['tests']
+            if state['records'].get(entry['id'], {}).get('status') != 'PASS']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -430,6 +441,7 @@ def main():
     p.add_argument('--lane', choices=LANES, required=True)
     p.add_argument('--blocked-reason', default='')
     p = sub.add_parser('reconcile')
+    p.add_argument('--require-selected', action='store_true')
     for option in ('plan', 'policy', 'state', 'output'):
         p.add_argument('--' + option, required=True)
     p.add_argument('--receipts', nargs='*', default=[])
@@ -468,7 +480,7 @@ def main():
     elif args.command == 'execute':
         signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
         result = execute(read(args.plan), read(args.policy), args.lane, args.repo, args.output)
-        return int(any(r['status'] in ('FAIL', 'TIMEOUT') for r in result['results']))
+        return int(result.get('runner_failed', False) or any(r['status'] in ('FAIL', 'TIMEOUT') for r in result['results']))
     elif args.command == 'collect':
         collect(read(args.plan), read(args.policy), args.lane, args.output, args.blocked_reason)
     else:
@@ -479,7 +491,10 @@ def main():
         pending = set(policy_entries(policy)) - set(state['records']) - set(state.get('excluded', {})) - {e['id'] for e in plan['exclusions']}
         summary['pending_owners'] = len(pending)
         summary['outcome'] = 'incomplete' if pending else ('exhausted_with_failures' if summary['failures'] else ('exhausted_with_exclusions' if summary['incomplete_owners'] or summary['excluded'] or state.get('excluded') else 'complete_pass'))
+        summary['selected_without_pass'] = selected_without_pass(plan, state)
         print(json.dumps(summary, indent=2))
+        if args.require_selected and summary['selected_without_pass']:
+            return 1
     return 0
 
 
