@@ -11404,6 +11404,9 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 #include "public_matcen_stations_fixture.hpp"
+#ifdef DXX_BUILD_DESCENT_II
+#include "fcd_audio_cache_fixture.hpp"
+#endif
 
 static void verify_headless_audio_closed()
 {
@@ -11438,6 +11441,16 @@ int main(int argc, char **argv)
 		test_missile_camera_ownership();
 		return 0;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (argc == 2 && std::strcmp(argv[1], "--fcd-audio-cache") == 0) {
+		test_fcd_audio_cache();
+		return 0;
+	}
+	if (argc == 2 && std::strcmp(argv[1], "--fcd-gameplay-cache-sequence") == 0) {
+		std::puts(fcd_gameplay_cache_sequence().dump(2).c_str());
+		return 0;
+	}
+#endif
 	if (argc == 2 && std::strcmp(argv[1], "--public-d1-comparison-profile") == 0) {
 		write_public_d1_comparison_profile();
 		PHYSFS_deinit();
