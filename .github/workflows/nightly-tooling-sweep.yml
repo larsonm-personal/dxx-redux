@@ -136,6 +136,12 @@ jobs:
           bash target/android/get_deps/helpers/get_bounded_python.sh
           command -v ffmpeg
           command -v ffprobe
+      - name: Prepare locked formatter dependencies
+        id: formatter_prerequisites
+        timeout-minutes: 8
+        run: |
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Node 20 or newer is required"); }'
+          npm ci --prefix target/android/tools/code-quality --ignore-scripts
       - name: Execute admitted host owners
         id: execute
         timeout-minutes: 65
@@ -146,7 +152,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
