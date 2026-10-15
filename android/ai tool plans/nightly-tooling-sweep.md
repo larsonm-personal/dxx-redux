@@ -2,7 +2,7 @@
 
 ## Deployment and trust
 
-This change does not activate a schedule until the workflow is on the repository's default branch. The default was `main` when designed; the intended simple deployment is to make `cmake` default and merge the reviewed implementation there. Neither action is performed by these scripts. If `main` remains default, a separately reviewed default-branch deployment is required; copying only a cron stanza without its trusted controller/reusable workflows is insufficient.
+The repository default branch is `cmake` (verified through the GitHub API on 2026-10-15). The schedule becomes available only after the reviewed workflow is merged there; this change does not merge or activate it. No separate `main` trigger is needed.
 
 The coordinator resolves `refs/heads/cmake` once and passes that immutable commit to every executor. Controller scripts and the committed admission policy come from `github.workflow_sha`, separately checked out from the target. PR validation instead pins the PR head and runs a bounded representative host/public-emulator batch. PR jobs have read-only repository permission and cannot publish progress.
 
@@ -49,4 +49,8 @@ A subsequent reviewed increment brings the policy to 232 selections: six public 
 
 Equally unattempted owners use a stable SHA-seeded order; retries still follow never-attempted work. This avoids replaying an identical prefix when cmake changes frequently without reusing any prior-SHA pass. Cross-changing-SHA fairness is probabilistic; finite completion requires an unchanged SHA and eligible suites that can run.
 
-The current admission list is 256 selections after adding the reviewed runtime/formatter owners and eleven default-only native Android fixture wrappers. These use the retained x86_64 CMake build from existing APK preparation; synthetic no-media assertions do not certify retail scenarios or physical-device behavior. Estimates remain provisional pending hosted timings.
+The admission list reached 256 selections after adding the reviewed runtime/formatter owners and eleven default-only native Android fixture wrappers. These use the retained x86_64 CMake build from existing APK preparation; synthetic no-media assertions do not certify retail scenarios or physical-device behavior. Estimates remain provisional pending hosted timings.
+
+The final initial rollout freezes at 264 selections, adding five reviewed media-independent tooling defaults and three generated/bundled JSONC scenarios. All 346 original master registry owners now have concrete audit decisions; admission and actual hosted qualification remain separate. Further expansion is deferred while the exact final head is qualified.
+
+Read-only hosted validation now selects ten representative owners across all four lanes, including dual-AVD LAN discovery, a native Android music-completion fixture, and generated launcher audio. The fixed selection is checked against each lane's 45-minute estimate budget.

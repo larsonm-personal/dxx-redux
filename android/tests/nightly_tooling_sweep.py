@@ -14,6 +14,11 @@ import subprocess
 import sys
 import time
 
+VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
+                  'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1',
+                  'master:test_lan_lobby_discovery', 'master:test_android_music_completion',
+                  'master:test_launcher_media_controls_generated'}
+
 SCHEMA = 1
 LANES = ('host', 'jvm', 'android-single', 'android-dual')
 TERMINAL = {'PASS', 'FAIL', 'TIMEOUT'}
@@ -449,14 +454,14 @@ def main():
         plan, state = plan_batch(args.target_sha, read(args.catalog), read(args.policy), read(args.state) if args.state and Path(args.state).exists() else None)
         if args.validation:
             state = fresh_state(plan['target_sha'], plan['catalog_hash'])
-            validation_ids = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
-                              'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1'}
+            validation_ids = VALIDATION_IDS
             plan['tests'] = [e for e in policy_entries(read(args.policy)).values() if e['id'] in validation_ids]
             if {e['id'] for e in plan['tests']} != validation_ids:
                 raise ValueError('Missing representative validation suites')
             plan['estimated_seconds'] = sum(e['estimated_seconds'] for e in plan['tests'])
             plan['lanes'] = [lane for lane in LANES if any(e['lane'] == lane for e in plan['tests'])]
             plan['batch_id'] = digest({key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')})
+        validate_plan(plan, read(args.policy))
         write(args.output, plan)
         write(args.state_output, state)
         print(json.dumps({'lanes': plan['lanes'], 'count': len(plan['tests']), 'batch_id': plan['batch_id']}))

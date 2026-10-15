@@ -257,7 +257,15 @@
     {"id": "master:test_android_redbook_completion", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_redbook_completion"}, "estimated_seconds": 600},
     {"id": "master:test_android_texture_bindings", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_texture_bindings"}, "estimated_seconds": 600},
     {"id": "master:test_android_texture_labels", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_texture_labels"}, "estimated_seconds": 600},
-    {"id": "master:test_android_xmodel_mipmaps", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_xmodel_mipmaps"}, "estimated_seconds": 600}
+    {"id": "master:test_android_xmodel_mipmaps", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_xmodel_mipmaps"}, "estimated_seconds": 600},
+    {"id": "master:test_pcm_ring", "owner": "master", "lane": "android-single", "args": {"suite": "test_pcm_ring"}, "estimated_seconds": 120},
+    {"id": "master:test_touch_layout_format", "owner": "master", "lane": "android-single", "args": {"suite": "test_touch_layout_format"}, "estimated_seconds": 120},
+    {"id": "master:test_distribution_build_info", "owner": "master", "lane": "android-single", "args": {"suite": "test_distribution_build_info"}, "estimated_seconds": 120},
+    {"id": "master:test_xcrash_native_report", "owner": "master", "lane": "android-single", "args": {"suite": "test_xcrash_native_report"}, "estimated_seconds": 300},
+    {"id": "master:test_lan_transport_recovery", "owner": "master", "lane": "android-single", "args": {"suite": "test_lan_transport_recovery"}, "estimated_seconds": 120},
+    {"id": "master:test_demo_group_file_set_content", "owner": "master", "lane": "android-single", "args": {"suite": "test_demo_group_file_set_content"}, "estimated_seconds": 720},
+    {"id": "master:test_unified_file_set_content", "owner": "master", "lane": "android-single", "args": {"suite": "test_unified_file_set_content"}, "estimated_seconds": 720},
+    {"id": "master:test_soundfont_download_catalog", "owner": "master", "lane": "android-single", "args": {"suite": "test_soundfont_download_catalog"}, "estimated_seconds": 1410}
   ],
   "exclusions": [{"id": "retail-media", "reason": "Retail/expansion/campaign assets unavailable on public hosted runners"}, {"id": "physical-android", "reason": "Physical GPU/touch/audio hardware and multi-device LAN topology are not emulated coverage"}]
 }

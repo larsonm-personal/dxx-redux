@@ -1,5 +1,7 @@
 # Nightly source reconciliation
 
+> Historical snapshot: this document records the initial 158-selection admission map. See [current accounting](NIGHTLY_CURRENT_RECONCILIATION.md) for the completed 346-owner audit, current policy, and remaining path-level mapping gaps.
+
 Source snapshot: `e12e0bcf4c2fe6e3edd0302f75dd5c4666e9bb70`. Policy SHA-256: `ab1fb9ab736f23a05d0330a4b3b2236695d996e4aed63113f004a60575633489`.
 
 This is an admission map, **not executed coverage or a claim that every existing test is supported**. The machine-readable [per-path map](nightly_source_reconciliation.json) contains every one of the 1,239 discovered candidate files, its classification, exact selection IDs, known owner, and reason. It also lists all 91 textual CMake registration mentions separately.

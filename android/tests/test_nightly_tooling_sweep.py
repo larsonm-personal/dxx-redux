@@ -25,6 +25,18 @@ class SweepTests(unittest.TestCase):
         return {**{k: self.plan[k] for k in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}, 'lane': 'host',
                 'results': [{'id': ident, 'status': status, 'run_url': 'https://github.com/o/r/actions/runs/1'}]}
 
+    def test_representative_validation_covers_four_lanes_within_budgets(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        entries = sweep.policy_entries(policy)
+        selected = [entries[ident] for ident in sweep.VALIDATION_IDS]
+        self.assertEqual(len(selected), 10)
+        self.assertEqual({entry['lane'] for entry in selected}, set(sweep.LANES))
+        for lane in sweep.LANES:
+            self.assertLessEqual(sum(entry['estimated_seconds'] for entry in selected if entry['lane'] == lane), 2700)
+        self.assertIn('master:test_lan_lobby_discovery', sweep.VALIDATION_IDS)
+        self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
+        self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)
