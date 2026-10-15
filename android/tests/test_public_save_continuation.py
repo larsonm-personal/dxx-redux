@@ -4,9 +4,38 @@ import copy
 import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import public_save_continuation as save
+
+
+class RuntimeRunnerRegistrationTests(unittest.TestCase):
+    def test_report_ignores_runtime_directories_without_trace_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for case in ("d2-countdown", "d2-robot-death"):
+                (root / case).mkdir()
+                (root / case / "exit.txt").write_text("0")
+            with mock.patch.object(save, "qualify_case", return_value={"status": "pass"}) as qualify:
+                with mock.patch("sys.argv", ["public_save_continuation.py", "--output", temp]):
+                    self.assertEqual(save.main(), 0)
+            self.assertEqual([call.args[0].name for call in qualify.call_args_list],
+                             ["d1-flight", "d2-flight", "d1-door"])
+
+    def test_active_runtime_cases_use_staged_d2_assets_and_checked_process(self):
+        runner = Path(__file__).with_suffix(".ps1").read_text()
+        for scenario in ("countdown", "robot-death"):
+            entry = f"@{{Name = 'd2-{scenario}'; Exe = $d2ExePath; Assets = $d2Path; Scenario = '{scenario}'; Mode = '--active-save-runtime' }}"
+            self.assertIn(entry, runner)
+        self.assertIn("$traceArgs = @($mode, $case.Assets, $case.Scenario)", runner)
+        self.assertIn("$case.ContainsKey('Mode')", runner)
+        self.assertIn("Assert-SharewareTestDataDirectory -Config $config -DataDir $staged", runner)
+        self.assertLess(runner.index("Assert-SharewareTestDataDirectory"), runner.index("foreach ($case in $cases)"))
+        self.assertIn("$testProcess.WaitForExit($TimeoutSeconds * 1000)", runner)
+        self.assertIn("if ($testProcess.ExitCode -ne 0) { throw", runner)
+        workflow = Path(__file__).parents[2] / ".github/workflows/public-save-integrity.yml"
+        self.assertIn("-File android/tests/test_public_save_continuation.ps1", workflow.read_text())
 
 
 class SavePersistenceTests(unittest.TestCase):

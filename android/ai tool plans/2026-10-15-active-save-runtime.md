@@ -26,3 +26,15 @@ The public D1 moving-door continuation fixture preserves doors, walls and trigge
 Both current-source baseline scenarios exit 1 at their targeted assertion. Both fixed scenarios exit 0, including warm/zero-cache countdown controls, identical first-step SIM state and rotation, and active/elapsed/inactive death offsets. The fixed and baseline binaries differ only in their state.c object.
 
 The validation binaries compile current cmake state.c, cntrlcen.c and ai2.c, with the new fixture, reusing older engine object files for unchanged surrounding infrastructure. This establishes the targeted source behavior; it is not a complete current-tree build or Android qualification. The existing fixture translation unit emits pre-existing string-literal warnings; changed production C files compile without warnings. Fixture teardown retains the existing MEM allocation warning. No PowerShell, full aggregate suite, or physical audio check was run.
+
+## Durable CI registration
+
+The existing `.github/workflows/public-save-integrity.yml` step
+`Qualify runtime-generated ordinary save persistence` invokes
+`android/tests/test_public_save_continuation.ps1`. That runner stages and verifies
+public D2 assets, then runs `--active-save-runtime <staged-d2> countdown` and
+`--active-save-runtime <staged-d2> robot-death` in isolated directories with its
+existing timeout, log capture and fatal nonzero-exit handling. No new pipeline.
+Its existing Python admission test verifies both registrations and the CI link.
+PowerShell execution remains excluded by task instruction; native scenarios and
+Python structural/admission tests are run directly.

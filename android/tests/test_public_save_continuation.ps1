@@ -45,10 +45,18 @@ foreach ($game in @('d1', 'd2')) {
 }
 $identities | ConvertTo-Json -Depth 6 | Set-Content "$outputPath/assets.json"
 
-foreach ($case in @(@{Name = 'd1-flight'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'flight' }, @{Name = 'd2-flight'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'flight' }, @{Name = 'd1-door'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'door' })) {
+$cases = @(
+    @{Name = 'd1-flight'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'flight' }
+    @{Name = 'd2-flight'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'flight' }
+    @{Name = 'd1-door'; Exe = $d1ExePath; Assets = $d1Path; Scenario = 'door' }
+    @{Name = 'd2-countdown'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'countdown'; Mode = '--active-save-runtime' }
+    @{Name = 'd2-robot-death'; Exe = $d2ExePath; Assets = $d2Path; Scenario = 'robot-death'; Mode = '--active-save-runtime' }
+)
+foreach ($case in $cases) {
     $directory = Join-Path $outputPath $case.Name
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
-    $traceArgs = @('--public-save-continuation', $case.Assets, $case.Scenario)
+    $mode = if ($case.ContainsKey('Mode')) { $case.Mode } else { '--public-save-continuation' }
+    $traceArgs = @($mode, $case.Assets, $case.Scenario)
     $quotedArgs = @($traceArgs | ForEach-Object { '"' + $_ + '"' })
     $parameters = @{
         FilePath = $case.Exe; ArgumentList = $quotedArgs; WorkingDirectory = $directory; PassThru = $true
@@ -75,4 +83,4 @@ if (-not $python) { throw 'Python 3 is required for save continuation verificati
 $prefix = @($python.PrefixArguments)
 & $python.Path @prefix (Join-Path $PSScriptRoot 'public_save_continuation.py') --output $outputPath
 if ($LASTEXITCODE -ne 0) { throw "Ordinary save persistence failed; see $outputPath/report.json" }
-Write-Output "PASS: D1/D2 immediate ordinary-save persistence and selected flight continuation; full trajectories UNQUALIFIED; $outputPath/report.json"
+Write-Output "PASS: D2 countdown/robot-death runtime and D1/D2 immediate ordinary-save persistence and selected flight continuation; full trajectories UNQUALIFIED; $outputPath/report.json"
