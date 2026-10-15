@@ -9,6 +9,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(dxx-extract-tests C CXX)
 
+option(DXX_EXTRACT_DEPENDENCY_LIGHT
+       "Run dependency-free host tests without downloading third-party sources or media" OFF)
+
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/dxx-verified-dependencies.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/audio-tag-metadata-deps.cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -21,56 +24,59 @@ if(MSVC)
     add_compile_definitions(NOMINMAX _USE_MATH_DEFINES)
 endif()
 
-# ── LZMA SDK (for InnoSetup decompression) ───────────────────────────
-dxx_verified_fetchcontent_declare(lzma_sdk LZMA_SDK)
-FetchContent_GetProperties(lzma_sdk)
-if(NOT lzma_sdk_POPULATED)
-    FetchContent_Populate(lzma_sdk)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    # ── LZMA SDK (for InnoSetup decompression) ───────────────────────────
+    dxx_verified_fetchcontent_declare(lzma_sdk LZMA_SDK)
+    FetchContent_GetProperties(lzma_sdk)
+    if(NOT lzma_sdk_POPULATED)
+        FetchContent_Populate(lzma_sdk)
+    endif()
+
+    # Build the LZMA SDK C files we need as a static library
+    add_library(
+        lzma_sdk_c STATIC ${lzma_sdk_SOURCE_DIR}/C/LzmaDec.c ${lzma_sdk_SOURCE_DIR}/C/Lzma2Dec.c
+                          ${lzma_sdk_SOURCE_DIR}/C/7zCrc.c ${lzma_sdk_SOURCE_DIR}/C/7zCrcOpt.c)
+    target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
+    target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST) # single-threaded
+
+    # ── zlib (for InnoSetup decompression) ────────────────────────────────
+    dxx_verified_fetchcontent_declare(zlib_dep ZLIB)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(zlib_dep)
+
+    # Create ZLIB::ZLIB alias matching find_package(ZLIB) conventions
+    if(NOT TARGET ZLIB::ZLIB)
+        add_library(ZLIB::ZLIB ALIAS zlibstatic)
+        # Make zlib headers available
+        target_include_directories(zlibstatic PUBLIC ${zlib_dep_SOURCE_DIR} ${zlib_dep_BINARY_DIR})
+    endif()
+
+    # ── nlohmann/json (header-only for manifest-driven desktop tests) ─────
+    if(NOT TARGET nlohmann_json::nlohmann_json)
+        dxx_verified_fetchcontent_declare(nlohmann_json NLOHMANN_JSON)
+        set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+        set(JSON_Install OFF CACHE BOOL "" FORCE)
+        set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(nlohmann_json)
+    endif()
+
+    # The rewind wrapper test supplies controlled PHYSFS function implementations, but it must
+    # compile against the same public declarations as the application.
+    dxx_verified_fetchcontent_declare(physfs_test_headers PHYSFS)
+    FetchContent_GetProperties(physfs_test_headers)
+    if(NOT physfs_test_headers_POPULATED)
+        FetchContent_Populate(physfs_test_headers)
+    endif()
+
+    # ── StuffIt corpus (desktop regression only) ─────────────────────────
+    dxx_verified_fetchcontent_declare(stuffit_test_files STUFFIT_TEST_FILES)
+    FetchContent_GetProperties(stuffit_test_files)
+    if(NOT stuffit_test_files_POPULATED)
+        FetchContent_Populate(stuffit_test_files)
+    endif()
+    file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
+
 endif()
-
-# Build the LZMA SDK C files we need as a static library
-add_library(
-    lzma_sdk_c STATIC ${lzma_sdk_SOURCE_DIR}/C/LzmaDec.c ${lzma_sdk_SOURCE_DIR}/C/Lzma2Dec.c
-                      ${lzma_sdk_SOURCE_DIR}/C/7zCrc.c ${lzma_sdk_SOURCE_DIR}/C/7zCrcOpt.c)
-target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
-target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST) # single-threaded
-
-# ── zlib (for InnoSetup decompression) ────────────────────────────────
-dxx_verified_fetchcontent_declare(zlib_dep ZLIB)
-set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(zlib_dep)
-
-# Create ZLIB::ZLIB alias matching find_package(ZLIB) conventions
-if(NOT TARGET ZLIB::ZLIB)
-    add_library(ZLIB::ZLIB ALIAS zlibstatic)
-    # Make zlib headers available
-    target_include_directories(zlibstatic PUBLIC ${zlib_dep_SOURCE_DIR} ${zlib_dep_BINARY_DIR})
-endif()
-
-# ── nlohmann/json (header-only for manifest-driven desktop tests) ─────
-if(NOT TARGET nlohmann_json::nlohmann_json)
-    dxx_verified_fetchcontent_declare(nlohmann_json NLOHMANN_JSON)
-    set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-    set(JSON_Install OFF CACHE BOOL "" FORCE)
-    set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(nlohmann_json)
-endif()
-
-# The rewind wrapper test supplies controlled PHYSFS function implementations, but it must compile
-# against the same public declarations as the application.
-dxx_verified_fetchcontent_declare(physfs_test_headers PHYSFS)
-FetchContent_GetProperties(physfs_test_headers)
-if(NOT physfs_test_headers_POPULATED)
-    FetchContent_Populate(physfs_test_headers)
-endif()
-
-# ── StuffIt corpus (desktop regression only) ─────────────────────────
-dxx_verified_fetchcontent_declare(stuffit_test_files STUFFIT_TEST_FILES)
-FetchContent_GetProperties(stuffit_test_files)
-if(NOT stuffit_test_files_POPULATED)
-    FetchContent_Populate(stuffit_test_files)
-endif()
-file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
 
 # ── Library sources (shared by all test executables) ─────────────────
 set(EXTRACT_SOURCES
@@ -140,26 +146,33 @@ add_executable(
 target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_sti2 PRIVATE STI2_EXTRACT_TESTING HFS_READER_TESTING)
 
-# ── test_stuffit_corpus ────────────────────────────────────────────
-add_executable(
-    test_stuffit_corpus
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
-target_include_directories(test_stuffit_corpus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_features(test_stuffit_corpus PRIVATE cxx_std_11)
-target_compile_definitions(
-    test_stuffit_corpus
-    PRIVATE STUFFIT_TEST_FILES_DIR="${STUFFIT_TEST_FILES_DIR}"
-            STUFFIT_MANIFEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/data/stuffit_manifests")
-target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    # ── test_stuffit_corpus ────────────────────────────────────────────
+    add_executable(
+        test_stuffit_corpus
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c)
+    target_include_directories(test_stuffit_corpus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_features(test_stuffit_corpus PRIVATE cxx_std_11)
+    target_compile_definitions(
+        test_stuffit_corpus
+        PRIVATE STUFFIT_TEST_FILES_DIR="${STUFFIT_TEST_FILES_DIR}"
+                STUFFIT_MANIFEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/data/stuffit_manifests")
+    target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
+
+endif()
 
 # ── CTest integration ───────────────────────────────────────────────
 enable_testing()
-add_executable(test_json_writer ${CMAKE_CURRENT_SOURCE_DIR}/test_json_writer.cpp
-                                ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
-target_include_directories(test_json_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_json_writer PRIVATE nlohmann_json::nlohmann_json)
-add_test(NAME json_writer_tests COMMAND test_json_writer)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_executable(test_json_writer ${CMAKE_CURRENT_SOURCE_DIR}/test_json_writer.cpp
+                                    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
+    target_include_directories(test_json_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(test_json_writer PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME json_writer_tests COMMAND test_json_writer)
+endif()
+
 add_executable(test_extract_limits ${CMAKE_CURRENT_SOURCE_DIR}/test_extract_limits.c
                                    ${CMAKE_CURRENT_SOURCE_DIR}/extract_attempt_budget.c)
 target_include_directories(test_extract_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -180,46 +193,58 @@ add_test(NAME graphics_config_transaction_tests COMMAND test_graphics_config_tra
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
     add_subdirectory(directory_sync)
 endif()
-add_executable(
-    test_graphics_safety_store
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_graphics_safety_store.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_safety_store.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_config_transaction.c)
-target_include_directories(test_graphics_safety_store PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
-target_compile_definitions(test_graphics_safety_store PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
-target_compile_features(test_graphics_safety_store PRIVATE cxx_std_11)
-target_link_libraries(test_graphics_safety_store PRIVATE nlohmann_json::nlohmann_json)
-if(MSVC)
-    target_compile_definitions(test_graphics_safety_store PRIVATE _CRT_SECURE_NO_WARNINGS)
-    target_compile_options(test_graphics_safety_store PRIVATE /W4)
-else()
-    target_compile_options(test_graphics_safety_store PRIVATE -Wall -Wextra -Werror)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_executable(
+        test_graphics_safety_store
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_graphics_safety_store.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_safety_store.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/graphics_config_transaction.c)
+    target_include_directories(test_graphics_safety_store
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+    target_compile_definitions(test_graphics_safety_store
+                               PRIVATE GRAPHICS_CONFIG_TRANSACTION_TESTING)
+    target_compile_features(test_graphics_safety_store PRIVATE cxx_std_11)
+    target_link_libraries(test_graphics_safety_store PRIVATE nlohmann_json::nlohmann_json)
+    if(MSVC)
+        target_compile_definitions(test_graphics_safety_store PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(test_graphics_safety_store PRIVATE /W4)
+    else()
+        target_compile_options(test_graphics_safety_store PRIVATE -Wall -Wextra -Werror)
+    endif()
+    add_test(NAME graphics_safety_store_tests COMMAND test_graphics_safety_store)
 endif()
-add_test(NAME graphics_safety_store_tests COMMAND test_graphics_safety_store)
+
 add_test(NAME sow_huffman_tests COMMAND test_sow_huffman)
 add_test(NAME sow_integrity_tests COMMAND test_sow_integrity)
-set(SOW_RETAIL_FIXTURE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/DESCENT2.SOW")
-set(SOW_SPLIT_FIXTURE_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff"
-)
-add_test(
-    NAME sow_real_media_tests
-    COMMAND
-        ${CMAKE_COMMAND} -DTEST_SOW_DIRECT=$<TARGET_FILE:test_sow_direct>
-        "-DRETAIL_SOW=${SOW_RETAIL_FIXTURE}" "-DSPLIT_SOW_DIR=${SOW_SPLIT_FIXTURE_DIR}"
-        "-DFLIGHT_SOW_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent - Test Flight (USA)/data_tracks"
-        -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/sow_real_media_tests -P
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_real_media.cmake)
-set_tests_properties(sow_real_media_tests PROPERTIES SKIP_REGULAR_EXPRESSION
-                                                     "SKIP: SOW real-media fixtures unavailable")
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    set(SOW_RETAIL_FIXTURE "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/DESCENT2.SOW")
+    set(SOW_SPLIT_FIXTURE_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent II (USA) (3-Level Interactive Preview)/data_tracks/sowstuff"
+    )
+    add_test(
+        NAME sow_real_media_tests
+        COMMAND
+            ${CMAKE_COMMAND} -DTEST_SOW_DIRECT=$<TARGET_FILE:test_sow_direct>
+            "-DRETAIL_SOW=${SOW_RETAIL_FIXTURE}" "-DSPLIT_SOW_DIR=${SOW_SPLIT_FIXTURE_DIR}"
+            "-DFLIGHT_SOW_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/CD images/Descent - Test Flight (USA)/data_tracks"
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/sow_real_media_tests -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_sow_real_media.cmake)
+    set_tests_properties(
+        sow_real_media_tests PROPERTIES SKIP_REGULAR_EXPRESSION
+                                        "SKIP: SOW real-media fixtures unavailable")
+endif()
+
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME hfs_tests COMMAND test_hfs)
 set_tests_properties(hfs_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME sti2_tests COMMAND test_sti2)
 set_tests_properties(sti2_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-add_test(NAME stuffit_corpus_tests COMMAND test_stuffit_corpus)
-set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_test(NAME stuffit_corpus_tests COMMAND test_stuffit_corpus)
+    set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY
+                                                         ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
 add_executable(
     test_stuffit_malformed
@@ -240,241 +265,255 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c)
 target_include_directories(test_stuffit_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-set(DEMO_INSTALLER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/demo installers")
-set(MAC_STUFFIT_ORACLE_FILE "${DEMO_INSTALLER_DIR}/mac_stuffit_oracles.json")
-add_test(
-    NAME stuffit_demo_oracle_tests
-    COMMAND
-        ${CMAKE_COMMAND} -DTEST_STUFFIT_DIRECT=$<TARGET_FILE:test_stuffit_direct>
-        "-DDEMO_INSTALLER_DIR=${DEMO_INSTALLER_DIR}" "-DORACLE_FILE=${MAC_STUFFIT_ORACLE_FILE}"
-        -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/stuffit_demo_oracle_tests -P
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_demo_oracles.cmake)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    set(DEMO_INSTALLER_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/demo installers")
+    set(MAC_STUFFIT_ORACLE_FILE "${DEMO_INSTALLER_DIR}/mac_stuffit_oracles.json")
+    add_test(
+        NAME stuffit_demo_oracle_tests
+        COMMAND
+            ${CMAKE_COMMAND} -DTEST_STUFFIT_DIRECT=$<TARGET_FILE:test_stuffit_direct>
+            "-DDEMO_INSTALLER_DIR=${DEMO_INSTALLER_DIR}" "-DORACLE_FILE=${MAC_STUFFIT_ORACLE_FILE}"
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/stuffit_demo_oracle_tests -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_demo_oracles.cmake)
 
-# ── extract_gog ─────────────────────────────────────────────────────
-add_executable(
-    extract_gog
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
-target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
-
-add_executable(
-    test_gog_fd
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
-target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
-target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
-
-add_executable(
-    test_pkg_toc_bounds
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_pkg_toc_bounds.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
-target_include_directories(test_pkg_toc_bounds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_pkg_toc_bounds PRIVATE ZLIB::ZLIB)
-target_compile_definitions(test_pkg_toc_bounds PRIVATE PKG_READER_TESTING=1)
-
-set(GOG_D1_INSTALLER
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_1.4a_(16596).exe"
-)
-set(GOG_D2_INSTALLER
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_2_1.1_(16596).exe"
-)
-add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_INSTALLER}")
-add_test(NAME pkg_toc_bound_tests COMMAND test_pkg_toc_bounds)
-
-# ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
-dxx_verified_fetchcontent_declare(chromaprint CHROMAPRINT)
-FetchContent_GetProperties(chromaprint)
-if(NOT chromaprint_POPULATED)
-    FetchContent_Populate(chromaprint)
 endif()
 
-set(_CP_SRC ${chromaprint_SOURCE_DIR}/src)
-add_library(
-    chromaprint STATIC
-    ${_CP_SRC}/chromaprint.cpp
-    ${_CP_SRC}/audio_processor.cpp
-    ${_CP_SRC}/chroma.cpp
-    ${_CP_SRC}/chroma_filter.cpp
-    ${_CP_SRC}/chroma_resampler.cpp
-    ${_CP_SRC}/fft.cpp
-    ${_CP_SRC}/fft_lib_kissfft.cpp
-    ${_CP_SRC}/fingerprint_calculator.cpp
-    ${_CP_SRC}/fingerprint_compressor.cpp
-    ${_CP_SRC}/fingerprint_decompressor.cpp
-    ${_CP_SRC}/fingerprint_matcher.cpp
-    ${_CP_SRC}/fingerprinter.cpp
-    ${_CP_SRC}/fingerprinter_configuration.cpp
-    ${_CP_SRC}/image_builder.cpp
-    ${_CP_SRC}/silence_remover.cpp
-    ${_CP_SRC}/simhash.cpp
-    ${_CP_SRC}/spectrum.cpp
-    ${_CP_SRC}/utils/base64.cpp
-    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fft.c
-    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fftr.c
-    ${chromaprint_SOURCE_DIR}/src/avresample/resample2.c)
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config/config.h"
-     "#ifndef CHROMAPRINT_CONFIG_H\n" "#define CHROMAPRINT_CONFIG_H\n" "#define HAVE_ROUND 1\n"
-     "#define USE_KISSFFT 1\n" "#define USE_INTERNAL_AVRESAMPLE 1\n" "#endif\n")
-target_include_directories(
-    chromaprint
-    PUBLIC ${chromaprint_SOURCE_DIR}/src
-    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config
-            ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft
-            ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools)
-target_compile_definitions(chromaprint PRIVATE HAVE_CONFIG_H HAVE_LRINTF)
-if(MSVC)
-    target_compile_options(chromaprint PRIVATE /w)
-else()
-    target_compile_options(chromaprint PRIVATE -w)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    # ── extract_gog ─────────────────────────────────────────────────────
+    add_executable(
+        extract_gog
+        ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
+    target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
+
+    add_executable(
+        test_gog_fd
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
+    target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
+    target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
+
+    add_executable(
+        test_pkg_toc_bounds
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_pkg_toc_bounds.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
+    target_include_directories(test_pkg_toc_bounds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(test_pkg_toc_bounds PRIVATE ZLIB::ZLIB)
+    target_compile_definitions(test_pkg_toc_bounds PRIVATE PKG_READER_TESTING=1)
+
+    set(GOG_D1_INSTALLER
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_1.4a_(16596).exe"
+    )
+    set(GOG_D2_INSTALLER
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_2_1.1_(16596).exe"
+    )
+    add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_INSTALLER}")
+    add_test(NAME pkg_toc_bound_tests COMMAND test_pkg_toc_bounds)
+
+    # ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
+    dxx_verified_fetchcontent_declare(chromaprint CHROMAPRINT)
+    FetchContent_GetProperties(chromaprint)
+    if(NOT chromaprint_POPULATED)
+        FetchContent_Populate(chromaprint)
+    endif()
+
+    set(_CP_SRC ${chromaprint_SOURCE_DIR}/src)
+    add_library(
+        chromaprint STATIC
+        ${_CP_SRC}/chromaprint.cpp
+        ${_CP_SRC}/audio_processor.cpp
+        ${_CP_SRC}/chroma.cpp
+        ${_CP_SRC}/chroma_filter.cpp
+        ${_CP_SRC}/chroma_resampler.cpp
+        ${_CP_SRC}/fft.cpp
+        ${_CP_SRC}/fft_lib_kissfft.cpp
+        ${_CP_SRC}/fingerprint_calculator.cpp
+        ${_CP_SRC}/fingerprint_compressor.cpp
+        ${_CP_SRC}/fingerprint_decompressor.cpp
+        ${_CP_SRC}/fingerprint_matcher.cpp
+        ${_CP_SRC}/fingerprinter.cpp
+        ${_CP_SRC}/fingerprinter_configuration.cpp
+        ${_CP_SRC}/image_builder.cpp
+        ${_CP_SRC}/silence_remover.cpp
+        ${_CP_SRC}/simhash.cpp
+        ${_CP_SRC}/spectrum.cpp
+        ${_CP_SRC}/utils/base64.cpp
+        ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fft.c
+        ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fftr.c
+        ${chromaprint_SOURCE_DIR}/src/avresample/resample2.c)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config/config.h"
+         "#ifndef CHROMAPRINT_CONFIG_H\n" "#define CHROMAPRINT_CONFIG_H\n" "#define HAVE_ROUND 1\n"
+         "#define USE_KISSFFT 1\n" "#define USE_INTERNAL_AVRESAMPLE 1\n" "#endif\n")
+    target_include_directories(
+        chromaprint
+        PUBLIC ${chromaprint_SOURCE_DIR}/src
+        PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config
+                ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft
+                ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools)
+    target_compile_definitions(chromaprint PRIVATE HAVE_CONFIG_H HAVE_LRINTF)
+    if(MSVC)
+        target_compile_options(chromaprint PRIVATE /w)
+    else()
+        target_compile_options(chromaprint PRIVATE -w)
+    endif()
+
+    # ── Single-file PCM decoders (minimp3, stb_vorbis, dr_flac) ─────────
+    set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
+    file(MAKE_DIRECTORY "${_DECODERS_DIR}")
+
+    dxx_verified_source(MINIMP3 "${_DECODERS_DIR}/minimp3.h")
+    dxx_verified_source(MINIMP3_EX "${_DECODERS_DIR}/minimp3_ex.h")
+    dxx_verified_source(STB_VORBIS "${_DECODERS_DIR}/stb_vorbis.c")
+    dxx_verified_source(DR_FLAC "${_DECODERS_DIR}/dr_flac.h")
+
+    set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
+
+    # ── fingerprint_cd ───────────────────────────────────────────────────
+    add_executable(
+        fingerprint_cd
+        ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+        ${SHARED_DIR}/pcm_decoders.c
+        ${SHARED_DIR}/fingerprint_gen.c
+        ${_DECODERS_DIR}/stb_vorbis.c)
+    target_include_directories(fingerprint_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
+                                                      ${_DECODERS_DIR})
+    target_compile_definitions(fingerprint_cd PRIVATE CHROMAPRINT_NODLL)
+    target_link_libraries(fingerprint_cd PRIVATE chromaprint)
+    if(MSVC)
+        target_compile_options(fingerprint_cd PRIVATE /W3)
+    else()
+        target_compile_options(fingerprint_cd PRIVATE -Wall)
+    endif()
+
+    # ── fingerprint_audio (loose MP3/OGG/FLAC files) ────────────────────
+    set(FINGERPRINT_AUDIO_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c ${SHARED_DIR}/pcm_decoders.c
+        ${SHARED_DIR}/fingerprint_gen.c ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
+        ${_DECODERS_DIR}/stb_vorbis.c)
+    add_executable(fingerprint_audio ${FINGERPRINT_AUDIO_SOURCES})
+    target_include_directories(fingerprint_audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
+                                                         ${_DECODERS_DIR})
+    target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL
+                                                         MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
+    target_link_libraries(fingerprint_audio PRIVATE chromaprint)
+    if(MSVC)
+        target_compile_options(fingerprint_audio PRIVATE /W3)
+    else()
+        target_compile_options(fingerprint_audio PRIVATE -Wall)
+    endif()
+
+    add_executable(test_fingerprint_audio_enumeration ${FINGERPRINT_AUDIO_SOURCES})
+    target_include_directories(test_fingerprint_audio_enumeration
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR} ${_DECODERS_DIR})
+    target_compile_definitions(
+        test_fingerprint_audio_enumeration PRIVATE CHROMAPRINT_NODLL FINGERPRINT_AUDIO_TESTING
+                                                   MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
+    target_link_libraries(test_fingerprint_audio_enumeration PRIVATE chromaprint)
+    if(MSVC)
+        target_compile_options(test_fingerprint_audio_enumeration PRIVATE /W3)
+    else()
+        target_compile_options(test_fingerprint_audio_enumeration PRIVATE -Wall)
+    endif()
+
+    # ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
+    add_executable(fingerprint_match ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c PROPERTIES LANGUAGE
+                                                                                           CXX)
+    target_include_directories(fingerprint_match PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_definitions(fingerprint_match PRIVATE CHROMAPRINT_NODLL)
+    target_link_libraries(fingerprint_match PRIVATE chromaprint nlohmann_json::nlohmann_json)
+    if(MSVC)
+        target_compile_options(fingerprint_match PRIVATE /W3)
+    else()
+        target_compile_options(fingerprint_match PRIVATE -Wall)
+    endif()
+
+    # ── test_fingerprint (unit tests for fingerprint_gen) ────────────────
+    add_executable(
+        test_fingerprint
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_fingerprint.c ${SHARED_DIR}/pcm_decoders.c
+        ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
+    target_include_directories(test_fingerprint PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
+                                                        ${_DECODERS_DIR})
+    target_compile_definitions(test_fingerprint PRIVATE CHROMAPRINT_NODLL)
+    target_link_libraries(test_fingerprint PRIVATE chromaprint)
+    if(MSVC)
+        target_compile_definitions(test_fingerprint PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(test_fingerprint PRIVATE /W3)
+    else()
+        target_compile_options(test_fingerprint PRIVATE -Wall)
+    endif()
+
+    # Chromaprint test data lives in the fetched source tree
+    set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
+    add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
+    add_test(NAME fingerprint_assertion_tests COMMAND test_fingerprint --assertion-self-test)
+
+    # FluidSynth unconditionally defines the Unix uninstall target; TagLib reuses an existing one
+    include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
+
+    # Audio tag metadata parser. TagLib's compact upstream media fixtures provide valid MP3, OGG,
+    # and FLAC containers; the test writes controlled tags into temporary copies.
+    dxx_audio_tag_prepare_deps()
+    FetchContent_GetProperties(taglib)
+    add_executable(test_audio_tag_metadata ${SHARED_DIR}/test_audio_tag_metadata.cpp)
+    target_compile_definitions(test_audio_tag_metadata PRIVATE AUDIO_TAG_NO_PHYSFS)
+    dxx_audio_tag_apply(test_audio_tag_metadata)
+    add_test(NAME audio_tag_metadata_tests
+             COMMAND test_audio_tag_metadata "${taglib_SOURCE_DIR}/tests/data"
+                     "${CMAKE_CURRENT_BINARY_DIR}/audio_tag_metadata_temp")
+
+    add_executable(
+        test_chromaprint_db_config ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_config.c
+                                   ${SHARED_DIR}/chromaprint_db.c)
+    set_source_files_properties(${SHARED_DIR}/chromaprint_db.c PROPERTIES LANGUAGE CXX)
+    target_include_directories(test_chromaprint_db_config
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
+    target_compile_definitions(test_chromaprint_db_config PRIVATE CHROMAPRINT_NODLL)
+    target_link_libraries(test_chromaprint_db_config PRIVATE chromaprint
+                                                             nlohmann_json::nlohmann_json)
+    if(MSVC)
+        target_compile_options(test_chromaprint_db_config PRIVATE /W4)
+    else()
+        target_compile_options(test_chromaprint_db_config PRIVATE -Wall -Wextra)
+    endif()
+    add_test(NAME chromaprint_db_config_tests COMMAND test_chromaprint_db_config)
+
+    find_package(Threads REQUIRED)
+    add_executable(
+        test_chromaprint_db_concurrency
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_concurrency.cpp
+        ${SHARED_DIR}/chromaprint_db.c)
+    target_include_directories(test_chromaprint_db_concurrency
+                               PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
+    target_compile_definitions(test_chromaprint_db_concurrency PRIVATE CHROMAPRINT_NODLL)
+    target_link_libraries(test_chromaprint_db_concurrency
+                          PRIVATE chromaprint nlohmann_json::nlohmann_json Threads::Threads)
+    if(MSVC)
+        target_compile_options(test_chromaprint_db_concurrency PRIVATE /W4)
+    else()
+        target_compile_options(test_chromaprint_db_concurrency PRIVATE -Wall -Wextra)
+    endif()
+    add_test(NAME chromaprint_db_concurrency_tests COMMAND test_chromaprint_db_concurrency)
+
 endif()
-
-# ── Single-file PCM decoders (minimp3, stb_vorbis, dr_flac) ─────────
-set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
-file(MAKE_DIRECTORY "${_DECODERS_DIR}")
-
-dxx_verified_source(MINIMP3 "${_DECODERS_DIR}/minimp3.h")
-dxx_verified_source(MINIMP3_EX "${_DECODERS_DIR}/minimp3_ex.h")
-dxx_verified_source(STB_VORBIS "${_DECODERS_DIR}/stb_vorbis.c")
-dxx_verified_source(DR_FLAC "${_DECODERS_DIR}/dr_flac.h")
-
-set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../shared")
-
-# ── fingerprint_cd ───────────────────────────────────────────────────
-add_executable(
-    fingerprint_cd
-    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_cd.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/sha1.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
-    ${SHARED_DIR}/pcm_decoders.c
-    ${SHARED_DIR}/fingerprint_gen.c
-    ${_DECODERS_DIR}/stb_vorbis.c)
-target_include_directories(fingerprint_cd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
-                                                  ${_DECODERS_DIR})
-target_compile_definitions(fingerprint_cd PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(fingerprint_cd PRIVATE chromaprint)
-if(MSVC)
-    target_compile_options(fingerprint_cd PRIVATE /W3)
-else()
-    target_compile_options(fingerprint_cd PRIVATE -Wall)
-endif()
-
-# ── fingerprint_audio (loose MP3/OGG/FLAC files) ────────────────────
-set(FINGERPRINT_AUDIO_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c ${SHARED_DIR}/pcm_decoders.c
-    ${SHARED_DIR}/fingerprint_gen.c ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c
-    ${_DECODERS_DIR}/stb_vorbis.c)
-add_executable(fingerprint_audio ${FINGERPRINT_AUDIO_SOURCES})
-target_include_directories(fingerprint_audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
-                                                     ${_DECODERS_DIR})
-target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL
-                                                     MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
-target_link_libraries(fingerprint_audio PRIVATE chromaprint)
-if(MSVC)
-    target_compile_options(fingerprint_audio PRIVATE /W3)
-else()
-    target_compile_options(fingerprint_audio PRIVATE -Wall)
-endif()
-
-add_executable(test_fingerprint_audio_enumeration ${FINGERPRINT_AUDIO_SOURCES})
-target_include_directories(test_fingerprint_audio_enumeration
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR} ${_DECODERS_DIR})
-target_compile_definitions(
-    test_fingerprint_audio_enumeration PRIVATE CHROMAPRINT_NODLL FINGERPRINT_AUDIO_TESTING
-                                               MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
-target_link_libraries(test_fingerprint_audio_enumeration PRIVATE chromaprint)
-if(MSVC)
-    target_compile_options(test_fingerprint_audio_enumeration PRIVATE /W3)
-else()
-    target_compile_options(test_fingerprint_audio_enumeration PRIVATE -Wall)
-endif()
-
-# ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
-add_executable(fingerprint_match ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c PROPERTIES LANGUAGE CXX)
-target_include_directories(fingerprint_match PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(fingerprint_match PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(fingerprint_match PRIVATE chromaprint nlohmann_json::nlohmann_json)
-if(MSVC)
-    target_compile_options(fingerprint_match PRIVATE /W3)
-else()
-    target_compile_options(fingerprint_match PRIVATE -Wall)
-endif()
-
-# ── test_fingerprint (unit tests for fingerprint_gen) ────────────────
-add_executable(
-    test_fingerprint ${CMAKE_CURRENT_SOURCE_DIR}/test_fingerprint.c ${SHARED_DIR}/pcm_decoders.c
-                     ${SHARED_DIR}/fingerprint_gen.c ${_DECODERS_DIR}/stb_vorbis.c)
-target_include_directories(test_fingerprint PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
-                                                    ${_DECODERS_DIR})
-target_compile_definitions(test_fingerprint PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(test_fingerprint PRIVATE chromaprint)
-if(MSVC)
-    target_compile_definitions(test_fingerprint PRIVATE _CRT_SECURE_NO_WARNINGS)
-    target_compile_options(test_fingerprint PRIVATE /W3)
-else()
-    target_compile_options(test_fingerprint PRIVATE -Wall)
-endif()
-
-# Chromaprint test data lives in the fetched source tree
-set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
-add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
-add_test(NAME fingerprint_assertion_tests COMMAND test_fingerprint --assertion-self-test)
-
-# FluidSynth unconditionally defines the Unix uninstall target; TagLib reuses an existing one
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/fluidsynth-music.cmake)
-
-# Audio tag metadata parser. TagLib's compact upstream media fixtures provide valid MP3, OGG, and
-# FLAC containers; the test writes controlled tags into temporary copies.
-dxx_audio_tag_prepare_deps()
-FetchContent_GetProperties(taglib)
-add_executable(test_audio_tag_metadata ${SHARED_DIR}/test_audio_tag_metadata.cpp)
-target_compile_definitions(test_audio_tag_metadata PRIVATE AUDIO_TAG_NO_PHYSFS)
-dxx_audio_tag_apply(test_audio_tag_metadata)
-add_test(NAME audio_tag_metadata_tests
-         COMMAND test_audio_tag_metadata "${taglib_SOURCE_DIR}/tests/data"
-                 "${CMAKE_CURRENT_BINARY_DIR}/audio_tag_metadata_temp")
-
-add_executable(test_chromaprint_db_config ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_config.c
-                                          ${SHARED_DIR}/chromaprint_db.c)
-set_source_files_properties(${SHARED_DIR}/chromaprint_db.c PROPERTIES LANGUAGE CXX)
-target_include_directories(test_chromaprint_db_config
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
-target_compile_definitions(test_chromaprint_db_config PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(test_chromaprint_db_config PRIVATE chromaprint nlohmann_json::nlohmann_json)
-if(MSVC)
-    target_compile_options(test_chromaprint_db_config PRIVATE /W4)
-else()
-    target_compile_options(test_chromaprint_db_config PRIVATE -Wall -Wextra)
-endif()
-add_test(NAME chromaprint_db_config_tests COMMAND test_chromaprint_db_config)
-
-find_package(Threads REQUIRED)
-add_executable(
-    test_chromaprint_db_concurrency ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_concurrency.cpp
-                                    ${SHARED_DIR}/chromaprint_db.c)
-target_include_directories(test_chromaprint_db_concurrency
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_android_stubs ${SHARED_DIR})
-target_compile_definitions(test_chromaprint_db_concurrency PRIVATE CHROMAPRINT_NODLL)
-target_link_libraries(test_chromaprint_db_concurrency
-                      PRIVATE chromaprint nlohmann_json::nlohmann_json Threads::Threads)
-if(MSVC)
-    target_compile_options(test_chromaprint_db_concurrency PRIVATE /W4)
-else()
-    target_compile_options(test_chromaprint_db_concurrency PRIVATE -Wall -Wextra)
-endif()
-add_test(NAME chromaprint_db_concurrency_tests COMMAND test_chromaprint_db_concurrency)
 
 add_executable(test_gles3_shim_array_sources
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_gles3_shim_array_sources.c)
@@ -509,67 +548,72 @@ add_executable(test_merged_wall_geometry_hit
 target_include_directories(test_merged_wall_geometry_hit
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME merged_wall_geometry_hit_tests COMMAND test_merged_wall_geometry_hit)
-dxx_verified_fetchcontent_declare(tinysoundfont_test TINYSOUNDFONT)
-FetchContent_GetProperties(tinysoundfont_test)
-if(NOT tinysoundfont_test_POPULATED)
-    FetchContent_Populate(tinysoundfont_test)
-endif()
-add_executable(
-    test_midi_seek_timeline
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_seek_timeline.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_seek_timeline.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tsf_impl.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
-target_include_directories(test_midi_seek_timeline PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared
-                                                           ${tinysoundfont_test_SOURCE_DIR})
-if(NOT MSVC)
-    target_link_libraries(test_midi_seek_timeline PRIVATE m)
-endif()
-add_test(NAME midi_seek_timeline_tests COMMAND test_midi_seek_timeline
-                                               ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
-add_executable(test_music_soundfont ../shared/test_music_soundfont.c ../shared/music_soundfont.c
-                                    ../shared/tsf_impl.c)
-target_include_directories(test_music_soundfont PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
-if(NOT MSVC)
-    target_link_libraries(test_music_soundfont PRIVATE m)
-endif()
-add_test(NAME music_soundfont_tests COMMAND test_music_soundfont
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    dxx_verified_fetchcontent_declare(tinysoundfont_test TINYSOUNDFONT)
+    FetchContent_GetProperties(tinysoundfont_test)
+    if(NOT tinysoundfont_test_POPULATED)
+        FetchContent_Populate(tinysoundfont_test)
+    endif()
+    add_executable(
+        test_midi_seek_timeline
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_seek_timeline.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_seek_timeline.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tsf_impl.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
+    target_include_directories(test_midi_seek_timeline PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared
+                                                               ${tinysoundfont_test_SOURCE_DIR})
+    if(NOT MSVC)
+        target_link_libraries(test_midi_seek_timeline PRIVATE m)
+    endif()
+    add_test(NAME midi_seek_timeline_tests COMMAND test_midi_seek_timeline
+                                                   ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+    add_executable(test_music_soundfont ../shared/test_music_soundfont.c
+                                        ../shared/music_soundfont.c ../shared/tsf_impl.c)
+    target_include_directories(test_music_soundfont PRIVATE ../shared
+                                                            ${tinysoundfont_test_SOURCE_DIR})
+    if(NOT MSVC)
+        target_link_libraries(test_music_soundfont PRIVATE m)
+    endif()
+    add_test(NAME music_soundfont_tests COMMAND test_music_soundfont
+                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+    add_executable(soundfont_coverage soundfont_coverage.cpp ../shared/music_soundfont.c)
+    target_include_directories(soundfont_coverage PRIVATE ../shared
+                                                          ${tinysoundfont_test_SOURCE_DIR})
+    if(NOT MSVC)
+        target_link_libraries(soundfont_coverage PRIVATE m)
+    endif()
+    include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
+    add_executable(
+        test_music_synth
+        test_music_synth.c
+        test_music_fluid.cpp
+        ../shared/music_fluid.cpp
+        ../shared/music_synth.cpp
+        ../shared/music_soundfont.c
+        ../shared/tsf_impl.c
+        ../shared/hmp_android_shared.c
+        ../shared/midi_seek_timeline.c)
+    target_include_directories(test_music_synth PRIVATE test_hmp_stubs ../shared
+                                                        ${tinysoundfont_test_SOURCE_DIR})
+    target_link_libraries(test_music_synth PRIVATE music_ymfmidi libfluidsynth)
+    if(WIN32)
+        add_custom_command(
+            TARGET test_music_synth
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libfluidsynth>
+                    $<TARGET_FILE_DIR:test_music_synth>
+            COMMENT "Place FluidSynth beside the host integration test")
+    endif()
+    target_compile_definitions(test_music_synth PRIVATE DXX_MUSIC_SYNTH_TEST_TRACE)
+    if(MSVC)
+        target_compile_options(test_music_synth PRIVATE /W4)
+    else()
+        target_compile_options(test_music_synth PRIVATE -Wall -Wextra)
+    endif()
+    add_test(NAME music_synth_tests COMMAND test_music_synth
                                             ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
-add_executable(soundfont_coverage soundfont_coverage.cpp ../shared/music_soundfont.c)
-target_include_directories(soundfont_coverage PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
-if(NOT MSVC)
-    target_link_libraries(soundfont_coverage PRIVATE m)
 endif()
-include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/ymfm-music.cmake)
-add_executable(
-    test_music_synth
-    test_music_synth.c
-    test_music_fluid.cpp
-    ../shared/music_fluid.cpp
-    ../shared/music_synth.cpp
-    ../shared/music_soundfont.c
-    ../shared/tsf_impl.c
-    ../shared/hmp_android_shared.c
-    ../shared/midi_seek_timeline.c)
-target_include_directories(test_music_synth PRIVATE test_hmp_stubs ../shared
-                                                    ${tinysoundfont_test_SOURCE_DIR})
-target_link_libraries(test_music_synth PRIVATE music_ymfmidi libfluidsynth)
-if(WIN32)
-    add_custom_command(
-        TARGET test_music_synth
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:libfluidsynth>
-                $<TARGET_FILE_DIR:test_music_synth>
-        COMMENT "Place FluidSynth beside the host integration test")
-endif()
-target_compile_definitions(test_music_synth PRIVATE DXX_MUSIC_SYNTH_TEST_TRACE)
-if(MSVC)
-    target_compile_options(test_music_synth PRIVATE /W4)
-else()
-    target_compile_options(test_music_synth PRIVATE -Wall -Wextra)
-endif()
-add_test(NAME music_synth_tests COMMAND test_music_synth
-                                        ${CMAKE_CURRENT_SOURCE_DIR}/../../assets/gm.sf2)
+
 add_executable(test_fm_resampler test_fm_resampler.cpp)
 target_include_directories(test_fm_resampler PRIVATE ../shared)
 add_test(NAME fm_resampler_tests COMMAND test_fm_resampler)
@@ -597,40 +641,44 @@ else()
     target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
-add_executable(
-    hmp_midi_export hmp_midi_export.c ../shared/hmp_android_shared.c ../shared/tsf_impl.c
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
-target_include_directories(hmp_midi_export PRIVATE test_hmp_stubs ../shared
-                                                   ${tinysoundfont_test_SOURCE_DIR})
-if(NOT MSVC)
-    target_link_libraries(hmp_midi_export PRIVATE m)
-    target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_executable(
+        hmp_midi_export hmp_midi_export.c ../shared/hmp_android_shared.c ../shared/tsf_impl.c
+                        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
+    target_include_directories(hmp_midi_export PRIVATE test_hmp_stubs ../shared
+                                                       ${tinysoundfont_test_SOURCE_DIR})
+    if(NOT MSVC)
+        target_link_libraries(hmp_midi_export PRIVATE m)
+        target_compile_options(hmp_midi_export PRIVATE -Wall -Wextra)
+    endif()
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_Interpreter_FOUND)
+        add_test(
+            NAME soundfont_loop_bounds_tests
+            COMMAND
+                ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_soundfont_loop_bounds.py
+                --probe $<TARGET_FILE:soundfont_coverage> --work
+                ${CMAKE_CURRENT_BINARY_DIR}/sf2-loop-fixtures)
+    endif()
+    add_executable(
+        midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c ../shared/tsf_impl.c
+                        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
+    target_include_directories(midi_tsf_render PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
+    if(NOT MSVC)
+        target_link_libraries(midi_tsf_render PRIVATE m)
+        target_compile_options(midi_tsf_render PRIVATE -Wall -Wextra)
+    endif()
+    if(Python3_Interpreter_FOUND)
+        add_test(
+            NAME hmp_playback_tests
+            COMMAND
+                ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_hmp_playback.py --exporter
+                $<TARGET_FILE:hmp_midi_export>)
+    endif()
 endif()
-find_package(Python3 COMPONENTS Interpreter)
-if(Python3_Interpreter_FOUND)
-    add_test(
-        NAME soundfont_loop_bounds_tests
-        COMMAND
-            ${Python3_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_soundfont_loop_bounds.py --probe
-            $<TARGET_FILE:soundfont_coverage> --work ${CMAKE_CURRENT_BINARY_DIR}/sf2-loop-fixtures)
-endif()
-add_executable(
-    midi_tsf_render midi_tsf_render.c ../shared/midi_seek_timeline.c ../shared/tsf_impl.c
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_soundfont.c)
-target_include_directories(midi_tsf_render PRIVATE ../shared ${tinysoundfont_test_SOURCE_DIR})
-if(NOT MSVC)
-    target_link_libraries(midi_tsf_render PRIVATE m)
-    target_compile_options(midi_tsf_render PRIVATE -Wall -Wextra)
-endif()
-if(Python3_Interpreter_FOUND)
-    add_test(
-        NAME hmp_playback_tests
-        COMMAND
-            ${Python3_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../tests/test_hmp_playback.py --exporter
-            $<TARGET_FILE:hmp_midi_export>)
-endif()
+
 add_executable(
     test_midi_metadata
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_metadata.c
@@ -655,12 +703,15 @@ else()
     target_compile_options(test_sha1 PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME sha1_tests COMMAND test_sha1)
-add_test(
-    NAME cd_sha1_cli_tests
-    COMMAND
-        ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
-        "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_sha1.cmake)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_test(
+        NAME cd_sha1_cli_tests
+        COMMAND
+            ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
+            "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_sha1.cmake)
+
+endif()
 
 add_executable(test_cd_read_contract ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_read_contract.c
                                      ${CMAKE_CURRENT_SOURCE_DIR}/cd_read_contract.c)
@@ -671,12 +722,15 @@ else()
     target_compile_options(test_cd_read_contract PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME cd_read_contract_tests COMMAND test_cd_read_contract)
-add_test(
-    NAME cd_incomplete_read_cli_tests
-    COMMAND
-        ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
-        "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
-        ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_incomplete_read.cmake)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_test(
+        NAME cd_incomplete_read_cli_tests
+        COMMAND
+            ${CMAKE_COMMAND} "-DEXTRACT_CD=$<TARGET_FILE:extract_cd>"
+            "-DFINGERPRINT_CD=$<TARGET_FILE:fingerprint_cd>" -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/test_cd_incomplete_read.cmake)
+endif()
+
 add_executable(
     test_saf_manifest_parser ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_saf_manifest_parser.c
                              ${CMAKE_CURRENT_SOURCE_DIR}/../shared/saf_manifest_parser.c)
@@ -707,17 +761,22 @@ else()
 endif()
 add_test(NAME music_track_json_tests COMMAND test_music_track_json)
 
-add_executable(test_music_name_table ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_music_name_table.cpp
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_name_table.cpp)
-target_include_directories(test_music_name_table PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
-target_link_libraries(test_music_name_table PRIVATE nlohmann_json::nlohmann_json)
-if(MSVC)
-    target_compile_options(test_music_name_table PRIVATE /W4)
-else()
-    target_compile_options(test_music_name_table PRIVATE -Wall -Wextra -Werror)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_executable(
+        test_music_name_table ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_music_name_table.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/../shared/music_name_table.cpp)
+    target_include_directories(test_music_name_table PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+    target_link_libraries(test_music_name_table PRIVATE nlohmann_json::nlohmann_json)
+    if(MSVC)
+        target_compile_options(test_music_name_table PRIVATE /W4)
+    else()
+        target_compile_options(test_music_name_table PRIVATE -Wall -Wextra -Werror)
+    endif()
+    add_test(NAME music_name_table_tests COMMAND test_music_name_table)
+    add_test(NAME music_name_table_schema_version_tests COMMAND test_music_name_table
+                                                                --schema-version)
 endif()
-add_test(NAME music_name_table_tests COMMAND test_music_name_table)
-add_test(NAME music_name_table_schema_version_tests COMMAND test_music_name_table --schema-version)
+
 add_executable(test_input_demo_limits
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_input_demo_limits.c)
 target_include_directories(test_input_demo_limits PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
@@ -727,15 +786,18 @@ else()
     target_compile_options(test_input_demo_limits PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME input_demo_limit_tests COMMAND test_input_demo_limits)
-add_executable(test_rewind_file ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rewind_file.c)
-target_include_directories(test_rewind_file PRIVATE ${physfs_test_headers_SOURCE_DIR}/src
-                                                    ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
-if(MSVC)
-    target_compile_options(test_rewind_file PRIVATE /W4)
-else()
-    target_compile_options(test_rewind_file PRIVATE -Wall -Wextra -Werror)
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    add_executable(test_rewind_file ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rewind_file.c)
+    target_include_directories(test_rewind_file PRIVATE ${physfs_test_headers_SOURCE_DIR}/src
+                                                        ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+    if(MSVC)
+        target_compile_options(test_rewind_file PRIVATE /W4)
+    else()
+        target_compile_options(test_rewind_file PRIVATE -Wall -Wextra -Werror)
+    endif()
+    add_test(NAME rewind_file_tests COMMAND test_rewind_file)
 endif()
-add_test(NAME rewind_file_tests COMMAND test_rewind_file)
+
 add_executable(test_classic_demo_wall_validation
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_classic_demo_wall_validation.c)
 target_include_directories(test_classic_demo_wall_validation
@@ -808,7 +870,9 @@ else()
     target_compile_options(test_pilot_pref_transaction PRIVATE -Wall -Wextra -Werror)
 endif()
 add_test(NAME pilot_pref_transaction_tests COMMAND test_pilot_pref_transaction)
-set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT DXX_EXTRACT_DEPENDENCY_LIGHT)
+    set_tests_properties(fingerprint_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
 
 if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
     add_subdirectory(rollback_backups)
@@ -826,3 +890,50 @@ foreach(EXTRACT_TARGET IN LISTS EXTRACT_DIRECTORY_TARGETS)
         endif()
     endif()
 endforeach()
+
+# Keep the full test inventory visible: omitted dependency/media tests are real CTest skips, never
+# successful no-op tests. Default builds above retain their original registrations.
+if(DXX_EXTRACT_DEPENDENCY_LIGHT)
+    set(_light_skipped_tests
+        json_writer_tests
+        graphics_safety_store_tests
+        sow_real_media_tests
+        stuffit_corpus_tests
+        stuffit_demo_oracle_tests
+        gog_fd_tests
+        pkg_toc_bound_tests
+        fingerprint_tests
+        fingerprint_assertion_tests
+        audio_tag_metadata_tests
+        chromaprint_db_config_tests
+        chromaprint_db_concurrency_tests
+        midi_seek_timeline_tests
+        music_soundfont_tests
+        music_synth_tests
+        soundfont_loop_bounds_tests
+        hmp_playback_tests
+        cd_sha1_cli_tests
+        cd_incomplete_read_cli_tests
+        music_name_table_tests
+        music_name_table_schema_version_tests
+        rewind_file_tests)
+    foreach(_test IN LISTS _light_skipped_tests)
+        add_test(
+            NAME ${_test}
+            COMMAND ${CMAKE_COMMAND} -E echo
+                    "SKIP: ${_test} requires the full extraction profile dependencies or media")
+        set_tests_properties(${_test} PROPERTIES SKIP_REGULAR_EXPRESSION "SKIP:" LABELS
+                                                 "full-profile-required")
+    endforeach()
+    # CUE tests read checked-in fixtures and generate their own large temporary fixtures. Keep both
+    # in the build tree so source checkouts can stay read-only and untouched.
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/test/data"
+         DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/test")
+    set_tests_properties(cue_iso_tests hfs_tests sti2_tests
+                         PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    list(LENGTH _light_skipped_tests _light_skip_count)
+    message(
+        STATUS
+            "Dependency-light extraction profile: no third-party downloads; ${_light_skip_count} full-profile tests explicitly skipped"
+    )
+endif()
