@@ -23,6 +23,24 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
+    def test_coop_positive_save_fixture_uses_authoritative_format(self) -> None:
+        source = (ROOT / 'android/tests/test_coop_save_compatibility.ps1').read_text()
+        header_path = 'android/app/src/main/cpp/shared/android_save_format.h'
+        header = ROOT / header_path
+        text = header.read_text() if header.exists() else subprocess.check_output(
+            ['git', 'show', 'HEAD:' + header_path], cwd=ROOT, text=True)
+        pattern = re.search(r"'([^']*ANDROID_D1_IN_D2_SAVE_VERSION[^']*)'", source).group(1)
+        values = re.findall(pattern, text)
+        self.assertEqual(1, len(values))
+        self.assertGreater(int(values[0]), 0)
+        self.assertIn('$versionDefinitions.Count -ne 1', source)
+        self.assertIn('Write-VersionFixture $oldSave $currentD1InD2Version', source)
+        self.assertNotIn('Write-VersionFixture $oldSave 44', source)
+        self.assertIn("throw 'Current D1-in-D2 save version was rejected'", source)
+        self.assertIn('foreach ($version in @(40, 42, 45))', source)
+        for version in (40, 42, 45):
+            self.assertNotEqual(version, int(values[0]))
+
     def test_lan_broadcast_failure_contract(self) -> None:
         source = (ROOT / "android/tests/test_lan_broadcast.ps1").read_text(encoding="utf-8")
         self.assertIn('$script:udpFailureCount = 0', source)
