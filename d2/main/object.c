@@ -3005,9 +3005,9 @@ static object *get_missile_camera_viewer(void)
 	if (viewer)
 		Guided_missile[Player_num] = NULL;
 	viewer = Missile_viewer;
-	if (viewer && Missile_viewer_sig == -1)
+	if (player_missile_camera_weapon_is_valid(viewer) && Missile_viewer_sig == -1)
 		Missile_viewer_sig = viewer->signature;
-	if (viewer && viewer->signature == Missile_viewer_sig && player_missile_camera_weapon_is_valid(viewer))
+	if (player_missile_camera_weapon_is_valid(viewer) && viewer->signature == Missile_viewer_sig)
 		return viewer;
 	if (viewer) {
 		Missile_viewer = NULL;

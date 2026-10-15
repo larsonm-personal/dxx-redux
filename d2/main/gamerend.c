@@ -664,6 +664,7 @@ void game_expand_bitmap( grs_bitmap * bmp, uint flags )
 	}
 }
 
+extern int weapon_box_user[2];
 extern int SW_drawn[2], SW_x[2], SW_y[2], SW_w[2], SW_h[2];
 ubyte RenderingType=0;
 ubyte DemoDoingRight=0,DemoDoingLeft=0;
@@ -674,16 +675,12 @@ char DemoWBUType[]={0,WBU_GUIDED,WBU_MISSILE,WBU_REAR,WBU_ESCORT,WBU_MARKER,0};
 char DemoRearCheck[]={0,0,0,1,0,0,0};
 static const char *const DemoExtraMessage[]={"PLAYER","GUIDED","MISSILE","REAR","GUIDE-BOT","MARKER","SHIP"};
 
+/* Presentation reads the simulation-owned identity without retiring or selecting it */
 object *select_missile_viewer(void)
 {
-	if (Missile_viewer) {
-		if (Missile_viewer_sig == -1)
-			Missile_viewer_sig = Missile_viewer->signature;
-		if (PlayerCfg.MissileViewEnabled && Missile_viewer->type != OBJ_NONE && Missile_viewer->signature == Missile_viewer_sig)
-			return Missile_viewer;
-		Missile_viewer = NULL;
-		Missile_viewer_sig = -1;
-	}
+	if (PlayerCfg.MissileViewEnabled && Missile_viewer && Missile_viewer->type != OBJ_NONE &&
+	    (Missile_viewer_sig == -1 || Missile_viewer->signature == Missile_viewer_sig))
+		return Missile_viewer;
 	return NULL;
 }
 
@@ -743,23 +740,18 @@ void show_extra_views()
 	}
 	else {
 
-		if (Guided_missile[Player_num]) {		//used to be active
-			if (!PlayerCfg.GuidedInBigWindow)
-				do_cockpit_window_view(1,NULL,0,WBU_STATIC,NULL);
-			Guided_missile[Player_num] = NULL;
-		}
+		/* Static follows the displayed feed, never retires gameplay ownership */
+		if (weapon_box_user[1] == WBU_GUIDED && !PlayerCfg.GuidedInBigWindow)
+			do_cockpit_window_view(1,NULL,0,WBU_STATIC,NULL);
 
-		if (Missile_viewer) //do missile view
-		{
-			if (select_missile_viewer()) {
-  				RenderingType=2+(1<<4);
-				do_cockpit_window_view(1,Missile_viewer,0,WBU_MISSILE,"MISSILE");
-				did_missile_view=1;
-			}
-			else {
-				RenderingType=255;
-				do_cockpit_window_view(1,NULL,0,WBU_STATIC,NULL);
-			}
+		if (select_missile_viewer()) {
+			RenderingType=2+(1<<4);
+			do_cockpit_window_view(1,Missile_viewer,0,WBU_MISSILE,"MISSILE");
+			did_missile_view=1;
+		}
+		else if (weapon_box_user[1] == WBU_MISSILE) {
+			RenderingType=255;
+			do_cockpit_window_view(1,NULL,0,WBU_STATIC,NULL);
 		}
 	}
 

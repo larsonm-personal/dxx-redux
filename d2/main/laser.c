@@ -1757,8 +1757,10 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 			 //laser_type == SUPERPROX_ID ||
 			 laser_type == MERCURY_ID ||
 			 laser_type == EARTHSHAKER_ID)
-		if (Missile_viewer == NULL && obj->id==Player_num)
+		if (Missile_viewer == NULL && obj->id==Player_num) {
 			Missile_viewer = &Objects[objnum];
+			Missile_viewer_sig = Objects[objnum].signature;
+		}
 
 	//	If this weapon is supposed to be silent, set that bit!
 	if (!make_sound)
@@ -2752,7 +2754,14 @@ void release_guided_missile(int player_num)
 	  if (Guided_missile[player_num]==NULL)
 			return;
 
+		if (Guided_missile[player_num]->type != OBJ_WEAPON ||
+		    Guided_missile[player_num]->id != GUIDEDMISS_ID ||
+		    Guided_missile[player_num]->signature != Guided_missile_sig[player_num]) {
+			Guided_missile[player_num] = NULL;
+			return;
+		}
 		Missile_viewer = Guided_missile[player_num];
+		Missile_viewer_sig = Guided_missile_sig[player_num];
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI)
 		 multi_send_guided_info (Guided_missile[Player_num],1);
