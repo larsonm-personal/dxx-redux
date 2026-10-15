@@ -6314,3 +6314,8 @@ NO_INHERITED_EFFECT;zero originalpaths/hunks/lines removed. SixteenAndroidscript
 ## GQD-1165: GQ2-CHUNK-0456, 2026-10-14
 
 NO_INHERITED_EFFECT;zero originalpaths/hunks/lines removed. SixteenAndroidscriptadditions absentbase/1996original;retain retiredrecords/campaign/privateinventory/rewindhistoryprefix/earliertargetclocks/companionruntime-dockgeneration/savechoosercancel. GQC1285ISSUES/BR0593REFERENCE47MEDIUM23/0/7/10/7 currentstagedbyteidentity. ExistingGQF0320/GQR0306fenceoracle and GQF0278/GQR0264diagnosticcandidate330expectedreduction retained/unapplied/notcountedagain. No newroot/status/rating/runtime/inheritedreduction. Exactreport/snapshot/currentpublishedreferences in evidenceledger;broaderdiagnosisclosureopen.
+
+
+## GQD-1166: GQ2-CHUNK-0457, 2026-10-14
+
+NO_INHERITED_EFFECT;zero originalpaths/hunks/lines removed. TwoAndroidscriptadditions absentbase/1996original;retain contextretirement/EGLrollback/acceptedMSAA/color-VBOprobes/controllerreadiness/hostphase-tuples. GQC1286ISSUES/BR0593REFERENCE47MEDIUM23/0/7/10/7 currentstagedbyteidentity. ExistingBR0251/GQR0174shaderreadiness/GQF0183/GQR0170containment/BR0029ownership and BR0284replacement stayseparate; no borrowed originalminimization. No newroot/status/rating/runtime/inheritedreduction. Exactreport/snapshot/currentpublishedreferences in evidenceledger;broaderdiagnosisclosureopen.
