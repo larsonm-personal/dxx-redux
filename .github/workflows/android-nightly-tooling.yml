@@ -193,6 +193,14 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y --no-install-recommends libpulse0
           } 2>&1 | tee results/setup/emulator-host-runtime.log
+      - name: Provision dual-lane master host prerequisites
+        if: inputs.lane == 'android-dual'
+        timeout-minutes: 10
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          bash android/get_deps/helpers/get_linux_build_prereqs.sh 2>&1 | tee ../results/setup/dual-host-prerequisites.log
       - name: Provision emulator image
         if: inputs.lane != 'jvm'
         id: emulator

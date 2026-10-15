@@ -330,8 +330,22 @@ def execute(plan, policy, lane, repo, output):
             serial = os.environ.get('DXX_TEST_PRIMARY_SERIAL')
             if serial:
                 command += ['-Serial', serial]
+            # The master intentionally stops its AVDs. The shareware owner restarts
+            # its own device; revalidate only the original CI UID grant first.
             start = time.monotonic()
             with destination.with_suffix('.log').open('w') as log:
+                if os.environ.get('GITHUB_ACTIONS') == 'true':
+                    refresh = Path(__file__).resolve().parents[1] / 'helpers/refresh_nightly_kvm_access.sh'
+                    try:
+                        setup_failed = run_command(['bash', str(refresh)], repo, log, timeout=60).returncode != 0
+                    except subprocess.TimeoutExpired:
+                        setup_failed = True
+                    if setup_failed:
+                        reason = 'Approved KVM access refresh failed before shareware owner launch; see owner log'
+                        write(destination, {'schema': 1, 'suite': entry['args']['suite'], 'status': 'BLOCKED', 'reason': reason, 'attempted_tests': False, 'phase': 'setup', 'retryable': True, 'blocker_kind': 'infrastructure', 'coverage_complete': False})
+                        save(entry, 'BLOCKED', reason)
+                        receipt['runner_failed'] = True
+                        continue
                 try:
                     process = run_command(command, repo, log, timeout=max(120, entry['estimated_seconds'] * 2))
                     status = 'PASS' if process.returncode == 0 else 'FAIL'

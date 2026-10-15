@@ -176,6 +176,32 @@ class SweepTests(unittest.TestCase):
             self.assertTrue(all(not row['attempted_tests'] for row in result['results']))
             self.assertEqual(sweep.reconcile(self.plan, self.policy, self.state, [result])['records'], {})
 
+    def test_shareware_refresh_precedes_each_owner_and_failure_stays_pending(self):
+        policy = {'schema': 1, 'suites': [
+            {'id': 'shareware:test_death#' + game, 'owner': 'shareware', 'lane': 'android-single',
+             'args': {'suite': 'test_death', 'game': game}, 'estimated_seconds': 100}
+            for game in ('d1', 'd2')], 'exclusions': []}
+        plan, state = sweep.plan_batch(SHA, {'schema': 1, 'tests': []}, policy, budget=200)
+        for failure in (False, True, 'timeout'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as d:
+                calls = []
+                def run(command, *args, **kwargs):
+                    calls.append(command)
+                    if command[0] == 'bash' and failure == 'timeout':
+                        raise subprocess.TimeoutExpired(command, 60)
+                    return subprocess.CompletedProcess(command, 1 if command[0] == 'bash' and failure else 0)
+                with patch.dict(os.environ, {'GITHUB_ACTIONS': 'true'}), patch.object(sweep.subprocess, 'check_output', return_value=SHA), patch.object(sweep, 'run_command', side_effect=run):
+                    result = sweep.execute(plan, policy, 'android-single', d, Path(d, 'out'))
+                self.assertEqual([c[0] for c in calls], ['bash', 'bash'] if failure else ['bash', 'pwsh', 'bash', 'pwsh'])
+                self.assertTrue(all(c[1].endswith('refresh_nightly_kvm_access.sh') for c in calls if c[0] == 'bash'))
+                receipt = sweep.collect(plan, policy, 'android-single', Path(d, 'out'))
+                if failure:
+                    self.assertTrue(result['runner_failed'])
+                    self.assertTrue(all(r['status'] == 'BLOCKED' and r['retryable'] and not r['attempted_tests'] for r in receipt['results']))
+                    self.assertEqual(sweep.reconcile(plan, policy, state, [receipt])['records'], {})
+                else:
+                    self.assertTrue(all(r['status'] == 'PASS' for r in receipt['results']))
+
     def test_nonzero_master_exit_fails_lane_even_without_test_failures(self):
         argv = ['sweep', 'execute', '--plan', 'plan', '--policy', 'policy', '--repo', 'repo', '--output', 'out', '--lane', 'host']
         with patch.object(sys, 'argv', argv), patch.object(sweep, 'read', return_value={}), patch.object(sweep, 'execute', return_value={'runner_failed': True, 'results': []}):
