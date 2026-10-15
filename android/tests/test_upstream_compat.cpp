@@ -11587,6 +11587,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
+#include "active_save_runtime_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 #include "public_matcen_stations_fixture.hpp"
 #ifdef DXX_BUILD_DESCENT_II
@@ -11671,6 +11672,11 @@ int main(int argc, char **argv)
 		require(init_headless_audio(), "initialize the production headless audio runtime");
 		require(SDL_WasInit(SDL_INIT_AUDIO) != 0, "headless audio was actually initialized");
 		return std::atoi(argv[2]);
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--active-save-runtime") == 0) {
+		capture_public_level_replay(argv[2], "flight");
+		exercise_active_save_runtime(argv[3]);
+		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);

@@ -1586,8 +1586,12 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.ai_info.danger_laser_signature = obj->ctype.ai_info.danger_laser_signature;
 			if (obj->ctype.ai_info.dying_start_time == 0) // if bot not dead, anything but 0 will kill it
 				obj_rw->ctype.ai_info.dying_start_time = 0;
-			else
+			else {
 				obj_rw->ctype.ai_info.dying_start_time = obj->ctype.ai_info.dying_start_time - GameTime64;
+				// Preserve the active death sequence when its relative start time is zero
+				if (obj_rw->ctype.ai_info.dying_start_time == 0)
+					obj_rw->ctype.ai_info.dying_start_time = -1;
+			}
 			break;
 		}
 			
@@ -3542,6 +3546,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	Control_center_destroyed = PHYSFSX_readSXE32(fp, swap);
 	reactor_countdown_reset_pause();
 	Countdown_timer = PHYSFSX_readSXE32(fp, swap);
+	Countdown_seconds_left = f2i(Countdown_timer + F1_0*7/8);
 	Num_robot_centers = PHYSFSX_readSXE32(fp, swap);
 	matcen_info_read_n_swap(RobotCenters, Num_robot_centers, swap, fp);
 	if (!control_center_triggers_read_n_swap(&ControlCenterTriggers, 1, swap, fp)) {
