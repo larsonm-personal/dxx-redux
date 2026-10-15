@@ -4,7 +4,7 @@ pluginManagement {
     toolVersions.load(new FileInputStream(new File(rootDir, "get_deps/tool_versions.conf")))
 
     repositories {
-        google()
+        if (!providers.gradleProperty('hostJvmOnly').getOrElse('false').toBoolean()) google()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -18,14 +18,18 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
+        if (!providers.gradleProperty('hostJvmOnly').getOrElse('false').toBoolean()) google()
         mavenCentral()
     }
 }
 
+// Pure JVM modules use their existing builds without resolving AGP or an Android SDK
+def hostJvmOnly = providers.gradleProperty('hostJvmOnly').getOrElse('false').toBoolean()
+if (hostJvmOnly) rootProject.buildFileName = 'host-jvm.gradle'
+
 // Auto-generate local.properties from dependency_base.txt if it doesn't exist
 def localPropsFile = new File(rootDir, "local.properties")
-if (!localPropsFile.exists()) {
+if (!hostJvmOnly && !localPropsFile.exists()) {
     def depBaseFile = new File(rootDir, "../dependency_base.txt")
     if (depBaseFile.exists()) {
         def depBase = depBaseFile.text.trim().replace('\\', '/')
@@ -34,7 +38,7 @@ if (!localPropsFile.exists()) {
 }
 
 rootProject.name = "dxx-redux"
-include ':app'
+if (!hostJvmOnly) include ':app'
 include ':mission-metadata-core'
 include ':mission-metadata-cli'
 include ':proxy-tests'

@@ -12,6 +12,27 @@ directories are retained for upstream merges.
 - JDK (`<dependency_base>/jdk.../`)
 - wsl (for bash)
 
+# Host JVM tests without an Android SDK
+
+With JDK 21 installed, generate the pinned wrapper once and run the existing
+pure JVM test tasks from the repository root:
+
+```bash
+bash android/get_deps/helpers/get_gradle_wrapper.sh
+bash android/gradlew -p android -PhostJvmOnly=true \
+  :mission-metadata-core:test :proxy-tests:test --console=plain --no-daemon
+```
+
+`hostJvmOnly` selects the existing metadata core, metadata CLI and proxy modules,
+without configuring `:app`, resolving Android plugins, or generating
+`local.properties`. Production sources, dependency versions and test definitions
+remain in their original module builds. The proxy tests need local UDP sockets;
+the historical comparison remains opt-in with `-PcompareProxyHistory=true`.
+
+This mode does not run `:app:testDebugUnitTest` or Android instrumentation tests.
+For the app unit tests, omit `-PhostJvmOnly=true` and use the normal Android SDK
+setup. Neither host suite establishes Android lifecycle, JNI or device parity.
+
 # VS code extensions
 
 - extension pack for java (ms)
