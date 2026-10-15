@@ -61,6 +61,17 @@ class KvmWorkflowContractTests(unittest.TestCase):
         for forbidden in ('chmod', '0666', 'usermod', 'useradd', 'groupadd'):
             self.assertNotIn(forbidden, grant)
 
+    def test_each_launch_records_actual_access_without_expanding_permissions(self):
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        loop = source.split('foreach ($avd in $avds) {', 1)[1].split("if ($env:SWEEP_LANE -eq 'android-dual')", 1)[0]
+        self.assertIn('& getfacl -p -n /dev/kvm', loop)
+        self.assertIn('os.open("/dev/kvm", os.O_RDWR)', loop)
+        self.assertIn('os.close(fd)', loop)
+        self.assertLess(loop.index('os.open'), loop.index('emu_health.ps1'))
+        self.assertNotIn('setfacl', loop)
+        cleanup = source.split('- name: Collect emulator diagnostics', 1)[1].split('- name: Restore original KVM access', 1)[0]
+        self.assertLess(cleanup.index('kvm-before-cleanup.log'), cleanup.index('emu kill'))
+
     def test_cleanup_is_unconditional_and_restores_prior_acl(self):
         source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
         cleanup = source.split('- name: Restore original KVM access', 1)[1].split('- name: Record lane lifecycle', 1)[0]

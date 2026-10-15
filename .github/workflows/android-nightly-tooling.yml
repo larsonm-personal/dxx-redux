@@ -278,6 +278,12 @@ jobs:
           foreach ($avd in $avds) {
             & ./android/get_deps/helpers/create_light_avds.ps1 -AvdName $avd.Name
             if ($LASTEXITCODE -ne 0) { throw 'AVD provisioning failed' }
+            Write-Host "Host KVM state before $($avd.Name)"
+            & id
+            & stat -c '%F %a %U:%G' /dev/kvm
+            & getfacl -p -n /dev/kvm
+            & python3 -c 'import os; fd = os.open("/dev/kvm", os.O_RDWR); os.close(fd); print("Direct KVM open succeeded")'
+            if ($LASTEXITCODE -ne 0) { throw 'Direct KVM access failed before emulator acceleration probe' }
             & ./android/helpers/emu_health.ps1 -Restart -Wait -Headless -GpuRenderer swiftshader_indirect -AvdName $avd.Name -PreferredSerial $avd.Serial
             if ($LASTEXITCODE -notin @(0, 2)) { throw 'Accelerated emulator boot failed' }
             if (-not (Install-ApkOnDevice -Serial $avd.Serial)) { throw 'Debug APK install failed' }
@@ -322,6 +328,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p results/setup
+          # Snapshot before killing emulators or restoring the original ACL.
+          { id; stat -c '%F %a %U:%G' /dev/kvm; getfacl -p -n /dev/kvm; } > results/setup/kvm-before-cleanup.log 2>&1 || true
           if command -v adb >/dev/null; then
             timeout 15 adb devices -l > results/setup/adb-devices.log 2>&1 || true
             for serial in emulator-5554 emulator-5556; do
