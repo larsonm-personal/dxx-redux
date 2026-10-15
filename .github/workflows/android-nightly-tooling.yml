@@ -153,17 +153,6 @@ jobs:
             javac -version
             df -h .
           } 2>&1 | tee ../results/setup/toolchain.log
-      - name: Save provisioned toolchain cache
-        if: steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ${{ runner.temp }}/dxx-nightly-deps/jdk-21
-            ${{ runner.temp }}/dxx-nightly-deps/android-ndk-*
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
-          key: ${{ steps.tools.outputs.cache-primary-key }}
       - name: Restore emulator components
         if: inputs.lane != 'jvm'
         id: emulator-cache
@@ -195,14 +184,6 @@ jobs:
           if not match or tuple(map(int, match.groups())) < (36, 5):
               raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
           PYTHON
-      - name: Save emulator components
-        if: inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/emulator
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
-          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
@@ -280,15 +261,6 @@ jobs:
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --output "$GITHUB_WORKSPACE/results" "${reason[@]}"
-      - name: Save completed dependency downloads
-        if: always() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            target/android/.cxx/dependency-cache
-          key: ${{ steps.dependencies.outputs.cache-primary-key }}
       - name: Collect emulator diagnostics
         if: always() && inputs.lane != 'jvm'
         shell: bash
@@ -339,3 +311,37 @@ jobs:
             target/android/proxy-tests/build/reports/tests/
           retention-days: 14
           if-no-files-found: ignore
+      - name: Save provisioned toolchain cache
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ runner.temp }}/dxx-nightly-deps/jdk-21
+            ${{ runner.temp }}/dxx-nightly-deps/android-ndk-*
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+      - name: Save emulator components
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/emulator
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
+          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
+      - name: Save completed dependency downloads
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            target/android/.cxx/dependency-cache
+          key: ${{ steps.dependencies.outputs.cache-primary-key }}
