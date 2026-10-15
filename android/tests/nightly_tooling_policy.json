@@ -246,7 +246,18 @@
     {"id": "master:test_extract_regression_workflow", "owner": "master", "lane": "host", "args": {"suite": "test_extract_regression_workflow"}, "estimated_seconds": 120},
     {"id": "master:test_fingerprint_manifest_publication", "owner": "master", "lane": "host", "args": {"suite": "test_fingerprint_manifest_publication"}, "estimated_seconds": 120},
     {"id": "master:test_generate_regression_specs", "owner": "master", "lane": "host", "args": {"suite": "test_generate_regression_specs"}, "estimated_seconds": 120},
-    {"id": "host-profile:public-matcen", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:public-matcen"}, "estimated_seconds": 180}
+    {"id": "host-profile:public-matcen", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:public-matcen"}, "estimated_seconds": 180},
+    {"id": "master:test_android_automap_route_policy", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_automap_route_policy"}, "estimated_seconds": 600},
+    {"id": "master:test_android_cd_preview_completion", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_cd_preview_completion"}, "estimated_seconds": 600},
+    {"id": "master:test_android_config_policy", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_config_policy"}, "estimated_seconds": 600},
+    {"id": "master:test_android_merge_cache", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_merge_cache"}, "estimated_seconds": 600},
+    {"id": "master:test_android_merged_wrap", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_merged_wrap"}, "estimated_seconds": 600},
+    {"id": "master:test_android_music_completion", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_music_completion"}, "estimated_seconds": 600},
+    {"id": "master:test_android_ogl_batches", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_ogl_batches"}, "estimated_seconds": 600},
+    {"id": "master:test_android_redbook_completion", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_redbook_completion"}, "estimated_seconds": 600},
+    {"id": "master:test_android_texture_bindings", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_texture_bindings"}, "estimated_seconds": 600},
+    {"id": "master:test_android_texture_labels", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_texture_labels"}, "estimated_seconds": 600},
+    {"id": "master:test_android_xmodel_mipmaps", "owner": "master", "lane": "android-single", "args": {"suite": "test_android_xmodel_mipmaps"}, "estimated_seconds": 600}
   ],
   "exclusions": [{"id": "retail-media", "reason": "Retail/expansion/campaign assets unavailable on public hosted runners"}, {"id": "physical-android", "reason": "Physical GPU/touch/audio hardware and multi-device LAN topology are not emulated coverage"}]
 }
