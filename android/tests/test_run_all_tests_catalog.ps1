@@ -5,6 +5,34 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
 . (Join-Path $repoRoot 'android/helpers/test_host_platform.ps1')
 . (Join-Path $repoRoot 'android/helpers/test_suite_coverage.ps1')
+. (Join-Path $repoRoot 'android/helpers/nightly_public_fixture_policy.ps1')
+# Media-free admission is deliberately narrower than instrumentation ownership
+$mediaFree = @(
+    @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+)
+foreach ($entry in $mediaFree) {
+    if (-not (Test-SuiteMediaIndependentTest -Test $entry)) { throw "Missing media-free owner: $($entry.Name)" }
+    if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
+}
+$deniedMediaFree = @(
+    @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-Published') },
+    @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-Published:$false') },
+    @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-FutureVariant') },
+    @{ Name = 'test_controller_overlay_extra'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'jsonc'; Requires = 'emulator' },
+    @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'two_emulators' },
+    @{ Name = 'test_launch'; BaseName = 'test_launch'; Type = 'ps1'; Requires = 'emulator' }
+)
+foreach ($entry in $deniedMediaFree) {
+    if (Test-SuiteMediaIndependentTest -Test $entry) { throw "Overbroad media-free admission: $($entry.Name)" }
+    if (-not (Test-SuiteNeedsStandardGameData -Tests @($entry))) { throw 'Non-exempt Android test lost its media requirement' }
+}
+if (Test-SuiteNeedsStandardGameData -Tests $mediaFree) { throw 'Media-free selection still requires game data' }
+if (Test-SuiteNeedsStandardGameData -Tests @()) { throw 'Empty selection requires game data' }
+if (Test-SuiteNeedsStandardGameData -Tests @(@{ Requires = 'none' })) { throw 'Host-only selection requires game data' }
+if (-not (Test-SuiteNeedsStandardGameData -Tests ($mediaFree + @($deniedMediaFree[-1])))) { throw 'Mixed selection lost retail media requirement' }
+Write-Host 'Media-free fixture policy checks passed'
 $unusedReportDir = Join-Path $repoRoot ('android/temp/catalog_must_not_exist_' + [guid]::NewGuid().ToString('N'))
 $fixtureRoot = Join-Path $repoRoot ('android/temp/test_catalog/run_' + [guid]::NewGuid().ToString('N'))
 & (Join-Path $repoRoot 'android/helpers/retain-recent-artifacts.ps1') -Artifacts $fixtureRoot -DirectoryPrefix run_
