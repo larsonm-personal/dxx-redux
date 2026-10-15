@@ -80,9 +80,23 @@ PREAMBLE = r"""
 #define SAMPLE_RATE_22K 22050
 #define SNDFILE_ID 0x444e5344
 #define SNDFILE_VERSION 1
+#define MUSIC_TYPE_BUILTIN 0
 #define DEFAULT_SNDFILE ((Piggy_hamfile_version < 3) ? "d2demo.ham" : (GameArg.SndDigiSampleRate == SAMPLE_RATE_22K ? "descent2.s22" : "descent2.s11"))
 struct { int GfxMovieHires, SysNoMovies, SndDigiSampleRate, SndNoSound, SndDisableSdlMixer; } GameArg;
+struct { int MusicType; } GameCfg;
 std::set<std::string> available, mounted;
+// Model the external presentation resolver, not the selection code under test.
+std::string presentation_prefix, played_file;
+int d1_in_d2_presentation_resource(const char *name, char *path, size_t size) {
+    const std::string resolved = presentation_prefix + name;
+    assert(resolved.size() < size);
+    snprintf(path, size, "%s", resolved.c_str());
+    return available.count(resolved) != 0;
+}
+int d1_in_d2_presentation_resource_exists(const char *name) {
+    char path[PATH_MAX];
+    return d1_in_d2_presentation_resource(name, path, sizeof(path));
+}
 std::vector<std::string> attempts;
 int PHYSFSX_contfile_init(const char *name, int) {
     attempts.emplace_back(name);
@@ -100,11 +114,14 @@ void songs_stop_all() {}
 #include <strings.h>
 #define d_stricmp strcasecmp
 #endif
-int digi_win32_play_midi_song(char *, int) { return 1; }
-int mix_play_file(char *, int, void (*)()) { return 2; }
+int digi_win32_play_midi_song(char *name, int) { played_file = name; return 1; }
+int mix_play_file(char *name, int, void (*)()) { played_file = name; return 2; }
 typedef unsigned char ubyte;
 typedef FILE PHYSFS_file;
 int Piggy_hamfile_version = 3, Num_sound_files, resets;
+// Duration-bank parsing is separately tested; observe this successful-load hook.
+int duration_reads;
+void read_sound_durations() { ++duration_reads; }
 int SoundOffset[1];
 void *SoundBits;
 char LastSndfileDir[PATH_MAX];
@@ -147,6 +164,11 @@ int main() {
         available.clear();
         assert(!strcmp(select_screen_resolution(low, high), preferred ? high : low));
     }
+    presentation_prefix = "content/";
+    available = {"content/end01.pcx", "end01b.pcx"};
+    GameArg.GfxMovieHires = 1;
+    assert(!strcmp(select_screen_resolution(low, high), low));
+    presentation_prefix.clear();
     // All library categories, both preferences, and both one-file-only cases
     for (const char *base : {"robots", "intro", "other", "oem", "custom"}) {
         char name[16]; snprintf(name, sizeof(name), "%s", base);
@@ -176,8 +198,9 @@ int main() {
                 remove("descent2.s11"); remove("descent2.s22");
                 bank(present == SAMPLE_RATE_11K ? "descent2.s11" : "descent2.s22");
                 GameArg.SndDigiSampleRate = preferred; GameArg.SndNoSound = disabled;
-                GameArg.SndDisableSdlMixer = 0; resets = 0;
+                GameArg.SndDisableSdlMixer = 0; resets = 0; duration_reads = 0;
                 assert(read_sndfile()); assert(GameArg.SndDigiSampleRate == present);
+                assert(duration_reads == 1);
                 assert(!strcmp(LastSndfileDir, "fixture"));
                 FILE *f = PHYSFSX_openReadBuffered(DEFAULT_SNDFILE); assert(f);
                 fseek(f, SoundOffset[0], SEEK_SET); char data[4]; assert(fread(data, 4, 1, f) == 1);
@@ -194,9 +217,12 @@ int main() {
         assert(read_sndfile()); assert(GameArg.SndDigiSampleRate == preferred);
     }
     remove("descent2.s11"); remove("descent2.s22");
+    duration_reads = 0;
     GameArg.SndDigiSampleRate = SAMPLE_RATE_22K; assert(!read_sndfile());
+    assert(duration_reads == 0);
     assert(GameArg.SndDigiSampleRate == SAMPLE_RATE_22K);
     bank("descent2.s11", false); assert(!read_sndfile());
+    assert(duration_reads == 0);
     assert(GameArg.SndDigiSampleRate == SAMPLE_RATE_22K);
     remove("descent2.s11"); bank("descent2.s11");
     GameArg.SndNoSound = 0; GameArg.SndDisableSdlMixer = 1; resets = 0;
@@ -213,6 +239,14 @@ int main() {
         assert((songs_play_file_d1(filename, 0, NULL) != 0) == supported);
         assert((songs_play_file_d2(filename, 0, NULL) != 0) == supported);
     }
+#if defined(_WIN32) || defined(USE_SDLMIXER)
+    char song[] = "track.hmp";
+    presentation_prefix = "content/"; available = {"content/track.hmp"};
+    GameCfg.MusicType = MUSIC_TYPE_BUILTIN;
+    assert(songs_play_file_d2(song, 0, NULL) && played_file == "content/track.hmp");
+    GameCfg.MusicType = MUSIC_TYPE_BUILTIN + 1;
+    assert(songs_play_file_d2(song, 0, NULL) && played_file == "track.hmp");
+#endif
     puts("PASS: movie resolution, mission unload, sound rate and payload fallbacks");
 }
 """
