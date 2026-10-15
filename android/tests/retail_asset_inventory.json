@@ -1,0 +1,88 @@
+{
+  "repository": "larsonm-personal/dxx-redux-test-assets",
+  "commit": "f31a7a192c2e38eb70ea2382a5a39e5a1c5ceebe",
+  "files": [
+    {
+      "source_path": "descent_2_1.1_retail/DESCENT2.HOG",
+      "target_path": "d2/descent2.hog",
+      "size": 7595079,
+      "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/DESCENT2.HAM",
+      "target_path": "d2/descent2.ham",
+      "size": 1307598,
+      "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/GROUPA.PIG",
+      "target_path": "d2/groupa.pig",
+      "size": 4931752,
+      "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/DESCENT2.S22",
+      "target_path": "d2/descent2.s22",
+      "size": 5160905,
+      "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/ALIEN1.PIG",
+      "target_path": "d2/alien1.pig",
+      "size": 5016232,
+      "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/ALIEN2.PIG",
+      "target_path": "d2/alien2.pig",
+      "size": 4912053,
+      "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/FIRE.PIG",
+      "target_path": "d2/fire.pig",
+      "size": 4973944,
+      "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/ICE.PIG",
+      "target_path": "d2/ice.pig",
+      "size": 4926111,
+      "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_2_1.1_retail/WATER.PIG",
+      "target_path": "d2/water.pig",
+      "size": 4833463,
+      "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_1.4a_retail/DESCENT.HOG",
+      "target_path": "d1/descent.hog",
+      "size": 6856701,
+      "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+      "matches_tested_edition": true
+    },
+    {
+      "source_path": "descent_1.4a_retail/DESCENT.PIG",
+      "target_path": "d1/descent.pig",
+      "size": 4920305,
+      "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe",
+      "matches_tested_edition": true
+    }
+  ],
+  "matches_tested_edition": true,
+  "optional_unread": [
+    "descent_2_1.1_retail/DESCENT2.S11"
+  ],
+  "manifest_sha256": "7f4d505a907584333dd3a4a3b87d8807778afd3aa798badd974b4155821154d9"
+}

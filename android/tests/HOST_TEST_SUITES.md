@@ -122,3 +122,40 @@ remain unchanged. Retail pickup modes and secret-area baselines remain excluded
 from their explicitly public profiles.
 
 The `host-profile:public-matcen` owner invokes the existing controlled native station-production wrapper with both fixture executables and explicit verified shareware directories. Its historical master `emulator` category does not describe its actual prerequisites: no ADB or Android device is used. This profile makes no normal-player-route claim.
+
+## Private base-retail profiles
+
+Four `retail-powershell` profiles reuse the same lazy native build adapter. Each
+requires the eleven-file private stage at `game_data/retail-ci/{d1,d2}` and is
+admitted by the nightly policy only with fixture `retail-base`. Before building,
+the adapter inventories that exact stage against the existing standard-game-data
+hashes and checks that the target and control checkout pins agree. Missing files,
+different editions, or invalid stages are retryable BLOCKED setup with no
+assertion credit. There is no fallback to shareware, unverified local media, or a
+download source. Inventory time is setup, not assertion time.
+
+- `host-profile:retail-secret-baseline` builds both headless metadata targets and
+  invokes `test_secret_area_baseline.ps1` with `-DataEdition retail -Game both`,
+  explicit data/executable paths, an attempt-local output directory, and
+  `-RequireAssets`. It never updates a checked-in baseline.
+- `host-profile:retail-counterstrike-route` invokes the existing Counterstrike
+  route owner with the D2 headless metadata target and the verified D2 stage.
+  Its native dump retains the owner's 300-second timeout and original route
+  assertions; the adapter does not override them.
+- `host-profile:retail-metadata-headers` builds both metadata workers and invokes
+  the existing malformed-header/recovery owner with `-NoBuild`, retail data,
+  both games, and explicit input/output paths.
+- `host-profile:retail-guidebot-timeout` builds the D2 headless route target and
+  runs the complete existing policy owner with `-NoBuild`, `-HeadlessExecutable`,
+  and `-HogDir`. PASS includes its native one-second timeout status and 61-frame
+  assertion. Exit 2 from the owner remains retryable BLOCKED, even if its earlier
+  calculation-only checks passed.
+
+Receipts are aggregate assertions for these exact selections only. They do not
+claim custom mission, audio-disc, Android, or other retail runtime coverage.
+Build failures remain retryable and do not earn assertion credit. These profiles
+do not fetch assets or publish logs; the private nightly lane owns staging,
+metadata-only public reporting, and cleanup of licensed inputs and derived files.
+The portable `test_retail_ci_assets.py` and `test_nightly_retail.py` registrations
+exercise synthetic/mock controls without licensed assets. Their passing results
+do not establish that any retail owner has run successfully.

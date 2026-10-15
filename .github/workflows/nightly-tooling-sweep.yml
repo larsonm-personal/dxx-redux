@@ -29,6 +29,8 @@ jobs:
       lanes: ${{ steps.plan.outputs.lanes }}
       android_lanes: ${{ steps.plan.outputs.android_lanes }}
       count: ${{ steps.plan.outputs.count }}
+      retail_lanes: ${{ steps.plan.outputs.retail_lanes }}
+      retail_commit: ${{ steps.plan.outputs.retail_commit }}
     steps:
       - name: Check out trusted controller
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -68,6 +70,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
           VALIDATION: ${{ github.event_name == 'pull_request' }}
+          RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
           validation=()
@@ -84,6 +87,8 @@ jobs:
               f.write('lanes='+json.dumps(p['lanes'])+'\n')
               f.write('android_lanes='+json.dumps([x for x in p['lanes'] if x!='host'])+'\n')
               f.write('count='+str(len(p['tests']))+'\n')
+              f.write('retail_lanes='+json.dumps(sorted({t['lane'] for t in p['tests'] if t.get('fixture')=='retail-base'}))+'\n')
+              f.write('retail_commit='+p.get('retail_assets',{}).get('commit','')+'\n')
           PY
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -96,7 +101,10 @@ jobs:
     if: contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    environment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
     env:
+      RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
+      RETAIL_CHECKOUT_COMMIT: ${{ needs.plan.outputs.retail_commit }}
       SDL_AUDIODRIVER: dummy
       SDL_VIDEODRIVER: dummy
     steps:
@@ -142,6 +150,35 @@ jobs:
         run: |
           node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Node 20 or newer is required"); }'
           npm ci --prefix target/android/tools/code-quality --ignore-scripts
+      - name: Verify trusted retail checkout boundary
+        id: retail_gate
+        env:
+          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        run: |
+          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
+          unset RETAIL_READ_TOKEN
+          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
+          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
+      - name: Check out immutable private retail inputs
+        id: retail_checkout
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ needs.plan.outputs.retail_commit }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Verify supplied edition and stage base retail files
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        id: retail_stage
+        run: |
+          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
+          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
+            --output results/retail-verification.json --stage target/game_data/retail-ci
+          rm -rf retail-input
       - name: Execute admitted host owners
         id: execute
         timeout-minutes: 65
@@ -152,7 +189,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
@@ -160,12 +197,22 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane host --output results "${blocked[@]}"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        if: always()
+        if: always() && !contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
         with:
           name: nightly-results-host
           path: |
             results/
             !results/build/**
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Upload retail-safe owner receipts
+        if: always() && contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-results-host
+          path: |
+            results/results.json
+            results/retail-verification.json
           retention-days: 14
           if-no-files-found: warn
 
@@ -182,6 +229,8 @@ jobs:
       target_sha: ${{ needs.plan.outputs.target_sha }}
       plan_artifact: nightly-plan
       lane: ${{ matrix.lane }}
+      retail_assets: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), matrix.lane) }}
+      retail_commit: ${{ needs.plan.outputs.retail_commit }}
 
   finish:
     needs: [plan, host, android]

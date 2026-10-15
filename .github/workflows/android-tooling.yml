@@ -62,6 +62,8 @@ jobs:
         shell: bash
         run: |
           python3 android/tests/test_nightly_tooling_sweep.py
+          python3 android/tests/test_nightly_retail.py
+          python3 android/tests/test_retail_ci_assets.py
           python3 android/tests/test_run_host_test_suites.py
       - name: Tooling smoke tests
         shell: pwsh

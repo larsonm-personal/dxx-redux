@@ -32,6 +32,7 @@ class HostAdapterTests(unittest.TestCase):
                     "extractor",
                     "configured-ctest",
                     "public-powershell",
+                    "retail-powershell",
                     "standalone-cmake",
                 },
             )
@@ -415,6 +416,241 @@ class PublicProfileTests(unittest.TestCase):
                     self.assertNotIn(
                         "-Revision", argv
                     )  # Existing owner binds exact clean HEAD itself.
+
+
+class RetailProfileTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(patch.object(adapter.sys, "platform", "linux"))
+        self.enterContext(patch.object(adapter.shutil, "which", return_value="tool"))
+
+    def run_profile(self, profile, *, owner_code=0, setup_code=0):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            suite = adapter.load_suites()["host-profile:" + profile]
+            script = root / suite["path"]
+            script.parent.mkdir(parents=True)
+            script.touch()
+            calls = []
+            events = []
+
+            class Process:
+                def __init__(self, argv, **kwargs):
+                    self.argv = argv
+                    calls.append(argv)
+                    events.append(argv[0])
+
+                def wait(self, **kwargs):
+                    return owner_code if self.argv[0] == "pwsh" else setup_code
+
+            with (
+                patch.object(
+                    adapter,
+                    "verify_retail_stage",
+                    side_effect=lambda repo: events.append("verify"),
+                ) as verify,
+                patch.object(adapter.subprocess, "Popen", Process),
+            ):
+                code = adapter.run_suite(
+                    suite, root, root / "build", root / "receipt.json", 30
+                )
+                verify.assert_called_once_with(root)
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(events[0], "verify")
+            return code, receipt, calls, root
+
+    def test_retail_registry_is_four_fixed_owners_and_portable_controls(self):
+        suites = adapter.load_suites()
+        self.assertEqual(
+            {
+                suite["profile"]
+                for suite in suites.values()
+                if suite["kind"] == "retail-powershell"
+            },
+            {
+                "retail-secret-baseline",
+                "retail-counterstrike-route",
+                "retail-metadata-headers",
+                "retail-guidebot-timeout",
+            },
+        )
+        for suite in suites.values():
+            if suite["kind"] == "retail-powershell":
+                self.assertEqual(suite["fixture"], "retail-base")
+                self.assertFalse(suite["public_data"])
+                self.assertFalse(suite["virtual_display"])
+                self.assertEqual(suite["executables"], ["pwsh", "cmake"])
+        for name in ("test_retail_ci_assets.py", "test_nightly_retail.py"):
+            self.assertEqual(suites["python:" + name]["kind"], "python-unittest")
+            self.assertEqual(suites["python:" + name]["executables"], [])
+
+    def test_retail_baseline_and_headers_bind_both_games_without_inner_builds(self):
+        for profile, suffix, output_flag, required in (
+            (
+                "retail-secret-baseline",
+                "-headless-metadata",
+                "-OutputDir",
+                "-RequireAssets",
+            ),
+            ("retail-metadata-headers", "-metadata-worker", "-OutputDirectory", "-NoBuild"),
+        ):
+            with self.subTest(profile=profile):
+                code, receipt, calls, root = self.run_profile(profile)
+                self.assertEqual(code, 0)
+                self.assertEqual(len(calls), 5)
+                argv = calls[-1]
+                self.assertEqual(argv[argv.index("-DataEdition") + 1], "retail")
+                self.assertEqual(argv[argv.index("-Game") + 1], "both")
+                for index, game in enumerate(("d1", "d2")):
+                    name = "dxx-redux-" + game + suffix
+                    self.assertEqual(calls[index * 2 + 1][-1], name)
+                    flag = "-" + game.upper() + "Exe"
+                    self.assertEqual(
+                        argv[argv.index(flag) + 1],
+                        str(root / ("build/engine-" + game) / "main" / name),
+                    )
+                    flag = "-" + game.upper() + "DataDir"
+                    self.assertEqual(
+                        argv[argv.index(flag) + 1],
+                        str(root / "game_data/retail-ci" / game),
+                    )
+                self.assertIn(output_flag, argv)
+                self.assertIn(required, argv)
+                self.assertNotIn("-UpdateBaseline", argv)
+                self.assertNotIn("-BuildBeforeRun", argv)
+                self.assertFalse(any("-Download" in command for command in calls))
+                self.assertTrue(receipt["coverage_complete"])
+                self.assertTrue(receipt["attempted_tests"])
+                self.assertEqual(len(receipt["cases"]), 1)
+
+    def test_counterstrike_route_keeps_existing_bounded_owner(self):
+        code, _receipt, calls, root = self.run_profile("retail-counterstrike-route")
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(calls[1][-1], "dxx-redux-d2-headless-metadata")
+        self.assertEqual(
+            calls[-1][5:],
+            [
+                "-Exe",
+                str(root / "build/engine-d2/main/dxx-redux-d2-headless-metadata"),
+                "-DataDir",
+                str(root / "game_data/retail-ci/d2"),
+                "-OutputPath",
+                str(root / "receipt.artifacts/counterstrike-route.json"),
+            ],
+        )
+        repo = Path(__file__).resolve().parents[2]
+        source = (
+            repo / "android/tests/test_counterstrike_level2_trigger21_route.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("TimeoutSeconds = 300", source)
+
+    def test_guidebot_uses_native_assertion_and_cannot_pass_exit_two(self):
+        for owner_code, expected in ((0, "PASS"), (1, "FAIL"), (2, "BLOCKED")):
+            with self.subTest(owner_code=owner_code):
+                code, receipt, calls, root = self.run_profile(
+                    "retail-guidebot-timeout", owner_code=owner_code
+                )
+                self.assertEqual(code, owner_code)
+                self.assertEqual(calls[1][-1], "dxx-redux-d2-headless-route")
+                self.assertEqual(
+                    calls[-1][5:],
+                    [
+                        "-NoBuild",
+                        "-HeadlessExecutable",
+                        str(root / "build/engine-d2/main/dxx-redux-d2-headless-route"),
+                        "-HogDir",
+                        str(root / "game_data/retail-ci/d2"),
+                    ],
+                )
+                self.assertEqual(receipt["status"], expected)
+                self.assertEqual(receipt["cases"][0]["status"], expected)
+                self.assertEqual(receipt["coverage_complete"], owner_code == 0)
+                if owner_code == 2:
+                    self.assertTrue(receipt["retryable"])
+                    self.assertEqual(receipt["exclusions"], receipt["cases"])
+        repo = Path(__file__).resolve().parents[2]
+        source = (
+            repo / "android/tests/test_guidebot_simulation_timeout_policy.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Assert-Equal 61 $engineResult.frames", source)
+        self.assertIn("Assert-Equal 'timeout' $engineResult.status", source)
+        self.assertIn("if ($LASTEXITCODE -ne 2)", source)
+        self.assertIn("exit 2", source[:source.index("Assert-Equal 61")])
+
+    def test_build_failure_is_retryable_without_assertion_credit(self):
+        code, receipt, calls, _root = self.run_profile(
+            "retail-secret-baseline", setup_code=9
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(receipt["phase"], "setup")
+        self.assertTrue(receipt["retryable"])
+        self.assertFalse(receipt["attempted_tests"])
+        self.assertFalse(receipt["coverage_complete"])
+        self.assertEqual(receipt["cases"], [])
+
+    def test_missing_mismatched_and_changed_pin_stages_block_before_build(self):
+        control = Path(__file__).resolve().parents[2]
+        baseline = (control / "android/helpers/standard_game_data.ps1").read_text(
+            encoding="utf-8"
+        )
+        for failure in ("missing", "mismatched", "changed-pins"):
+            with (
+                self.subTest(failure=failure),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory).resolve()
+                suite = adapter.load_suites()["host-profile:retail-guidebot-timeout"]
+                script = root / suite["path"]
+                script.parent.mkdir(parents=True)
+                script.touch()
+                pins = root / "android/helpers/standard_game_data.ps1"
+                pins.parent.mkdir(parents=True)
+                pins.write_text(baseline, encoding="utf-8")
+                if failure == "changed-pins":
+                    pins.write_text(
+                        baseline.replace("f1abf516", "f2abf516"), encoding="utf-8"
+                    )
+                if failure == "mismatched":
+                    files = {
+                        "d1": ("descent.hog", "descent.pig"),
+                        "d2": (
+                            "descent2.hog",
+                            "descent2.ham",
+                            "descent2.s22",
+                            "groupa.pig",
+                            "alien1.pig",
+                            "alien2.pig",
+                            "fire.pig",
+                            "ice.pig",
+                            "water.pig",
+                        ),
+                    }
+                    for game, names in files.items():
+                        stage = root / "game_data/retail-ci" / game
+                        stage.mkdir(parents=True)
+                        for name in names:
+                            (stage / name).write_bytes(b"Synthetic mismatch only")
+                with patch.object(adapter.subprocess, "Popen") as launch:
+                    code = adapter.run_suite(
+                        suite, root, root / "build", root / "receipt.json", 10
+                    )
+                self.assertEqual(code, 2)
+                launch.assert_not_called()
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(receipt["status"], "BLOCKED")
+                self.assertEqual(receipt["phase"], "setup")
+                self.assertEqual(receipt["blocker_kind"], "retail-fixture")
+                self.assertTrue(receipt["retryable"])
+                self.assertFalse(receipt["attempted_tests"])
+                self.assertFalse(receipt["coverage_complete"])
+                self.assertEqual(receipt["cases"], [])
+
+    def test_unknown_retail_profile_cannot_supply_arguments(self):
+        with self.assertRaises(ValueError):
+            adapter.retail_profile_arguments(
+                {"profile": "arbitrary"}, Path("repo"), Path("build"), Path("work")
+            )
 
 
 class StandaloneCMakeTests(unittest.TestCase):

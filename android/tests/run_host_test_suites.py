@@ -301,6 +301,74 @@ def public_profile_arguments(suite, repo, build_root, work):
     raise ValueError("Unknown reviewed PowerShell profile: " + profile)
 
 
+def retail_profile_arguments(suite, repo, build_root, work):
+    """Bind reviewed retail owners to the verified stage, never fallback media."""
+    profile = suite["profile"]
+    stage = repo / "game_data/retail-ci"
+
+    def binary(game, suffix):
+        return str(
+            build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix)
+        )
+
+    if profile in {"retail-secret-baseline", "retail-metadata-headers"}:
+        secret = profile == "retail-secret-baseline"
+        suffix = "-headless-metadata" if secret else "-metadata-worker"
+        return [
+            "-DataEdition",
+            "retail",
+            "-Game",
+            "both",
+            "-D1DataDir",
+            str(stage / "d1"),
+            "-D2DataDir",
+            str(stage / "d2"),
+            "-D1Exe",
+            binary("d1", suffix),
+            "-D2Exe",
+            binary("d2", suffix),
+            "-OutputDir" if secret else "-OutputDirectory",
+            str(work / ("secret-baseline" if secret else "headers")),
+            "-RequireAssets" if secret else "-NoBuild",
+        ]
+    if profile == "retail-counterstrike-route":
+        return [
+            "-Exe",
+            binary("d2", "-headless-metadata"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-OutputPath",
+            str(work / "counterstrike-route.json"),
+        ]
+    if profile == "retail-guidebot-timeout":
+        return [
+            "-NoBuild",
+            "-HeadlessExecutable",
+            binary("d2", "-headless-route"),
+            "-HogDir",
+            str(stage / "d2"),
+        ]
+    raise ValueError("Unknown reviewed retail PowerShell profile: " + profile)
+
+
+def verify_retail_stage(repo):
+    """Hash the stage without copying fixture bytes into logs or receipts."""
+    control_repo = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "retail_ci_assets", control_repo / "android/helpers/retail_ci_assets.py"
+    )
+    assets = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(assets)
+    expected = assets.baseline(control_repo)
+    if assets.baseline(repo) != expected:
+        raise ValueError(
+            "Target retail identity pins differ from the reviewed control checkout"
+        )
+    manifest = assets.inventory(repo / "game_data/retail-ci", expected)
+    if manifest["matches_tested_edition"] is not True:
+        raise ValueError("Staged retail edition differs from the existing test fixtures")
+
+
 def run_suite(suite, repo, build_root, output, timeout):
     started = time.monotonic()
     result = {
@@ -412,7 +480,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
-        if suite["kind"] == "public-powershell":
+        if suite["kind"] in {"public-powershell", "retail-powershell"}:
+            retail = suite["kind"] == "retail-powershell"
             script = target_file(repo, suite["path"])
             if not script.is_file():
                 return finish(
@@ -421,6 +490,24 @@ def run_suite(suite, repo, build_root, output, timeout):
                     retryable=False,
                     blocker_kind="target-capability",
                 )
+            if retail:
+                result["phase"] = "setup"
+                verification_started = time.monotonic()
+                verification_error = None
+                try:
+                    verify_retail_stage(repo)
+                except (OSError, ValueError) as error:
+                    verification_error = str(error)
+                finally:
+                    setup_seconds += time.monotonic() - verification_started
+                if verification_error is not None:
+                    return finish(
+                        "BLOCKED",
+                        "Verified retail fixture preparation failed: "
+                        + verification_error,
+                        retryable=True,
+                        blocker_kind="retail-fixture",
+                    )
             for game in suite.get("games", []):
                 build = build_root / ("engine-" + game)
                 code = run(native_configure_arguments(repo, build, game), setup=True)
@@ -483,7 +570,10 @@ def run_suite(suite, repo, build_root, output, timeout):
                         retryable=True,
                     )
             argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
-            argv += public_profile_arguments(suite, repo, build_root, work)
+            profile_arguments = (
+                retail_profile_arguments if retail else public_profile_arguments
+            )
+            argv += profile_arguments(suite, repo, build_root, work)
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
@@ -492,7 +582,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                 {
                     "id": suite["id"],
                     "status": status,
-                    "reason": "Existing owner assertions for the selected public profile; aggregate receipt",
+                    "reason": "Existing owner assertions for the selected "
+                    + ("retail" if retail else "public")
+                    + " profile; aggregate receipt",
                 }
             ]
             result["exclusions"] = [

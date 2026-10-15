@@ -1,0 +1,705 @@
+{
+  "schema": 1,
+  "source_commit": "ef43fe4171082e922bf9553d978427bcac209ede",
+  "runtime_qualified": false,
+  "asset_identity": "existing eleven-file Get-StandardGameDataDeps profile; actual supplied bytes must match before execution",
+  "admitted_base_defaults": [
+    {
+      "id": "master:test_android_sdk_lifecycle",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_android_sdk_lifecycle"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_async_checkpoint_unified",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_async_checkpoint_unified"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_automap_objective_readiness_progress",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_automap_objective_readiness_progress"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_axis_mapping",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_axis_mapping"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_boss_health_bar",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_boss_health_bar"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_controls_readability_d2",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_controls_readability_d2"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level20_guidebot_dropped_notification",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level20_guidebot_dropped_notification"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level20_guidebot_post_boss_exit",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level20_guidebot_post_boss_exit"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level20_guidebot_trigger3",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level20_guidebot_trigger3"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level21_guidebot_pre_reactor_exit",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level21_guidebot_pre_reactor_exit"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level23_guidebot_trigger_liveness",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level23_guidebot_trigger_liveness"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_counterstrike_level24_guidebot_gold_key_liveness",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_counterstrike_level24_guidebot_gold_key_liveness"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_d2_level7_reactor_water_profile",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_d2_level7_reactor_water_profile"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_distribution_launch",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_distribution_launch"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_endgame_singleplayer_d1",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_endgame_singleplayer_d1"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_fov_cpu_visibility",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_fov_cpu_visibility"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_gamepad_menu_navigation_unified",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_gamepad_menu_navigation_unified"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_goal_message",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_goal_message"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_info_overlay",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_info_overlay"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_recall_to_ship",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_recall_to_ship"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_routing_modes",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_routing_modes"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_unexplored_goal",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_unexplored_goal"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_input_demo_recording_profile",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_input_demo_recording_profile"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_launch_to_automap",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_launch_to_automap"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_levelcomplete_touch_skip",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_levelcomplete_touch_skip"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_merged_wall_snapshot_regression",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_merged_wall_snapshot_regression"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_merged_wall_two_pass_probe",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_merged_wall_two_pass_probe"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_msaa_render_and_menu",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_msaa_render_and_menu"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_music_track_controls_unified",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_music_track_controls_unified"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_quick_record_classic_sidecar",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_quick_record_classic_sidecar"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_readable_tiny_help_d2",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_readable_tiny_help_d2"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_route_metadata_background_priority",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_route_metadata_background_priority"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_secret_reveal_automap_d2",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_secret_reveal_automap_d2"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_texture_index_level_load",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_texture_index_level_load"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_unified_content_mission_picker",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_unified_content_mission_picker"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_android_matcen_stations",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_android_matcen_stations"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_android_pause_state",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_android_pause_state"
+      },
+      "estimated_seconds": 1200,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_android_secret_origins",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_android_secret_origins"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_controller_response",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_controller_response"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_coop_launch_feedback",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_coop_launch_feedback"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_coop_save_compatibility",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_coop_save_compatibility"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_coop_session",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_coop_session"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_double_launch",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_double_launch"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_fov_demo_compatibility",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_fov_demo_compatibility"
+      },
+      "estimated_seconds": 900,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_graphics_preview",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_graphics_preview"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_graphics_video_overlay",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_graphics_video_overlay"
+      },
+      "estimated_seconds": 900,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_guidebot_routing_menus",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_guidebot_routing_menus"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_lan_orphan_restart",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_lan_orphan_restart"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_launcher_dpad",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_launcher_dpad"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_saf_redbook",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_saf_redbook"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_sound_trace",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_sound_trace"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_startup_restore_failure",
+      "owner": "master",
+      "lane": "android-single",
+      "args": {
+        "suite": "test_startup_restore_failure"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_coop_pause",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_coop_pause"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_independent_checkpoints",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_independent_checkpoints"
+      },
+      "estimated_seconds": 1200,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_lan",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_lan"
+      },
+      "estimated_seconds": 900,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_lan_launch_preparation",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_lan_launch_preparation"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_manual_ip_engine",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_manual_ip_engine"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "master:test_mp",
+      "owner": "master",
+      "lane": "android-dual",
+      "args": {
+        "suite": "test_mp"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    }
+  ],
+  "preserved_scope": "Original games, parameters and assertions; no subset substitution",
+  "pending_additional_prerequisites": [
+    {
+      "owners": [
+        "test_audio_mix"
+      ],
+      "reason": "Base media sufficient; Android Python numpy/imageio_ffmpeg provisioning still required"
+    },
+    {
+      "owners": [
+        "test_auto_level_demos"
+      ],
+      "reason": "Base media sufficient; fixed native graphical replay builds still required"
+    },
+    {
+      "owners": [
+        "test_controller_touch_hotplug"
+      ],
+      "reason": "Emulator uinput access is a separate capability/permission review"
+    },
+    {
+      "owners": [
+        "test_lan_qr_join"
+      ],
+      "reason": "Nearby-Wi-Fi permission grant requires separate approval"
+    },
+    {
+      "owners": [
+        "test_android_metadata_worker",
+        "test_d1_in_d2_standalone",
+        "test_lan_nsd"
+      ],
+      "reason": "Explicit Linux arguments/serial profiles and D1 case-compatible staging required"
+    },
+    {
+      "owners": [
+        "test_guidebot_simulation_headed_headless_parity"
+      ],
+      "reason": "Hybrid Android/native configuration requires a fixed adapter"
+    },
+    {
+      "owners": [
+        "native retail pickup/parity",
+        "D1 wall-blast save",
+        "saved-world restoration",
+        "original Guide-Bot navigation"
+      ],
+      "reason": "Straightforward fixed native build/path/uppercase D1 adapters are follow-up work, not blocked by base media"
+    },
+    {
+      "owners": [
+        "22 other private JSONC owners"
+      ],
+      "reason": "Additional expansion/custom mission/movie/mod identities; see original Android owner audit"
+    },
+    {
+      "owners": [
+        "manual input recordings",
+        "CD installers/music",
+        "Vertigo",
+        "custom campaigns",
+        "authored mod packages"
+      ],
+      "reason": "Not supplied by base D1/D2 files"
+    },
+    {
+      "owners": [
+        "test_graphics_first_run",
+        "test_graphics_recovery"
+      ],
+      "reason": "Existing 3600/7200-second owner timeouts exceed the 2700-second lane admission ceiling; need measured timing or reviewed full-case partition, not silent truncation"
+    }
+  ],
+  "admitted_host_profiles": [
+    {
+      "id": "host-profile:retail-secret-baseline",
+      "owner": "host-adapter",
+      "lane": "host",
+      "args": {
+        "suite": "host-profile:retail-secret-baseline"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "host-profile:retail-counterstrike-route",
+      "owner": "host-adapter",
+      "lane": "host",
+      "args": {
+        "suite": "host-profile:retail-counterstrike-route"
+      },
+      "estimated_seconds": 360,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "host-profile:retail-metadata-headers",
+      "owner": "host-adapter",
+      "lane": "host",
+      "args": {
+        "suite": "host-profile:retail-metadata-headers"
+      },
+      "estimated_seconds": 600,
+      "fixture": "retail-base"
+    },
+    {
+      "id": "host-profile:retail-guidebot-timeout",
+      "owner": "host-adapter",
+      "lane": "host",
+      "args": {
+        "suite": "host-profile:retail-guidebot-timeout"
+      },
+      "estimated_seconds": 120,
+      "fixture": "retail-base"
+    }
+  ],
+  "verified_private_asset_commit": "f31a7a192c2e38eb70ea2382a5a39e5a1c5ceebe",
+  "verified_manifest_sha256": "7f4d505a907584333dd3a4a3b87d8807778afd3aa798badd974b4155821154d9"
+}
