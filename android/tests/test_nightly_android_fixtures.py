@@ -3,6 +3,8 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -45,6 +47,54 @@ class SdkWorkflowContractTests(unittest.TestCase):
         inventory = (ROOT / 'android/helpers/sdk_package_inventory.ps1').read_text()
         self.assertIn('Assert-DxxPlainSdkPath $sdkRoot', inventory)
         self.assertIn('Cannot assess linked SDK/reference path:', inventory)
+
+
+@unittest.skipUnless(sys.platform == 'linux', 'Linux-only KVM ACL refresh helper')
+class KvmRefreshTests(unittest.TestCase):
+    BASE = '# file: /dev/kvm\n# owner: 0\n# group: 993\nuser::rw-\ngroup::rw-\nother::---\n\n'
+
+    def validate(self, current, original=None):
+        with tempfile.TemporaryDirectory() as d:
+            original_path, current_path = Path(d, 'before'), Path(d, 'current')
+            original_path.write_text(self.BASE if original is None else original)
+            current_path.write_text(current)
+            before = original_path.read_bytes()
+            helper = ROOT / 'android/helpers/refresh_nightly_kvm_access.sh'
+            result = subprocess.run(['bash', '-c', 'source "$1"; validate_nightly_kvm_acl "$2" "$3" 1001', 'check', str(helper), str(original_path), str(current_path)], capture_output=True)
+            self.assertEqual(original_path.read_bytes(), before)
+            return result.returncode
+
+    def test_original_and_disappeared_grant_can_be_refreshed(self):
+        self.assertEqual(self.validate(self.BASE), 0)
+        self.assertEqual(self.validate(self.BASE.replace('other::', 'mask::rw-\nother::')), 0)
+
+    def test_existing_same_uid_grant_is_accepted(self):
+        acl = self.BASE.replace('group::', 'user:1001:rw-\ngroup::').replace('other::', 'mask::rw-\nother::')
+        self.assertEqual(self.validate(acl), 0)
+
+    def test_unexpected_security_changes_are_rejected(self):
+        for acl in (self.BASE.replace('group::', 'user:1002:rw-\ngroup::'),
+                    self.BASE.replace('other::---', 'other::rw-'),
+                    self.BASE.replace('# owner: 0', '# owner: 1001'),
+                    self.BASE.replace('other::', 'mask::rwx\nother::')):
+            with self.subTest(acl=acl):
+                self.assertNotEqual(self.validate(acl), 0)
+
+    def test_extended_original_snapshot_is_rejected_without_overwriting(self):
+        extended = self.BASE.replace('group::', 'user:1002:rw-\ngroup::')
+        self.assertNotEqual(self.validate(self.BASE, extended), 0)
+
+    def test_refresh_never_replaces_original_snapshot_or_authorized_uid(self):
+        helper = (ROOT / 'android/helpers/refresh_nightly_kvm_access.sh').read_text()
+        self.assertIn('[[ "$uid" == "$approved" ]]', helper)
+        self.assertIn('sudo setfacl -m "u:$uid:rw" /dev/kvm', helper)
+        self.assertNotIn('> "$original"', helper)
+        self.assertNotIn('> "$RUNNER_TEMP/dxx-kvm-before.acl"', helper)
+        self.assertNotIn('> "$RUNNER_TEMP/dxx-kvm-runner.uid"', helper)
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        self.assertEqual(source.count('> "$RUNNER_TEMP/dxx-kvm-before.acl"'), 1)
+        self.assertEqual(source.count('> "$RUNNER_TEMP/dxx-kvm-runner.uid"'), 1)
+        self.assertEqual(source.count('refresh_nightly_kvm_access.sh'), 2)
 
 
 class KvmWorkflowContractTests(unittest.TestCase):
