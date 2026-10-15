@@ -874,42 +874,46 @@ typedef struct {
 	fix	dist;
 } fcd_data;
 
-int	Fcd_index = 0;
-fcd_data Fcd_cache[MAX_FCD_CACHE];
-fix64	Last_fcd_flush_time;
+typedef struct {
+	int index;
+	fcd_data entries[MAX_FCD_CACHE];
+	fix64 last_flush_time;
+} fcd_cache;
+
+static fcd_cache Gameplay_fcd_cache, Sound_fcd_cache;
 
 //	----------------------------------------------------------------------------------------------------------
-void flush_fcd_cache(void)
+static void flush_fcd_cache_state(fcd_cache *cache)
 {
 	int	i;
 
-	Fcd_index = 0;
+	cache->index = 0;
 
 	for (i=0; i<MAX_FCD_CACHE; i++)
-		Fcd_cache[i].seg0 = -1;
+		cache->entries[i].seg0 = -1;
 }
 
 //	----------------------------------------------------------------------------------------------------------
-void add_to_fcd_cache(int seg0, int seg1, int depth, fix dist)
+static void add_to_fcd_cache_state(fcd_cache *cache, int seg0, int seg1, int depth, fix dist)
 {
 	if (dist > MIN_CACHE_FCD_DIST) {
-		Fcd_cache[Fcd_index].seg0 = seg0;
-		Fcd_cache[Fcd_index].seg1 = seg1;
-		Fcd_cache[Fcd_index].csd = depth;
-		Fcd_cache[Fcd_index].dist = dist;
+		cache->entries[cache->index].seg0 = seg0;
+		cache->entries[cache->index].seg1 = seg1;
+		cache->entries[cache->index].csd = depth;
+		cache->entries[cache->index].dist = dist;
 
-		Fcd_index++;
+		cache->index++;
 
-		if (Fcd_index >= MAX_FCD_CACHE)
-			Fcd_index = 0;
+		if (cache->index >= MAX_FCD_CACHE)
+			cache->index = 0;
 	} else {
 		//	If it's in the cache, remove it.
 		int	i;
 
 		for (i=0; i<MAX_FCD_CACHE; i++)
-			if (Fcd_cache[i].seg0 == seg0)
-				if (Fcd_cache[i].seg1 == seg1) {
-					Fcd_cache[Fcd_index].seg0 = -1;
+			if (cache->entries[i].seg0 == seg0)
+				if (cache->entries[i].seg1 == seg1) {
+					cache->entries[cache->index].seg0 = -1;
 					break;
 				}
 	}
@@ -920,7 +924,7 @@ void add_to_fcd_cache(int seg0, int seg1, int depth, fix dist)
 //	Determine whether seg0 and seg1 are reachable in a way that allows sound to pass.
 //	Search up to a maximum depth of max_depth.
 //	Return the distance.
-fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag)
+static fix find_connected_distance_cached(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag, fcd_cache *cache, int *connected_segment_distance)
 {
 	int		cur_seg;
 	int		sidenum;
@@ -944,29 +948,29 @@ fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, 
 	}
 
 	if (seg0 == seg1) {
-		Connected_segment_distance = 0;
+		*connected_segment_distance = 0;
 		return vm_vec_dist_quick(p0, p1);
 	} else {
 		int	conn_side;
 		if ((conn_side = find_connect_side(&Segments[seg0], &Segments[seg1])) != -1) {
 			if (WALL_IS_DOORWAY(&Segments[seg1], conn_side) & wid_flag) {
-				Connected_segment_distance = 1;
+				*connected_segment_distance = 1;
 				return vm_vec_dist_quick(p0, p1);
 			}
 		}
 	}
 
 	//	Periodically flush cache.
-	if ((GameTime64 - Last_fcd_flush_time > F1_0*2) || (GameTime64 < Last_fcd_flush_time)) {
-		flush_fcd_cache();
-		Last_fcd_flush_time = GameTime64;
+	if ((GameTime64 - cache->last_flush_time > F1_0*2) || (GameTime64 < cache->last_flush_time)) {
+		flush_fcd_cache_state(cache);
+		cache->last_flush_time = GameTime64;
 	}
 
 	//	Can't quickly get distance, so see if in Fcd_cache.
 	for (i=0; i<MAX_FCD_CACHE; i++)
-		if ((Fcd_cache[i].seg0 == seg0) && (Fcd_cache[i].seg1 == seg1)) {
-			Connected_segment_distance = Fcd_cache[i].csd;
-			return Fcd_cache[i].dist;
+		if ((cache->entries[i].seg0 == seg0) && (cache->entries[i].seg1 == seg1)) {
+			*connected_segment_distance = cache->entries[i].csd;
+			return cache->entries[i].dist;
 		}
 
 	num_points = 0;
@@ -995,8 +999,8 @@ fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, 
 					depth[qtail++] = cur_depth+1;
 					if (max_depth != -1) {
 						if (depth[qtail-1] == max_depth) {
-							Connected_segment_distance = 1000;
-							add_to_fcd_cache(seg0, seg1, Connected_segment_distance, F1_0*1000);
+							*connected_segment_distance = 1000;
+							add_to_fcd_cache_state(cache, seg0, seg1, *connected_segment_distance, F1_0*1000);
 							return -1;
 						}
 					} else if (this_seg == seg1) {
@@ -1008,8 +1012,8 @@ fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, 
 		}	//	for (sidenum...
 
 		if (qhead >= qtail) {
-			Connected_segment_distance = 1000;
-			add_to_fcd_cache(seg0, seg1, Connected_segment_distance, F1_0*1000);
+			*connected_segment_distance = 1000;
+			add_to_fcd_cache_state(cache, seg0, seg1, *connected_segment_distance, F1_0*1000);
 			return -1;
 		}
 
@@ -1023,8 +1027,8 @@ fcd_done1: ;
 	//	Set qtail to the segment which ends at the goal.
 	while (seg_queue[--qtail].end != seg1)
 		if (qtail < 0) {
-			Connected_segment_distance = 1000;
-			add_to_fcd_cache(seg0, seg1, Connected_segment_distance, F1_0*1000);
+			*connected_segment_distance = 1000;
+			add_to_fcd_cache_state(cache, seg0, seg1, *connected_segment_distance, F1_0*1000);
 			return -1;
 		}
 
@@ -1049,7 +1053,7 @@ fcd_done1: ;
 	num_points++;
 
 	if (num_points == 1) {
-		Connected_segment_distance = num_points;
+		*connected_segment_distance = num_points;
 		return vm_vec_dist_quick(p0, p1);
 	} else {
 		dist = vm_vec_dist_quick(p1, &point_segs[1].point);
@@ -1063,11 +1067,38 @@ fcd_done1: ;
 
 	}
 
-	Connected_segment_distance = num_points;
-	add_to_fcd_cache(seg0, seg1, num_points, dist);
+	*connected_segment_distance = num_points;
+	add_to_fcd_cache_state(cache, seg0, seg1, num_points, dist);
 
 	return dist;
 
+}
+
+// Door changes invalidate both query domains; ordinary expiry stays domain-local
+void flush_fcd_cache(void)
+{
+	flush_fcd_cache_state(&Gameplay_fcd_cache);
+	flush_fcd_cache_state(&Sound_fcd_cache);
+}
+
+void add_to_fcd_cache(int seg0, int seg1, int depth, fix dist)
+{
+	add_to_fcd_cache_state(&Gameplay_fcd_cache, seg0, seg1, depth, dist);
+}
+
+fix find_connected_distance(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag)
+{
+	return find_connected_distance_cached(p0, seg0, p1, seg1, max_depth, wid_flag,
+		&Gameplay_fcd_cache, &Connected_segment_distance);
+}
+
+fix find_connected_distance_for_sound(vms_vector *p0, int seg0, vms_vector *p1, int seg1, int max_depth, int wid_flag)
+{
+	int connected_segment_distance;
+
+	// Sound timing and listener position must not change gameplay cache state
+	return find_connected_distance_cached(p0, seg0, p1, seg1, max_depth, wid_flag,
+		&Sound_fcd_cache, &connected_segment_distance);
 }
 
 sbyte convert_to_byte(fix f)
