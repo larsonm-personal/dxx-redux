@@ -151,6 +151,16 @@ class SweepTests(unittest.TestCase):
         self.assertEqual(state['records']['master:first']['case_counts']['FAIL'], 1)
         self.assertFalse(state['records']['master:first']['coverage_complete'])
 
+    def test_success_receipt_is_not_labelled_infrastructure(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'status': 'PASS', 'commit': SHA, 'attempted_tests': True}) + '\n')
+            with patch.dict(os.environ, {'GITHUB_SERVER_URL': 'https://github.com', 'GITHUB_REPOSITORY': 'o/r', 'GITHUB_RUN_ID': '1'}):
+                result = sweep.collect(self.plan, self.policy, 'host', d)
+            row = result['results'][0]
+            self.assertEqual(row['status'], 'PASS')
+            self.assertFalse(row['retryable'])
+            self.assertEqual(row['blocker_kind'], '')
+
     def test_timeout_cleanup_is_bounded(self):
         with tempfile.TemporaryDirectory() as d, open(os.devnull, 'w') as log:
             with self.assertRaises(subprocess.TimeoutExpired):

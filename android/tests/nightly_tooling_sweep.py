@@ -224,7 +224,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
             row = {'reason': blocked_reason}
         if status not in TERMINAL | {'RUNNING', 'NOT_RUN', 'BLOCKED'}:
             raise ValueError('Invalid collected status')
-        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', True), 'blocker_kind': row.get('blocker_kind', 'infrastructure')})
+        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
     write(output / 'results.json', receipt)
     return receipt
 
