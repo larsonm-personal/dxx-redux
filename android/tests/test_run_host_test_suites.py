@@ -13,6 +13,11 @@ import test_fingerprint_match_strict as strict
 
 
 class HostAdapterTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise Linux-only contracts with mocked subprocesses on every CI host.
+        self.enterContext(patch.object(adapter.sys, "platform", "linux"))
+        self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
+
     def test_registry_ids_are_unique_and_no_arbitrary_commands(self):
         suites = adapter.load_suites()
         self.assertGreater(len(suites), 70)
@@ -23,6 +28,23 @@ class HostAdapterTests(unittest.TestCase):
                 suite["kind"],
                 {"python-unittest", "python-script", "extractor", "configured-ctest"},
             )
+
+    def test_unsupported_windows_host_blocks_before_launch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            suite = {"id": "fixture", "coverage_scope": "fixture"}
+            with (
+                patch.object(adapter.sys, "platform", "win32"),
+                patch.object(adapter.subprocess, "Popen") as launch,
+            ):
+                code = adapter.run_suite(
+                    suite, root, root / "build", root / "receipt.json", 10
+                )
+            self.assertEqual(code, 2)
+            launch.assert_not_called()
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertFalse(receipt["attempted_tests"])
+            self.assertIn("Linux only", receipt["reason"])
 
     def test_hmp_owned_by_ctest_not_unconfigured_discovery(self):
         self.assertNotIn("python:test_hmp_playback.py", adapter.load_suites())
@@ -68,7 +90,7 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_missing_tool_blocks_without_launch(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             suite = {"id": "fake", "coverage_scope": "fake", "executables": ["missing"]}
             with (
                 patch.object(adapter.shutil, "which", return_value=None),
@@ -85,7 +107,7 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_old_commit_light_profile_blocks_without_full_download(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             source = root / "android/app/src/main/cpp/extract"
             source.mkdir(parents=True)
             (source / "CMakeLists.txt").write_text("project(old)")
@@ -107,7 +129,7 @@ class HostAdapterTests(unittest.TestCase):
 
     def test_native_lazy_setup_preserves_debug_and_serial_environment(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / "d1").mkdir()
             (root / "d1/CMakeLists.txt").write_text("project(fake)")
             calls = []
@@ -149,6 +171,11 @@ class HostAdapterTests(unittest.TestCase):
 
 
 class EvidenceAndCancellationTests(unittest.TestCase):
+    def setUp(self):
+        # Exercise Linux-only contracts with mocked subprocesses on every CI host.
+        self.enterContext(patch.object(adapter.sys, "platform", "linux"))
+        self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
+
     def test_expected_failure_and_unexpected_success_remain_visible(self):
         class Cases(unittest.TestCase):
             @unittest.expectedFailure
@@ -160,7 +187,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 pass
 
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             suite = unittest.defaultTestLoader.loadTestsFromTestCase(Cases)
             with patch.object(
                 unittest.defaultTestLoader, "discover", return_value=suite
@@ -182,7 +209,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
 
     def test_timeout_reaps_group_even_after_parent_exits(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / "fixture.py").touch()
 
             class Process:
@@ -206,7 +233,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
             }
             with (
                 patch.object(adapter.subprocess, "Popen", Process),
-                patch.object(adapter.os, "killpg") as kill,
+                patch.object(adapter.os, "killpg", create=True) as kill,
             ):
                 code = adapter.run_suite(
                     suite, root, root / "build", root / "out.json", 1
@@ -226,7 +253,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 self.subTest(interruption=type(interruption).__name__),
                 tempfile.TemporaryDirectory() as directory,
             ):
-                root = Path(directory)
+                root = Path(directory).resolve()
                 (root / "d1").mkdir()
                 (root / "d1/CMakeLists.txt").write_text("project(fake)")
 
@@ -251,7 +278,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
                 }
                 with (
                     patch.object(adapter.subprocess, "Popen", Process),
-                    patch.object(adapter.os, "killpg"),
+                    patch.object(adapter.os, "killpg", create=True),
                 ):
                     code = adapter.run_suite(
                         suite, root, root / "build", root / "out.json", 1
@@ -268,7 +295,7 @@ class EvidenceAndCancellationTests(unittest.TestCase):
 class FingerprintPortableCliTests(unittest.TestCase):
     def test_explicit_matcher_and_fixture_preserve_all_assertions(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             binary = root / "fingerprint_match"
             binary.touch()
             fixture = root / "known_albums.jsonc"

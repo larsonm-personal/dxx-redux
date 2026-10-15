@@ -166,6 +166,10 @@ class SweepTests(unittest.TestCase):
         self.assertIn('cancel-in-progress: false', workflow)
         self.assertIn('persist-credentials: false', workflow)
         self.assertIn('Recover completed receipts', workflow)
+        self.assertEqual(workflow.count('> target/dependency_base.txt'), 2)
+        self.assertLess(workflow.index('> target/dependency_base.txt'), workflow.index('Export authoritative master catalog'))
+        host = workflow[workflow.index('  host:'):workflow.index('  android:')]
+        self.assertLess(host.index('> target/dependency_base.txt'), host.index('Execute admitted host owners'))
 
 
 if __name__ == '__main__':
