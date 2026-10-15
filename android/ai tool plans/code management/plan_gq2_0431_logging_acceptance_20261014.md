@@ -1,0 +1,19 @@
+# Chunk0431 logging acceptance, 2026-10-14
+
+Diagnosis and conditional continuation only. Preserve concurrent work and the existing BR-0446 byte-budget and BR-0447 interprocess writer owners. No product edit or runtime acceptance in this tranche.
+
+Preserve the current common crash-report count policy. CrashLog.MAX_FILES is five across matching tombstone and crash_error files; supporting markers, breadcrumb snapshots, temporary files and directories are excluded. Application attach, xCrash callbacks, report listing and exit-marker recovery invoke pruning. CrashLog uses TombstoneManager deletion for tombstones, reports failed deletion and retains the shared helper's deterministic newest-time/name ordering. Treat the count as the intended policy rather than a guaranteed physical ceiling when deletion fails or producers overlap.
+
+Preserve exit-recovery behavior: marker length preflight, matching PID and start timestamp, known expected exits, file sync and temporary rename before marker retirement, explicit unavailable-history fallback and final pruning even when there are no markers. This is not proof of PID-generation identity, crash durability, every native marker producer or real Android historical-exit ordering. Current test with empty marker input qualifies the final prune call only. Any broader exit-recovery changes require their actual owner and callers to be reviewed first.
+
+Keep debug pruning before creation of the next log, retaining four old files before the intended fifth. Current log reuse can bypass new-file pruning, and current DebugLog append paths have no active byte ceiling or directory byte budget. BR-0446 remains open. Add encoded-byte accounting and coordinated rollover under that owner when implementation is authorized; include ordinary, forced, profiling and forced asynchronous batches, low space, failed prune/rotation/close and sustained use. Preserve the bounded eight-item asynchronous queue and explicit drop warnings rather than describing all diagnostic logging as synchronous.
+
+Actual SetupActivity passes currentFilePath in netlog_path, MainActivity in :game opens initAppend, and both process-local DebugLog instances own independent buffered writers and locks. Native android_log forwards through JNI and the MainActivity callbacks into the Kotlin logger; it does not provide a separate interprocess file-append protocol. BR-0447 remains open. Validate complete record/batch boundaries, ordering, active-file ownership, category changes, deletion, rollover and process death across launcher/game/service producers using the existing owner. Keep native/Android-only seams and desktop parity.
+
+Current touch-input messages are diverted to the Activity's capture object; network messages also reach MatchmakingStateHolder. Those downstream subsystems and JNI exception/lifetime handling are not fully accepted by tracing this selected route. Do not assert native logging safety or every producer's lifecycle from a retained-file helper test.
+
+Current crash and debug export helpers use immutable FileProvider generations/read grants; retain the completed BR-0515 repair. This checkpoint only traces their call sites; the prior0430 provider acceptance remains separate. Do not replace immutable exported generations with shared mutable files.
+
+Whole prior0319 LAN/log support and centralization plans are historical evidence. Their log-byte/interprocess overlap remains relevant; their LAN authentication, transport, save, metadata and test results are not new evidence here. BR-0131 concerns server logging and is excluded from this Android finding set despite the shared retention terminology.
+
+No new finding, remediation, status/rating change, inherited saving or runtime test is admitted. Continue actual preview/worker, lobby, overlay/progress, preference-fixture and mission identity/publication consumers, whole relevant prior owners/plans, then final chunk disposition and canonical publication.

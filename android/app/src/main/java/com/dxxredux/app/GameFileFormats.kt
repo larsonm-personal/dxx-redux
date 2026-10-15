@@ -390,7 +390,11 @@ object GameFileFormats {
     fun roleLabel(filename: String): String = formats[extensionOf(filename)]?.roleLabel ?: typeLabel(filename)
 
     fun missionZipRoleForFile(filename: String): String =
-        formats[extensionOf(filename)]?.missionZipRole ?: MISSION_ZIP_OTHER
+        if (isDocumentation(filename)) {
+            MISSION_ZIP_DOCUMENTATION
+        } else {
+            formats[extensionOf(filename)]?.missionZipRole ?: MISSION_ZIP_OTHER
+        }
 
     fun missionZipRoleLabel(role: String): String =
         when (role) {
@@ -421,7 +425,7 @@ object GameFileFormats {
 
     fun isMusicFile(filename: String): Boolean = formats[extensionOf(filename)]?.music == true
 
-    fun isDocumentation(filename: String): Boolean = formats[extensionOf(filename)]?.documentation == true
+    fun isDocumentation(filename: String): Boolean = PackageDocuments.isReadmeCandidate(filename)
 
     fun isBaseReplacement(filename: String): Boolean = formats[extensionOf(filename)]?.baseReplacement == true
 

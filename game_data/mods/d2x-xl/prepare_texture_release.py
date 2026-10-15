@@ -4,7 +4,8 @@
 # Run from the repository root with Python 3.11+ and authenticated GitHub CLI:
 # python game_data/mods/d2x-xl/prepare_texture_release.py --publish
 # Without --publish, regenerate RELEASE.md and metadata locally only
-# Existing archives are validated and uploaded without reconversion or recompression
+# Documented archives are staged under --output/packs without reconverting gameplay data
+# Original conversion outputs and byte-identical upstream archives are never rewritten
 # Replacement uploads are not atomic; rerun --publish after an interruption
 # This assets-only release stays separate from the latest Android APK release
 # Runtime acceptance still requires an updated APK and in-game verification:
@@ -20,6 +21,8 @@ from pathlib import Path
 import struct
 import subprocess
 import zipfile
+
+from mod_documentation import load_policy, prepare_bundle, prepare_pack
 
 REPOSITORY = "larsonm-personal/dxx-redux"
 TAG = "texture-packs-v1"  # Keep published download URLs stable
@@ -86,9 +89,11 @@ def release_notes(packs: list[dict]) -> str:
     rows = [
         "Original level textures are 64x64 pixels. **256px texture packs are recommended.**",
         "",
-        "| Download | Applies to | Description |",
-        "| --- | --- | --- |",
+        "Documentation ZIPs contain the pack's original documents and, for adapted packs, separate Redux notes.",
+        "The D1 menus/fonts and Mac sound archives are unchanged upstream downloads.",
+        "",
     ]
+    table = [["Download", "Docs", "Applies to", "Description"]]
     texture_descriptions = {
         "128": "Replacement wall and object textures with lower memory and storage use",
         "256": "Sharper wall and object textures. Recommended balance of detail and memory use",
@@ -104,7 +109,12 @@ def release_notes(packs: list[dict]) -> str:
         else:
             name, applies_to, description = EXTRA_DESCRIPTIONS[filename]
         url = f"https://github.com/{REPOSITORY}/releases/download/{TAG}/{filename}"
-        rows.append(f"| [{name}]({url}) | {applies_to} | {description} |")
+        table.append([f"[{name}]({url})", f"[View docs]({url}.readme.zip)", applies_to, description])
+    widths = [max(len(row[index]) for row in table) for index in range(4)]
+    table.insert(1, ["-" * width for width in widths])
+    rows.extend(
+        "| " + " | ".join(cell.ljust(width) for cell, width in zip(row, widths, strict=True)) + " |" for row in table
+    )
     return "\n".join(rows) + "\n\n" + CREDITS + "\n"
 
 
@@ -124,7 +134,7 @@ def validate_archive(archive: zipfile.ZipFile) -> None:
         parts = name.rstrip("/").split("/")
         if any(part in ("", ".", "..") for part in parts) or "\\" in name or ":" in name:
             raise ValueError(f"Invalid archive path: {archive.filename}:{name}")
-    if not any(name.casefold() in ("readme.md", "readme.txt") for name in names):
+    if not any(name.casefold() in ("readme.md", "readme.txt", "readme.dxx-redux.md") for name in names):
         raise ValueError(f"Missing credits: {archive.filename}")
 
 
@@ -349,6 +359,11 @@ def publish(files: list[Path], notes: Path, validated_packs: list[dict]) -> None
     for pack in validated_packs:
         if any(expected[pack["filename"]][key] != pack[key] for key in ("bytes", "sha256")):
             raise RuntimeError(f"Pack changed after validation: {pack['filename']}; rerun after conversion finishes")
+        doc = pack["documentation"]
+        if any(expected[doc["filename"]][key] != doc[key] for key in ("bytes", "sha256")):
+            raise RuntimeError(f"Documentation changed after validation: {doc['filename']}")
+        if doc["source_pack_sha256"] != pack["sha256"]:
+            raise RuntimeError(f"Documentation belongs to a different pack: {pack['filename']}")
     release = get_release()
     if release is None:
         gh(
@@ -371,8 +386,14 @@ def publish(files: list[Path], notes: Path, validated_packs: list[dict]) -> None
     assets = {asset["name"]: asset for asset in release["assets"]}
     changed = [path for path in files if not asset_matches(assets.get(path.name, {}), expected[path.name])]
     print(f"Publishing {len(changed)} changed assets; {len(files) - len(changed)} unchanged")
-    if changed:
-        gh("release", "upload", TAG, "--repo", REPOSITORY, "--clobber", *(str(path) for path in changed))
+    # Publish payloads and companion ZIPs before indexes; interrupted replacements remain retryable
+    for group in (
+        [p for p in changed if p.suffix in (".dxa", ".zip")],
+        [p for p in changed if p.suffix not in (".dxa", ".zip")],
+    ):
+        if group:
+            print(f"Uploading {len(group)} assets", flush=True)
+            gh("release", "upload", TAG, "--repo", REPOSITORY, "--clobber", *(str(path) for path in group))
     refreshed = get_release()
     if refreshed is None or refreshed["id"] != release_id:
         raise RuntimeError("Release identity changed during publication")
@@ -396,7 +417,13 @@ def publish(files: list[Path], notes: Path, validated_packs: list[dict]) -> None
             str(notes),
         )
         refreshed = get_release()
-        if refreshed is None or refreshed["id"] != release_id or refreshed["draft"]:
+        if (
+            refreshed is None
+            or refreshed["id"] != release_id
+            or refreshed["draft"]
+            or refreshed["name"] != TITLE
+            or (refreshed.get("body") or "").strip() != body.strip()
+        ):
             raise RuntimeError("Release publication could not be verified")
     print(f"Verified {len(files)} assets: {refreshed['html_url']}")
 
@@ -411,20 +438,41 @@ def main() -> None:
         help="Create/update texture-packs-v1; replace changed assets and verify hashes",
     )
     args = parser.parse_args()
+    args.output.mkdir(parents=True, exist_ok=True)
+    policy = load_policy()
+    uud_source = source.parent / "xfing/dxx_tp/tmp/plain_texture_dxa"
+    sources = {
+        name: (
+            uud_source / name
+            if name in ("uud1tp-textures.dxa", "uud2tp-textures.dxa")
+            else source.parent / "xfing/d2x_sp" / name
+            if name == "uud2sp-sounds.dxa"
+            else source / name
+        )
+        for name in policy
+    }
+    staged = {}
+    preservation = {}
+    for name, path in sources.items():
+        print(f"Preparing documentation: {name}", flush=True)
+        staged[name], preservation[name] = prepare_pack(
+            path, args.output / "packs", policy[name], source / "documentation"
+        )
     packs = [
-        inspect_pack(source / f"{game}-hires-{size}-textures-ktx2.dxa")
+        inspect_pack(staged[f"{game}-hires-{size}-textures-ktx2.dxa"])
         for game in ("d1", "d2")
         for size in (128, 256, 512)
     ]
-    args.output.mkdir(parents=True, exist_ok=True)
-    extras = [inspect_extra_pack(source / name, kind, modes) for name, kind, modes in EXTRA_PACKS]
-    uud_source = source.parent / "xfing/dxx_tp/tmp/plain_texture_dxa"
-    uud_paths = [uud_source / f"uu{game}tp-textures.dxa" for game in ("d1", "d2")]
+    extras = [inspect_extra_pack(staged[name], kind, modes) for name, kind, modes in EXTRA_PACKS]
+    uud_paths = [staged[f"uu{game}tp-textures.dxa"] for game in ("d1", "d2")]
     uud_packs = [inspect_uud_pack(path, game) for path, game in zip(uud_paths, ("d1", "d2"), strict=True)]
-    sound_patch = source.parent / "xfing/d2x_sp/uud2sp-sounds.dxa"
+    sound_patch = staged["uud2sp-sounds.dxa"]
     uud_packs.append(inspect_uud_sound_pack(sound_patch))
     uud_paths.append(sound_patch)
-    manifest = {"schema": 1, "tag": TAG, "recommended_resolution": 256, "packs": packs}
+    for pack in packs + extras + uud_packs:
+        name = pack["filename"]
+        pack["documentation"] = prepare_bundle(staged[name], args.output, policy[name])
+    manifest = {"schema": 2, "tag": TAG, "recommended_resolution": 256, "packs": packs}
     write_if_changed(args.output / "texture-packs.json", json.dumps(manifest, indent=2) + "\n")
     all_packs = (
         [
@@ -440,15 +488,19 @@ def main() -> None:
     )
     write_if_changed(source / "RELEASE.md", release_notes(all_packs))
     write_if_changed(args.output / "mod-packs.json", json.dumps({**manifest, "packs": all_packs}, indent=2) + "\n")
+    write_if_changed(args.output / "documentation-preservation.json", json.dumps(preservation, indent=2) + "\n")
     write_if_changed(
-        args.output / "SHA256SUMS.txt", "".join(f"{pack['sha256']}  {pack['filename']}\n" for pack in all_packs)
+        args.output / "SHA256SUMS.txt",
+        "".join(
+            f"{item['sha256']}  {item['filename']}\n" for pack in all_packs for item in (pack, pack["documentation"])
+        ),
     )
     for pack in all_packs:
         print(f"Validated {pack['filename']}: {pack['bytes']} bytes, SHA-256 {pack['sha256']}")
     if args.publish:
         publish(
-            [source / pack["filename"] for pack in packs + extras]
-            + uud_paths
+            [staged[pack["filename"]] for pack in all_packs]
+            + [args.output / pack["documentation"]["filename"] for pack in all_packs]
             + [args.output / name for name in ("texture-packs.json", "mod-packs.json", "SHA256SUMS.txt")],
             source / "RELEASE.md",
             all_packs,

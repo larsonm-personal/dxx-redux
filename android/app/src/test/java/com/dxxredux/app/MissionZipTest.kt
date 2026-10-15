@@ -802,6 +802,20 @@ class MissionZipTest {
     }
 
     @Test
+    fun includesMarkdownAndExtensionlessReadmesThroughSharedDocumentPolicy() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "Docs.zip",
+                listOf("README" to "Original instructions", "changes.md" to "# Changes"),
+            )
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        assertEquals(listOf("README", "changes.md"), scan.readmes.map { it.path })
+        assertEquals("Original instructions", MissionZip.readTextFile(zipFile, "README").text)
+        assertEquals("# Changes", MissionZip.readTextFile(zipFile, "changes.md").text)
+        assertTrue(scan.readmes.all { it.role == GameFileFormats.MISSION_ZIP_DOCUMENTATION })
+    }
+
+    @Test
     fun readTextFileRejectsExternalDocuments() {
         val zipFile = createMissionZipWithDocs("Castaway.zip", listOf("README.pdf" to "pdf"))
         val scan = MissionZip.inspect(zipFile)
@@ -809,7 +823,7 @@ class MissionZipTest {
         assertNotNull(scan)
         val content = MissionZip.readTextFile(zipFile, scan!!.readme!!.path)
 
-        assertEquals("Only .txt and .docx files can be viewed in the launcher", content.problem)
+        assertEquals("This document needs an external viewer", content.problem)
     }
 
     private fun createMissionZip(

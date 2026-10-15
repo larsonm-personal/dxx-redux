@@ -1,0 +1,24 @@
+# Chunk0431 overlay and preference fixture acceptance, 2026-10-14
+
+Diagnosis and conditional plans only, under plan_general_diagnosis_resume_20261009.md. No implementation or runtime acceptance.
+
+The complete MenuInteractionOverlayView, LoadingProgressOverlayView, native loading-progress producer and MemoryPreferences fixture were read, alongside selected actual MainActivity/JNI/native viewport, paired D1/D2 menu/listbox/Kconfig publishers and Soundfont preference callers. Exact byte windows are frozen in gq2-overlay-preferences-progress-0431-20261014.json. Partial files remain partial.
+
+Preserve current repairs
+
+- Keep native point ownership flags and fail-closed JNI lookup, bounded 64-region publication, locked region/scale snapshots and actual paired engine geometry. Both games publish visible non-text rows, listbox item bounds and Kconfig scroll ownership through the shared Android implementation. Preserve Android guards and narrow engine hooks; no broad inherited deduplication or saving is justified.
+- Keep clamped zoom/pan and focal-point calculations, menu-change pan centering/cancellation and inactive-menu viewport reset. The current scalar atomic loads/stores are race-free individually; they do not establish a coherent zoom/pan pair.
+- Keep loading layout/clamps/Locale.ROOT, noninteractive rendering, removal of an older hide callback on show, 250ms completion hiding and detach cleanup. The phase argument is currently unused by the painted view. Native progress uses a mutex, monotonic 300ms throttle, bounded labels and forced first/final publication. Native percentage rounds; the separately reviewed metadata percent helper truncates. These are distinct producers.
+- Keep the intentionally narrow in-memory preference fixture. Actual SoundfontStore readers use strings/booleans; saveSelection commits the preference set and attempts restoration before throwing on a failed commit. The fixture supports tested getAll/export/import and null-valued removal but always returns true from commit. Reopening a store against the same map is in-memory state evidence, not process restart or disk durability proof.
+
+Conditional implementation and acceptance
+
+1. Continue the previously mapped BR-0029 menu-transform generation work from prior0117: bind applied screen/menu generation, keyboard offset, scale and regions to one gesture. Retain current locking and reset repairs. Use actual MotionEvent dispatch and barriers around queued viewport work, menu replacement, background DOWN/UP replay, keyboard activation, cancel, detach and focus loss. No callback from an earlier lifetime may mutate or act in a later lifetime. The current queued lambda reads current zoom/pan when it runs; do not claim that it necessarily replays stale captured coordinates. Whole current BR-0029 reconciliation remains pending before final disposition.
+2. Whole OPEN BR-0244 retains admitted request-mailbox acceptance where actual Back/Exit dispatch reaches native commands; this checkpoint does not freshly qualify those mailbox bodies or restate all historical volatile claims. Keep this separate from coherent menu transforms.
+3. Whole OPEN BR-0420 retains per-action accessibility acceptance. The current menu view is clickable and has one description, and touch calls performClick; preserve those improvements. Its performClick only calls super, and painted Back/Exit actions invoke separate raw-touch callbacks. Require bounded distinct actionable nodes, current labels, keyboard/D-pad and accessibility activation of the same exactly-once actions. The full-screen description alone does not prove this.
+4. Keep layout tests as pure geometry tests. Later ordinary lifecycle validation must exercise actual native/JNI/UI delivery, quick consecutive loading operations, delayed hides and detach. Checked JNI attachment/acquisition/exception ownership and complete Activity lifetime remain separate existing-owner reconciliation; no JNI failure experiment ran here.
+5. Keep the fixture small. Where real persistence failure is an acceptance requirement, use a deliberately controlled failure backend or platform integration at the real store boundary and verify both the exception and restored preference values. Do not widen this shared fake into a pretend Android storage implementation or infer native SF2 validation from synthetic imported bytes.
+
+Prior0326 was read whole; prior0117 only3191-3210 was freshly read. Their historical scopes, runtimes and completed gates do not establish fresh acceptance. No new finding, remediation, status, rating, inherited saving or runtime result is admitted.
+
+Before final0431 publication, finish mission identity/import/publication/native consumer tracing, complete existing-owner and earlier test-scope reconciliation, and explicitly resolve the preview early-close source candidate. The candidate is carried unchanged as SOURCE-CANDIDATE-OWNERSHIP-PENDING. Broader diagnosis remains active.

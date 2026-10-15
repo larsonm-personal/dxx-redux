@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,7 +34,7 @@ internal val RECOMMENDED_MODS =
                     "Place above high-res packs to retain its corrected artwork " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d1",
-            sizeBytes = 472_064L,
+            sizeBytes = 472_576L,
         ),
         RecommendedMod(
             filename = "uud2tp-textures.dxa",
@@ -45,7 +45,7 @@ internal val RECOMMENDED_MODS =
                     "Place above high-res packs to retain its corrected artwork " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d2",
-            sizeBytes = 3_242_301L,
+            sizeBytes = 3_242_446L,
         ),
         RecommendedMod(
             filename = "uud2sp-sounds.dxa",
@@ -55,7 +55,7 @@ internal val RECOMMENDED_MODS =
                     "Place above D2 High-Res Sounds to retain these effects " +
                     "(higher mods in the list mask matching assets in lower ones)",
             game = "d2",
-            sizeBytes = 6_986_269L,
+            sizeBytes = 6_962_535L,
         ),
         RecommendedMod(
             filename = "d1-hires-256-textures-ktx2.dxa",
@@ -64,7 +64,7 @@ internal val RECOMMENDED_MODS =
                 "Sharper wall and object textures for D1 and D1-in-D2. " +
                     "This is the recommended balance of detail and memory use; enable only one D1 texture pack",
             game = "d1",
-            sizeBytes = 61_766_716L,
+            sizeBytes = 61_767_015L,
         ),
         RecommendedMod(
             filename = "d2-hires-256-textures-ktx2.dxa",
@@ -73,7 +73,7 @@ internal val RECOMMENDED_MODS =
                 "Sharper wall and object textures for D2. " +
                     "This is the recommended balance of detail and memory use; enable only one D2 texture pack",
             game = "d2",
-            sizeBytes = 118_747_893L,
+            sizeBytes = 118_746_521L,
         ),
         RecommendedMod(
             filename = "d1-hires-sounds.dxa",
@@ -82,14 +82,14 @@ internal val RECOMMENDED_MODS =
                 "Higher-quality 22 kHz sound effects for D1 and D1-in-D2. " +
                     "Can be combined with the texture and menu packs",
             game = "d1",
-            sizeBytes = 1_875_014L,
+            sizeBytes = 1_859_830L,
         ),
         RecommendedMod(
             filename = "d2-hires-sounds.dxa",
             displayName = "D2 High-Res Sounds",
             description = "Higher-quality 22 kHz sound effects for D2. Can be combined with the D2 texture pack",
             game = "d2",
-            sizeBytes = 3_691_485L,
+            sizeBytes = 3_669_893L,
         ),
         RecommendedMod(
             filename = "d1xr-hires.dxa",
@@ -117,7 +117,15 @@ internal fun RecommendedModsDialog(
     downloadProgress: Map<String, Int>,
     onDownload: (RecommendedMod) -> Unit,
     onDismiss: () -> Unit,
+    loadDocuments: suspend (
+        java.io.File,
+        RecommendedMod,
+    ) -> RecommendedModDocuments.Loaded = ::loadRecommendedModDocuments,
 ) {
+    var documentsTarget by remember { mutableStateOf<RecommendedMod?>(null) }
+    documentsTarget?.let { mod ->
+        RecommendedModDocumentsDialog(mod, onDismiss = { documentsTarget = null }, loadDocuments = loadDocuments)
+    }
     val scrollState = rememberScrollState()
     NavigationAlertDialog(
         onDismissRequest = onDismiss,
@@ -142,6 +150,7 @@ internal fun RecommendedModsDialog(
                             installed = portableGameFilenameIdentity(rec.filename) in installedNames,
                             progress = downloadProgress[rec.filename],
                             onDownload = { onDownload(rec) },
+                            onViewDocs = { documentsTarget = rec },
                         )
                     }
                 }
@@ -157,6 +166,7 @@ private fun RecommendedModRow(
     installed: Boolean,
     progress: Int?,
     onDownload: () -> Unit,
+    onViewDocs: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(rec.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -174,6 +184,7 @@ private fun RecommendedModRow(
                 else -> TextButton(onClick = onDownload) { Text(if (progress == -1) "Retry" else "Download") }
             }
         }
+        TextButton(onClick = onViewDocs) { Text("View docs") }
         if (!installed && progress == -1) {
             Text("Download failed", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }

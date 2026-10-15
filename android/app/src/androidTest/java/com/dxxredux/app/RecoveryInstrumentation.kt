@@ -47,6 +47,8 @@ class RecoveryInstrumentation : Instrumentation() {
     private var missionLoadingOnly = false
     private var coopSessionOnly = false
     private var lobbyLatencyOnly = false
+    private var verifyPublishedDocuments = false
+    private var packageDocumentsOnly = false
     private var lanQrOnly = false
     private var sliderNavigationOnly = false
     private var graphicsCapabilitiesOnly = false
@@ -60,6 +62,8 @@ class RecoveryInstrumentation : Instrumentation() {
             engineProbeGame = arguments.getString("game") ?: "d2"
         }
         lobbyLatencyOnly = arguments?.getString("suite") == "lobby_latency"
+        verifyPublishedDocuments = arguments?.getString("published") == "true"
+        packageDocumentsOnly = arguments?.getString("suite") == "package_documents"
         lanQrOnly = arguments?.getString("suite") == "lan_qr"
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
@@ -75,6 +79,15 @@ class RecoveryInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            if (packageDocumentsOnly) {
+                PackageDocumentChecks(this).run(verifyPublishedDocuments)
+                result.putString(
+                    "stream",
+                    "PASS: package documents metadata, recommended, original bytes, back and retry\n",
+                )
+                finish(Activity.RESULT_OK, result)
+                return
+            }
             if (enemyWithinImportOnly) {
                 EnemyWithinImportChecks(this).run()
                 result.putString("stream", "PASS: Enemy Within full wrapper probe, URI import and Rebirth assets\n")

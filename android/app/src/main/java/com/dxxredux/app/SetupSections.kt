@@ -34,7 +34,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,7 +44,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -697,7 +695,7 @@ private fun customAudioSetEntry(
     )
 
 @Composable
-private fun ModDetailsDialog(
+internal fun ModDetailsDialog(
     mod: ModManager.ModInfo,
     details: ModManager.ModDetails?,
     loading: Boolean,
@@ -708,6 +706,7 @@ private fun ModDetailsDialog(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var showDocuments by remember { mutableStateOf(false) }
     var textViewTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var constituentTarget by remember { mutableStateOf<MissionZip.Constituent?>(null) }
     var levelMetadataTarget by remember { mutableStateOf<LevelMetadataTarget?>(null) }
@@ -740,8 +739,8 @@ private fun ModDetailsDialog(
         )
     }
     textViewTarget?.let { constituent ->
-        MissionZipTextDialog(
-            constituent = constituent,
+        PackageDocumentTextDialog(
+            document = PackageDocument(constituent.path, constituent.sizeBytes),
             archivePath = details?.archivePath,
             onDismiss = { textViewTarget = null },
         )
@@ -750,16 +749,17 @@ private fun ModDetailsDialog(
     fun openExternalConstituent(constituent: MissionZip.Constituent) {
         val archivePath = details?.archivePath
         scope.launch {
-            openMissionZipExternalDocument(context, archivePath, constituent)
+            openPackageExternalDocument(context, archivePath, PackageDocument(constituent.path, constituent.sizeBytes))
         }
     }
 
-    fun openReadme(readme: MissionZip.Constituent) {
-        if (MissionZip.isInlineReadmeCandidate(readme.name)) {
-            textViewTarget = readme
-        } else if (MissionZip.isExternalReadmeCandidate(readme.name)) {
-            openExternalConstituent(readme)
-        }
+    if (showDocuments && details != null) {
+        PackageDocumentDialog(
+            title = mod.displayName,
+            archivePath = details.archivePath,
+            documents = details.documents,
+            onDismiss = { showDocuments = false },
+        )
     }
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
@@ -805,13 +805,13 @@ private fun ModDetailsDialog(
                     fontSize = 16.sp,
                     modifier = Modifier.weight(1f),
                 )
-                details?.missionZip?.readmes?.singleOrNull()?.let { readme ->
+                details?.documents?.takeIf { it.isNotEmpty() }?.let { documents ->
                     TextButton(
-                        onClick = { openReadme(readme) },
+                        onClick = { showDocuments = true },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         modifier = Modifier.height(32.dp),
                     ) {
-                        Text("View readme", fontSize = 12.sp)
+                        Text(if (documents.size == 1) "View readme" else "View docs", fontSize = 12.sp)
                     }
                 }
             }
@@ -920,22 +920,6 @@ private fun ModDetailsDialog(
                                 DetailRow("Extracted files", extraction.fileCount.toString())
                                 DetailRow("Extracted size", setupSectionFormatSize(extraction.extractedSizeBytes))
                                 DetailRow("Extracted path", extraction.rootPath)
-                            }
-                            if (missionZip.readmes.size > 1) {
-                                ModDetailSectionTitle("Readmes")
-                                missionZip.readmes.forEach { readme ->
-                                    OutlinedButton(
-                                        onClick = { openReadme(readme) },
-                                        shape = MaterialTheme.shapes.small,
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(bottom = 4.dp),
-                                    ) {
-                                        Text(readme.name, fontSize = 12.sp)
-                                    }
-                                }
                             }
                             missionZip.variantSelection?.let { selection ->
                                 ModDetailSectionTitle("Mission variant")
@@ -1982,99 +1966,6 @@ private fun MissionZipConstituentDialog(
     )
 }
 
-@Composable
-private fun MissionZipTextDialog(
-    constituent: MissionZip.Constituent,
-    archivePath: String?,
-    onDismiss: () -> Unit,
-) {
-    var content by remember(archivePath, constituent.path) {
-        mutableStateOf<MissionZip.TextFileContent?>(null)
-    }
-    LaunchedEffect(archivePath, constituent.path) {
-        content = null
-        content = withContext(kotlinx.coroutines.Dispatchers.IO) { readMissionZipTextFile(archivePath, constituent) }
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        },
-        title = {
-            Text(constituent.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        },
-        text = {
-            val scrollState = rememberScrollState()
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 420.dp),
-            ) {
-                SelectionContainer {
-                    Column(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .verticalScroll(scrollState)
-                                .padding(end = 8.dp),
-                    ) {
-                        val loadedContent = content
-                        if (loadedContent == null) {
-                            MetadataLoadProgressView(MetadataLoadProgress("Reading text file", 0, 1))
-                            return@Column
-                        }
-                        loadedContent.problem?.let { problem ->
-                            Text(
-                                problem,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(bottom = 6.dp),
-                            )
-                        }
-                        if (loadedContent.truncated) {
-                            Text(
-                                "Showing first ${setupSectionFormatSize(1024L * 1024L)}",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 6.dp),
-                            )
-                        }
-                        Text(
-                            loadedContent.text.ifEmpty { "(empty text file)" },
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-                SetupScrollArrows(scrollState)
-            }
-        },
-    )
-}
-
-private fun readMissionZipTextFile(
-    archivePath: String?,
-    constituent: MissionZip.Constituent,
-): MissionZip.TextFileContent {
-    if (archivePath ==
-        null
-    ) {
-        return MissionZip.TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
-    }
-    missionZipExtractedStoreForArchivePath(archivePath)
-        ?.extractedEntryForArchiveEntry(archivePath, constituent.path)
-        ?.let { return readExtractedMissionZipTextFile(it.file, constituent.path) }
-    return MissionZip.readTextFile(File(archivePath), constituent.path)
-}
-
-private fun readExtractedMissionZipTextFile(
-    file: File,
-    path: String,
-    maxBytes: Long = 1024L * 1024L,
-): MissionZip.TextFileContent = MissionZip.readExtractedDocument(file, path, maxBytes)
-
 private fun missionZipViewAction(
     constituent: MissionZip.Constituent,
     onViewText: () -> Unit,
@@ -2093,76 +1984,6 @@ private fun missionZipViewAction(
             null
         }
     }
-
-private suspend fun openMissionZipExternalDocument(
-    context: Context,
-    archivePath: String?,
-    constituent: MissionZip.Constituent,
-) {
-    if (archivePath == null) {
-        Toast.makeText(context, "Mission ZIP is missing", Toast.LENGTH_SHORT).show()
-        return
-    }
-    try {
-        val uri =
-            withContext(kotlinx.coroutines.Dispatchers.IO) {
-                extractMissionZipConstituentToCache(context, File(archivePath), constituent)
-            }
-        openExternalFile(context, uri, MissionZip.externalViewMimeType(constituent.name), constituent.name)
-    } catch (e: Exception) {
-        Toast.makeText(context, "Could not open ${constituent.name}: ${e.message}", Toast.LENGTH_SHORT).show()
-    }
-}
-
-private fun extractMissionZipConstituentToCache(
-    context: Context,
-    archive: File,
-    constituent: MissionZip.Constituent,
-): Uri =
-    FileProviderGrantStore.publish(
-        context,
-        FileProviderGrantStore.FILE_VIEW,
-        constituent.name,
-        constituent.sizeBytes,
-    ) { temporary ->
-        val extracted =
-            missionZipExtractedStoreForArchivePath(archive.absolutePath)
-                ?.extractedEntryForArchiveEntry(archive.absolutePath, constituent.path)
-                ?.file
-        if (extracted != null) {
-            extracted.copyTo(temporary)
-        } else {
-            ArchiveFiles.open(archive).use { archiveFile ->
-                val entry =
-                    archiveFile.findEntry(constituent.path)
-                        ?: throw IllegalArgumentException("Document file is missing")
-                if (entry.isDirectory) throw IllegalArgumentException("Document path is a directory")
-                archiveFile.openInputStream(entry).use { input ->
-                    FileOutputStream(temporary).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            }
-        }
-    }
-
-private fun openExternalFile(
-    context: Context,
-    uri: Uri,
-    mimeType: String,
-    displayName: String,
-) {
-    try {
-        val intent =
-            Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-        context.startActivity(intent)
-    } catch (_: Exception) {
-        Toast.makeText(context, "No viewer available for $displayName", Toast.LENGTH_SHORT).show()
-    }
-}
 
 private fun missionZipRoleLabel(role: String): String = GameFileFormats.missionZipRoleLabel(role)
 

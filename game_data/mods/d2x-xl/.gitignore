@@ -3,3 +3,5 @@
 !*.ps1
 !*.py
 !.gitignore
+!documentation/
+!documentation-policy.json

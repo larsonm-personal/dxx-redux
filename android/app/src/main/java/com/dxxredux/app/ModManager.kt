@@ -207,6 +207,7 @@ class ModManager(
         val patches: List<ModPatchDetail>,
         val baseRequirements: List<ModBaseRequirement>,
         val problems: List<String>,
+        val documents: List<PackageDocument> = emptyList(),
         val missionZip: MissionZip.ScanResult? = null,
         val missionZipMusic: MissionZipMusicCatalog? = null,
         val missionZipExtraction: MissionZipExtractionInfo? = null,
@@ -1117,6 +1118,11 @@ class ModManager(
                     archiveSizeBytes = modFile.length(),
                     manifestSchema = manifest?.optString("schema")?.takeIf { it.isNotBlank() },
                     notes = readStringArray(manifest?.optJSONArray("notes")),
+                    documents =
+                        PackageDocuments.order(
+                            entries.map { PackageDocument(it.name, it.size) },
+                            modFile.nameWithoutExtension,
+                        ),
                     categories = categorizeModEntries(entries),
                     patches = readPatchDetails(zip, entries, rawRequirements),
                     baseRequirements = baseRequirements,
@@ -1171,6 +1177,7 @@ class ModManager(
                     patches = emptyList(),
                     baseRequirements = emptyList(),
                     problems = emptyList(),
+                    documents = scan.readmes.map { PackageDocument(it.path, it.sizeBytes) },
                     missionZip = scan,
                     missionZipMusic =
                         extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }

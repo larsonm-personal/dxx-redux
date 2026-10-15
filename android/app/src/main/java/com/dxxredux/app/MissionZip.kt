@@ -7,8 +7,6 @@ import java.nio.charset.CharacterCodingException
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
 import java.util.Locale
-import java.util.zip.ZipInputStream
-import javax.xml.parsers.DocumentBuilderFactory
 
 object MissionZip {
     const val KIND = "mission_zip"
@@ -16,10 +14,6 @@ object MissionZip {
     const val DURABLE_EXTRACT_THRESHOLD_BYTES = 10L * 1024L * 1024L
     const val SMALL_IN_MEMORY_LIMIT_BYTES = 100L * 1024L * 1024L
     const val SMALL_NESTED_ARCHIVE_LIMIT_BYTES = 32L * 1024L * 1024L
-    private val INLINE_README_EXTENSIONS = setOf("txt", "docx")
-    private val EXTERNAL_README_EXTENSIONS = setOf("pdf", "rtf", "doc")
-    private const val MAX_DOCX_XML_BYTES = 4L * 1024L * 1024L
-    private const val MAX_DOCX_TOTAL_BYTES = 16L * 1024L * 1024L
 
     const val UNSUPPORTED_D2XXL_HOG_MESSAGE =
         "This level pack uses the D2X-XL extended HOG format, which DXX-Revival does not currently support"
@@ -364,72 +358,21 @@ object MissionZip {
         file: File,
         path: String,
         maxBytes: Long = 1024L * 1024L,
-    ): TextFileContent {
-        if (!file.isFile) return TextFileContent("", truncated = false, problem = "Mission ZIP is missing")
-        return try {
-            ArchiveFiles.open(file).use { archive ->
-                val entry = archive.findEntry(path) ?: return TextFileContent("", false, "Text file is missing")
-                if (!isInlineReadmeCandidate(entry.path)) {
-                    return TextFileContent("", false, "Only .txt and .docx files can be viewed in the launcher")
-                }
-                val requestedLimit =
-                    if (GameFileFormats.extensionOf(entry.path) == "docx") MAX_DOCX_TOTAL_BYTES else maxBytes
-                val limit = requestedLimit.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
-                val bytes =
-                    archive.openInputStream(entry).use { input ->
-                        val buffer = ByteArray(limit + 1)
-                        var total = 0
-                        while (total < buffer.size) {
-                            val read = input.read(buffer, total, buffer.size - total)
-                            if (read <= 0) break
-                            total += read
-                        }
-                        buffer.copyOf(total)
-                    }
-                decodeInlineDocument(entry.path, bytes, limit)
-            }
-        } catch (e: Exception) {
-            TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
-        }
-    }
+    ): TextFileContent = PackageDocuments.readTextFile(file, path, maxBytes)
 
     fun readExtractedDocument(
         file: File,
         path: String,
         maxBytes: Long = 1024L * 1024L,
-    ): TextFileContent {
-        if (!isInlineReadmeCandidate(path)) {
-            return TextFileContent("", false, "Only .txt and .docx files can be viewed in the launcher")
-        }
-        if (!file.isFile) return TextFileContent("", truncated = false, problem = "Document file is missing")
-        return try {
-            val requestedLimit = if (GameFileFormats.extensionOf(path) == "docx") MAX_DOCX_TOTAL_BYTES else maxBytes
-            val limit = requestedLimit.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
-            file.inputStream().use { input ->
-                val bytes = input.readBytesBounded(limit.toLong(), path)
-                decodeInlineDocument(path, bytes, limit)
-            }
-        } catch (e: Exception) {
-            TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
-        }
-    }
+    ): TextFileContent = PackageDocuments.readExtractedDocument(file, path, maxBytes)
 
-    fun isInlineReadmeCandidate(path: String): Boolean = GameFileFormats.extensionOf(path) in INLINE_README_EXTENSIONS
+    fun isInlineReadmeCandidate(path: String): Boolean = PackageDocuments.isInlineReadmeCandidate(path)
 
-    fun isExternalReadmeCandidate(path: String): Boolean =
-        GameFileFormats.extensionOf(path) in EXTERNAL_README_EXTENSIONS
+    fun isExternalReadmeCandidate(path: String): Boolean = PackageDocuments.isExternalReadmeCandidate(path)
 
-    fun isReadmeCandidate(path: String): Boolean = isInlineReadmeCandidate(path) || isExternalReadmeCandidate(path)
+    fun isReadmeCandidate(path: String): Boolean = PackageDocuments.isReadmeCandidate(path)
 
-    fun externalViewMimeType(path: String): String =
-        when (GameFileFormats.extensionOf(path)) {
-            "pdf" -> "application/pdf"
-            "rtf" -> "application/rtf"
-            "doc" -> "application/msword"
-            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "txt" -> "text/plain"
-            else -> "application/octet-stream"
-        }
+    fun externalViewMimeType(path: String): String = PackageDocuments.externalViewMimeType(path)
 
     fun parseMissionDescriptor(
         path: String,
@@ -708,125 +651,17 @@ object MissionZip {
                 .thenBy { it.path.lowercase(Locale.US) },
         )
 
-    private fun chooseReadme(
-        constituents: List<Constituent>,
-        zipStem: String?,
-    ): Constituent? {
-        chooseReadmeFromCandidates(constituents.filter { isInlineReadmeCandidate(it.name) }, zipStem)?.let {
-            return it
-        }
-        return chooseReadmeFromCandidates(constituents.filter { isExternalReadmeCandidate(it.name) }, zipStem)
-    }
-
     private fun chooseReadmes(
         constituents: List<Constituent>,
         zipStem: String?,
     ): List<Constituent> {
-        val candidates = constituents.filter { isReadmeCandidate(it.name) }
-        val preferred = chooseReadme(candidates, zipStem) ?: return emptyList()
-        return listOf(preferred) + candidates.filterNot { it.path.equals(preferred.path, ignoreCase = true) }
+        val byPath = constituents.associateBy { it.path }
+        return PackageDocuments
+            .order(constituents.map { PackageDocument(it.path, it.sizeBytes) }, zipStem)
+            .mapNotNull { byPath[it.path] }
     }
 
-    private fun chooseReadmeFromCandidates(
-        candidates: List<Constituent>,
-        zipStem: String?,
-    ): Constituent? {
-        if (candidates.size <= 1) return candidates.firstOrNull()
-        candidates.firstOrNull { isReadmeNamed(it.name) }?.let { return it }
-        val zipPrefix = zipStem?.takeIf { it.isNotBlank() }?.lowercase(Locale.US)
-        if (zipPrefix != null) {
-            candidates.firstOrNull { it.name.lowercase(Locale.US).startsWith(zipPrefix) }?.let { return it }
-        }
-        return candidates.sortedWith(compareByDescending<Constituent> { it.sizeBytes }.thenBy { it.path }).firstOrNull()
-    }
-
-    private fun readmeSortGroup(path: String): Int =
-        when {
-            isInlineReadmeCandidate(path) -> 0
-            isExternalReadmeCandidate(path) -> 1
-            else -> 2
-        }
-
-    private fun isReadmeNamed(path: String): Boolean =
-        leafName(path).substringBeforeLast('.').equals("README", ignoreCase = true) && isReadmeCandidate(path)
-
-    private fun readDocxText(bytes: ByteArray): TextFileContent {
-        val budget =
-            ExtractionBudget(
-                maxEntryBytes = MAX_DOCX_XML_BYTES,
-                maxTotalBytes = MAX_DOCX_TOTAL_BYTES,
-                maxEntries = 256,
-            )
-        ZipInputStream(bytes.inputStream().buffered()).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                val path = normalizePath(entry.name)
-                budget.registerEntry(entry.size, entry.compressedSize, path)
-                if (!entry.isDirectory) {
-                    val content =
-                        zip.readBytesBounded(
-                            MAX_DOCX_XML_BYTES,
-                            path,
-                            budget,
-                            entry.compressedSize,
-                            entry.size,
-                        )
-                    if (path.equals("word/document.xml", ignoreCase = true)) {
-                        return TextFileContent(parseDocxDocumentXml(content), truncated = false)
-                    }
-                }
-                zip.closeEntry()
-                entry = zip.nextEntry
-            }
-        }
-        return TextFileContent("", truncated = false, problem = "Word document content is missing")
-    }
-
-    private fun decodeInlineDocument(
-        path: String,
-        bytes: ByteArray,
-        limit: Int,
-    ): TextFileContent =
-        if (GameFileFormats.extensionOf(path) == "docx") {
-            if (bytes.size > limit) {
-                TextFileContent("", truncated = true, problem = "Word document exceeds $limit bytes")
-            } else {
-                readDocxText(bytes)
-            }
-        } else {
-            val truncated = bytes.size > limit
-            TextFileContent(decodeLegacyText(bytes.copyOf(minOf(bytes.size, limit)), truncated), truncated)
-        }
-
-    private fun parseDocxDocumentXml(bytes: ByteArray): String {
-        val factory = DocumentBuilderFactory.newInstance()
-        factory.isNamespaceAware = true
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-        val document = factory.newDocumentBuilder().parse(bytes.inputStream())
-        val paragraphs = document.getElementsByTagNameNS("*", "p")
-        return buildString {
-            for (paragraphIndex in 0 until paragraphs.length) {
-                val children = paragraphs.item(paragraphIndex).childNodes
-                appendDocxText(children)
-                if (isNotEmpty() && last() != '\n') append('\n')
-            }
-        }.trimEnd()
-    }
-
-    private fun StringBuilder.appendDocxText(nodes: org.w3c.dom.NodeList) {
-        for (index in 0 until nodes.length) {
-            val node = nodes.item(index)
-            when (node.localName) {
-                "t" -> append(node.textContent)
-                "tab" -> append('\t')
-                "br", "cr" -> append('\n')
-                else -> appendDocxText(node.childNodes)
-            }
-        }
-    }
+    private fun readmeSortGroup(path: String): Int = PackageDocuments.sortGroup(path)
 
     internal fun decodeLegacyText(
         bytes: ByteArray,

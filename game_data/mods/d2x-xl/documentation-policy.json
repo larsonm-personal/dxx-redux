@@ -1,0 +1,135 @@
+{
+  "d1-hires-128-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "650673eea26d767531a955a8cfb0b3ecd80a4a7245fd0b589472726d553d5ded"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d1-hires-256-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "222fe06ce7a6f6cd9247feec8acc1cb2cf0125ea6fd56964e8cc3e1bc2d22f30"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d1-hires-512-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "66e700798fc5c583cf088e7f6f848bf31ae21811e8cebc5682d7db2e2cc246d3"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d1-hires-sounds.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "4a786b9f44aa5bfa9a623219c59faed5949931ea5ebf0339e43c4b4d8b3149e1"
+      ],
+      "README.dxx-redux.md": [
+        "ce22ad7706bc98fcb9a3d92a0c1defd6439d3048f5dbca2af34b7c8b4d75ff92"
+      ]
+    }
+  },
+  "d1xr-hires.dxa": {
+    "original_documents": {
+      "README.TXT": "4dc43a8f6e22fb41e1ca4fca66008563b768af511189913b977d7c0f75cbd051"
+    },
+    "generated_documents": {},
+    "upstream_sha256": "b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19"
+  },
+  "d1xr-mac-demo-sounds.dxa": {
+    "original_documents": {
+      "README.TXT": "786c0766afad59079ce3f77c3221dd8aa15109a4e69c10ade7b0fb332d57c351",
+      "Sounds/Move me.txt": "56f55725d0e8dfef79d3ef2a8d284040a51b8d37b3859cbabbdd0af2d39dd565"
+    },
+    "generated_documents": {},
+    "upstream_sha256": "3ef1bf1dbcb1be8c3dde121ed53b0fec8a22340320937735073353fd0a1a990c"
+  },
+  "d2-hires-128-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "af28734d41866725a082ebf92ce65c3a7a4f9b251d62b55fecdba2043bd87bac"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d2-hires-256-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "fd4f05e16e8ac1026fbaa5e0fad44fcfdd402f59cb7e06a9664f2be1dce587c5"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d2-hires-512-textures-ktx2.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "e2e05332feea75dbc45e7449173b71f36a1436beb4062877e0d3378296176d87"
+      ],
+      "README.dxx-redux.md": [
+        "6c3d5033c699e9510aa3a3516b2f09d2fcff26483b5ef71933cd085bbfaf6675"
+      ]
+    }
+  },
+  "d2-hires-sounds.dxa": {
+    "original_documents": {},
+    "generated_documents": {
+      "README.md": [
+        "4c2cad9cd15d77b4890fee2bf737f26bc534c5cb61d4157fc84a875be6543d5e"
+      ],
+      "README.dxx-redux.md": [
+        "ce22ad7706bc98fcb9a3d92a0c1defd6439d3048f5dbca2af34b7c8b4d75ff92"
+      ]
+    }
+  },
+  "uud1tp-textures.dxa": {
+    "original_documents": {
+      "uud1tp.rtf": "42ae478f014008e9ee66a4679decced91b7c72abd348e3f57a22916658baeafe"
+    },
+    "generated_documents": {
+      "README.md": [
+        "270ef314e451e1aa98013b7e0474db268b14eac87ea18da389b94a2fa8b98d61"
+      ]
+    }
+  },
+  "uud2sp-sounds.dxa": {
+    "original_documents": {
+      "UUD2SP.rtf": "46160a60dab0bc2bdd5d3c84cd8f6fb4e758ea49a4108f94cdbe2a2e3bff57d6"
+    },
+    "generated_documents": {
+      "README.md": [
+        "7d7700d0c526db6adac59430fbda2a7d73b336b810c48c1a4f952d0771d6be80"
+      ]
+    }
+  },
+  "uud2tp-textures.dxa": {
+    "original_documents": {
+      "UUD2TP.rtf": "43fb7dd746332cab0af1f02267a9e294377c790d8000420b2c92cea404de73c5"
+    },
+    "generated_documents": {
+      "README.md": [
+        "109a1bace92a5f6fcca4500e4f5c07ada47509c469b353c95a047c66c225be40"
+      ]
+    }
+  }
+}
