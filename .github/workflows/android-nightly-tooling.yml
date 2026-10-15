@@ -103,6 +103,15 @@ jobs:
         if: inputs.lane != 'jvm'
         shell: bash
         run: |
+          {
+            id
+            if [[ -e /dev/kvm ]]; then
+              stat -c 'KVM type=%F mode=%a owner=%U(%u) group=%G(%g)' /dev/kvm
+              if command -v getfacl >/dev/null; then getfacl -p /dev/kvm; fi
+            else
+              echo 'KVM device is absent'
+            fi
+          } 2>&1 | tee results/setup/kvm-access.log
           if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
             echo 'BLOCKED: readable/writable KVM is required; no security settings changed' | tee results/setup/kvm.log
             exit 1
