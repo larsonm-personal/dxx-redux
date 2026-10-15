@@ -74,6 +74,11 @@ void piggy_register_virtual_bitmap_index(int bitmap_index);
 int piggy_register_sound( digi_sound * snd, char * name, int in_file );
 bitmap_index piggy_find_bitmap( char * name );
 int piggy_find_sound( char * name );
+/* Runtime authored duration; invalid metadata retains the historical one-second fallback */
+fix piggy_sound_duration(int sample);
+const char *piggy_sound_duration_bank(void);
+const char *piggy_sound_duration_name(int sample);
+void piggy_sound_duration_override(int sample, int length, int rate);
 
 extern int Pigfile_initialized;
 
