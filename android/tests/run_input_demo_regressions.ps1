@@ -2,6 +2,9 @@
 param(
     [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
     [string]$DemoRoot,
+    [switch]$SharewareOnly,
+    [switch]$AllowUnverifiedAssets,
+    [string]$ExecutablePath,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,
     [string]$ReferenceResultRoot,
@@ -29,6 +32,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+. (Join-Path $repoRoot 'android/helpers/input_demo_assets.ps1')
 $script:InputDemoSanitizer = $Sanitizer
 $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 
@@ -125,16 +129,30 @@ function Select-NamedRegressionDemos {
 }
 
 if (-not $DemoRoot) {
-    $DemoRoot = Join-Path $repoRoot 'android\regression_demos'
+    $DemoRoot = if ($SharewareOnly) { Join-Path $repoRoot 'android' } else { Join-Path $repoRoot 'android/regression_demos' }
 }
+if ($SharewareOnly -and $AllowUnverifiedAssets) { throw '-SharewareOnly cannot allow unverified recordings' }
 if (-not (Test-Path -LiteralPath $DemoRoot)) {
     throw "Regression demo directory not found: $DemoRoot"
 }
 $resolvedDemoRoot = (Resolve-Path -LiteralPath $DemoRoot).Path
-$allDemos = @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
+$allDemos = if ($SharewareOnly -and -not $PSBoundParameters.ContainsKey('DemoRoot')) {
+    # Committed corpus roots only; never discover generated scratch recordings
+    @(@('android/regression_demos', 'android/tests/fixtures') | ForEach-Object {
+            Get-ChildItem -LiteralPath (Join-Path $repoRoot $_) -Recurse -Filter '*.dximdemo' -File
+        } | Sort-Object FullName)
+} else {
+    @(Get-ChildItem -LiteralPath $resolvedDemoRoot -Recurse -Filter '*.dximdemo' -File | Sort-Object FullName)
+}
 $effectiveRecordedGame = Get-EffectiveRecordedGameFilter -RequestedGame $Game -RequestedRecordedGame $RecordedGame -UseD1InD2:$D1InD2
 $demos = @(Select-RegressionDemos -Demos $allDemos -RecordedGameFilter $effectiveRecordedGame)
 $demos = @(Select-NamedRegressionDemos -Demos $demos -RequestedFileNames $DemoFileName)
+if ($SharewareOnly) {
+    if (-not $demos.Count) { throw 'No recordings available for verified shareware selection' }
+    $selected = @(Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command select-shareware -Paths @($demos.FullName))
+    $demos = @($demos | Where-Object { $_.FullName -cin $selected })
+    if (-not $demos.Count) { throw 'No verified shareware recordings selected' }
+}
 
 if ($ReferenceResultRoot) {
     foreach ($demo in $demos) {
@@ -187,6 +205,7 @@ if (-not $RunMode) {
 
 $buildGames = Get-RegressionBuildGames -Demos $demos -RequestedGame $Game -UseD1InD2:$D1InD2
 foreach ($buildGame in $buildGames) {
+    if ($ExecutablePath) { continue }
     $preferHeadless = ($RunMode -eq 'headless') -and -not $D1InD2
     Ensure-InputDemoGameBuild -RepoRoot $repoRoot -GameName $buildGame -PreferHeadlessConsole:$preferHeadless
 }
@@ -211,6 +230,9 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
         '-Mode', $Mode,
         '-TimeoutSeconds', [string]$TimeoutSeconds
     )
+    if ($SharewareOnly) { $args += @('-StrictComparison', '-RequireCleanExit') }
+    if ($AllowUnverifiedAssets) { $args += '-AllowUnverifiedAssets' }
+    if ($ExecutablePath) { $args += @('-ExecutablePath', $ExecutablePath) }
     if ($D1InD2) {
         $args += '-D1InD2'
     }

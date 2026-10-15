@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdint.h>
 #endif
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -534,6 +535,7 @@ PHYSFS_file *copy_pigfile_from_cd(char *filename)
 void piggy_init_pigfile(char *filename)
 {
 	int i;
+	const char *opened_name = filename;
 	char temp_name[16];
 	char temp_name_read[16];
 	DiskBitmapHeader bmh;
@@ -552,7 +554,8 @@ void piggy_init_pigfile(char *filename)
 	//try pigfile for shareware
 	if (!Piggy_fp) {
 		con_printf(CON_NORMAL, "piggy_init_pigfile: '%s' not found, trying '%s'\n", filename, DEFAULT_PIGFILE_SHAREWARE);
-		Piggy_fp = PHYSFSX_openReadBuffered(DEFAULT_PIGFILE_SHAREWARE);
+		opened_name = DEFAULT_PIGFILE_SHAREWARE;
+		Piggy_fp = PHYSFSX_openReadBuffered(opened_name);
 	}
 
 	if (!Piggy_fp)
@@ -585,6 +588,7 @@ void piggy_init_pigfile(char *filename)
 		#endif
 	}
 
+	input_demo_assets_note_file("d2_pig", opened_name, Piggy_fp);
 	strncpy(Current_pigfile,filename,sizeof(Current_pigfile));
 
 	N_bitmaps = PHYSFSX_readInt(Piggy_fp);
@@ -678,6 +682,7 @@ void piggy_new_pigfile(char *pigname)
 	int must_rewrite_pig = 0;
 #endif
 
+	const char *opened_name = pigname;
 	d_strlwr(pigname);
 
 	if (d_strnicmp(Current_pigfile, pigname, sizeof(Current_pigfile)) == 0 // correct pig already loaded
@@ -701,8 +706,10 @@ void piggy_new_pigfile(char *pigname)
 	Piggy_fp = PHYSFSX_openReadBuffered(pigname);
 
 	//try pigfile for shareware
-	if (!Piggy_fp)
-		Piggy_fp = PHYSFSX_openReadBuffered(DEFAULT_PIGFILE_SHAREWARE);
+	if (!Piggy_fp) {
+		opened_name = DEFAULT_PIGFILE_SHAREWARE;
+		Piggy_fp = PHYSFSX_openReadBuffered(opened_name);
+	}
 	
 	if (Piggy_fp) {  //make sure pig is valid type file & is up-to-date
 		int pig_id,pig_version;
@@ -721,6 +728,7 @@ void piggy_new_pigfile(char *pigname)
 #endif
 
 	if (Piggy_fp) {
+		input_demo_assets_note_file("d2_pig", opened_name, Piggy_fp);
 
 		N_bitmaps = PHYSFSX_readInt(Piggy_fp);
 
@@ -966,6 +974,7 @@ int read_hamfile()
 #ifdef __ANDROID__
 	android_sound_trace_asset_open("ham", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED);
 #endif
+	input_demo_assets_note_file("d2_ham", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED, ham_fp);
 	//make sure ham is valid type file & is up-to-date
 	ham_id = PHYSFSX_readInt(ham_fp);
 	Piggy_hamfile_version = PHYSFSX_readInt(ham_fp);

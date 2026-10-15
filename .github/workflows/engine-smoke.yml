@@ -40,6 +40,7 @@ jobs:
       - name: Check the Linux build and test runner
         timeout-minutes: 1
         run: |
+          python3 android/tests/test_input_demo_assets.py
           python3 android/tests/test_linux_build_cli.py
           python3 android/tests/test_d1_briefing_automation.py
 
@@ -69,6 +70,15 @@ jobs:
             -Game "$game" -DataEdition shareware -RequireAssets \
             -"${game^^}Exe" "$PWD/build${game}-test/main/dxx-redux-${game}-headless-metadata"
 
+      - name: Replay every verified shareware recording
+        timeout-minutes: 5
+        run: |
+          game="${{ matrix.game }}"
+          pwsh -NoProfile -File android/tests/run_input_demo_regressions.ps1 \
+            -SharewareOnly -Game "$game" -RunMode headless -StopOnFirstFailure \
+            -ExecutablePath "$PWD/build${game}-test/main/dxx-redux-${game}-headless" \
+            -ResultArchiveRoot "$PWD/temp/verified-shareware-${game}"
+
       - name: Check public metadata worker failure recovery
         timeout-minutes: 3
         run: |
@@ -94,6 +104,7 @@ jobs:
             build${{ matrix.game }}-test/CMakeFiles/CMakeConfigureLog.yaml
             build${{ matrix.game }}-test/CMakeCache.txt
             temp/input_demo_runtime_smoke/shareware/
+            temp/verified-shareware-*/
             android/temp/secret_area_shareware_baseline/
             temp/native-metadata-worker-*/
             android/temp/metadata-level-header-test/

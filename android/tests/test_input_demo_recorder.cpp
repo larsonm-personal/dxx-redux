@@ -124,6 +124,11 @@ static const char *input_demo_test_arch(void)
 #endif
 }
 
+static std::string input_demo_test_unknown_assets_header_json(void)
+{
+	return std::string(",\"asset_fingerprints\":{\"status\":\"unknown\",\"mode\":\"native_") + input_demo_test_game_name() + "\",\"files\":[],\"error\":\"no engine asset sources\"}";
+}
+
 static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
 {
 #if defined(INPUT_DEMO_TEST_D2)
@@ -317,7 +322,7 @@ static int expect_record_and_flush(void)
 	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
 	           "\",\"mission\":\"" + input_demo_test_game_name() +
 	           "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
-	           "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+	           "\"" + input_demo_test_unknown_assets_header_json() + ",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 	           "\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
 	           "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
 	           "{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(1) + "}\n" +
@@ -406,7 +411,7 @@ static int expect_record_and_flush_checkpoint(void)
 	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
 	           "\",\"mission\":\"" + input_demo_test_game_name() +
 	           "\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
-	           "\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+	           "\"" + input_demo_test_unknown_assets_header_json() + ",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 	           "\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
 	           "{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
 	           "{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +

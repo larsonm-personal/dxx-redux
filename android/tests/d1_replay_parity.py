@@ -27,6 +27,8 @@ class EvidenceError(ValueError):
 HARNESS_FILES = (
     "android/tests/d1_replay_parity.py",
     "android/tests/run_input_demo_replay.ps1",
+    "android/tests/input_demo_assets.py",
+    "android/helpers/input_demo_assets.ps1",
     "android/tests/input_demo_host_build_guard.ps1",
     "android/helpers/test_host_platform.ps1",
     "android/helpers/shareware_test_data.ps1",
@@ -1535,6 +1537,8 @@ def capture(args, demo, directory, name, imported, assets, executable, harness):
         "-MinimumFreeSpaceGB",
         str(args.minimum_free_gb),
     ]
+    if getattr(args, "allow_unverified_assets", False):
+        command += ["-AllowUnverifiedAssets"]
     command += ["-ExecutablePath", executable["path"]]
     command += ["-D1InD2"] if imported else ["-Game", "d1"]
     info = {"command": command, "executable": executable, "artifacts": {key: str(path) for key, path in paths.items()}}
@@ -1600,6 +1604,8 @@ def run(args):
             "--minimum-free-gb",
             str(args.minimum_free_gb),
         ]
+        if getattr(args, "allow_unverified_assets", False):
+            command.append("--allow-unverified-assets")
         for demo in args.demo:
             command.extend(("--demo", str(demo)))
         write_json(args.output / "controller-launch.json", {"command": command})
@@ -1730,6 +1736,7 @@ def main():
     parser.add_argument("--native", type=Path, required=True)
     parser.add_argument("--imported", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-unverified-assets", action="store_true")
     parser.add_argument("--pwsh", required=True)
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--minimum-free-gb", type=float, default=4)

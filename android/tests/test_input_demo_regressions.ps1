@@ -21,6 +21,8 @@ param(
     [string]$D2DataDir,
     [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [string]$DemoRoot,
+    [switch]$SharewareOnly,
+    [switch]$AllowUnverifiedAssets,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,
     [string]$ReferenceResultRoot,
@@ -39,12 +41,14 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Corpus -eq 'public') {
+    if ($SharewareOnly) { throw '-SharewareOnly selects recordings from the recorded corpus' }
     if ($D1InD2 -or $Game -ne 'auto' -or $RecordedGame -ne 'all' -or $DemoFileName -or $ReferenceResultRoot -or $ListOnly -or $StopOnFirstFailure) {
         throw 'Public qualification runs the complete admitted corpus; use the single replay runner for individual investigations'
     }
     $public = @{
         RunMode = $RunMode
         NativeOnly = $NativeOnly
+        AllowUnverifiedAssets = $AllowUnverifiedAssets
         TimeoutSeconds = $TimeoutSeconds
         MinimumFreeSpaceGB = $MinimumFreeSpaceGB
     }
@@ -62,6 +66,8 @@ if ($NativeOnly -or $D1Exe -or $D2Exe -or $D1DataDir -or $D2DataDir) {
 }
 
 $forwardedParams = @{
+    SharewareOnly = $SharewareOnly
+    AllowUnverifiedAssets = $AllowUnverifiedAssets
     Game = $Game
     RecordedGame = $RecordedGame
     Mode = 'accelerated'

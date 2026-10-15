@@ -17,6 +17,7 @@ param(
     [switch]$TraceState,
     [switch]$CompareStateTrace,
     [switch]$SkipExpectedChecks,
+    [switch]$AllowUnverifiedAssets,
     [ValidateSet(1, 2)]
     [int]$HeadlessConsoleOutput = 1
 )
@@ -86,6 +87,7 @@ if ($TraceState) {
 if ($CompareStateTrace) {
     $args += '-CompareStateTrace'
 }
+if ($AllowUnverifiedAssets) { $args += '-AllowUnverifiedAssets' }
 if ($SkipExpectedChecks) {
     $args += '-SkipExpectedChecks'
 }

@@ -17,6 +17,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -624,6 +625,7 @@ void free_mission(void)
 		if (Current_mission_hog[0])
 			PHYSFS_removeFromSearchPath(Current_mission_hog);
 		Current_mission_hog[0] = '\0';
+		input_demo_assets_forget("mission_hog");
 
 		if (Current_mission->path)
 			d_free(Current_mission->path);
@@ -808,7 +810,7 @@ int load_mission(mle *mission)
 
 	// for Descent 1 missions, load descent.hog
 	if (EMULATING_D1) {
-		if (!PHYSFSX_contfile_init("descent.hog", 1))
+		if (!input_demo_assets_mount("d1_hog", "descent.hog", 1))
 			Warning("descent.hog not available, this mission may be missing some files required for briefings and exit sequence\n");
 		if (!d_stricmp(Current_mission_filename, D1_MISSION_FILENAME))
 			return load_mission_d1();
@@ -874,9 +876,12 @@ int load_mission(mle *mission)
 	{
 		strcpy(buf+strlen(buf)-4,".hog");		//change extension
 		PHYSFSEXT_locateCorrectCase(buf);
-		if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog))
+		if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog)) {
 			if (!PHYSFS_addToSearchPath(Current_mission_hog, 0))
 				Current_mission_hog[0] = '\0';
+			else
+				input_demo_assets_note_archive("mission_hog", Current_mission_hog);
+		}
 
 		snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.tex",Current_mission_filename);
 		if (!PHYSFSX_exists(Briefing_text_filename,1))
@@ -942,7 +947,7 @@ int load_mission(mle *mission)
 						*ptr = '\0';
 					strncat(tmp, ".tex", sizeof(char)*FILENAME_LEN); // apply tex-extenstion
 					if (PHYSFSX_exists(tmp,1)) // check if this file exists ...
-						snprintf(Briefing_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
+						snprintf(Ending_text_filename, FILENAME_LEN, "%s", tmp); // ... and apply ...
 					else // ... otherwise ...
 					{
 						if ((ptr = strrchr(tmp, '.')))
@@ -1090,9 +1095,14 @@ int load_mission_by_name(char *mission_name)
 	if (ambiguous) Warning("Mission name '%s' is ambiguous; select its package in the mission menu", mission_name);
 	else if (match >= 0) found = load_mission(mission_list + match);
 #else
+	int match = -1, ambiguous = 0;
 	for (i = 0; i < num_missions; i++)
-		if (!d_stricmp(mission_name, mission_list[i].filename))
-			found = load_mission(mission_list + i);
+		if (!d_stricmp(mission_name, mission_list[i].filename)) {
+			if (match >= 0) ambiguous = 1;
+			match = i;
+		}
+	if (ambiguous) Warning("Mission name '%s' is ambiguous; remove or rename duplicate missions", mission_name);
+	else if (match >= 0) found = load_mission(mission_list + match);
 #endif
 
 	free_mission_list(mission_list);

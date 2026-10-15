@@ -161,12 +161,12 @@ try {
     Assert-Throws { Invoke-MenuTestWrapper -Answers @('1') -Options @{ Interactive = $true; SearchRoot = (Join-Path $fixtureRoot 'missing') } } 'Search root not found:*'
     Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = (Join-Path $fixtureRoot 'missing.dximdemo') } } 'Demo file not found:*'
     $publicDemo = Join-Path $repoRoot 'android/tests/fixtures/public_all_weapons/d1-bigred.dximdemo'
-    Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; DataEdition = 'retail' } } '*tracked public fixture requires -DataEdition shareware*'
+    Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; DataEdition = 'retail' } } '*UNVERIFIED recording assets*'
     Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; Game = 'd2' } } '*fixture was recorded in d1; select that engine*'
     Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; D1InD2 = $true } } '*qualified only in their native engine*'
-    Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; ResolveDataDirOnly = $true } } '*Prepare the pinned public fixtures explicitly:*setup_shareware_test_data.ps1*'
+    Assert-Throws { Invoke-MenuTestWrapper -Options @{ DemoPath = $publicDemo; RepositoryRoot = $repoRoot; ResolveDataDirOnly = $true; DataEdition = 'shareware' } } '*Prepare the pinned public fixtures explicitly:*setup_shareware_test_data.ps1*'
     foreach ($cancel in @('q', '')) {
-        $output = Invoke-MenuTestWrapper -Answers @('1', '1', $cancel) -Options @{ Interactive = $true; DemoPath = $publicDemo; RepositoryRoot = $repoRoot }
+        $output = Invoke-MenuTestWrapper -Answers @('1', '1', $cancel) -Options @{ Interactive = $true; DemoPath = $publicDemo; RepositoryRoot = $repoRoot; DataEdition = 'shareware'; AllowUnverifiedAssets = $true }
         Assert-True ($output.Contains('Replay cancelled; no game data was prepared')) 'Public data setup cancellation must be explicit'
         Assert-True ($script:menuTestAnswers.Count -eq 0) 'Public data setup cancellation did not consume the intended prompt'
     }

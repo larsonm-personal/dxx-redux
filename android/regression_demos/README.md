@@ -7,6 +7,16 @@
 
 - remove debug state tracing from the early demos
 
+# Recorded asset compatibility
+
+New input recordings include SHA-256 fingerprints for the HOG/PIG/HAM assets
+actually loaded. Every input playback path verifies these dependencies; missing
+or unknown historical fingerprints require an explicit `-AllowUnverifiedAssets`
+investigation and are excluded from verified shareware CI. Malformed metadata or
+known mismatches always fail. Use `run_input_demo_regressions.ps1 -SharewareOnly
+-RunMode headless` to run every recognized recording, with a nonzero failure if
+none are selected. See [the asset-verification contract and execution-path audit](../tests/INPUT_DEMO_ASSETS.md).
+
 # Guide-Bot routing for new regression recordings
 
 Use **Original** Guide-Bot routing for new D2 recordings intended to protect

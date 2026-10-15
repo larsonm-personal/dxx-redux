@@ -189,7 +189,7 @@ int d1_in_d2_dead_reactor_effects(void)
 	if (!d1_in_d2_use_d1_gameplay())
 		return 0;
 	if (Dead_controlcen_object_num != -1 && Countdown_seconds_left > 0)
-		if (d_rand_fx() < FrameTime * 4)
+		if (d_rand() < FrameTime * 4)
 			create_small_fireball_on_object(&Objects[Dead_controlcen_object_num], F1_0 * 3, 1);
 	return 1;
 }

@@ -1,5 +1,5 @@
 {
-    "compact_sha256": "31e3a5151ee2ec318408b9e396b6367eee3fe729ff28b94545121491535f9959",
+    "compact_sha256": "2a62decf06446427d0884645e7220f3bd230b19f096054461879deabc4d62ac6",
     "frame_sha256": [
         "c0fff69f5f4d9ca56a0d1d070743803b5b182a3bd748f9cc979e17d415c1c674",
         "8c651f72b29be9912a885de69a10d52db2c0507bc4df7a2fd03b3409e89c84f6",
@@ -222,7 +222,7 @@
         "163b2797bbe4790818564331d9adf49a0cb01463a8df7c368c09d06b58132970"
     ],
     "frames": 219,
-    "full_recording_sha256": "b1e01f07eccaca2130c074c6a756b4239eecf4002fd0ca344fea73d6f6e0ff2f",
+    "full_recording_sha256": "9bbc2883d365c10168ff9b340943f2191f1603ed79df590c5179279265489168",
     "game": "d2",
     "guidebot_observations": {
         "count": 219,
@@ -238,9 +238,9 @@
             "d2demo.hog": "b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e",
             "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
         },
-        "capture_executable_sha256": "2ec168e3c8ecf2bebb89f60822e1b570c0d2f6e77c7f67977c8ba22ee9b60a7a",
-        "capture_source_sha256": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
-        "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5"
+        "capture_executable_sha256": "8f28b5c730ba6c8bbd794688ced45f9c180a50800d2a3b28c43e98db9669272b",
+        "capture_source_sha256": "980ce67b28440178ed33c089817ec47f73381af7d193b727b6b95873b96fd071",
+        "source_revision": "77bd4d8e4b5636499730f7bc3f7857e6920c2911"
     },
     "removed_telemetry": {
         "compared_on_replay": false,

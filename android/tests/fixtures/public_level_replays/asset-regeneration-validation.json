@@ -1,0 +1,1522 @@
+{
+  "binary_sha256": {
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d1/d1x-redux": "a0da1bd0279f0bee1bfbff9eaacfcd88c486e152674329ef21eb5beed6ad5729",
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d1/dxx-redux-d1-headless": "2b8548d38dd80f52e26ce45baa633f866668c1164ec571e4409bf30932b950ca",
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d1/test_upstream_compat": "c8ceba9694806a6922d6996f879bd67260512096ff14e08ca5c163d3196e94f6",
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d2/d2x-redux": "189daa237f6989dfffd61c7e25ec3f7941162a7e63cc787851b630ba7710fc00",
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d2/dxx-redux-d2-headless": "01d976eb0e43682b4717b0e9f8171fc00fea302d513714e36ba57d56d62aecef",
+    "dxx-demo-assets/temp/faithful-assets-frozen-77bd4d8e4/d2/test_upstream_compat": "8f28b5c730ba6c8bbd794688ced45f9c180a50800d2a3b28c43e98db9669272b"
+  },
+  "capture_method": "Existing production recorder, normal authored level starts, independent captures before packing; no retrospective metadata insertion",
+  "cases": [
+    {
+      "files": {
+        "d1-public-flight.dximdemo": {
+          "bytes": 52149,
+          "sha256": "7b1cc398ab8f7e85690f784de5a7a9ab81d6c6bb9fb595291083cbf017a740a7"
+        },
+        "d1-public-flight.oracle.json": {
+          "bytes": 28668,
+          "sha256": "f387f49a00d06b3abfc1581e8e4cc6d496479e51addca62452d3f76ee723595c"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "max_player_weapons": 12,
+            "movement": true,
+            "wall_contact_frames": 51
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 360,
+            "simulation_events_compared": 96,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "max_player_weapons": 12,
+            "movement": true,
+            "wall_contact_frames": 51
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 360,
+            "simulation_events_compared": 96,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "max_player_weapons": 12,
+            "movement": true,
+            "wall_contact_frames": 51
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 360,
+            "simulation_events_compared": 96,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-flight/capture-observation.jsonl": "11208e43df4057248854cd213d6d15610cab615d7f79bb01b01dc9d21ccfb279",
+        "d1-flight/capture.dximdemo": "1766018498b3dc5359b5eaf4013660986ba7c0321b9a166fe3e7ff1f1f75a55a",
+        "d1-flight/capture.dximdemo.rngtrace.jsonl": "bd258aa8c09f6c65cc404e266cd7097de7cab4ee29c5ad8f5c349015790c9902",
+        "d1-flight/capture.json": "3a678395a0df97e3cddcdc47bed777acb2f82af09a5afba9dd27efd98ec03eaa",
+        "d1-public-flight.dximdemo": "7b1cc398ab8f7e85690f784de5a7a9ab81d6c6bb9fb595291083cbf017a740a7",
+        "d1-public-flight.oracle.json": "f387f49a00d06b3abfc1581e8e4cc6d496479e51addca62452d3f76ee723595c"
+      },
+      "scenario": "flight",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-pickup.dximdemo": {
+          "bytes": 39355,
+          "sha256": "76484abcd6540b8918fe28aa8be8aac6babe754ecb4a796e870cda242082502e"
+        },
+        "d1-public-pickup.oracle.json": {
+          "bytes": 20991,
+          "sha256": "99dc2ea7de4a9cd16c84310ecc3611606463f7a3e9d026c6586fc87744e09920"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "pickup_gain_frames": [
+              227
+            ],
+            "pickup_target_retired_frame": 228
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 259,
+            "simulation_events_compared": 240,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "pickup_gain_frames": [
+              227
+            ],
+            "pickup_target_retired_frame": 228
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 259,
+            "simulation_events_compared": 240,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-pickup/capture-observation.jsonl": "329419035e1680939bb4819ec38073def50302a6a2c21aca5d95bb5e3d9933a5",
+        "d1-pickup/capture.dximdemo": "34c5c610e1d8f1fb1e0dfd70425b7bc348c660f49781814f30d33254bb17631b",
+        "d1-pickup/capture.dximdemo.rngtrace.jsonl": "16bf5d6f891b37530cfaf79d39c20738348f7b547770b3bce6ca0c1accde1853",
+        "d1-pickup/capture.json": "d857ec370a12794ace5d137b342c0c8983c4bb85b9cb946e7f91b354f4d8e6e4",
+        "d1-public-pickup.dximdemo": "76484abcd6540b8918fe28aa8be8aac6babe754ecb4a796e870cda242082502e",
+        "d1-public-pickup.oracle.json": "99dc2ea7de4a9cd16c84310ecc3611606463f7a3e9d026c6586fc87744e09920"
+      },
+      "scenario": "pickup",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-door.dximdemo": {
+          "bytes": 65732,
+          "sha256": "1863ee897bdc25e5942f15add92a145add0644dcf78f215ca4c9ee2a0fffd2d0"
+        },
+        "d1-public-door.oracle.json": {
+          "bytes": 33721,
+          "sha256": "2ec2081e750099a19a0c3dbd0119ebd3ee919b8cc68d8ba5c8a6575e5cf0f396"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "door_open_entry_frames": [
+              366,
+              367,
+              368,
+              369,
+              370,
+              371,
+              372,
+              373,
+              374,
+              375,
+              376,
+              377,
+              378,
+              379,
+              380,
+              381,
+              382,
+              383,
+              384,
+              385,
+              386,
+              387,
+              388,
+              389,
+              390,
+              391,
+              392,
+              393,
+              394,
+              395,
+              396,
+              397,
+              398,
+              399,
+              400,
+              401,
+              402,
+              403,
+              404,
+              405,
+              406,
+              407,
+              408,
+              409,
+              410,
+              411,
+              412,
+              413,
+              414,
+              415,
+              416,
+              417,
+              418,
+              419,
+              420,
+              421,
+              422,
+              423,
+              424,
+              425,
+              426
+            ],
+            "energy_fell": true,
+            "max_player_weapons": 10,
+            "movement": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 426,
+            "simulation_events_compared": 649,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "door_open_entry_frames": [
+              366,
+              367,
+              368,
+              369,
+              370,
+              371,
+              372,
+              373,
+              374,
+              375,
+              376,
+              377,
+              378,
+              379,
+              380,
+              381,
+              382,
+              383,
+              384,
+              385,
+              386,
+              387,
+              388,
+              389,
+              390,
+              391,
+              392,
+              393,
+              394,
+              395,
+              396,
+              397,
+              398,
+              399,
+              400,
+              401,
+              402,
+              403,
+              404,
+              405,
+              406,
+              407,
+              408,
+              409,
+              410,
+              411,
+              412,
+              413,
+              414,
+              415,
+              416,
+              417,
+              418,
+              419,
+              420,
+              421,
+              422,
+              423,
+              424,
+              425,
+              426
+            ],
+            "energy_fell": true,
+            "max_player_weapons": 10,
+            "movement": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 426,
+            "simulation_events_compared": 649,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-door/capture-observation.jsonl": "a51b9f8c23e8577e963ba818f765c8d98dadab10ce9fdb9b9f23a0f2d0e36fd1",
+        "d1-door/capture.dximdemo": "a241b528a5dd498aecb16a35568fcfbf448b74b3e0177905382baf53bc75b709",
+        "d1-door/capture.dximdemo.rngtrace.jsonl": "8e3cea2bfd1c3014ed246dd4fe8ac5fb790ae41fda47cfce68b05d5c771e5d5b",
+        "d1-door/capture.json": "9c327e61da0ac17babd1e2448a00a0207b720b7ce3d6304259ac1e7b3d5575d1",
+        "d1-public-door.dximdemo": "1863ee897bdc25e5942f15add92a145add0644dcf78f215ca4c9ee2a0fffd2d0",
+        "d1-public-door.oracle.json": "2ec2081e750099a19a0c3dbd0119ebd3ee919b8cc68d8ba5c8a6575e5cf0f396"
+      },
+      "scenario": "door",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-combat.dximdemo": {
+          "bytes": 22157,
+          "sha256": "081c31303172aa6ec8623de3995ae98e799eb65cf84265761046fc678617eef0"
+        },
+        "d1-public-combat.oracle.json": {
+          "bytes": 12069,
+          "sha256": "6e2efef08f2999d82a74842faaa20fbe8d4ed8b218c677a01de6e5fdb39a7140"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "incoming_hit_frames": [
+              112,
+              116
+            ],
+            "incoming_robot": 8,
+            "incoming_robot_projectile_hits": 2,
+            "incoming_shield_loss": 12,
+            "loot_resolution_frame": 123,
+            "max_player_weapons": 5,
+            "movement": true,
+            "physical_loot_objects": 0,
+            "player_projectile_hits": 3,
+            "robot_damage_frame": 105,
+            "robot_death_frame": 116,
+            "robot_retirement_frame": 138,
+            "score_awarded": 200
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 4,
+            "frames_compared": 139,
+            "simulation_events_compared": 135,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "incoming_hit_frames": [
+              112,
+              116
+            ],
+            "incoming_robot": 8,
+            "incoming_robot_projectile_hits": 2,
+            "incoming_shield_loss": 12,
+            "loot_resolution_frame": 123,
+            "max_player_weapons": 5,
+            "movement": true,
+            "physical_loot_objects": 0,
+            "player_projectile_hits": 3,
+            "robot_damage_frame": 105,
+            "robot_death_frame": 116,
+            "robot_retirement_frame": 138,
+            "score_awarded": 200
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 4,
+            "frames_compared": 139,
+            "simulation_events_compared": 135,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-combat/capture-observation.jsonl": "35a84ec30b6c8cbe7a95587cabef356dc56b7f216ffe8364063acd812326918e",
+        "d1-combat/capture.dximdemo": "8fb130ae0d707edd42cca1c8c353ddc4eb3119baa4e64c4042cecf948ff161f9",
+        "d1-combat/capture.dximdemo.rngtrace.jsonl": "5231f241cbbe0dc4f300ab88177e1a18dd74fa8899f5c5b31afe3c7d3905af8f",
+        "d1-combat/capture.json": "4e81e0b4de80e1863750798f6e760d6d8dd1ca1915b3289136b3626dac8d1d31",
+        "d1-public-combat.dximdemo": "081c31303172aa6ec8623de3995ae98e799eb65cf84265761046fc678617eef0",
+        "d1-public-combat.oracle.json": "6e2efef08f2999d82a74842faaa20fbe8d4ed8b218c677a01de6e5fdb39a7140"
+      },
+      "scenario": "combat",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-door-lifecycle.dximdemo": {
+          "bytes": 44207,
+          "sha256": "c797069e5b9b655ad094c95cd40e1c568675efb02aacff2355e338e7d4598ea6"
+        },
+        "d1-public-door-lifecycle.oracle.json": {
+          "bytes": 20015,
+          "sha256": "911718df2c52334d69edbc7bc73b082f431eca12c420fb1e6a71a2778170880e"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "door_clear_frame": 182,
+            "door_closed_frame": 201,
+            "door_first_open_frame": 35,
+            "door_obstruction_reversal_frame": null,
+            "door_passage_frame": 243,
+            "door_reopen_frame": 214,
+            "energy_fell": true,
+            "max_player_weapons": 12,
+            "movement": true,
+            "player_obstruction_frames": 20
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "door_observations_compared": 219,
+            "frames_compared": 244,
+            "simulation_events_compared": 582,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "door_clear_frame": 182,
+            "door_closed_frame": 201,
+            "door_first_open_frame": 35,
+            "door_obstruction_reversal_frame": null,
+            "door_passage_frame": 243,
+            "door_reopen_frame": 214,
+            "energy_fell": true,
+            "max_player_weapons": 12,
+            "movement": true,
+            "player_obstruction_frames": 20
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "door_observations_compared": 219,
+            "frames_compared": 244,
+            "simulation_events_compared": 582,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-door-lifecycle/capture-observation.jsonl": "51aa3f5d718ee2b44edd25a456da63919219605e267966c4a9b2c4941226f788",
+        "d1-door-lifecycle/capture.dximdemo": "d2579131c89838f303fe38ac51bc355ff910909465e04feaf3e86b6715a82805",
+        "d1-door-lifecycle/capture.dximdemo.rngtrace.jsonl": "173c0f587485505b7903fdeac2f4541cf6beeb0fdd57bdc89812a3856df6789d",
+        "d1-door-lifecycle/capture.json": "d7eae7b98ff1fa33299d0f7e152bbc98bfcb00ea1a7ec53731c2cc999ae3696a",
+        "d1-public-door-lifecycle.dximdemo": "c797069e5b9b655ad094c95cd40e1c568675efb02aacff2355e338e7d4598ea6",
+        "d1-public-door-lifecycle.oracle.json": "911718df2c52334d69edbc7bc73b082f431eca12c420fb1e6a71a2778170880e"
+      },
+      "scenario": "door-lifecycle",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-loot.dximdemo": {
+          "bytes": 93139,
+          "sha256": "3041aab9cb43bf0e6fe90e4a8b056e67da16da451c34a4e922e3e00f5ce4ebaa"
+        },
+        "d1-public-loot.oracle.json": {
+          "bytes": 45742,
+          "sha256": "e911fa7c0712fde2893b0cf038604704c2459ed8d84b51f18723332ccb0e7650"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "laser_level_increase": 1,
+            "loot_collection_frame": 580,
+            "loot_retirement_frame": 581,
+            "max_player_weapons": 5,
+            "movement": true,
+            "physical_loot_frame": 550,
+            "player_projectile_hits": 8,
+            "robot_death_frame": 542,
+            "score_awarded": 500,
+            "selected_primary": 0,
+            "uncredited_kills_before_carrier": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 10,
+            "frames_compared": 582,
+            "simulation_events_compared": 1360,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "laser_level_increase": 1,
+            "loot_collection_frame": 580,
+            "loot_retirement_frame": 581,
+            "max_player_weapons": 5,
+            "movement": true,
+            "physical_loot_frame": 550,
+            "player_projectile_hits": 8,
+            "robot_death_frame": 542,
+            "score_awarded": 500,
+            "selected_primary": 0,
+            "uncredited_kills_before_carrier": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 10,
+            "frames_compared": 582,
+            "simulation_events_compared": 1360,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-loot/capture-observation.jsonl": "fa6cb29df51487a668aa77a51cfe308187561d9c072bbe7f04e0318398ee2f54",
+        "d1-loot/capture.dximdemo": "c27aa6c8ff744ea96aac79517f011aa6aee589ad33b2298298060a139d219bf3",
+        "d1-loot/capture.dximdemo.rngtrace.jsonl": "24dab2c2daccb5570d4da71671614be6ba2da1846aef24fbe34d06922bc0037b",
+        "d1-loot/capture.json": "fe0e296c7cada0f2e71fe7252b84dd8fbcb54377215d68b51c23780cfde4b59c",
+        "d1-public-loot.dximdemo": "3041aab9cb43bf0e6fe90e4a8b056e67da16da451c34a4e922e3e00f5ce4ebaa",
+        "d1-public-loot.oracle.json": "e911fa7c0712fde2893b0cf038604704c2459ed8d84b51f18723332ccb0e7650"
+      },
+      "scenario": "loot",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-secondary-release-first.dximdemo": {
+          "bytes": 5981,
+          "sha256": "3fd3f3c647058cf1b98d01070e6071d8576f4994d479ab51ae4df7169f1976f3"
+        },
+        "d1-public-secondary-release-first.oracle.json": {
+          "bytes": 3203,
+          "sha256": "522adec4132a0df7f5c72848d46e0209a57c64097234ed2117104c80970a61ca"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 12,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 12,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-public-secondary-release-first.dximdemo": "3fd3f3c647058cf1b98d01070e6071d8576f4994d479ab51ae4df7169f1976f3",
+        "d1-public-secondary-release-first.oracle.json": "522adec4132a0df7f5c72848d46e0209a57c64097234ed2117104c80970a61ca",
+        "d1-secondary-release-first/capture-observation.jsonl": "62282f377f353f747293e684b020162e1ed9277f9e7fd46f1ff6e6e97192f590",
+        "d1-secondary-release-first/capture.dximdemo": "f63215f3ac2ed595c86040a628671376d1326c50cab7d3a2ecbc34fcec5514cf",
+        "d1-secondary-release-first/capture.dximdemo.rngtrace.jsonl": "bed0d9f9897a52600551b4cb055356953b80a7cde67089226836d6ca409b9b5d",
+        "d1-secondary-release-first/capture.json": "80ed5495a44fc834035133127e58662cf9bb19788367cddcf8a7deea63ffa766"
+      },
+      "scenario": "secondary-release-first",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d1-public-secondary-mouse-first.dximdemo": {
+          "bytes": 5987,
+          "sha256": "f38eed8f5928b7691c49f7b3261efee4290e83ab8c0f9d2cbc90f8126962069d"
+        },
+        "d1-public-secondary-mouse-first.oracle.json": {
+          "bytes": 3203,
+          "sha256": "15f6ca910a0e6ba64ef804b62e89d130c8e2a078a0b765bd69e4d04db35ff57d"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d1",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 2
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 12,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 2
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 12,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d1-public-secondary-mouse-first.dximdemo": "f38eed8f5928b7691c49f7b3261efee4290e83ab8c0f9d2cbc90f8126962069d",
+        "d1-public-secondary-mouse-first.oracle.json": "15f6ca910a0e6ba64ef804b62e89d130c8e2a078a0b765bd69e4d04db35ff57d",
+        "d1-secondary-mouse-first/capture-observation.jsonl": "62282f377f353f747293e684b020162e1ed9277f9e7fd46f1ff6e6e97192f590",
+        "d1-secondary-mouse-first/capture.dximdemo": "45d8936c977765027c346038b10006bc290fc147de03873810fecfc2f533ebc9",
+        "d1-secondary-mouse-first/capture.dximdemo.rngtrace.jsonl": "bed0d9f9897a52600551b4cb055356953b80a7cde67089226836d6ca409b9b5d",
+        "d1-secondary-mouse-first/capture.json": "f022d949bbc8e78d4341257fcd05ef28021b1692697cc0391d5f0226e5c5c8d9"
+      },
+      "scenario": "secondary-mouse-first",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-flight.dximdemo": {
+          "bytes": 54530,
+          "sha256": "0f356ff07bc2c5040a2032abddca2653ffab16ccf85e4448e9aaff8687137172"
+        },
+        "d2-public-flight.oracle.json": {
+          "bytes": 29445,
+          "sha256": "766b02c2b55caf24d477c40b4eefccf165d48f36ec01e984c47c2d5228255a42"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "max_player_weapons": 18,
+            "movement": true,
+            "wall_contact_frames": 51
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 360,
+            "simulation_events_compared": 778,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "max_player_weapons": 18,
+            "movement": true,
+            "wall_contact_frames": 51
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 360,
+            "simulation_events_compared": 778,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-flight/capture-observation.jsonl": "bffdda5f028bd455fd42d14f1be856f27e2e4a01ff0e6fdc964a76b69c6630c9",
+        "d2-flight/capture.dximdemo": "1842dcd5b7c60c1c16dd3284ae1d0df3edbe8c3fe814379be3c44f87489beb9c",
+        "d2-flight/capture.dximdemo.rngtrace.jsonl": "20dccc3dbd9cfcf1e4dedf6d5af7c427793b1c3f6ec4aef53bfbca5e85be598b",
+        "d2-flight/capture.json": "b69919374de0f8796ac90a4a04580e21c16d7e0976a7390142171d7b2c4e9325",
+        "d2-public-flight.dximdemo": "0f356ff07bc2c5040a2032abddca2653ffab16ccf85e4448e9aaff8687137172",
+        "d2-public-flight.oracle.json": "766b02c2b55caf24d477c40b4eefccf165d48f36ec01e984c47c2d5228255a42"
+      },
+      "scenario": "flight",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-pickup.dximdemo": {
+          "bytes": 23181,
+          "sha256": "d59a6e1b01affc054b034a754cd999a3ae64d8190296fed05d75b71bceedadfa"
+        },
+        "d2-public-pickup.oracle.json": {
+          "bytes": 13037,
+          "sha256": "ab1b478da142cf47bbc2805b06acfcd6aab2f4b27e7dc10707406a6ad12e4fa5"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "pickup_gain_frames": [
+              113
+            ],
+            "pickup_target_retired_frame": 114
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 145,
+            "simulation_events_compared": 657,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "pickup_gain_frames": [
+              113
+            ],
+            "pickup_target_retired_frame": 114
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 145,
+            "simulation_events_compared": 657,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-pickup/capture-observation.jsonl": "d5618d7bc9ee86a68abe33a7a062df04e316761c526908ab1f9ff04ba3122e26",
+        "d2-pickup/capture.dximdemo": "ae40768a06711de3872c0e36775c2958297eaf9841b7545bbb332689234a3ec2",
+        "d2-pickup/capture.dximdemo.rngtrace.jsonl": "a380ef4c020bbc635073184aa98084db53432409bda6688a0ca9879906110026",
+        "d2-pickup/capture.json": "5a47c20df18a1c1d8008b258efe22d79dc343d437cf95de67994799bdc77f763",
+        "d2-public-pickup.dximdemo": "d59a6e1b01affc054b034a754cd999a3ae64d8190296fed05d75b71bceedadfa",
+        "d2-public-pickup.oracle.json": "ab1b478da142cf47bbc2805b06acfcd6aab2f4b27e7dc10707406a6ad12e4fa5"
+      },
+      "scenario": "pickup",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-door.dximdemo": {
+          "bytes": 24023,
+          "sha256": "dfdef5001bdfe64e9bc17dd69b12ad4c4d56dbc40d10a937455d8fc086272d0b"
+        },
+        "d2-public-door.oracle.json": {
+          "bytes": 13676,
+          "sha256": "6a8e4282122bf8126360d435a1b3c3b83579be7b64fdd4201347f4121a0aa338"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "door_open_entry_frames": [
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110,
+              111,
+              112,
+              113,
+              114,
+              115,
+              116,
+              117,
+              118,
+              119,
+              120,
+              121,
+              122,
+              123,
+              124,
+              125,
+              126,
+              127,
+              128,
+              129,
+              130,
+              131,
+              132,
+              133,
+              134,
+              135,
+              136,
+              137,
+              138,
+              139,
+              140,
+              141,
+              142,
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              149,
+              150
+            ],
+            "energy_fell": true,
+            "max_player_weapons": 22,
+            "movement": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 150,
+            "simulation_events_compared": 988,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "door_open_entry_frames": [
+              90,
+              91,
+              92,
+              93,
+              94,
+              95,
+              96,
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104,
+              105,
+              106,
+              107,
+              108,
+              109,
+              110,
+              111,
+              112,
+              113,
+              114,
+              115,
+              116,
+              117,
+              118,
+              119,
+              120,
+              121,
+              122,
+              123,
+              124,
+              125,
+              126,
+              127,
+              128,
+              129,
+              130,
+              131,
+              132,
+              133,
+              134,
+              135,
+              136,
+              137,
+              138,
+              139,
+              140,
+              141,
+              142,
+              143,
+              144,
+              145,
+              146,
+              147,
+              148,
+              149,
+              150
+            ],
+            "energy_fell": true,
+            "max_player_weapons": 22,
+            "movement": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 150,
+            "simulation_events_compared": 988,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-door/capture-observation.jsonl": "d5618d7bc9ee86a68abe33a7a062df04e316761c526908ab1f9ff04ba3122e26",
+        "d2-door/capture.dximdemo": "cb522c9723e32da5e9f43156cbccf6e4a05cc47e9b769555fca63d8edc1abd07",
+        "d2-door/capture.dximdemo.rngtrace.jsonl": "81470ba1f082c26d4a7811e75ec7cdf225e946d041b6f56e91b67d34b82c7233",
+        "d2-door/capture.json": "f0fccaf86efe331a95c79cfd4054bbeb461eaa238cd25dd40241e17daebc0f95",
+        "d2-public-door.dximdemo": "dfdef5001bdfe64e9bc17dd69b12ad4c4d56dbc40d10a937455d8fc086272d0b",
+        "d2-public-door.oracle.json": "6a8e4282122bf8126360d435a1b3c3b83579be7b64fdd4201347f4121a0aa338"
+      },
+      "scenario": "door",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-combat.dximdemo": {
+          "bytes": 43956,
+          "sha256": "03fdedb052aae18597709c4edc086f262576e1f0627798c7e50df79cdc1a0d65"
+        },
+        "d2-public-combat.oracle.json": {
+          "bytes": 22508,
+          "sha256": "6502018e2b084e6cdbaa98fd9acaefb31d7a8123298acfbd76940aa560527f91"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "incoming_hit_frames": [
+              168,
+              247
+            ],
+            "incoming_robot": 11,
+            "incoming_robot_projectile_hits": 2,
+            "incoming_shield_loss": 4,
+            "loot_resolution_frame": 248,
+            "max_player_weapons": 6,
+            "movement": true,
+            "physical_loot_objects": 0,
+            "player_projectile_hits": 2,
+            "robot_damage_frame": 239,
+            "robot_death_frame": 241,
+            "robot_retirement_frame": 262,
+            "score_awarded": 200
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 3,
+            "frames_compared": 263,
+            "simulation_events_compared": 1225,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "incoming_hit_frames": [
+              168,
+              247
+            ],
+            "incoming_robot": 11,
+            "incoming_robot_projectile_hits": 2,
+            "incoming_shield_loss": 4,
+            "loot_resolution_frame": 248,
+            "max_player_weapons": 6,
+            "movement": true,
+            "physical_loot_objects": 0,
+            "player_projectile_hits": 2,
+            "robot_damage_frame": 239,
+            "robot_death_frame": 241,
+            "robot_retirement_frame": 262,
+            "score_awarded": 200
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "combat_observations_compared": 3,
+            "frames_compared": 263,
+            "simulation_events_compared": 1225,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-combat/capture-observation.jsonl": "689e4b0a11d5b869a450657a40c0611455d81a50d7f51f88c6333d35503dca46",
+        "d2-combat/capture.dximdemo": "b45e7b3053b5c5556dc08256f5c4ed87f35103d61b06e00c498210aeab38283d",
+        "d2-combat/capture.dximdemo.rngtrace.jsonl": "6d093d8b052dc4cdb0c8ce2577b20e9bff23c94d1620340fc7c8d36f08c1c959",
+        "d2-combat/capture.json": "ce67afc6bb756d73e1dbb1eb5c43a6fa62e990f5fd2ac779f982bee6a3f3ac19",
+        "d2-public-combat.dximdemo": "03fdedb052aae18597709c4edc086f262576e1f0627798c7e50df79cdc1a0d65",
+        "d2-public-combat.oracle.json": "6502018e2b084e6cdbaa98fd9acaefb31d7a8123298acfbd76940aa560527f91"
+      },
+      "scenario": "combat",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-shoot-switch.dximdemo": {
+          "bytes": 34723,
+          "sha256": "91f3d6c399b63315ca78d91fac63dcf3daf94e13544be680d6fd1facfa4e55e6"
+        },
+        "d2-public-shoot-switch.oracle.json": {
+          "bytes": 18777,
+          "sha256": "74b484275f087d31fb45c828d3d8803abdc4fadd74e45b96cbdfe30afea707ad"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "both_doors_opening_frame": 187,
+            "energy_fell": true,
+            "max_player_weapons": 2,
+            "movement": true,
+            "passage_frame": 217,
+            "projectile_trigger_frame": 175
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 218,
+            "simulation_events_compared": 3191,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "both_doors_opening_frame": 187,
+            "energy_fell": true,
+            "max_player_weapons": 2,
+            "movement": true,
+            "passage_frame": 217,
+            "projectile_trigger_frame": 175
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 218,
+            "simulation_events_compared": 3191,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-public-shoot-switch.dximdemo": "91f3d6c399b63315ca78d91fac63dcf3daf94e13544be680d6fd1facfa4e55e6",
+        "d2-public-shoot-switch.oracle.json": "74b484275f087d31fb45c828d3d8803abdc4fadd74e45b96cbdfe30afea707ad",
+        "d2-shoot-switch/capture-observation.jsonl": "9f7f7fbaddf48b640a6abd5300e48e35e6173dc020d2fba58c41c08e107a4d2c",
+        "d2-shoot-switch/capture.dximdemo": "9046dd5e4f9211979339cdeffa08d80bd98f5150b3c573b9ce37b01c87e01b92",
+        "d2-shoot-switch/capture.dximdemo.rngtrace.jsonl": "15295cf8a9145a4460ebc77487ebd7470561f76df108222728d59c08281adf64",
+        "d2-shoot-switch/capture.json": "d78c1a40387520ce509a7172f97ee66d970ee0df08d8b52e084d4989dfa4076d"
+      },
+      "scenario": "shoot-switch",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-door-lifecycle.dximdemo": {
+          "bytes": 68027,
+          "sha256": "ae051e1e1465431363e40691009443c3ed617e961a4a8f24beb4b98ed8862658"
+        },
+        "d2-public-door-lifecycle.oracle.json": {
+          "bytes": 29372,
+          "sha256": "2dc8b84155f3765aecfe6b7bbe5cacf30b2cc7e86ecc4d478d7f4a635d6b355a"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "door_clear_frame": 216,
+            "door_closed_frame": 324,
+            "door_first_open_frame": 71,
+            "door_obstruction_reversal_frame": 221,
+            "door_passage_frame": 361,
+            "door_reopen_frame": 336,
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "player_obstruction_frames": 20
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "door_observations_compared": 315,
+            "frames_compared": 362,
+            "simulation_events_compared": 3032,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "door_clear_frame": 216,
+            "door_closed_frame": 324,
+            "door_first_open_frame": 71,
+            "door_obstruction_reversal_frame": 221,
+            "door_passage_frame": 361,
+            "door_reopen_frame": 336,
+            "energy_fell": false,
+            "max_player_weapons": 0,
+            "movement": true,
+            "player_obstruction_frames": 20
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "door_observations_compared": 315,
+            "frames_compared": 362,
+            "simulation_events_compared": 3032,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-door-lifecycle/capture-observation.jsonl": "e32149941b4bc18d32d04c7ab0d221398f909c9a9b27821a6fea627eb9c0aa27",
+        "d2-door-lifecycle/capture.dximdemo": "7be1ad44db21865cd2dea096a2bb2f37d04f74a74e0066ce7bb047c7f0836406",
+        "d2-door-lifecycle/capture.dximdemo.rngtrace.jsonl": "10fb66ef5d2f2b486381deb69f3c068194df1ef299b2091ac521bd9392d481c7",
+        "d2-door-lifecycle/capture.json": "549e30fdf524d623f0e899999c24849ae2594fb23b6cea3087dd20488e502f42",
+        "d2-public-door-lifecycle.dximdemo": "ae051e1e1465431363e40691009443c3ed617e961a4a8f24beb4b98ed8862658",
+        "d2-public-door-lifecycle.oracle.json": "2dc8b84155f3765aecfe6b7bbe5cacf30b2cc7e86ecc4d478d7f4a635d6b355a"
+      },
+      "scenario": "door-lifecycle",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-guidebot-release.dximdemo": {
+          "bytes": 38677,
+          "sha256": "2a62decf06446427d0884645e7220f3bd230b19f096054461879deabc4d62ac6"
+        },
+        "d2-public-guidebot-release.oracle.json": {
+          "bytes": 19035,
+          "sha256": "92c21d9bea0d1a604303ba9876110272f17d17e190d6b61a19c7f877ceefc0a6"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "energy_fell": true,
+            "guidebot_exited_frame": 179,
+            "guidebot_released_frame": 188,
+            "max_player_weapons": 3,
+            "movement": true,
+            "original_guidebot_survived": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 219,
+            "guidebot_observations_compared": 219,
+            "simulation_events_compared": 3343,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "energy_fell": true,
+            "guidebot_exited_frame": 179,
+            "guidebot_released_frame": 188,
+            "max_player_weapons": 3,
+            "movement": true,
+            "original_guidebot_survived": true
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 219,
+            "guidebot_observations_compared": 219,
+            "simulation_events_compared": 3343,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-guidebot-release/capture-observation.jsonl": "052cf44d88f7658df490069101b95b1ddc37b347b01112f9dae549d8f20c380d",
+        "d2-guidebot-release/capture.dximdemo": "9bbc2883d365c10168ff9b340943f2191f1603ed79df590c5179279265489168",
+        "d2-guidebot-release/capture.dximdemo.rngtrace.jsonl": "91257132d3ec41d27382e6a34459cb011ef3c46bd54d46ffab3e36451b5f2675",
+        "d2-guidebot-release/capture.json": "8c96a1a5ff463123b4cd80ef20f5d51f4bf8584fd4ff710e9ead712d6a86d0dc",
+        "d2-public-guidebot-release.dximdemo": "2a62decf06446427d0884645e7220f3bd230b19f096054461879deabc4d62ac6",
+        "d2-public-guidebot-release.oracle.json": "92c21d9bea0d1a604303ba9876110272f17d17e190d6b61a19c7f877ceefc0a6"
+      },
+      "scenario": "guidebot-release",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-secondary-release-first.dximdemo": {
+          "bytes": 6371,
+          "sha256": "550a8938b5a9c2d5ccde2f75df2b99cb416c2519ffd6ddbc4f5b88d2c72b1916"
+        },
+        "d2-public-secondary-release-first.oracle.json": {
+          "bytes": 3906,
+          "sha256": "6818fa1fd04bc49c04149ef3b9456612741249bb6130d37bf29cadd79a463c7a"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 478,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 1
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 478,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-public-secondary-release-first.dximdemo": "550a8938b5a9c2d5ccde2f75df2b99cb416c2519ffd6ddbc4f5b88d2c72b1916",
+        "d2-public-secondary-release-first.oracle.json": "6818fa1fd04bc49c04149ef3b9456612741249bb6130d37bf29cadd79a463c7a",
+        "d2-secondary-release-first/capture-observation.jsonl": "94ba0a3a3f50d9fa2e8288b7bdadabe170566bcf362353cc1abd503064b2af11",
+        "d2-secondary-release-first/capture.dximdemo": "1f034bf92c9f99d679d96ee973b0ac5452138097bbcca41bd4a86cbda5336aab",
+        "d2-secondary-release-first/capture.dximdemo.rngtrace.jsonl": "74ee66abfd106252b2402c62f3e2046bcb963bda0d0e32a3674e459eadc140b0",
+        "d2-secondary-release-first/capture.json": "c887a578309f086b92b9c9a234671c506e33effe365e3ed70c95714191a720bc"
+      },
+      "scenario": "secondary-release-first",
+      "semantic_oracles_unchanged": true
+    },
+    {
+      "files": {
+        "d2-public-secondary-mouse-first.dximdemo": {
+          "bytes": 6397,
+          "sha256": "7e7b97618d1cdd6cbbb122c7f06b3000e7809e7ecb9c05a8002fb266c04672d3"
+        },
+        "d2-public-secondary-mouse-first.oracle.json": {
+          "bytes": 3907,
+          "sha256": "48600a8a934cfa4a1a280e25df8069339fd38094b8dec05a619b173aa0689580"
+        }
+      },
+      "fx_state_metadata_absent": true,
+      "game": "d2",
+      "independent_capture_byte_equality": true,
+      "native_runs": [
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 2
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 453,
+            "status": "pass"
+          },
+          "timed_out": false
+        },
+        {
+          "actions": {
+            "ordered_input": true,
+            "release_frame": 13,
+            "second_press_ticks_early": 8,
+            "secondary_shots": 2
+          },
+          "exit_code": 0,
+          "fidelity": {
+            "frames_compared": 25,
+            "simulation_events_compared": 453,
+            "status": "pass"
+          },
+          "timed_out": false
+        }
+      ],
+      "repeated_capture_sha256": {
+        "d2-public-secondary-mouse-first.dximdemo": "7e7b97618d1cdd6cbbb122c7f06b3000e7809e7ecb9c05a8002fb266c04672d3",
+        "d2-public-secondary-mouse-first.oracle.json": "48600a8a934cfa4a1a280e25df8069339fd38094b8dec05a619b173aa0689580",
+        "d2-secondary-mouse-first/capture-observation.jsonl": "94ba0a3a3f50d9fa2e8288b7bdadabe170566bcf362353cc1abd503064b2af11",
+        "d2-secondary-mouse-first/capture.dximdemo": "841be86793b56846766f02c4ab4299c6c77f44093b9d585ee56d965072e2e339",
+        "d2-secondary-mouse-first/capture.dximdemo.rngtrace.jsonl": "514b1a53c864671e040247113fc8d2d0d0e9dc521b413d7401dae7b702aa44ee",
+        "d2-secondary-mouse-first/capture.json": "beda49cb97f7c18a8ce4d3bfbb0c0bd2e8b57f627d39900f1e50b628b96971a1"
+      },
+      "scenario": "secondary-mouse-first",
+      "semantic_oracles_unchanged": true
+    }
+  ],
+  "full_imported_simulation_status": "INCOMPLETE",
+  "headed_coverage": "Production native D1 flight plus imported D1 flight, both with -inputdemo-norender. Remaining cases headless only.",
+  "historical_algorithm_preservation": "Faithful RNG-stream correction only; all historical public semantic oracle fields and actions unchanged.",
+  "imported_d1_flight": {
+    "full_comparison": {
+      "checks": {
+        "checkpoint_collision_clock": {
+          "status": "pass"
+        },
+        "frames": {
+          "first_differences": {
+            "diag": {
+              "actual": 2349085647,
+              "expected": 906675262,
+              "frame": 0,
+              "path": "$.diag.live_object_hash"
+            }
+          },
+          "frames_compared": 360,
+          "status": "fail"
+        },
+        "object_states": {
+          "first_field_differences": {
+            "$.object.signature": {
+              "actual": 0,
+              "expected": 1,
+              "frame": 0,
+              "path": "$.object.signature",
+              "slot": 0
+            },
+            "$.object.weapon.parent_signature": {
+              "actual": 0,
+              "expected": 1,
+              "frame": 1,
+              "path": "$.object.weapon.parent_signature",
+              "slot": 67
+            }
+          },
+          "frames_compared": 360,
+          "status": "fail"
+        },
+        "simulation_rng": {
+          "first_difference": null,
+          "first_value_difference": null,
+          "simulation_events_compared": 96,
+          "status": "pass"
+        },
+        "terminal_result": {
+          "first_difference": null,
+          "status": "pass"
+        },
+        "world_states": {
+          "different_field_count": 269,
+          "first_field_difference_examples": {
+            "object_boundary:restored:$.slots.0.signature": {
+              "actual": 0,
+              "expected": 1,
+              "frame": 0,
+              "path": "$.slots.0.signature"
+            },
+            "object_boundary:terminal:$.slots.0.signature": {
+              "actual": 0,
+              "expected": 1,
+              "frame": 360,
+              "path": "$.slots.0.signature"
+            },
+            "world_boundary:restored:$.state.effects[0].time_left": {
+              "actual": 0,
+              "expected": 4369,
+              "frame": 0,
+              "path": "$.state.effects[0].time_left"
+            }
+          },
+          "records_compared": 364,
+          "status": "fail"
+        }
+      },
+      "status": "fail",
+      "unabridged_comparison_sha256": "ed382c598471ac337b542ac984c1b6cd055025363adbe8973726c44a7299d001"
+    },
+    "gameplay_scope": {
+      "checks": {
+        "frames": {
+          "first_difference": null,
+          "frames_compared": 360,
+          "status": "pass"
+        },
+        "simulation_rng": {
+          "first_difference": null,
+          "first_value_difference": null,
+          "simulation_events_compared": 96,
+          "status": "pass"
+        },
+        "terminal_result": {
+          "first_difference": null,
+          "status": "pass"
+        }
+      },
+      "compared_fields": [
+        "frame.f",
+        "frame.ft",
+        "frame.state",
+        "frame.rng",
+        "terminal_result",
+        "simulation_rng_events"
+      ],
+      "diagnostic_frames_different": 360,
+      "first_difference": null,
+      "frames_compared": 360,
+      "not_qualified": [
+        "frame.diag",
+        "object_states",
+        "world_states"
+      ],
+      "original_comparison_statuses": {
+        "checkpoint_collision_clock": "pass",
+        "frames": "fail",
+        "object_states": "fail",
+        "simulation_rng": "pass",
+        "terminal_result": "pass",
+        "world_states": "fail"
+      },
+      "original_frame_first_differences": {
+        "diag": {
+          "actual": 2349085647,
+          "expected": 906675262,
+          "frame": 0,
+          "path": "$.diag.live_object_hash"
+        }
+      },
+      "qualification": "incomplete",
+      "status": "pass"
+    },
+    "raw_embedded_result": "Engine identity mismatch is retained: recorded d1, actual d2. Explicit existing imported comparison canonicalizes terminal engine identity.",
+    "separately_verified_runtime_assets": {
+      "d2demo.ham": "747ccf2494916892061e13601cd8695c35e46f2a99062fff3e3f298da94b9be6",
+      "d2demo.hog": "b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e",
+      "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989",
+      "descent.hog": "26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab",
+      "descent.pig": "b67865e513452a35887a20270d17fdfb5af1a2edaaae247bc523489f1d84f9ac"
+    }
+  },
+  "native_graphical_runs": 1,
+  "native_headless_runs": 34,
+  "powershell_limitation": "Execution was unavailable by instruction; direct native equivalents and shared Python validators were used.",
+  "powershell_wrappers_executed": false,
+  "schema": 1,
+  "source_revision": "77bd4d8e4b5636499730f7bc3f7857e6920c2911",
+  "status": "pass",
+  "verified_shareware_selection": {
+    "d1": 8,
+    "d2": 9
+  }
+}

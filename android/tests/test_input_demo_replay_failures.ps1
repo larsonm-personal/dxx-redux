@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
                 $result = Join-Path $testRoot ($runner + '-' + $scenario + '.result.json')
                 $log = Join-Path $testRoot ($runner + '-' + $scenario + '.log')
                 & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') `
-                    -DemoPath $demo -DataDir $data -ExecutablePath $nativeExe -Runner $runner `
+                    -AllowUnverifiedAssets -DemoPath $demo -DataDir $data -ExecutablePath $nativeExe -Runner $runner `
                     -Mode accelerated -TimeoutSeconds 2 -ResultCopyPath $result -StrictComparison -RequireCleanExit *> $log
                 $exitCode = $LASTEXITCODE
                 $archives = @(Get-ChildItem -LiteralPath $testRoot -Directory | Where-Object Name -Like ($runner + '-' + $scenario + '.result.json.failure_*'))
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
                             $arguments = @('-NoProfile', '-File', (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'),
                                 '-DemoPath', $demo, '-DataDir', $data, '-ExecutablePath', $nativeExe, '-Runner', $runner,
                                 '-Mode', 'accelerated', '-TimeoutSeconds', '2', '-StrictComparison', '-RequireCleanExit',
-                                '-ReuseSandbox', '-KeepSandbox')
+                                '-ReuseSandbox', '-KeepSandbox', '-AllowUnverifiedAssets')
                             if ($selectedPilot) { $arguments += @('-Pilot', $selectedPilot) }
                             $log = Join-Path $testRoot ($gameName + '-' + $runner + '-home-' + $homes.Count + '.log')
                             & $pwsh @arguments *> $log

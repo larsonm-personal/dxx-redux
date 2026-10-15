@@ -634,15 +634,15 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 	vms_vector	pos, rand_vec;
 	int			segnum;
 
-	// FX RNG: graphics and sound only, this only varies attached fireball placement, size, and crackle
+	// SIM RNG: retain original geometry, admission and world-update draw order; crackle stays FX
 	pos = objp->pos;
-	make_random_vector_fx(&rand_vec);
+	make_random_vector(&rand_vec);
 
 	vm_vec_scale(&rand_vec, objp->size/2);
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0 + d_rand_fx()*4);
+	size = fixmul(size_scale, F1_0 + d_rand()*4);
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {
@@ -1770,8 +1770,8 @@ void dead_player_frame(void)
 #endif				
 			}
 		} else {
-			// FX RNG: graphics only, this just varies post-death fireball cadence
-			if (d_rand_fx() < FrameTime*4) {
+			// SIM RNG: retain original shared-pool fireball cadence
+			if (d_rand() < FrameTime*4) {
 				#ifdef NETWORK
 				if (Game_mode & GM_MULTI)
 					multi_send_create_explosion(Player_num);

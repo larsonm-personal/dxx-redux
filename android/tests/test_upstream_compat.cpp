@@ -828,6 +828,71 @@ static void test_door_open_completion()
 #endif
 }
 
+// Preserve original D1 fireball blocking and the different D2 type filters
+static void test_fireball_door_isolation()
+{
+#ifdef DXX_BUILD_DESCENT_II
+	Mission mission = {};
+	Current_mission = &mission;
+#endif
+	const auto original_clip = WallAnims[0];
+	Game_mode = 0;
+	Newdemo_state = ND_STATE_NORMAL;
+	GameArg.SndNoSound = 1;
+	FrameTime = F1_0 / 16;
+	for (const int profile : { 1, 2 }) {
+#ifdef DXX_BUILD_DESCENT_II
+		mission.descent_version = profile;
+		const bool native = profile == 1;
+#else
+		(void) profile;
+		const bool native = true;
+#endif
+		for (const auto type : { OBJ_PLAYER, OBJ_ROBOT, OBJ_WEAPON, OBJ_FIREBALL })
+			for (const int back : { 0, 1 })
+				for (const unsigned seed : { 1u, 5678u, 3896797992u }) {
+					init_test_corridor();
+					Num_walls = 2;
+					Num_open_doors = 1;
+					std::memset(ActiveDoors, 0, sizeof(ActiveDoors));
+					WallAnims[0] = {};
+					WallAnims[0].num_frames = 8;
+					WallAnims[0].play_time = F1_0;
+					WallAnims[0].flags = WCF_TMAP1;
+					WallAnims[0].open_sound = WallAnims[0].close_sound = -1;
+					for (int i = 0; i < 8; ++i) WallAnims[0].frames[i] = i + 1;
+					for (int i = 0; i < 2; ++i) {
+						Walls[i] = {};
+						Walls[i].segnum = i;
+						Walls[i].sidenum = i ? 5 : 4;
+						Walls[i].linked_wall = -1;
+						Walls[i].type = WALL_DOOR;
+						Walls[i].flags = WALL_DOOR_AUTO | WALL_DOOR_OPENED;
+						Walls[i].state = WALL_DOOR_CLOSING;
+						Segments[i].sides[Walls[i].sidenum].wall_num = i;
+					}
+					ActiveDoors[0].n_parts = 1;
+					ActiveDoors[0].front_wallnum[0] = 0;
+					ActiveDoors[0].back_wallnum[0] = 1;
+					d_srand(1234);
+					d_srand_fx(seed);
+					const auto calls = d_rand_get_call_count();
+					vms_vector point = { d_rand_fx() - 16384, d_rand_fx() - 16384, 10 * F1_0 + (back ? 1 : -1) * (d_rand_fx() + 1) };
+					const int blocker = obj_create(type, 0, back, &point, &vmd_identity_matrix, F1_0 + d_rand_fx() * 4, type == OBJ_WEAPON ? CT_WEAPON : CT_NONE, MT_NONE, RT_NONE);
+					require(blocker > 0, "create actual doorway overlap with FX-varied geometry");
+					do_door_close(0);
+					const bool blocked = native || (type != OBJ_WEAPON && type != OBJ_FIREBALL);
+					require(d_rand_get_call_count() == calls, "cosmetic door geometry consumes no SIM RNG");
+					require(blocked ? (native ? ActiveDoors[0].time == 0 : Walls[0].state == WALL_DOOR_OPENING) : ActiveDoors[0].time > 0,
+					        "original D1 fireball/weapon blockers and native D2 exclusions remain intact");
+				}
+	}
+	WallAnims[0] = original_clip;
+#ifdef DXX_BUILD_DESCENT_II
+	Current_mission = nullptr;
+#endif
+}
+
 // Shared native/imported activation scenarios, through the real crossing entry
 static void install_native_trigger(int index, short flags)
 {
@@ -4232,6 +4297,8 @@ static object &create_boss_frame_scene()
 #endif
 	return boss;
 }
+
+#include "fx_gameplay_isolation_fixture.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 static void test_boss_sound_storage()
@@ -10775,6 +10842,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 		vms_vector point = {};
 		Dead_controlcen_object_num = obj_create(OBJ_CNTRLCEN, 0, 0, &point, &vmd_identity_matrix, F1_0, CT_NONE, MT_NONE, RT_NONE);
 		require(Dead_controlcen_object_num > 0, "create burnt reactor");
+		d_srand(seed);
 		d_srand_stream(D_RNG_FX, seed);
 		d_rand_reset_stream_call_count(D_RNG_FX);
 		const auto sim_calls = d_rand_get_call_count();
@@ -10784,7 +10852,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 		const auto &fireball = Objects[index];
 		require(fireball.size >= (native ? 3 * F1_0 : F1_0 / 2) && fireball.size < (native ? 9 * F1_0 : 3 * F1_0 / 2),
 		        "reactor burn retains native source scale or ordinary D2 scale");
-		require(d_rand_get_call_count() == sim_calls, "reactor burn consumes only FX RNG");
+		require(d_rand_get_call_count() == sim_calls + 5, "reactor cadence and four geometry draws use SIM in original order");
 		reactor_fireballs.push_back({ seed, fireball.size, fireball.lifeleft, fireball.pos.x, fireball.pos.y, fireball.pos.z,
 		                              d_rand_get_stream_call_count(D_RNG_FX) });
 	}
@@ -10796,6 +10864,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				ConsoleObject->type = type;
 				ConsoleObject->id = 0;
 				ConsoleObject->size = F1_0;
+				d_srand(seed);
 				d_srand_stream(D_RNG_FX, seed);
 				d_rand_reset_stream_call_count(D_RNG_FX);
 				const auto sim_calls = d_rand_get_call_count();
@@ -10803,7 +10872,7 @@ static nlohmann::json exercise_gameplay_rules(bool native)
 				const int index = ConsoleObject->attached_obj;
 				require(index > 0 && Objects[index].type == OBJ_FIREBALL, "small fireball is created and attached to its source");
 				const auto &fireball = Objects[index];
-				require(d_rand_get_call_count() == sim_calls, "attached fireball consumes only the FX stream");
+				require(d_rand_get_call_count() == sim_calls + 4, "attached fireball geometry uses four SIM draws");
 				require(fireball.size >= (native ? scale : scale / 2) && fireball.size < (native ? scale * 3 : scale * 3 / 2),
 				        "native fireball size range retains D1 presentation while ordinary D2 stays smaller");
 				small_fireballs.push_back({ type, scale, seed, fireball.size, fireball.lifeleft, fireball.flags,
@@ -11515,6 +11584,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 }
 
 #include "gameplay_view_lifecycle_fixture.hpp"
+#include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
@@ -11572,6 +11642,24 @@ int main(int argc, char **argv)
 		return 0;
 	}
 #endif
+	if ((argc == 2 || argc == 3) && std::strcmp(argv[1], "--fx-gameplay-isolation") == 0) {
+		const int scenario = argc == 3 ? std::atoi(argv[2]) : -1;
+		require(scenario >= -1 && scenario < 6, "known bounded FX isolation scenario");
+		if (scenario < 0) test_fireball_original_geometry();
+		test_fx_gameplay_isolation(scenario);
+		std::puts("PASS: effects seeds/counters do not change covered gameplay");
+		return 0;
+	}
+	if (argc == 2 && std::strcmp(argv[1], "--fireball-original-behavior") == 0) {
+		test_fireball_original_geometry(false);
+		std::puts("PASS: original fireball geometry and admission are preserved");
+		return 0;
+	}
+	if (argc == 2 && std::strcmp(argv[1], "--fireball-door-isolation") == 0) {
+		test_fireball_door_isolation();
+		std::puts("PASS: original D1/D2 fireball door behavior is preserved");
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--public-d1-comparison-profile") == 0) {
 		write_public_d1_comparison_profile();
 		PHYSFS_deinit();
@@ -11612,6 +11700,11 @@ int main(int argc, char **argv)
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-all-weapons") == 0) {
 		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized all-weapons profile");
 		capture_public_level_replay(argv[2], "all-weapons", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--recording-asset-fingerprints") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized recording asset test profile");
+		capture_public_level_replay(argv[2], "asset-fingerprints", argc == 4);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {
@@ -11810,6 +11903,7 @@ int main(int argc, char **argv)
 	test_multiplayer_bump_cadence();
 	test_wall_crossing();
 	test_door_open_completion();
+	test_fireball_door_isolation();
 	std::fprintf(stderr, "Testing native compound triggers and paired crossing state\n");
 	test_trigger_exit_queries();
 	test_native_triggers();
@@ -11844,6 +11938,8 @@ int main(int argc, char **argv)
 	test_robot_relative_movement();
 	test_boss_preparation_and_gating();
 	test_boss_frame_updates();
+	test_fireball_original_geometry();
+	test_fx_gameplay_isolation();
 #ifdef DXX_BUILD_DESCENT_II
 	test_boss_sound_storage();
 #endif

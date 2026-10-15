@@ -1,5 +1,6 @@
 /* D1-in-D2 session and asset lifecycle */
 
+#include "input_demo_assets.h"
 #include "inferno.h"
 #include "gr.h"
 #include "mission.h"
@@ -42,18 +43,18 @@ int d1_in_d2_init_base_resources(int requested_version)
 {
 	if (requested_version == 1 || (!requested_version &&
 		!PHYSFSX_exists("descent2.hog", 1) && !PHYSFSX_exists("d2demo.hog", 1))) {
-		if (!PHYSFSX_exists(D1_PIGFILE, 1) || !PHYSFSX_contfile_init("descent.hog", 1))
+		if (!PHYSFSX_exists(D1_PIGFILE, 1) || !input_demo_assets_mount("d1_hog", "descent.hog", 1))
 			return 0;
 		/* Preserve loose/mission precedence; presentation resolves base-game names
 		 * explicitly even when another game's archive was mounted earlier */
 		if (PHYSFSX_exists("descent2.hog", 1))
-			PHYSFSX_contfile_init("descent2.hog", 1);
+			input_demo_assets_mount("d2_hog", "descent2.hog", 1);
 		else if (PHYSFSX_exists("d2demo.hog", 1))
-			PHYSFSX_contfile_init("d2demo.hog", 1);
+			input_demo_assets_mount("d2_hog", "d2demo.hog", 1);
 		Startup_d1 = 1;
 		return 1;
 	}
-	if (!PHYSFSX_contfile_init("descent2.hog", 1) && !PHYSFSX_contfile_init("d2demo.hog", 1))
+	if (!input_demo_assets_mount("d2_hog", "descent2.hog", 1) && !input_demo_assets_mount("d2_hog", "d2demo.hog", 1))
 		return 0;
 	Startup_d1 = 0;
 	return 1;

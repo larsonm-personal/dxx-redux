@@ -14,9 +14,13 @@ import xml.etree.ElementTree as ET
 import zipfile
 import uuid
 import math
+import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "com.dxxredux.app"
+sys.path.insert(0, str(ROOT / "android/tests"))
+import input_demo_assets as demo_assets  # noqa: E402
 
 
 def write_json(path, value):
@@ -25,7 +29,8 @@ def write_json(path, value):
 
 
 class Capture:
-    def __init__(self, output, serial="emulator-5580"):
+    def __init__(self, output, serial="emulator-5580", allow_unverified_assets=False):
+        self.allow_unverified_assets = allow_unverified_assets
         self.output = Path(output).resolve()
         self.output.mkdir(parents=True, exist_ok=True)
         self.serial = serial
@@ -530,6 +535,42 @@ class Capture:
         if not audio_pass and not visual_only:
             self.flyout(audio_pass=True)
 
+    def verify_replay_assets(self, header, setup, engine):
+        fingerprint = demo_assets.fingerprints(header)
+        if (fingerprint is None or fingerprint["status"] != "complete") and not self.allow_unverified_assets:
+            raise demo_assets.AssetError(
+                "UNVERIFIED recording assets; use a fresh recording or --allow-unverified-assets"
+            )
+        root = setup.get("active_set_path")
+        relatives = setup.get("set_files_recursive")
+        if not isinstance(root, str) or not isinstance(relatives, list):
+            raise demo_assets.AssetError("Cannot inspect the active Android game-data set before playback")
+        requested = {row["name"].lower() for row in fingerprint["files"]} if fingerprint else set()
+        # Include preferred engine alternatives so the shared checker detects shadowing
+        if fingerprint:
+            for row in fingerprint["files"]:
+                requested.update(demo_assets.ROLE_NAMES.get(row["role"], ()))
+        with tempfile.TemporaryDirectory(prefix="dxx-replay-assets-") as temporary:
+            data = Path(temporary)
+            for relative in relatives:
+                path = Path(relative)
+                if path.is_absolute() or ".." in path.parts:
+                    raise demo_assets.AssetError("Unsafe Android asset inventory path")
+                if path.name.lower() not in requested:
+                    continue
+                target = data / path.name
+                if any(item.name.lower() == path.name.lower() for item in data.iterdir()):
+                    raise demo_assets.AssetError("Ambiguous Android asset basename: " + path.name)
+                target.write_bytes(self.private("cat", root + "/" + path.as_posix(), binary=True))
+            result = demo_assets.verify_header(
+                header,
+                data,
+                engine,
+                imported=header["game"] == "d1" and engine == "d2",
+                allow_unverified=self.allow_unverified_assets,
+            )
+        print("Replay assets: " + result["status"], flush=True)
+
     def replay(self, source, video_only=False, presentation=None, review_frames=0, presentation_video=False):
         source = Path(source).resolve()
         name = source.stem
@@ -545,7 +586,9 @@ class Capture:
                 if record["type"] == "frame":
                     frame_time = record.get("ft", frame_time)
                     frames.append(frames[-1] + frame_time / 65536)
-        self.launcher(input_demo_replay="/data/user/0/" + PACKAGE + "/files/store-demo.dximdemo")
+        setup = self.launcher(input_demo_replay="/data/user/0/" + PACKAGE + "/files/store-demo.dximdemo")
+        target = presentation["launch_target"] if presentation else header["game"]
+        self.verify_replay_assets(header, setup, "d2" if target == "d1-in-d2" else target)
         self.stage(source, "files/store-demo.dximdemo")
         self.private("rm", "-f", "files/store-demo.dximdemo.actual.json")
         self.call("logcat", "-c")
@@ -838,7 +881,7 @@ class Capture:
         )
         for collection, name in required:
             print("Capturing supplementary still source " + name, flush=True)
-            Capture(self.output / collection, self.serial).replay(
+            Capture(self.output / collection, self.serial, self.allow_unverified_assets).replay(
                 ROOT / "android/regression_demos" / (name + ".dximdemo")
             )
 
@@ -846,7 +889,7 @@ class Capture:
         from store_asset_media import featured_recipe, select_featured, review
 
         item = featured_recipe()
-        capture = Capture(self.output / item["collection"], self.serial)
+        capture = Capture(self.output / item["collection"], self.serial, self.allow_unverified_assets)
         previous = re.search(r"Override size: (\d+x\d+)", self.shell("wm", "size"))
         width, height = item["capture_size"]
         game_directory = "d1x-redux" if item["launch_target"] == "d1" else "d2x-redux"
@@ -927,6 +970,7 @@ def main():
     parser.add_argument("--script", type=Path)
     parser.add_argument("--demo", type=Path)
     parser.add_argument("--all-demos", action="store_true")
+    parser.add_argument("--allow-unverified-assets", action="store_true")
     parser.add_argument(
         "--video-only", action="store_true", help="Recapture replay video using existing screenshot manifests"
     )
@@ -972,7 +1016,7 @@ def main():
         else:
             print(json.dumps(validate(args.output), indent=2))
         return
-    capture = Capture(args.output, args.serial)
+    capture = Capture(args.output, args.serial, args.allow_unverified_assets)
     if args.action == "all":
         from store_asset_media import compose, validate
 

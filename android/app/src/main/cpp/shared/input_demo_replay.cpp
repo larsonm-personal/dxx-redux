@@ -38,6 +38,7 @@ struct input_demo_replay_session {
 	int level;
 	int difficulty;
 	std::string start_mode;
+	std::string asset_fingerprints;
 	std::string rng_mode;
 	bool has_level_start = false;
 	input_demo_level_start level_start{};
@@ -570,6 +571,7 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.level = demo.metadata.level;
 	g_input_demo_replay_session.difficulty = demo.metadata.difficulty;
 	g_input_demo_replay_session.start_mode = demo.metadata.start_mode;
+	g_input_demo_replay_session.asset_fingerprints = demo.metadata.asset_fingerprints;
 	g_input_demo_replay_session.rng_mode = demo.metadata.rng_mode;
 	g_input_demo_replay_session.has_level_start = demo.metadata.has_level_start;
 	g_input_demo_replay_session.level_start = demo.metadata.level_start;
@@ -667,6 +669,11 @@ int input_demo_replay_level(void)
 int input_demo_replay_difficulty(void)
 {
 	return g_input_demo_replay_session.difficulty;
+}
+
+const char *input_demo_replay_asset_fingerprints(void)
+{
+	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.asset_fingerprints.c_str() : NULL;
 }
 
 const char *input_demo_replay_start_mode(void)

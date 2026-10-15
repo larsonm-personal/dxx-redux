@@ -2,6 +2,7 @@
 # Compact, ordinary-start public replays; no downloads or expectation updates
 [CmdletBinding()]
 param(
+    [switch]$AllowUnverifiedAssets,
     [ValidateSet('headless', 'graphics')][string]$RunMode = 'headless',
     [switch]$NativeOnly,
     [string]$D1Exe,
@@ -44,6 +45,7 @@ if (-not $python) { throw 'Python 3 is required for compact public replay verifi
 $prefix = @($python.PrefixArguments)
 $pwsh = (Get-Process -Id $PID).Path
 [string[]]$nativeArguments = if ($NativeOnly) { @('--native-only') } else { @() }
+if ($AllowUnverifiedAssets) { $nativeArguments += '--allow-unverified-assets' }
 & $python.Path @prefix (Join-Path $PSScriptRoot 'run_compact_public_replays.py') --repo $repoRoot --corpus $CorpusDirectory --output $Output `
     --data-d1 $D1DataDir --data-d2 $D2DataDir --exe-d1 $D1Exe --exe-d2 $D2Exe --pwsh $pwsh `
     @nativeArguments --run-mode $RunMode --timeout $TimeoutSeconds --minimum-free-gb $MinimumFreeSpaceGB.ToString([Globalization.CultureInfo]::InvariantCulture)

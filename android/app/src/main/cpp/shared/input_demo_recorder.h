@@ -46,6 +46,9 @@ typedef struct input_demo_recorder_settings {
 #pragma pack(pop)
 #endif
 
+void input_demo_recorder_set_asset_provider(const char *(*provider)(void));
+void input_demo_recorder_note_asset(const char *role, const char *sha256, uint64_t size);
+void input_demo_recorder_invalidate_assets(const char *reason);
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
 int input_demo_recorder_is_active(void);
 uint32_t input_demo_recorder_frame_count(void);

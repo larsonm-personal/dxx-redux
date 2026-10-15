@@ -109,6 +109,7 @@ class ParityTests(unittest.TestCase):
                 str(Path(harness["root"]) / "android/tests/run_input_demo_replay.ps1"),
                 "-RepositoryRoot",
                 str(source),
+                "-AllowUnverifiedAssets",
                 "-DemoPath",
                 str(demos / "pinned-demo.dximdemo"),
                 "-DataDir",

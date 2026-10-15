@@ -177,7 +177,7 @@ try {
     foreach ($file in @('test_input_demo_regressions.ps1', 'test_input_demo_regressions_graphics.ps1', 'run_input_demo_regressions.ps1', 'input_demo_host_build_guard.ps1')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $batchTests
     }
-    foreach ($file in @('test_host_platform.ps1', 'powershell_compat.ps1')) {
+    foreach ($file in @('test_host_platform.ps1', 'powershell_compat.ps1', 'input_demo_assets.ps1')) {
         Copy-Item -LiteralPath (Join-Path $repoRoot "android/helpers/$file") -Destination $batchHelpers
     }
     Add-Content -LiteralPath (Join-Path $batchTests 'input_demo_host_build_guard.ps1') -Encoding utf8NoBOM -Value @'
