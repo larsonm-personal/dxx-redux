@@ -8,6 +8,13 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/nightly_public_fixture_policy.ps1')
 # Media-free admission is deliberately narrower than instrumentation ownership
 $mediaFree = @(
+    @{ Name = 'test_compute_faster_dialog'; BaseName = 'test_compute_faster_dialog'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
+    @{ Name = 'test_debug_log_refresh_button'; BaseName = 'test_debug_log_refresh_button'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
+    @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
+    @{ Name = 'test_controller_trigger_axis_priority'; BaseName = 'test_controller_trigger_axis_priority'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
+    @{ Name = 'test_slider_navigation'; BaseName = 'test_slider_navigation'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_lobby_latency'; BaseName = 'test_lobby_latency'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_host_dialog_loading'; BaseName = 'test_host_dialog_loading'; Type = 'ps1'; Requires = 'emulator' },
     @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator' },
     @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 )
@@ -16,6 +23,11 @@ foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
 }
 $deniedMediaFree = @(
+    @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600', '-FutureVariant') },
+    @{ Name = 'test_compute_faster_dialog'; BaseName = 'test_compute_faster_dialog'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-FutureVariant') },
+    @{ Name = 'test_slider_navigation'; BaseName = 'test_slider_navigation'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-CapabilitiesOnly') },
+    @{ Name = 'test_lobby_latency'; BaseName = 'test_lobby_latency'; Type = 'ps1'; Requires = 'two_emulators' },
     @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-Published') },
     @{ Name = 'test_package_documents'; BaseName = 'test_package_documents'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-Published:$false') },
     @{ Name = 'test_controller_overlay'; BaseName = 'test_controller_overlay'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-FutureVariant') },

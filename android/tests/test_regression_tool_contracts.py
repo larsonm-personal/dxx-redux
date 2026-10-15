@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -22,6 +23,23 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
+    def test_lan_broadcast_failure_contract(self) -> None:
+        source = (ROOT / "android/tests/test_lan_broadcast.ps1").read_text(encoding="utf-8")
+        self.assertIn('$script:udpFailureCount = 0', source)
+        # Every non-terminal failed probe, including the native fallback, contributes
+        # to the final exit status; early prerequisite failures already exit one.
+        self.assertEqual(5, source.count('$script:udpFailureCount++'))
+        for message in ('Ping failed', 'UDP unicast not received',
+                        'UDP broadcast not received', 'UDP subnet broadcast not received'):
+            self.assertRegex(source, re.escape('Write-Host "FAIL: ' + message + '"') +
+                             r'\s+\$script:udpFailureCount\+\+')
+        self.assertRegex(source, r'Write-Host \$FailMessage\s+\$script:udpFailureCount\+\+')
+        self.assertTrue(source.rstrip().endswith('if ($script:udpFailureCount -gt 0) { exit 1 }\nexit 0'))
+        pattern = re.search(r'\$pingResult -match "([^"]+)"', source).group(1)
+        self.assertRegex('2 received, 0% packet loss', pattern)
+        for failed in ('0 received, 100% packet loss', '1 received, 50% packet loss'):
+            self.assertNotRegex(failed, pattern)
+
     def test_health_uses_selected_emulator(self) -> None:
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
         self.assertIn("test_helpers.ps1", health)

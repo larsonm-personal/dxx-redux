@@ -32,6 +32,7 @@ $ErrorActionPreference = "Stop"
 $helpersDir = Split-Path -Parent $PSCommandPath
 $scriptDir = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
+. (Join-Path $helpersDir "nightly_public_fixture_policy.ps1")
 Initialize-AndroidTestTarget -Serial $Serial | Out-Null
 
 function Push-TestScriptToDevice {
@@ -109,6 +110,13 @@ $scriptPath = if ([IO.Path]::IsPathRooted($ScriptName)) {
 } else {
     Join-RegressionPath $scriptDir "game_scripts" $ScriptName
 }
+# Reuse the exact reviewed launcher policy only for the repository's default scripts
+$mediaIndependentName = [IO.Path]::GetFileNameWithoutExtension($scriptPath)
+$mediaIndependentPath = [IO.Path]::GetFullPath((Join-RegressionPath $scriptDir 'game_scripts' "$mediaIndependentName.jsonc"))
+$mediaIndependentLauncher = $scriptPath -ceq $mediaIndependentPath -and $Params.Count -eq 0 -and
+    $DataEdition -eq 'default' -and (Test-SuiteMediaIndependentTest -Test @{
+        Name = $mediaIndependentName; BaseName = $mediaIndependentName; Type = 'jsonc'; Requires = 'emulator'
+    })
 $script:resolvedDataEdition = Get-TestScriptDataEdition -ScriptPath $scriptPath -DataEdition $DataEdition
 $script:isolatedDataProfile = (Get-TestScriptDataEdition -ScriptPath $scriptPath) -eq 'shareware'
 if ($script:isolatedDataProfile -and $PreserveState) {
@@ -342,7 +350,7 @@ try {
                         $launcherRecoveryFailed = $true
                         break
                     }
-                } elseif (-not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {
+                } elseif (-not $mediaIndependentLauncher -and -not $skipGameData -and -not (Ensure-GameDataOnDevice -Game $gameId)) {
                     $launcherRecoveryFailed = $true
                     break
                 }

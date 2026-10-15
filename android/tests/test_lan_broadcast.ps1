@@ -3,6 +3,7 @@
 # Requires emulator 36.5+ with shared virtual Wi-Fi LAN
 
 $ErrorActionPreference = "Stop"
+$script:udpFailureCount = 0
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_helpers.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
@@ -123,6 +124,7 @@ function Invoke-NativeUdpCheck {
             Write-Host $PassMessage
         } else {
             Write-Host $FailMessage
+            $script:udpFailureCount++
         }
     } finally {
         Stop-TestProcess $recvProc
@@ -154,10 +156,11 @@ Write-Host ""
 Write-Host "=== Test 1: Ping EMU1 -> EMU2 ==="
 $pingResult = & $adb -s $EMU1 shell "ping -c 2 -W 2 $IP_EMU2" 2>&1 | Out-String
 Write-Host $pingResult
-if ($pingResult -match "0% packet loss") {
+if ($pingResult -match "(?:^|\s)0% packet loss") {
     Write-Host "PASS: Unicast ping works"
 } else {
     Write-Host "FAIL: Ping failed"
+    $script:udpFailureCount++
 }
 
 # Test 2: UDP unicast
@@ -255,6 +258,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP unicast works"
     } else {
         Write-Host "FAIL: UDP unicast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc
 
@@ -282,6 +286,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP broadcast works"
     } else {
         Write-Host "FAIL: UDP broadcast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc2
 
@@ -309,6 +314,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP subnet broadcast works"
     } else {
         Write-Host "FAIL: UDP subnet broadcast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc3
 }
@@ -317,3 +323,7 @@ Write-Host ""
 Write-Host "=== Summary ==="
 Write-Host "Emulators: $EMU1 ($IP_EMU1), $EMU2 ($IP_EMU2)"
 Write-Host "Tests complete"
+
+# Report all probes, but never let the final logging command hide failed assertions
+if ($script:udpFailureCount -gt 0) { exit 1 }
+exit 0

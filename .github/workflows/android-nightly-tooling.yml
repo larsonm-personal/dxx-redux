@@ -182,6 +182,19 @@ jobs:
         run: |
           set -euo pipefail
           bash android/get_deps/helpers/get_emulator.sh 2>&1 | tee ../results/setup/emulator-image.log
+      - name: Require shared Wi-Fi emulator generation
+        if: inputs.lane == 'android-dual'
+        shell: bash
+        run: |
+          set -euo pipefail
+          emulator -version 2>&1 | tee results/setup/emulator-version.log
+          python3 - <<'PYTHON'
+          import pathlib, re
+          text = pathlib.Path('results/setup/emulator-version.log').read_text()
+          match = re.search(r'Android emulator version (\d+)\.(\d+)', text)
+          if not match or tuple(map(int, match.groups())) < (36, 5):
+              raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
+          PYTHON
       - name: Save emulator components
         if: inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -235,6 +248,13 @@ jobs:
             if (-not $instrumentation) { throw 'Instrumentation APK missing' }
             $installed = Adb-Dev -Serial $avd.Serial -AdbArgs @('install', '-r', '-t', $instrumentation) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
+          }
+          if ($env:SWEEP_LANE -eq 'android-dual') {
+            $addresses = @($avds | ForEach-Object { Get-DeviceWlanIp -Serial $_.Serial })
+            Write-Host "Shared Wi-Fi addresses: $($addresses -join ', ')"
+            if ($addresses.Count -ne 2 -or @($addresses | Where-Object { $_ }).Count -ne 2 -or $addresses[0] -eq $addresses[1]) {
+              throw 'Dual LAN topology unavailable: two distinct wlan0 addresses are required'
+            }
           }
           } finally { Stop-Transcript }
           exit 0
