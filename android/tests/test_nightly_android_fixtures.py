@@ -22,6 +22,17 @@ audio = module('generate_preview_test_audio')
 
 
 class SdkWorkflowContractTests(unittest.TestCase):
+    def test_emulator_runtime_is_provisioned_and_checked_before_build(self):
+        source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        runtime = source.split('- name: Provision emulator host runtime', 1)[1].split('- name: Provision emulator image', 1)[0]
+        self.assertIn("if: inputs.lane != 'jvm'", runtime)
+        self.assertIn('timeout-minutes: 8', runtime)
+        self.assertIn('apt-get install -y --no-install-recommends libpulse0', runtime)
+        check = source.split('- name: Check emulator runtime before APK build', 1)[1].split('- name: Require shared Wi-Fi', 1)[0]
+        self.assertIn('set -euo pipefail', check)
+        self.assertIn('emulator -version', check)
+        self.assertLess(source.index('- name: Check emulator runtime'), source.index('- name: Build emulator APKs'))
+
     def test_managed_sdk_uses_plain_private_directory(self):
         source = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
         setup = source.split('- name: Prepare dependency locations', 1)[1].split('- name: Require accelerated', 1)[0]
