@@ -29,6 +29,8 @@ if(TARGET test_upstream_compat)
     add_test(NAME test_coop_pickup_rewards COMMAND test_upstream_compat --coop-pickup-rewards
                                                    coop-pickup-rewards.json)
     if(DXX_TEST_GAME STREQUAL "d2")
+        add_test(NAME test_fcd_audio_cache COMMAND test_upstream_compat --fcd-audio-cache)
+        set_tests_properties(test_fcd_audio_cache PROPERTIES TIMEOUT 30)
         add_test(NAME test_d1_bitmap_replacements COMMAND test_upstream_compat
                                                           --d1-bitmap-replacements)
     endif()
