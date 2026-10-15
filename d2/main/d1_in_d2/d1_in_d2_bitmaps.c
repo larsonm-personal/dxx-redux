@@ -15,6 +15,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 /* D1 bitmap decoding and legacy replacement mapping, extracted from piggy.c */
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <string.h>
 #include "pstypes.h"
@@ -446,6 +447,7 @@ d1_bitmap_generation *d1_in_d2_read_feature_bitmaps(const char *pig_name, const 
 			NULL, NULL, generation->palette, 1, identity, 0))
 			goto failed;
 	}
+	input_demo_assets_note_file("d2_pig", pig_name, fp);
 	PHYSFS_close(palette_file);
 	PHYSFS_close(fp);
 	return generation;

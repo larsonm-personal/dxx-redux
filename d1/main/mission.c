@@ -17,6 +17,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -453,6 +454,7 @@ void free_mission(void)
 		if (Current_mission_hog[0])
 			PHYSFS_removeFromSearchPath(Current_mission_hog);
 		Current_mission_hog[0] = '\0';
+		input_demo_assets_forget("mission_hog");
 
 		if (Current_mission->path)
 			d_free(Current_mission->path);
@@ -588,7 +590,7 @@ int load_mission(mle *mission)
 	Secret_level_names = NULL;
 
 	// for Descent 1 missions, load descent.hog
-	if (!PHYSFSX_contfile_init("descent.hog", 1))
+	if (!input_demo_assets_mount("d1_hog", "descent.hog", 1))
 		Error("descent.hog not available!\n");
 	if (!d_stricmp(Current_mission_filename, D1_MISSION_FILENAME))
 		return load_mission_d1();
@@ -623,9 +625,12 @@ int load_mission(mle *mission)
 	//for non-builtin missions, load HOG
 	strcpy(buf+strlen(buf)-4,".hog");		//change extension
 	PHYSFSEXT_locateCorrectCase(buf);
-	if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog))
+	if (PHYSFSX_exists(buf, 1) && PHYSFSX_getRealPath(buf, Current_mission_hog)) {
 		if (!PHYSFS_addToSearchPath(Current_mission_hog, 0))
 			Current_mission_hog[0] = '\0';
+		else
+			input_demo_assets_note_archive("mission_hog", Current_mission_hog);
+	}
 
 	snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.tex",Current_mission_filename);
 	if (!PHYSFSX_exists(Briefing_text_filename,1))

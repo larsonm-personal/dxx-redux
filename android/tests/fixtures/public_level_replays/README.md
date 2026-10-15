@@ -5,7 +5,7 @@ shareware and Descent 2 v1.0 demo data. Recordings start from ordinary authored
 level spawns; each scenario declares its level in the manifest. No player
 pose, inventory, object or geometry is staged; no save/checkpoint data is stored
 in the replay or its companions. All seventeen scenes were freshly recorded twice from
-merged source `7253def84bda52401731cc36ecffc2d1468503c5`. Their native
+source `77bd4d8e4b5636499730f7bc3f7857e6920c2911`. Their native
 recordings, compact inputs, RNG traces, summary reports and observation oracles
 were byte-identical across the independent captures. These are direct format-5
 captures; obsolete conversion sidecars have been removed.
@@ -30,13 +30,30 @@ replay-compared. Unknown event kinds fail admission rather than being ignored.
 
 Each oracle pins the engine source revision, capture executable, capture fixture
 source and all extracted public asset hashes. `demo_import_oracles.json` and
-`game_data/test_data_manifest.json` identify the source distributions. Every oracle points to the same published merged source commit, built before
+`game_data/test_data_manifest.json` identify the source distributions. Every oracle points to the same identified source commit, built before
 fixture admission; `capture_source_sha256` identifies the exact capture fixture
 header. Ordered-input packing and admission require the recorder's compiled Git
-identity to match that published source revision. Reconfigure CMake after selecting the capture commit
+identity to match that source revision. Reconfigure CMake after selecting the capture commit
 so stale generated build metadata cannot be admitted. Format 5 restores SIM RNG once before the first input batch, then checks the
 carried pre-input and computed post-input boundaries; it does not seed the separate FX stream. Capture leaves ordinary FX
 initialization untouched, including the level-entry starfield draws.
+
+Every fresh recording embeds complete `asset_fingerprints` for the actual loaded
+HOG/PIG/HAM files. Strict verification matches these against playback data before
+execution. No FX RNG baseline is recorded or restored. This source preserves the
+historical algorithms while assigning gameplay-affecting RNG draws to SIM.
+`asset-regeneration-validation.json` records independent capture equality,
+unchanged frame/SIM/terminal/action oracles, 34 strict native headless playback
+passes, and the separately verified imported flight scope. All 17 recordings
+qualify for verified-shareware selection (8 D1, 9 D2); the largest is 93139 bytes.
+Headed qualification covers native D1 flight and its imported D1 counterpart,
+using the production executable with rendering disabled; other cases were
+qualified through the headless engine. The native D1 recording remains a native
+D1 capture during imported playback; D2 runtime resources are verified separately.
+Full imported object/world parity remains **INCOMPLETE**, with failures retained
+in the validation report. PowerShell wrapper execution was unavailable during
+regeneration; direct native runs used the shared Python asset, fidelity and
+real-action validators.
 
 ## Real actions
 

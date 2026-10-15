@@ -7,6 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 import d1_replay_parity as parity
+import input_demo_assets as assets
 import ordered_public_replay as ordered
 
 MAX_BYTES = 100000
@@ -42,6 +43,7 @@ HEADER_KEYS = {
     "rng_mode",
     "frame_count",
     "classic_preview",
+    "asset_fingerprints",
     "player_cfg",
     "rear_view",
     "view_projection",
@@ -130,13 +132,7 @@ def _no_save(value):
 
 
 def pinned_assets(game):
-    archive = "desc14sw.exe" if game == "d1" else "d2demo10.zip"
-    path = Path(__file__).parent / "fixtures/demo_import_oracles.json"
-    rows = _json(path.read_bytes())["archives"]
-    matches = [row for row in rows if row["archive"] == archive]
-    if len(matches) != 1:
-        raise parity.EvidenceError("Public asset oracle is ambiguous")
-    return {row["file"]: row["sha256"] for row in matches[0]["files"]}
+    return {name: row["sha256"] for name, row in assets.pinned_assets(game).items()}
 
 
 def _digest(value, length=64):
@@ -166,6 +162,8 @@ def _records(path, full):
     for row in rows:
         _no_save(row)
     header = rows[0]
+    if "asset_fingerprints" in header:
+        assets.fingerprints(header)
     game = header.get("game")
     count = header.get("frame_count")
     if (

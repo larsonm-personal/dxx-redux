@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 import compact_public_replay as compact
+import input_demo_assets as assets
 from run_compact_public_replays import load_corpus, validate_assets, PUBLIC_CASES
 import public_switch_replay as shoot_switch
 import public_guidebot_replay as guidebot
@@ -73,6 +74,10 @@ def capture(args):
                 raise compact.parity.EvidenceError("Capture did not contact solid geometry under thrust")
             if scenario != "flight" and scenario not in secondary.SCENARIOS and report["action_frame"] < 0:
                 raise compact.parity.EvidenceError("Capture did not reach its declared real action")
+            header = assets.read_header(directory / "capture.dximdemo")
+            verification = assets.verify_header(header, data, game, repo=args.repo)
+            if verification["shareware_game"] != game:
+                raise compact.parity.EvidenceError("Fresh public capture requires verified shareware base fingerprints")
             stem = f"{game}-public-{scenario}"
             compact.pack(
                 directory / "capture.dximdemo",

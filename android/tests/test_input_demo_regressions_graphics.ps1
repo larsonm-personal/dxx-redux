@@ -21,6 +21,8 @@ param(
     [string]$D2DataDir,
     [ValidateRange(0.01, 1048576)][double]$MinimumFreeSpaceGB = 4,
     [string]$DemoRoot,
+    [switch]$SharewareOnly,
+    [switch]$AllowUnverifiedAssets,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,
     [string]$ReferenceResultRoot,

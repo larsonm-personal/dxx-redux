@@ -117,6 +117,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/input_demo_world_trace.cpp
     ../../android/app/src/main/cpp/shared/input_demo_ai_trace.cpp
     ../../android/app/src/main/cpp/shared/input_demo_level_start.c
+    ../../android/app/src/main/cpp/shared/input_demo_assets.cpp
     ../../android/app/src/main/cpp/shared/input_demo_newdemo_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_start_shared.c
     ../../android/app/src/main/cpp/shared/input_demo_debug_logging.cpp

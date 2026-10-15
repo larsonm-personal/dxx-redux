@@ -430,6 +430,7 @@ def _run_cases(args, cases):
     report = {
         "schema": 1,
         "qualification": "incomplete",
+        "asset_verification": "unverified-allowed" if getattr(args, "allow_unverified_assets", False) else "required",
         "backend": args.run_mode,
         "native_only": args.native_only,
         "case_count": len(cases),
@@ -486,6 +487,8 @@ def _run_cases(args, cases):
                 "-SandboxSuffix",
                 args.run_mode + "-" + sandbox_token + "-" + directory.name,
             ]
+            if getattr(args, "allow_unverified_assets", False):
+                command += ["-AllowUnverifiedAssets"]
             if args.run_mode == "headless":
                 command += ["-HeadlessConsoleOutput", "2"]
             item["command"] = command
@@ -555,6 +558,8 @@ def _run_imported(args, cases, report):
         "-MinimumFreeSpaceGB",
         str(args.minimum_free_gb),
     ]
+    if getattr(args, "allow_unverified_assets", False):
+        command += ["-AllowUnverifiedAssets"]
     try:
         code = _run(
             command,
@@ -586,6 +591,7 @@ def main():
         "--native-only", action="store_true", help="Omit imported parity and report it explicitly as not run"
     )
     parser.add_argument("--run-mode", choices=("headless", "graphics"), default="headless")
+    parser.add_argument("--allow-unverified-assets", action="store_true")
     parser.add_argument("--pwsh", default="pwsh")
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--minimum-free-gb", type=float, default=4)

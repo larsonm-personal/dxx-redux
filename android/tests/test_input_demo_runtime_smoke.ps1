@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 param(
+    [switch]$AllowUnverifiedAssets,
     [ValidateSet('both', 'd1', 'd2')]
     [string]$Game = 'both',
     [ValidateRange(1, 3600)][int]$TimeoutSeconds = 60,
@@ -174,7 +175,7 @@ function Invoke-ReplaySmoke {
     try {
         # The shared runner verifies the fixture result and rejects forced or nonzero exits
         & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') `
-            -DemoPath $Recording.Path -Game $GameName -DataDir $resolvedDataDir -DataEdition $DataEdition `
+            -AllowUnverifiedAssets:$AllowUnverifiedAssets -DemoPath $Recording.Path -Game $GameName -DataDir $resolvedDataDir -DataEdition $DataEdition `
             -ExecutablePath $config.Exe -Runner visual -Mode accelerated -RenderProfile default `
             -TimeoutSeconds $TimeoutSeconds -StrictComparison -RequireCleanExit -KeepSandbox -SandboxSuffix $suffix `
             -ResultCopyPath $actualResultPath -StateLogPath $actualStatePath -RngLogPath $actualRngPath *> $logPath

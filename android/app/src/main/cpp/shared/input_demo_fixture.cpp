@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <utility>
@@ -1223,6 +1224,51 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	return true;
 }
 
+static bool validate_asset_fingerprints(const ordered_json &value, std::string *error)
+{
+	if (!value.is_object() || !value.contains("status") || !value["status"].is_string())
+		return fail(error, "invalid asset_fingerprints object");
+	const std::string status = value["status"];
+	if (status == "complete") {
+		if (!exact_keys(value, { "status", "mode", "files" }, error, "asset fingerprints")) return false;
+	} else if (status == "unknown") {
+		if (!exact_keys(value, { "status", "mode", "files", "error" }, error, "asset fingerprints") ||
+		    !value["error"].is_string() || value["error"].get<std::string>().find_first_not_of(" \t\r\n") == std::string::npos)
+			return fail(error, "unknown asset fingerprints require a reason");
+	} else return fail(error, "invalid asset_fingerprints status");
+	if (!value["mode"].is_string() || !value["files"].is_array()) return fail(error, "invalid asset_fingerprints mode or files");
+	const std::string mode = value["mode"];
+	if (mode != "native_d1" && mode != "native_d2" && mode != "d1_in_d2") return fail(error, "invalid asset_fingerprints mode");
+	std::vector<std::string> roles;
+	for (const auto &entry : value["files"]) {
+		if (!(entry.contains("container") ? exact_keys(entry, { "role", "name", "size", "sha256", "container" }, error, "asset fingerprint") : exact_keys(entry, { "role", "name", "size", "sha256" }, error, "asset fingerprint")) ||
+		    !entry["role"].is_string() || !entry["name"].is_string() || !entry["sha256"].is_string() ||
+		    !entry["size"].is_number_unsigned() || entry["size"].get<uint64_t>() == 0) return fail(error, "invalid asset fingerprint");
+		const std::string role = entry["role"], hash = entry["sha256"], name = entry["name"];
+		if (role != "d1_hog" && role != "d1_pig" && role != "d2_hog" && role != "d2_pig" && role != "d2_ham" && role != "mission_hog") return fail(error, "unknown asset role");
+		if ((mode == "native_d1" && role.compare(0, 3, "d2_") == 0) || (mode == "native_d2" && role.compare(0, 3, "d1_") == 0)) return fail(error, "asset role disagrees with mode");
+		if (std::find(roles.begin(), roles.end(), role) != roles.end() || hash.size() != 64 ||
+		    hash.find_first_not_of("0123456789abcdef") != std::string::npos || name.empty() || name == "." || name == ".." || name.find_first_of("/\\") != std::string::npos ||
+		    std::any_of(name.begin(), name.end(), [](unsigned char c) { return c < 32 || c == 127; }))
+			return fail(error, "invalid or duplicate asset fingerprint");
+		if (entry.contains("container")) {
+			if (!entry["container"].is_string()) return fail(error, "invalid asset container");
+			const std::string container = entry["container"];
+			if (role == "d1_hog" || role == "d2_hog" || role == "mission_hog" ||
+			    (container != "d1_hog" && container != "d2_hog" && container != "mission_hog")) return fail(error, "invalid asset container role");
+		}
+		roles.push_back(role);
+	}
+	for (const auto &entry : value["files"])
+		if (entry.contains("container") && std::find(roles.begin(), roles.end(), entry["container"].get<std::string>()) == roles.end()) return fail(error, "missing asset container fingerprint");
+	const auto has = [&](const char *role) { return std::find(roles.begin(), roles.end(), role) != roles.end(); };
+	if (status == "complete" && ((mode != "native_d2" && (!has("d1_hog") || !has("d1_pig"))) ||
+	                             (mode == "native_d2" && (!has("d2_hog") || !has("d2_pig") || !has("d2_ham"))))) return fail(error, "incomplete asset_fingerprints");
+	if (mode == "d1_in_d2" && status == "complete" && (has("d2_hog") || has("d2_pig") || has("d2_ham")) && (!has("d2_hog") || !has("d2_pig") || !has("d2_ham")))
+		return fail(error, "incomplete imported D1 companion asset_fingerprints");
+	return true;
+}
+
 bool input_demo_metadata_parse_header_line(const std::string &line,
                                            input_demo_metadata *metadata, std::string *error)
 {
@@ -1259,6 +1305,9 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			if (!it.value().is_string())
 				return fail(error, "metadata git_version must be a string");
 			parsed.git_version = it.value().get<std::string>();
+		} else if (name == "asset_fingerprints") {
+			if (!validate_asset_fingerprints(it.value(), error)) return false;
+			parsed.asset_fingerprints = it.value().dump();
 		} else if (name == "arch") {
 			if (!it.value().is_string())
 				return fail(error, "metadata arch must be a string");
@@ -1323,6 +1372,10 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 	}
 	if (!validate_metadata(parsed, error))
 		return false;
+	if (!parsed.asset_fingerprints.empty()) {
+		const auto mode = ordered_json::parse(parsed.asset_fingerprints)["mode"];
+		if ((mode == "native_d1" ? "d1" : "d2") != parsed.game) return fail(error, "asset mode disagrees with recorded engine");
+	}
 	*metadata = parsed;
 	return true;
 }
@@ -1343,6 +1396,11 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 	root["build_number"] = metadata.build_number;
 	root["git_version"] = metadata.git_version;
 	root["arch"] = metadata.arch;
+	if (!metadata.asset_fingerprints.empty()) {
+		const auto assets = ordered_json::parse(metadata.asset_fingerprints, nullptr, false);
+		if (!validate_asset_fingerprints(assets, error)) return false;
+		root["asset_fingerprints"] = assets;
+	}
 	root["level"] = metadata.level;
 	root["difficulty"] = metadata.difficulty;
 	root["start_mode"] = metadata.start_mode;

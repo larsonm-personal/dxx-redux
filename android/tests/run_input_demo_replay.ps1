@@ -35,6 +35,7 @@ param(
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
     [switch]$SkipExpectedChecks,
+    [switch]$AllowUnverifiedAssets,
     [switch]$StrictComparison,
     [switch]$RequireCleanExit,
     [string]$ResultCopyPath,
@@ -60,6 +61,7 @@ $repoRoot = if ($RepositoryRoot) { [IO.Path]::GetFullPath($RepositoryRoot) } els
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/test_host_platform.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_replay_menu.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_fixture_catalog.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/input_demo_assets.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/output_disk_space.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers/headless_process_pool.ps1')
 $script:InputDemoSanitizer = $Sanitizer
@@ -1179,6 +1181,7 @@ function Get-DemoCandidates {
             $items.Add([pscustomobject]@{
                     Path = $file.FullName
                     Fixture = $fixture
+                    HasAssetFingerprint = ($header.ContainsKey('asset_fingerprints') -and $header.asset_fingerprints.status -eq 'complete')
                     Version = if ($header.ContainsKey('version')) { [int]$header.version } else { 0 }
                     RelativePath = Get-RelativeRepoPath -Path $file.FullName
                     Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
@@ -1220,8 +1223,9 @@ function Show-DemoCandidates {
         )
         $line = '[{0}] {1} {2} lvl={3} {4} fr={5} {6}KB {7}' -f $formatArgs
         if ($item.Fixture) {
-            $line += ' [public shareware' + $(if ($item.Fixture.NativeOnly) { '; native only' }) + ']'
+            $line += ' [public fixture' + $(if ($item.Fixture.NativeOnly) { '; native only' }) + ']'
         }
+        if (-not $item.HasAssetFingerprint) { $line += ' [assets unverified]' }
         if ($item.Version -lt 5) { $line += " [legacy format $($item.Version)]" }
         Write-Host $line
         if ($D1InD2 -and $item.Fixture) { Write-Host "      $($item.Fixture.ImportedNote)" -ForegroundColor Yellow }
@@ -1571,17 +1575,20 @@ if ($Interactive) {
 
 $header = Get-DemoHeader -Path $resolvedDemoPath
 $recordedGame = Resolve-DemoGame -Header $header -RequestedGame 'auto'
-if ($recordedGame -eq 'd2' -and $header.mission -in @('d1', 'descent')) { $D1Mission = $true }
+$assetInfo = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command inspect -Paths @($resolvedDemoPath)
+if ($assetInfo.mode -eq 'd1_in_d2') { $D1Mission = $true }
 if ($D1Mission -and ($D1InD2 -or $recordedGame -ne 'd2' -or $Game -eq 'd1')) {
     throw '-D1Mission requires a D2 recording replayed in D2 without translation'
+}
+if ($assetInfo.shareware_game) {
+    if ($PSBoundParameters.ContainsKey('DataEdition') -and $DataEdition -ne 'shareware') {
+        throw 'Recorded asset fingerprints require shareware data'
+    }
+    $DataEdition = 'shareware'
 }
 $fixtureInfo = Get-InputDemoFixtureInfo -RepoRoot $repoRoot -Path $resolvedDemoPath
 $useComparisonPilot = $false
 if ($fixtureInfo) {
-    if ($PSBoundParameters.ContainsKey('DataEdition') -and $DataEdition -ne $fixtureInfo.DataEdition) {
-        throw 'This tracked public fixture requires -DataEdition shareware; retail assets cannot replace its pinned data'
-    }
-    $DataEdition = $fixtureInfo.DataEdition
     if ($D1InD2 -and $fixtureInfo.NativeOnly) {
         throw 'All-weapons compact recordings are qualified only in their native engine; imported live capture does not qualify imported replay'
     }
@@ -1595,7 +1602,10 @@ if ($fixtureInfo) {
             $useComparisonPilot = $true
         }
     }
-    Write-Host 'Public fixture: pinned shareware data; playback compares the terminal summary, not the separate full-state/detail oracles'
+    Write-Host 'Public fixture: playback compares the terminal summary, not the separate full-state/detail oracles'
+}
+if ($assetInfo.status -ne 'complete' -and -not $AllowUnverifiedAssets -and -not $ResolveDataDirOnly) {
+    throw 'UNVERIFIED recording assets: record a fresh demo, or explicitly opt in with -AllowUnverifiedAssets'
 }
 if (-not $header.ContainsKey('version') -or [int]$header.version -lt 5) {
     if (-not $ExecutablePath) {
@@ -1626,7 +1636,13 @@ if ($D1InD2) {
     $config = if ($D1Mission) { Get-D1InD2GameConfig } else { Get-GameConfig -Name $resolvedGame }
     $config.D1Mission = [bool]$D1Mission
 }
-$resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+# Explicit data roots may include a recorded custom mission or companion assets
+# The common fingerprint verifier checks every recorded dependency below
+$resolvedDataDir = if ($DataDir -and $assetInfo.status -eq 'complete' -and (Test-Path -LiteralPath $DataDir -PathType Container)) {
+    (Resolve-Path -LiteralPath $DataDir).Path
+} else {
+    Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+}
 if ($Interactive -and -not $resolvedDataDir) { exit 0 }
 if ($StrictComparison -and ($SkipExpectedChecks -or $AllowMissingActualResult -or $D1InD2StartFromLevel)) {
     throw 'Strict comparison requires the unchanged start state, an actual result and enabled comparisons'
@@ -1639,6 +1655,8 @@ if ($ResolveDataDirOnly) {
     }
     exit 0
 }
+$assetCheck = Invoke-InputDemoAssetCheck -RepoRoot $repoRoot -Command verify -Paths @($resolvedDemoPath) -DataDir $resolvedDataDir -Game $resolvedGame -D1InD2:$D1InD2 -AllowUnverifiedAssets:$AllowUnverifiedAssets
+if ($assetCheck.status -eq 'unverified') { Write-Warning 'UNVERIFIED recording assets: explicit historical playback opt-in; this run is not verified shareware coverage' }
 $runnerPromptDefaults = Get-RunnerPromptDefaults -RequestedRunner $Runner -RequestedMode $Mode -RequestedProfile $RenderProfile
 $renderProfileSelection = Get-RenderProfile -RequestedProfile $runnerPromptDefaults.RenderProfile -RequestedMode $runnerPromptDefaults.Mode
 $launchMode = Get-LaunchMode -RequestedMode $runnerPromptDefaults.Mode -Path $resolvedDemoPath -Config $config

@@ -2,6 +2,7 @@
 # Paired native-repeat/imported captures; incomplete evidence is a nonzero result
 [CmdletBinding()]
 param(
+    [switch]$AllowUnverifiedAssets,
     [string]$DataDir,
     [ValidateSet('retail', 'shareware')][string]$DataEdition = 'retail',
     [string]$DemoDirectory,
@@ -73,6 +74,7 @@ $arguments = @(
     '--output', $OutputPath, '--pwsh', $pwsh, '--timeout', $TimeoutSeconds,
     '--minimum-free-gb', $MinimumFreeSpaceGB.ToString([Globalization.CultureInfo]::InvariantCulture)
 )
+if ($AllowUnverifiedAssets) { $arguments += '--allow-unverified-assets' }
 foreach ($demo in $demos) { $arguments += @('--demo', $demo.FullName) }
 & $python.Path @pythonPrefix @arguments
 exit $LASTEXITCODE

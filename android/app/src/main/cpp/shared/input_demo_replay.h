@@ -53,6 +53,7 @@ const char *input_demo_replay_mission(void);
 int input_demo_replay_level(void);
 int input_demo_replay_difficulty(void);
 const char *input_demo_replay_start_mode(void);
+const char *input_demo_replay_asset_fingerprints(void);
 const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
 void input_demo_replay_set_actual_result_path(const char *path);

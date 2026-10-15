@@ -10,6 +10,7 @@ import subprocess
 import compact_public_replay as compact
 import d1_replay_parity as parity
 import ordered_public_replay as ordered
+import input_demo_assets as assets
 import public_secondary_replay as secondary
 from run_compact_public_replays import validate_assets, verify_actions
 
@@ -728,6 +729,7 @@ def run(args):
             blocked.mkdir()
             result_directory = blocked / "result.json"
             result_directory.mkdir()
+            assets.verify_header(assets.read_header(demo), data, game)
             command = [
                 str(getattr(args, mode + "_" + game)),
                 "-hogdir",

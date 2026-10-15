@@ -2,6 +2,7 @@
  * Reads an explicit D2 package without publishing or borrowing live game data
  * Record decoding uses the engine's readers after checking each disk span */
 
+#include "input_demo_assets.h"
 #include <string.h>
 #include "d1_in_d2_assets.h"
 #include "d1_pig_validation.h"
@@ -559,6 +560,7 @@ d1_guidebot_assets *d1_in_d2_read_guidebot_source(const d1_guidebot_source *sour
 	stage = "optional sample source";
 	if (!read_samples(assets, source))
 		goto failed;
+	input_demo_assets_note_file("d2_ham", source->ham_path, file);
 	PHYSFS_close(file);
 	if (error)
 		*error = NULL;

@@ -148,6 +148,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_host_metadata_worker'
             'test_host_metadata_workspace'
             'test_input_demo_explicit_path'
+            'test_input_demo_assets'
             'test_input_demo_comparison_policy'
             'test_public_d1_fault_tools'
             'test_input_demo_host_build_guard'

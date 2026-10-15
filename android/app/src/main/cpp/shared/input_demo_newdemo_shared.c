@@ -69,6 +69,7 @@ extern void newdemo_record_oneframeevent_update(int wallupdate);
 #define INPUT_DEMO_TEMP_DEMO_FILENAME      DEMO_DIR "tmpdemo.dem"
 
 static int input_demo_android_quick_recording = 0;
+static int input_demo_deferred_quick_recording_stop = 0;
 static int input_demo_android_quick_record_level = 0;
 static char input_demo_android_quick_record_mission[PATH_MAX] = "";
 
@@ -197,6 +198,7 @@ static const char *input_demo_quick_record_mission_name(void)
 static void input_demo_clear_quick_recording(void)
 {
 	input_demo_android_quick_recording = 0;
+	input_demo_deferred_quick_recording_stop = 0;
 	input_demo_android_quick_record_level = 0;
 	input_demo_android_quick_record_mission[0] = 0;
 	input_demo_clear_quick_recording_extra();
@@ -695,6 +697,21 @@ int input_demo_stop_quick_recording_common(void)
 		return 0;
 	input_demo_stop_recording_common(0);
 	return 1;
+}
+
+int input_demo_defer_quick_recording_stop(void)
+{
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_android_quick_recording)
+		return 0;
+	input_demo_deferred_quick_recording_stop = 1;
+	return 1;
+}
+
+void input_demo_finish_deferred_quick_recording_stop(void)
+{
+	if (!input_demo_deferred_quick_recording_stop) return;
+	input_demo_deferred_quick_recording_stop = 0;
+	input_demo_stop_quick_recording_common();
 }
 
 int input_demo_toggle_quick_recording_common(void)

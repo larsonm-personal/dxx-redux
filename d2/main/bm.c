@@ -21,6 +21,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_sound_trace.h"
 #endif
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -370,6 +371,7 @@ void bm_read_extra_robots(const char *fname,int type)
 	for (i = N_D2_OBJBITMAPPTRS; i < (N_D2_OBJBITMAPPTRS + t); i++)
 		ObjBitmapPtrs[i] = PHYSFSX_readShort(fp);
 
+	input_demo_assets_extra_ham_loaded();
 	PHYSFS_close(fp);
 }
 
