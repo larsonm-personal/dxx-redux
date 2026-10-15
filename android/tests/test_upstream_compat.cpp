@@ -3528,6 +3528,8 @@ static void test_missile_camera_awareness()
 #endif
 }
 
+#include "missile_camera_ownership_fixture.hpp"
+
 static void test_companion_physics()
 {
 #ifdef DXX_BUILD_DESCENT_II
@@ -11432,6 +11434,10 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 2 && std::strcmp(argv[1], "--missile-camera-ownership") == 0) {
+		test_missile_camera_ownership();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--public-d1-comparison-profile") == 0) {
 		write_public_d1_comparison_profile();
 		PHYSFS_deinit();
@@ -11692,6 +11698,7 @@ int main(int argc, char **argv)
 	test_robot_hit_response();
 	test_world_camera_completion();
 	test_missile_camera_awareness();
+	test_missile_camera_ownership();
 	test_companion_physics();
 	test_robot_navigation_preparation();
 	test_robot_path_creation();

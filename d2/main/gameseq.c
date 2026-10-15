@@ -543,6 +543,7 @@ void init_player_stats_level(int secret_flag)
 	init_gauges();
 
 	Missile_viewer = NULL;
+	Missile_viewer_sig = -1;
 
 	if (Game_mode & GM_MULTI)
 		multi_send_ship_status();

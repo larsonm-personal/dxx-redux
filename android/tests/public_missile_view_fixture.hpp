@@ -46,9 +46,9 @@ static nlohmann::json test_native_missile_view_helpers_recording_off()
 				Missile_viewer_sig = signature;
 				const bool selected = enabled && type != OBJ_NONE && signature != 43;
 				require(select_missile_viewer() == (selected ? &candidate : nullptr) &&
-				            Missile_viewer == (selected ? &candidate : nullptr) &&
-				            Missile_viewer_sig == (selected ? 42 : -1),
-				        "non-guided selector preserves exact native enabled/type/signature lifecycle");
+				            Missile_viewer == &candidate &&
+				            Missile_viewer_sig == signature,
+				        "non-guided presentation selector never changes gameplay identity");
 				selectors.push_back({ { "enabled", enabled }, { "type", type }, { "signature", signature }, { "selected", selected } });
 			}
 	Missile_viewer = nullptr;
@@ -134,8 +134,8 @@ static nlohmann::json test_native_missile_view_helpers_recording_off()
 						PlayerCfg.MissileViewEnabled = 1;
 						Missile_viewer = &candidate;
 						Missile_viewer_sig = 43;
-						require(!select_missile_viewer() && !Missile_viewer && Missile_viewer_sig == -1,
-						        "stale missile cleanup still occurs without a drawable window");
+						require(!select_missile_viewer() && Missile_viewer == &candidate && Missile_viewer_sig == 43,
+						        "stale presentation selection leaves retirement to simulation");
 						geometry.push_back({ { "width", screen.sc_w }, { "height", screen.sc_h }, { "hires", hires }, { "mode", mode }, { "window", win }, { "graph", graph }, { "drawable", drawable } });
 					}
 		}
