@@ -243,6 +243,11 @@ class save_endian_fixture
 #else
 		if (version >= 19) words(4, MAX_EXPLODING_WALLS * 3);
 #endif
+#ifdef DXX_BUILD_DESCENT_II
+		if (version >= 45) { skip(MAX_PLAYERS * 8); words(4, 2); } // LE guided, host phase and Fusion active
+#else
+		if (version >= 21) words(4, 2); // phase and Fusion active
+#endif
 	}
 
   public:
@@ -259,9 +264,9 @@ class save_endian_fixture
 		skip(4);
 		const int version = integer();
 #ifdef DXX_BUILD_DESCENT_II
-		require(version == 38 || version == 40 || version == 41 || version == 42, "current ordinary/imported D2 save fixture");
+		require(version == 38 || version == 40 || version == 41 || version == 42 || version == 45 || version == 46, "current ordinary/imported D2 save fixture");
 #else
-		require(version == 18 || version == 19, "current native D1 save fixture");
+		require(version == 18 || version == 19 || version == 21, "current native D1 save fixture");
 #endif
 		skip(20 + 100 * 50 * 3); // description and RGB thumbnail
 		require(integer() == 0, "endian fixture is an in-level save");
@@ -271,7 +276,7 @@ class save_endian_fixture
 		skip(2);     // selected weapons
 		words(4, 5); // difficulty history and cheats
 #ifdef DXX_BUILD_DESCENT_II
-		if (version == 40 || version == 42) {
+		if (version == 40 || version == 42 || version == 46) {
 			const int length = count();
 			skip(length);
 		}

@@ -200,6 +200,7 @@ static int g_android_save_blank_thumbnail = 0;
 #include "exploding_wall_runtime.h"
 #include "cadence_runtime.h"
 #include "wiggle_phase_runtime.h"
+#include "fusion_autofire_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -642,6 +643,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	cadence_runtime_write(fp, GameTime64);
 	exploding_wall_runtime_write(fp);
 	wiggle_phase_runtime_write(fp);
+	fusion_autofire_runtime_write(fp, Auto_fire_fusion_cannon_time);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -903,6 +905,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION &&
 	    !wiggle_phase_runtime_read(fp, swap, 0))
 		goto done;
+	validation_stage = "Fusion autofire active";
+	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION &&
+	    !fusion_autofire_runtime_read(fp, swap, NULL))
+		goto done;
 	valid = 1;
 done:
 	if (!valid)
@@ -1018,6 +1024,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		exploding_wall_runtime_read(fp, swap, 1);
 	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION)
 		wiggle_phase_runtime_read(fp, swap, 1);
+	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION)
+		fusion_autofire_runtime_read(fp, swap, &Auto_fire_fusion_cannon_time);
 }
 
 static int state_thumbnail_has_palette(int version)

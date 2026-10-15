@@ -346,6 +346,7 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 #include "autoselect_runtime.h"
 #include "cadence_runtime.h"
 #include "wiggle_phase_runtime.h"
+#include "fusion_autofire_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -933,7 +934,8 @@ static int state_write_runtime_state(PHYSFS_file *fp)
 		guidebot_save_stream stream = { fp, 1, 0, 1, GameTime64, 0 };
 		if (!escort_save_runtime(&stream)) return 0;
 	}
-	return state_write_guided_state(fp) && wiggle_phase_runtime_write(fp);
+	return state_write_guided_state(fp) && wiggle_phase_runtime_write(fp) &&
+		fusion_autofire_runtime_write(fp, Auto_fire_fusion_cannon_time);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1238,6 +1240,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
 	    !wiggle_phase_runtime_read(fp, swap, 0))
 		goto done;
+	validation_stage = "Fusion autofire active";
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
+	    !fusion_autofire_runtime_read(fp, swap, NULL))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1365,6 +1371,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 
 	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
 		wiggle_phase_runtime_read(fp, swap, !secret_restore);
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
+		fusion_autofire_runtime_read(fp, swap, &auto_fire_fusion_cannon_time);
 
 	if (secret_restore) {
 		/* Preserve the existing secret-return phase reset, not saved player runtime */
