@@ -85,10 +85,11 @@ def file_identity(path, target=None):
                     output.write(chunk)
         reject_links(path)
         after = path.stat()
-        # Check the pathname as well as the open descriptor to catch replacement
-        for current in (os.fstat(stream.fileno()), after):
-            if (not os.path.samestat(before, current) or before.st_size != current.st_size
-                    or before.st_mtime_ns != current.st_mtime_ns or before.st_ctime_ns != current.st_ctime_ns):
+        # Compare each API with itself; stat/fstat timestamps can differ on Windows
+        # Keep both pathname and descriptor checks to catch replacement and mutation
+        for previous, current in ((opened, os.fstat(stream.fileno())), (before, after)):
+            if (not os.path.samestat(previous, current) or previous.st_size != current.st_size
+                    or previous.st_mtime_ns != current.st_mtime_ns or previous.st_ctime_ns != current.st_ctime_ns):
                 raise ValueError('Retail file changed while reading')
     return size, digest.hexdigest()
 

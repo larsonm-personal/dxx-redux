@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -341,6 +342,59 @@ class RetailAssetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'changed during staging'):
             assets.stage(self.root, self.destination, manifest)
         self.assertFalse(self.destination.exists())
+
+    def snapshot(self, info, **changes):
+        fields = ('st_mode', 'st_ino', 'st_dev', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+        return SimpleNamespace(**{field: changes.get(field, getattr(info, field)) for field in fields})
+
+    def test_stat_and_fstat_timestamps_can_differ_for_unchanged_files(self):
+        original_fstat = os.fstat
+
+        def descriptor_snapshot(fd):
+            info = original_fstat(fd)
+            return self.snapshot(info, st_mtime_ns=info.st_mtime_ns + 123,
+                                 st_ctime_ns=info.st_ctime_ns + 456)
+
+        # Different API representations must not become false mutation reports
+        with patch.object(assets.os, 'fstat', side_effect=descriptor_snapshot):
+            manifest = self.inventory()
+            assets.stage(self.root, self.destination, manifest)
+        self.assertIs(manifest['matches_tested_edition'], True)
+        self.assertEqual(assets.inventory(self.destination, self.expected), manifest)
+
+    def test_each_metadata_stream_still_rejects_real_changes(self):
+        path = self.root / 'd1/descent.hog'
+        original_stat = Path.stat
+        before = path.stat()
+        opened = self.snapshot(before, st_mtime_ns=before.st_mtime_ns + 123,
+                               st_ctime_ns=before.st_ctime_ns + 456)
+        for stream in ('pathname', 'descriptor'):
+            for field in ('st_ino', 'st_dev', 'st_size', 'st_mtime_ns', 'st_ctime_ns'):
+                after = self.snapshot(before)
+                closed = self.snapshot(opened)
+                changed = after if stream == 'pathname' else closed
+                setattr(changed, field, getattr(changed, field) + 1)
+                path_observations = iter((before, after))
+
+                def pathname_snapshot(candidate, **kwargs):
+                    if candidate == path and kwargs.get('follow_symlinks', True):
+                        return next(path_observations)
+                    return original_stat(candidate, **kwargs)
+
+                with self.subTest(stream=stream, field=field):
+                    with patch.object(Path, 'stat', pathname_snapshot), patch.object(
+                            assets.os, 'fstat', side_effect=[opened, closed]):
+                        with self.assertRaisesRegex(ValueError, 'changed while reading'):
+                            assets.file_identity(path)
+
+    def test_open_descriptor_must_still_match_pathname_identity(self):
+        path = self.root / 'd1/descent.hog'
+        before = path.stat()
+        for field in ('st_ino', 'st_dev'):
+            opened = self.snapshot(before, **{field: getattr(before, field) + 1})
+            with self.subTest(field=field), patch.object(assets.os, 'fstat', return_value=opened):
+                with self.assertRaisesRegex(ValueError, 'changed while opening'):
+                    assets.file_identity(path)
 
     def test_midstream_change_or_path_replacement_is_rejected_and_stage_removed(self):
         path = self.root / 'd1/descent.hog'
