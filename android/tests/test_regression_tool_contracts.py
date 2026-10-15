@@ -40,6 +40,16 @@ class RegressionToolContractsTest(unittest.TestCase):
         for failed in ('0 received, 100% packet loss', '1 received, 50% packet loss'):
             self.assertNotRegex(failed, pattern)
 
+    def test_lan_owners_keep_configured_pair_and_report_missing_devices(self) -> None:
+        for name in ('test_lan_broadcast.ps1', 'test_lan_lobby_discovery.ps1'):
+            source = (ROOT / 'android/tests' / name).read_text(encoding='utf-8')
+            self.assertIn('$EMU1 = $script:PRIMARY_EMULATOR_SERIAL', source)
+            self.assertIn('$EMU2 = $script:SECONDARY_EMULATOR_SERIAL', source)
+            self.assertRegex(source, r'RESULT: SKIP \(Need[^\n]+\n\s+exit 2')
+        source = (ROOT / 'android/tests/test_lan_broadcast.ps1').read_text(encoding='utf-8')
+        self.assertNotIn('$emus[0]', source)
+        self.assertIn("if addr in ('255.255.255.255', '10.0.2.255'):", source)
+
     def test_health_uses_selected_emulator(self) -> None:
         health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
         self.assertIn("test_helpers.ps1", health)

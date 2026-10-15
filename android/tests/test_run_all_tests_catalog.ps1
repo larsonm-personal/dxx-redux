@@ -8,6 +8,9 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/nightly_public_fixture_policy.ps1')
 # Media-free admission is deliberately narrower than instrumentation ownership
 $mediaFree = @(
+    @{ Name = 'test_lan_lobby_discovery'; BaseName = 'test_lan_lobby_discovery'; Type = 'ps1'; Requires = 'two_emulators' },
+    @{ Name = 'test_lan_broadcast'; BaseName = 'test_lan_broadcast'; Type = 'ps1'; Requires = 'two_emulators' },
+    @{ Name = 'test_launcher_media_controls_generated'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-GeneratedAudio') },
     @{ Name = 'test_compute_faster_dialog'; BaseName = 'test_compute_faster_dialog'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
     @{ Name = 'test_debug_log_refresh_button'; BaseName = 'test_debug_log_refresh_button'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
     @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') },
@@ -23,6 +26,10 @@ foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
 }
 $deniedMediaFree = @(
+    @{ Name = 'test_lan_lobby_discovery'; BaseName = 'test_lan_lobby_discovery'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-ReconnectCoverage') },
+    @{ Name = 'test_launcher_media_controls'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator' },
+    @{ Name = 'test_launcher_media_controls_generated'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-AudioFile', 'arbitrary.mp3') },
+    @{ Name = 'test_launcher_media_controls_generated'; BaseName = 'test_launcher_media_controls'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-GeneratedAudio', '-FutureVariant') },
     @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600', '-FutureVariant') },
     @{ Name = 'test_compute_faster_dialog'; BaseName = 'test_compute_faster_dialog'; Type = 'ps1'; Requires = 'emulator' },
     @{ Name = 'test_controller_raw_inputs'; BaseName = 'test_controller_raw_inputs'; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-FutureVariant') },

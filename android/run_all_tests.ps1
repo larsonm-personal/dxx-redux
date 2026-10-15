@@ -855,6 +855,17 @@ foreach ($t in $ps1Files) {
     $allTests += $entry
 }
 
+# A fixed synthetic fixture variant preserves the original user-supplied audio owner
+$allTests += @{
+    Name = 'test_launcher_media_controls_generated'
+    BaseName = 'test_launcher_media_controls'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_launcher_media_controls.ps1')
+    Requires = 'emulator'
+    TimeoutSeconds = 360
+    Arguments = @('-GeneratedAudio')
+}
+
 $inputDemoRegressionHeadlessWrapper = Join-Path $testsDir "test_input_demo_regressions.ps1"
 $inputDemoRegressionGraphicsWrapper = Join-Path $testsDir "test_input_demo_regressions_graphics.ps1"
 $inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest -ManifestPath (Join-Path $testsDir "input_demo_graphics_canaries.txt")

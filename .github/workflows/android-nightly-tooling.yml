@@ -63,9 +63,14 @@ jobs:
           python3 - <<'PYTHON'
           import json, os
           plan = json.load(open('plan/plan.json'))
-          needed = any(test.get('owner') == 'shareware' and test.get('lane') == os.environ['SWEEP_LANE'] for test in plan['tests'])
+          selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
+          requirements = {
+              'public_fixtures': any(test.get('owner') == 'shareware' for test in selected),
+              'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
+          }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write(f"public_fixtures={str(needed).lower()}\n")
+              for name, needed in requirements.items():
+                  output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
       - name: Prepare dependency locations
         shell: bash
@@ -207,6 +212,26 @@ jobs:
           bash android/get_deps/helpers/get_bounded_python.sh 2>&1 | tee ../results/setup/bounded-python.log
           pwsh -NoProfile -NonInteractive -File android/helpers/setup_shareware_test_data.ps1 \
             -Game both -Download 2>&1 | tee ../results/setup/public-fixtures.log
+      - name: Require standard FFmpeg for generated preview fixture
+        if: inputs.lane == 'android-single' && steps.selection.outputs.generated_audio == 'true'
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            # Official Ubuntu Noble package: https://packages.ubuntu.com/noble/ffmpeg
+            expected='7:6.1.1-3ubuntu5'
+            installed=$(dpkg-query -W -f='${Version}' ffmpeg 2>/dev/null || true)
+            if [[ "$installed" != "$expected" ]]; then
+              sudo apt-get update
+              sudo apt-get install -y --no-install-recommends "ffmpeg=$expected"
+            fi
+            [[ "$(dpkg-query -W -f='${Version}' ffmpeg)" == "$expected" ]]
+            [[ "$(command -v ffmpeg)" == /usr/bin/ffmpeg ]]
+            [[ "$(command -v ffprobe)" == /usr/bin/ffprobe ]]
+            ffmpeg -version
+            ffprobe -version
+          } 2>&1 | tee results/setup/ffmpeg.log
       - name: Prepare isolated headless emulators
         if: inputs.lane != 'jvm'
         timeout-minutes: 8
@@ -309,6 +334,15 @@ jobs:
             target/android/mission-metadata-core/build/reports/tests/
             target/android/proxy-tests/build/test-results/
             target/android/proxy-tests/build/reports/tests/
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Upload generated fixture provenance
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-fixture-provenance-${{ inputs.lane }}
+          path: |
+            target/android/temp/preview_fixture_*/provenance.json
           retention-days: 14
           if-no-files-found: ignore
       - name: Save provisioned toolchain cache

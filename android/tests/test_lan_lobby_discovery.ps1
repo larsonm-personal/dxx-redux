@@ -41,8 +41,8 @@ $ACTIVITY = "com.dxxredux.app.SetupActivity"
 $EMU1 = $script:PRIMARY_EMULATOR_SERIAL
 $EMU2 = $script:SECONDARY_EMULATOR_SERIAL
 if (-not (Test-DeviceOnline -Serial $EMU1) -or -not (Test-DeviceOnline -Serial $EMU2)) {
-    Write-Host "SKIP: Need configured emulators $EMU1 and $EMU2"
-    exit 0
+    Write-Host "RESULT: SKIP (Need configured emulators $EMU1 and $EMU2)"
+    exit 2
 }
 
 $script:LogFile = Join-RegressionPath $REPO_ROOT "temp" "lan_discovery_test_log.txt"
