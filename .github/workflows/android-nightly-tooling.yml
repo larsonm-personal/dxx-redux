@@ -93,9 +93,11 @@ jobs:
             echo "DXX_NIGHTLY_CMAKE=$CMAKE_VERSION"
             echo "DXX_NIGHTLY_EMULATOR_API=$EMULATOR_API_LEVEL"
           } >> "$GITHUB_ENV"
-          echo "$dep_base/jdk-$JDK_MAJOR/bin" >> "$GITHUB_PATH"
-          echo "$sdk_root/platform-tools" >> "$GITHUB_PATH"
-          echo "$sdk_root/emulator" >> "$GITHUB_PATH"
+          {
+            echo "$dep_base/jdk-$JDK_MAJOR/bin"
+            echo "$sdk_root/platform-tools"
+            echo "$sdk_root/emulator"
+          } >> "$GITHUB_PATH"
           df -h . | tee results/setup/storage-before.log
       - name: Require accelerated emulator access
         if: inputs.lane != 'jvm'
