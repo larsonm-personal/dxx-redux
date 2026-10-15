@@ -34,7 +34,12 @@ function Test-SuiteMediaIndependentTest {
                 'test_android_redbook_completion',
                 'test_android_texture_bindings',
                 'test_android_texture_labels',
-                'test_android_xmodel_mipmaps')
+                'test_android_xmodel_mipmaps',
+                'test_pcm_ring',
+                'test_touch_layout_format',
+                'test_distribution_build_info',
+                'test_xcrash_native_report',
+                'test_lan_transport_recovery')
         }
         'ps1:two_emulators' { @('test_lan_lobby_discovery', 'test_lan_broadcast') }
         'jsonc:emulator' {

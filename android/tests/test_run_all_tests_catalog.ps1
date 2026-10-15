@@ -37,6 +37,11 @@ $nativeMediaFreeOwners = @(
 foreach ($name in $nativeMediaFreeOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 }
+$toolMediaFreeOwners = @('test_pcm_ring', 'test_touch_layout_format', 'test_distribution_build_info',
+    'test_xcrash_native_report', 'test_lan_transport_recovery')
+foreach ($name in $toolMediaFreeOwners) {
+    $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+}
 foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test $entry)) { throw "Missing media-free owner: $($entry.Name)" }
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
@@ -67,6 +72,10 @@ foreach ($name in $nativeMediaFreeOwners) {
 foreach ($name in @('test_android_matcen_stations', 'test_android_secret_origins', 'test_android_ktx2_mipmaps',
     'test_android_d1_mod_patches', 'test_android_mod_bitmaps', 'test_android_mod_renderer', 'test_android_mod_sounds', 'test_android_mod_save')) {
     $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
+}
+foreach ($name in $toolMediaFreeOwners) {
+    $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-FutureVariant') }
+    $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @() }
 }
 foreach ($entry in $deniedMediaFree) {
     if (Test-SuiteMediaIndependentTest -Test $entry) { throw "Overbroad media-free admission: $($entry.Name)" }
