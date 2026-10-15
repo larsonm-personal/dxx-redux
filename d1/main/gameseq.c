@@ -703,6 +703,7 @@ ushort netmisc_calc_checksum()
 void LoadLevel(int level_num,int page_in_textures)
 {
 	char *level_name;
+	int load_ret;
 	player save_player;
 #ifdef __ANDROID__
 	struct android_profile_level_load_metrics load_profile = { 0 };
@@ -718,7 +719,8 @@ void LoadLevel(int level_num,int page_in_textures)
 	/* New objects must not inherit the previous level's custom definitions */
 	custom_restore_definitions();
 
-	if (!load_level(level_name)) {
+	load_ret = load_level(level_name);
+	if (!load_ret) {
 		Current_level_num=level_num;
 #ifdef __ANDROID__
 		secret_area_prepare_current_level();
@@ -744,6 +746,8 @@ void LoadLevel(int level_num,int page_in_textures)
 		secret_area_rescan_current_level();
 #endif
 	}
+	else
+		Error("Couldn't load level file <%s>, error = %d",level_name,load_ret);
 
 #ifdef __ANDROID__
 	load_profile.file_us = android_profile_take_elapsed_us(&load_profile_phase_us);
