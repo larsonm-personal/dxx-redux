@@ -24,6 +24,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 extern int Cyberman_installed;	//SWIFT device present
 
 void read_flying_controls( object * obj );
+unsigned int controls_get_wiggle_phase(void);
+void controls_restore_wiggle_phase(unsigned int phase);
+void controls_reset_wiggle_phase(void);
 
 extern ubyte Controls_stopped;
 extern ubyte Controls_always_move;

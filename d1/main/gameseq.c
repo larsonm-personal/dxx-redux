@@ -38,6 +38,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "game.h"
 #include "key.h"
 #include "object.h"
+#include "controls.h"
 #include "physics.h"
 #include "dxxerror.h"
 #include "joy.h"
@@ -1637,6 +1638,7 @@ void StartNewLevel(int level_num)
 	hide_menus();
 
 	GameTime64 = 0;
+	controls_reset_wiggle_phase();
 	ThisLevelTime=0;
 
 	if (!input_demo_consume_skip_level_intro() && !(Game_mode & GM_MULTI)) {

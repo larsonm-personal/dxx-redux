@@ -1128,6 +1128,7 @@ void StartNewGame(int start_level)
 		return;
 	}
 #endif
+	controls_reset_wiggle_phase();
 	state_quick_item = -1;	// for first blind save, pick slot to save in
 
 	game_disable_cheats();
@@ -2371,6 +2372,7 @@ void StartNewLevel(int level_num)
 	hide_menus();
 
 	GameTime64 = 0;
+	controls_reset_wiggle_phase();
 	ThisLevelTime=0;
 
 	if (level_num > 0) {

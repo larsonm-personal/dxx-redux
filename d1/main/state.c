@@ -28,6 +28,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "wall.h"
 #include "object.h"
+#include "controls.h"
 #include "gamemine.h"
 #include "dxxerror.h"
 #include "gamefont.h"
@@ -100,7 +101,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_save_format.h"
 #define STATE_VERSION ANDROID_D1_SAVE_VERSION
 #else
-#define STATE_VERSION EXPLODING_WALL_D1_SAVE_VERSION
+#define STATE_VERSION WIGGLE_PHASE_D1_SAVE_VERSION
 #endif
 #define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
@@ -198,6 +199,7 @@ static int g_android_save_blank_thumbnail = 0;
 #include "autoselect_runtime.h"
 #include "exploding_wall_runtime.h"
 #include "cadence_runtime.h"
+#include "wiggle_phase_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -639,6 +641,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	autoselect_write_runtime_state(fp);
 	cadence_runtime_write(fp, GameTime64);
 	exploding_wall_runtime_write(fp);
+	wiggle_phase_runtime_write(fp);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -896,6 +899,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= EXPLODING_WALL_D1_SAVE_VERSION &&
 	    !exploding_wall_runtime_read(fp, swap, 0))
 		goto done;
+	validation_stage = "wiggle phase";
+	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION &&
+	    !wiggle_phase_runtime_read(fp, swap, 0))
+		goto done;
 	valid = 1;
 done:
 	if (!valid)
@@ -1009,6 +1016,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		cadence_runtime_read(fp, swap, 1, GameTime64);
 	if (version >= EXPLODING_WALL_D1_SAVE_VERSION)
 		exploding_wall_runtime_read(fp, swap, 1);
+	if (version >= WIGGLE_PHASE_D1_SAVE_VERSION)
+		wiggle_phase_runtime_read(fp, swap, 1);
 }
 
 static int state_thumbnail_has_palette(int version)
@@ -2878,6 +2887,8 @@ RetryObjectLoading:
 		}
 		state_read_runtime_state(fp, swap, version);
 	}
+	if (version < WIGGLE_PHASE_D1_SAVE_VERSION)
+		controls_reset_wiggle_phase();
 	if (version < CADENCE_D1_SAVE_VERSION)
 		cadence_runtime_reset();
 	if (version < STATE_AI_PATH_FREE_PTR_VERSION)

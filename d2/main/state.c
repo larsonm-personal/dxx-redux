@@ -345,6 +345,7 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 
 #include "autoselect_runtime.h"
 #include "cadence_runtime.h"
+#include "wiggle_phase_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -932,7 +933,7 @@ static int state_write_runtime_state(PHYSFS_file *fp)
 		guidebot_save_stream stream = { fp, 1, 0, 1, GameTime64, 0 };
 		if (!escort_save_runtime(&stream)) return 0;
 	}
-	return state_write_guided_state(fp);
+	return state_write_guided_state(fp) && wiggle_phase_runtime_write(fp);
 }
 
 /* velocity, thrust, rotvel, rotthrust; mass, drag, brakes; turnroll, flags */
@@ -1233,6 +1234,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 			if (objnum < -1 || objnum >= MAX_OBJECTS || (objnum == -1 && signature != -1)) goto done;
 		}
 	}
+	validation_stage = "wiggle phase";
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION &&
+	    !wiggle_phase_runtime_read(fp, swap, 0))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1358,8 +1363,14 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 		}
 	}
 
-	if (secret_restore)
+	if (version >= WIGGLE_PHASE_D2_SAVE_VERSION)
+		wiggle_phase_runtime_read(fp, swap, !secret_restore);
+
+	if (secret_restore) {
+		/* Preserve the existing secret-return phase reset, not saved player runtime */
+		controls_reset_wiggle_phase();
 		return;
+	}
 
 	Next_laser_fire_time = next_laser_fire_time;
 	Next_missile_fire_time = next_missile_fire_time;
@@ -3966,6 +3977,8 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		state_read_runtime_state(fp, swap, secret_restore, version, &saved_guidebot_mode, guided_owners);
 	} else if (!secret_restore)
 		guidebot_routing_restore_mode(guidebot_routing_default());
+	if (version < WIGGLE_PHASE_D2_SAVE_VERSION || secret_restore)
+		controls_reset_wiggle_phase();
 	if (version < CADENCE_D2_SAVE_VERSION && !secret_restore)
 		cadence_runtime_reset();
 	state_log_checkpoint_ai_restore_state();

@@ -11588,6 +11588,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
 #include "active_save_runtime_fixture.hpp"
+#include "wiggle_save_runtime_fixture.hpp"
 #include "guided_save_runtime_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 #include "public_matcen_stations_fixture.hpp"
@@ -11682,6 +11683,15 @@ int main(int argc, char **argv)
 	if (argc == 4 && std::strcmp(argv[1], "--guided-save-runtime") == 0) {
 		capture_public_level_replay(argv[2], "flight");
 		exercise_guided_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 4 && std::strcmp(argv[1], "--wiggle-save-runtime") == 0) {
+#ifdef DXX_BUILD_DESCENT_II
+		capture_public_level_replay(argv[2], "flight");
+#else
+		capture_public_level_replay(argv[2], "door");
+#endif
+		exercise_wiggle_save_runtime(argv[3]);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {

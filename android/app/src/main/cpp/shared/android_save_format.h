@@ -2,7 +2,7 @@
 #define ANDROID_SAVE_FORMAT_H
 
 /* Android save formats are pre-release: accept only the current format */
-#define ANDROID_D1_SAVE_VERSION       20
+#define ANDROID_D1_SAVE_VERSION       22
 #define ANDROID_D2_SAVE_VERSION       45
 #define ANDROID_D1_IN_D2_SAVE_VERSION 46
 

@@ -74,23 +74,31 @@ static void exercise_guided_save_runtime(const char *scenario)
 		require(file != nullptr, "open saved guided extension");
 		bytes original(static_cast<size_t>(PHYSFS_fileLength(file)));
 		require(PHYSFS_read(file, original.data(), 1, original.size()) == original.size() && PHYSFS_close(file), "read saved guided extension");
-		require(original.size() > MAX_PLAYERS * 8 && original[4] == 45, "native D2 guided format version");
+		require(original.size() > (MAX_PLAYERS * 8 + 4) && original[4] == 45, "native D2 guided format version");
 		bytes malformed = original;
-		set_int(malformed, malformed.size() - MAX_PLAYERS * 8, MAX_OBJECTS);
+		set_int(malformed, malformed.size() - (MAX_PLAYERS * 8 + 4), MAX_OBJECTS);
 		write_fixture(filename, malformed);
 		require(!state_restore_all_sub(filename, 0), "reject out-of-range guided slot");
 		malformed = original;
 		malformed.pop_back();
 		write_fixture(filename, malformed);
-		require(!state_restore_all_sub(filename, 0), "reject truncated guided tail");
+		require(!state_restore_all_sub(filename, 0), "reject truncated runtime tail");
 		malformed = original;
-		set_int(malformed, malformed.size() - MAX_PLAYERS * 8 + 4, 123);
+		malformed.resize(malformed.size() - 5);
+		write_fixture(filename, malformed);
+		require(!state_restore_all_sub(filename, 0), "reject truncated guided identity before phase");
+		malformed = original;
+		set_int(malformed, malformed.size() - 4, 65536);
+		write_fixture(filename, malformed);
+		require(!state_restore_all_sub(filename, 0), "reject out-of-range full-save phase");
+		malformed = original;
+		set_int(malformed, malformed.size() - (MAX_PLAYERS * 8 + 4) + 4, 123);
 		write_fixture(filename, malformed);
 		require(!state_restore_all_sub(filename, 0), "reject noncanonical absent identity");
-		// Native 41 has the same prefix and no guided ownership tail
+		// Native 41 has the same prefix and no guided ownership or wiggle phase tail
 		bytes legacy = original;
 		set_int(legacy, 4, 41);
-		legacy.resize(legacy.size() - MAX_PLAYERS * 8);
+		legacy.resize(legacy.size() - (MAX_PLAYERS * 8 + 4));
 		write_fixture(filename, legacy);
 		require(state_restore_all_sub(filename, 0), "retain ordinary native version41 save support");
 		write_fixture(filename, original);

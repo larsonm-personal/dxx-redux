@@ -59,6 +59,24 @@ extern int Drop_afterburner_blob_flag;		//ugly hack
 
 extern fix	Seismic_tremor_magnitude;
 
+/* Only the phase survives ordinary save clock rebasing; fresh play keeps offset zero */
+static unsigned int Wiggle_phase_offset;
+
+unsigned int controls_get_wiggle_phase(void)
+{
+	return ((unsigned int)GameTime64 + Wiggle_phase_offset) & 0xffffu;
+}
+
+void controls_restore_wiggle_phase(unsigned int phase)
+{
+	Wiggle_phase_offset = (phase - (unsigned int)GameTime64) & 0xffffu;
+}
+
+void controls_reset_wiggle_phase(void)
+{
+	Wiggle_phase_offset = 0;
+}
+
 void read_flying_controls( object * obj )
 {
 #ifdef ANDROID
@@ -218,7 +236,7 @@ void read_flying_controls( object * obj )
 
 	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE)
 	{
-		fix_fastsincos(((fix)GameTime64), &raw_swiggle, NULL);
+		fix_fastsincos((fix)controls_get_wiggle_phase(), &raw_swiggle, NULL);
 		scaled_swiggle = raw_swiggle;
 		if (FrameTime < F1_0) // Only scale wiggle if getting at least 1 FPS, to avoid causing the opposite problem.
 			scaled_swiggle = fixmul(raw_swiggle*30, FrameTime); //make wiggle fps-independent (based on pre-scaled amount of wiggle at 30 FPS)
