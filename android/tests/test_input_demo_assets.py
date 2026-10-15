@@ -257,11 +257,17 @@ class AssetPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(assets.AssetError, "mismatch"):
             assets.verify_header(header, self.data, "d1")
 
-    def test_case_ambiguity_and_retail_shadow_fail(self):
+    def test_case_ambiguity_fails_on_case_sensitive_filesystems(self):
         header = self.header()
-        (self.data / "DESCENT.HOG").write_bytes((self.data / "descent.hog").read_bytes())
+        original = self.data / "descent.hog"
+        alternate = self.data / "DESCENT.HOG"
+        alternate.write_bytes(original.read_bytes())
+        if alternate.samefile(original):
+            self.skipTest("Filesystem aliases case-only asset filenames")
         with self.assertRaisesRegex(assets.AssetError, "Ambiguous"):
             assets.verify_header(header, self.data, "d1")
+
+    def test_retail_shadow_fails(self):
         header = self.header("native_d2")
         for row in header["asset_fingerprints"]["files"]:
             if row["role"] in ("d2_hog", "d2_ham"):
