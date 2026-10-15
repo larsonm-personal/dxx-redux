@@ -1,0 +1,21 @@
+# Chunk0425 conversion and release continuation, 2026-10-14
+
+Diagnosis and plans only. No conversion, archive inspection, GitHub command or publication executed.
+
+The complete current convert_all wrapper declares three size configurations for both games and both sound packs. Preserve checked child statuses, shared naming/credit helpers and same primary/merge TGA/mask/strip preparation. Its merge updater copies the old archive to a GUID candidate, rejects existing texture and duplicate archive paths, writes deterministic entry timestamps, closes the candidate and replaces the old file only when hashes differ. Keep this repair; it is not a guarantee of transactional publication of all eight packs.
+
+Convert-AndAdd owns a GUID workspace and checks cleanup containment on its normal tail. Earlier extraction, conversion, merge or error-count throws can bypass that tail because it has no encompassing finally. Reconcile remaining owned cleanup under existing resource/publication owners, preserving diagnostic retention policy and every successful-path repair. No process or fixture ran.
+
+The complete shared pack library generates credits and the exact textures/<game> and Sounds/<name>.r22 paths. Additive blend markers are limited to the six named D2 muzzle strips and frames0-2, written as additive plus newline beside their image. The actual renderer admission and primary child converter remain to qualify; producer naming alone is not accepted playback/rendering evidence.
+
+The current release helper is stronger than the general Xfing verifier. It validates ZIP integrity, case-folded uniqueness, path safety and credits; nonempty KTX2 packs with bounded authored mip spans; fixed UUD pack/game, required palette-specific indexed POG banks with positive counts, nonempty tested semantic patches, original documentation and PNG/indexed-count equality. Sound checks validate two aligned sample-name lists, declared lengths/digests, sample spans and nonempty semantic patch count. Preserve these routes without claiming independent complete source inventories or actual native schema execution from packaging checks.
+
+Local-only mode still reads/hashes input packs and writes generated release notes and metadata. It is a mutating generator and was not run. The generated table and comments are source declarations, not remote release state.
+
+The publication function checks current local identities against validated pack records, lists the existing tagged release, uploads only changed assets, refreshes the release and requires reported size/digest equality for every expected asset before updating publication state. The GH wrapper uses argument arrays and checks return status. Preserve checked failure and release-identity admission. Replacement uploads are expressly non-atomic; do not present multi-asset publication as an all-or-nothing generation. No remote fetch or upload was performed in diagnosis.
+
+Later implementation or documentation must distinguish general structural verification, stricter release packaging checks and actual engine acceptance. Reuse BR0630 for independent exact artifact policy and native schema parity, BR0233 for complete/no-churn/transactional generation and BR0173 for owned resources after full existing-owner reconciliation. Keep local regeneration and remote publication effects explicit. Preserve fixed tag, caller paths, source author credits, game namespaces, POG/semantic content, same-archive blend ownership intent and private-copy fallback.
+
+Acceptance remains unrun: exact valid D1/D2 controls, omitted/duplicate/wrong-case entries, malformed image or sample payloads, unknown/native-invalid semantic operations, source changes between validation/upload, failed child and mid-merge operations, interrupted replacement and unchanged generation. Require truthful failure, preserved prior local output where promised, attempt-owned cleanup and explicit partial-remote recovery policy. Historical source and runtime receipts cannot substitute actual acceptance.
+
+Remaining diagnosis: primary texture/sound child entry and archive admission, Xfing producer/library semantics, renderer blend/indexed/native metadata consumers, prior plans and guide-owner reconciliation. This plan adds no finding/status/rating or runtime credit.

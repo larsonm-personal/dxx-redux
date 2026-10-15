@@ -172,7 +172,7 @@ function Invoke-ReplaySmoke {
     $pwsh = (Get-Process -Id $PID).Path
     Write-Host "SMOKE $GameName recording=$($Recording.Path) data=$resolvedDataDir"
     try {
-        # The shared runner verifies the full result and rejects forced or nonzero exits
+        # The shared runner verifies the fixture result and rejects forced or nonzero exits
         & $pwsh -NoProfile -File (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') `
             -DemoPath $Recording.Path -Game $GameName -DataDir $resolvedDataDir -DataEdition $DataEdition `
             -ExecutablePath $config.Exe -Runner visual -Mode accelerated -RenderProfile default `
@@ -191,9 +191,7 @@ function Invoke-ReplaySmoke {
         if ($diagnostics -match 'AddressSanitizer|LeakSanitizer|runtime error:|Input demo replay[^\r\n]*(mismatch|stopped|failed|could not)') {
             throw "$GameName replay emitted failure diagnostics: $logPath"
         }
-        # Native D1 uses an empty display name for its built-in mission; trace metadata pins its identity
-        $startup = 'Input demo replay starting: [^\r\n]* level {0}, {1} frames' -f $Recording.Header.level, $Recording.Header.frame_count
-        if ($diagnostics -notmatch $startup) { throw "$GameName replay startup was not verified: $logPath" }
+        # Trace metadata pins startup identity even when a Windows GUI binary has no stdout
         Assert-SmokeTraces -Header $Recording.Header -StatePath $actualStatePath -RngPath $actualRngPath
     } finally {
         if (Test-Path -LiteralPath $sandbox) { Remove-Item -LiteralPath $sandbox -Recurse -Force }

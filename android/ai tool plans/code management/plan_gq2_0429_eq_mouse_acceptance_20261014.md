@@ -1,0 +1,15 @@
+# Chunk0429 EQ and touch-mouse acceptance, 2026-10-14
+
+Conditional plan only; no product edit or runtime acceptance.
+
+Preserve EQ profile admission and defaults: bundled Balanced, other profiles Flat, measured presets allowed only for supported font identity, unknown preset native mapping to Flat. Preserve sorted profile encoding, activation before persistence and rollback on persistence failure. Native measured EQ independently checks font byte size and FNV before activation; the launcher SHA identity is a separate selection mechanism. Do not replace these with a filename-only assumption.
+
+Shipped JSON and generated native header contain the same three profiles and fifteen bands at generated numeric precision. Kotlin graph and native DSP have matching RBJ peak/shelf equations, preamp and 0.45-rate frequency clamp in selected source. The graph defaults to 48 kHz; native EQ admits 8-96 kHz and maintains stereo filter state. Graph samples and metadata parity are not actual native impulse/response, clipping, reset or arbitrary sample-rate acceptance.
+
+When implementation/validation is authorized, compare compiled native output against an independent offline response reference using disposable deterministic impulses/noise at supported rate boundaries and common rates. Check Flat bypass, all presets, reset/seek, stereo independence, finite/nonfinite input, font eligibility, preset switching and output conversion. Require the displayed curve's rate policy to be explicit and consistent with the audio configuration it represents. Do not execute fit_music_eq.py or publish new coefficients from this diagnosis.
+
+Preserve FluidSynth output reconfiguration, EQ reset on rate changes and placement after synth effects but before mixing/PCM16 conversion. Preserve preview control mutex and stop/join before synth replacement; selected game startup configures effects/EQ before output rate. Trace any remaining rate-change failure/rollback and live-call ownership before claiming whole playback acceptance. Recorded song-fit statistics and hashes in the asset are provenance claims, not newly reproduced measurements.
+
+BR-0464 owns touch-mouse cadence dependence. Current helper clamps fractional sub-16ms windows to a full decay/grace window, while the actual caller uses uptimeMillis per event and scales that event delta. Assigned MouseModeTuning change is newline-only and does not prove equal-trajectory cadence invariance. Fix the time basis and fractional/fixed-window policy under the existing owner, with equal total distance/time split across 1/4/8/16/32/64 ms, jitter, batching, event history, equal timestamps and pauses. Require near-equal integrated axis output and unchanged disabled acceleration. Preserve per-axis sensitivity, bounded drain/backlog, edge movement, inversion and release clearing; validate actual MotionEvent-to-axis integration rather than only helper values.
+
+No duplicate finding or owner closure. No new remediation/status/rating/runtime credit or inherited saving. Remaining whole-owner/prior disposition reconciliation and final chunk publication are separate gates.

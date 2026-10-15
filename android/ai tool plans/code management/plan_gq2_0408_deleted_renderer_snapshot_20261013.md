@@ -1,0 +1,39 @@
+# GQ2 chunk 0408 deleted renderer snapshot, 2026-10-13
+
+Diagnosis/plans only,serial under plan_general_diagnosis_resume_20261009.md. No product/test/helper edits,build/test/probe/formatter/network/device execution,staging or commits.
+
+- [x] Audit exact assigned deletion/current correspondence
+- [x] Reconcile actual artifact controls,completed repair and full current owner
+- [x] Author simplification/original disposition/direct reference rating
+- [x] Publish exact canonical report/snapshot and independent replay before DONE
+
+| GQ2-CHUNK-0408 | [ ] TODO | source | low | documentation | `d1_d2_ogl_diff.txt` | diff hunks 1-1, new L1-L1 | - |
+
+Complete base922line copied D1/D2 OpenGL diff read in four bounded ranges L1-230/L231-460/L461-690/L691-922 after initial combined discovery truncated. Frozen deletion is one hunk -1,922 +0,0 despite queue newL1-L1 shorthand. Full oldline/deletion correspondence checked inline;no independent stage audit yet. Current/frozen artifact absent. Historical copied content has54internal diff hunks including constness,diagnostics,viewport/filter/cache/mip/mask andmultiplayerrecolor differences. These are historical text,not currentengine findings or parity evidence.
+
+Whole current .gitignore andtest_repository_artifact_policy.ps1 read. Trackedreference search excludingplanledgers foundexactignore andpolicydenylistonly. Rootanchor andmaintainedRedbookfixture allowlist distinguish scratchfrom maintaineddata. Source fixture definitions are not fresh testexecution. Five prior root/remediation/disposition/rank rows recovered without whitespace-padding truncation: GQF0004FIXED/GQR0005DONE/GQD0523RETAIN/GQC0643CLEAN/prior0630reference0BR0001. FullBR0001 andcompletedrepairplan/callerregistration stillrequire review. Do not reopenhistoricalcompletedrepair or claim broadownerclosure.
+
+Partialsourceartifacttemp/general_cleanup_20261006/gq2-source-progress-0408-20261013.json SHA 6b2777c9e9fe71b36cefc4e1e45051b28f78258aa28cb7491cf5cab22d8dc89e.No gates or terminal credit.No newroot/remediation/status/rating/acceptance/runtimeadmission. Next full currentBR0001/repairplan/actualpolicycaller andexact independent qualification beforeauthoredfinaldisposition. Missingolderrecursiveancestry/globalTSV andbroaderqueue/preflights/sweeps/investigations/finalHEAD/dirty-untracked/closure remainpending.
+
+
+Drive receipt0407: namedDxxReduxEvidenceLedgerBackup terminalReady/LastTaskResult0 afterpolling sameliveRunning267009taskwithoutrestart. Independentsource/localDrivecopy/sidecar match431519778bytesSHA76366d20c5353e2e3ade31e3fad483d9fbf89cae315755567127fe492026d344;no.pending. Local-folderproofonly,cloud-synccompletionnotclaimed.
+
+0408partialsource savedtemp/general_cleanup_20261006/gq2-source-progress-0408-20261013.json SHA6b2777c9e9fe71b36cefc4e1e45051b28f78258aa28cb7491cf5cab22d8dc89e;newplan plan_gq2_0408_deleted_renderer_snapshot_20261013.md. Complete922lineoldbody/54embeddeddiffhunks readfourboundedoutputs andexactdeletioncorrespondence checked;currentignore/policyfixture andfivepriorrows read. Initialinlineproof erroneouslyfilteredembeddedoldfileheader asouterheader;correctedtoparseonlyafterouterhunkheader andreranbeforecredit. No independent0408audit/gates/terminalyet. FullBR0001/completedrepairplan/actualpolicycaller remainnext;retainabsenceandnarrowrecurrencepolicy,nocurrentenginefinding/parityclaimfromobsoletecopieddiff. No canonical/evidencechangessince0407;no furtherbackuprewrite. Broaderrecovery/queue/closurepending.
+
+
+Authored disposition:retain deletion andnarrowrecurrencecontrols;wholeBR0001/currentcompletedrepairplan reconciled withoutstatuschange. Policytest registeredcore/hostnone;tooling-smoke onlycatalogcoverage,notdirectpolicyexecution.No newenginefinding from54historicalembeddedhunks;NO_INHERITED_EFFECT/originalabsent/zeroappliedsaving.DirectBR0001REFERENCE0/components0/0/0/0/0.No additionalimplementation neededforthisartifact. Qualificationaudit pending beforefirstthreegates.
+
+
+## Chunk0408 consolidated qualification, 2026-10-13
+
+Consumercheckpoint62b4cc94a908ba36a5297a382c60714e4ab7c4a949be30f95a87d92c3e6294cc;independentPASS82auditedf3e98aa7ce06523014d9df1be75f2f5abc35b564eac0848b3f9331709a9a09.Exact922lineouterdeletion/54internalhistoricalhunks/currentabsence;13contexts795selectedlines4whole/fullBR0001/fivepriorrawdisposition-root-remediationrows bound. Exactrootignore andmaintainedfixturetracked/notignored inspected viareadonlyGit. Core/hostnone registration definitions retained;notdirecttoolingsmokeexecution.No freshpolicytest/fullhistory/privacy/engineparityclaim. DirectBR0001REFERENCE0/components0/0/0/0/0;originalabsent/NO_INHERITED_EFFECT/saving0.Preserve completedGQF0004/GQR0005 andcurrentbroadBR0001OPEN withoutstatusmutation.Firstthreegatesqualified;canonicalpublication/replay/finalgate/Drive pending. Missingolderglobalrecovery andbroaderclosure remainpending.
+
+
+## Chunk0408 audited canonical publication, 2026-10-13
+
+COMPLETE.GQC1237CLEAN/GQD1117NO_INHERITED_EFFECT;0408DONE afterindependentpublicationPASS2589audit6a804664d64fd95dabcf1d4d4299ea3b1452eea622c4c16c461a8cbb49737000.Mutationd9c4db919ceeedce50ee5cedf00b47f6bc888ae0fddc081777f7da840db548dc;parentreplaybaseline3ca9b4e974bcd77392aa7021b09df7766805ae4ab73e6fd3ce5b1ffe441bee2f;snapshot6ca7cbacb88a19138e9c55634ce8435e86cd9def87c26320869943b6e48bccc2/threequalificationartifacts.Priorfivecanonicalbytes preservedexceptdeclaredsixoperations;oldroots/queues/ranksuffixes/fixranks/wholeBR exact. DirectBR0001REFERENCE0/components0/0/0/0/0;originalabsent/zeroappliedsaving.No newroot/remediation/status/rating/acceptance/numberedinvestigation/runtimeclaim.GQ2now408DONE219TODO627;1224terminalranks296fixranks310findings296remediations12investigations.Evidence437934467bytesSHA9e24676d2e0f47c2cf0eb225f2cc82eabcaa704f8d52e82a56a0ce66abc9b65c;Drive receiptpending.
+
+Next0409test.txt exactlyonefailureline deleted atfrozen/currentabsent/originalabsent. Oldline Failed2989-1 wasread;exactGitdeletion/currentabsence onlydiscovery. SharedBR0001/completedGQR0005/ignore/denylistcontext justqualified0408 canbereboundexactly,notassumed. PriorGQ1-0628/GQC0641/GQD0521 disposition mixesREADME/BR0006 andscratchBR0001;fullrelevantrows pendingread. Trackedsubstringsearchalsomatches crash_breadcrumbs_latest.txt andgraphicsper-gameoutput;theseare unrelatedfilenames,not rootartifactconsumers. Exactscope/wholecurrentowner/context/priorrows/directratingqualification stillpending;no0409gate/terminalcredit. Missingolderancestry/globalTSV/broaderqueue/preflights/sweeps/investigations/finalHEAD/dirty-untracked/closure remainpending.No product/test/helperedit or productexecution,staging/commit.
+
+
+Drive receipt0408 independentlyverified:Ready/LastTaskResult0/source-localDrive-sidecar437934467bytesSHA9e24676d2e0f47c2cf0eb225f2cc82eabcaa704f8d52e82a56a0ce66abc9b65c/no.pending.Localfolderproofonly.

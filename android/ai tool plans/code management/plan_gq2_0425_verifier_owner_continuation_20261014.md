@@ -1,0 +1,19 @@
+# Chunk0425 verifier and D1 patch owner continuation, 2026-10-14
+
+Diagnosis and plans only. Reuse existing BR0630 exact artifact verification, BR0627 D1 surface application and BR0493 native schema agreement after complete owner reconciliation. No product/test/helper or payload operations.
+
+The assigned guide diff is presentation-only. Preserve all nonblank text and source credits. Current workflow problems are already owned independently of that diff.
+
+The complete current Xfing verifier checks the expected manifest schema, populated compatibility metadata, declared PNG signatures and self-declared digests, declared patch shape and referenced detail-file presence. It rejects forbidden full-data extensions and closes archive/entry/hash handles. It now requires value for add/replace/test, a guard to preserve. It still admits six generic verbs and slash-prefixed paths, trusts the manifest's texture/patch subset, and does not require exact pack/game, a nonempty game body, positive expected output counts or an independent complete inventory. Do not describe successful verification as proof of complete usable D1/D2 packs. BR0630 remains open.
+
+The current native D1 implementation exists in android_d1_mod_patches.cpp and is called at the Android level-load boundaries in both D1 and D1-in-D2. Do not repeat the historical no-consumer claim as current. It bounds patch/source reads, uses game-specific namespace and enablement, requires exact source tests before replace operations, stages JSON mutations, validates affected surface indices, texture domains, orientation encoding and unchanged nontexture fields before writing surfaces. This source review does not prove the maintained packs or every failure case at runtime.
+
+The selected callers currently discard android_d1_mod_apply_level's result. The function returns -1 after a rejected patch, while these callers continue. Existing BR0627 already requires complete correct application or rejection before gameplay, so preserve the native implementation and reconcile its remaining rejection-admission acceptance under that owner. No new independent root or status transition here.
+
+Current converter preflight uses a GUID scratch directory, reads baseline and selected-source structural information before calling the D1/D2 archive producers and cleans the preflight in finally. This is a source repair, not complete generation atomicity, exact source identity, semantic schema agreement or runtime proof. Do not infer that the optional palette branch makes every later conversion requirement optional.
+
+The D2X wrapper's selected dispatch runs both games at the three configured sizes, checks child statuses, performs a merge pass, then runs both sound conversions. Its final texture-count block prints counts; printing alone is not an exact completeness assertion. Remaining merge/child/library and release paths must still be qualified before a complete guide disposition.
+
+Later acceptance must derive independent current D1/D2 pack policies from maintained source contracts, cross-check exact archive paths, duplicates, counts, source identities and positive coverage, apply the actual supported native schemas, and distinguish structural packaging from correct runtime behavior. Cover empty bodies, omitted rows/payloads, wrong game/pack, generic-but-native-invalid operations, wrong source tests, boundary values, rejected first/middle/last operations and complete valid controls. Verify both native caller results and unchanged prior level state on rejection; do not weaken native checks to match a permissive host verifier.
+
+Historical 144-operation/72-surface or 126/920 archive counts are historical evidence until current source and fixtures independently establish them. No generator, verifier, native test, archive read/hash, device or malformed-media probe ran. Statuses, ratings and canonical ledgers remain unchanged.

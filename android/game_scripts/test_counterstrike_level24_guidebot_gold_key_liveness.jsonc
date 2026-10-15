@@ -55,7 +55,9 @@
         "expect": {
             "guidebot.route_goal_activation_kind_name": "pickup_key",
             "guidebot.route_goal_objective_seg": "281",
-            "guidebot.route_goal_instruction": { "contains": "gold key" },
+            // The initial path reaches a player-openable door before the key
+            "guidebot.route_goal_frontier_player_openable_door": "true",
+            "guidebot.route_goal_instruction": { "contains": "open the door" },
         },
     },
 

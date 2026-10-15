@@ -1779,8 +1779,8 @@ void FireLaser()
 						multi_send_play_sound(SOUND_FUSION_WARMUP, F1_0);
 					#endif
 				}
-				// FX RNG jitters this cadence, which also gates awareness and overcharge damage
-				Fusion_next_sound_time = GameTime64 + F1_0/8 + d_rand_fx()/4;
+				// SIM RNG: this cadence gates AI awareness and overcharge damage
+				Fusion_next_sound_time = GameTime64 + F1_0/8 + d_rand()/4;
 			}
 
 			if (Game_mode & GM_MULTI)

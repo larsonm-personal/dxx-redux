@@ -229,7 +229,6 @@ static nlohmann::json exercise_pickup_autoselect(bool native)
 // Record the selected real asset bank before the controlled corridor replaces geometry
 static void write_pickup_asset_profile(bool shareware, bool ordinary_d2)
 {
-	extern int Num_sound_files;
 	using nlohmann::json;
 	if (shareware) {
 		require(std::strcmp(Level_names[0], ordinary_d2 ? "d2leva-1.sl2" : "level01.sdl") == 0,

@@ -1,4 +1,4 @@
-{"arch":"x86_64","build_number":25070,"difficulty":2,"frame_count":362,"game":"d2","git_version":"9c6852ab","level":1,"mission":"d2demo","player_cfg":{"auto_leveling":1,"autoselect_only_once":0,"classic_autoselect_weapon":0,"cycle_autoselect_only":0,"guidebot_routing_mode":0,"headlight_active_default":1,"no_fire_autoselect":0,"original_homing":0,"persistent_debris":0,"primary_order":[9,8,7,6,5,4,3,2,1,0,255],"secondary_order":[9,4,3,8,1,5,0,255,7,6,2],"select_after_fire":1},"rng_mode":"lcg_state","start_mode":"new_level","type":"header","version":5}
+{"arch":"x86","build_number":25690,"difficulty":2,"frame_count":362,"game":"d2","git_version":"7253def84","level":1,"mission":"d2demo","player_cfg":{"auto_leveling":1,"autoselect_only_once":0,"classic_autoselect_weapon":0,"cycle_autoselect_only":0,"guidebot_routing_mode":0,"headlight_active_default":1,"no_fire_autoselect":0,"original_homing":0,"persistent_debris":0,"primary_order":[9,8,7,6,5,4,3,2,1,0,255],"secondary_order":[9,4,3,8,1,5,0,255,7,6,2],"select_after_fire":1},"rng_mode":"lcg_state","start_mode":"new_level","type":"header","version":5}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":0,"ft":3276,"input":{"s":{"f":3276,"p":3276}},"rng":{"c":0,"s":1234},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":1,"input":{"s":{"p":-3276}},"rng":{"c":40,"s":4214503306},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":2,"input":{"s":{"p":3276}},"rng":{"c":388,"s":3353132190},"type":"frame"}
@@ -21,7 +21,7 @@
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":19,"input":{"s":{"p":-3276,"z":0}},"rng":{"c":463,"s":1337186829},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":20,"input":{"s":{"p":3276}},"rng":{"c":465,"s":2349225939},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":21,"input":{"s":{"p":0}},"rng":{"c":465,"s":2349225939},"type":"frame"}
-{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":22,"input":{"s":{}},"rng":{"c":466,"s":229105424},"type":"frame"}
+{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":22,"input":{},"rng":{"c":466,"s":229105424},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":23,"input":{"s":{"p":3276,"z":-3276}},"rng":{"c":467,"s":2362509833},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":24,"input":{"s":{"p":-3276,"z":3276}},"rng":{"c":469,"s":2169806383},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":25,"input":{"s":{"p":3276}},"rng":{"c":469,"s":2169806383},"type":"frame"}
@@ -37,13 +37,13 @@
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":35,"input":{"s":{"f":3276,"p":3276}},"rng":{"c":475,"s":4237488449},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":36,"input":{"s":{"p":-3276}},"rng":{"c":475,"s":4237488449},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":37,"input":{"s":{"f":-3276,"p":3276}},"rng":{"c":475,"s":4237488449},"type":"frame"}
-{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":38,"input":{"s":{}},"rng":{"c":476,"s":1767421670},"type":"frame"}
+{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":38,"input":{},"rng":{"c":476,"s":1767421670},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":39,"input":{"s":{"p":-3276}},"rng":{"c":476,"s":1767421670},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":40,"input":{"s":{"f":3276,"p":3276}},"rng":{"c":477,"s":3194233895},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":41,"input":{"s":{"z":0}},"rng":{"c":478,"s":1892775636},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":42,"input":{"s":{"p":-3276,"z":-3276}},"rng":{"c":479,"s":2539413629},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":43,"input":{"s":{"p":3276,"z":0}},"rng":{"c":479,"s":2539413629},"type":"frame"}
-{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":44,"input":{"s":{}},"rng":{"c":479,"s":2539413629},"type":"frame"}
+{"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":44,"input":{},"rng":{"c":479,"s":2539413629},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":45,"input":{"s":{"p":-3276,"z":-3276}},"rng":{"c":479,"s":2539413629},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":46,"input":{"s":{"p":3276}},"rng":{"c":480,"s":4117322610},"type":"frame"}
 {"dispatch":{"ops":[{"ft":3276,"k":"sample","s":"="}],"pre_rng":"="},"events":[],"f":47,"input":{"s":{"z":0}},"rng":{"c":480,"s":4117322610},"type":"frame"}

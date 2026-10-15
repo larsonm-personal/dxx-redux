@@ -49,6 +49,16 @@ Android. Repeated replay results alone do not establish recording fidelity
 
 # Create and verify automatic level recordings
 
+The 17 public level replay fixtures were recaptured with the current native
+producer after the ordered-input changes. Independent captures matched byte for
+byte, and each scene passed detailed native replay checks twice on both graphics
+and headless backends. Their gameplay action declarations, terminal results and
+simulation RNG expectations remain unchanged. Imported coverage retains the
+manifest's explicit scope; only flight gameplay-state/SIM parity is qualified.
+Historical format-4 conversion metadata is retained under
+`../tests/fixtures/public_level_replays/provenance/format4_migration/` and describes
+the previous corpus rather than the current native captures.
+
 The automatic level-recording integration runner is
 `android/tests/test_auto_level_demos.ps1`. Select `-Game d1`, `d2`, or `d1-in-d2`
 and the owned device with `-Serial`. Add `-DataEdition shareware` for public data,

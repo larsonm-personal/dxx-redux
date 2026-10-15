@@ -6110,6 +6110,9 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				if (Automap_visited[segnum]) {
+#ifdef DXX_BUILD_DESCENT_II
+					const unsigned int before_generation = escort_get_route_automap_generation();
+#endif
 					Automap_visited[segnum] = 0;
 #ifdef DXX_BUILD_DESCENT_II
 					escort_route_notify_automap_changed(segnum);
@@ -6117,6 +6120,12 @@ extern "C" void game_automate_tick(void)
 					Automap_visited[segnum] = 1;
 #ifdef DXX_BUILD_DESCENT_II
 					escort_route_notify_automap_changed(segnum);
+					const unsigned int generation_delta = escort_get_route_automap_generation() - before_generation;
+					LOGI("Automap revisit: segment=%d generation_delta=%u", segnum, generation_delta);
+					if (generation_delta != 2) {
+						stop_script_fail("automap revisit must publish both same-frame transitions");
+						break;
+					}
 #endif
 				}
 			} else if (s.field == "restore_diagnostic_test") {

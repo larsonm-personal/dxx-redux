@@ -1598,6 +1598,9 @@ if ($fixtureInfo) {
     Write-Host 'Public fixture: pinned shareware data; playback compares the terminal summary, not the separate full-state/detail oracles'
 }
 if (-not $header.ContainsKey('version') -or [int]$header.version -lt 5) {
+    if (-not $ExecutablePath) {
+        throw 'Legacy input-demo format is unsupported by the current engine; convert with verified capture/oracle checks where supported, or record a fresh format-5 capture'
+    }
     Write-Warning 'Legacy input-demo format: preserved unchanged; the current engine requires format 5. Convert with the verified public-corpus converter where supported, or record again'
 }
 if ($D1InD2) {
@@ -1721,7 +1724,10 @@ if ($SandboxSuffix) {
 }
 $script:replayOutputPaths = @($outRoot, $resolvedStateLogPath, $resolvedRngLogPath, $ResultCopyPath) | Where-Object { $_ }
 Assert-OutputDiskSpace -Paths $script:replayOutputPaths -MinimumFreeGB $MinimumFreeSpaceGB
-$sandbox = New-LaunchSandbox -Config $config -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
+$sandboxConfig = $config.Clone()
+if ($useHeadlessConsole) { $sandboxConfig.Exe = $headlessConsoleExe }
+# Windows PhysFS uses the executable directory for profiles, including console runs
+$sandbox = New-LaunchSandbox -Config $sandboxConfig -SandboxName $sandboxName -ReuseSandbox:$ReuseSandbox
 $replaySucceeded = $false
 $replayFailure = 'Replay did not complete'
 $lastWindowTitle = $null
@@ -1753,7 +1759,7 @@ try {
         Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ActualResultPath $actualResultPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$effectiveNoRender -ShowReplayRobotLabels:$showReplayRobotLabels -ReplayDebugLog:$ReplayDebugLog -D1InD2:$D1InD2 -D1InD2StartFromLevel:$D1InD2StartFromLevel -ExitAfterReplay:($RequireCleanExit -or [bool]$fixtureInfo) -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
     }
     if ($pilotUsesPlayersDirectory) { $launchArgs += '-use_players_dir' }
-    $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
+    $launchExecutable = $sandbox.Exe
     $runnerName = $runnerSelection.Name
     $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
@@ -2083,6 +2089,7 @@ try {
             Write-Warning "Could not archive replay diagnostics: $_. Preserving sandbox: $($sandbox.Directory)"
         }
     }
+    if ($process) { $process.Dispose() }
     if (-not $KeepSandbox -and (Test-Path -LiteralPath $sandbox.Directory)) {
         # Delete only this runner's sandbox after its engine has been stopped
         $sandboxPath = [IO.Path]::GetFullPath($sandbox.Directory)
@@ -2097,6 +2104,20 @@ try {
             }
             $ancestor = [IO.Path]::GetDirectoryName($ancestor)
         }
-        Remove-Item -LiteralPath $sandboxPath -Recurse -Force -ErrorAction Continue
+        # Windows may briefly retain an image lock after the process exits
+        for ($attempt = 0; $attempt -lt 11; $attempt++) {
+            try {
+                if (Test-Path -LiteralPath $sandboxPath) {
+                    Remove-Item -LiteralPath $sandboxPath -Recurse -Force -ErrorAction Stop
+                }
+                break
+            } catch {
+                if ($attempt -eq 10) {
+                    Write-Warning "Could not fully remove replay sandbox: $sandboxPath. $($_.Exception.Message)"
+                } else {
+                    Start-Sleep -Milliseconds 200
+                }
+            }
+        }
     }
 }

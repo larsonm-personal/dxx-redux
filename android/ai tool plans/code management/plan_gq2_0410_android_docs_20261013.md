@@ -1,0 +1,118 @@
+# GQ2 chunk 0410 Android documentation, 2026-10-13
+
+Diagnosis/plans only,serial under plan_general_diagnosis_resume_20261009.md. No product/test/helper edits,build/test/probe/formatter/network/media/device execution,staging or commits. outstanding_bugs.md explicitly says do not edit;preserve its authoredbytes andstatuses.
+
+- [x] Read exactassignedbase/frozen old-new hunks andwholecurrent correspondence;auditsource
+- [x] Trace actuallauncher/release/privacy/soundtrace consumers andcontracts
+- [x] Reconcile fullcurrentowners/completedrepairs andprior dispositions
+- [x] Author simplification/original disposition/directrating
+- [x] Publish exactcanonicalreport/snapshot andindependentreplay beforeDONE
+
+| GQ2-CHUNK-0410 | [ ] TODO | source | low | documentation | `4 related paths` | 745 review lines under android | - |
+### GQ2-CHUNK-0410
+
+- `android/outstanding_bugs.md`: diff hunks 1-24, new L3-L413
+- `android/privacy_policy.md`: diff hunks 1-1, new L1-L38
+- `android/README.md`: diff hunks 1-6, new L2-L137
+- `android/SOUND_TRACE.md`: L1-L101
+
+
+
+Initial discoverycensus only:
+[
+  {
+    "path": "android/outstanding_bugs.md",
+    "current_sha256": "2104c541fa4a576165002012a4ab7517a3109b07a7890eef1273cc8b19c3c4bc",
+    "current_lines": 435,
+    "postfrozen_hunks": 1,
+    "current_whole_read": false,
+    "assigned_qualified": false
+  },
+  {
+    "path": "android/privacy_policy.md",
+    "current_sha256": "f67d001d41863e12d1c9892070b732dcf650a1bfcc98747689ad3af6ba771afa",
+    "current_lines": 39,
+    "postfrozen_hunks": 0,
+    "current_whole_read": true,
+    "assigned_qualified": false
+  },
+  {
+    "path": "android/README.md",
+    "current_sha256": "64d66a177bcefcde7820636bf36136b63cf84ebc34eea2a9ee9c3b0bd143b364",
+    "current_lines": 152,
+    "postfrozen_hunks": 2,
+    "current_whole_read": true,
+    "assigned_qualified": false
+  },
+  {
+    "path": "android/SOUND_TRACE.md",
+    "current_sha256": "f5cd22ba1fb8fa0a96f4c6904b03cd7e5b0fb180baaecd6f433c0d51263855d5",
+    "current_lines": 101,
+    "postfrozen_hunks": 0,
+    "current_whole_read": true,
+    "assigned_qualified": false
+  }
+]
+
+WholecurrentREADME/privacy_policy/SOUND_TRACE freshlyreaduntruncated. Initialoutstanding_bugs currentL1-L220 outputtruncated;no creditforthewholefile orunseenmiddle. ItsL1 no-editinstruction is visibleandapplied. Completeassignedold-new/frozenSOUND/currentdelta semanticcoverage stillpendingforallfourpaths;no0410gate/terminalcredit.
+
+Candidateconsumerchecks are actualreleaseentrypoints/distributionidentity/SDK/config/signing/clean-source policy,privacy declarationsversusactualpermissions/network/logexport/backup/musiclookup/Play SDK behavior,andSFXtracebank/load/cache state/context/rate/source limits versusactualinstrumentation/fixtures. Documentread isnot fresh publishing/test/device/media evidence anddoesnotauthorizeany ofthose operations. Bugstatusmarks are userhistory,not executableacceptance. Preserveintentionaldiagnosticlimitssuchasnoncryptographicfingerprint/unknownmatch/no finalmixedaudio oracle. Do notinferlegalcompliance orSDKstartup/networkbehavior fromthepolicytextalone.
+
+Prior0409 COMPLETE/GQC1238CLEAN/GQD1118NO_INHERITED_EFFECT;publicationPASS2605/19e5fe80252b6341c4063e3ca7d8afe7e1ed89574ce49c9d732a78608f6d25a9. GQ2now409DONE218TODO627;1225terminalranks296fixranks310findings296remediations12investigations. CurrentHEAD 7253def84bda52401731cc36ecffc2d1468503c5. Evidence443934115bytesSHA674fc5712666800832a65ef5120ecee99d1fef36fd3b3d096da654a0917d58e4;namedDrivebackuptaskRunning267009/receiptpending,pollsamehandlewithoutrestart. Prior0408Drive receiptverifiedReady0/source-localDrive-sidecar/no.pendingbefore409publication.
+
+Missingolderrecursiveancestry/globalfingerprintTSV,remainingqueue/preflights/sweeps/investigations/finalHEAD/dirty-untracked/supplements/closure remainpending. No goalcompletionorappliedinheritedsavingclaim.
+
+
+0410sourceprogress temp/general_cleanup_20261006/gq2-source-progress-0410-20261013.json SHAa3e83418b97b709c07caf8263c927caee5b68a729e91a1b21ab7f0e2405b967b:complete privacy1/README6assignedold-newhunks andfrozenSOUND101whole readuntruncated;wholecurrentthreepaths/twoREADMEpostfrozenhunks read. Buglist24assignedhunks/fullcurrent/finaldelta remainpending;initialcurrent220lineoutputtruncated/noqualifyingcredit. No independentstageaudit/orgate/terminalcredit. Next fullboundedbuglistold-new/currentreads andsourceaudit,thenactualrelease/privacy/sound consumers/owners.
+
+
+Drive receipt0409: namedDxxReduxEvidenceLedgerBackup terminalReady/LastTaskResult0 afterpolling sameliveRunning267009taskwithoutrestart. Independent source/localDrivecopy/sidecar443934115bytesSHA674fc5712666800832a65ef5120ecee99d1fef36fd3b3d096da654a0917d58e4match/no.pending.Localfolderproofonly,nocloud-syncclaim.No canonical/evidencechangessince0409publication. Sourceprogress0410a3e83418b97b709c07caf8263c927caee5b68a729e91a1b21ab7f0e2405b967b andprimaryplan saved;buglist/sourceaudit/consumer-owner-disposition/publication gates pending. Broadergoalactive.
+
+
+## Chunk0410 assigned source qualification, 2026-10-13
+
+Sourcecheckpoint44f43049134bb00a96ce656d635d348b1cf64468ab6e6a62e43b57e385358b37;independentPASS446audit52c4b608356ec2fb77f82dda3acc49513bd98a818e5586c90d16751a722a8958. Allfourpaths745assignedreview32hunks580added165deleted/wholecurrent727lines/3zero-contextpostfrozenhunks qualified.Buglist24hunks466review/README6hunks135/privacy1hunk43/SOUNDwhole101.Allfouroriginalabsent/saving0.Currentbuglist435lines readinsixboundedoutputsanddegree-symbolL43UTF8recovered. Initialcombinedassignedhunks1-4outputtruncated/nocredit;fulloldbodiesfor24hunksreadinthreeboundedgroups,andallnewbodylinesmatchedtofreshfullcurrentreadviaexactlinecorrespondence,exceptfrozenL3-L5explicitlyprinted. No source omittedfromassignedreview. SourcepreparationinitialU3delta mergedREADME2zero-contexthunks;standardizedU0andreranbeforecheckpointqualification. JSconstantassignmenterrorandinitialassertiongotnocredit.
+
+Firstgatequalifiedonly. Currentbuglistreadonlyinstruction/statusespreserved;checkboxesareauthorhistory/notfreshacceptance.No newroot/remediation/status/rating/numberedinvestigation/runtimeadmission.Canonical/evidenceunchangedsince0409verifiedDrive receipt.No backuprewrite.Sourceparent409PASS2605/explicit405recoverylineage retained;olderglobalTSV/ancestry andbroaderclosure pending.
+
+
+## Chunk0410 partial privacy and sound consumers, 2026-10-13
+
+Partialentry9cb330ea5243a9779b9e8b5cee6997a449393d94014efd3a7d1625312b8da6e9;independentpartialPASS37auditdd78429bba149cd98ee42034539bbb81f12d897033017feb17485eb2ff25086d.Sevenwholecontexts491lines andfullcurrentBR0642OPEN readandbound;sourcePASS446/fourassignedcurrent/fivecanonicals/HEAD revalidated. Wholemanifest/backup/dataextractionrules/AcoustIdConfiguration andsoundtraceimplementation/twoheaders. Manifestsource supportscamera/network/nearby-neverForLocation/connectedforeground/wakelock/backup/PlayGamesproviderplaceholder;backups/device-transferexcludeclient_identity.xml. No mergedrelease manifest/SDKruntime/trafficclaim. Currentprivacyrewrite supersedes oldcategoricalnone claimbutdoesnotcloseBR0642pendingflow/retention/deletion/releaseconfigacceptance.
+
+Soundobserverbody/header/fingerprint supportsload-conversion snapshots,GameLogsgatedplayhashes,report suppression/reset,context/search/mappingcandidates,FNV64+length/16MiBbound/-1unknown.No sample/cache mutation inobserverbodies;callsite/thread/backend/fixture/emulator/finalaudiooracleproofremainpending. Preserve currentmanualcollection/noncryptographic/unknown/no-finalmixedaudio limitations. No newroot/remediation/status/rating/acceptance/numberedinvestigation/runtimeclaim. Onlyfirstsourcegatequalified;remainingfourgates pending.
+
+Nextfullreleasehelper/distributionidentity/sourceguard consumers;privacyPlayGames/AcoustIdtransports/preferences/QR/logexport/serverinventory;D1-D2load/mixer/resetcallers andfixture/registration sources;fullBR0002/relevantcurrentowners/priorrows;authoredsimplification/directrating;canonicalpublication/replay/finalgate/Drive. BroaderlostglobalTSV/olderancestry/preflights/sweeps/investigations/finalHEAD/dirty-untracked/closure remainpending. GQ2still409DONE218TODO627. Canonical/evidenceunchangedsince0409verifiedDrive443934115bytesSHA674fc5712666800832a65ef5120ecee99d1fef36fd3b3d096da654a0917d58e4;no backuprewrite.No product/test/helperedit or execution,staging/commit.
+
+
+## Chunk0410 release,auth andsound consumer continuation, 2026-10-13
+
+Partialrelease-soundentrye363d8f2fc27d843f484c368ecc8e19d6e30f612024582476cd5c748de9f99ec;independentpartialPASS136auditd28e4369a76272a47c13f5357a6e78038e1febc8c13cb97bfdab353d961e0ec1 binds44selectedcontexts3276lines22whole/fullBR0642/sourcePASS446/parentpartialPASS37/currentHEAD/fivecanonicals. Full0_upload_to_test/1_build_aab_apk/release-github/release-build helper/distributionconfig sourcechecked;selectedGradle distribution/sourceSets/SDK/deps/generatedmanifest/native-marker fragments only. FullMacresource/modassets/SFXnativefixture/emulatorsmoke+ownedJSON/DxxReduxApp/AcoustIdPrefs-client/PlayServicesandDirectInstallauthwrappers plusboundedD1-D2load/mixer/levelreset/compatibility/rawload/settingsguards readuntruncated. Initialbuild.gradle.kts lookupfailedandactualbuild.gradlerecoveredbeforecredit.
+
+README mainpublishmenu/versionfirst/Playfirst/pairedAAB-APK/GitHubcurrentlegacy/signature-package-ABI-DEX-nativeidentity/incrementalisolatedtrees/sourceguards/savedupload/notes-preservation/hashcheckedretirement claims alignwithsource.No release/build/APK/signing/networkexecution orcompleteGradleproof. Play-vs-directInstall authsources/SDKdeps/manifestrules supportdistinction;AcoustIDclientPOSTfields fingerprint-duration-client-meta anddefaultfalsemanualguard confirmedinselectedcaller/settingsranges.Crashapplicationcallback writeslocalreports,notfullautomatictransmission/exportaudit. Privacyserver/QR/logexport/update/startupinventory stillpending.
+
+SOUND_TRACE blanketMac/custommissing-snapshot limitation isstaleforcoveredcurrentpaths:Macretailresource bank+per-sample android_sound_trace_loaded,RAWbmread registration andmodPCM/DXA overlay refresh nowrecordsnapshot. D1-in-D2preparedgeneration custom-samplepublish pathisnotfullycoveredbyoverlayloop;do notreplaceoldblanketlimitationwithoppositeallcoveredclaim. Futurewordingshouldnamecoveredpaths andretainremainingunknowncompatibilitybaselines/no-finalmixedaudio/noncryptographiclimits. D1-D2mixerhashbeforeMix_PlayChannel/currentload/readresult/resetcalls andnativefingerprintfixture+emulatorsmoke definitions inspected;notrun.NativeCTestloop/hostrunner andfullsourceowner/priorroot reconciliation pending.No newrootadmissionyet.
+
+Onlyfirstsourcegatequalified;consumer/owner/disposition/publicationfourgatesstillpending. NextfullBR0002/relevantowners/priorrows;privacyserverretention-deletion/matchtransport/QR/logexport/update/startup;preciseSFXcovered-vs-unknowncalldisposition/registration;remainingreleaseinput/cachecontracts/fixtures;authoredsimplification/directrating;canonicalpublication/replay/finalgate/Drive. No newfinding/remediation/status/rating/acceptance/numberedinvestigation/runtimeadmission orappliedsaving.Canonical/evidenceunchangedsince0409verifiedDrive443934115bytesSHA674fc5712666800832a65ef5120ecee99d1fef36fd3b3d096da654a0917d58e4;no backuprewrite. GQ2still409DONE218TODO627;broaderglobalrecovery/queue/preflights/sweeps/investigations/finalHEAD/dirty-untracked/closure remainpending.No product/test/helperedit or productexecution,staging/commit.
+
+
+## Chunk0410 complete consumer and owner qualification, 2026-10-13
+
+Entrycheckpointcf200cf24da604526175a3f2242512714e25b89874e264b1816458c0048cc487;independententryPASS227auditff56f695191a6c1361de7fce7a8f5a0241e9c578c7435cc96413531ca9936fc1.77contexts5201lines32whole/fullBR0002-0006-0642/fiveprior0631rows qualified withsourcePASS446/partialparents136-37. FullBR0002readfourboundedgroups;BR0006standalonerecoveredaftertruncatedcombinedoutputbeforecredit. No test/build/publishing/traffic/mergedmanifest/finalaudioacceptance. Existingowners anddirectBR0642REFERENCE56MEDIUM-HIGH32/0/7/10/7 retainedunpooled.No newroot/remediation/status/rating/acceptance/numberedinvestigation/runtimeclaim. Firstthreegatesqualified;authoredfutureplan/report saved,consolidateddispositionaudit andcanonicalpublication pending. Allfouroriginalabsent/zeroappliedsaving;buglistnoedit respected.Missingolderglobalrecovery andbroaderclosure pending.Canonical/evidenceunchangedsince0409Drive receipt;no backuprewrite.
+
+
+## Chunk0410 consolidated disposition qualification, 2026-10-13
+
+Consumercheckpoint4732d04bee2afcdf8a724c36042ee68a4e1f2fbe32aeb46d5105b4d4205823aa;independentPASS235audit65488d7f7f66c9d8583caafc8e4a0d9ea2bd368ec130c0152f04b5bd5dadae29.SourcePASS446/entryPASS227/parentpartials136-37/currentsource77selectedcontexts5201lines32whole/3fullBR/5priorrows/fivecanonicals/HEAD/report/futureplan revalidated.Reportd66ae73e5bac1dcd44fef4036f237eb1404308f6906b996e16991fb658bfd8ff;futurepland5e6f6b0d35fcc85dd0ae08bc453d40286a25b3644ee967cc761d59a90fe40db.Fourgatesqualified;canonicalpublication/replay/finalgate/Drive remainpending.DirectBR0642REFERENCE56MEDIUM-HIGH32/0/7/10/7retainedunpooled;allfouroriginalabsent/NO_INHERITED_EFFECT/saving0.No newroot/remediation/status/rating/acceptance/numberedinvestigation/runtimeclaim.Keepbuglistunmodified;preserve publishingidentity/sourceguards/SDK-freedistributions/privacyrewrite/diagnosticunknownlimits.FutureREADMEhelperlinks/privacyauthcode-operatorinventory/SFXcovered-versus-unknownscope underexistingBR0002/0006/0642.Parent409through explicit405recovery;missingolderglobalrecovery/broaderclosurepending.No canonical/evidencewritesyet.
+
+
+## Chunk0410 audited canonical publication, 2026-10-13
+
+COMPLETE.GQC1239ISSUES/GQD1119NO_INHERITED_EFFECT;0410DONEafterindependentpublicationPASS2665auditf1ef59c5cade9248696bc111ebff66fcdef7e81a6ca726ef18740221cab6cf42.Mutatione61b3cc84574b5de88c47ea813eec7bbfa9d38d14058a9aa78c4823d2dbc4b6c;parentreplaybaselinee536f46d117a9f2bb18a00eb21116716129b805ab98c9a635e335295d788f9c7;snapshot22f6036fc1cc81505f10774d26a366bbb878cbc0830c9dd4a1df2f67761ec91a/elevenqualificationartifacts.Exactsixoperationspreservedpriorfivecanonicalbytes exceptdeclaredqueue/coverage/ranksort/history-original-evidenceappends;oldroots/queues/ranksuffixes/fixranks/wholeBR exact.Allfivegatescomplete.
+
+All4originalabsent/32assignedhunks745review580added165deleted/current727/3postfrozenhunks;77selectedcontexts5201lines32whole/3fullBR/5priorrows.DirectBR0642REFERENCE56MEDIUM-HIGH32/0/7/10/7retainedunpooled;NO_INHERITED_EFFECT/zeroappliedsaving.No newroot/remediation/status/rating/acceptance/numberedinvestigation/runtimeclaim.Keepbuglistnoedit andcurrentreleaseidentity-sourceguards/privacyrewrite/SFXunknownlimits;futureREADMEhelperlinks/authorization-code-operatorinventory/preciseSFXcoverageplan underexistingBR0002/0006/0642.GQ2now410DONE217TODO627;1226terminalranks296fixranks310findings296remediations12investigations.Evidence451864301bytesSHAd2e7f30865df1b75d955b9c7e87032bda19e00bc8559174680a14adf57c8829d;Drive receiptpending.
+
+Next0411scope4wholefrozenpaths599review:android_features162/CLEANUP348/CODE_QUALITY43/MANUAL_APK46.No semanticcreditfromdiscoveryyet.Missingolderancestry/globalTSV/broaderqueue/preflights/sweeps/investigations/finalHEAD/dirty-untracked/closure remainpending.No product/test/helperedit or productexecution,staging/commit.
+
+
+Drive receipt0410: namedDxxReduxEvidenceLedgerBackup reachedReady/LastTaskResult0 afterpolling sameRunning267009withoutrestart. Independentsource/localDrivecopy/sidecar451864301bytesSHAd2e7f30865df1b75d955b9c7e87032bda19e00bc8559174680a14adf57c8829dmatch/no.pending.Localfolderproofonly,nocloud-syncclaim. Canonical/evidenceunchangedsince0410publication. Next0411primaryplan plan_gq2_0411_feature_cleanup_tooling_docs_20261013.md andpartialsource635ad6a19e541af449caa97bfc5fdee75518532799172b7793efb7cc09d0520a saved:wholefeatures/currentdelta,CODE_QUALITY andMANUAL_APK read/251assigned-current253lines;CLEANUP348 andsourceaudit/consumer-owner-disposition/publicationgatespending. InitialnewplanJSsyntaxfailureexecutednothing,recoveredbeforeartifactwrite.No0411terminalcredit. GQ2still410DONE217TODO627;broaderglobalrecovery/queue/closureactive.

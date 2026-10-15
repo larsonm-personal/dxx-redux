@@ -15,6 +15,7 @@
 #include "gameseq.h"
 #include "input_demo_debug_logging.h"
 #include "input_demo_hooks.h"
+#include "input_demo_hooks_shared.h"
 #include "input_demo_limits.h"
 #include "input_demo_replay.h"
 #include "input_demo_rng_mode.h"
@@ -615,6 +616,7 @@ static int input_demo_restore_loaded_replay(void)
 	INPUT_DEMO_CRUMB("input_demo: start_loaded_replay enter");
 	if (!input_demo_prepare_loaded_replay_context(&replay_context))
 		return 1;
+	input_demo_reset_player_bump_diag();
 	mission_name = replay_context.mission_name;
 	start_mode = replay_context.start_mode;
 	local_player_callsign = replay_context.local_player_callsign;

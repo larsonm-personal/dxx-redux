@@ -1,6 +1,6 @@
 # GQ2 chunk0396 finite audio validation candidate, 2026-10-13
 
-Source-static candidate and future implementation plan only; no canonical ID/admission, product/test/helper edits, NumPy/backend execution, codec/media generation or malformed-media probe. Final complete consumer/dedup/rating/publication gates remain pending.
+Canonical source-static finding GQF-0307 OPEN / GQR-0293 TODO, admitted under chunk0396 after consumerPASS312 and publicationPASS4419. Priority47MEDIUM/P2high. Future implementation plan only; no product/test/helper edits, NumPy/backend execution, codec/media generation, malformed-media probe or observed recipe false-pass claimed. Earlier candidate/proposed-ID sections preserve prepublication history.
 
 ## Actual validator and reporting path
 
@@ -25,3 +25,12 @@ Require validation/report output to contain interoperable finite JSON, preferabl
 Future implementation must call the production validator/integration entry and cover ordinary finite matching audio, mismatching constant delivered audio, constant/zero expected windows, empty/short windows, missing/truncated decoded samples, nonsilent lowRMS, deliberate muted clips and cut-boundary AAC exclusion. Use valid PCM/native captures and actual existing decode/encode helpers where permitted; backend/malformed-media/fault probes remain separately deferred under the tranche. Require deterministic nonzero rejection with no new success report/PASS or stale success reuse, finite accepted metrics, preserved valid900frame/30second output, native MIDItempo and retained picture/master checks.
 
 Provisional local rating47MEDIUM (23/0/4/10/10), P2/high for the conditional source acceptance defect: focused store-preview validator and real integration/report callers, authored paths absent1996, local finite/admission correction. This is a proposal, not canonical rating/admission or executed failure. Final confidence/owner/rating/IDs require consolidated qualification. No inherited saving.
+
+
+## Final constrained source reconciliation, 2026-10-13
+
+NativePASS225 qualifies bounded signed16 tap and complete current graphics/caller controls. Neither native sample format nor picture/native music/motion gates imposes positive waveform variance or finite delivered correlation. Exact actual validate360-415 and stdout435 were re-read; shared save_json and real pipeline caller remain qualified by entryPASS134. Undefined audio evidence can therefore escape this specific gate independently of correct metadata/pictures. This establishes a conditional source defect, not a demonstrated all-gates encoded artifact false pass.
+
+Deduplication mechanically parsed all306 numbered general finding descriptions. All42 descriptions selected by audio/boss/store/finite/correlation/NaN/normalization/PCM/numeric terms were fully recovered without padding/truncation, plus the complete current GQR0283 dependency row. BR active/archive headings were searched; that search is discovery, not full-block semantic review. Six entire current relevant owners are separately qualified:0173/0233/0543OPEN and0199/0200/0591FIXED. Existing0145 threshold reconfiguration,0150 raw fingerprint fixture admission,0268 music-synth uninitialized observation tail and0297/0283 dependency provisioning have different trigger/producer/admission ownership. None establishes finite boss window evidence. Preserve their statuses and avoid broad duplicate serialization or resource roots.
+
+Proposed canonical IDs GQF-0307 OPEN/GQR-0293 TODO are unused and will be admitted only with consolidated consumer and canonical publication gates. Final proposed rating47MEDIUM/P2high remains local23/0/4/10/10. No original-file saving or runtime acceptance. Full branch supplemental coverage and every pending campaign gate remain required.

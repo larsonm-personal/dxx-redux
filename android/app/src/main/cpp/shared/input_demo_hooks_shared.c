@@ -126,6 +126,17 @@ static input_demo_player_bump_trace input_demo_last_player_bump = {
 	-1, 0, 0, -1, -1, -1, -1, 0, 0, 0, 0, -1, { 0, 0, 0 }, { 0, 0, 0 }, 0, 0
 };
 
+void input_demo_reset_player_bump_diag(void)
+{
+	memset(&input_demo_last_player_bump, 0, sizeof(input_demo_last_player_bump));
+	input_demo_last_player_bump.frame = -1;
+	input_demo_last_player_bump.other_obj = -1;
+	input_demo_last_player_bump.other_sig = -1;
+	input_demo_last_player_bump.other_type = -1;
+	input_demo_last_player_bump.other_id = -1;
+	input_demo_last_player_bump.other_attack_type = -1;
+}
+
 #ifdef DXX_BUILD_DESCENT_II
 extern void input_demo_capture_current_result_prep_d2(player *current_player);
 extern void input_demo_capture_current_result_after_game_time_d2(
@@ -2585,7 +2596,7 @@ void input_demo_log_player_bump_probe(const char *step, object *obj0,
 	fix damage_raw = 0;
 	fix damage_scaled = 0;
 
-	if (!trace_active && !state_trace_active)
+	if (!trace_active && !state_trace_active && !input_demo_recorder_is_active())
 		return;
 	mode_name = input_demo_trace_collision_mode_name();
 	frame_index = input_demo_trace_collision_frame_index();

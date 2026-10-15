@@ -118,6 +118,7 @@ void state_object_rw_to_object(object_rw *saved, object *obj, int native_ai_form
 #include "u_mem.h"
 #include "wall.h"
 extern hashtable AllBitmapsNames, AllDigiSndNames;
+extern int Num_sound_files;
 void start_endlevel_flythrough(int n, object *obj, fix speed);
 void gameseq_init_network_players(void);
 void do_endlevel_flythrough(int n);
@@ -188,7 +189,6 @@ void ogl_smash_texture_list_internal(void);
 #include "d1_in_d2/d1_in_d2_bitmaps.h"
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #include "d1_in_d2/d1_in_d2_cockpit.h"
-extern int Num_sound_files;
 int digi_unxlat_sound(int soundno);
 extern ubyte *SoundBits;
 void free_bitmap_replacements(void);
@@ -1160,34 +1160,48 @@ static void test_fusion_cadence_state()
 		mission.descent_version = profile;
 #endif
 		for (bool overcharge : { false, true }) {
-			init_test_corridor();
-			Game_mode = 0;
-			GameTime64 = 10 * F1_0;
-			FrameTime = F1_0 / 64;
-			Players[0].primary_weapon = FUSION_INDEX;
-			Players[0].energy = 100 * F1_0;
-			Players[0].shields = 100 * F1_0;
-			Players[0].flags = 0;
-			Weapon_info[Primary_weapon_to_weapon_info[FUSION_INDEX]].fire_count = 1;
-			Fusion_charge = overcharge ? 3 * F1_0 : 0;
-			Auto_fire_fusion_cannon_time = 0;
-			Controls = {};
-			Controls.fire_primary_state = 1;
-			Num_awareness_events = 0;
-			game_set_fusion_next_sound_time(GameTime64);
-			const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
-			FireLaser();
-			require(game_get_fusion_next_sound_time() == GameTime64 && Players[0].shields == 100 * F1_0 &&
-			            Num_awareness_events == 0 && sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX),
-			        "Fusion cadence suppresses sound, awareness and overcharge damage at its exact deadline");
-			++GameTime64;
-			FireLaser();
-			require(game_get_fusion_next_sound_time() >= GameTime64 + F1_0 / 8 &&
-			            game_get_fusion_next_sound_time() <= GameTime64 + F1_0 / 8 + D_RAND_MAX / 4 &&
-			            d_rand_get_stream_call_count(D_RNG_FX) == fx + 1,
-			        "Fusion advances the observed deadline using one cadence RNG draw");
-			require(overcharge ? (Players[0].shields < 100 * F1_0 && d_rand_get_call_count() == sim + 1 && Num_awareness_events == 0) : (Players[0].shields == 100 * F1_0 && Num_awareness_events == 1),
-			        "Fusion's observed clock gates real damage or AI awareness, not only audio");
+			fix64 baseline_deadline = 0;
+			fix baseline_shields = 0;
+			for (int fx_noise : { 0, 37 }) {
+				init_test_corridor();
+				Game_mode = 0;
+				GameTime64 = 10 * F1_0;
+				FrameTime = F1_0 / 64;
+				Players[0].primary_weapon = FUSION_INDEX;
+				Players[0].energy = 100 * F1_0;
+				Players[0].shields = 100 * F1_0;
+				Players[0].flags = 0;
+				Weapon_info[Primary_weapon_to_weapon_info[FUSION_INDEX]].fire_count = 1;
+				Fusion_charge = overcharge ? 3 * F1_0 : 0;
+				Auto_fire_fusion_cannon_time = 0;
+				Controls = {};
+				Controls.fire_primary_state = 1;
+				Num_awareness_events = 0;
+				d_srand(123);
+				for (int noise = 0; noise < fx_noise; ++noise)
+					d_rand_fx();
+				game_set_fusion_next_sound_time(GameTime64);
+				const auto sim = d_rand_get_call_count(), fx = d_rand_get_stream_call_count(D_RNG_FX);
+				FireLaser();
+				require(game_get_fusion_next_sound_time() == GameTime64 && Players[0].shields == 100 * F1_0 &&
+				            Num_awareness_events == 0 && sim == d_rand_get_call_count() && fx == d_rand_get_stream_call_count(D_RNG_FX),
+				        "Fusion cadence suppresses sound, awareness and overcharge damage at its exact deadline");
+				++GameTime64;
+				FireLaser();
+				require(game_get_fusion_next_sound_time() >= GameTime64 + F1_0 / 8 &&
+				            game_get_fusion_next_sound_time() <= GameTime64 + F1_0 / 8 + D_RAND_MAX / 4 &&
+				            d_rand_get_call_count() == sim + 2 && d_rand_get_stream_call_count(D_RNG_FX) == fx,
+				        "Fusion advances its simulation deadline without consuming effects RNG");
+				require(overcharge ? (Players[0].shields < 100 * F1_0 && Num_awareness_events == 0) : (Players[0].shields == 100 * F1_0 && Num_awareness_events == 1),
+				        "Fusion's observed clock gates real damage or AI awareness, not only audio");
+				if (!fx_noise) {
+					baseline_deadline = game_get_fusion_next_sound_time();
+					baseline_shields = Players[0].shields;
+				} else {
+					require(game_get_fusion_next_sound_time() == baseline_deadline && Players[0].shields == baseline_shields,
+					        "Effects RNG activity cannot change Fusion awareness or damage cadence");
+				}
+			}
 		}
 	}
 	Controls = saved_controls;

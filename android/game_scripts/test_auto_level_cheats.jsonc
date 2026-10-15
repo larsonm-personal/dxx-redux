@@ -12,6 +12,7 @@
                     "GAME": "d1",
                     "SMART_WHEN": "d1",
                     "MEGA_WHEN": "d1",
+                    "GUIDED_FIRE_WHEN": "skip",
                     "DIAGNOSTICS_WHEN": "skip",
                 },
                 "d2": {
@@ -20,6 +21,7 @@
                     "GAME": "d2",
                     "SMART_WHEN": "d2",
                     "MEGA_WHEN": "d1",
+                    "GUIDED_FIRE_WHEN": "skip",
                     "DIAGNOSTICS_WHEN": "skip",
                 },
             },
@@ -1018,11 +1020,13 @@
         },
         "when": "d2",
     },
+    // The owner separately verifies that guided-camera firing stops recording
+    // Positive replay captures still verify the granted guided weapon selection
     {
         "action": "send_button",
         "button": 101,
         "held": 1,
-        "when": "d2",
+        "when": "${GUIDED_FIRE_WHEN}",
     },
     {
         "action": "wait_for",
@@ -1032,14 +1036,14 @@
             },
         },
         "timeout_ms": 5000,
-        "when": "d2",
+        "when": "${GUIDED_FIRE_WHEN}",
     },
     {
         "action": "send_button",
         "button": 101,
         "held": 0,
         "pressed": 0,
-        "when": "d2",
+        "when": "${GUIDED_FIRE_WHEN}",
     },
     {
         "action": "assert",
@@ -1048,7 +1052,7 @@
                 "lt": 20,
             },
         },
-        "when": "d2",
+        "when": "${GUIDED_FIRE_WHEN}",
     },
     {
         "action": "key",

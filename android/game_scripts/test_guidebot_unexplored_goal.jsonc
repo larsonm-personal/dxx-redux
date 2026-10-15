@@ -148,6 +148,7 @@
 
     // Two same-frame automap transitions must collapse into one high-level
     // semantic route rescan while leaving the player's map unchanged.
+    // The action checks a generation delta of two; startup generations vary
     { "action": "set_debug", "field": "automap_revisit_segment", "value": "0", "post_delay_ms": 1000 },
     {
         "action": "wait_for",
@@ -155,7 +156,7 @@
         "expect": {
             "guidebot.route_target_mode_name": "unexplored",
             "guidebot.unexplored_target_visited": "false",
-            "guidebot.route_event_generations.automap": { "gt": 19 },
+            "guidebot.route_event_generations.automap": { "gte": 2 },
             "guidebot.route_pending_event_mask": "0",
             "guidebot.route_event_notification_count": "2",
             "guidebot.route_notification_coalesced_count": "1",

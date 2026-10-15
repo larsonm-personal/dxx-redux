@@ -9,7 +9,7 @@ $names = @(
     'idle_screen_saver', 'independent_trigger_axes', 'pilot_long_hold_delete_unified',
     'gles3_shim_vbo_arrays', 'abort_game_to_main_menu_d2',
     'android_saveload_dispatch_unified', 'autoselect_crash_unified', 'autosave_resume_missing_pilot_unified',
-    'controller_compare_unified', 'death', 'engine_prefs_unified', 'intro_skip_inputs_unified',
+    'controller_compare_unified', 'death', 'engine_prefs_unified', 'intro_skip_inputs_unified', 'auto_level_demos',
     'newmenu_render_paths_unified', 'ogl_gauge_batch_unified', 'ogl_runtime_texture_options_unified',
     'resolution_unified', 'title_music_skip_pref_unified',
     'graphics_black_output', 'graphics_capabilities', 'graphics_confirmation_input', 'graphics_context_loss',
@@ -27,12 +27,22 @@ foreach ($game in @('d1', 'd2')) {
     }
 }
 $listed = & "$PSScriptRoot/../helpers/run_shareware_tests.ps1" -ListTests | ConvertFrom-Json
-if (@($listed).Count -ne $names.Count -or @($listed | Where-Object { ($_.name -replace '^test_', '') -notin $names }).Count) {
+$reviewedNames = @($names) + 'auto_level_cheats'
+if (@($listed).Count -ne $reviewedNames.Count -or @($listed | Where-Object { ($_.name -replace '^test_', '') -notin $reviewedNames }).Count) {
     throw 'Public runner did not select exactly the reviewed scenarios'
 }
 $owned = @($listed | Where-Object owner)
-if ($owned.Count -ne 1 -or $owned[0].owner -cne 'test_ogl_runtime_texture_options_unified') {
-    throw 'Public runner bypassed the texture integration owner'
+$expectedOwners = @{
+    test_ogl_runtime_texture_options_unified = 'test_ogl_runtime_texture_options_unified'
+    test_auto_level_demos = 'test_auto_level_demos'
+    test_auto_level_cheats = 'test_auto_level_demos'
+}
+if ($owned.Count -ne $expectedOwners.Count -or @($owned | Where-Object { $_.owner -cne $expectedOwners[$_.name] }).Count) {
+    throw 'Public runner bypassed a reviewed integration owner'
+}
+foreach ($case in $listed) {
+    $expectedArgs = if ($case.name -eq 'test_auto_level_cheats') { '-Cheats' } else { '' }
+    if (($case.owner_args -join ',') -cne $expectedArgs) { throw "Public owner arguments differ for $($case.name)" }
 }
 $ownerText = Get-Content "$PSScriptRoot/test_ogl_runtime_texture_options_unified.ps1" -Raw
 if ($ownerText -notmatch '-DataEdition \$DataEdition' -or $ownerText -notmatch '\[string\]\$DataEdition') {
@@ -98,7 +108,31 @@ foreach ($name in @('test_async_checkpoint_unified', 'test_launch_to_automap')) 
     try { Get-ScriptDeps -ScriptPath $path -DataEdition shareware | Out-Null } catch { $rejected = $_ -match 'not been audited' }
     if (-not $rejected) { throw "$name silently accepted incompatible public data" }
 }
-Write-Host "PASS: $($names.Count) public automation profiles, $caseCount engine variants, retained retail assertions and dependencies"
+# D1 shareware omits exactly the authored Smart/Mega weapon blocks
+$cheatPath = Join-Path $script:ANDROID_ROOT 'game_scripts/test_auto_level_cheats.jsonc'
+$cheatInfo = Get-TestScriptInfo -ScriptPath $cheatPath
+$overrides = $cheatInfo._shareware_vars.d1.PSObject.Properties
+if (($overrides.Name | Sort-Object) -join ',' -cne 'MEGA_WHEN,SMART_WHEN' -or
+    @($overrides | Where-Object Value -cne 'skip').Count) { throw 'Unexpected public cheat scenario exclusions' }
+$referenceDir = Join-Path $script:REPO_ROOT 'temp/shareware_profile_cheat_reference'
+& "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $referenceDir | Out-Null
+New-Item -ItemType Directory -Path $referenceDir -Force | Out-Null
+foreach ($game in @('d1', 'd2')) {
+    $source = @(Read-JsoncFile -Path $cheatPath)
+    $reference = @($source | Where-Object { $game -ne 'd1' -or $_.when -cnotin @('${SMART_WHEN}', '${MEGA_WHEN}') })
+    if ($game -eq 'd1' -and $source.Count - $reference.Count -ne 12) { throw 'Unexpected D1 public cheat block size' }
+    $referencePath = Join-Path $referenceDir "$game.jsonc"
+    $reference | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $referencePath -Encoding utf8NoBOM
+    $retail = Get-Content (Resolve-TestScript -ScriptPath $referencePath -GameId $game -DataEdition retail) -Raw | ConvertFrom-Json
+    $public = Get-Content (Resolve-TestScript -ScriptPath $cheatPath -GameId $game -DataEdition shareware) -Raw | ConvertFrom-Json
+    $config = Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $game
+    $expected = ($retail | ConvertTo-Json -Depth 100 -Compress).Replace('"' + $cheatInfo.vars.$game.MISSION + '"', '"' + $config.MissionTitle + '"')
+    if (($public | ConvertTo-Json -Depth 100 -Compress) -cne $expected) { throw "Public cheat scenario changed an unreviewed action for $game" }
+    $deps = @(Get-ScriptDeps -ScriptPath $cheatPath -DataEdition shareware)
+    if (($deps | ConvertTo-Json -Compress) -cne ($publicDeps | ConvertTo-Json -Compress)) { throw 'Public cheat dependencies differ' }
+    ++$caseCount
+}
+Write-Host "PASS: $($reviewedNames.Count) public automation profiles, $caseCount engine variants, retained retail assertions and dependencies"
 
 # Exercise the device isolation contract with an in-memory ADB boundary
 $script:deviceFiles = @('descent2.hog', 'DESCENT.PIG', 'loose.rl2')

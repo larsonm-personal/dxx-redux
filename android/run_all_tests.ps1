@@ -2011,7 +2011,7 @@ function Invoke-SingleTest {
     }
 
     $sw.Stop()
-    $elapsed = $sw.Elapsed.ToString("mm\:ss")
+    $elapsed = $sw.Elapsed.ToString($(if ($sw.Elapsed.TotalHours -ge 1) { "hh\:mm\:ss" } else { "mm\:ss" }))
 
     $skipMarker = [regex]::Match("$stdout`n$stderr", '(?m)^RESULT:\s*SKIP(?:\s*\((?<reason>[^\r\n]*)\))?')
     $skipDeclared = $skipMarker.Success

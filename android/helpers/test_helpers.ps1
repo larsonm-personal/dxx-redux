@@ -1536,17 +1536,33 @@ function Resolve-GameDataDeps {
                 return $false
             }
             $prevEAP = $ErrorActionPreference
-            $ErrorActionPreference = "Continue"
-            if ($isExternal) {
-                # Push directly to external storage (no run-as needed)
-                & $script:ADB push $localFile "$target/$fname" 2>&1 | Out-Null
-            } else {
-                # Stage through /data/local/tmp then copy via run-as
-                & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
-                & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1 | Out-Null
-                & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+            try {
+                $ErrorActionPreference = "Continue"
+                $destination = if ($isExternal) { "$target/$fname" } else { "/data/local/tmp/$fname" }
+                $transferOutput = & $script:ADB push $localFile $destination 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Status "FAIL: Game data push failed for $fname`: $transferOutput" "Red"
+                    return $false
+                }
+                if (-not $isExternal) {
+                    # Copy only after staging succeeds; retain staging on a failed copy
+                    $transferOutput = & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Status "FAIL: Game data copy failed for $fname`: $transferOutput" "Red"
+                        return $false
+                    }
+                    & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+                }
+                $sizeCommand = "stat -c %s '$target/$fname'"
+                if (-not $isExternal) { $sizeCommand = "run-as $($script:PACKAGE) $sizeCommand" }
+                $remoteSize = & $script:ADB shell $sizeCommand 2>&1
+                if ($LASTEXITCODE -ne 0 -or "$remoteSize".Trim() -ne [string](Get-Item -LiteralPath $localFile).Length) {
+                    Write-Status "FAIL: Game data size verification failed for $fname`: $remoteSize" "Red"
+                    return $false
+                }
+            } finally {
+                $ErrorActionPreference = $prevEAP
             }
-            $ErrorActionPreference = $prevEAP
             $pushCount++
         }
     }
@@ -2127,6 +2143,11 @@ function Watch-AutomationResult {
                         Write-Status 'FAIL: Responsive graphics lifecycle transition unexpectedly closed the game' 'Red'
                         return $false
                     }
+                    # Native UI state reads this marker on the foreground edge
+                    if ($line -match 'rearm_graphics_chooser=(true|1)') {
+                        Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                            '--es', 'command', 'graphics_first_run_offered', '--ez', 'value', 'false') | Out-Null
+                    }
                     # Explicitly put SetupActivity on top before returning to the game
                     # A launcher intent can restore MainActivity directly,
                     # where BACK would open the game menu instead of resuming
@@ -2150,10 +2171,6 @@ function Watch-AutomationResult {
                     }
                     # Return through the launcher action instead of sending BACK
                     # during the handoff, which can also open the native game menu
-                    if ($line -match 'rearm_graphics_chooser=(true|1)') {
-                        Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
-                            '--es', 'command', 'graphics_first_run_offered', '--ez', 'value', 'false') | Out-Null
-                    }
                     Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
                         '--es', 'command', 'launch') | Out-Null
                     Start-Sleep -Seconds 2

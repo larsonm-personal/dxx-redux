@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+import itertools
 import contextlib
 import io
 import json
@@ -1212,10 +1213,13 @@ class RealNegativeCorpusTests(unittest.TestCase):
         source = Path(__file__).parent / "fixtures/public_level_replays"
         cases = runner.load_corpus(source)
         bindings = set()
-        for case in cases:
+        for case, converted in itertools.product(cases, (False, True)):
             if case["scenario"] not in scenarios:
                 continue
-            with self.subTest(game=case["game"], scenario=case["scenario"]), tempfile.TemporaryDirectory() as root:
+            with (
+                self.subTest(game=case["game"], scenario=case["scenario"], converted=converted),
+                tempfile.TemporaryDirectory() as root,
+            ):
                 import shutil
 
                 destination = Path(root) / "corpus"
@@ -1223,7 +1227,23 @@ class RealNegativeCorpusTests(unittest.TestCase):
                 demo, path = (destination / case[key] for key in ("demo", "oracle"))
                 original_oracle = path.read_bytes()
                 oracle = json.loads(original_oracle)
-                converted = oracle["compact_sha256"] != runner.parity.digest(demo)
+                if converted:
+                    # A whitespace-only disposable input change exercises immutable-oracle binding
+                    demo.write_bytes(b" " + demo.read_bytes())
+                    runner.parity.write_json(
+                        demo.with_suffix(".migration.json"),
+                        {
+                            "schema": 1,
+                            "kind": "ordered-input-candidate",
+                            "schedule": "sample-only",
+                            "original_corpus_revision": oracle["provenance"]["source_revision"],
+                            "source_demo_sha256": oracle["compact_sha256"],
+                            "source_oracle_sha256": runner.parity.digest(path),
+                            "converted_demo_sha256": runner.parity.digest(demo),
+                            "baseline_sha256": {"state": "1" * 64, "rng": "2" * 64, "result": "3" * 64},
+                        },
+                    )
+                self.assertEqual(runner.load_corpus(destination), cases)
                 bindings.add("converted" if converted else "live")
                 oracle.pop(field)
                 runner.parity.write_json(path, oracle)
@@ -1257,7 +1277,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
             self.assert_missing_observation_rejected(
                 {"door-lifecycle"}, "door_observations", "immutable live geometric"
             ),
-            {"converted"},
+            {"live", "converted"},
         )
 
     def test_guidebot_cannot_drop_its_immutable_escort_observation_oracle(self):
@@ -1265,7 +1285,7 @@ class RealNegativeCorpusTests(unittest.TestCase):
             self.assert_missing_observation_rejected(
                 {"guidebot-release"}, "guidebot_observations", "immutable live escort"
             ),
-            {"live"},
+            {"live", "converted"},
         )
 
     def assert_changed_ordered_controls(self, case, original_demo, changed_demo):

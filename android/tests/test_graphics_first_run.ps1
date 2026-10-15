@@ -140,7 +140,7 @@ foreach ($engine in $games) {
             if ($case -eq 'Rearm') {
                 $steps.Add(@{ action = 'log'; message = 'SCRIPT_BACKGROUND: rearm-chooser duration_s=4 rearm_graphics_chooser=true' })
                 # The first presented gameplay frame opens the rearmed chooser automatically
-                $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
+                $steps.Add((New-ExpectStep -Wait @{ 'egl_recreate_count' = @{ gte = 1 }; 'graphics_safety.phase' = 'editing'; 'graphics_safety.current.TexFilt' = '2'; 'graphics_safety.accepted.TexFilt' = '0'; 'graphics_safety.first_run_pending' = 'false'; 'time_paused' = 'true' }))
                 $steps.Add(@{ action = 'wait_ms'; ms = 5500 })
                 $steps.Add((New-ExpectStep @{ 'graphics_safety.phase' = 'editing'; 'graphics_safety.deadline_ms' = '0' }))
                 $steps.Add((New-TouchStep 'cancel'))

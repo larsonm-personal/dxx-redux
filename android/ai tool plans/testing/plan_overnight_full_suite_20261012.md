@@ -504,3 +504,789 @@
 - Incremental report now records 12 PASS sources and no failures; current European Definitive Collection disc import completed file verification and launch automation is running
 - PIDs 7132/8356/36420 remain live; session 38254 not terminal. Do not interrupt, narrow scope, or start competing device tests
 - Full 39-source result, artifact review and exhaustive full-suite rerun remain outstanding
+
+## 2026-10-13 23:15 resumed against latest changes
+
+- User requested continuing after additional changes since last night
+- Prior CD PIDs 7132/8356/36420 are absent and prior temp report/log removed; no terminal clean result available. Treat earlier partial results as historical, not current completion evidence
+- Current HEAD 7253def84 includes replay fixture picker, GuideBot recovery and merged test fixes; uncommitted test/quality owner changes remain intact
+- Read current AGENTS.md, .github/copilot-instructions.md and tests README. FullSuite + FullExtracts + ExtendedGraphics + ExtendedMultiplayer remains exhaustive unattended profile
+- Starting fresh rebuilt exhaustive run with dedicated DxxOvernight_1/2 (5574/5576), SwiftShader GPU / hardware CPU acceleration and isolated ADB socket 5038. Shared/default devices and other-owner source edits preserved
+- New report root temp/full_suite_20261013_2315, starting commit/status captured. Canonical existing-oracle CD validation follows complete full suite; fix failures and repeat until clean
+
+## 23:24 bootstrap recovery
+
+- Initial fresh driver terminal before suite start: dedicated primary not registered on private ADB within both 90s managed launch attempts. No test result inferred from this bootstrap failure
+- Retained driver-bootstrap-failure.log; managed Windows launch intentionally uses hidden ShellExecute and produces no redirected logs
+- Reset only private ADB server 5038; shared server untouched. Diagnostic hidden launch with redirected logs and ANDROID_ADB_SERVER_PORT=5038 booted in 34.6s and registered emulator-5574 successfully
+- Added explicit emulator-side private server port to driver, retaining ADB_SERVER_SOCKET for clients, software GPU and accelerated CPU. Reusing healthy primary and provisioning secondary before full profile
+- Recorded 3299 current source/test fingerprints in new report root for current-state audit
+
+## 23:28 fresh exhaustive run active
+
+- Secondary boot succeeded; current driver PID 36348 / session 12778 confirmed live
+- Master suite now running from current worktree: 350 selected, 325 runnable, 6 manual-skipped, 19 profile-skipped, 393 support-owned; suite profile all requested scenarios
+- FullSuite, FullExtracts, ExtendedGraphics and ExtendedMultiplayer flags retained; configured primary 5574, secondary 5576; private ADB port 5038 client/emulator vars set
+- Current-source APK build underway across Android ABIs. No current test pass/failure claim yet; inspect full report and skip reasons at completion
+- Evidence root temp/full_suite_20261013_2315 includes starting commit/status and 3299 source/test SHA256 fingerprints; preserve other-owner test modifications
+
+## 23:31 active build / coverage exclusions audit
+
+- Previous turn made progress: recovered bootstrap, started current exhaustive master PID 27812 under driver PID 36348 / session 12778
+- Master FullSuite selection source explicitly excludes investigation/caller-configuration probes; 19 profile skips are separate from 6 manual tests. No retained scenario rotation narrowing applied with FullSuite
+- APK native build advancing across ABI variants; compiler warning details under apk_build_20261013_232641.log need review for new warnings before final completion
+- Keep complete run active; no source edit or overlapping build while current build/test workflow owns outputs
+- Current-source debug/instrumentation build reached assemble tasks for all ABIs; driver/master PIDs still live
+- Warning review currently shows vendored LZMA enum conversion and existing upstream unused/cast/string diagnostics; preserve complete build log and distinguish baseline warnings from newly introduced warnings before final audit
+- Do not edit compiled sources during current complete run; fix actionable failures/new diagnostics and rebuild in subsequent repeat if needed
+
+## 23:37 host owner verified wait
+
+- Previous turn made progress: fresh debug + instrumentation build succeeded in 6m31s; exhaustive master entered 325-test execution
+- Driver/master PIDs 36348/27812 confirmed live; current AcoustID packaging child PID 17540 runs real Gradle positive and expected-negative asset generation phases within 600s owner timeout
+- 7zip install/round-trip/cached/failure-preservation test passed; packaging owner still pending. Expected invalid-config Gradle exits are asserted by that test, not independent suite failures
+- Keep full run serial and intact; diagnose actual nonzero owner exits from retained logs before making fixes
+- AcoustID packaging owner completed all positive/expected-negative phases and restored default generated asset, PASS; active game-data reset owner PASS
+- Current exhaustive run at test_android_distributions (owner timeout 1800s); driver/master PIDs 36348/27812 remain live. No current nonzero owner result reported
+- One read-command observation returned empty exit 1; re-polled same task PIDs and console successfully, confirming live workflow. No test restart performed
+
+## 23:45 distribution builds verified wait
+
+- Previous turn made progress: AcoustID packaging and game-data-reset owners passed; full run reached distribution integration
+- Live distribution owner PID 28076 under master 27812/driver 36348; Play and GitHub checks passed (minimum API 24, target 36, both engines/all ABIs)
+- Legacy distribution is an actual separate build, native compilation finished and package assembly progressing. Its active Gradle wrapper child PID 16588 remains live; no timeout or failure reported
+- Preserve complete owner coverage including legacy/CI builds; do not use NoBuild or narrow profile to obtain green subset
+
+## 23:49 distribution owner clean
+
+- Prior turn was verified wait on live distribution owner under master PID 27812
+- Play, GitHub, legacy and CI distribution integration checks all passed, covering SDK metadata, package labels/IDs, both engines/all ABIs, Play runtime inclusion/exclusion and Java NIO backports
+- CI build succeeded in 1m05s; distribution child PID 28076 terminal. Full master remains live and advanced to next owners; no run narrowing or source edit applied
+- Current suite still requires complete 325-test result, full replay/route/extraction/multiplayer owners and canonical existing-oracle CD validation before completion audit
+
+## 23:53 host regression progress
+
+- Previous turn made progress: all distribution variants passed and master advanced through early host owners
+- Current full run has 39 completed PASS owners, zero failure/timeout lines and one platform skip; current flyout-safety owner active under live master PID 27812
+- DOS MIDI parity passed production comparison with legacy negative control rejected; extraction/publication/fingerprint host workflows progressing
+- Preserve full run and inspect exact platform skip reason; no source fix warranted without actual failure
+- Exact runtime skip is test_dependency_install: transaction fixtures require Linux/flock; portable dependency checks remain separate Windows coverage
+- Full current run reached 45 completed PASS owners with zero failure/timeout lines. Flyout safety passed D1, D2 and grand finale malformed-data guards/full travel in 1m40s
+- Live driver/master PIDs unchanged; keep exhaustive profile active and retain actual full report before completion claim
+
+## 23:58 full JVM owner active
+
+- Previous turn made progress: flyout safety passed all three scenarios and current suite reached 45 PASS owners without failure
+- Release orchestration owner uses real temporary Git fixtures and fake external services, and advanced successfully; no external release publication performed
+- Full Gradle unit-test owner now active, child PID 800 under master PID 27812; fresh Kotlin/unit-test compilation completed and testDebugUnitTest task running within original 600s timeout
+- One expected Linux-only installer skip remains; all remaining full replay/route/device/extraction/multiplayer owners still required
+
+## 2026-10-14 00:01 full JVM owner clean / full routes active
+
+- Previous turn made progress: native/host regression owners and full JVM compile completed; current suite had no failures
+- Full Gradle JVM owner passed in 2m32s. Actual XML aggregate: 191 suites, 1171 tests, zero failures/errors, one skipped test. Summary retained as jvm-summary.json
+- Full physical GuideBot route owner active, child PID 5376, arguments Seed 286 / AllCases; actual corpus expanded to 87 cases in current worktree, not prior 83
+- Initial route cases passed; keep all 87 cases and later replay/device/extraction/multiplayer owners in scope. Live master/driver still 27812/36348
+
+## 00:05 JVM skipped native fixture coverage identified
+
+- Actual JVM skip is DiscContentImportTest.anniversaryExtractedMediaRetainsEveryMissionAndLooseLevel, assumption requires DXX_DISC_CONTENT_FIXTURE
+- Native extracted Anniversary fixture exists locally under game_data/CD images/Descent - Anniversary Edition (USA)/data_tracks, containing mission descriptors and required newlevel/mad,newest,retrib10,retrib11 RDLs
+- Added real fixture env to future full driver invocations; current already-running master environment is unchanged. Run full JVM owner with fixture after current complete serial run, and retain zero-skip evidence before completion audit
+- No assertion/oracle changes made. Full route owner continues all 87 cases; do not overlap Gradle builds with active owner
+
+## 00:10 full JVM coverage audit / routes verified wait
+
+- Previous turn made progress: JVM owner clean and real native Anniversary fixture located/validated for previously skipped app integration test
+- Proxy XML aggregate: 3 tests, zero failures/errors, one opt-in historical negative-control skip. Current owner log says proxy-tests:test UP-TO-DATE; app task actually ran
+- Follow-up full JVM must force --rerun-tasks for app and proxy tasks, pass real DXX_DISC_CONTENT_FIXTURE and -PcompareProxyHistory=true so cached/skipped evidence is not substituted for actual execution
+- Do not run overlapping Gradle work while current route/device owner active. No assertions changed or historical code used as production compensation
+- Full route owner now passing through case 53/87; driver/master/route PIDs 36348/27812/5376 remain live
+
+## 00:11 full route corpus verified wait
+
+- Previous turn made progress: proxy JVM coverage audited, optional history control and real Anniversary fixture follow-up identified without weakening assertions
+- Current full route owner PID 5376 remains live with all cases retained; passed through at least 59/87 physical route cases, including restored walls, remote doors and firing dependencies
+- Main complete suite remains at 48 completed PASS owners with zero failures/timeouts and expected Linux-only dependency skip; route owner result still pending
+- Do not substitute partial route pass counts for full owner success. Full device/replay/extraction/multiplayer and fresh configured JVM follow-up remain outstanding
+
+## 00:15 full physical routes complete
+
+- Full current GuideBot route owner completed all 87 cases with PASS; no partial-count substitution
+- Exhaustive master remains active at test 55/325 with 53 completed PASS owners, zero failures/timeouts and the previously documented Linux-only installer skip
+- Preserve serial run through all remaining owners; configured fresh JVM follow-up and canonical existing-oracle CD validation remain required
+
+
+## 00:20 guided-shot owner clean / source audit
+
+- Guided-shot annotations owner completed ordinary-route negative control and required guided-route coverage with PASS; full master advanced to test_input_demo_determinism_matrix (test 65/325)
+- 63 PASS owners and zero failures/timeouts reported; master remains live
+- Rehashed all 3299 source-start entries: zero changed or removed sources during this run so far; evidence retained as source-midrun-audit.json. Repeat current-state audit at final completion
+
+
+## 00:25 current public corpus legacy-format failure evidence
+
+- test_input_demo_determinism_matrix remains live (PID 23148) under master 27812; first windowed-default replay timed out after 300s, lowres variant now active. Retain complete owner/full-suite coverage
+- First actual state trace contains six rows ending in object/world aborted boundaries at frame zero; no final actual result. Archived failure diagnostics under temp/input_demo_runtime_wrapper/failures/d2_descent2_level9_20260511_192804__matrix_20261014_001920_windowed-default_20261014_002425_534
+- Current native input_demo_hooks_shared.c explicitly stops replay when format version !=5. All ten checked-in public recordings currently declare version4
+- Existing convert_public_replay.py requires independently verified historical baseline state/RNG/result against unchanged original oracle, then generates three bounded schedule candidates. A candidate must pass original complete oracle before use; do not introduce legacy engine compensation, auto conversion or refresh expected results
+- Investigate historical baseline capture and verified conversion after full serial run; current full result remains pending and clean completion unproven
+
+
+## 00:27 legacy corpus converter scope correction
+
+- Existing convert_public_replay.py validates compact new-level public inputs only (100000 bytes /1000 frames). The current failing legacy save-checkpoint demo is 31080752 bytes /2452 frames, so that converter cannot directly migrate this corpus
+- Current regression recordings include embedded original results and RNG sidecars; do not treat compact converter admission as proof of old corpus convertibility
+- Exact pre-ordered-input revision identified: 89468298d6d9608c4d54a80036fc4a77ff66f3f2 (parent of 44eaf9740). Historical capture must independently pass unchanged legacy expectations before migration candidates are admissible
+- No historical build or overlapping runtime launched while current serial master/lowres replay live; no source/oracle edits
+
+
+## 00:29 isolated migration preparation
+
+- Prepared detached historical worktree temp/replay_migration_20261014_0030/baseline at 89468298d6d9608c4d54a80036fc4a77ff66f3f2 after required retention helper. No build or runtime started
+- Preserved all ten original recordings and ten RNG sidecars (1131179330 bytes) in replay_migration_20261014_0030/originals; original-manifest.json records exact SHA256 and sizes
+- These demo inputs are local ignored assets, not tracked corpus history (git log for failing demo empty). Use explicit content hashes for provenance rather than assuming Git revision binds recording bytes
+- Current full master remains serial and intact. Read historical checkout instructions fully before eventual build; capture baseline only after current master terminates
+
+
+## 00:36 complete determinism owner failure / historical playback build
+
+- Current matrix owner completed all three selected rendering variants, all FAIL after individual 300s result timeouts; master reports FAIL (15:17) and advances through host-build guard to test_input_demo_regressions_d1
+- Historical all-target build failed linking its unrelated test_upstream_compat with missing Num_sound_files symbol, retained baseline-build.log/exit=1. Historical D1 game/headless binaries linked successfully
+- Copied baseline build wrapper to run-baseline-playback-build.ps1, changing only --target to game/headless playback executables. This temporary historical build helper is not a main-worktree source change or a historical full-suite pass claim
+- Build helper uses isolated worktree outputs and MaxParallel2; no parallel playback/test execution
+
+
+## 00:40 historical playback binaries ready
+
+- Isolated playback build completed both D1 and D2 headed/headless targets with exit0 (baseline-playback-build.log / baseline-playback-build.exit); four executable SHA256/size identities retained in baseline-binaries.json
+- Initial temporary helper used output filename as target; corrected to actual dxx-redux-d1/d2 CMake targets and retained failed attempt log. No main-worktree source or historical engine change
+- Current master at imported-D1 replay owner test70/325, PID14176 under master27812; no overlapping historical replay execution
+- Current native D1 owner failed without actual results; graphics owner failed required-primary-result prerequisite, preserved logs
+
+
+## 00:43 serial post-suite queue active
+
+- Started temp/test_goal/run_post_suite.ps1 in exec session46080; actual child PID recorded in full report post-suite.pid
+- Queue verifies live master27812 and driver36348 identities, waits for both to terminate, and requires suite.exit before any follow-up execution
+- After master: full app/proxy JVM tasks with --rerun-tasks, real Anniversary fixture and compareProxyHistory=true; then canonical existing-oracle run_all_cd_regressions.ps1 with full default extraction/launch, no RefreshOracle/SkipLaunch
+- Queue retains full-jvm-followup.log/exit, canonical-cd-followup.log/exit, post-suite.exit in current report. Check this live queue before manually launching any tests/builds after master completes to avoid overlap
+- Historical baseline replay remains unlaunched; must wait until serial post-suite queue is terminal before runtime baseline capture
+
+
+## 00:45 strict historical baseline queued serially
+
+- Started temp/test_goal/run_historical_baseline.ps1, exec session44884, actual live child recorded in replay_migration_20261014_0030/baseline-replay.pid
+- Queue waits for post-suite PID31916 identity to terminate and requires post-suite.exit/build exit0; then verifies preserved D2 recording SHA256 before one headed strict historical playback
+- Baseline uses historical wrapper and exact historical D2 binary, retail Europe D2 assets, unchanged embedded final result plus original state/RNG comparisons, RequireCleanExit. Output retains d2-baseline-replay.log/exit, actual state/RNG and result copy
+- Baseline replay must pass independently before migration admission; a failure is evidence, not permission to weaken oracles. Check both active queues before any manual runtime/Gradle test to maintain serial ownership
+
+
+## 00:49 large-corpus evidence / imported replay verified wait
+
+- Preserved failing D2 source has 2452 frames, 2452 event-bearing frames and 48135 diagnostic probe events; summary retained in d2-source-input-summary.json. These events carry probe kind rather than direct command field; preserve them in any admitted conversion
+- Live imported-D1 owner progressed to demo4/8 (level18) under master27812; failure diagnostic directories retained for first three attempts, no complete owner result yet
+- Raw console regex counts can miss exceptions swallowed by batch owner; inspect retained failure.json and final batch summary for authoritative per-demo outcomes
+- Post-suite and historical baseline queues remain live and waiting; no parallel runtime launched
+
+
+## 00:51 isolated historical headless baseline active
+
+- Reconciled earlier broad no-parallel-runtime assumption against actual cleanup and sandbox source: both historical/current wrappers stop only their own sandbox processes; master stops only child process tree
+- Started independent host-only historical D2 headless baseline, exec session8042, runner36612/native37540; distinct historical executable, historical_d2_headless sandbox, state/RNG/result/log paths, no emulator or shared Gradle state
+- Strict unchanged original embedded-result/state/RNG checks retained. Historical headed queue remains waiting behind post-suite for separate renderer evidence
+- Independent isolated host baseline may overlap current windowed master replay; device/Gradle tests remain serial. Do not mistake this historical playback for current full-suite evidence
+
+
+## 00:57 historical baseline complete / master advanced
+
+- Historical isolated D2 headless playback completed all2452 frames and produced result/state/RNG outputs. Wrapper final exit1: RNG trace compare failed; no final-result or per-frame-state compare failure reported
+- Actual full state trace is341515098 compressed bytes. Preserve this independently captured evidence; historical baseline is not yet admitted as a fully clean conversion baseline
+- Re-running exact RNG verifier with visible diagnostic log (session66927) to identify first mismatch; no comparison rule or expected sidecar edits
+- Master advanced to test74/325 after imported-D1 owner deadline and remaining replay regression owners. Current failure list retained in known-failures-midrun.json; full run still required through remaining owners
+
+
+## 00:59 historical RNG diagnostic mismatch localized
+
+- Raw historical RNG comparison first differs only in absolute checkout source file path; SIM call/state/result/context identical at that event
+- Retained derived trace mapping only file member historical-root prefix to original root, with raw/derived SHA256 and mapped record count26516 in d2-baseline-headless-source-map.json. Original RNG sidecar and raw capture unchanged
+- Derived verifier still exits1 at comparable event12: same RNG state/call/result/context, but function create_path_points versus historical create_path_points_avoiding. Existing verifier allows source-line changes but requires function identity
+- Baseline is not fully admitted by exact verifier. Investigate recorded revision/source contract; do not silently drop function identity or publish changed expected sidecars
+- Master reached test88/325, remaining current suite still active; queued device/Gradle workflows remain serial
+
+
+## 01:00 historical D2 gameplay baseline verified
+
+- Unchanged existing d1_replay_parity.py compare_rng explicitly excludes source function/path/line labels while retaining all SIM values, call counts and object context
+- Applied that existing verifier to raw original and raw historical capture (no path mapping needed): PASS all23826 SIM events, no first_difference or first_value_difference. Raw digest-bound verdict retained in d2-baseline-headless-sim-rng-verdict.json
+- Combined evidence: historical2452-frame playback completed, wrapper reported no final-result or per-frame-state mismatch, unchanged semantic SIM verifier passes complete event stream. Exact diagnostic-label verifier still fails historical function rename; retain both outcomes explicitly
+- This establishes a gameplay/SIM baseline for bounded candidate investigation, not current-engine migration success. Preserve full source/result/state/RNG identities and unchanged embedded original expected result in any candidate
+
+
+## 01:07 modal-capture admission classified
+
+- Scratch prepare_d2_candidates.py used existing converter.candidate_rows schedules with original checkpoint/probe/result records retained and independently verified terminal SIM boundary. Corrected SHA256 letter-case representation in admission check (initial attempt retained)
+- All three D2 level9 long-recording candidates rejected before writing input: historical rear-view/modal automap order requires fresh qualified capture. No partial candidate or published recording changes
+- Static inventory original-capture-requirements.json: modal input in D1 level7 144212, D1 level7 144813 and both D2 level9 recordings. Direct death_abort in D1 level15 and D1 level7 144212; existing converter also does not silently move those commands
+- Nonmodal recordings without direct commands: D1 levels14,16,18,5 and level7 181652. They still require independent baseline and current candidate verification; do not assume convertible
+- Master progressed through complete native-host unit owner and reached test105/325. Remaining full run, actual fixes and clean repeat still required
+
+
+## 01:08 native owner evidence clarified
+
+- Complete native-host unit log contains PASS aggregates: D1 70/70, D2 79/79. Final tail contains expected CMake dependency-discovery debug output, not native test failure
+- Eighth master failure is test_input_demo_runtime_smoke (00:10), distinct owner to inspect before root-cause grouping. Seven previously recorded replay owner failures unchanged
+
+
+## 01:13 runtime smoke false failure fixed and verified
+
+- Actual failed D1 smoke replay already completed360frames, wrote full replay startup/frame/RNG traces and clean final result; only caller startup printf regex failed. Windows GUI runtime does not guarantee that stdout message in captured logs
+- Updated test_input_demo_runtime_smoke.ps1 to use existing strict Assert-SmokeTraces startup metadata rather than printf text. It still pins game/mission/level/difficulty/start_mode/frame_count, every sequential replay frame, complete RNG metadata/events and clean native exit; failure diagnostics retained
+- Scoped run-code-quality -Fix for this one PS1 completed exit0, allchecksPASS (smoke-fix-quality.log/exit). git diff --check passed
+- Isolated full both-game smoke rerun with retained explicit binaries and own result directory completed exit0: D1 360frames PASS, D2 360frames PASS. Evidence smoke-fix-validation.log/exit/results
+- Main master remains at test123/325. This is an intentional test-source change after source-start snapshot; full fresh repeat after all fixes is required. Original failing owner result remains in current report, not rewritten
+
+
+## 01:18 D1 level5 historical baseline not admitted
+
+- Isolated historical D1 level5 playback completed but strict state comparison diverges at frame0 in motion/probe diagnostics, and exact RNG labels differ. Retained all outputs under d1-level5-baseline.*
+- Existing semantic compare_rng reports5883 events, no RNG-value difference, but strict object-context metadata differs at event26 (missing ctx_id versus actual0). This is not a fully matching baseline; do not emit converted D1 inputs as verified
+- Existing old/desyncing recording policy remains: preserve as evidence, avoid replay-specific engine compensation, use fresh qualified capture where historical order/provenance is unavailable
+- Current full run and canonical queued workflows remain live; native D1/D2 full unit suites and separately corrected runtime smoke have actual PASS evidence, but full clean repeat remains required
+
+
+## 01:34 shareware inventory/owner dispatch fix verified
+
+- Ninth original run failure is test_shareware_automation_profiles stale inventory after two auto-level recording scenarios were added. Public runner also selected cheat scenario without forwarding -Cheats
+- run_shareware_tests.ps1 now exposes/forwards scenario owner_args; cheat case gets -Cheats, all other cases no extra switch. Host audit pins all29 names, three exact integration owners and exact arguments
+- Existing strict retail/public parity checks retained for prior profiles and auto_level_demos. Cheat audit permits exactly twelve authored D1 Smart/Mega guarded steps to be excluded; all remaining actions match retail after mission-title fixture substitution, with pinned public deps
+- Complete host audit passed29 profiles/55 engine variants plus isolation/hash/retail rejection/navigation cases; scoped mixed quality invocation for both changed PS1 files exited0 with allchecksPASS. Diff whitespace check passed
+- Queued actual public recording and cheat scenarios for both nativegames behind post-suite and historical headed workflows, session57327, live PID in public-profile-validation.pid. Preserve serial device ownership; inspect this queue before manually launching tests
+- Main master reached test_auto_level_demos (167/325); its actual device/replay outcomes pending. Full repeat must include both intentional smoke/profile fixes and any later changes
+
+
+## 01:35 fresh recording producer complete
+
+- Full current master test_auto_level_demos owner completed automatic two-level capture and strict independent replay for nativeD1, nativeD2 and importedD1, PASS. Retained logs under android/temp/auto-level-demos-20261014-013153 and full report
+- This validates current format5 producer for those fresh scenarios; it does not migrate or replace legacy recordings or establish modal/deep-campaign corpus coverage
+- Master advanced through test168 and now autosave_resume_missing_pilot_unified (169/325). Continue complete device owner coverage and preserve all original failures for final fresh repeat
+
+
+## 01:42 audio prerequisites restored / staged graphics failure retained
+
+- New original-run failures: test_audio_mix could not invoke deleted temp/music-spectral-venv Python; test_android_ogl_batches failed before child launch because retail data listing verification returned no output
+- Recreated documented isolated audio venv using Python3.11 and installed all13 exact requirements from android/tests/music_spectral/requirements.txt; setup exit0 and numpy/scipy/imageio_ffmpeg imports pass. No test_audio_mix source change
+- OGL restore failed after approx5seconds in Test-ResolvedGameDataCaseNormalized read-only listing. No exact ADB timeout/exit cause retained, so do not speculate or change verification/retry policy. Subsequent owners have provisioned and run; reproduce after serial workflow
+- Queued full audio-mix and both-game42-case OGL fixture owners behind actual public-profile queue, session8626, live PID in audio-graphics-followup.pid. Distinct reports/logs/exitfiles. Check all live queues before manual device/Gradle work
+- Master remains live and continues full selected device suite. First-run failure evidence preserved; full clean repeat still required after all fixes and corpus resolution
+
+
+## 02:24 GuideBot/import failures localized and follow-ups queued
+
+- Original run reached14 failures: new level23/24 GuideBot liveness waits and demo-import instrumentation failed-to-attach. Native physical routes still all87PASS; do not group these causes blindly
+- Extracted retained failure introspection without dumping full payload: level24 target pickup_key281 is correct, frontier_player_openable_door=true, path_length19, instruction follow me then open the door. Native escort_get_route_goal_instruction explicitly prioritizes that frontier condition
+- Corrected only level24 initial hint assertion to pin frontier=true and open-door instruction; exact key target, endpoint path fallback, simulation owner and6second liveness checks remain. Scoped quality exit0/allchecksPASS and whitespace check clean; actual rerun pending
+- Level23 cached pending step8 is Pass through trigger3, while guidance detour15 targets221 to reopen wall41/door5. Do NOT claim step8 proves trigger3 completed (physical objective array index differs from native route_step_index). Mission metadata: step7 trigger5 opens238:4 wall46; step8 trigger3 lies240:5 wall47 and opens237:4 wall44
+- Fixture uses teleports beyond the auto-closing portal without a normal crossing of reverse-side trigger3; investigate this precondition and actual route/access geometry before changing engine or relaxing expectations. Level23 source remains unchanged
+- Queued full original level23, corrected level24 and demo-import owners with retained logcat/exit-info after audio/graphics queue, session95986. Live child recorded in guidebot-import-followup.pid; inspect all queue handles before manual device work
+- Current master remains live at graphics_first_run owner; full selected run and eventual fresh clean repeat still required
+
+
+## 02:40 ordered cheat reader corrected / explicit qualification pending
+
+- Supplementary test_all_weapons_runtime attempted with current available builds, but existing clean-commit provenance guard rejected dirty main worktree before any tests. Retained all-weapons-runtime-validation.log/exit=1; do not weaken guard or commit unrelated user edits to get green
+- Deterministic source witness: format5 rejects executable direct commands in frame events and records typed command events in dispatch.ops; old test_auto_level_demos -Cheats reader could never observe its legacy numeric cheat events
+- Corrected current-format reader to requireversion5 and inspect enable_cheats/grant_all_weapons in ordered frame plus terminal-tail dispatch; pins exact repeated order and named grant profiles. NativeD1 requiresenable,scourge,bigred,bigred; nativeD2 honestbob twice; importedD1 uses bigred(retail)/scourge(shareware) twice
+- Retained two-recording, checkpoint-free/new-level, Original-routing, scoring/inventory and independent strict result/RNG/state checks. No producer or expected replay artifact changes
+- Scoped PS quality completedexit0/allchecksPASS; whitespace check passed. Actual -Cheats device validation pending, not claimedclean
+- Queued six native/imported retail/shareware -Cheats -RecordState owner variants behind GuideBot/import queue (session28440; live PID in cheat-recording-matrix.pid). All cases continue and retain per-case logs/captures/exits. Check every serial queue before manual device/Gradle work
+- Main full graphics-first-run owner completedall44 branches withPASS and master continues graphics_recovery. Fresh complete repeat still required after all fixes and legacy corpus resolution
+
+
+## 02:44 correction: graphics first-run owner failed
+
+- Previous 02:40 entry incorrectly inferred full first-run44branch PASS from master advancement. Actual final owner log throws d1 Rearm failed; that earlier PASS claim is revoked. Inspect d1-Rearm.log and repeat full owner after fix
+- Graphics recovery owner separately completed all listed cases withPASS; do not conflate recovery success with first-run matrix completion
+
+
+## 02:59 rearm driver race/tuple expectation corrected
+
+- Actual d1-Rearm failure: script waitedfor current.TexFilt2, observed0; retained snapshot phaseidle/current0/accepted0. First-run native offer previews live() rather than forcing a new filtering value; fixture/rollback retained0
+- Native android_graphics_safety_ui_state reads offered marker on foreground false-to-true edge. Background handler previously reset marker only after SetupActivity foregrounded; now rearm broadcast precedes foreground resume
+- Setup command receiver is unregistered only onDestroy, so retained background launcher can receive the rearm request. Actual full matrix remains required to verify ordering; do not claim fix passedruntime yet
+- Rearm expectation now pins retained current0 and accepted0, automaticediting state, paused gameplay, consumed marker and recreatedEGL context. Later editing deadline/cancel/idle checks unchanged
+- Scoped quality for helper plus first-run PS1 completedexit0/allchecksPASS; whitespace check passed. Current master continueshires-pack owner at236/325
+- Queued full unfiltered two-game/eleven-scenario first-run owner behind six-case recording matrix, session42824; livePID in graphics-first-run-followup.pid. All44 branches must finish before completion claim
+
+
+## 03:09 unexplored timing failure retained without threshold change
+
+- Sixteenth original-run failure is test_guidebot_unexplored_goal: max_tick_us5722 exceeds4000 limit. Retained failure snapshot shows47 route ticks,6 completed/41 deferred,2 tick overruns,2 refresh overruns, no full planner calls, finalpendingfalse and lasttick596us
+- Native secretarea.c uses a2000us certifier deadline and512work units; total live-stage timing includes candidate publication/snapshot work, withoverrun accounting above4000us. Actual excess cause (work versus scheduling) remains unproven
+- No performance threshold/counter/engine changes applied. Queued unchanged full JSON owner after full graphics matrix, session44563; live child in unexplored-followup.pid; retains logcat and complete result for reproduction
+- Main high-resolution pack owner continues actual integration stages; maintain full run and final fresh repeat requirements
+
+
+## 03:12 edited-source catalogue gates complete
+
+- After all current smoke/profile/cheat-reader/rearm/level24 test-source edits, test_validate_automation_catalog completedexit0:95standaloneJSON,393support,251standalonePS
+- test_run_all_tests_catalog completedexit0:350top-level entries,393support; replay batches preserve distinct visual/native-console/imported no-present routes. Retained fix-automation-catalog and fix-master-catalog logs/exits
+- High-resolution release owner completed production integration withPASS. Main master remains live and advanced to test244/325 (LAN orphan restart), with prior failures preserved
+- All planned device/Gradle follow-up queues remain serialized after master; inspect PID identity and exitfiles rather than treating wait time or partial owner counts as completion
+
+
+## 03:20 KCXF2 switch frontier expectation corrected
+
+- Seventeenth original failure: KCXF2 step110 after debug-completing blue key at level5. Retained state: player170,bot172,pendingstep2,correctshoot-switch trigger6/wall8 target120, frontierplayerdoor=true, guidance/endpoint673, nearest_progress_point andopen-door instruction
+- Corrected only that stage's guidance mode/instruction to pin actual player-door prerequisite; addedfrontier=true. Exact switch identity/kind/coordinates, path progress, waiting-player no-auto-completion and later automap/mission checks retained
+- Scoped JSONC quality completedexit0/allchecksPASS anddiffwhitespace check clean. Actual full192-step owner validation remainspending
+- Queued complete owner after unchanged unexplored follow-up, session64178, livePID in kcxf2-followup.pid; retains fullresult/logcat. Do not claim scenarioPASS until fullowner terminal
+- Main full run remainslive and progressing through level-metadata owners. Final catalogue checks should be repeated after final source edits, not rely solely on earlier03:12 pre-KCXF2 gate
+
+
+## 03:24 source audit and metadata owner verified progress
+
+- Rehashed all3299 source-start entries; exactly eight intentional test/helper edits changed, no production C/C++/Kotlin source drift. Evidence retained source-fix-audit.json
+- Full master advanced from metadata-result-cache owner254 to lobby-latency256,237 completedPASS owners and17 original failures/timeouts retained
+- Main PID27812 and child4644 confirmedlive; all serial follow-up queues remainwaiting. Previous goal turn was progress (KCXF2 source correction, scoped lint and queued fullowner); current turn is authoritative source audit plus verified live-run progress
+- No current fullrun/follow-up completion claim. Original scope, unresolved legacy corpus and full clean repeat remain required
+
+
+## 03:33 mod-fuzz live / serial queue syntax audited
+
+- Full master advanced to test265/325, mod_fuzz owner under live master27812; prior failure evidence retained and scope unchanged
+- Parsed allnine serial follow-up scripts with PowerShell parser, zero syntax issues; proof followup-script-syntax-audit.json. This verifies syntax only, not testexecution or runtime success
+- Previous goal turn was authoritative source audit and live-run progress; current turn verifies additional completed owners/live mod-fuzz plus queue syntax. Keep goalactive through fullterminalresults, remaining fixes and fresh clean repeat
+
+
+## 03:40 mod-fuzz verified wait
+
+- Current mod-fuzz owner15408 and master27812 confirmedlive. Seven baseline cases and all-on D1/importedD1/D2 cases passed; remaining ownercases/result pending
+- Previous goal turn verified live fuzz handle and queue syntax; current turn verified additional completed fuzzcases under same active handle. Preserve wholeowner and fullrun; no new source edit or reduced scope
+
+
+## 03:44 mod-fuzz complete
+
+- Same live full-run mod_fuzz owner completed all14selected devicecases: sevenbaseline plussevenall-on includingMac/Vertigo, allPASS; accompanying13Python tests alsoOK
+- Master advanced to mod_save_toggle267/325. Verify exact masterterminal status retained in suiteconsole; do not confuse14selected smoke cases with all49possible fuzzcombinations
+- No scope reduction or newsourceedit thisturn. Fullselected run, queued fixverification, legacy corpus resolution and finalfreshclean repeat remain outstanding
+
+
+## 03:49 mod-save owner complete
+
+- Full master mod_save_toggle owner completed selected installed-mod disable/re-enable and exact-resave scenarios withPASS; retained Vertigo57step terminalPASS and original-owner status
+- Master remainslive at test269/325, MSAA render/menu. Original17failures retained; no newfailure identifiedthissegment
+- Current goal turn verifies complete owner progress and live next handle, no narrowed scenario set or unsupported clean-run claim
+
+
+## 03:52 failure triage retained / live suite continued
+
+- Original17failed/timed-out owners consolidated into failure-triage.json, preserving original result and separating verified corrections, queued runtime validation and unresolved causes
+- Main suite continues beyond MSAA/new-menu cases to music controls; same master27812 confirmedlive. No narrowing, oracle rewrite or newsourceedit thisturn
+- Previous goal turn completedmod-save owner; current turn retained actionable triage and verifies ongoing full-suite process. Keep objectiveactive until complete cleanfresh fullrun and regression evidence
+
+
+## 04:00 Obsidian level 1 frontier correction
+
+- Master reached owner 281/325; original Obsidian level 1 failed step 92/204 with switch trigger 4 / segment 231 / wall 114 unchanged, but nearest_progress_point at segment 52 and player-openable door frontier
+- Corrected that wait to assert the actual frontier guidance while preserving the switch objective and every subsequent action and progression check
+- Inspected move_player_to_route_guidance: it uses the first pending route step activation and aim pose, independently of displayed frontier guidance; the subsequent real shot remains directed at the required switch
+- Scoped quality and diff whitespace checks passed; full 204-step runtime rerun queued after KCXF2, serially on the owned emulator
+- This is the eighteenth original failing owner; no clean-run claim. Legacy format-4 recordings and full queued regression coverage remain unresolved
+
+## 04:03 full-run progress and catalogue verification
+
+- Master reached 287/325 with 266 PASS, 18 FAIL, 1 TIMEOUT; these are owner outcomes, with runtime skip accounting separate
+- Newly identified Obsidian level 7 switch-guidance failure retained and added to triage; investigation outstanding
+- Latest complete automation and master catalogues passed after all nine intentional test/helper source edits: 350 top-level entries, 393 support scripts
+- Source hash audit checked 3299 starting files, exactly nine intentional modifications, zero missing; no production source drift
+- Obsidian level 1 full rerun now waits serially after KCXF2 (driver PID 25104, exec session 49131). Master and queued verification remain active; final clean repeat required
+
+## 04:06 Obsidian level 7 fixture precondition
+
+- Original failure step 35/47 retained: switch trigger 7 / objective segment 322 remains selected, but player at spawn segment 20 receives nearest-progress guidance segment 102 through a player-openable door
+- Added explicit spawn-frontier assertions, then pose_route_guidance before the existing nearby switch segment 321 expectation and automap connector checks
+- This establishes the near-switch fixture precondition instead of removing its original guidance, connector or GuideBot movement checks; pending switch identity stays asserted
+- Scoped quality and whitespace checks passed; complete expanded scenario queued after Obsidian level 1. Runtime proof and final catalogue checks outstanding
+
+## 04:08 large-level dependency staging failure retained
+
+- Master reached owner 295/325; large-level budget scenario failed before gameplay at import with ZipException: zip file is empty
+- Read-only inspection of the owned emulator confirmed files/mission_zip_batch_cache/uneasy4.zip is zero bytes. /data has 10 GB free; local Uneasy4.zip is 32,030,975 bytes
+- Resolve-GameDataDeps suppresses adb push/copy diagnostics and increments success count without checking native exit codes; investigate staging cause and preserve diagnostics before next rerun
+- No importer or engine change made based on this infrastructure failure; original owner log retained and triage expanded
+- Expanded Obsidian level 7 runtime queue driver remains live after level 1; quality exit 0. Current main suite live, all remaining coverage and clean repeat outstanding
+
+## 04:11 checked dependency transfers
+
+- Added native exit-code checks and retained diagnostic output for dependency push and app-private copy, plus final device size verification before counting a successful transfer
+- A failed staging push now stops before redirecting into the app file; a failed copy preserves the staging artifact for diagnosis. Source selection, declared hashes and test scope unchanged
+- Seven isolated failure-injection cases passed: private push/copy/size failures and success; external push/size failures and success. Failures prevent asset manifest publication and failed pushes prevent copies
+- Scoped helper quality and whitespace checks passed. This establishes reliable failure handling, not proof of the original transfer cause or successful real-device restaging
+- Complete Uneasy 4 metadata budget scenario queued after Obsidian level 7, preserving its full 60-second gameplay interval and importer checks; final full repeat remains required
+
+## 04:17 public corpus coverage and isolated concurrent qualification
+
+- Main master remains live at owner 305/325, full UUD mission gameplay; no native game or native build process was running when supplemental public headless qualification started
+- Queued default complete compact public corpus for both headless and graphics after the final device fix rerun; these do not replace the ten original recorded corpus cases
+- Started an independent complete public headless run with explicit existing D1/D2 binaries, retained binary SHA256 identities, unique output path and output-derived sandbox token. Runner cleanup is scoped by executable path under its sandbox, confirmed from source
+- No shared build, Gradle or emulator state mutated by the concurrent headless qualification. It checks every admitted public scene twice against live capture frame/diagnostic/terminal/SIM oracles; scope limitations remain explicit in the standard runner
+- Current exec session 77008 retained; public replay serial queue session 48390. Legacy failures remain open, and final fresh full-suite clean run remains required
+
+## 04:20 complete public headless fidelity failure
+
+- Independent complete supplemental corpus finished exit 1: 17 admitted cases, all 34 native replay attempts completed, zero detailed fidelity passes
+- Replay viewing terminal summaries passed, but the immutable live-capture frame hashes differed; D1 flight first mismatch is frame 0. Original terminal pass is insufficient evidence of simulation fidelity
+- Retained report.json, each full state/RNG/result and runner log, binary hashes, and process terminal exit. No oracle or fixture overwritten
+- Existing oracle stores hashes rather than full capture states; direct recorded frame inspection correctly rejects stripped compact telemetry. Need build/capture provenance audit and independent native fresh candidate captures to distinguish instrumentation drift from behavior changes
+- Main master remained live at UUD mod combinations 306/325. Original twenty failed/timed-out owners still retained; supplemental public failure is additional evidence, not a substitute for legacy corpus resolution
+
+## 04:25 fresh public capture evidence
+
+- Current native producer binaries generated all 17 fresh public corpus candidate scenes successfully, format 5 and git_version 7253def84; capture identity/hash provenance retained
+- Against immutable checked-in oracles, every scene preserves frame count, exact terminal SHA256 and complete simulation RNG SHA256/event count. Only frame_sha256 differs across all 17
+- Fresh D1 flight frame 0 compared directly with prior completed current replay: f/ft/state/rng/diag equal, no diagnostic differences. This supports stale detailed expectations; broader current capture-to-replay proof remains pending
+- Started independent repeat captures followed by full candidate headless qualification, all 17 scenes twice. Exec session 93420 retained; no fixtures/oracles published or expectations copied from replay output
+- Root master still live at 306/325, UUD mod combinations; source hash audit remains ten intentional test/helper modifications only
+
+## 04:28 repeated public capture and generator manifest fix
+
+- Second independent producer run succeeded; all 17 compact recordings and all 17 immutable live-capture oracles are byte-identical between captures
+- Candidate replay validation initially rejected generated manifests before any playback because capture_compact_public_replays.py omitted mandatory imported_d1 declarations
+- Corrected generator to load/validate the existing complete reference corpus and preserve its exact imported-D1 role/reason declarations for captured scenes. No role broadened, excluded case admitted or imported qualification inferred
+- Scoped quality and whitespace passed; generator function rebuilt only the two scratch manifests, preserved their original omitted-scope manifests, and both corrected corpora pass complete 17-case loader validation and byte equality
+- All candidate recordings/oracles remain untouched and outside tracked fixtures. Complete candidate headless validation restarted in a fresh path, exec session 57858, all 17 cases twice; prior manifest failure evidence preserved
+- Fresh graphics verification and safe publication remain outstanding, as do legacy replay failures and final full-suite clean repeat
+
+## 04:30 live candidate qualification and master progression
+
+- Complete candidate headless validation still live; first 14/34 detailed native replay fidelity checks passed with no failures
+- Full default graphics qualification queued after headless terminal marker, explicit immutable current visual binaries and unique output; exec session 32527 retained
+- Tracked public corpus remains untouched; git status for its directory is clean. Both independent candidate capture products are byte-identical and maintain old frame counts, terminal state fingerprints and SIM RNG streams
+- Full master progressed to 307/325, UUD surface levels; exact previous owner result captured rather than inferred from progression
+- Required pending work includes complete headless+graphics proof before any candidate publication, original recorded corpus resolution, all queued failure reruns, full master completion and same-scope fresh clean repeat
+
+## 04:35 unchanged public coverage verified
+
+- New candidate manifest has exactly the original 17 game/scenario pairs, identical per-case gameplay action declarations, and identical imported_d1 role/reason mapping
+- Native headless detailed fidelity validation remains live with 27/34 completed checks passing; no original public fixture published yet
+- Master UUD surface owner completed PASS (4:54), verifying D1/imported level surfaces; suite advanced to owner 308/325, UUD2SP
+- FullExtracts and extended multiplayer options remain enabled in the master; exact full extraction and dedicated extended owner outcomes must still be verified from terminal logs, not inferred from simple extraction helper or recovery tests
+
+## 04:43 Windows console replay profile isolation fix
+
+- Candidate headless corpus completed all 34 attempts: 30 detailed passes, four D2 secondary failures before replay frames. Logs explicitly reject expected missile view 1 versus actual 0
+- Found Windows PhysFS uses executable base directory as write/search root, while console helper intentionally skipped executable copying and launched buildd2/main directly. Its shared .plr exists and was modified by these runs
+- Prior statement that concurrent headless runs could not mutate shared build state was incorrect. Executable-path sandbox cleanup alone did not establish player-file isolation; source hash audit did not inspect generated build profiles
+- Fixed replay helper to clone configuration, select the console executable as sandbox source, copy it with runtime libraries, and launch sandbox.Exe for both backends. Preserved user pre-existing replay picker edits; no recorded setting override or engine compensation
+- Scoped formatting and whitespace checks passed. Full 17-case twice headless rerun started in a new path with copied binaries, exec session 24562; source profile hash/mtime snapshots retained for before/after verification
+- Graphics candidate run has 21 detailed passes so far and no failures; its existing copied executable path already isolates Windows profiles
+- Master reached 312/325 test_all_extracts -All; current import/launch of CD sources active, no extraction outcome yet. Legacy replay cases and final full clean repeat remain pending
+
+## 04:50 native graphics complete; profile isolation audit
+
+- Candidate native graphics completed all 34 detailed fidelity checks with PASS. Graphics owner remains live in its default imported-D1 paired phase; overall terminal outcome not yet available
+- Fixed headless run currently 26/34 detailed checks passed, no failures; source executable is copied into its private replay sandbox on Windows
+- Live source-profile audit checked six .plr/.plx files: all hashes and modification instants unchanged. An initial string timestamp comparison falsely flagged all six because PowerShell JSON parsing returns DateTime; corrected comparison uses UTC ticks
+- Master full extraction owner is explicitly 39 specs, full mode with launch, retained report root temp/extract_regression_reports/run_20261014_043937. No substitution by extraction helper tests or host-only oracle checks
+- All original/public failure records remain retained; candidates unpublished. Imported phase, complete headless run, final source-profile audit, queued fixes and full fresh clean suite remain outstanding
+
+## 04:54 full isolated headless qualification passed
+
+- Complete candidate headless owner finished exit 0, 34/34 detailed fidelity passes across all 17 admitted public scenes twice; this includes both D2 secondary release-order scenarios previously rejected for leaked missile-view preference
+- Final before/after source-profile verdict passed: same six .plr/.plx paths, exact hashes and modification instants unchanged, no new files. This is runtime proof of source-directory isolation after the console executable-copy fix
+- Complete native graphics pass already 34/34; imported-D1 phase still live, overall graphics owner terminal status outstanding. Candidates remain outside tracked fixtures until all planned proof completes
+- Full master extraction/launch corpus remains active. Original failed owners, legacy data resolution and complete same-scope clean master repeat remain mandatory
+
+## 05:05 verified public corpus replacement and negative controls
+
+- Published all 17 fresh native captures and immutable producer oracles after byte-identical independent capture runs and complete 34/34 headless plus 34/34 graphics fidelity passes
+- Default graphics owner finished exit 0 with its explicitly declared imported-D1 flight gameplay-state/SIM comparison passing. Raw paired diagnostic/object/world verdict remains unqualified; other imported scenes retain diagnostic/excluded declarations, no broader parity claim
+- Per-case gameplay actions, frame counts, terminal SHA256 and complete SIM stream SHA256/count remain identical to the prior corpus. Existing manifest bytes and ordering preserved
+- Archived exact prior 50 root files in public-corpus-before-refresh, and moved 13 obsolete active migration companions plus their index into tracked provenance/format4_migration; their bytes are historical evidence, not current capture bindings
+- Publisher preflight initially stopped on case ordering difference before mutation; corrected map equality validates identical case contents while preserving existing manifest order
+- Native-capture qualification provenance stored alongside fixtures, with backend report digests and explicit imported limitations. No expectation copied from replay outputs
+- Updated negative observation tests to exercise both native-bound and synthetic converted-bound disposable inputs for combat/loot, doors and GuideBot. This preserves and extends conversion-branch checks after active data became native captures
+- Scoped mixed quality passed; 50 compact-corpus unit tests passed with one existing opt-in skip. Complete published-corpus follow-up remains queued; final catalogue, source audit and full master repeat pending
+- Asked optional regression-policy clarification about preserving ignored format-4 retail level coverage versus admitted public corpus plus legacy rejection. Pending answer does not authorize a scope reduction; other full testing continues
+
+## 05:11 published-corpus integration verification
+
+- Automation and full master catalogues passed after fixture refresh and helper/test corrections: 95 standalone JSON, 251 standalone PowerShell, 350 master entries, 393 support scripts
+- Broader affected public Python unittest run passed 293 tests with 7 conditional skips. Six are platform gates: POSIX advisory retention locking and five Linux PowerShell sanitizer-runner checks; remaining retained effect-phase capture test requires absent historical local capture artifacts, with synthetic contract cases executed
+- Scoped diff whitespace check covers only goal-owned source/docs/public fixture changes; unrelated pre-existing review ledgers are excluded from the gate and preserved
+- Main 39-spec extraction/launch owner continues live; final extraction result and subsequent extended multiplayer still outstanding. Queued device fix reruns remain serialized behind the master and full canonical CD follow-up
+- Optional regression-corpus policy question remains unanswered. Original retail coverage requirement retained; no clean goal or scope-reduced success claim
+
+## 05:13 published default-path native replay validation started
+
+- Started full default published-corpus headless qualification after refresh, using explicit unchanged native binaries and sandboxed executable copies; all 17 scenes twice, no corpus override or reduced scene list
+- Exec session 5446 retained. This checks the tracked public fixture path handling in addition to already passed complete candidate headless/graphics qualification
+- Main extraction owner and post-suite waiter confirmed live; all queued emulator tests remain serialized. No clean-run claim and no permission-based stop
+
+## 05:17 published metadata preservation audit
+
+- Starting hash snapshot checked 3299 files: 30 changed (13 goal-owned code/test helpers and 17 public oracles), 14 original migration paths relocated, zero production C/C++/Kotlin changes
+- Verified all 13 migration companions and index byte-identical in provenance/format4_migration against preserved prior corpus; existing manifest bytes unchanged
+- Source snapshot excludes large .dximdemo/doc artifacts, so refreshed recording digests are separately bound in public-corpus-refresh-audit.json; do not treat the hash count as covering omitted extensions
+- outstanding_bugs.md remains untouched. Unrelated existing review ledgers preserved
+- Main extraction and full published-path headless processes confirmed live. Previous turn completed catalogue/public unit gates; current turn audits authoritative preservation and verifies ongoing full-scope work, not a clean completion claim
+
+## 05:23 published-path full native replay repeat passed
+
+- Full default published public-corpus headless qualification completed exit 0: all 17 scenes twice, 34/34 detailed fidelity passes, no failures. Exec session 5446 terminal
+- Verified persistent qualification provenance binds all 34 current recording/oracle bytes to their admitted digests
+- Main full extraction summary now records 29 completed cases, all PASS, with owner still live on remaining specs; summary completed_at/status are rewritten per case and do not prove owner termination
+- Candidate full graphics owner already qualified all 34 native cases plus its declared imported flight scope; full published graphics repeat remains in serial follow-up queue
+- Required remaining work unchanged: full first master terminal outcome, canonical CD/JVM and queued failure validations, original legacy coverage resolution and full same-scope clean repeat
+
+## 05:25 extraction private-ADB incident retained
+
+- Extraction spec 30/39, Descent II USA v1.1, first attempt failed during automation result staging: exec-out client reported private server tcp:localhost:5038 daemon not running and failed daemon startup
+- Owner marked infrastructure failure, verified emulator healthy and started its one complete-spec retry. Original log retained; no external device mutation or competing restart issued
+- First 29 specs already passed; full owner remains live and must complete all 39. Do not treat partial summary status=pass as complete or hide the first-attempt infrastructure incident
+
+## 05:27 full-spec infrastructure retry passed
+
+- Extraction case 30 finished PASS exit 0 on attempt 2; first private-ADB failure remains preserved. Main owner continues remaining cases without competing device activity
+- Read-only audit confirms private port 5038 listener is 127.0.0.1, daemon PID 33380 created at 23:22:32 yesterday and unchanged across the client startup failure. This contradicts assuming the server actually restarted; root cause remains a transient client connectivity/startup failure
+- For the next fresh full-run driver, prefer explicit IPv4 loopback for the private socket to remove localhost name-resolution ambiguity. This is an infrastructure configuration choice, not a proven diagnosis or engine fix; do not disrupt current live waiters to change their loaded environments
+- Published default-path headless corpus remains fully passed 34/34; all other required failures/queues and fresh master repeat remain open
+
+## 05:32 serial queue health and extraction retries audited
+
+- All twelve report-owned follow-up waiters and historical baseline PID 31104 confirmed live with matching runner scripts; historical marker is in replay_migration_20261014_0030/baseline-replay.pid, not the full-suite report root
+- Extraction summary has two recovered first-attempt infrastructure incidents: d2 mac automation result read timed out at 15 seconds; D2 USA v1.1 client could not connect/start private ADB despite unchanged live daemon
+- Both complete-spec retries passed. First-attempt logs retained; no threshold relaxation, oracle refresh or external emulator intervention used to recover
+- Main full extraction owner remains live. Next steps depend on authoritative terminal owner records, not stale PID files or partial status=pass summaries
+
+## 05:39 unsupported default replay preflight
+
+- Default current-engine replay now rejects legacy headers before game launch rather than merely warning and waiting for a terminal result that unsupported input cannot generate
+- Explicit executable overrides retain engine-side validation for archival/custom engines; historical baseline runner uses its historical helper and explicit historical binary, unchanged
+- Actual legacy D1 level 5 default visual request correctly failed with the specific format error in 0.66 seconds, exit 1. This verifies failure handling, not recording acceptance; original legacy failures remain unresolved
+- Batch runner continues after failures unless StopOnFirstFailure was explicitly selected; early format rejection prevents the imported eight-case batch consuming its owner timeout before attempting every selected file
+- Scoped helper quality and diff checks passed. No corpus selection, fixture bytes or expected game result changed by this fix
+
+## 05:40 full extraction owner terminal
+
+- Master test_all_extracts -All completed its full 39/39 import/verify/launch corpus with PASS; two complete-spec infrastructure recoveries preserved in case reports
+- Whole master advances to 313/325 GOG D1 unified installer, remains live. Dedicated extended multiplayer and other final owners still required, and twenty earlier owner failures remain authoritative until validated repairs and fresh full repeat
+
+## 05:45 full-scope repeat driver prepared
+
+- Prepared reusable run_full_suite_repeat.ps1 with mandatory fresh repository-temp report path, retained artifact handling, JDK21, same two owned emulators and SwiftShader renderer, real disc fixture and all original FullSuite/FullExtracts/ExtendedGraphics/ExtendedMultiplayer flags
+- Repeat private socket uses explicit 127.0.0.1:5038; same daemon/port/devices, no shared 5037 or external emulator changes
+- Script parse gate passed. It is not started while the main suite and current serial queue own the devices, and no narrowed corpus or scope override is added
+- Whole master progresses to coop pause 316/325 after GOG installers and Mac SAF. Required next step is finish first full owner sequence, process all queued failures, then launch same-scope repeat once fixes and legacy requirements are resolved
+
+## 05:50 cooperative pause owner passed
+
+- Main test_coop_pause owner completed its both-peer pause/menu/held-input release and host/guest save-load checks with PASS; actual per-game evidence retained in its owner log
+- Suite remains live at 318/325 independent checkpoints, after emulator recovery owner. No new failure identified this verified-wait segment
+- First complete full-suite terminal result and all queued failed-owner validations still required. Do not start competing emulator jobs or claim complete from partial owner progress
+
+## 05:54 final LAN owners passed
+
+- Independent checkpoint authoritative repeated restore passed with different local peer histories; owner terminal PASS (2:18)
+- LAN base, broadcast, launch preparation and lobby discovery owners all terminal PASS. Original failure total remains 19 FAIL + 1 TIMEOUT, with 301 PASS recorded through lobby discovery and separate runtime skip accounting
+- Full master continues final owners; post-suite driver confirmed live and waiting for terminal suite record. No competing device test started and no missing scope reclassified as success
+
+## 05:56 final full-suite owner active
+
+- Manual IP engine joining/rejoining completed PASS for actual engine hosts without launcher discovery; suite reached final owner 325/325 test_mp
+- ExtendedMultiplayer passes SoakSeconds=90 and raises owner timeout to 330 seconds, preserving requested sustained gameplay coverage
+- Master and final owner confirmed live. First full suite terminal result not yet available; post-suite queue remains live awaiting its final marker
+
+## 05:59 first complete full-suite terminal result
+
+- Full selected owner sequence completed: 304 PASS, 19 FAIL, 1 TIMEOUT, 26 SKIP, Not run 0; full master/driver exit 1, elapsed 6:24:03
+- test_mp terminal PASS with actual SoakSeconds=90, observed both peers and sustained relay connectivity through the full interval. Full 39-case extraction/launch owner PASS retained with two recovered infrastructure attempts
+- This fulfills one complete failed full-suite run, not the requested clean result. Original failure outcomes preserved in the final report and execution_evidence_windows_x64.json
+- Main teardown stopped its owned emulators; post-suite driver 31916 has started fresh rerun-tasks JVM/proxy tests with real fixture and historical comparison enabled. Do not start another device job ahead of serial queue
+- Required subsequent work: all queued validations, unresolved failures/legacy coverage, and fresh full-scope repeat until clean
+
+## 06:02 fresh JVM follow-up terminal
+
+- Fresh app/proxy rerun-tasks follow-up completed BUILD SUCCESSFUL exit 0 in 3:31, all 38 tasks executed; proxy historical IOException comparison test actually ran and passed
+- XML suite counts collected separately in full-jvm-followup-counts.json; real disc fixture configured before Gradle startup
+- Serial post-suite owner advanced to canonical run_all_cd_regressions.ps1, default complete source extraction and existing-oracle workflow. No RefreshOracle or SkipLaunch flags supplied
+- First full master result remains 304 PASS / 19 FAIL / 1 TIMEOUT / 26 SKIP, all selected owners attempted; clean repeat still required after all fixes and legacy scope obligations
+
+## 06:08 level 23 routing diagnosis instrumented
+
+- Counterstrike level 23 unresolved failure keeps every original target/progress/path/liveness assertion. Added existing guidebot_nav_trace=true before routing actions, and false after successful completion
+- Verified native automation action enables DLOG_GUIDEBOT and android_log.c mirrors category output to DXX-DLOG logcat. Existing serial rerun driver already retains complete post-owner logcat
+- Scoped quality and whitespace checks passed. No access-door, trigger ordering, expected goal or engine behavior changed; reproduction with detailed route decisions remains pending behind the serial queue
+- Canonical CD workflow completed host extraction/build steps and is bringing the owned primary emulator back after master teardown, installing current debug APK for complete Android import/launch regressions
+
+## 06:12 canonical oracle stage audit
+
+- Canonical workflow stage construction verified: Force extraction for CDs/GOG, structural spec validation, complete Android -All -BuildAndInstall -RestartDevice import/launch. RefreshOracle-only track/spec regeneration stages are absent
+- Android phase explicitly reports 39 specs and is active on the second case, no reduced sample or SkipLaunch mode
+- Original 3299-file source hash snapshot contains zero ignored game_data regression specs; do not infer their preservation from that source audit or empty git diff
+- Recorded separate current spec hashes/mtimes after host extraction and during Android phase for final mutation audit. This baseline proves subsequent preservation only; absence of refresh stages is separate evidence for earlier workflow behavior
+- Main suite has one complete failed result; all post-suite and corrective validations remain active, no scope reduction or goal completion
+
+## 06:25 duration reporting fix and repeated ADB client incident
+
+- Corrected master owner duration format to include hours for elapsed >= 1 hour; sub-hour mm:ss remains unchanged. First full extraction actual 1:00:42 had displayed 00:42 in the original report
+- Scoped quality/syntax/whitespace passed; actual formatter expression verified on 130 seconds => 02:10 and 3642 => 01:00:42. Status, selection, timeout and test behavior unchanged
+- Canonical Europe Definitive Collection disc 2 track-9 staging exec-out mkdir encountered daemon startup/read-ok error at localhost:5038; built-in single-transfer retry succeeded and import continued
+- Listener/daemon audit again confirms same IPv4 endpoint and PID 33380 since 23:22 yesterday. Preserve error as client connectivity/startup evidence, not proof of daemon restart or game defect
+- Do not disrupt live serial queues. Fresh full-repeat driver already uses explicit IPv4 socket; current canonical workflow and all failure validations remain required
+
+## 06:55 canonical case 33 infrastructure retry
+
+- Canonical Android case 33 Destination Quartzon ISO first attempt timed out reading durable automation result through exec-out at 15 seconds; original failure retained in case and workflow logs
+- Owner initiated its configured full-spec retry after health recovery. No game/spec oracle modified, timeout relaxed, or competing external restart issued
+- Prior 32 canonical cases passed. Final owner terminal result, oracle hash preservation and all subsequent failure validations remain required
+
+## 07:03 canonical case 36 retry passed
+
+- GOG descent_2_enUS_1_0_51877 first attempt encountered the same 15-second exec-out automation result read timeout; complete configured spec retry passed
+- Canonical summary now 36 PASS, zero unresolved failures, two whole-spec retries (cases 33 and 36) plus prior individual staging-transfer recovery. Original failure logs retained
+- Remaining three canonical cases and entire workflow exit record still required; no competing device activity or timeout relaxation applied
+
+## 07:06 complete canonical CD workflow passed
+
+- Canonical run_all_cd_regressions.ps1 finished all four selected stages exit 0: forced CD extraction, forced GOG extraction, existing spec validation, complete 39/39 Android import/verify/launch corpus
+- Two full-spec retries (Destination Quartzon ISO and GOG D2) plus a separate staging transfer retry retained; final zero unresolved cases. Workflow and post-suite exit records both 0
+- Final oracle hash/mtime audit written against the explicitly recorded after-host/during-Android baseline, preserving scope of proof. No RefreshOracle, SkipLaunch or sampling flags supplied
+- Historical headed baseline waiter now owns the next serial stage; public/cheat/audio/graphics/GuideBot fixes still pending after it. First master remained failed with 20 owners requiring resolution and a full clean repeat
+
+## 07:12 historical headed replay completed; public device queue progressing
+
+- Historical headed D2 level 9 playback terminated normally with strict replay exit 1 due to RNG source annotations. Unchanged compare_rng independently verified all 23,826 SIM events including contexts and values against the preserved original; digest-bound verdict d2-baseline-headed-sim-rng-verdict.json. Raw strict failure retained, not counted as current format-5 qualification
+- Public profile workflow now live on emulator-5574, first complete 120-step cheat recording launcher script passed; full four-case owner exit still required
+- No competing device workflows started. Remaining device validations and complete master repeat remain required
+
+## 07:16 public profile follow-up found D2 recording failure
+
+- Public workflow terminal exit 1: D1 cheat and both normal D1/D2 automatic recording/replay cases passed; D2 cheat stopped progressing at step 123/155, frame_count 0 after prior successful weapon-firing assertions. Root cause unproven; no assertion or timeout relaxed
+- Moved automatic recording logcat capture before failure throw, preserving child exit first, and added activity exit-info on failed capture. Queued six-case cheat/state matrix will collect complete failure diagnostics if reproduced; existing run lacked those artifacts
+- Final catalog pair passed after master duration and GuideBot nav-trace changes. Source audit inspected 3,299 baseline files: 46 changed/moved, 15 code/helper/scenario paths; no production C/C++/Kotlin changes from the initial snapshot
+
+## 07:18 user-authorized archival of incompatible recordings
+
+- User answered pending scope question: "I will make fresh by-hand captures, for now move anything incompatible out to a backup dir"
+- Moved all ten format-4 recordings plus ten RNG traces and ten classic .dem companions to android/regression_demos_backup/format4_20261014_0718, outside the recursively discovered active corpus. Manifest records original paths, format, bytes and SHA256; every moved file's digest verified unchanged
+- Two preflight count checks failed before any move (PowerShell path-expression construction), then corrected paths and completed verified 30-file move. No partial or unverified moves
+- Backup root locally ignored to keep large local artifacts out of git. Active regression_demos contains no compact recordings; existing master availability gates will report the six legacy batch owners and legacy determinism matrix as fixture skips pending user captures. Public format-5 corpus owners remain selected, with full published graphics validation still queued
+- No fixtures fabricated, no historical header edits, no golden result replacement. Original master report failures remain intact. User authorization explicitly changes current local-recording scope; remaining current tests and full master repeat remain required
+
+## 07:24 complete audio normalization follow-up passed
+
+- test_audio_mix.ps1 finished exit 0 with all seven live capture/measurement cases: D2 MIDI peak, MIDI, CD and MP3; D1 MIDI, CD and MP3. Includes the complete 120-second D2 peak fixture and production mixer effects overlap, audible music/effects, mute, loudness and clipping checks
+- Audio environment repair is now verified by complete integration execution, not just imports. Full OGL batch owner has begun fresh native fixture builds; remaining owner terminal evidence required
+- Archived corpus discovery independently checked using the actual master function definitions: zero active D1/D2 compact demos, legacy determinism fixture availability false. Backup excluded from the recursive active root; user by-hand captures pending outside current requested scope
+
+## 07:24 full OGL batch follow-up passed
+
+- test_android_ogl_batches completed exit 0 after fresh Android native fixture builds, actual engine texture-label cases and pulled trace validation: 42 cases per game, 84 total. Combined audio/graphics workflow exit 0
+- Level-23 GuideBot diagnostic reproduction owns the next serial stage; original assertions remain intact and complete nav-trace logcat will be retained
+
+## 07:27 GuideBot follow-up results
+
+- Level 24 corrected door-guidance fixture completed all 26 steps exit 0, including live path/owner and six-second endpoint liveness checks
+- Level 23 full diagnostic run exit 1 at earlier step 26: fly-through trigger 5 / objective 221 / guidance 220 matched, frontier_player_openable_door false during wait. Cached state after timeout shows frontier true; bot had returned toward distant spawn. Full navigation trace retained. Timing or live partial-path state hypothesis unproven, no condition or timeout relaxed
+- Demo-import integration remains live and progressing through multiple retained launch-runtime evidence directories; no premature restart
+
+## 07:32 complete demo-import follow-up passed
+
+- Unchanged test_demo_import.ps1 terminal exit 0: complete original installer corpus import, bytes, publication, readiness and failed-import preservation; desc14sw.exe and descent 1 demo 1-4.zip each passed startup/movement/weapons/audio/file-restore/rewind and all seven campaign levels plus ending in imported D1-in-D2
+- Original first-master instrumentation attach failure did not reproduce. Full logcat and activity exit-info retained by serial driver. No test assertions or engine changes made for this owner
+- GuideBot/import combined workflow exit 1 solely for unresolved level-23 routing test. Level-24 and import owner results remain individually exit 0; six-case cheat/RecordState matrix is next
+
+## 07:40 Fusion replay divergence traced to effects RNG gating simulation
+
+- Complete D1 retail cheat+RecordState capture succeeded (583 frames); current headed replay timed out and isolated console replay aborted. Two independent console reproductions retained, including debug run. First SIM trace divergence is missing create_awareness_event at frame 538; prior 123 SIM events match
+- FireLaser in both d1/main/game.c and d2/main/game.c uses d_rand_fx to set Fusion_next_sound_time, yet that clock gates SIM awareness/damage. Existing test_fusion_cadence_state explicitly observes that coupling. Graphics/platform effects draws can therefore alter future SIM work
+- Fix cadence jitter to SIM RNG in both engines, preserve timing range and damage/awareness behavior. Extend existing native cadence regression with controlled effects-stream perturbation and unchanged deadline/damage assertions, then build/test both engines and fresh APK/captures. Existing recordings made before fix remain evidence; do not edit expected state or replay-compensate
+- Supporting isolated console runs use copied executable sandboxes and distinct state/RNG/result paths alongside queued headed owner; no shared executable profile writes. Initial diagnostic invocation rejected invalid Runner=headless before launch; corrected supported headless-console
+
+## 07:44 Fusion fix built; D2 recorder rejection identified
+
+- Both Windows engine builds passed after SIM cadence fix and native regression extension. Formatting/lint passed. Build retains an existing public_missile_view_fixture.hpp int/bool warning outside edited cadence lines; no new warning in edited code observed
+- Initial ctest shell invocation failed because executable was absent from PATH; inherited LASTEXITCODE incorrectly wrote zero markers without logs. Immediately invalidated that evidence and reran via authoritative CMAKE_COMMAND sibling ctest.exe with terminating shell errors. Only real test logs and corrected final markers qualify results
+- D1 corrected native test run passed all 70/70 tests, including effects-noise perturbation across Fusion warmup and damage branches. D2 run terminal still required
+- Retained D2 retail failure logcat proves recorder deliberately stops upon guided missile camera creation, while game remains live with recording=false. No native crash; activity exit-info shows only later runner force-stop. Guided-camera rejection is a separate issue from Fusion cadence
+- Six-case pre-fix cheat/RecordState matrix ended exit 1; all four D2-engine cases hit guided-camera rejection, D1 retail/shareware recordings failed replay. Fresh APK and capture/replay validation required after source fix, plus a test design preserving explicit guided-camera rejection coverage rather than pretending positive recordings support it
+
+## 07:47 Fusion fix native validation complete
+
+- Corrected ctest executions terminal exit 0: D1 70/70, D2 79/79, including new effects-stream perturbation assertions for normal warmup and overcharge, native D2 and imported D1 profiles. D2 complete run 142.77 seconds; live test process was polled while running, no restart or timeout relaxation
+- Fresh Android assembleDebug reached final packaging/assemble tasks. Build terminal exit, retained APK hash and on-device capture/replay still required; no installation into the active serial queue performed
+- Current graphics-first-run owner continues passing complete scenario branches. Post-fix public fixture qualification and comprehensive repeat still required because simulation RNG behavior changed
+
+## 07:47 fresh fixed Android APK built and retained
+
+- assembleDebug terminal exit 0, 1m46, 53 tasks (13 executed). Fixed APK retained as fusion-fixed-debug.apk with source/APK SHA256 binding in fusion-fixed-build-identity.json; not installed into the active serial workflow
+- Scoped diff whitespace check passed for both engine files, native regression and recording diagnostic helper. No outstanding_bugs.md edit
+
+## 07:53 guided rejection coverage and graphics rearm correction
+
+- Cheat owner now derives a separate guided rejection probe from the same authored grant/fire prefix, asserts actual guided ammo consumption plus recording=false/in_game=true and checks exact native rejection log. Positive two-level captures retain granted guided weapon selection but fire that unsupported camera only in the rejection probe; supported weapon fire, ordered grants/refills, carried inventory, checkpoint exclusion and strict independent replay remain
+- Four D2-engine/edition combinations require rejection proof; D1 scenarios keep their actual Smart/Mega fire. No recorder guard relaxed or guided-camera support claimed. Formatter/lint passed and retail/public profile audit exit 0; catalog validations in progress
+- Fixed APK six-case recording + public profile follow-up queued behind PID 8660/public replay terminal marker. It will verify retained APK SHA before serial installation and preserve each result separately; driver session 61920
+- Graphics first-run full owner failed D1 Rearm step 43. Cached current TexFilt=2, accepted=0, editing and first_run_pending=false; earlier change current=0 was incorrect and is reverted to 2. This acknowledges/corrects the unsupported earlier test expectation; full 44-case owner rerun still required
+- Unchanged Unexplored owner remains failed; KCXF2 corrected full route test is now live. No budget threshold relaxation
+
+## 07:56 KCXF2 passed; Unexplored generation assertion repaired
+
+- Corrected KCXF2 complete test terminal exit 0, all 192 steps across authored levels. Original target/trigger/wall progression preserved
+- Unexplored second full run passed its work-budget gate (max_tick 1463us, zero tick overruns, zero full plans), then failed hardcoded automap generation >19 with actual19. Original first run failed earlier at max_tick5722; that timing issue remains a separate unproven concern, no threshold raised
+- automap_revisit_segment automation action now checks same-frame generation delta exactly two around its real unvisit/revisit notifications. JSON expects generation >=2 rather than a startup-dependent absolute >19; exact notification count2/coalesced1 and rescan assertions remain. This strengthens the specific increment contract without assuming prior map visits
+- New automation diagnostic and JSON formatting/lint passed. Fresh APK build and complete Unexplored rerun needed to verify the added runtime delta check; fixed-recording queued driver intentionally retains prior Fusion-fixed APK for that separate integration scope
+- Guided profile audit and both catalog checks passed, counts350 top-level/393 support. Graphics expectation corrected after that check; final catalog pair required after all edits
+
+## 07:58 Obsidian complete route passed; final diagnostic queues prepared
+
+- Corrected Obsidian owner terminal exit 0, all204 authored steps. Level1 trigger4/seg231/wall114 preserved with actual nearest-progress guidance; all other objective/marking checks executed
+- Fixed-recording driver PID4084/session61920 waits complete published replay queue PID8660. Separate generation/graphics driver waits PID4084 and validates second retained APK identity before installation; will run full Unexplored, level23 diagnostic case, then complete44 graphics owner with restored TexFilt2 expectation
+- Latest APK with exact automap generation delta diagnostic building in session92769. Generation/graphics waiter session72268; no competing device jobs or installation during current queue
+- Host guided profile and catalogue pair terminal0; no new standalone/support leaf required because guided probe derives same owned authored prefix in report scratch. New runtime cases still require actual serial completion
+
+## 08:00 large-level staging validation passed; second APK built
+
+- Large Uneasy4 route-budget owner terminal exit0, all18 steps including60 seconds actual gameplay after full32,030,975-byte ZIP staging. Checked-transfer helper fix now verified on complete originally failing integration, not only fault-injection cases
+- Obsidian level7 expanded49-step precondition run failed step37: expected guidance321, actual102. Cached player321 after pose_route_guidance, buddy still must traverse player-openable door frontier102. Earlier teleport-precondition fix insufficient; no target or route assertion relaxed. Further real door/topology evidence required
+- Second generation-probe APK assembleDebug terminal exit0,2m05. Retained generation-fixed-debug.apk SHA7F26627C0AB66FBA1D606FA947EB3D6F23C69192E2C7003E5F8563703AF0CD47 and automation-source SHA binding. Still not installed into active serial workflow
+- Remaining original queue now runs published public corpus against rebuilt host engines; fresh fixed recording and generation/graphics validations follow serially
+
+## 08:08 Obsidian7 prerequisite identified from real physical-route trace
+
+- Retained complete physical-route trace android/temp/test_obsidian_level7_exit_route_4083e63da742440fb47320cad5607f7f/logs/Obsidian.json_0_7_berylium.rl2_run_2.log line230 shows real flare opening wall29 at segment102 side2 before switch7
+- Live cached buddy path endpoint321 and guidance102 are distinct: endpoint getter reads actual Point_segs path, while guidance reports the reachable frontier. Player pose at321 alone does not open the required blue-key door for buddy navigation
+- Updated fixture physically faces102 side2 and fires normal primary input for500ms, releases it, then retains existing guidance321/activation!=aim, zero automap connector and buddy motion/path assertions. pose_route_guidance now follows successful door/guidance transition. No switch7 goal/target or assertion relaxed
+- Scoped fixture formatting/lint passed. Full case queued after generation/graphics driver32928 using separate obsidian-frontier driver/session99594; on-device success still required
+- Current rebuilt-engine public headless validation continues passing all completed cases. Native recordings/graphics and complete master repeat remain outstanding
+
+## 08:10 complete rebuilt-engine public headless corpus passed
+
+- Published default corpus test_compact_public_replays.ps1 -RunMode headless terminal exit0, all34 native runs pass (17 cases twice), with rebuilt current engines after Fusion SIM cadence change and Android debug-source update
+- Original first-format5 supplemental34 failures remain retained; this follow-up validates current published detailed native expectations without expected-result edits
+- Complete graphics half now live under same serial queue; imported qualification remains manifest-declared scope rather than full imported parity. Fixed Android capture/replay, remaining GuideBot tests and complete master repeat still required
+
+## 08:13 original failure inventory reconciled against terminal logs
+
+- owner-resolution-0813.json records all20 original failed/timed-out owners with original result, latest exit/log and SHA256. Nine owner follow-ups pass; seven legacy owners now fixture-unavailable under explicit user archival request; four remain failed/pending repair validation (counter23, graphics first-run, Unexplored, Obsidian7)
+- Inventory is explicitly not a clean master run or blanket latest-source qualification. Supplemental Fusion/guided recording checks still pending independently; broad master repeat remains required
+
+## 08:18 complete-repeat driver source binding strengthened
+
+- Prepared run_full_suite_repeat.ps1 now snapshots tracked/untracked nonignored source, scripts, build configuration, JSON fixtures and compact recordings before the full unchanged-flag master invocation, then writes source changes and final git status after terminal exit
+- Syntax parsed successfully. Snapshot whitelist and before/after output explicit; this is not proof a master run occurred. Driver remains unstarted pending runtime repair validation
+- Public graphics native phase currently25/34PASS; workflow PID8660 and child24560 confirmed live. No observation timeout treated as terminal or replay restarted
+
+## 08:24 latest-source catalog checks passed
+
+- Current catalog pair terminal exit0 after guided rejection, restored graphics rearm, exact automap delta diagnostic and physical Obsidian7 door prerequisite changes: 95 standalone JSON,393 support,251 standalone PowerShell; master350 top-level
+- Public graphics native34/34 passed; imported paired phase remains live. Raw paired report currently contains diagnostic failures, consistent with retained unqualified full-world imported modes; outer declared-scope qualification and workflow terminal result still required. No raw failure reclassified as native pass
+- Fixed Android recording waiter4084 remains live behind workflow8660; generation/graphics32928 and Obsidian21572 remain serially queued. No reinstallation or competing device test launched during host/imported phase
+
+## 08:27 published public replay workflow passed; fixed Android capture started
+
+- Full current-source public replay workflow terminal exit0: headless34/34 native; graphics34/34 native; exact gameplay-state/SIM-RNG imported D1 flight parity pass. Raw paired diagnostic exit1 retained, full imported diag/object/world qualification incomplete, four diagnostic-only paired cases and three explicit exclusions unchanged
+- Latest catalogue pair exit0. Fixed APK hash verified and install terminal0 on owned emulator5574, under explicit private adb127.0.0.1:5038. D1 retail cheat+RecordState capture exported both levels; strict independent replay now live
+- Generation/graphics and Obsidian frontier queues remain behind fixed-recording PID4084. No master repeat claimed or goal marked complete

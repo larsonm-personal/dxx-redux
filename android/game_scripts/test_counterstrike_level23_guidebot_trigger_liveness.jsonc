@@ -56,6 +56,7 @@
             "level_metadata_route.status": "ok",
         },
     },
+    { "action": "set_debug", "field": "guidebot_nav_trace", "value": "true" },
     { "action": "meta_action", "id": 1037, "post_delay_ms": 500 },
     { "action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100 },
     // Complete the opening switches before testing the post-key traversal chain
@@ -173,5 +174,6 @@
             "guidebot.route_goal_objective_seg": "5",
         },
     },
+    { "action": "set_debug", "field": "guidebot_nav_trace", "value": "false" },
     { "action": "log", "message": "=== TEST: Counterstrike level 23 GuideBot trigger liveness -- PASS ===" },
 ]

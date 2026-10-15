@@ -592,6 +592,7 @@ int maybe_start_input_demo_recording(int is_autorecord)
 		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
 		return 0;
 	}
+	input_demo_reset_player_bump_diag();
 	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n",
 	           input_demo_recorder_settings_mission(), Current_level_num);
 	return 1;

@@ -1157,7 +1157,7 @@ static int expect_all_weapons_command_domains(void)
 	for (int game : { INPUT_DEMO_GAME_D1, INPUT_DEMO_GAME_D2 }) {
 		for (int grant = -1; grant <= 4; ++grant) {
 			const bool supported = grant >= 1 && grant <= (game == INPUT_DEMO_GAME_D1 ? 2 : 3);
-			if (input_demo_all_weapons_grant_supported_for_game(grant, game) != supported)
+			if ((input_demo_all_weapons_grant_supported_for_game(grant, game) != 0) != supported)
 				return report_failure("all-weapons grant game domain mismatch");
 		}
 		for (int grant = 1; grant <= 3; ++grant) {

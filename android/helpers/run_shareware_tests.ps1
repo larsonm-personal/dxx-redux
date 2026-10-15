@@ -16,11 +16,12 @@ $cases = @(
         $games = @($info.games | Where-Object { $Game -eq 'both' -or $_ -eq $Game })
         if (-not $games.Count) { continue }
         $owner = if ($info.PSObject.Properties['_standalone'] -and $info._standalone -eq $false) { [string]$info._owner } else { '' }
-        [pscustomobject]@{ name = $file.BaseName; games = $games; owner = $owner; path = $file.FullName }
+        $ownerArgs = @(if ($file.BaseName -eq 'test_auto_level_cheats') { '-Cheats' })
+        [pscustomobject]@{ name = $file.BaseName; games = $games; owner = $owner; owner_args = $ownerArgs; path = $file.FullName }
     }
 )
 if ($ListTests) {
-    ConvertTo-Json -InputObject @($cases | Select-Object name, games, owner) -Depth 5
+    ConvertTo-Json -InputObject @($cases | Select-Object name, games, owner, owner_args) -Depth 5
     return
 }
 if (-not $cases.Count) { throw "No audited public scenarios match $Filter for $Game" }
@@ -38,6 +39,7 @@ foreach ($case in $cases) {
             $ownerPath = Join-Path $script:ANDROID_ROOT "tests/$($case.owner).ps1"
             if (-not (Test-Path -LiteralPath $ownerPath)) { throw "Missing existing integration owner: $ownerPath" }
             $arguments += @($ownerPath, '-Game', $engine, '-DataEdition', 'shareware')
+            $arguments += $case.owner_args
         } else {
             $arguments += @((Join-Path $PSScriptRoot 'run_test.ps1'), '-ScriptName', $case.path, '-Game', $engine, '-DataEdition', 'shareware')
         }
