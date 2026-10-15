@@ -48,6 +48,22 @@ class RetailBoundaryTests(unittest.TestCase):
         available, _ = self.plan(self.identity, state)
         self.assertEqual(len(available['tests']), 1)
 
+    def test_mission_owners_require_the_same_private_boundary(self):
+        self.policy['suites'][0]['fixture'] = 'retail-missions'
+        missing, _ = self.plan()
+        self.assertEqual(missing['tests'], [])
+        self.assertEqual(len(missing['unavailable']), 1)
+        plan, _ = self.plan(self.identity)
+        self.assertTrue(retail.lane_requires_retail(plan, 'android-single'))
+        self.assertFalse(retail.lane_requires_retail(plan, 'host'))
+        sweep.validate_plan(plan, self.policy)
+        workflow = (ROOT / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        self.assertIn('from nightly_retail import lane_requires_retail', workflow)
+        self.assertIn('sorted(lane for lane in p[\'lanes\'] if lane_requires_retail(p, lane))', workflow)
+        del plan['retail_assets']
+        with self.assertRaises(ValueError):
+            sweep.validate_plan(plan, self.policy)
+
     def test_configuration_requires_immutable_commit(self):
         for commit in ('main', 'b' * 39, 'B' * 40, '../secret'):
             with self.subTest(commit=commit), self.assertRaises(ValueError):
@@ -118,7 +134,7 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertIn('repository: larsonm-personal/dxx-redux-test-assets', source)
             self.assertIn('token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}', source)
             self.assertIn('unset RETAIL_READ_TOKEN', source)
-            self.assertIn('--stage target/game_data/retail-ci', source)
+            self.assertIn('--stage target/game_data/retail-ci --include-missions', source)
             self.assertIn('results/retail-verification.json', source)
             self.assertIn('rm -rf retail-input', source)
         android = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()

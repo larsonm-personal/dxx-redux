@@ -80,14 +80,16 @@ jobs:
             --policy control/android/tests/nightly_tooling_policy.json --state plan/previous.json \
             --output plan/plan.json --state-output plan/state.json "${validation[@]}"
           python3 - <<'PY'
-          import json, os
+          import json, os, sys
+          sys.path.insert(0, 'control/android/tests')
+          from nightly_retail import lane_requires_retail
           p=json.load(open('plan/plan.json'))
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('target_sha='+p['target_sha']+'\n')
               f.write('lanes='+json.dumps(p['lanes'])+'\n')
               f.write('android_lanes='+json.dumps([x for x in p['lanes'] if x!='host'])+'\n')
               f.write('count='+str(len(p['tests']))+'\n')
-              f.write('retail_lanes='+json.dumps(sorted({t['lane'] for t in p['tests'] if t.get('fixture')=='retail-base'}))+'\n')
+              f.write('retail_lanes='+json.dumps(sorted(lane for lane in p['lanes'] if lane_requires_retail(p, lane)))+'\n')
               f.write('retail_commit='+p.get('retail_assets',{}).get('commit','')+'\n')
           PY
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -177,7 +179,7 @@ jobs:
         run: |
           [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
           python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
-            --output results/retail-verification.json --stage target/game_data/retail-ci
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
           rm -rf retail-input
       - name: Execute admitted host owners
         id: execute

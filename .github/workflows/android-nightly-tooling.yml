@@ -317,7 +317,7 @@ jobs:
         run: |
           [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
           python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
-            --output results/retail-verification.json --stage target/game_data/retail-ci
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
           rm -rf retail-input
       - name: Prepare isolated headless emulators
         if: inputs.lane != 'jvm'

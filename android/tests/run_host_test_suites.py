@@ -2,20 +2,34 @@
 """Allowlisted host-suite adapter for a separately qualified target checkout."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 REGISTRY = Path(__file__).with_name("host_test_suites.json")
+# Exact installed members of the reviewed, pinned Obsidian ZIP
+OBSIDIAN_MEMBERS = {
+    "obsidian.hog": (
+        35385307,
+        "32ee5f893718c2191975c826a6f95f116658b143b69bbf2aa73a9455174508db",
+    ),
+    "obsidian.mn2": (
+        338,
+        "1bf9a8cc9882a67356e16f08e06cb82923ca920710bf30d245cd7be9829bdde6",
+    ),
+}
 MEDIA_SKIP = re.compile(
     r"SKIP: sample media not present|skip missing fixture:|"
     r"StuffIt demo (?:archive|oracle file) missing, skipping|"
@@ -348,10 +362,85 @@ def retail_profile_arguments(suite, repo, build_root, work):
             "-HogDir",
             str(stage / "d2"),
         ]
-    raise ValueError("Unknown reviewed retail PowerShell profile: " + profile)
+    if profile == "retail-vertigo-metadata":
+        return [
+            "-NoBuild",
+            "-Worker",
+            binary("d2", "-metadata-worker"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-VertigoDir",
+            str(stage / "missions"),
+        ]
+    if profile == "retail-obsidian-liquid":
+        return [
+            "--exe",
+            binary("d2", "-headless-metadata"),
+            "--hogdir",
+            str(stage / "d2"),
+            "--mission-dir",
+            str(work / "obsidian-stage"),
+            "--output",
+            str(work / "obsidian-liquid.json"),
+        ]
+    raise ValueError("Unknown reviewed retail profile: " + profile)
 
 
-def verify_retail_stage(repo):
+def prepare_obsidian_mission(repo, work):
+    """Extract only two pinned members into a fresh private native mission tree."""
+    destination = work / "obsidian-stage"
+    with zipfile.ZipFile(repo / "game_data/retail-ci/missions/obsidian.zip") as archive:
+        members = archive.infolist()
+        if len(members) > 32:
+            raise ValueError("Unexpected Obsidian ZIP member count")
+        by_name = {}
+        for member in members:
+            name = member.filename
+            mode = member.external_attr >> 16
+            if (
+                not re.fullmatch(r"[A-Za-z0-9_.-]+", name)
+                or name in {".", ".."}
+                or name != member.orig_filename
+                or name.lower() in by_name
+                or member.is_dir()
+                or stat.S_IFMT(mode) not in {0, stat.S_IFREG}
+                or member.flag_bits & 1
+                or member.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
+            ):
+                raise ValueError("Unsafe or duplicate Obsidian ZIP member")
+            by_name[name.lower()] = member
+        for name, (size, _digest) in OBSIDIAN_MEMBERS.items():
+            if (
+                name not in by_name
+                or by_name[name].filename != name
+                or by_name[name].file_size != size
+            ):
+                raise ValueError("Missing or wrong-sized Obsidian mission member")
+        destination.mkdir()
+        try:
+            installed = destination / "missions"
+            installed.mkdir()
+            for name, (expected_size, expected_digest) in OBSIDIAN_MEMBERS.items():
+                digest = hashlib.sha256()
+                size = 0
+                with (
+                    archive.open(by_name[name]) as source,
+                    (installed / name).open("xb") as output,
+                ):
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        size += len(chunk)
+                        if size > expected_size:
+                            raise ValueError("Oversized Obsidian mission member")
+                        digest.update(chunk)
+                        output.write(chunk)
+                if size != expected_size or digest.hexdigest() != expected_digest:
+                    raise ValueError("Obsidian mission member identity mismatch")
+        except BaseException:
+            shutil.rmtree(destination)
+            raise
+
+
+def verify_retail_stage(repo, *, include_missions=False):
     """Hash the stage without copying fixture bytes into logs or receipts."""
     control_repo = Path(__file__).resolve().parents[2]
     spec = importlib.util.spec_from_file_location(
@@ -364,7 +453,13 @@ def verify_retail_stage(repo):
         raise ValueError(
             "Target retail identity pins differ from the reviewed control checkout"
         )
-    manifest = assets.inventory(repo / "game_data/retail-ci", expected)
+    manifest = (
+        assets.stage_inventory(
+            repo / "game_data/retail-ci", expected, include_missions=True
+        )
+        if include_missions
+        else assets.inventory(repo / "game_data/retail-ci", expected)
+    )
     if manifest["matches_tested_edition"] is not True:
         raise ValueError("Staged retail edition differs from the existing test fixtures")
 
@@ -480,8 +575,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
-        if suite["kind"] in {"public-powershell", "retail-powershell"}:
-            retail = suite["kind"] == "retail-powershell"
+        if suite["kind"] in {"public-powershell", "retail-powershell", "retail-python"}:
+            retail = suite["kind"] in {"retail-powershell", "retail-python"}
             script = target_file(repo, suite["path"])
             if not script.is_file():
                 return finish(
@@ -495,8 +590,13 @@ def run_suite(suite, repo, build_root, output, timeout):
                 verification_started = time.monotonic()
                 verification_error = None
                 try:
-                    verify_retail_stage(repo)
-                except (OSError, ValueError) as error:
+                    if suite.get("fixture") == "retail-missions":
+                        verify_retail_stage(repo, include_missions=True)
+                    else:
+                        verify_retail_stage(repo)
+                    if suite["profile"] == "retail-obsidian-liquid":
+                        prepare_obsidian_mission(repo, work)
+                except (OSError, ValueError, zipfile.BadZipFile) as error:
                     verification_error = str(error)
                 finally:
                     setup_seconds += time.monotonic() - verification_started
@@ -569,7 +669,11 @@ def run_suite(suite, repo, build_root, output, timeout):
                         code,
                         retryable=True,
                     )
-            argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
+            argv = (
+                [sys.executable, "-I", str(script)]
+                if suite["kind"] == "retail-python"
+                else ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
+            )
             profile_arguments = (
                 retail_profile_arguments if retail else public_profile_arguments
             )

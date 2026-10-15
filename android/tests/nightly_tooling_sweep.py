@@ -63,7 +63,7 @@ def policy_entries(policy):
             raise ValueError('Only typed exact suite selection is accepted')
         if entry['owner'] == 'shareware' and (entry['args']['game'] not in ('d1', 'd2') or entry['lane'] != 'android-single'):
             raise ValueError('Invalid public gameplay lane/game')
-        if entry.get('fixture') not in (None, 'retail-base'):
+        if entry.get('fixture') not in (None, 'retail-base', 'retail-missions'):
             raise ValueError('Unknown fixture requirement')
         entries[ident] = entry
     return entries
@@ -111,7 +111,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     ordered = sorted(entries.items(), key=lambda item: (
         state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
     for ident, entry in ordered:
-        if entry.get('fixture') == 'retail-base' and not retail_assets:
+        if entry.get('fixture') in ('retail-base', 'retail-missions') and not retail_assets:
             unavailable.append({'id': ident, 'reason': 'retail configuration unavailable for this run; pending'})
             continue
         if entry['owner'] == 'master' and entry['args']['suite'] not in names:
@@ -149,7 +149,7 @@ def validate_plan(plan, policy):
         ident = entry.get('id')
         if ident in seen or entries.get(ident) != entry:
             raise ValueError('Unapproved or duplicate plan entry')
-        if entry.get('fixture') == 'retail-base' and not plan.get('retail_assets'):
+        if entry.get('fixture') in ('retail-base', 'retail-missions') and not plan.get('retail_assets'):
             raise ValueError('Retail selection lacks pinned data identity')
         seen.add(ident)
     if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:

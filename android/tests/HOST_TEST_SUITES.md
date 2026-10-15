@@ -159,3 +159,25 @@ metadata-only public reporting, and cleanup of licensed inputs and derived files
 The portable `test_retail_ci_assets.py` and `test_nightly_retail.py` registrations
 exercise synthetic/mock controls without licensed assets. Their passing results
 do not establish that any retail owner has run successfully.
+
+Two additional profiles use the separately admitted `retail-missions` fixture:
+`host-profile:retail-vertigo-metadata` builds the D2 metadata worker and supplies
+explicit base-data, Vertigo-directory, and worker paths with `-NoBuild` to the
+unchanged reused-worker owner. `host-profile:retail-obsidian-liquid` builds the D2
+headless metadata target and runs the existing Python owner with isolated Python
+so environment optimization cannot disable its assertions. It retains the native
+60-second timeout and exact level-13 liquid-secret/transparent-water assertions.
+Both verify the staged mission identities, including the reviewed CRLF Vertigo
+descriptor, before builds or tests. The Obsidian profile extracts only its exact
+HOG and MN2 members into a fresh private `missions` tree, checking member names,
+duplicates, sizes, and SHA-256 while streaming bounded chunks. ZIP setup errors
+are retryable BLOCKED with no assertion credit. It never installs or executes the
+archive's batch file, and its derived stage must remain private and be cleaned up
+with the lane workspace. Runtime qualification remains pending actual hosted runs.
+
+Remaining GuideBot cases need a separate bounded adapter change to plumb explicit
+executable, base-data, and mission-stage paths into their unchanged assertions.
+The full family remains excluded: Vertigo level 16 also requires Plutonia, which
+this fixture does not contain. The Vertigo CD checkpoint owner still targets the
+original CD catalog layout; these profiles do not claim that owner, Android
+behavior, movies, or any other custom mission.

@@ -33,3 +33,9 @@ mismatched files remain pending. PRs never receive these fixtures. Retail lanes
 upload only bounded result/verification metadata, exclude broad logs/screenshots,
 and do not save caches. Token functionality and retail tests require a trusted
 post-merge run; source admission alone is not runtime qualification.
+
+The mission-enabled profile additionally verifies Vertigo and Obsidian. Its three
+source/staging identities are fixed in `retail_ci_assets.py`; only the pinned
+Vertigo descriptor receives explicit LF-to-CRLF normalization in staging. After
+merging this profile, set `RETAIL_ASSETS_COMMIT` to
+`a5fe978f5cf42a612489dca1267e77e837f7da8c`. Supplied originals are never modified.

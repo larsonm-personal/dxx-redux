@@ -175,6 +175,200 @@ class RetailAssetTests(unittest.TestCase):
         self.assertEqual(process.returncode, 1, process.stderr)
         self.assertFalse(self.report.exists())
 
+    def mission_fixture(self):
+        pins = copy.deepcopy(assets.MISSION_FILES)
+        data = (b'synthetic Vertigo HOG', b'name = Synthetic\nnum_levels = 1\nexample.rl2\n\x1a',
+                b'synthetic Obsidian ZIP')
+        self.mission_data = {}
+        for pin, source in zip(pins, data):
+            target = self.root / pin['source_path']
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(source)
+            staged = source.replace(b'\n', b'\r\n') if pin['transform'] != 'none' else source
+            pin.update(source_size=len(source), source_sha256=hashlib.sha256(source).hexdigest(),
+                       size=len(staged), sha256=hashlib.sha256(staged).hexdigest())
+            self.mission_data[pin['source_path']] = source
+        patched = patch.object(assets, 'MISSION_FILES', pins)
+        patched.start()
+        self.addCleanup(patched.stop)
+        return pins
+
+    def test_missions_are_explicit_opt_in_with_unchanged_base_contract(self):
+        base = self.inventory()
+        base_identity = assets.baseline_identity(self.repo)
+        pins = self.mission_fixture()
+        self.assertEqual(self.inventory(), base)
+        self.assertEqual(assets.baseline_identity(self.repo), base_identity)
+        expanded = assets.inventory(self.root, self.expected, include_missions=True)
+        self.assertEqual(len(expanded['files']), 14)
+        self.assertIs(expanded['matches_tested_edition'], True)
+        self.assertEqual(expanded['manifest_sha256'], assets.baseline_identity(self.repo, include_missions=True))
+        self.assertNotEqual(expanded['manifest_sha256'], base_identity)
+        for actual, expected in zip(expanded['files'][11:], pins):
+            self.assertEqual({key: actual[key] for key in expected}, expected)
+        assets.stage(self.root, self.destination, expanded, include_missions=True)
+        expected_data = dict(self.data)
+        for pin in pins:
+            source = self.mission_data[pin['source_path']]
+            expected_data[pin['path']] = source.replace(b'\n', b'\r\n') if pin['transform'] != 'none' else source
+            self.assertEqual((self.root / pin['source_path']).read_bytes(), source)
+        staged = {path.relative_to(self.destination).as_posix(): path.read_bytes()
+                  for path in self.destination.rglob('*') if path.is_file()}
+        self.assertEqual(staged, expected_data)
+        descriptor = staged['missions/d2x.mn2']
+        self.assertTrue(descriptor.endswith(b'\r\n\x1a'))
+        self.assertEqual(assets.stage_inventory(self.destination, self.expected), base)
+        checked = assets.stage_inventory(self.destination, self.expected, include_missions=True)
+        self.assertIs(checked['matches_tested_edition'], True)
+        self.assertEqual(len(checked['files']), 14)
+        self.assertEqual(checked['verification_scope'], 'staged-only')
+        self.assertNotEqual(checked['manifest_sha256'], expanded['manifest_sha256'])
+        self.assertTrue(all('source_sha256' not in row for row in checked['files']))
+        with self.assertRaises(OSError):
+            assets.inventory(self.destination, self.expected, include_missions=True)
+
+    def test_expanded_identity_binds_both_hashes_paths_and_transform(self):
+        self.mission_fixture()
+        result = assets.inventory(self.root, self.expected, include_missions=True)
+        for field in ('path', 'source_sha256', 'sha256', 'transform'):
+            records = copy.deepcopy(result['files'])
+            records[12][field] += '.changed'
+            with self.subTest(field=field):
+                self.assertNotEqual(assets.identity_digest(records, include_missions=True), result['manifest_sha256'])
+
+    def test_supplemental_hog_and_zip_mismatch_records_actual_bytes_and_refuses_stage(self):
+        pins = self.mission_fixture()
+        for pin in (pins[0], pins[2]):
+            path = self.root / pin['source_path']
+            path.write_bytes(b'wrong package')
+            result = assets.inventory(self.root, self.expected, include_missions=True)
+            row = next(row for row in result['files'] if row['path'] == pin['path'])
+            self.assertIs(result['matches_tested_edition'], False)
+            self.assertEqual(row['source_size'], len(b'wrong package'))
+            self.assertEqual(row['source_sha256'], hashlib.sha256(b'wrong package').hexdigest())
+            with self.assertRaises(ValueError):
+                assets.stage(self.root, self.destination, result, include_missions=True)
+            self.assertFalse(self.destination.exists())
+            path.write_bytes(self.mission_data[pin['source_path']])
+
+    def test_descriptor_edits_and_unreviewed_line_endings_never_normalize(self):
+        pin = self.mission_fixture()[1]
+        path = self.root / pin['source_path']
+        original = self.mission_data[pin['source_path']]
+        variants = (original.replace(b'Synthetic', b'Changed!!'), original.replace(b'\n', b'\r\n'),
+                    original.replace(b'\n', b'\r\n', 1), original.replace(b'\n', b'\r'),
+                    b'\xef\xbb\xbf' + original, original + b'extra')
+        for changed in variants:
+            with self.subTest(changed=changed):
+                path.write_bytes(changed)
+                result = assets.inventory(self.root, self.expected, include_missions=True)
+                row = result['files'][12]
+                self.assertIs(result['matches_tested_edition'], False)
+                self.assertEqual(row['source_size'], len(changed))
+                self.assertEqual(row['source_sha256'], hashlib.sha256(changed).hexdigest())
+                self.assertIsNone(row['size'])
+                self.assertIsNone(row['sha256'])
+                with self.assertRaises(ValueError):
+                    assets.stage(self.root, self.destination, result, include_missions=True)
+                with self.assertRaisesRegex(ValueError, 'Unapproved Vertigo descriptor input'):
+                    assets.file_identity(path, self.base / 'normalized.mn2', normalize_descriptor=True)
+                self.assertFalse((self.base / 'normalized.mn2').exists())
+                self.assertFalse(self.destination.exists())
+                self.assertEqual(path.read_bytes(), changed)
+
+    def test_descriptor_normalization_must_match_existing_destination_pin(self):
+        pins = self.mission_fixture()
+        pins[1]['sha256'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'differs from existing fixture pin'):
+            assets.file_identity(self.root / pins[1]['source_path'], self.base / 'normalized.mn2', normalize_descriptor=True)
+        self.assertFalse((self.base / 'normalized.mn2').exists())
+
+    def test_supplemental_manifest_cannot_change_membership_sources_pins_or_transform(self):
+        self.mission_fixture()
+        good = assets.inventory(self.root, self.expected, include_missions=True)
+        with self.assertRaises(ValueError):
+            assets.stage(self.root, self.destination, good)
+        mutations = [lambda m: m['files'].pop(), lambda m: m['files'].append(m['files'][-1]),
+                     lambda m: m['files'][12].update(transform='arbitrary-text-normalization'),
+                     lambda m: m['files'][12].update(source_path='../outside.mn2'),
+                     lambda m: m['files'][12].update(source_sha256='0' * 64),
+                     lambda m: m['files'][12].update(source_size=0),
+                     lambda m: m['files'][12].update(sha256='0' * 64),
+                     lambda m: m['files'][12].update(size=0),
+                     lambda m: m['files'][0].update(transform='d2x-mn2-lf-to-crlf')]
+        for mutate in mutations:
+            bad = copy.deepcopy(good)
+            mutate(bad)
+            bad['manifest_sha256'] = assets.identity_digest(bad['files'], include_missions=True)
+            with self.assertRaises(ValueError):
+                assets.stage(self.root, self.destination, bad, include_missions=True)
+            self.assertFalse(self.destination.exists())
+        sources = assets.checked_source_paths()
+        sources['missions/d2x.hog'] = 'descent_2_vertigo/d2x.hog'
+        with self.assertRaises(ValueError):
+            assets.inventory(self.root, self.expected, sources, include_missions=True)
+
+    def test_missing_supplemental_files_are_not_silently_omitted(self):
+        pins = self.mission_fixture()
+        for pin in pins:
+            path = self.root / pin['source_path']
+            path.unlink()
+            with self.assertRaises(OSError):
+                assets.inventory(self.root, self.expected, include_missions=True)
+            path.write_bytes(self.mission_data[pin['source_path']])
+        self.assertFalse(self.destination.exists())
+
+    def test_supplemental_source_changes_after_inventory_remove_entire_stage(self):
+        pins = self.mission_fixture()
+        manifest = assets.inventory(self.root, self.expected, include_missions=True)
+        for pin in pins:
+            path = self.root / pin['source_path']
+            path.write_bytes(b'changed after inventory')
+            with self.assertRaises(ValueError):
+                assets.stage(self.root, self.destination, manifest, include_missions=True)
+            self.assertFalse(self.destination.exists())
+            self.assertEqual(path.read_bytes(), b'changed after inventory')
+            path.write_bytes(self.mission_data[pin['source_path']])
+
+    def test_staged_mission_recheck_rejects_changed_destination_bytes(self):
+        pins = self.mission_fixture()
+        manifest = assets.inventory(self.root, self.expected, include_missions=True)
+        assets.stage(self.root, self.destination, manifest, include_missions=True)
+        for pin in pins:
+            path = self.destination / pin['path']
+            original = path.read_bytes()
+            path.write_bytes(b'changed stage')
+            result = assets.stage_inventory(self.destination, self.expected, include_missions=True)
+            self.assertIs(result['matches_tested_edition'], False)
+            self.assertEqual([row['path'] for row in result['files'] if not row['matches_tested_edition']], [pin['path']])
+            path.write_bytes(original)
+
+    def test_supplemental_symlink_rejected_before_reading_and_during_stage(self):
+        pin = self.mission_fixture()[0]
+        manifest = assets.inventory(self.root, self.expected, include_missions=True)
+        path = self.root / pin['source_path']
+        moved = path.with_name('real.hog')
+        path.rename(moved)
+        self.symlink(path, moved)
+        with self.assertRaises(ValueError):
+            assets.inventory(self.root, self.expected, include_missions=True)
+        with self.assertRaises(ValueError):
+            assets.stage(self.root, self.destination, manifest, include_missions=True)
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(moved.read_bytes(), self.mission_data[pin['source_path']])
+
+    def test_cli_missions_switch_keeps_reviewed_pins_and_reports_raw_mismatch(self):
+        self.mission_fixture()
+        # The subprocess retains production pins, never the patched synthetic pins
+        process = self.cli('--include-missions', '--stage', self.destination)
+        self.assertEqual(process.returncode, 1, process.stderr)
+        result = json.loads(self.report.read_text())
+        self.assertEqual(len(result['files']), 14)
+        self.assertIs(result['matches_tested_edition'], False)
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(result['files'][12]['source_size'], len(self.mission_data['descent_2_vertigo/d2x.mn2']))
+        self.assertIsNone(result['files'][12]['sha256'])
+
     def test_repository_baseline_remains_exactly_eleven_source_pins(self):
         expected = assets.baseline(REPO)
         self.assertEqual(len(expected), 11)

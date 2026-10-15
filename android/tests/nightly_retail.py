@@ -28,7 +28,7 @@ def configured_identity(env=None):
     if not re.fullmatch('[0-9a-f]{40}', commit):
         raise ValueError('Retail assets require an immutable forty-character commit')
     return {'repository': ASSET_REPOSITORY, 'commit': commit,
-            'manifest_sha256': baseline_identity(Path(__file__).resolve().parents[2])}
+            'manifest_sha256': baseline_identity(Path(__file__).resolve().parents[2], include_missions=True)}
 
 
 def validate_identity(identity):
@@ -37,12 +37,12 @@ def validate_identity(identity):
     if (not isinstance(identity, dict) or set(identity) != {'repository', 'commit', 'manifest_sha256'}
             or identity['repository'] != ASSET_REPOSITORY
             or not re.fullmatch('[0-9a-f]{40}', identity.get('commit', ''))
-            or identity['manifest_sha256'] != baseline_identity(Path(__file__).resolve().parents[2])):
+            or identity['manifest_sha256'] != baseline_identity(Path(__file__).resolve().parents[2], include_missions=True)):
         raise ValueError('Unapproved retail asset identity')
 
 
 def lane_requires_retail(plan, lane):
-    return any(entry['lane'] == lane and entry.get('fixture') == 'retail-base' for entry in plan['tests'])
+    return any(entry['lane'] == lane and entry.get('fixture') in ('retail-base', 'retail-missions') for entry in plan['tests'])
 
 
 def public_receipt(receipt):

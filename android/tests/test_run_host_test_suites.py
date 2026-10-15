@@ -1,10 +1,13 @@
 """Adapter contracts without executing target native, PowerShell, or device tests."""
 
+import hashlib
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+import warnings
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -33,6 +36,7 @@ class HostAdapterTests(unittest.TestCase):
                     "configured-ctest",
                     "public-powershell",
                     "retail-powershell",
+                    "retail-python",
                     "standalone-cmake",
                 },
             )
@@ -440,31 +444,39 @@ class RetailProfileTests(unittest.TestCase):
                     events.append(argv[0])
 
                 def wait(self, **kwargs):
-                    return owner_code if self.argv[0] == "pwsh" else setup_code
+                    return setup_code if self.argv[0] == "cmake" else owner_code
 
             with (
                 patch.object(
                     adapter,
                     "verify_retail_stage",
-                    side_effect=lambda repo: events.append("verify"),
+                    side_effect=lambda repo, **kwargs: events.append("verify"),
                 ) as verify,
+                patch.object(adapter, "prepare_obsidian_mission") as prepare,
                 patch.object(adapter.subprocess, "Popen", Process),
             ):
                 code = adapter.run_suite(
                     suite, root, root / "build", root / "receipt.json", 30
                 )
-                verify.assert_called_once_with(root)
+                if suite.get("fixture") == "retail-missions":
+                    verify.assert_called_once_with(root, include_missions=True)
+                else:
+                    verify.assert_called_once_with(root)
+                if profile == "retail-obsidian-liquid":
+                    prepare.assert_called_once_with(root, root / "receipt.artifacts")
+                else:
+                    prepare.assert_not_called()
             receipt = json.loads((root / "receipt.json").read_text())
             self.assertEqual(events[0], "verify")
             return code, receipt, calls, root
 
-    def test_retail_registry_is_four_fixed_owners_and_portable_controls(self):
+    def test_base_retail_registry_is_four_fixed_owners_and_portable_controls(self):
         suites = adapter.load_suites()
         self.assertEqual(
             {
                 suite["profile"]
                 for suite in suites.values()
-                if suite["kind"] == "retail-powershell"
+                if suite.get("fixture") == "retail-base"
             },
             {
                 "retail-secret-baseline",
@@ -474,7 +486,7 @@ class RetailProfileTests(unittest.TestCase):
             },
         )
         for suite in suites.values():
-            if suite["kind"] == "retail-powershell":
+            if suite.get("fixture") == "retail-base":
                 self.assertEqual(suite["fixture"], "retail-base")
                 self.assertFalse(suite["public_data"])
                 self.assertFalse(suite["virtual_display"])
@@ -651,6 +663,231 @@ class RetailProfileTests(unittest.TestCase):
             adapter.retail_profile_arguments(
                 {"profile": "arbitrary"}, Path("repo"), Path("build"), Path("work")
             )
+
+    def test_two_expansion_profiles_require_mission_stage(self):
+        suites = adapter.load_suites()
+        expansions = [
+            suite
+            for suite in suites.values()
+            if suite.get("fixture") == "retail-missions"
+        ]
+        self.assertEqual(
+            {suite["profile"] for suite in expansions},
+            {"retail-vertigo-metadata", "retail-obsidian-liquid"},
+        )
+        for suite in expansions:
+            self.assertEqual(suite["games"], ["d2"])
+            self.assertFalse(suite["public_data"])
+            self.assertFalse(suite["virtual_display"])
+        registry = json.loads(adapter.REGISTRY.read_text(encoding="utf-8"))
+        self.assertNotIn(
+            "android/tests/test_secret_area_liquid_obsidian.py",
+            {entry["path"] for entry in registry["unsupported_entrypoints"]},
+        )
+
+    def test_vertigo_profile_uses_reused_worker_and_exact_staged_missions(self):
+        code, receipt, calls, root = self.run_profile("retail-vertigo-metadata")
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(calls[1][-1], "dxx-redux-d2-metadata-worker")
+        self.assertEqual(Path(calls[-1][4]).name, "test_vertigo_metadata.ps1")
+        self.assertEqual(
+            calls[-1][5:],
+            [
+                "-NoBuild",
+                "-Worker",
+                str(root / "build/engine-d2/main/dxx-redux-d2-metadata-worker"),
+                "-DataDir",
+                str(root / "game_data/retail-ci/d2"),
+                "-VertigoDir",
+                str(root / "game_data/retail-ci/missions"),
+            ],
+        )
+        self.assertTrue(receipt["attempted_tests"])
+
+    def test_obsidian_profile_keeps_assertions_and_native_owner_timeout(self):
+        for owner_code in (0, 1):
+            with self.subTest(owner_code=owner_code):
+                code, receipt, calls, root = self.run_profile(
+                    "retail-obsidian-liquid", owner_code=owner_code
+                )
+                self.assertEqual(code, owner_code)
+                self.assertEqual(len(calls), 3)
+                self.assertEqual(calls[1][-1], "dxx-redux-d2-headless-metadata")
+                # Isolated Python ignores PYTHONOPTIMIZE and user site hooks
+                self.assertEqual(calls[-1][:2], [sys.executable, "-I"])
+                self.assertEqual(
+                    Path(calls[-1][2]).name, "test_secret_area_liquid_obsidian.py"
+                )
+                self.assertEqual(
+                    calls[-1][3:],
+                    [
+                        "--exe",
+                        str(root / "build/engine-d2/main/dxx-redux-d2-headless-metadata"),
+                        "--hogdir",
+                        str(root / "game_data/retail-ci/d2"),
+                        "--mission-dir",
+                        str(root / "receipt.artifacts/obsidian-stage"),
+                        "--output",
+                        str(root / "receipt.artifacts/obsidian-liquid.json"),
+                    ],
+                )
+                self.assertEqual(receipt["coverage_complete"], owner_code == 0)
+        repo = Path(__file__).resolve().parents[2]
+        owner = (repo / "android/tests/test_secret_area_liquid_obsidian.py").read_text()
+        self.assertIn("timeout=60", owner)
+        self.assertIn('assert level["secret_count"] == 6', owner)
+        self.assertIn("{(154,), (282,)}", owner)
+
+    def test_expansion_setup_errors_never_launch_builds_or_assertions(self):
+        for profile, failing_step, error in (
+            ("retail-vertigo-metadata", "verify", ValueError("wrong mission pin")),
+            ("retail-obsidian-liquid", "verify", OSError("missing mission file")),
+            ("retail-obsidian-liquid", "extract", zipfile.BadZipFile("invalid ZIP")),
+            ("retail-obsidian-liquid", "extract", ValueError("wrong member digest")),
+        ):
+            with (
+                self.subTest(profile=profile, error=str(error)),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory).resolve()
+                suite = adapter.load_suites()["host-profile:" + profile]
+                script = root / suite["path"]
+                script.parent.mkdir(parents=True)
+                script.touch()
+                with (
+                    patch.object(
+                        adapter, "verify_retail_stage",
+                        side_effect=error if failing_step == "verify" else None,
+                    ),
+                    patch.object(
+                        adapter, "prepare_obsidian_mission",
+                        side_effect=error if failing_step == "extract" else None,
+                    ),
+                    patch.object(adapter.subprocess, "Popen") as launch,
+                ):
+                    code = adapter.run_suite(
+                        suite, root, root / "build", root / "receipt.json", 10
+                    )
+                self.assertEqual(code, 2)
+                launch.assert_not_called()
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(receipt["phase"], "setup")
+                self.assertEqual(receipt["status"], "BLOCKED")
+                self.assertTrue(receipt["retryable"])
+                self.assertFalse(receipt["attempted_tests"])
+                self.assertEqual(receipt["cases"], [])
+
+
+class ObsidianExtractionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = self.enterContext(tempfile.TemporaryDirectory())
+        self.root = Path(self.temp).resolve()
+        self.work = self.root / "work"
+        self.work.mkdir()
+        self.archive = self.root / "game_data/retail-ci/missions/obsidian.zip"
+        self.archive.parent.mkdir(parents=True)
+        self.contents = {
+            "obsidian.hog": b"Synthetic mission HOG, not licensed content",
+            "obsidian.mn2": b"Synthetic mission descriptor, not licensed content",
+        }
+        self.pins = {
+            name: (len(data), hashlib.sha256(data).hexdigest())
+            for name, data in self.contents.items()
+        }
+
+    def write_archive(self, entries=None):
+        with warnings.catch_warnings(), zipfile.ZipFile(self.archive, "w") as archive:
+            warnings.simplefilter("ignore", UserWarning)
+            for name, data in entries or self.contents.items():
+                archive.writestr(name, data)
+
+    def prepare(self):
+        with patch.object(adapter, "OBSIDIAN_MEMBERS", self.pins):
+            adapter.prepare_obsidian_mission(self.root, self.work)
+
+    def test_exact_real_member_pins_are_preserved(self):
+        self.assertEqual(
+            adapter.OBSIDIAN_MEMBERS,
+            {
+                "obsidian.hog": (
+                    35385307,
+                    "32ee5f893718c2191975c826a6f95f116658b143b69bbf2aa73a9455174508db",
+                ),
+                "obsidian.mn2": (
+                    338,
+                    "1bf9a8cc9882a67356e16f08e06cb82923ca920710bf30d245cd7be9829bdde6",
+                ),
+            },
+        )
+
+    def test_only_two_members_are_installed_under_native_missions_directory(self):
+        self.write_archive([
+            *self.contents.items(), ("obsidian.bat", b"never execute or copy")
+        ])
+        self.prepare()
+        stage = self.work / "obsidian-stage"
+        self.assertEqual(
+            sorted(
+                path.relative_to(stage).as_posix()
+                for path in stage.rglob("*") if path.is_file()
+            ),
+            ["missions/obsidian.hog", "missions/obsidian.mn2"],
+        )
+        for name, data in self.contents.items():
+            self.assertEqual((stage / "missions" / name).read_bytes(), data)
+        with self.assertRaises(FileExistsError):
+            self.prepare()
+
+    def test_duplicate_case_alias_and_unsafe_paths_are_rejected(self):
+        for name in (
+            "../outside", "/outside", "folder/file", "folder\\file", "C:outside",
+            "obsidian.hog", "OBSIDIAN.HOG",
+        ):
+            with self.subTest(name=name):
+                self.write_archive([*self.contents.items(), (name, b"unsafe")])
+                with self.assertRaises(ValueError):
+                    self.prepare()
+                self.assertFalse((self.work / "obsidian-stage").exists())
+
+    def test_missing_member_and_size_mismatch_are_rejected_before_extraction(self):
+        for entries in (
+            [("obsidian.hog", self.contents["obsidian.hog"])],
+            [
+                ("obsidian.hog", b"wrong size"),
+                ("obsidian.mn2", self.contents["obsidian.mn2"]),
+            ],
+        ):
+            with self.subTest(entries=entries):
+                self.write_archive(entries)
+                with self.assertRaises(ValueError):
+                    self.prepare()
+                self.assertFalse((self.work / "obsidian-stage").exists())
+
+    def test_same_size_hash_mismatch_removes_partial_stage(self):
+        entries = list(self.contents.items())
+        entries[-1] = ("obsidian.mn2", b"x" * len(self.contents["obsidian.mn2"]))
+        self.write_archive(entries)
+        with self.assertRaises(ValueError):
+            self.prepare()
+        self.assertFalse((self.work / "obsidian-stage").exists())
+
+    def test_symlink_zip_member_and_excessive_member_count_are_rejected(self):
+        link = zipfile.ZipInfo("obsidian.hog")
+        link.create_system = 3
+        link.external_attr = (0o120777 << 16)
+        self.write_archive([
+            (link, self.contents["obsidian.hog"]),
+            ("obsidian.mn2", self.contents["obsidian.mn2"]),
+        ])
+        with self.assertRaises(ValueError):
+            self.prepare()
+        self.write_archive([
+            *self.contents.items(), *((f"extra{i}", b"") for i in range(31))
+        ])
+        with self.assertRaises(ValueError):
+            self.prepare()
+        self.assertFalse((self.work / "obsidian-stage").exists())
 
 
 class StandaloneCMakeTests(unittest.TestCase):

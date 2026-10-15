@@ -18,6 +18,22 @@ FILES = {
 }
 
 
+# Staged identities match the existing Vertigo and Obsidian fixture pins
+# Only the reviewed LF descriptor is converted, exclusively in the new stage
+MISSION_FILES = (
+    {'path': 'missions/d2x.hog', 'source_path': 'descent_2_vertigo/d2x.hog',
+     'source_size': 4371791, 'source_sha256': '97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6',
+     'size': 4371791, 'sha256': '97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6', 'transform': 'none'},
+    {'path': 'missions/d2x.mn2', 'source_path': 'descent_2_vertigo/d2x.mn2',
+     'source_size': 381, 'source_sha256': '7b7e2445304d5541c42af7d2033ad2cbf693a2db080270853f46ecfd26825811',
+     'size': 408, 'sha256': '42d1c04c96f4dad7e8d03a6fdf342ac9ccd22672c0db5886f965638bd325764d',
+     'transform': 'd2x-mn2-lf-to-crlf'},
+    {'path': 'missions/obsidian.zip', 'source_path': 'missions/Obsidian.zip',
+     'source_size': 7676896, 'source_sha256': '441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce',
+     'size': 7676896, 'sha256': '441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce', 'transform': 'none'},
+)
+
+
 def baseline(repo):
     source = (Path(repo) / 'android/helpers/standard_game_data.ps1').read_text(encoding='utf-8')
     blocks = re.findall(
@@ -40,16 +56,23 @@ def baseline(repo):
     return dict(pairs)
 
 
-def identity_digest(records):
+def identity_digest(records, include_missions=False):
     identity = sorted(({'path': row['path'], 'sha256': row['sha256']} for row in records),
                       key=lambda row: row['path'])
+    if include_missions:
+        identity = sorted(({'path': row['path'], 'sha256': row['sha256'],
+                            'source_sha256': row.get('source_sha256', row['sha256']),
+                            'transform': row.get('transform', 'none')} for row in records), key=lambda row: row['path'])
     return hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode('ascii')).hexdigest()
 
 
-def baseline_identity(repo):
+def baseline_identity(repo, include_missions=False):
     expected = baseline(repo)
-    return identity_digest([{'path': game + '/' + name, 'sha256': expected[name]}
-                            for game, names in FILES.items() for name in names])
+    records = [{'path': game + '/' + name, 'sha256': expected[name]}
+               for game, names in FILES.items() for name in names]
+    if include_missions:
+        records.extend(MISSION_FILES)
+    return identity_digest(records, include_missions)
 
 
 def reject_links(path):
@@ -64,7 +87,7 @@ def reject_links(path):
             raise ValueError('Retail paths must not contain symbolic links or junctions')
 
 
-def file_identity(path, target=None):
+def file_identity(path, target=None, normalize_descriptor=False):
     """Stream bytes with bounded memory and reject replacement or in-place changes."""
     reject_links(path)
     before = path.stat()
@@ -77,10 +100,15 @@ def file_identity(path, target=None):
             raise ValueError('Retail file changed while opening')
         digest = hashlib.sha256()
         size = 0
-        with target.open('xb') if target else nullcontext() as output:
+        descriptor = bytearray()
+        with target.open('xb') if target and not normalize_descriptor else nullcontext() as output:
             for chunk in iter(lambda: stream.read(1024 * 1024), b''):
                 size += len(chunk)
                 digest.update(chunk)
+                if normalize_descriptor:
+                    if size > MISSION_FILES[1]['source_size']:
+                        raise ValueError('Unapproved Vertigo descriptor input')
+                    descriptor.extend(chunk)
                 if output is not None:
                     output.write(chunk)
         reject_links(path)
@@ -91,6 +119,18 @@ def file_identity(path, target=None):
             if (not os.path.samestat(previous, current) or previous.st_size != current.st_size
                     or previous.st_mtime_ns != current.st_mtime_ns or previous.st_ctime_ns != current.st_ctime_ns):
                 raise ValueError('Retail file changed while reading')
+    if normalize_descriptor:
+        pin = MISSION_FILES[1]
+        if ((size, digest.hexdigest()) != (pin['source_size'], pin['source_sha256']) or b'\r' in descriptor):
+            raise ValueError('Unapproved Vertigo descriptor input')
+        normalized = descriptor.replace(b'\n', b'\r\n')
+        identity = len(normalized), hashlib.sha256(normalized).hexdigest()
+        if identity != (pin['size'], pin['sha256']):
+            raise ValueError('Normalized Vertigo descriptor differs from existing fixture pin')
+        if target is not None:
+            with target.open('xb') as output:
+                output.write(normalized)
+        return identity
     return size, digest.hexdigest()
 
 
@@ -116,7 +156,7 @@ def unique_source_keys(pairs):
     return result
 
 
-def inventory(root, expected, source_paths=None):
+def inventory(root, expected, source_paths=None, include_missions=False):
     if (set(expected) != {name for names in FILES.values() for name in names}
             or any(not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value)
                    for value in expected.values())):
@@ -141,24 +181,63 @@ def inventory(root, expected, source_paths=None):
             if mapped:
                 row['source_path'] = sources[relative]
             records.append(row)
-    return {'schema': 1, 'files': records, 'manifest_sha256': identity_digest(records),
-            'matches_tested_edition': all(row['matches_tested_edition'] for row in records)}
+    if include_missions:
+        for pin in MISSION_FILES:
+            source_size, source_digest = file_identity(root / pin['source_path'])
+            matches = (source_size, source_digest) == (pin['source_size'], pin['source_sha256'])
+            size, digest = source_size, source_digest
+            if pin['transform'] != 'none':
+                # Never transform unreviewed input; report its raw identity on mismatch
+                size, digest = file_identity(root / pin['source_path'], normalize_descriptor=True) if matches else (None, None)
+            records.append({'path': pin['path'], 'source_path': pin['source_path'],
+                            'source_size': source_size, 'source_sha256': source_digest,
+                            'size': size, 'sha256': digest, 'transform': pin['transform'],
+                            'matches_tested_edition': matches and (size, digest) == (pin['size'], pin['sha256'])})
+    result = {'schema': 1, 'files': records, 'manifest_sha256': identity_digest(records, include_missions),
+              'matches_tested_edition': all(row['matches_tested_edition'] for row in records)}
+    if include_missions:
+        result['includes_missions'] = True
+    return result
 
 
-def stage(root, destination, manifest):
+def stage_inventory(root, expected, include_missions=False):
+    """Verify canonical staged bytes without claiming to recheck their raw sources."""
+    result = inventory(root, expected)
+    if include_missions:
+        for pin in MISSION_FILES:
+            size, digest = file_identity(Path(root) / pin['path'])
+            result['files'].append({'path': pin['path'], 'size': size, 'sha256': digest,
+                                    'matches_tested_edition': (size, digest) == (pin['size'], pin['sha256'])})
+        result['manifest_sha256'] = identity_digest(result['files'])
+        result['matches_tested_edition'] = all(row['matches_tested_edition'] for row in result['files'])
+        result['includes_missions'] = True
+        result['verification_scope'] = 'staged-only'
+    return result
+
+
+def stage(root, destination, manifest, include_missions=False):
     if manifest.get('matches_tested_edition') is not True:
         raise ValueError('Supplied retail edition differs from existing test fixtures; review identities before enabling tests')
     records = manifest.get('files', [])
     paths = [game + '/' + name for game, names in FILES.items() for name in names]
-    if (manifest.get('schema') != 1 or not isinstance(records, list) or len(records) != 11
+    if include_missions:
+        paths.extend(pin['path'] for pin in MISSION_FILES)
+    if (manifest.get('schema') != 1 or manifest.get('includes_missions', False) is not include_missions
+            or not isinstance(records, list) or len(records) != len(paths)
             or any(not isinstance(row, dict) for row in records)
             or [row.get('path') for row in records] != paths
+            or any(row.get('transform', 'none') != 'none' for row in records[:11])
             or any(row.get('matches_tested_edition') is not True or type(row.get('size')) is not int
                    or row['size'] < 0 or not isinstance(row.get('sha256'), str)
                    or not re.fullmatch('[0-9a-f]{64}', row['sha256']) for row in records)
-            or manifest.get('manifest_sha256') != identity_digest(records)):
+            or manifest.get('manifest_sha256') != identity_digest(records, include_missions)):
         raise ValueError('Invalid verified retail inventory')
-    sources = checked_source_paths({row['path']: row.get('source_path', row['path']) for row in records})
+    if include_missions and any(any(row.get(key) != value for key, value in pin.items())
+                                for row, pin in zip(records[11:], MISSION_FILES)):
+        raise ValueError('Unapproved supplemental retail identity or transform')
+    sources = checked_source_paths({row['path']: row.get('source_path', row['path']) for row in records[:11]})
+    if include_missions:
+        sources.update({pin['path']: pin['source_path'] for pin in MISSION_FILES})
     root, destination = Path(root), Path(destination)
     reject_links(root)
     reject_links(destination)
@@ -172,7 +251,11 @@ def stage(root, destination, manifest):
             target = destination / row['path']
             reject_links(target)
             target.parent.mkdir(exist_ok=True)
-            size, digest = file_identity(root / sources[row['path']], target)
+            source = root / sources[row['path']]
+            if row.get('transform') == 'd2x-mn2-lf-to-crlf':
+                size, digest = file_identity(source, target, normalize_descriptor=True)
+            else:
+                size, digest = file_identity(source, target)
             if size != row['size'] or digest != row['sha256']:
                 raise ValueError('Retail file changed during staging')
             if file_identity(target) != (row['size'], row['sha256']):
@@ -188,6 +271,7 @@ def main():
     parser.add_argument('--repo', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path, help='New metadata-only report path')
     parser.add_argument('--stage', type=Path)
+    parser.add_argument('--include-missions', action='store_true', help='Include the three reviewed Vertigo/Obsidian files')
     parser.add_argument('--source-map', type=Path, help='Reviewed JSON map from canonical paths to supplied relative paths')
     args = parser.parse_args()
     reject_links(args.output)
@@ -202,7 +286,7 @@ def main():
         source_paths = json.loads(args.source_map.read_text(encoding='utf-8'), object_pairs_hook=unique_source_keys)
         if source_paths is None:
             raise ValueError('Retail source map must be a JSON object')
-    result = inventory(args.root, baseline(args.repo), source_paths)
+    result = inventory(args.root, baseline(args.repo), source_paths, args.include_missions)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x', encoding='utf-8', newline='\n') as output:
         output.write(json.dumps(result, indent=2) + '\n')
@@ -210,8 +294,8 @@ def main():
         print('Retail edition mismatch; inspect file identities in the inventory report', file=sys.stderr)
         return 1
     if args.stage:
-        stage(args.root, args.stage, result)
-    print('Verified eleven retail files against the existing tested edition')
+        stage(args.root, args.stage, result, args.include_missions)
+    print('Verified ' + ('fourteen' if args.include_missions else 'eleven') + ' retail files against the existing tested edition')
     return 0
 
 

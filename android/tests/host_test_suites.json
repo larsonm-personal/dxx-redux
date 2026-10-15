@@ -1385,6 +1385,55 @@
         "Full target checkout and native dependencies required; no custom mission, media, Android or public-profile coverage claim."
       ],
       "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:retail-vertigo-metadata",
+      "kind": "retail-powershell",
+      "profile": "retail-vertigo-metadata",
+      "path": "android/tests/test_vertigo_metadata.ps1",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "fixture": "retail-missions",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 600,
+      "coverage_scope": "Existing Vertigo reused-worker assertions: descriptor-only loading, unrelated HOG isolation, missing HAM rejection, and mount cleanup; aggregate receipt.",
+      "constraints": [
+        "Verified base eleven-file stage plus exact Vertigo/Obsidian mission stage at game_data/retail-ci/missions.",
+        "Native runtime qualification is pending; no full GuideBot family, Android, checkpoint, movie or other mission coverage claim."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:retail-obsidian-liquid",
+      "kind": "retail-python",
+      "profile": "retail-obsidian-liquid",
+      "path": "android/tests/test_secret_area_liquid_obsidian.py",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-headless-metadata",
+      "fixture": "retail-missions",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "Existing Obsidian level 13 liquid-secret assertions with exact HOG/MN2 inputs, both reward pockets and transparent-water negatives; aggregate receipt, unchanged 60-second native timeout.",
+      "constraints": [
+        "Verified base eleven-file stage plus exact Vertigo/Obsidian mission stage at game_data/retail-ci/missions.",
+        "Native runtime qualification is pending; no full GuideBot family, Android, checkpoint, movie or other mission coverage claim."
+      ],
+      "profile_exclusions": []
     }
   ],
   "owned_elsewhere": [
@@ -1403,10 +1452,6 @@
     {
       "path": "android/tests/test_fm_playback.py",
       "reason": "Requires explicit HOG song fixture, renderer and SF2; media/profile provenance not yet encoded."
-    },
-    {
-      "path": "android/tests/test_secret_area_liquid_obsidian.py",
-      "reason": "Exact Obsidian mission and game assets required; no public substitute."
     },
     {
       "path": "android/tests/test_replay_window_progress.py",
