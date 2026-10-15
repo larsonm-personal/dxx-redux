@@ -111,6 +111,9 @@
 
 param(
     [string]$Filter,
+    [string]$SelectedTestsPath,
+    [string]$EvidenceJournalPath,
+    [ValidateRange(0, 86400)][int]$TestBudgetSeconds = 0,
     [switch]$HostOnly,
     [switch]$SingleDevice,
     [string]$Serial,
@@ -145,6 +148,7 @@ $routeSampleSeed = if ($SampleSeed -gt 0) { $SampleSeed } else { [int]([DateTime
 . "$helpersDir\test_suite_progress.ps1"
 . "$helpersDir\runtime_targeted_sampling.ps1"
 . "$helpersDir\test_suite_coverage.ps1"
+. "$helpersDir\nightly_public_fixture_policy.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
@@ -1012,6 +1016,20 @@ Initialize-RegressionProcessLifetime
 $evidenceTestsByName = @{}
 foreach ($test in $allTests) { $evidenceTestsByName[$test.Name] = $test }
 
+# CI batches use exact catalog names, never wildcard command input.
+if ($SelectedTestsPath) {
+    if ($Filter -or $Target45Minutes) { throw 'Exact selection cannot combine with Filter or Target45Minutes' }
+    $selectedNames = @(Get-Content -LiteralPath $SelectedTestsPath -Raw | ConvertFrom-Json)
+    if (-not $selectedNames.Count -or $selectedNames.Count -gt 1024) { throw 'Invalid exact test selection size' }
+    $selectionSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($name in $selectedNames) {
+        if ($name -isnot [string] -or -not $selectionSet.Add($name) -or $name -cnotin $allTests.Name) {
+            throw "Unknown or duplicate exact test name: $name"
+        }
+    }
+    $allTests = @($allTests | Where-Object { $selectionSet.Contains($_.Name) })
+}
+
 # Apply filter
 if ($Filter) {
     . (Join-Path $testsDir 'guidebot_route_regression_cases.ps1')
@@ -1103,7 +1121,7 @@ $runnableTests = @($runnableTests | Where-Object {
     })
 
 $suiteCoverageProfile = 'all requested scenarios'
-if ($Target45Minutes -or (-not $Filter -and -not $IncludeManual)) {
+if (-not $SelectedTestsPath -and ($Target45Minutes -or (-not $Filter -and -not $IncludeManual))) {
     $coverageSelection = @(Select-TestSuiteCoverage -Tests $runnableTests -Seed $routeSampleSeed -AllScenarios:($FullSuite -or $Target45Minutes))
     $explicitTests = (Get-TestSuiteCoveragePolicy).explicit
     foreach ($test in $runnableTests) {
@@ -1366,6 +1384,14 @@ function Test-SingleEmulatorFailureNeedsRecovery {
     return $logText -match 'SetupActivity not responding|SetupActivity not responding after 30s|Game never started after \d+ attempts|SetupActivity recovery could not restore launcher prerequisites|Launcher recovery failed|Emulator could not be restored|Can''t find service: package|no emulator device found|shell unresponsive'
 }
 
+# Only audited media-independent owners may install the app without retail data.
+$script:suiteRequiresStandardGameData = $true
+function Install-SuiteTarget {
+    param([string]$Serial)
+    if ($script:suiteRequiresStandardGameData) { return Install-AppAndData -Serial $Serial }
+    return Install-ApkOnDevice -Serial $Serial
+}
+
 function Recover-SingleEmulatorEnvironment {
     param([ref]$SerialRef)
 
@@ -1392,7 +1418,7 @@ function Recover-SingleEmulatorEnvironment {
         return $false
     }
 
-    if (-not (Install-AppAndData -Serial $serial)) {
+    if (-not (Install-SuiteTarget -Serial $serial)) {
         Write-Status "Single-emulator recovery failed: app/data provisioning failed" "Red"
         return $false
     }
@@ -1441,8 +1467,8 @@ function Recover-DualEmulatorEnvironment {
         return $false
     }
 
-    if (-not (Install-AppAndData -Serial $primarySerial) -or
-        -not (Install-AppAndData -Serial $secondarySerial)) {
+    if (-not (Install-SuiteTarget -Serial $primarySerial) -or
+        -not (Install-SuiteTarget -Serial $secondarySerial)) {
         Write-Status "Dual-emulator recovery failed: app/data provisioning failed" "Red"
         return $false
     }
@@ -1533,7 +1559,7 @@ function Invoke-PrimaryEmulatorPreflight {
 
     if (Test-PhysicalTestTarget) {
         Ensure-EmulatorHealthy | Out-Null
-        if (-not (Install-AppAndData -Serial $script:singleTestSerial)) { return $null }
+        if (-not (Install-SuiteTarget -Serial $script:singleTestSerial)) { return $null }
         if (Invoke-SetupActivityPreflight -Serial $script:singleTestSerial -RequireStandardGameData:$RequireStandardGameData) {
             return $script:singleTestSerial
         }
@@ -1559,7 +1585,7 @@ function Invoke-PrimaryEmulatorPreflight {
             return $null
         }
 
-        $appDataOk = Install-AppAndData -Serial $serial
+        $appDataOk = Install-SuiteTarget -Serial $serial
         if ($RequireStandardGameData -and -not $appDataOk) {
             Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
             return $null
@@ -1596,7 +1622,7 @@ function Invoke-SecondaryEmulatorPreflight {
 
     $serial = $script:SECONDARY_EMULATOR_SERIAL
     if (-not (Test-DeviceOnline -Serial $serial)) { return $null }
-    $appDataOk = Install-AppAndData -Serial $serial
+    $appDataOk = Install-SuiteTarget -Serial $serial
     if ($RequireStandardGameData -and -not $appDataOk) {
         Write-Status "Preflight: standard game data provisioning failed on $serial" "Red"
         return $null
@@ -1612,7 +1638,8 @@ function Invoke-SuitePreflight {
     $needsPrimaryEmulator = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
     $needsServer = $tierServer.Count -gt 0
     $needsExtractData = $tierExtract.Count -gt 0
-    $needsStandardGameData = ($tierSingleEmu.Count + $tierDualEmu.Count) -gt 0
+    $needsStandardGameData = Test-SuiteNeedsStandardGameData -Tests @($tierSingleEmu + $tierDualEmu)
+    $script:suiteRequiresStandardGameData = $needsStandardGameData -or $tierExtract.Count -gt 0
 
     if (-not ($needsPrimaryEmulator -or $needsServer -or $needsExtractData)) {
         return $true
@@ -1847,10 +1874,21 @@ if ($runnableTests.Count -gt 0 -and -not (Invoke-SuitePreflight)) {
 $evidenceContext = New-TestExecutionEvidenceContext -RepositoryRoot $repoRoot -ReportDir $ReportDir -ReportPath $reportFile
 $evidenceStartedUtc = [DateTime]::UtcNow.ToString('o')
 $script:evidenceFailed = $false
+function Write-SuiteEvidenceJournal {
+    param($Observation)
+    if ($EvidenceJournalPath) {
+        $parent = Split-Path -Parent ([IO.Path]::GetFullPath($EvidenceJournalPath))
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+        [IO.File]::AppendAllText($EvidenceJournalPath, (($Observation | ConvertTo-Json -Depth 12 -Compress) + "`n"), [Text.UTF8Encoding]::new($false))
+    }
+}
+
 function Save-SuiteTestEvidence {
     param([hashtable]$Test, [hashtable]$Result, [string]$StartedUtc, [string]$SourceSha256)
     try {
         $observation = New-TestExecutionObservation -Context $evidenceContext -Test $Test -Result $Result -StartedUtc $StartedUtc -SourceSha256 $SourceSha256
+        if ($Result -and $Result.ContainsKey('AttemptedTests')) { $observation['attempted_tests'] = [bool]$Result.AttemptedTests }
+        Write-SuiteEvidenceJournal -Observation $observation
         Write-TestExecutionEvidence -Path $evidenceContext.Path -HostKey $evidenceContext.HostKey -Observations @($observation)
     } catch {
         $script:evidenceFailed = $true
@@ -1867,6 +1905,7 @@ $skipCount = 0
 $infraSkipped = @($profileSkipped) + @($fixtureSkipped)
 $stopEarly = $false
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
+$script:completedTestSeconds = 0.0
 
 # Tracked infra for cleanup
 $script:autoServerProc = $null
@@ -1876,6 +1915,10 @@ $script:startedDocker = $false
 
 function Invoke-SingleTest {
     param([hashtable]$Test)
+    if ($TestBudgetSeconds -gt 0 -and $script:completedTestSeconds -ge $TestBudgetSeconds) {
+        $script:stopEarly = $true
+        return @{ Name = $Test.Name; Type = $Test.Type; Status = 'NOT_RUN'; Reason = 'test budget exhausted' }
+    }
     $name = $Test.Name
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
     & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $logFile | Out-Host
@@ -1953,10 +1996,11 @@ function Invoke-SingleTest {
     $stdout = ""
     $stderr = ""
     $powerSession = $null
+    $attemptedTests = $false
     try {
         if ($Test.Requires -eq 'emulator') {
             # Shareware owners replace the disposable default set; restore retail prerequisites between owners
-            if (-not (Ensure-StandardGameDataOnDevice -Serial $script:singleTestSerial)) {
+            if (-not (Test-SuiteMediaIndependentTest -Test $Test) -and -not (Ensure-StandardGameDataOnDevice -Serial $script:singleTestSerial)) {
                 throw "Could not restore standard game data before $name"
             }
             $powerSession = Start-AndroidTestPowerSession
@@ -1973,6 +2017,7 @@ function Invoke-SingleTest {
         if (Test-RegressionWindowsHost) { $startArguments.WindowStyle = "Hidden" }
         else { $startArguments.NoNewWindow = $true }
         $proc = Start-Process @startArguments
+        $attemptedTests = $true
 
         if (-not $proc.WaitForExit($testTimeout * 1000)) {
             $timedOut = $true
@@ -2012,6 +2057,7 @@ function Invoke-SingleTest {
     }
 
     $sw.Stop()
+    $script:completedTestSeconds += $sw.Elapsed.TotalSeconds
     $elapsed = $sw.Elapsed.ToString($(if ($sw.Elapsed.TotalHours -ge 1) { "hh\:mm\:ss" } else { "mm\:ss" }))
 
     $skipMarker = [regex]::Match("$stdout`n$stderr", '(?m)^RESULT:\s*SKIP(?:\s*\((?<reason>[^\r\n]*)\))?')
@@ -2037,7 +2083,7 @@ function Invoke-SingleTest {
 
     $result = @{
         Name = $name; Type = $Test.Type; Status = $status
-        ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile; Notes = $notes
+        ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile; Notes = $notes; AttemptedTests = $attemptedTests
         Reason = if ($status -eq "SKIP" -and $skipMarker.Groups["reason"].Success) {
             $skipMarker.Groups["reason"].Value
         } else { "" }
@@ -2183,10 +2229,10 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
         # Install APK and push game data via SHA256-indexed deps
         $emu1Serial = $script:singleTestSerial
         if ($emu1Serial) {
-            Install-AppAndData -Serial $emu1Serial
+            Install-SuiteTarget -Serial $emu1Serial
         } else {
             Install-ApkOnDevice | Out-Null
-            Push-GameDataToDevice
+            if ($script:suiteRequiresStandardGameData) { Push-GameDataToDevice }
         }
 
         $singleEmuFailureStreak = 0
@@ -2245,7 +2291,7 @@ if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
         if ($emu1Ok) {
             $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
             # Extraction tests stage their own sources; provision only standard game data
-            Install-AppAndData -Serial $emu1Serial | Out-Null
+            Install-SuiteTarget -Serial $emu1Serial | Out-Null
             foreach ($test in $tierExtract) {
                 if ($stopEarly) { break }
                 $result = Invoke-SingleTest -Test $test
@@ -2307,7 +2353,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         # Install APK + push data on the second emulator
         $emu1Serial = $script:PRIMARY_EMULATOR_SERIAL
         $emu2Serial = $script:SECONDARY_EMULATOR_SERIAL
-        Install-AppAndData -Serial $emu2Serial
+        Install-SuiteTarget -Serial $emu2Serial
 
         if ($script:needsInstrumentation) {
             $instrumentApk = Get-AndroidTestApkPath -Instrumentation
@@ -2366,6 +2412,7 @@ try {
             New-TestExecutionObservation -Context $evidenceContext -Test $definition -Result $observationResult -StartedUtc $evidenceStartedUtc
         })
     if ($pendingObservations.Count) {
+        foreach ($observation in $pendingObservations) { Write-SuiteEvidenceJournal -Observation $observation }
         Write-TestExecutionEvidence -Path $evidenceContext.Path -HostKey $evidenceContext.HostKey -Observations $pendingObservations
     }
 } catch {

@@ -58,6 +58,11 @@ jobs:
       - name: Install verified bounded Python
         shell: bash
         run: bash ./android/get_deps/helpers/get_bounded_python.sh
+      - name: Nightly sweep planner and ledger controls
+        shell: bash
+        run: |
+          python3 android/tests/test_nightly_tooling_sweep.py
+          python3 android/tests/test_run_host_test_suites.py
       - name: Tooling smoke tests
         shell: pwsh
         run: ./android/tests/run_tooling_smoke.ps1 -IncludeBoundedRuntime
