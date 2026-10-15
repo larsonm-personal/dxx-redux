@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "input_demo_fixture.h"
 #include "input_demo_limits.h"
@@ -756,8 +757,81 @@ static int expect_level_start_metadata(void)
 	return 0;
 }
 
+static int expect_asset_fingerprints(void)
+{
+	using json = nlohmann::ordered_json;
+	const bool d1 = std::string(input_demo_test_game_name()) == "d1";
+	json header = { { "type", "header" }, { "version", 3 }, { "game", input_demo_test_game_name() }, { "mission", "test" }, { "build_number", 0 }, { "git_version", "test" }, { "arch", "test" }, { "level", 1 }, { "difficulty", 2 }, { "start_mode", "new_level" }, { "rng_mode", "lcg_state" }, { "frame_count", 1 } };
+	json assets = { { "status", "complete" }, { "mode", d1 ? "native_d1" : "native_d2" }, { "files", json::array() } };
+	for (const char *kind : { "hog", "pig", "ham" }) {
+		if (d1 && std::string(kind) == "ham") continue;
+		assets["files"].push_back({ { "role", std::string(d1 ? "d1_" : "d2_") + kind }, { "name", std::string("renamed.") + kind }, { "size", 100 }, { "sha256", std::string(64, 'a') } });
+	}
+	header["asset_fingerprints"] = assets;
+	input_demo_metadata parsed;
+	std::string error, line;
+	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != assets)
+		return report_failure_string("asset fingerprint round trip failed: " + error);
+	auto member = assets;
+	member["files"][1]["container"] = d1 ? "d1_hog" : "d2_hog";
+	header["asset_fingerprints"] = member;
+	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !input_demo_metadata_to_header_line(parsed, &line, &error) || json::parse(line)["asset_fingerprints"] != member)
+		return report_failure_string("container member round trip failed: " + error);
+	std::vector<json> invalid;
+	auto invalid_container = member;
+	invalid_container["files"][1]["container"] = "mission_hog";
+	invalid.push_back(invalid_container);
+	invalid_container = member;
+	invalid_container["files"][1]["container"] = 1;
+	invalid.push_back(invalid_container);
+	invalid_container = member;
+	invalid_container["files"][0]["container"] = d1 ? "d1_hog" : "d2_hog";
+	invalid.push_back(invalid_container);
+
+	auto changed = assets;
+	changed["files"][1] = changed["files"][0];
+	invalid.push_back(changed);
+	changed = assets;
+	changed["files"].erase(1);
+	invalid.push_back(changed);
+	changed = assets;
+	changed["files"][0]["sha256"] = std::string(64, 'G');
+	invalid.push_back(changed);
+	changed = assets;
+	changed["files"][0]["size"] = 0;
+	invalid.push_back(changed);
+	changed = assets;
+	changed["files"][0]["size"] = -1;
+	invalid.push_back(changed);
+	changed = assets;
+	changed["files"][0]["unexpected"] = true;
+	invalid.push_back(changed);
+	changed = assets;
+	changed["unexpected"] = true;
+	invalid.push_back(changed);
+	changed = assets;
+	changed["mode"] = d1 ? "native_d2" : "native_d1";
+	invalid.push_back(changed);
+	changed = assets;
+	changed["status"] = "unknown";
+	invalid.push_back(changed);
+	invalid.push_back(nullptr);
+	for (const auto &value : invalid) {
+		header["asset_fingerprints"] = value;
+		if (input_demo_metadata_parse_header_line(header.dump(), &parsed, &error)) return report_failure("malformed asset fingerprint accepted");
+	}
+	header["asset_fingerprints"] = { { "status", "unknown" }, { "mode", d1 ? "native_d1" : "native_d2" }, { "files", json::array() }, { "error", "source unreadable" } };
+	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error)) return report_failure_string(error);
+	header.erase("asset_fingerprints");
+	if (!input_demo_metadata_parse_header_line(header.dump(), &parsed, &error) || !parsed.asset_fingerprints.empty()) return report_failure("legacy asset absence changed");
+	parsed.asset_fingerprints = "{";
+	if (input_demo_metadata_to_header_line(parsed, &line, &error)) return report_failure("malformed asset output accepted");
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_asset_fingerprints()) return 1;
 	if (expect_level_start_metadata())
 		return 1;
 	if (expect_rng_coalescer())

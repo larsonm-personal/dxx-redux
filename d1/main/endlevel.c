@@ -49,6 +49,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "bm.h"
 #include "gameseq.h"
 #include "newdemo.h"
+#include "input_demo_newdemo_shared.h"
 #include "multi.h"
 #include "vclip.h"
 #include "render.h"
@@ -242,7 +243,7 @@ void start_endlevel_sequence()
 	reset_rear_view(); //turn off rear view if set - NOTE: make sure this happens before we pause demo recording!!
 
 	if (Newdemo_state == ND_STATE_RECORDING)		// stop demo recording
-		if (!newdemo_stop_quick_recording())
+		if (!input_demo_stop_quick_recording_after_frame())
 			Newdemo_state = ND_STATE_PAUSED;
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)		// don't do this if in playback mode
@@ -261,6 +262,7 @@ void start_endlevel_sequence()
 		}
 		#endif
 
+		newdemo_stop_quick_recording(); // Finish before any level transition
 		finish_endlevel();		//don't do special sequence
 		return;
 	}
@@ -270,6 +272,7 @@ void start_endlevel_sequence()
 		const char *reason = endlevel_validate_route(ConsoleObject->segnum, find_exit_side(ConsoleObject), &route);
 		if (reason) {
 			con_printf(CON_DEBUG, "Skipping exit animation: %s\n", reason);
+			newdemo_stop_quick_recording(); // No gameplay frame may finish in the next level
 			finish_endlevel();
 			return;
 		}

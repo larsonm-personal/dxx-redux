@@ -121,6 +121,7 @@ struct input_demo_metadata {
 	int build_number;
 	std::string git_version;
 	std::string arch;
+	std::string asset_fingerprints;
 	int level;
 	int difficulty;
 	std::string start_mode;

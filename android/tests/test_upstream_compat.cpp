@@ -11467,6 +11467,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 }
 
 #include "gameplay_view_lifecycle_fixture.hpp"
+#include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
@@ -11559,6 +11560,11 @@ int main(int argc, char **argv)
 	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--public-all-weapons") == 0) {
 		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized all-weapons profile");
 		capture_public_level_replay(argv[2], "all-weapons", argc == 4);
+		return 0;
+	}
+	if ((argc == 3 || argc == 4) && std::strcmp(argv[1], "--recording-asset-fingerprints") == 0) {
+		require(argc == 3 || std::strcmp(argv[3], "--imported-d1") == 0, "recognized recording asset test profile");
+		capture_public_level_replay(argv[2], "asset-fingerprints", argc == 4);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-level-replay") == 0) {

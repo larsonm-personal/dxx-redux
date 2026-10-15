@@ -691,6 +691,11 @@ void input_demo_record_reset_input_phase(void)
 		input_demo_reset_replay_input_state();
 }
 
+int input_demo_stop_quick_recording_after_frame(void)
+{
+	return input_demo_record_simulation_active ? input_demo_defer_quick_recording_stop() : input_demo_stop_quick_recording_common();
+}
+
 void input_demo_run_game_process_frame(void (*process)(void))
 {
 	/* The wrapper also resets the guard on every ordinary early return */
@@ -698,6 +703,9 @@ void input_demo_run_game_process_frame(void (*process)(void))
 	process();
 	if (input_demo_record_simulation_active)
 		--input_demo_record_simulation_active;
+	/* Exit entry changes state during physics; snapshot the completed frame */
+	if (!input_demo_record_simulation_active)
+		input_demo_finish_deferred_quick_recording_stop();
 }
 
 void input_demo_record_input_clear(void)

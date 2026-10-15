@@ -23,6 +23,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_mod_bitmaps.h"
 #endif
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -388,6 +389,7 @@ int properties_init()
 #ifdef __ANDROID__
 	android_sound_trace_bank_open(DEFAULT_PIGFILE_REGISTERED);
 #endif
+	input_demo_assets_note_file("d1_pig", DEFAULT_PIGFILE_REGISTERED, Piggy_fp);
 	pigsize = PHYSFS_fileLength(Piggy_fp);
 	switch (pigsize) {
 		case D1_SHARE_BIG_PIGSIZE:

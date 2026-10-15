@@ -4,6 +4,7 @@
  *
  */
 
+#include "input_demo_assets.h"
 #include <string.h>
 
 #include "pstypes.h"
@@ -864,6 +865,7 @@ static d1_asset_generation *read_shareware_assets(const char *pig_name, const ch
      !d1_in_d2_hash_custom_sources(generation->base_identity, custom, generation->definition_identity)) {
   *error = "shareware source identity"; goto failed;
  }
+ input_demo_assets_note_file("d1_pig", pig_name, fp);
  PHYSFS_close(fp);
  return generation;
 failed:
@@ -919,6 +921,7 @@ d1_asset_generation *d1_in_d2_read_assets(const char *pig_name, const char *pale
 		    !d1_in_d2_hash_custom_sources(generation->base_identity, custom, generation->definition_identity))
 			goto failed;
 	}
+	input_demo_assets_note_file("d1_pig", pig_name, fp);
 	PHYSFS_close(fp);
 	if (error)
 		*error = NULL;

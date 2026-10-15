@@ -4,8 +4,9 @@ Use `android/tests/run_input_demo_replay.ps1` for manual host replays.
 
 For the existing interactive picker, run `android/run_all_tests.ps1 -ReplayDemo`
 from the repository root. It includes user recordings and all 28 tracked public
-fixtures, automatically chooses their shareware data, and defaults to a visible
-realtime window. See [Watch one recording](../regression_demos/README.md#watch-one-recording)
+fixtures and defaults to a visible realtime window. Complete recorded asset
+fingerprints choose verified shareware data; historical recordings without them
+need an explicit `-AllowUnverifiedAssets` investigation. See [Watch one recording](../regression_demos/README.md#watch-one-recording)
 for data setup, pause/step controls, native/imported choices and known-fault labels.
 
 Do not launch `buildd1/main/dxx-redux-d1.exe` or `buildd2/main/dxx-redux-d2.exe` directly for replay checks unless you are debugging launcher args.
@@ -59,12 +60,11 @@ Notes:
 
 ## Public shareware runtime smoke
 
-The existing generated three-frame smoke uses pinned DOS shareware data for both
-engines by default. It still verifies replay identity, difficulty and frame count,
-frame-state output, and complete RNG trace publication. It does not replace the
-recorded retail replay corpus or its gameplay-state oracles. The generated RNG
-inputs are synthetic and may emit mismatch diagnostics; this smoke asserts trace
-publication rather than deterministic equality.
+The smoke replays the real recorded public flight fixtures with complete expected
+terminal results, startup identity, detailed frame output, and complete RNG
+trace publication. Asset fingerprints are checked before launch. See
+[recorded asset verification](INPUT_DEMO_ASSETS.md) for the exact scope,
+`-SharewareOnly` batch selection, and the explicit historical opt-in.
 
 Prepare public data explicitly once (PowerShell 7, CMake, and a C compiler):
 

@@ -4,7 +4,7 @@
         "schema": 1,
         "sha256": "d77d63f5275bed39310b2df3b49970afed1829e5f85018a72217cfd6d5990e37"
     },
-    "compact_sha256": "1dd236a6a4d5b788448df0d4cb70807728eb6f9479a22546d5f617919167fd5f",
+    "compact_sha256": "03fdedb052aae18597709c4edc086f262576e1f0627798c7e50df79cdc1a0d65",
     "frame_sha256": [
         "c0fff69f5f4d9ca56a0d1d070743803b5b182a3bd748f9cc979e17d415c1c674",
         "8c651f72b29be9912a885de69a10d52db2c0507bc4df7a2fd03b3409e89c84f6",
@@ -271,7 +271,7 @@
         "b6b3fdb9a8b037cd13ed80a9b3c2aa1719df818f0b1b1dbba2e324ff863d7fd8"
     ],
     "frames": 263,
-    "full_recording_sha256": "86c4b0b41949fd3978b3c74fcb6a887982747428e785274c76c27b2954a0f016",
+    "full_recording_sha256": "b45e7b3053b5c5556dc08256f5c4ed87f35103d61b06e00c498210aeab38283d",
     "game": "d2",
     "level": 1,
     "mission": "d2demo",
@@ -282,9 +282,9 @@
             "d2demo.hog": "b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e",
             "d2demo.pig": "368f9ea56fe8eb8b6e4636ab5eba60bfffdf692fe10100d604fedf654d7d8989"
         },
-        "capture_executable_sha256": "2ec168e3c8ecf2bebb89f60822e1b570c0d2f6e77c7f67977c8ba22ee9b60a7a",
-        "capture_source_sha256": "952dfb73dbf052daa61732c6835a1de4dc0c8588a4e5442c34f6d741018b4ab8",
-        "source_revision": "7253def84bda52401731cc36ecffc2d1468503c5"
+        "capture_executable_sha256": "8f28b5c730ba6c8bbd794688ced45f9c180a50800d2a3b28c43e98db9669272b",
+        "capture_source_sha256": "980ce67b28440178ed33c089817ec47f73381af7d193b727b6b95873b96fd071",
+        "source_revision": "77bd4d8e4b5636499730f7bc3f7857e6920c2911"
     },
     "removed_telemetry": {
         "compared_on_replay": false,

@@ -12,6 +12,7 @@ param(
     [string]$OutputDirectory,
     [switch]$NoBuild,
     [switch]$AllDemos,
+    [switch]$AllowUnverifiedAssets,
     [switch]$ComposeOnly,
     [switch]$SelectStillsOnly,
     [switch]$FeaturedOnly,
@@ -134,6 +135,7 @@ if ($FeaturedOnly) {
     $arguments = @($generator, 'capture-featured', '--output', $OutputDirectory)
 }
 if ($AllDemos) { $arguments += '--all-demos' }
+if ($AllowUnverifiedAssets) { $arguments += '--allow-unverified-assets' }
 if ($Recipe) { $arguments += @('--recipe', [IO.Path]::GetFullPath($Recipe)) }
 $captureLog = if ($FeaturedOnly) { 'capture-featured.log' } else { 'capture.log' }
 & $venvPython @arguments 2>&1 | Tee-Object -FilePath (Join-Path $OutputDirectory $captureLog)

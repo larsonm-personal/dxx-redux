@@ -45,6 +45,7 @@
 #endif
 
 #include "input_demo_start_shared.h"
+#include "input_demo_assets.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2/d1_save_translate.h"
@@ -741,6 +742,11 @@ int input_demo_start_loaded_replay_common(void)
 	input_demo_reset_replay_input_state();
 	result = input_demo_restore_loaded_replay();
 	if (!result) {
+		if (!input_demo_assets_check_replay(projection_error, sizeof(projection_error))) {
+			printf("Input demo replay could not start: %s\n", projection_error);
+			input_demo_replay_unload();
+			return 1;
+		}
 		if (input_demo_replay_get_rear_view_baseline(&view) &&
 		    !input_demo_restore_rear_view_state(view.active, view.leave_mode,
 		                                        view.current_cockpit, view.preferred_cockpit, 0)) {

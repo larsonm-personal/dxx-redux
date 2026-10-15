@@ -25,6 +25,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORATION";
 
+#include "input_demo_assets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -402,7 +403,7 @@ int main(int argc, char *argv[])
 	if (!PHYSFSX_checkSupportedArchiveTypes())
 		return(0);
 
-	if (! PHYSFSX_contfile_init("descent.hog", 1)) {
+	if (! input_demo_assets_mount("d1_hog", "descent.hog", 1)) {
 		char path[PATH_MAX];
 		snprintf(path, sizeof(path), "%s", PHYSFS_getWriteDir());
 		size_t len = strlen(path);

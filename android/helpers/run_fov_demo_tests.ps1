@@ -6,6 +6,7 @@ param(
     [string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
+Write-Output 'Classic .dem playback: input-demo asset fingerprint verification is unavailable for this format'
 . (Join-Path $PSScriptRoot 'test_helpers.ps1')
 if (!$OutputDirectory) {
     $OutputDirectory = Join-Path $script:REPO_ROOT ('android/temp/fov-demo-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))

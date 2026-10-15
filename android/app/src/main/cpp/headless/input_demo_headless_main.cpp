@@ -5,6 +5,7 @@
 
 #include <SDL.h>
 
+#include "input_demo_assets.h"
 #include "input_demo_fp_env.h"
 #include "input_demo_hooks.h"
 #include "input_demo_rng_trace.h"
@@ -111,7 +112,7 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 		return 0;
 	}
 #else
-	if (!PHYSFSX_contfile_init("descent.hog", 1)) {
+	if (!input_demo_assets_mount("d1_hog", "descent.hog", 1)) {
 		snprintf(error, error_size, "%s",
 		         "could not find descent.hog; pass -hogdir <dir> with Descent data files");
 		return 0;

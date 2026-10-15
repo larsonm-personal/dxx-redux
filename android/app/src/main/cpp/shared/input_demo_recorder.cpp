@@ -61,6 +61,7 @@ struct input_demo_recorder_session {
 	bool active;
 	int game;
 	std::string mission;
+	std::string asset_fingerprints;
 	int level;
 	int difficulty;
 	std::string rng_mode;
@@ -108,6 +109,7 @@ struct input_demo_recorder_session {
 };
 
 input_demo_recorder_session g_input_demo_recorder_session;
+const char *(*asset_provider)(void);
 
 static int input_demo_recorder_copy_error(const std::string &message,
                                           char *error, size_t error_size)
@@ -405,6 +407,7 @@ static bool input_demo_recorder_build_envelope(input_demo_file *demo,
 	}
 	demo->metadata.game = input_demo_recorder_game_name(session.game);
 	demo->metadata.mission = session.mission;
+	demo->metadata.asset_fingerprints = session.asset_fingerprints;
 	demo->metadata.build_number = input_demo_recorder_build_number();
 	demo->metadata.git_version = input_demo_recorder_git_version();
 	demo->metadata.arch = input_demo_recorder_arch();
@@ -524,6 +527,33 @@ int input_demo_recorder_truncate(uint32_t frame_count)
 	return 1;
 }
 
+void input_demo_recorder_set_asset_provider(const char *(*provider)(void) )
+{
+	asset_provider = provider;
+}
+
+void input_demo_recorder_invalidate_assets(const char *reason)
+{
+	auto &session = g_input_demo_recorder_session;
+	if (!session.active || session.asset_fingerprints.empty()) return;
+	auto assets = ordered_json::parse(session.asset_fingerprints);
+	if (assets["status"] != "complete") return;
+	assets["status"] = "unknown";
+	assets["error"] = reason;
+	session.asset_fingerprints = assets.dump();
+}
+
+void input_demo_recorder_note_asset(const char *role, const char *sha256, uint64_t size)
+{
+	const auto &session = g_input_demo_recorder_session;
+	if (!session.active || session.asset_fingerprints.empty()) return;
+	const auto assets = ordered_json::parse(session.asset_fingerprints);
+	if (assets["status"] != "complete") return;
+	for (const auto &entry : assets["files"])
+		if (entry["role"] == role && entry["sha256"] == sha256 && entry["size"] == size) return;
+	input_demo_recorder_invalidate_assets("asset sources changed during recording");
+}
+
 int input_demo_recorder_start(const input_demo_recorder_settings *settings,
                               char *error, size_t error_size)
 {
@@ -569,6 +599,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	g_input_demo_recorder_session.active = true;
 	g_input_demo_recorder_session.game = settings->game;
 	g_input_demo_recorder_session.mission = settings->mission;
+	g_input_demo_recorder_session.asset_fingerprints = asset_provider ? asset_provider() : ordered_json({ { "status", "unknown" }, { "mode", settings->game == INPUT_DEMO_GAME_D1 ? "native_d1" : "native_d2" }, { "files", ordered_json::array() }, { "error", "no engine asset sources" } }).dump();
 	g_input_demo_recorder_session.level = settings->level;
 	g_input_demo_recorder_session.difficulty = settings->difficulty;
 	g_input_demo_recorder_session.rng_mode = settings->rng_mode;
@@ -1101,6 +1132,17 @@ int input_demo_recorder_flush_with_result(const char *demo_path,
 		return input_demo_recorder_copy_error("input demo recorder captured no frames", error, error_size);
 	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.frame_lines.size())
 		return input_demo_recorder_copy_error("input demo recorder frame streams are out of sync", error, error_size);
+	// One final source check catches removals and external changes; loader events
+	// retain a sticky unknown even when a changed source later returns to its start bytes
+	if (asset_provider) {
+		const auto actual = ordered_json::parse(asset_provider());
+		const auto expected = ordered_json::parse(g_input_demo_recorder_session.asset_fingerprints);
+		if (actual["status"] != "complete" || actual["mode"] != expected["mode"] || actual["files"].size() != expected["files"].size())
+			input_demo_recorder_invalidate_assets("asset sources changed or became unknown during recording");
+		else
+			for (const auto &entry : actual["files"])
+				input_demo_recorder_note_asset(entry["role"].get<std::string>().c_str(), entry["sha256"].get<std::string>().c_str(), entry["size"].get<uint64_t>());
+	}
 	if (!input_demo_recorder_build_envelope(&demo, g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	if (!input_demo_file_write_recorded(demo_path, demo, g_input_demo_recorder_session.frame_lines, &shared_error))

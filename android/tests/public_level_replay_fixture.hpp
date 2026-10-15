@@ -1,4 +1,5 @@
 // Fresh public level starts: only ordinary controls may alter the world
+#include "input_demo_assets.h"
 extern "C" {
 void do_weapon_n_item_stuff(void);
 void calc_game_time(void);
@@ -82,10 +83,12 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "public_all_weapons_fixture.hpp"
 
+#include "quick_recording_exit_fixture.hpp"
+
 static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
 {
 	using nlohmann::json;
-	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "all-weapons") == 0,
+	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "all-weapons") == 0 || std::strcmp(scenario, "asset-fingerprints") == 0,
 	        "imported public startup is scoped to explicit diagnostic fixtures");
 #ifdef DXX_BUILD_DESCENT_II
 	const char *game_name = "d2";
@@ -100,6 +103,7 @@ static void capture_public_level_replay(const char *directory, const char *scena
 #endif
 	const std::string hog = std::string(directory) + archive;
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount pinned public resources");
+	input_demo_assets_note_archive(std::strcmp(game_name, "d1") == 0 || imported_d1 ? "d1_hog" : "d2_hog", hog.c_str());
 	const bool screenshots = std::getenv("DXX_PUBLIC_CAPTURE_SCREENSHOTS") != nullptr;
 	char error[256] = "";
 	char trace_source[] = __FILE__;
@@ -180,7 +184,17 @@ static void capture_public_level_replay(const char *directory, const char *scena
 		test_gameplay_view_lifecycle();
 		return;
 	}
+	if (std::strcmp(scenario, "asset-fingerprints") == 0) {
+		test_recording_asset_fingerprints(imported_d1);
+		return;
+	}
 	GameArg.SysInputDemoNoRender = 1;
+#ifndef DXX_BUILD_DESCENT_II
+	if (std::strcmp(scenario, "exit-boundary") == 0) {
+		test_quick_recording_exit_boundary();
+		return;
+	}
+#endif
 	newdemo_start_recording(0);
 	require(Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active(), "initialize production record callbacks");
 	input_demo_recorder_cancel();
