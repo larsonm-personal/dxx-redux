@@ -364,8 +364,9 @@ class PublicProfileTests(unittest.TestCase):
                 Path(argv[argv.index(flag) + 1]).name, "test_upstream_compat"
             )
             flag = "-" + game.upper() + "DataDir"
-            self.assertTrue(
-                argv[argv.index(flag) + 1].endswith("game_data/shareware/" + game)
+            self.assertEqual(
+                Path(argv[argv.index(flag) + 1]).parts[-3:],
+                ("game_data", "shareware", game),
             )
         self.assertTrue(any("-Download" in command for command, _ in calls))
 
