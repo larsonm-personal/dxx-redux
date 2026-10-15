@@ -17,7 +17,7 @@ it does not qualify retail Fusion parameters.
 
 - Keep the existing relative deadline bytes unchanged
 - Append a host-endian uint32 active flag (0 or 1) after wiggle phase in the single
-  unpublished runtime extension: native D1 21 / Android 22, native D2 45 / Android 46
+  unpublished runtime extension: native D1 21 / Android 22, ordinary D2 native/Android 45 / imported D1-in-D2 native/Android 46
 - Validate the complete flag before applying runtime state; reject other values
 - Inactive forces deadline zero; active with rebased deadline zero uses -1, the
   existing nonzero active convention

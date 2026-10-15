@@ -79,6 +79,8 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 				const auto data = read_save_fixture("native-checkpoints/" + source);
 				d1_save_translate_checkpoint_start start = {};
 				require(d1_save_translate_read_checkpoint_start(data.data(), data.size(), &start), "decode native wall-blast checkpoint");
+				// Native v21 appends phase and Fusion-active uint32 words after the pool.
+				const int trailing_runtime_bytes = start.version >= 21 ? 8 : 0;
 				input_demo_set_skip_level_intro(1);
 				StartNewGame(start.current_level);
 				GameTime64 = start.game_time;
@@ -118,29 +120,29 @@ static nlohmann::json exercise_wall_blast_save(const char *native_directory = nu
 						                                    : malformed == 3   ? -1
 						                                    : malformed == 4   ? F1_0 + 1
 						                                                       : Highest_segment_index + 1;
-						set_int(damaged, damaged.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES + field * 4,
+						set_int(damaged, damaged.size() - trailing_runtime_bytes - EXPLODING_WALL_RUNTIME_DISK_BYTES + field * 4,
 						        start.checkpoint_swap ? SWAPINT(value) : value);
 					}
 					reject_unchanged(damaged);
 				}
 				// Every truncation boundary in the appended pool must fail atomically
-				for (int missing = 2; missing <= EXPLODING_WALL_RUNTIME_DISK_BYTES; ++missing) {
+				for (int missing = 2; missing <= EXPLODING_WALL_RUNTIME_DISK_BYTES + trailing_runtime_bytes; ++missing) {
 					auto damaged = data;
 					damaged.resize(damaged.size() - missing);
 					reject_unchanged(damaged);
 				}
 				auto last_slot = data;
-				set_int(last_slot, last_slot.size() - 12, start.checkpoint_swap ? SWAPINT(-2) : -2);
+				set_int(last_slot, last_slot.size() - trailing_runtime_bytes - 12, start.checkpoint_swap ? SWAPINT(-2) : -2);
 				reject_unchanged(last_slot);
 				require(d1_save_translate_apply_checkpoint_objects(data.data(), data.size(), &start), "import native wall blast through normal checkpoint adapter");
 				d1_save_translate_apply_checkpoint_player(&start, "walltest");
 				FrameTime = F1_0 / 32;
 				const auto translated = finish();
 				report.back()["import_differences"][source] = json::diff(uninterrupted, translated);
-				report.back()["rejected_mutations"][source] = EXPLODING_WALL_RUNTIME_DISK_BYTES + 6;
+				report.back()["rejected_mutations"][source] = EXPLODING_WALL_RUNTIME_DISK_BYTES + trailing_runtime_bytes + 6;
 				if (source == filename) {
 					auto legacy = data;
-					legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES);
+					legacy.resize(legacy.size() - EXPLODING_WALL_RUNTIME_DISK_BYTES - trailing_runtime_bytes);
 					set_int(legacy, 4, 18);
 					d1_save_translate_checkpoint_start legacy_start = {};
 					require(d1_save_translate_read_checkpoint_start(legacy.data(), legacy.size(), &legacy_start), "decode prior native save format");
