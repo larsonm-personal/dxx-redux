@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Get-FirstPlayPickerChoicePoint')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -100,7 +100,7 @@ function Send-TapButton {
     $script:tapTexts += $Text
     return $script:tapResult
 }
-foreach ($label in @('Select Game Files or Archive to Import', 'Pick One or More Files', 'Import to Current Set', 'Import All')) {
+foreach ($label in @('Select Game Files or Archive to Import', 'Import to Current Set', 'Import All')) {
     Tap-FirstPlayButton -Text $label
     if ($script:tapTexts[-1] -cne "'$label'") { throw 'Multi-word button lost its remote-shell quoting' }
 }
@@ -114,6 +114,22 @@ if ($failure -cne 'Could not tap first-play button: Import All' -or
     'requested_button=Import All' -cnotin $script:writtenValues -or
     'tap failure diagnostic marker' -cnotin $script:writtenValues) {
     throw 'Unacknowledged tap did not fail with preserved button/log diagnostics'
+}
+$chooserXml = '<hierarchy><node package="test.package" text="Import Files"/><node package="test.package" text="Pick One or More Files" enabled="true" bounds="[20,40][120,100]"/></hierarchy>'
+$point = Get-FirstPlayPickerChoicePoint -XmlText $chooserXml
+if ($null -eq $point -or $point.X -ne 70 -or $point.Y -ne 70) { throw 'Exact chooser node did not produce its observed center' }
+foreach ($invalidXml in @(
+        '', '<broken',
+        $chooserXml.Replace('Import Files', 'Other Dialog'),
+        $chooserXml.Replace('test.package', 'other.package'),
+        $chooserXml.Replace('Pick One or More Files', 'Pick One or More Files Copy'),
+        $chooserXml.Replace('enabled="true"', 'enabled="false"'),
+        $chooserXml.Replace(' bounds="[20,40][120,100]"', ''),
+        $chooserXml.Replace('[20,40][120,100]', '[20,40][20,100]'),
+        $chooserXml.Replace('</hierarchy>', '<node package="test.package" text="Pick One or More Files" enabled="true" bounds="[20,40][120,100]"/></hierarchy>')
+    )) {
+    $invalidPoint = & { Set-StrictMode -Version Latest; Get-FirstPlayPickerChoicePoint -XmlText $invalidXml }
+    if ($null -ne $invalidPoint) { throw 'Unobserved, disabled, ambiguous, or foreign chooser node was accepted' }
 }
 Assert-FirstPlayFiles -Expected $expected -Label valid
 Send-FirstPlaySource -Path fixture -Name descent.hog -Sha256 $expected[0].Sha256

@@ -42,7 +42,7 @@ function Test-FirstPlayReadiness {
 }
 
 function Tap-FirstPlayButton {
-    param([ValidateSet('Select Game Files or Archive to Import', 'Pick One or More Files', 'Import to Current Set', 'Import All')][string]$Text)
+    param([ValidateSet('Select Game Files or Archive to Import', 'Import to Current Set', 'Import All')][string]$Text)
     # Host argv quoting does not survive adb shell's second parse; these fixed labels contain no quotes
     $quotedText = "'$Text'"
     if (-not (Send-TapButton -Serial $Serial -Text $quotedText -TimeoutSec 30 -PollMs 500)) {
@@ -53,6 +53,20 @@ function Tap-FirstPlayButton {
         ) | Set-Content (Join-Path $firstPlayOutput 'tap-button-failure.log') -Encoding utf8
         throw "Could not tap first-play button: $Text"
     }
+}
+
+function Get-FirstPlayPickerChoicePoint {
+    param([string]$XmlText)
+    try { [xml]$document = $XmlText } catch { return $null }
+    if ($null -eq $document -or $null -eq $document.DocumentElement) { return $null }
+    if (-not $document.SelectSingleNode("//node[@package='$($script:PACKAGE)' and @text='Import Files']")) { return $null }
+    $choices = @($document.SelectNodes("//node[@package='$($script:PACKAGE)' and @text='Pick One or More Files' and @enabled='true']"))
+    if ($choices.Count -ne 1) { return $null }
+    $bounds = [regex]::Match($choices[0].GetAttribute('bounds'), '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$')
+    if (-not $bounds.Success) { return $null }
+    $left, $top, $right, $bottom = 1..4 | ForEach-Object { [int]$bounds.Groups[$_].Value }
+    if ($right -le $left -or $bottom -le $top) { return $null }
+    return [pscustomobject]@{ X = [int](($left + $right) / 2); Y = [int](($top + $bottom) / 2) }
 }
 
 function Assert-FirstPlayFiles {
@@ -119,8 +133,20 @@ function Import-FirstPlaySources {
 
 function Test-FirstPlayDocumentsUiCancel {
     Tap-FirstPlayButton 'Select Game Files or Archive to Import'
-    Tap-FirstPlayButton 'Pick One or More Files'
     $dump = '/sdcard/first-play-picker.xml'
+    # The Compose chooser owns a separate window; observe the actual focused UI
+    # rather than the MP helper's covered activity root (test_mac_extract_saf pattern)
+    $choice = @{ Point = $null }
+    $chooserReady = Wait-ForCondition -Description 'exact import chooser choice visible' -TimeoutSec 30 -PollMs 500 -Condition {
+        Adb -AdbArgs @('shell', 'rm', '-f', $dump) | Out-Null
+        Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
+        $xml = Adb -AdbArgs @('shell', 'cat', $dump)
+        $xml | Set-Content (Join-Path $firstPlayOutput 'import-chooser.xml') -Encoding utf8
+        $choice.Point = Get-FirstPlayPickerChoicePoint -XmlText $xml
+        return $null -ne $choice.Point
+    }
+    if (-not $chooserReady) { throw 'Import chooser did not expose its enabled exact file-picker choice' }
+    Adb -AdbArgs @('shell', 'input', 'tap', [string]$choice.Point.X, [string]$choice.Point.Y) | Out-Null
     $opened = Wait-ForCondition -Description 'system DocumentsUI opened' -TimeoutSec 30 -PollMs 500 -Condition {
         Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
         $xml = Adb -AdbArgs @('shell', 'cat', $dump)
