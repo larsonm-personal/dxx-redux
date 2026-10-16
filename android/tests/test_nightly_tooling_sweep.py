@@ -94,10 +94,11 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
         self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
         self.assertIn('-Game both -Download -RequireArchives', fixture_step)
-        for name in ('test_demo_import_public_first_play',):
+        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware'):
             self.assertIn(name, workflow)
         entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
+        self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])
 
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)

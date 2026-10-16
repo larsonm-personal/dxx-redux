@@ -709,6 +709,7 @@ $noInfraTests = @(
     "test_public_save_continuation",
     "test_d1_wall_blast_save",
     "test_shareware_automation_profiles",
+    "test_lan_launch_preparation_profiles",
     "test_demo_import_first_play_profiles",
     "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
@@ -868,6 +869,15 @@ $allTests += @{
 }
 
 # Exact public variants keep the original retail owners unchanged
+$allTests += @{
+    Name = 'test_lan_launch_preparation_public_shareware'
+    BaseName = 'test_lan_launch_preparation'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_lan_launch_preparation.ps1')
+    Requires = 'two_emulators'
+    TimeoutSeconds = 1500
+    Arguments = @('-PublicShareware')
+}
 $allTests += @{
     Name = 'test_demo_import_public_first_play'
     BaseName = 'test_demo_import'
