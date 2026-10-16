@@ -132,7 +132,7 @@ class SweepTests(unittest.TestCase):
             (unrelated / 'manifest.json').write_text('excluded')
             result = subprocess.run([sys.executable, '-c', code], cwd=root, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            files = {str(p.relative_to(root / 'results/first-play'))
+            files = {p.relative_to(root / 'results/first-play').as_posix()
                      for p in (root / 'results/first-play').rglob('*') if p.is_file()}
             self.assertEqual(files, {'public-graphics-lifecycle-d2/manifest.json',
                                      'public-graphics-lifecycle-d2/logcat-crash.txt'})
