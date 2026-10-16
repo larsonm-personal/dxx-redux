@@ -2,20 +2,34 @@
 """Allowlisted host-suite adapter for a separately qualified target checkout."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 REGISTRY = Path(__file__).with_name("host_test_suites.json")
+# Exact installed members of the reviewed, pinned Obsidian ZIP
+OBSIDIAN_MEMBERS = {
+    "obsidian.hog": (
+        35385307,
+        "32ee5f893718c2191975c826a6f95f116658b143b69bbf2aa73a9455174508db",
+    ),
+    "obsidian.mn2": (
+        338,
+        "1bf9a8cc9882a67356e16f08e06cb82923ca920710bf30d245cd7be9829bdde6",
+    ),
+}
 MEDIA_SKIP = re.compile(
     r"SKIP: sample media not present|skip missing fixture:|"
     r"StuffIt demo (?:archive|oracle file) missing, skipping|"
@@ -60,8 +74,19 @@ def classify_cases(cases, *, light=False):
     # cause an endless rerun of public leaves in the same commit's coverage sweep.
     failed = [c for c in cases if c["status"] == "FAIL"]
     exclusions = [c for c in cases if c["status"] in {"SKIP", "BLOCKED"}]
-    ran = any(c["status"] in {"PASS", "FAIL", "BLOCKED"} for c in cases)
-    return ("FAIL" if failed else "PASS" if ran else "BLOCKED"), exclusions
+    passed = any(c["status"] == "PASS" for c in cases)
+    return ("FAIL" if failed else "PASS" if passed else "BLOCKED"), exclusions
+
+
+def count_cases(cases):
+    """Count structured leaves only; aggregate scripts have unknown leaf counts."""
+    return {
+        "total": len(cases),
+        "passed": sum(c["status"] == "PASS" for c in cases),
+        "failed": sum(c["status"] == "FAIL" for c in cases),
+        "skipped": sum(c["status"] == "SKIP" for c in cases),
+        "excluded": sum(c["status"] in {"SKIP", "BLOCKED"} for c in cases),
+    }
 
 
 def read_ctest_results(path):
@@ -141,6 +166,315 @@ def unittest_worker(repo, relative, output):
     return 0 if result.wasSuccessful() else 1
 
 
+def native_configure_arguments(repo, build, game):
+    """Match run-linux-build.sh Debug test flags in a caller-owned cache."""
+    return [
+        "cmake",
+        "-S",
+        str(target_file(repo, game)),
+        "-B",
+        str(build),
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DBUILD_TESTING=ON",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_C_FLAGS_DEBUG=-O0 -g1",
+        "-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1",
+        "-DOPENGL=ON",
+        "-DSDLMIXER=ON",
+        "-DUDP=ON",
+        "-DOpenGL_GL_PREFERENCE=LEGACY",
+    ]
+
+
+def public_profile_arguments(suite, repo, build_root, work):
+    """Only reviewed profile names construct argv; plans cannot supply commands."""
+    profile = suite["profile"]
+
+    def binary(game, suffix):
+        name = "dxx-redux-" + game + suffix if suffix else game + "x-redux"
+        return str(build_root / ("engine-" + game) / "main" / name)
+
+    if profile in {"metadata-d1", "metadata-d2", "metadata-imported-d1"}:
+        game = "d1" if profile == "metadata-d1" else "d2"
+        args = [
+            "-Executable",
+            binary(game, "-metadata-worker"),
+            "-Game",
+            game,
+            "-DataEdition",
+            "shareware",
+            "-OutputDirectory",
+            str(work / "metadata"),
+        ]
+        if profile == "metadata-imported-d1":
+            args += ["-ContentGame", "d1", "-CheckProfileSwitch"]
+        return args
+    if profile == "metadata-headers":
+        return [
+            "-NoBuild",
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-D1Exe",
+            binary("d1", "-metadata-worker"),
+            "-D2Exe",
+            binary("d2", "-metadata-worker"),
+            "-OutputDirectory",
+            str(work / "headers"),
+        ]
+    if profile == "public-flight":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-D1Exe",
+            binary("d1", ""),
+            "-D2Exe",
+            binary("d2", ""),
+            "-OutputDirectory",
+            str(work / "flight"),
+        ]
+
+    def fixture(game):
+        return str(build_root / ("engine-" + game) / "main" / "test_upstream_compat")
+
+    if profile == "shareware-data":
+        return ["-RequireData"]
+    if profile == "public-save":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1Assets",
+            str(repo / "game_data/shareware/d1"),
+            "-D2Assets",
+            str(repo / "game_data/shareware/d2"),
+            "-Output",
+            str(work / "save"),
+        ]
+    if profile == "public-matcen":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1DataDir",
+            str(repo / "game_data/shareware/d1"),
+            "-D2DataDir",
+            str(repo / "game_data/shareware/d2"),
+            "-Output",
+            str(work / "matcen"),
+        ]
+    if profile == "public-pickup":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Mode",
+            "pickup",
+            "-NativeExe",
+            fixture("d1"),
+            "-ImportedExe",
+            fixture("d2"),
+            "-Output",
+            str(work / "pickup"),
+        ]
+    if profile == "public-secret-baseline":
+        return [
+            "-DataEdition",
+            "shareware",
+            "-Game",
+            "both",
+            "-RequireAssets",
+            "-D1Exe",
+            binary("d1", "-headless-metadata"),
+            "-D2Exe",
+            binary("d2", "-headless-metadata"),
+            "-OutputDir",
+            str(work / "secret-baseline"),
+        ]
+    if profile == "public-ordered-input":
+        return [
+            "-D1Exe",
+            fixture("d1"),
+            "-D2Exe",
+            fixture("d2"),
+            "-D1Headless",
+            binary("d1", "-headless"),
+            "-D2Headless",
+            binary("d2", "-headless"),
+            "-D1Graphics",
+            binary("d1", ""),
+            "-D2Graphics",
+            binary("d2", ""),
+            "-Output",
+            str(work / "ordered-input"),
+        ]
+    if profile == "public-all-weapons":
+        return [
+            "-D1BuildDir",
+            str(build_root / "engine-d1"),
+            "-D2BuildDir",
+            str(build_root / "engine-d2"),
+            "-Output",
+            str(work / "all-weapons"),
+        ]
+    if profile == "benchmark-policy":
+        return ["-PolicySelfTest"]
+    raise ValueError("Unknown reviewed PowerShell profile: " + profile)
+
+
+def retail_profile_arguments(suite, repo, build_root, work):
+    """Bind reviewed retail owners to the verified stage, never fallback media."""
+    profile = suite["profile"]
+    stage = repo / "game_data/retail-ci"
+
+    def binary(game, suffix):
+        return str(
+            build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix)
+        )
+
+    if profile in {"retail-secret-baseline", "retail-metadata-headers"}:
+        secret = profile == "retail-secret-baseline"
+        suffix = "-headless-metadata" if secret else "-metadata-worker"
+        return [
+            "-DataEdition",
+            "retail",
+            "-Game",
+            "both",
+            "-D1DataDir",
+            str(stage / "d1"),
+            "-D2DataDir",
+            str(stage / "d2"),
+            "-D1Exe",
+            binary("d1", suffix),
+            "-D2Exe",
+            binary("d2", suffix),
+            "-OutputDir" if secret else "-OutputDirectory",
+            str(work / ("secret-baseline" if secret else "headers")),
+            "-RequireAssets" if secret else "-NoBuild",
+        ]
+    if profile == "retail-counterstrike-route":
+        return [
+            "-Exe",
+            binary("d2", "-headless-metadata"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-OutputPath",
+            str(work / "counterstrike-route.json"),
+        ]
+    if profile == "retail-guidebot-timeout":
+        return [
+            "-NoBuild",
+            "-HeadlessExecutable",
+            binary("d2", "-headless-route"),
+            "-HogDir",
+            str(stage / "d2"),
+        ]
+    if profile == "retail-vertigo-metadata":
+        return [
+            "-NoBuild",
+            "-Worker",
+            binary("d2", "-metadata-worker"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-VertigoDir",
+            str(stage / "missions"),
+        ]
+    if profile == "retail-obsidian-liquid":
+        return [
+            "--exe",
+            binary("d2", "-headless-metadata"),
+            "--hogdir",
+            str(stage / "d2"),
+            "--mission-dir",
+            str(work / "obsidian-stage"),
+            "--output",
+            str(work / "obsidian-liquid.json"),
+        ]
+    raise ValueError("Unknown reviewed retail profile: " + profile)
+
+
+def prepare_obsidian_mission(repo, work):
+    """Extract only two pinned members into a fresh private native mission tree."""
+    destination = work / "obsidian-stage"
+    with zipfile.ZipFile(repo / "game_data/retail-ci/missions/obsidian.zip") as archive:
+        members = archive.infolist()
+        if len(members) > 32:
+            raise ValueError("Unexpected Obsidian ZIP member count")
+        by_name = {}
+        for member in members:
+            name = member.filename
+            mode = member.external_attr >> 16
+            if (
+                not re.fullmatch(r"[A-Za-z0-9_.-]+", name)
+                or name in {".", ".."}
+                or name != member.orig_filename
+                or name.lower() in by_name
+                or member.is_dir()
+                or stat.S_IFMT(mode) not in {0, stat.S_IFREG}
+                or member.flag_bits & 1
+                or member.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
+            ):
+                raise ValueError("Unsafe or duplicate Obsidian ZIP member")
+            by_name[name.lower()] = member
+        for name, (size, _digest) in OBSIDIAN_MEMBERS.items():
+            if (
+                name not in by_name
+                or by_name[name].filename != name
+                or by_name[name].file_size != size
+            ):
+                raise ValueError("Missing or wrong-sized Obsidian mission member")
+        destination.mkdir()
+        try:
+            installed = destination / "missions"
+            installed.mkdir()
+            for name, (expected_size, expected_digest) in OBSIDIAN_MEMBERS.items():
+                digest = hashlib.sha256()
+                size = 0
+                with (
+                    archive.open(by_name[name]) as source,
+                    (installed / name).open("xb") as output,
+                ):
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        size += len(chunk)
+                        if size > expected_size:
+                            raise ValueError("Oversized Obsidian mission member")
+                        digest.update(chunk)
+                        output.write(chunk)
+                if size != expected_size or digest.hexdigest() != expected_digest:
+                    raise ValueError("Obsidian mission member identity mismatch")
+        except BaseException:
+            shutil.rmtree(destination)
+            raise
+
+
+def verify_retail_stage(repo, *, include_missions=False):
+    """Hash the stage without copying fixture bytes into logs or receipts."""
+    control_repo = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "retail_ci_assets", control_repo / "android/helpers/retail_ci_assets.py"
+    )
+    assets = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(assets)
+    expected = assets.baseline(control_repo)
+    if assets.baseline(repo) != expected:
+        raise ValueError(
+            "Target retail identity pins differ from the reviewed control checkout"
+        )
+    manifest = (
+        assets.stage_inventory(
+            repo / "game_data/retail-ci", expected, include_missions=True
+        )
+        if include_missions
+        else assets.inventory(repo / "game_data/retail-ci", expected)
+    )
+    if manifest["matches_tested_edition"] is not True:
+        raise ValueError("Staged retail edition differs from the existing test fixtures")
+
+
 def run_suite(suite, repo, build_root, output, timeout):
     started = time.monotonic()
     result = {
@@ -181,12 +515,14 @@ def run_suite(suite, repo, build_root, output, timeout):
             elapsed_seconds=round(time.monotonic() - started - setup_seconds, 3),
             setup_seconds=round(setup_seconds, 3),
             elapsed_wall_seconds=round(time.monotonic() - started, 3),
-            coverage_complete=status == "PASS" and not result["exclusions"],
+            # Aggregate owner success does not establish internal leaf coverage
+            coverage_complete=(status == "PASS" and "counts" in result
+                               and not result["exclusions"]),
         )
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
 
-    def run(argv, *, native=False, setup=False):
+    def run(argv, *, native=False, setup=False, virtual_display=False):
         nonlocal setup_seconds
         command_started = time.monotonic()
         result["phase"] = "setup" if setup else "tests"
@@ -206,6 +542,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                     "TMPDIR": str(temporary_root),
                     "TEMP": str(temporary_root),
                     "TMP": str(temporary_root),
+                    **({"SDL_VIDEODRIVER": "x11"} if virtual_display else {}),
                     **(
                         {"SDL_AUDIODRIVER": "dummy", "SDL_VIDEODRIVER": "dummy"}
                         if native
@@ -251,6 +588,133 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
+        if suite["kind"] in {"public-powershell", "retail-powershell", "retail-python"}:
+            retail = suite["kind"] in {"retail-powershell", "retail-python"}
+            script = target_file(repo, suite["path"])
+            if not script.is_file():
+                return finish(
+                    "BLOCKED",
+                    "Profile script absent from target commit",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
+            if retail:
+                result["phase"] = "setup"
+                verification_started = time.monotonic()
+                verification_error = None
+                try:
+                    if suite.get("fixture") == "retail-missions":
+                        verify_retail_stage(repo, include_missions=True)
+                    else:
+                        verify_retail_stage(repo)
+                    if suite["profile"] == "retail-obsidian-liquid":
+                        prepare_obsidian_mission(repo, work)
+                except (OSError, ValueError, zipfile.BadZipFile) as error:
+                    verification_error = str(error)
+                finally:
+                    setup_seconds += time.monotonic() - verification_started
+                if verification_error is not None:
+                    return finish(
+                        "BLOCKED",
+                        "Verified retail fixture preparation failed: "
+                        + verification_error,
+                        retryable=True,
+                        blocker_kind="retail-fixture",
+                    )
+            for game in suite.get("games", []):
+                build = build_root / ("engine-" + game)
+                code = run(native_configure_arguments(repo, build, game), setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Native profile configuration failed; see log",
+                        code,
+                        retryable=True,
+                    )
+                targets = [
+                    name.format(game=game)
+                    for name in suite.get(
+                        "build_targets", ["dxx-redux-" + game + suite["target_suffix"]]
+                    )
+                ]
+                code = run(
+                    [
+                        "cmake",
+                        "--build",
+                        str(build),
+                        "--parallel",
+                        "2",
+                        "--target",
+                        *targets,
+                    ],
+                    setup=True,
+                )
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Native profile build failed; see log",
+                        code,
+                        retryable=True,
+                    )
+            if suite.get("public_data"):
+                setup = target_file(
+                    repo, "android/helpers/setup_shareware_test_data.ps1"
+                )
+                code = run(
+                    [
+                        "pwsh",
+                        "-NoProfile",
+                        "-NonInteractive",
+                        "-File",
+                        str(setup),
+                        "-Game",
+                        "both",
+                        "-Download",
+                        "-BuildDirectory",
+                        str(build_root / "shareware-fixture"),
+                    ],
+                    setup=True,
+                )
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public fixture preparation failed; see log",
+                        code,
+                        retryable=True,
+                    )
+            argv = (
+                [sys.executable, "-I", str(script)]
+                if suite["kind"] == "retail-python"
+                else ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
+            )
+            profile_arguments = (
+                retail_profile_arguments if retail else public_profile_arguments
+            )
+            argv += profile_arguments(suite, repo, build_root, work)
+            if suite.get("virtual_display"):
+                argv = ["xvfb-run", "-a"] + argv
+            code = run(argv, virtual_display=suite.get("virtual_display", False))
+            status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
+            result["exclusions"] = [
+                {
+                    "id": suite["id"] + ":" + item["id"],
+                    "status": "SKIP",
+                    "reason": item["reason"],
+                }
+                for item in suite.get("profile_exclusions", [])
+            ]
+            if code == 2:
+                result["exclusions"].append({
+                    "id": suite["id"], "status": "BLOCKED",
+                    "reason": "Aggregate profile owner reported unavailable prerequisites",
+                })
+            return finish(
+                status,
+                "Reviewed profile completed; other profiles remain explicit exclusions",
+                code,
+                retryable=code == 2,
+            )
+
         if suite["kind"] == "python-script":
             script = target_file(repo, suite["path"])
             if not script.is_file():
@@ -261,15 +725,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                     blocker_kind="target-capability",
                 )
             code = run([sys.executable, str(script)])
-            result["cases"] = [
-                {
-                    "id": suite["id"],
-                    "status": "PASS" if code == 0 else "FAIL",
-                    "reason": "Aggregate assertion-script result; no internal case count",
-                }
-            ]
             return finish(
-                "PASS" if code == 0 else "FAIL", "Assertion script completed", code
+                "PASS" if code == 0 else "FAIL",
+                "Aggregate assertion script completed; internal case count unknown", code
             )
 
         if suite["kind"] == "python-unittest":
@@ -296,27 +754,76 @@ def run_suite(suite, repo, build_root, output, timeout):
             if not child.exists():
                 return finish("FAIL", "Test process did not produce results", code)
             data = json.loads(child.read_text(encoding="utf-8"))
-            result["counts"] = {
-                "total": data["tests"],
-                "failed": len(data["failures"]),
-                "skipped": len(data["skipped"]),
-            }
             result["cases"] = data["passed"] + data["failures"] + data["skipped"]
-            result["exclusions"] = data["skipped"]
-            status = (
-                "FAIL"
-                if code or not data["successful"]
-                else "BLOCKED"
-                if not data["tests"]
-                else "PASS"
-            )
+            result["counts"] = count_cases(result["cases"])
+            status, result["exclusions"] = classify_cases(result["cases"])
+            if code or not data["successful"]:
+                status = "FAIL"
             return finish(
                 status,
                 "Unittest module completed; skipped cases are incomplete coverage",
                 code,
             )
 
-        if suite["kind"] == "extractor":
+        if suite["kind"] == "standalone-cmake":
+            light = False
+            source = target_file(repo, suite["source"])
+            if not (source / "CMakeLists.txt").is_file():
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake owner absent from target commit",
+                    retryable=False,
+                    blocker_kind="target-capability",
+                )
+            if suite.get("public_soundfont"):
+                helper = target_file(repo, "android/get_deps/helpers/get_soundfont.sh")
+                code = run(["bash", str(helper)], setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public SoundFont setup failed",
+                        code,
+                        retryable=True,
+                    )
+            build = build_root / suite["build_subdirectory"]
+            code = run(
+                [
+                    "cmake",
+                    "-S",
+                    str(source),
+                    "-B",
+                    str(build),
+                    "-DCMAKE_BUILD_TYPE=Release",
+                ],
+                setup=True,
+            )
+            if code:
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake configuration failed; see log",
+                    code,
+                    retryable=True,
+                )
+            code = run(
+                [
+                    "cmake",
+                    "--build",
+                    str(build),
+                    "--parallel",
+                    "2",
+                    "--target",
+                    suite["build_target"],
+                ],
+                setup=True,
+            )
+            if code:
+                return finish(
+                    "BLOCKED",
+                    "Standalone CMake build failed; see log",
+                    code,
+                    retryable=True,
+                )
+        elif suite["kind"] == "extractor":
             source = target_file(repo, "android/app/src/main/cpp/extract")
             cmake_file = source / "CMakeLists.txt"
             if not cmake_file.is_file():
@@ -351,6 +858,16 @@ def run_suite(suite, repo, build_root, output, timeout):
                     retryable=False,
                     blocker_kind="target-capability",
                 )
+            if not light and not suite.get("extra_test"):
+                helper = target_file(repo, "android/get_deps/helpers/get_soundfont.sh")
+                code = run(["bash", str(helper)], setup=True)
+                if code:
+                    return finish(
+                        "BLOCKED",
+                        "Verified public SoundFont setup failed",
+                        code,
+                        retryable=True,
+                    )
             build = (
                 build_root
                 / ("extractor-light" if light else "extractor-full")
@@ -401,16 +918,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                         str(albums),
                     ]
                 )
-                result["cases"] = [
-                    {
-                        "id": suite["id"],
-                        "status": "PASS" if code == 0 else "FAIL",
-                        "reason": "Existing strict database admission assertions",
-                    }
-                ]
                 return finish(
                     "PASS" if code == 0 else "FAIL",
-                    "Strict fingerprint assertions completed",
+                    "Aggregate strict fingerprint assertions completed; internal case count unknown",
                     code,
                 )
         else:
@@ -424,21 +934,7 @@ def run_suite(suite, repo, build_root, output, timeout):
                 )
             # Same assertion-preserving options as run-linux-build.sh --test, with a
             # caller-owned build directory and separately captured leaf results.
-            args = [
-                "cmake",
-                "-S",
-                str(source),
-                "-B",
-                str(build),
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DBUILD_TESTING=ON",
-                "-DCMAKE_C_FLAGS_DEBUG=-O0 -g1",
-                "-DCMAKE_CXX_FLAGS_DEBUG=-O0 -g1",
-                "-DOPENGL=ON",
-                "-DSDLMIXER=ON",
-                "-DUDP=ON",
-                "-DOpenGL_GL_PREFERENCE=LEGACY",
-            ]
+            args = native_configure_arguments(repo, build, game)
             code = run(args, setup=True)
             if code:
                 text = log.read_text(encoding="utf-8", errors="replace")
@@ -488,12 +984,7 @@ def run_suite(suite, repo, build_root, output, timeout):
         if code:
             status = "FAIL"
         result["cases"], result["exclusions"] = cases, exclusions
-        result["counts"] = {
-            "total": len(cases),
-            "passed": sum(c["status"] == "PASS" for c in cases),
-            "excluded": len(exclusions),
-            "failed": sum(c["status"] == "FAIL" for c in cases),
-        }
+        result["counts"] = count_cases(cases)
         return finish(
             status, "CTest completed; exclusions remain outside proven coverage", code
         )

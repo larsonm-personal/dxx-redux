@@ -560,6 +560,17 @@ if(DXX_TEST_GAME STREQUAL "d2")
         test_thief_network_policy)
 endif()
 
+# These fixtures use standard assert; retain their checks in release packaging builds
+# Keep production targets and the remaining test sources' explicit policies unchanged
+foreach(test_target IN ITEMS test_android_gpu_policy test_android_axis_mailbox
+                             test_net_udp_initial_sync_retry)
+    if(MSVC)
+        target_compile_options(${test_target} PRIVATE /UNDEBUG)
+    else()
+        target_compile_options(${test_target} PRIVATE -UNDEBUG)
+    endif()
+endforeach()
+
 foreach(test_target IN LISTS DXX_HOST_TEST_TARGETS)
     add_test(NAME ${test_target} COMMAND ${test_target})
     set_tests_properties(${test_target} PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")

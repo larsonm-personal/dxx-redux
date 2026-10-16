@@ -75,3 +75,109 @@ playback needs a compiled exporter and must not be run by bare unittest discover
 `unsupported_entrypoints` retains concrete constraints for remaining standalone scripts.
 Android instrumentation, physical hardware checks, Windows GUI checks, device audio probes,
 interactive tools, and exact licensed mission media remain distinct from this Linux owner.
+
+## Public native and scoped PowerShell profiles
+
+Six additional `host-profile:` selections invoke existing assertion owners with
+reviewed, explicit arguments. Plans cannot inject executable paths or commands.
+`metadata-d1`, `metadata-d2`, and `metadata-imported-d1` build the corresponding
+native metadata worker; the imported profile also checks retirement/recovery on
+D1/D2 content-profile changes. `metadata-headers` runs malformed-header recovery
+for both engines. `public-flight` builds both full games and executes their
+existing public-flight replay smoke under `xvfb-run` (Mesa/Xvfb/xauth required).
+All use verified public shareware prepared by the existing setup script; its
+pinned dependency requirements and downloads are setup, separately timed from
+assertions. Default retail data is never substituted. Build failures and public
+fixture preparation failures remain retryable and earn no test coverage.
+
+`benchmark-policy` runs only the existing `-PolicySelfTest` branch. It does not
+measure native performance, validate corpus digests, or update history. Those
+unexecuted portions are explicit exclusions. Public native receipts similarly
+exclude retail/custom-asset variants. These owners currently provide aggregate
+assertion receipts, not invented internal leaf counts. Optional variants are not
+silently included. Local qualification covers adapter argument/phase contracts;
+actual PowerShell/native profile execution requires the hosted lane.
+
+## Additional standalone CTest owners
+
+`cmake:fluidsynth-contracts` runs the existing `fluid_render_contracts` test. Its
+public bundled SoundFont is provisioned by the existing hash-verifying
+`get_soundfont.sh` helper, separately timed as setup. It does not run audition or
+retail-audio experiments. `cmake:etc2-limits` builds the existing
+`test_etc2_limits` target and runs its CTest registration. The assertions need no
+assets; the unchanged full project configure still fetches its normal ETC2/KTX
+build dependencies. Both profiles reuse original CMake flags and assertions and
+produce actual CTest leaf receipts. Their setup/download failures remain retryable.
+
+Further public runtime profiles bind the existing public-save-integrity recipes:
+`public-save` and `public-pickup` build both `test_upstream_compat` fixtures;
+`public-secret-baseline` builds both headless metadata executables and requires
+actual assets; `shareware-data` requires the prepared data instead of accepting
+missing-data skips. `public-ordered-input` and `public-all-weapons` build the
+capture, full graphics, and headless replay targets for both engines. Compile
+commands are exported so the existing all-weapons source/build/binary provenance
+checks remain intact, including its exact clean-HEAD requirement. These visual
+profiles use Xvfb and explicit x11 video; original timeout and assertion defaults
+remain unchanged. Retail pickup modes and secret-area baselines remain excluded
+from their explicitly public profiles.
+
+The `host-profile:public-matcen` owner invokes the existing controlled native station-production wrapper with both fixture executables and explicit verified shareware directories. Its historical master `emulator` category does not describe its actual prerequisites: no ADB or Android device is used. This profile makes no normal-player-route claim.
+
+## Private base-retail profiles
+
+Four `retail-powershell` profiles reuse the same lazy native build adapter. Each
+requires the eleven-file private stage at `game_data/retail-ci/{d1,d2}` and is
+admitted by the nightly policy only with fixture `retail-base`. Before building,
+the adapter inventories that exact stage against the existing standard-game-data
+hashes and checks that the target and control checkout pins agree. Missing files,
+different editions, or invalid stages are retryable BLOCKED setup with no
+assertion credit. There is no fallback to shareware, unverified local media, or a
+download source. Inventory time is setup, not assertion time.
+
+- `host-profile:retail-secret-baseline` builds both headless metadata targets and
+  invokes `test_secret_area_baseline.ps1` with `-DataEdition retail -Game both`,
+  explicit data/executable paths, an attempt-local output directory, and
+  `-RequireAssets`. It never updates a checked-in baseline.
+- `host-profile:retail-counterstrike-route` invokes the existing Counterstrike
+  route owner with the D2 headless metadata target and the verified D2 stage.
+  Its native dump retains the owner's 300-second timeout and original route
+  assertions; the adapter does not override them.
+- `host-profile:retail-metadata-headers` builds both metadata workers and invokes
+  the existing malformed-header/recovery owner with `-NoBuild`, retail data,
+  both games, and explicit input/output paths.
+- `host-profile:retail-guidebot-timeout` builds the D2 headless route target and
+  runs the complete existing policy owner with `-NoBuild`, `-HeadlessExecutable`,
+  and `-HogDir`. PASS includes its native one-second timeout status and 61-frame
+  assertion. Exit 2 from the owner remains retryable BLOCKED, even if its earlier
+  calculation-only checks passed.
+
+Receipts are aggregate assertions for these exact selections only. They do not
+claim custom mission, audio-disc, Android, or other retail runtime coverage.
+Build failures remain retryable and do not earn assertion credit. These profiles
+do not fetch assets or publish logs; the private nightly lane owns staging,
+metadata-only public reporting, and cleanup of licensed inputs and derived files.
+The portable `test_retail_ci_assets.py` and `test_nightly_retail.py` registrations
+exercise synthetic/mock controls without licensed assets. Their passing results
+do not establish that any retail owner has run successfully.
+
+Two additional profiles use the separately admitted `retail-missions` fixture:
+`host-profile:retail-vertigo-metadata` builds the D2 metadata worker and supplies
+explicit base-data, Vertigo-directory, and worker paths with `-NoBuild` to the
+unchanged reused-worker owner. `host-profile:retail-obsidian-liquid` builds the D2
+headless metadata target and runs the existing Python owner with isolated Python
+so environment optimization cannot disable its assertions. It retains the native
+60-second timeout and exact level-13 liquid-secret/transparent-water assertions.
+Both verify the staged mission identities, including the reviewed CRLF Vertigo
+descriptor, before builds or tests. The Obsidian profile extracts only its exact
+HOG and MN2 members into a fresh private `missions` tree, checking member names,
+duplicates, sizes, and SHA-256 while streaming bounded chunks. ZIP setup errors
+are retryable BLOCKED with no assertion credit. It never installs or executes the
+archive's batch file, and its derived stage must remain private and be cleaned up
+with the lane workspace. Runtime qualification remains pending actual hosted runs.
+
+Remaining GuideBot cases need a separate bounded adapter change to plumb explicit
+executable, base-data, and mission-stage paths into their unchanged assertions.
+The full family remains excluded: Vertigo level 16 also requires Plutonia, which
+this fixture does not contain. The Vertigo CD checkpoint owner still targets the
+original CD catalog layout; these profiles do not claim that owner, Android
+behavior, movies, or any other custom mission.

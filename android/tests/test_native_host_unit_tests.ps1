@@ -31,6 +31,14 @@ if ($linuxHost) {
     if (-not $python) { throw 'Python is required for Linux build CLI regression tests' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_linux_build_cli.py')
     if ($LASTEXITCODE -ne 0) { throw 'Linux build CLI regression tests failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_run_host_test_suites.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Host suite adapter checks failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_nightly_retail.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Retail sweep boundary checks failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_retail_ci_assets.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Retail asset identity checks failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_nightly_tooling_sweep.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Nightly sweep planner checks failed' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_public_sanitizer_runner.py')
     if ($LASTEXITCODE -ne 0) { throw 'Public sanitizer runner regression tests failed' }
     & bash (Join-Path $repoRoot 'run-linux-build.sh') --target $Game --test --build-type $Configuration

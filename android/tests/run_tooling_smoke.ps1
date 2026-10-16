@@ -9,6 +9,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/headless_process_pool.ps1')
 . (Join-Path $repoRoot 'android/helpers/atomic_text_file.ps1')
 $tests = @(
+    'test_automation_result_evidence', 'test_gradle_unit_test_evidence',
     'test_test_execution_evidence', 'test_download_verification', 'test_d2xxl_sound_format', 'test_d2xxl_tga_pixels',
     'test_dep_platform', 'test_clean_workspace', 'test_clean_old_artifacts',
     'test_host_process_cleanup', 'test_headless_process_pool', 'test_managed_dependencies',

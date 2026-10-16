@@ -1,4 +1,4 @@
-name: Nightly Android tooling lane
+name: Android and JVM tests
 
 on:
   workflow_call:
@@ -11,6 +11,14 @@ on:
         description: Same-run artifact containing plan.json
         required: true
         type: string
+      retail_assets:
+        required: false
+        type: boolean
+        default: false
+      retail_commit:
+        required: false
+        type: string
+        default: ""
       lane:
         description: jvm, android-single, or android-dual
         required: true
@@ -21,13 +29,17 @@ permissions:
 
 jobs:
   android:
-    name: ${{ inputs.lane }}
+    name: Run selected tests
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
     timeout-minutes: 90
+    environment: ${{ inputs.retail_assets && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
     env:
+      RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
+      RETAIL_CHECKOUT_COMMIT: ${{ inputs.retail_commit }}
       TARGET_SHA: ${{ inputs.target_sha }}
       SWEEP_LANE: ${{ inputs.lane }}
+      RETAIL_REQUESTED: ${{ inputs.retail_assets }}
       ORG_GRADLE_PROJECT_ciTestAbi: x86_64
       ORG_GRADLE_PROJECT_compareProxyHistory: "true"
       CMAKE_BUILD_PARALLEL_LEVEL: "2"
@@ -36,6 +48,12 @@ jobs:
       - name: Check lane arguments
         shell: bash
         run: |
+          if [[ "$RETAIL_REQUESTED" == true ]]; then
+            [[ "$GITHUB_REPOSITORY" == larsonm-personal/dxx-redux &&
+               "$GITHUB_REF" == refs/heads/cmake &&
+               "$GITHUB_WORKFLOW_REF" == larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake &&
+               ( "$GITHUB_EVENT_NAME" == schedule || "$GITHUB_EVENT_NAME" == workflow_dispatch ) ]] || exit 1
+          fi
           [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
           case "$SWEEP_LANE" in jvm|android-single|android-dual) ;; *) exit 1 ;; esac
       - name: Check out trusted sweep controller
@@ -63,9 +81,14 @@ jobs:
           python3 - <<'PYTHON'
           import json, os
           plan = json.load(open('plan/plan.json'))
-          needed = any(test.get('owner') == 'shareware' and test.get('lane') == os.environ['SWEEP_LANE'] for test in plan['tests'])
+          selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
+          requirements = {
+              'public_fixtures': any(test.get('owner') == 'shareware' for test in selected),
+              'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
+          }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write(f"public_fixtures={str(needed).lower()}\n")
+              for name, needed in requirements.items():
+                  output.write(f"{name}={str(needed).lower()}\n")
           PYTHON
       - name: Prepare dependency locations
         shell: bash
@@ -75,11 +98,10 @@ jobs:
           mkdir -p results/setup "$RUNNER_TEMP/dxx-nightly-deps"
           source target/android/get_deps/tool_versions.conf
           dep_base="$RUNNER_TEMP/dxx-nightly-deps"
-          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$dep_base/android-sdk}}"
+          # Managed SDK writers require a real directory, not a hosted-SDK symlink.
+          sdk_root="$dep_base/android-sdk"
+          mkdir -p "$sdk_root"
           printf '%s\n' "$dep_base" > target/dependency_base.txt
-          if [[ "$sdk_root" != "$dep_base/android-sdk" ]]; then
-            ln -s "$sdk_root" "$dep_base/android-sdk"
-          fi
           {
             echo "DXX_LANE_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "DXX_NIGHTLY_DEPS=$dep_base"
@@ -103,10 +125,36 @@ jobs:
         if: inputs.lane != 'jvm'
         shell: bash
         run: |
-          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
-            echo 'BLOCKED: readable/writable KVM is required; no security settings changed' | tee results/setup/kvm.log
+          set -euo pipefail
+          {
+            id
+            if [[ -e /dev/kvm ]]; then
+              stat -c 'KVM type=%F mode=%a owner=%U(%u) group=%G(%g)' /dev/kvm
+              if command -v getfacl >/dev/null; then getfacl -p /dev/kvm; fi
+            else
+              echo 'KVM device is absent'
+            fi
+          } 2>&1 | tee results/setup/kvm-access.log
+          if [[ ! -c /dev/kvm ]]; then
+            echo 'BLOCKED: KVM character device is absent' | tee results/setup/kvm.log
             exit 1
           fi
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            # Approved ephemeral access for this existing runner user only.
+            command -v getfacl
+            command -v setfacl
+            getfacl -p -n /dev/kvm > "$RUNNER_TEMP/dxx-kvm-before.acl"
+            # A new shared mask must not unmask another named user's/group's rights.
+            if grep -Eq '^(mask::|user:[^:]+:|group:[^:]+:)' "$RUNNER_TEMP/dxx-kvm-before.acl"; then
+              echo 'BLOCKED: existing extended KVM ACL requires separate review' | tee results/setup/kvm.log
+              exit 1
+            fi
+            printf '%s\n' "$(id -u)" > "$RUNNER_TEMP/dxx-kvm-runner.uid"
+            touch "$RUNNER_TEMP/dxx-kvm-acl-changed"
+            sudo setfacl -m "u:$(id -u):rw" /dev/kvm
+          fi
+          [[ -r /dev/kvm && -w /dev/kvm ]]
+          getfacl -p -n /dev/kvm | tee results/setup/kvm-effective.acl
       - name: Restore pinned toolchain components
         id: tools
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -144,17 +192,6 @@ jobs:
             javac -version
             df -h .
           } 2>&1 | tee ../results/setup/toolchain.log
-      - name: Save provisioned toolchain cache
-        if: steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ${{ runner.temp }}/dxx-nightly-deps/jdk-21
-            ${{ runner.temp }}/dxx-nightly-deps/android-ndk-*
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
-          key: ${{ steps.tools.outputs.cache-primary-key }}
       - name: Restore emulator components
         if: inputs.lane != 'jvm'
         id: emulator-cache
@@ -164,6 +201,24 @@ jobs:
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/emulator
             ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
           key: nightly-android-emulator-${{ runner.os }}-${{ hashFiles('target/android/get_deps/tool_versions.conf') }}
+      - name: Provision emulator host runtime
+        if: inputs.lane != 'jvm'
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends libpulse0
+          } 2>&1 | tee results/setup/emulator-host-runtime.log
+      - name: Provision dual-lane master host prerequisites
+        if: inputs.lane == 'android-dual'
+        timeout-minutes: 10
+        shell: bash
+        working-directory: target
+        run: |
+          set -euo pipefail
+          bash android/get_deps/helpers/get_linux_build_prereqs.sh 2>&1 | tee ../results/setup/dual-host-prerequisites.log
       - name: Provision emulator image
         if: inputs.lane != 'jvm'
         id: emulator
@@ -173,14 +228,25 @@ jobs:
         run: |
           set -euo pipefail
           bash android/get_deps/helpers/get_emulator.sh 2>&1 | tee ../results/setup/emulator-image.log
-      - name: Save emulator components
-        if: inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/emulator
-            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
-          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
+      - name: Check emulator runtime before APK build
+        if: inputs.lane != 'jvm'
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          emulator -version 2>&1 | tee results/setup/emulator-version.log
+      - name: Require shared Wi-Fi emulator generation
+        if: inputs.lane == 'android-dual'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYTHON'
+          import pathlib, re
+          text = pathlib.Path('results/setup/emulator-version.log').read_text()
+          match = re.search(r'Android emulator version (\d+)\.(\d+)', text)
+          if not match or tuple(map(int, match.groups())) < (36, 5):
+              raise SystemExit('BLOCKED: dual LAN tests require emulator 36.5+ shared Wi-Fi; isolated NAT is unsupported')
+          PYTHON
       - name: Build emulator APKs before boot
         if: inputs.lane != 'jvm'
         id: apk
@@ -204,6 +270,55 @@ jobs:
           bash android/get_deps/helpers/get_bounded_python.sh 2>&1 | tee ../results/setup/bounded-python.log
           pwsh -NoProfile -NonInteractive -File android/helpers/setup_shareware_test_data.ps1 \
             -Game both -Download 2>&1 | tee ../results/setup/public-fixtures.log
+      - name: Require standard FFmpeg for generated preview fixture
+        if: inputs.lane == 'android-single' && steps.selection.outputs.generated_audio == 'true'
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            # Official Ubuntu Noble package: https://packages.ubuntu.com/noble/ffmpeg
+            expected='7:6.1.1-3ubuntu5'
+            installed=$(dpkg-query -W -f='${Version}' ffmpeg 2>/dev/null || true)
+            if [[ "$installed" != "$expected" ]]; then
+              sudo apt-get update
+              sudo apt-get install -y --no-install-recommends "ffmpeg=$expected"
+            fi
+            [[ "$(dpkg-query -W -f='${Version}' ffmpeg)" == "$expected" ]]
+            [[ "$(command -v ffmpeg)" == /usr/bin/ffmpeg ]]
+            [[ "$(command -v ffprobe)" == /usr/bin/ffprobe ]]
+            ffmpeg -version
+            ffprobe -version
+          } 2>&1 | tee results/setup/ffmpeg.log
+      - name: Verify trusted retail checkout boundary
+        id: retail_gate
+        env:
+          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+        if: inputs.retail_assets
+        run: |
+          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
+          unset RETAIL_READ_TOKEN
+          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
+          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane "$SWEEP_LANE"
+      - name: Check out immutable private retail inputs
+        id: retail_checkout
+        if: inputs.retail_assets
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ inputs.retail_commit }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Verify supplied edition and stage base retail files
+        if: inputs.retail_assets
+        id: retail_stage
+        run: |
+          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
+          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
+          rm -rf retail-input
       - name: Prepare isolated headless emulators
         if: inputs.lane != 'jvm'
         timeout-minutes: 8
@@ -219,6 +334,14 @@ jobs:
           foreach ($avd in $avds) {
             & ./android/get_deps/helpers/create_light_avds.ps1 -AvdName $avd.Name
             if ($LASTEXITCODE -ne 0) { throw 'AVD provisioning failed' }
+            & bash "$env:GITHUB_WORKSPACE/control/android/helpers/refresh_nightly_kvm_access.sh"
+            if ($LASTEXITCODE -ne 0) { throw 'Approved runner KVM access could not be refreshed safely' }
+            Write-Host "Host KVM state before $($avd.Name)"
+            & id
+            & stat -c '%F %a %U:%G' /dev/kvm
+            & getfacl -p -n /dev/kvm
+            & python3 -c 'import os; fd = os.open("/dev/kvm", os.O_RDWR); os.close(fd); print("Direct KVM open succeeded")'
+            if ($LASTEXITCODE -ne 0) { throw 'Direct KVM access failed before emulator acceleration probe' }
             & ./android/helpers/emu_health.ps1 -Restart -Wait -Headless -GpuRenderer swiftshader_indirect -AvdName $avd.Name -PreferredSerial $avd.Serial
             if ($LASTEXITCODE -notin @(0, 2)) { throw 'Accelerated emulator boot failed' }
             if (-not (Install-ApkOnDevice -Serial $avd.Serial)) { throw 'Debug APK install failed' }
@@ -226,6 +349,13 @@ jobs:
             if (-not $instrumentation) { throw 'Instrumentation APK missing' }
             $installed = Adb-Dev -Serial $avd.Serial -AdbArgs @('install', '-r', '-t', $instrumentation) -Seconds 180
             if ($installed -notmatch 'Success') { throw "Instrumentation APK install failed: $installed" }
+          }
+          if ($env:SWEEP_LANE -eq 'android-dual') {
+            $addresses = @($avds | ForEach-Object { Get-DeviceWlanIp -Serial $_.Serial })
+            Write-Host "Shared Wi-Fi addresses: $($addresses -join ', ')"
+            if ($addresses.Count -ne 2 -or @($addresses | Where-Object { $_ }).Count -ne 2 -or $addresses[0] -eq $addresses[1]) {
+              throw 'Dual LAN topology unavailable: two distinct wlan0 addresses are required'
+            }
           }
           } finally { Stop-Transcript }
           exit 0
@@ -235,6 +365,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$SWEEP_LANE" != 'jvm' ]]; then
+            bash control/android/helpers/refresh_nightly_kvm_access.sh
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py execute \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --repo "$GITHUB_WORKSPACE/target" --output "$GITHUB_WORKSPACE/results"
@@ -251,26 +384,31 @@ jobs:
           python3 control/android/tests/nightly_tooling_sweep.py collect \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane "$SWEEP_LANE" --output "$GITHUB_WORKSPACE/results" "${reason[@]}"
-      - name: Save completed dependency downloads
-        if: always() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true'
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            target/android/.cxx/dependency-cache
-          key: ${{ steps.dependencies.outputs.cache-primary-key }}
       - name: Collect emulator diagnostics
         if: always() && inputs.lane != 'jvm'
         shell: bash
         run: |
           mkdir -p results/setup
+          # Snapshot before killing emulators or restoring the original ACL.
+          { id; stat -c '%F %a %U:%G' /dev/kvm; getfacl -p -n /dev/kvm; } > results/setup/kvm-before-cleanup.log 2>&1 || true
           if command -v adb >/dev/null; then
             timeout 15 adb devices -l > results/setup/adb-devices.log 2>&1 || true
             for serial in emulator-5554 emulator-5556; do
               timeout 15 adb -s "$serial" logcat -d -t 2000 > "results/setup/$serial-logcat.log" 2>&1 || true
               timeout 15 adb -s "$serial" emu kill >/dev/null 2>&1 || true
             done
+          fi
+      - name: Restore original KVM access
+        if: always() && inputs.lane != 'jvm'
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/dxx-kvm-acl-changed" ]]; then
+            sudo setfacl --restore="$RUNNER_TEMP/dxx-kvm-before.acl"
+            getfacl -p -n /dev/kvm > results/setup/kvm-restored.acl
+            cmp "$RUNNER_TEMP/dxx-kvm-before.acl" results/setup/kvm-restored.acl
+            echo 'Original KVM ACL restored' | tee results/setup/kvm-cleanup.log
           fi
       - name: Record lane lifecycle
         if: always()
@@ -289,7 +427,7 @@ jobs:
           (path / 'lifecycle.json').write_text(json.dumps(data, indent=2) + '\n')
           PY
       - name: Upload execution evidence
-        if: always()
+        if: always() && !inputs.retail_assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-results-${{ inputs.lane }}
@@ -297,7 +435,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
       - name: Upload Gradle test reports
-        if: always()
+        if: always() && !inputs.retail_assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: nightly-gradle-reports-${{ inputs.lane }}
@@ -310,3 +448,56 @@ jobs:
             target/android/proxy-tests/build/reports/tests/
           retention-days: 14
           if-no-files-found: ignore
+      - name: Upload generated fixture provenance
+        if: always() && !inputs.retail_assets
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-fixture-provenance-${{ inputs.lane }}
+          path: |
+            target/android/temp/preview_fixture_*/provenance.json
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Upload retail-safe owner receipts
+        if: always() && inputs.retail_assets
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-results-${{ inputs.lane }}
+          path: |
+            results/results.json
+            results/retail-verification.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Save provisioned toolchain cache
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && steps.setup.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && !inputs.retail_assets
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ runner.temp }}/dxx-nightly-deps/jdk-21
+            ${{ runner.temp }}/dxx-nightly-deps/android-ndk-*
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/platforms/android-${{ env.DXX_NIGHTLY_COMPILE_SDK }}*
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/build-tools/${{ env.DXX_NIGHTLY_BUILD_TOOLS }}
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/cmake/${{ env.DXX_NIGHTLY_CMAKE }}
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+      - name: Save emulator components
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && inputs.lane != 'jvm' && steps.emulator.outcome == 'success' && steps.emulator-cache.outputs.cache-hit != 'true' && !inputs.retail_assets
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/emulator
+            ${{ env.DXX_NIGHTLY_SDK_CACHE }}/system-images/android-${{ env.DXX_NIGHTLY_EMULATOR_API }}/google_apis/x86_64
+          key: ${{ steps.emulator-cache.outputs.cache-primary-key }}
+      - name: Save completed dependency downloads
+        timeout-minutes: 5
+        continue-on-error: true
+        if: always() && !cancelled() && steps.execute.outcome == 'success' && steps.dependencies.outputs.cache-hit != 'true' && !inputs.retail_assets
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            target/android/.cxx/dependency-cache
+          key: ${{ steps.dependencies.outputs.cache-primary-key }}
