@@ -17,12 +17,13 @@ import nightly_retail as retail
 
 VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
                   'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1',
-                  'master:test_lan_lobby_discovery', 'master:test_android_music_completion',
+                  'master:test_lan_launch_preparation_public_shareware', 'master:test_android_music_completion',
                   'master:test_launcher_media_controls_generated'}
 
 FIRST_PLAY_IDS = {
     'master:test_demo_import_public_first_play',
     'master:test_lan_launch_preparation_public_shareware',
+    'master:test_lan_host_migration_public_shareware',
     'master:test_gradle_unit_tests',
     'shareware:test_autosave_resume_missing_pilot_unified#d1',
     'shareware:test_autosave_resume_missing_pilot_unified#d2',

@@ -14,6 +14,14 @@ on:
       - "android/tests/*host_test_suites*"
       - "android/run_all_tests.ps1"
       - "android/helpers/nightly_public_fixture_policy.ps1"
+      - "d[12]/main/net*"
+      - "d[12]/main/multi*"
+      - "android/app/src/main/cpp/shared/net/**"
+      - "android/app/src/main/cpp/shared/coop/**"
+      - "android/app/src/main/cpp/shared/android_network_profile.*"
+      - "android/app/src/main/java/com/dxxredux/app/lobby/**"
+      - "android/app/src/main/java/com/dxxredux/app/multiplayer/**"
+      - "android/tests/test_lan*"
   workflow_dispatch:
     inputs:
       campaign:
