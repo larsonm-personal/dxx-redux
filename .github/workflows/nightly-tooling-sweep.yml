@@ -203,6 +203,10 @@ jobs:
           [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
           python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
             --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
+          # Stage only the immutable demo pair when its owner was admitted
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-demos' for e in p['tests']))"; then
+            python3 control/android/tests/private_input_demos.py --stage --demos retail-input/demos --output target/game_data/retail-ci/demos
+          fi
           rm -rf retail-input
       - name: Execute admitted host owners
         id: execute

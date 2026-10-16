@@ -42,7 +42,7 @@ def validate_identity(identity):
 
 
 def lane_requires_retail(plan, lane):
-    return any(entry['lane'] == lane and entry.get('fixture') in ('retail-base', 'retail-missions') for entry in plan['tests'])
+    return any(entry['lane'] == lane and entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') for entry in plan['tests'])
 
 
 def public_receipt(receipt):
@@ -68,3 +68,8 @@ def public_receipt(receipt):
             clean['exit_code'] = row['exit_code']
         result['results'].append(clean)
     return result
+
+
+def demos_available(identity):
+    from private_input_demos import ASSETS_COMMIT
+    return bool(identity and identity.get('commit') == ASSETS_COMMIT)
