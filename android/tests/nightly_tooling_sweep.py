@@ -21,6 +21,7 @@ VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_o
                   'master:test_launcher_media_controls_generated'}
 
 FIRST_PLAY_IDS = {
+    'master:test_demo_import_public_first_play',
     'master:test_gradle_unit_tests',
     'shareware:test_autosave_resume_missing_pilot_unified#d1',
     'shareware:test_autosave_resume_missing_pilot_unified#d2',

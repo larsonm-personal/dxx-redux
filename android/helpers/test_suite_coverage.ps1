@@ -195,6 +195,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_public_combat_profiles'
             'test_public_save_profiles'
             'test_shareware_automation_profiles'
+            'test_demo_import_first_play_profiles'
             'test_secret_area_data_profiles'
             'test_server_integration'
             'test_standard_game_data_resolution'

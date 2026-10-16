@@ -19,6 +19,11 @@ function Test-SuiteMediaIndependentTest {
         $Test.Type -ceq 'ps1' -and $Test.Requires -ceq 'emulator') {
         return $arguments.Count -eq 1 -and $arguments[0] -ceq '-GeneratedAudio'
     }
+    if ($Test.Name -ceq 'test_demo_import_public_first_play' -and
+        $Test.BaseName -ceq 'test_demo_import' -and $Test.Type -ceq 'ps1' -and
+        $Test.Requires -ceq 'emulator') {
+        return $arguments.Count -eq 1 -and $arguments[0] -ceq '-PublicFirstPlay'
+    }
     if ($Test.Name -cne $Test.BaseName) { return $false }
     $allowed = switch -CaseSensitive ("$($Test.Type):$($Test.Requires)") {
         'ps1:emulator' {
@@ -43,7 +48,9 @@ function Test-SuiteMediaIndependentTest {
         }
         'ps1:two_emulators' { @('test_lan_lobby_discovery', 'test_lan_broadcast') }
         'jsonc:emulator' {
-            @('test_compute_faster_dialog', 'test_debug_log_refresh_button',
+            @('test_public_first_play_empty', 'test_public_first_play_d1',
+                'test_public_first_play_d1_in_d2', 'test_public_first_play_d2',
+                'test_compute_faster_dialog', 'test_debug_log_refresh_button',
                 'test_controller_raw_inputs', 'test_controller_trigger_axis_priority',
                 'test_launcher_media_controls',
                 'test_demo_group_file_set_content',

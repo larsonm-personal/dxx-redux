@@ -88,6 +88,17 @@ class SweepTests(unittest.TestCase):
                 self.assertEqual(sweep.main(), 1)
             self.assertEqual(sweep.read(root / 'out')['records'], {})
 
+    def test_first_play_public_variants_provision_originals_on_both_lanes(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        fixture_step = workflow.split('      - name: Provision verified public fixtures', 1)[1].split('      - name:', 1)[0]
+        self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
+        self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
+        self.assertIn('-Game both -Download -RequireArchives', fixture_step)
+        for name in ('test_demo_import_public_first_play',):
+            self.assertIn(name, workflow)
+        entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
+        self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)

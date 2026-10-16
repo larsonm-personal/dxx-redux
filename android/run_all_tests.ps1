@@ -709,6 +709,7 @@ $noInfraTests = @(
     "test_public_save_continuation",
     "test_d1_wall_blast_save",
     "test_shareware_automation_profiles",
+    "test_demo_import_first_play_profiles",
     "test_secret_area_data_profiles",
     "test_input_demo_state_trace_compare",
     "test_input_demo_rng_trace_compare",
@@ -864,6 +865,17 @@ $allTests += @{
     Requires = 'emulator'
     TimeoutSeconds = 360
     Arguments = @('-GeneratedAudio')
+}
+
+# Exact public variants keep the original retail owners unchanged
+$allTests += @{
+    Name = 'test_demo_import_public_first_play'
+    BaseName = 'test_demo_import'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_demo_import.ps1')
+    Requires = 'emulator'
+    TimeoutSeconds = 900
+    Arguments = @('-PublicFirstPlay')
 }
 
 $inputDemoRegressionHeadlessWrapper = Join-Path $testsDir "test_input_demo_regressions.ps1"
