@@ -3,13 +3,16 @@ param([string]$Serial = 'emulator-5554')
 
 $ErrorActionPreference = 'Stop'
 if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this fixture test only on an emulator' }
+# Keep the positive preflight fixture aligned with the production format gate.
+$formatHeader = Join-Path $PSScriptRoot '../app/src/main/cpp/shared/android_save_format.h'
+$versionDefinitions = [regex]::Matches([IO.File]::ReadAllText($formatHeader),
+    '(?m)^\s*#define\s+ANDROID_D1_IN_D2_SAVE_VERSION\s+([0-9]+)\s*$')
+if ($versionDefinitions.Count -ne 1) { throw 'Expected one authoritative D1-in-D2 save version' }
+$currentD1InD2Version = [int]$versionDefinitions[0].Groups[1].Value
+if ($currentD1InD2Version -le 0) { throw 'Invalid authoritative D1-in-D2 save version' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
-$saveFormats = Get-Content (Join-Path $script:REPO_ROOT 'android/app/src/main/cpp/shared/android_save_format.h') -Raw
-$versionMatch = [regex]::Match($saveFormats, '(?m)^#define\s+ANDROID_D1_IN_D2_SAVE_VERSION\s+(\d+)\b')
-if (-not $versionMatch.Success) { throw 'Current D1-in-D2 save version was not found' }
-$currentSaveVersion = [int]$versionMatch.Groups[1].Value
 $root = 'files/d2x-redux'
 $save = "$root/Players/save_sets/coop/descent/coopsave.mg5"
 $marker = "$root/coop_restore_slot.txt"
@@ -139,14 +142,14 @@ try {
         throw 'Host did not block unsupported D1-in-D2 version 31'
     }
     if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw 'Unsupported save launched a game' }
-    foreach ($version in (@(40, 42, 45, ($currentSaveVersion - 1), ($currentSaveVersion + 1)) | Sort-Object -Unique)) {
+    foreach ($version in (@(40, 42, 45, ($currentD1InD2Version - 1), ($currentD1InD2Version + 1)) | Sort-Object -Unique)) {
         Write-VersionFixture $oldSave $version
         Push-AppFixture $oldSave $save
         $announce = Read-HostAnnouncement -ExpectedWarning "incompatible format version $version"
         Send-MpCommand 'lan_start_game'
         if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw "Incompatible save version $version launched a game" }
     }
-    Write-VersionFixture $oldSave $currentSaveVersion
+    Write-VersionFixture $oldSave $currentD1InD2Version
     Push-AppFixture $oldSave $save
     $announce = Read-HostAnnouncement
     if ($announce.PSObject.Properties.Name -contains 'save_compatibility_warning') { throw 'Current D1-in-D2 save version was rejected' }

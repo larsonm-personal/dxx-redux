@@ -3,6 +3,7 @@
 # Requires emulator 36.5+ with shared virtual Wi-Fi LAN
 
 $ErrorActionPreference = "Stop"
+$script:udpFailureCount = 0
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_helpers.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
@@ -123,6 +124,7 @@ function Invoke-NativeUdpCheck {
             Write-Host $PassMessage
         } else {
             Write-Host $FailMessage
+            $script:udpFailureCount++
         }
     } finally {
         Stop-TestProcess $recvProc
@@ -132,13 +134,12 @@ function Invoke-NativeUdpCheck {
 # Ensure both emulators are up
 $devices = & $adb devices 2>&1 | Out-String
 Write-Host "Devices:`n$devices"
-$emus = [regex]::Matches($devices, "emulator-(\d+)\s+device")
-if ($emus.Count -lt 2) {
-    Write-Host "FAIL: Need 2 emulators, found $($emus.Count)"
-    exit 1
+$EMU1 = $script:PRIMARY_EMULATOR_SERIAL
+$EMU2 = $script:SECONDARY_EMULATOR_SERIAL
+if ($EMU1 -eq $EMU2 -or -not (Test-DeviceOnline -Serial $EMU1) -or -not (Test-DeviceOnline -Serial $EMU2)) {
+    Write-Host "RESULT: SKIP (Need two distinct configured emulators $EMU1 and $EMU2)"
+    exit 2
 }
-$EMU1 = "emulator-$($emus[0].Groups[1].Value)"
-$EMU2 = "emulator-$($emus[1].Groups[1].Value)"
 Write-Host "EMU1=$EMU1  EMU2=$EMU2"
 
 $IP_EMU1 = Get-DeviceWlanIp -Serial $EMU1
@@ -154,10 +155,11 @@ Write-Host ""
 Write-Host "=== Test 1: Ping EMU1 -> EMU2 ==="
 $pingResult = & $adb -s $EMU1 shell "ping -c 2 -W 2 $IP_EMU2" 2>&1 | Out-String
 Write-Host $pingResult
-if ($pingResult -match "0% packet loss") {
+if ($pingResult -match "(?:^|\s)0% packet loss") {
     Write-Host "PASS: Unicast ping works"
 } else {
     Write-Host "FAIL: Ping failed"
+    $script:udpFailureCount++
 }
 
 # Test 2: UDP unicast
@@ -184,7 +186,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 msg = sys.argv[1] if len(sys.argv) > 1 else 'HELLO'
 addr = sys.argv[2] if len(sys.argv) > 2 else '255.255.255.255'
 port = int(sys.argv[3]) if len(sys.argv) > 3 else 42425
-if addr == '255.255.255.255':
+if addr in ('255.255.255.255', '10.0.2.255'):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 s.sendto(msg.encode(), (addr, port))
 print(f'SENT: {msg} to {addr}:{port}')
@@ -255,6 +257,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP unicast works"
     } else {
         Write-Host "FAIL: UDP unicast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc
 
@@ -282,6 +285,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP broadcast works"
     } else {
         Write-Host "FAIL: UDP broadcast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc2
 
@@ -309,6 +313,7 @@ if ($pyCheck -match "NOPYTHON") {
         Write-Host "PASS: UDP subnet broadcast works"
     } else {
         Write-Host "FAIL: UDP subnet broadcast not received"
+        $script:udpFailureCount++
     }
     Stop-TestProcess $recvProc3
 }
@@ -317,3 +322,7 @@ Write-Host ""
 Write-Host "=== Summary ==="
 Write-Host "Emulators: $EMU1 ($IP_EMU1), $EMU2 ($IP_EMU2)"
 Write-Host "Tests complete"
+
+# Report all probes, but never let the final logging command hide failed assertions
+if ($script:udpFailureCount -gt 0) { exit 1 }
+exit 0

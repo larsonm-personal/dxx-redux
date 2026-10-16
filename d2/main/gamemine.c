@@ -49,6 +49,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #include "vclip.h"
 #include "d1_in_d2/d1_in_d2_levels.h"
+#include "level_section_io.h"
 
 #define REMOVE_EXT(s)  (*(strchr( (s), '.' ))='\0')
 
@@ -651,13 +652,16 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 		Num_vertices = PHYSFSX_readShort(LoadFile);
 	else
 		Num_vertices = PHYSFSX_readInt(LoadFile);
-	Assert( Num_vertices <= MAX_VERTICES );
 
 	if (New_file_format_load)
 		Num_segments = PHYSFSX_readShort(LoadFile);
 	else
 		Num_segments = PHYSFSX_readInt(LoadFile);
-	Assert( Num_segments <= MAX_SEGMENTS );
+	if (!level_count_is_valid(Num_vertices, 1, MAX_VERTICES) ||
+	    !level_count_is_valid(Num_segments, 1, MAX_SEGMENTS)) {
+		Warning("Invalid compiled mine counts vertices=%d segments=%d", Num_vertices, Num_segments);
+		return -1;
+	}
 
 	for (i = 0; i < Num_vertices; i++)
 		PHYSFSX_readVector( &(Vertices[i]), LoadFile);
@@ -761,6 +765,14 @@ int load_mine_data_compiled(PHYSFS_file *LoadFile)
 			}
 		}
 	}
+
+	for (segnum = 0; segnum < Num_segments; ++segnum)
+		if (!level_segment_references_are_valid(Segments[segnum].children, MAX_SIDES_PER_SEGMENT,
+		                                           Segments[segnum].verts, MAX_VERTICES_PER_SEGMENT,
+		                                           Num_segments, Num_vertices)) {
+			Warning("Invalid compiled mine references in segment %d", segnum);
+			return -1;
+		}
 
 #if 0
 	{

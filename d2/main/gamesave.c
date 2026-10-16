@@ -842,10 +842,9 @@ int load_game_data(PHYSFS_file *LoadFile)
 	Gamesave_num_org_robots = 0;
 	Gamesave_num_players = 0;
 
-	if (object_offset > -1) {
-		if (PHYSFSX_fseek( LoadFile, object_offset, SEEK_SET ))
-			Error( "Error seeking to object_offset in gamesave.c" );
-
+	if (!level_section_seek(LoadFile, object_offset, gs_num_objects, MAX_OBJECTS, "objects"))
+		return -1;
+	if (gs_num_objects) {
 		object_clear_level_objects();
 		for (i = 0; i < gs_num_objects; i++) {
 
@@ -859,7 +858,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	//===================== READ WALL INFO ============================
 	// Editors may leave padding between sections; object decoding does not locate the wall table
-	if (!level_section_seek(LoadFile, walls_offset, Num_walls, "walls"))
+	if (!level_section_seek(LoadFile, walls_offset, Num_walls, MAX_WALLS, "walls"))
 		return -1;
 	REWIND_PHYSFS_FILE(load_rewind_file, LoadFile);
 
@@ -928,7 +927,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 #endif // 0
 
 	//==================== READ TRIGGER INFO ==========================
-	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, "triggers"))
+	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, MAX_TRIGGERS, "triggers"))
 		return -1;
 
 	for (i = 0; i < Num_triggers; i++)
@@ -955,16 +954,23 @@ int load_game_data(PHYSFS_file *LoadFile)
 		else
 			trigger_read(&Triggers[i], load_rewind_file);
 	}
+	for (i = 0; i < Num_triggers; ++i)
+		if (!level_links_are_valid(Triggers[i].num_links, MAX_WALLS_PER_LINK,
+		                           Triggers[i].seg, Triggers[i].side,
+		                           Num_segments, MAX_SIDES_PER_SEGMENT)) {
+			Warning("Invalid level trigger links trigger=%d count=%d", i, Triggers[i].num_links);
+			return -1;
+		}
 
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
-	if (!level_section_seek(LoadFile, control_offset, 1, "reactor triggers"))
+	if (!level_section_seek(LoadFile, control_offset, 1, 1, "reactor triggers"))
 		return -1;
 
 	if (!control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file))
 		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
-	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, "matcens"))
+	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS, "matcens"))
 		return -1;
 
 	for (i = 0; i < Num_robot_centers; i++) {
@@ -988,7 +994,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 
 	//================ READ DL_INDICES INFO ===============
-	if (!level_section_seek(LoadFile, light_indices_offset, Num_static_lights, "light indices"))
+	if (!level_section_seek(LoadFile, light_indices_offset, Num_static_lights, MAX_DL_INDICES, "light indices"))
 		return -1;
 
 	for (i = 0; i < Num_static_lights; i++) {
@@ -1002,7 +1008,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	clear_light_subtracted();
 
 	//================ READ DELTA LIGHT INFO ===============
-	if (!level_section_seek(LoadFile, delta_lights_offset, num_delta_lights, "delta lights"))
+	if (!level_section_seek(LoadFile, delta_lights_offset, num_delta_lights, MAX_DELTA_LIGHTS, "delta lights"))
 		return -1;
 
 	for (i = 0; i < num_delta_lights; i++) {
@@ -1021,7 +1027,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 		if (Objects[i].type != OBJ_NONE) {
 			int objsegnum = Objects[i].segnum;
 
-			if (objsegnum > Highest_segment_index)		//bogus object
+			if (objsegnum < 0 || objsegnum > Highest_segment_index)		//bogus object
 				Objects[i].type = OBJ_NONE;
 			else {
 				Objects[i].segnum = -1;			//avoid Assert()
