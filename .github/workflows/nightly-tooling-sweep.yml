@@ -1,0 +1,269 @@
+name: Nightly complete tooling sweep
+
+on:
+  schedule:
+    - cron: '15 2 * * *'
+  pull_request:
+    paths:
+      - ".github/workflows/*nightly*"
+      - "android/tests/*nightly*"
+      - "android/tests/*host_test_suites*"
+      - "android/run_all_tests.ps1"
+      - "android/helpers/nightly_public_fixture_policy.ps1"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('nightly-tooling-pr-{0}', github.event.pull_request.number) || 'nightly-cmake-tooling-sweep' }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      target_sha: ${{ steps.plan.outputs.target_sha }}
+      lanes: ${{ steps.plan.outputs.lanes }}
+      android_lanes: ${{ steps.plan.outputs.android_lanes }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - name: Check out trusted controller
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Resolve cmake once
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
+          if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Check out exact target catalog
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          path: target
+          persist-credentials: false
+      - name: Prepare host dependency location
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+      - name: Export authoritative master catalog
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path plan -Force | Out-Null
+          & ./target/android/run_all_tests.ps1 -ListTests -ExtendedGraphics | Set-Content plan/catalog.json -Encoding utf8
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Plan unfinished tests without advancing progress
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+          VALIDATION: ${{ github.event_name == 'pull_request' }}
+        run: |
+          python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
+          validation=()
+          if [[ "$VALIDATION" == true ]]; then validation=(--validation); fi
+          python3 control/android/tests/nightly_tooling_sweep.py plan \
+            --target-sha "$TARGET_SHA" --catalog plan/catalog.json \
+            --policy control/android/tests/nightly_tooling_policy.json --state plan/previous.json \
+            --output plan/plan.json --state-output plan/state.json "${validation[@]}"
+          python3 - <<'PY'
+          import json, os
+          p=json.load(open('plan/plan.json'))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('target_sha='+p['target_sha']+'\n')
+              f.write('lanes='+json.dumps(p['lanes'])+'\n')
+              f.write('android_lanes='+json.dumps([x for x in p['lanes'] if x!='host'])+'\n')
+              f.write('count='+str(len(p['tests']))+'\n')
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-plan
+          path: plan/
+          retention-days: 30
+
+  host:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.lanes), 'host')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEODRIVER: dummy
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ needs.plan.outputs.target_sha }}
+          path: target
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-plan
+          path: plan
+      - name: Install host prerequisites
+        id: prerequisites
+        timeout-minutes: 8
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential clang cmake ninja-build \
+            libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
+            xvfb xauth libgl1-mesa-dri ffmpeg python3-numpy python3-scipy python3-venv
+          python3 -m venv --system-site-packages "$RUNNER_TEMP/dxx-nightly-python"
+          "$RUNNER_TEMP/dxx-nightly-python/bin/python" -m pip install imageio-ffmpeg==0.6.0
+          echo "$RUNNER_TEMP/dxx-nightly-python/bin" >> "$GITHUB_PATH"
+      - name: Prepare host dependency location
+        run: |
+          mkdir -p "$RUNNER_TEMP/dxx-nightly-deps" target/android/temp target/temp
+          printf '%s\n' "$RUNNER_TEMP/dxx-nightly-deps" > target/dependency_base.txt
+      - name: Prepare verified public fixture runtime
+        id: public_prerequisites
+        timeout-minutes: 8
+        run: |
+          bash target/android/get_deps/helpers/get_bounded_python.sh
+          command -v ffmpeg
+          command -v ffprobe
+      - name: Prepare locked formatter dependencies
+        id: formatter_prerequisites
+        timeout-minutes: 8
+        run: |
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Node 20 or newer is required"); }'
+          npm ci --prefix target/android/tools/code-quality --ignore-scripts
+      - name: Execute admitted host owners
+        id: execute
+        timeout-minutes: 65
+        run: |
+          python3 control/android/tests/nightly_tooling_sweep.py execute \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
+            --lane host --repo target --output results
+      - name: Recover completed receipts after failure or interruption
+        if: always()
+        env:
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+        run: |
+          blocked=()
+          if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
+          python3 control/android/tests/nightly_tooling_sweep.py collect \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
+            --lane host --output results "${blocked[@]}"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: always()
+        with:
+          name: nightly-results-host
+          path: |
+            results/
+            !results/build/**
+          retention-days: 14
+          if-no-files-found: warn
+
+  android:
+    needs: plan
+    if: needs.plan.outputs.android_lanes != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 3 # Plus the separate host executor: at most four test lanes.
+      matrix:
+        lane: ${{ fromJSON(needs.plan.outputs.android_lanes) }}
+    uses: ./.github/workflows/android-nightly-tooling.yml
+    with:
+      target_sha: ${{ needs.plan.outputs.target_sha }}
+      plan_artifact: nightly-plan
+      lane: ${{ matrix.lane }}
+
+  finish:
+    needs: [plan, host, android]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-plan
+          path: plan
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true
+        with:
+          pattern: nightly-results-*
+          path: receipts
+      - name: Reconcile terminal results and retain unresolved failures
+        env:
+          TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
+          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' }}
+        run: |
+          qualification=()
+          if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
+          status=0
+          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          python3 control/android/tests/nightly_tooling_sweep.py reconcile \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
+            --state plan/state.json --output summary-state.json "${qualification[@]}" --receipts "${receipts[@]}" > summary.json || status=$?
+          {
+            echo '## Nightly tooling sweep'
+            echo 'Exact target, completed owners, unresolved failures, blocked suites and exclusions:'
+            echo '```json'
+            cat summary.json
+            echo '```'
+            echo 'No result means pending. Infrastructure blockages are not coverage and retry next night; stable exclusions remain explicit.'
+            echo 'A completed sweep stops selecting tests until the target or admitted catalog changes.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: always()
+        with:
+          name: nightly-sweep-summary
+          path: |
+            summary.json
+            summary-state.json
+            published-state.json
+          retention-days: 30
+
+
+  publish:
+    needs: [plan, finish]
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: nightly-plan
+          path: plan
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true
+        with:
+          pattern: nightly-results-*
+          path: receipts
+      - name: Publish only completed progress to dedicated state branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
+        run: |
+          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          python3 control/android/tests/nightly_tooling_sweep.py publish \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
+            --expected-target "$TARGET_SHA" --output published-state.json --receipts "${receipts[@]}"

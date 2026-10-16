@@ -5,7 +5,11 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 . (Join-Path $repoRoot 'android/helpers/mission_archive_sources.ps1')
-$missionSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
+# These assertions validate checked-in JSON, not archive extraction. Do not
+# require untracked mission ZIPs merely to discover maintained metadata.
+$missionSources = @(Get-MissionArchiveSources -RepoRoot $repoRoot | Where-Object {
+        Test-Path -LiteralPath $_.Directory -PathType Container
+    })
 $mismatches = @()
 $checked = 0
 
@@ -29,6 +33,8 @@ $checked = 0
             }
         }
     }
+
+if ($checked -eq 0) { throw 'No mission metadata travel-time records were checked' }
 
 if ($mismatches.Count -gt 0) {
     $reported = @($mismatches | Select-Object -First 20)

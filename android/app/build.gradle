@@ -15,6 +15,12 @@ if ((project.findProperty('isolatedGithubBuild') ?: 'false').toBoolean()) {
     if (!githubRelease || ciApk) { throw new GradleException('isolatedGithubBuild requires a GitHub release') }
     layout.buildDirectory.set(file(legacyRelease ? 'build/legacy' : 'build/github'))
 }
+// Nightly emulator tests may compile one ABI; ordinary/package builds keep all three
+def ciTestAbi = providers.gradleProperty('ciTestAbi').orNull
+if (ciTestAbi != null && ciTestAbi != 'x86_64') {
+    throw new GradleException('ciTestAbi supports only x86_64 emulator test builds')
+}
+
 def appBrandName = 'DXX-Revival'
 
 // Load tool versions from central config
@@ -435,7 +441,11 @@ android {
         resValue "string", "games_app_id", authGamesAppId
 
         ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            if (ciTestAbi != null) {
+                abiFilters ciTestAbi
+            } else {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            }
         }
 
         externalNativeBuild {

@@ -1,4 +1,4 @@
-name: Public runtime integrity
+name: Linux shareware gameplay, saves & replays
 
 on:
   pull_request:

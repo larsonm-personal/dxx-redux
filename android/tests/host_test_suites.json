@@ -1,0 +1,1294 @@
+{
+  "schema": 1,
+  "platforms": [
+    "linux"
+  ],
+  "suites": [
+    {
+      "id": "python:test_android_audio_lifecycle.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_android_audio_lifecycle.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_android_mixer_diagnostics_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_android_mixer_diagnostics_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_android_renderer_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_android_renderer_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_asset_alternatives.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_asset_alternatives.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_autoselect_order_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_autoselect_order_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_capture_public_d1_fault_probes.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_capture_public_d1_fault_probes.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_cd_preview_sync.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_cd_preview_sync.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_check_all_weapons_runtime.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_check_all_weapons_runtime.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_check_public_effect_phase.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_check_public_effect_phase.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_check_public_fan_transparency.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_check_public_fan_transparency.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_check_public_mine_blast.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_check_public_mine_blast.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_compact_public_gameplay_parity.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_compact_public_gameplay_parity.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_compact_public_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_compact_public_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_convert_public_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_convert_public_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_coop_trigger_messages.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_coop_trigger_messages.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_d1_briefing_automation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d1_briefing_automation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_d1_custom_rle_staging.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d1_custom_rle_staging.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_d1_in_d2_text_mapping.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d1_in_d2_text_mapping.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_d1_replay_parity_compare.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d1_replay_parity_compare.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "pwsh"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": [
+        "Includes PowerShell subprocess tests; local restricted environments must not execute."
+      ]
+    },
+    {
+      "id": "python:test_d1_save_translate_weapon_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d1_save_translate_weapon_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_d_tick_state_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_d_tick_state_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_deployment_script_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_deployment_script_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_dpog_d1_bitmap_mapping.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_dpog_d1_bitmap_mapping.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_dxa_animation_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_dxa_animation_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_dxa_ham_patch_transaction.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_dxa_ham_patch_transaction.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_dxa_robot_weapon_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_dxa_robot_weapon_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_extract_hfs_machfs.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_extract_hfs_machfs.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_inno_capability_docs.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_inno_capability_docs.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_input_demo_assets.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_input_demo_assets.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_input_demo_start_difficulty_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_input_demo_start_difficulty_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_introspection_accessor_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_introspection_accessor_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_jni_exception_safety_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_jni_exception_safety_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_linux_build_cli.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_linux_build_cli.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_linux_process_lifetime.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_linux_process_lifetime.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "pwsh"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": [
+        "Includes PowerShell subprocess tests; local restricted environments must not execute."
+      ]
+    },
+    {
+      "id": "python:test_metadata_worker_audio_lifecycle.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_metadata_worker_audio_lifecycle.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_metadata_worker_shutdown_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_metadata_worker_shutdown_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_midi_preview_sync.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_midi_preview_sync.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_mod_fuzz_controls.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_mod_fuzz_controls.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_multiplayer_source_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_multiplayer_source_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_music_spectra.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_music_spectra.py",
+      "estimated_seconds": 30,
+      "python_modules": [
+        "numpy",
+        "scipy",
+        "imageio_ffmpeg"
+      ],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_native_file_naming_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_native_file_naming_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_ordered_public_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_ordered_public_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_physfsx_android_init_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_physfsx_android_init_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_d1_fan_corpus.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_d1_fan_corpus.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_d1_fault_corpus.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_d1_fault_corpus.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_door_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_door_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_guidebot_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_guidebot_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_incoming_robot_hits.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_incoming_robot_hits.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_loot_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_loot_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_matcen_report.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_matcen_report.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_robot_combat_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_robot_combat_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_sanitizer_runner.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_sanitizer_runner.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "pwsh"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": [
+        "Includes PowerShell subprocess tests; local restricted environments must not execute."
+      ]
+    },
+    {
+      "id": "python:test_public_save_continuation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_save_continuation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_secondary_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_secondary_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_public_switch_replay.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_public_switch_replay.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_rbaudio_bin_header_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_rbaudio_bin_header_contracts.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "clang",
+        "clang++"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_regression_tool_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_regression_tool_contracts.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "pwsh"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": [
+        "Includes PowerShell subprocess tests; local restricted environments must not execute."
+      ]
+    },
+    {
+      "id": "python:test_run_bounded_extractor.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_run_bounded_extractor.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_run_compact_public_replays.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_run_compact_public_replays.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_save_epoch_contract.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_save_epoch_contract.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_save_runtime_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_save_runtime_validation.py",
+      "estimated_seconds": 180,
+      "python_modules": [],
+      "executables": [
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_secret_area_serialization_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_secret_area_serialization_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_state_persistence_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_state_persistence_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_strict_jni_utf8_contracts.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_strict_jni_utf8_contracts.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_thief_checkpoint_index_validation.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_thief_checkpoint_index_validation.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_tsf_render_thread_tuning.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_tsf_render_thread_tuning.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_verified_native_dependencies.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_verified_native_dependencies.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "extractor:light",
+      "kind": "extractor",
+      "profile": "light",
+      "estimated_seconds": 120,
+      "executables": [
+        "cmake",
+        "ctest",
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "Dependency-free CTest registrations only; optional and real-media checks excluded.",
+      "constraints": [
+        "Requires DXX_EXTRACT_DEPENDENCY_LIGHT option in target commit.",
+        "22 optional registrations and 8 internal media cases are excluded, never full-profile coverage."
+      ]
+    },
+    {
+      "id": "extractor:full",
+      "kind": "extractor",
+      "profile": "full",
+      "estimated_seconds": 1200,
+      "executables": [
+        "cmake",
+        "ctest",
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "Full standalone extraction/shared CTest inventory.",
+      "constraints": [
+        "Configuration downloads hash-verified pinned third-party sources unless cached.",
+        "Real-media tests require separately provisioned legally obtained GOG/CD/SOW/Mac demo fixtures.",
+        "Missing media and internally skipped checks produce BLOCKED, not complete coverage."
+      ]
+    },
+    {
+      "id": "engine:ctest-d1",
+      "kind": "configured-ctest",
+      "build_subdirectory": "engine-d1",
+      "estimated_seconds": 180,
+      "executables": [
+        "cmake",
+        "ctest",
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All registered CTests in supplied d1 build, no build or media substitution.",
+      "constraints": [
+        "Lazily configures/builds native Debug with the assertion-preserving run-linux-build.sh --test options.",
+        "Requires native desktop development dependencies; cold setup can take about1200 seconds, outside the test budget."
+      ]
+    },
+    {
+      "id": "engine:ctest-d2",
+      "kind": "configured-ctest",
+      "build_subdirectory": "engine-d2",
+      "estimated_seconds": 180,
+      "executables": [
+        "cmake",
+        "ctest",
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "All registered CTests in supplied d2 build, no build or media substitution.",
+      "constraints": [
+        "Lazily configures/builds native Debug with the assertion-preserving run-linux-build.sh --test options.",
+        "Requires native desktop development dependencies; cold setup can take about1200 seconds, outside the test budget."
+      ]
+    },
+    {
+      "id": "python:test_cockpit_mode_validation.py",
+      "kind": "python-script",
+      "path": "android/tests/test_cockpit_mode_validation.py",
+      "estimated_seconds": 30,
+      "executables": [],
+      "coverage_scope": "Existing assertion script, aggregate result only; no fabricated unittest case count.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_control_center_trigger_validation.py",
+      "kind": "python-script",
+      "path": "android/tests/test_control_center_trigger_validation.py",
+      "estimated_seconds": 30,
+      "executables": [],
+      "coverage_scope": "Existing assertion script, aggregate result only; no fabricated unittest case count.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_legacy_save_header_loadability.py",
+      "kind": "python-script",
+      "path": "android/tests/test_legacy_save_header_loadability.py",
+      "estimated_seconds": 30,
+      "executables": [],
+      "coverage_scope": "Existing assertion script, aggregate result only; no fabricated unittest case count.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_replacement_texture_limits.py",
+      "kind": "python-script",
+      "path": "android/tests/test_replacement_texture_limits.py",
+      "estimated_seconds": 30,
+      "executables": [],
+      "coverage_scope": "Existing assertion script, aggregate result only; no fabricated unittest case count.",
+      "constraints": []
+    },
+    {
+      "id": "audio:strict-fingerprint",
+      "kind": "extractor",
+      "profile": "full",
+      "extra_test": "strict-fingerprint",
+      "estimated_seconds": 30,
+      "executables": [
+        "cmake",
+        "ctest",
+        "cc",
+        "c++"
+      ],
+      "coverage_scope": "Existing strict fingerprint database admission assertions, using compiled target matcher and maintained fingerprint fixture.",
+      "constraints": [
+        "Requires portable --matcher CLI in target script.",
+        "Builds fingerprint_match with pinned Chromaprint/JSON/PCM dependency configuration; setup time is separate.",
+        "Uses checked-in known_albums.jsonc fingerprint; no retail media needed."
+      ]
+    },
+    {
+      "id": "python:test_run_host_test_suites.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_run_host_test_suites.py",
+      "estimated_seconds": 30,
+      "executables": [],
+      "coverage_scope": "Host adapter and portable fingerprint CLI contracts with mocked execution.",
+      "constraints": []
+    },
+    {
+      "id": "host-profile:metadata-d1",
+      "kind": "public-powershell",
+      "profile": "metadata-d1",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d1"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-d1 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-d2",
+      "kind": "public-powershell",
+      "profile": "metadata-d2",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-d2 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-imported-d1",
+      "kind": "public-powershell",
+      "profile": "metadata-imported-d1",
+      "path": "android/tests/test_native_metadata_worker.ps1",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-imported-d1 profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:metadata-headers",
+      "kind": "public-powershell",
+      "profile": "metadata-headers",
+      "path": "android/tests/test_metadata_level_headers.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "-metadata-worker",
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit metadata-headers profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:public-flight",
+      "kind": "public-powershell",
+      "profile": "public-flight",
+      "path": "android/tests/test_input_demo_runtime_smoke.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing owner assertions for explicit public-flight profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Retail/custom-asset profiles and optional caller-supplied recordings are outside this public selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:benchmark-policy",
+      "kind": "public-powershell",
+      "profile": "benchmark-policy",
+      "path": "android/tests/test_level_metadata_benchmark.ps1",
+      "games": [],
+      "target_suffix": "",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "pwsh"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 30,
+      "coverage_scope": "Existing owner assertions for explicit benchmark-policy profile only; aggregate assertion receipt, not per-assertion leaf discovery.",
+      "constraints": [
+        "Full checkout and supported dependency_base.txt/pinned dependencies; public downloads may be needed."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "unselected-profiles",
+          "reason": "Only benchmark policy self-test runs. Native performance measurements and corpus digest assertions remain unexecuted."
+        }
+      ]
+    },
+    {
+      "id": "cmake:fluidsynth-contracts",
+      "kind": "standalone-cmake",
+      "source": "android/tests/fluidsynth_quality",
+      "build_target": "fluid_render",
+      "build_subdirectory": "contract-fluidsynth-contracts",
+      "public_soundfont": true,
+      "executables": [
+        "cmake",
+        "ctest",
+        "bash"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "All existing CTest registrations from this standalone CMake project; excludes unregistered audition/experiment scripts.",
+      "constraints": [
+        "Pinned dependency downloads may be needed; setup failures remain retryable.",
+        "Public pinned gm.sf2 downloaded through existing verified helper; no retail audio."
+      ]
+    },
+    {
+      "id": "cmake:etc2-limits",
+      "kind": "standalone-cmake",
+      "source": "android/tools/etc2tool",
+      "build_target": "test_etc2_limits",
+      "build_subdirectory": "contract-etc2-limits",
+      "public_soundfont": false,
+      "executables": [
+        "cmake",
+        "ctest"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "All existing CTest registrations from this standalone CMake project; excludes unregistered audition/experiment scripts.",
+      "constraints": [
+        "Pinned dependency downloads may be needed; setup failures remain retryable.",
+        "Existing full project config fetches ETC2/KTX dependencies even though limit assertions are asset-free."
+      ]
+    },
+    {
+      "id": "python:test_nightly_android_fixtures.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_nightly_android_fixtures.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All discovered fixture controls; optional FFmpeg/ffprobe test skip remains an explicit excluded leaf.",
+      "constraints": [
+        "Install ffmpeg and ffprobe for the real repeatability/overwrite test; otherwise mock controls still run."
+      ]
+    },
+    {
+      "id": "host-profile:shareware-data",
+      "kind": "public-powershell",
+      "profile": "shareware-data",
+      "path": "android/tests/test_shareware_test_data.ps1",
+      "games": [],
+      "target_suffix": "",
+      "build_targets": [],
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 120,
+      "coverage_scope": "Existing shareware-data assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:public-save",
+      "kind": "public-powershell",
+      "profile": "public-save",
+      "path": "android/tests/test_public_save_continuation.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat"
+      ],
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 720,
+      "coverage_scope": "Existing public-save assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:public-pickup",
+      "kind": "public-powershell",
+      "profile": "public-pickup",
+      "path": "android/tests/test_pickup_autoselect_parity.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat"
+      ],
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing public-pickup assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "retail-variants",
+          "reason": "Retail baseline/selection/profile variants are outside this explicit shareware selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:public-secret-baseline",
+      "kind": "public-powershell",
+      "profile": "public-secret-baseline",
+      "path": "android/tests/test_secret_area_baseline.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "dxx-redux-{game}-headless-metadata"
+      ],
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 300,
+      "coverage_scope": "Existing public-secret-baseline assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": [
+        {
+          "id": "retail-variants",
+          "reason": "Retail baseline/selection/profile variants are outside this explicit shareware selection."
+        }
+      ]
+    },
+    {
+      "id": "host-profile:public-ordered-input",
+      "kind": "public-powershell",
+      "profile": "public-ordered-input",
+      "path": "android/tests/test_ordered_input_runtime.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat",
+        "dxx-redux-{game}",
+        "dxx-redux-{game}-headless"
+      ],
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 720,
+      "coverage_scope": "Existing public-ordered-input assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:public-all-weapons",
+      "kind": "public-powershell",
+      "profile": "public-all-weapons",
+      "path": "android/tests/test_all_weapons_runtime.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat",
+        "dxx-redux-{game}",
+        "dxx-redux-{game}-headless"
+      ],
+      "public_data": true,
+      "virtual_display": true,
+      "executables": [
+        "pwsh",
+        "cmake",
+        "xvfb-run"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 420,
+      "coverage_scope": "Existing public-all-weapons assertion owner with verified public inputs and explicit native paths; aggregate receipt.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads.",
+        "Compile command provenance and all original clean-revision checks retained."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "host-profile:public-matcen",
+      "kind": "public-powershell",
+      "profile": "public-matcen",
+      "path": "android/tests/test_public_matcen_stations.ps1",
+      "games": [
+        "d1",
+        "d2"
+      ],
+      "target_suffix": "",
+      "build_targets": [
+        "test_upstream_compat"
+      ],
+      "public_data": true,
+      "virtual_display": false,
+      "executables": [
+        "pwsh",
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 180,
+      "coverage_scope": "Existing controlled native public matcen production and suppression owner; aggregate receipt, no player-route coverage claim.",
+      "constraints": [
+        "Full clean target checkout; verified pinned public shareware setup; native setup may need downloads."
+      ],
+      "profile_exclusions": []
+    }
+  ],
+  "owned_elsewhere": [
+    {
+      "path": "android/tests/test_hmp_playback.py",
+      "owner": "extractor:full#hmp_playback_tests",
+      "reason": "Needs compiled exporter argument; standalone unittest discovery skips all cases."
+    },
+    {
+      "path": "android/tests/test_soundfont_loop_bounds.py",
+      "owner": "extractor:full#soundfont_loop_bounds_tests",
+      "reason": "Needs compiled soundfont probe; original CMake registration supplies it."
+    }
+  ],
+  "unsupported_entrypoints": [
+    {
+      "path": "android/tests/test_fm_playback.py",
+      "reason": "Requires explicit HOG song fixture, renderer and SF2; media/profile provenance not yet encoded."
+    },
+    {
+      "path": "android/tests/test_secret_area_liquid_obsidian.py",
+      "reason": "Exact Obsidian mission and game assets required; no public substitute."
+    },
+    {
+      "path": "android/tests/test_replay_window_progress.py",
+      "reason": "Windows GUI integration, outside Linux adapter."
+    }
+  ]
+}

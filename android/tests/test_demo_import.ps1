@@ -35,8 +35,8 @@ try {
         if (-not $oracles.archives[$i].runtime_suite) { continue }
         if ($oracles.archives[$i].runtime_suite -ne 'd1-in-d2-shareware') { throw 'Unknown demo runtime suite' }
         Write-Output "Original-package runtime checks: $($oracles.archives[$i].archive)"
-        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareSmoke -Serial $Serial
-        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareLastLevel 7 -Serial $Serial
+        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareSmoke -Serial $Serial -AdbPath $script:ADB
+        & "$PSScriptRoot/../helpers/test_d1_in_d2_android.ps1" -ImportedDemoIndex $i -SharewareLastLevel 7 -Serial $Serial -AdbPath $script:ADB
     }
 } finally {
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null

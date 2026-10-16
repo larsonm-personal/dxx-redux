@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
 """Exercise strict host fingerprint database admission."""
 
+import argparse
 import json
 import re
 import subprocess
 import tempfile
 from pathlib import Path
 
-
 REPO = Path(__file__).parents[2]
-MATCHER = REPO / "android/tests/build/Debug/fingerprint_match.exe"
+_MATCHER_CANDIDATES = [
+    REPO / "android/tests/build/fingerprint_match",
+    REPO / "android/tests/build/Debug/fingerprint_match.exe",
+    REPO / "android/tests/build/fingerprint_match.exe",
+]
+MATCHER = next(
+    (path for path in _MATCHER_CANDIDATES if path.is_file()), _MATCHER_CANDIDATES[0]
+)
 KNOWN_DISCS = REPO / "android/app/src/main/assets/known_albums.jsonc"
 
 
-def run_matcher(entries: list[dict], duration_tolerance: str = "0.10") -> subprocess.CompletedProcess[str]:
+def run_matcher(
+    entries: list[dict], duration_tolerance: str = "0.10"
+) -> subprocess.CompletedProcess[str]:
     with tempfile.TemporaryDirectory(prefix="dxx-fingerprint-match-") as directory:
         database = Path(directory) / "database.json"
         database.write_text(json.dumps(entries), encoding="utf-8")
@@ -26,9 +35,15 @@ def run_matcher(entries: list[dict], duration_tolerance: str = "0.10") -> subpro
 
 
 def main() -> None:
+    global MATCHER
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--matcher", type=Path, default=MATCHER)
+    parser.add_argument("--known-discs", type=Path, default=KNOWN_DISCS)
+    args = parser.parse_args()
+    MATCHER = args.matcher.resolve()
     if not MATCHER.is_file():
         raise SystemExit(f"Missing matcher: {MATCHER}")
-    source = KNOWN_DISCS.read_text(encoding="utf-8")
+    source = args.known_discs.read_text(encoding="utf-8")
     match = re.search(r'"?chromaprint"?\s*:\s*"([^"]+)"', source)
     if not match:
         raise SystemExit("Maintained database has no Chromaprint fixture")
@@ -58,7 +73,9 @@ def main() -> None:
     malformed = dict(valid, chromaprint="not-a-fingerprint")
     rejected = run_matcher([valid, malformed, valid])
     if rejected.returncode == 0:
-        raise SystemExit("Malformed middle entry produced a consumable partial database")
+        raise SystemExit(
+            "Malformed middle entry produced a consumable partial database"
+        )
 
     over_limit = run_matcher([valid] * 4097)
     if over_limit.returncode == 0:
