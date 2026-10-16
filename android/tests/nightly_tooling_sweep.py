@@ -32,6 +32,15 @@ FIRST_PLAY_IDS = {
     'shareware:test_pilot_long_hold_delete_unified#d2',
 }
 
+GRAPHICS_CAPABILITIES_IDS = {
+    'shareware:test_graphics_capabilities#d1',
+    'shareware:test_graphics_capabilities#d2',
+    'shareware:test_graphics_context_loss#d1',
+    'shareware:test_graphics_context_loss#d2',
+    'shareware:test_graphics_msaa_allocation_failure#d1',
+    'shareware:test_graphics_msaa_allocation_failure#d2',
+}
+
 SCHEMA = 1
 LANES = ('host', 'jvm', 'android-single', 'android-dual')
 TERMINAL = {'PASS', 'FAIL', 'TIMEOUT'}
@@ -146,17 +155,18 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     return plan, state
 
 
-def select_first_play(plan, policy, catalog):
+def select_public_campaign(plan, policy, catalog, campaign):
     """A fixed asset-free sample; never inherits rotating retail selections or progress."""
+    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS}[campaign]
     entries = policy_entries(policy)
-    if not FIRST_PLAY_IDS <= entries.keys():
-        raise ValueError('Missing first-play campaign suites')
+    if not campaign_ids <= entries.keys():
+        raise ValueError(f'Missing {campaign} campaign suites')
     names = {row['name'] for row in catalog['tests']}
-    selected = [entry for ident, entry in entries.items() if ident in FIRST_PLAY_IDS]
+    selected = [entry for ident, entry in entries.items() if ident in campaign_ids]
     if any(entry.get('fixture') in ('retail-base', 'retail-missions') for entry in selected):
-        raise ValueError('First-play campaign must remain asset-free')
-    if any(entry['owner'] == 'master' and entry['args']['suite'] not in names for entry in selected):
-        raise ValueError('First-play owner absent from pinned catalog')
+        raise ValueError(f'{campaign} campaign must remain asset-free')
+    if any((entry['owner'] == 'master' or campaign == 'graphics-capabilities') and entry['args']['suite'] not in names for entry in selected):
+        raise ValueError(f'{campaign} owner absent from pinned catalog')
     plan = dict(plan)
     plan.pop('retail_assets', None)
     plan['tests'] = selected
@@ -566,7 +576,7 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
-    p.add_argument('--campaign', choices=('first-play',))
+    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities'))
     p = sub.add_parser('retail-check')
     for option in ('plan', 'policy', 'lane'):
         p.add_argument('--' + option, required=True)
@@ -624,7 +634,7 @@ def main():
         if args.campaign:
             if args.validation:
                 raise ValueError('Choose validation or campaign, not both')
-            plan = select_first_play(plan, read(args.policy), read(args.catalog))
+            plan = select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
             state = fresh_state(plan['target_sha'], plan['catalog_hash'])
         validate_plan(plan, read(args.policy))
         write(args.output, plan)

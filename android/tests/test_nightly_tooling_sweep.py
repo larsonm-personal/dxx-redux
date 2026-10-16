@@ -46,7 +46,7 @@ class SweepTests(unittest.TestCase):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
         catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
         plan, _ = sweep.plan_batch(SHA, catalog, policy)
-        chosen = sweep.select_first_play(plan, policy, catalog)
+        chosen = sweep.select_public_campaign(plan, policy, catalog, 'first-play')
         self.assertEqual({e['id'] for e in chosen['tests']}, sweep.FIRST_PLAY_IDS)
         self.assertNotIn('retail_assets', chosen)
         for lane in sweep.LANES:
@@ -58,25 +58,25 @@ class SweepTests(unittest.TestCase):
         catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
         plan, _ = sweep.plan_batch(SHA, catalog, policy)
         with self.assertRaisesRegex(ValueError, 'absent'):
-            sweep.select_first_play(plan, policy, {'tests': []})
+            sweep.select_public_campaign(plan, policy, {'tests': []}, 'first-play')
         bad = copy.deepcopy(policy)
         next(e for e in bad['suites'] if e['id'] in sweep.FIRST_PLAY_IDS)['fixture'] = 'retail-base'
         with self.assertRaisesRegex(ValueError, 'asset-free'):
-            sweep.select_first_play(plan, bad, catalog)
+            sweep.select_public_campaign(plan, bad, catalog, 'first-play')
         bad['suites'] = [e for e in bad['suites'] if e['id'] not in sweep.FIRST_PLAY_IDS]
         with self.assertRaisesRegex(ValueError, 'Missing'):
-            sweep.select_first_play(plan, bad, catalog)
+            sweep.select_public_campaign(plan, bad, catalog, 'first-play')
 
     def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' }}", workflow)
-        self.assertIn("inputs.campaign == 'first-play' && github.sha", workflow)
+        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' }}", workflow)
+        self.assertIn("(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities') && github.sha", workflow)
         self.assertIn("if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'", workflow)
         self.assertIn('types: [opened, synchronize, reopened, labeled]', workflow)
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
         catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
         plan, _ = sweep.plan_batch(SHA, catalog, policy)
-        plan = sweep.select_first_play(plan, policy, catalog)
+        plan = sweep.select_public_campaign(plan, policy, catalog, 'first-play')
         state = sweep.fresh_state(plan['target_sha'], plan['catalog_hash'])
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -87,6 +87,94 @@ class SweepTests(unittest.TestCase):
             with patch.object(sys, 'argv', argv), patch('builtins.print'):
                 self.assertEqual(sweep.main(), 1)
             self.assertEqual(sweep.read(root / 'out')['records'], {})
+
+    def test_graphics_campaign_is_exact_public_and_within_lane_budget(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        names = ('test_graphics_capabilities', 'test_graphics_context_loss', 'test_graphics_msaa_allocation_failure')
+        catalog = {'schema': 1, 'tests': [{'name': name} for name in names]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        chosen = sweep.select_public_campaign(plan, policy, catalog, 'graphics-capabilities')
+        expected = {'shareware:' + name + '#' + game for name in names for game in ('d1', 'd2')}
+        self.assertEqual(sweep.GRAPHICS_CAPABILITIES_IDS, expected)
+        self.assertEqual({e['id'] for e in chosen['tests']}, expected)
+        self.assertEqual(chosen['lanes'], ['android-single'])
+        self.assertEqual(chosen['estimated_seconds'], 1800)
+        self.assertLessEqual(chosen['estimated_seconds'], chosen['budget_seconds'])
+        self.assertLessEqual(chosen['budget_seconds'], 2700)
+        self.assertNotIn('retail_assets', chosen)
+        for entry in chosen['tests']:
+            self.assertEqual(entry['owner'], 'shareware')
+            self.assertEqual(entry['estimated_seconds'], 300)
+            self.assertNotIn('fixture', entry)
+            self.assertEqual(entry['id'], 'shareware:' + entry['args']['suite'] + '#' + entry['args']['game'])
+
+    def test_graphics_campaign_rejects_missing_owner_retail_and_overbudget(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        with self.assertRaisesRegex(ValueError, 'absent'):
+            sweep.select_public_campaign(plan, policy, {'tests': []}, 'graphics-capabilities')
+        for fixture in ('retail-base', 'retail-missions'):
+            bad = copy.deepcopy(policy)
+            next(e for e in bad['suites'] if e['id'] in sweep.GRAPHICS_CAPABILITIES_IDS)['fixture'] = fixture
+            with self.assertRaisesRegex(ValueError, 'asset-free'):
+                sweep.select_public_campaign(plan, bad, catalog, 'graphics-capabilities')
+        bad = copy.deepcopy(policy)
+        bad['suites'] = [e for e in bad['suites'] if e['id'] != 'shareware:test_graphics_capabilities#d1']
+        with self.assertRaisesRegex(ValueError, 'Missing'):
+            sweep.select_public_campaign(plan, bad, catalog, 'graphics-capabilities')
+        bad = copy.deepcopy(policy)
+        for entry in bad['suites']:
+            if entry['id'] in sweep.GRAPHICS_CAPABILITIES_IDS:
+                entry['estimated_seconds'] = 500
+        with self.assertRaisesRegex(ValueError, 'lane budget'):
+            sweep.select_public_campaign(plan, bad, catalog, 'graphics-capabilities')
+        with patch.object(sys, 'argv', ['sweep', 'plan', '--campaign', 'shareware:test_death#d1']), patch('sys.stderr'), self.assertRaises(SystemExit) as error:
+            sweep.main()
+        self.assertEqual(error.exception.code, 2)
+
+    def test_graphics_campaign_discards_old_pass_and_requires_all_fresh_receipts(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites']]}
+        _, state = sweep.plan_batch(SHA, catalog, policy)
+        state['records'] = {ident: {'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/1'}
+                            for ident in sweep.GRAPHICS_CAPABILITIES_IDS}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('policy', policy), ('catalog', catalog), ('previous', state)):
+                sweep.write(root / name, value)
+            argv = ['sweep', 'plan', '--campaign', 'graphics-capabilities', '--target-sha', SHA,
+                    '--catalog', str(root / 'catalog'), '--policy', str(root / 'policy'), '--state', str(root / 'previous'),
+                    '--output', str(root / 'plan'), '--state-output', str(root / 'state')]
+            with patch.object(sys, 'argv', argv), patch.object(sweep.retail, 'configured_identity', return_value=None), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 0)
+            plan = sweep.read(root / 'plan')
+            self.assertEqual(plan['target_sha'], SHA)
+            self.assertEqual({e['id'] for e in plan['tests']}, sweep.GRAPHICS_CAPABILITIES_IDS)
+            self.assertEqual(sweep.read(root / 'state')['records'], {})
+            receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+            receipt['lane'] = 'android-single'
+            argv = ['sweep', 'reconcile', '--require-selected', '--plan', str(root / 'plan'), '--policy', str(root / 'policy'),
+                    '--state', str(root / 'state'), '--output', str(root / 'out'), '--receipts', str(root / 'receipt')]
+            for status in (None, 'BLOCKED', 'NOT_RUN', 'RUNNING', 'TIMEOUT', 'FAIL', 'PASS'):
+                receipt['results'] = [{'id': e['id'], 'status': 'PASS', 'run_url': 'https://github.com/o/r/actions/runs/2'} for e in plan['tests']]
+                if status is None:
+                    receipt['results'].pop()
+                else:
+                    receipt['results'][0]['status'] = status
+                sweep.write(root / 'receipt', receipt)
+                with self.subTest(status=status), patch.object(sys, 'argv', argv), patch('builtins.print'):
+                    self.assertEqual(sweep.main(), 0 if status == 'PASS' else 1)
+
+    def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        self.assertIn('options: [nightly, first-play, graphics-capabilities]', workflow)
+        self.assertIn('default: nightly', workflow)
+        self.assertIn("GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}", workflow)
+        self.assertIn('elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then\n            validation=(--campaign graphics-capabilities)', workflow)
+        self.assertNotIn('release-graphics-capabilities', workflow)
+        publish = workflow.split('  publish:', 1)[1]
+        self.assertIn("inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities'", publish)
 
     def test_first_play_public_variants_provision_originals_on_both_lanes(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
