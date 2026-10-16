@@ -344,6 +344,19 @@ function Test-FirstPlayDocumentsUiCancel {
     Write-Output 'PASS: actual DocumentsUI open/cancel; installer selection is separately injected through SafTestProvider'
 }
 
+function Assert-FirstPlayMissionReturnProcess {
+    param([string]$Log)
+    # Reuse the isolation owner's log-PID oracle, scoped to this post-resume transition
+    $markers = [regex]::Matches($Log,
+        '(?m)^\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+\s+(?<process>[1-9]\d*)\s+\d+\s+I\s+DXX-Automate:\s+SCRIPT: FIRST_PLAY_RETURN (?<phase>resumed_custom|builtin_live)\r?$')
+    if ($markers.Count -ne 2 -or $markers[0].Groups['phase'].Value -cne 'resumed_custom' -or
+        $markers[1].Groups['phase'].Value -cne 'builtin_live' -or
+        $markers[0].Groups['process'].Value -cne $markers[1].Groups['process'].Value) {
+        throw 'Public mission return lacks ordered same-process custom-to-base evidence'
+    }
+    return $markers[0].Groups['process'].Value
+}
+
 function Invoke-FirstPlayPhase {
     param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2', 'mission')][string]$Phase)
     $phaseScripts = @{
@@ -369,6 +382,10 @@ function Invoke-FirstPlayPhase {
     # run_test force-stops the previous process, then clears logcat before this phase
     $nativeLog = Adb -AdbArgs @('logcat', '-d', '-s', 'MainActivity:I', '*:S')
     $nativeLog | Set-Content (Join-Path $phaseOutput 'native-library.log') -Encoding utf8
+    if ($Phase -eq 'mission') {
+        $returnLog = Adb -AdbArgs @('logcat', '-d', '-v', 'threadtime', '-s', 'DXX-Automate:I', '*:S')
+        $returnLog | Set-Content (Join-Path $phaseOutput 'mission-return.log') -Encoding utf8
+    }
     if ($exitCode -ne 0) { throw "First-play $Phase automation failed (exit $exitCode)" }
     $result = Get-Content (Join-Path $phaseOutput 'automation_result.json') -Raw | ConvertFrom-Json
     if (-not (Test-AutomationResultComplete -Result $result) -or $result.run_id -notmatch '^[a-f0-9]{32}$' -or
@@ -376,6 +393,11 @@ function Invoke-FirstPlayPhase {
     $runnerLog = Get-Content (Join-Path $phaseOutput 'runner.log') -Raw
     $expectedPushName = "test_public_first_play_$Phase.run-$($result.run_id).jsonc"
     if (-not $runnerLog.Contains($expectedPushName)) { throw "First-play $Phase result is not correlated to its staged script" }
+    if ($Phase -eq 'mission') {
+        $returnProcess = Assert-FirstPlayMissionReturnProcess -Log $returnLog
+        [ordered]@{ run_id = $result.run_id; process_id = $returnProcess; transition = 'resumed_custom -> native menu -> builtin_live' } |
+            ConvertTo-Json | Set-Content (Join-Path $phaseOutput 'mission-return-process.json') -Encoding utf8
+    }
     if ($Phase -eq 'empty') {
         if ($nativeLog -match 'Loaded native library:') { throw 'An engine started despite missing game files' }
     } else {
@@ -465,6 +487,7 @@ function Invoke-PublicFirstPlay {
             mission = 'Generated ZIP, unchanged D2 demo level with unique fpplay1.rl2 alias; internal level title remains Ahayweh Gate'
             mission_identity = 'Pinned source/member and imported ZIP hashes, unique descriptor/member mapping, active mod owner and saved mission name; no direct level-filename introspection'
             exit_save = 'enter_launcher uses the synchronous automation auto-exit save path; Load Last Save is a real launcher button'
+            mission_return = 'Resumed custom mission -> normal Abort Game -> native menu -> built-in D2 demo in the same log-verified process; custom HOG detached and new-game ammunition reset'
             native_d1_identity = 'fresh MainActivity native-library load plus correlated level-one PASS; D1 has no asset_trace'
         } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $firstPlayOutput 'summary.json') -Encoding utf8
         Write-Output 'PASS: public import and button launches, generated mission selection, normal menu save/restore and launcher resume'

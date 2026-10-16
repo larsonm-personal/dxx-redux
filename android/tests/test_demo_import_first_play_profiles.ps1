@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -35,6 +35,22 @@ function Assert-MissionDifficultyTransition {
         $selection.action -cne 'select' -or $selection.text -cne 'Trainee') {
         throw 'Single-level mission must observe difficulty before selecting Trainee, without an Ok step'
     }
+}
+
+$returnStartLine = '10-16 09:45:00.100  8626  8660 I DXX-Automate: SCRIPT: FIRST_PLAY_RETURN resumed_custom'
+$returnEndLine = '10-16 09:45:20.100  8626  8660 I DXX-Automate: SCRIPT: FIRST_PLAY_RETURN builtin_live'
+$validReturnLog = "noise`n$returnStartLine`n$returnEndLine`n"
+if ((Assert-FirstPlayMissionReturnProcess -Log $validReturnLog) -cne '8626') { throw 'Valid same-process return evidence rejected' }
+foreach ($invalidReturnLog in @(
+        '', $returnStartLine, $returnEndLine,
+        "$returnEndLine`n$returnStartLine",
+        "$returnStartLine`n$returnStartLine`n$returnEndLine",
+        "$returnStartLine`n$returnEndLine`n$returnEndLine",
+        "$returnStartLine`n$($returnEndLine.Replace('8626', '9999'))",
+        $validReturnLog.Replace('DXX-Automate:', 'OtherTag:'),
+        $validReturnLog.Replace('I DXX-Automate:', 'E DXX-Automate:')
+    )) {
+    Assert-Rejected { Assert-FirstPlayMissionReturnProcess -Log $invalidReturnLog } 'Missing, reordered, repeated, foreign, or restarted mission return evidence accepted'
 }
 
 # Small synthetic bytes only: the owner must reject malformed archives before any publication
@@ -507,6 +523,8 @@ if ($source -notmatch "'import_picked_uris', '--esa', 'uris'" -or
     $source -notmatch 'Get-SharewareTestGameConfig' -or
     $source -notmatch 'Assert-DxxFileSha256' -or
     $source -notmatch 'Test-AutomationResultComplete' -or
+    -not $source.Contains('Assert-FirstPlayMissionReturnProcess -Log $returnLog') -or
+    -not $source.Contains("@('logcat', '-d', '-v', 'threadtime', '-s', 'DXX-Automate:I', '*:S')") -or
     $source -notmatch '\$firstPlayRunIds\.Add' -or
     $source -notmatch 'runnerLog\.Contains\(\$expectedPushName\)' -or
     $source -match '-DataEdition|-Params\s') { throw 'First-play provenance, fresh evidence, or no-seeding contract changed' }
@@ -560,8 +578,9 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
             throw "First-play $phase does not launch through the normal button"
         }
         $liveAssertions = @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.in_game -eq $true -and $_.expect.current_level_num -eq 1 })
-        $expectedLiveCount = if ($phase -eq 'mission') { 3 } else { 1 }
-        if (@($steps | Where-Object { $_.action -eq 'select' -and $_.text -ceq 'New game' }).Count -ne 1 -or
+        $expectedLiveCount = if ($phase -eq 'mission') { 4 } else { 1 }
+        $expectedNewGames = if ($phase -eq 'mission') { 2 } else { 1 }
+        if (@($steps | Where-Object { $_.action -eq 'select' -and $_.text -ceq 'New game' }).Count -ne $expectedNewGames -or
             $liveAssertions.Count -ne $expectedLiveCount) {
             throw "First-play $phase lost ordinary new-game navigation or live level-one evidence"
         }
@@ -578,7 +597,7 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
                 throw 'Public mission must not use mission-picker shortcuts or debug state mutation'
             }
             $selections = @($steps | Where-Object action -EQ 'select' | ForEach-Object text) -join '|'
-            if ($selections -cne 'New game|Public First Play|Trainee|Save Game...|Load Game|level 1|Yes' -or
+            if ($selections -cne 'New game|Public First Play|Trainee|Save Game...|Load Game|level 1|Yes|Abort Game|New game|Descent 2 Demo|Ok|Trainee' -or
                 @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'menu.items'.contains -ceq 'Public First Play' }).Count -ne 1) {
                 throw 'Public mission lost its observed normal mission picker or save/load menus'
             }
@@ -595,15 +614,48 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
             $wrongMenu[$difficultyGuardIndex] = @{ action = 'wait_for'; expect = @{ menu_subtitle = 'Select Starting Level'; 'menu.items[0].text' = 'Trainee' }; timeout_ms = 10000 }
             Assert-Rejected { Assert-MissionDifficultyTransition -Steps $wrongMenu } 'A starting-level menu passed as the single-level difficulty prompt'
             $ammo = @($steps | Where-Object { $_.action -eq 'assert' -and $null -ne $_.expect.'player.secondary_ammo[0]' } | ForEach-Object { $_.expect.'player.secondary_ammo[0]' }) -join ','
-            if ($ammo -cne '7,6,5,6,6' -or @($steps | Where-Object { $_.action -eq 'send_button' -and $_.button -eq 101 }).Count -ne 2) {
+            if ($ammo -cne '7,6,5,6,6,7' -or @($steps | Where-Object { $_.action -eq 'send_button' -and $_.button -eq 101 }).Count -ne 2) {
                 throw 'Public mission lost its nondefault saved-ammo witness'
             }
-            foreach ($live in $liveAssertions) {
+            $customLive = @($liveAssertions | Where-Object { $_.expect.mission_asset_owner -ceq 'mod/fpplay.zip' })
+            if ($customLive.Count -ne 3) { throw 'Public mission lost its three custom-owner gameplay assertions' }
+            foreach ($live in $customLive) {
                 if ($live.expect.mission_asset_owner -cne 'mod/fpplay.zip' -or $live.expect.'player.callsign' -cne 'player' -or
                     $live.expect.difficulty -ne 0 -or $live.expect.player_dead -ne $false -or $live.expect.time_paused -ne $false) {
                     throw 'Public mission lost owned live identity or preserved player state'
                 }
             }
+            $baseLive = @($liveAssertions | Where-Object { $_.expect.mission_asset_owner -ceq 'base' })
+            if ($baseLive.Count -ne 1 -or $baseLive[0].expect.'physfs.search_path'.contains -cne 'd2demo.hog' -or
+                $baseLive[0].expect.'player.secondary_ammo[0]' -ne 7 -or $baseLive[0].expect.'player.lives' -ne 3 -or
+                $baseLive[0].expect.'player.score' -ne 0 -or $baseLive[0].expect.difficulty -ne 0 -or
+                $baseLive[0].expect.player_dead -ne $false -or $baseLive[0].expect.time_paused -ne $false -or
+                @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'physfs.search_path'.not_contains -ceq 'fpplay.hog' }).Count -ne 2) {
+                throw 'Built-in return lost base data, detached custom HOG, or new-game state'
+            }
+            $returnStart = @(for ($i = 0; $i -lt $steps.Count; $i++) {
+                    if ($steps[$i].action -ceq 'log' -and $steps[$i].message -ceq 'FIRST_PLAY_RETURN resumed_custom') { $i }
+                })
+            $returnEnd = @(for ($i = 0; $i -lt $steps.Count; $i++) {
+                    if ($steps[$i].action -ceq 'log' -and $steps[$i].message -ceq 'FIRST_PLAY_RETURN builtin_live') { $i }
+                })
+            $resumeTap = @(for ($i = 0; $i -lt $steps.Count; $i++) {
+                    if ($steps[$i].action -ceq 'tap_button' -and $steps[$i].text -ceq 'Load Last Save') { $i }
+                })
+            if ($returnStart.Count -ne 1 -or $returnEnd.Count -ne 1 -or $resumeTap.Count -ne 1 -or
+                $returnStart[0] -le $resumeTap[0] -or $returnEnd[0] -le $returnStart[0]) { throw 'Mission return lost ordered post-resume markers' }
+            $returnSteps = @($steps[$returnStart[0]..$returnEnd[0]])
+            if (@($returnSteps | Where-Object action -in @('enter_launcher', 'enter_game', 'tap_button', 'start_level', 'reset_state')).Count) {
+                throw 'Same-process mission return contains a restart or launch shortcut'
+            }
+            $baseSelections = @(for ($i = 0; $i -lt $returnSteps.Count; $i++) {
+                    if ($returnSteps[$i].action -ceq 'select' -and $returnSteps[$i].text -ceq 'Descent 2 Demo') { $i }
+                })
+            if ($baseSelections.Count -ne 1) { throw 'Mission return lost its observed built-in selection' }
+            $levelGuard = $returnSteps[$baseSelections[0] + 1]
+            if ($levelGuard.action -cne 'wait_for' -or $levelGuard.expect.menu_subtitle.contains -cne 'Select starting level' -or
+                $levelGuard.expect.'menu.items[1].text' -cne '1' -or $levelGuard.expect.'menu.items[2].text' -cne 'Ok' -or
+                $returnSteps[$baseSelections[0] + 2].text -cne 'Ok') { throw 'Built-in confirmation lost its starting-level menu guard' }
             if (@($steps | Where-Object { $_.action -eq 'tap_button' -and $_.text -ceq 'Load Last Save' -and $_.exact -eq $true -and $_.launches_game -eq $true }).Count -ne 1 -or
                 @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'resume_candidate.mission_name' -ceq 'fpplay' -and $_.expect.'resume_candidate.level_num' -eq 1 -and $_.expect.'resume_candidate.save_kind' -ceq 'auto_exit' }).Count -ne 1 -or
                 @($steps | Where-Object { $_.action -eq 'delete_mod' -and $_.file -ceq 'fpplay.zip' }).Count -ne 1 -or
@@ -613,4 +665,4 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
         }
     }
 }
-Write-Host 'PASS: public first-play target, readiness, hash, mission packaging/publication, normal menu save/resume and correlated-evidence controls'
+Write-Host 'PASS: public first-play target, readiness, hash, mission packaging/publication, normal save/resume, same-process built-in return and correlated-evidence controls'
