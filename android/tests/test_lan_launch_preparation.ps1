@@ -53,7 +53,14 @@ function Test-PublicLanPeerState {
         $State.multiplayer.num_connected -ne 2 -or $State.multiplayer.num_players -ne 2 -or
         $State.multiplayer.i_am_master -ne $IsHost -or -not (Test-PublicLanEngineLog -Log $NativeLog -Engine $Engine)) { return $false }
     if ($Engine -eq 'd1') {
-        if ($Content -cne 'd1' -or $null -ne $State.asset_trace) { return $false }
+        # Native D1 omits this property; inspect it without a StrictMode missing-property read
+        $assetTrace = $null
+        if ($State -is [Collections.IDictionary]) {
+            $assetTrace = $State['asset_trace']
+        } elseif ($State.PSObject.Properties['asset_trace']) {
+            $assetTrace = $State.PSObject.Properties['asset_trace'].Value
+        }
+        if ($Content -cne 'd1' -or $null -ne $assetTrace) { return $false }
     } else {
         $mode = if ($Content -eq 'd1') { 'd1-in-d2' } else { 'd2' }
         if ($State.asset_trace.runtime_engine -cne 'd2' -or $State.asset_trace.selected_base_game -cne $Content -or

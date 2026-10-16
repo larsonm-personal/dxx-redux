@@ -146,6 +146,29 @@ $nativeD1.asset_trace = (New-PeerState).asset_trace
 if (Test-PublicLanPeerState -State $nativeD1 -LocalCallsign 'PrepH1' -RemoteCallsign 'PrepJ1' -IsHost $true -PigSize 5092871 -Engine d1 -Content d1 -NativeLog 'Loaded native library: dxx-redux-d1') {
     throw 'D2 introspection accepted as native D1'
 }
+# The device returns PSCustomObject JSON, whose absent properties throw under the master's StrictMode
+& {
+    Set-StrictMode -Version Latest
+    foreach ($isHost in @($true, $false)) {
+        $state = New-PeerState -Engine d1 -Content d1 | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        if ($null -ne $state.PSObject.Properties['asset_trace']) { throw 'Native D1 JSON fixture must omit asset_trace' }
+        $state.multiplayer.i_am_master = $isHost
+        $state.multiplayer.players[0].is_me = $isHost
+        $state.multiplayer.players[1].is_me = -not $isHost
+        $parameters = @{
+            LocalCallsign = $(if ($isHost) { 'PrepH1' } else { 'PrepJ1' })
+            RemoteCallsign = $(if ($isHost) { 'PrepJ1' } else { 'PrepH1' })
+            IsHost = $isHost; PigSize = 5092871; Engine = 'd1'; Content = 'd1'
+            NativeLog = 'Loaded native library: dxx-redux-d1'
+        }
+        if (-not (Test-PublicLanPeerState -State $state @parameters)) { throw 'Native D1 JSON without asset_trace failed under StrictMode' }
+        $state | Add-Member -NotePropertyName asset_trace -NotePropertyValue (New-PeerState).asset_trace
+        if (Test-PublicLanPeerState -State $state @parameters) { throw 'D2 JSON trace accepted as native D1 under StrictMode' }
+        $state.asset_trace = @()
+        $state = $state | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+        if (Test-PublicLanPeerState -State $state @parameters) { throw 'Non-null empty JSON trace accepted as native D1 under StrictMode' }
+    }
+}
 
 function Assert-Rejected([string]$Label, [scriptblock]$Action) {
     try { & $Action } catch { Write-Host "PASS: rejects $Label"; return }
