@@ -1,5 +1,6 @@
 """Adapter contracts without executing target native, PowerShell, or device tests."""
 
+import copy
 import hashlib
 import json
 import subprocess
@@ -13,6 +14,7 @@ from unittest.mock import patch
 
 import run_host_test_suites as adapter
 import test_fingerprint_match_strict as strict
+import test_secret_area_liquid_obsidian as missions
 
 
 class HostAdapterTests(unittest.TestCase):
@@ -828,7 +830,10 @@ class RetailProfileTests(unittest.TestCase):
                 )
                 self.assertEqual(code, owner_code)
                 self.assertEqual(len(calls), 3)
-                self.assertEqual(calls[1][-1], "dxx-redux-d2-headless-metadata")
+                self.assertEqual(calls[1][-3:], [
+                    "dxx-redux-d2-headless-metadata", "dxx-redux-d2-metadata-worker",
+                    "dxx-redux-d2-headless-route",
+                ])
                 # Isolated Python ignores PYTHONOPTIMIZE and user site hooks
                 self.assertEqual(calls[-1][:2], [sys.executable, "-I"])
                 self.assertEqual(
@@ -845,6 +850,12 @@ class RetailProfileTests(unittest.TestCase):
                         str(root / "receipt.artifacts/obsidian-stage"),
                         "--output",
                         str(root / "receipt.artifacts/obsidian-liquid.json"),
+                        "--worker",
+                        str(root / "build/engine-d2/main/dxx-redux-d2-metadata-worker"),
+                        "--route-exe",
+                        str(root / "build/engine-d2/main/dxx-redux-d2-headless-route"),
+                        "--vertigo-dir",
+                        str(root / "game_data/retail-ci/missions"),
                     ],
                 )
                 self.assertFalse(receipt["coverage_complete"])
@@ -893,6 +904,250 @@ class RetailProfileTests(unittest.TestCase):
                 self.assertFalse(receipt["attempted_tests"])
                 self.assertEqual(receipt["cases"], [])
 
+
+class MissionLifecycleOwnerTests(unittest.TestCase):
+    DESCRIPTOR = "name = Synthetic\nnum_levels = 2\none.rl2\ntwo.rl2\nnum_secrets = 1\nsecret.rl2,1\n"
+    WORKER = '''import json, sys
+mode = sys.argv[1]
+for index, line in enumerate(sys.stdin, 1):
+    request = json.loads(line)
+    with open('requests.jsonl', 'a') as log: log.write(line)
+    level = dict.fromkeys(('segment_count', 'texture_count', 'wall_count', 'trigger_count',
+                          'object_count', 'robots', 'hostages', 'powerups', 'reactors'), 1)
+    level.update(status='ok', level_num=request['level_num'], level_name='Synthetic',
+                 level_file=request['level_file'])
+    report = dict(schema='dxx-level-metadata-v1', request_id=request['request_id'], status='ok',
+                  game='d2', source=request['source_name'], mission_filename=request['mission_name'],
+                  levels=[level])
+    if mode == 'missing': sys.exit(0)
+    if mode == 'foreign': report['request_id'] = 'foreign'
+    if mode == 'mission': report['mission_filename'] = 'foreign'
+    if mode == 'level': level['level_num'] = 77
+    if mode == 'filename': level['level_file'] = 'foreign.rl2'
+    if mode == 'empty': report['levels'] = []
+    if mode == 'failed': level['status'] = 'error'
+    if mode == 'restart': report['worker_restart_required'] = True
+    if mode == 'zero': level['texture_count'] = 0
+    if mode == 'base-count' and index > 1 and request['mission_name'] == 'd2':
+        level['object_count'] = 99
+    print('DXXMETA\\t' + json.dumps(report), flush=True)
+    if mode == 'duplicate': print('DXXMETA\\t' + json.dumps(report), flush=True)
+if mode == 'trailing': print('DXXMETA\\t' + json.dumps(report), flush=True)
+if mode == 'nonzero': sys.exit(1)
+'''
+
+    def test_descriptor_counts_and_secret_entries_are_complete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.mn2"
+            path.write_text(self.DESCRIPTOR + "\x1a", encoding="ascii")
+            self.assertEqual(missions.mission_levels(path),
+                             [(1, "one.rl2"), (2, "two.rl2"), (-1, "secret.rl2")])
+            malformed = (
+                self.DESCRIPTOR.replace("num_levels = 2", "num_levels = -1"),
+                self.DESCRIPTOR.replace("num_levels = 2", "num_levels = 101"),
+                self.DESCRIPTOR.replace("num_levels = 2", "num_levels = 0"),
+                self.DESCRIPTOR.replace("num_levels = 2", "num_levels = two"),
+                self.DESCRIPTOR + "num_levels = 1\nother.rl2\n",
+                self.DESCRIPTOR.replace("num_secrets = 1\nsecret.rl2,1\n", ""),
+                self.DESCRIPTOR.replace("secret.rl2,1\n", ""),
+                self.DESCRIPTOR.replace("secret.rl2,1", "secret.rl2,3"),
+                self.DESCRIPTOR.replace("secret.rl2,1", "secret.rl2"),
+                self.DESCRIPTOR.replace("two.rl2", "ONE.RL2"),
+                self.DESCRIPTOR.replace("one.rl2", "../one.rl2"),
+            )
+            for descriptor in malformed:
+                with self.subTest(descriptor=descriptor), self.assertRaises(AssertionError):
+                    path.write_text(descriptor)
+                    missions.mission_levels(path)
+
+    def test_one_worker_sequence_rejects_missing_foreign_duplicate_and_mismatched_results(self):
+        popen = subprocess.Popen
+        modes = ("ok", "missing", "foreign", "mission", "level", "filename", "empty",
+                 "failed", "restart", "zero", "base-count", "duplicate", "trailing", "nonzero", "timeout")
+        for mode in modes:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                worker = root / "worker.py"
+                worker.write_text(self.WORKER)
+                for name in ("d2x", "obsidian"):
+                    (root / (name + ".mn2")).write_text(self.DESCRIPTOR)
+                processes = []
+
+                def launch(argv, *, worker=worker, mode=mode, processes=processes, **kwargs):
+                    process = popen([sys.executable, str(worker), mode], **kwargs)
+                    processes.append(process)
+                    return process
+
+                with patch.object(missions.subprocess, "Popen", side_effect=launch), patch("builtins.print"):
+                    if mode == "ok":
+                        missions.check_loading(worker, root, (("d2x", root), ("obsidian", root)), root)
+                        requests = [json.loads(line) for line in (root / "requests.jsonl").read_text().splitlines()]
+                        self.assertEqual([(request["mission_name"], request["level_num"]) for request in requests],
+                                         [("d2", 1), ("d2x", 1), ("d2x", 2), ("d2x", -1), ("d2", 1),
+                                          ("obsidian", 1), ("obsidian", 2), ("obsidian", -1), ("d2", 1)])
+                        self.assertEqual(["extra_data_dir" in request for request in requests],
+                                         [False, True, True, True, False, True, True, True, False])
+                    elif mode == "timeout":
+                        with (patch.object(missions.queue.Queue, "get", side_effect=missions.queue.Empty),
+                              self.assertRaises(TimeoutError)):
+                            missions.check_loading(worker, root, (("d2x", root), ("obsidian", root)), root)
+                    else:
+                        with self.assertRaises(AssertionError):
+                            missions.check_loading(worker, root, (("d2x", root), ("obsidian", root)), root)
+                self.assertEqual(len(processes), 1)
+                self.assertIsNotNone(processes[0].poll())
+
+    @staticmethod
+    def route_report(mission, *, restored=False):
+        report = {
+            "schema": "dxx-guidebot-route-confirmation-v1", "mission": mission,
+            "level": 1, "status": "confirmed", "frames": 12, "seed": 1,
+            "fixed_hz": 60, "difficulty": 2, "radius": {"player": 42, "effective": 42},
+            "objectives": [{"kind": "exit", "activation_kind": "enter_exit", "frame": 12}],
+        }
+        if restored:
+            report["start_state"] = {"kind": "saved_world", "segment": 3,
+                                     "key_flags": 6, "position_fixed": [1, 2, 3]}
+        else:
+            report["route_confirmation"] = {"status": "confirmed"}
+        return report
+
+    def test_route_requires_current_json_success_identity_and_native_confirmation(self):
+        failures = (
+            ("absent", None), ("status", "failed"), ("mission", "wrong"), ("level", 2),
+            ("frames", 0), ("objectives", []), ("route_confirmation", {"status": "failed"}),
+            ("radius", {"player": 42, "effective": 1}),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "route.json"
+            success = subprocess.CompletedProcess([], 0, "ROUTE-CONFIRM OK", "")
+            report = self.route_report("d2x")
+            output.write_text(json.dumps(report))
+            missions.validate_route(success, output, "d2x")
+            # A PASS-looking JSON and stdout cannot rescue a failing process
+            with self.assertRaises(AssertionError):
+                missions.validate_route(subprocess.CompletedProcess([], 1, success.stdout, ""), output, "d2x")
+            for key, value in failures:
+                with self.subTest(key=key), self.assertRaises((AssertionError, FileNotFoundError, IndexError)):
+                    changed = copy.deepcopy(report)
+                    if key == "absent":
+                        output.unlink()
+                    else:
+                        changed[key] = value
+                        output.write_text(json.dumps(changed))
+                    missions.validate_route(success, output, "d2x")
+            output.write_text(json.dumps(report))
+            with self.assertRaises(KeyError):
+                missions.validate_route(success, output, "d2x", restored=True)
+            restored = self.route_report("d2x", restored=True)
+            output.write_text(json.dumps(restored))
+            missions.validate_route(success, output, "d2x", restored=True)
+            for key in ("segment", "key_flags"):
+                with self.subTest(default_state=key), self.assertRaises(AssertionError):
+                    changed = copy.deepcopy(restored)
+                    changed["start_state"][key] = 0
+                    output.write_text(json.dumps(changed))
+                    missions.validate_route(success, output, "d2x", restored=True)
+
+    def test_checkpoint_negative_requires_the_expected_guard_and_no_success_artifact(self):
+        guard = "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch"
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "rejected.json"
+            missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output,
+                                    "d2x", rejected=True)
+            for code, log in ((0, guard), (2, guard), (-11, guard), (1, "mission load failed"),
+                              (1, guard + "\nROUTE-CONFIRM OK")):
+                with self.subTest(code=code, log=log), self.assertRaises(AssertionError):
+                    missions.validate_route(subprocess.CompletedProcess([], code, "", log), output,
+                                            "d2x", rejected=True)
+            output.write_text(json.dumps(self.route_report("d2x")))
+            with self.assertRaises(AssertionError):
+                missions.validate_route(subprocess.CompletedProcess([], 1, "", guard), output,
+                                        "d2x", rejected=True)
+
+    def test_route_sequence_saves_restores_rejects_mismatches_and_preserves_checkpoint(self):
+        for fault in (None, "missing-save", "changed-save"):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                calls = []
+                installed = tuple((name, root / (name + "-input") / "missions")
+                                  for name in ("d2x", "obsidian"))
+
+                def run(argv, *, calls=calls, fault=fault, root=root, **kwargs):
+                    calls.append(argv)
+                    self.assertEqual(kwargs["timeout"], 60)
+                    target = argv[argv.index("-mission") + 1]
+                    output = Path(argv[argv.index("-route-confirm-json-out") + 1])
+                    # Route discovery mounts the parent of the descriptor directory
+                    self.assertEqual(argv[argv.index("-extra-dir") + 1],
+                                     str((root / (output.parent.name + "-input")).resolve()))
+                    save = Path(argv[argv.index("-route-confirm-user-dir") + 1]) / "level1.sav"
+                    phase = output.stem
+                    if phase.startswith("wrong-"):
+                        return subprocess.CompletedProcess(argv, 1, "", "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch")
+                    if phase == "start" and fault != "missing-save":
+                        save.write_bytes(b"synthetic checkpoint")
+                    if phase == "restore" and fault == "changed-save":
+                        save.write_bytes(b"modified checkpoint")
+                    output.write_text(json.dumps(self.route_report(target, restored=phase == "restore")))
+                    return subprocess.CompletedProcess(argv, 0, "ROUTE-CONFIRM OK", "")
+
+                with patch.object(missions.subprocess, "run", side_effect=run), patch("builtins.print"):
+                    if fault:
+                        with self.assertRaises(AssertionError):
+                            missions.check_routes(root / "native", root, installed, root)
+                    else:
+                        missions.check_routes(root / "native", root, installed, root)
+                        self.assertEqual(len(calls), 8)
+                        self.assertEqual([argv[argv.index("-mission") + 1] for argv in calls],
+                                         ["d2x", "d2x", "d2x", "d2", "obsidian", "obsidian", "obsidian", "d2"])
+                        self.assertEqual([argv[argv.index("-level") + 1] for argv in calls],
+                                         ["1", "1", "2", "1"] * 2)
+
+    def test_route_requires_native_mission_directory_layout_before_launch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(missions.subprocess, "run") as run, self.assertRaises(AssertionError):
+                missions.check_routes(root / "native", root, (("d2x", root),), root)
+            run.assert_not_called()
+
+    def test_extended_arguments_are_all_or_none_and_default_remains_liquid_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "liquid.json"
+            base = ["--exe", "metadata", "--hogdir", str(root), "--mission-dir", str(root),
+                    "--output", str(output)]
+            for flags in (["--worker", "worker"], ["--route-exe", "route"],
+                          ["--vertigo-dir", str(root)], ["--worker", "worker", "--route-exe", "route"]):
+                with self.subTest(flags=flags), patch("sys.stderr"), patch.object(missions.subprocess, "run") as run:
+                    with self.assertRaises(SystemExit) as error:
+                        missions.main(base + flags)
+                    self.assertEqual(error.exception.code, 2)
+                    run.assert_not_called()
+
+            def liquid_run(argv, **kwargs):
+                output.write_text("{}")
+                return subprocess.CompletedProcess(argv, 0, "", "")
+
+            with (patch.object(missions.subprocess, "run", side_effect=liquid_run) as run,
+                  patch.object(missions, "validate") as validate,
+                  patch.object(missions, "check_loading") as loading,
+                  patch.object(missions, "check_routes") as routes, patch("builtins.print")):
+                missions.main(base)
+            run.assert_called_once()
+            validate.assert_called_once_with({})
+            loading.assert_not_called()
+            routes.assert_not_called()
+
+    def test_expanded_estimate_matches_policy_without_changing_the_lane_budget(self):
+        suite = adapter.load_suites()["host-profile:retail-obsidian-liquid"]
+        policy = json.loads(Path(__file__).with_name("nightly_tooling_policy.json").read_text())
+        entry = next(item for item in policy["suites"] if item["id"] == suite["id"])
+        self.assertEqual(suite["estimated_seconds"], 600)
+        self.assertEqual(entry["estimated_seconds"], suite["estimated_seconds"])
+        self.assertEqual(entry["fixture"], "retail-missions")
+        self.assertLessEqual(entry["estimated_seconds"], 2700)
+        self.assertIn("Vertigo/Obsidian loading and checkpoint regressions", suite["coverage_scope"])
 
 class ObsidianExtractionTests(unittest.TestCase):
     def setUp(self):

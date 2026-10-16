@@ -163,17 +163,30 @@ do not establish that any retail owner has run successfully.
 Two additional profiles use the separately admitted `retail-missions` fixture:
 `host-profile:retail-vertigo-metadata` builds the D2 metadata worker and supplies
 explicit base-data, Vertigo-directory, and worker paths with `-NoBuild` to the
-unchanged reused-worker owner. `host-profile:retail-obsidian-liquid` builds the D2
-headless metadata target and runs the existing Python owner with isolated Python
-so environment optimization cannot disable its assertions. It retains the native
-60-second timeout and exact level-13 liquid-secret/transparent-water assertions.
+unchanged reused-worker owner. `host-profile:retail-obsidian-liquid` provides
+Vertigo/Obsidian loading and checkpoint regressions. It builds the D2 headless
+metadata, metadata-worker, and headless-route targets and runs the existing Python
+owner with isolated Python so environment optimization cannot disable assertions.
+The standalone owner's default remains the Obsidian level-13 liquid-secret and
+transparent-water checks. Supplying all three optional `--worker`, `--route-exe`,
+and `--vertigo-dir` inputs also exercises 44 requests in one metadata worker:
+23 Vertigo levels, 18 Obsidian levels, and three base loads, ordered
+base -> Vertigo -> base -> Obsidian -> base, with unchanged base resource counts.
+The profile supplies those fixed inputs and checks each mission's native L1 route,
+checkpoint save/restore, and wrong-level/wrong-mission rejection. Native mission
+discovery requires the installed `missions/` layout. These headless routes use a
+synthetic actor; they do not exercise gameplay menus or an Android/player session.
+Each native call or worker request keeps its 60-second bound. The 600-second
+registry/policy estimate includes build headroom; the overall adapter wall-clock
+limit and 45-minute nightly lane budget remain unchanged. This is not a measured
+hosted Debug build/runtime guarantee.
 Both verify the staged mission identities, including the reviewed CRLF Vertigo
 descriptor, before builds or tests. The Obsidian profile extracts only its exact
 HOG and MN2 members into a fresh private `missions` tree, checking member names,
 duplicates, sizes, and SHA-256 while streaming bounded chunks. ZIP setup errors
 are retryable BLOCKED with no assertion credit. It never installs or executes the
 archive's batch file, and its derived stage must remain private and be cleaned up
-with the lane workspace. Runtime qualification remains pending actual hosted runs.
+with the lane workspace. Hosted runtime qualification remains pending.
 
 Remaining GuideBot cases need a separate bounded adapter change to plumb explicit
 executable, base-data, and mission-stage paths into their unchanged assertions.

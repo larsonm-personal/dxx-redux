@@ -192,6 +192,7 @@ Register-EngineEvent PowerShell.Exiting -Action { Invoke-RunTestCleanup } | Out-
 try {
     $script:runTestPowerSession = Start-AndroidTestPowerSession
     foreach ($gameId in $gameList) {
+        Save-PublicGraphicsLifecycleFailure -ScriptPath $scriptPath -DataEdition $script:resolvedDataEdition -Game $gameId -Initialize
         if ($gameList.Count -gt 1) {
             Write-Host ""
             Write-Host "============================================================" -ForegroundColor White
@@ -436,6 +437,11 @@ try {
         }
 
         if (-not $passed) {
+            try {
+                Save-PublicGraphicsLifecycleFailure -ScriptPath $scriptPath -DataEdition $script:resolvedDataEdition -Game $gameId -RunId $runId
+            } catch {
+                Write-Status "Graphics lifecycle evidence collection failed: $($_.Exception.Message)" 'Yellow'
+            }
             $failedGameState = Get-GameIntrospection -Serial $env:ANDROID_SERIAL
             if ($failedGameState) {
                 Write-Status "--- game introspection at failure ---" "Yellow"

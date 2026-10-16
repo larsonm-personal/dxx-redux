@@ -262,6 +262,8 @@
     {"id": "master:test_touch_layout_format", "owner": "master", "lane": "android-single", "args": {"suite": "test_touch_layout_format"}, "estimated_seconds": 120},
     {"id": "master:test_distribution_build_info", "owner": "master", "lane": "android-single", "args": {"suite": "test_distribution_build_info"}, "estimated_seconds": 120},
     {"id": "master:test_xcrash_native_report", "owner": "master", "lane": "android-single", "args": {"suite": "test_xcrash_native_report"}, "estimated_seconds": 300},
+    {"id": "master:test_demo_import_public_first_play", "owner": "master", "lane": "android-single", "args": {"suite": "test_demo_import_public_first_play"}, "estimated_seconds": 900, "coverage_scope": "Pinned public installer, loose-file and generated demo-level mission ZIP provider imports; real engine/mission selection and menu save/restore plus launcher resume. Graphics onboarding suppressed, saves reset between phases, automation auto-exit save; no retail qualification."},
+    {"id": "master:test_lan_launch_preparation_public_shareware", "owner": "master", "lane": "android-dual", "args": {"suite": "test_lan_launch_preparation_public_shareware"}, "estimated_seconds": 1500, "coverage_scope": "Pinned public D1 and D2 profiles; two peers enter native D1, native D2, and D1-in-D2 level one through lobby preparation; cold rehost with swapped roles; no retail qualification."},
     {"id": "master:test_lan_transport_recovery", "owner": "master", "lane": "android-single", "args": {"suite": "test_lan_transport_recovery"}, "estimated_seconds": 120},
     {"id": "master:test_demo_group_file_set_content", "owner": "master", "lane": "android-single", "args": {"suite": "test_demo_group_file_set_content"}, "estimated_seconds": 720},
     {"id": "master:test_unified_file_set_content", "owner": "master", "lane": "android-single", "args": {"suite": "test_unified_file_set_content"}, "estimated_seconds": 720},
@@ -339,7 +341,7 @@
     {"id": "master:test_obsidian_level7_switch_guidance", "owner": "master", "lane": "android-single", "args": {"suite": "test_obsidian_level7_switch_guidance"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "master:test_vertigo_level_metadata", "owner": "master", "lane": "android-single", "args": {"suite": "test_vertigo_level_metadata"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "host-profile:retail-vertigo-metadata", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-vertigo-metadata"}, "estimated_seconds": 600, "fixture": "retail-missions"},
-    {"id": "host-profile:retail-obsidian-liquid", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-obsidian-liquid"}, "estimated_seconds": 120, "fixture": "retail-missions"}
+    {"id": "host-profile:retail-obsidian-liquid", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-obsidian-liquid"}, "estimated_seconds": 600, "fixture": "retail-missions"}
   ],
   "exclusions": [{"id": "retail-media", "reason": "Additional licensed or campaign fixtures not yet provided to the trusted retail profile"}, {"id": "physical-android", "reason": "Physical GPU/touch/audio hardware and multi-device LAN topology are not emulated coverage"}]
 }
