@@ -1,4 +1,4 @@
-name: Nightly Android tooling lane
+name: Android and JVM tests
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   android:
-    name: ${{ inputs.lane }}
+    name: Run selected tests
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
     timeout-minutes: 90
@@ -83,7 +83,7 @@ jobs:
           plan = json.load(open('plan/plan.json'))
           selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
           requirements = {
-              'public_fixtures': any(test.get('owner') == 'shareware' for test in selected),
+              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware') for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
           }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -259,7 +259,7 @@ jobs:
             -PciApk=false -PgithubRelease=false -PlegacyRelease=false -PnsdDiagnosticApp=false \
             --console=plain --no-daemon --max-workers=2 2>&1 | tee ../results/setup/apk-build.log
       - name: Provision verified public fixtures
-        if: inputs.lane == 'android-single' && steps.selection.outputs.public_fixtures == 'true'
+        if: steps.selection.outputs.public_fixtures == 'true'
         id: fixtures
         timeout-minutes: 15
         shell: bash
@@ -269,7 +269,7 @@ jobs:
           # Existing verifier enforces pinned installer/file hashes and rejects retail shadows
           bash android/get_deps/helpers/get_bounded_python.sh 2>&1 | tee ../results/setup/bounded-python.log
           pwsh -NoProfile -NonInteractive -File android/helpers/setup_shareware_test_data.ps1 \
-            -Game both -Download 2>&1 | tee ../results/setup/public-fixtures.log
+            -Game both -Download -RequireArchives 2>&1 | tee ../results/setup/public-fixtures.log
       - name: Require standard FFmpeg for generated preview fixture
         if: inputs.lane == 'android-single' && steps.selection.outputs.generated_audio == 'true'
         timeout-minutes: 10
@@ -426,6 +426,34 @@ jobs:
           data['note'] = 'Provisioning/job success is not a test result; only executor journal entries establish coverage'
           (path / 'lifecycle.json').write_text(json.dumps(data, indent=2) + '\n')
           PY
+      - name: Collect public first-play diagnostics
+        if: always() && !inputs.retail_assets
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import pathlib, shutil
+          temporary = pathlib.Path('target/android/temp')
+          destination = pathlib.Path('results/first-play')
+          for pattern in ('public-first-play-*', 'lan-launch-preparation-public-shareware'):
+              for source in temporary.glob(pattern):
+                  if source.is_dir() and not source.is_symlink():
+                      shutil.copytree(source, destination / source.name, dirs_exist_ok=True, symlinks=True)
+          # Only these fixed public-owner snapshots; never collect arbitrary temp content
+          graphics_files = ('manifest.json', 'logcat-crash.txt', 'logcat-main.txt', 'logcat-system.txt',
+                            'graphics-safety.txt', 'native-fatal.txt', 'exit-info.txt', 'activities.txt',
+                            'window.txt', 'power.txt', 'cached-introspect.txt', 'tombstone-list.txt',
+                            'tombstone-1.txt', 'tombstone-2.txt')
+          for name in ('public-graphics-lifecycle-d1', 'public-graphics-lifecycle-d2'):
+              source = temporary / name
+              if not source.is_dir() or source.is_symlink():
+                  continue
+              for filename in graphics_files:
+                  path = source / filename
+                  if path.is_file() and not path.is_symlink() and path.stat().st_size <= 262144:
+                      target = destination / name / filename
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copyfile(path, target)
+          PYTHON
       - name: Upload execution evidence
         if: always() && !inputs.retail_assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

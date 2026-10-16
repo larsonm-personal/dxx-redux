@@ -1,0 +1,19 @@
+// Owned cold-content phase; never seed data or bypass launch buttons
+[
+    { "_info": { "games": ["d1"], "_standalone": false, "_owner": "test_demo_import" } },
+    { "action": "enter_launcher" },
+    { "action": "wait_for", "field": "active_set", "value": "default", "timeout_ms": 30000 },
+    {
+        "action": "assert",
+        "expect": { "can_launch": false, "d1.ready": false, "d2.ready": false, "d1_in_d2.ready": false, "game_running": false },
+    },
+    // The buttons remain clickable to explain missing files; they must not start an engine
+    { "action": "tap_button", "text": "Launch Descent 1", "exact": true },
+    { "action": "assert_button", "text": "OK", "exact": true, "enabled": true },
+    { "action": "tap_button", "text": "OK", "exact": true },
+    { "action": "tap_button", "text": "Launch Descent 2", "exact": true },
+    { "action": "assert_button", "text": "OK", "exact": true, "enabled": true },
+    { "action": "tap_button", "text": "OK", "exact": true },
+    { "action": "assert", "expect": { "can_launch": false, "game_running": false } },
+    { "action": "log", "message": "PASS: empty content blocks both real launch buttons" },
+]

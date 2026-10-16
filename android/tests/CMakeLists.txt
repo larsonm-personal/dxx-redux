@@ -49,6 +49,8 @@ if(NOT TARGET nlohmann_json::nlohmann_json)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
+include("${CMAKE_CURRENT_LIST_DIR}/game_automate_input.cmake")
+
 include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-build-metadata.cmake")
 
@@ -544,6 +546,7 @@ set(DXX_HOST_TEST_TARGETS
     test_input_demo_fixture
     test_input_demo_recorder
     test_input_demo_result
+    test_game_automate_input
     test_input_demo_replay
     test_args_defaults)
 
@@ -563,7 +566,7 @@ endif()
 # These fixtures use standard assert; retain their checks in release packaging builds
 # Keep production targets and the remaining test sources' explicit policies unchanged
 foreach(test_target IN ITEMS test_android_gpu_policy test_android_axis_mailbox
-                             test_net_udp_initial_sync_retry)
+                             test_net_udp_initial_sync_retry test_game_automate_input)
     if(MSVC)
         target_compile_options(${test_target} PRIVATE /UNDEBUG)
     else()

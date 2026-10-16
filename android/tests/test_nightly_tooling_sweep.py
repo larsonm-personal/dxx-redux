@@ -42,6 +42,126 @@ class SweepTests(unittest.TestCase):
         self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
 
+    def test_first_play_is_fixed_public_and_within_each_lane_budget(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        chosen = sweep.select_first_play(plan, policy, catalog)
+        self.assertEqual({e['id'] for e in chosen['tests']}, sweep.FIRST_PLAY_IDS)
+        self.assertNotIn('retail_assets', chosen)
+        for lane in sweep.LANES:
+            self.assertLessEqual(sum(e['estimated_seconds'] for e in chosen['tests'] if e['lane'] == lane), 2700)
+        self.assertTrue(all(e.get('fixture') not in ('retail-base', 'retail-missions') for e in chosen['tests']))
+
+    def test_first_play_rejects_missing_owner_and_retail_reclassification(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        with self.assertRaisesRegex(ValueError, 'absent'):
+            sweep.select_first_play(plan, policy, {'tests': []})
+        bad = copy.deepcopy(policy)
+        next(e for e in bad['suites'] if e['id'] in sweep.FIRST_PLAY_IDS)['fixture'] = 'retail-base'
+        with self.assertRaisesRegex(ValueError, 'asset-free'):
+            sweep.select_first_play(plan, bad, catalog)
+        bad['suites'] = [e for e in bad['suites'] if e['id'] not in sweep.FIRST_PLAY_IDS]
+        with self.assertRaisesRegex(ValueError, 'Missing'):
+            sweep.select_first_play(plan, bad, catalog)
+
+    def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' }}", workflow)
+        self.assertIn("inputs.campaign == 'first-play' && github.sha", workflow)
+        self.assertIn("if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'", workflow)
+        self.assertIn('types: [opened, synchronize, reopened, labeled]', workflow)
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        plan = sweep.select_first_play(plan, policy, catalog)
+        state = sweep.fresh_state(plan['target_sha'], plan['catalog_hash'])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('plan', plan), ('policy', policy), ('state', state)):
+                sweep.write(root / name, value)
+            argv = ['sweep', 'reconcile', '--require-selected', '--plan', str(root / 'plan'),
+                    '--policy', str(root / 'policy'), '--state', str(root / 'state'), '--output', str(root / 'out')]
+            with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 1)
+            self.assertEqual(sweep.read(root / 'out')['records'], {})
+
+    def test_first_play_public_variants_provision_originals_on_both_lanes(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        fixture_step = workflow.split('      - name: Provision verified public fixtures', 1)[1].split('      - name:', 1)[0]
+        self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
+        self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
+        self.assertIn('-Game both -Download -RequireArchives', fixture_step)
+        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware'):
+            self.assertIn(name, workflow)
+        entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
+        self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
+        self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])
+
+    def test_first_play_evidence_is_public_only_and_keeps_receipt_root(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        collect = workflow.split('      - name: Collect public first-play diagnostics', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('if: always() && !inputs.retail_assets', collect)
+        self.assertIn("('public-first-play-*', 'lan-launch-preparation-public-shareware')", collect)
+        self.assertIn("pathlib.Path('results/first-play')", collect)
+        self.assertNotIn('game_data', collect)
+        upload = workflow.split('      - name: Upload execution evidence', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('path: results/', upload)
+        self.assertIn('if: always() && !inputs.retail_assets', upload)
+
+    def test_graphics_failure_collector_is_exact_bounded_and_rejects_links(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        collect = workflow.split('      - name: Collect public first-play diagnostics', 1)[1].split('      - name:', 1)[0]
+        code = collect.split("          python3 - <<'PYTHON'\n", 1)[1].rsplit('          PYTHON', 1)[0]
+        code = '\n'.join(line[10:] for line in code.splitlines())
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            temporary = root / 'target/android/temp'
+            source = temporary / 'public-graphics-lifecycle-d2'
+            source.mkdir(parents=True)
+            (source / 'manifest.json').write_text('{"run_id":"current"}')
+            (source / 'logcat-crash.txt').write_bytes(b'c' * 262144)
+            (source / 'logcat-main.txt').write_bytes(b'm' * 262145)
+            (source / 'unreviewed.txt').write_text('excluded')
+            (source / 'window.txt').symlink_to(source / 'manifest.json')
+            (temporary / 'public-graphics-lifecycle-d1').symlink_to(source, target_is_directory=True)
+            unrelated = temporary / 'private-owner'
+            unrelated.mkdir()
+            (unrelated / 'manifest.json').write_text('excluded')
+            result = subprocess.run([sys.executable, '-c', code], cwd=root, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            files = {p.relative_to(root / 'results/first-play').as_posix()
+                     for p in (root / 'results/first-play').rglob('*') if p.is_file()}
+            self.assertEqual(files, {'public-graphics-lifecycle-d2/manifest.json',
+                                     'public-graphics-lifecycle-d2/logcat-crash.txt'})
+
+    def test_graphics_failure_snapshot_precedes_cleanup_without_changing_oracle(self):
+        root = Path(__file__).parents[2]
+        runner = (root / 'android/helpers/run_test.ps1').read_text()
+        failure = runner.split('        if (-not $passed) {', 1)[1]
+        self.assertLess(failure.index('Save-PublicGraphicsLifecycleFailure'), failure.index('Get-GameIntrospection'))
+        self.assertLess(failure.index('Save-PublicGraphicsLifecycleFailure'), failure.index('exit 1'))
+        helpers = (root / 'android/helpers/test_helpers.ps1').read_text()
+        probe = helpers.split('                    $processDiagnostic = $null', 1)[1].split('# Native UI state', 1)[0]
+        self.assertIn('$observedProcess -ne "$($graphicsBefore.attempt.owner_pid)"', probe)
+        self.assertIn('-DiagnosticResult ([ref]$processDiagnostic)', probe)
+        self.assertIn('same-process survival could not be verified', probe)
+        self.assertIn('return $false', probe)
+        self.assertIn('-Game $gameId -Initialize', runner)
+        smoke = (root / '.github/workflows/engine-smoke.yml').read_text()
+        self.assertIn('python3 android/tests/test_android_audio_lifecycle.py', smoke)
+        tooling = (root / 'android/tests/run_tooling_smoke.ps1').read_text()
+        self.assertIn("'test_automation_result_evidence'", tooling)
+        snapshot = helpers.split('function Save-PublicGraphicsLifecycleFailure {', 1)[1].split('function Wait-ProcessDead', 1)[0]
+        for restriction in ("$DataEdition -cne 'shareware'", '$ownerPath', "'^emulator-[0-9]+$'",
+                            "$script:PACKAGE -cne 'com.dxxredux.app'", '-Seconds 3', '-lt 45',
+                            '[Math]::Min($bytes.Length, 262144)', 'Select-Object -First 2'):
+            self.assertIn(restriction, snapshot)
+        for forbidden in ('bugreport', '/data/tombstones', 'root', 'grant', 'logcat -c'):
+            self.assertNotIn(forbidden, snapshot)
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)

@@ -3,6 +3,7 @@
 param(
     [ValidateSet('d1', 'd2', 'both')][string]$Game = 'both',
     [switch]$Download,
+    [switch]$RequireArchives,
     [string]$ArchiveDirectory,
     [string]$DataRoot,
     [string]$ExtractorPath,
@@ -27,11 +28,13 @@ try {
     foreach ($name in $games) {
         $config = Get-SharewareTestGameConfig -RepoRoot $repoRoot -Game $name
         $destination = Join-Path $DataRoot $name
+        $existingVerified = $false
         if (Test-Path -LiteralPath $destination -PathType Container) {
             try {
                 $verified = Assert-SharewareTestDataDirectory -Config $config -DataDir $destination
                 Write-Host "Verified $name shareware: $verified"
-                continue
+                $existingVerified = $true
+                if (-not $RequireArchives) { continue }
             } catch {
                 Write-Host "Rebuilding invalid $name shareware fixture: $($_.Exception.Message)"
             }
@@ -57,6 +60,8 @@ try {
             if ((Get-Item -LiteralPath $archivePath).Length -ne $config.ArchiveSize) {
                 throw "Public package size mismatch: $archivePath"
             }
+            # First-play imports consume original packages even when extracted fixtures are cached
+            if ($existingVerified) { continue }
             if (-not $ExtractorPath) {
                 & cmake -S $toolSource -B $BuildDirectory | Out-Host
                 if ($LASTEXITCODE -ne 0) { throw 'Shareware extractor CMake configuration failed' }

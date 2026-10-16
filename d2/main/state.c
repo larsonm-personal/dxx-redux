@@ -4254,6 +4254,7 @@ int state_get_save_file_callsign(char *filename, char *callsign, int callsign_si
 	char mission[128];
 	int version;
 	int swap = 0;
+	fix64 saved_epoch;
 	player_rw pl_rw;
 
 	if (!filename || !callsign || callsign_size <= 0)
@@ -4287,6 +4288,11 @@ int state_get_save_file_callsign(char *filename, char *callsign, int callsign_si
 	PHYSFSX_readSXE32(fp, swap);
 	PHYSFSX_readSXE32(fp, swap);
 	PHYSFSX_readSXE32(fp, swap);
+	/* New save headers place the epoch before the player record */
+	if (version >= SAVE_EPOCH_D2_VERSION && !save_epoch_read(fp, swap, &saved_epoch)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
 	memset(&pl_rw, 0, sizeof(pl_rw));
 	if (PHYSFS_read(fp, &pl_rw, sizeof(pl_rw), 1) != 1) {
 		PHYSFS_close(fp);

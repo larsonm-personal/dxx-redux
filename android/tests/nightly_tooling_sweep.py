@@ -20,6 +20,18 @@ VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_o
                   'master:test_lan_lobby_discovery', 'master:test_android_music_completion',
                   'master:test_launcher_media_controls_generated'}
 
+FIRST_PLAY_IDS = {
+    'master:test_demo_import_public_first_play',
+    'master:test_lan_launch_preparation_public_shareware',
+    'master:test_gradle_unit_tests',
+    'shareware:test_autosave_resume_missing_pilot_unified#d1',
+    'shareware:test_autosave_resume_missing_pilot_unified#d2',
+    'shareware:test_graphics_lifecycle#d1',
+    'shareware:test_graphics_lifecycle#d2',
+    'master:test_lan_transport_recovery',
+    'shareware:test_pilot_long_hold_delete_unified#d2',
+}
+
 SCHEMA = 1
 LANES = ('host', 'jvm', 'android-single', 'android-dual')
 TERMINAL = {'PASS', 'FAIL', 'TIMEOUT'}
@@ -132,6 +144,27 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     if retail_assets:
         plan['retail_assets'] = retail_assets
     return plan, state
+
+
+def select_first_play(plan, policy, catalog):
+    """A fixed asset-free sample; never inherits rotating retail selections or progress."""
+    entries = policy_entries(policy)
+    if not FIRST_PLAY_IDS <= entries.keys():
+        raise ValueError('Missing first-play campaign suites')
+    names = {row['name'] for row in catalog['tests']}
+    selected = [entry for ident, entry in entries.items() if ident in FIRST_PLAY_IDS]
+    if any(entry.get('fixture') in ('retail-base', 'retail-missions') for entry in selected):
+        raise ValueError('First-play campaign must remain asset-free')
+    if any(entry['owner'] == 'master' and entry['args']['suite'] not in names for entry in selected):
+        raise ValueError('First-play owner absent from pinned catalog')
+    plan = dict(plan)
+    plan.pop('retail_assets', None)
+    plan['tests'] = selected
+    plan['estimated_seconds'] = sum(entry['estimated_seconds'] for entry in selected)
+    plan['lanes'] = [lane for lane in LANES if any(entry['lane'] == lane for entry in selected)]
+    plan['batch_id'] = digest({key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')})
+    validate_plan(plan, policy)
+    return plan
 
 
 def validate_plan(plan, policy):
@@ -533,6 +566,7 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
+    p.add_argument('--campaign', choices=('first-play',))
     p = sub.add_parser('retail-check')
     for option in ('plan', 'policy', 'lane'):
         p.add_argument('--' + option, required=True)
@@ -587,6 +621,11 @@ def main():
             if plan.get('retail_assets'):
                 identity['retail_assets'] = plan['retail_assets']
             plan['batch_id'] = digest(identity)
+        if args.campaign:
+            if args.validation:
+                raise ValueError('Choose validation or campaign, not both')
+            plan = select_first_play(plan, read(args.policy), read(args.catalog))
+            state = fresh_state(plan['target_sha'], plan['catalog_hash'])
         validate_plan(plan, read(args.policy))
         write(args.output, plan)
         write(args.state_output, state)

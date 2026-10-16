@@ -68,6 +68,21 @@ internal fun stripLauncherJsonc(text: String): String {
     return cleaned.toString()
 }
 
+internal fun launcherScriptSteps(text: String): JSONArray {
+    val source = JSONArray(stripLauncherJsonc(text))
+    val flat = JSONArray()
+    for (i in 0 until source.length()) {
+        val step = requireNotNull(source.optJSONObject(i)) { "Script entry $i must be an object" }
+        if (step.has("_info")) continue
+        require(step.opt("action") is String && step.getString("action").isNotBlank()) {
+            "Script entry $i must have a nonempty action"
+        }
+        flat.put(step)
+    }
+    require(flat.length() > 0) { "Script has no executable steps" }
+    return flat
+}
+
 /**
  * Executes JSONC automation scripts in the launcher (SetupActivity) process.
  *
@@ -127,24 +142,21 @@ class LauncherScriptExecutor(
         running = true
         startTimeMs = System.currentTimeMillis()
 
-        val text = withContext(Dispatchers.IO) { File(path).readText() }
-        val cleaned = stripLauncherJsonc(text)
-        steps = JSONArray(cleaned)
-
-        // Build flat step list skipping _info blocks
-        val flat = JSONArray()
-        for (i in 0 until steps.length()) {
-            val obj = steps.optJSONObject(i) ?: continue
-            if (obj.has("_info")) continue
-            flat.put(obj)
-        }
-        steps = flat
-        totalSteps = steps.length()
         currentStep = startStep
-
-        Log.i(TAG, "Script loaded: $path ($totalSteps steps, starting at $startStep)")
+        totalSteps = 0
         removeStaleResult()
-        runSteps()
+        try {
+            val text = withContext(Dispatchers.IO) { File(path).readText() }
+            steps = launcherScriptSteps(text)
+            totalSteps = steps.length()
+            require(startStep in 0..totalSteps) { "Invalid start step $startStep for $totalSteps steps" }
+            Log.i(TAG, "Script loaded: $path ($totalSteps steps, starting at $startStep)")
+            runSteps()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail("script load failed: ${e.javaClass.simpleName}: ${e.message}")
+        }
     }
 
     /** Resume execution after the game exited with LAUNCHER_CONTINUE. */
@@ -153,6 +165,10 @@ class LauncherScriptExecutor(
         currentStep = nextStep
         Log.i(TAG, "Resuming from step $nextStep")
         removeStaleResult()
+        if (nextStep !in 0..totalSteps || totalSteps == 0) {
+            fail("Invalid resume step $nextStep for $totalSteps steps")
+            return
+        }
         runSteps()
     }
 
@@ -843,8 +859,8 @@ class LauncherScriptExecutor(
                 }
 
                 else -> {
-                    Log.w(TAG, "Skipping unknown/game-only action: $action")
-                    currentStep++
+                    fail("Unknown or unsupported launcher action: $action")
+                    return
                 }
             }
         }
