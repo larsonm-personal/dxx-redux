@@ -1,0 +1,3474 @@
+{
+  "schema": 1,
+  "provenance": {
+    "gameplay_revision": "bc19490fb58d0db5f6ba0fd440db33b59b9861fe",
+    "capture_adapter_sha256": "21c0e30a755c8bc9b4113ed319deb126b199442fc491dc6129a0fed657447a96",
+    "capture": "Exact historical gameplay plus capture-only adapter; public D1 level 3 and D2 level 2; no gameplay repair or reference regeneration from current code.",
+    "excluded_identity_fields": [
+      "birth.object",
+      "birth.signature",
+      "activation_light.signature",
+      "cleared_authored_robot.object",
+      "cleared_authored_robot.signature"
+    ],
+    "d2_level_2_disk_backlinks": [
+      263,
+      233,
+      50
+    ],
+    "d2_level_2_runtime_segments": [
+      50,
+      233,
+      263
+    ],
+    "capture_revision": "ffdb397624d4f61d5d2129ef705402f867b14942"
+  },
+  "games": {
+    "d1": {
+      "cases": [
+        {
+          "activation_count": 2,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 5,
+          "second_lives": 1,
+          "segment": 213,
+          "station": 0,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1384,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 368,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 708,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1048,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1382,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 213,
+          "station": 0,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1384,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 213,
+          "station": 0,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 213,
+          "station": 0,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 5,
+          "second_lives": 1,
+          "segment": 214,
+          "station": 1,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1384,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 368,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 708,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1048,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1382,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 214,
+          "station": 1,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1384,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 214,
+          "station": 1,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 214,
+          "station": 1,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 4,
+          "second_lives": 1,
+          "segment": 213,
+          "station": 0,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 370,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 706,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1039,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 213,
+          "station": 0,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 213,
+          "station": 0,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 213,
+          "station": 0,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 4,
+          "second_lives": 1,
+          "segment": 214,
+          "station": 1,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 370,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 706,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            },
+            {
+              "frame": 1039,
+              "id": 3,
+              "round": 2,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 214,
+          "station": 1,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 366,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            },
+            {
+              "frame": 1046,
+              "id": 3,
+              "round": 1,
+              "shields": 1638400
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 214,
+          "station": 1,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 3,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 214,
+          "station": 1,
+          "births": [],
+          "cleared_robot_types": []
+        }
+      ],
+      "dispatch_cases": [
+        {
+          "activation_counts": [
+            1,
+            1
+          ],
+          "links": [
+            214,
+            213,
+            214
+          ],
+          "scenario": "wall_dispatch",
+          "source_segment": 225,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 370,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 373,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 704,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1042,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1053,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1376,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1389,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            }
+          ],
+          "activation_light_segments": [
+            214,
+            213
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_counts": [
+            1,
+            1
+          ],
+          "links": [
+            214,
+            213,
+            214
+          ],
+          "scenario": "sub",
+          "source_segment": 225,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 370,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 373,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 704,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1042,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1053,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1376,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1389,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            }
+          ],
+          "activation_light_segments": [
+            214,
+            213
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_counts": [
+            1,
+            1
+          ],
+          "links": [
+            213,
+            214,
+            213
+          ],
+          "scenario": "reverse",
+          "source_segment": 225,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 31,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 370,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 373,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 704,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 710,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1042,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1053,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            },
+            {
+              "frame": 1376,
+              "id": 3,
+              "ordinal": 1,
+              "segment": 214,
+              "shields": 1638400,
+              "station": 1
+            },
+            {
+              "frame": 1389,
+              "id": 3,
+              "ordinal": 0,
+              "segment": 213,
+              "shields": 1638400,
+              "station": 0
+            }
+          ],
+          "activation_light_segments": [
+            213,
+            214
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_counts": [
+            0,
+            0
+          ],
+          "links": [
+            214,
+            213,
+            214
+          ],
+          "scenario": "no_dispatch",
+          "source_segment": 225,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [],
+          "activation_light_segments": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_counts": [
+            1,
+            1
+          ],
+          "links": [
+            214,
+            213,
+            214
+          ],
+          "scenario": "empty_mask",
+          "source_segment": 225,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": true,
+          "births": [],
+          "activation_light_segments": [
+            214,
+            213
+          ],
+          "cleared_robot_types": []
+        }
+      ],
+      "mapping": [
+        {
+          "ordinal": 0,
+          "robot_flags": [
+            8
+          ],
+          "segment": 213,
+          "station": 0
+        },
+        {
+          "ordinal": 1,
+          "robot_flags": [
+            8
+          ],
+          "segment": 214,
+          "station": 1
+        }
+      ],
+      "authored_triggers": [
+        {
+          "declared_link_count": 2,
+          "flags": 64,
+          "index": 0,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 213,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 214,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 64,
+          "runtime_source_walls": [
+            {
+              "segment": 320,
+              "side": 5,
+              "wall": 68
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 64,
+          "index": 1,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 214,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 213,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 64,
+          "runtime_source_walls": [
+            {
+              "segment": 239,
+              "side": 5,
+              "wall": 60
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 64,
+          "index": 2,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 214,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 213,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 64,
+          "runtime_source_walls": [
+            {
+              "segment": 425,
+              "side": 5,
+              "wall": 62
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 64,
+          "index": 3,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 213,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 214,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 64,
+          "runtime_source_walls": [
+            {
+              "segment": 303,
+              "side": 5,
+              "wall": 64
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 0,
+          "flags": 8,
+          "index": 4,
+          "links": [],
+          "runtime_flags": 8,
+          "runtime_source_walls": [
+            {
+              "segment": 353,
+              "side": 4,
+              "wall": 0
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 1,
+          "index": 5,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 325,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 325,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 1,
+          "runtime_source_walls": [
+            {
+              "segment": 324,
+              "side": 4,
+              "wall": 24
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        }
+      ]
+    },
+    "d2": {
+      "cases": [
+        {
+          "activation_count": 2,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 5,
+          "second_lives": 1,
+          "segment": 50,
+          "station": 5,
+          "births": [
+            {
+              "frame": 31,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 365,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 708,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1043,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1380,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 31,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 366,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 707,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 1046,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 1380,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            }
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 50,
+          "station": 5,
+          "births": [
+            {
+              "frame": 31,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 365,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 708,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1043,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1380,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            }
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 0,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 50,
+          "station": 5,
+          "births": [],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 50,
+          "station": 5,
+          "births": [],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 2,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 5,
+          "second_lives": 1,
+          "segment": 233,
+          "station": 14,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 364,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 704,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1045,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1387,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            },
+            {
+              "frame": 367,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 705,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 1044,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 1380,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 233,
+          "station": 14,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 364,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 704,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1045,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1387,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 233,
+          "station": 14,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 233,
+          "station": 14,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 2,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 0,
+          "second_births": 5,
+          "second_lives": 1,
+          "segment": 263,
+          "station": 16,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 365,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 707,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 1041,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1379,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 31,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 375,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            },
+            {
+              "frame": 711,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 1049,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 1390,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 2,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 5,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 263,
+          "station": 16,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 365,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 707,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 1041,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1379,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 2,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 263,
+          "station": 16,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 2,
+          "difficulty": 2,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 2,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 263,
+          "station": 16,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 3,
+          "policy": 0,
+          "second_births": 4,
+          "second_lives": 3,
+          "segment": 50,
+          "station": 5,
+          "births": [
+            {
+              "frame": 31,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 365,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 708,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1043,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 31,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 365,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 703,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 1038,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            }
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 50,
+          "station": 5,
+          "births": [
+            {
+              "frame": 31,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 365,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 708,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 1043,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            }
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 0,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 50,
+          "station": 5,
+          "births": [],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 1,
+          "center": 0,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 50,
+          "station": 5,
+          "births": [],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_count": 2,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 3,
+          "policy": 0,
+          "second_births": 4,
+          "second_lives": 3,
+          "segment": 233,
+          "station": 14,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 364,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 704,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1045,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            },
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            },
+            {
+              "frame": 369,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 707,
+              "id": 39,
+              "round": 2,
+              "shields": 4259840
+            },
+            {
+              "frame": 1041,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 233,
+          "station": 14,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 364,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 704,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 1045,
+              "id": 39,
+              "round": 1,
+              "shields": 4259840
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 233,
+          "station": 14,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 1,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 233,
+          "station": 14,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 2,
+          "center": 2,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 3,
+          "policy": 0,
+          "second_births": 4,
+          "second_lives": 3,
+          "segment": 263,
+          "station": 16,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 365,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 707,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 1041,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            },
+            {
+              "frame": 368,
+              "id": 25,
+              "round": 2,
+              "shields": 5242880
+            },
+            {
+              "frame": 716,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            },
+            {
+              "frame": 1054,
+              "id": 38,
+              "round": 2,
+              "shields": 1966080
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 2,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 4,
+          "first_lives": 2,
+          "policy": 1,
+          "second_births": 0,
+          "second_lives": 2,
+          "segment": 263,
+          "station": 16,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 365,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            },
+            {
+              "frame": 707,
+              "id": 38,
+              "round": 1,
+              "shields": 1966080
+            },
+            {
+              "frame": 1041,
+              "id": 25,
+              "round": 1,
+              "shields": 5242880
+            }
+          ],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 0,
+          "center": 2,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 2,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 263,
+          "station": 16,
+          "births": [],
+          "cleared_robot_types": []
+        },
+        {
+          "activation_count": 1,
+          "center": 2,
+          "difficulty": 4,
+          "energy_centers": 25,
+          "energy_state_preserved": true,
+          "first_births": 0,
+          "first_lives": 3,
+          "policy": 3,
+          "second_births": 0,
+          "second_lives": 3,
+          "segment": 263,
+          "station": 16,
+          "births": [],
+          "cleared_robot_types": []
+        }
+      ],
+      "dispatch_cases": [
+        {
+          "activation_counts": [
+            1,
+            0,
+            1
+          ],
+          "links": [
+            263,
+            50,
+            263
+          ],
+          "scenario": "wall_dispatch",
+          "source_segment": 217,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 31,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 367,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 379,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 705,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 721,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1037,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 1060,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1383,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 1394,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            }
+          ],
+          "activation_light_segments": [
+            263,
+            50
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_counts": [
+            1,
+            0,
+            1
+          ],
+          "links": [
+            263,
+            50,
+            263
+          ],
+          "scenario": "sub",
+          "source_segment": 217,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 31,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 367,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 379,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 705,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 721,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1037,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 1060,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1383,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 1394,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            }
+          ],
+          "activation_light_segments": [
+            263,
+            50
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_counts": [
+            1,
+            0,
+            1
+          ],
+          "links": [
+            50,
+            263,
+            50
+          ],
+          "scenario": "reverse",
+          "source_segment": 217,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [
+            {
+              "frame": 31,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 31,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 367,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 379,
+              "id": 25,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 5242880,
+              "station": 16
+            },
+            {
+              "frame": 705,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 721,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1037,
+              "id": 39,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 4259840,
+              "station": 5
+            },
+            {
+              "frame": 1060,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            },
+            {
+              "frame": 1383,
+              "id": 38,
+              "ordinal": 0,
+              "segment": 50,
+              "shields": 1966080,
+              "station": 5
+            },
+            {
+              "frame": 1394,
+              "id": 38,
+              "ordinal": 2,
+              "segment": 263,
+              "shields": 1966080,
+              "station": 16
+            }
+          ],
+          "activation_light_segments": [
+            50,
+            263
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_counts": [
+            0,
+            0,
+            0
+          ],
+          "links": [
+            263,
+            50,
+            263
+          ],
+          "scenario": "no_dispatch",
+          "source_segment": 217,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": false,
+          "births": [],
+          "activation_light_segments": [],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        },
+        {
+          "activation_counts": [
+            1,
+            0,
+            1
+          ],
+          "links": [
+            263,
+            50,
+            263
+          ],
+          "scenario": "empty_mask",
+          "source_segment": 217,
+          "source_side": 0,
+          "synthetic_links": true,
+          "trigger": 0,
+          "zeroed_robot_masks": true,
+          "births": [],
+          "activation_light_segments": [
+            263,
+            50
+          ],
+          "cleared_robot_types": [
+            37,
+            37
+          ]
+        }
+      ],
+      "mapping": [
+        {
+          "ordinal": 0,
+          "robot_flags": [
+            0,
+            192
+          ],
+          "segment": 50,
+          "station": 5
+        },
+        {
+          "ordinal": 1,
+          "robot_flags": [
+            33554432,
+            128
+          ],
+          "segment": 233,
+          "station": 14
+        },
+        {
+          "ordinal": 2,
+          "robot_flags": [
+            33554432,
+            64
+          ],
+          "segment": 263,
+          "station": 16
+        }
+      ],
+      "authored_triggers": [
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 0,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 262,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 223,
+              "side": 5,
+              "wall": 28
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 1,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 14,
+              "side": 5
+            },
+            {
+              "ordinal": 1,
+              "segment": 14,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 81,
+              "side": 5,
+              "wall": 38
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 0,
+          "flags": 0,
+          "index": 2,
+          "links": [],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 77,
+              "side": 4,
+              "wall": 78
+            }
+          ],
+          "runtime_type": 3,
+          "time": -1,
+          "type": 3,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 3,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 255,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 132,
+              "side": 4,
+              "wall": 81
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 4,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 57,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 54,
+              "side": 3,
+              "wall": 39
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 5,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 57,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 53,
+              "side": 3,
+              "wall": 37
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 6,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 57,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 57,
+              "side": 3,
+              "wall": 41
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 7,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 127,
+              "side": 5
+            },
+            {
+              "ordinal": 1,
+              "segment": 144,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 118,
+              "side": 2,
+              "wall": 88
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 8,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 18,
+              "side": 5
+            },
+            {
+              "ordinal": 1,
+              "segment": 7,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 164,
+              "side": 2,
+              "wall": 89
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 4,
+          "flags": 0,
+          "index": 9,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 31,
+              "side": 1
+            },
+            {
+              "ordinal": 1,
+              "segment": 16,
+              "side": 1
+            },
+            {
+              "ordinal": 2,
+              "segment": 17,
+              "side": 5
+            },
+            {
+              "ordinal": 3,
+              "segment": 26,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 76,
+              "side": 2,
+              "wall": 96
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 10,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 72,
+              "side": 2
+            },
+            {
+              "ordinal": 1,
+              "segment": 66,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 76,
+              "side": 0,
+              "wall": 97
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 11,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 11,
+              "side": 5
+            },
+            {
+              "ordinal": 1,
+              "segment": 106,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 91,
+              "side": 0,
+              "wall": 100
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 12,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 298,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 292,
+              "side": 3,
+              "wall": 109
+            }
+          ],
+          "runtime_type": 10,
+          "time": -1,
+          "type": 10,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 13,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 93,
+              "side": 5
+            },
+            {
+              "ordinal": 1,
+              "segment": 23,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 82,
+              "side": 5,
+              "wall": 36
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 14,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 30,
+              "side": 3
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 157,
+              "side": 5,
+              "wall": 130
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 15,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 193,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 102,
+              "side": 4,
+              "wall": 134
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 16,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 187,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 302,
+              "side": 3,
+              "wall": 66
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 17,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 85,
+              "side": 4
+            },
+            {
+              "ordinal": 1,
+              "segment": 235,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 84,
+              "side": 2,
+              "wall": 154
+            }
+          ],
+          "runtime_type": 7,
+          "time": -1,
+          "type": 7,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 18,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 30,
+              "side": 3
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 286,
+              "side": 5,
+              "wall": 118
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 19,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 8,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 15,
+              "side": 1,
+              "wall": 173
+            }
+          ],
+          "runtime_type": 7,
+          "time": -1,
+          "type": 7,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 4,
+          "flags": 0,
+          "index": 20,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 248,
+              "side": 0
+            },
+            {
+              "ordinal": 1,
+              "segment": 257,
+              "side": 2
+            },
+            {
+              "ordinal": 2,
+              "segment": 248,
+              "side": 2
+            },
+            {
+              "ordinal": 3,
+              "segment": 257,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 257,
+              "side": 2,
+              "wall": 175
+            },
+            {
+              "segment": 259,
+              "side": 5,
+              "wall": 176
+            },
+            {
+              "segment": 253,
+              "side": 5,
+              "wall": 182
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 3,
+          "flags": 0,
+          "index": 21,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 130,
+              "side": 4
+            },
+            {
+              "ordinal": 1,
+              "segment": 116,
+              "side": 0
+            },
+            {
+              "ordinal": 2,
+              "segment": 116,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 24,
+              "side": 4,
+              "wall": 184
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 22,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 195,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 177,
+              "side": 4,
+              "wall": 185
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 23,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 97,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 81,
+              "side": 2,
+              "wall": 187
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 2,
+          "flags": 0,
+          "index": 24,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 414,
+              "side": 4
+            },
+            {
+              "ordinal": 1,
+              "segment": 422,
+              "side": 5
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 425,
+              "side": 4,
+              "wall": 188
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 25,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 97,
+              "side": 2
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 281,
+              "side": 2,
+              "wall": 189
+            }
+          ],
+          "runtime_type": 7,
+          "time": -1,
+          "type": 7,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 1,
+          "index": 26,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 436,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 1,
+          "runtime_source_walls": [
+            {
+              "segment": 436,
+              "side": 3,
+              "wall": 192
+            }
+          ],
+          "runtime_type": 9,
+          "time": -1,
+          "type": 9,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 27,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 263,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 311,
+              "side": 3,
+              "wall": 195
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 28,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 263,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 31,
+              "side": 1,
+              "wall": 91
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 29,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 263,
+              "side": 1
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 72,
+              "side": 2,
+              "wall": 95
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 30,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 50,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 279,
+              "side": 4,
+              "wall": 197
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 31,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 50,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 38,
+              "side": 0,
+              "wall": 199
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 32,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 50,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 231,
+              "side": 4,
+              "wall": 201
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 33,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 233,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 140,
+              "side": 2,
+              "wall": 203
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 34,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 233,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 280,
+              "side": 4,
+              "wall": 205
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 35,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 233,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 169,
+              "side": 4,
+              "wall": 6
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 36,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 233,
+              "side": 0
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 180,
+              "side": 5,
+              "wall": 207
+            }
+          ],
+          "runtime_type": 2,
+          "time": -1,
+          "type": 2,
+          "value": 327680
+        },
+        {
+          "declared_link_count": 1,
+          "flags": 0,
+          "index": 37,
+          "links": [
+            {
+              "ordinal": 0,
+              "segment": 350,
+              "side": 4
+            }
+          ],
+          "runtime_flags": 0,
+          "runtime_source_walls": [
+            {
+              "segment": 434,
+              "side": 1,
+              "wall": 209
+            }
+          ],
+          "runtime_type": 0,
+          "time": -1,
+          "type": 0,
+          "value": 327680
+        }
+      ]
+    }
+  }
+}

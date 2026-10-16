@@ -1,0 +1,362 @@
+{
+  "cases": [
+    {
+      "activation_lights": [
+        {
+          "segment": 131
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 131,
+          "station": 0,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 131,
+          "station": 0,
+          "timer": 0
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 0,
+          "segment": 131,
+          "station": 0,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 0,
+          "segment": 131,
+          "shields": 6553600,
+          "spawn_ordinal": 0,
+          "station": 0,
+          "type": 0
+        },
+        {
+          "frame": 369,
+          "ordinal": 0,
+          "segment": 131,
+          "shields": 9830400,
+          "spawn_ordinal": 1,
+          "station": 0,
+          "type": 6
+        },
+        {
+          "frame": 709,
+          "ordinal": 0,
+          "segment": 131,
+          "shields": 4259840,
+          "spawn_ordinal": 2,
+          "station": 0,
+          "type": 8
+        },
+        {
+          "frame": 1046,
+          "ordinal": 0,
+          "segment": 131,
+          "shields": 4587520,
+          "spawn_ordinal": 3,
+          "station": 0,
+          "type": 22
+        },
+        {
+          "frame": 1382,
+          "ordinal": 0,
+          "segment": 131,
+          "shields": 4587520,
+          "spawn_ordinal": 4,
+          "station": 0,
+          "type": 22
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": false,
+      "links": [
+        {
+          "center": 0,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 131,
+          "side": 3,
+          "station": 0,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 5,
+          "ordinal": 0,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 0
+    },
+    {
+      "activation_lights": [
+        {
+          "segment": 541
+        },
+        {
+          "segment": 542
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 541,
+          "station": 3,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 542,
+          "station": 4,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 541,
+          "station": 3,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 542,
+          "station": 4,
+          "timer": 0
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 1,
+          "segment": 541,
+          "station": 3,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 2,
+          "segment": 542,
+          "station": 4,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 1,
+          "segment": 541,
+          "shields": 6553600,
+          "spawn_ordinal": 0,
+          "station": 3,
+          "type": 21
+        },
+        {
+          "frame": 31,
+          "ordinal": 2,
+          "segment": 542,
+          "shields": 4587520,
+          "spawn_ordinal": 1,
+          "station": 4,
+          "type": 22
+        },
+        {
+          "frame": 370,
+          "ordinal": 1,
+          "segment": 541,
+          "shields": 4259840,
+          "spawn_ordinal": 2,
+          "station": 3,
+          "type": 8
+        },
+        {
+          "frame": 372,
+          "ordinal": 2,
+          "segment": 542,
+          "shields": 3276800,
+          "spawn_ordinal": 3,
+          "station": 4,
+          "type": 19
+        },
+        {
+          "frame": 709,
+          "ordinal": 2,
+          "segment": 542,
+          "shields": 4587520,
+          "spawn_ordinal": 4,
+          "station": 4,
+          "type": 22
+        },
+        {
+          "frame": 712,
+          "ordinal": 1,
+          "segment": 541,
+          "shields": 4259840,
+          "spawn_ordinal": 5,
+          "station": 3,
+          "type": 8
+        },
+        {
+          "frame": 1050,
+          "ordinal": 2,
+          "segment": 542,
+          "shields": 4259840,
+          "spawn_ordinal": 6,
+          "station": 4,
+          "type": 8
+        },
+        {
+          "frame": 1051,
+          "ordinal": 1,
+          "segment": 541,
+          "shields": 6553600,
+          "spawn_ordinal": 7,
+          "station": 3,
+          "type": 21
+        },
+        {
+          "frame": 1389,
+          "ordinal": 1,
+          "segment": 541,
+          "shields": 6553600,
+          "spawn_ordinal": 8,
+          "station": 3,
+          "type": 0
+        },
+        {
+          "frame": 1390,
+          "ordinal": 2,
+          "segment": 542,
+          "shields": 4259840,
+          "spawn_ordinal": 9,
+          "station": 4,
+          "type": 8
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": false,
+      "links": [
+        {
+          "center": 1,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 541,
+          "side": 0,
+          "station": 3,
+          "status": "eligible"
+        },
+        {
+          "center": 2,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 542,
+          "side": 2,
+          "station": 4,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 5,
+          "ordinal": 1,
+          "status": "produced"
+        },
+        {
+          "births": 5,
+          "ordinal": 2,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 3
+    }
+  ],
+  "difficulty": 2,
+  "fixture_operations": [
+    "clear target-segment authored robots",
+    "retire each generated robot immediately without combat",
+    "advance only station loop"
+  ],
+  "frame_time": 1092,
+  "frames": 2400,
+  "game": "d1",
+  "level": 13,
+  "mission": "vignette",
+  "original_links_preserved": true,
+  "passed": true,
+  "rng_seed": 1234,
+  "schema": 1,
+  "scope": "controlled_authored_trigger_station_loop"
+}

@@ -1,0 +1,1133 @@
+{
+  "cases": [
+    {
+      "activation_lights": [
+        {
+          "segment": 167
+        },
+        {
+          "segment": 166
+        },
+        {
+          "segment": 418
+        },
+        {
+          "segment": 417
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": 5460
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": 3276
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 131072,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 1,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 32760
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 9830400,
+          "spawn_ordinal": 0,
+          "station": 0,
+          "type": 12
+        },
+        {
+          "frame": 31,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 4259840,
+          "spawn_ordinal": 1,
+          "station": 1,
+          "type": 8
+        },
+        {
+          "frame": 31,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 3276800,
+          "spawn_ordinal": 2,
+          "station": 4,
+          "type": 19
+        },
+        {
+          "frame": 31,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 3,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 367,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 4,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 369,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 4587520,
+          "spawn_ordinal": 5,
+          "station": 0,
+          "type": 22
+        },
+        {
+          "frame": 371,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 21299200,
+          "spawn_ordinal": 6,
+          "station": 5,
+          "type": 16
+        },
+        {
+          "frame": 374,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 9830400,
+          "spawn_ordinal": 7,
+          "station": 4,
+          "type": 9
+        },
+        {
+          "frame": 702,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 8,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 707,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 5242880,
+          "spawn_ordinal": 9,
+          "station": 0,
+          "type": 1
+        },
+        {
+          "frame": 708,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 10,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 712,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 6553600,
+          "spawn_ordinal": 11,
+          "station": 4,
+          "type": 0
+        },
+        {
+          "frame": 1040,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 12,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 1042,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 5242880,
+          "spawn_ordinal": 13,
+          "station": 0,
+          "type": 1
+        },
+        {
+          "frame": 1045,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 14,
+          "station": 5,
+          "type": 12
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": true,
+      "links": [
+        {
+          "center": 1,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 167,
+          "side": 1,
+          "station": 1,
+          "status": "eligible"
+        },
+        {
+          "center": 0,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 166,
+          "side": 3,
+          "station": 0,
+          "status": "eligible"
+        },
+        {
+          "center": 3,
+          "nonempty_mask": true,
+          "ordinal": 2,
+          "segment": 418,
+          "side": 1,
+          "station": 5,
+          "status": "eligible"
+        },
+        {
+          "center": 2,
+          "nonempty_mask": true,
+          "ordinal": 3,
+          "segment": 417,
+          "side": 1,
+          "station": 4,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 4,
+          "ordinal": 1,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 0,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 3,
+          "status": "produced"
+        },
+        {
+          "births": 3,
+          "ordinal": 2,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 0
+    },
+    {
+      "activation_lights": [
+        {
+          "segment": 167
+        },
+        {
+          "segment": 166
+        },
+        {
+          "segment": 418
+        },
+        {
+          "segment": 417
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": 5460
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": 3276
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 131072,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 1,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 32760
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 1,
+          "segment": 167,
+          "station": 1,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 0,
+          "segment": 166,
+          "station": 0,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 9830400,
+          "spawn_ordinal": 0,
+          "station": 0,
+          "type": 12
+        },
+        {
+          "frame": 31,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 4259840,
+          "spawn_ordinal": 1,
+          "station": 1,
+          "type": 8
+        },
+        {
+          "frame": 31,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 3276800,
+          "spawn_ordinal": 2,
+          "station": 4,
+          "type": 19
+        },
+        {
+          "frame": 31,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 3,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 367,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 4,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 369,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 4587520,
+          "spawn_ordinal": 5,
+          "station": 0,
+          "type": 22
+        },
+        {
+          "frame": 371,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 21299200,
+          "spawn_ordinal": 6,
+          "station": 5,
+          "type": 16
+        },
+        {
+          "frame": 374,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 9830400,
+          "spawn_ordinal": 7,
+          "station": 4,
+          "type": 9
+        },
+        {
+          "frame": 702,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 8,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 707,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 5242880,
+          "spawn_ordinal": 9,
+          "station": 0,
+          "type": 1
+        },
+        {
+          "frame": 708,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 10,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 712,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 6553600,
+          "spawn_ordinal": 11,
+          "station": 4,
+          "type": 0
+        },
+        {
+          "frame": 1040,
+          "ordinal": 1,
+          "segment": 167,
+          "shields": 6553600,
+          "spawn_ordinal": 12,
+          "station": 1,
+          "type": 18
+        },
+        {
+          "frame": 1042,
+          "ordinal": 0,
+          "segment": 166,
+          "shields": 5242880,
+          "spawn_ordinal": 13,
+          "station": 0,
+          "type": 1
+        },
+        {
+          "frame": 1045,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 14,
+          "station": 5,
+          "type": 12
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": true,
+      "links": [
+        {
+          "center": 1,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 167,
+          "side": 1,
+          "station": 1,
+          "status": "eligible"
+        },
+        {
+          "center": 0,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 166,
+          "side": 3,
+          "station": 0,
+          "status": "eligible"
+        },
+        {
+          "center": 3,
+          "nonempty_mask": true,
+          "ordinal": 2,
+          "segment": 418,
+          "side": 1,
+          "station": 5,
+          "status": "eligible"
+        },
+        {
+          "center": 2,
+          "nonempty_mask": true,
+          "ordinal": 3,
+          "segment": 417,
+          "side": 1,
+          "station": 4,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 4,
+          "ordinal": 1,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 0,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 3,
+          "status": "produced"
+        },
+        {
+          "births": 3,
+          "ordinal": 2,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 2
+    },
+    {
+      "activation_lights": [
+        {
+          "segment": 418
+        },
+        {
+          "segment": 417
+        },
+        {
+          "segment": 488
+        },
+        {
+          "segment": 487
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 5,
+          "segment": 488,
+          "station": 8,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 4,
+          "segment": 487,
+          "station": 7,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 131072,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 1,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": 27300
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 5,
+          "segment": 488,
+          "station": 8,
+          "timer": 121212
+        },
+        {
+          "activation_count": 1,
+          "capacity": 65536,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 4,
+          "segment": 487,
+          "station": 7,
+          "timer": 104832
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 3,
+          "segment": 418,
+          "station": 5,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 2,
+          "segment": 417,
+          "station": 4,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 5,
+          "segment": 488,
+          "station": 8,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 4,
+          "segment": 487,
+          "station": 7,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 5242880,
+          "spawn_ordinal": 0,
+          "station": 4,
+          "type": 1
+        },
+        {
+          "frame": 31,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 1,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 31,
+          "ordinal": 4,
+          "segment": 487,
+          "shields": 9830400,
+          "spawn_ordinal": 2,
+          "station": 7,
+          "type": 12
+        },
+        {
+          "frame": 31,
+          "ordinal": 5,
+          "segment": 488,
+          "shields": 6553600,
+          "spawn_ordinal": 3,
+          "station": 8,
+          "type": 0
+        },
+        {
+          "frame": 330,
+          "ordinal": 5,
+          "segment": 488,
+          "shields": 3276800,
+          "spawn_ordinal": 4,
+          "station": 8,
+          "type": 19
+        },
+        {
+          "frame": 343,
+          "ordinal": 4,
+          "segment": 487,
+          "shields": 9830400,
+          "spawn_ordinal": 5,
+          "station": 7,
+          "type": 9
+        },
+        {
+          "frame": 369,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 6,
+          "station": 5,
+          "type": 12
+        },
+        {
+          "frame": 374,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 9830400,
+          "spawn_ordinal": 7,
+          "station": 4,
+          "type": 9
+        },
+        {
+          "frame": 638,
+          "ordinal": 5,
+          "segment": 488,
+          "shields": 4587520,
+          "spawn_ordinal": 8,
+          "station": 8,
+          "type": 11
+        },
+        {
+          "frame": 647,
+          "ordinal": 4,
+          "segment": 487,
+          "shields": 9830400,
+          "spawn_ordinal": 9,
+          "station": 7,
+          "type": 9
+        },
+        {
+          "frame": 710,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 10,
+          "station": 5,
+          "type": 9
+        },
+        {
+          "frame": 712,
+          "ordinal": 2,
+          "segment": 417,
+          "shields": 6553600,
+          "spawn_ordinal": 11,
+          "station": 4,
+          "type": 0
+        },
+        {
+          "frame": 937,
+          "ordinal": 5,
+          "segment": 488,
+          "shields": 6553600,
+          "spawn_ordinal": 12,
+          "station": 8,
+          "type": 0
+        },
+        {
+          "frame": 952,
+          "ordinal": 4,
+          "segment": 487,
+          "shields": 9830400,
+          "spawn_ordinal": 13,
+          "station": 7,
+          "type": 6
+        },
+        {
+          "frame": 1049,
+          "ordinal": 3,
+          "segment": 418,
+          "shields": 9830400,
+          "spawn_ordinal": 14,
+          "station": 5,
+          "type": 9
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": true,
+      "links": [
+        {
+          "center": 3,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 418,
+          "side": 1,
+          "station": 5,
+          "status": "eligible"
+        },
+        {
+          "center": 2,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 417,
+          "side": 1,
+          "station": 4,
+          "status": "eligible"
+        },
+        {
+          "center": 5,
+          "nonempty_mask": true,
+          "ordinal": 2,
+          "segment": 488,
+          "side": 0,
+          "station": 8,
+          "status": "eligible"
+        },
+        {
+          "center": 4,
+          "nonempty_mask": true,
+          "ordinal": 3,
+          "segment": 487,
+          "side": 0,
+          "station": 7,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 4,
+          "ordinal": 3,
+          "status": "produced"
+        },
+        {
+          "births": 3,
+          "ordinal": 2,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 5,
+          "status": "produced"
+        },
+        {
+          "births": 4,
+          "ordinal": 4,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 3
+    }
+  ],
+  "difficulty": 2,
+  "fixture_operations": [
+    "clear target-segment authored robots",
+    "retire each generated robot immediately without combat",
+    "advance only station loop"
+  ],
+  "frame_time": 1092,
+  "frames": 2400,
+  "game": "d1",
+  "level": 17,
+  "mission": "vignette",
+  "original_links_preserved": true,
+  "passed": true,
+  "rng_seed": 1234,
+  "schema": 1,
+  "scope": "controlled_authored_trigger_station_loop"
+}

@@ -1,0 +1,605 @@
+{
+  "cases": [
+    {
+      "activation_lights": [
+        {
+          "segment": 614
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": 0
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 0,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 267,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 1,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 509,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 2,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 747,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 3,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 983,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 4,
+          "station": 3,
+          "type": 3
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": false,
+      "links": [
+        {
+          "center": 3,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 614,
+          "side": 1,
+          "station": 3,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 5,
+          "ordinal": 3,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 0
+    },
+    {
+      "activation_lights": [
+        {
+          "segment": 611
+        },
+        {
+          "segment": 613
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 611,
+          "station": 0,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 613,
+          "station": 2,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 0,
+          "segment": 611,
+          "station": 0,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 2,
+          "segment": 613,
+          "station": 2,
+          "timer": 0
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 0,
+          "segment": 611,
+          "station": 0,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 2,
+          "segment": 613,
+          "station": 2,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 2,
+          "segment": 613,
+          "shields": 1638400,
+          "spawn_ordinal": 0,
+          "station": 2,
+          "type": 3
+        },
+        {
+          "frame": 31,
+          "ordinal": 0,
+          "segment": 611,
+          "shields": 1638400,
+          "spawn_ordinal": 1,
+          "station": 0,
+          "type": 3
+        },
+        {
+          "frame": 240,
+          "ordinal": 2,
+          "segment": 613,
+          "shields": 1638400,
+          "spawn_ordinal": 2,
+          "station": 2,
+          "type": 3
+        },
+        {
+          "frame": 269,
+          "ordinal": 0,
+          "segment": 611,
+          "shields": 1638400,
+          "spawn_ordinal": 3,
+          "station": 0,
+          "type": 3
+        },
+        {
+          "frame": 455,
+          "ordinal": 2,
+          "segment": 613,
+          "shields": 1638400,
+          "spawn_ordinal": 4,
+          "station": 2,
+          "type": 3
+        },
+        {
+          "frame": 515,
+          "ordinal": 0,
+          "segment": 611,
+          "shields": 1638400,
+          "spawn_ordinal": 5,
+          "station": 0,
+          "type": 3
+        },
+        {
+          "frame": 661,
+          "ordinal": 2,
+          "segment": 613,
+          "shields": 1638400,
+          "spawn_ordinal": 6,
+          "station": 2,
+          "type": 3
+        },
+        {
+          "frame": 753,
+          "ordinal": 0,
+          "segment": 611,
+          "shields": 1638400,
+          "spawn_ordinal": 7,
+          "station": 0,
+          "type": 3
+        },
+        {
+          "frame": 873,
+          "ordinal": 2,
+          "segment": 613,
+          "shields": 1638400,
+          "spawn_ordinal": 8,
+          "station": 2,
+          "type": 3
+        },
+        {
+          "frame": 1004,
+          "ordinal": 0,
+          "segment": 611,
+          "shields": 1638400,
+          "spawn_ordinal": 9,
+          "station": 0,
+          "type": 3
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": false,
+      "links": [
+        {
+          "center": 0,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 611,
+          "side": 1,
+          "station": 0,
+          "status": "eligible"
+        },
+        {
+          "center": 2,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 613,
+          "side": 1,
+          "station": 2,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 5,
+          "ordinal": 0,
+          "status": "produced"
+        },
+        {
+          "births": 5,
+          "ordinal": 2,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 1
+    },
+    {
+      "activation_lights": [
+        {
+          "segment": 612
+        },
+        {
+          "segment": 614
+        }
+      ],
+      "after_dispatch": [
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 612,
+          "station": 1,
+          "timer": 65536000
+        },
+        {
+          "activation_count": 1,
+          "capacity": 327680,
+          "disable_time": 1703936,
+          "enabled": 1,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": 65536000
+        }
+      ],
+      "after_frames": [
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 1,
+          "segment": 612,
+          "station": 1,
+          "timer": 0
+        },
+        {
+          "activation_count": 1,
+          "capacity": 0,
+          "disable_time": -676,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 2,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": 0
+        }
+      ],
+      "before_dispatch": [
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 1,
+          "segment": 612,
+          "station": 1,
+          "timer": -1
+        },
+        {
+          "activation_count": 0,
+          "capacity": 327680,
+          "disable_time": 0,
+          "enabled": 0,
+          "flag": 0,
+          "lives": 3,
+          "ordinal": 3,
+          "segment": 614,
+          "station": 3,
+          "timer": -1
+        }
+      ],
+      "births": [
+        {
+          "frame": 31,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 0,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 31,
+          "ordinal": 1,
+          "segment": 612,
+          "shields": 1638400,
+          "spawn_ordinal": 1,
+          "station": 1,
+          "type": 3
+        },
+        {
+          "frame": 237,
+          "ordinal": 1,
+          "segment": 612,
+          "shields": 1638400,
+          "spawn_ordinal": 2,
+          "station": 1,
+          "type": 3
+        },
+        {
+          "frame": 269,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 3,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 440,
+          "ordinal": 1,
+          "segment": 612,
+          "shields": 1638400,
+          "spawn_ordinal": 4,
+          "station": 1,
+          "type": 3
+        },
+        {
+          "frame": 512,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 5,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 652,
+          "ordinal": 1,
+          "segment": 612,
+          "shields": 1638400,
+          "spawn_ordinal": 6,
+          "station": 1,
+          "type": 3
+        },
+        {
+          "frame": 754,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 7,
+          "station": 3,
+          "type": 3
+        },
+        {
+          "frame": 853,
+          "ordinal": 1,
+          "segment": 612,
+          "shields": 1638400,
+          "spawn_ordinal": 8,
+          "station": 1,
+          "type": 3
+        },
+        {
+          "frame": 988,
+          "ordinal": 3,
+          "segment": 614,
+          "shields": 1638400,
+          "spawn_ordinal": 9,
+          "station": 3,
+          "type": 3
+        }
+      ],
+      "cleared_authored_robots": [],
+      "dispatch_requested": true,
+      "dispatch_result": 0,
+      "global_cap_observed": false,
+      "links": [
+        {
+          "center": 1,
+          "nonempty_mask": true,
+          "ordinal": 0,
+          "segment": 612,
+          "side": 1,
+          "station": 1,
+          "status": "eligible"
+        },
+        {
+          "center": 3,
+          "nonempty_mask": true,
+          "ordinal": 1,
+          "segment": 614,
+          "side": 1,
+          "station": 3,
+          "status": "eligible"
+        }
+      ],
+      "production_outcomes": [
+        {
+          "births": 5,
+          "ordinal": 1,
+          "status": "produced"
+        },
+        {
+          "births": 5,
+          "ordinal": 3,
+          "status": "produced"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "status": "executed",
+      "trigger": 2
+    },
+    {
+      "dispatch_requested": true,
+      "links": [
+        {
+          "center": 4,
+          "ordinal": 0,
+          "segment": 799,
+          "side": 0,
+          "station": -1,
+          "status": "runtime_count_unbound"
+        }
+      ],
+      "runtime_flags": 64,
+      "runtime_type": 0,
+      "skip_reasons": [
+        {
+          "link": 0,
+          "reason": "runtime_count_unbound"
+        }
+      ],
+      "status": "skipped",
+      "trigger": 5
+    }
+  ],
+  "difficulty": 2,
+  "fixture_operations": [
+    "clear target-segment authored robots",
+    "retire each generated robot immediately without combat",
+    "advance only station loop"
+  ],
+  "frame_time": 1092,
+  "frames": 2400,
+  "game": "d1",
+  "level": 3,
+  "mission": "IRONBL01",
+  "original_links_preserved": true,
+  "passed": true,
+  "rng_seed": 1234,
+  "schema": 1,
+  "scope": "controlled_authored_trigger_station_loop"
+}

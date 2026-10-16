@@ -1,0 +1,24 @@
+{
+  "game": "d2",
+  "mission": "ORION-D2",
+  "level": 7,
+  "base_files": {
+    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"
+  },
+  "extra_files": {
+    "missions/ORION-D2.BAT": "b996ec8b247ccdc0cd4a701de76eb495e619561c833232c0fce434c562593d5e",
+    "missions/ORION-D2.HOG": "686dcb4e1dfc475a3e1bc0d71c5a687b10c4d2e585e0b6983874a296016b1094",
+    "missions/ORION-D2.MN2": "29f00e44eaafe4e4887faf1ca71b36fb131ea384828c128d41cf50a0365922b5",
+    "missions/ORION-D2.REP": "adb79f08098182d8c54b5fdb766f0e3534ef457d3ede65bff56d7ab37f3d426d",
+    "missions/ORION-D2.SNG": "8ff3a825a60ad139344a038b22da83fbc6f77215e9f43a173216c97365a3ee38",
+    "missions/ORION-D2.TXT": "40b43d77944887a9d44d13eaa7c9c0f9676edc17e6b54847b33cac35b62e730d"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "dispatch_requested": true,
+      "links": [
+        {
+          "center": 1,
+          "ordinal": 0,
+          "segment": 344,
+          "side": 0,
+          "station": -1,
+          "status": "runtime_count_unbound"
+        }
+      ],
+      "runtime_flags": 0,
+      "runtime_type": 2,
+      "skip_reasons": [
+        {
+          "link": 0,
+          "reason": "runtime_count_unbound"
+        }
+      ],
+      "status": "skipped",
+      "trigger": 8
+    }
+  ],
+  "difficulty": 2,
+  "fixture_operations": [
+    "clear target-segment authored robots",
+    "retire each generated robot immediately without combat",
+    "advance only station loop"
+  ],
+  "frame_time": 1092,
+  "frames": 2400,
+  "game": "d2",
+  "level": 2,
+  "mission": "galmond2",
+  "original_links_preserved": true,
+  "passed": true,
+  "rng_seed": 1234,
+  "schema": 1,
+  "scope": "controlled_authored_trigger_station_loop"
+}

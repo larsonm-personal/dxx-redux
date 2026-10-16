@@ -1,0 +1,19 @@
+{
+  "cases": [],
+  "difficulty": 2,
+  "fixture_operations": [
+    "clear target-segment authored robots",
+    "retire each generated robot immediately without combat",
+    "advance only station loop"
+  ],
+  "frame_time": 1092,
+  "frames": 2400,
+  "game": "d2",
+  "level": 7,
+  "mission": "ORION-D2",
+  "original_links_preserved": true,
+  "passed": true,
+  "rng_seed": 1234,
+  "schema": 1,
+  "scope": "controlled_authored_trigger_station_loop"
+}
