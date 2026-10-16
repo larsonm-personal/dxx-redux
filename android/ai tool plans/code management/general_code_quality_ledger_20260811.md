@@ -760,982 +760,987 @@ On 2026-09-30, annotations 0168-0184 were reconciled from their durable historic
 | 317 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0438 | NO_INHERITED_EFFECT | GQR-0271 | REFERENCE | file-set/formats/fingerprint/controller tests; direct content-audio lock order, existing repairs retained, zero original reduction |
 | 318 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0439 | NO_INHERITED_EFFECT | GQR-0212 | REFERENCE | action/resume/preview/route tests; pre-worker identity attempt admission, existing repairs retained, zero original reduction |
 | 319 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0465 | NO_INHERITED_EFFECT | GQR-0170 | REFERENCE | controller comparison raw response scripts; retain normalized input and useful checks, require JNI containment and isolated persisted oracle plus request-generation acceptance, zero original reduction |
-| 320 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0013` | `PRE-0108` | `GQF-0047` | `PRIMARY` | ISO output directory traversal and final opens |
-| 321 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0018` | `PRE-0108` | `BR-0497` | `REFERENCE` | Authenticate and bound dynamic host-proxy peer admission |
-| 322 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0021` | `PRE-0108` | `GQF-0061` | `PRIMARY` | Complete CD extraction attempt budget |
-| 323 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0030` | `PRE-0108` | `GQF-0051` | `PRIMARY` | STi2 method-15 decode scratch |
-| 324 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0031` | `PRE-0108` | `GQF-0078` | `PRIMARY` | Inno version admission arithmetic |
-| 325 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0032` | `PRE-0108` | `GQF-0076` | `PRIMARY` | Inno metadata LZMA peak-live memory |
-| 326 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0033` | `PRE-0108` | `GQF-0083` | `PRIMARY` | Inno aggregate repeated solid-chunk decoding |
-| 327 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0034` | `PRE-0108` | `GQF-0083` | `REFERENCE` | Inno aggregate repeated solid-chunk decoding |
-| 328 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0036` | `PRE-0108` | `GQF-0047` | `REFERENCE` | ISO output directory traversal and final opens |
-| 329 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0043` | `PRE-0108` | `GQF-0051` | `REFERENCE` | STi2 method-15 decode scratch |
-| 330 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0049` | `PRE-0108` | `BR-0080` | `REFERENCE` | Validate ship-status player and weapon indices before caching or display |
-| 331 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0054` | `PRE-0108` | `GQF-0100` | `PRIMARY` | ZIP early-marker prompt bypass |
-| 332 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0056` | `PRE-0108` | `GQF-0108` | `PRIMARY` | RAR policy rejection fallback |
-| 333 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0061` | `PRE-0108` | `GQF-0118` | `PRIMARY` | Nested mission music container catalogs |
-| 334 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0062` | `PRE-0108` | `GQF-0119` | `PRIMARY` | Streaming descriptor nested music budget |
-| 335 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0063` | `PRE-0108` | `BR-0090` | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication |
-| 336 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0065` | `PRE-0108` | `BR-0106` | `REFERENCE` | Fail closed when Google authentication is not configured |
-| 337 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0066` | `PRE-0108` | `BR-0108` | `REFERENCE` | Reject incomplete TLS configuration instead of serving plaintext |
-| 338 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0067` | `PRE-0108` | `BR-0090` | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication |
-| 339 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0068` | `PRE-0108` | `BR-0121` | `REFERENCE` | Enforce the friend-state authorization invariant on accept, presence, and join |
-| 340 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0069` | `PRE-0108` | `BR-0127` | `REFERENCE` | Give every WebSocket connection generation-safe session ownership |
-| 341 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0070` | `PRE-0108` | `BR-0132` | `REFERENCE` | Authenticate each relay endpoint and preserve its exact lobby slot |
-| 342 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0071` | `PRE-0108` | `BR-0137` | `REFERENCE` | Fail closed when ban enforcement cannot read the database |
-| 343 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0073` | `PRE-0108` | `BR-0115` | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work |
-| 344 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0075` | `PRE-0108` | `BR-0115` | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work |
-| 345 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0076` | `PRE-0108` | `BR-0116` | `REFERENCE` | Validate and cap ICE candidates before storing or expanding them |
-| 346 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0079` | `PRE-0108` | `GQF-0024` | `PRIMARY` | android/app/src/main/cpp/CMakeLists.txt` production dependency fetches |
-| 347 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0083` | `PRE-0108` | `GQF-0125` | `PRIMARY` | Bounded extraction Python runtime |
-| 348 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0084` | `PRE-0108` | `GQF-0127` | `PRIMARY` | Bounded extractor descendant ownership |
-| 349 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0088` | `PRE-0108` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
-| 350 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0090` | `PRE-0108` | `GQF-0128` | `PRIMARY` | Extractor link and special-file outputs |
-| 351 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0092` | `PRE-0108` | `GQF-0078` | `REFERENCE` | Inno version admission arithmetic |
-| 352 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0095` | `PRE-0108` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
-| 353 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0106` | `PRE-0108` | `GQF-0076` | `REFERENCE` | Inno metadata LZMA peak-live memory |
-| 354 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0119` | `NO_INHERITED_EFFECT` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
-| 355 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0121` | `NO_INHERITED_EFFECT` | `GQF-0119` | `REFERENCE` | Streaming descriptor nested music budget |
-| 356 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0122` | `NO_INHERITED_EFFECT` | `GQF-0118` | `REFERENCE` | Nested mission music container catalogs |
-| 357 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0128` | `CANDIDATE` | `GQF-0127` | `REFERENCE` | Bounded extractor descendant ownership |
-| 358 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0130` | `NO_INHERITED_EFFECT` | `GQF-0125` | `REFERENCE` | Bounded extraction Python runtime |
-| 359 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0390` | `RETAIN` | `GQR-0011` | `REFERENCE` | D1 native executable/source/Android policy, headless metadata/test construction and paired desktop JSON fallback |
-| 360 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0391` | `RETAIN` | `GQR-0011` | `REFERENCE` | D1 maths target naming, platform math, relocated native test graph and current shared test registration |
-| 361 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0404` | `RETAIN` | `GQR-0011` | `REFERENCE` | D2 native executable/source inventories, headless/route/metadata targets and desktop JSON acquisition |
-| 362 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0405` | `RETAIN` | `GQR-0011` | `REFERENCE` | D2 maths target and completed native test relocation |
-| 363 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0606` | `RETAIN` | `GQR-0011` | `REFERENCE` | Align paired packet-log consumers with the native producer; finish existing verified texture-tool acquisition |
-| 364 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0716` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 365 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0717` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 366 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0718` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 367 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0719` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 368 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0720` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 369 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0721` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 370 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0722` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 371 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0723` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 372 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0724` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 373 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0725` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 374 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0726` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 375 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0727` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 376 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0728` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 377 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0729` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 378 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0730` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 379 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0731` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 380 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0732` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 381 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0733` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 382 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0734` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 383 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0735` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 384 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0736` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 385 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0737` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 386 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0738` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 387 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0739` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 388 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0740` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 389 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0741` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 390 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0742` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 391 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0743` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 392 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0744` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 393 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0745` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 394 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0746` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 395 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0747` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 396 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0748` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 397 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0749` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
-| 398 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-SWEEP-007` | `RETAIN` | `GQR-0011` | `REFERENCE` | Build portability, exact tool identity, verified dependency publication and release artifact admission sweep |
-| 399 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0011` | `NO_INHERITED_EFFECT` | `BR-0090` | `REFERENCE` | Direct-install caller and non-Play signed-key fallback owner |
-| 400 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0019` | `RETAIN` | `GQR-0038` | `REFERENCE` | Production STi2 reservation ownership and JNI/query acceptance plans |
-| 401 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0021` | `NO_INHERITED_EFFECT` | `GQR-0048` | `REFERENCE` | Reopened complete-attempt budget for standalone ISO primary/nested counter reset; CUE/CLI repair retained |
-| 402 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0027` | `RETAIN` | `GQR-0106` | `REFERENCE` | Streaming expansion accounting, staged generation lease and stable source identity |
-| 403 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0029` | `RETAIN` | `GQR-0106` | `REFERENCE` | Streaming skip/rejection accounting, extraction generations and contained-track name identity |
-| 404 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0030` | `RETAIN` | `GQR-0096` | `REFERENCE` | RAR admitted metadata/cause dispatch, ZIP identity and streaming policy |
-| 405 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0032` | `RETAIN` | `BR-0090` | `REFERENCE` | Preserve flavor isolation and complete existing non-Play fallback |
-| 406 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0035` | `RETAIN` | `GQR-0011` | `REFERENCE` | Shared verified dependency cache/source admission and actual minimum/incremental/test acceptance |
-| 407 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0038` | `RETAIN` | `GQR-0114` | `REFERENCE` | Cancellation-safe child owner setup and bounded complete validator traversal |
-| 408 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0042` | `RETAIN` | `GQR-0048` | `REFERENCE` | Complete legacy Mac CD attempt admission and source-bound independent reference ownership |
-| 409 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0109` | `NO_INHERITED_EFFECT` | `GQR-0011` | `REFERENCE` | Music DSP/calibration/limits diagnosis; existing broader FluidSynth dependency acceptance reference, corpus0254/productionHMP0131 retained |
-| 410 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0315` | `RETAIN` | `GQR-0096` | `REFERENCE` | Retain incremental RAR admission, touch-action gates and shared robot labels; existing facade, input lifecycle/parity and applied-preview acceptance |
-| 411 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0360 | RETAIN | GQR-0048 | REFERENCE | Disc and ISO attempt continuity, truthful outcomes and owned cleanup; preserve native/staged publication repairs |
-| 412 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0374 | RETAIN | BR-0090 | REFERENCE | App distribution/source sets/native/generated source/fixture review; existing production direct-auth owner and build policy acceptance |
-| 413 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0393 | RETAIN | GQR-0114 | REFERENCE | GuideBot runner actual RAR extractor setup cancellation; recovery projection separate local47 |
-| 414 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0394 | RETAIN | GQR-0114 | REFERENCE | GuideBot runner actual RAR extractor setup cancellation; recovery projection separate local47 |
-| 415 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0401 | RETAIN/EXISTING-OWNER | GQR-0011 | REFERENCE | Preserve verified acquisition and incremental manifest/min-tool obligations;completed headless extraction retained |
-| 416 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0402 | RETAIN/EXISTING-OWNER+PLANNED-FIX | GQR-0011 | REFERENCE | Extend native/package acquisition admission;separate conditional complete-RPATH38 and retained inherited repairs |
-| 417 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0427 | ISSUES/RETAIN | GQR-0096 | REFERENCE | Retain policy tests and current music-pause/RAR repairs;existing actual-caller admission and lifecycle acceptance remains |
-| 418 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0091` | `RETAIN` | `GQR-0236` | `REFERENCE` | Cooperative save generation/publication with distinct native pause, scheduler, bonus, JSON and restore-intent acceptance |
-| 419 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0095` | `RETAIN` | `GQR-0236` | `REFERENCE` | Endlevel observation, bounded route/scenery metadata and wall-blast pool; preserve Android write-error latch and complete save-generation recovery acceptance |
-| 420 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0112` | `NO_INHERITED_EFFECT` | `GQR-0236` | `PRIMARY` | Secret/sound/save diagnosis; generation recovery and distinct pause/allocation/body owners retained |
-| 421 | 55 | MEDIUM-HIGH | 32/0/7/10/6 | `GQ2-CHUNK-0071` | `RETAIN` | `GQR-0169` | `REFERENCE` | All11 frozen scopes/current endgame/status deltas and named paired consumers reconciled; retain0169 JSON,BR0195 authority,BR0206 restore,BR0507 handoff and0236 recovery; preserve completed0189; no new root/status/inherited saving |
-| 422 | 54 | MEDIUM-HIGH | 32/0/2/10/10 | `GQ1-CHUNK-0709` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain intentional launcher and Redbook inputs; reconcile remaining generated extraction residue with existing hygiene owner |
-| 423 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0074` | `PRE-0108` | `BR-0148` | `REFERENCE` | Track and complete connectivity checks per player pair |
-| 424 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0287` | `RETAIN` | `GQR-0187` | `PRIMARY` | native title/briefing/cache/weapon/rewind interfaces and D1 text extension |
-| 425 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0320` | `RETAIN` | `GQR-0193` | `PRIMARY` | D2 MVE output-rate conversion, custom allocation, startup trim and callback/producer/teardown ownership |
-| 426 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0322` | `RETAIN` | `GQR-0194` | `PRIMARY` | D2 Guide-Bot menu dispatch, scaled source allocation and native cooperative owner generation with current extensions |
-| 427 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0326` | `RETAIN` | `GQR-0195` | `PRIMARY` | D1-in-D2 facade, exact RLE/remap and model structural validation with unchecked signed renderer fields |
-| 428 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0350` | `RETAIN` | `GQR-0195` | `REFERENCE` | D2 original model/Guide-Bot/effect/wall/robot publication overlay |
-| 429 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0352` | `RETAIN` | `GQR-0200` | `PRIMARY` | D1 checkpoint object/AI/world validation and current morph/stuck/effect staging |
-| 430 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0403` | `RETAIN` | `GQR-0193` | `REFERENCE` | D2 movie decoder CMake target naming, optional mixer links and platform timing definitions |
-| 431 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0411` | `RETAIN` | `BR-0398` | `REFERENCE` | Server deployment, LAN certificate, service, NAT and Rust maintenance scripts |
-| 432 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0475` | `RETAIN` | `GQR-0212` | `PRIMARY` | Retain validated BinHex integrity and preview lifecycle repairs; enforce the existing shared live-memory policy during BinHex decoding |
-| 433 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0483` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared preview lifecycle and game UI ownership; finish existing IME and preview acceptance |
-| 434 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0486` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain asynchronous settings inventories and active-set ownership; complete existing configuration and reset transactions |
-| 435 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0494` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain controller page and raw input diagnostics; close existing persistence and nested picker owners |
-| 436 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0496` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain paired picker controls and shared dialog motion bridge; finish existing transactional state and slot publication owners |
-| 437 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0498` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain staged engine toggles and preset confirmation; complete coherent multi-owner preference publication |
-| 438 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0533` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared CD and audio preview composition; finish existing preview ownership and completion contracts |
-| 439 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0534` | `RETAIN` | `GQR-0219` | `PRIMARY` | Retain shared strip geometry; make valid oversized vertical spans safe in the touch editor |
-| 440 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0535` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared launcher orchestration and repaired admission boundaries; finish existing durable launch generations |
-| 441 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0558` | `RETAIN` | `GQR-0219` | `REFERENCE` | Preserve shared finite-domain and current-only touch parsing; reconcile typed action and accepted strip geometry owners |
-| 442 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0559` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain one current touch codec; finish typed radial and finite oversized-strip acceptance without compatibility paths |
-| 443 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0561` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain current stacked gesture and presentation helpers; make editor drag safe for accepted vertical strip geometry |
-| 444 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0562` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain shared diagnostic and stacked hit geometry; fix the existing valid oversized vertical clamp at its actual mover |
-| 445 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0563` | `RETAIN` | `GQR-0219` | `REFERENCE` | Keep bounded shared property controls; finish existing strip clamp, Custom preset and typed binding contracts |
-| 446 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0614` | `RETAIN` | `GQR-0212` | `REFERENCE` | Retain shared descriptor and normalized atomic publication; complete exact selectors, source identity and deterministic bounded AcoustID policy |
-| 447 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0644` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain shared save projections, launch admission and strip geometry; extend accepted finite geometry and integration acceptance |
-| 448 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-SWEEP-008` | `REFACTOR` | `BR-0662` | `REFERENCE` | Test registration, enabled assertions, fixture admission, source-contract limitations and actual integration coverage sweep |
-| 449 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0082` | `RETAIN` | `GQR-0255` | `PRIMARY` | Validate restored resumable workspace while retaining explicit codec and separate guided geometry/flight contracts |
-| 450 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0100` | `RETAIN` | `GQR-0255` | `REFERENCE` | Guide-Bot message lifecycle overlay diagnostics and restored resumable workspace admission |
-| 451 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0016` | `REFERENCE` | MIDI preview metadata and seek source diagnosis; existing broader preview lifecycle reference, quoted UTF8 owner0258 and MIDI EOF-clock0276 retained |
-| 452 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0130` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared certifier/native frontier and publication retained; restored workspace owner reference; compiled versus budgeted paths reconciled; zero inherited saving |
-| 453 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0131` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared certifier recovery/identity/native activation retained; approximate confirmation acceptance limits; existing restored workspace owner; zero inherited saving |
-| 454 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0132` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared shooting search/cache/native boundary retained; restored workspace and geometry owners preserved; callback reuse limits; zero inherited saving |
-| 455 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0145` | `RETAIN` | `GQR-0265` | `PRIMARY` | Retain migrated native ownership; bound failed full sample-buffer flush; investigate interrupted-negative cache provenance |
-| 456 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0343 | RETAIN | BR-0016 | REFERENCE | Shared preview media-session ownership, real lifecycle/focus acceptance and runner identity; no new root |
-| 457 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0357 | RETAIN | BR-0016 | REFERENCE | Setup import and preview outcomes, migration and input ownership; new command outcome fix44 |
-| 458 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0368 | RETAIN | GQR-0282 | PRIMARY | Android tooling; artifact-bound installer reset regrowth and explicit boss dependencies; no inherited effect |
-| 459 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0017` | `PRE-0108` | `GQF-0052` | `PRIMARY` | Assigned JNI array/string acquisitions and MIDI byte-array creation |
-| 460 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0024` | `PRE-0108` | `GQF-0058` | `PRIMARY` | Complete-track disc and compressed-file fingerprinting |
-| 461 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0025` | `PRE-0108` | `GQF-0058` | `REFERENCE` | Complete-track disc and compressed-file fingerprinting |
-| 462 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0026` | `PRE-0108` | `GQF-0058` | `REFERENCE` | Complete-track disc and compressed-file fingerprinting |
-| 463 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0037` | `PRE-0108` | `GQF-0052` | `REFERENCE` | Assigned JNI array/string acquisitions and MIDI byte-array creation |
-| 464 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0048` | `PRE-0108` | `BR-0029` | `REFERENCE` | Marshal overlay game-state access through the engine thread |
-| 465 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0050` | `PRE-0108` | `BR-0029` | `REFERENCE` | Marshal overlay game-state access through the engine thread |
-| 466 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0059` | `PRE-0108` | `GQF-0115` | `PRIMARY` | Mission extraction `ScanResult` generation |
-| 467 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0094` | `PRE-0108` | `GQF-0141` | `PRIMARY` | Graphics configuration rollback backup |
-| 468 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0118` | `NO_INHERITED_EFFECT` | `GQF-0115` | `REFERENCE` | Mission extraction `ScanResult` generation |
-| 469 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0161` | `RETAIN` | `BR-0078` | `REFERENCE` | Make native engine admission atomic through process termination |
-| 470 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0178` | `NO_INHERITED_EFFECT` | `GQF-0058` | REFERENCE | duplicate high-confidence complete-media resource and cancellation exposure is the highest live root |
-| 471 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0181` | `RETAIN` | `BR-0029` | REFERENCE | duplicate high-confidence cross-thread engine and renderer ownership is the highest live root |
-| 472 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0185` | `RETAIN` | `BR-0195` | REFERENCE | existing protocol authority work is broader than the assigned handlers |
-| 473 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0186` | `RETAIN` | `BR-0029` | REFERENCE | UI/engine thread ownership needs a subsystem boundary |
-| 474 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0191` | `RETAIN` | `BR-0029` | `REFERENCE` | save metadata, save-set paths and screen admission API |
-| 475 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0192` | `RETAIN` | `BR-0029` | `REFERENCE` | save lifecycle, periodic checkpoints and music overlays |
-| 476 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0193` | `RETAIN` | `BR-0463` | `REFERENCE` | slowdown detection, surface API, texture diagnostics and visual admission |
-| 477 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0195` | `NO_INHERITED_EFFECT` | `GQF-0058` | `REFERENCE` | ETC2 decoder, fingerprint generation/duration and font controls |
-| 478 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0197` | `RETAIN` | `BR-0195` | `REFERENCE` | transfer admission, music schema and serialization budgets |
-| 479 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0200` | `RETAIN` | `BR-0029` | `REFERENCE` | profile APIs, FOV/resolution policy, resume pilot and rewind selection |
-| 480 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0205` | `RETAIN` | `BR-0029` | `REFERENCE` | touch gestures, screen generations and discrete event publication |
-| 481 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0206` | `RETAIN` | `BR-0266` | `REFERENCE` | keyboard/lifecycle dispatch, UI state queries and join approval |
-| 482 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0210` | `RETAIN` | `BR-0029` | `REFERENCE` | menu scaling, scratch allocation, OGL lifetime and UI transform publication |
-| 483 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0212` | `RETAIN` | `BR-0029` | `REFERENCE` | frame admission, JNI capture requests, storage records and capture completion |
-| 484 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0215` | `RETAIN` | `BR-0029` | `REFERENCE` | Coop and guidebot indicator paths, keep-out clipping and diagnostic ownership |
-| 485 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0226` | `RETAIN` | `BR-0029` | `REFERENCE` | Introspection lifecycle/audio/input snapshots and producer failure containment |
-| 486 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0247` | `RETAIN` | `BR-0029` | `REFERENCE` | merged-wall geometry logs, diagnostic session lifetime and paired source provenance |
-| 487 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0258` | `RETAIN` | `BR-0206` | `REFERENCE` | cooperative save-transfer send/apply ordering, acknowledgements and current restore-barrier reconciliation |
-| 488 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0282` | `RETAIN` | `BR-0029` | `REFERENCE` | paired SDL event/window/input/timer/music and virtual-gamepad integration |
-| 489 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0288` | `RETAIN` | `BR-0029` | `REFERENCE` | native controls, postlevel admission, homing/weapon probes, graphics/pilot menus and mission formats |
-| 490 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0290` | `RETAIN` | `BR-0029` | `REFERENCE` | startup quit/resume/replay/metadata/preview lifecycle and native input conversion |
-| 491 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0299` | `RETAIN` | `BR-0029` | `REFERENCE` | AI save/visibility/FX, path runtime, automap input/metadata/edges and reactor validation |
-| 492 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0335` | `RETAIN` | `BR-0029` | `REFERENCE` | D2 replay startup, control settings/rendering/navigation and ordinary/terminal postlevel lifecycle |
-| 493 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0342` | `RETAIN` | `BR-0206` | `REFERENCE` | D2 laser runtime interface, lighting, menus, mission selection and movie lifecycle |
-| 494 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0343` | `RETAIN` | `BR-0206` | `REFERENCE` | D2 font/mine/palette, frame composition, native level sections, placement RNG and level lifecycle |
-| 495 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0454` | `RETAIN` | `GQF-0141/GQR-0128` | `REFERENCE` | Retain launcher configuration and snapshot owners; preserve batch originals and correlate introspection requests |
-| 496 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0468` | `RETAIN` | `GQF-0141/GQR-0128` | `REFERENCE` | Preserve shared publication and identity-checked preview ownership; retain original generations when batch rollback fails |
-| 497 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0477` | `RETAIN` | `BR-0463` | `REFERENCE` | Retain shared overlay navigation, geometry and ammo presentation; complete existing stock-PvP provenance and accessibility owners |
-| 498 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0521` | `RETAIN` | `BR-0082` | `REFERENCE` | Keep one shared host dialog and asynchronous mission/save loader; finish existing defaults, save and host admission |
-| 499 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0528` | `RETAIN` | `BR-0115` | `REFERENCE` | Retain engine-owned save validation and shared cooperative selection; finish existing protocol, metadata and publication boundaries |
-| 500 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0565` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared touch dispatch and mixer ownership; align supported disabled gyro axes across editor and codecs |
-| 501 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0566` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared overlay geometry and controller menus; complete existing action snapshot and per-diagnostic scale owners |
-| 502 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0567` | `RETAIN` | `BR-0029` | `REFERENCE` | Preserve shared draw/input policy and current pause presentation; complete existing physical release and native snapshot owners |
-| 503 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0568` | `RETAIN` | `BR-0029` | `REFERENCE` | Keep shared radial and strip presentation; finish existing opacity, exclusive pointer admission and abandoned-source cleanup |
-| 504 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0569` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared stick and selector helpers; close existing cadence, command routing and immutable selection roots |
-| 505 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0570` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared admin action policy and menu geometry; finish existing stable gesture, callback lifetime and native ownership contracts |
-| 506 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0571` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared admin rendering and bounded slider policy; finish immutable touch generations and preserve current controller edges |
-| 507 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0572` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared Video Info layout and diagnostics; reconcile current graphics acknowledgement with existing gesture and native lifetime owners |
-| 508 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0653` | `RETAIN` | `BR-0029` | `REFERENCE` | Preserve finite touch geometry and shared action inventories; finish existing gesture, typed dispatch and snapshot owners |
-| 509 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0001` | `RETAIN` | `BR-0016` | `REFERENCE` | Current preview reservation, stop ordering, composition disposal and native serialized teardown |
-| 510 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0003` | `RETAIN` | `BR-0029` | `REFERENCE` | Overlay publication, paired music apply hooks, synth tuning and residual escort/debug affinity |
-| 511 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0004` | `RETAIN` | `BR-0044` | `REFERENCE` | Repeated overlay JNI cleanup, strict text policy, attachment failures and keyboard requested state |
-| 512 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0006` | `RETAIN` | `BR-0078` | `REFERENCE` | Game/preview atomic admission, callback-owner publication, failed setup and process termination |
-| 513 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0007` | `RETAIN` | `BR-0080` | `REFERENCE` | Ship-status decoder admission, player/weapon snapshot bounds and transport origin |
-| 514 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0010` | `REFACTOR` | `BR-0090` | `REFERENCE` | Non-Play authentication flavors, wire fields, ephemeral dev identity and server keypair protocol |
-| 515 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0013` | `REFACTOR` | `BR-0103` | `REFERENCE` | Mission extraction tree/manifest replacement, reader lifetime, corrupt records and linked cleanup |
-| 516 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0015` | `REFACTOR` | `BR-0109` | `REFERENCE` | NAT simulator main/inbound task lifecycle, best-effort abort and STUN handle cleanup |
-| 517 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0017` | `REFACTOR` | `BR-0111` | `REFERENCE` | Rust simulator and Android STUN body/attribute/padding bounds and response provenance |
-| 518 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0019` | `REFACTOR` | `BR-0113` | `REFERENCE` | Public-key hex decoding versus textual hashing and durable account lookup |
-| 519 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0022` | `REFACTOR` | `BR-0118` | `REFERENCE` | Rate-limit stale-key snapshot removal versus concurrent accepted events |
-| 520 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0026` | `REFACTOR` | `BR-0124` | `REFERENCE` | Admin u64 hour conversion, chrono constructor/addition overflow and expiry semantics |
-| 521 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0031` | `REFACTOR` | `BR-0131` | `REFERENCE` | Daily tracing appender retention, journal duplication and disk budgets |
-| 522 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0040` | `REFACTOR` | `BR-0158` | `REFERENCE` | Extraction optional fixture accounting, new synthetic coverage and registered SOW skip repair |
-| 523 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0041` | `RETAIN` | `BR-0159` | `REFERENCE` | 7-Zip staged hash-verified publication repair and remaining discovery/crash boundaries |
-| 524 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0042` | `REFACTOR` | `BR-0160` | `REFERENCE` | CUE/ISO runner shared paths, set-e cleanup bypass and unchecked generated fixture writes |
-| 525 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0043` | `REFACTOR` | `BR-0162` | `REFERENCE` | All-skipped mission/extraction batches still report success despite improved preflight failure classification |
-| 526 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0044` | `REFACTOR` | `BR-0163` | `REFERENCE` | LAN cleanup improvements and managed-ending exception before relay teardown |
-| 527 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0046` | `REFACTOR` | `BR-0167` | `REFERENCE` | Mission device/host batch timestamp and normalized-label/base-name artifact collisions |
-| 528 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0047` | `REFACTOR` | `BR-0168` | `REFERENCE` | Mission batch direct ADB push/copy lacks deadline and shared staging cleanup transaction |
-| 529 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0048` | `REFACTOR` | `BR-0169` | `REFERENCE` | CD nonzero aggregate status repaired while GOG still falls through after counted errors |
-| 530 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0049` | `RETAIN` | `BR-0663` | `REFERENCE` | Replay result publication now preserves natural failure except forced-stop classification race and smoke acceptance |
-| 531 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-003` | `RETAIN` | `GQR-0084` | `REFERENCE` | Launcher/main lifecycle, suspend releases, blocking resume discovery, SAF permission and durable handoff reconciliation |
-| 532 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-012` | `RETAIN` | `GQR-0170` | `REFERENCE` | JNI save preflight, network authentication/version parity, controller dimensions and native ABI interface sweep |
-| 533 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0013` | `RETAIN` | `BR-0044` | `REFERENCE` | Reconnect JNI long-frame lifecycle gate; completed route/transcript/admission retained |
-| 534 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0016` | `NO_INHERITED_EFFECT` | `GQR-0045` | `REFERENCE` | Complete-track fingerprint work, coherent source and CLI publication plans |
-| 535 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0017` | `NO_INHERITED_EFFECT` | `GQR-0045` | `REFERENCE` | Fingerprint work/source coherence, duration parity and HMP wrapper evidence limits |
-| 536 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0020` | `RETAIN` | `BR-0044` | `REFERENCE` | Existing repeated callback strict-text and first-exception/lifecycle plan; save fallback/JNI owners deduplicated |
-| 537 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0025` | `RETAIN` | `BR-0078` | `REFERENCE` | Native startup transaction, preview result and process retirement ownership |
-| 538 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0026` | `RETAIN` | `BR-0029` | `REFERENCE` | Graphics option and guidebot affinity, warp delivery and coherent overlay projections |
-| 539 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0036` | `RETAIN` | `BR-0159` | `REFERENCE` | Verified platform acquisition, recoverable publication and truthful shared discovery/consumer acceptance |
-| 540 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0043` | `RETAIN` | `BR-0103` | `REFERENCE` | Immutable selected mission generation and coherent launch publication |
-| 541 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0044` | `RETAIN` | `BR-0103` | `REFERENCE` | Complete mission isolation acceptance map and immutable consumer generation |
-| 542 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0053` | `RETAIN` | `GQR-0102` | `REFERENCE` | Bind managed wrapper scan, persisted identity, policy, served bytes and separate MIDI preview reads to one generation |
-| 543 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0056` | `RETAIN` | `GQR-0103` | `REFERENCE` | Preserve bounded helper repairs and fast lookup while completing generation, reader lifetime and retry acceptance |
-| 544 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0058` | `RETAIN` | `GQR-0103` | `REFERENCE` | Preserve mission ownership and fast helper repair; complete actual catalog audit latency, generation and native-consumer acceptance |
-| 545 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0060` | `RETAIN` | `BR-0283` | `REFERENCE` | Preserve separate metadata/launch contracts; complete strict non-base assertion, imported identity and existing batch artifact/outcome acceptance |
-| 546 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0061` | `RETAIN` | `BR-0103` | `REFERENCE` | Preserve seven-owner/sample oracle and complete immutable native generation and fresh save-state acceptance |
-| 547 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0064` | `RETAIN` | `BR-0010` | `REFERENCE` | Preserve canonical no-churn and listening/installer scope; complete current-attempt source/result and existing outcome acceptance |
-| 548 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0070` | `RETAIN` | `GQR-0160` | `REFERENCE` | All11 assigned scopes/current diagnostic delta reconciled; retain0160 callback lifetime,0167 strict JNI andBR0233/0240/0241 publication/breadcrumb ownership; preserve paired controller/briefing and route terminal policy; no new root/status/inherited saving |
-| 549 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0084` | `RETAIN` | `BR-0195` | `REFERENCE` | Shared optional pickup discard/adoption and portable roster state; existing packet authority, required-world transaction and clock acceptance |
-| 550 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0135` | `RETAIN` | `BR-0206` | `REFERENCE` | Shared save-transfer policy and current postload barrier retained; future paired acceptance; zero inherited saving |
-| 551 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0386` | `RETAIN` | `BR-0162` | `REFERENCE` | Metadata workers/retention/profile/automation; retain repairs, complete meaningful-success ownership and admit ignored-selection47 separately |
-| 552 | 53 | MEDIUM-HIGH | 23/12/4/10/4 | `GQ1-SWEEP-002` | `REFACTOR` | `GQR-0170` | `REFERENCE` | JNI attachment, partial acquisition, standard UTF-8 and Activity publication remain cross-cutting owners |
-| 553 | 53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ1-CHUNK-0001` | `PRE-0108` | `BR-0007` | `REFERENCE` | Make the Play Store credential sample match the supported key format |
-| 554 | 53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ2-CHUNK-0001` | `NO_INHERITED_EFFECT` | `BR-0007` | `REFERENCE` | Android authentication examples |
-| 555 | 51 | MEDIUM-HIGH | 32/0/2/10/7 | `GQ2-CHUNK-0089` | `RETAIN` | `GQR-0256` | `PRIMARY` | TSF resolved interpolation neighbor admission; secondary GQR0257 WAV filename fallback and existing GQR0167 outbound overlay encoding; preserve repaired sidecar schema, zero inherited saving |
-| 556 | 51 | MEDIUM-HIGH | 32/0/2/10/7 | `GQ2-CHUNK-0094` | `RETAIN` | `GQR-0256` | `REFERENCE` | SoundFont admission and production shared Fluid/FM renderer |
-| 557 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0002` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 558 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0003` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 559 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0004` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 560 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0005` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 561 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0006` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 562 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0007` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 563 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0080` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 564 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0082` | `PRE-0108` | `BR-0162` | `REFERENCE` | Fail test batches that execute no archive |
-| 565 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0085` | `PRE-0108` | `BR-0165` | `REFERENCE` | Derive the default mission archive directory from the repository |
-| 566 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0086` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
-| 567 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0087` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
-| 568 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0089` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
-| 569 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0099` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 570 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0100` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 571 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0101` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 572 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0102` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 573 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0103` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 574 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
-| 575 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0109` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
-| 576 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0113` | `NO_INHERITED_EFFECT` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 577 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0114` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
-| 578 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0116` | `NO_INHERITED_EFFECT` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
-| 579 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0129` | `NO_INHERITED_EFFECT` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 580 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0131` | `CANDIDATE` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 581 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0133` | `NO_INHERITED_EFFECT` | `GQF-0153` | `PRIMARY` | D2 Mac native extraction output oracle |
-| 582 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0134` | `NO_INHERITED_EFFECT` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
-| 583 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0136` | `NO_INHERITED_EFFECT` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
-| 584 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0138` | `NO_INHERITED_EFFECT` | `GQF-0158` | `PRIMARY` | Bounded extractor Python regression registration |
-| 585 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0151` | `RETAIN` | `GQF-0167` | `PRIMARY` | Shared TSF/PCM producer completion ordering |
-| 586 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0218` | `RETAIN` | `GQF-0167` | `REFERENCE` | Game music producer publication, tuning ownership, ring drain and startup |
-| 587 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0292` | `RETAIN` | `BR-0209` | `REFERENCE` | native replay diagnostics, result lifecycle, public hooks and D1 startup adapter |
-| 588 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0436` | `RETAIN` | `GQR-0020` | `REFERENCE` | Complete combined-launch helper, extension-only current references, component-union check and generator derivation |
-| 589 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0504` | `RETAIN` | `BR-0516` | `REFERENCE` | Preserve strict current layout admission and direct per-axis gyro values; finish existing radial namespace and preset owners |
-| 590 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0588` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain shared platform selection, destination-owned installer transactions and inert configuration serialization |
-| 591 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0589` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep staged exact tool acquisition in shared installer policy and avoid duplicating upstream host package management |
-| 592 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0590` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared verified staged installers, native host identity and explicit delegated option contracts |
-| 593 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0591` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared SDK writer, complete package admission and exact tool-generation policy; preserve focused external oracle walls |
-| 594 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0592` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared dependency discovery, exact installed identity and bounded action execution under existing updater owners |
-| 595 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0593` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain one typed dependency-discovery and selection owner; bound remote processes and couple accepted release metadata |
-| 596 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0594` | `RETAIN` | `GQR-0222` | `PRIMARY` | Retain shared string-aware JSONC parsing and serial-scoped emulator recovery; preserve lexical token boundaries |
-| 597 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0595` | `RETAIN` | `BR-0168` | `REFERENCE` | Retain schema-specific metadata canonicalization and verified provisioner ownership; finish existing path and transaction boundaries |
-| 598 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0599` | `RETAIN` | `GQR-0222` | `REFERENCE` | Retain shared managed-emulator recovery and fingerprint identity owners; consolidate remaining comment parser and build-process boundaries |
-| 599 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0633` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain the Ubuntu bootstrap entry point and verified bounded-runtime policy; keep installer remainder with existing owners |
-| 600 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0638` | `RETAIN` | `BR-0168` | `REFERENCE` | Retain additive device provisioning and explicit owned-sync policy; finish its shared transfer, filename and publication owners |
-| 601 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0002` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Physical CD regression metadata; existing executable audio oracle owner |
-| 602 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0003` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Multi-file CD regression metadata; existing executable audio oracle owner |
-| 603 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0004` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Definitive Collection and OEM regression metadata |
-| 604 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0005` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | D2 release and preview regression metadata |
-| 605 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0006` | `NO_INHERITED_EFFECT` | `GQR-0020` | `REFERENCE` | Combined Vertigo metadata and existing freshness owner |
-| 606 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0063` | `RETAIN` | `GQR-0151` | `REFERENCE` | Retain completed JNI/output controls; complete focused descriptor observation and existing supervisor/SAF outcome acceptance |
-| 607 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0067` | `RETAIN` | `GQR-0149` | `REFERENCE` | Eight assigned scopes and complete current deltas reconciled; preserve0148/0039 completed limits,0149 behavior,0252 published generation,BR0209 independent replay and remaining JNI/SAF/Mac oracle acceptance; no new root/status/inherited saving |
-| 608 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0090` | `RETAIN` | `BR-0209` | `REFERENCE` | Shared requested trace failure outcome with existing producer/publication policy and strict reader qualification limits |
-| 609 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0286` | `RETAIN` | `GQR-0020` | `REFERENCE` | Regression and CD source metadata 0286 |
-| 610 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0294` | `RETAIN` | `GQR-0145` | `REFERENCE` | Workflow and Gradle settings 0294 |
-| 611 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ1-CHUNK-0182` | `RETAIN` | `BR-0244` | REFERENCE | duplicate high-confidence request loss spans every newly added mailbox and existing action paths |
-| 612 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ1-CHUNK-0659` | `RETAIN` | `BR-0381` | `REFERENCE` | Retain semantic route and lifecycle assertions; finish existing observational probe and metadata lifecycle acceptance |
-| 613 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ2-CHUNK-0080` | `RETAIN` | `BR-0381` | `REFERENCE` | Retain native automation semantics; observational parity, correlated queued outcomes and coordinated restores remain existing acceptance |
-| 614 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ2-CHUNK-0227` | `RETAIN` | `BR-0381` | `REFERENCE` | Native route events and observational parity |
-| 615 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | GQ2-CHUNK-0460 | NO_INHERITED_EFFECT | BR-0381 | REFERENCE | Obsidian objective wall and postreactor key scripts; retain synthetic versus physical acceptance, guidance frontier, cache/profile oracle limits and complete observational parity, zero original reduction |
-| 616 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | GQ2-CHUNK-0462 | NO_INHERITED_EFFECT | BR-0381 | REFERENCE | join Guide-Bot and keyboard scripts; retain phase-peer boundaries, semantic physical frontier, synthetic progression and manual keyboard role, complete observational parity and separate exact admission, zero original reduction |
-| 617 | 48 | MEDIUM | 12/12/7/10/7 | `GQ2-CHUNK-0237` | `CANDIDATE` | `GQR-0249` | `PRIMARY` | D1 native targets and paired codec runtime extraction |
-| 618 | 48 | MEDIUM | 12/12/7/10/7 | `GQ2-CHUNK-0242` | `CANDIDATE` | `GQR-0249` | `REFERENCE` | D2 native targets and codec deployment boundary |
-| 619 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0188` | `NO_INHERITED_EFFECT` | `GQF-0177` | `PRIMARY` | Reject out-of-range database integers before narrowing |
-| 620 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0198` | `RETAIN` | `GQF-0180` | `PRIMARY` | crash JNI, breadcrumb publication, EGL and save pair recovery |
-| 621 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0202` | `RETAIN` | `GQF-0182` | `PRIMARY` | cooperative metadata contracts, migration and retained restart publication |
-| 622 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0211` | `RETAIN` | `GQF-0184` | `PRIMARY` | profiling batches, texture burst boundaries and bounded flight envelope |
-| 623 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0213` | `RETAIN` | `BR-0273` | `REFERENCE` | automap labels, grouping, live key positions and connector endpoints |
-| 624 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0449` | `RETAIN` | `GQR-0207` | `PRIMARY` | Close fingerprint asset reader ownership and preserve distinct-identity ambiguity through database projection |
-| 625 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0452` | `RETAIN` | `GQR-0208` | `PRIMARY` | Preserve custom-audio generation and metadata policy; make copied append publication transactional |
-| 626 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0480` | `RETAIN` | `BR-0454` | `REFERENCE` | Retain shared controller edge ownership and flavor updates; complete existing gesture identity and callback owners |
-| 627 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0487` | `RETAIN` | `BR-0443` | `REFERENCE` | Retain immutable shared artifacts and asynchronous inventory; finish pending Downloads and log lifecycle owners |
-| 628 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0488` | `RETAIN` | `BR-0419` | `REFERENCE` | Retain asynchronous storage dialogs and atomic registry leaves; finish existing audio-resource and truthful removal ownership |
-| 629 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0497` | `RETAIN` | `BR-0479` | `REFERENCE` | Keep shared drawing helpers; finish existing picker cancellation and nested input routing |
-| 630 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0499` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain atomic set metadata and current-only storage; finish ownership-consistent deletion and clearing |
-| 631 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0585` | `RETAIN` | `BR-0558` | `REFERENCE` | Keep shared Gradle build identity, exact tool policy and flavor-specific runtime ownership |
-| 632 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0587` | `RETAIN` | `BR-0579` | `REFERENCE` | Keep one dependency update manifest owner and shared SDK provisioning policy; publish coupled identities together |
-| 633 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0598` | `RETAIN` | `BR-0586` | `REFERENCE` | Retain exact oracle executable identities, checked warning capture and shared runtime estimates; finish existing oracle and snapshot acceptance |
-| 634 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0600` | `RETAIN` | `GQR-0223` | `PRIMARY` | Consolidate CD source manifest parsing onto the shared JSONC owner; retain transactional publication and scoped artifact protection |
-| 635 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0603` | `RETAIN` | `GQR-0225` | `PRIMARY` | Parse canonical Git paths before generating review scopes; retain deterministic frozen campaign and supplemental audit ownership |
-| 636 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0604` | `RETAIN` | `GQR-0226` | `PRIMARY` | Confine host metadata staging before recursive replacement; remove dead projection under its already admitted owner |
-| 637 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0607` | `RETAIN` | `GQR-0228` | `PRIMARY` | Preserve signed wire fields and partial-packet diagnostics in the PowerShell decoder |
-| 638 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0610` | `RETAIN` | `GQR-0229` | `PRIMARY` | Retain repaired complete version and track admission; share JSONC readers and align descriptor modes with native ownership |
-| 639 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0628` | `RETAIN` | `BR-0006` | `REFERENCE` | Retain deleted scratch artifacts and document complete root-helper versus manual Linux build alternatives |
-| 640 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0645` | `RETAIN` | `GQR-0217` | `REFERENCE` | Preserve bounded DXA inspection, immutable grants and current-only storage; extend exact descriptor and shared configuration tests |
-| 641 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0669` | `RETAIN` | `GQR-0232` | `PRIMARY` | Retain managed emulator repair and shared JSONC parsing; resolve template values before serialization |
-| 642 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0671` | `RETAIN` | `BR-0652` | `REFERENCE` | Retain shared paired control codec tests; preserve runner failure independently of trace agreement |
-| 643 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0672` | `RETAIN` | `BR-0651` | `REFERENCE` | Retain shared portable and gzip trace reads; compare complete unique frame identity |
-| 644 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0673` | `RETAIN` | `BR-0193` | `REFERENCE` | Retain expanded shared route semantic tests; complete owned SAF fixture restoration and admission |
-| 645 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0674` | `RETAIN` | `BR-0659` | `REFERENCE` | Retain shared WLAN resolution and expanded lifecycle probes; require exact transport result and lobby generation |
-| 646 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0681` | `RETAIN` | `GQR-0223` | `REFERENCE` | Retain bounded native RLE and transactional conversion checks; extend shared CD metadata/runner and PCM regression coverage |
-| 647 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0682` | `RETAIN` | `BR-0008` | `REFERENCE` | Keep paired replay wrappers and shared build admission; close existing data provenance and device-state transaction owners |
-| 648 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0683` | `RETAIN` | `BR-0181` | `REFERENCE` | Retain canonical fingerprint policy and transactional dependency fixtures; repair existing complete-reference and measured-data owners |
-| 649 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0684` | `RETAIN` | `BR-0082` | `REFERENCE` | Retain shared native policy fixtures and paired renderer contracts; preserve existing save-body and namespace owners |
-| 650 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0685` | `RETAIN` | `BR-0669` | `REFERENCE` | Retain current JSONC subset and shared replay diagnostics; strengthen existing smoke semantics and resource owners |
-| 651 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0686` | `RETAIN` | `BR-0667` | `REFERENCE` | Retain shared metadata normalization and asynchronous MIDI preview contracts; require existing complete travel-row coverage |
-| 652 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0687` | `RETAIN` | `BR-0401` | `REFERENCE` | Retain native staged state admission and verified data staging; close existing bounded server and output owners |
-| 653 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0688` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain mock runner ownership and catalog rotation coverage; finish shared checked-device and artifact-lifetime policy |
-| 654 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0689` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain bounded structural distance tolerance and audio snapshot owners; keep mailbox behavioral checks active |
-| 655 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0690` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain paired installer policy and native HUD/homing ownership; synchronize existing Inno progress capability contract |
-| 656 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0692` | `RETAIN` | `BR-0277` | `REFERENCE` | Retain shared native fixtures and completed validation; synchronize stale cockpit source guard with staged pilot writer |
-| 657 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0693` | `RETAIN` | `GQR-0233` | `PRIMARY` | Require actual co-op start inventories before reporting fanout success; retain native format and restore fixture ownership |
-| 658 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0694` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain current transfer pacing and shared regression policy; reconcile complete native test inventory and preview lifecycle |
-| 659 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0695` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain real fingerprint publication/enumeration checks and shared native ownership; keep escort exit oracles active |
-| 660 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0696` | `RETAIN` | `GQR-0234` | `PRIMARY` | Validate complete RNG trace envelopes before filtering or comparison |
-| 661 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0697` | `RETAIN` | `BR-0545` | `REFERENCE` | Retain exact replay selection, sanitizer forwarding and required-primary rejection; verify shared aggregate status/lifetime owners |
-| 662 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0698` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain strengthened replay process verdicts and diagnostic preservation; complete existing lifetime and publication owners |
-| 663 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0699` | `RETAIN` | `BR-0209` | `REFERENCE` | Preserve current strict replay controls while removing the existing terminal-result compensation root during implementation |
-| 664 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0700` | `RETAIN` | `BR-0292` | `REFERENCE` | Keep paired recorder semantic and long-recording coverage; finish existing disabled-diagnostic and publication acceptance |
-| 665 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0701` | `RETAIN` | `BR-0231` | `REFERENCE` | Retain paired replay loader and validate-before-apply policy fixtures; complete shared terminal failure integration |
-| 666 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0702` | `RETAIN` | `BR-0163` | `REFERENCE` | Retain expanded paired LAN scenarios and shared helpers; close existing cleanup and correlated-oracle owners |
-| 667 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0703` | `RETAIN` | `BR-0302` | `REFERENCE` | Retain shared level-metadata fixtures and truthful partial-route semantics; validate existing route owners |
-| 668 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0704` | `RETAIN` | `BR-0301` | `REFERENCE` | Preserve corrected all-link completion and bounded metadata distance tests; reconcile existing live-route validation |
-| 669 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0705` | `RETAIN` | `BR-0656` | `REFERENCE` | Retain shared multiplayer orchestration improvements; close existing false-pass and ownership findings |
-| 670 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0706` | `RETAIN` | `BR-0332` | `REFERENCE` | Retain current prepared-route profile identity tests; complete semantic cache and I/O acceptance |
-| 671 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0707` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain expanded shared route transition and convergence fixtures; reconcile existing route geometry and cache owners |
-| 672 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0711` | `RETAIN` | `BR-0337` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 673 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0712` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 674 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0713` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 675 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0714` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
-| 676 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0750` | `RETAIN` | `BR-0659` | `REFERENCE` | Complete22 frozen/current payloads; exact CUE consumers and existing root reconciliation |
-| 677 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0079` | `RETAIN` | `BR-0335` | `REFERENCE` | Guidebot semantic/guidance/proof identity and active/passive adoption retained; live rebase/certificate acceptance remains |
-| 678 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0081` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain ordering barriers and private candidate publication; separate resumable certification from compiled selection and live rebase acceptance |
-| 679 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0087` | `RETAIN` | `BR-0335` | `REFERENCE` | Snapshot domain generations, transit/trigger consumers and replay capture association; current compiled selector and existing failure acceptance |
-| 680 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0250` | `RETAIN` | `GQR-0207` | `REFERENCE` | JVM file-set, projection, storage and protocol fixtures |
-| 681 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0336 | RETAIN | GQR-0207 | REFERENCE | File-set and launch formats; decoder regrowth and unused inventory plans |
-| 682 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0364 | RETAIN | BR-0454 | REFERENCE | Preserve flavor source boundary; existing update task and store fallback defects remain |
-| 683 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0379 | RETAIN | GQR-0226 | REFERENCE | Helper capture/build/metadata/cleanup/quality/crash/upstream boundaries; existing owner/current repairs retained |
-| 684 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0387` | `RETAIN` | `BR-0543` | `REFERENCE` | Graphics/formatter wrappers; existing independent cleanup and new physical eligibility47 separately |
-| 685 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0388` | `RETAIN` | `BR-0543` | `REFERENCE` | Process JSON compatibility helpers; preserve repairs and existing owned cleanup/publication acceptance |
-| 686 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0389 | RETAIN | GQF-0305 | PRIMARY | Validate readable cursor schema; retain current policies and scoped formatter repairs; no inherited saving |
-| 687 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0390 | RETAIN | BR-0543 | REFERENCE | Retain process/workspace helpers and current parser/native repairs; complete existing finite owned stream/cleanup acceptance; no inherited saving |
-| 688 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0391 | RETAIN | BR-0543 | REFERENCE | Retain real store capture; complete owned recording/audio/display cleanup and private validated publication; native-backed snapshot simplification, no inherited saving |
-| 689 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0392 | RETAIN | BR-0543 | REFERENCE | Retain platform process lifetime dispatch; complete finite owned stop and all-error cleanup with actual pool/aggregate/formatter acceptance; no inherited saving |
-| 690 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0396 | NEW-ISSUE/RETAIN | GQR-0293 | PRIMARY | Require finite boss audio window evidence; retain existing lifecycle/publication and native format policies |
-| 691 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0397 | RETAIN | GQR-0293 | REFERENCE | Shared store media finite-report boundary;retain publication/process/device/dependency policies and distinct actual validators |
-| 692 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0400 | PLANNED-FIX/RETAIN | GQR-0295 | PRIMARY | Decode native D1/D2 packet headers explicitly; preserve identity/error/session obligations |
-| 693 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0411 | NO_INHERITED_EFFECT/EXISTING-OWNER | BR-0006 | REFERENCE | Consolidate current cleanup and tooling documentation; retain authored feature intent and separate platform acceptance |
-| 694 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0412 | NO_INHERITED_EFFECT/EXISTING-OWNER | BR-0006 | REFERENCE | Simplify store capture prerequisites and evidence boundaries; retain existing media-lifetime-publication-finite owners |
-| 695 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0441 | NO_INHERITED_EFFECT | GQR-0303 | PRIMARY | world travel/Guidebot/metadata tests;focused metadata-only flyout verdict mismatch,no original reduction |
-| 696 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0443 | NO_INHERITED_EFFECT | GQR-0304 | PRIMARY | D1/D2/death/content/launch tests;boss full-health oracle absent despite explicit contract,no original reduction |
-| 697 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0444 | NO_INHERITED_EFFECT | GQR-0305 | PRIMARY | recording/preview/restore/route tests;missing retained launcher-work oracle,no original reduction |
-| 698 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0453 | NO_INHERITED_EFFECT | GQR-0306 | PRIMARY | restart/fence/normalexit scripts;repair D1ten/D2twelve diagnostic oracle,preserve distinct restore/packet/exit effects;existing330line extraction separate,zero original reduction here |
-| 699 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0470 | NO_INHERITED_EFFECT | GQR-0307 | PRIMARY | Menu GLES GOG scripts; verify owned preset target, retain native actions/unrelated inventory, extend existing parent budget and completed-command outcomes, zero original reduction |
-| 700 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0008` | `PRE-0108` | `BR-0623` | `REFERENCE` | Share one complete portable source-manifest policy |
-| 701 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0010` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 702 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0011` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 703 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0012` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 704 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0014` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 705 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0027` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 706 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0028` | `PRE-0108` | `GQF-0040` | `PRIMARY` | Flattened HFS loose-file projection |
-| 707 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0035` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 708 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0038` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 709 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0051` | `PRE-0108` | `BR-0082` | `REFERENCE` | Validate metadata-backed save bodies before offering Resume |
-| 710 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0052` | `PRE-0108` | `BR-0417` | `REFERENCE` | Repair last-save selection after deleting an empty set |
-| 711 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0057` | `PRE-0108` | `GQF-0113` | `PRIMARY` | Stored ZIP collision validation timing |
-| 712 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0058` | `PRE-0108` | `GQF-0030` | `PRIMARY` | Physical-disc and mission fingerprint generation and cache reuse |
-| 713 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0072` | `PRE-0108` | `BR-0111` | `REFERENCE` | Bounds-check complete STUN attributes before slicing |
-| 714 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0081` | `PRE-0108` | `BR-0174` | `REFERENCE` | Gate external reference extractors to supported hosts |
-| 715 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0091` | `PRE-0108` | `BR-0174` | `REFERENCE` | Gate external reference extractors to supported hosts |
-| 716 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0096` | `PRE-0108` | `GQF-0091` | `PRIMARY` | PKG analysis-to-extraction generation identity |
-| 717 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0097` | `PRE-0108` | `BR-0236` | `REFERENCE` | Report and roll back partial all-pilot preference writes |
-| 718 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0110` | `NO_INHERITED_EFFECT` | `GQF-0091` | `REFERENCE` | PKG analysis-to-extraction generation identity |
-| 719 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0111` | `NO_INHERITED_EFFECT` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
-| 720 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0120` | `NO_INHERITED_EFFECT` | `GQF-0030` | `REFERENCE` | Physical-disc and mission fingerprint generation and cache reuse |
-| 721 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0171` | `RETAIN` | `BR-0332` | REFERENCE | duplicate high-confidence cache identity evidence is the highest-impact live owner in this scope |
-| 722 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0172` | `RETAIN` | `BR-0247` | REFERENCE | duplicate evidence for the open unbounded trace-growth root is the highest-impact live owner |
-| 723 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0173` | `RETAIN` | `BR-0236` | REFERENCE | duplicate high-confidence partial-commit evidence is the only live quality root |
-| 724 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0174` | `RETAIN` | `BR-0238` | REFERENCE | duplicate high-confidence mission-source identity evidence is the highest ready live root |
-| 725 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0175` | `NO_INHERITED_EFFECT` | `BR-0276` | REFERENCE | duplicate evidence for the remaining preview completion/clock root is the highest live owner |
-| 726 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0176` | `RETAIN` | `BR-0257` | REFERENCE | duplicate high-confidence one-shot lifecycle failure remains the highest live root |
-| 727 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0177` | `RETAIN` | `BR-0251` | REFERENCE | duplicate renderer recovery evidence is the highest-impact live owner |
-| 728 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0179` | `RETAIN` | `BR-0236` | REFERENCE | duplicate grouped partial-publication risk is the broadest live owner in this scope |
-| 729 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0184` | `RETAIN` | `BR-0078` | REFERENCE | duplicate lifecycle exposure is the broadest high-confidence failure boundary in the assigned logging path |
-| 730 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0187` | `RETAIN` | `BR-0209` | REFERENCE | requested-output failure must be propagated through the shared replay completion boundary |
-| 731 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0190` | `RETAIN` | `BR-0250` | `REFERENCE` | Coherent audio diagnostic publication; mailbox queue measurement pending |
-| 732 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0194` | `RETAIN` | `BR-0236` | `REFERENCE` | PhysFS setup and grouped pilot preference transactions |
-| 733 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0196` | `RETAIN` | `BR-0244` | `REFERENCE` | meta actions, music control, text wrapping and pilot hold gestures |
-| 734 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0214` | `RETAIN` | `BR-0276` | `REFERENCE` | CD preview PCM/resampling, producer EOF, callback output and startup ownership |
-| 735 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0216` | `RETAIN` | `GQF-0096` | `REFERENCE` | Cooperative metadata framing, identity remapping and absent-player snapshots |
-| 736 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0217` | `RETAIN` | `BR-0278` | `REFERENCE` | Cooperative autosave schedulers, sidecars, progress inventory and restore admission |
-| 737 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0219` | `RETAIN` | `BR-0282` | `REFERENCE` | Automation result/JSONL publication, outbound radial JNI and key injection |
-| 738 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0220` | `RETAIN` | `BR-0283` | `REFERENCE` | Automation input domains, mission discovery, direct window dispatch and face geometry |
-| 739 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0221` | `RETAIN` | `BR-0284` | `REFERENCE` | Automation pose/objective controls, condition cleanup and script replacement admission |
-| 740 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0222` | `RETAIN` | `BR-0223` | `REFERENCE` | Automation cursor admission, typed assertions, replacement and menu deadlines |
-| 741 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0223` | `RETAIN` | `BR-0286` | `REFERENCE` | Automation overlay/run assertions, briefing deadlines, renderer probes and native controls |
-| 742 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0227` | `RETAIN` | `GQR-0174` | `PRIMARY` | GLES3 shader initialization, matrices and client-state policy |
-| 743 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0232` | `RETAIN` | `BR-0292` | `REFERENCE` | recording capture, replay lifecycle, RNG synchronization and diagnostics |
-| 744 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0233` | `RETAIN` | `BR-0293` | `REFERENCE` | runtime allocator, player weapons, local segment chains and robot diagnostic history |
-| 745 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0234` | `RETAIN` | `BR-0293` | `REFERENCE` | object histories, current result, segment aggregates and collision step output |
-| 746 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0235` | `RETAIN` | `BR-0296` | `REFERENCE` | recording admission, checkpoint capture, quick naming, retention and flush |
-| 747 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0241` | `RETAIN` | `BR-0246` | `REFERENCE` | replay startup, metadata binding, owned checkpoint temporary, configuration and restored clocks |
-| 748 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0243` | `RETAIN` | `BR-0301` | `REFERENCE` | metadata world-state completion, connected components, energy distance, volume and guidebot summary |
-| 749 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0248` | `RETAIN` | `BR-0308` | `REFERENCE` | merged-wall projected geometry, crosshair coordinates and focus ranking |
-| 750 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0249` | `RETAIN` | `BR-0310` | `REFERENCE` | merged-wall framebuffer coordinate conversion, source provenance and readback admission |
-| 751 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0250` | `RETAIN` | `BR-0311` | `REFERENCE` | merged-wall cover dumps, GL-state/readback transactions and sampled-texture LOD |
-| 752 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0251` | `RETAIN` | `BR-0312` | `REFERENCE` | merged-wall face capacity, cover matching and per-frame/view lifecycle |
-| 753 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0252` | `RETAIN` | `BR-0313` | `REFERENCE` | merged-wall focus ranking, route orientation models and native texture/effect/door diagnostics |
-| 754 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0253` | `RETAIN` | `BR-0315` | `REFERENCE` | merged-wall side/palette provenance, geometry hit classification and rear-view ray |
-| 755 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0254` | `RETAIN` | `BR-0316` | `REFERENCE` | merged-wall final tap ranking, route models and composed framebuffer sampling |
-| 756 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0255` | `RETAIN` | `BR-0317` | `REFERENCE` | merged-wall zero-candidate probe terminal behavior, selection and result publication |
-| 757 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0257` | `RETAIN` | `BR-0276` | `REFERENCE` | MIDI preview lifecycle, PCM EOF drain, synth timeline and current approximate-seek reconciliation |
-| 758 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0264` | `RETAIN` | `BR-0302` | `REFERENCE` | route graph traversal, target capacity and current multiple-boss reconciliation |
-| 759 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0266` | `RETAIN` | `BR-0331` | `REFERENCE` | trigger opener alternatives, dependency rollback, fallback plans and route projection |
-| 760 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0267` | `RETAIN` | `BR-0332` | `REFERENCE` | route snapshot staging, navigation identity and current domain/replay capture reconciliation |
-| 761 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0268` | `RETAIN` | `BR-0334` | `REFERENCE` | native metadata state, visibility cache admission and engine portal clearance |
-| 762 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0270` | `RETAIN` | `BR-0334` | `REFERENCE` | topology indexing, persistent cache ownership and canonical live reuse |
-| 763 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0271` | `RETAIN` | `BR-0337` | `REFERENCE` | secret scanner required progression, bounded components and published entrance inventory |
-| 764 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0272` | `RETAIN` | `GQF-0096` | `REFERENCE` | save namespace, staged publication, trailers and lifecycle memory adapters |
-| 765 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0280` | `RETAIN` | `BR-0251` | `REFERENCE` | paired graphics initialization, render admission and arch hook declarations |
-| 766 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0284` | `DEFER` | `BR-0347` | `REFERENCE` | paired diagnostic clipping RGB, nested render frame/MSAA/timer and upload/scratch integration |
-| 767 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0293` | `DEFER` | `BR-0349` | `REFERENCE` | native HUD visible-frame integration, paired corner geometry/counts and cooperative level/spawn/score lifecycle |
-| 768 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0296` | `DEFER` | `BR-0278` | `REFERENCE` | game loop, replay controls, font/render policy and native level-I/O adapters |
-| 769 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0297` | `RETAIN` | `BR-0294` | `REFERENCE` | listbox tail/accessors, object runtime/effects, physics probes and bitmap paging/flags |
-| 770 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0300` | `RETAIN` | `BR-0294` | `REFERENCE` | D1 typed replay commands, checkpoint links and weapon/physics diagnostic adapters |
-| 771 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0303` | `DEFER` | `BR-0269` | `REFERENCE` | native newmenu background cache, readable text, reorder and tap/key/geometry adapters |
-| 772 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0304` | `DEFER` | `BR-0269` | `REFERENCE` | native scaled menu/listbox draw callbacks, wrapped teardown, joystick/tap and hold lifecycles |
-| 773 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0306` | `RETAIN` | `BR-0082` | `REFERENCE` | native save body/header/callsign conversion, checkpoint topology fallback, cooperative remap and current restore failure/publication containment |
-| 774 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0313` | `RETAIN` | `BR-0345` | `REFERENCE` | D2 SDL mixer/convert/start, event/window nonlocal lifetime, virtual input and desktop joystick, software mode, jukebox/mouse/timer and resource guard |
-| 775 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0315` | `RETAIN` | `BR-0251` | `REFERENCE` | D2 platform/header input/music/window interfaces and EGL/canvas/mode integration |
-| 776 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0317` | `DEFER` | `BR-0347` | `REFERENCE` | D2 diagnostic clipping and RGB payload, external draw cleanup, MSAA/frame/timer/readback and ordinary upload scratch lifecycle |
-| 777 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0323` | `RETAIN` | `BR-0202` | `REFERENCE` | D2 pilot hold draw polling, listbox lifecycle/window title geometry and completed accessor headers with comment encoding residue |
-| 778 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0325` | `RETAIN` | `BR-0209` | `REFERENCE` | D2 hooks tail, terminal overrides, RNG and replay lifecycle/header interfaces |
-| 779 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0328` | `RETAIN` | `BR-0278` | `REFERENCE` | D2 frame/tick/palette/profiling/RNG lifecycle and native replay/control/autosave hooks |
-| 780 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0329` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI restore tail, path/actor/route interfaces and AI2 visibility/fire/movement/boss/native-D1 policy |
-| 781 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0330` | `RETAIN` | `BR-0206` | `REFERENCE` | D1 translated checkpoint runtime/world/AI/player publication and digital audio sample contract |
-| 782 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0332` | `DEFER` | `BR-0294` | `REFERENCE` | D2 reactor codecs/runtime clocks, collision diagnostics/native actor damage and cooperative death/pickup wrappers |
-| 783 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0336` | `DEFER` | `BR-0349` | `REFERENCE` | D2 HUD messages/gauges/controls, score recording and startup lifecycle |
-| 784 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0339` | `DEFER` | `BR-0294` | `REFERENCE` | D2 explosion/drop/fuel/matcen and FVI callbacks/native transparency |
-| 785 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0340` | `RETAIN` | `GQR-0198` | `PRIMARY` | D2 custom asset staging, source identity publication, native semantic and result adapters |
-| 786 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0345` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 metadata patch tail, effects, endlevel and escort ownership/exit policy |
-| 787 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0346` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI scheduling, awareness, native actor dispatch, diagnostics and legacy timestamp save/read |
-| 788 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0347` | `RETAIN` | `GQR-0198` | `REFERENCE` | D2 custom PIG/POG/PCM original assets and current HX1 unpublished generation |
-| 789 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0349` | `RETAIN` | `GQR-0198` | `REFERENCE` | D2 original sound, palette, gauges/cockpit overlay and native robot/weapon decode |
-| 790 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0354` | `DEFER` | `BR-0381` | `REFERENCE` | D2 Guide-Bot route state/probes/events/guidance/completion and spawn lifecycle |
-| 791 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0357` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 included energy trace helper and native caller ownership |
-| 792 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0358` | `DEFER` | `BR-0294` | `REFERENCE` | D2 input-demo direct command adapters, player control/wiggle and render/motion probe ownership |
-| 793 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0359` | `DEFER` | `BR-0294` | `REFERENCE` | D2 motion/physics/FVI probes, shared result hooks, debris/explosion and replay probe transport |
-| 794 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0360` | `DEFER` | `BR-0294` | `REFERENCE` | D2 weapon/debris path and activity probes, hard-coded FVI geometry, contact and powerup delta/state diagnostics |
-| 795 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0361` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI schedule, baseline, awareness, focus predicates and weapon/impact/damage event capture |
-| 796 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0362` | `DEFER` | `BR-0294` | `REFERENCE` | D2 homing/shot/spreadfire, reactor/shield, collision/powerup and follow-path diagnostics |
-| 797 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0363` | `DEFER` | `BR-0294` | `REFERENCE` | D2 path hash, escort RNG/path/restore, chase/follow and escort/snipe observation snapshots |
-| 798 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0364` | `DEFER` | `BR-0294` | `REFERENCE` | D2 thief/path requests, path hash suppression, RNG/agitation and lifecycle/pose diagnostics |
-| 799 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0365` | `DEFER` | `BR-0294` | `REFERENCE` | D2 tracked robot pose lifecycle, robot fire, visibility/FVI and awareness-roll diagnostics |
-| 800 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0366` | `DEFER` | `BR-0294` | `REFERENCE` | D2 awareness chain, physical/claw recorder events, AI state/fire and partial wall-repair diagnostics |
-| 801 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0372` | `DEFER` | `BR-0269` | `REFERENCE` | D2 native menu background cache, readable text, reorder and touch/key geometry with current snapshots and interaction publication |
-| 802 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0373` | `DEFER` | `BR-0269` | `REFERENCE` | D2 scaled menu/listbox draw, wrapped teardown, touch/controller gestures and pilot hold lifecycle |
-| 803 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0387` | `RETAIN` | `GQR-0174` | `REFERENCE` | D1 Cocoa/OGL/SDL/Windows/X11 CMake and current per-game shared registrations |
-| 804 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0400` | `RETAIN` | `GQR-0174` | `REFERENCE` | D2 platform CMake prefixes, shader runtime registration and conditional SDL audio ownership |
-| 805 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0414` | `RETAIN` | `BR-0402` | `REFERENCE` | Server Rust version snapshot and active toolchain-selection owner |
-| 806 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0420` | `RETAIN` | `BR-0401` | `REFERENCE` | Server integration harness and initial auth/lobby/HTTP/database/friend/ready/start/kick cases |
-| 807 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0421` | `RETAIN` | `BR-0403` | `REFERENCE` | Welcome, stable identity, messaging, coded lobbies, friend joins, relay and NAT candidate fixtures |
-| 808 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0422` | `RETAIN` | `BR-0404` | `REFERENCE` | Verified-only lobbies, Ed25519/PoW, known-key reconnect and lobby lifecycle; complete current mission-status hunk |
-| 809 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0423` | `RETAIN` | `BR-0401` | `REFERENCE` | Final integration chat/discovery, relay age cleanup, connectivity, STUN allowlist/UDP and full friend lifecycle |
-| 810 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0424` | `RETAIN` | `BR-0406` | `REFERENCE` | Full NAT simulator integration suite: STUN, mapping/filtering, sequential reservation, bidirectional cone, permissive mixed case and tiny packets |
-| 811 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0428` | `RETAIN` | `GQR-0017` | `REFERENCE` | Known albums primary metadata 1-750, full current rename/regeneration hunks and byte-level payload audit |
-| 812 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0429` | `RETAIN` | `GQR-0017` | `REFERENCE` | Known albums final ambiguity comments, empty Ulterior album and Uneasy audio row |
-| 813 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0433` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 10-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
-| 814 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0434` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 16-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
-| 815 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0435` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 8-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
-| 816 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0438` | `RETAIN` | `BR-0192` | `REFERENCE` | All four GOG regression specs, complete current rename/count changes, JSON audit and existing extraction-test owners |
-| 817 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0440` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 16-album/318-track source corpus, comment-only rename and strict full-byte/schema audit |
-| 818 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0441` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 7-album/80-track source corpus, comment-only rename and strict full-byte/schema audit |
-| 819 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0447` | `RETAIN` | `BR-0529` | `REFERENCE` | Retain shared weapon-state presentation and close existing cross-game touch admission owner |
-| 820 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0453` | `RETAIN` | `BR-0415` | `REFERENCE` | Keep launcher content and engine policy distinct; finish coherent D2 variant precedence under existing owner |
-| 821 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0457` | `RETAIN` | `BR-0447` | `REFERENCE` | Retain shared logging policy and demo declarations; coordinate logging budgets and cross-process ownership |
-| 822 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0458` | `RETAIN` | `BR-0420` | `REFERENCE` | Keep transient actions distinct from launch-intro policy; complete the existing custom-control accessibility owner |
-| 823 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0460` | `RETAIN` | `GQR-0209` | `PRIMARY` | Preserve callsign and shared resume projections; bind delayed foreground-service shutdown to the expired game session |
-| 824 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0461` | `RETAIN` | `BR-0440` | `REFERENCE` | Retain typed mission metadata and shared state boundaries; complete native mode compatibility and supported preference publication |
-| 825 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0463` | `RETAIN` | `BR-0460` | `REFERENCE` | Retain isolated preview request ownership and corrected PixelCopy API guard; finish controller and probe correlation owners |
-| 826 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0464` | `RETAIN` | `BR-0021` | `REFERENCE` | Retain press-owned controller dispatch and strict GOG catalog parsing; complete existing cancellation and diagnostic owners |
-| 827 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0465` | `RETAIN` | `BR-0451` | `REFERENCE` | Retain shared focus navigation, bounded DXA traversal and crash retention; finish existing focus cancellation and retry owners |
-| 828 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0466` | `RETAIN` | `BR-0643` | `REFERENCE` | Preserve exact disc hashing and shared attempt budgets; finish disc identity and owned asset-reader scopes |
-| 829 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0470` | `RETAIN` | `BR-0508` | `REFERENCE` | Retain repaired storage ownership and manifest publication; complete Downloads export and failed-hash feedback owners |
-| 830 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0472` | `RETAIN` | `BR-0241` | `REFERENCE` | Retain shared controller sampling and navigation helpers; complete existing crash provenance and input ownership contracts |
-| 831 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0473` | `RETAIN` | `BR-0111` | `REFERENCE` | Keep thin logging and process IPC owners; encode recent endpoints without a delimiter collision |
-| 832 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0474` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain shared music geometry, typed bounded sidecar and active-set availability; complete existing UI and process publication owners |
-| 833 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0482` | `RETAIN` | `GQR-0216` | `PRIMARY` | Retain owned descriptor staging and shared action policy; serialize durable resume handoff generations |
-| 834 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0485` | `RETAIN` | `BR-0222` | `REFERENCE` | Retain atomic single-file copies and shared input mixing; complete coherent demo artifact publication |
-| 835 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0490` | `RETAIN` | `BR-0244` | `REFERENCE` | Retain the small shared automap policy; fix existing mailbox, gesture identity and command latch boundaries |
-| 836 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0491` | `RETAIN` | `BR-0236` | `REFERENCE` | Retain IO and debounce for weapon ordering; finish existing paired pilot transaction and interaction generations |
-| 837 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0493` | `RETAIN` | `BR-0263` | `REFERENCE` | Retain shared controller maps and independent trigger inventory; complete existing game-specific keyboard schema owner |
-| 838 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0495` | `RETAIN` | `BR-0420` | `REFERENCE` | Retain diagram presentation and physical-device display selection; complete existing hit testing and semantic controls |
-| 839 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0502` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain shared graphics controls and focus links; publish live preferences through the existing process owner |
-| 840 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0503` | `RETAIN` | `BR-0422` | `REFERENCE` | Retain shared gyro producer; close existing activation, calibration and source lifetime owners |
-| 841 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0505` | `RETAIN` | `BR-0224` | `REFERENCE` | Retain exact-label activation and command failure propagation; close existing script schema and handoff owners |
-| 842 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0506` | `RETAIN` | `BR-0284` | `REFERENCE` | Preserve shared metadata projection and atomic individual reports; complete existing automation session and assertion contracts |
-| 843 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0526` | `RETAIN` | `GQR-0084` | `REFERENCE` | Retain one typed resume configuration and native save boundary; remove unused roster persistence and finish off-main discovery |
-| 844 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0532` | `RETAIN` | `BR-0236` | `REFERENCE` | Retain shared active-set music UI and native format adapters; finish existing preference and provider lifecycles |
-| 845 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0537` | `RETAIN` | `BR-0506` | `REFERENCE` | Retain shared launcher startup and input adapters; finish lifecycle cancellation and coherent launch publication |
-| 846 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0538` | `RETAIN` | `BR-0284` | `REFERENCE` | Retain shared setup projection and bounded import owners; finish correlated automation and stable hash outcomes |
-| 847 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0540` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain exact shared copy and single-flight result imports; reconcile remaining global temporary cleanup and readiness policy |
-| 848 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0541` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain exact-copy and shared launcher controls; reopen incomplete temporary-owner closure and finish existing retry policy |
-| 849 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0542` | `RETAIN` | `BR-0510` | `REFERENCE` | Retain shared automation adapters and lightweight introspection; finish stable activation identity and acknowledged handoff |
-| 850 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0543` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain shared set dialogs and archive publication; finish existing truthful deletion and staging-owner lifecycle |
-| 851 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0544` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain staged installer/disc publication and native CUE ownership; finish caller cancellation and durable source admission |
-| 852 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0545` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain current disc staging and typed audio identification; unify explicit dismissal with existing attempt lifetime owner |
-| 853 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0546` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain shared disc helpers and repaired collision/publication paths; consolidate authoritative CUE identities in existing parser owner |
-| 854 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0547` | `RETAIN` | `BR-0456` | `REFERENCE` | Preserve all-track staging and shared attempt budgets; complete existing cancellation and file/source transaction acceptance |
-| 855 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0549` | `RETAIN` | `GQR-0216` | `REFERENCE` | Retain one launcher thumbnail/presentation owner; resume identity and handoff safety remain existing cross-layer owners |
-| 856 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0550` | `RETAIN` | `GQR-0085` | `REFERENCE` | Retain shared save browsing and grant-safe sharing; bind destructive confirmation and late publication to existing generation owners |
-| 857 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0551` | `RETAIN` | `GQR-0085` | `REFERENCE` | Retain shared save presentation and native format admission; finish existing candidate/deletion generation acceptance |
-| 858 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0557` | `RETAIN` | `BR-0529` | `REFERENCE` | Keep shared touch/native binding inventories; finish existing typed radial and cross-game dispatch admission |
-| 859 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0560` | `RETAIN` | `BR-0517` | `REFERENCE` | Keep current editor geometry and shared properties; preserve unsaved generations across typed import outcomes |
-| 860 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0564` | `RETAIN` | `BR-0529` | `REFERENCE` | Keep shared bounded editor widgets and native action labels; finish existing per-game admission and preset reader lifetime |
-| 861 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0574` | `RETAIN` | `BR-0322` | `REFERENCE` | Preserve bounded standalone ETC2 conversion and checked shared layout; finish existing packaged mip consumer acceptance |
-| 862 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0576` | `RETAIN` | `BR-0533` | `REFERENCE` | Keep Windows toolchain discovery at its platform boundary and refresh existing toolchain identity owner |
-| 863 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0577` | `RETAIN` | `BR-0549` | `REFERENCE` | Retain installer and aggregate orchestration boundaries with existing release/configuration owners |
-| 864 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0578` | `RETAIN` | `BR-0539` | `REFERENCE` | Retain script-relative launcher/settings ownership and existing menu/device/provisioning fixes |
-| 865 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0579` | `RETAIN` | `BR-0556` | `REFERENCE` | Retain release script/build boundaries and remove obsolete unreachable promotion policy |
-| 866 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0580` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain catalog discovery and scheduling at the aggregate runner boundary |
-| 867 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0581` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain aggregate preflight and result execution ownership; complete existing resource and provisioning acceptance |
-| 868 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0582` | `RETAIN` | `BR-0554` | `REFERENCE` | Retain ordered tier and report orchestration; remove disconnected Docker coverage through existing owner |
-| 869 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0583` | `RETAIN` | `BR-0544` | `REFERENCE` | Retain deliberately budgeted quick-suite policy and existing exact-APK preflight owner |
-| 870 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0584` | `RETAIN` | `BR-0538` | `REFERENCE` | Keep one mixed-language quality coordinator and atomic ownership in the existing formatter root |
-| 871 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0596` | `RETAIN` | `BR-0584` | `REFERENCE` | Retain shared profile parsing and dependency verification; complete existing producer coverage and cleanup truthfulness |
-| 872 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0597` | `RETAIN` | `BR-0603` | `REFERENCE` | Retain pinned shared game-data staging and process identity repairs; complete existing NAT readiness and transactional demo stripping |
-| 873 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0601` | `RETAIN` | `BR-0600` | `REFERENCE` | Keep shared quality file selection; close remaining checked mutation, test coverage and exact dependency identity owners |
-| 874 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0602` | `RETAIN` | `BR-0582` | `REFERENCE` | Remove the disconnected PowerShell metadata projection; preserve shared Kotlin projection and finish bounded worker ownership |
-| 875 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0605` | `RETAIN` | `BR-0607` | `REFERENCE` | Retain local replay artifact rules while completing required corpus provenance and clean-checkout acceptance |
-| 876 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0608` | `RETAIN` | `BR-0610` | `REFERENCE` | Retain shared CMake policy owners and verified codec acquisition; honor explicit tool selection and canonical build identity |
-| 877 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0609` | `RETAIN` | `BR-0615` | `REFERENCE` | Reuse shared string-aware JSONC and source identity policy; finish complete music album and index generation under existing owners |
-| 878 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0611` | `RETAIN` | `BR-0611` | `REFERENCE` | Retain physical/album schema separation and ordinal ordering; complete shared parser, private matcher and symmetric collision owners |
-| 879 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0612` | `RETAIN` | `BR-0623` | `REFERENCE` | Retain current canonical spec and extraction identity policy; enforce explicit generation selections and portable source inventory |
-| 880 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0613` | `RETAIN` | `BR-0620` | `REFERENCE` | Retain shared sampler and data owners; complete aggregate stage routing, non-mutating previews and contained portable export |
-| 881 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0615` | `RETAIN` | `BR-0493` | `REFERENCE` | Retain native HAM format ownership and rollback; complete exact DXA inventory, shared schema and full composition oracle |
-| 882 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0616` | `RETAIN` | `BR-0626` | `REFERENCE` | Retain shared HAM analysis and source exclusions; complete alias-safe, verified and reproducible DXA generation |
-| 883 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0617` | `RETAIN` | `BR-0634` | `REFERENCE` | Retain shared conversion progress and pack policy; finish truthful complete merge, private stages and reproducible tool identity |
-| 884 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0618` | `RETAIN` | `BR-0636` | `REFERENCE` | Retain portable bounded TGA repair and shared pack naming; complete exact sizing, collision rejection and archive publication |
-| 885 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0619` | `RETAIN` | `BR-0634` | `REFERENCE` | Retain per-game sound format and checked RIFF spans; complete sound pack status, private stages and source-bound publication |
-| 886 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0620` | `RETAIN` | `BR-0637` | `REFERENCE` | Retain exact portable TGA ownership and engine naming boundary; finish shared resize and collision-safe conversion policy |
-| 887 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0621` | `RETAIN` | `BR-0626` | `REFERENCE` | Retain branch-owned pack conversion and narrow paired engine seams; close exact source identity and namespace contracts |
-| 888 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0622` | `RETAIN` | `BR-0493` | `REFERENCE` | Retain branch-owned semantic HAM projection; agree host field domains with the actual native consumer |
-| 889 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0623` | `RETAIN` | `BR-0630` | `REFERENCE` | Retain branch-owned verifier; replace candidate-directed success with independent exact consumer validation |
-| 890 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0624` | `RETAIN` | `BR-0636` | `REFERENCE` | Retain shared bounded asset readers and portable pixel ownership; finish source namespace and cumulative work policy |
-| 891 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0625` | `RETAIN` | `BR-0493` | `REFERENCE` | Remove disconnected raw payload and byte-difference helpers; retain bounded semantic source readers and native contracts |
-| 892 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0626` | `RETAIN` | `BR-0233` | `REFERENCE` | Retain one shared branch-owned archive writer; publish a complete validated generation with exact source/output ownership |
-| 893 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0632` | `RETAIN` | `BR-0643` | `REFERENCE` | Keep compatibility disc hashes separate from identity admission and refresh the actual database maintenance contract |
-| 894 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0636` | `RETAIN` | `BR-0607` | `REFERENCE` | Keep replay sandbox and trace ownership in existing runners; repair recording prerequisites and required corpus contracts |
-| 895 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0637` | `RETAIN` | `BR-0008` | `REFERENCE` | Keep measured source identity distinct from path lookup and converge generated inventories on one source policy |
-| 896 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0639` | `RETAIN` | `BR-0169` | `REFERENCE` | Retain engine-owned demo extraction and source tables; correct executable validation commands and complete oracle outcomes |
-| 897 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0640` | `RETAIN` | `BR-0630` | `REFERENCE` | Restore a concise mod family index and complete staged-input instructions while preserving converter/runtime ownership |
-| 898 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0641` | `RETAIN` | `BR-0556` | `REFERENCE` | Preserve exact build-to-upload artifact handoff and shared host setup while reconciling release identity and signing owners |
-| 899 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0642` | `RETAIN` | `BR-0493` | `REFERENCE` | Keep policy tests beside branch-owned controller, audio, demo and import owners; require native and lifecycle acceptance separately |
-| 900 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0648` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain explicit music source policy, bounded typed sidecars and cache confinement; verify runtime publication and overlay lifecycle separately |
-| 901 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0661` | `RETAIN` | `BR-0649` | `REFERENCE` | Retain SAF audio generation and asset teardown assertions; close existing title-music oracle and state-restoration owners |
-| 902 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0662` | `RETAIN` | `BR-0644` | `REFERENCE` | Retain shared render, music and generation assertions; reconcile existing binding oracle at current merged script |
-| 903 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0663` | `RETAIN` | `BR-0645` | `REFERENCE` | Retain distinct route, rendering and recorder fixtures; finish existing paired pilot deletion oracle |
-| 904 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0665` | `RETAIN` | `BR-0546` | `REFERENCE` | Retain shared correlated runner and centralized host discovery; finish exact tool identity and existing staging lifetime policy |
-| 905 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0666` | `RETAIN` | `BR-0171` | `REFERENCE` | Retain shared host adapters and duration estimator; constrain existing process cleanup to owned generations |
-| 906 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0667` | `RETAIN` | `BR-0190` | `REFERENCE` | Preserve centralized emulator readiness and active-set publication; finish typed ADB failures and bounded process ownership |
-| 907 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0668` | `RETAIN` | `BR-0190` | `REFERENCE` | Retain correlated terminal outcomes and shared dependency policy; replace name/size admission and uncovered lexical reader |
-| 908 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0675` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain shared managed emulators and fail-closed port conflicts; guarantee owned provisioning cleanup |
-| 909 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0676` | `RETAIN` | `BR-0653` | `REFERENCE` | Retain expanded paired LAN scenarios and controller-page waits; preserve accepted synchronization oracle through final verification |
-| 910 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0680` | `RETAIN` | `BR-0665` | `REFERENCE` | Retain slowdown/ABI/pilot invariants and removed stale route fixture; repair existing WebSocket bot protocol and lifetime owners |
-| 911 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0002` | `RETAIN` | `BR-0021` | `REFERENCE` | Extraction callback cancellation, JNI exception unwind, ISO abort and Mac fallback suppression |
-| 912 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0005` | `RETAIN` | `BR-0077` | `REFERENCE` | Native load status propagation, missing-secret policy and launcher assertion consumers |
-| 913 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0008` | `RETAIN` | `BR-0082` | `REFERENCE` | Metadata-backed Resume admission, scope/path checks and paired body/runtime readers |
-| 914 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0009` | `REMOVE` | `BR-0084` | `REFERENCE` | Dormant SAF base-file archive registration, managed-copy picker and injected-provider tests |
-| 915 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0011` | `RETAIN` | `BR-0099` | `REFERENCE` | Bundled audio database invalidation, local analysis completion and music name sidecar identity |
-| 916 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0016` | `REFACTOR` | `BR-0110` | `REFERENCE` | Simulator multi-client mapping identity and last-sender inbound delivery |
-| 917 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0023` | `RETAIN` | `BR-0119` | `REFERENCE` | Future protocol admission after version2 bump and rejection response contract |
-| 918 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0007` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Ulterior and Uneasy music metadata and existing typed cache owner |
-| 919 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0008` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Castaway Cererian and D2X-XL metadata and typed cache owner |
-| 920 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0009` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Ewithin KCXF2RM and nefarious metadata and typed cache owner |
-| 921 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0010` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Trine and U3AAH metadata and typed cache owner |
-| 922 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0014` | `NO_INHERITED_EFFECT` | `GQR-0025` | `REFERENCE` | HFS path/scratch ownership and offline MIDI diagnostic limits |
-| 923 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0015` | `NO_INHERITED_EFFECT` | `GQR-0031` | `REFERENCE` | PKG selected-output admission and physical publication ownership |
-| 924 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0022` | `NO_INHERITED_EFFECT` | `GQR-0064` | `REFERENCE` | Inno metadata header completion and scoped budget evidence |
-| 925 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0024` | `NO_INHERITED_EFFECT` | `BR-0077` | `REFERENCE` | Native load status propagation and active-pack/result consumers |
-| 926 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0041` | `RETAIN` | `GQR-0118` | `REFERENCE` | Initial DOS output validation, exact selected-item outcomes and owned publication/cleanup |
-| 927 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0050` | `RETAIN` | `BR-0084` | `REFERENCE` | Reconcile ineffective dormant SAF parser fixture within existing removal, retain valid manifests/shared texture contract |
-| 928 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0051` | `RETAIN` | `GQR-0033` | `REFERENCE` | Preserve containment and streaming contracts while completing existing transaction and attempt ownership |
-| 929 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0052` | `RETAIN` | `GQR-0123` | `REFERENCE` | Enforce current demo oracle provenance and complete inventory while retaining exact output checks |
-| 930 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0055` | `RETAIN` | `GQR-0093` | `REFERENCE` | Preserve member keys and exact music bytes while completing collision, retry and discriminating guard acceptance |
-| 931 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0059` | `RETAIN` | `BR-0008` | `REFERENCE` | Preserve native expected-level oracle and parameterized smoke contract; complete served-source identity and final consistency acceptance |
-| 932 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0075` | `RETAIN` | `BR-0337` | `REFERENCE` | Secret inventory/identity; required bosses, complete entrances and paired discovery acceptance retained |
-| 933 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0085` | `RETAIN` | `BR-0251` | `REFERENCE` | Shared GPU timer/MSAA operation admission and recovery; diagnostic failure must not suppress required rejection, preserve archived oracle fix |
-| 934 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0088` | `RETAIN` | `BR-0280` | `REFERENCE` | TSF checked startup/current ordered EOF repair, ring completion and paired scenery/multiplayer presentation consumers |
-| 935 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0137` | `RETAIN` | `BR-0251` | `REFERENCE` | Shared MSAA diagnostic targets, actual paired presentation and probe cleanup/freshness ownership |
-| 936 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0162` | `RETAIN` | `GQR-0239; GQR-0175; GQR-0191; GQR-0236; BR-0206` | `REFERENCE` | D1 save, terrain, briefing and native selection |
-| 937 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0163` | `REFACTOR/RETAIN` | `GQR-0240; GQR-0241; GQR-0189; GQR-0238` | `REFERENCE` | D1 menu, profile, object and rendering integration |
-| 938 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0166` | `ISSUES/RETAIN` | `GQF-0253/GQR-0239` | `PRIMARY` | D1 game loop, flyout state and mixed-station matcen pause |
-| 939 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0177` | `REFACTOR/RETAIN` | `GQF-0254/GQR-0240; GQF-0255/GQR-0241; GQR-0189; GQR-0238` | `PRIMARY` | D2 profile, powerup, native bitmap relocation and CPU visibility |
-| 940 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0179` | `RETAIN` | `GQF-0253/GQR-0239; GQR-0175; BR-0294; BR-0345` | `REFERENCE` | D2 game loop, native D1 policy calls and presentation |
-| 941 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0245` | `NO_INHERITED_EFFECT` | `BR-0402; GQR-0204` | `REFERENCE` | Server script JSONC and maintenance integration |
-| 942 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0262` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L1-L750 |
-| 943 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0263` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L751-L1500 |
-| 944 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0264` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L1501-L2250 |
-| 945 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0265` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L2251-L3000 |
-| 946 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0266` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L3001-L3251 |
-| 947 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0267` | `RETAIN` | `GQR-0017; GQR-0251` | `REFERENCE` | Physical disc catalog L1-L750 |
-| 948 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0268` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L751-L1500 |
-| 949 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0269` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L1501-L2250 |
-| 950 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0270` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L2251-L2288 |
-| 951 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0283` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0283 |
-| 952 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0284` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0284 |
-| 953 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0285` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0285 |
-| 954 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0287` | `RETAIN` | `BR-0192; GQR-0252` | `REFERENCE` | Regression and CD source metadata 0287 |
-| 955 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0289` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0289 |
-| 956 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0290` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0290 |
-| 957 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0291` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0291 |
-| 958 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0292` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0292 |
-| 959 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0293` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0293 |
-| 960 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0305` | `RETAIN` | `BR-0643` | `REFERENCE` | Disc identity and existing audio/logging/extraction/registry/navigation owners; current repairs preserved, no new root |
-| 961 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0359 | RETAIN | GQR-0040 | REFERENCE | Preserve native source identity and owned import lifetime; new GOG dialog failure/action policy44 |
-| 962 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0367 | RETAIN | BR-0533 | REFERENCE | Root build/config policy; retain sanitizer isolation and refresh existing toolchain identity owner |
-| 963 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0369 | RETAIN | BR-0556 | REFERENCE | Retain authored release/native cleanup boundaries; current BuildInfo owner and supported Play fixture identity |
-| 964 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0370 | RETAIN | BR-0538 | REFERENCE | Preserve shared tooling and current repairs; finish held formatter ownership and existing runner/catalog acceptance |
-| 965 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0372 | RETAIN | BR-0556 | REFERENCE | Retain verified pair/recovery/release boundaries; finish existing variant-specific build identity |
-| 966 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0373 | RETAIN | BR-0543 | REFERENCE | Master runner declaration/profile/sampling/preflight/execution review; preserve existing lifecycle owner and admit eligibility44 separately |
-| 967 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0380` | RETAIN | `BR-0539` | REFERENCE | Capture/FOV/black/preview wrappers; new registration44 plus existing target/lifetime acceptance |
-| 968 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0381` | RETAIN | `BR-0233` | REFERENCE | Media/demo/metadata; retain contracts and complete existing correlated publication/capture/corpus owners |
-| 969 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0382` | `RETAIN` | `BR-0233` | `REFERENCE` | Retain capture/oracle/timing/projection contracts; complete existing publication, worker lifetime and exact request acceptance |
-| 970 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0385` | `RETAIN` | `BR-0171` | `REFERENCE` | Retain selected recovery, exact formatter and DOS capture controls; complete existing warning/process/session/generation/independent cleanup acceptance |
-| 971 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0403 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve semantic pipeline repairs;reuse existing typed JSON/publication/generation policies;pair-shape lead unadmitted |
-| 972 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0404 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve generation repairs;share explicit inventory/path/hash/serialization/publication policies under existing owners |
-| 973 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0405 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve converter format/native repairs;share explicit admission/entrymap/resize/schema/publication ownership under existing owners |
-| 974 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0414 | NO_INHERITED_EFFECT | BR-0643 | REFERENCE | Preserve exact hash and parser repairs; resolve identity admission and simplify actual guide workflow; retain notices |
-| 975 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0426 | ISSUES/RETAIN | BR-0556 | REFERENCE | Retain publishing menu and current artifact guards;complete existing invocation-bound variant identity and conditional authored title cleanup |
-| 976 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0428 | ISSUES/RETAIN | BR-0202 | REFERENCE | Retain controller tests/current routing repairs;actual native hold/lifecycle and publication acceptance remains |
-| 977 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0434 | NO_INHERITED_EFFECT | GQR-0301 | PRIMARY | mouse edge/extreme tests; shared Android capability mismatch, no original reduction |
-| 978 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0436 | NO_INHERITED_EFFECT | GQR-0302 | PRIMARY | SoundFont and geometry tests;missing installed bytes despite existing identity,no original reduction |
-| 979 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0440 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | coop rewind/score/secret advance tests; checked staging byte identity, current native repairs retained, zero original reduction |
-| 980 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0442 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | cooperative ending/flyout deadline tests; checked staging byte identity, current native repairs retained, zero original reduction |
-| 981 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0445 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | controller/readability/coop save and briefing scripts; checked staging identity, distinct current repairs retained, zero original reduction |
-| 982 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0446 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | briefing reading/rejoin/release/countdown scripts; checked staging identity, current native repairs retained, zero original reduction |
-| 983 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0447 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | secret save/travel/world rollback scripts; checked staging identity, distinct native guards retained, zero original reduction |
-| 984 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0448 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | secret ending/race/cold/save scripts; checked staging identity, native repairs and distinct local roles retained, zero original reduction |
-| 985 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0449 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | briefing pause/deadline/movie scripts; checked staging identity and distinct authored-count/touch/authority/cleanup roles retained, zero original reduction |
-| 986 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0450 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | transition/death/disconnect/boss scripts; checked staging identity and distinct phase/life/arrival/local ending roles retained, zero original reduction |
-| 987 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0451 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | flyout/Guide-Bot scripts; retain distinct timing/pause/cage/spawn/dock/owner/observer/cold identity restore and checked staging, zero original reduction |
-| 988 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0452 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | travel/migration/latejoin/feedback scripts; retain companion carry and dock, distinct host swaps/reorder/cancel/recovery, launch feedback and checked staging, zero original reduction |
-| 989 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0454 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | reactor death, physical arrival/history, countdown, partial pickup and repeated recovery scripts; preserve exact current oracles and checked staged bytes, zero original reduction |
-| 990 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0455 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | recovery and restore-failure scripts; retain ordinary pickup, partial quantities, loss/error/rehost/status, tolerant optional gear and session reports, checked staged bytes, zero original reduction |
-| 991 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0456 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | retired-world and rewind scripts; retain exact record/campaign/private inventory, host selection and history prefix, two earlier targets, companion runtime/dock ownership, nested save chooser cancellation, checked staged bytes, zero original reduction |
-| 992 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0457 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics context and EGL failure scripts; retain actual retirement, accepted mode/MSAA recovery, known-color and VBO readback/state, UI readiness and deadlines, checked staged bytes, zero original reduction |
-| 993 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0458 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics accept and black-output scripts; retain actual blocked OK, accepted tuple/config mirrors/restart, pre-swap black readback/state, prearm failure capture, checked staged bytes and request identity, zero original reduction |
-| 994 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0459 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | prefs and FOV scripts; retain ordered preference completion, rollback, pilot reload, intro and shareware, six live FOV cases and pre-swap marker checks, exact staged bytes, zero original reduction |
-| 995 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0461 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics confirmation restart and stall scripts; retain input and debounce, deferred requested mode, normalexit restart and livepreview rollback oracle, exact staged bytes and correlated outcomes, zero original reduction |
-| 996 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0463 | NO_INHERITED_EFFECT | BR-0245 | REFERENCE | independent triggers recording and intro scripts; retain engine state and capture checks, require admitted current-screen input-caused dismissal, preserve current storage-close-reset-path-resolver repairs and distinct artifact/persistence/admission owners, zero original reduction |
-| 997 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0464 | NO_INHERITED_EFFECT | GQR-0290 | REFERENCE | graphics first-run lifecycle menu-abandon scripts; retain distinct marker-preview-recovery contracts, require truthful physical eligibility and generation-correlated runtime acceptance, preserve completed rollback repairs, zero original reduction |
-| 998 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0466 | NO_INHERITED_EFFECT | BR-0190 | REFERENCE | single-player endgame and Enemy Within scripts; retain distinct native endings and useful briefing/save sentinel, require checked fixture device identity and acknowledged screen/save generation, zero original reduction |
-| 999 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0467 | NO_INHERITED_EFFECT | BR-0671 | REFERENCE | unified content and Vertigo scripts; preserve ownership, HAM and GPU repairs, require exact optional selection and correlated snapshot/preview evidence, zero original reduction |
-| 1000 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0468 | NO_INHERITED_EFFECT | BR-0190 | REFERENCE | GuideBot and idle screen saver scripts; preserve native policy and route repairs, require checked current payload and correlated snapshot/background acceptance, zero original reduction |
-| 1001 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0469 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Graphics allocation multiplayer and interruption scripts; retain real GL failure recovery, deferred automap and paired peer checks, require exact current staged bytes and correlated observations, zero original reduction |
-| 1002 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0471 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | MSAA music restore track and native menu scripts; retain distinct real producers, require exact staged bytes and truthful completion/observation, zero original reduction |
-| 1003 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0472 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Mac graphics wall snapshot two-pass cache and mod scripts; retain distinct coverage, verify staged bytes and generation/observation, zero original reduction |
-| 1004 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0473 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Guide-Bot goal info metadata recall and routing scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1005 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0474 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Autoselect axis preview boss music and compute scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1006 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0475 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Guide-Bot graphics demo music and pilot scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1007 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0476 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Graphics exit preview rebuild and recovery scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1008 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0477 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Preview abort save-load lifecycle import objective and autosave scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1009 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0478 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | SAF audio secret launch and texture scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1010 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0479 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Automap media metadata and touch scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
-| 1011 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0053` | `PRE-0108` | `GQF-0036` | `PRIMARY` | saf_manifest_parser.c` retained strings and duplicate lookup |
-| 1012 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0481` | `RETAIN` | `GQR-0023` | `REFERENCE` | Retain strict atomic SAF publication and save projection; complete existing bounded parsing and deletion identity owners |
-| 1013 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0646` | `RETAIN` | `GQR-0023` | `REFERENCE` | Retain shared touch action policy and validated save/SAF projection; cover true publication and runtime generations at their owners |
-| 1014 | 47 | MEDIUM | 23/0/10/10/4 | `GQ2-CHUNK-0040` | `RETAIN` | `GQR-0124` | `REFERENCE` | Explicit nested container depth and complete attempt ownership, with escaping0253 and source-bound publication/oracle plans |
-| 1015 | 46 | MEDIUM | 23/0/6/10/7 | `GQ2-CHUNK-0184` | `REPAIR/RETAIN` | `GQF-0256/GQR-0242; GQR-0175; GQR-0191; GQR-0236; GQR-0239; BR-0206` | `PRIMARY` | D2 native save integration and timer cleanup |
-| 1016 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0104` | `PRE-0108` | `BR-0181` | `REFERENCE` | Compare the complete fpcalc reference fingerprint |
-| 1017 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0105` | `PRE-0108` | `BR-0662` | `REFERENCE` | Keep mailbox assertions active in registered builds |
-| 1018 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0115` | `NO_INHERITED_EFFECT` | `BR-0182` | `REFERENCE` | Exercise the production StuffIt parser in corpus tests |
-| 1019 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0154` | `RETAIN` | `BR-0224` | `REFERENCE` | Fail closed on unknown automation actions and debug fields |
-| 1020 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0156` | `RETAIN` | `BR-0231` | `REFERENCE` | Stop replay when direct-command policy fails |
-| 1021 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0160` | `RETAIN` | `BR-0396` | `REFERENCE` | Register route snapshot and cache tests with CTest |
-| 1022 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0163` | `RETAIN` | `BR-0396` | `REFERENCE` | Register route snapshot and cache tests with CTest |
-| 1023 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0444` | `RETAIN` | `GQR-0205` | `PRIMARY` | Preserve debug SAF pipe error status before ordinary writer close |
-| 1024 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0586` | `RETAIN` | `BR-0561` | `REFERENCE` | Retain a focused NAT simulation owner with canonical resolved endpoints and bounded mapping lifecycle |
-| 1025 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0048` | `RETAIN` | `GQR-0131` | `REFERENCE` | Complete remaining shared HMP success semantics while retaining original-file minimization |
-| 1026 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0296` | `RETAIN` | `GQR-0266` | `PRIMARY` | Provision selected instrumentation on actual secondary target; preserve fixture oracles |
-| 1027 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0297` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected lobby-latency instrumentation provisioning; preserve distinct fixture oracles |
-| 1028 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0298` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected slider/capability instrumentation provisioning; retain window repeat boundaries |
-| 1029 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0300` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected slider package/component consistency; retain config/native ownership |
-| 1030 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0301` | `RETAIN` | `GQR-0267` | `PRIMARY` | Bind Mac SAF selected package URI authority; retain private debug provider |
-| 1031 | 45 | MEDIUM | 12/12/4/10/7 | `GQ2-CHUNK-0224` | `CANDIDATE` | `GQR-0247; GQR-0194; GQR-0175; BR-0206; BR-0374; BR-0332` | `PRIMARY` | Escort path continuation, runtime and direct timeout cleanup |
-| 1032 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0020` | `PRE-0108` | `GQF-0059` | `PRIMARY` | Fingerprint matcher score serialization and best-CD selection |
-| 1033 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0022` | `PRE-0108` | `GQF-0063` | `PRIMARY` | CUE `FILE` directive grammar |
-| 1034 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0039` | `PRE-0108` | `GQF-0070` | `PRIMARY` | Windows `fingerprint_cd` CUE and BIN paths |
-| 1035 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0046` | `PRE-0108` | `BR-0077` | `REFERENCE` | Propagate loaded level failures to the metadata result |
-| 1036 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0047` | `PRE-0108` | `BR-0077` | `REFERENCE` | Propagate loaded level failures to the metadata result |
-| 1037 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0055` | `PRE-0108` | `GQF-0105` | `PRIMARY` | Song-list token versus engine filename capacity |
-| 1038 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0117` | `DEFER` | `GQF-0106` | `PRIMARY` | Container-track sidecar identity |
-| 1039 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0123` | `NO_INHERITED_EFFECT` | `GQF-0111` | `PRIMARY` | Mission ZIP loadable-level admission |
-| 1040 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQF-0111` | `REFERENCE` | Mission ZIP loadable-level admission |
-| 1041 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0126` | `NO_INHERITED_EFFECT` | `GQF-0111` | `REFERENCE` | Mission ZIP loadable-level admission |
-| 1042 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0147` | `RETAIN` | `BR-0289` | `REFERENCE` | Preserve resolution-scaled point primitives in GLES3 |
-| 1043 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0149` | `RETAIN` | `BR-0300` | `REFERENCE` | Remove or restore the dead D1-in-D2 level-start mode |
-| 1044 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0157` | `CANDIDATE` | `BR-0201` | `REFERENCE` | Restore the replay floating-point environment on every platform |
-| 1045 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0166` | `RETAIN` | `BR-0588` | `REFERENCE` | Correlate introspection reads with the current request |
-| 1046 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0201` | `RETAIN` | `GQF-0181` | `PRIMARY` | audio catalog payload lifetime, homing/HUD and demo codec |
-| 1047 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0224` | `RETAIN` | `BR-0588` | `REFERENCE` | Introspection sampling, menus, player, secrets and route snapshots |
-| 1048 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0225` | `RETAIN` | `BR-0288` | `REFERENCE` | Introspection route, Guide-Bot, thief, rendering, HUD and multiplayer snapshots |
-| 1049 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0230` | `RETAIN` | `GQR-0175` | `PRIMARY` | Input-demo fixture settings, RNG/checkpoint schema and restored timer admission |
-| 1050 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0263` | `RETAIN` | `GQF-0195` | `PRIMARY` | route geometry arithmetic, visibility cache, trigger source discovery and packing reconciliation |
-| 1051 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0265` | `RETAIN` | `GQF-0195` | `REFERENCE` | route objective progression, fleeing carrier anchors and partial-result semantics |
-| 1052 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0310` | `RETAIN` | `BR-0197` | `REFERENCE` | private model headers, disabled TGA breakpoint, model texture upload and ClassicDepth draw policy |
-| 1053 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0331` | `RETAIN` | `GQR-0196` | `PRIMARY` | D2 object runtime interfaces, native/hybrid physics diagnostics and PIG cache/replacement ownership |
-| 1054 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0353` | `RETAIN` | `GQR-0201` | `PRIMARY` | D2 DXA patch snapshot, integer/frame parsing and native row/field test codecs |
-| 1055 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0355` | `RETAIN` | `BR-0382` | `REFERENCE` | D2 Guide-Bot warp/release/commands, secret search, traversal and path-goal resolution |
-| 1056 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0356` | `RETAIN` | `GQR-0175` | `REFERENCE` | D2 Guide-Bot path continuation, runtime reconstruction, replay probes, thief inventory and partial menu |
-| 1057 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0367` | `RETAIN` | `BR-0386` | `REFERENCE` | D2 weapon/homing, energy and RNG hooks, guided rebuild and runtime state with current D1 adapter delegation |
-| 1058 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0371` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 classic demo control trace, event/dump admission, quick recording and current D1 identity hooks |
-| 1059 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0374` | `RETAIN` | `GQR-0175` | `REFERENCE` | D2 object allocator/runtime, warning view, FX RNG, diagnostics, missile-camera wakes and current cooperative death hooks |
-| 1060 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0380` | `RETAIN` | `BR-0197` | `REFERENCE` | D2 model string/name guards, disabled TGA breakpoint, texture upload and ClassicDepth policy |
-| 1061 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0426` | `RETAIN` | `BR-0559` | `REFERENCE` | AcoustID example rename, optional generated asset integration and keystore properties example |
-| 1062 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0427` | `RETAIN` | `BR-0471` | `REFERENCE` | Controller/touch frozen presets, full current successors/discovery and fingerprint matching configuration |
-| 1063 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0430` | `RETAIN` | `BR-0643` | `REFERENCE` | Complete known-discs corpus, identical current rename, strict full-byte audit and full current DiscIdentifier |
-| 1064 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0432` | `RETAIN` | `BR-0562` | `REFERENCE` | Complete frozen 196-line dependency manifest, full current delta, current JDK/fpcalc helpers, exact platform URL and updater pin paths |
-| 1065 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0437` | `RETAIN` | `GQR-0123` | `REFERENCE` | Complete Mac StuffIt oracle, identical current bytes, schema audit and full current native consumer |
-| 1066 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-SWEEP-014` | `RETAIN` | `GQR-0008` | `REFERENCE` | Tracked artifact recurrence, cleanup/retention contracts, formatter selection and release review hygiene sweep |
-| 1067 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0018` | `NO_INHERITED_EFFECT` | `GQR-0028` | `REFERENCE` | SOW append/output ownership and shared-budget diagnostic evidence limits |
-| 1068 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0078` | `RETAIN` | `GQR-0173` | `REFERENCE` | Weapon art debug fixture scoped failure cleanup, native clock admission and distinct Android/host oracles retained |
-| 1069 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0129` | `RETAIN` | `GQR-0173` | `REFERENCE` | Native hooks/getters retained; allocation/publication/freshness owners reconciled; current atomic/mailbox/mutex repairs; zero inherited saving |
-| 1070 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0214` | `RETAIN` | `GQR-0246; BR-0345; BR-0294` | `PRIMARY` | Native briefing parser and missing pagination repair |
-| 1071 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0029` | `PRE-0108` | `GQF-0075` | `PRIMARY` | Inno PE resource offset-table leaf |
-| 1072 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0045` | `PRE-0108` | `GQF-0095` | `PRIMARY` | Level-metadata process-global initialization retry |
-| 1073 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0098` | `PRE-0108` | `GQF-0069` | `PRIMARY` | CD fingerprint BIN source generation |
-| 1074 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0107` | `PRE-0108` | `GQF-0082` | `PRIMARY` | Inno solid-chunk decoded prefix and terminal routing |
-| 1075 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0150` | `RETAIN` | `BR-0222` | `REFERENCE` | Publish input-demo artifact sets transactionally |
-| 1076 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0152` | `RETAIN` | `GQF-0168` | `PRIMARY` | Replay current-frame direct-command acquisition |
-| 1077 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0023` | `NO_INHERITED_EFFECT` | `GQR-0082` | `REFERENCE` | Level-metadata runtime retirement and exception ownership |
-| 1078 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQR-0261` | `REFERENCE` | Shared travel retained; existing recovery-freeze remedy separate, zero inherited saving |
-| 1079 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0125` | `NO_INHERITED_EFFECT` | `GQR-0261` | `REFERENCE` | Travel continuation retained; existing recovery-freeze remedy separate, zero inherited saving |
-| 1080 | 43 | MEDIUM | 23/0/0/10/10 | `GQ2-CHUNK-0049` | `RETAIN` | `GQR-0254` | `PRIMARY` | Complete actual corpus PCM observation window while preserving production timeline and native format ownership |
-| 1081 | 43 | MEDIUM | 23/0/7/10/3 | `GQ1-CHUNK-0180` | `RETAIN` | `BR-0243` | REFERENCE | duplicate high-confidence diagnostic pagination loss is the only live root in this scope |
-| 1082 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0139` | `RETAIN` | `BR-0610` | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback |
-| 1083 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0140` | `RETAIN` | `BR-0610` | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback |
-| 1084 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0382` | `RETAIN` | `GQR-0110` | `REFERENCE` | Android native CMake dependency acquisition, SDL patches, compiler/options and first target registrations |
-| 1085 | 41 | MEDIUM | 12/5/7/10/7 | `GQ2-CHUNK-0186` | `CANDIDATE` | `GQR-0244` | `PRIMARY` | Native bitmap tail and unused frame reader |
-| 1086 | 41 | MEDIUM | 12/5/7/10/7 | `GQ2-CHUNK-0193` | `CANDIDATE` | `GQR-0158` | `REFERENCE` | D2 classic demo, menu and UDP header |
-| 1087 | 40 | MEDIUM | 25/0/5/6/4 | `GQ2-CHUNK-0068` | `RETAIN` | `GQR-0044` | `REFERENCE` | Retain actual transcript/route/admission fixture and completed0042/0043/0044; actual admitted JNI caller and paired post-proof state seams reconciled with explicit synthetic-crypto and historical runtime limits; no new root/status/inherited saving |
-| 1088 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0012` | `REFACTOR` | `BR-0101` | `REFERENCE` | Global mission audio fingerprint retention and whole-file lookup/update costs |
-| 1089 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0018` | `RETAIN` | `BR-0112` | `REFERENCE` | NAT sequential32-port reservation, startup errors and exhausted mapping admission |
-| 1090 | 39 | MEDIUM | 12/0/7/10/10 | `GQ1-CHUNK-0383` | `CANDIDATE` | `GQR-0203` | `PRIMARY` | Android D2 target tail, native compile/link fixups and complete paired executable source-list comparison |
-| 1091 | 39 | MEDIUM | 12/0/7/10/10 | `GQ2-CHUNK-0234` | `RETAIN` | `GQR-0203` | `REFERENCE` | Android native dependencies and per-game source registration |
-| 1092 | 38 | MEDIUM | 12/5/4/10/7 | `GQ1-CHUNK-0229` | `CANDIDATE` | `BR-0290` | `REFERENCE` | Input-demo diagnostic logger and duplicate inherited collision probes |
-| 1093 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0209` | `RETAIN` | `BR-0234` | `REFERENCE` | headless metadata runtime, cooperative diagnostics and canonical serializers |
-| 1094 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0312` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 polygon/morph UVL and RGB ownership, count guards, face counters and current indexed-color handling |
-| 1095 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0431` | `RETAIN` | `BR-0411` | `REFERENCE` | Complete 452-line version corpus, identical current rename, strict schema/alias audit and complete KnownVersions consumer |
-| 1096 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0451` | `RETAIN` | `BR-0494` | `REFERENCE` | Retain friend UI actions and replace terminal ICE ordinal projection under its existing owner |
-| 1097 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0171` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 instance palette and projection current delta |
-| 1098 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0271` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L1-L750 |
-| 1099 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0272` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L751-L1500 |
-| 1100 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0273` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L1501-L2068 |
-| 1101 | 35 | MEDIUM | 12/7/2/10/4 | `GQ1-SWEEP-015` | `RETAIN` | `GQR-0015` | `REFERENCE` | Current dead-code/schema cleanup, historical owner reconciliation and exact remaining analysis gates |
-| 1102 | 34 | LOW | 12/0/2/10/10 | `GQ1-CHUNK-0575` | `RETAIN` | `BR-0532` | `REFERENCE` | Retain narrow repository tooling policy and platform-specific build discovery; align existing C/C++ editor/formatter indentation |
-| 1103 | 33 | LOW | 12/0/4/10/7 | `GQ1-CHUNK-0060` | `PRE-0108` | `GQF-0117` | `PRIMARY` | Generated `descent.sng` alias bytes |
-| 1104 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0046` | `RETAIN` | `GQR-0073` | `REFERENCE` | Truthful Inno progress and exact Galaxy sink cancellation |
-| 1105 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0047` | `RETAIN` | `GQR-0073` | `REFERENCE` | Preserve actual native fixture scope and targeted Galaxy callback acceptance |
-| 1106 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0211` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294; GQR-0245` | `PRIMARY` | Native AI perception, frame completion and test scenario repair |
-| 1107 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0225` | `RETAIN` | `GQR-0248` | `PRIMARY` | Guidebot internal interface and owner-only state |
-| 1108 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0226` | `RETAIN` | `GQR-0248` | `REFERENCE` | Native route state, save and cadence |
-| 1109 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0228` | `RETAIN` | `GQR-0248` | `REFERENCE` | Native route goal and cache adoption |
-| 1110 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0252` | `RETAIN` | `GQR-0250` | `PRIMARY` | Campaign orchestration and native fixture changes |
-| 1111 | 33 | LOW | 12/0/4/10/7 | GQ2-CHUNK-0351 | REFACTOR | GQR-0275 | PRIMARY | Remove misleading proxy packet categories; preserve native protocol and transport owners |
-| 1112 | 31 | LOW | 12/0/2/10/7 | `GQ1-CHUNK-0425` | `RETAIN` | `BR-0407` | `REFERENCE` | VS Code C/C++, extensions and current Java/search settings |
-| 1113 | 30 | LOW | 12/0/2/6/10 | GQ2-CHUNK-0399 | PLANNED-SIMPLIFICATION/RETAIN | GQR-0294 | PRIMARY | Verify and remove core-only serialization compiler registration;keep runtime/app plugin and existing rounding owner |
-| 1114 | 12 | REFERENCE | 8/0/0/4/0 | `GQ1-RECHECK-0050` | `REMOVE` | `BR-0668` | `REFERENCE` | Assigned route-corpus wrapper and baseline were deleted in committed test cleanup |
-| 1115 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0064` | `PRE-0108` | - | `NONE` | Clean coverage; no live fix |
-| 1116 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0077` | `PRE-0108` | - | `NONE` | No live canonical fix remains |
-| 1117 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0078` | `PRE-0108` | - | `NONE` | Clean coverage; no live fix |
-| 1118 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0112` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
-| 1119 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0142` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
-| 1120 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0143` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
-| 1121 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0144` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
-| 1122 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0145` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
-| 1123 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0146` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
-| 1124 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0148` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
-| 1125 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0162` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
-| 1126 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0168` | `NO_INHERITED_EFFECT` | - | NONE | branch-added shared ownership is already natural and no new live defect survived reconciliation |
-| 1127 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0169` | `DEFER` | `BR-0029` | REFERENCE | all live quality evidence is already owned and the only minimization is an existing below-payoff deferral |
-| 1128 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0183` | `RETAIN` | - | NONE | all historical roots are closed or non-applicable and no new root survived complete reconciliation |
-| 1129 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0189` | `RETAIN` | NONE | `REFERENCE` | Frozen timer issue already repaired in live code |
-| 1130 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0199` | `RETAIN` | `NONE` | `REFERENCE` | automap predicates, boss HUD, bounded music reads and RLE validation |
-| 1131 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0228` | `RETAIN` | `none` | `REFERENCE` | Input-demo control state/pulse parsing, validation and coalescing |
-| 1132 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0236` | `RETAIN` | `none` | `REFERENCE` | shared recording facade declarations |
-| 1133 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0240` | `RETAIN` | `none` | `REFERENCE` | RNG trace C/C++ declarations, context/lifecycle signatures and suffix contract |
-| 1134 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0244` | `RETAIN` | `none` | `REFERENCE` | metadata view, route/state schemas, packing and declarations |
-| 1135 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0256` | `RETAIN` | `NONE` | `REFERENCE` | MIDI enumeration header contract and caller ownership |
-| 1136 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0259` | `RETAIN` | `NONE` | `REFERENCE` | UDP shared authentication, welcome/observer admission and proxy/rebind adapter reconciliation |
-| 1137 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0269` | `RETAIN` | `-` | `REFERENCE` | native object, visibility and shootable-wall callbacks |
-| 1138 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0276` | `RETAIN` | `-` | `REFERENCE` | shared storage failure dialog presentation |
-| 1139 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0279` | `RETAIN` | `-` | `REFERENCE` | paired model UVL ownership and ordinary/morph polygon admission |
-| 1140 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0308` | `RETAIN` | `none` | `REFERENCE` | native argument defaults/initialization, fatal exit and bounded current messages, HMP wrapper and PhysFS platform setup |
-| 1141 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0309` | `RETAIN` | `none` | `REFERENCE` | private texture-mapper declarations and balanced header guard |
-| 1142 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0319` | `RETAIN` | `none` | `REFERENCE` | D2 native type aliases, multisource audio declarations, bounded replay-label header and guarded typed xmodel interface |
-| 1143 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0321` | `RETAIN` | `none` | `REFERENCE` | D2 classic-demo dump snapshots, alias checks, temporary output and cleanup with current mount/input/asset-identity integration |
-| 1144 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0378` | `RETAIN` | `none` | `REFERENCE` | D2 argument defaults/init, fatal output, removed HMP wrapper and shared PhysFS initialization |
-| 1145 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0379` | `RETAIN` | `none` | `REFERENCE` | D2 private software texture mapper include guard |
-| 1146 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0381` | `RETAIN` | `none` | `REFERENCE` | Rust server manifest, removed json5 and scoped root lock consistency |
-| 1147 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0384` | `RETAIN` | `none` | `REFERENCE` | D1 root native CMake options, Android platform seam, prefixed dependencies and current host-test/sanitizer registration |
-| 1148 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0386` | `RETAIN` | `none` | `REFERENCE` | D1 3D archive prefix, platform compile option and dependency includes |
-| 1149 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0388` | `RETAIN` | `none` | `REFERENCE` | D1 native editor CMake identity and dependency includes |
-| 1150 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0389` | `RETAIN` | `none` | `REFERENCE` | D1 native IFF CMake identity and dependency includes |
-| 1151 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0392` | `RETAIN` | `-` | `REFERENCE` | D1 memory CMake target and paired native target context |
-| 1152 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0393` | `RETAIN` | `-` | `REFERENCE` | D1 misc CMake target naming, optional PNG registration and relocated defaults test |
-| 1153 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0394` | `RETAIN` | `-` | `REFERENCE` | D1 texture mapping CMake source and compile definition branches |
-| 1154 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0395` | `RETAIN` | `-` | `REFERENCE` | D1 UI CMake target naming and paired editor UI source context |
-| 1155 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0396` | `RETAIN` | `-` | `REFERENCE` | D1 external-model CMake target naming and paired renderer dependency context |
-| 1156 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0397` | `RETAIN` | `-` | `REFERENCE` | D2 native root naming, deterministic compiler settings, Android platform admission and current host test registration |
-| 1157 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0399` | `RETAIN` | `-` | `REFERENCE` | D2 3D CMake target naming, native Apple compiler policy and paired library context |
-| 1158 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0401` | `RETAIN` | `-` | `REFERENCE` | D2 editor CMake target naming and source registration |
-| 1159 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0402` | `RETAIN` | `-` | `REFERENCE` | D2 IFF CMake target naming and decoder registration |
-| 1160 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0406` | `RETAIN` | `-` | `REFERENCE` | D2 memory CMake target prefix and public dependencies |
-| 1161 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0407` | `RETAIN` | `-` | `REFERENCE` | D2 misc CMake target naming, optional PNG and relocated defaults test |
-| 1162 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0408` | `RETAIN` | `-` | `REFERENCE` | D2 texture-mapping CMake target prefix and software/ASM policy |
-| 1163 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0409` | `RETAIN` | `-` | `REFERENCE` | D2 editor UI target prefix and source inventory |
-| 1164 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0410` | `RETAIN` | `-` | `REFERENCE` | D2 external-model target prefix and renderer dependencies |
-| 1165 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0412` | `RETAIN` | `-` | `REFERENCE` | D1 install-note mission archive sentence |
-| 1166 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0413` | `RETAIN` | `-` | `REFERENCE` | D2 install-note mission archive sentence |
-| 1167 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0415` | `RETAIN` | `-` | `REFERENCE` | Shared music-name/track, PhysFS setup, rewind, RGBA and SAF focused native tests |
-| 1168 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0416` | `RETAIN` | `-` | `REFERENCE` | Audio format/read/decode, wall/GLES source, HOG catalog, replay limits, geometry and MIDI seek tests |
-| 1169 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0417` | `RETAIN` | `-` | `REFERENCE` | Secret-area scan state size, candidate saturation and opener/work-budget regression |
-| 1170 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0418` | `RETAIN` | `-` | `REFERENCE` | Custom audio staging/publication, disc fingerprint projection, storage guard and lobby packet contracts |
-| 1171 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0419` | `RETAIN` | `-` | `REFERENCE` | Paired player layout/text/transaction fixtures and D2 thief policy regression |
-| 1172 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0439` | `RETAIN` | `-` | `REFERENCE` | Complete source manifest, identical current rename, resolver and exclusion/test context |
-| 1173 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0442` | `RETAIN` | `-` | `REFERENCE` | Retain small explicit Gradle rendering/tool settings |
-| 1174 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0443` | `RETAIN` | `-` | `REFERENCE` | Retain debug-only nonexported SAF fixture registration |
-| 1175 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0448` | `RETAIN` | `-` | `REFERENCE` | Preserve immutable FileProvider generation store and completed exit-view removal |
-| 1176 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0529` | `RETAIN` | `none` | `REFERENCE` | Retain the closing boundary of the shared status-log composable; no inherited change or independent repair |
-| 1177 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0573` | `RETAIN` | `-` | `REFERENCE` | Retain explicit backup exclusions and confined FileProvider cache roots |
-| 1178 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0627` | `RETAIN` | `-` | `REFERENCE` | Retain concise current repository instructions and paired engine ownership guidance |
-| 1179 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0629` | `RETAIN` | `-` | `REFERENCE` | Retain the repository-level Codex instruction pointer |
-| 1180 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0630` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain removal of the stale nonconsumed D1/D2 OpenGL diff snapshot |
-| 1181 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0635` | `RETAIN` | `-` | `REFERENCE` | Retain the reviewed engine-generated secret baseline command and explicit required-asset gate |
-| 1182 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0657` | `RETAIN` | `NONE` | `REFERENCE` | Retain paired weapon slot/current presentation and shared ammo policy without another engine inventory copy |
-| 1183 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0670` | `RETAIN` | `NONE` | `REFERENCE` | Retain focused asset fixtures and thin paired baseline wrapper |
-| 1184 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0677` | `RETAIN` | `-` | `REFERENCE` | Retain shared recorder diagnostics and thin headless/graphics regression entry points |
-| 1185 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0678` | `RETAIN` | `-` | `REFERENCE` | Retain paired native fixture contracts, streaming boundary coverage and isolated sanitizer build selection |
-| 1186 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0679` | `RETAIN` | `-` | `REFERENCE` | Retain transactional direct-command policy, explicit partial-result contracts and strict RNG backend probes |
-| 1187 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0708` | `RETAIN` | `none` | `REFERENCE` | Retain small always-active ETC2 layout boundary regression |
-| 1188 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0715` | `RETAIN` | `none` | `REFERENCE` | Retain the completed local scroll-strip geometry plan and branch-owned math boundary |
-| 1189 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0031` | `RETAIN` | `-` | `REFERENCE` | Retain backup exclusion parity and identity ownership; declaration spacing only |
-| 1190 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0045` | `NO_INHERITED_EFFECT` | - | `NONE` | Retain complete third-party attribution; no live fix |
-| 1191 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0156` | `RETAIN` | `none` | `REFERENCE` | D1 instance and projection current delta |
-| 1192 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0158` | `RETAIN` | `none` | `REFERENCE` | D1 required IFF writer seek execution |
-| 1193 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0159` | `RETAIN` | `none` | `REFERENCE` | D1 native graphics, audio, argument and model interfaces |
-| 1194 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0161` | `RETAIN` | `BR-0294; BR-0269; GQR-0238; GQR-0239` | `REFERENCE` | D1 controls, menus, mission and native lifecycle |
-| 1195 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0164` | `RETAIN` | `BR-0294; GQR-0236; BR-0206` | `REFERENCE` | D1 later UDP native integration |
-| 1196 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0167` | `RETAIN` | `none` | `REFERENCE` | D1 early UDP native integration |
-| 1197 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0168` | `RETAIN` | `GQR-0142/0157 completed` | `REFERENCE` | D1 native utility ownership |
-| 1198 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0173` | `RETAIN` | `none` | `REFERENCE` | D2 editor trigger disk-size boundary |
-| 1199 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0174` | `RETAIN` | `none` | `REFERENCE` | D2 IFF seek execution and BODY chunk positioning |
-| 1200 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0175` | `RETAIN` | `none` | `REFERENCE` | D2 native graphics, audio, argument and model interfaces |
-| 1201 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0178` | `RETAIN` | `BR-0294; BR-0345` | `REFERENCE` | D2 trigger, terrain, presentation and wall integration |
-| 1202 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0180` | `RETAIN` | `BR-0294; BR-0269; BR-0386; GQR-0175` | `REFERENCE` | D2 controls, menus, mission and native lifecycle |
-| 1203 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0181` | `RETAIN` | `native D1-in-D2 owners` | `REFERENCE` | Native D1 semantics and trigger-storage interfaces |
-| 1204 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0182` | `RETAIN` | `native weapon and upstream backport owners` | `REFERENCE` | D2 native weapon selection and first-pickup policy |
-| 1205 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0183` | `RETAIN` | `native D1-in-D2 owners` | `REFERENCE` | Retired root-level D1 policy files and live replacement owners |
-| 1206 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0185` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native AI interface and asset identity |
-| 1207 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0187` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native asset publication, sound preparation and ownership |
-| 1208 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0188` | `RETAIN` | `GQR-0238; GQR-0185` | `REFERENCE` | Native cockpit drawing and lifecycle tail |
-| 1209 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0190` | `RETAIN` | `BR-0294; BR-0206; GQR-0175` | `REFERENCE` | D2 native AI integration |
-| 1210 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0192` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native Guidebot publication and renamed replay helpers |
-| 1211 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0194` | `RETAIN` | `BR-0294; GQR-0236; GQR-0238` | `REFERENCE` | D2 level progression, gauges and Guidebot interface |
-| 1212 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0195` | `RETAIN` | `GQR-0198` | `REFERENCE` | Custom native generations and relocated interfaces |
-| 1213 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0196` | `RETAIN` | `GQR-0191; GQR-0175; BR-0206` | `REFERENCE` | Native checkpoint runtime fidelity and extended sounds |
-| 1214 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0197` | `RETAIN` | `BR-0294; BR-0377; GQR-0244` | `REFERENCE` | D2 object, physics and PIG registry reconciliation |
-| 1215 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0198` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native session facade, weapon interfaces and model validation |
-| 1216 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0199` | `RETAIN` | `GQR-0004; BR-0294; BR-0206; BR-0345` | `REFERENCE` | D2 flyout integration and Guidebot goal policy |
-| 1217 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0200` | `RETAIN` | `BR-0294; BR-0206; BR-0345; GQR-0197` | `REFERENCE` | Guidebot routing tail, HUD and native startup |
-| 1218 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0201` | `RETAIN` | `GQR-0190; GQR-0238; BR-0294; BR-0345` | `REFERENCE` | D2 native mine, palette, rendering and level loading |
-| 1219 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0202` | `RETAIN` | `GQR-0092; BR-0345` | `REFERENCE` | D2 robot serialization, scores and music admission |
-| 1220 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0203` | `RETAIN` | `GQR-0198; BR-0345` | `REFERENCE` | Native presentation, text, object ordering and interfaces |
-| 1221 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0204` | `RETAIN` | `GQR-0197; GQR-0182; BR-0381; BR-0294` | `REFERENCE` | D2 inherited AI path and Guidebot geometry integration |
-| 1222 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0205` | `RETAIN` | `GQR-0198` | `REFERENCE` | Retired custom-asset overlay |
-| 1223 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0206` | `RETAIN` | `GQR-0198; GQR-0244` | `REFERENCE` | Retired hybrid native asset facade |
-| 1224 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0207` | `RETAIN` | `BR-0381; BR-0294` | `REFERENCE` | Native D1 path construction and following |
-| 1225 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0208` | `RETAIN` | `BR-0206` | `REFERENCE` | Native D1 saved AI layout and storage |
-| 1226 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0209` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294` | `REFERENCE` | Native AI records, actor roles, awareness and bosses |
-| 1227 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0210` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294` | `REFERENCE` | Native AI frame preparation, movement and shot ownership |
-| 1228 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0212` | `RETAIN` | `GQR-0198; GQR-0199` | `REFERENCE` | Native property, model and sample preparation |
-| 1229 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0213` | `RETAIN` | `GQR-0198; GQR-0244` | `REFERENCE` | Native and optional bitmap decoding and legacy mapping |
-| 1230 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0215` | `RETAIN` | `GQR-0246; BR-0345; BR-0294` | `REFERENCE` | Native briefing window, resource and profile lifetime |
-| 1231 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0216` | `RETAIN` | `GQR-0175; GQR-0185; GQR-0238` | `REFERENCE` | Native cockpit layout and score drawing |
-| 1232 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0217` | `RETAIN` | `GQR-0175; GQR-0185; GQR-0238` | `REFERENCE` | Native cockpit decoding, gauges and weapon panels |
-| 1233 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0218` | `RETAIN` | `GQR-0198; GQR-0199` | `REFERENCE` | Optional Guidebot source, dependency and generation preparation |
-| 1234 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0219` | `RETAIN` | `GQR-0175; BR-0206` | `REFERENCE` | Native level policy, triggers and progression |
-| 1235 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0220` | `RETAIN` | `GQR-0175; GQR-0240; BR-0206; BR-0294` | `REFERENCE` | Native gameplay, reactor and physics semantics |
-| 1236 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0221` | `RETAIN` | `GQR-0175; GQR-0189; GQR-0240; BR-0294` | `REFERENCE` | Native weapon order, homing and projectile policy |
-| 1237 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0222` | `RETAIN` | `BR-0332; BR-0381; GQR-0197; GQR-0175; BR-0294` | `REFERENCE` | Escort routing extraction and removed state body |
-| 1238 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0223` | `RETAIN` | `BR-0374; BR-0382; BR-0384; BR-0332; BR-0294; GQR-0197` | `REFERENCE` | Escort docking, commands and physical path setup |
-| 1239 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0229` | `RETAIN` | `none` | `REFERENCE` | D2 early UDP native integration |
-| 1240 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0230` | `RETAIN` | `BR-0294; GQR-0236; BR-0206` | `REFERENCE` | D2 later UDP native integration |
-| 1241 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0231` | `RETAIN` | `GQR-0142/0157 completed` | `REFERENCE` | D2 native utility ownership |
-| 1242 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0233` | `NO_INHERITED_EFFECT` | `none` | `REFERENCE` | Server JSON5 dependency retirement |
-| 1243 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0235` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662` | `REFERENCE` | D1 root test and instrumentation registration |
-| 1244 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0236` | `RETAIN` | `GQR-0185; GQR-0238` | `REFERENCE` | D1 shared renderer and sound source registration |
-| 1245 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0238` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662; GQR-0011` | `REFERENCE` | D1 maths test-graph relocation |
-| 1246 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0239` | `RETAIN` | `none` | `REFERENCE` | D1 misc argument-test relocation |
-| 1247 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0240` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662` | `REFERENCE` | D2 root test and instrumentation registration |
-| 1248 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0241` | `RETAIN` | `GQR-0185; GQR-0238` | `REFERENCE` | D2 shared renderer and sound source registration |
-| 1249 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0243` | `RETAIN` | `none` | `REFERENCE` | D2 maths test-graph relocation |
-| 1250 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0244` | `RETAIN` | `none` | `REFERENCE` | D2 misc argument-test relocation |
-| 1251 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0246` | `RETAIN` | `none` | `REFERENCE` | Native D1-in-D2 ownership documentation |
-| 1252 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0248` | `RETAIN` | `none` | `REFERENCE` | Native MIDI, mission classification and storage test ownership |
-| 1253 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0249` | `RETAIN` | `none` | `REFERENCE` | Secret liquid classification and identity fixture ownership |
-| 1254 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0251` | `RETAIN` | `none` | `REFERENCE` | Owned automation transitions and graphics fault trigger |
-| 1255 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0253` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native network asset fixture ownership |
-| 1256 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0254` | `RETAIN` | `GQR-0250` | `REFERENCE` | Campaign catalog, device adapter and traffic/control oracles |
-| 1257 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0255` | `RETAIN` | `GQR-0250` | `REFERENCE` | Campaign recovery, lobby and native lifecycle scenarios |
-| 1258 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0256` | `RETAIN` | `none` | `REFERENCE` | Server mission readiness integration assertions |
-| 1259 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0257` | `RETAIN` | `none` | `REFERENCE` | Editor import and searchable metadata settings |
-| 1260 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0258` | `RETAIN` | `none` | `REFERENCE` | Distribution policy, AcoustID example and store recipes |
-| 1261 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0259` | `RETAIN` | `none` | `REFERENCE` | Touch default and canonical fingerprint settings |
-| 1262 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0260` | `RETAIN` | `none` | `REFERENCE` | Measured EQ provenance and stock robot labels |
-| 1263 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0261` | `RETAIN` | `none` | `REFERENCE` | Controller defaults and retired touch preset consolidation |
-| 1264 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0274` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L1-L750 |
-| 1265 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0275` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L751-L1500 |
-| 1266 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0276` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L1501-L2250 |
-| 1267 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0277` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L2251-L3000 |
-| 1268 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0278` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L3001-L3750 |
-| 1269 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0279` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L3751-L4464 |
-| 1270 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0280` | `RETAIN` | `none` | `REFERENCE` | Benchmark manifest L1-L109 |
-| 1271 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0281` | `RETAIN` | `none` | `REFERENCE` | Tool pins and CD manifest delta 0281 |
-| 1272 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0282` | `RETAIN` | `none` | `REFERENCE` | Tool pins and CD manifest delta 0282 |
-| 1273 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0288` | `RETAIN` | `none` | `REFERENCE` | Regression and CD source metadata 0288 |
-| 1274 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0295` | `RETAIN` | `none` | `REFERENCE` | Workflow and Gradle settings 0295 |
-| 1275 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0299` | `RETAIN` | - | `NONE` | Retain real recovery oracles and current owner repairs; existing deadline/lifetime acceptance remains |
-| 1276 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0302` | `RETAIN` | - | `NONE` | Clean direct update stub; retain conditional source/dependency boundary |
-| 1277 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0363 | RETAIN | - | NONE | Clean resource boundaries; preserve legacy qualifier, identity backup exclusions and storage export grants |
-| 1278 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0371 | RETAIN | - | NONE | Retain narrow workspace retention and concrete guards; no inherited change or newly established finding |
-| 1279 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0398 | RETAIN | - | REFERENCE | Metadata CLI build declarations consistent;retain shared core,pins,JDK21 and actual MainKt distribution entry |
-| 1280 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0406 | NO_INHERITED_EFFECT/EXISTING-OWNER | - | REFERENCE | Retain concise instructions and current CTest repairs;refresh workflow-backed CI coverage and noninteractive helper contracts under existing owners |
-| 1281 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0407 | NO_INHERITED_EFFECT/RETAIN | - | REFERENCE | Retain the concise authoritative project instruction pointer and blank separator |
-| 1282 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0408 | NO_INHERITED_EFFECT/RETAIN | BR-0001 | REFERENCE | Retain removal of obsolete renderer diff snapshot and narrow artifact recurrence controls |
-| 1283 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0409 | NO_INHERITED_EFFECT/RETAIN | BR-0001 | REFERENCE | Retain deletion of unexplained root failure marker and narrow artifact recurrence controls |
-| 1284 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0413 | NO_INHERITED_EFFECT | - | NONE | Retain complete audio notices and distinct component identities; no live fix |
-| 1285 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0415 | NO_INHERITED_EFFECT | - | NONE | Retain benchmark contract and current repairs; clarify prerequisites and evidence limits when maintained |
-| 1286 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0416 | NO_INHERITED_EFFECT | - | NONE | Retain bounded runtime and emulator policy; preserve installer repairs and separate general bootstrap obligations |
-| 1287 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0417 | NO_INHERITED_EFFECT | - | NONE | Retain provenance evidence semantics; separate historical validation and existing admission or generation obligations |
-| 1288 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0419 | CLEAN/RETAIN | none | REFERENCE | Preserve capture and synth guide provenance,current settings and explicit audio/device validation limits |
-| 1289 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0420 | NEW-CONTEXT-ISSUE/RETAIN | none | REFERENCE | Retain test-guide contracts;separate two-helper SoundFont default oracle47,never pool with guide0 |
-| 1290 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0421 | NEW-CONTEXT-ISSUES/RETAIN | none | REFERENCE | Preserve FM/music guide contracts;separate existingdefault and newaudition/FMfixture owners,unpooled guide0 |
-| 1291 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0422 | CLEAN/RETAIN | none | REFERENCE | Retain generated index metadata and four existing owner boundaries;no new finding or inherited saving |
-| 1292 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0423 | CLEAN/RETAIN | none | REFERENCE | Retain demo reference identities and jsonc filename corrections;existing owner continuations and current repairs preserved |
-| 1293 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0424 | ISSUES/RETAIN | BR-0006 | REFERENCE | Retain PO2 handoff and native format safety;qualify stale HMQ and sound status under existing documentation owner |
-| 1294 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0425 | CLEAN/RETAIN | - | REFERENCE | Retain nonblank-preserving mod guide presentation changes;conditional guide cleanup and current verifier/native/converter ownership preserved |
-| 1295 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-SUP-SETUP-TAIL-20261011 | RETAIN | - | NONE | Clean omitted SetupSections tail; retain native policy and paired extension declarations |
+| 320 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0482 | NO_INHERITED_EFFECT | BR-0029 | REFERENCE | Unified gamepad menu navigation script; retain native/overlay focus and release contracts, finish engine focus snapshot/request retirement/staged bytes/completed attempts, zero original reduction |
+| 321 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0483 | NO_INHERITED_EFFECT | GQR-0170 | REFERENCE | Graphics capabilities script; retain graphics rollback/capability/probe/UI contracts, finish existing C-JNI publication/renderer admission/request ownership, zero original reduction |
+| 322 | 56 | MEDIUM-HIGH | 32/0/7/10/7 | GQ2-CHUNK-0484 | NO_INHERITED_EFFECT | GQR-0170 | REFERENCE | Graphics confirmation input script; retain confirmation fresh-held-repeat-touch/deadline/rollback contracts, finish existing C-JNI publication/lifecycle request ownership, zero original reduction |
+| 323 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0013` | `PRE-0108` | `GQF-0047` | `PRIMARY` | ISO output directory traversal and final opens |
+| 324 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0018` | `PRE-0108` | `BR-0497` | `REFERENCE` | Authenticate and bound dynamic host-proxy peer admission |
+| 325 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0021` | `PRE-0108` | `GQF-0061` | `PRIMARY` | Complete CD extraction attempt budget |
+| 326 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0030` | `PRE-0108` | `GQF-0051` | `PRIMARY` | STi2 method-15 decode scratch |
+| 327 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0031` | `PRE-0108` | `GQF-0078` | `PRIMARY` | Inno version admission arithmetic |
+| 328 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0032` | `PRE-0108` | `GQF-0076` | `PRIMARY` | Inno metadata LZMA peak-live memory |
+| 329 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0033` | `PRE-0108` | `GQF-0083` | `PRIMARY` | Inno aggregate repeated solid-chunk decoding |
+| 330 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0034` | `PRE-0108` | `GQF-0083` | `REFERENCE` | Inno aggregate repeated solid-chunk decoding |
+| 331 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0036` | `PRE-0108` | `GQF-0047` | `REFERENCE` | ISO output directory traversal and final opens |
+| 332 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0043` | `PRE-0108` | `GQF-0051` | `REFERENCE` | STi2 method-15 decode scratch |
+| 333 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0049` | `PRE-0108` | `BR-0080` | `REFERENCE` | Validate ship-status player and weapon indices before caching or display |
+| 334 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0054` | `PRE-0108` | `GQF-0100` | `PRIMARY` | ZIP early-marker prompt bypass |
+| 335 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0056` | `PRE-0108` | `GQF-0108` | `PRIMARY` | RAR policy rejection fallback |
+| 336 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0061` | `PRE-0108` | `GQF-0118` | `PRIMARY` | Nested mission music container catalogs |
+| 337 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0062` | `PRE-0108` | `GQF-0119` | `PRIMARY` | Streaming descriptor nested music budget |
+| 338 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0063` | `PRE-0108` | `BR-0090` | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication |
+| 339 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0065` | `PRE-0108` | `BR-0106` | `REFERENCE` | Fail closed when Google authentication is not configured |
+| 340 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0066` | `PRE-0108` | `BR-0108` | `REFERENCE` | Reject incomplete TLS configuration instead of serving plaintext |
+| 341 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0067` | `PRE-0108` | `BR-0090` | `REFERENCE` | Implement the server's keypair fallback for clients without Play Games authentication |
+| 342 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0068` | `PRE-0108` | `BR-0121` | `REFERENCE` | Enforce the friend-state authorization invariant on accept, presence, and join |
+| 343 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0069` | `PRE-0108` | `BR-0127` | `REFERENCE` | Give every WebSocket connection generation-safe session ownership |
+| 344 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0070` | `PRE-0108` | `BR-0132` | `REFERENCE` | Authenticate each relay endpoint and preserve its exact lobby slot |
+| 345 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0071` | `PRE-0108` | `BR-0137` | `REFERENCE` | Fail closed when ban enforcement cannot read the database |
+| 346 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0073` | `PRE-0108` | `BR-0115` | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work |
+| 347 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0075` | `PRE-0108` | `BR-0115` | `REFERENCE` | Bound WebSocket messages and every client-controlled field before work |
+| 348 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0076` | `PRE-0108` | `BR-0116` | `REFERENCE` | Validate and cap ICE candidates before storing or expanding them |
+| 349 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0079` | `PRE-0108` | `GQF-0024` | `PRIMARY` | android/app/src/main/cpp/CMakeLists.txt` production dependency fetches |
+| 350 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0083` | `PRE-0108` | `GQF-0125` | `PRIMARY` | Bounded extraction Python runtime |
+| 351 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0084` | `PRE-0108` | `GQF-0127` | `PRIMARY` | Bounded extractor descendant ownership |
+| 352 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0088` | `PRE-0108` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
+| 353 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0090` | `PRE-0108` | `GQF-0128` | `PRIMARY` | Extractor link and special-file outputs |
+| 354 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0092` | `PRE-0108` | `GQF-0078` | `REFERENCE` | Inno version admission arithmetic |
+| 355 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0095` | `PRE-0108` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
+| 356 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0106` | `PRE-0108` | `GQF-0076` | `REFERENCE` | Inno metadata LZMA peak-live memory |
+| 357 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0119` | `NO_INHERITED_EFFECT` | `GQF-0061` | `REFERENCE` | Complete CD extraction attempt budget |
+| 358 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0121` | `NO_INHERITED_EFFECT` | `GQF-0119` | `REFERENCE` | Streaming descriptor nested music budget |
+| 359 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0122` | `NO_INHERITED_EFFECT` | `GQF-0118` | `REFERENCE` | Nested mission music container catalogs |
+| 360 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0128` | `CANDIDATE` | `GQF-0127` | `REFERENCE` | Bounded extractor descendant ownership |
+| 361 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0130` | `NO_INHERITED_EFFECT` | `GQF-0125` | `REFERENCE` | Bounded extraction Python runtime |
+| 362 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0390` | `RETAIN` | `GQR-0011` | `REFERENCE` | D1 native executable/source/Android policy, headless metadata/test construction and paired desktop JSON fallback |
+| 363 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0391` | `RETAIN` | `GQR-0011` | `REFERENCE` | D1 maths target naming, platform math, relocated native test graph and current shared test registration |
+| 364 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0404` | `RETAIN` | `GQR-0011` | `REFERENCE` | D2 native executable/source inventories, headless/route/metadata targets and desktop JSON acquisition |
+| 365 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0405` | `RETAIN` | `GQR-0011` | `REFERENCE` | D2 maths target and completed native test relocation |
+| 366 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0606` | `RETAIN` | `GQR-0011` | `REFERENCE` | Align paired packet-log consumers with the native producer; finish existing verified texture-tool acquisition |
+| 367 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0716` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 368 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0717` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 369 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0718` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 370 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0719` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 371 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0720` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 372 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0721` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 373 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0722` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 374 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0723` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 375 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0724` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 376 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0725` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 377 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0726` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 378 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0727` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 379 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0728` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 380 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0729` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 381 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0730` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 382 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0731` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 383 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0732` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 384 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0733` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 385 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0734` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 386 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0735` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 387 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0736` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 388 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0737` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 389 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0738` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 390 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0739` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 391 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0740` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 392 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0741` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 393 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0742` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 394 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0743` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 395 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0744` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 396 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0745` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 397 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0746` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 398 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0747` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 399 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0748` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 400 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-CHUNK-0749` | `RETAIN` | `BR-0002` | `REFERENCE` | Complete historical-document mechanical provenance/content classification; existing publication owner |
+| 401 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ1-SWEEP-007` | `RETAIN` | `GQR-0011` | `REFERENCE` | Build portability, exact tool identity, verified dependency publication and release artifact admission sweep |
+| 402 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0011` | `NO_INHERITED_EFFECT` | `BR-0090` | `REFERENCE` | Direct-install caller and non-Play signed-key fallback owner |
+| 403 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0019` | `RETAIN` | `GQR-0038` | `REFERENCE` | Production STi2 reservation ownership and JNI/query acceptance plans |
+| 404 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0021` | `NO_INHERITED_EFFECT` | `GQR-0048` | `REFERENCE` | Reopened complete-attempt budget for standalone ISO primary/nested counter reset; CUE/CLI repair retained |
+| 405 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0027` | `RETAIN` | `GQR-0106` | `REFERENCE` | Streaming expansion accounting, staged generation lease and stable source identity |
+| 406 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0029` | `RETAIN` | `GQR-0106` | `REFERENCE` | Streaming skip/rejection accounting, extraction generations and contained-track name identity |
+| 407 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0030` | `RETAIN` | `GQR-0096` | `REFERENCE` | RAR admitted metadata/cause dispatch, ZIP identity and streaming policy |
+| 408 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0032` | `RETAIN` | `BR-0090` | `REFERENCE` | Preserve flavor isolation and complete existing non-Play fallback |
+| 409 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0035` | `RETAIN` | `GQR-0011` | `REFERENCE` | Shared verified dependency cache/source admission and actual minimum/incremental/test acceptance |
+| 410 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0038` | `RETAIN` | `GQR-0114` | `REFERENCE` | Cancellation-safe child owner setup and bounded complete validator traversal |
+| 411 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0042` | `RETAIN` | `GQR-0048` | `REFERENCE` | Complete legacy Mac CD attempt admission and source-bound independent reference ownership |
+| 412 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0109` | `NO_INHERITED_EFFECT` | `GQR-0011` | `REFERENCE` | Music DSP/calibration/limits diagnosis; existing broader FluidSynth dependency acceptance reference, corpus0254/productionHMP0131 retained |
+| 413 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | `GQ2-CHUNK-0315` | `RETAIN` | `GQR-0096` | `REFERENCE` | Retain incremental RAR admission, touch-action gates and shared robot labels; existing facade, input lifecycle/parity and applied-preview acceptance |
+| 414 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0360 | RETAIN | GQR-0048 | REFERENCE | Disc and ISO attempt continuity, truthful outcomes and owned cleanup; preserve native/staged publication repairs |
+| 415 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0374 | RETAIN | BR-0090 | REFERENCE | App distribution/source sets/native/generated source/fixture review; existing production direct-auth owner and build policy acceptance |
+| 416 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0393 | RETAIN | GQR-0114 | REFERENCE | GuideBot runner actual RAR extractor setup cancellation; recovery projection separate local47 |
+| 417 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0394 | RETAIN | GQR-0114 | REFERENCE | GuideBot runner actual RAR extractor setup cancellation; recovery projection separate local47 |
+| 418 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0401 | RETAIN/EXISTING-OWNER | GQR-0011 | REFERENCE | Preserve verified acquisition and incremental manifest/min-tool obligations;completed headless extraction retained |
+| 419 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0402 | RETAIN/EXISTING-OWNER+PLANNED-FIX | GQR-0011 | REFERENCE | Extend native/package acquisition admission;separate conditional complete-RPATH38 and retained inherited repairs |
+| 420 | 56 | MEDIUM-HIGH | 32/0/10/10/4 | GQ2-CHUNK-0427 | ISSUES/RETAIN | GQR-0096 | REFERENCE | Retain policy tests and current music-pause/RAR repairs;existing actual-caller admission and lifecycle acceptance remains |
+| 421 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0091` | `RETAIN` | `GQR-0236` | `REFERENCE` | Cooperative save generation/publication with distinct native pause, scheduler, bonus, JSON and restore-intent acceptance |
+| 422 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0095` | `RETAIN` | `GQR-0236` | `REFERENCE` | Endlevel observation, bounded route/scenery metadata and wall-blast pool; preserve Android write-error latch and complete save-generation recovery acceptance |
+| 423 | 56 | MEDIUM-HIGH | 28/0/8/10/10 | `GQ2-CHUNK-0112` | `NO_INHERITED_EFFECT` | `GQR-0236` | `PRIMARY` | Secret/sound/save diagnosis; generation recovery and distinct pause/allocation/body owners retained |
+| 424 | 55 | MEDIUM-HIGH | 32/0/7/10/6 | `GQ2-CHUNK-0071` | `RETAIN` | `GQR-0169` | `REFERENCE` | All11 frozen scopes/current endgame/status deltas and named paired consumers reconciled; retain0169 JSON,BR0195 authority,BR0206 restore,BR0507 handoff and0236 recovery; preserve completed0189; no new root/status/inherited saving |
+| 425 | 54 | MEDIUM-HIGH | 32/0/2/10/10 | `GQ1-CHUNK-0709` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain intentional launcher and Redbook inputs; reconcile remaining generated extraction residue with existing hygiene owner |
+| 426 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0074` | `PRE-0108` | `BR-0148` | `REFERENCE` | Track and complete connectivity checks per player pair |
+| 427 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0287` | `RETAIN` | `GQR-0187` | `PRIMARY` | native title/briefing/cache/weapon/rewind interfaces and D1 text extension |
+| 428 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0320` | `RETAIN` | `GQR-0193` | `PRIMARY` | D2 MVE output-rate conversion, custom allocation, startup trim and callback/producer/teardown ownership |
+| 429 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0322` | `RETAIN` | `GQR-0194` | `PRIMARY` | D2 Guide-Bot menu dispatch, scaled source allocation and native cooperative owner generation with current extensions |
+| 430 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0326` | `RETAIN` | `GQR-0195` | `PRIMARY` | D1-in-D2 facade, exact RLE/remap and model structural validation with unchecked signed renderer fields |
+| 431 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0350` | `RETAIN` | `GQR-0195` | `REFERENCE` | D2 original model/Guide-Bot/effect/wall/robot publication overlay |
+| 432 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0352` | `RETAIN` | `GQR-0200` | `PRIMARY` | D1 checkpoint object/AI/world validation and current morph/stuck/effect staging |
+| 433 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0403` | `RETAIN` | `GQR-0193` | `REFERENCE` | D2 movie decoder CMake target naming, optional mixer links and platform timing definitions |
+| 434 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0411` | `RETAIN` | `BR-0398` | `REFERENCE` | Server deployment, LAN certificate, service, NAT and Rust maintenance scripts |
+| 435 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0475` | `RETAIN` | `GQR-0212` | `PRIMARY` | Retain validated BinHex integrity and preview lifecycle repairs; enforce the existing shared live-memory policy during BinHex decoding |
+| 436 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0483` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared preview lifecycle and game UI ownership; finish existing IME and preview acceptance |
+| 437 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0486` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain asynchronous settings inventories and active-set ownership; complete existing configuration and reset transactions |
+| 438 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0494` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain controller page and raw input diagnostics; close existing persistence and nested picker owners |
+| 439 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0496` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain paired picker controls and shared dialog motion bridge; finish existing transactional state and slot publication owners |
+| 440 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0498` | `RETAIN` | `BR-0438` | `REFERENCE` | Retain staged engine toggles and preset confirmation; complete coherent multi-owner preference publication |
+| 441 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0533` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared CD and audio preview composition; finish existing preview ownership and completion contracts |
+| 442 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0534` | `RETAIN` | `GQR-0219` | `PRIMARY` | Retain shared strip geometry; make valid oversized vertical spans safe in the touch editor |
+| 443 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0535` | `RETAIN` | `BR-0016` | `REFERENCE` | Retain shared launcher orchestration and repaired admission boundaries; finish existing durable launch generations |
+| 444 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0558` | `RETAIN` | `GQR-0219` | `REFERENCE` | Preserve shared finite-domain and current-only touch parsing; reconcile typed action and accepted strip geometry owners |
+| 445 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0559` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain one current touch codec; finish typed radial and finite oversized-strip acceptance without compatibility paths |
+| 446 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0561` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain current stacked gesture and presentation helpers; make editor drag safe for accepted vertical strip geometry |
+| 447 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0562` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain shared diagnostic and stacked hit geometry; fix the existing valid oversized vertical clamp at its actual mover |
+| 448 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0563` | `RETAIN` | `GQR-0219` | `REFERENCE` | Keep bounded shared property controls; finish existing strip clamp, Custom preset and typed binding contracts |
+| 449 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0614` | `RETAIN` | `GQR-0212` | `REFERENCE` | Retain shared descriptor and normalized atomic publication; complete exact selectors, source identity and deterministic bounded AcoustID policy |
+| 450 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-CHUNK-0644` | `RETAIN` | `GQR-0219` | `REFERENCE` | Retain shared save projections, launch admission and strip geometry; extend accepted finite geometry and integration acceptance |
+| 451 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ1-SWEEP-008` | `REFACTOR` | `BR-0662` | `REFERENCE` | Test registration, enabled assertions, fixture admission, source-contract limitations and actual integration coverage sweep |
+| 452 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0082` | `RETAIN` | `GQR-0255` | `PRIMARY` | Validate restored resumable workspace while retaining explicit codec and separate guided geometry/flight contracts |
+| 453 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0100` | `RETAIN` | `GQR-0255` | `REFERENCE` | Guide-Bot message lifecycle overlay diagnostics and restored resumable workspace admission |
+| 454 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0016` | `REFERENCE` | MIDI preview metadata and seek source diagnosis; existing broader preview lifecycle reference, quoted UTF8 owner0258 and MIDI EOF-clock0276 retained |
+| 455 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0130` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared certifier/native frontier and publication retained; restored workspace owner reference; compiled versus budgeted paths reconciled; zero inherited saving |
+| 456 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0131` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared certifier recovery/identity/native activation retained; approximate confirmation acceptance limits; existing restored workspace owner; zero inherited saving |
+| 457 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0132` | `RETAIN` | `GQR-0255` | `REFERENCE` | Shared shooting search/cache/native boundary retained; restored workspace and geometry owners preserved; callback reuse limits; zero inherited saving |
+| 458 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | `GQ2-CHUNK-0145` | `RETAIN` | `GQR-0265` | `PRIMARY` | Retain migrated native ownership; bound failed full sample-buffer flush; investigate interrupted-negative cache provenance |
+| 459 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0343 | RETAIN | BR-0016 | REFERENCE | Shared preview media-session ownership, real lifecycle/focus acceptance and runner identity; no new root |
+| 460 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0357 | RETAIN | BR-0016 | REFERENCE | Setup import and preview outcomes, migration and input ownership; new command outcome fix44 |
+| 461 | 53 | MEDIUM-HIGH | 32/0/4/10/7 | GQ2-CHUNK-0368 | RETAIN | GQR-0282 | PRIMARY | Android tooling; artifact-bound installer reset regrowth and explicit boss dependencies; no inherited effect |
+| 462 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0017` | `PRE-0108` | `GQF-0052` | `PRIMARY` | Assigned JNI array/string acquisitions and MIDI byte-array creation |
+| 463 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0024` | `PRE-0108` | `GQF-0058` | `PRIMARY` | Complete-track disc and compressed-file fingerprinting |
+| 464 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0025` | `PRE-0108` | `GQF-0058` | `REFERENCE` | Complete-track disc and compressed-file fingerprinting |
+| 465 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0026` | `PRE-0108` | `GQF-0058` | `REFERENCE` | Complete-track disc and compressed-file fingerprinting |
+| 466 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0037` | `PRE-0108` | `GQF-0052` | `REFERENCE` | Assigned JNI array/string acquisitions and MIDI byte-array creation |
+| 467 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0048` | `PRE-0108` | `BR-0029` | `REFERENCE` | Marshal overlay game-state access through the engine thread |
+| 468 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0050` | `PRE-0108` | `BR-0029` | `REFERENCE` | Marshal overlay game-state access through the engine thread |
+| 469 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0059` | `PRE-0108` | `GQF-0115` | `PRIMARY` | Mission extraction `ScanResult` generation |
+| 470 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0094` | `PRE-0108` | `GQF-0141` | `PRIMARY` | Graphics configuration rollback backup |
+| 471 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0118` | `NO_INHERITED_EFFECT` | `GQF-0115` | `REFERENCE` | Mission extraction `ScanResult` generation |
+| 472 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0161` | `RETAIN` | `BR-0078` | `REFERENCE` | Make native engine admission atomic through process termination |
+| 473 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0178` | `NO_INHERITED_EFFECT` | `GQF-0058` | REFERENCE | duplicate high-confidence complete-media resource and cancellation exposure is the highest live root |
+| 474 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0181` | `RETAIN` | `BR-0029` | REFERENCE | duplicate high-confidence cross-thread engine and renderer ownership is the highest live root |
+| 475 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0185` | `RETAIN` | `BR-0195` | REFERENCE | existing protocol authority work is broader than the assigned handlers |
+| 476 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0186` | `RETAIN` | `BR-0029` | REFERENCE | UI/engine thread ownership needs a subsystem boundary |
+| 477 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0191` | `RETAIN` | `BR-0029` | `REFERENCE` | save metadata, save-set paths and screen admission API |
+| 478 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0192` | `RETAIN` | `BR-0029` | `REFERENCE` | save lifecycle, periodic checkpoints and music overlays |
+| 479 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0193` | `RETAIN` | `BR-0463` | `REFERENCE` | slowdown detection, surface API, texture diagnostics and visual admission |
+| 480 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0195` | `NO_INHERITED_EFFECT` | `GQF-0058` | `REFERENCE` | ETC2 decoder, fingerprint generation/duration and font controls |
+| 481 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0197` | `RETAIN` | `BR-0195` | `REFERENCE` | transfer admission, music schema and serialization budgets |
+| 482 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0200` | `RETAIN` | `BR-0029` | `REFERENCE` | profile APIs, FOV/resolution policy, resume pilot and rewind selection |
+| 483 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0205` | `RETAIN` | `BR-0029` | `REFERENCE` | touch gestures, screen generations and discrete event publication |
+| 484 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0206` | `RETAIN` | `BR-0266` | `REFERENCE` | keyboard/lifecycle dispatch, UI state queries and join approval |
+| 485 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0210` | `RETAIN` | `BR-0029` | `REFERENCE` | menu scaling, scratch allocation, OGL lifetime and UI transform publication |
+| 486 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0212` | `RETAIN` | `BR-0029` | `REFERENCE` | frame admission, JNI capture requests, storage records and capture completion |
+| 487 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0215` | `RETAIN` | `BR-0029` | `REFERENCE` | Coop and guidebot indicator paths, keep-out clipping and diagnostic ownership |
+| 488 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0226` | `RETAIN` | `BR-0029` | `REFERENCE` | Introspection lifecycle/audio/input snapshots and producer failure containment |
+| 489 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0247` | `RETAIN` | `BR-0029` | `REFERENCE` | merged-wall geometry logs, diagnostic session lifetime and paired source provenance |
+| 490 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0258` | `RETAIN` | `BR-0206` | `REFERENCE` | cooperative save-transfer send/apply ordering, acknowledgements and current restore-barrier reconciliation |
+| 491 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0282` | `RETAIN` | `BR-0029` | `REFERENCE` | paired SDL event/window/input/timer/music and virtual-gamepad integration |
+| 492 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0288` | `RETAIN` | `BR-0029` | `REFERENCE` | native controls, postlevel admission, homing/weapon probes, graphics/pilot menus and mission formats |
+| 493 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0290` | `RETAIN` | `BR-0029` | `REFERENCE` | startup quit/resume/replay/metadata/preview lifecycle and native input conversion |
+| 494 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0299` | `RETAIN` | `BR-0029` | `REFERENCE` | AI save/visibility/FX, path runtime, automap input/metadata/edges and reactor validation |
+| 495 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0335` | `RETAIN` | `BR-0029` | `REFERENCE` | D2 replay startup, control settings/rendering/navigation and ordinary/terminal postlevel lifecycle |
+| 496 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0342` | `RETAIN` | `BR-0206` | `REFERENCE` | D2 laser runtime interface, lighting, menus, mission selection and movie lifecycle |
+| 497 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0343` | `RETAIN` | `BR-0206` | `REFERENCE` | D2 font/mine/palette, frame composition, native level sections, placement RNG and level lifecycle |
+| 498 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0454` | `RETAIN` | `GQF-0141/GQR-0128` | `REFERENCE` | Retain launcher configuration and snapshot owners; preserve batch originals and correlate introspection requests |
+| 499 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0468` | `RETAIN` | `GQF-0141/GQR-0128` | `REFERENCE` | Preserve shared publication and identity-checked preview ownership; retain original generations when batch rollback fails |
+| 500 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0477` | `RETAIN` | `BR-0463` | `REFERENCE` | Retain shared overlay navigation, geometry and ammo presentation; complete existing stock-PvP provenance and accessibility owners |
+| 501 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0521` | `RETAIN` | `BR-0082` | `REFERENCE` | Keep one shared host dialog and asynchronous mission/save loader; finish existing defaults, save and host admission |
+| 502 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0528` | `RETAIN` | `BR-0115` | `REFERENCE` | Retain engine-owned save validation and shared cooperative selection; finish existing protocol, metadata and publication boundaries |
+| 503 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0565` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared touch dispatch and mixer ownership; align supported disabled gyro axes across editor and codecs |
+| 504 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0566` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared overlay geometry and controller menus; complete existing action snapshot and per-diagnostic scale owners |
+| 505 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0567` | `RETAIN` | `BR-0029` | `REFERENCE` | Preserve shared draw/input policy and current pause presentation; complete existing physical release and native snapshot owners |
+| 506 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0568` | `RETAIN` | `BR-0029` | `REFERENCE` | Keep shared radial and strip presentation; finish existing opacity, exclusive pointer admission and abandoned-source cleanup |
+| 507 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0569` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared stick and selector helpers; close existing cadence, command routing and immutable selection roots |
+| 508 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0570` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared admin action policy and menu geometry; finish existing stable gesture, callback lifetime and native ownership contracts |
+| 509 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0571` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared admin rendering and bounded slider policy; finish immutable touch generations and preserve current controller edges |
+| 510 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0572` | `RETAIN` | `BR-0029` | `REFERENCE` | Retain shared Video Info layout and diagnostics; reconcile current graphics acknowledgement with existing gesture and native lifetime owners |
+| 511 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-CHUNK-0653` | `RETAIN` | `BR-0029` | `REFERENCE` | Preserve finite touch geometry and shared action inventories; finish existing gesture, typed dispatch and snapshot owners |
+| 512 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0001` | `RETAIN` | `BR-0016` | `REFERENCE` | Current preview reservation, stop ordering, composition disposal and native serialized teardown |
+| 513 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0003` | `RETAIN` | `BR-0029` | `REFERENCE` | Overlay publication, paired music apply hooks, synth tuning and residual escort/debug affinity |
+| 514 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0004` | `RETAIN` | `BR-0044` | `REFERENCE` | Repeated overlay JNI cleanup, strict text policy, attachment failures and keyboard requested state |
+| 515 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0006` | `RETAIN` | `BR-0078` | `REFERENCE` | Game/preview atomic admission, callback-owner publication, failed setup and process termination |
+| 516 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0007` | `RETAIN` | `BR-0080` | `REFERENCE` | Ship-status decoder admission, player/weapon snapshot bounds and transport origin |
+| 517 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0010` | `REFACTOR` | `BR-0090` | `REFERENCE` | Non-Play authentication flavors, wire fields, ephemeral dev identity and server keypair protocol |
+| 518 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0013` | `REFACTOR` | `BR-0103` | `REFERENCE` | Mission extraction tree/manifest replacement, reader lifetime, corrupt records and linked cleanup |
+| 519 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0015` | `REFACTOR` | `BR-0109` | `REFERENCE` | NAT simulator main/inbound task lifecycle, best-effort abort and STUN handle cleanup |
+| 520 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0017` | `REFACTOR` | `BR-0111` | `REFERENCE` | Rust simulator and Android STUN body/attribute/padding bounds and response provenance |
+| 521 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0019` | `REFACTOR` | `BR-0113` | `REFERENCE` | Public-key hex decoding versus textual hashing and durable account lookup |
+| 522 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0022` | `REFACTOR` | `BR-0118` | `REFERENCE` | Rate-limit stale-key snapshot removal versus concurrent accepted events |
+| 523 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0026` | `REFACTOR` | `BR-0124` | `REFERENCE` | Admin u64 hour conversion, chrono constructor/addition overflow and expiry semantics |
+| 524 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0031` | `REFACTOR` | `BR-0131` | `REFERENCE` | Daily tracing appender retention, journal duplication and disk budgets |
+| 525 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0040` | `REFACTOR` | `BR-0158` | `REFERENCE` | Extraction optional fixture accounting, new synthetic coverage and registered SOW skip repair |
+| 526 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0041` | `RETAIN` | `BR-0159` | `REFERENCE` | 7-Zip staged hash-verified publication repair and remaining discovery/crash boundaries |
+| 527 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0042` | `REFACTOR` | `BR-0160` | `REFERENCE` | CUE/ISO runner shared paths, set-e cleanup bypass and unchecked generated fixture writes |
+| 528 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0043` | `REFACTOR` | `BR-0162` | `REFERENCE` | All-skipped mission/extraction batches still report success despite improved preflight failure classification |
+| 529 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0044` | `REFACTOR` | `BR-0163` | `REFERENCE` | LAN cleanup improvements and managed-ending exception before relay teardown |
+| 530 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0046` | `REFACTOR` | `BR-0167` | `REFERENCE` | Mission device/host batch timestamp and normalized-label/base-name artifact collisions |
+| 531 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0047` | `REFACTOR` | `BR-0168` | `REFERENCE` | Mission batch direct ADB push/copy lacks deadline and shared staging cleanup transaction |
+| 532 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0048` | `REFACTOR` | `BR-0169` | `REFERENCE` | CD nonzero aggregate status repaired while GOG still falls through after counted errors |
+| 533 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-RECHECK-0049` | `RETAIN` | `BR-0663` | `REFERENCE` | Replay result publication now preserves natural failure except forced-stop classification race and smoke acceptance |
+| 534 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-003` | `RETAIN` | `GQR-0084` | `REFERENCE` | Launcher/main lifecycle, suspend releases, blocking resume discovery, SAF permission and durable handoff reconciliation |
+| 535 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ1-SWEEP-012` | `RETAIN` | `GQR-0170` | `REFERENCE` | JNI save preflight, network authentication/version parity, controller dimensions and native ABI interface sweep |
+| 536 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0013` | `RETAIN` | `BR-0044` | `REFERENCE` | Reconnect JNI long-frame lifecycle gate; completed route/transcript/admission retained |
+| 537 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0016` | `NO_INHERITED_EFFECT` | `GQR-0045` | `REFERENCE` | Complete-track fingerprint work, coherent source and CLI publication plans |
+| 538 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0017` | `NO_INHERITED_EFFECT` | `GQR-0045` | `REFERENCE` | Fingerprint work/source coherence, duration parity and HMP wrapper evidence limits |
+| 539 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0020` | `RETAIN` | `BR-0044` | `REFERENCE` | Existing repeated callback strict-text and first-exception/lifecycle plan; save fallback/JNI owners deduplicated |
+| 540 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0025` | `RETAIN` | `BR-0078` | `REFERENCE` | Native startup transaction, preview result and process retirement ownership |
+| 541 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0026` | `RETAIN` | `BR-0029` | `REFERENCE` | Graphics option and guidebot affinity, warp delivery and coherent overlay projections |
+| 542 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0036` | `RETAIN` | `BR-0159` | `REFERENCE` | Verified platform acquisition, recoverable publication and truthful shared discovery/consumer acceptance |
+| 543 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0043` | `RETAIN` | `BR-0103` | `REFERENCE` | Immutable selected mission generation and coherent launch publication |
+| 544 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0044` | `RETAIN` | `BR-0103` | `REFERENCE` | Complete mission isolation acceptance map and immutable consumer generation |
+| 545 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0053` | `RETAIN` | `GQR-0102` | `REFERENCE` | Bind managed wrapper scan, persisted identity, policy, served bytes and separate MIDI preview reads to one generation |
+| 546 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0056` | `RETAIN` | `GQR-0103` | `REFERENCE` | Preserve bounded helper repairs and fast lookup while completing generation, reader lifetime and retry acceptance |
+| 547 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0058` | `RETAIN` | `GQR-0103` | `REFERENCE` | Preserve mission ownership and fast helper repair; complete actual catalog audit latency, generation and native-consumer acceptance |
+| 548 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0060` | `RETAIN` | `BR-0283` | `REFERENCE` | Preserve separate metadata/launch contracts; complete strict non-base assertion, imported identity and existing batch artifact/outcome acceptance |
+| 549 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0061` | `RETAIN` | `BR-0103` | `REFERENCE` | Preserve seven-owner/sample oracle and complete immutable native generation and fresh save-state acceptance |
+| 550 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0064` | `RETAIN` | `BR-0010` | `REFERENCE` | Preserve canonical no-churn and listening/installer scope; complete current-attempt source/result and existing outcome acceptance |
+| 551 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0070` | `RETAIN` | `GQR-0160` | `REFERENCE` | All11 assigned scopes/current diagnostic delta reconciled; retain0160 callback lifetime,0167 strict JNI andBR0233/0240/0241 publication/breadcrumb ownership; preserve paired controller/briefing and route terminal policy; no new root/status/inherited saving |
+| 552 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0084` | `RETAIN` | `BR-0195` | `REFERENCE` | Shared optional pickup discard/adoption and portable roster state; existing packet authority, required-world transaction and clock acceptance |
+| 553 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0135` | `RETAIN` | `BR-0206` | `REFERENCE` | Shared save-transfer policy and current postload barrier retained; future paired acceptance; zero inherited saving |
+| 554 | 53 | MEDIUM-HIGH | 32/0/7/10/4 | `GQ2-CHUNK-0386` | `RETAIN` | `BR-0162` | `REFERENCE` | Metadata workers/retention/profile/automation; retain repairs, complete meaningful-success ownership and admit ignored-selection47 separately |
+| 555 | 53 | MEDIUM-HIGH | 23/12/4/10/4 | `GQ1-SWEEP-002` | `REFACTOR` | `GQR-0170` | `REFERENCE` | JNI attachment, partial acquisition, standard UTF-8 and Activity publication remain cross-cutting owners |
+| 556 | 53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ1-CHUNK-0001` | `PRE-0108` | `BR-0007` | `REFERENCE` | Make the Play Store credential sample match the supported key format |
+| 557 | 53 | MEDIUM-HIGH | 23/0/10/10/10 | `GQ2-CHUNK-0001` | `NO_INHERITED_EFFECT` | `BR-0007` | `REFERENCE` | Android authentication examples |
+| 558 | 51 | MEDIUM-HIGH | 32/0/2/10/7 | `GQ2-CHUNK-0089` | `RETAIN` | `GQR-0256` | `PRIMARY` | TSF resolved interpolation neighbor admission; secondary GQR0257 WAV filename fallback and existing GQR0167 outbound overlay encoding; preserve repaired sidecar schema, zero inherited saving |
+| 559 | 51 | MEDIUM-HIGH | 32/0/2/10/7 | `GQ2-CHUNK-0094` | `RETAIN` | `GQR-0256` | `REFERENCE` | SoundFont admission and production shared Fluid/FM renderer |
+| 560 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0002` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 561 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0003` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 562 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0004` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 563 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0005` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 564 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0006` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 565 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0007` | `PRE-0108` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 566 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0080` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 567 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0082` | `PRE-0108` | `BR-0162` | `REFERENCE` | Fail test batches that execute no archive |
+| 568 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0085` | `PRE-0108` | `BR-0165` | `REFERENCE` | Derive the default mission archive directory from the repository |
+| 569 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0086` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
+| 570 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0087` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
+| 571 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0089` | `PRE-0108` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
+| 572 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0099` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 573 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0100` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 574 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0101` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 575 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0102` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 576 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0103` | `PRE-0108` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 577 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0108` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
+| 578 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0109` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
+| 579 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0113` | `NO_INHERITED_EFFECT` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 580 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0114` | `NO_INHERITED_EFFECT` | `BR-0158` | `REFERENCE` | Report absent extraction fixtures as skipped or failed |
+| 581 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0116` | `NO_INHERITED_EFFECT` | `BR-0160` | `REFERENCE` | Bound and isolate CUE/ISO test runs |
+| 582 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0129` | `NO_INHERITED_EFFECT` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 583 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0131` | `CANDIDATE` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 584 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0133` | `NO_INHERITED_EFFECT` | `GQF-0153` | `PRIMARY` | D2 Mac native extraction output oracle |
+| 585 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0134` | `NO_INHERITED_EFFECT` | `BR-0169` | `REFERENCE` | Return a failing status when any batch extraction fails |
+| 586 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0136` | `NO_INHERITED_EFFECT` | `BR-0008` | `REFERENCE` | Enforce recorded source hashes before extraction regression tests |
+| 587 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0138` | `NO_INHERITED_EFFECT` | `GQF-0158` | `PRIMARY` | Bounded extractor Python regression registration |
+| 588 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0151` | `RETAIN` | `GQF-0167` | `PRIMARY` | Shared TSF/PCM producer completion ordering |
+| 589 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0218` | `RETAIN` | `GQF-0167` | `REFERENCE` | Game music producer publication, tuning ownership, ring drain and startup |
+| 590 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0292` | `RETAIN` | `BR-0209` | `REFERENCE` | native replay diagnostics, result lifecycle, public hooks and D1 startup adapter |
+| 591 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0436` | `RETAIN` | `GQR-0020` | `REFERENCE` | Complete combined-launch helper, extension-only current references, component-union check and generator derivation |
+| 592 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0504` | `RETAIN` | `BR-0516` | `REFERENCE` | Preserve strict current layout admission and direct per-axis gyro values; finish existing radial namespace and preset owners |
+| 593 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0588` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain shared platform selection, destination-owned installer transactions and inert configuration serialization |
+| 594 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0589` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep staged exact tool acquisition in shared installer policy and avoid duplicating upstream host package management |
+| 595 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0590` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared verified staged installers, native host identity and explicit delegated option contracts |
+| 596 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0591` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared SDK writer, complete package admission and exact tool-generation policy; preserve focused external oracle walls |
+| 597 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0592` | `RETAIN` | `BR-0159` | `REFERENCE` | Keep shared dependency discovery, exact installed identity and bounded action execution under existing updater owners |
+| 598 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0593` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain one typed dependency-discovery and selection owner; bound remote processes and couple accepted release metadata |
+| 599 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0594` | `RETAIN` | `GQR-0222` | `PRIMARY` | Retain shared string-aware JSONC parsing and serial-scoped emulator recovery; preserve lexical token boundaries |
+| 600 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0595` | `RETAIN` | `BR-0168` | `REFERENCE` | Retain schema-specific metadata canonicalization and verified provisioner ownership; finish existing path and transaction boundaries |
+| 601 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0599` | `RETAIN` | `GQR-0222` | `REFERENCE` | Retain shared managed-emulator recovery and fingerprint identity owners; consolidate remaining comment parser and build-process boundaries |
+| 602 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0633` | `RETAIN` | `BR-0159` | `REFERENCE` | Retain the Ubuntu bootstrap entry point and verified bounded-runtime policy; keep installer remainder with existing owners |
+| 603 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ1-CHUNK-0638` | `RETAIN` | `BR-0168` | `REFERENCE` | Retain additive device provisioning and explicit owned-sync policy; finish its shared transfer, filename and publication owners |
+| 604 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0002` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Physical CD regression metadata; existing executable audio oracle owner |
+| 605 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0003` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Multi-file CD regression metadata; existing executable audio oracle owner |
+| 606 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0004` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | Definitive Collection and OEM regression metadata |
+| 607 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0005` | `NO_INHERITED_EFFECT` | `GQR-0018` | `REFERENCE` | D2 release and preview regression metadata |
+| 608 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0006` | `NO_INHERITED_EFFECT` | `GQR-0020` | `REFERENCE` | Combined Vertigo metadata and existing freshness owner |
+| 609 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0063` | `RETAIN` | `GQR-0151` | `REFERENCE` | Retain completed JNI/output controls; complete focused descriptor observation and existing supervisor/SAF outcome acceptance |
+| 610 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0067` | `RETAIN` | `GQR-0149` | `REFERENCE` | Eight assigned scopes and complete current deltas reconciled; preserve0148/0039 completed limits,0149 behavior,0252 published generation,BR0209 independent replay and remaining JNI/SAF/Mac oracle acceptance; no new root/status/inherited saving |
+| 611 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0090` | `RETAIN` | `BR-0209` | `REFERENCE` | Shared requested trace failure outcome with existing producer/publication policy and strict reader qualification limits |
+| 612 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0286` | `RETAIN` | `GQR-0020` | `REFERENCE` | Regression and CD source metadata 0286 |
+| 613 | 50 | MEDIUM-HIGH | 23/0/7/10/10 | `GQ2-CHUNK-0294` | `RETAIN` | `GQR-0145` | `REFERENCE` | Workflow and Gradle settings 0294 |
+| 614 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ1-CHUNK-0182` | `RETAIN` | `BR-0244` | REFERENCE | duplicate high-confidence request loss spans every newly added mailbox and existing action paths |
+| 615 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ1-CHUNK-0659` | `RETAIN` | `BR-0381` | `REFERENCE` | Retain semantic route and lifecycle assertions; finish existing observational probe and metadata lifecycle acceptance |
+| 616 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ2-CHUNK-0080` | `RETAIN` | `BR-0381` | `REFERENCE` | Retain native automation semantics; observational parity, correlated queued outcomes and coordinated restores remain existing acceptance |
+| 617 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | `GQ2-CHUNK-0227` | `RETAIN` | `BR-0381` | `REFERENCE` | Native route events and observational parity |
+| 618 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | GQ2-CHUNK-0460 | NO_INHERITED_EFFECT | BR-0381 | REFERENCE | Obsidian objective wall and postreactor key scripts; retain synthetic versus physical acceptance, guidance frontier, cache/profile oracle limits and complete observational parity, zero original reduction |
+| 619 | 50 | MEDIUM-HIGH | 23/0/10/10/7 | GQ2-CHUNK-0462 | NO_INHERITED_EFFECT | BR-0381 | REFERENCE | join Guide-Bot and keyboard scripts; retain phase-peer boundaries, semantic physical frontier, synthetic progression and manual keyboard role, complete observational parity and separate exact admission, zero original reduction |
+| 620 | 48 | MEDIUM | 12/12/7/10/7 | `GQ2-CHUNK-0237` | `CANDIDATE` | `GQR-0249` | `PRIMARY` | D1 native targets and paired codec runtime extraction |
+| 621 | 48 | MEDIUM | 12/12/7/10/7 | `GQ2-CHUNK-0242` | `CANDIDATE` | `GQR-0249` | `REFERENCE` | D2 native targets and codec deployment boundary |
+| 622 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0188` | `NO_INHERITED_EFFECT` | `GQF-0177` | `PRIMARY` | Reject out-of-range database integers before narrowing |
+| 623 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0198` | `RETAIN` | `GQF-0180` | `PRIMARY` | crash JNI, breadcrumb publication, EGL and save pair recovery |
+| 624 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0202` | `RETAIN` | `GQF-0182` | `PRIMARY` | cooperative metadata contracts, migration and retained restart publication |
+| 625 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0211` | `RETAIN` | `GQF-0184` | `PRIMARY` | profiling batches, texture burst boundaries and bounded flight envelope |
+| 626 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0213` | `RETAIN` | `BR-0273` | `REFERENCE` | automap labels, grouping, live key positions and connector endpoints |
+| 627 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0449` | `RETAIN` | `GQR-0207` | `PRIMARY` | Close fingerprint asset reader ownership and preserve distinct-identity ambiguity through database projection |
+| 628 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0452` | `RETAIN` | `GQR-0208` | `PRIMARY` | Preserve custom-audio generation and metadata policy; make copied append publication transactional |
+| 629 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0480` | `RETAIN` | `BR-0454` | `REFERENCE` | Retain shared controller edge ownership and flavor updates; complete existing gesture identity and callback owners |
+| 630 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0487` | `RETAIN` | `BR-0443` | `REFERENCE` | Retain immutable shared artifacts and asynchronous inventory; finish pending Downloads and log lifecycle owners |
+| 631 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0488` | `RETAIN` | `BR-0419` | `REFERENCE` | Retain asynchronous storage dialogs and atomic registry leaves; finish existing audio-resource and truthful removal ownership |
+| 632 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0497` | `RETAIN` | `BR-0479` | `REFERENCE` | Keep shared drawing helpers; finish existing picker cancellation and nested input routing |
+| 633 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0499` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain atomic set metadata and current-only storage; finish ownership-consistent deletion and clearing |
+| 634 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0585` | `RETAIN` | `BR-0558` | `REFERENCE` | Keep shared Gradle build identity, exact tool policy and flavor-specific runtime ownership |
+| 635 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0587` | `RETAIN` | `BR-0579` | `REFERENCE` | Keep one dependency update manifest owner and shared SDK provisioning policy; publish coupled identities together |
+| 636 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0598` | `RETAIN` | `BR-0586` | `REFERENCE` | Retain exact oracle executable identities, checked warning capture and shared runtime estimates; finish existing oracle and snapshot acceptance |
+| 637 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0600` | `RETAIN` | `GQR-0223` | `PRIMARY` | Consolidate CD source manifest parsing onto the shared JSONC owner; retain transactional publication and scoped artifact protection |
+| 638 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0603` | `RETAIN` | `GQR-0225` | `PRIMARY` | Parse canonical Git paths before generating review scopes; retain deterministic frozen campaign and supplemental audit ownership |
+| 639 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0604` | `RETAIN` | `GQR-0226` | `PRIMARY` | Confine host metadata staging before recursive replacement; remove dead projection under its already admitted owner |
+| 640 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0607` | `RETAIN` | `GQR-0228` | `PRIMARY` | Preserve signed wire fields and partial-packet diagnostics in the PowerShell decoder |
+| 641 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0610` | `RETAIN` | `GQR-0229` | `PRIMARY` | Retain repaired complete version and track admission; share JSONC readers and align descriptor modes with native ownership |
+| 642 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0628` | `RETAIN` | `BR-0006` | `REFERENCE` | Retain deleted scratch artifacts and document complete root-helper versus manual Linux build alternatives |
+| 643 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0645` | `RETAIN` | `GQR-0217` | `REFERENCE` | Preserve bounded DXA inspection, immutable grants and current-only storage; extend exact descriptor and shared configuration tests |
+| 644 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0669` | `RETAIN` | `GQR-0232` | `PRIMARY` | Retain managed emulator repair and shared JSONC parsing; resolve template values before serialization |
+| 645 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0671` | `RETAIN` | `BR-0652` | `REFERENCE` | Retain shared paired control codec tests; preserve runner failure independently of trace agreement |
+| 646 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0672` | `RETAIN` | `BR-0651` | `REFERENCE` | Retain shared portable and gzip trace reads; compare complete unique frame identity |
+| 647 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0673` | `RETAIN` | `BR-0193` | `REFERENCE` | Retain expanded shared route semantic tests; complete owned SAF fixture restoration and admission |
+| 648 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0674` | `RETAIN` | `BR-0659` | `REFERENCE` | Retain shared WLAN resolution and expanded lifecycle probes; require exact transport result and lobby generation |
+| 649 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0681` | `RETAIN` | `GQR-0223` | `REFERENCE` | Retain bounded native RLE and transactional conversion checks; extend shared CD metadata/runner and PCM regression coverage |
+| 650 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0682` | `RETAIN` | `BR-0008` | `REFERENCE` | Keep paired replay wrappers and shared build admission; close existing data provenance and device-state transaction owners |
+| 651 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0683` | `RETAIN` | `BR-0181` | `REFERENCE` | Retain canonical fingerprint policy and transactional dependency fixtures; repair existing complete-reference and measured-data owners |
+| 652 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0684` | `RETAIN` | `BR-0082` | `REFERENCE` | Retain shared native policy fixtures and paired renderer contracts; preserve existing save-body and namespace owners |
+| 653 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0685` | `RETAIN` | `BR-0669` | `REFERENCE` | Retain current JSONC subset and shared replay diagnostics; strengthen existing smoke semantics and resource owners |
+| 654 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0686` | `RETAIN` | `BR-0667` | `REFERENCE` | Retain shared metadata normalization and asynchronous MIDI preview contracts; require existing complete travel-row coverage |
+| 655 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0687` | `RETAIN` | `BR-0401` | `REFERENCE` | Retain native staged state admission and verified data staging; close existing bounded server and output owners |
+| 656 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0688` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain mock runner ownership and catalog rotation coverage; finish shared checked-device and artifact-lifetime policy |
+| 657 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0689` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain bounded structural distance tolerance and audio snapshot owners; keep mailbox behavioral checks active |
+| 658 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0690` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain paired installer policy and native HUD/homing ownership; synchronize existing Inno progress capability contract |
+| 659 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0692` | `RETAIN` | `BR-0277` | `REFERENCE` | Retain shared native fixtures and completed validation; synchronize stale cockpit source guard with staged pilot writer |
+| 660 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0693` | `RETAIN` | `GQR-0233` | `PRIMARY` | Require actual co-op start inventories before reporting fanout success; retain native format and restore fixture ownership |
+| 661 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0694` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain current transfer pacing and shared regression policy; reconcile complete native test inventory and preview lifecycle |
+| 662 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0695` | `RETAIN` | `BR-0662` | `REFERENCE` | Retain real fingerprint publication/enumeration checks and shared native ownership; keep escort exit oracles active |
+| 663 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0696` | `RETAIN` | `GQR-0234` | `PRIMARY` | Validate complete RNG trace envelopes before filtering or comparison |
+| 664 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0697` | `RETAIN` | `BR-0545` | `REFERENCE` | Retain exact replay selection, sanitizer forwarding and required-primary rejection; verify shared aggregate status/lifetime owners |
+| 665 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0698` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain strengthened replay process verdicts and diagnostic preservation; complete existing lifetime and publication owners |
+| 666 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0699` | `RETAIN` | `BR-0209` | `REFERENCE` | Preserve current strict replay controls while removing the existing terminal-result compensation root during implementation |
+| 667 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0700` | `RETAIN` | `BR-0292` | `REFERENCE` | Keep paired recorder semantic and long-recording coverage; finish existing disabled-diagnostic and publication acceptance |
+| 668 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0701` | `RETAIN` | `BR-0231` | `REFERENCE` | Retain paired replay loader and validate-before-apply policy fixtures; complete shared terminal failure integration |
+| 669 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0702` | `RETAIN` | `BR-0163` | `REFERENCE` | Retain expanded paired LAN scenarios and shared helpers; close existing cleanup and correlated-oracle owners |
+| 670 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0703` | `RETAIN` | `BR-0302` | `REFERENCE` | Retain shared level-metadata fixtures and truthful partial-route semantics; validate existing route owners |
+| 671 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0704` | `RETAIN` | `BR-0301` | `REFERENCE` | Preserve corrected all-link completion and bounded metadata distance tests; reconcile existing live-route validation |
+| 672 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0705` | `RETAIN` | `BR-0656` | `REFERENCE` | Retain shared multiplayer orchestration improvements; close existing false-pass and ownership findings |
+| 673 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0706` | `RETAIN` | `BR-0332` | `REFERENCE` | Retain current prepared-route profile identity tests; complete semantic cache and I/O acceptance |
+| 674 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0707` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain expanded shared route transition and convergence fixtures; reconcile existing route geometry and cache owners |
+| 675 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0711` | `RETAIN` | `BR-0337` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 676 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0712` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 677 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0713` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 678 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0714` | `RETAIN` | `BR-0623` | `REFERENCE` | Complete generated JSON mechanical schema/provenance review; no inherited reduction |
+| 679 | 47 | MEDIUM | 23/0/4/10/10 | `GQ1-CHUNK-0750` | `RETAIN` | `BR-0659` | `REFERENCE` | Complete22 frozen/current payloads; exact CUE consumers and existing root reconciliation |
+| 680 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0079` | `RETAIN` | `BR-0335` | `REFERENCE` | Guidebot semantic/guidance/proof identity and active/passive adoption retained; live rebase/certificate acceptance remains |
+| 681 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0081` | `RETAIN` | `BR-0335` | `REFERENCE` | Retain ordering barriers and private candidate publication; separate resumable certification from compiled selection and live rebase acceptance |
+| 682 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0087` | `RETAIN` | `BR-0335` | `REFERENCE` | Snapshot domain generations, transit/trigger consumers and replay capture association; current compiled selector and existing failure acceptance |
+| 683 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0250` | `RETAIN` | `GQR-0207` | `REFERENCE` | JVM file-set, projection, storage and protocol fixtures |
+| 684 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0336 | RETAIN | GQR-0207 | REFERENCE | File-set and launch formats; decoder regrowth and unused inventory plans |
+| 685 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0364 | RETAIN | BR-0454 | REFERENCE | Preserve flavor source boundary; existing update task and store fallback defects remain |
+| 686 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0379 | RETAIN | GQR-0226 | REFERENCE | Helper capture/build/metadata/cleanup/quality/crash/upstream boundaries; existing owner/current repairs retained |
+| 687 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0387` | `RETAIN` | `BR-0543` | `REFERENCE` | Graphics/formatter wrappers; existing independent cleanup and new physical eligibility47 separately |
+| 688 | 47 | MEDIUM | 23/0/4/10/10 | `GQ2-CHUNK-0388` | `RETAIN` | `BR-0543` | `REFERENCE` | Process JSON compatibility helpers; preserve repairs and existing owned cleanup/publication acceptance |
+| 689 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0389 | RETAIN | GQF-0305 | PRIMARY | Validate readable cursor schema; retain current policies and scoped formatter repairs; no inherited saving |
+| 690 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0390 | RETAIN | BR-0543 | REFERENCE | Retain process/workspace helpers and current parser/native repairs; complete existing finite owned stream/cleanup acceptance; no inherited saving |
+| 691 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0391 | RETAIN | BR-0543 | REFERENCE | Retain real store capture; complete owned recording/audio/display cleanup and private validated publication; native-backed snapshot simplification, no inherited saving |
+| 692 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0392 | RETAIN | BR-0543 | REFERENCE | Retain platform process lifetime dispatch; complete finite owned stop and all-error cleanup with actual pool/aggregate/formatter acceptance; no inherited saving |
+| 693 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0396 | NEW-ISSUE/RETAIN | GQR-0293 | PRIMARY | Require finite boss audio window evidence; retain existing lifecycle/publication and native format policies |
+| 694 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0397 | RETAIN | GQR-0293 | REFERENCE | Shared store media finite-report boundary;retain publication/process/device/dependency policies and distinct actual validators |
+| 695 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0400 | PLANNED-FIX/RETAIN | GQR-0295 | PRIMARY | Decode native D1/D2 packet headers explicitly; preserve identity/error/session obligations |
+| 696 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0411 | NO_INHERITED_EFFECT/EXISTING-OWNER | BR-0006 | REFERENCE | Consolidate current cleanup and tooling documentation; retain authored feature intent and separate platform acceptance |
+| 697 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0412 | NO_INHERITED_EFFECT/EXISTING-OWNER | BR-0006 | REFERENCE | Simplify store capture prerequisites and evidence boundaries; retain existing media-lifetime-publication-finite owners |
+| 698 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0441 | NO_INHERITED_EFFECT | GQR-0303 | PRIMARY | world travel/Guidebot/metadata tests;focused metadata-only flyout verdict mismatch,no original reduction |
+| 699 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0443 | NO_INHERITED_EFFECT | GQR-0304 | PRIMARY | D1/D2/death/content/launch tests;boss full-health oracle absent despite explicit contract,no original reduction |
+| 700 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0444 | NO_INHERITED_EFFECT | GQR-0305 | PRIMARY | recording/preview/restore/route tests;missing retained launcher-work oracle,no original reduction |
+| 701 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0453 | NO_INHERITED_EFFECT | GQR-0306 | PRIMARY | restart/fence/normalexit scripts;repair D1ten/D2twelve diagnostic oracle,preserve distinct restore/packet/exit effects;existing330line extraction separate,zero original reduction here |
+| 702 | 47 | MEDIUM | 23/0/4/10/10 | GQ2-CHUNK-0470 | NO_INHERITED_EFFECT | GQR-0307 | PRIMARY | Menu GLES GOG scripts; verify owned preset target, retain native actions/unrelated inventory, extend existing parent budget and completed-command outcomes, zero original reduction |
+| 703 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0008` | `PRE-0108` | `BR-0623` | `REFERENCE` | Share one complete portable source-manifest policy |
+| 704 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0010` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 705 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0011` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 706 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0012` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 707 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0014` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 708 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0027` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 709 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0028` | `PRE-0108` | `GQF-0040` | `PRIMARY` | Flattened HFS loose-file projection |
+| 710 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0035` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 711 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0038` | `PRE-0108` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 712 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0051` | `PRE-0108` | `BR-0082` | `REFERENCE` | Validate metadata-backed save bodies before offering Resume |
+| 713 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0052` | `PRE-0108` | `BR-0417` | `REFERENCE` | Repair last-save selection after deleting an empty set |
+| 714 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0057` | `PRE-0108` | `GQF-0113` | `PRIMARY` | Stored ZIP collision validation timing |
+| 715 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0058` | `PRE-0108` | `GQF-0030` | `PRIMARY` | Physical-disc and mission fingerprint generation and cache reuse |
+| 716 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0072` | `PRE-0108` | `BR-0111` | `REFERENCE` | Bounds-check complete STUN attributes before slicing |
+| 717 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0081` | `PRE-0108` | `BR-0174` | `REFERENCE` | Gate external reference extractors to supported hosts |
+| 718 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0091` | `PRE-0108` | `BR-0174` | `REFERENCE` | Gate external reference extractors to supported hosts |
+| 719 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0096` | `PRE-0108` | `GQF-0091` | `PRIMARY` | PKG analysis-to-extraction generation identity |
+| 720 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0097` | `PRE-0108` | `BR-0236` | `REFERENCE` | Report and roll back partial all-pilot preference writes |
+| 721 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0110` | `NO_INHERITED_EFFECT` | `GQF-0091` | `REFERENCE` | PKG analysis-to-extraction generation identity |
+| 722 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0111` | `NO_INHERITED_EFFECT` | `BR-0021` | `REFERENCE` | Honor and propagate documented extraction cancellation |
+| 723 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0120` | `NO_INHERITED_EFFECT` | `GQF-0030` | `REFERENCE` | Physical-disc and mission fingerprint generation and cache reuse |
+| 724 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0171` | `RETAIN` | `BR-0332` | REFERENCE | duplicate high-confidence cache identity evidence is the highest-impact live owner in this scope |
+| 725 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0172` | `RETAIN` | `BR-0247` | REFERENCE | duplicate evidence for the open unbounded trace-growth root is the highest-impact live owner |
+| 726 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0173` | `RETAIN` | `BR-0236` | REFERENCE | duplicate high-confidence partial-commit evidence is the only live quality root |
+| 727 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0174` | `RETAIN` | `BR-0238` | REFERENCE | duplicate high-confidence mission-source identity evidence is the highest ready live root |
+| 728 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0175` | `NO_INHERITED_EFFECT` | `BR-0276` | REFERENCE | duplicate evidence for the remaining preview completion/clock root is the highest live owner |
+| 729 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0176` | `RETAIN` | `BR-0257` | REFERENCE | duplicate high-confidence one-shot lifecycle failure remains the highest live root |
+| 730 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0177` | `RETAIN` | `BR-0251` | REFERENCE | duplicate renderer recovery evidence is the highest-impact live owner |
+| 731 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0179` | `RETAIN` | `BR-0236` | REFERENCE | duplicate grouped partial-publication risk is the broadest live owner in this scope |
+| 732 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0184` | `RETAIN` | `BR-0078` | REFERENCE | duplicate lifecycle exposure is the broadest high-confidence failure boundary in the assigned logging path |
+| 733 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0187` | `RETAIN` | `BR-0209` | REFERENCE | requested-output failure must be propagated through the shared replay completion boundary |
+| 734 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0190` | `RETAIN` | `BR-0250` | `REFERENCE` | Coherent audio diagnostic publication; mailbox queue measurement pending |
+| 735 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0194` | `RETAIN` | `BR-0236` | `REFERENCE` | PhysFS setup and grouped pilot preference transactions |
+| 736 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0196` | `RETAIN` | `BR-0244` | `REFERENCE` | meta actions, music control, text wrapping and pilot hold gestures |
+| 737 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0214` | `RETAIN` | `BR-0276` | `REFERENCE` | CD preview PCM/resampling, producer EOF, callback output and startup ownership |
+| 738 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0216` | `RETAIN` | `GQF-0096` | `REFERENCE` | Cooperative metadata framing, identity remapping and absent-player snapshots |
+| 739 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0217` | `RETAIN` | `BR-0278` | `REFERENCE` | Cooperative autosave schedulers, sidecars, progress inventory and restore admission |
+| 740 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0219` | `RETAIN` | `BR-0282` | `REFERENCE` | Automation result/JSONL publication, outbound radial JNI and key injection |
+| 741 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0220` | `RETAIN` | `BR-0283` | `REFERENCE` | Automation input domains, mission discovery, direct window dispatch and face geometry |
+| 742 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0221` | `RETAIN` | `BR-0284` | `REFERENCE` | Automation pose/objective controls, condition cleanup and script replacement admission |
+| 743 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0222` | `RETAIN` | `BR-0223` | `REFERENCE` | Automation cursor admission, typed assertions, replacement and menu deadlines |
+| 744 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0223` | `RETAIN` | `BR-0286` | `REFERENCE` | Automation overlay/run assertions, briefing deadlines, renderer probes and native controls |
+| 745 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0227` | `RETAIN` | `GQR-0174` | `PRIMARY` | GLES3 shader initialization, matrices and client-state policy |
+| 746 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0232` | `RETAIN` | `BR-0292` | `REFERENCE` | recording capture, replay lifecycle, RNG synchronization and diagnostics |
+| 747 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0233` | `RETAIN` | `BR-0293` | `REFERENCE` | runtime allocator, player weapons, local segment chains and robot diagnostic history |
+| 748 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0234` | `RETAIN` | `BR-0293` | `REFERENCE` | object histories, current result, segment aggregates and collision step output |
+| 749 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0235` | `RETAIN` | `BR-0296` | `REFERENCE` | recording admission, checkpoint capture, quick naming, retention and flush |
+| 750 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0241` | `RETAIN` | `BR-0246` | `REFERENCE` | replay startup, metadata binding, owned checkpoint temporary, configuration and restored clocks |
+| 751 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0243` | `RETAIN` | `BR-0301` | `REFERENCE` | metadata world-state completion, connected components, energy distance, volume and guidebot summary |
+| 752 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0248` | `RETAIN` | `BR-0308` | `REFERENCE` | merged-wall projected geometry, crosshair coordinates and focus ranking |
+| 753 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0249` | `RETAIN` | `BR-0310` | `REFERENCE` | merged-wall framebuffer coordinate conversion, source provenance and readback admission |
+| 754 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0250` | `RETAIN` | `BR-0311` | `REFERENCE` | merged-wall cover dumps, GL-state/readback transactions and sampled-texture LOD |
+| 755 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0251` | `RETAIN` | `BR-0312` | `REFERENCE` | merged-wall face capacity, cover matching and per-frame/view lifecycle |
+| 756 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0252` | `RETAIN` | `BR-0313` | `REFERENCE` | merged-wall focus ranking, route orientation models and native texture/effect/door diagnostics |
+| 757 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0253` | `RETAIN` | `BR-0315` | `REFERENCE` | merged-wall side/palette provenance, geometry hit classification and rear-view ray |
+| 758 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0254` | `RETAIN` | `BR-0316` | `REFERENCE` | merged-wall final tap ranking, route models and composed framebuffer sampling |
+| 759 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0255` | `RETAIN` | `BR-0317` | `REFERENCE` | merged-wall zero-candidate probe terminal behavior, selection and result publication |
+| 760 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0257` | `RETAIN` | `BR-0276` | `REFERENCE` | MIDI preview lifecycle, PCM EOF drain, synth timeline and current approximate-seek reconciliation |
+| 761 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0264` | `RETAIN` | `BR-0302` | `REFERENCE` | route graph traversal, target capacity and current multiple-boss reconciliation |
+| 762 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0266` | `RETAIN` | `BR-0331` | `REFERENCE` | trigger opener alternatives, dependency rollback, fallback plans and route projection |
+| 763 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0267` | `RETAIN` | `BR-0332` | `REFERENCE` | route snapshot staging, navigation identity and current domain/replay capture reconciliation |
+| 764 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0268` | `RETAIN` | `BR-0334` | `REFERENCE` | native metadata state, visibility cache admission and engine portal clearance |
+| 765 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0270` | `RETAIN` | `BR-0334` | `REFERENCE` | topology indexing, persistent cache ownership and canonical live reuse |
+| 766 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0271` | `RETAIN` | `BR-0337` | `REFERENCE` | secret scanner required progression, bounded components and published entrance inventory |
+| 767 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0272` | `RETAIN` | `GQF-0096` | `REFERENCE` | save namespace, staged publication, trailers and lifecycle memory adapters |
+| 768 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0280` | `RETAIN` | `BR-0251` | `REFERENCE` | paired graphics initialization, render admission and arch hook declarations |
+| 769 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0284` | `DEFER` | `BR-0347` | `REFERENCE` | paired diagnostic clipping RGB, nested render frame/MSAA/timer and upload/scratch integration |
+| 770 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0293` | `DEFER` | `BR-0349` | `REFERENCE` | native HUD visible-frame integration, paired corner geometry/counts and cooperative level/spawn/score lifecycle |
+| 771 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0296` | `DEFER` | `BR-0278` | `REFERENCE` | game loop, replay controls, font/render policy and native level-I/O adapters |
+| 772 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0297` | `RETAIN` | `BR-0294` | `REFERENCE` | listbox tail/accessors, object runtime/effects, physics probes and bitmap paging/flags |
+| 773 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0300` | `RETAIN` | `BR-0294` | `REFERENCE` | D1 typed replay commands, checkpoint links and weapon/physics diagnostic adapters |
+| 774 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0303` | `DEFER` | `BR-0269` | `REFERENCE` | native newmenu background cache, readable text, reorder and tap/key/geometry adapters |
+| 775 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0304` | `DEFER` | `BR-0269` | `REFERENCE` | native scaled menu/listbox draw callbacks, wrapped teardown, joystick/tap and hold lifecycles |
+| 776 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0306` | `RETAIN` | `BR-0082` | `REFERENCE` | native save body/header/callsign conversion, checkpoint topology fallback, cooperative remap and current restore failure/publication containment |
+| 777 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0313` | `RETAIN` | `BR-0345` | `REFERENCE` | D2 SDL mixer/convert/start, event/window nonlocal lifetime, virtual input and desktop joystick, software mode, jukebox/mouse/timer and resource guard |
+| 778 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0315` | `RETAIN` | `BR-0251` | `REFERENCE` | D2 platform/header input/music/window interfaces and EGL/canvas/mode integration |
+| 779 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0317` | `DEFER` | `BR-0347` | `REFERENCE` | D2 diagnostic clipping and RGB payload, external draw cleanup, MSAA/frame/timer/readback and ordinary upload scratch lifecycle |
+| 780 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0323` | `RETAIN` | `BR-0202` | `REFERENCE` | D2 pilot hold draw polling, listbox lifecycle/window title geometry and completed accessor headers with comment encoding residue |
+| 781 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0325` | `RETAIN` | `BR-0209` | `REFERENCE` | D2 hooks tail, terminal overrides, RNG and replay lifecycle/header interfaces |
+| 782 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0328` | `RETAIN` | `BR-0278` | `REFERENCE` | D2 frame/tick/palette/profiling/RNG lifecycle and native replay/control/autosave hooks |
+| 783 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0329` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI restore tail, path/actor/route interfaces and AI2 visibility/fire/movement/boss/native-D1 policy |
+| 784 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0330` | `RETAIN` | `BR-0206` | `REFERENCE` | D1 translated checkpoint runtime/world/AI/player publication and digital audio sample contract |
+| 785 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0332` | `DEFER` | `BR-0294` | `REFERENCE` | D2 reactor codecs/runtime clocks, collision diagnostics/native actor damage and cooperative death/pickup wrappers |
+| 786 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0336` | `DEFER` | `BR-0349` | `REFERENCE` | D2 HUD messages/gauges/controls, score recording and startup lifecycle |
+| 787 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0339` | `DEFER` | `BR-0294` | `REFERENCE` | D2 explosion/drop/fuel/matcen and FVI callbacks/native transparency |
+| 788 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0340` | `RETAIN` | `GQR-0198` | `PRIMARY` | D2 custom asset staging, source identity publication, native semantic and result adapters |
+| 789 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0345` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 metadata patch tail, effects, endlevel and escort ownership/exit policy |
+| 790 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0346` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI scheduling, awareness, native actor dispatch, diagnostics and legacy timestamp save/read |
+| 791 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0347` | `RETAIN` | `GQR-0198` | `REFERENCE` | D2 custom PIG/POG/PCM original assets and current HX1 unpublished generation |
+| 792 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0349` | `RETAIN` | `GQR-0198` | `REFERENCE` | D2 original sound, palette, gauges/cockpit overlay and native robot/weapon decode |
+| 793 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0354` | `DEFER` | `BR-0381` | `REFERENCE` | D2 Guide-Bot route state/probes/events/guidance/completion and spawn lifecycle |
+| 794 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0357` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 included energy trace helper and native caller ownership |
+| 795 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0358` | `DEFER` | `BR-0294` | `REFERENCE` | D2 input-demo direct command adapters, player control/wiggle and render/motion probe ownership |
+| 796 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0359` | `DEFER` | `BR-0294` | `REFERENCE` | D2 motion/physics/FVI probes, shared result hooks, debris/explosion and replay probe transport |
+| 797 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0360` | `DEFER` | `BR-0294` | `REFERENCE` | D2 weapon/debris path and activity probes, hard-coded FVI geometry, contact and powerup delta/state diagnostics |
+| 798 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0361` | `DEFER` | `BR-0294` | `REFERENCE` | D2 AI schedule, baseline, awareness, focus predicates and weapon/impact/damage event capture |
+| 799 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0362` | `DEFER` | `BR-0294` | `REFERENCE` | D2 homing/shot/spreadfire, reactor/shield, collision/powerup and follow-path diagnostics |
+| 800 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0363` | `DEFER` | `BR-0294` | `REFERENCE` | D2 path hash, escort RNG/path/restore, chase/follow and escort/snipe observation snapshots |
+| 801 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0364` | `DEFER` | `BR-0294` | `REFERENCE` | D2 thief/path requests, path hash suppression, RNG/agitation and lifecycle/pose diagnostics |
+| 802 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0365` | `DEFER` | `BR-0294` | `REFERENCE` | D2 tracked robot pose lifecycle, robot fire, visibility/FVI and awareness-roll diagnostics |
+| 803 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0366` | `DEFER` | `BR-0294` | `REFERENCE` | D2 awareness chain, physical/claw recorder events, AI state/fire and partial wall-repair diagnostics |
+| 804 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0372` | `DEFER` | `BR-0269` | `REFERENCE` | D2 native menu background cache, readable text, reorder and touch/key geometry with current snapshots and interaction publication |
+| 805 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0373` | `DEFER` | `BR-0269` | `REFERENCE` | D2 scaled menu/listbox draw, wrapped teardown, touch/controller gestures and pilot hold lifecycle |
+| 806 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0387` | `RETAIN` | `GQR-0174` | `REFERENCE` | D1 Cocoa/OGL/SDL/Windows/X11 CMake and current per-game shared registrations |
+| 807 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0400` | `RETAIN` | `GQR-0174` | `REFERENCE` | D2 platform CMake prefixes, shader runtime registration and conditional SDL audio ownership |
+| 808 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0414` | `RETAIN` | `BR-0402` | `REFERENCE` | Server Rust version snapshot and active toolchain-selection owner |
+| 809 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0420` | `RETAIN` | `BR-0401` | `REFERENCE` | Server integration harness and initial auth/lobby/HTTP/database/friend/ready/start/kick cases |
+| 810 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0421` | `RETAIN` | `BR-0403` | `REFERENCE` | Welcome, stable identity, messaging, coded lobbies, friend joins, relay and NAT candidate fixtures |
+| 811 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0422` | `RETAIN` | `BR-0404` | `REFERENCE` | Verified-only lobbies, Ed25519/PoW, known-key reconnect and lobby lifecycle; complete current mission-status hunk |
+| 812 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0423` | `RETAIN` | `BR-0401` | `REFERENCE` | Final integration chat/discovery, relay age cleanup, connectivity, STUN allowlist/UDP and full friend lifecycle |
+| 813 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0424` | `RETAIN` | `BR-0406` | `REFERENCE` | Full NAT simulator integration suite: STUN, mapping/filtering, sequential reservation, bidirectional cone, permissive mixed case and tiny packets |
+| 814 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0428` | `RETAIN` | `GQR-0017` | `REFERENCE` | Known albums primary metadata 1-750, full current rename/regeneration hunks and byte-level payload audit |
+| 815 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0429` | `RETAIN` | `GQR-0017` | `REFERENCE` | Known albums final ambiguity comments, empty Ulterior album and Uneasy audio row |
+| 816 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0433` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 10-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
+| 817 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0434` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 16-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
+| 818 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0435` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 8-file physical fingerprint/hash corpus, full payload audit and exact CUE/sibling identities |
+| 819 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0438` | `RETAIN` | `BR-0192` | `REFERENCE` | All four GOG regression specs, complete current rename/count changes, JSON audit and existing extraction-test owners |
+| 820 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0440` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 16-album/318-track source corpus, comment-only rename and strict full-byte/schema audit |
+| 821 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0441` | `RETAIN` | `GQR-0017` | `REFERENCE` | Complete 7-album/80-track source corpus, comment-only rename and strict full-byte/schema audit |
+| 822 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0447` | `RETAIN` | `BR-0529` | `REFERENCE` | Retain shared weapon-state presentation and close existing cross-game touch admission owner |
+| 823 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0453` | `RETAIN` | `BR-0415` | `REFERENCE` | Keep launcher content and engine policy distinct; finish coherent D2 variant precedence under existing owner |
+| 824 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0457` | `RETAIN` | `BR-0447` | `REFERENCE` | Retain shared logging policy and demo declarations; coordinate logging budgets and cross-process ownership |
+| 825 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0458` | `RETAIN` | `BR-0420` | `REFERENCE` | Keep transient actions distinct from launch-intro policy; complete the existing custom-control accessibility owner |
+| 826 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0460` | `RETAIN` | `GQR-0209` | `PRIMARY` | Preserve callsign and shared resume projections; bind delayed foreground-service shutdown to the expired game session |
+| 827 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0461` | `RETAIN` | `BR-0440` | `REFERENCE` | Retain typed mission metadata and shared state boundaries; complete native mode compatibility and supported preference publication |
+| 828 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0463` | `RETAIN` | `BR-0460` | `REFERENCE` | Retain isolated preview request ownership and corrected PixelCopy API guard; finish controller and probe correlation owners |
+| 829 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0464` | `RETAIN` | `BR-0021` | `REFERENCE` | Retain press-owned controller dispatch and strict GOG catalog parsing; complete existing cancellation and diagnostic owners |
+| 830 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0465` | `RETAIN` | `BR-0451` | `REFERENCE` | Retain shared focus navigation, bounded DXA traversal and crash retention; finish existing focus cancellation and retry owners |
+| 831 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0466` | `RETAIN` | `BR-0643` | `REFERENCE` | Preserve exact disc hashing and shared attempt budgets; finish disc identity and owned asset-reader scopes |
+| 832 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0470` | `RETAIN` | `BR-0508` | `REFERENCE` | Retain repaired storage ownership and manifest publication; complete Downloads export and failed-hash feedback owners |
+| 833 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0472` | `RETAIN` | `BR-0241` | `REFERENCE` | Retain shared controller sampling and navigation helpers; complete existing crash provenance and input ownership contracts |
+| 834 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0473` | `RETAIN` | `BR-0111` | `REFERENCE` | Keep thin logging and process IPC owners; encode recent endpoints without a delimiter collision |
+| 835 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0474` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain shared music geometry, typed bounded sidecar and active-set availability; complete existing UI and process publication owners |
+| 836 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0482` | `RETAIN` | `GQR-0216` | `PRIMARY` | Retain owned descriptor staging and shared action policy; serialize durable resume handoff generations |
+| 837 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0485` | `RETAIN` | `BR-0222` | `REFERENCE` | Retain atomic single-file copies and shared input mixing; complete coherent demo artifact publication |
+| 838 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0490` | `RETAIN` | `BR-0244` | `REFERENCE` | Retain the small shared automap policy; fix existing mailbox, gesture identity and command latch boundaries |
+| 839 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0491` | `RETAIN` | `BR-0236` | `REFERENCE` | Retain IO and debounce for weapon ordering; finish existing paired pilot transaction and interaction generations |
+| 840 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0493` | `RETAIN` | `BR-0263` | `REFERENCE` | Retain shared controller maps and independent trigger inventory; complete existing game-specific keyboard schema owner |
+| 841 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0495` | `RETAIN` | `BR-0420` | `REFERENCE` | Retain diagram presentation and physical-device display selection; complete existing hit testing and semantic controls |
+| 842 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0502` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain shared graphics controls and focus links; publish live preferences through the existing process owner |
+| 843 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0503` | `RETAIN` | `BR-0422` | `REFERENCE` | Retain shared gyro producer; close existing activation, calibration and source lifetime owners |
+| 844 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0505` | `RETAIN` | `BR-0224` | `REFERENCE` | Retain exact-label activation and command failure propagation; close existing script schema and handoff owners |
+| 845 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0506` | `RETAIN` | `BR-0284` | `REFERENCE` | Preserve shared metadata projection and atomic individual reports; complete existing automation session and assertion contracts |
+| 846 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0526` | `RETAIN` | `GQR-0084` | `REFERENCE` | Retain one typed resume configuration and native save boundary; remove unused roster persistence and finish off-main discovery |
+| 847 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0532` | `RETAIN` | `BR-0236` | `REFERENCE` | Retain shared active-set music UI and native format adapters; finish existing preference and provider lifecycles |
+| 848 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0537` | `RETAIN` | `BR-0506` | `REFERENCE` | Retain shared launcher startup and input adapters; finish lifecycle cancellation and coherent launch publication |
+| 849 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0538` | `RETAIN` | `BR-0284` | `REFERENCE` | Retain shared setup projection and bounded import owners; finish correlated automation and stable hash outcomes |
+| 850 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0540` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain exact shared copy and single-flight result imports; reconcile remaining global temporary cleanup and readiness policy |
+| 851 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0541` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain exact-copy and shared launcher controls; reopen incomplete temporary-owner closure and finish existing retry policy |
+| 852 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0542` | `RETAIN` | `BR-0510` | `REFERENCE` | Retain shared automation adapters and lightweight introspection; finish stable activation identity and acknowledged handoff |
+| 853 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0543` | `RETAIN` | `BR-0472` | `REFERENCE` | Retain shared set dialogs and archive publication; finish existing truthful deletion and staging-owner lifecycle |
+| 854 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0544` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain staged installer/disc publication and native CUE ownership; finish caller cancellation and durable source admission |
+| 855 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0545` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain current disc staging and typed audio identification; unify explicit dismissal with existing attempt lifetime owner |
+| 856 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0546` | `RETAIN` | `BR-0456` | `REFERENCE` | Retain shared disc helpers and repaired collision/publication paths; consolidate authoritative CUE identities in existing parser owner |
+| 857 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0547` | `RETAIN` | `BR-0456` | `REFERENCE` | Preserve all-track staging and shared attempt budgets; complete existing cancellation and file/source transaction acceptance |
+| 858 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0549` | `RETAIN` | `GQR-0216` | `REFERENCE` | Retain one launcher thumbnail/presentation owner; resume identity and handoff safety remain existing cross-layer owners |
+| 859 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0550` | `RETAIN` | `GQR-0085` | `REFERENCE` | Retain shared save browsing and grant-safe sharing; bind destructive confirmation and late publication to existing generation owners |
+| 860 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0551` | `RETAIN` | `GQR-0085` | `REFERENCE` | Retain shared save presentation and native format admission; finish existing candidate/deletion generation acceptance |
+| 861 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0557` | `RETAIN` | `BR-0529` | `REFERENCE` | Keep shared touch/native binding inventories; finish existing typed radial and cross-game dispatch admission |
+| 862 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0560` | `RETAIN` | `BR-0517` | `REFERENCE` | Keep current editor geometry and shared properties; preserve unsaved generations across typed import outcomes |
+| 863 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0564` | `RETAIN` | `BR-0529` | `REFERENCE` | Keep shared bounded editor widgets and native action labels; finish existing per-game admission and preset reader lifetime |
+| 864 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0574` | `RETAIN` | `BR-0322` | `REFERENCE` | Preserve bounded standalone ETC2 conversion and checked shared layout; finish existing packaged mip consumer acceptance |
+| 865 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0576` | `RETAIN` | `BR-0533` | `REFERENCE` | Keep Windows toolchain discovery at its platform boundary and refresh existing toolchain identity owner |
+| 866 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0577` | `RETAIN` | `BR-0549` | `REFERENCE` | Retain installer and aggregate orchestration boundaries with existing release/configuration owners |
+| 867 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0578` | `RETAIN` | `BR-0539` | `REFERENCE` | Retain script-relative launcher/settings ownership and existing menu/device/provisioning fixes |
+| 868 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0579` | `RETAIN` | `BR-0556` | `REFERENCE` | Retain release script/build boundaries and remove obsolete unreachable promotion policy |
+| 869 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0580` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain catalog discovery and scheduling at the aggregate runner boundary |
+| 870 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0581` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain aggregate preflight and result execution ownership; complete existing resource and provisioning acceptance |
+| 871 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0582` | `RETAIN` | `BR-0554` | `REFERENCE` | Retain ordered tier and report orchestration; remove disconnected Docker coverage through existing owner |
+| 872 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0583` | `RETAIN` | `BR-0544` | `REFERENCE` | Retain deliberately budgeted quick-suite policy and existing exact-APK preflight owner |
+| 873 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0584` | `RETAIN` | `BR-0538` | `REFERENCE` | Keep one mixed-language quality coordinator and atomic ownership in the existing formatter root |
+| 874 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0596` | `RETAIN` | `BR-0584` | `REFERENCE` | Retain shared profile parsing and dependency verification; complete existing producer coverage and cleanup truthfulness |
+| 875 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0597` | `RETAIN` | `BR-0603` | `REFERENCE` | Retain pinned shared game-data staging and process identity repairs; complete existing NAT readiness and transactional demo stripping |
+| 876 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0601` | `RETAIN` | `BR-0600` | `REFERENCE` | Keep shared quality file selection; close remaining checked mutation, test coverage and exact dependency identity owners |
+| 877 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0602` | `RETAIN` | `BR-0582` | `REFERENCE` | Remove the disconnected PowerShell metadata projection; preserve shared Kotlin projection and finish bounded worker ownership |
+| 878 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0605` | `RETAIN` | `BR-0607` | `REFERENCE` | Retain local replay artifact rules while completing required corpus provenance and clean-checkout acceptance |
+| 879 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0608` | `RETAIN` | `BR-0610` | `REFERENCE` | Retain shared CMake policy owners and verified codec acquisition; honor explicit tool selection and canonical build identity |
+| 880 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0609` | `RETAIN` | `BR-0615` | `REFERENCE` | Reuse shared string-aware JSONC and source identity policy; finish complete music album and index generation under existing owners |
+| 881 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0611` | `RETAIN` | `BR-0611` | `REFERENCE` | Retain physical/album schema separation and ordinal ordering; complete shared parser, private matcher and symmetric collision owners |
+| 882 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0612` | `RETAIN` | `BR-0623` | `REFERENCE` | Retain current canonical spec and extraction identity policy; enforce explicit generation selections and portable source inventory |
+| 883 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0613` | `RETAIN` | `BR-0620` | `REFERENCE` | Retain shared sampler and data owners; complete aggregate stage routing, non-mutating previews and contained portable export |
+| 884 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0615` | `RETAIN` | `BR-0493` | `REFERENCE` | Retain native HAM format ownership and rollback; complete exact DXA inventory, shared schema and full composition oracle |
+| 885 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0616` | `RETAIN` | `BR-0626` | `REFERENCE` | Retain shared HAM analysis and source exclusions; complete alias-safe, verified and reproducible DXA generation |
+| 886 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0617` | `RETAIN` | `BR-0634` | `REFERENCE` | Retain shared conversion progress and pack policy; finish truthful complete merge, private stages and reproducible tool identity |
+| 887 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0618` | `RETAIN` | `BR-0636` | `REFERENCE` | Retain portable bounded TGA repair and shared pack naming; complete exact sizing, collision rejection and archive publication |
+| 888 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0619` | `RETAIN` | `BR-0634` | `REFERENCE` | Retain per-game sound format and checked RIFF spans; complete sound pack status, private stages and source-bound publication |
+| 889 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0620` | `RETAIN` | `BR-0637` | `REFERENCE` | Retain exact portable TGA ownership and engine naming boundary; finish shared resize and collision-safe conversion policy |
+| 890 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0621` | `RETAIN` | `BR-0626` | `REFERENCE` | Retain branch-owned pack conversion and narrow paired engine seams; close exact source identity and namespace contracts |
+| 891 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0622` | `RETAIN` | `BR-0493` | `REFERENCE` | Retain branch-owned semantic HAM projection; agree host field domains with the actual native consumer |
+| 892 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0623` | `RETAIN` | `BR-0630` | `REFERENCE` | Retain branch-owned verifier; replace candidate-directed success with independent exact consumer validation |
+| 893 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0624` | `RETAIN` | `BR-0636` | `REFERENCE` | Retain shared bounded asset readers and portable pixel ownership; finish source namespace and cumulative work policy |
+| 894 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0625` | `RETAIN` | `BR-0493` | `REFERENCE` | Remove disconnected raw payload and byte-difference helpers; retain bounded semantic source readers and native contracts |
+| 895 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0626` | `RETAIN` | `BR-0233` | `REFERENCE` | Retain one shared branch-owned archive writer; publish a complete validated generation with exact source/output ownership |
+| 896 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0632` | `RETAIN` | `BR-0643` | `REFERENCE` | Keep compatibility disc hashes separate from identity admission and refresh the actual database maintenance contract |
+| 897 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0636` | `RETAIN` | `BR-0607` | `REFERENCE` | Keep replay sandbox and trace ownership in existing runners; repair recording prerequisites and required corpus contracts |
+| 898 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0637` | `RETAIN` | `BR-0008` | `REFERENCE` | Keep measured source identity distinct from path lookup and converge generated inventories on one source policy |
+| 899 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0639` | `RETAIN` | `BR-0169` | `REFERENCE` | Retain engine-owned demo extraction and source tables; correct executable validation commands and complete oracle outcomes |
+| 900 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0640` | `RETAIN` | `BR-0630` | `REFERENCE` | Restore a concise mod family index and complete staged-input instructions while preserving converter/runtime ownership |
+| 901 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0641` | `RETAIN` | `BR-0556` | `REFERENCE` | Preserve exact build-to-upload artifact handoff and shared host setup while reconciling release identity and signing owners |
+| 902 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0642` | `RETAIN` | `BR-0493` | `REFERENCE` | Keep policy tests beside branch-owned controller, audio, demo and import owners; require native and lifecycle acceptance separately |
+| 903 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0648` | `RETAIN` | `BR-0491` | `REFERENCE` | Retain explicit music source policy, bounded typed sidecars and cache confinement; verify runtime publication and overlay lifecycle separately |
+| 904 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0661` | `RETAIN` | `BR-0649` | `REFERENCE` | Retain SAF audio generation and asset teardown assertions; close existing title-music oracle and state-restoration owners |
+| 905 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0662` | `RETAIN` | `BR-0644` | `REFERENCE` | Retain shared render, music and generation assertions; reconcile existing binding oracle at current merged script |
+| 906 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0663` | `RETAIN` | `BR-0645` | `REFERENCE` | Retain distinct route, rendering and recorder fixtures; finish existing paired pilot deletion oracle |
+| 907 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0665` | `RETAIN` | `BR-0546` | `REFERENCE` | Retain shared correlated runner and centralized host discovery; finish exact tool identity and existing staging lifetime policy |
+| 908 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0666` | `RETAIN` | `BR-0171` | `REFERENCE` | Retain shared host adapters and duration estimator; constrain existing process cleanup to owned generations |
+| 909 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0667` | `RETAIN` | `BR-0190` | `REFERENCE` | Preserve centralized emulator readiness and active-set publication; finish typed ADB failures and bounded process ownership |
+| 910 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0668` | `RETAIN` | `BR-0190` | `REFERENCE` | Retain correlated terminal outcomes and shared dependency policy; replace name/size admission and uncovered lexical reader |
+| 911 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0675` | `RETAIN` | `BR-0543` | `REFERENCE` | Retain shared managed emulators and fail-closed port conflicts; guarantee owned provisioning cleanup |
+| 912 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0676` | `RETAIN` | `BR-0653` | `REFERENCE` | Retain expanded paired LAN scenarios and controller-page waits; preserve accepted synchronization oracle through final verification |
+| 913 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-CHUNK-0680` | `RETAIN` | `BR-0665` | `REFERENCE` | Retain slowdown/ABI/pilot invariants and removed stale route fixture; repair existing WebSocket bot protocol and lifetime owners |
+| 914 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0002` | `RETAIN` | `BR-0021` | `REFERENCE` | Extraction callback cancellation, JNI exception unwind, ISO abort and Mac fallback suppression |
+| 915 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0005` | `RETAIN` | `BR-0077` | `REFERENCE` | Native load status propagation, missing-secret policy and launcher assertion consumers |
+| 916 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0008` | `RETAIN` | `BR-0082` | `REFERENCE` | Metadata-backed Resume admission, scope/path checks and paired body/runtime readers |
+| 917 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0009` | `REMOVE` | `BR-0084` | `REFERENCE` | Dormant SAF base-file archive registration, managed-copy picker and injected-provider tests |
+| 918 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0011` | `RETAIN` | `BR-0099` | `REFERENCE` | Bundled audio database invalidation, local analysis completion and music name sidecar identity |
+| 919 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0016` | `REFACTOR` | `BR-0110` | `REFERENCE` | Simulator multi-client mapping identity and last-sender inbound delivery |
+| 920 | 47 | MEDIUM | 23/0/7/10/7 | `GQ1-RECHECK-0023` | `RETAIN` | `BR-0119` | `REFERENCE` | Future protocol admission after version2 bump and rejection response contract |
+| 921 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0007` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Ulterior and Uneasy music metadata and existing typed cache owner |
+| 922 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0008` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Castaway Cererian and D2X-XL metadata and typed cache owner |
+| 923 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0009` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Ewithin KCXF2RM and nefarious metadata and typed cache owner |
+| 924 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0010` | `NO_INHERITED_EFFECT` | `GQR-0021` | `REFERENCE` | Trine and U3AAH metadata and typed cache owner |
+| 925 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0014` | `NO_INHERITED_EFFECT` | `GQR-0025` | `REFERENCE` | HFS path/scratch ownership and offline MIDI diagnostic limits |
+| 926 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0015` | `NO_INHERITED_EFFECT` | `GQR-0031` | `REFERENCE` | PKG selected-output admission and physical publication ownership |
+| 927 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0022` | `NO_INHERITED_EFFECT` | `GQR-0064` | `REFERENCE` | Inno metadata header completion and scoped budget evidence |
+| 928 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0024` | `NO_INHERITED_EFFECT` | `BR-0077` | `REFERENCE` | Native load status propagation and active-pack/result consumers |
+| 929 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0041` | `RETAIN` | `GQR-0118` | `REFERENCE` | Initial DOS output validation, exact selected-item outcomes and owned publication/cleanup |
+| 930 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0050` | `RETAIN` | `BR-0084` | `REFERENCE` | Reconcile ineffective dormant SAF parser fixture within existing removal, retain valid manifests/shared texture contract |
+| 931 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0051` | `RETAIN` | `GQR-0033` | `REFERENCE` | Preserve containment and streaming contracts while completing existing transaction and attempt ownership |
+| 932 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0052` | `RETAIN` | `GQR-0123` | `REFERENCE` | Enforce current demo oracle provenance and complete inventory while retaining exact output checks |
+| 933 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0055` | `RETAIN` | `GQR-0093` | `REFERENCE` | Preserve member keys and exact music bytes while completing collision, retry and discriminating guard acceptance |
+| 934 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0059` | `RETAIN` | `BR-0008` | `REFERENCE` | Preserve native expected-level oracle and parameterized smoke contract; complete served-source identity and final consistency acceptance |
+| 935 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0075` | `RETAIN` | `BR-0337` | `REFERENCE` | Secret inventory/identity; required bosses, complete entrances and paired discovery acceptance retained |
+| 936 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0085` | `RETAIN` | `BR-0251` | `REFERENCE` | Shared GPU timer/MSAA operation admission and recovery; diagnostic failure must not suppress required rejection, preserve archived oracle fix |
+| 937 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0088` | `RETAIN` | `BR-0280` | `REFERENCE` | TSF checked startup/current ordered EOF repair, ring completion and paired scenery/multiplayer presentation consumers |
+| 938 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0137` | `RETAIN` | `BR-0251` | `REFERENCE` | Shared MSAA diagnostic targets, actual paired presentation and probe cleanup/freshness ownership |
+| 939 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0162` | `RETAIN` | `GQR-0239; GQR-0175; GQR-0191; GQR-0236; BR-0206` | `REFERENCE` | D1 save, terrain, briefing and native selection |
+| 940 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0163` | `REFACTOR/RETAIN` | `GQR-0240; GQR-0241; GQR-0189; GQR-0238` | `REFERENCE` | D1 menu, profile, object and rendering integration |
+| 941 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0166` | `ISSUES/RETAIN` | `GQF-0253/GQR-0239` | `PRIMARY` | D1 game loop, flyout state and mixed-station matcen pause |
+| 942 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0177` | `REFACTOR/RETAIN` | `GQF-0254/GQR-0240; GQF-0255/GQR-0241; GQR-0189; GQR-0238` | `PRIMARY` | D2 profile, powerup, native bitmap relocation and CPU visibility |
+| 943 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0179` | `RETAIN` | `GQF-0253/GQR-0239; GQR-0175; BR-0294; BR-0345` | `REFERENCE` | D2 game loop, native D1 policy calls and presentation |
+| 944 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0245` | `NO_INHERITED_EFFECT` | `BR-0402; GQR-0204` | `REFERENCE` | Server script JSONC and maintenance integration |
+| 945 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0262` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L1-L750 |
+| 946 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0263` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L751-L1500 |
+| 947 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0264` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L1501-L2250 |
+| 948 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0265` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L2251-L3000 |
+| 949 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0266` | `RETAIN` | `GQR-0017` | `REFERENCE` | Generated album catalog L3001-L3251 |
+| 950 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0267` | `RETAIN` | `GQR-0017; GQR-0251` | `REFERENCE` | Physical disc catalog L1-L750 |
+| 951 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0268` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L751-L1500 |
+| 952 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0269` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L1501-L2250 |
+| 953 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0270` | `RETAIN` | `GQR-0017` | `REFERENCE` | Physical disc catalog L2251-L2288 |
+| 954 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0283` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0283 |
+| 955 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0284` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0284 |
+| 956 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0285` | `RETAIN` | `GQR-0017` | `REFERENCE` | Tool pins and CD manifest delta 0285 |
+| 957 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0287` | `RETAIN` | `BR-0192; GQR-0252` | `REFERENCE` | Regression and CD source metadata 0287 |
+| 958 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0289` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0289 |
+| 959 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0290` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0290 |
+| 960 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0291` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0291 |
+| 961 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0292` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0292 |
+| 962 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0293` | `RETAIN` | `GQR-0017` | `REFERENCE` | Music fingerprint sources 0293 |
+| 963 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0305` | `RETAIN` | `BR-0643` | `REFERENCE` | Disc identity and existing audio/logging/extraction/registry/navigation owners; current repairs preserved, no new root |
+| 964 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0359 | RETAIN | GQR-0040 | REFERENCE | Preserve native source identity and owned import lifetime; new GOG dialog failure/action policy44 |
+| 965 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0367 | RETAIN | BR-0533 | REFERENCE | Root build/config policy; retain sanitizer isolation and refresh existing toolchain identity owner |
+| 966 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0369 | RETAIN | BR-0556 | REFERENCE | Retain authored release/native cleanup boundaries; current BuildInfo owner and supported Play fixture identity |
+| 967 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0370 | RETAIN | BR-0538 | REFERENCE | Preserve shared tooling and current repairs; finish held formatter ownership and existing runner/catalog acceptance |
+| 968 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0372 | RETAIN | BR-0556 | REFERENCE | Retain verified pair/recovery/release boundaries; finish existing variant-specific build identity |
+| 969 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0373 | RETAIN | BR-0543 | REFERENCE | Master runner declaration/profile/sampling/preflight/execution review; preserve existing lifecycle owner and admit eligibility44 separately |
+| 970 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0380` | RETAIN | `BR-0539` | REFERENCE | Capture/FOV/black/preview wrappers; new registration44 plus existing target/lifetime acceptance |
+| 971 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0381` | RETAIN | `BR-0233` | REFERENCE | Media/demo/metadata; retain contracts and complete existing correlated publication/capture/corpus owners |
+| 972 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0382` | `RETAIN` | `BR-0233` | `REFERENCE` | Retain capture/oracle/timing/projection contracts; complete existing publication, worker lifetime and exact request acceptance |
+| 973 | 47 | MEDIUM | 23/0/7/10/7 | `GQ2-CHUNK-0385` | `RETAIN` | `BR-0171` | `REFERENCE` | Retain selected recovery, exact formatter and DOS capture controls; complete existing warning/process/session/generation/independent cleanup acceptance |
+| 974 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0403 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve semantic pipeline repairs;reuse existing typed JSON/publication/generation policies;pair-shape lead unadmitted |
+| 975 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0404 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve generation repairs;share explicit inventory/path/hash/serialization/publication policies under existing owners |
+| 976 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0405 | NO_INHERITED_EFFECT/EXISTING-OWNER | GQR-0017 | REFERENCE | Preserve converter format/native repairs;share explicit admission/entrymap/resize/schema/publication ownership under existing owners |
+| 977 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0414 | NO_INHERITED_EFFECT | BR-0643 | REFERENCE | Preserve exact hash and parser repairs; resolve identity admission and simplify actual guide workflow; retain notices |
+| 978 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0426 | ISSUES/RETAIN | BR-0556 | REFERENCE | Retain publishing menu and current artifact guards;complete existing invocation-bound variant identity and conditional authored title cleanup |
+| 979 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0428 | ISSUES/RETAIN | BR-0202 | REFERENCE | Retain controller tests/current routing repairs;actual native hold/lifecycle and publication acceptance remains |
+| 980 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0434 | NO_INHERITED_EFFECT | GQR-0301 | PRIMARY | mouse edge/extreme tests; shared Android capability mismatch, no original reduction |
+| 981 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0436 | NO_INHERITED_EFFECT | GQR-0302 | PRIMARY | SoundFont and geometry tests;missing installed bytes despite existing identity,no original reduction |
+| 982 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0440 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | coop rewind/score/secret advance tests; checked staging byte identity, current native repairs retained, zero original reduction |
+| 983 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0442 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | cooperative ending/flyout deadline tests; checked staging byte identity, current native repairs retained, zero original reduction |
+| 984 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0445 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | controller/readability/coop save and briefing scripts; checked staging identity, distinct current repairs retained, zero original reduction |
+| 985 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0446 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | briefing reading/rejoin/release/countdown scripts; checked staging identity, current native repairs retained, zero original reduction |
+| 986 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0447 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | secret save/travel/world rollback scripts; checked staging identity, distinct native guards retained, zero original reduction |
+| 987 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0448 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | secret ending/race/cold/save scripts; checked staging identity, native repairs and distinct local roles retained, zero original reduction |
+| 988 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0449 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | briefing pause/deadline/movie scripts; checked staging identity and distinct authored-count/touch/authority/cleanup roles retained, zero original reduction |
+| 989 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0450 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | transition/death/disconnect/boss scripts; checked staging identity and distinct phase/life/arrival/local ending roles retained, zero original reduction |
+| 990 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0451 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | flyout/Guide-Bot scripts; retain distinct timing/pause/cage/spawn/dock/owner/observer/cold identity restore and checked staging, zero original reduction |
+| 991 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0452 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | travel/migration/latejoin/feedback scripts; retain companion carry and dock, distinct host swaps/reorder/cancel/recovery, launch feedback and checked staging, zero original reduction |
+| 992 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0454 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | reactor death, physical arrival/history, countdown, partial pickup and repeated recovery scripts; preserve exact current oracles and checked staged bytes, zero original reduction |
+| 993 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0455 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | recovery and restore-failure scripts; retain ordinary pickup, partial quantities, loss/error/rehost/status, tolerant optional gear and session reports, checked staged bytes, zero original reduction |
+| 994 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0456 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | retired-world and rewind scripts; retain exact record/campaign/private inventory, host selection and history prefix, two earlier targets, companion runtime/dock ownership, nested save chooser cancellation, checked staged bytes, zero original reduction |
+| 995 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0457 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics context and EGL failure scripts; retain actual retirement, accepted mode/MSAA recovery, known-color and VBO readback/state, UI readiness and deadlines, checked staged bytes, zero original reduction |
+| 996 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0458 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics accept and black-output scripts; retain actual blocked OK, accepted tuple/config mirrors/restart, pre-swap black readback/state, prearm failure capture, checked staged bytes and request identity, zero original reduction |
+| 997 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0459 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | prefs and FOV scripts; retain ordered preference completion, rollback, pilot reload, intro and shareware, six live FOV cases and pre-swap marker checks, exact staged bytes, zero original reduction |
+| 998 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0461 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | graphics confirmation restart and stall scripts; retain input and debounce, deferred requested mode, normalexit restart and livepreview rollback oracle, exact staged bytes and correlated outcomes, zero original reduction |
+| 999 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0463 | NO_INHERITED_EFFECT | BR-0245 | REFERENCE | independent triggers recording and intro scripts; retain engine state and capture checks, require admitted current-screen input-caused dismissal, preserve current storage-close-reset-path-resolver repairs and distinct artifact/persistence/admission owners, zero original reduction |
+| 1000 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0464 | NO_INHERITED_EFFECT | GQR-0290 | REFERENCE | graphics first-run lifecycle menu-abandon scripts; retain distinct marker-preview-recovery contracts, require truthful physical eligibility and generation-correlated runtime acceptance, preserve completed rollback repairs, zero original reduction |
+| 1001 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0466 | NO_INHERITED_EFFECT | BR-0190 | REFERENCE | single-player endgame and Enemy Within scripts; retain distinct native endings and useful briefing/save sentinel, require checked fixture device identity and acknowledged screen/save generation, zero original reduction |
+| 1002 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0467 | NO_INHERITED_EFFECT | BR-0671 | REFERENCE | unified content and Vertigo scripts; preserve ownership, HAM and GPU repairs, require exact optional selection and correlated snapshot/preview evidence, zero original reduction |
+| 1003 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0468 | NO_INHERITED_EFFECT | BR-0190 | REFERENCE | GuideBot and idle screen saver scripts; preserve native policy and route repairs, require checked current payload and correlated snapshot/background acceptance, zero original reduction |
+| 1004 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0469 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Graphics allocation multiplayer and interruption scripts; retain real GL failure recovery, deferred automap and paired peer checks, require exact current staged bytes and correlated observations, zero original reduction |
+| 1005 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0471 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | MSAA music restore track and native menu scripts; retain distinct real producers, require exact staged bytes and truthful completion/observation, zero original reduction |
+| 1006 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0472 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Mac graphics wall snapshot two-pass cache and mod scripts; retain distinct coverage, verify staged bytes and generation/observation, zero original reduction |
+| 1007 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0473 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Guide-Bot goal info metadata recall and routing scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1008 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0474 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Autoselect axis preview boss music and compute scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1009 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0475 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Guide-Bot graphics demo music and pilot scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1010 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0476 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Graphics exit preview rebuild and recovery scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1011 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0477 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Preview abort save-load lifecycle import objective and autosave scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1012 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0478 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | SAF audio secret launch and texture scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1013 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0479 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Automap media metadata and touch scripts; retain distinct coverage, verify staged bytes and completed attempts, zero original reduction |
+| 1014 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0480 | NO_INHERITED_EFFECT | BR-0593 | REFERENCE | Cooperative countdown save and flyout scripts; retain distinct coverage, preserve native restore and distinct flyout checks, verify staged bytes and completed attempts, zero original reduction |
+| 1015 | 47 | MEDIUM | 23/0/7/10/7 | GQ2-CHUNK-0481 | NO_INHERITED_EFFECT | BR-0222 | REFERENCE | FOV demo compatibility script; retain distinct coverage, retain native record/render controls and coherent artifacts, verify staged bytes and completed attempts, zero original reduction |
+| 1016 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0053` | `PRE-0108` | `GQF-0036` | `PRIMARY` | saf_manifest_parser.c` retained strings and duplicate lookup |
+| 1017 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0481` | `RETAIN` | `GQR-0023` | `REFERENCE` | Retain strict atomic SAF publication and save projection; complete existing bounded parsing and deletion identity owners |
+| 1018 | 47 | MEDIUM | 23/0/10/10/4 | `GQ1-CHUNK-0646` | `RETAIN` | `GQR-0023` | `REFERENCE` | Retain shared touch action policy and validated save/SAF projection; cover true publication and runtime generations at their owners |
+| 1019 | 47 | MEDIUM | 23/0/10/10/4 | `GQ2-CHUNK-0040` | `RETAIN` | `GQR-0124` | `REFERENCE` | Explicit nested container depth and complete attempt ownership, with escaping0253 and source-bound publication/oracle plans |
+| 1020 | 46 | MEDIUM | 23/0/6/10/7 | `GQ2-CHUNK-0184` | `REPAIR/RETAIN` | `GQF-0256/GQR-0242; GQR-0175; GQR-0191; GQR-0236; GQR-0239; BR-0206` | `PRIMARY` | D2 native save integration and timer cleanup |
+| 1021 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0104` | `PRE-0108` | `BR-0181` | `REFERENCE` | Compare the complete fpcalc reference fingerprint |
+| 1022 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0105` | `PRE-0108` | `BR-0662` | `REFERENCE` | Keep mailbox assertions active in registered builds |
+| 1023 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0115` | `NO_INHERITED_EFFECT` | `BR-0182` | `REFERENCE` | Exercise the production StuffIt parser in corpus tests |
+| 1024 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0154` | `RETAIN` | `BR-0224` | `REFERENCE` | Fail closed on unknown automation actions and debug fields |
+| 1025 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0156` | `RETAIN` | `BR-0231` | `REFERENCE` | Stop replay when direct-command policy fails |
+| 1026 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0160` | `RETAIN` | `BR-0396` | `REFERENCE` | Register route snapshot and cache tests with CTest |
+| 1027 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0163` | `RETAIN` | `BR-0396` | `REFERENCE` | Register route snapshot and cache tests with CTest |
+| 1028 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0444` | `RETAIN` | `GQR-0205` | `PRIMARY` | Preserve debug SAF pipe error status before ordinary writer close |
+| 1029 | 45 | MEDIUM | 23/0/2/10/10 | `GQ1-CHUNK-0586` | `RETAIN` | `BR-0561` | `REFERENCE` | Retain a focused NAT simulation owner with canonical resolved endpoints and bounded mapping lifecycle |
+| 1030 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0048` | `RETAIN` | `GQR-0131` | `REFERENCE` | Complete remaining shared HMP success semantics while retaining original-file minimization |
+| 1031 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0296` | `RETAIN` | `GQR-0266` | `PRIMARY` | Provision selected instrumentation on actual secondary target; preserve fixture oracles |
+| 1032 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0297` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected lobby-latency instrumentation provisioning; preserve distinct fixture oracles |
+| 1033 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0298` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected slider/capability instrumentation provisioning; retain window repeat boundaries |
+| 1034 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0300` | `RETAIN` | `GQR-0266` | `REFERENCE` | Extend selected slider package/component consistency; retain config/native ownership |
+| 1035 | 45 | MEDIUM | 23/0/2/10/10 | `GQ2-CHUNK-0301` | `RETAIN` | `GQR-0267` | `PRIMARY` | Bind Mac SAF selected package URI authority; retain private debug provider |
+| 1036 | 45 | MEDIUM | 12/12/4/10/7 | `GQ2-CHUNK-0224` | `CANDIDATE` | `GQR-0247; GQR-0194; GQR-0175; BR-0206; BR-0374; BR-0332` | `PRIMARY` | Escort path continuation, runtime and direct timeout cleanup |
+| 1037 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0020` | `PRE-0108` | `GQF-0059` | `PRIMARY` | Fingerprint matcher score serialization and best-CD selection |
+| 1038 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0022` | `PRE-0108` | `GQF-0063` | `PRIMARY` | CUE `FILE` directive grammar |
+| 1039 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0039` | `PRE-0108` | `GQF-0070` | `PRIMARY` | Windows `fingerprint_cd` CUE and BIN paths |
+| 1040 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0046` | `PRE-0108` | `BR-0077` | `REFERENCE` | Propagate loaded level failures to the metadata result |
+| 1041 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0047` | `PRE-0108` | `BR-0077` | `REFERENCE` | Propagate loaded level failures to the metadata result |
+| 1042 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0055` | `PRE-0108` | `GQF-0105` | `PRIMARY` | Song-list token versus engine filename capacity |
+| 1043 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0117` | `DEFER` | `GQF-0106` | `PRIMARY` | Container-track sidecar identity |
+| 1044 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0123` | `NO_INHERITED_EFFECT` | `GQF-0111` | `PRIMARY` | Mission ZIP loadable-level admission |
+| 1045 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQF-0111` | `REFERENCE` | Mission ZIP loadable-level admission |
+| 1046 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0126` | `NO_INHERITED_EFFECT` | `GQF-0111` | `REFERENCE` | Mission ZIP loadable-level admission |
+| 1047 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0147` | `RETAIN` | `BR-0289` | `REFERENCE` | Preserve resolution-scaled point primitives in GLES3 |
+| 1048 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0149` | `RETAIN` | `BR-0300` | `REFERENCE` | Remove or restore the dead D1-in-D2 level-start mode |
+| 1049 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0157` | `CANDIDATE` | `BR-0201` | `REFERENCE` | Restore the replay floating-point environment on every platform |
+| 1050 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0166` | `RETAIN` | `BR-0588` | `REFERENCE` | Correlate introspection reads with the current request |
+| 1051 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0201` | `RETAIN` | `GQF-0181` | `PRIMARY` | audio catalog payload lifetime, homing/HUD and demo codec |
+| 1052 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0224` | `RETAIN` | `BR-0588` | `REFERENCE` | Introspection sampling, menus, player, secrets and route snapshots |
+| 1053 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0225` | `RETAIN` | `BR-0288` | `REFERENCE` | Introspection route, Guide-Bot, thief, rendering, HUD and multiplayer snapshots |
+| 1054 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0230` | `RETAIN` | `GQR-0175` | `PRIMARY` | Input-demo fixture settings, RNG/checkpoint schema and restored timer admission |
+| 1055 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0263` | `RETAIN` | `GQF-0195` | `PRIMARY` | route geometry arithmetic, visibility cache, trigger source discovery and packing reconciliation |
+| 1056 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0265` | `RETAIN` | `GQF-0195` | `REFERENCE` | route objective progression, fleeing carrier anchors and partial-result semantics |
+| 1057 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0310` | `RETAIN` | `BR-0197` | `REFERENCE` | private model headers, disabled TGA breakpoint, model texture upload and ClassicDepth draw policy |
+| 1058 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0331` | `RETAIN` | `GQR-0196` | `PRIMARY` | D2 object runtime interfaces, native/hybrid physics diagnostics and PIG cache/replacement ownership |
+| 1059 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0353` | `RETAIN` | `GQR-0201` | `PRIMARY` | D2 DXA patch snapshot, integer/frame parsing and native row/field test codecs |
+| 1060 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0355` | `RETAIN` | `BR-0382` | `REFERENCE` | D2 Guide-Bot warp/release/commands, secret search, traversal and path-goal resolution |
+| 1061 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0356` | `RETAIN` | `GQR-0175` | `REFERENCE` | D2 Guide-Bot path continuation, runtime reconstruction, replay probes, thief inventory and partial menu |
+| 1062 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0367` | `RETAIN` | `BR-0386` | `REFERENCE` | D2 weapon/homing, energy and RNG hooks, guided rebuild and runtime state with current D1 adapter delegation |
+| 1063 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0371` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 classic demo control trace, event/dump admission, quick recording and current D1 identity hooks |
+| 1064 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0374` | `RETAIN` | `GQR-0175` | `REFERENCE` | D2 object allocator/runtime, warning view, FX RNG, diagnostics, missile-camera wakes and current cooperative death hooks |
+| 1065 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0380` | `RETAIN` | `BR-0197` | `REFERENCE` | D2 model string/name guards, disabled TGA breakpoint, texture upload and ClassicDepth policy |
+| 1066 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0426` | `RETAIN` | `BR-0559` | `REFERENCE` | AcoustID example rename, optional generated asset integration and keystore properties example |
+| 1067 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0427` | `RETAIN` | `BR-0471` | `REFERENCE` | Controller/touch frozen presets, full current successors/discovery and fingerprint matching configuration |
+| 1068 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0430` | `RETAIN` | `BR-0643` | `REFERENCE` | Complete known-discs corpus, identical current rename, strict full-byte audit and full current DiscIdentifier |
+| 1069 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0432` | `RETAIN` | `BR-0562` | `REFERENCE` | Complete frozen 196-line dependency manifest, full current delta, current JDK/fpcalc helpers, exact platform URL and updater pin paths |
+| 1070 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-CHUNK-0437` | `RETAIN` | `GQR-0123` | `REFERENCE` | Complete Mac StuffIt oracle, identical current bytes, schema audit and full current native consumer |
+| 1071 | 44 | MEDIUM | 23/0/4/10/7 | `GQ1-SWEEP-014` | `RETAIN` | `GQR-0008` | `REFERENCE` | Tracked artifact recurrence, cleanup/retention contracts, formatter selection and release review hygiene sweep |
+| 1072 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0018` | `NO_INHERITED_EFFECT` | `GQR-0028` | `REFERENCE` | SOW append/output ownership and shared-budget diagnostic evidence limits |
+| 1073 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0078` | `RETAIN` | `GQR-0173` | `REFERENCE` | Weapon art debug fixture scoped failure cleanup, native clock admission and distinct Android/host oracles retained |
+| 1074 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0129` | `RETAIN` | `GQR-0173` | `REFERENCE` | Native hooks/getters retained; allocation/publication/freshness owners reconciled; current atomic/mailbox/mutex repairs; zero inherited saving |
+| 1075 | 44 | MEDIUM | 23/0/4/10/7 | `GQ2-CHUNK-0214` | `RETAIN` | `GQR-0246; BR-0345; BR-0294` | `PRIMARY` | Native briefing parser and missing pagination repair |
+| 1076 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0029` | `PRE-0108` | `GQF-0075` | `PRIMARY` | Inno PE resource offset-table leaf |
+| 1077 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0045` | `PRE-0108` | `GQF-0095` | `PRIMARY` | Level-metadata process-global initialization retry |
+| 1078 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0098` | `PRE-0108` | `GQF-0069` | `PRIMARY` | CD fingerprint BIN source generation |
+| 1079 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0107` | `PRE-0108` | `GQF-0082` | `PRIMARY` | Inno solid-chunk decoded prefix and terminal routing |
+| 1080 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0150` | `RETAIN` | `BR-0222` | `REFERENCE` | Publish input-demo artifact sets transactionally |
+| 1081 | 44 | MEDIUM | 23/0/7/10/4 | `GQ1-CHUNK-0152` | `RETAIN` | `GQF-0168` | `PRIMARY` | Replay current-frame direct-command acquisition |
+| 1082 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0023` | `NO_INHERITED_EFFECT` | `GQR-0082` | `REFERENCE` | Level-metadata runtime retirement and exception ownership |
+| 1083 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0124` | `NO_INHERITED_EFFECT` | `GQR-0261` | `REFERENCE` | Shared travel retained; existing recovery-freeze remedy separate, zero inherited saving |
+| 1084 | 44 | MEDIUM | 23/0/7/10/4 | `GQ2-CHUNK-0125` | `NO_INHERITED_EFFECT` | `GQR-0261` | `REFERENCE` | Travel continuation retained; existing recovery-freeze remedy separate, zero inherited saving |
+| 1085 | 43 | MEDIUM | 23/0/0/10/10 | `GQ2-CHUNK-0049` | `RETAIN` | `GQR-0254` | `PRIMARY` | Complete actual corpus PCM observation window while preserving production timeline and native format ownership |
+| 1086 | 43 | MEDIUM | 23/0/7/10/3 | `GQ1-CHUNK-0180` | `RETAIN` | `BR-0243` | REFERENCE | duplicate high-confidence diagnostic pagination loss is the only live root in this scope |
+| 1087 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0139` | `RETAIN` | `BR-0610` | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback |
+| 1088 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0140` | `RETAIN` | `BR-0610` | `REFERENCE` | Fail an invalid explicit vcpkg root before automatic fallback |
+| 1089 | 42 | MEDIUM | 23/0/2/10/7 | `GQ1-CHUNK-0382` | `RETAIN` | `GQR-0110` | `REFERENCE` | Android native CMake dependency acquisition, SDL patches, compiler/options and first target registrations |
+| 1090 | 41 | MEDIUM | 12/5/7/10/7 | `GQ2-CHUNK-0186` | `CANDIDATE` | `GQR-0244` | `PRIMARY` | Native bitmap tail and unused frame reader |
+| 1091 | 41 | MEDIUM | 12/5/7/10/7 | `GQ2-CHUNK-0193` | `CANDIDATE` | `GQR-0158` | `REFERENCE` | D2 classic demo, menu and UDP header |
+| 1092 | 40 | MEDIUM | 25/0/5/6/4 | `GQ2-CHUNK-0068` | `RETAIN` | `GQR-0044` | `REFERENCE` | Retain actual transcript/route/admission fixture and completed0042/0043/0044; actual admitted JNI caller and paired post-proof state seams reconciled with explicit synthetic-crypto and historical runtime limits; no new root/status/inherited saving |
+| 1093 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0012` | `REFACTOR` | `BR-0101` | `REFERENCE` | Global mission audio fingerprint retention and whole-file lookup/update costs |
+| 1094 | 40 | MEDIUM | 23/0/7/6/4 | `GQ1-RECHECK-0018` | `RETAIN` | `BR-0112` | `REFERENCE` | NAT sequential32-port reservation, startup errors and exhausted mapping admission |
+| 1095 | 39 | MEDIUM | 12/0/7/10/10 | `GQ1-CHUNK-0383` | `CANDIDATE` | `GQR-0203` | `PRIMARY` | Android D2 target tail, native compile/link fixups and complete paired executable source-list comparison |
+| 1096 | 39 | MEDIUM | 12/0/7/10/10 | `GQ2-CHUNK-0234` | `RETAIN` | `GQR-0203` | `REFERENCE` | Android native dependencies and per-game source registration |
+| 1097 | 38 | MEDIUM | 12/5/4/10/7 | `GQ1-CHUNK-0229` | `CANDIDATE` | `BR-0290` | `REFERENCE` | Input-demo diagnostic logger and duplicate inherited collision probes |
+| 1098 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0209` | `RETAIN` | `BR-0234` | `REFERENCE` | headless metadata runtime, cooperative diagnostics and canonical serializers |
+| 1099 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0312` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 polygon/morph UVL and RGB ownership, count guards, face counters and current indexed-color handling |
+| 1100 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0431` | `RETAIN` | `BR-0411` | `REFERENCE` | Complete 452-line version corpus, identical current rename, strict schema/alias audit and complete KnownVersions consumer |
+| 1101 | 36 | MEDIUM | 12/0/4/10/10 | `GQ1-CHUNK-0451` | `RETAIN` | `BR-0494` | `REFERENCE` | Retain friend UI actions and replace terminal ICE ordinal projection under its existing owner |
+| 1102 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0171` | `RETAIN` | `BR-0294` | `REFERENCE` | D2 instance palette and projection current delta |
+| 1103 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0271` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L1-L750 |
+| 1104 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0272` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L751-L1500 |
+| 1105 | 36 | MEDIUM | 12/0/4/10/10 | `GQ2-CHUNK-0273` | `RETAIN` | `BR-0411` | `REFERENCE` | Known-version catalog L1501-L2068 |
+| 1106 | 35 | MEDIUM | 12/7/2/10/4 | `GQ1-SWEEP-015` | `RETAIN` | `GQR-0015` | `REFERENCE` | Current dead-code/schema cleanup, historical owner reconciliation and exact remaining analysis gates |
+| 1107 | 34 | LOW | 12/0/2/10/10 | `GQ1-CHUNK-0575` | `RETAIN` | `BR-0532` | `REFERENCE` | Retain narrow repository tooling policy and platform-specific build discovery; align existing C/C++ editor/formatter indentation |
+| 1108 | 33 | LOW | 12/0/4/10/7 | `GQ1-CHUNK-0060` | `PRE-0108` | `GQF-0117` | `PRIMARY` | Generated `descent.sng` alias bytes |
+| 1109 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0046` | `RETAIN` | `GQR-0073` | `REFERENCE` | Truthful Inno progress and exact Galaxy sink cancellation |
+| 1110 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0047` | `RETAIN` | `GQR-0073` | `REFERENCE` | Preserve actual native fixture scope and targeted Galaxy callback acceptance |
+| 1111 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0211` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294; GQR-0245` | `PRIMARY` | Native AI perception, frame completion and test scenario repair |
+| 1112 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0225` | `RETAIN` | `GQR-0248` | `PRIMARY` | Guidebot internal interface and owner-only state |
+| 1113 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0226` | `RETAIN` | `GQR-0248` | `REFERENCE` | Native route state, save and cadence |
+| 1114 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0228` | `RETAIN` | `GQR-0248` | `REFERENCE` | Native route goal and cache adoption |
+| 1115 | 33 | LOW | 12/0/4/10/7 | `GQ2-CHUNK-0252` | `RETAIN` | `GQR-0250` | `PRIMARY` | Campaign orchestration and native fixture changes |
+| 1116 | 33 | LOW | 12/0/4/10/7 | GQ2-CHUNK-0351 | REFACTOR | GQR-0275 | PRIMARY | Remove misleading proxy packet categories; preserve native protocol and transport owners |
+| 1117 | 31 | LOW | 12/0/2/10/7 | `GQ1-CHUNK-0425` | `RETAIN` | `BR-0407` | `REFERENCE` | VS Code C/C++, extensions and current Java/search settings |
+| 1118 | 30 | LOW | 12/0/2/6/10 | GQ2-CHUNK-0399 | PLANNED-SIMPLIFICATION/RETAIN | GQR-0294 | PRIMARY | Verify and remove core-only serialization compiler registration;keep runtime/app plugin and existing rounding owner |
+| 1119 | 12 | REFERENCE | 8/0/0/4/0 | `GQ1-RECHECK-0050` | `REMOVE` | `BR-0668` | `REFERENCE` | Assigned route-corpus wrapper and baseline were deleted in committed test cleanup |
+| 1120 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0064` | `PRE-0108` | - | `NONE` | Clean coverage; no live fix |
+| 1121 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0077` | `PRE-0108` | - | `NONE` | No live canonical fix remains |
+| 1122 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0078` | `PRE-0108` | - | `NONE` | Clean coverage; no live fix |
+| 1123 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0112` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
+| 1124 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0142` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
+| 1125 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0143` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
+| 1126 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0144` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
+| 1127 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0145` | `NO_INHERITED_EFFECT` | - | `NONE` | Clean coverage; no live fix |
+| 1128 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0146` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
+| 1129 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0148` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
+| 1130 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0162` | `RETAIN` | - | `NONE` | Clean coverage; no live fix |
+| 1131 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0168` | `NO_INHERITED_EFFECT` | - | NONE | branch-added shared ownership is already natural and no new live defect survived reconciliation |
+| 1132 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0169` | `DEFER` | `BR-0029` | REFERENCE | all live quality evidence is already owned and the only minimization is an existing below-payoff deferral |
+| 1133 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0183` | `RETAIN` | - | NONE | all historical roots are closed or non-applicable and no new root survived complete reconciliation |
+| 1134 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0189` | `RETAIN` | NONE | `REFERENCE` | Frozen timer issue already repaired in live code |
+| 1135 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0199` | `RETAIN` | `NONE` | `REFERENCE` | automap predicates, boss HUD, bounded music reads and RLE validation |
+| 1136 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0228` | `RETAIN` | `none` | `REFERENCE` | Input-demo control state/pulse parsing, validation and coalescing |
+| 1137 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0236` | `RETAIN` | `none` | `REFERENCE` | shared recording facade declarations |
+| 1138 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0240` | `RETAIN` | `none` | `REFERENCE` | RNG trace C/C++ declarations, context/lifecycle signatures and suffix contract |
+| 1139 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0244` | `RETAIN` | `none` | `REFERENCE` | metadata view, route/state schemas, packing and declarations |
+| 1140 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0256` | `RETAIN` | `NONE` | `REFERENCE` | MIDI enumeration header contract and caller ownership |
+| 1141 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0259` | `RETAIN` | `NONE` | `REFERENCE` | UDP shared authentication, welcome/observer admission and proxy/rebind adapter reconciliation |
+| 1142 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0269` | `RETAIN` | `-` | `REFERENCE` | native object, visibility and shootable-wall callbacks |
+| 1143 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0276` | `RETAIN` | `-` | `REFERENCE` | shared storage failure dialog presentation |
+| 1144 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0279` | `RETAIN` | `-` | `REFERENCE` | paired model UVL ownership and ordinary/morph polygon admission |
+| 1145 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0308` | `RETAIN` | `none` | `REFERENCE` | native argument defaults/initialization, fatal exit and bounded current messages, HMP wrapper and PhysFS platform setup |
+| 1146 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0309` | `RETAIN` | `none` | `REFERENCE` | private texture-mapper declarations and balanced header guard |
+| 1147 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0319` | `RETAIN` | `none` | `REFERENCE` | D2 native type aliases, multisource audio declarations, bounded replay-label header and guarded typed xmodel interface |
+| 1148 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0321` | `RETAIN` | `none` | `REFERENCE` | D2 classic-demo dump snapshots, alias checks, temporary output and cleanup with current mount/input/asset-identity integration |
+| 1149 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0378` | `RETAIN` | `none` | `REFERENCE` | D2 argument defaults/init, fatal output, removed HMP wrapper and shared PhysFS initialization |
+| 1150 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0379` | `RETAIN` | `none` | `REFERENCE` | D2 private software texture mapper include guard |
+| 1151 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0381` | `RETAIN` | `none` | `REFERENCE` | Rust server manifest, removed json5 and scoped root lock consistency |
+| 1152 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0384` | `RETAIN` | `none` | `REFERENCE` | D1 root native CMake options, Android platform seam, prefixed dependencies and current host-test/sanitizer registration |
+| 1153 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0386` | `RETAIN` | `none` | `REFERENCE` | D1 3D archive prefix, platform compile option and dependency includes |
+| 1154 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0388` | `RETAIN` | `none` | `REFERENCE` | D1 native editor CMake identity and dependency includes |
+| 1155 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0389` | `RETAIN` | `none` | `REFERENCE` | D1 native IFF CMake identity and dependency includes |
+| 1156 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0392` | `RETAIN` | `-` | `REFERENCE` | D1 memory CMake target and paired native target context |
+| 1157 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0393` | `RETAIN` | `-` | `REFERENCE` | D1 misc CMake target naming, optional PNG registration and relocated defaults test |
+| 1158 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0394` | `RETAIN` | `-` | `REFERENCE` | D1 texture mapping CMake source and compile definition branches |
+| 1159 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0395` | `RETAIN` | `-` | `REFERENCE` | D1 UI CMake target naming and paired editor UI source context |
+| 1160 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0396` | `RETAIN` | `-` | `REFERENCE` | D1 external-model CMake target naming and paired renderer dependency context |
+| 1161 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0397` | `RETAIN` | `-` | `REFERENCE` | D2 native root naming, deterministic compiler settings, Android platform admission and current host test registration |
+| 1162 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0399` | `RETAIN` | `-` | `REFERENCE` | D2 3D CMake target naming, native Apple compiler policy and paired library context |
+| 1163 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0401` | `RETAIN` | `-` | `REFERENCE` | D2 editor CMake target naming and source registration |
+| 1164 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0402` | `RETAIN` | `-` | `REFERENCE` | D2 IFF CMake target naming and decoder registration |
+| 1165 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0406` | `RETAIN` | `-` | `REFERENCE` | D2 memory CMake target prefix and public dependencies |
+| 1166 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0407` | `RETAIN` | `-` | `REFERENCE` | D2 misc CMake target naming, optional PNG and relocated defaults test |
+| 1167 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0408` | `RETAIN` | `-` | `REFERENCE` | D2 texture-mapping CMake target prefix and software/ASM policy |
+| 1168 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0409` | `RETAIN` | `-` | `REFERENCE` | D2 editor UI target prefix and source inventory |
+| 1169 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0410` | `RETAIN` | `-` | `REFERENCE` | D2 external-model target prefix and renderer dependencies |
+| 1170 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0412` | `RETAIN` | `-` | `REFERENCE` | D1 install-note mission archive sentence |
+| 1171 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0413` | `RETAIN` | `-` | `REFERENCE` | D2 install-note mission archive sentence |
+| 1172 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0415` | `RETAIN` | `-` | `REFERENCE` | Shared music-name/track, PhysFS setup, rewind, RGBA and SAF focused native tests |
+| 1173 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0416` | `RETAIN` | `-` | `REFERENCE` | Audio format/read/decode, wall/GLES source, HOG catalog, replay limits, geometry and MIDI seek tests |
+| 1174 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0417` | `RETAIN` | `-` | `REFERENCE` | Secret-area scan state size, candidate saturation and opener/work-budget regression |
+| 1175 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0418` | `RETAIN` | `-` | `REFERENCE` | Custom audio staging/publication, disc fingerprint projection, storage guard and lobby packet contracts |
+| 1176 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0419` | `RETAIN` | `-` | `REFERENCE` | Paired player layout/text/transaction fixtures and D2 thief policy regression |
+| 1177 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0439` | `RETAIN` | `-` | `REFERENCE` | Complete source manifest, identical current rename, resolver and exclusion/test context |
+| 1178 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0442` | `RETAIN` | `-` | `REFERENCE` | Retain small explicit Gradle rendering/tool settings |
+| 1179 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0443` | `RETAIN` | `-` | `REFERENCE` | Retain debug-only nonexported SAF fixture registration |
+| 1180 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0448` | `RETAIN` | `-` | `REFERENCE` | Preserve immutable FileProvider generation store and completed exit-view removal |
+| 1181 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0529` | `RETAIN` | `none` | `REFERENCE` | Retain the closing boundary of the shared status-log composable; no inherited change or independent repair |
+| 1182 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0573` | `RETAIN` | `-` | `REFERENCE` | Retain explicit backup exclusions and confined FileProvider cache roots |
+| 1183 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0627` | `RETAIN` | `-` | `REFERENCE` | Retain concise current repository instructions and paired engine ownership guidance |
+| 1184 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0629` | `RETAIN` | `-` | `REFERENCE` | Retain the repository-level Codex instruction pointer |
+| 1185 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0630` | `RETAIN` | `BR-0001` | `REFERENCE` | Retain removal of the stale nonconsumed D1/D2 OpenGL diff snapshot |
+| 1186 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0635` | `RETAIN` | `-` | `REFERENCE` | Retain the reviewed engine-generated secret baseline command and explicit required-asset gate |
+| 1187 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0657` | `RETAIN` | `NONE` | `REFERENCE` | Retain paired weapon slot/current presentation and shared ammo policy without another engine inventory copy |
+| 1188 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0670` | `RETAIN` | `NONE` | `REFERENCE` | Retain focused asset fixtures and thin paired baseline wrapper |
+| 1189 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0677` | `RETAIN` | `-` | `REFERENCE` | Retain shared recorder diagnostics and thin headless/graphics regression entry points |
+| 1190 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0678` | `RETAIN` | `-` | `REFERENCE` | Retain paired native fixture contracts, streaming boundary coverage and isolated sanitizer build selection |
+| 1191 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0679` | `RETAIN` | `-` | `REFERENCE` | Retain transactional direct-command policy, explicit partial-result contracts and strict RNG backend probes |
+| 1192 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0708` | `RETAIN` | `none` | `REFERENCE` | Retain small always-active ETC2 layout boundary regression |
+| 1193 | 0 | REFERENCE | 0/0/0/0/0 | `GQ1-CHUNK-0715` | `RETAIN` | `none` | `REFERENCE` | Retain the completed local scroll-strip geometry plan and branch-owned math boundary |
+| 1194 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0031` | `RETAIN` | `-` | `REFERENCE` | Retain backup exclusion parity and identity ownership; declaration spacing only |
+| 1195 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0045` | `NO_INHERITED_EFFECT` | - | `NONE` | Retain complete third-party attribution; no live fix |
+| 1196 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0156` | `RETAIN` | `none` | `REFERENCE` | D1 instance and projection current delta |
+| 1197 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0158` | `RETAIN` | `none` | `REFERENCE` | D1 required IFF writer seek execution |
+| 1198 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0159` | `RETAIN` | `none` | `REFERENCE` | D1 native graphics, audio, argument and model interfaces |
+| 1199 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0161` | `RETAIN` | `BR-0294; BR-0269; GQR-0238; GQR-0239` | `REFERENCE` | D1 controls, menus, mission and native lifecycle |
+| 1200 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0164` | `RETAIN` | `BR-0294; GQR-0236; BR-0206` | `REFERENCE` | D1 later UDP native integration |
+| 1201 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0167` | `RETAIN` | `none` | `REFERENCE` | D1 early UDP native integration |
+| 1202 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0168` | `RETAIN` | `GQR-0142/0157 completed` | `REFERENCE` | D1 native utility ownership |
+| 1203 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0173` | `RETAIN` | `none` | `REFERENCE` | D2 editor trigger disk-size boundary |
+| 1204 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0174` | `RETAIN` | `none` | `REFERENCE` | D2 IFF seek execution and BODY chunk positioning |
+| 1205 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0175` | `RETAIN` | `none` | `REFERENCE` | D2 native graphics, audio, argument and model interfaces |
+| 1206 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0178` | `RETAIN` | `BR-0294; BR-0345` | `REFERENCE` | D2 trigger, terrain, presentation and wall integration |
+| 1207 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0180` | `RETAIN` | `BR-0294; BR-0269; BR-0386; GQR-0175` | `REFERENCE` | D2 controls, menus, mission and native lifecycle |
+| 1208 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0181` | `RETAIN` | `native D1-in-D2 owners` | `REFERENCE` | Native D1 semantics and trigger-storage interfaces |
+| 1209 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0182` | `RETAIN` | `native weapon and upstream backport owners` | `REFERENCE` | D2 native weapon selection and first-pickup policy |
+| 1210 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0183` | `RETAIN` | `native D1-in-D2 owners` | `REFERENCE` | Retired root-level D1 policy files and live replacement owners |
+| 1211 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0185` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native AI interface and asset identity |
+| 1212 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0187` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native asset publication, sound preparation and ownership |
+| 1213 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0188` | `RETAIN` | `GQR-0238; GQR-0185` | `REFERENCE` | Native cockpit drawing and lifecycle tail |
+| 1214 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0190` | `RETAIN` | `BR-0294; BR-0206; GQR-0175` | `REFERENCE` | D2 native AI integration |
+| 1215 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0192` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native Guidebot publication and renamed replay helpers |
+| 1216 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0194` | `RETAIN` | `BR-0294; GQR-0236; GQR-0238` | `REFERENCE` | D2 level progression, gauges and Guidebot interface |
+| 1217 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0195` | `RETAIN` | `GQR-0198` | `REFERENCE` | Custom native generations and relocated interfaces |
+| 1218 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0196` | `RETAIN` | `GQR-0191; GQR-0175; BR-0206` | `REFERENCE` | Native checkpoint runtime fidelity and extended sounds |
+| 1219 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0197` | `RETAIN` | `BR-0294; BR-0377; GQR-0244` | `REFERENCE` | D2 object, physics and PIG registry reconciliation |
+| 1220 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0198` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native session facade, weapon interfaces and model validation |
+| 1221 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0199` | `RETAIN` | `GQR-0004; BR-0294; BR-0206; BR-0345` | `REFERENCE` | D2 flyout integration and Guidebot goal policy |
+| 1222 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0200` | `RETAIN` | `BR-0294; BR-0206; BR-0345; GQR-0197` | `REFERENCE` | Guidebot routing tail, HUD and native startup |
+| 1223 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0201` | `RETAIN` | `GQR-0190; GQR-0238; BR-0294; BR-0345` | `REFERENCE` | D2 native mine, palette, rendering and level loading |
+| 1224 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0202` | `RETAIN` | `GQR-0092; BR-0345` | `REFERENCE` | D2 robot serialization, scores and music admission |
+| 1225 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0203` | `RETAIN` | `GQR-0198; BR-0345` | `REFERENCE` | Native presentation, text, object ordering and interfaces |
+| 1226 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0204` | `RETAIN` | `GQR-0197; GQR-0182; BR-0381; BR-0294` | `REFERENCE` | D2 inherited AI path and Guidebot geometry integration |
+| 1227 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0205` | `RETAIN` | `GQR-0198` | `REFERENCE` | Retired custom-asset overlay |
+| 1228 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0206` | `RETAIN` | `GQR-0198; GQR-0244` | `REFERENCE` | Retired hybrid native asset facade |
+| 1229 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0207` | `RETAIN` | `BR-0381; BR-0294` | `REFERENCE` | Native D1 path construction and following |
+| 1230 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0208` | `RETAIN` | `BR-0206` | `REFERENCE` | Native D1 saved AI layout and storage |
+| 1231 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0209` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294` | `REFERENCE` | Native AI records, actor roles, awareness and bosses |
+| 1232 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0210` | `RETAIN` | `GQR-0200; GQR-0175; BR-0206; BR-0294` | `REFERENCE` | Native AI frame preparation, movement and shot ownership |
+| 1233 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0212` | `RETAIN` | `GQR-0198; GQR-0199` | `REFERENCE` | Native property, model and sample preparation |
+| 1234 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0213` | `RETAIN` | `GQR-0198; GQR-0244` | `REFERENCE` | Native and optional bitmap decoding and legacy mapping |
+| 1235 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0215` | `RETAIN` | `GQR-0246; BR-0345; BR-0294` | `REFERENCE` | Native briefing window, resource and profile lifetime |
+| 1236 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0216` | `RETAIN` | `GQR-0175; GQR-0185; GQR-0238` | `REFERENCE` | Native cockpit layout and score drawing |
+| 1237 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0217` | `RETAIN` | `GQR-0175; GQR-0185; GQR-0238` | `REFERENCE` | Native cockpit decoding, gauges and weapon panels |
+| 1238 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0218` | `RETAIN` | `GQR-0198; GQR-0199` | `REFERENCE` | Optional Guidebot source, dependency and generation preparation |
+| 1239 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0219` | `RETAIN` | `GQR-0175; BR-0206` | `REFERENCE` | Native level policy, triggers and progression |
+| 1240 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0220` | `RETAIN` | `GQR-0175; GQR-0240; BR-0206; BR-0294` | `REFERENCE` | Native gameplay, reactor and physics semantics |
+| 1241 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0221` | `RETAIN` | `GQR-0175; GQR-0189; GQR-0240; BR-0294` | `REFERENCE` | Native weapon order, homing and projectile policy |
+| 1242 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0222` | `RETAIN` | `BR-0332; BR-0381; GQR-0197; GQR-0175; BR-0294` | `REFERENCE` | Escort routing extraction and removed state body |
+| 1243 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0223` | `RETAIN` | `BR-0374; BR-0382; BR-0384; BR-0332; BR-0294; GQR-0197` | `REFERENCE` | Escort docking, commands and physical path setup |
+| 1244 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0229` | `RETAIN` | `none` | `REFERENCE` | D2 early UDP native integration |
+| 1245 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0230` | `RETAIN` | `BR-0294; GQR-0236; BR-0206` | `REFERENCE` | D2 later UDP native integration |
+| 1246 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0231` | `RETAIN` | `GQR-0142/0157 completed` | `REFERENCE` | D2 native utility ownership |
+| 1247 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0233` | `NO_INHERITED_EFFECT` | `none` | `REFERENCE` | Server JSON5 dependency retirement |
+| 1248 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0235` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662` | `REFERENCE` | D1 root test and instrumentation registration |
+| 1249 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0236` | `RETAIN` | `GQR-0185; GQR-0238` | `REFERENCE` | D1 shared renderer and sound source registration |
+| 1250 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0238` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662; GQR-0011` | `REFERENCE` | D1 maths test-graph relocation |
+| 1251 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0239` | `RETAIN` | `none` | `REFERENCE` | D1 misc argument-test relocation |
+| 1252 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0240` | `RETAIN` | `GQR-0003; GQR-0004; BR-0662` | `REFERENCE` | D2 root test and instrumentation registration |
+| 1253 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0241` | `RETAIN` | `GQR-0185; GQR-0238` | `REFERENCE` | D2 shared renderer and sound source registration |
+| 1254 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0243` | `RETAIN` | `none` | `REFERENCE` | D2 maths test-graph relocation |
+| 1255 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0244` | `RETAIN` | `none` | `REFERENCE` | D2 misc argument-test relocation |
+| 1256 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0246` | `RETAIN` | `none` | `REFERENCE` | Native D1-in-D2 ownership documentation |
+| 1257 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0248` | `RETAIN` | `none` | `REFERENCE` | Native MIDI, mission classification and storage test ownership |
+| 1258 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0249` | `RETAIN` | `none` | `REFERENCE` | Secret liquid classification and identity fixture ownership |
+| 1259 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0251` | `RETAIN` | `none` | `REFERENCE` | Owned automation transitions and graphics fault trigger |
+| 1260 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0253` | `RETAIN` | `GQR-0198` | `REFERENCE` | Native network asset fixture ownership |
+| 1261 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0254` | `RETAIN` | `GQR-0250` | `REFERENCE` | Campaign catalog, device adapter and traffic/control oracles |
+| 1262 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0255` | `RETAIN` | `GQR-0250` | `REFERENCE` | Campaign recovery, lobby and native lifecycle scenarios |
+| 1263 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0256` | `RETAIN` | `none` | `REFERENCE` | Server mission readiness integration assertions |
+| 1264 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0257` | `RETAIN` | `none` | `REFERENCE` | Editor import and searchable metadata settings |
+| 1265 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0258` | `RETAIN` | `none` | `REFERENCE` | Distribution policy, AcoustID example and store recipes |
+| 1266 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0259` | `RETAIN` | `none` | `REFERENCE` | Touch default and canonical fingerprint settings |
+| 1267 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0260` | `RETAIN` | `none` | `REFERENCE` | Measured EQ provenance and stock robot labels |
+| 1268 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0261` | `RETAIN` | `none` | `REFERENCE` | Controller defaults and retired touch preset consolidation |
+| 1269 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0274` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L1-L750 |
+| 1270 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0275` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L751-L1500 |
+| 1271 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0276` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L1501-L2250 |
+| 1272 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0277` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L2251-L3000 |
+| 1273 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0278` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L3001-L3750 |
+| 1274 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0279` | `RETAIN` | `none` | `REFERENCE` | Benchmark history L3751-L4464 |
+| 1275 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0280` | `RETAIN` | `none` | `REFERENCE` | Benchmark manifest L1-L109 |
+| 1276 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0281` | `RETAIN` | `none` | `REFERENCE` | Tool pins and CD manifest delta 0281 |
+| 1277 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0282` | `RETAIN` | `none` | `REFERENCE` | Tool pins and CD manifest delta 0282 |
+| 1278 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0288` | `RETAIN` | `none` | `REFERENCE` | Regression and CD source metadata 0288 |
+| 1279 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0295` | `RETAIN` | `none` | `REFERENCE` | Workflow and Gradle settings 0295 |
+| 1280 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0299` | `RETAIN` | - | `NONE` | Retain real recovery oracles and current owner repairs; existing deadline/lifetime acceptance remains |
+| 1281 | 0 | REFERENCE | 0/0/0/0/0 | `GQ2-CHUNK-0302` | `RETAIN` | - | `NONE` | Clean direct update stub; retain conditional source/dependency boundary |
+| 1282 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0363 | RETAIN | - | NONE | Clean resource boundaries; preserve legacy qualifier, identity backup exclusions and storage export grants |
+| 1283 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0371 | RETAIN | - | NONE | Retain narrow workspace retention and concrete guards; no inherited change or newly established finding |
+| 1284 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0398 | RETAIN | - | REFERENCE | Metadata CLI build declarations consistent;retain shared core,pins,JDK21 and actual MainKt distribution entry |
+| 1285 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0406 | NO_INHERITED_EFFECT/EXISTING-OWNER | - | REFERENCE | Retain concise instructions and current CTest repairs;refresh workflow-backed CI coverage and noninteractive helper contracts under existing owners |
+| 1286 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0407 | NO_INHERITED_EFFECT/RETAIN | - | REFERENCE | Retain the concise authoritative project instruction pointer and blank separator |
+| 1287 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0408 | NO_INHERITED_EFFECT/RETAIN | BR-0001 | REFERENCE | Retain removal of obsolete renderer diff snapshot and narrow artifact recurrence controls |
+| 1288 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0409 | NO_INHERITED_EFFECT/RETAIN | BR-0001 | REFERENCE | Retain deletion of unexplained root failure marker and narrow artifact recurrence controls |
+| 1289 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0413 | NO_INHERITED_EFFECT | - | NONE | Retain complete audio notices and distinct component identities; no live fix |
+| 1290 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0415 | NO_INHERITED_EFFECT | - | NONE | Retain benchmark contract and current repairs; clarify prerequisites and evidence limits when maintained |
+| 1291 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0416 | NO_INHERITED_EFFECT | - | NONE | Retain bounded runtime and emulator policy; preserve installer repairs and separate general bootstrap obligations |
+| 1292 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-CHUNK-0417 | NO_INHERITED_EFFECT | - | NONE | Retain provenance evidence semantics; separate historical validation and existing admission or generation obligations |
+| 1293 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0419 | CLEAN/RETAIN | none | REFERENCE | Preserve capture and synth guide provenance,current settings and explicit audio/device validation limits |
+| 1294 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0420 | NEW-CONTEXT-ISSUE/RETAIN | none | REFERENCE | Retain test-guide contracts;separate two-helper SoundFont default oracle47,never pool with guide0 |
+| 1295 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0421 | NEW-CONTEXT-ISSUES/RETAIN | none | REFERENCE | Preserve FM/music guide contracts;separate existingdefault and newaudition/FMfixture owners,unpooled guide0 |
+| 1296 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0422 | CLEAN/RETAIN | none | REFERENCE | Retain generated index metadata and four existing owner boundaries;no new finding or inherited saving |
+| 1297 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0423 | CLEAN/RETAIN | none | REFERENCE | Retain demo reference identities and jsonc filename corrections;existing owner continuations and current repairs preserved |
+| 1298 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0424 | ISSUES/RETAIN | BR-0006 | REFERENCE | Retain PO2 handoff and native format safety;qualify stale HMQ and sound status under existing documentation owner |
+| 1299 | 0 | NONE | 0/0/0/0/0 | GQ2-CHUNK-0425 | CLEAN/RETAIN | - | REFERENCE | Retain nonblank-preserving mod guide presentation changes;conditional guide cleanup and current verifier/native/converter ownership preserved |
+| 1300 | 0 | REFERENCE | 0/0/0/0/0 | GQ2-SUP-SETUP-TAIL-20261011 | RETAIN | - | NONE | Clean omitted SetupSections tail; retain native policy and paired extension declarations |
 
 ## Review queue
 
@@ -11324,6 +11329,11 @@ The broad live survey produced ten preliminary `PARTIAL` records. They establish
 | GQC-1306 | ISSUES | GQ2-CHUNK-0477 Preview abort save-load lifecycle import objective and autosave scripts | GQD-1186; assigned823wholefrozenlines/current887;7wholeadditionhunks823add0del/865patchrows/base-originalabsent/later78add14del17hunks. Snapshot16artifacts7plans62contexts3560lines19wholeBRowners11qualityrows5priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct staged-byte/status admission. Retain seven profile/abort/save-load/lifecycle/Anniversary/objective/missing-pilot scenarios and current repeated-restore held-fire energy proof, menu pause reason2, paired cold/warm route behavior and shareware path. Preserve native save/header/codec authority, session/revision pause queue, after-unlink menu restore/outer-loop orphan repair, staged saves/content/backup/descriptor repairs, condition parking, generation-aware route cache and owned preview requests. Current selected pilot read failure check retained; broader BR0255/0082 acceptance remains OPEN. Typed Setup failure/deletion absence, immutable executed source, complete attempt budget, correlated tracker/checkpoint/preview outcomes and checked publication/independent cleanup remain existing owner work. No duplicate framework/arbitrary sleeps/scenario merge. Logical steps/candidates and pre-restore log or metadata are not full rendering/save-body/completion proof. Historical130 inherited startup additions removed not new credit; GQR0128/0129 stay DONE. No newroot/status/rating/runtime/original reduction. Freshreview306/final244. ReportSHA1277d73fe6a793b1c57493b400af642a929a11bab7c698221fe3cf8f1f793c58;snapshotSHA824f5a02ffc33a972913343b03b8fb7c88fbbcc71e8149630b91ccbf14197fcc. |
 | GQC-1307 | ISSUES | GQ2-CHUNK-0478 SAF audio secret launch and texture scripts | GQD-1187; assigned840wholefrozenlines/current840;8wholeadditionhunks840add0del/888patchrows/base-originalabsent/later2add2del3hunks. Snapshot18artifacts7plans65contexts4329lines25wholeBRowners11qualityrows7priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct staged-byte/status admission. Retain eight SAF/redbook,secret-reveal,manual-skip,SFX-trace,catalog-cancel,index-load,title-request,Trine-native-asset scenarios. Preserve source/audio-only range iteration/error-EOF-state separation, persistent latest-only producer/stale-chunk rejection, descriptor ownership, calibrated slider-distance split, bounded texture-index rejection/reset, native generation validation/publication/teardown, and secret draw semantics. Completed0324/0327/0328 remain FIXED;0193/0250/0419/0577/0649 remain OPEN. Local fixture paths not real provider grant proof; ring delivery not physical audio; independent getters not atomic combined snapshot; pre-play fingerprints and title request not successful playback. Catalog cancels no download; manual wait not action; stock level not index-bound oracle; Trine counts not all-pixel parity. Complete immutable staging/current source-run-generation correlation/whole-attempt budget/typed outcomes/checked mandatory restoration under existing owners, without duplicate framework or fixture merge. Historical results/old join or conversion implementations not current acceptance/design. GQR0128/0129 stay DONE. No newroot/status/rating/runtime/original reduction. Freshreview331/final273. ReportSHA8f875ee9c2cc9b6ba27063188c10f25f5a528c05b933a31ced96ac610d279048;snapshotSHA722b3f5da332e0f7121d4b023fc921851997429ea2f98280bd4a855239fdb4e2. |
 | GQC-1308 | ISSUES | GQ2-CHUNK-0479 Automap media metadata and touch scripts | GQD-1188; assigned865wholefrozenlines/current874;8wholeadditionhunks865add0del/913patchrows/base-originalabsent/later9add0del2hunks. Snapshot22artifacts8plans65contexts4206lines25wholeBRowners11qualityrows5priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct staged-byte/status admission. Retain paired launch/automap/dormancy,media transports,HXM reuse,interactive preemption,mount scope,resultcache,touch-route,Lunar metadata-only scenarios. Preserve native source codecs/engine ownership, keyed full-result fastpath, request/PID/starttick/FIFO service/global lock, HXM reset/request mount cleanup/poisoned runtime, bounded native analysis, condition parking/audio quiescence/transactional checkpoint/pause-session restore, generation-tagged fresh-input admission and projected-label/drawn-connector controls. Currentcoldroute cache clear+240s wait retained; pendingfalse not complete; downstream trigger/hiddenwall/redkey checks meaningful. Rootok/mincount still permits failed loaded-mission rows under existingBR0077. Completed0076/0485/0215/0416/0275 andGQR0128/0129 retained;OPEN0016/0077/0276 notclosed. Complete immutable staging/current-run-source-request identity/whole-attempt budget/typed row outcomes/checked independent restoration and worker retirement. No duplicate framework or fixture merge. Cumulative lifecycle floors not current-cycle/flatpark evidence; cache precheck not runtime no-native-start proof; delay not live preemption; synthetic endlevel/media silentCD not cinematic/acoustic/hardware proof. Historical results not fresh acceptance. No newroot/status/rating/runtime/original reduction. Freshreview354/final276. ReportSHA8987d4c4bd8b7a3005af8c1eb7cf2ff55ded0492c7fffae599c601e3ed2ec964;snapshotSHAcd48492829cdc207083cd598426c3a849915288dc61596e2457287b2f0f4349d. |
+| GQC-1309 | ISSUES | GQ2-CHUNK-0480 Cooperative countdown save and flyout scripts | GQD-1189; assigned848wholefrozenlines/current865;8wholeadditionhunks848add0del/896patchrows/base-originalabsent/later17add0del2hunks. Snapshot24artifacts11plans116contexts6332lines10wholeBRowners3qualityrows4priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct unpooled. Retain separate countdown seed/save/verify/wait and near/staggered host/client flyout scenarios; real restored timer/original duration/per-player inventory/GameTime and pause/drop/retry checks, read-only receive percentage and distinct final restore/barrier outcome. Preserve native save parsing/metadata, immutable sent snapshot/frame-boundary apply, staged visit/member identity, sampled frozen clocks, native local outcome and failure mine shutdown. Host local unpause at firstRUN differs allRUN_ACK completion. ExistingBR0195innerpayload authority andBR0206all-peer staging/failure matrix remainOPEN; no duplicate or closure. Preserve detached renderactors/current-world age/authenticated endlevel clocks/draw-call model-label flags, shared native D1/D2 hooks andD1-in-D2 adapter, unresolved mine live/adaptive deadline/separate closure-release-nextbriefing generations, held-input/current-generation guards and actual overlay/back/flight recovery. Complete checked immutable run staging/command outcomes/current-request correlation/whole-attempt deadlines/independent mandatory cleanup under existingowners; exact active-set readback and hostnetworklobby controls retained. GQF0291OPEN/GQR0277TODO typed recognizedasyncoutcomes unchanged. No fixture merge/newgenericframework/format duplication/weakening timed assertions. Historical plans/tests not fresh runtime/pixel/acoustic/hardware/fullfault acceptance. No newroot/status/rating/runtime/original reduction. Historicalreview372/currentHEADrefresh399/final339. ReportSHA1d0881fdb86559a0048ab65ee5e7abca90079a34fafc8d0bc7748173622a0ee9;snapshotSHA18f6d94247f03cf8452247af0080f7979b61563472e16974ca19fc0279ce9cdb. |
+| GQC-1310 | ISSUES | GQ2-CHUNK-0481 FOV demo compatibility script | GQD-1190; assigned620wholefrozenlines/current620;1wholeadditionhunks620add0del/626patchrows/base-originalabsent/laterempty. Snapshot16artifacts7plans71contexts2817lines9wholeBRowners1qualityrows3priorplans. ExistingBR0222REFERENCE47MEDIUM23/0/7/10/7 direct unpooled from currentGQ1-0485. Retain distinct record/FOV100-110-120/fire/movement/frame60/onepass-zero-discard/stagedtrio/install/nativeclassicpause-probe-resume/selector-return assertions. Preserve shared native baseCPUvisibility and visual-only demo/homing/automap guards, paired original object ordering/morph/frame/viewer writers, actual smallmarker GLreadback/state/errors, native completed-frame recording finalization and engine-owned source/checkpoint/format admission. Current checkedclose and individualcopytemp/fdsync/publish are improvements, not one coherent input-RNG-classic generation. BR0222OPEN already owns partialrecording/trio/sequentialinstall/stalesidecars; no duplicate/closure. Headerregex/presence/game-frame fields not complete native decode or RNGgeneration; selectorreturn after shared EOF/error stop not full nontruncatedoracle. Androidwrapper exports unique managed-source/nonemptytrio but doesn't invoke separate host exactfinalresult/RNG verifier; historical strict host replay/decoder evidence not fresh execution. Preserve GUIDstagedscript/exactrunID durable outcomes/no uncorrelatedlogcatPASS withExpectedRunId; complete stagedbyte/commandstatus/currentrequest/wholebudget/progressgrace/mandatoryindependentcleanup and acknowledgedhandoff underexistingowners. No genericframework/fixturemerge/nativeformatrewrite/replaycompensation. No newroot/status/rating/runtime/original reduction. Freshreview212/final214. ReportSHA112645bcb237fa33eb0e7fa84d4a8685ae344675c43773a2120654bc62886f87;snapshotSHA622d8fb1c7551ef626a5c60298a6f4c2993f6ee930fccfd7ab4520f3710b6131. |
+| GQC-1311 | ISSUES | GQ2-CHUNK-0482 Unified gamepad menu navigation script | GQD-1191; assigned900/enclosing368/wholefrozen1268current1268;1wholeadditionhunks1268add0del/1274patchrows/base-originalabsent/laterempty. Snapshot20artifacts9plans90contexts5470lines9wholeBRowners1qualityrows3priorplans. ExistingBR0029REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ1-0517. Retain Activity dispatch vs physicaldevice/directnative injection distinction, SDL queued virtualbuttons/pairedenginepoll, heldpressdestination/repeatidentity/neutral/menupriority over buttonremaps, distinct overlay/native/childfocus, checkboxcapturecancel/zoomscroll/scoreconfirmcancel/credits/demoownedfixture/pilotconfirmation/reordermovement assertions. Raw axismeta precedes menufocus; do not generalize buttonpriority to axisbindings. Current musicqueue/snapshot and pausemailbox retained. ExistingBR0029 owns UIwindow traversal/callback lifetime; require enginepublished focus, requestgeneration/queuedUIretirement and actual nativewindow replacement acceptance. Preserve GUIDstaging/exactrunIDdurable outcome, complete stagedbyte/commandstatus/request/wholebudget/mandatorycleanup/acknowledgedhandoff under distinct existingowners. Enclosingpost900presetidentitygap remains explicit tailcontinuation, no assignedextraqueuecredit/no nativepickerchange/presetpurge/newcanonicalfinding. May20manualtouchless incomplete, historicalpasses notfresh; no codeexecution/hardware/race/format/fullpersistedreorder proof. No simplification/deduplication/original reduction justified. Freshreview259/final260. ReportSHA27f27144749cb3fd4d4408a214ef4f921562abe12bce0ed7e4f9c1fe12dc26a3;snapshotSHAa2d2a7831aa32c02f28a390d04f198e48c4a172452fd4bffbf633c4d38aa1ea3. |
+| GQC-1312 | ISSUES | GQ2-CHUNK-0483 Graphics capabilities script | GQD-1192; assignedwholefrozen509/current510;1wholeadditionhunks509add0del/515patchrows/base-originalabsent/later2hunks2add1del. Snapshot20artifacts9plans94contexts5140lines15wholeBRowners9qualityrows3priorplans. ExistingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ2-0077. Retain full10tuplecurrent-requested-acceptedrollback/exactrendererfailurephase5/PREVIEWbeforeGL/diagnosticoverridevsrealcapabilityrecovery/AFrejection/disabledVideoInfofocus/actualMSAAeffectivecreateerrors/colorprobeandstate-restoration/noinputleak checks. Sharedformat/samplepolicy/Retroidformatrefresh/currentcontextgeneration-revisionpresentation guards and nativejournal/tupleauthority stay. Knowncolorownedtargets boundedRGBAtolerance8/offscreen-windowcontrol-resolve is notwhole-scene/productionbind-resolve/latestpass acceptance; preserveFIXEDBR0647dedicatedsmoke andBR0199/0200/GQR0128/0129completepublication/backup/descriptorrepairs. Nativevideo snapshot andcapabilityJSONmutex/currentpressdestinationrepeat controls retained; separateproviders/tapscenario notcrossgeneration/gesture/lateUI acceptance. ExistingGQR0170ownsC-JNIallocation/cleanup/firstexception/completeJSONpublication,BR0251/GQR0174ownsrenderer-shaderadmission;optionaldiagnosticfailuremustnotbypassrequiredrejection. No newduplicate/closure. Currentsharewaremetadatachangesdefaultdeps/mission/isolation/per-fileSHA;actualretailoverride/currentGUIDdurablecorrelation preserved withstaging/outcome/fullbudget/handoff/cleanup/retirementwork existing. HistoricalphysicalRetroidpasses/OOMlimits notfreshhardware/faultmatrix. No genericrewrite/deduplication/neworiginal reduction. Freshreview287/final294. ReportSHAfd2093d1859e91f38986d5b1090870e7bccb7bd2ce45f8c9752539f3478d2284;snapshotSHAe029adfb1e0cd3f1a0d2663a18e23acfb1c20d50ae7c7500e7c382f28fccec4d. |
+| GQC-1313 | ISSUES | GQ2-CHUNK-0484 Graphics confirmation input script | GQD-1193; assignedwholefrozen818/current832;1wholeadditionhunks818add0del/824patchrows/base-originalabsent/later5hunks17add3del. Snapshot14artifacts6plans69contexts3890lines15wholeBRowners9qualityrows3priorplans. ExistingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ2-0077. Retain ordinaryCancel/firstdrawCancel5/boundednavigation/numericBackEsc/orphan-heldrepeat-release/freshpress/hat-stickfreshvspreheldrelease/touchdragrejection/validOKCancel/TexFiltaccepted-current-requested-unpaused-gamefront-fire-energyoracles. Overlay observesaxiswhilehidden;newdirectionworksfirstevent,unchangedpreheldignoreduntilneutral;noobsoleteaxesreadycompatfield. Activitynormaldispatch/helddestination/suppressedup/mixercancel andnativeID-candidate-ready/strict5sdeadline/rejectRESTORINGacceptedtuple/presentationcontext-generation-revision guards retained. UIclockindependenceisnotboundednativelock-I/Owatchdog;lostup-disconnect-focusloss-newActivity/latecallback/exception/mandatorycleanup-handoff acceptance stays existingowners. Tap/singlepointerfixture nothardware/multitouch/first-runchooser/all10filebytes/entiresimulation/faultmatrix. Actualnativeassertionsfailmissing-invalidstate/waitdeadline,logmarkerdoesnotpassfailedchecks. CurrentGUIDdurablerunID/sharewaredeps-mission/defaultsetguard-SHA andcompletedgraphicsmirror/backup/descriptor/MSAAsmoke repairs preserved;historicalOct7input97steps/frameflashdiagnosticAPK/fullGradlelocklimits andOct2Retroidphysical evidence notfresh. No newduplicate/status/rating/root/nativehookremoval/original reduction. Freshreview228/final235. ReportSHA801221f09e41d660077c6c7aae214e96eb1a78331f1018c6db6eb564c6e00e85;snapshotSHAb7762ac95e77c43a3e4f5713ca0afb989b61be8c999f9887d596a8bd29358c15. |
 | GQC-1295 | ISSUES | GQ2-CHUNK-0466 Single-player endgame Enemy Within scripts | GQD-1175;3wholepaths3U0hunks810add0del,current810frozen810,base-originalabsent,0laterhunks0add0del. Snapshot14artifacts7plans97contexts2664lines13wholeBRowners5qualityrows. ExistingBR0190REFERENCE47MEDIUM23/0/7/10/7 actual unchecked fixture transfer and length-only device admission. Retain distinct D1briefing-score/D2movie-score endings, normal EnemyWithin briefing/level2/difficulty-restoration sentinel and actual native consumers. Preserve no-exterior-exit guard, staged save/companion/status, ordinary pagination/fitted canvas, parsed template and maintained GUID script staging repairs. Require checked fixture status/device hash/current generation, acknowledged screen/save generation, bounded exact-context selection/fresh state and independent imported-native/save recovery/session/handoff/schema/encoding/input acceptance. No newroot/status/rating/runtime/saving. ReportSHAcf5cc6eb2bc75f1234a68248cf3ececfb3bdc8ebe01b519a3de2a2dc07da6bf5;snapshotSHA1d1d05736dc21ab0917b3a9caecd0d36c3aa18eea5a26426a56ffcd5f3a6a388. |
 | GQC-1188 | ISSUES | GQ2-CHUNK-0360 Disc and ISO dialogs | GQD-1068; All8 assigned hunks23-30 (+293/-265), current/frozen1372-1994 (623lines), empty current delta and59 contexts:3 source/29 fresh/27 exact audited0359 selections. Existing GQR0048 REFERENCE56 owns one primary/nested ISO attempt. GQR0278 same-root ISO failure-versus-empty projection extends existing GQF0292; ISO retry remains attached, rating44 unchanged. BR0419/0456/0472/GQR0273 retain grant, target, joined cleanup and early descriptor ownership. Preserve native cancellation, staged publication and combined/individual actions. No new root/status/rating, runtime acceptance or inherited saving. Report f1ecc4349eeafe5b7ac84a91e7ed4dbed49c924ed92eef4541abd25e89f87672; snapshot 8ba86261e33820c4a746267f3a5f2e0ae586e09dc6bf7b4d1c6703024422f74c; scope b438ee0c8c677cc4e1407d098bb4ea84e8599f826ceef738860851fabae5d44f. |
 
@@ -12412,11 +12422,11 @@ Append a dated entry whenever a finding becomes fixed, dismissed, deferred, or a
 | GQ2-CHUNK-0477 | [x] DONE | source | low | test-source | `7 related paths` | 823 review lines under android/game_scripts | GQC-1306; GQD-1186; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0244; BR-0029; BR-0103; BR-0506; BR-0484; BR-0233; BR-0008; BR-0186; BR-0472; BR-0224; BR-0082; BR-0255; GQR-0102; GQR-0103; GQR-0212; GQR-0128; GQR-0129 |
 | GQ2-CHUNK-0478 | [x] DONE | source | low | test-source | `8 related paths` | 840 review lines under android/game_scripts | GQC-1307; GQD-1187; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0244; BR-0029; BR-0103; BR-0506; BR-0484; BR-0233; BR-0008; BR-0186; BR-0472; BR-0224; BR-0193; BR-0250; BR-0419; BR-0577; BR-0649; BR-0324; BR-0327; BR-0328; GQR-0102; GQR-0103; GQR-0212; GQR-0128; GQR-0129 |
 | GQ2-CHUNK-0479 | [x] DONE | source | low | test-source | `8 related paths` | 865 review lines under android/game_scripts | GQC-1308; GQD-1188; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0244; BR-0029; BR-0103; BR-0506; BR-0484; BR-0233; BR-0008; BR-0186; BR-0472; BR-0224; BR-0016; BR-0077; BR-0276; BR-0076; BR-0485; BR-0215; BR-0416; BR-0275; GQR-0102; GQR-0103; GQR-0212; GQR-0128; GQR-0129 |
-| GQ2-CHUNK-0480 | [ ] TODO | source | low | test-source | `8 related paths` | 848 review lines under android/game_scripts | - |
-| GQ2-CHUNK-0481 | [ ] TODO | source | low | test-source | `android/game_scripts/test_fov_demo_compatibility.jsonc` | L1-L620 | - |
-| GQ2-CHUNK-0482 | [ ] TODO | source | low | test-source | `android/game_scripts/test_gamepad_menu_navigation_unified.jsonc` | L1-L900 | - |
-| GQ2-CHUNK-0483 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_capabilities.jsonc` | L1-L509 | - |
-| GQ2-CHUNK-0484 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_confirmation_input.jsonc` | L1-L818 | - |
+| GQ2-CHUNK-0480 | [x] DONE | source | low | test-source | `8 related paths` | 848 review lines under android/game_scripts | GQC-1309; GQD-1189; BR-0195; BR-0206; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0224; GQR-0277 |
+| GQ2-CHUNK-0481 | [x] DONE | source | low | test-source | `android/game_scripts/test_fov_demo_compatibility.jsonc` | L1-L620 | GQC-1310; GQD-1190; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0224; BR-0222 |
+| GQ2-CHUNK-0482 | [x] DONE | source | low | test-source | `android/game_scripts/test_gamepad_menu_navigation_unified.jsonc` | L1-L900 | GQC-1311; GQD-1191; BR-0029; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0224 |
+| GQ2-CHUNK-0483 | [x] DONE | source | low | test-source | `android/game_scripts/test_graphics_capabilities.jsonc` | L1-L509 | GQC-1312; GQD-1192; GQR-0170; GQR-0174; GQR-0128; GQR-0129; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0224; BR-0029; BR-0199; BR-0200; BR-0647; BR-0448; BR-0467; BR-0251 |
+| GQ2-CHUNK-0484 | [x] DONE | source | low | test-source | `android/game_scripts/test_graphics_confirmation_input.jsonc` | L1-L818 | GQC-1313; GQD-1193; GQR-0170; GQR-0174; GQR-0128; GQR-0129; BR-0190; BR-0287; BR-0588; BR-0593; BR-0284; BR-0482; BR-0543; BR-0224; BR-0029; BR-0199; BR-0200; BR-0647; BR-0448; BR-0467; BR-0251 |
 | GQ2-CHUNK-0485 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_mode_restore.jsonc` | L1-L517 | - |
 | GQ2-CHUNK-0486 | [ ] TODO | source | low | test-source | `android/game_scripts/test_graphics_video_overlay.jsonc` | L1-L728 | - |
 | GQ2-CHUNK-0487 | [ ] TODO | source | low | test-source | `android/game_scripts/test_movie_skip_controls_d2.jsonc` | L1-L264 | - |
@@ -24408,3 +24418,33 @@ Canonical477DONE150TODO627/1293terminalranks321findings307remediations307fixrank
 
 GQC1308ISSUES/GQD1188NO_INHERITED_EFFECT0; REPAIR/RETAIN existingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct unpooled. GQD-1188; assigned865wholefrozenlines/current874;8wholeadditionhunks865add0del/913patchrows/base-originalabsent/later9add0del2hunks. Snapshot22artifacts8plans65contexts4206lines25wholeBRowners11qualityrows5priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct staged-byte/status admission. Retain paired launch/automap/dormancy,media transports,HXM reuse,interactive preemption,mount scope,resultcache,touch-route,Lunar metadata-only scenarios. Preserve native source codecs/engine ownership, keyed full-result fastpath, request/PID/starttick/FIFO service/global lock, HXM reset/request mount cleanup/poisoned runtime, bounded native analysis, condition parking/audio quiescence/transactional checkpoint/pause-session restore, generation-tagged fresh-input admission and projected-label/drawn-connector controls. Currentcoldroute cache clear+240s wait retained; pendingfalse not complete; downstream trigger/hiddenwall/redkey checks meaningful. Rootok/mincount still permits failed loaded-mission rows under existingBR0077. Completed0076/0485/0215/0416/0275 andGQR0128/0129 retained;OPEN0016/0077/0276 notclosed. Complete immutable staging/current-run-source-request identity/whole-attempt budget/typed row outcomes/checked independent restoration and worker retirement. No duplicate framework or fixture merge. Cumulative lifecycle floors not current-cycle/flatpark evidence; cache precheck not runtime no-native-start proof; delay not live preemption; synthetic endlevel/media silentCD not cinematic/acoustic/hardware proof. Historical results not fresh acceptance. No newroot/status/rating/runtime/original reduction. Freshreview354/final276. ReportSHA8987d4c4bd8b7a3005af8c1eb7cf2ff55ded0492c7fffae599c601e3ed2ec964;snapshotSHAcd48492829cdc207083cd598426c3a849915288dc61596e2457287b2f0f4349d.
 Canonical478DONE149TODO627/1294terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0479_synthesis_20261015.md.
+
+
+## GQ2-CHUNK-0480 canonical diagnosis publication, 2026-10-15
+
+GQC1309ISSUES/GQD1189NO_INHERITED_EFFECT0; REPAIR/RETAIN existingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct unpooled. GQD-1189; assigned848wholefrozenlines/current865;8wholeadditionhunks848add0del/896patchrows/base-originalabsent/later17add0del2hunks. Snapshot24artifacts11plans116contexts6332lines10wholeBRowners3qualityrows4priorplans. ExistingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct unpooled. Retain separate countdown seed/save/verify/wait and near/staggered host/client flyout scenarios; real restored timer/original duration/per-player inventory/GameTime and pause/drop/retry checks, read-only receive percentage and distinct final restore/barrier outcome. Preserve native save parsing/metadata, immutable sent snapshot/frame-boundary apply, staged visit/member identity, sampled frozen clocks, native local outcome and failure mine shutdown. Host local unpause at firstRUN differs allRUN_ACK completion. ExistingBR0195innerpayload authority andBR0206all-peer staging/failure matrix remainOPEN; no duplicate or closure. Preserve detached renderactors/current-world age/authenticated endlevel clocks/draw-call model-label flags, shared native D1/D2 hooks andD1-in-D2 adapter, unresolved mine live/adaptive deadline/separate closure-release-nextbriefing generations, held-input/current-generation guards and actual overlay/back/flight recovery. Complete checked immutable run staging/command outcomes/current-request correlation/whole-attempt deadlines/independent mandatory cleanup under existingowners; exact active-set readback and hostnetworklobby controls retained. GQF0291OPEN/GQR0277TODO typed recognizedasyncoutcomes unchanged. No fixture merge/newgenericframework/format duplication/weakening timed assertions. Historical plans/tests not fresh runtime/pixel/acoustic/hardware/fullfault acceptance. No newroot/status/rating/runtime/original reduction. Historicalreview372/currentHEADrefresh399/final339. ReportSHA1d0881fdb86559a0048ab65ee5e7abca90079a34fafc8d0bc7748173622a0ee9;snapshotSHA18f6d94247f03cf8452247af0080f7979b61563472e16974ca19fc0279ce9cdb.
+Canonical479DONE148TODO627/1295terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0480_synthesis_20261015.md.
+
+
+## GQ2-CHUNK-0481 canonical diagnosis publication, 2026-10-15
+
+GQC1310ISSUES/GQD1190NO_INHERITED_EFFECT0; REPAIR/RETAIN existingBR0593REFERENCE47MEDIUM23/0/7/10/7 direct unpooled. GQD-1190; assigned620wholefrozenlines/current620;1wholeadditionhunks620add0del/626patchrows/base-originalabsent/laterempty. Snapshot16artifacts7plans71contexts2817lines9wholeBRowners1qualityrows3priorplans. ExistingBR0222REFERENCE47MEDIUM23/0/7/10/7 direct unpooled from currentGQ1-0485. Retain distinct record/FOV100-110-120/fire/movement/frame60/onepass-zero-discard/stagedtrio/install/nativeclassicpause-probe-resume/selector-return assertions. Preserve shared native baseCPUvisibility and visual-only demo/homing/automap guards, paired original object ordering/morph/frame/viewer writers, actual smallmarker GLreadback/state/errors, native completed-frame recording finalization and engine-owned source/checkpoint/format admission. Current checkedclose and individualcopytemp/fdsync/publish are improvements, not one coherent input-RNG-classic generation. BR0222OPEN already owns partialrecording/trio/sequentialinstall/stalesidecars; no duplicate/closure. Headerregex/presence/game-frame fields not complete native decode or RNGgeneration; selectorreturn after shared EOF/error stop not full nontruncatedoracle. Androidwrapper exports unique managed-source/nonemptytrio but doesn't invoke separate host exactfinalresult/RNG verifier; historical strict host replay/decoder evidence not fresh execution. Preserve GUIDstagedscript/exactrunID durable outcomes/no uncorrelatedlogcatPASS withExpectedRunId; complete stagedbyte/commandstatus/currentrequest/wholebudget/progressgrace/mandatoryindependentcleanup and acknowledgedhandoff underexistingowners. No genericframework/fixturemerge/nativeformatrewrite/replaycompensation. No newroot/status/rating/runtime/original reduction. Freshreview212/final214. ReportSHA112645bcb237fa33eb0e7fa84d4a8685ae344675c43773a2120654bc62886f87;snapshotSHA622d8fb1c7551ef626a5c60298a6f4c2993f6ee930fccfd7ab4520f3710b6131.
+Canonical480DONE147TODO627/1296terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0481_synthesis_20261015.md.
+
+
+## GQ2-CHUNK-0482 canonical diagnosis publication, 2026-10-15
+
+GQC1311ISSUES/GQD1191NO_INHERITED_EFFECT0; REPAIR/RETAIN existingBR0029REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled. GQD-1191; assigned900/enclosing368/wholefrozen1268current1268;1wholeadditionhunks1268add0del/1274patchrows/base-originalabsent/laterempty. Snapshot20artifacts9plans90contexts5470lines9wholeBRowners1qualityrows3priorplans. ExistingBR0029REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ1-0517. Retain Activity dispatch vs physicaldevice/directnative injection distinction, SDL queued virtualbuttons/pairedenginepoll, heldpressdestination/repeatidentity/neutral/menupriority over buttonremaps, distinct overlay/native/childfocus, checkboxcapturecancel/zoomscroll/scoreconfirmcancel/credits/demoownedfixture/pilotconfirmation/reordermovement assertions. Raw axismeta precedes menufocus; do not generalize buttonpriority to axisbindings. Current musicqueue/snapshot and pausemailbox retained. ExistingBR0029 owns UIwindow traversal/callback lifetime; require enginepublished focus, requestgeneration/queuedUIretirement and actual nativewindow replacement acceptance. Preserve GUIDstaging/exactrunIDdurable outcome, complete stagedbyte/commandstatus/request/wholebudget/mandatorycleanup/acknowledgedhandoff under distinct existingowners. Enclosingpost900presetidentitygap remains explicit tailcontinuation, no assignedextraqueuecredit/no nativepickerchange/presetpurge/newcanonicalfinding. May20manualtouchless incomplete, historicalpasses notfresh; no codeexecution/hardware/race/format/fullpersistedreorder proof. No simplification/deduplication/original reduction justified. Freshreview259/final260. ReportSHA27f27144749cb3fd4d4408a214ef4f921562abe12bce0ed7e4f9c1fe12dc26a3;snapshotSHAa2d2a7831aa32c02f28a390d04f198e48c4a172452fd4bffbf633c4d38aa1ea3.
+Canonical482DONE145TODO627/1298terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0482_synthesis_20261015.md.
+
+
+## GQ2-CHUNK-0483 canonical diagnosis publication, 2026-10-15
+
+GQC1312ISSUES/GQD1192NO_INHERITED_EFFECT0; REPAIR/RETAIN existingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled. GQD-1192; assignedwholefrozen509/current510;1wholeadditionhunks509add0del/515patchrows/base-originalabsent/later2hunks2add1del. Snapshot20artifacts9plans94contexts5140lines15wholeBRowners9qualityrows3priorplans. ExistingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ2-0077. Retain full10tuplecurrent-requested-acceptedrollback/exactrendererfailurephase5/PREVIEWbeforeGL/diagnosticoverridevsrealcapabilityrecovery/AFrejection/disabledVideoInfofocus/actualMSAAeffectivecreateerrors/colorprobeandstate-restoration/noinputleak checks. Sharedformat/samplepolicy/Retroidformatrefresh/currentcontextgeneration-revisionpresentation guards and nativejournal/tupleauthority stay. Knowncolorownedtargets boundedRGBAtolerance8/offscreen-windowcontrol-resolve is notwhole-scene/productionbind-resolve/latestpass acceptance; preserveFIXEDBR0647dedicatedsmoke andBR0199/0200/GQR0128/0129completepublication/backup/descriptorrepairs. Nativevideo snapshot andcapabilityJSONmutex/currentpressdestinationrepeat controls retained; separateproviders/tapscenario notcrossgeneration/gesture/lateUI acceptance. ExistingGQR0170ownsC-JNIallocation/cleanup/firstexception/completeJSONpublication,BR0251/GQR0174ownsrenderer-shaderadmission;optionaldiagnosticfailuremustnotbypassrequiredrejection. No newduplicate/closure. Currentsharewaremetadatachangesdefaultdeps/mission/isolation/per-fileSHA;actualretailoverride/currentGUIDdurablecorrelation preserved withstaging/outcome/fullbudget/handoff/cleanup/retirementwork existing. HistoricalphysicalRetroidpasses/OOMlimits notfreshhardware/faultmatrix. No genericrewrite/deduplication/neworiginal reduction. Freshreview287/final294. ReportSHAfd2093d1859e91f38986d5b1090870e7bccb7bd2ce45f8c9752539f3478d2284;snapshotSHAe029adfb1e0cd3f1a0d2663a18e23acfb1c20d50ae7c7500e7c382f28fccec4d.
+Canonical483DONE144TODO627/1299terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0483_synthesis_20261015.md.
+
+
+## GQ2-CHUNK-0484 canonical diagnosis publication, 2026-10-15
+
+GQC1313ISSUES/GQD1193NO_INHERITED_EFFECT0; REPAIR/RETAIN existingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled. GQD-1193; assignedwholefrozen818/current832;1wholeadditionhunks818add0del/824patchrows/base-originalabsent/later5hunks17add3del. Snapshot14artifacts6plans69contexts3890lines15wholeBRowners9qualityrows3priorplans. ExistingGQR0170REFERENCE56MEDIUM-HIGH32/0/7/10/7 direct unpooled from currentGQ2-0077. Retain ordinaryCancel/firstdrawCancel5/boundednavigation/numericBackEsc/orphan-heldrepeat-release/freshpress/hat-stickfreshvspreheldrelease/touchdragrejection/validOKCancel/TexFiltaccepted-current-requested-unpaused-gamefront-fire-energyoracles. Overlay observesaxiswhilehidden;newdirectionworksfirstevent,unchangedpreheldignoreduntilneutral;noobsoleteaxesreadycompatfield. Activitynormaldispatch/helddestination/suppressedup/mixercancel andnativeID-candidate-ready/strict5sdeadline/rejectRESTORINGacceptedtuple/presentationcontext-generation-revision guards retained. UIclockindependenceisnotboundednativelock-I/Owatchdog;lostup-disconnect-focusloss-newActivity/latecallback/exception/mandatorycleanup-handoff acceptance stays existingowners. Tap/singlepointerfixture nothardware/multitouch/first-runchooser/all10filebytes/entiresimulation/faultmatrix. Actualnativeassertionsfailmissing-invalidstate/waitdeadline,logmarkerdoesnotpassfailedchecks. CurrentGUIDdurablerunID/sharewaredeps-mission/defaultsetguard-SHA andcompletedgraphicsmirror/backup/descriptor/MSAAsmoke repairs preserved;historicalOct7input97steps/frameflashdiagnosticAPK/fullGradlelocklimits andOct2Retroidphysical evidence notfresh. No newduplicate/status/rating/root/nativehookremoval/original reduction. Freshreview228/final235. ReportSHA801221f09e41d660077c6c7aae214e96eb1a78331f1018c6db6eb564c6e00e85;snapshotSHAb7762ac95e77c43a3e4f5713ca0afb989b61be8c999f9887d596a8bd29358c15.
+Canonical484DONE143TODO627/1300terminalranks321findings307remediations307fixranks12investigations. Six exact operations; all old finding/remediation/status/rating/fixrank/BRbytes/other626queue/oldcoverage/evidenceprefix and369protectedCRCRLF rows retained modulo terminalrank. Implementation/runtime/Drive proof and broad diagnosis remain separate; plan_gq2_0484_synthesis_20261015.md.

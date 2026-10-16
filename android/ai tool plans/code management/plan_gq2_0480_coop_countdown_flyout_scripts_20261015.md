@@ -6,7 +6,7 @@ Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Work s
 - [x] Trace actual script harness/automation/native consumers at explicit boundaries
 - [x] Reconcile whole existing owners, prior plans and quality dispositions
 - [x] Author direct unpooled disposition and conditional continuation
-- [ ] Publish exact evidence, independently replay and verify mounted Drive backup
+- [x] Publish exact evidence, independently replay and verify mounted Drive backup
 
 Canonical locators only; no source-body, patch, consumer or runtime credit:
 ### GQ2-CHUNK-0480

@@ -1,0 +1,17 @@
+# Chunk 0485 graphics mode restore source read, 2026-10-15
+
+Read the complete frozen addition patch (523 physical rows, 517 added lines), current script (518 lines), and complete later delta (one hunk adding _shareware:true). The path is absent from the frozen base and 1996 original. No enclosing tail, removals, runtime acceptance, or additional queue coverage.
+
+The script declares both games and per-game mission variables. It resets launcher state, writes an accepted ten-field graphics tuple with 640x480 and ColorDepth=0, then writes three complete config tuples requesting 800x600 and ColorDepth=1. TexFilt=1 is active throughout the initial mode trial. Dependency hashes and _shareware admission require maintained runner/data-edition consumers, not assumptions from metadata.
+
+After intro and pilot/menu handling it asserts idle and actual 800x600 menu rendering. It starts gameplay; D1 explicitly waits for the 800/depth1 candidate and cancels with B down/up. D2 has no equivalent challenge wait or input and relies on timeout. Both wait for idle, 640x480, current depth0, no scene GL error and unpaused state. Retained UI first-draw Cancel (5) and closed state are checked after rollback, allowing the independent UI to have timed out while native automation was blocked. These assertions do not prove separate lifecycle/fault paths or physical input latency.
+
+Two color probes use msaa_color_probe=2 plus probe_gles_vbo and require passed/state_restored and zero scene errors. Trace the actual probe/control/context owner before credit; scene error counters and diagnostic probe results do not prove every production draw or complete prior pixel preservation.
+
+The nested native Screen Resolution menu queues tex_filt:2 and waits one second while asserting idle and the same subtitle. It types 800x600 and applies it, then asserts idle and 800x600 after 400ms while still inside the native menu. Escape returns to a trial-eligible window; challenge must include TexFilt2 and ResolutionX800. After 5500ms it waits for idle, 640x480, current TexFilt1/depth0, accepted width640 and unpaused. This deferral is substantive coverage, not redundant delay.
+
+Absolute context_generation>=4 is checked after these restores. It does not measure a before/after delta or correlate a particular generation with a particular request. Preserve this limit when tracing renderer and EGL acknowledgements. The second color probe again checks the rebuilt context.
+
+Finally the script reopens the nested menu, queues tex_filt:0 and applies 800x600. After Escape and one second it expects idle, actual 800x600, current TexFilt0 while accepted TexFilt remains1 and accepted width640. This tests the all-effects-off exemption, not acceptance of a replacement durable tuple. No final assertion explicitly checks current depth, requested tuple, all config bytes, pause state or trial identity here. The final pass log supplies no extra evidence.
+
+NEXT trace actual native screen-resolution menu entry/exit and modal depth; graphics_option admission/queue; all-off trial predicate; requested/current/accepted tuples, durable journal/config transaction, EGL surface/context and render/present acknowledgements. Reuse previous harness/assertion/UI/deadline/probe and owner evidence only after exact current-byte proof. Diagnosis only; no product/test/helper execution or edits, findings/status/rating changes, inherited savings, ledger append or new Drive backup claim.
