@@ -137,7 +137,13 @@ function Test-FirstPlayDocumentsUiCancel {
 
 function Invoke-FirstPlayPhase {
     param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2')][string]$Phase)
-    $name = "test_public_first_play_$Phase.jsonc"
+    $phaseScripts = @{
+        empty = 'test_public_first_play_empty.jsonc'
+        d1 = 'test_public_first_play_d1.jsonc'
+        d1_in_d2 = 'test_public_first_play_d1_in_d2.jsonc'
+        d2 = 'test_public_first_play_d2.jsonc'
+    }
+    $name = $phaseScripts[$Phase]
     $phaseOutput = Join-Path $firstPlayOutput $Phase
     New-Item -ItemType Directory -Force -Path $phaseOutput | Out-Null
     $pwsh = Get-RegressionCurrentPwshPath

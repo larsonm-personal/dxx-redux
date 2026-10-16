@@ -123,10 +123,44 @@ if ($source -notmatch "'import_picked_uris', '--esa', 'uris'" -or
     $source -match '-DataEdition|-Params\s') { throw 'First-play provenance, fresh evidence, or no-seeding contract changed' }
 
 . "$PSScriptRoot/../helpers/jsonc.ps1"
+$catalogPath = Join-Path $PSScriptRoot 'test_validate_automation_catalog.ps1'
+$catalogAst = [Management.Automation.Language.Parser]::ParseFile($catalogPath, [ref]$null, [ref]$parseErrors)
+if ($parseErrors.Count) { throw "Catalog parser errors: $parseErrors" }
+$exception = $catalogAst.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-FirstPlayLauncherButtonException'
+    }, $true)
+if (-not $exception) { throw 'Missing reviewed first-play catalog exception' }
+. ([scriptblock]::Create($exception.Extent.Text))
+$gameScriptsDir = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../game_scripts'))
+$allowedInfo = @{ _standalone = $false; _owner = 'test_demo_import' }
+foreach ($unrelated in @(
+        (Join-Path $gameScriptsDir 'test_launch_to_automap.jsonc'),
+        (Join-Path $gameScriptsDir 'test_public_first_play_other.jsonc'),
+        (Join-Path $gameScriptsDir 'test_public_first_play_d1_copy.jsonc'),
+        (Join-Path $PSScriptRoot 'test_public_first_play_d1.jsonc')
+    )) {
+    if (Test-FirstPlayLauncherButtonException -ScriptPath $unrelated -Info $allowedInfo) {
+        throw 'Catalog accepted an unrelated or external launcher-button script'
+    }
+}
+foreach ($invalidInfo in @(
+        $null, @{}, @{ _standalone = $false }, @{ _owner = 'test_demo_import' },
+        @{ _standalone = $false; _owner = 'test_other' },
+        @{ _standalone = $true; _owner = 'test_demo_import' },
+        @{ _standalone = 'false'; _owner = 'test_demo_import' }
+    )) {
+    if (Test-FirstPlayLauncherButtonException -ScriptPath (Join-Path $gameScriptsDir 'test_public_first_play_d1.jsonc') -Info $invalidInfo) {
+        throw 'Catalog accepted missing, standalone, or foreign first-play ownership'
+    }
+}
 foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2')) {
     $path = Join-Path $PSScriptRoot "../game_scripts/test_public_first_play_$phase.jsonc"
     $steps = Read-JsoncFile -Path $path
     $info = $steps[0]._info
+    if (-not (Test-FirstPlayLauncherButtonException -ScriptPath $path -Info $info) -or
+        -not $source.Contains("'test_public_first_play_$phase.jsonc'")) {
+        throw "First-play $phase lost its exact catalog admission or literal owner reference"
+    }
     if ($info._standalone -ne $false -or $info._owner -cne 'test_demo_import' -or $info._deps -or $info._shareware -or $info.params) {
         throw "First-play $phase lost its parameter-free, unseeded owner contract"
     }
