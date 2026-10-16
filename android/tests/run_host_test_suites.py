@@ -383,6 +383,10 @@ def retail_profile_arguments(suite, repo, build_root, work):
             "-VertigoDir",
             str(stage / "missions"),
         ]
+    if profile == "retail-input-demos":
+        return ["--demos", str(stage / "demos"),
+                "--data", str(stage / "d2"), "--exe", binary("d2", "-headless"),
+                "--output", str(work / "private-input-demos")]
     if profile == "retail-obsidian-liquid":
         return [
             "--exe",
@@ -613,6 +617,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                         verify_retail_stage(repo, include_missions=True)
                     else:
                         verify_retail_stage(repo)
+                    if suite.get("fixture") == "retail-demos":
+                        from private_input_demos import validate
+                        validate(repo / "game_data/retail-ci/demos")
                     if suite["profile"] == "retail-obsidian-liquid":
                         prepare_obsidian_mission(repo, work)
                 except (OSError, ValueError, zipfile.BadZipFile) as error:
