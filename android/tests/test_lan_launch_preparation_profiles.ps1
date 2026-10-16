@@ -10,6 +10,29 @@ $public = $runner.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.Us
 if ($mission.DefaultValue.SafeGetValue() -cne 'descent' -or -not $public -or $public.DefaultValue) {
     throw 'Retail launch preparation must remain the default; public staging requires an explicit switch'
 }
+# Execute only the owner's host-argument construction, without any device commands
+$hostArguments = $runner.Find({ param($node)
+        $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+        $node.Left.Extent.Text -ceq '$hostExtras' -and $node.Operator -eq 'Equals'
+    }, $true)
+$publicCapacity = $runner.Find({ param($node)
+        $node -is [Management.Automation.Language.IfStatementAst] -and
+        $node.Extent.Text -ceq 'if ($PublicShareware) { $hostExtras += @(''--ei'', ''max_players'', ''2'') }'
+    }, $true)
+if (-not $hostArguments -or -not $publicCapacity) { throw 'Public two-player capacity must be explicitly scoped to the public variant' }
+$buildHostArguments = [scriptblock]::Create($hostArguments.Extent.Text + "`n" + $publicCapacity.Extent.Text + "`nreturn ,`$hostExtras")
+foreach ($PublicShareware in @($false, $true)) {
+    foreach ($Engine in @('d1', 'd2')) {
+        $hostCallsign = 'PrepH1'
+        $missionArgument = if ($Engine -eq 'd1') { "''" } else { 'descent' }
+        $actual = & $buildHostArguments
+        $expected = @('--es', 'callsign', $hostCallsign, '--es', 'game', $Engine, '--es', 'mission', $missionArgument)
+        if ($PublicShareware) { $expected += @('--ei', 'max_players', '2') }
+        if (($actual | ConvertTo-Json -Compress) -cne ($expected | ConvertTo-Json -Compress)) {
+            throw "Host arguments changed unexpectedly: public=$PublicShareware engine=$Engine"
+        }
+    }
+}
 foreach ($name in @('Test-PublicLanEngineLog', 'Test-PublicLanPeerState', 'Assert-LanPreparationTargets', 'Assert-PublicLanDeviceAssets', 'Stage-PublicLanAssets')) {
     $definition = $runner.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
@@ -191,6 +214,8 @@ Assert-Rejected 'changed staged public asset' { Assert-PublicLanDeviceAssets -Se
 $source = Get-Content -LiteralPath $runnerPath -Raw
 foreach ($required in @(
         'Get-GameIntrospection -Serial $HostSerial -Fresh',
+        'Send-MpCommand -Serial $HostSerial -Command ''lan_host_lobby'' -Extras $hostExtras',
+        'LAN final peer evidence:',
         'logcat -c && echo DXX_LAN_LOG_CLEARED',
         'rm -f files/mp_introspect.json && echo DXX_LAN_STATE_CLEARED',
         'gameplay_tested = $false',

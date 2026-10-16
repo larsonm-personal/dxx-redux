@@ -171,7 +171,10 @@ function Invoke-LanPreparationSession {
         }
         # Reuse the QR owner's shell quoting for native D1's empty built-in mission key
         $missionArgument = if ($SessionMission) { $SessionMission } else { "''" }
-        Send-MpCommand -Serial $HostSerial -Command 'lan_host_lobby' -Extras @('--es', 'callsign', $hostCallsign, '--es', 'game', $Engine, '--es', 'mission', $missionArgument)
+        $hostExtras = @('--es', 'callsign', $hostCallsign, '--es', 'game', $Engine, '--es', 'mission', $missionArgument)
+        # Native auto-host starts when the configured player capacity is reached
+        if ($PublicShareware) { $hostExtras += @('--ei', 'max_players', '2') }
+        Send-MpCommand -Serial $HostSerial -Command 'lan_host_lobby' -Extras $hostExtras
         Send-MpCommand -Serial $ClientSerial -Command 'lan_discover' -Extras @('--es', 'callsign', $clientCallsign)
         $joined = Wait-ForCondition -Description 'client joined launcher lobby' -TimeoutSec 25 -PollMs 500 -Condition {
             Send-MpCommand -Serial $ClientSerial -Command 'lan_join_first_lobby'
@@ -206,6 +209,7 @@ function Invoke-LanPreparationSession {
         $log = Read-LaunchLog $ClientSerial
         if (([regex]::Matches($log, 'mp preparation role=client .*step=begin')).Count -ne 1) { throw 'Client prepared more than once' }
         if ($PublicShareware) {
+            $lastPeerEvidence = @{}
             $playing = Wait-ForCondition -Description "public LAN session $Session ($Engine/$Content) has two live level-one peers" -TimeoutSec $startupTimeout -PollMs 1000 -Condition {
                 $hostState = Get-GameIntrospection -Serial $HostSerial -Fresh
                 $clientState = Get-GameIntrospection -Serial $ClientSerial -Fresh
@@ -215,10 +219,28 @@ function Invoke-LanPreparationSession {
                 $clientNativeLog = Adb-Dev-Timeout -Serial $ClientSerial -AdbArgs @('logcat', '-d', '-s', 'MainActivity:I', '*:S') -Seconds 5
                 $hostNativeLog | Set-Content (Join-Path $outputDirectory "session-$Session-host-native-library.log") -Encoding utf8
                 $clientNativeLog | Set-Content (Join-Path $outputDirectory "session-$Session-client-native-library.log") -Encoding utf8
+                $lastPeerEvidence.host = @{ State = $hostState; NativeLog = $hostNativeLog }
+                $lastPeerEvidence.client = @{ State = $clientState; NativeLog = $clientNativeLog }
                 (Test-PublicLanPeerState -State $hostState -LocalCallsign $hostCallsign -RemoteCallsign $clientCallsign -IsHost $true -PigSize $pigSize -Engine $Engine -Content $Content -NativeLog $hostNativeLog) -and
                 (Test-PublicLanPeerState -State $clientState -LocalCallsign $clientCallsign -RemoteCallsign $hostCallsign -IsHost $false -PigSize $pigSize -Engine $Engine -Content $Content -NativeLog $clientNativeLog)
             }
-            if (-not $playing) { throw "Public LAN session $Session never reached matching two-player $Engine/$Content gameplay" }
+            if (-not $playing) {
+                foreach ($peer in @('host', 'client')) {
+                    $state = $lastPeerEvidence[$peer].State
+                    $diagnostic = [ordered]@{
+                        session = $Session; peer = $peer; engine = $Engine; content = $Content; has_state = $null -ne $state
+                        native_library_match = Test-PublicLanEngineLog -Log $lastPeerEvidence[$peer].NativeLog -Engine $Engine
+                        in_game = $state.in_game; is_network = $state.is_network; screen_mode = $state.screen_mode
+                        level = $state.current_level_num; mission = $state.multiplayer.mission_name; title = $state.multiplayer.mission_title
+                        mode = $state.multiplayer.gamemode_name; network_level = $state.multiplayer.level_num
+                        players = $state.multiplayer.num_players; connected = $state.multiplayer.num_connected
+                        capacity = $state.multiplayer.max_players; is_host = $state.multiplayer.i_am_master
+                        roster = @($state.multiplayer.players | Select-Object -First 4 -Property callsign, is_me, connected)
+                    }
+                    Write-Host "LAN final peer evidence: $($diagnostic | ConvertTo-Json -Depth 5 -Compress)"
+                }
+                throw "Public LAN session $Session never reached matching two-player $Engine/$Content gameplay"
+            }
             foreach ($serial in @($HostSerial, $ClientSerial)) { Assert-PublicLanDeviceAssets -Serial $serial -Files $AssetFiles }
             [ordered]@{
                 result = 'PASS'; session = $Session; engine = $Engine; content = $Content; mission = $SessionMission; level = 1
