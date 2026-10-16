@@ -42,8 +42,15 @@ function Test-FirstPlayReadiness {
 }
 
 function Tap-FirstPlayButton {
-    param([string]$Text)
-    if (-not (Send-TapButton -Serial $Serial -Text $Text -TimeoutSec 30 -PollMs 500)) {
+    param([ValidateSet('Select Game Files or Archive to Import', 'Pick One or More Files', 'Import to Current Set', 'Import All')][string]$Text)
+    # Host argv quoting does not survive adb shell's second parse; these fixed labels contain no quotes
+    $quotedText = "'$Text'"
+    if (-not (Send-TapButton -Serial $Serial -Text $quotedText -TimeoutSec 30 -PollMs 500)) {
+        @(
+            "requested_button=$Text"
+            "remote_shell_argument=$quotedText"
+            (Adb -AdbArgs @('logcat', '-d', '-t', '200', '-s', 'DXX-MP:*', 'DXX-Setup:*', '*:S'))
+        ) | Set-Content (Join-Path $firstPlayOutput 'tap-button-failure.log') -Encoding utf8
         throw "Could not tap first-play button: $Text"
     }
 }

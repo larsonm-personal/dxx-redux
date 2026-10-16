@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -80,14 +80,40 @@ $script:state = New-SetupState
 $script:state.set_files_recursive = @('assets.json', 'descent.hog')
 $script:hash = $expected[0].Sha256
 $script:outputWrites = 0
+$script:writtenValues = @()
 function Wait-FirstPlaySetup { param($Label, $Predicate) return $script:state }
-function Set-Content { param([Parameter(Position = 0)]$Path, [Parameter(ValueFromPipeline)]$Value, $Encoding) process { $script:outputWrites++ } }
+function Set-Content { param([Parameter(Position = 0)]$Path, [Parameter(ValueFromPipeline)]$Value, $Encoding) process { $script:outputWrites++; $script:writtenValues += [string]$Value } }
 function Adb {
     param($AdbArgs, $Seconds)
+    if ($AdbArgs -contains 'logcat') { return 'tap failure diagnostic marker' }
     if ($AdbArgs -contains 'sha256sum') { return "$($script:hash)  $($AdbArgs[-1])" }
     if ($AdbArgs -contains 'cp' -and $AdbArgs[-1] -notlike 'files/saf_provider_source/*') {
         throw 'Source staging attempted to seed the active set'
     }
+}
+$Serial = 'emulator-5554'
+$script:tapResult = $true
+$script:tapTexts = @()
+function Send-TapButton {
+    param($Serial, $Text, $TimeoutSec, $PollMs)
+    if ($Serial -cne 'emulator-5554' -or $TimeoutSec -ne 30 -or $PollMs -ne 500) { throw 'Tap lost its bounded explicit target' }
+    $script:tapTexts += $Text
+    return $script:tapResult
+}
+foreach ($label in @('Select Game Files or Archive to Import', 'Pick One or More Files', 'Import to Current Set', 'Import All')) {
+    Tap-FirstPlayButton -Text $label
+    if ($script:tapTexts[-1] -cne "'$label'") { throw 'Multi-word button lost its remote-shell quoting' }
+}
+$script:tapTexts = @()
+Assert-Rejected { Tap-FirstPlayButton -Text "unsafe'button" } 'Arbitrary shell text reached the button tap helper'
+if ($script:tapTexts.Count) { throw 'Unreviewed button text reached device transport' }
+$script:tapResult = $false
+$failure = ''
+try { Tap-FirstPlayButton -Text 'Import All' } catch { $failure = $_.Exception.Message }
+if ($failure -cne 'Could not tap first-play button: Import All' -or
+    'requested_button=Import All' -cnotin $script:writtenValues -or
+    'tap failure diagnostic marker' -cnotin $script:writtenValues) {
+    throw 'Unacknowledged tap did not fail with preserved button/log diagnostics'
 }
 Assert-FirstPlayFiles -Expected $expected -Label valid
 Send-FirstPlaySource -Path fixture -Name descent.hog -Sha256 $expected[0].Sha256
