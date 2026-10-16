@@ -176,6 +176,38 @@ class SweepTests(unittest.TestCase):
         publish = workflow.split('  publish:', 1)[1]
         self.assertIn("inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities'", publish)
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Hosted receipt discovery runs in the Linux coordinator')
+    def test_receipt_discovery_handles_single_and_multiple_artifact_layouts(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        discovery = [line.strip() for line in workflow.splitlines() if 'mapfile -t receipts' in line]
+        self.assertEqual(len(discovery), 2)
+        self.assertEqual(discovery[0], discovery[1])
+        for multiple in (False, True):
+            with self.subTest(multiple=multiple), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                policy = {'schema': 1, 'suites': self.policy['suites'][:2 if multiple else 1]}
+                plan, state = sweep.plan_batch(SHA, self.catalog, policy)
+                expected = []
+                for i, entry in enumerate(plan['tests']):
+                    # download-artifact v7 flattens a single pattern match, even without merge-multiple
+                    relative = f'receipts/nightly-results-{i}/results.json' if multiple else 'receipts/results.json'
+                    receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+                    receipt.update(lane=entry['lane'], results=[{'id': entry['id'], 'status': 'PASS',
+                                                               'run_url': 'https://github.com/o/r/actions/runs/2'}])
+                    sweep.write(root / relative, receipt)
+                    expected.append(relative)
+                for relative in ('receipts/other/results.json', 'receipts/nightly-results-host/nested/results.json',
+                                 'receipts/nightly-results-host/owner.json', 'receipts/not-results.json'):
+                    sweep.write(root / relative, {'unrelated': True})
+                linked = root / 'receipts/nightly-results-linked'
+                linked.mkdir()
+                (linked / 'results.json').symlink_to(root / expected[0])
+                command = discovery[0] + '\nprintf "%s\\n" "${receipts[@]}"'
+                found = subprocess.check_output(['bash', '-c', command], cwd=root, text=True).splitlines()
+                self.assertEqual(found, sorted(expected))
+                reconciled = sweep.reconcile(plan, policy, state, [sweep.read(root / path) for path in found])
+                self.assertEqual(sweep.selected_without_pass(plan, reconciled), [])
+
     def test_first_play_public_variants_provision_originals_on_both_lanes(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
         fixture_step = workflow.split('      - name: Provision verified public fixtures', 1)[1].split('      - name:', 1)[0]

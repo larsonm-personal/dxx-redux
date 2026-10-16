@@ -287,7 +287,7 @@ jobs:
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
           status=0
-          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py reconcile \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --state plan/state.json --output summary-state.json "${qualification[@]}" --receipts "${receipts[@]}" > summary.json || status=$?
@@ -340,7 +340,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
         run: |
-          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py publish \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --expected-target "$TARGET_SHA" --output published-state.json --receipts "${receipts[@]}"
