@@ -18,6 +18,10 @@ template<class Json> Json matcen_regression_serialize(bool admitted = true)
         {"generated_count", c.generated_count}, {"disk_count", c.disk_count},
         {"declared_disk_count", c.declared_disk_count}, {"scope", "fresh_level_load"},
         {"trigger_representation", "decoded_disk_before_runtime_linking"}};
+    out["engine_limits"] = {{"segments", MAX_SEGMENTS}, {"robot_centers", MAX_ROBOT_CENTERS},
+        {"stations", MAX_NUM_FUELCENS}, {"robot_types", MAX_ROBOT_TYPES}, {"polygon_models", MAX_POLYGON_MODELS}};
+    out["runtime_counts"] = {{"segments", Highest_segment_index + 1}, {"robot_centers", Num_robot_centers},
+        {"stations", Num_fuelcenters}, {"robot_types", N_robot_types}, {"polygon_models", N_polygon_models}};
     Json authored = Json::array(), records = Json::array(), triggers = Json::array(), runtime = Json::array();
     auto record = [](const matcen_info &r) {
         Json masks = Json::array();
