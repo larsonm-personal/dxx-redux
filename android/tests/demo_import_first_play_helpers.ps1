@@ -69,6 +69,23 @@ function Get-FirstPlayPickerChoicePoint {
     return [pscustomobject]@{ X = [int](($left + $right) / 2); Y = [int](($top + $bottom) / 2) }
 }
 
+function Test-FirstPlayDocumentsUiRoot {
+    param([string]$XmlText, [string]$ActivityText)
+    try { [xml]$document = $XmlText } catch { return $false }
+    if ($null -eq $document -or $null -eq $document.DocumentElement) { return $false }
+    $roots = @($document.SelectNodes('/hierarchy/node'))
+    if ($roots.Count -ne 1) { return $false }
+    $package = $roots[0].GetAttribute('package')
+    if ($package -cnotin @('com.android.documentsui', 'com.google.android.documentsui')) { return $false }
+    $resumed = @([regex]::Matches($ActivityText,
+            '(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)\s*[:=]\s*ActivityRecord\{[^\r\n}]*\s(?<component>[A-Za-z0-9_.]+/[A-Za-z0-9_.]+)(?:\s|\})') |
+        ForEach-Object { $_.Groups['component'].Value })
+    $expected = "$package/com.android.documentsui.picker.PickActivity"
+    return ($resumed.Count -gt 0 -and @($resumed | Where-Object {
+                $_ -cne $expected -and -not ($package -ceq 'com.android.documentsui' -and $_ -ceq 'com.android.documentsui/.picker.PickActivity')
+            }).Count -eq 0)
+}
+
 function Assert-FirstPlayFiles {
     param([array]$Expected, [string]$Label)
     $state = Wait-FirstPlaySetup -Label $Label -Predicate { param($s) $s.active_set -ceq 'default' }
@@ -132,39 +149,57 @@ function Import-FirstPlaySources {
 }
 
 function Test-FirstPlayDocumentsUiCancel {
-    Tap-FirstPlayButton 'Select Game Files or Archive to Import'
+    param([Parameter(Mandatory)][array]$Expected)
+    # One click request only: retrying while the previous MP coroutine scrolls can
+    # leave overlapping gestures after the dialog or system picker has opened
+    Adb -AdbArgs @('logcat', '-c') | Out-Null
+    Send-MpCommand -Serial $Serial -Command 'tap_button' -Extras @('--es', 'text', "'Select Game Files or Archive to Import'")
     $dump = '/sdcard/first-play-picker.xml'
     # The Compose chooser owns a separate window; observe the actual focused UI
     # rather than the MP helper's covered activity root (test_mac_extract_saf pattern)
-    $choice = @{ Point = $null }
-    $chooserReady = Wait-ForCondition -Description 'exact import chooser choice visible' -TimeoutSec 30 -PollMs 500 -Condition {
+    $choice = @{ Point = $null; DocumentsUi = $false }
+    $chooserReady = Wait-ForCondition -Description 'exact chooser or system picker visible' -TimeoutSec 30 -PollMs 500 -Condition {
         Adb -AdbArgs @('shell', 'rm', '-f', $dump) | Out-Null
         Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
         $xml = Adb -AdbArgs @('shell', 'cat', $dump)
         $xml | Set-Content (Join-Path $firstPlayOutput 'import-chooser.xml') -Encoding utf8
+        $activity = Adb -AdbArgs @('shell', 'dumpsys', 'activity', 'activities')
+        $activity | Set-Content (Join-Path $firstPlayOutput 'import-chooser-activity.txt') -Encoding utf8
+        $choice.DocumentsUi = Test-FirstPlayDocumentsUiRoot -XmlText $xml -ActivityText $activity
         $choice.Point = Get-FirstPlayPickerChoicePoint -XmlText $xml
-        return $null -ne $choice.Point
+        return $choice.DocumentsUi -or $null -ne $choice.Point
     }
-    if (-not $chooserReady) { throw 'Import chooser did not expose its enabled exact file-picker choice' }
-    Adb -AdbArgs @('shell', 'input', 'tap', [string]$choice.Point.X, [string]$choice.Point.Y) | Out-Null
+    if (-not $chooserReady) { throw 'Neither the exact import chooser nor the system picker became visible' }
+    if (-not $choice.DocumentsUi) {
+        Adb -AdbArgs @('shell', 'input', 'tap', [string]$choice.Point.X, [string]$choice.Point.Y) | Out-Null
+    }
+    # Even an already-open picker requires a second fresh observation before Back
     $opened = Wait-ForCondition -Description 'system DocumentsUI opened' -TimeoutSec 30 -PollMs 500 -Condition {
+        Adb -AdbArgs @('shell', 'rm', '-f', $dump) | Out-Null
         Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
         $xml = Adb -AdbArgs @('shell', 'cat', $dump)
         $xml | Set-Content (Join-Path $firstPlayOutput 'documentsui-open.xml') -Encoding utf8
-        $xml -match 'package="com\.(?:google\.)?android\.documentsui"'
+        $activity = Adb -AdbArgs @('shell', 'dumpsys', 'activity', 'activities')
+        $activity | Set-Content (Join-Path $firstPlayOutput 'documentsui-open-activity.txt') -Encoding utf8
+        Test-FirstPlayDocumentsUiRoot -XmlText $xml -ActivityText $activity
     }
     if (-not $opened) { throw 'Import chooser did not open the system DocumentsUI' }
     Adb -AdbArgs @('shell', 'input', 'keyevent', 'KEYCODE_BACK') | Out-Null
     $returned = Wait-ForCondition -Description 'DocumentsUI cancellation returned to launcher' -TimeoutSec 30 -PollMs 500 -Condition {
+        Adb -AdbArgs @('shell', 'rm', '-f', $dump) | Out-Null
         Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
         $xml = Adb -AdbArgs @('shell', 'cat', $dump)
         $xml | Set-Content (Join-Path $firstPlayOutput 'documentsui-cancel.xml') -Encoding utf8
+        $activity = Adb -AdbArgs @('shell', 'dumpsys', 'activity', 'activities')
+        $activity | Set-Content (Join-Path $firstPlayOutput 'documentsui-cancel-activity.txt') -Encoding utf8
         $xml -match ('package="' + [regex]::Escape($script:PACKAGE) + '"') -and
-            $xml -notmatch 'package="com\.(?:google\.)?android\.documentsui"'
+            $activity -match ('(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)\s*[:=].*\s' +
+                [regex]::Escape($script:PACKAGE) + '/(?:\.SetupActivity|com\.dxxredux\.app\.SetupActivity)(?:\s|\})') -and
+            -not (Test-FirstPlayDocumentsUiRoot -XmlText $xml -ActivityText $activity)
     }
     if (-not $returned) { throw 'Canceling DocumentsUI did not return to the launcher' }
-    Wait-FirstPlaySetup -Label 'picker-cancel' -Predicate { param($s) Test-FirstPlayReadiness $s $false $false } | Out-Null
-    Assert-FirstPlayFiles -Expected @() -Label 'picker-cancel'
+    Wait-FirstPlaySetup -Label 'picker-cancel' -Predicate { param($s) Test-FirstPlayReadiness $s $true $true } | Out-Null
+    Assert-FirstPlayFiles -Expected $Expected -Label 'picker-cancel'
     Write-Output 'PASS: actual DocumentsUI open/cancel; installer selection is separately injected through SafTestProvider'
 }
 
@@ -247,7 +282,6 @@ function Invoke-PublicFirstPlay {
         # run_test suppresses graphics onboarding and clears saves; this tests cold content/pilots, not that dialog
         Invoke-FirstPlayPhase empty
         Assert-FirstPlayFiles -Expected @() -Label 'cold-empty'
-        Test-FirstPlayDocumentsUiCancel
         Import-FirstPlaySources -Names @($configs[0].Archive) -Kind archive -Label 'd1-archive'
         Wait-FirstPlaySetup -Label 'd1-archive' -Predicate { param($s) Test-FirstPlayReadiness $s $true $false } | Out-Null
         Assert-FirstPlayFiles -Expected $configs[0].RequiredHashes -Label 'd1-archive'
@@ -271,6 +305,8 @@ function Invoke-PublicFirstPlay {
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'both-demos'
         Invoke-FirstPlayPhase d2
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'final'
+        # Keep the independent picker smoke after the priority import/engine evidence
+        Test-FirstPlayDocumentsUiCancel -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes)
         [ordered]@{
             result = 'PASS'; phases = @('empty', 'd1', 'd1_in_d2', 'd2'); run_ids = @($firstPlayRunIds | Sort-Object)
             installers = @($configs | ForEach-Object { @{ name = $_.Archive; sha256 = $_.ArchiveSha256 } })

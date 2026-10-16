@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Get-FirstPlayPickerChoicePoint')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -130,6 +130,76 @@ foreach ($invalidXml in @(
     )) {
     $invalidPoint = & { Set-StrictMode -Version Latest; Get-FirstPlayPickerChoicePoint -XmlText $invalidXml }
     if ($null -ne $invalidPoint) { throw 'Unobserved, disabled, ambiguous, or foreign chooser node was accepted' }
+}
+$documentsXml = '<hierarchy><node package="com.google.android.documentsui"/></hierarchy>'
+$documentsActivity = 'topResumedActivity=ActivityRecord{123 u0 com.google.android.documentsui/com.android.documentsui.picker.PickActivity t9}'
+foreach ($package in @('com.android.documentsui', 'com.google.android.documentsui')) {
+    if (-not (Test-FirstPlayDocumentsUiRoot -XmlText $documentsXml.Replace('com.google.android.documentsui', $package) `
+                -ActivityText $documentsActivity.Replace('com.google.android.documentsui', $package))) {
+        throw 'Exact system picker root rejected'
+    }
+}
+foreach ($invalidXml in @('', '<broken', '<hierarchy/>',
+        $documentsXml.Replace('com.google.android.documentsui', 'com.google.android.documentsui.fake'),
+        '<hierarchy><node text="com.google.android.documentsui"/></hierarchy>',
+        '<hierarchy><node package="test.package"><node package="com.google.android.documentsui"/></node></hierarchy>')) {
+    if (& { Set-StrictMode -Version Latest; Test-FirstPlayDocumentsUiRoot -XmlText $invalidXml -ActivityText $documentsActivity }) { throw 'Non-system picker root accepted' }
+}
+foreach ($invalidActivity in @('',
+        $documentsActivity.Replace('topResumedActivity', 'Hist #0'),
+        $documentsActivity.Replace('PickActivity', 'OtherActivity'),
+        $documentsActivity.Replace('com.google.android.documentsui/', 'other.package/'),
+        ($documentsActivity + "`n" + 'mResumedActivity=ActivityRecord{234 u0 test.package/.SetupActivity t9}'))) {
+    if (Test-FirstPlayDocumentsUiRoot -XmlText $documentsXml -ActivityText $invalidActivity) { throw 'Picker XML passed without exact fresh foreground activity' }
+}
+foreach ($scenario in @('chooser', 'already_open', 'missing_second_observation')) {
+    & {
+        $observations = [Collections.Generic.Queue[string]]::new()
+        $observations.Enqueue($(if ($scenario -eq 'chooser') { $chooserXml } else { $documentsXml }))
+        $appXml = '<hierarchy><node package="test.package"/></hierarchy>'
+        $observations.Enqueue($(if ($scenario -eq 'missing_second_observation') { $appXml } else { $documentsXml }))
+        $observations.Enqueue($appXml)
+        $events = [Collections.Generic.List[string]]::new()
+        $observed = @{ Xml = '' }
+        function Send-MpCommand {
+            param($Serial, $Command, $Extras)
+            if ($Command -cne 'tap_button' -or $Extras[-1] -cne "'Select Game Files or Archive to Import'") { throw 'Initial chooser request changed' }
+            $events.Add('request')
+        }
+        function Adb {
+            param($AdbArgs, $Seconds)
+            if ($AdbArgs -contains 'cat') { $observed.Xml = $observations.Dequeue(); return $observed.Xml }
+            if ($AdbArgs -contains 'dumpsys') {
+                if ($observed.Xml -ceq $documentsXml) { return $documentsActivity }
+                return 'topResumedActivity=ActivityRecord{234 u0 test.package/.SetupActivity t9}'
+            }
+            if ($AdbArgs -contains 'input') { $events.Add($AdbArgs[2]) }
+        }
+        function Wait-ForCondition { param($Description, $TimeoutSec, $PollMs, $Condition) return [bool](& $Condition) }
+        function Wait-FirstPlaySetup {
+            param($Label, $Predicate)
+            if (-not (& $Predicate (New-SetupState $true $true))) { throw 'Cancellation must retain both imported games ready' }
+            $events.Add('readiness')
+        }
+        function Assert-FirstPlayFiles {
+            param($Expected, $Label)
+            if (($Expected -join ',') -cne 'd1,d2') { throw 'Cancellation did not recheck final fixture hashes' }
+            $events.Add('files')
+        }
+        $failed = $false
+        try { Test-FirstPlayDocumentsUiCancel -Expected @('d1', 'd2') | Out-Null } catch {
+            if ($_.Exception.Message -cne 'Import chooser did not open the system DocumentsUI') { throw }
+            $failed = $true
+        }
+        $expectedEvents = switch ($scenario) {
+            'chooser' { 'request,tap,keyevent,readiness,files' }
+            'already_open' { 'request,keyevent,readiness,files' }
+            'missing_second_observation' { 'request' }
+        }
+        if (($events -join ',') -cne $expectedEvents -or $failed -ne ($scenario -eq 'missing_second_observation')) {
+            throw "Picker scenario $scenario skipped fresh proof, repeated a click, or lost cancel/readiness checks"
+        }
+    }
 }
 Assert-FirstPlayFiles -Expected $expected -Label valid
 Send-FirstPlaySource -Path fixture -Name descent.hog -Sha256 $expected[0].Sha256
