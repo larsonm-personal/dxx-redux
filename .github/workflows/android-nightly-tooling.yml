@@ -426,6 +426,19 @@ jobs:
           data['note'] = 'Provisioning/job success is not a test result; only executor journal entries establish coverage'
           (path / 'lifecycle.json').write_text(json.dumps(data, indent=2) + '\n')
           PY
+      - name: Collect public first-play diagnostics
+        if: always() && !inputs.retail_assets
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import pathlib, shutil
+          temporary = pathlib.Path('target/android/temp')
+          destination = pathlib.Path('results/first-play')
+          for pattern in ('public-first-play-*', 'lan-launch-preparation-public-shareware'):
+              for source in temporary.glob(pattern):
+                  if source.is_dir() and not source.is_symlink():
+                      shutil.copytree(source, destination / source.name, dirs_exist_ok=True, symlinks=True)
+          PYTHON
       - name: Upload execution evidence
         if: always() && !inputs.retail_assets
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

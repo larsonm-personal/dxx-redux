@@ -100,6 +100,17 @@ class SweepTests(unittest.TestCase):
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
         self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])
 
+    def test_first_play_evidence_is_public_only_and_keeps_receipt_root(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        collect = workflow.split('      - name: Collect public first-play diagnostics', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('if: always() && !inputs.retail_assets', collect)
+        self.assertIn("('public-first-play-*', 'lan-launch-preparation-public-shareware')", collect)
+        self.assertIn("pathlib.Path('results/first-play')", collect)
+        self.assertNotIn('game_data', collect)
+        upload = workflow.split('      - name: Upload execution evidence', 1)[1].split('      - name:', 1)[0]
+        self.assertIn('path: results/', upload)
+        self.assertIn('if: always() && !inputs.retail_assets', upload)
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)
