@@ -33,6 +33,10 @@ if ($linuxHost) {
     if ($LASTEXITCODE -ne 0) { throw 'Linux build CLI regression tests failed' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_run_host_test_suites.py')
     if ($LASTEXITCODE -ne 0) { throw 'Host suite adapter checks failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_nightly_retail.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Retail sweep boundary checks failed' }
+    & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_retail_ci_assets.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Retail asset identity checks failed' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_nightly_tooling_sweep.py')
     if ($LASTEXITCODE -ne 0) { throw 'Nightly sweep planner checks failed' }
     & $python.Path @($python.PrefixArguments) (Join-Path $PSScriptRoot 'test_public_sanitizer_runner.py')

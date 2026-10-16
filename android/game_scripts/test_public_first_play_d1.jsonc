@@ -1,0 +1,23 @@
+// Original public D1 installer was imported by the owner through the picker callback
+[
+    { "_info": { "games": ["d1"], "_standalone": false, "_owner": "test_demo_import" } },
+    { "action": "enter_launcher" },
+    { "action": "assert", "expect": { "active_set": "default", "d1.ready": true, "d2.ready": false, "d1_in_d2.ready": true } },
+    { "action": "tap_button", "text": "Launch Descent 1", "exact": true, "launches_game": true },
+    { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
+    { "action": "select", "text": "New game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "select_mission", "text": "Descent Demo", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
+    { "action": "select", "text": "Rookie", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "skip_briefing", "timeout_ms": 30000, "post_delay_ms": 100 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "assert", "expect": { "in_game": true, "screen_mode": "game", "current_level_num": 1, "player_dead": false } },
+    { "action": "introspect" },
+    { "action": "log", "message": "PASS: real Descent 1 button reached public D1 level 1" },
+    { "action": "enter_launcher" },
+    { "action": "wait_for", "field": "game_running", "value": "false", "timeout_ms": 30000 },
+    { "action": "assert_button", "text": "Launch Descent 2", "exact": true, "enabled": true },
+]

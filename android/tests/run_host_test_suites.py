@@ -2,20 +2,34 @@
 """Allowlisted host-suite adapter for a separately qualified target checkout."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
 import unittest
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 REGISTRY = Path(__file__).with_name("host_test_suites.json")
+# Exact installed members of the reviewed, pinned Obsidian ZIP
+OBSIDIAN_MEMBERS = {
+    "obsidian.hog": (
+        35385307,
+        "32ee5f893718c2191975c826a6f95f116658b143b69bbf2aa73a9455174508db",
+    ),
+    "obsidian.mn2": (
+        338,
+        "1bf9a8cc9882a67356e16f08e06cb82923ca920710bf30d245cd7be9829bdde6",
+    ),
+}
 MEDIA_SKIP = re.compile(
     r"SKIP: sample media not present|skip missing fixture:|"
     r"StuffIt demo (?:archive|oracle file) missing, skipping|"
@@ -60,8 +74,19 @@ def classify_cases(cases, *, light=False):
     # cause an endless rerun of public leaves in the same commit's coverage sweep.
     failed = [c for c in cases if c["status"] == "FAIL"]
     exclusions = [c for c in cases if c["status"] in {"SKIP", "BLOCKED"}]
-    ran = any(c["status"] in {"PASS", "FAIL", "BLOCKED"} for c in cases)
-    return ("FAIL" if failed else "PASS" if ran else "BLOCKED"), exclusions
+    passed = any(c["status"] == "PASS" for c in cases)
+    return ("FAIL" if failed else "PASS" if passed else "BLOCKED"), exclusions
+
+
+def count_cases(cases):
+    """Count structured leaves only; aggregate scripts have unknown leaf counts."""
+    return {
+        "total": len(cases),
+        "passed": sum(c["status"] == "PASS" for c in cases),
+        "failed": sum(c["status"] == "FAIL" for c in cases),
+        "skipped": sum(c["status"] == "SKIP" for c in cases),
+        "excluded": sum(c["status"] in {"SKIP", "BLOCKED"} for c in cases),
+    }
 
 
 def read_ctest_results(path):
@@ -301,6 +326,165 @@ def public_profile_arguments(suite, repo, build_root, work):
     raise ValueError("Unknown reviewed PowerShell profile: " + profile)
 
 
+def retail_profile_arguments(suite, repo, build_root, work):
+    """Bind reviewed retail owners to the verified stage, never fallback media."""
+    profile = suite["profile"]
+    stage = repo / "game_data/retail-ci"
+
+    def binary(game, suffix):
+        return str(
+            build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix)
+        )
+
+    if profile in {"retail-secret-baseline", "retail-metadata-headers"}:
+        secret = profile == "retail-secret-baseline"
+        suffix = "-headless-metadata" if secret else "-metadata-worker"
+        return [
+            "-DataEdition",
+            "retail",
+            "-Game",
+            "both",
+            "-D1DataDir",
+            str(stage / "d1"),
+            "-D2DataDir",
+            str(stage / "d2"),
+            "-D1Exe",
+            binary("d1", suffix),
+            "-D2Exe",
+            binary("d2", suffix),
+            "-OutputDir" if secret else "-OutputDirectory",
+            str(work / ("secret-baseline" if secret else "headers")),
+            "-RequireAssets" if secret else "-NoBuild",
+        ]
+    if profile == "retail-counterstrike-route":
+        return [
+            "-Exe",
+            binary("d2", "-headless-metadata"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-OutputPath",
+            str(work / "counterstrike-route.json"),
+        ]
+    if profile == "retail-guidebot-timeout":
+        return [
+            "-NoBuild",
+            "-HeadlessExecutable",
+            binary("d2", "-headless-route"),
+            "-HogDir",
+            str(stage / "d2"),
+        ]
+    if profile == "retail-vertigo-metadata":
+        return [
+            "-NoBuild",
+            "-Worker",
+            binary("d2", "-metadata-worker"),
+            "-DataDir",
+            str(stage / "d2"),
+            "-VertigoDir",
+            str(stage / "missions"),
+        ]
+    if profile == "retail-input-demos":
+        return ["--demos", str(stage / "demos"),
+                "--data", str(stage / "d2"), "--exe", binary("d2", "-headless"),
+                "--output", str(work / "private-input-demos")]
+    if profile == "retail-obsidian-liquid":
+        return [
+            "--exe",
+            binary("d2", "-headless-metadata"),
+            "--hogdir",
+            str(stage / "d2"),
+            "--mission-dir",
+            str(work / "obsidian-stage"),
+            "--output",
+            str(work / "obsidian-liquid.json"),
+            "--worker",
+            binary("d2", "-metadata-worker"),
+            "--route-exe",
+            binary("d2", "-headless-route"),
+            "--vertigo-dir",
+            str(stage / "missions"),
+        ]
+    raise ValueError("Unknown reviewed retail profile: " + profile)
+
+
+def prepare_obsidian_mission(repo, work):
+    """Extract only two pinned members into a fresh private native mission tree."""
+    destination = work / "obsidian-stage"
+    with zipfile.ZipFile(repo / "game_data/retail-ci/missions/obsidian.zip") as archive:
+        members = archive.infolist()
+        if len(members) > 32:
+            raise ValueError("Unexpected Obsidian ZIP member count")
+        by_name = {}
+        for member in members:
+            name = member.filename
+            mode = member.external_attr >> 16
+            if (
+                not re.fullmatch(r"[A-Za-z0-9_.-]+", name)
+                or name in {".", ".."}
+                or name != member.orig_filename
+                or name.lower() in by_name
+                or member.is_dir()
+                or stat.S_IFMT(mode) not in {0, stat.S_IFREG}
+                or member.flag_bits & 1
+                or member.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}
+            ):
+                raise ValueError("Unsafe or duplicate Obsidian ZIP member")
+            by_name[name.lower()] = member
+        for name, (size, _digest) in OBSIDIAN_MEMBERS.items():
+            if (
+                name not in by_name
+                or by_name[name].filename != name
+                or by_name[name].file_size != size
+            ):
+                raise ValueError("Missing or wrong-sized Obsidian mission member")
+        destination.mkdir()
+        try:
+            installed = destination / "missions"
+            installed.mkdir()
+            for name, (expected_size, expected_digest) in OBSIDIAN_MEMBERS.items():
+                digest = hashlib.sha256()
+                size = 0
+                with (
+                    archive.open(by_name[name]) as source,
+                    (installed / name).open("xb") as output,
+                ):
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        size += len(chunk)
+                        if size > expected_size:
+                            raise ValueError("Oversized Obsidian mission member")
+                        digest.update(chunk)
+                        output.write(chunk)
+                if size != expected_size or digest.hexdigest() != expected_digest:
+                    raise ValueError("Obsidian mission member identity mismatch")
+        except BaseException:
+            shutil.rmtree(destination)
+            raise
+
+
+def verify_retail_stage(repo, *, include_missions=False):
+    """Hash the stage without copying fixture bytes into logs or receipts."""
+    control_repo = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location(
+        "retail_ci_assets", control_repo / "android/helpers/retail_ci_assets.py"
+    )
+    assets = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(assets)
+    expected = assets.baseline(control_repo)
+    if assets.baseline(repo) != expected:
+        raise ValueError(
+            "Target retail identity pins differ from the reviewed control checkout"
+        )
+    manifest = (
+        assets.stage_inventory(
+            repo / "game_data/retail-ci", expected, include_missions=True
+        )
+        if include_missions
+        else assets.inventory(repo / "game_data/retail-ci", expected)
+    )
+    if manifest["matches_tested_edition"] is not True:
+        raise ValueError("Staged retail edition differs from the existing test fixtures")
+
+
 def run_suite(suite, repo, build_root, output, timeout):
     started = time.monotonic()
     result = {
@@ -341,7 +525,9 @@ def run_suite(suite, repo, build_root, output, timeout):
             elapsed_seconds=round(time.monotonic() - started - setup_seconds, 3),
             setup_seconds=round(setup_seconds, 3),
             elapsed_wall_seconds=round(time.monotonic() - started, 3),
-            coverage_complete=status == "PASS" and not result["exclusions"],
+            # Aggregate owner success does not establish internal leaf coverage
+            coverage_complete=(status == "PASS" and "counts" in result
+                               and not result["exclusions"]),
         )
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
@@ -412,7 +598,8 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
-        if suite["kind"] == "public-powershell":
+        if suite["kind"] in {"public-powershell", "retail-powershell", "retail-python"}:
+            retail = suite["kind"] in {"retail-powershell", "retail-python"}
             script = target_file(repo, suite["path"])
             if not script.is_file():
                 return finish(
@@ -421,6 +608,32 @@ def run_suite(suite, repo, build_root, output, timeout):
                     retryable=False,
                     blocker_kind="target-capability",
                 )
+            if retail:
+                result["phase"] = "setup"
+                verification_started = time.monotonic()
+                verification_error = None
+                try:
+                    if suite.get("fixture") == "retail-missions":
+                        verify_retail_stage(repo, include_missions=True)
+                    else:
+                        verify_retail_stage(repo)
+                    if suite.get("fixture") == "retail-demos":
+                        from private_input_demos import validate
+                        validate(repo / "game_data/retail-ci/demos")
+                    if suite["profile"] == "retail-obsidian-liquid":
+                        prepare_obsidian_mission(repo, work)
+                except (OSError, ValueError, zipfile.BadZipFile) as error:
+                    verification_error = str(error)
+                finally:
+                    setup_seconds += time.monotonic() - verification_started
+                if verification_error is not None:
+                    return finish(
+                        "BLOCKED",
+                        "Verified retail fixture preparation failed: "
+                        + verification_error,
+                        retryable=True,
+                        blocker_kind="retail-fixture",
+                    )
             for game in suite.get("games", []):
                 build = build_root / ("engine-" + game)
                 code = run(native_configure_arguments(repo, build, game), setup=True)
@@ -482,19 +695,19 @@ def run_suite(suite, repo, build_root, output, timeout):
                         code,
                         retryable=True,
                     )
-            argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
-            argv += public_profile_arguments(suite, repo, build_root, work)
+            argv = (
+                [sys.executable, "-I", str(script)]
+                if suite["kind"] == "retail-python"
+                else ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script)]
+            )
+            profile_arguments = (
+                retail_profile_arguments if retail else public_profile_arguments
+            )
+            argv += profile_arguments(suite, repo, build_root, work)
             if suite.get("virtual_display"):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
-            result["cases"] = [
-                {
-                    "id": suite["id"],
-                    "status": status,
-                    "reason": "Existing owner assertions for the selected public profile; aggregate receipt",
-                }
-            ]
             result["exclusions"] = [
                 {
                     "id": suite["id"] + ":" + item["id"],
@@ -504,7 +717,10 @@ def run_suite(suite, repo, build_root, output, timeout):
                 for item in suite.get("profile_exclusions", [])
             ]
             if code == 2:
-                result["exclusions"] += result["cases"]
+                result["exclusions"].append({
+                    "id": suite["id"], "status": "BLOCKED",
+                    "reason": "Aggregate profile owner reported unavailable prerequisites",
+                })
             return finish(
                 status,
                 "Reviewed profile completed; other profiles remain explicit exclusions",
@@ -522,15 +738,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                     blocker_kind="target-capability",
                 )
             code = run([sys.executable, str(script)])
-            result["cases"] = [
-                {
-                    "id": suite["id"],
-                    "status": "PASS" if code == 0 else "FAIL",
-                    "reason": "Aggregate assertion-script result; no internal case count",
-                }
-            ]
             return finish(
-                "PASS" if code == 0 else "FAIL", "Assertion script completed", code
+                "PASS" if code == 0 else "FAIL",
+                "Aggregate assertion script completed; internal case count unknown", code
             )
 
         if suite["kind"] == "python-unittest":
@@ -557,20 +767,11 @@ def run_suite(suite, repo, build_root, output, timeout):
             if not child.exists():
                 return finish("FAIL", "Test process did not produce results", code)
             data = json.loads(child.read_text(encoding="utf-8"))
-            result["counts"] = {
-                "total": data["tests"],
-                "failed": len(data["failures"]),
-                "skipped": len(data["skipped"]),
-            }
             result["cases"] = data["passed"] + data["failures"] + data["skipped"]
-            result["exclusions"] = data["skipped"]
-            status = (
-                "FAIL"
-                if code or not data["successful"]
-                else "BLOCKED"
-                if not data["tests"]
-                else "PASS"
-            )
+            result["counts"] = count_cases(result["cases"])
+            status, result["exclusions"] = classify_cases(result["cases"])
+            if code or not data["successful"]:
+                status = "FAIL"
             return finish(
                 status,
                 "Unittest module completed; skipped cases are incomplete coverage",
@@ -730,16 +931,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                         str(albums),
                     ]
                 )
-                result["cases"] = [
-                    {
-                        "id": suite["id"],
-                        "status": "PASS" if code == 0 else "FAIL",
-                        "reason": "Existing strict database admission assertions",
-                    }
-                ]
                 return finish(
                     "PASS" if code == 0 else "FAIL",
-                    "Strict fingerprint assertions completed",
+                    "Aggregate strict fingerprint assertions completed; internal case count unknown",
                     code,
                 )
         else:
@@ -803,12 +997,7 @@ def run_suite(suite, repo, build_root, output, timeout):
         if code:
             status = "FAIL"
         result["cases"], result["exclusions"] = cases, exclusions
-        result["counts"] = {
-            "total": len(cases),
-            "passed": sum(c["status"] == "PASS" for c in cases),
-            "excluded": len(exclusions),
-            "failed": sum(c["status"] == "FAIL" for c in cases),
-        }
+        result["counts"] = count_cases(cases)
         return finish(
             status, "CTest completed; exclusions remain outside proven coverage", code
         )

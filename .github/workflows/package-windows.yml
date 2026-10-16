@@ -59,7 +59,7 @@ jobs:
         env:
           SDL_AUDIODRIVER: dummy
           SDL_VIDEODRIVER: dummy
-        run: ctest --test-dir buildd1 --output-on-failure
+        run: ctest --test-dir buildd1 --output-on-failure --no-tests=error
 
       - name: Configure D2
         run: CC=clang CXX=clang++ cmake -S d2 -B buildd2 -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -71,7 +71,7 @@ jobs:
         env:
           SDL_AUDIODRIVER: dummy
           SDL_VIDEODRIVER: dummy
-        run: ctest --test-dir buildd2 --output-on-failure
+        run: ctest --test-dir buildd2 --output-on-failure --no-tests=error
 
       - name: List generated PDB files
         run: find buildd1 buildd2 -type f -name '*.pdb'

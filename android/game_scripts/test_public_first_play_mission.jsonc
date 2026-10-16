@@ -1,0 +1,142 @@
+// Generated packaging of unchanged public D2 demo level one, owned by test_demo_import
+// The unique fpplay1.rl2 alias exists only in fpplay.hog; the original level title is unchanged
+[
+    { "_info": { "games": ["d2"], "_standalone": false, "_owner": "test_demo_import" } },
+    { "action": "enter_launcher" },
+    {
+        "action": "assert",
+        "expect": {
+            "active_set": "default", "d1.ready": true, "d2.ready": true,
+            // The owner already verified the exact enabled mission entry and imported ZIP hash
+            "content_entries": { "contains": "mod:fpplay.zip" },
+        },
+    },
+    { "action": "tap_button", "text": "Launch Descent 2", "exact": true, "launches_game": true },
+    { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
+    { "action": "select", "text": "New game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    // Ordinary select cannot silently skip a missing mission picker
+    { "action": "assert", "expect": { "menu.items": { "contains": "Public First Play" } } },
+    { "action": "select", "text": "Public First Play", "timeout_ms": 10000, "post_delay_ms": 100 },
+    // A one-level mission skips starting-level selection; substring-selecting Ok would choose Rookie
+    { "action": "wait_for", "expect": { "menu_subtitle": "Difficulty Level", "menu.items[0].text": "Trainee" }, "timeout_ms": 10000 },
+    { "action": "select", "text": "Trainee", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "skip_briefing", "timeout_ms": 30000, "post_delay_ms": 100 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": true, "screen_mode": "game", "current_level_num": 1,
+            "player_dead": false, "time_paused": false, "difficulty": 0,
+            "mission_asset_owner": "mod/fpplay.zip",
+            "asset_trace.runtime_engine": "d2", "asset_trace.selected_base_game": "d2", "asset_trace.mode": "d2",
+            "player.callsign": "player", "player.secondary_weapon": 0, "player.secondary_ammo[0]": 7,
+            "joystick_controls.items[1].name": "Fire secondary", "joystick_controls.items[1].value": 101,
+        },
+    },
+    // Existing one-frame secondary-fire path gives a nondefault, integer save-state witness
+    { "action": "send_button", "button": 101, "post_delay_ms": 50 },
+    { "action": "wait_ms", "ms": 1500 },
+    { "action": "assert", "expect": { "player.secondary_ammo[0]": 6, "player_dead": false } },
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "select", "text": "Save Game...", "timeout_ms": 5000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "menu_subtitle", "value": "Save Game", "timeout_ms": 5000 },
+    // Android activates the initially selected empty slot with the normal level-one description
+    { "action": "assert", "expect": { "menu.selected_index": 1, "menu.items[1].text": "level 1" } },
+    { "action": "key", "key": "enter", "post_delay_ms": 300 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    { "action": "send_button", "button": 101, "post_delay_ms": 50 },
+    { "action": "wait_ms", "ms": 1500 },
+    { "action": "assert", "expect": { "player.secondary_ammo[0]": 5, "player_dead": false } },
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "select", "text": "Load Game", "timeout_ms": 5000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "menu_subtitle", "value": "Select Game to Restore", "timeout_ms": 5000 },
+    { "action": "select", "text": "level 1", "timeout_ms": 5000, "post_delay_ms": 200 },
+    { "action": "select", "text": "Yes", "timeout_ms": 5000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 30000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": true, "screen_mode": "game", "current_level_num": 1,
+            "player_dead": false, "time_paused": false, "difficulty": 0,
+            "mission_asset_owner": "mod/fpplay.zip",
+            "player.callsign": "player", "player.secondary_weapon": 0, "player.secondary_ammo[0]": 6,
+        },
+    },
+    { "action": "log", "message": "PASS: generated public mission normal menu save/restore preserved six missiles" },
+    // This action saves synchronously through automation's auto-exit path, not a physical exit-control tap
+    { "action": "enter_launcher" },
+    { "action": "wait_for", "field": "resume_offer_enabled", "value": "true", "timeout_ms": 10000 },
+    {
+        "action": "assert",
+        "expect": {
+            "resume_candidate.game": "d2", "resume_candidate.mission_name": "fpplay",
+            "resume_candidate.level_num": 1, "resume_candidate.save_kind": "auto_exit",
+            "resume_candidate.callsign": "player", "resume_candidate.has_thumbnail": true,
+            "resume_candidate.thumbnail_width": 200, "resume_candidate.thumbnail_height": 100,
+        },
+    },
+    { "action": "assert_button", "text": "Load Last Save", "enabled": true },
+    { "action": "tap_button", "text": "Load Last Save", "exact": true, "launches_game": true },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 30000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": true, "screen_mode": "game", "current_level_num": 1,
+            "player_dead": false, "time_paused": false, "difficulty": 0,
+            "mission_asset_owner": "mod/fpplay.zip",
+            "asset_trace.runtime_engine": "d2", "asset_trace.selected_base_game": "d2", "asset_trace.mode": "d2",
+            "player.callsign": "player", "player.secondary_weapon": 0, "player.secondary_ammo[0]": 6,
+        },
+    },
+    { "action": "introspect" },
+    { "action": "log", "message": "PASS: Load Last Save restored the generated public mission and six missiles" },
+    // Startup resume has no hidden main menu; abort must rebuild it without restarting the engine
+    { "action": "log", "message": "FIRST_PLAY_RETURN resumed_custom" },
+    { "action": "key", "key": "escape", "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "menu_subtitle", "value": "Game Menu", "timeout_ms": 5000 },
+    { "action": "select", "text": "Abort Game", "timeout_ms": 5000, "post_delay_ms": 200 },
+    {
+        "action": "wait_for",
+        "expect": { "in_game": false, "current_level_num": 0, "menu.items": { "contains": "New game" } },
+        "timeout_ms": 15000,
+    },
+    { "action": "assert", "expect": { "mission_asset_owner": "base", "physfs.search_path": { "not_contains": "fpplay.hog" } } },
+    { "action": "select", "text": "New game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "assert", "expect": { "menu.items": { "contains": "Descent 2 Demo" } } },
+    { "action": "select", "text": "Descent 2 Demo", "timeout_ms": 10000, "post_delay_ms": 100 },
+    // The existing debug-owner demo has three levels; only confirm Ok on its observed level prompt
+    {
+        "action": "wait_for",
+        "expect": { "menu_subtitle": { "contains": "Select starting level" }, "menu.items[1].text": "1", "menu.items[2].text": "Ok" },
+        "timeout_ms": 10000,
+    },
+    { "action": "select", "text": "Ok", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "menu_subtitle": "Difficulty Level", "menu.items[0].text": "Trainee" }, "timeout_ms": 10000 },
+    { "action": "select", "text": "Trainee", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "skip_briefing", "timeout_ms": 30000, "post_delay_ms": 100 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 30000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": true, "screen_mode": "game", "current_level_num": 1,
+            "player_dead": false, "time_paused": false, "difficulty": 0,
+            "mission_asset_owner": "base", "physfs.search_path": { "contains": "d2demo.hog" },
+            "asset_trace.runtime_engine": "d2", "asset_trace.selected_base_game": "d2", "asset_trace.mode": "d2",
+            "asset_trace.current_level_palette": "GROUPA.256", "asset_trace.current_pigfile": "groupa.pig",
+            "player.callsign": "player", "player.primary_weapon": 0, "player.secondary_weapon": 0,
+            "player.secondary_ammo[0]": 7, "player.lives": 3, "player.score": 0,
+        },
+    },
+    { "action": "assert", "expect": { "physfs.search_path": { "not_contains": "fpplay.hog" } } },
+    { "action": "introspect" },
+    { "action": "log", "message": "FIRST_PLAY_RETURN builtin_live" },
+    { "action": "enter_launcher" },
+    { "action": "wait_for", "field": "game_running", "value": "false", "timeout_ms": 30000 },
+    // The owner verified an otherwise base-only disposable set before import
+    { "action": "delete_mod", "file": "fpplay.zip" },
+    { "action": "clear_mods" },
+    { "action": "assert", "expect": { "content_entries": { "not_contains": "mod:fpplay.zip" } } },
+]

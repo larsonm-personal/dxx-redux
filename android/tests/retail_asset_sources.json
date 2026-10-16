@@ -1,0 +1,13 @@
+{
+  "d1/descent.hog": "descent_1.4a_retail/DESCENT.HOG",
+  "d1/descent.pig": "descent_1.4a_retail/DESCENT.PIG",
+  "d2/descent2.hog": "descent_2_1.1_retail/DESCENT2.HOG",
+  "d2/descent2.ham": "descent_2_1.1_retail/DESCENT2.HAM",
+  "d2/descent2.s22": "descent_2_1.1_retail/DESCENT2.S22",
+  "d2/groupa.pig": "descent_2_1.1_retail/GROUPA.PIG",
+  "d2/alien1.pig": "descent_2_1.1_retail/ALIEN1.PIG",
+  "d2/alien2.pig": "descent_2_1.1_retail/ALIEN2.PIG",
+  "d2/fire.pig": "descent_2_1.1_retail/FIRE.PIG",
+  "d2/ice.pig": "descent_2_1.1_retail/ICE.PIG",
+  "d2/water.pig": "descent_2_1.1_retail/WATER.PIG"
+}

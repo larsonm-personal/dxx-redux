@@ -1,9 +1,13 @@
-name: Nightly complete tooling sweep
+name: Extended test suite
+run-name: >-
+  ${{ github.event_name == 'pull_request' && format('PR #{0} test sample', github.event.pull_request.number) || github.event_name == 'schedule' && 'Nightly test sweep' || 'Manual test sweep' }}
 
 on:
   schedule:
     - cron: '15 2 * * *'
+      timezone: America/Los_Angeles
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - ".github/workflows/*nightly*"
       - "android/tests/*nightly*"
@@ -11,6 +15,12 @@ on:
       - "android/run_all_tests.ps1"
       - "android/helpers/nightly_public_fixture_policy.ps1"
   workflow_dispatch:
+    inputs:
+      campaign:
+        description: "Bounded test selection"
+        type: choice
+        options: [nightly, first-play, graphics-capabilities]
+        default: nightly
   workflow_call:
 
 permissions:
@@ -22,6 +32,8 @@ concurrency:
 
 jobs:
   plan:
+    if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'
+    name: Select tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
@@ -29,6 +41,8 @@ jobs:
       lanes: ${{ steps.plan.outputs.lanes }}
       android_lanes: ${{ steps.plan.outputs.android_lanes }}
       count: ${{ steps.plan.outputs.count }}
+      retail_lanes: ${{ steps.plan.outputs.retail_lanes }}
+      retail_commit: ${{ steps.plan.outputs.retail_commit }}
     steps:
       - name: Check out trusted controller
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -36,14 +50,16 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
-      - name: Resolve cmake once
+      - name: Resolve exact test target once
         id: target
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
+          if [[ -n "$CAMPAIGN_SHA" ]]; then sha="$CAMPAIGN_SHA"; fi
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - name: Check out exact target catalog
@@ -68,22 +84,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ steps.target.outputs.sha }}
           VALIDATION: ${{ github.event_name == 'pull_request' }}
+          FIRST_PLAY: ${{ inputs.campaign == 'first-play' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'release-first-play')) }}
+          GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
+          RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
           validation=()
-          if [[ "$VALIDATION" == true ]]; then validation=(--validation); fi
+          if [[ "$FIRST_PLAY" == true ]]; then
+            validation=(--campaign first-play)
+          elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then
+            validation=(--campaign graphics-capabilities)
+          elif [[ "$VALIDATION" == true ]]; then
+            validation=(--validation)
+          fi
           python3 control/android/tests/nightly_tooling_sweep.py plan \
             --target-sha "$TARGET_SHA" --catalog plan/catalog.json \
             --policy control/android/tests/nightly_tooling_policy.json --state plan/previous.json \
             --output plan/plan.json --state-output plan/state.json "${validation[@]}"
           python3 - <<'PY'
-          import json, os
+          import json, os, sys
+          sys.path.insert(0, 'control/android/tests')
+          from nightly_retail import lane_requires_retail
           p=json.load(open('plan/plan.json'))
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('target_sha='+p['target_sha']+'\n')
               f.write('lanes='+json.dumps(p['lanes'])+'\n')
               f.write('android_lanes='+json.dumps([x for x in p['lanes'] if x!='host'])+'\n')
               f.write('count='+str(len(p['tests']))+'\n')
+              f.write('retail_lanes='+json.dumps(sorted(lane for lane in p['lanes'] if lane_requires_retail(p, lane)))+'\n')
+              f.write('retail_commit='+p.get('retail_assets',{}).get('commit','')+'\n')
           PY
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -92,11 +121,15 @@ jobs:
           retention-days: 30
 
   host:
+    name: Linux tests
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.lanes), 'host')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    environment: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), 'host') && github.repository == 'larsonm-personal/dxx-redux' && github.ref == 'refs/heads/cmake' && github.workflow_ref == 'larsonm-personal/dxx-redux/.github/workflows/nightly-tooling-sweep.yml@refs/heads/cmake' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'retail-ci' || 'asset-free' }}
     env:
+      RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
+      RETAIL_CHECKOUT_COMMIT: ${{ needs.plan.outputs.retail_commit }}
       SDL_AUDIODRIVER: dummy
       SDL_VIDEODRIVER: dummy
     steps:
@@ -142,6 +175,39 @@ jobs:
         run: |
           node -e 'if (Number(process.versions.node.split(".")[0]) < 20) { throw new Error("Node 20 or newer is required"); }'
           npm ci --prefix target/android/tools/code-quality --ignore-scripts
+      - name: Verify trusted retail checkout boundary
+        id: retail_gate
+        env:
+          RETAIL_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        run: |
+          [[ -n "$RETAIL_READ_TOKEN" ]] || { echo "Retail read-only environment secret is missing" >&2; exit 1; }
+          unset RETAIL_READ_TOKEN
+          [[ "$RETAIL_CHECKOUT_COMMIT" == "$RETAIL_ASSETS_COMMIT" ]]
+          python3 control/android/tests/nightly_tooling_sweep.py retail-check \
+            --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json --lane host
+      - name: Check out immutable private retail inputs
+        id: retail_checkout
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          repository: larsonm-personal/dxx-redux-test-assets
+          ref: ${{ needs.plan.outputs.retail_commit }}
+          token: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
+          path: retail-input
+          persist-credentials: false
+      - name: Verify supplied edition and stage base retail files
+        if: contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        id: retail_stage
+        run: |
+          [[ "$(git -C retail-input rev-parse HEAD)" == "$RETAIL_CHECKOUT_COMMIT" ]]
+          python3 control/android/helpers/retail_ci_assets.py --root retail-input --repo control --source-map control/android/tests/retail_asset_sources.json \
+            --output results/retail-verification.json --stage target/game_data/retail-ci --include-missions
+          # Stage only the immutable demo pair when its owner was admitted
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-demos' for e in p['tests']))"; then
+            python3 control/android/tests/private_input_demos.py --stage --demos retail-input/demos --output target/game_data/retail-ci/demos
+          fi
+          rm -rf retail-input
       - name: Execute admitted host owners
         id: execute
         timeout-minutes: 65
@@ -152,7 +218,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi
@@ -160,7 +226,7 @@ jobs:
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --lane host --output results "${blocked[@]}"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        if: always()
+        if: always() && !contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
         with:
           name: nightly-results-host
           path: |
@@ -168,8 +234,19 @@ jobs:
             !results/build/**
           retention-days: 14
           if-no-files-found: warn
+      - name: Upload retail-safe owner receipts
+        if: always() && contains(fromJSON(needs.plan.outputs.retail_lanes), 'host')
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: nightly-results-host
+          path: |
+            results/results.json
+            results/retail-verification.json
+          retention-days: 14
+          if-no-files-found: warn
 
   android:
+    name: ${{ matrix.lane == 'jvm' && 'JVM tests' || matrix.lane == 'android-dual' && 'Two-device tests' || 'Android tests' }}
     needs: plan
     if: needs.plan.outputs.android_lanes != '[]'
     strategy:
@@ -182,8 +259,11 @@ jobs:
       target_sha: ${{ needs.plan.outputs.target_sha }}
       plan_artifact: nightly-plan
       lane: ${{ matrix.lane }}
+      retail_assets: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), matrix.lane) }}
+      retail_commit: ${{ needs.plan.outputs.retail_commit }}
 
   finish:
+    name: Check results
     needs: [plan, host, android]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-24.04
@@ -206,12 +286,12 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' }}
+          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
           status=0
-          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py reconcile \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --state plan/state.json --output summary-state.json "${qualification[@]}" --receipts "${receipts[@]}" > summary.json || status=$?
@@ -237,8 +317,9 @@ jobs:
 
 
   publish:
+    name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -263,7 +344,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
         run: |
-          mapfile -t receipts < <(find receipts -mindepth 2 -maxdepth 2 -path 'receipts/nightly-results-*/results.json' -type f 2>/dev/null | sort)
+          mapfile -t receipts < <(find receipts -mindepth 1 -maxdepth 2 -type f \( -path 'receipts/results.json' -o -path 'receipts/nightly-results-*/results.json' \) 2>/dev/null | sort)
           python3 control/android/tests/nightly_tooling_sweep.py publish \
             --plan plan/plan.json --policy control/android/tests/nightly_tooling_policy.json \
             --expected-target "$TARGET_SHA" --output published-state.json --receipts "${receipts[@]}"

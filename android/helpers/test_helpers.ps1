@@ -83,10 +83,12 @@ function Adb-Timeout {
     # Run an adb command with a timeout; returns $null if it hangs.
     # Uses ProcessStartInfo instead of Start-Job because Start-Job with
     # adb.exe hangs on Windows PowerShell 5.1 (pipe/handle inheritance issue).
-    param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
+    param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError, [ref]$DiagnosticResult)
     if (-not $env:ANDROID_SERIAL) { Initialize-AndroidTestTarget | Out-Null }
     $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { $script:PRIMARY_EMULATOR_SERIAL }
     $allArgs = @('-s', $serial) + @(Get-TestPackageAdbArguments -Arguments $AdbArgs)
+    $diagnostic = [ordered]@{ arguments = $allArgs; exit_code = $null; timed_out = $false; stderr = ''; error = '' }
+    if ($DiagnosticResult) { $DiagnosticResult.Value = $diagnostic }
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
     $psi.Arguments = ($allArgs | ForEach-Object {
@@ -102,6 +104,7 @@ function Adb-Timeout {
         $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
         $stderrTask = $proc.StandardError.ReadToEndAsync()
         if (-not $proc.WaitForExit($Seconds * 1000)) {
+            $diagnostic.timed_out = $true
             try {
                 $proc.Kill($true)
                 $proc.WaitForExit(5000) | Out-Null
@@ -118,11 +121,15 @@ function Adb-Timeout {
         # Process exited; wait for async reads to finish (already done since process exited)
         $out = $stdoutTask.GetAwaiter().GetResult()
         $err = $stderrTask.GetAwaiter().GetResult()
+        $diagnostic.exit_code = $proc.ExitCode
+        $diagnostic.stderr = $err.Substring(0, [Math]::Min($err.Length, 8192))
         $streams = if ($IncludeStandardError) { @($out, $err) } else { @($out) }
         return ($streams |
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
                 ForEach-Object { $_.Trim() }) -join "`n"
     } catch {
+        $message = $_.Exception.Message
+        $diagnostic.error = $message.Substring(0, [Math]::Min($message.Length, 8192))
         return $null
     }
 }
@@ -420,7 +427,9 @@ function Ensure-LauncherTestDeviceReady {
 }
 
 function Get-AppProcessId {
-    param([string]$ProcessName)
+    param([string]$ProcessName, [ref]$DiagnosticResult)
+    $diagnosticArguments = @{}
+    if ($DiagnosticResult) { $diagnosticArguments.DiagnosticResult = $DiagnosticResult }
     # Android 6's pidof can return unrelated PIDs on recent emulator kernels
     $serial = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { 'default' }
     if (-not (Test-Path variable:script:deviceApiLevels)) { $script:deviceApiLevels = @{} }
@@ -429,14 +438,87 @@ function Get-AppProcessId {
         if ($api -match '^\d+$') { $script:deviceApiLevels[$serial] = [int]$api }
     }
     if ($script:deviceApiLevels.ContainsKey($serial) -and $script:deviceApiLevels[$serial] -le 23) {
-        $processes = Adb-Timeout -AdbArgs @('shell', 'ps') -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
+        $processes = Adb-Timeout -AdbArgs @('shell', 'ps') -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3) @diagnosticArguments
         foreach ($line in ($processes -split "`n")) {
             $columns = $line.Trim() -split '\s+'
             if ($columns.Count -ge 2 -and $columns[-1] -eq $ProcessName) { return $columns[1] }
         }
         return $null
     }
-    return Adb-Timeout -AdbArgs @('shell', 'pidof', $ProcessName) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3)
+    return Adb-Timeout -AdbArgs @('shell', 'pidof', $ProcessName) -Seconds (Get-AndroidInfrastructureTimeout -DefaultSeconds 3) @diagnosticArguments
+}
+
+function Save-PublicGraphicsLifecycleFailure {
+    # Fixed public owner only; capture before cleanup or the next owner clears logcat
+    param([string]$ScriptPath, [string]$DataEdition, [ValidateSet('d1', 'd2')][string]$Game, [string]$RunId, [switch]$Initialize)
+    $ownerPath = [IO.Path]::GetFullPath((Join-Path $script:ANDROID_ROOT 'game_scripts/test_graphics_lifecycle.jsonc'))
+    if ($DataEdition -cne 'shareware' -or [IO.Path]::GetFullPath($ScriptPath) -cne $ownerPath -or
+        $env:ANDROID_SERIAL -notmatch '^emulator-[0-9]+$' -or $script:PACKAGE -cne 'com.dxxredux.app') { return }
+    $directory = Join-Path $script:ANDROID_ROOT "temp/public-graphics-lifecycle-$Game"
+    if ($Initialize) {
+        # A later PASS must not publish an earlier run's failure snapshot
+        foreach ($name in @('manifest.json', 'logcat-crash.txt', 'logcat-main.txt', 'logcat-system.txt',
+                'graphics-safety.txt', 'native-fatal.txt', 'exit-info.txt', 'activities.txt', 'window.txt',
+                'power.txt', 'cached-introspect.txt', 'tombstone-list.txt', 'tombstone-1.txt', 'tombstone-2.txt')) {
+            $path = Join-Path $directory $name
+            if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path -Force }
+        }
+        return
+    }
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    $manifest = [ordered]@{
+        schema = 1; owner = "shareware:test_graphics_lifecycle#$Game"; run_id = $RunId
+        captured_at = [DateTime]::UtcNow.ToString('o'); process = $script:graphicsLifecycleFailureProcess
+        note = 'PID query failure does not establish process death; diagnostic commands do not change the test result'
+        queries = @()
+    }
+    $queries = @(
+        @{ name = 'logcat-crash.txt'; args = @('logcat', '-b', 'crash', '-d', '-t', '500') },
+        @{ name = 'logcat-main.txt'; args = @('logcat', '-b', 'main', '-d', '-t', '1000') },
+        @{ name = 'logcat-system.txt'; args = @('logcat', '-b', 'system', '-d', '-t', '1000') },
+        @{ name = 'graphics-safety.txt'; args = @('shell', 'run-as', $script:PACKAGE, 'head', '-c', '65536', 'files/graphics_safety.json') },
+        @{ name = 'native-fatal.txt'; args = @('shell', 'run-as', $script:PACKAGE, 'head', '-c', '4096', 'files/.native_fatal_error') },
+        @{ name = 'exit-info.txt'; args = @('shell', "dumpsys activity exit-info $($script:PACKAGE) | head -c 65536") },
+        @{ name = 'activities.txt'; args = @('shell', 'dumpsys activity activities | head -c 65536') },
+        @{ name = 'window.txt'; args = @('shell', 'dumpsys window policy | head -c 65536') },
+        @{ name = 'power.txt'; args = @('shell', 'dumpsys power | head -c 65536') },
+        @{ name = 'cached-introspect.txt'; args = @('shell', 'run-as', $script:PACKAGE, 'head', '-c', '65536', 'files/introspect.json') },
+        @{ name = 'tombstone-list.txt'; args = @('shell', 'run-as', $script:PACKAGE, 'ls', '-1t', 'files/tombstones') }
+    )
+    # Always overwrite both bounded tombstone slots so older failures cannot leak into this snapshot
+    foreach ($name in @('tombstone-1.txt', 'tombstone-2.txt')) { [IO.File]::WriteAllText((Join-Path $directory $name), '') }
+    for ($index = 0; $index -lt $queries.Count; ++$index) {
+        $query = $queries[$index]
+        $diagnostic = $null
+        $text = ''
+        if ($timer.Elapsed.TotalSeconds -lt 45) {
+            $text = [string](Adb-Timeout -AdbArgs $query.args -Seconds 3 -DiagnosticResult ([ref]$diagnostic))
+        } else {
+            $diagnostic = @{ error = 'Snapshot budget exhausted'; exit_code = $null; timed_out = $false }
+        }
+        $bytes = [Text.Encoding]::UTF8.GetBytes($text)
+        $length = [Math]::Min($bytes.Length, 262144)
+        if ($bytes.Length -gt $length) { $bytes = $bytes[0..($length - 1)] }
+        [IO.File]::WriteAllBytes((Join-Path $directory $query.name), $bytes)
+        $manifest.queries += @{ file = $query.name; result = $diagnostic; truncated = $length -lt [Text.Encoding]::UTF8.GetByteCount($text) }
+        if ($query.name -eq 'tombstone-list.txt') {
+            $names = @($text -split "`n" | ForEach-Object { $_.Trim() } |
+                    Where-Object { $_ -cmatch '^(tombstone_|crash_error_)[A-Za-z0-9_.-]{1,180}$' } | Select-Object -First 2)
+            for ($tombstone = 0; $tombstone -lt $names.Count; ++$tombstone) {
+                $queries += @{ name = "tombstone-$($tombstone + 1).txt"; args = @('shell', 'run-as', $script:PACKAGE, 'head', '-c', '262144', "files/tombstones/$($names[$tombstone])") }
+            }
+        }
+    }
+    $json = $manifest | ConvertTo-Json -Depth 8
+    if ([Text.Encoding]::UTF8.GetByteCount($json) -gt 262144) {
+        $manifest.process = $null
+        $manifest.queries = @()
+        $manifest.note = 'Manifest exceeded its byte budget; query details omitted, bounded diagnostic files retained'
+        $json = $manifest | ConvertTo-Json -Depth 8
+    }
+    [IO.File]::WriteAllText((Join-Path $directory 'manifest.json'), $json, [Text.UTF8Encoding]::new($false))
+    Write-Status "Public graphics lifecycle failure evidence: $directory" 'Yellow'
 }
 
 function Wait-ProcessDead {
@@ -657,7 +739,7 @@ function Send-TapButton {
         Send-MpCommand -Serial $Serial -Command "tap_button" -Extras @("--es", "text", $Text)
         Start-Sleep -Milliseconds $PollMs
         $log = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-            "logcat", "-d", "-t", "20", "-s", "DXX-MP:*"
+            "logcat", "-d", "-s", "DXX-MP:*"
         ) -Seconds 5
         if ($log -match "tap_button: tapped") { return $true }
         if ($log -match 'tap_button:.*not found \(available: ([^)]*)\)') {
@@ -1766,6 +1848,20 @@ function Test-AutomationResultRunId {
     return ([string]$runIdProperty.Value -ceq $ExpectedRunId)
 }
 
+function Test-AutomationResultComplete {
+    param([AllowNull()][object]$Result)
+
+    if ($null -eq $Result -or $Result.result -cne 'PASS') { return $false }
+    $completed = $Result.PSObject.Properties['steps_completed']
+    $total = $Result.PSObject.Properties['total_steps']
+    if ($null -eq $completed -or $null -eq $total) { return $false }
+    # Both native and launcher producers publish integer counters only at completion
+    foreach ($value in @($completed.Value, $total.Value)) {
+        if ($value -isnot [int] -and $value -isnot [long] -and $value -isnot [bigint]) { return $false }
+    }
+    return ($total.Value -gt 0 -and $completed.Value -eq $total.Value)
+}
+
 function Get-TestStatusFromExitCode {
     param(
         [int]$ExitCode,
@@ -1836,6 +1932,7 @@ function Watch-AutomationResult {
     $lastHealthCheck = 0
     $finished = $false
     $passed = $false
+    $script:graphicsLifecycleFailureProcess = $null
     $backgroundMarkersHandled = [System.Collections.Generic.HashSet[string]]::new()
     $launcherChecked = $false
     $lastLauncherResumeStep = -1
@@ -1885,6 +1982,10 @@ function Watch-AutomationResult {
                         $terminalResult = $terminalJson | ConvertFrom-Json
                         if (Test-AutomationResultRunId -Result $terminalResult -ExpectedRunId $ExpectedRunId) {
                             if ($terminalResult.result -eq "PASS") {
+                                if (-not (Test-AutomationResultComplete -Result $terminalResult)) {
+                                    Write-Status "FAIL: Incomplete or invalid PASS result after process exit" "Red"
+                                    return $false
+                                }
                                 Write-Status "PASS (file-based after process exit, $($terminalResult.steps_completed)/$($terminalResult.total_steps) steps)" "Green"
                                 $finished = $true
                                 $passed = $true
@@ -2020,6 +2121,10 @@ function Watch-AutomationResult {
                         Write-Status "Ignoring automation result for run_id=$displayRunId" "Yellow"
                     }
                 } elseif ($resultObj.result -eq "PASS") {
+                    if (-not (Test-AutomationResultComplete -Result $resultObj)) {
+                        Write-Status "FAIL: Incomplete or invalid PASS result" "Red"
+                        return $false
+                    }
                     Write-Status "PASS (file-based, $($resultObj.steps_completed)/$($resultObj.total_steps) steps, $($resultObj.elapsed_ms)ms)" "Green"
                     $finished = $true
                     $passed = $true
@@ -2139,8 +2244,20 @@ function Watch-AutomationResult {
                         Adb -AdbArgs @("shell", "wm", "dismiss-keyguard") | Out-Null
                         Start-Sleep -Seconds 1
                     }
-                    if ($graphicsBefore -and (Get-AppProcessId "$($script:PACKAGE):game") -ne "$($graphicsBefore.attempt.owner_pid)") {
-                        Write-Status 'FAIL: Responsive graphics lifecycle transition unexpectedly closed the game' 'Red'
+                    $processDiagnostic = $null
+                    $observedProcess = if ($graphicsBefore) { Get-AppProcessId "$($script:PACKAGE):game" -DiagnosticResult ([ref]$processDiagnostic) }
+                    if ($graphicsBefore -and $observedProcess -ne "$($graphicsBefore.attempt.owner_pid)") {
+                        $script:graphicsLifecycleFailureProcess = [ordered]@{
+                            expected_pid = $graphicsBefore.attempt.owner_pid; observed_pid = $observedProcess
+                            query = $processDiagnostic; background_marker = $backgroundMarker; lock_screen = $lockScreen
+                        }
+                        Write-Host ($script:graphicsLifecycleFailureProcess | ConvertTo-Json -Depth 6 -Compress)
+                        if (-not $processDiagnostic -or $processDiagnostic.timed_out -or $processDiagnostic.error -or
+                            $processDiagnostic.stderr -or $processDiagnostic.exit_code -notin @(0, 1)) {
+                            Write-Status 'FAIL: Graphics lifecycle PID query failed; same-process survival could not be verified' 'Red'
+                        } else {
+                            Write-Status 'FAIL: Responsive graphics lifecycle transition unexpectedly closed the game' 'Red'
+                        }
                         return $false
                     }
                     # Native UI state reads this marker on the foreground edge

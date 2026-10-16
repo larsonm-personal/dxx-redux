@@ -46,6 +46,20 @@ $generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file
 foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
+foreach ($variant in @(
+        @{ Name = 'test_lan_launch_preparation_public_shareware'; BaseName = 'test_lan_launch_preparation'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },
+        @{ Name = 'test_demo_import_public_first_play'; BaseName = 'test_demo_import'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-PublicFirstPlay') })) {
+    if (-not (Test-SuiteMediaIndependentTest -Test $variant)) { throw "Public variant rejected: $($variant.Name)" }
+    foreach ($case in @(@{ Values = @() }, @{ Values = @('-FutureVariant') }, @{ Values = @($variant.Arguments[0], '-D1DataDirectory', 'other') })) {
+        $changed = $variant.Clone()
+        $changed.Arguments = $case.Values
+        if (Test-SuiteMediaIndependentTest -Test $changed) { throw 'Unreviewed public variant arguments admitted' }
+    }
+    $original = $variant.Clone()
+    $original.Name = $original.BaseName
+    $original.Arguments = @()
+    if (Test-SuiteMediaIndependentTest -Test $original) { throw 'Original retail owner lost its media requirement' }
+}
 foreach ($entry in $mediaFree) {
     if (-not (Test-SuiteMediaIndependentTest -Test $entry)) { throw "Missing media-free owner: $($entry.Name)" }
     if (-not (Test-SuiteMediaIndependentTest -Test ([pscustomobject]$entry))) { throw 'Object-backed admission differs from dictionary admission' }
@@ -131,7 +145,7 @@ try {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
-        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles')) {
+        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles', 'test_lan_launch_preparation_profiles', 'test_demo_import_first_play_profiles')) {
             $entry = @($catalog.tests | Where-Object name -eq $name)
             if ($entry.Count -ne 1 -or $entry[0].type -ne 'ps1' -or $entry[0].requires -ne 'none' -or
                 $name -notin (Get-TestSuiteCoveragePolicy).core) {

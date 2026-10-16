@@ -13,11 +13,33 @@ import signal
 import subprocess
 import sys
 import time
+import nightly_retail as retail
 
 VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
                   'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1',
                   'master:test_lan_lobby_discovery', 'master:test_android_music_completion',
                   'master:test_launcher_media_controls_generated'}
+
+FIRST_PLAY_IDS = {
+    'master:test_demo_import_public_first_play',
+    'master:test_lan_launch_preparation_public_shareware',
+    'master:test_gradle_unit_tests',
+    'shareware:test_autosave_resume_missing_pilot_unified#d1',
+    'shareware:test_autosave_resume_missing_pilot_unified#d2',
+    'shareware:test_graphics_lifecycle#d1',
+    'shareware:test_graphics_lifecycle#d2',
+    'master:test_lan_transport_recovery',
+    'shareware:test_pilot_long_hold_delete_unified#d2',
+}
+
+GRAPHICS_CAPABILITIES_IDS = {
+    'shareware:test_graphics_capabilities#d1',
+    'shareware:test_graphics_capabilities#d2',
+    'shareware:test_graphics_context_loss#d1',
+    'shareware:test_graphics_context_loss#d2',
+    'shareware:test_graphics_msaa_allocation_failure#d1',
+    'shareware:test_graphics_msaa_allocation_failure#d2',
+}
 
 SCHEMA = 1
 LANES = ('host', 'jvm', 'android-single', 'android-dual')
@@ -62,6 +84,8 @@ def policy_entries(policy):
             raise ValueError('Only typed exact suite selection is accepted')
         if entry['owner'] == 'shareware' and (entry['args']['game'] not in ('d1', 'd2') or entry['lane'] != 'android-single'):
             raise ValueError('Invalid public gameplay lane/game')
+        if entry.get('fixture') not in (None, 'retail-base', 'retail-missions', 'retail-demos'):
+            raise ValueError('Unknown fixture requirement')
         entries[ident] = entry
     return entries
 
@@ -82,21 +106,25 @@ def fresh_state(sha, catalog_hash):
     return {'schema': SCHEMA, 'target_sha': sha, 'catalog_hash': catalog_hash, 'records': {}, 'retryable': {}, 'excluded': {}}
 
 
-def plan_batch(sha, catalog, policy, state=None, budget=2700):
+def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None):
     if not SHA.fullmatch(sha) or type(budget) is not int or not 1 <= budget <= 2700:
         raise ValueError('Invalid revision/budget')
     entries = policy_entries(policy)
     if catalog.get('schema') != SCHEMA or not isinstance(catalog.get('tests'), list):
         raise ValueError('Invalid master discovery catalog')
     names = {row['name'] for row in catalog['tests']}
-    catalog_hash = digest({'catalog': catalog, 'policy': policy})
+    retail.validate_identity(retail_assets)
+    catalog_identity = {'catalog': catalog, 'policy': policy}
+    if retail_assets:
+        catalog_identity['retail_assets'] = retail_assets
+    catalog_hash = digest(catalog_identity)
     if state is not None:
         validate_state(state)
     if state is None or (state['target_sha'], state['catalog_hash']) != (sha, catalog_hash):
         state = fresh_state(sha, catalog_hash)
     if not (set(state['records']) | set(state.get('retryable', {})) | set(state.get('excluded', {}))) <= set(entries):
         raise ValueError('Ledger contains unknown suite')
-    selected, excluded = [], list(policy.get('exclusions', []))
+    selected, excluded, unavailable = [], list(policy.get('exclusions', [])), []
     admitted = {e['args']['suite'] for e in entries.values() if e['owner'] == 'master'}
     excluded.extend({'id': row['name'], 'reason': 'not yet admitted: public prerequisites/host support require qualification', 'requires': row.get('requires'), 'manual': row.get('manual')} for row in catalog['tests'] if row['name'] not in admitted)
     used = {lane: 0 for lane in LANES}
@@ -104,6 +132,12 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700):
     ordered = sorted(entries.items(), key=lambda item: (
         state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
     for ident, entry in ordered:
+        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') and not retail_assets:
+            unavailable.append({'id': ident, 'reason': 'retail configuration unavailable for this run; pending'})
+            continue
+        if entry.get('fixture') == 'retail-demos' and not retail.demos_available(retail_assets):
+            unavailable.append({'id': ident, 'reason': 'reviewed private demo commit unavailable; pending'})
+            continue
         if entry['owner'] == 'master' and entry['args']['suite'] not in names:
             excluded.append({'id': ident, 'reason': 'not present in pinned master catalog'})
             continue
@@ -113,10 +147,37 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700):
             selected.append(entry)
             used[entry['lane']] += entry['estimated_seconds']
     identity = {'target_sha': sha, 'catalog_hash': catalog_hash, 'tests': selected}
+    if retail_assets:
+        identity['retail_assets'] = retail_assets
     plan = {'schema': SCHEMA, **identity, 'batch_id': digest(identity), 'budget_seconds': budget,
             'estimated_seconds': sum(used.values()), 'budget_scope': 'per-lane', 'exclusions': excluded,
             'lanes': [lane for lane in LANES if any(e['lane'] == lane for e in selected)]}
+    plan['unavailable'] = unavailable
+    if retail_assets:
+        plan['retail_assets'] = retail_assets
     return plan, state
+
+
+def select_public_campaign(plan, policy, catalog, campaign):
+    """A fixed asset-free sample; never inherits rotating retail selections or progress."""
+    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS}[campaign]
+    entries = policy_entries(policy)
+    if not campaign_ids <= entries.keys():
+        raise ValueError(f'Missing {campaign} campaign suites')
+    names = {row['name'] for row in catalog['tests']}
+    selected = [entry for ident, entry in entries.items() if ident in campaign_ids]
+    if any(entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') for entry in selected):
+        raise ValueError(f'{campaign} campaign must remain asset-free')
+    if any((entry['owner'] == 'master' or campaign == 'graphics-capabilities') and entry['args']['suite'] not in names for entry in selected):
+        raise ValueError(f'{campaign} owner absent from pinned catalog')
+    plan = dict(plan)
+    plan.pop('retail_assets', None)
+    plan['tests'] = selected
+    plan['estimated_seconds'] = sum(entry['estimated_seconds'] for entry in selected)
+    plan['lanes'] = [lane for lane in LANES if any(entry['lane'] == lane for entry in selected)]
+    plan['batch_id'] = digest({key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')})
+    validate_plan(plan, policy)
+    return plan
 
 
 def validate_plan(plan, policy):
@@ -125,6 +186,7 @@ def validate_plan(plan, policy):
         raise ValueError('Invalid plan revision/schema')
     if not re.fullmatch(r'[0-9a-f]{64}', plan.get('catalog_hash', '')):
         raise ValueError('Invalid plan catalog hash')
+    retail.validate_identity(plan.get('retail_assets'))
     selected = plan.get('tests')
     if not isinstance(selected, list) or len(selected) > 1024:
         raise ValueError('Invalid plan selection')
@@ -133,14 +195,64 @@ def validate_plan(plan, policy):
         ident = entry.get('id')
         if ident in seen or entries.get(ident) != entry:
             raise ValueError('Unapproved or duplicate plan entry')
+        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') and not plan.get('retail_assets'):
+            raise ValueError('Retail selection lacks pinned data identity')
+        if entry.get('fixture') == 'retail-demos' and not retail.demos_available(plan.get('retail_assets')):
+            raise ValueError('Private demo selection lacks reviewed commit')
         seen.add(ident)
     if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:
         raise ValueError('Invalid per-lane budget')
     if any(sum(e['estimated_seconds'] for e in selected if e['lane'] == lane) > plan['budget_seconds'] for lane in LANES):
         raise ValueError('Plan exceeds lane budget')
     identity = {key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')}
+    if plan.get('retail_assets'):
+        identity['retail_assets'] = plan['retail_assets']
     if digest(identity) != plan.get('batch_id'):
         raise ValueError('Plan batch identity mismatch')
+
+
+def normalize_result(row):
+    """Never certify a PASS contradicted by the owner's structured evidence."""
+    row = dict(row)
+    if row.get('status') != 'PASS':
+        return row
+    cases = row.get('cases', [])
+    counts = row.get('counts', {})
+    if row.get('exit_code') not in (None, 0):
+        row.update(status='FAIL', reason='PASS receipt has a nonzero test exit code')
+    elif counts.get('failed', 0) or any(case.get('status') in ('FAIL', 'TIMEOUT') for case in cases):
+        row.update(status='FAIL', reason='PASS receipt contains failed leaf cases')
+    elif row.get('attempted_tests') is False or row.get('phase') in ('setup', 'preflight'):
+        row.update(status='BLOCKED', reason='PASS receipt does not attest to test execution', retryable=True)
+    elif counts.get('passed') == 0 or (cases and not any(case.get('status') == 'PASS' for case in cases)):
+        row.update(status='BLOCKED', reason='No structured leaf case passed', attempted_tests=False, retryable=True)
+    if row['status'] != 'PASS':
+        row['coverage_complete'] = False
+    return row
+
+
+def attempt_identity(plan, lane):
+    return {**{key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')},
+            'lane': lane, 'run_id': os.environ.get('GITHUB_RUN_ID', 'local'),
+            'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT', 'local'),
+            'repository': os.environ.get('GITHUB_REPOSITORY', 'local/unpublished')}
+
+
+def journal_observations(path, sha):
+    observations = {}
+    if Path(path).exists():
+        for line in Path(path).read_text().splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # Recover completed rows after an interrupted append
+            if row.get('commit') != sha:
+                raise ValueError('Journal target mismatch')
+            prior = observations.get(row['name'])
+            if prior and prior.get('status') != 'RUNNING' and prior != row:
+                raise ValueError('Conflicting terminal journal receipt')
+            observations[row['name']] = row
+    return observations
 
 
 def reconcile(plan, policy, state, receipts):
@@ -155,6 +267,11 @@ def reconcile(plan, policy, state, receipts):
         if any(receipt.get(key) != plan[key] for key in ('target_sha', 'catalog_hash', 'batch_id')) or receipt.get('schema') != SCHEMA:
             raise ValueError('Receipt provenance mismatch')
         lane = receipt.get('lane')
+        if receipt.get('retail_assets') != plan.get('retail_assets'):
+            raise ValueError('Receipt retail asset identity mismatch')
+        receipt = {**receipt, 'results': [normalize_result(row) for row in receipt.get('results', [])]}
+        if retail.lane_requires_retail(plan, lane):
+            receipt = retail.public_receipt(receipt)
         for row in receipt.get('results', []):
             ident = row.get('id')
             if ident not in allowed or allowed[ident]['lane'] != lane:
@@ -196,38 +313,40 @@ def collect(plan, policy, lane, output, blocked_reason=""):
     validate_plan(plan, policy)
     output = Path(output)
     receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+    if plan.get('retail_assets'):
+        receipt['retail_assets'] = plan['retail_assets']
     receipt.update(lane=lane, results=[])
     run_url = os.environ.get('GITHUB_SERVER_URL', 'https://github.com') + '/' + os.environ.get('GITHUB_REPOSITORY', 'local/unpublished') + '/actions/runs/' + os.environ.get('GITHUB_RUN_ID', 'local')
-    observations = {}
-    journal = output / 'journal.jsonl'
-    if journal.exists():
-        for line in journal.read_text().splitlines():
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if row.get('commit') != plan['target_sha']:
-                raise ValueError('Journal target mismatch')
-            observations[row['name']] = row
+    attempt_path = output / 'attempt.json'
+    attempt = read(attempt_path) if attempt_path.exists() else {}
+    if attempt and any(attempt.get(key) != value for key, value in attempt_identity(plan, lane).items()):
+        raise ValueError('Execution attempt provenance mismatch')
+    processes = attempt.get('processes', {})
+    observations = journal_observations(output / 'journal.jsonl', plan['target_sha']) if 'master' in processes else {}
     for entry in plan['tests']:
         if entry['lane'] != lane:
             continue
         if entry['owner'] == 'master':
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
-            process_path = output / 'master-process.json'
-            if not row and process_path.exists():
-                exit_code = read(process_path).get('exit_code')
-                if exit_code:
-                    row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
+            exit_code = processes.get('master', {}).get('exit_code')
+            if not row and exit_code:
+                row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
             if status == 'SKIP':
                 status = 'BLOCKED'
         else:
             path = output / (entry['id'].replace(':', '_') + '.json')
-            row = read(path) if path.exists() else {}
+            process = processes.get(entry['id'], {})
+            row = read(path) if process.get('completed') and path.exists() else {}
+            exit_code = process.get('exit_code')
             status = row.get('status', 'NOT_RUN')
             if row and (row.get('schema') != 1 or row.get('suite') != entry['args']['suite']):
                 raise ValueError('Invalid adapter receipt')
+        if status == 'PASS' and exit_code not in (None, 0):
+            row = {**row, 'status': 'FAIL', 'reason': f'Owner process exited {exit_code} despite PASS receipt', 'coverage_complete': False}
+            status = 'FAIL'
+        row = normalize_result({**row, 'status': status})
+        status = row['status']
         if row.get('blocker_kind') == 'interrupted':
             status = 'NOT_RUN'
         if row.get('attempted_tests') is False and status in ('FAIL', 'TIMEOUT'):
@@ -238,6 +357,8 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         if status not in TERMINAL | {'RUNNING', 'NOT_RUN', 'BLOCKED'}:
             raise ValueError('Invalid collected status')
         receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
+    if retail.lane_requires_retail(plan, lane):
+        receipt = retail.public_receipt(receipt)
     write(output / 'results.json', receipt)
     return receipt
 
@@ -283,7 +404,20 @@ def execute(plan, policy, lane, repo, output):
         raise ValueError('Checkout does not match pinned target')
     output.mkdir(parents=True, exist_ok=True)
     selected = [e for e in plan['tests'] if e['lane'] == lane]
+    # Only receipts produced after this attempt begins may be collected
+    for name in ('attempt.json', 'journal.jsonl', 'master-process.json', 'results.json', 'execution-progress.json'):
+        (output / name).unlink(missing_ok=True)
+    for entry in selected:
+        if entry['owner'] != 'master':
+            (output / (entry['id'].replace(':', '_') + '.json')).unlink(missing_ok=True)
+    attempt = {**attempt_identity(plan, lane), 'processes': {}}
+    write(output / 'attempt.json', attempt)
+    def process_evidence(owner, completed=False, exit_code=None):
+        attempt['processes'][owner] = {'completed': completed, 'exit_code': exit_code}
+        write(output / 'attempt.json', attempt)
     receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
+    if plan.get('retail_assets'):
+        receipt['retail_assets'] = plan['retail_assets']
     receipt.update(lane=lane, results=[])
     run_url = os.environ.get('GITHUB_SERVER_URL', 'https://github.com') + '/' + os.environ.get('GITHUB_REPOSITORY', 'local/unpublished') + '/actions/runs/' + os.environ.get('GITHUB_RUN_ID', 'local')
     def save(entry, status, reason='', **detail):
@@ -299,20 +433,12 @@ def execute(plan, policy, lane, repo, output):
         if lane in ('host', 'jvm'):
             command.append('-HostOnly')
         # Master owns setup/cleanup and per-test timeout; outer hosted cancellation remains pending.
+        process_evidence('master')
         with (output / 'master.log').open('w') as log:
             process = run_command(command, repo, log)
-        write(output / 'master-process.json', {'exit_code': process.returncode})
+        process_evidence('master', True, process.returncode)
         receipt['runner_failed'] = process.returncode != 0
-        observations = {}
-        if journal.exists():
-            for line in journal.read_text().splitlines():
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # an interrupted append cannot manufacture completion
-                if row.get('commit') != actual:
-                    raise ValueError('Journal target mismatch')
-                observations[row['name']] = row
+        observations = journal_observations(journal, actual)
         for entry in masters:
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
@@ -333,6 +459,7 @@ def execute(plan, policy, lane, repo, output):
             # The master intentionally stops its AVDs. The shareware owner restarts
             # its own device; revalidate only the original CI UID grant first.
             start = time.monotonic()
+            process_evidence(entry['id'])
             with destination.with_suffix('.log').open('w') as log:
                 if os.environ.get('GITHUB_ACTIONS') == 'true':
                     refresh = Path(__file__).resolve().parents[1] / 'helpers/refresh_nightly_kvm_access.sh'
@@ -343,13 +470,16 @@ def execute(plan, policy, lane, repo, output):
                     if setup_failed:
                         reason = 'Approved KVM access refresh failed before shareware owner launch; see owner log'
                         write(destination, {'schema': 1, 'suite': entry['args']['suite'], 'status': 'BLOCKED', 'reason': reason, 'attempted_tests': False, 'phase': 'setup', 'retryable': True, 'blocker_kind': 'infrastructure', 'coverage_complete': False})
+                        process_evidence(entry['id'], True)
                         save(entry, 'BLOCKED', reason)
                         receipt['runner_failed'] = True
                         continue
                 try:
                     process = run_command(command, repo, log, timeout=max(120, entry['estimated_seconds'] * 2))
+                    process_evidence(entry['id'], True, process.returncode)
                     status = 'PASS' if process.returncode == 0 else 'FAIL'
                 except subprocess.TimeoutExpired:
+                    process_evidence(entry['id'], True, 124)
                     status = 'TIMEOUT'
             elapsed += time.monotonic() - start
             write(destination, {'schema': 1, 'suite': entry['args']['suite'], 'status': status, 'reason': '', 'elapsed_seconds': time.monotonic() - start, 'coverage_complete': False})
@@ -363,12 +493,18 @@ def execute(plan, policy, lane, repo, output):
         destination = output / (entry['id'].replace(':', '_') + '.json')
         command = [sys.executable, str(Path(__file__).with_name('run_host_test_suites.py')), '--suite', entry['args']['suite'], '--repo', str(repo), '--build-root', str(output / 'build'), '--output', str(destination)]
         start = time.monotonic()
+        process_evidence(entry['id'])
         with destination.with_suffix('.log').open('w') as log:
-            run_command(command, repo, log)
+            process = run_command(command, repo, log)
+        process_evidence(entry['id'], True, process.returncode)
+        receipt['runner_failed'] = receipt.get('runner_failed', False) or process.returncode != 0
         if destination.exists():
             row = read(destination)
             if row.get('suite') != entry['args']['suite'] or row.get('status') not in ('PASS', 'FAIL', 'BLOCKED'):
                 raise ValueError('Invalid adapter result')
+            if row['status'] == 'PASS' and process.returncode != 0:
+                row.update(status='FAIL', reason=f'Owner process exited {process.returncode} despite PASS receipt')
+            row = normalize_result(row)
             elapsed += max(0, float(row.get('elapsed_seconds', time.monotonic() - start)))
             save(entry, row['status'], row.get('reason', ''), exclusions=row.get('exclusions', []))
         else:
@@ -445,6 +581,10 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
+    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities'))
+    p = sub.add_parser('retail-check')
+    for option in ('plan', 'policy', 'lane'):
+        p.add_argument('--' + option, required=True)
     p = sub.add_parser('execute')
     for option in ('plan', 'policy', 'repo', 'output'):
         p.add_argument('--' + option, required=True)
@@ -476,8 +616,14 @@ def main():
             raise ValueError('Coordinator target mismatch')
         state = publish_state(plan, read(args.policy), [read(p) for p in args.receipts])
         write(args.output, state)
+    elif args.command == 'retail-check':
+        plan = read(args.plan)
+        validate_plan(plan, read(args.policy))
+        if not retail.lane_requires_retail(plan, args.lane) or not retail.trusted_context() or plan.get('retail_assets') != retail.configured_identity():
+            raise ValueError('Private checkout is not authorized by this trusted run and plan')
+        print('Verified trusted retail lane and immutable data identity')
     elif args.command == 'plan':
-        plan, state = plan_batch(args.target_sha, read(args.catalog), read(args.policy), read(args.state) if args.state and Path(args.state).exists() else None)
+        plan, state = plan_batch(args.target_sha, read(args.catalog), read(args.policy), read(args.state) if args.state and Path(args.state).exists() else None, retail_assets=retail.configured_identity())
         if args.validation:
             state = fresh_state(plan['target_sha'], plan['catalog_hash'])
             validation_ids = VALIDATION_IDS
@@ -486,7 +632,15 @@ def main():
                 raise ValueError('Missing representative validation suites')
             plan['estimated_seconds'] = sum(e['estimated_seconds'] for e in plan['tests'])
             plan['lanes'] = [lane for lane in LANES if any(e['lane'] == lane for e in plan['tests'])]
-            plan['batch_id'] = digest({key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')})
+            identity = {key: plan[key] for key in ('target_sha', 'catalog_hash', 'tests')}
+            if plan.get('retail_assets'):
+                identity['retail_assets'] = plan['retail_assets']
+            plan['batch_id'] = digest(identity)
+        if args.campaign:
+            if args.validation:
+                raise ValueError('Choose validation or campaign, not both')
+            plan = select_public_campaign(plan, read(args.policy), read(args.catalog), args.campaign)
+            state = fresh_state(plan['target_sha'], plan['catalog_hash'])
         validate_plan(plan, read(args.policy))
         write(args.output, plan)
         write(args.state_output, state)
@@ -501,7 +655,7 @@ def main():
         plan, policy = read(args.plan), read(args.policy)
         state = reconcile(plan, policy, read(args.state), [read(p) for p in args.receipts])
         write(args.output, state)
-        summary = {'target_sha': state['target_sha'], 'terminal_owner_attempts': sum(r['status'] in COVERED for r in state['records'].values()), 'fully_covered_owners': sum(r.get('coverage_complete') is True for r in state['records'].values()), 'passed_leaf_cases': sum(r.get('case_counts', {}).get('PASS', 0) for r in state['records'].values()), 'incomplete_owners': [k for k, r in state['records'].items() if r.get('coverage_complete') is not True], 'failures': [k for k, r in state['records'].items() if r['status'] in ('FAIL', 'TIMEOUT')], 'retryable_infrastructure': state.get('retryable', {}), 'excluded': plan['exclusions'], 'target_capability_exclusions': state.get('excluded', {})}
+        summary = {'target_sha': state['target_sha'], 'terminal_owner_attempts': sum(r['status'] in COVERED for r in state['records'].values()), 'fully_covered_owners': sum(r.get('coverage_complete') is True for r in state['records'].values()), 'passed_leaf_cases': sum(r.get('case_counts', {}).get('PASS', 0) for r in state['records'].values()), 'incomplete_owners': [k for k, r in state['records'].items() if r.get('coverage_complete') is not True], 'failures': [k for k, r in state['records'].items() if r['status'] in ('FAIL', 'TIMEOUT')], 'retryable_infrastructure': state.get('retryable', {}), 'excluded': plan['exclusions'], 'target_capability_exclusions': state.get('excluded', {}), 'unavailable_pending': plan.get('unavailable', [])}
         pending = set(policy_entries(policy)) - set(state['records']) - set(state.get('excluded', {})) - {e['id'] for e in plan['exclusions']}
         summary['pending_owners'] = len(pending)
         summary['outcome'] = 'incomplete' if pending else ('exhausted_with_failures' if summary['failures'] else ('exhausted_with_exclusions' if summary['incomplete_owners'] or summary['excluded'] or state.get('excluded') else 'complete_pass'))

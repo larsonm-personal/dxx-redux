@@ -122,3 +122,75 @@ remain unchanged. Retail pickup modes and secret-area baselines remain excluded
 from their explicitly public profiles.
 
 The `host-profile:public-matcen` owner invokes the existing controlled native station-production wrapper with both fixture executables and explicit verified shareware directories. Its historical master `emulator` category does not describe its actual prerequisites: no ADB or Android device is used. This profile makes no normal-player-route claim.
+
+## Private base-retail profiles
+
+Four `retail-powershell` profiles reuse the same lazy native build adapter. Each
+requires the eleven-file private stage at `game_data/retail-ci/{d1,d2}` and is
+admitted by the nightly policy only with fixture `retail-base`. Before building,
+the adapter inventories that exact stage against the existing standard-game-data
+hashes and checks that the target and control checkout pins agree. Missing files,
+different editions, or invalid stages are retryable BLOCKED setup with no
+assertion credit. There is no fallback to shareware, unverified local media, or a
+download source. Inventory time is setup, not assertion time.
+
+- `host-profile:retail-secret-baseline` builds both headless metadata targets and
+  invokes `test_secret_area_baseline.ps1` with `-DataEdition retail -Game both`,
+  explicit data/executable paths, an attempt-local output directory, and
+  `-RequireAssets`. It never updates a checked-in baseline.
+- `host-profile:retail-counterstrike-route` invokes the existing Counterstrike
+  route owner with the D2 headless metadata target and the verified D2 stage.
+  Its native dump retains the owner's 300-second timeout and original route
+  assertions; the adapter does not override them.
+- `host-profile:retail-metadata-headers` builds both metadata workers and invokes
+  the existing malformed-header/recovery owner with `-NoBuild`, retail data,
+  both games, and explicit input/output paths.
+- `host-profile:retail-guidebot-timeout` builds the D2 headless route target and
+  runs the complete existing policy owner with `-NoBuild`, `-HeadlessExecutable`,
+  and `-HogDir`. PASS includes its native one-second timeout status and 61-frame
+  assertion. Exit 2 from the owner remains retryable BLOCKED, even if its earlier
+  calculation-only checks passed.
+
+Receipts are aggregate assertions for these exact selections only. They do not
+claim custom mission, audio-disc, Android, or other retail runtime coverage.
+Build failures remain retryable and do not earn assertion credit. These profiles
+do not fetch assets or publish logs; the private nightly lane owns staging,
+metadata-only public reporting, and cleanup of licensed inputs and derived files.
+The portable `test_retail_ci_assets.py` and `test_nightly_retail.py` registrations
+exercise synthetic/mock controls without licensed assets. Their passing results
+do not establish that any retail owner has run successfully.
+
+Two additional profiles use the separately admitted `retail-missions` fixture:
+`host-profile:retail-vertigo-metadata` builds the D2 metadata worker and supplies
+explicit base-data, Vertigo-directory, and worker paths with `-NoBuild` to the
+unchanged reused-worker owner. `host-profile:retail-obsidian-liquid` provides
+Vertigo/Obsidian loading and checkpoint regressions. It builds the D2 headless
+metadata, metadata-worker, and headless-route targets and runs the existing Python
+owner with isolated Python so environment optimization cannot disable assertions.
+The standalone owner's default remains the Obsidian level-13 liquid-secret and
+transparent-water checks. Supplying all three optional `--worker`, `--route-exe`,
+and `--vertigo-dir` inputs also exercises 44 requests in one metadata worker:
+23 Vertigo levels, 18 Obsidian levels, and three base loads, ordered
+base -> Vertigo -> base -> Obsidian -> base, with unchanged base resource counts.
+The profile supplies those fixed inputs and checks each mission's native L1 route,
+checkpoint save/restore, and wrong-level/wrong-mission rejection. Native mission
+discovery requires the installed `missions/` layout. These headless routes use a
+synthetic actor; they do not exercise gameplay menus or an Android/player session.
+Each native call or worker request keeps its 60-second bound. The 600-second
+registry/policy estimate includes build headroom; the overall adapter wall-clock
+limit and 45-minute nightly lane budget remain unchanged. This is not a measured
+hosted Debug build/runtime guarantee.
+Both verify the staged mission identities, including the reviewed CRLF Vertigo
+descriptor, before builds or tests. The Obsidian profile extracts only its exact
+HOG and MN2 members into a fresh private `missions` tree, checking member names,
+duplicates, sizes, and SHA-256 while streaming bounded chunks. ZIP setup errors
+are retryable BLOCKED with no assertion credit. It never installs or executes the
+archive's batch file, and its derived stage must remain private and be cleaned up
+with the lane workspace. Hosted runtime qualification remains pending.
+
+Remaining GuideBot cases need a separate bounded adapter change to plumb explicit
+executable, base-data, and mission-stage paths into their unchanged assertions.
+The full family remains excluded: Vertigo level 16 also requires Plutonia, which
+this fixture does not contain. The Vertigo CD checkpoint owner still targets the
+original CD catalog layout; these profiles do not claim that owner, Android
+behavior, movies, or any other custom mission.

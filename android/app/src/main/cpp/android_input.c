@@ -24,6 +24,7 @@
 #include "android_lifecycle_actions.h"
 #include "android_idle_saver.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_graphics_safety.h"
 #include "android_pause.h"
 #include "android_menu_scale.h"
 #include "android_rewind.h"
@@ -1142,6 +1143,11 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			return;
 		}
 
+		/* onPause rejects graphics trials before publishing the background request
+		 * Finish that game-thread rollback before checkpointing or parking */
+#ifdef OGL
+		android_graphics_safety_event_tick();
+#endif
 		android_lifecycle_diagnostics_set_suspend_state(
 		    ANDROID_LIFECYCLE_SUSPEND_QUIESCING);
 		androidaud_background_pause();
