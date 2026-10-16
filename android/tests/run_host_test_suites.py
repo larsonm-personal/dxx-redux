@@ -393,6 +393,12 @@ def retail_profile_arguments(suite, repo, build_root, work):
             str(work / "obsidian-stage"),
             "--output",
             str(work / "obsidian-liquid.json"),
+            "--worker",
+            binary("d2", "-metadata-worker"),
+            "--route-exe",
+            binary("d2", "-headless-route"),
+            "--vertigo-dir",
+            str(stage / "missions"),
         ]
     raise ValueError("Unknown reviewed retail profile: " + profile)
 
