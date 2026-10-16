@@ -48,6 +48,16 @@ try {
     }
 
     $setupScript = Join-Path $repoRoot 'android/helpers/setup_shareware_test_data.ps1'
+    $setupSource = Get-Content -LiteralPath $setupScript -Raw
+    if ($setupSource -notmatch '\[switch\]\$RequireArchives' -or
+        $setupSource -notmatch 'if \(-not \$RequireArchives\) \{ continue \}') {
+        throw 'First-play must retain and verify original archives even when extraction is cached'
+    }
+    $archiveValidation = $setupSource.IndexOf('Assert-DxxFileSha256 -Path $archivePath')
+    $cachedReturn = $setupSource.IndexOf('if ($existingVerified) { continue }')
+    if ($archiveValidation -lt 0 -or $cachedReturn -le $archiveValidation) {
+        throw 'Cached extraction bypasses original package verification'
+    }
     $emptyCache = Join-Path $testRoot 'empty-cache'
     $setupRoot = Join-Path $testRoot 'setup-output'
     $unusedBuild = Join-Path $testRoot 'unused-build'
@@ -65,6 +75,10 @@ try {
     } 'SHA-256 mismatch' 'corrupt cached package is rejected before building or extracting'
     if (Test-Path -LiteralPath $unusedBuild) { throw 'Corrupt package setup unexpectedly built a tool' }
     if (Test-Path -LiteralPath (Join-Path $setupRoot 'd1')) { throw 'Corrupt package setup published an output tree' }
+
+    Assert-Rejected {
+        & $setupScript -Game d1 -RequireArchives -ArchiveDirectory $emptyCache -DataRoot $setupRoot -BuildDirectory $unusedBuild
+    } 'SHA-256 mismatch' 'first-play archive requirement rejects corrupted installer bytes'
 
     # Exercise fail-closed resolution with small fixtures, without downloading game data
     $directory = Join-Path $testRoot 'synthetic'

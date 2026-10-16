@@ -2654,7 +2654,8 @@ static int parse_script(const char *json_text)
 			else if (action == "set_menu_viewport") s.type = STEP_SET_MENU_VIEWPORT;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
-				continue;
+				g_steps.clear();
+				return 0;
 			}
 
 			if (s.type == STEP_CONTROLLER_INPUT) s.controller_input = step_json.dump();
@@ -2762,9 +2763,11 @@ static int parse_script(const char *json_text)
 		}
 	} catch (const json::parse_error &e) {
 		LOGE("JSON parse error: %s", e.what());
+		g_steps.clear();
 		return 0;
 	} catch (const std::exception &e) {
 		LOGE("Script parse error: %s", e.what());
+		g_steps.clear();
 		return 0;
 	}
 
@@ -3252,6 +3255,12 @@ extern "C" void game_automate_tick(void)
 		remove_stale_result();
 		open_log_file();
 		clear_held_axes();
+		/* A rejected replacement must never continue the previous script */
+		g_active = 0;
+		g_failed = 0;
+		g_current_step = 0;
+		g_script_start = SDL_GetTicks();
+		g_steps.clear();
 
 		if (load_script_file(g_active_script)) {
 			g_current_step = request.start_step;
@@ -3270,6 +3279,8 @@ extern "C" void game_automate_tick(void)
 				LOGI("Step %d/%d: type=%d", g_current_step + 1, (int) g_steps.size(), (int) s.type);
 				log_append(step_type_name(s.type), "start", "");
 			}
+		} else {
+			stop_script_fail("Failed to load automation script");
 		}
 	}
 

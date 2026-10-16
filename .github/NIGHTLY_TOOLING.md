@@ -18,3 +18,24 @@ logs are workflow artifacts, not committed inventory reports.
 
 For host adapter arguments and prerequisites, see
 [`HOST_TEST_SUITES.md`](../android/tests/HOST_TEST_SUITES.md).
+
+## Private retail fixtures
+
+The `retail-ci` Environment must allow only the `cmake` branch. Its
+`RETAIL_ASSETS_READ_TOKEN` secret is read-only Contents access to
+`larsonm-personal/dxx-redux-test-assets`; the repository variable
+`RETAIL_ASSETS_COMMIT` pins an immutable forty-character commit.
+
+Only the exact scheduled/manual `cmake` coordinator can select that Environment.
+`retail_asset_sources.json` maps supplied paths to isolated staging;
+`standard_game_data.ps1` defines required file hashes. Missing configuration or
+mismatched files remain pending. PRs never receive these fixtures. Retail lanes
+upload only bounded result/verification metadata, exclude broad logs/screenshots,
+and do not save caches. Token functionality and retail tests require a trusted
+post-merge run; source admission alone is not runtime qualification.
+
+The mission-enabled profile additionally verifies Vertigo and Obsidian. Its three
+source/staging identities are fixed in `retail_ci_assets.py`; only the pinned
+Vertigo descriptor receives explicit LF-to-CRLF normalization in staging. After
+merging this profile, set `RETAIL_ASSETS_COMMIT` to
+`a5fe978f5cf42a612489dca1267e77e837f7da8c`. Supplied originals are never modified.

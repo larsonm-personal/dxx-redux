@@ -104,5 +104,4 @@
     { "action": "assert_button", "text": "Save Explorer", "enabled": true },
 
     { "action": "log", "message": "=== TEST: D2 abort game returns to main menu -- PASS ===" },
-    { "action": "introspect" },
 ]
