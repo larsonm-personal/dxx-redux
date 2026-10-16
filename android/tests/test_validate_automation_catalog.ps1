@@ -145,7 +145,7 @@ function Test-FirstPlayLauncherButtonException {
         $Info._owner -cne 'test_demo_import') { return $false }
     $reviewedNames = @(
         'test_public_first_play_empty.jsonc', 'test_public_first_play_d1.jsonc',
-        'test_public_first_play_d1_in_d2.jsonc', 'test_public_first_play_d2.jsonc'
+        'test_public_first_play_d1_in_d2.jsonc', 'test_public_first_play_d2.jsonc', 'test_public_first_play_mission.jsonc'
     )
     $fullPath = [IO.Path]::GetFullPath($ScriptPath)
     foreach ($name in $reviewedNames) {

@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -20,6 +20,48 @@ function Assert-Rejected {
     try { & $Action | Out-Null } catch { $rejected = $true }
     if (-not $rejected) { throw $Message }
 }
+
+# Small synthetic bytes only: the owner must reject malformed archives before any publication
+function New-ProfileHog {
+    param([string[]]$Names = @('d2leva-1.sl2'))
+    $stream = [IO.MemoryStream]::new()
+    $writer = [IO.BinaryWriter]::new($stream)
+    try {
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('DHF'))
+        foreach ($name in $Names) {
+            $field = [byte[]]::new(13)
+            [Text.Encoding]::ASCII.GetBytes($name).CopyTo($field, 0)
+            $writer.Write($field)
+            $writer.Write([uint32]3)
+            $writer.Write([byte[]]@(1, 2, 3))
+        }
+        $writer.Flush()
+        return ,$stream.ToArray()
+    } finally { $writer.Dispose(); $stream.Dispose() }
+}
+$profileHog = New-ProfileHog
+if (((Get-FirstPlayHogMember -Bytes $profileHog -Name 'd2leva-1.sl2') -join ',') -cne '1,2,3') {
+    throw 'Bounded HOG reader changed original member bytes'
+}
+if ((Get-FirstPlayBytesHash ([Text.Encoding]::ASCII.GetBytes('abc'))) -cne 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad') {
+    throw 'Public fixture hash helper changed SHA-256'
+}
+foreach ($invalidHog in @(
+        ([byte[]]@(1, 2, 3)),
+        ([byte[]]$profileHog[0..10]),
+        ([byte[]]$profileHog[0..($profileHog.Length - 2)]),
+        (New-ProfileHog -Names @('other.rl2')),
+        (New-ProfileHog -Names @('d2leva-1.sl2', 'D2LEVA-1.SL2')),
+        ([byte[]]::new(2292567))
+    )) {
+    Assert-Rejected { Get-FirstPlayHogMember -Bytes $invalidHog -Name 'd2leva-1.sl2' } 'Malformed or ambiguous public level source accepted'
+}
+# Same-sized incorrect sources must fail their pin, rather than becoming playable claims
+$profileSource = [IO.Path]::GetTempFileName()
+try {
+    [IO.File]::WriteAllBytes($profileSource, [byte[]]::new(2292566))
+    Assert-Rejected { New-FirstPlayMission -SourceHog $profileSource -OutputDirectory 'unused-profile-output' } 'Unpinned source generated a mission'
+} finally { Remove-Item -LiteralPath $profileSource -Force }
 
 $script:online = 'device'
 $script:qemu = '1'
@@ -54,6 +96,13 @@ function New-SetupState {
         screen = 'setup'; active_set = 'default'; d1 = @{ ready = $D1 }; d2 = @{ ready = $D2 }
         can_launch = ($D1 -or $D2); set_files_recursive = @()
     }
+}
+function New-MissionSetupState {
+    $state = New-SetupState $true $true
+    $state | Add-Member -NotePropertyName content_entries -NotePropertyValue @(
+        @{ id = 'mod:fpplay.zip'; kind = 'mission_zip'; game = 'd2'; enabled = $true; managed = $true; name = 'Public First Play' }
+    )
+    return $state
 }
 foreach ($pair in @(@($false, $false), @($true, $false), @($true, $true))) {
     if (-not (Test-FirstPlayReadiness (New-SetupState $pair[0] $pair[1]) $pair[0] $pair[1])) { throw 'Valid readiness rejected' }
@@ -260,6 +309,71 @@ foreach ($importScenario in @('archive', 'loose', 'missing_ack', 'missing_copy',
         if ($importScenario -ne 'missing_ack' -and $importPoll.Count -ne 2) { throw 'Import publication did not wait for fresh copied bytes' }
     }
 }
+foreach ($missionScenario in @('valid', 'missing_log', 'wrong_hash', 'missing_owner', 'disabled', 'string_enabled', 'wrong_kind', 'wrong_game', 'extra_mod', 'wrong_name', 'unmanaged', 'string_managed')) {
+    & {
+        $missionEvents = [Collections.Generic.List[string]]::new()
+        $missionPoll = @{ Count = 0 }
+        $fixture = @{ Path = 'generated-fixture'; File = 'fpplay.zip'; Sha256 = ('c' * 64) }
+        function Send-FirstPlaySource {
+            param($Path, $Name, $Sha256)
+            if ($Path -cne $fixture.Path -or $Name -cne 'fpplay.zip' -or $Sha256 -cne $fixture.Sha256) {
+                throw 'Mission staging lost its fixed identity'
+            }
+            $missionEvents.Add('stage')
+        }
+        function Tap-FirstPlayButton { throw 'Mission ZIP import has no base-installer confirmation' }
+        function Adb {
+            param($AdbArgs, $Seconds)
+            if ($AdbArgs -contains 'logcat') {
+                if ($AdbArgs -contains '-c') { $missionEvents.Add('clear'); return }
+                if ($missionPoll.Count -eq 1 -or $missionScenario -eq 'missing_log') { return 'No fresh import' }
+                return 'Mission ZIP import ok: fpplay.zip (123 bytes)'
+            }
+            if ($AdbArgs -contains 'import_picked_uris') {
+                if (($missionEvents -join ',') -cne 'stage,clear' -or $AdbArgs -cnotcontains '--esa' -or
+                    $AdbArgs[-1] -cne 'content://test.package.saf-test/seekable/fpplay.zip') { throw 'Mission callback lost source staging, fresh log, or URI array' }
+                $missionEvents.Add('callback')
+                return
+            }
+            if ($AdbArgs -contains 'sha256sum') {
+                if ($AdbArgs[-1] -cne 'files/imported/sets/default/.content/mods/fpplay.zip') { throw 'Mission publication checked an unrelated path' }
+                if ($missionScenario -eq 'wrong_hash') { return 'bad-hash' }
+                return "$($fixture.Sha256)  $($AdbArgs[-1])"
+            }
+            throw 'Unexpected mission import transport'
+        }
+        function Get-FirstPlaySetup {
+            $state = New-MissionSetupState
+            switch ($missionScenario) {
+                'missing_owner' { $state.content_entries = @() }
+                'disabled' { $state.content_entries[0].enabled = $false }
+                'string_enabled' { $state.content_entries[0].enabled = 'true' }
+                'wrong_kind' { $state.content_entries[0].kind = 'dxa' }
+                'wrong_game' { $state.content_entries[0].game = 'd1' }
+                'extra_mod' { $state.content_entries += @{ id = 'mod:other.zip' } }
+                'wrong_name' { $state.content_entries[0].name = 'Other Mission' }
+                'unmanaged' { $state.content_entries[0].managed = $false }
+                'string_managed' { $state.content_entries[0].managed = 'true' }
+            }
+            return $state
+        }
+        function Wait-ForCondition {
+            param($Description, $TimeoutSec, $PollMs, $Condition)
+            if ($TimeoutSec -ne 90 -or $PollMs -ne 500) { throw 'Mission import wait lost its bound' }
+            foreach ($attempt in 1..2) {
+                $missionPoll.Count++
+                if (& $Condition) { return $true }
+            }
+            return $false
+        }
+        $missionFailure = ''
+        try { Import-FirstPlayMission -Fixture $fixture } catch { $missionFailure = $_.Exception.Message }
+        $wantedFailure = if ($missionScenario -eq 'valid') { '' } else { 'Public mission lacks fresh production import, exact bytes, or enabled ownership' }
+        if ($missionFailure -cne $wantedFailure -or $missionPoll.Count -ne 2 -or ($missionEvents -join ',') -cne 'stage,clear,callback') {
+            throw "Mission publication scenario $missionScenario lost exact identity or fresh callback proof: $missionFailure"
+        }
+    }
+}
 $chooserXml = '<hierarchy><node package="test.package" text="Import Files"/><node package="test.package" text="Pick One or More Files" enabled="true" bounds="[20,40][120,100]"/></hierarchy>'
 $point = Get-FirstPlayPickerChoicePoint -XmlText $chooserXml
 if ($null -eq $point -or $point.X -ne 70 -or $point.Y -ne 70) { throw 'Exact chooser node did not produce its observed center' }
@@ -412,7 +526,7 @@ foreach ($invalidInfo in @(
         throw 'Catalog accepted missing, standalone, or foreign first-play ownership'
     }
 }
-foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2')) {
+foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
     $path = Join-Path $PSScriptRoot "../game_scripts/test_public_first_play_$phase.jsonc"
     $steps = Read-JsoncFile -Path $path
     $info = $steps[0]._info
@@ -429,8 +543,10 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2')) {
         if (@($steps | Where-Object { $_.action -eq 'tap_button' -and $_.text -ceq $button -and $_.launches_game -eq $true }).Count -ne 1) {
             throw "First-play $phase does not launch through the normal button"
         }
+        $liveAssertions = @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.in_game -eq $true -and $_.expect.current_level_num -eq 1 })
+        $expectedLiveCount = if ($phase -eq 'mission') { 3 } else { 1 }
         if (@($steps | Where-Object { $_.action -eq 'select' -and $_.text -ceq 'New game' }).Count -ne 1 -or
-            @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.in_game -eq $true -and $_.expect.current_level_num -eq 1 }).Count -ne 1) {
+            $liveAssertions.Count -ne $expectedLiveCount) {
             throw "First-play $phase lost ordinary new-game navigation or live level-one evidence"
         }
         if ($phase -eq 'd2' -and @($steps | Where-Object {
@@ -441,6 +557,32 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2')) {
                 }).Count -ne 1) {
             throw 'Native D2 trace must assert the requested palette/pig names; pinned import hashes prove the demo asset'
         }
+        if ($phase -eq 'mission') {
+            if (@($steps | Where-Object { $_.action -eq 'select_mission' -or $_.action -like 'debug*' -or $_.action -in @('set_debug', 'set_field') }).Count) {
+                throw 'Public mission must not use mission-picker shortcuts or debug state mutation'
+            }
+            $selections = @($steps | Where-Object action -EQ 'select' | ForEach-Object text) -join '|'
+            if ($selections -cne 'New game|Public First Play|Ok|Trainee|Save Game...|Load Game|level 1|Yes' -or
+                @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'menu.items'.contains -ceq 'Public First Play' }).Count -ne 1) {
+                throw 'Public mission lost its observed normal mission picker or save/load menus'
+            }
+            $ammo = @($steps | Where-Object { $_.action -eq 'assert' -and $null -ne $_.expect.'player.secondary_ammo[0]' } | ForEach-Object { $_.expect.'player.secondary_ammo[0]' }) -join ','
+            if ($ammo -cne '7,6,5,6,6' -or @($steps | Where-Object { $_.action -eq 'send_button' -and $_.button -eq 101 }).Count -ne 2) {
+                throw 'Public mission lost its nondefault saved-ammo witness'
+            }
+            foreach ($live in $liveAssertions) {
+                if ($live.expect.mission_asset_owner -cne 'mod/fpplay.zip' -or $live.expect.'player.callsign' -cne 'player' -or
+                    $live.expect.difficulty -ne 0 -or $live.expect.player_dead -ne $false -or $live.expect.time_paused -ne $false) {
+                    throw 'Public mission lost owned live identity or preserved player state'
+                }
+            }
+            if (@($steps | Where-Object { $_.action -eq 'tap_button' -and $_.text -ceq 'Load Last Save' -and $_.exact -eq $true -and $_.launches_game -eq $true }).Count -ne 1 -or
+                @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'resume_candidate.mission_name' -ceq 'fpplay' -and $_.expect.'resume_candidate.level_num' -eq 1 -and $_.expect.'resume_candidate.save_kind' -ceq 'auto_exit' }).Count -ne 1 -or
+                @($steps | Where-Object { $_.action -eq 'delete_mod' -and $_.file -ceq 'fpplay.zip' }).Count -ne 1 -or
+                @($steps | Where-Object action -EQ 'clear_mods').Count -ne 1) {
+                throw 'Public mission lost real launcher resume, saved mission identity, or cleanup'
+            }
+        }
     }
 }
-Write-Host 'PASS: public first-play target, readiness, hash, menu-path and correlated-evidence controls'
+Write-Host 'PASS: public first-play target, readiness, hash, mission packaging/publication, normal menu save/resume and correlated-evidence controls'

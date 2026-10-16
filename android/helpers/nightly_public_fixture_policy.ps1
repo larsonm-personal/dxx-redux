@@ -54,7 +54,7 @@ function Test-SuiteMediaIndependentTest {
         'ps1:two_emulators' { @('test_lan_lobby_discovery', 'test_lan_broadcast') }
         'jsonc:emulator' {
             @('test_public_first_play_empty', 'test_public_first_play_d1',
-                'test_public_first_play_d1_in_d2', 'test_public_first_play_d2',
+                'test_public_first_play_d1_in_d2', 'test_public_first_play_d2', 'test_public_first_play_mission',
                 'test_compute_faster_dialog', 'test_debug_log_refresh_button',
                 'test_controller_raw_inputs', 'test_controller_trigger_axis_priority',
                 'test_launcher_media_controls',

@@ -121,6 +121,121 @@ function Send-FirstPlaySource {
     }
 }
 
+function Get-FirstPlayBytesHash {
+    param([byte[]]$Bytes)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return [Convert]::ToHexString($sha.ComputeHash($Bytes)).ToLowerInvariant() } finally { $sha.Dispose() }
+}
+
+function Get-FirstPlayHogMember {
+    param([byte[]]$Bytes, [string]$Name)
+    if ($Bytes.Length -lt 3 -or $Bytes.Length -gt 2292566 -or
+        [Text.Encoding]::ASCII.GetString($Bytes, 0, 3) -cne 'DHF') { throw 'Invalid bounded public HOG' }
+    $stream = [IO.MemoryStream]::new($Bytes, $false)
+    $reader = [IO.BinaryReader]::new($stream)
+    $found = $null
+    try {
+        $stream.Position = 3
+        while ($stream.Position -lt $stream.Length) {
+            if ($stream.Length - $stream.Position -lt 17) { throw 'Truncated public HOG header' }
+            $entry = [Text.Encoding]::ASCII.GetString($reader.ReadBytes(13)).TrimEnd([char]0)
+            $size = $reader.ReadUInt32()
+            if ($size -gt $stream.Length - $stream.Position) { throw 'Truncated public HOG member' }
+            if ($entry -ieq $Name) {
+                if ($null -ne $found) { throw 'Duplicate public HOG member' }
+                $found = $reader.ReadBytes([int]$size)
+            } else { $stream.Position += $size }
+        }
+    } finally { $reader.Dispose(); $stream.Dispose() }
+    if ($null -eq $found) { throw 'Required public HOG member missing' }
+    return ,$found
+}
+
+function New-FirstPlayMission {
+    param([string]$SourceHog, [string]$OutputDirectory)
+    # Derive only the original demo level; no authored geometry or replacement assets
+    if ((Get-Item -LiteralPath $SourceHog).Length -ne 2292566) { throw 'Public mission source is not the pinned D2 demo HOG' }
+    $bytes = [IO.File]::ReadAllBytes($SourceHog)
+    $sourceHash = Get-FirstPlayBytesHash $bytes
+    if ($bytes.Length -ne 2292566 -or
+        $sourceHash -cne 'b6bf5514b7f2c25ff516c46e9d49eef5862b10667a95365631e7a64a10adc47e') {
+        throw 'Public mission source is not the pinned D2 demo HOG'
+    }
+    $level = Get-FirstPlayHogMember -Bytes $bytes -Name 'd2leva-1.sl2'
+    $levelHash = Get-FirstPlayBytesHash $level
+    if ($level.Length -ne 75440 -or
+        $levelHash -cne '133f34dff976ad7e5a84e2c4a16301f89bd833c954e9903c899613d6f7299302') {
+        throw 'Public mission level differs from the original demo member'
+    }
+    $hog = [IO.MemoryStream]::new()
+    $writer = [IO.BinaryWriter]::new($hog)
+    try {
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('DHF'))
+        $name = [byte[]]::new(13)
+        [Text.Encoding]::ASCII.GetBytes('fpplay1.rl2').CopyTo($name, 0)
+        $writer.Write($name)
+        $writer.Write([uint32]$level.Length)
+        $writer.Write($level)
+        $writer.Flush()
+        $missionHog = $hog.ToArray()
+    } finally { $writer.Dispose(); $hog.Dispose() }
+    $descriptor = [Text.Encoding]::ASCII.GetBytes("name = Public First Play`ntype = normal`nnum_levels = 1`nfpplay1.rl2`nnum_secrets = 0`n")
+    $path = Join-Path $OutputDirectory 'fpplay.zip'
+    $archive = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($entry in @(@{ Name = 'fpplay.mn2'; Bytes = $descriptor }, @{ Name = 'fpplay.hog'; Bytes = $missionHog })) {
+            $item = $archive.CreateEntry($entry.Name, [IO.Compression.CompressionLevel]::NoCompression)
+            $item.LastWriteTime = [DateTimeOffset]::new(2000, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+            $output = $item.Open()
+            try { $output.Write($entry.Bytes, 0, $entry.Bytes.Length) } finally { $output.Dispose() }
+        }
+    } finally { $archive.Dispose() }
+    $identity = [ordered]@{
+        file = 'fpplay.zip'; sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        source_hog_sha256 = $sourceHash; source_member = 'd2leva-1.sl2'; level_sha256 = $levelHash
+        level_size = $level.Length; mission_hog_sha256 = (Get-FirstPlayBytesHash $missionHog)
+        descriptor = 'fpplay.mn2'; level_alias = 'fpplay1.rl2'; level_title = 'Ahayweh Gate'
+        scope = 'Synthetic packaging of unchanged public level bytes; no retail or authored mission qualification'
+    }
+    $identity | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $OutputDirectory 'mission-fixture.json') -Encoding utf8
+    return @{ Path = $path; File = $identity.file; Sha256 = $identity.sha256 }
+}
+
+function Test-FirstPlayMissionPublication {
+    param($State, [string]$Log, [string]$HashLine, [string]$Sha256)
+    if (-not (Test-FirstPlayReadiness $State $true $true)) { return $false }
+    $mods = @($State.content_entries | Where-Object { $_.id -like 'mod:*' })
+    return ($mods.Count -eq 1 -and $mods[0].id -ceq 'mod:fpplay.zip' -and
+        $mods[0].kind -ceq 'mission_zip' -and $mods[0].game -ceq 'd2' -and
+        $mods[0].enabled -is [bool] -and $mods[0].enabled -and
+        $mods[0].managed -is [bool] -and $mods[0].managed -and
+        $mods[0].name -ceq 'Public First Play' -and
+        $Log -match 'Mission ZIP import ok: fpplay\.zip \([0-9]+ bytes\)' -and
+        $Sha256 -cmatch '^[0-9a-f]{64}$' -and
+        $HashLine -ceq "$Sha256  $($script:DEFAULT_SET_DIR)/.content/mods/fpplay.zip")
+}
+
+function Import-FirstPlayMission {
+    param([Parameter(Mandatory)][hashtable]$Fixture)
+    Send-FirstPlaySource -Path $Fixture.Path -Name $Fixture.File -Sha256 $Fixture.Sha256
+    Adb -AdbArgs @('logcat', '-c') | Out-Null
+    # Mission ZIPs import immediately through this production post-picker branch
+    # Unlike base installers, this route has no Import to Current Set confirmation
+    $uri = "content://$($script:PACKAGE).saf-test/seekable/fpplay.zip"
+    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        '--es', 'command', 'import_picked_uris', '--esa', 'uris', $uri) | Out-Null
+    $publication = @{ Log = ''; State = $null }
+    $published = Wait-ForCondition -Description 'public mission production publication' -TimeoutSec 90 -PollMs 500 -Condition {
+        $publication.Log = Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-Setup:I', '*:S')
+        $publication.State = Get-FirstPlaySetup
+        $hash = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', "$($script:DEFAULT_SET_DIR)/.content/mods/fpplay.zip")
+        Test-FirstPlayMissionPublication -State $publication.State -Log $publication.Log -HashLine $hash -Sha256 $Fixture.Sha256
+    }
+    $publication.Log | Set-Content (Join-Path $firstPlayOutput 'mission-import.log') -Encoding utf8
+    $publication.State | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $firstPlayOutput 'mission-import-setup.json') -Encoding utf8
+    if (-not $published) { throw 'Public mission lacks fresh production import, exact bytes, or enabled ownership' }
+}
+
 function Import-FirstPlaySources {
     param([string[]]$Names, [ValidateSet('archive', 'loose')][string]$Kind, [string]$Label,
         [Parameter(Mandatory)][array]$Expected)
@@ -230,12 +345,13 @@ function Test-FirstPlayDocumentsUiCancel {
 }
 
 function Invoke-FirstPlayPhase {
-    param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2')][string]$Phase)
+    param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2', 'mission')][string]$Phase)
     $phaseScripts = @{
         empty = 'test_public_first_play_empty.jsonc'
         d1 = 'test_public_first_play_d1.jsonc'
         d1_in_d2 = 'test_public_first_play_d1_in_d2.jsonc'
         d2 = 'test_public_first_play_d2.jsonc'
+        mission = 'test_public_first_play_mission.jsonc'
     }
     $name = $phaseScripts[$Phase]
     $phaseOutput = Join-Path $firstPlayOutput $Phase
@@ -284,6 +400,7 @@ function Invoke-PublicFirstPlay {
         if ((Get-Item -LiteralPath $archive).Length -ne $config.ArchiveSize) { throw "Original public installer size differs: $archive" }
     }
     $d1Loose = Resolve-SharewareTestData -RepoRoot $script:REPO_ROOT -Game d1
+    $d2Loose = Resolve-SharewareTestData -RepoRoot $script:REPO_ROOT -Game d2
     Assert-FirstPlayEmulator -Serial $Serial
     Ensure-EmulatorHealthy | Out-Null
     # Health recovery can change the target state; recheck immediately before destructive clearing
@@ -335,19 +452,28 @@ function Invoke-PublicFirstPlay {
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'final'
         # Keep the independent picker smoke after the priority import/engine evidence
         Test-FirstPlayDocumentsUiCancel -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes)
+        $missionFixture = New-FirstPlayMission -SourceHog (Join-Path $d2Loose 'd2demo.hog') -OutputDirectory $firstPlayOutput
+        try { Import-FirstPlayMission -Fixture $missionFixture } finally { Remove-Item -LiteralPath $missionFixture.Path -Force }
+        Invoke-FirstPlayPhase mission
+        Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'mission-cleanup'
         [ordered]@{
-            result = 'PASS'; phases = @('empty', 'd1', 'd1_in_d2', 'd2'); run_ids = @($firstPlayRunIds | Sort-Object)
+            result = 'PASS'; phases = @('empty', 'd1', 'd1_in_d2', 'd2', 'mission'); run_ids = @($firstPlayRunIds | Sort-Object)
             installers = @($configs | ForEach-Object { @{ name = $_.Archive; sha256 = $_.ArchiveSha256 } })
             picker = 'actual DocumentsUI open/cancel only'; imports = 'SafTestProvider production post-picker callback'
             cold_state = 'pm clear on verified disposable emulator'; graphics_onboarding = 'suppressed by existing run_test marker'
-            save_preservation = 'not tested; run_test clears saves between phases'
+            save_preservation = 'Custom public mission normal menu save/restore and Load Last Save inside one phase; saves reset between phases'
+            mission = 'Generated ZIP, unchanged D2 demo level with unique fpplay1.rl2 alias; internal level title remains Ahayweh Gate'
+            mission_identity = 'Pinned source/member and imported ZIP hashes, unique descriptor/member mapping, active mod owner and saved mission name; no direct level-filename introspection'
+            exit_save = 'enter_launcher uses the synchronous automation auto-exit save path; Load Last Save is a real launcher button'
             native_d1_identity = 'fresh MainActivity native-library load plus correlated level-one PASS; D1 has no asset_trace'
         } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $firstPlayOutput 'summary.json') -Encoding utf8
-        Write-Output 'PASS: cold public import, incomplete recovery, repeated multi-file import, D1/D1-in-D2/D2 button launches to level 1'
+        Write-Output 'PASS: public import and button launches, generated mission selection, normal menu save/restore and launcher resume'
     } finally {
         Adb -AdbArgs @('logcat', '-d') | Set-Content (Join-Path $firstPlayOutput 'final-logcat.txt') -Encoding utf8
         Stop-AppAndWait
         Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-rf', 'files/saf_provider_source') | Out-Null
         Adb -AdbArgs @('shell', 'rm', '-f', '/sdcard/first-play-picker.xml') | Out-Null
+        $generatedMission = Join-Path $firstPlayOutput 'fpplay.zip'
+        if (Test-Path -LiteralPath $generatedMission) { Remove-Item -LiteralPath $generatedMission -Force }
     }
 }
