@@ -739,7 +739,7 @@ function Send-TapButton {
         Send-MpCommand -Serial $Serial -Command "tap_button" -Extras @("--es", "text", $Text)
         Start-Sleep -Milliseconds $PollMs
         $log = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-            "logcat", "-d", "-t", "20", "-s", "DXX-MP:*"
+            "logcat", "-d", "-s", "DXX-MP:*"
         ) -Seconds 5
         if ($log -match "tap_button: tapped") { return $true }
         if ($log -match 'tap_button:.*not found \(available: ([^)]*)\)') {

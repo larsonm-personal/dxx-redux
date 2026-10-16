@@ -121,6 +121,72 @@ $script:tapResult = $true
 $script:wrongTapAck = $true
 Assert-Rejected { Tap-FirstPlayButton -Text 'Import All' } 'An unrelated tap acknowledgment accepted the import confirmation'
 $script:wrongTapAck = $false
+# Execute the real shared tap reader, including its logcat argv, without loading SDK helpers
+$transportPath = Join-Path $PSScriptRoot '../helpers/test_helpers.ps1'
+$transportAst = [Management.Automation.Language.Parser]::ParseFile($transportPath, [ref]$null, [ref]$parseErrors)
+if ($parseErrors.Count) { throw "Shared test helper parser errors: $parseErrors" }
+$tapTransportDefinition = $transportAst.Find({ param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Send-TapButton'
+    }, $true)
+if (-not $tapTransportDefinition) { throw 'Missing shared tap reader' }
+foreach ($ackScenario in @('noisy_success', 'wrong_ack', 'missing_ack')) {
+    & {
+        . ([scriptblock]::Create($tapTransportDefinition.Extent.Text))
+        $logBuffer = [Collections.Generic.List[object]]::new()
+        $tapTransportState = @{ Requests = 0; Clears = 0 }
+        function Send-MpCommand {
+            param($Serial, $Command, $Extras)
+            if ($Serial -cne 'emulator-5554' -or $Command -cne 'tap_button' -or $Extras[-1] -cne "'Import All'") {
+                throw 'Shared tap reader changed its explicit request'
+            }
+            $tapTransportState.Requests++
+            if ($ackScenario -ne 'missing_ack') {
+                $label = if ($ackScenario -eq 'wrong_ack') { 'Unrelated Button' } else { 'Import All' }
+                $logBuffer.Add([pscustomobject]@{ Tag = 'DXX-MP'; Text = 'tap_button: tapped "' + $label + '"' })
+            }
+            foreach ($noiseIndex in 1..30) {
+                $logBuffer.Add([pscustomobject]@{ Tag = 'Other'; Text = "Unrelated device log $noiseIndex" })
+            }
+            if (@($logBuffer | Select-Object -Last 20 | Where-Object Tag -CEQ 'DXX-MP').Count) {
+                throw 'Noisy fixture did not displace the acknowledgment from the global tail'
+            }
+        }
+        function Adb-Dev-Timeout {
+            param($Serial, $AdbArgs, $Seconds)
+            if ($Serial -cne 'emulator-5554') { throw 'Shared tap read lost its target' }
+            if ($AdbArgs -contains '-c') {
+                $tapTransportState.Clears++
+                $logBuffer.Clear()
+                return
+            }
+            if ($AdbArgs -ccontains '-t' -or $AdbArgs -ccontains '-T') {
+                throw 'Global log tail can discard the successful tap before tag filtering'
+            }
+            if ($AdbArgs -cnotcontains '-d' -or $AdbArgs -cnotcontains '-s' -or $AdbArgs -cnotcontains 'DXX-MP:*') {
+                throw 'Shared tap reader lost its bounded tag-filtered dump'
+            }
+            return @($logBuffer | Where-Object Tag -CEQ 'DXX-MP' | ForEach-Object Text) -join "`n"
+        }
+        function Adb {
+            param($AdbArgs, $Seconds)
+            return @($logBuffer | Where-Object Tag -CEQ 'DXX-MP' | ForEach-Object Text) -join "`n"
+        }
+        function Start-Sleep { param($Milliseconds) [Threading.Thread]::Sleep(10) }
+        function Write-Status { param($Msg, $Color) }
+        if ($ackScenario -eq 'missing_ack') {
+            if (Send-TapButton -Serial emulator-5554 -Text "'Import All'" -TimeoutSec 1 -PollMs 1) {
+                throw 'Missing acknowledgment passed the real shared reader'
+            }
+        } else {
+            $ackFailure = ''
+            try { Tap-FirstPlayButton -Text 'Import All' } catch { $ackFailure = $_.Exception.Message }
+            $wantedAckFailure = if ($ackScenario -eq 'wrong_ack') { 'Could not tap first-play button: Import All' } else { '' }
+            if ($ackFailure -cne $wantedAckFailure -or $tapTransportState.Requests -ne 1 -or $tapTransportState.Clears -ne 1) {
+                throw "Acknowledgment scenario $ackScenario lost the first completed click: $ackFailure"
+            }
+        }
+    }
+}
 foreach ($importScenario in @('archive', 'loose', 'missing_ack', 'missing_copy', 'wrong_hash', 'missing_file', 'wrong_inventory')) {
     & {
         $fixtureExpected = @(
@@ -366,6 +432,14 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2')) {
         if (@($steps | Where-Object { $_.action -eq 'select' -and $_.text -ceq 'New game' }).Count -ne 1 -or
             @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.in_game -eq $true -and $_.expect.current_level_num -eq 1 }).Count -ne 1) {
             throw "First-play $phase lost ordinary new-game navigation or live level-one evidence"
+        }
+        if ($phase -eq 'd2' -and @($steps | Where-Object {
+                    $_.action -eq 'assert' -and $_.expect.'asset_trace.runtime_engine' -ceq 'd2' -and
+                    $_.expect.'asset_trace.selected_base_game' -ceq 'd2' -and $_.expect.'asset_trace.mode' -ceq 'd2' -and
+                    $_.expect.'asset_trace.current_level_palette' -ceq 'GROUPA.256' -and
+                    $_.expect.'asset_trace.current_pigfile' -ceq 'groupa.pig'
+                }).Count -ne 1) {
+            throw 'Native D2 trace must assert the requested palette/pig names; pinned import hashes prove the demo asset'
         }
     }
 }

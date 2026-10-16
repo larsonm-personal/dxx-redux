@@ -20,7 +20,9 @@
         "expect": {
             "in_game": true, "screen_mode": "game", "current_level_num": 1, "player_dead": false,
             "asset_trace.runtime_engine": "d2", "asset_trace.selected_base_game": "d2", "asset_trace.mode": "d2",
-            "asset_trace.current_pigfile": "d2demo.pig",
+            // The trace records the palette-request name; pinned file hashes prove the demo fallback asset
+            "asset_trace.current_level_palette": "GROUPA.256",
+            "asset_trace.current_pigfile": "groupa.pig",
         },
     },
     { "action": "introspect" },
