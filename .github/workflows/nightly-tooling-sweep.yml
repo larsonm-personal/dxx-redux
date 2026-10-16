@@ -5,6 +5,7 @@ run-name: >-
 on:
   schedule:
     - cron: '15 2 * * *'
+      timezone: America/Los_Angeles
   pull_request:
     paths:
       - ".github/workflows/*nightly*"
