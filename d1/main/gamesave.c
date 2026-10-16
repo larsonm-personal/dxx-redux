@@ -45,6 +45,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "menu.h"
 #include "switch.h"
 #include "fuelcen.h"
+#include "matcen_regression_capture.h"
 #include "cntrlcen.h"
 #include "powerup.h"
 #include "hostage.h"
@@ -966,6 +967,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 			return -1;
 		}
 
+	matcen_capture_triggers();
+
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
 	if (!level_section_seek(LoadFile, control_offset, 1, 1, "reactor triggers"))
 		return -1;
@@ -974,11 +977,13 @@ int load_game_data(PHYSFS_file *LoadFile)
 		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
+	Matcen_regression_capture.declared_disk_count = Num_robot_centers;
 	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS, "matcens"))
 		return -1;
 
 	for (i = 0; i < Num_robot_centers; i++) {
 		matcen_info_read(&RobotCenters[i], load_rewind_file, game_top_fileinfo_version);
+		matcen_capture_record(i);
 		
 		//	Set links in RobotCenters to Station array
 		for (j = 0; j <= Highest_segment_index; j++)
@@ -987,6 +992,9 @@ int load_game_data(PHYSFS_file *LoadFile)
 					RobotCenters[i].fuelcen_num = Segments[j].value;
 	}
 
+
+	/* Historical parser has no checked-read scope; successful loader admission is recorded separately. */
+	Matcen_regression_capture.complete = !Matcen_regression_capture.overflow;
 
 	//========================= UPDATE VARIABLES ======================
 
