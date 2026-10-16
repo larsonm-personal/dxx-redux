@@ -438,6 +438,21 @@ jobs:
               for source in temporary.glob(pattern):
                   if source.is_dir() and not source.is_symlink():
                       shutil.copytree(source, destination / source.name, dirs_exist_ok=True, symlinks=True)
+          # Only these fixed public-owner snapshots; never collect arbitrary temp content
+          graphics_files = ('manifest.json', 'logcat-crash.txt', 'logcat-main.txt', 'logcat-system.txt',
+                            'graphics-safety.txt', 'native-fatal.txt', 'exit-info.txt', 'activities.txt',
+                            'window.txt', 'power.txt', 'cached-introspect.txt', 'tombstone-list.txt',
+                            'tombstone-1.txt', 'tombstone-2.txt')
+          for name in ('public-graphics-lifecycle-d1', 'public-graphics-lifecycle-d2'):
+              source = temporary / name
+              if not source.is_dir() or source.is_symlink():
+                  continue
+              for filename in graphics_files:
+                  path = source / filename
+                  if path.is_file() and not path.is_symlink() and path.stat().st_size <= 262144:
+                      target = destination / name / filename
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copyfile(path, target)
           PYTHON
       - name: Upload execution evidence
         if: always() && !inputs.retail_assets

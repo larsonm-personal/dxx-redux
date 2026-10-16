@@ -111,6 +111,57 @@ class SweepTests(unittest.TestCase):
         self.assertIn('path: results/', upload)
         self.assertIn('if: always() && !inputs.retail_assets', upload)
 
+    def test_graphics_failure_collector_is_exact_bounded_and_rejects_links(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
+        collect = workflow.split('      - name: Collect public first-play diagnostics', 1)[1].split('      - name:', 1)[0]
+        code = collect.split("          python3 - <<'PYTHON'\n", 1)[1].rsplit('          PYTHON', 1)[0]
+        code = '\n'.join(line[10:] for line in code.splitlines())
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            temporary = root / 'target/android/temp'
+            source = temporary / 'public-graphics-lifecycle-d2'
+            source.mkdir(parents=True)
+            (source / 'manifest.json').write_text('{"run_id":"current"}')
+            (source / 'logcat-crash.txt').write_bytes(b'c' * 262144)
+            (source / 'logcat-main.txt').write_bytes(b'm' * 262145)
+            (source / 'unreviewed.txt').write_text('excluded')
+            (source / 'window.txt').symlink_to(source / 'manifest.json')
+            (temporary / 'public-graphics-lifecycle-d1').symlink_to(source, target_is_directory=True)
+            unrelated = temporary / 'private-owner'
+            unrelated.mkdir()
+            (unrelated / 'manifest.json').write_text('excluded')
+            result = subprocess.run([sys.executable, '-c', code], cwd=root, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            files = {str(p.relative_to(root / 'results/first-play'))
+                     for p in (root / 'results/first-play').rglob('*') if p.is_file()}
+            self.assertEqual(files, {'public-graphics-lifecycle-d2/manifest.json',
+                                     'public-graphics-lifecycle-d2/logcat-crash.txt'})
+
+    def test_graphics_failure_snapshot_precedes_cleanup_without_changing_oracle(self):
+        root = Path(__file__).parents[2]
+        runner = (root / 'android/helpers/run_test.ps1').read_text()
+        failure = runner.split('        if (-not $passed) {', 1)[1]
+        self.assertLess(failure.index('Save-PublicGraphicsLifecycleFailure'), failure.index('Get-GameIntrospection'))
+        self.assertLess(failure.index('Save-PublicGraphicsLifecycleFailure'), failure.index('exit 1'))
+        helpers = (root / 'android/helpers/test_helpers.ps1').read_text()
+        probe = helpers.split('                    $processDiagnostic = $null', 1)[1].split('# Native UI state', 1)[0]
+        self.assertIn('$observedProcess -ne "$($graphicsBefore.attempt.owner_pid)"', probe)
+        self.assertIn('-DiagnosticResult ([ref]$processDiagnostic)', probe)
+        self.assertIn('same-process survival could not be verified', probe)
+        self.assertIn('return $false', probe)
+        self.assertIn('-Game $gameId -Initialize', runner)
+        smoke = (root / '.github/workflows/engine-smoke.yml').read_text()
+        self.assertIn('python3 android/tests/test_android_audio_lifecycle.py', smoke)
+        tooling = (root / 'android/tests/run_tooling_smoke.ps1').read_text()
+        self.assertIn("'test_automation_result_evidence'", tooling)
+        snapshot = helpers.split('function Save-PublicGraphicsLifecycleFailure {', 1)[1].split('function Wait-ProcessDead', 1)[0]
+        for restriction in ("$DataEdition -cne 'shareware'", '$ownerPath', "'^emulator-[0-9]+$'",
+                            "$script:PACKAGE -cne 'com.dxxredux.app'", '-Seconds 3', '-lt 45',
+                            '[Math]::Min($bytes.Length, 262144)', 'Select-Object -First 2'):
+            self.assertIn(restriction, snapshot)
+        for forbidden in ('bugreport', '/data/tombstones', 'root', 'grant', 'logcat -c'):
+            self.assertNotIn(forbidden, snapshot)
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)
