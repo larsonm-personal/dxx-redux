@@ -38,9 +38,38 @@ class SweepTests(unittest.TestCase):
         self.assertEqual({entry['lane'] for entry in selected}, set(sweep.LANES))
         for lane in sweep.LANES:
             self.assertLessEqual(sum(entry['estimated_seconds'] for entry in selected if entry['lane'] == lane), 2700)
-        self.assertIn('master:test_lan_lobby_discovery', sweep.VALIDATION_IDS)
+        self.assertIn('master:test_lan_launch_preparation_public_shareware', sweep.VALIDATION_IDS)
+        self.assertNotIn('master:test_lan_lobby_discovery', sweep.VALIDATION_IDS)
+        self.assertIn('master:test_lan_lobby_discovery', entries)
+        self.assertEqual(sum(e['estimated_seconds'] for e in selected if e['lane'] == 'android-dual'), 1500)
+        self.assertTrue(all(e.get('fixture') not in ('retail-base', 'retail-missions') for e in selected))
         self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
+
+    def test_public_network_recovery_is_bounded_and_not_default_pr_work(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        entries = sweep.policy_entries(policy)
+        ident = 'master:test_lan_host_migration_public_shareware'
+        self.assertNotIn(ident, sweep.VALIDATION_IDS)
+        self.assertIn(ident, sweep.FIRST_PLAY_IDS)
+        self.assertEqual(entries[ident]['args'], {'suite': 'test_lan_host_migration_public_shareware'})
+        self.assertEqual(entries[ident]['lane'], 'android-dual')
+        self.assertNotIn('fixture', entries[ident])
+        self.assertEqual(entries['master:test_lan']['fixture'], 'retail-base')
+        self.assertEqual(sum(entries[i]['estimated_seconds'] for i in sweep.FIRST_PLAY_IDS
+                             if entries[i]['lane'] == 'android-dual'), 2400)
+
+    def test_network_paths_trigger_existing_pr_sample(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        paths = workflow.split('    paths:', 1)[1].split('  workflow_dispatch:', 1)[0]
+        for expected in ('d[12]/main/net*', 'd[12]/main/multi*',
+                         'android/app/src/main/cpp/shared/net/**',
+                         'android/app/src/main/cpp/shared/coop/**',
+                         'android/app/src/main/java/com/dxxredux/app/lobby/**',
+                         'android/app/src/main/java/com/dxxredux/app/multiplayer/**',
+                         'android/tests/test_lan*'):
+            self.assertIn('"' + expected + '"', paths)
+        self.assertNotIn('"**"', paths)
 
     def test_first_play_is_fixed_public_and_within_each_lane_budget(self):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
@@ -214,7 +243,8 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
         self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
         self.assertIn('-Game both -Download -RequireArchives', fixture_step)
-        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware'):
+        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware',
+                     'test_lan_host_migration_public_shareware'):
             self.assertIn(name, workflow)
         entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
@@ -224,7 +254,7 @@ class SweepTests(unittest.TestCase):
         workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()
         collect = workflow.split('      - name: Collect public first-play diagnostics', 1)[1].split('      - name:', 1)[0]
         self.assertIn('if: always() && !inputs.retail_assets', collect)
-        self.assertIn("('public-first-play-*', 'lan-launch-preparation-public-shareware')", collect)
+        self.assertIn("('public-first-play-*', 'lan-launch-preparation-public-shareware', 'lan-host-migration-public-shareware')", collect)
         self.assertIn("pathlib.Path('results/first-play')", collect)
         self.assertNotIn('game_data', collect)
         upload = workflow.split('      - name: Upload execution evidence', 1)[1].split('      - name:', 1)[0]

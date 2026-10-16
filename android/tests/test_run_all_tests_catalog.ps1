@@ -47,6 +47,7 @@ foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
 foreach ($variant in @(
+        @{ Name = 'test_lan_host_migration_public_shareware'; BaseName = 'test_lan'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-Game', 'd1', '-HostMigration') },
         @{ Name = 'test_lan_launch_preparation_public_shareware'; BaseName = 'test_lan_launch_preparation'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },
         @{ Name = 'test_demo_import_public_first_play'; BaseName = 'test_demo_import'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-PublicFirstPlay') })) {
     if (-not (Test-SuiteMediaIndependentTest -Test $variant)) { throw "Public variant rejected: $($variant.Name)" }
@@ -54,6 +55,16 @@ foreach ($variant in @(
         $changed = $variant.Clone()
         $changed.Arguments = $case.Values
         if (Test-SuiteMediaIndependentTest -Test $changed) { throw 'Unreviewed public variant arguments admitted' }
+    }
+    if ($variant.Name -ceq 'test_lan_host_migration_public_shareware') {
+        foreach ($values in @(
+                @{ Args = @('-PublicShareware', '-Game', 'd2', '-HostMigration') },
+                @{ Args = @('-PublicShareware', '-Game', 'd1') },
+                @{ Args = @('-PublicShareware', '-Game', 'd1', '-HostMigration', '-MissionFile', 'other') })) {
+            $changed = $variant.Clone()
+            $changed.Arguments = $values.Args
+            if (Test-SuiteMediaIndependentTest -Test $changed) { throw 'Unreviewed migration variant admitted' }
+        }
     }
     $original = $variant.Clone()
     $original.Name = $original.BaseName
@@ -145,7 +156,7 @@ try {
             if ($test.timeout_seconds -le 0 -or $test.requires -notin @('none', 'emulator', 'two_emulators', 'extract', 'server')) { throw "Incomplete scheduling declaration: $($test.name)" }
             if ([IO.Path]::IsPathRooted($test.path) -or -not (Test-Path -LiteralPath (Join-Path $repoRoot $test.path) -PathType Leaf)) { throw "Invalid checkout-relative path: $($test.path)" }
         }
-        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles', 'test_lan_launch_preparation_profiles', 'test_demo_import_first_play_profiles')) {
+        foreach ($name in @('test_extraction_cache_provenance', 'test_extraction_publication', 'test_shareware_test_data', 'test_wall_blast_save_profiles', 'test_secret_area_data_profiles', 'test_shareware_automation_profiles', 'test_lan_launch_preparation_profiles', 'test_lan_public_profiles', 'test_demo_import_first_play_profiles')) {
             $entry = @($catalog.tests | Where-Object name -eq $name)
             if ($entry.Count -ne 1 -or $entry[0].type -ne 'ps1' -or $entry[0].requires -ne 'none' -or
                 $name -notin (Get-TestSuiteCoveragePolicy).core) {

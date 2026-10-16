@@ -83,7 +83,7 @@ jobs:
           plan = json.load(open('plan/plan.json'))
           selected = [test for test in plan['tests'] if test.get('lane') == os.environ['SWEEP_LANE']]
           requirements = {
-              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware') for test in selected),
+              'public_fixtures': any(test.get('owner') == 'shareware' or test.get('args', {}).get('suite') in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware', 'test_lan_host_migration_public_shareware') for test in selected),
               'generated_audio': any(test.get('owner') == 'master' and test.get('args', {}).get('suite') == 'test_launcher_media_controls_generated' for test in selected),
           }
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -434,7 +434,7 @@ jobs:
           import pathlib, shutil
           temporary = pathlib.Path('target/android/temp')
           destination = pathlib.Path('results/first-play')
-          for pattern in ('public-first-play-*', 'lan-launch-preparation-public-shareware'):
+          for pattern in ('public-first-play-*', 'lan-launch-preparation-public-shareware', 'lan-host-migration-public-shareware'):
               for source in temporary.glob(pattern):
                   if source.is_dir() and not source.is_symlink():
                       shutil.copytree(source, destination / source.name, dirs_exist_ok=True, symlinks=True)

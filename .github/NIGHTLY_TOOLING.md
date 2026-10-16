@@ -19,6 +19,22 @@ logs are workflow artifacts, not committed inventory reports.
 For host adapter arguments and prerequisites, see
 [`HOST_TEST_SUITES.md`](../android/tests/HOST_TEST_SUITES.md).
 
+## Public network coverage
+
+The default PR sample runs the existing two-emulator public gameplay owner:
+native D1, native D2, and imported D1 level-one starts with matching peers and a
+cold role swap. Network engine, shared networking/co-op, Android lobby/multiplayer,
+and LAN-owner changes trigger the same sample. Its dual-lane estimate is 1500
+seconds; fixture-free discovery and broadcast remain in rotating nightly coverage.
+
+The fixed public D1 host-migration variant reuses `test_lan.ps1`: graceful host
+leave, rejoin, forced host process loss, and a second migration/rejoin. It is
+admitted to nightly and the existing opt-in first-play selection, not the routine
+PR sample. Its 900-second estimate brings that selection's dual lane to 2400 of
+2700 seconds. Hosted completion within the owner timeout is required. This uses
+debug launch/automation controls and public shareware, not ordinary menu input or
+retail qualification. Retail defaults remain separate.
+
 ## Private retail fixtures
 
 The `retail-ci` Environment must allow only the `cmake` branch. Its

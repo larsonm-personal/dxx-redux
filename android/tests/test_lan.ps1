@@ -43,6 +43,7 @@
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -Game d2 -MissionFile descent -ClientRewind -GuidebotRewind
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -PublicShareware -Game d1 -HostMigration  # Disposable emulators only
 #   .\test_lan.ps1 -HostMigration -Game d2 -MissionFile descent -InitialLevel 8
 #   .\test_lan.ps1 -BackgroundRuntime  # Host and client keep serving while another app is visible
 #   .\test_lan.ps1 -GuidebotRoutingMode Original -HostMigration
@@ -126,6 +127,8 @@ param(
     [ValidateSet("unexpected_exit", "interrupted_restore", "normal_quit", "fail_after_hide")]
     [string]$RestoreReportCase,
     [switch]$HostMigration,
+    [switch]$PublicShareware,
+    [string]$D1DataDirectory,
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
@@ -212,6 +215,44 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+# Public coverage is deliberately one native-D1 shareware migration scenario.
+function Start-LanLogcatCapture {
+    param([string]$Serial, [string]$OutputPath, [string]$ErrorPath, [switch]$IncludeMatchmaking)
+    $filters = @('-s', $Serial, 'logcat', '-s', 'DXX-MP:*', 'DXX-Redux:*',
+        'DXX-DLOG:*', 'DXX-Automate:*', 'dxxredux:*', 'AndroidRuntime:*', 'LocalhostProxy:*')
+    if ($IncludeMatchmaking) { $filters += 'MatchmakingService:*' }
+    $options = @{
+        FilePath = $ADB; ArgumentList = $filters; PassThru = $true
+        RedirectStandardOutput = $OutputPath; RedirectStandardError = $ErrorPath
+    }
+    # WindowStyle is unsupported by Start-Process on non-Windows PowerShell.
+    if (Test-RegressionWindowsHost) { $options.WindowStyle = 'Hidden' }
+    return Start-Process @options
+}
+
+function Assert-PublicMigrationArguments {
+    param([System.Collections.IDictionary]$Arguments, [string]$SelectedGame, [bool]$Migration,
+        [string]$Mission, [int]$Level, [string]$HostName, [string]$JoinName)
+    $allowed = @('PublicShareware', 'Game', 'HostMigration', 'D1DataDirectory', 'HostDevice', 'JoinDevice',
+        'HostAvd', 'JoinAvd', 'HostCallsign', 'JoinCallsign', 'SkipBuild', 'TimeoutSeconds', 'InitialLevel', 'MissionFile')
+    foreach ($key in $Arguments.Keys) {
+        if ($key -notin $allowed) { throw "Public host migration does not support -$key" }
+    }
+    if ($SelectedGame -cne 'd1' -or -not $Migration -or $Mission -or $Level -ne 1) {
+        throw 'PublicShareware requires -Game d1 -HostMigration, built-in mission, and level 1'
+    }
+    if ($HostName -notmatch '^[A-Za-z0-9]{1,8}$' -or $JoinName -notmatch '^[A-Za-z0-9]{1,8}$' -or $HostName -ieq $JoinName) {
+        throw 'Public migration requires distinct one-to-eight-character alphanumeric callsigns'
+    }
+}
+if ($PublicShareware) {
+    Assert-PublicMigrationArguments -Arguments $PSBoundParameters -SelectedGame $Game -Migration $HostMigration `
+        -Mission $MissionFile -Level $InitialLevel -HostName $HostCallsign -JoinName $JoinCallsign
+    if ($HostDevice -notmatch '^emulator-\d+$' -or $JoinDevice -notmatch '^emulator-\d+$') {
+        throw 'Public migration requires two disposable emulators, never physical devices'
+    }
+    $PSDefaultParameterValues['Get-GameIntrospection:Fresh'] = $true
+} elseif ($D1DataDirectory) { throw 'D1DataDirectory requires -PublicShareware' }
 if ($HostDevice -eq $JoinDevice) { throw 'Host and joiner require separate devices' }
 if ($GuidebotRoutingMode -and $Game -ne 'd2') { throw 'Guidebot routing requires D2' }
 if ($GuidebotTravel) {
@@ -382,12 +423,33 @@ $MODE = "coop"
 $relayProc = $null
 $testPassed = $false
 $script:EndgameFiles = @()
+$script:PublicMigrationTargetsAdmitted = $false
+$script:PublicMigrationEvidenceDirectory = Join-Path $PSScriptRoot '../temp/lan-host-migration-public-shareware'
+if ($PublicShareware) {
+    if (Test-Path -LiteralPath $script:PublicMigrationEvidenceDirectory) {
+        $previous = "$script:PublicMigrationEvidenceDirectory-$([DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fff'))"
+        Move-Item -LiteralPath $script:PublicMigrationEvidenceDirectory -Destination $previous
+    }
+    & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $script:PublicMigrationEvidenceDirectory | Out-Null
+    New-Item -ItemType Directory -Path $script:PublicMigrationEvidenceDirectory -Force | Out-Null
+}
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\lan_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
 try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) } catch {}
 
 function Cleanup {
+    if ($PublicShareware -and -not $script:PublicMigrationTargetsAdmitted) { return }
+    if ($PublicShareware) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            try {
+                Get-GameIntrospection -Serial $serial -Fresh | ConvertTo-Json -Depth 100 |
+                    Set-Content (Join-Path $script:PublicMigrationEvidenceDirectory "$serial-final.json") -Encoding utf8
+            } catch { Write-Warning "Could not collect final public migration state from $serial" }
+        }
+        @{ result = $(if ($testPassed) { 'PASS' } else { 'FAIL' }); engine = 'd1'; mission = ''; level = 1 } |
+            ConvertTo-Json | Set-Content (Join-Path $script:PublicMigrationEvidenceDirectory 'result.json') -Encoding utf8
+    }
     Write-Status "Cleaning up..."
     try { if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force } } catch {}
     try { if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force } } catch {}
@@ -1564,6 +1626,105 @@ function Invoke-GuidebotHostObserverScenario {
     return $true
 }
 
+function Assert-PublicMigrationTargets {
+    param([string]$HostSerial, [string]$JoinSerial)
+    if ($HostSerial -notmatch '^emulator-\d+$' -or $JoinSerial -notmatch '^emulator-\d+$' -or $HostSerial -eq $JoinSerial) {
+        throw 'Public migration requires two distinct disposable emulators'
+    }
+    # Admit BOTH targets before the caller clears either app installation.
+    foreach ($serial in @($HostSerial, $JoinSerial)) {
+        $online = Adb-Dev-Timeout -Serial $serial -AdbArgs @('get-state') -Seconds 5
+        $qemu = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'getprop', 'ro.kernel.qemu') -Seconds 5
+        if (([string]$online).Trim() -cne 'device' -or ([string]$qemu).Trim() -cne '1') {
+            throw "Refusing to clear unverified disposable emulator $serial"
+        }
+    }
+}
+
+function Stage-PublicMigrationAssets {
+    param([string]$Serial, [object[]]$Files)
+    $cleared = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'pm', 'clear', $PACKAGE) -Seconds 30
+    if ($cleared -cne 'Success') { throw "Could not clear public migration app state on $Serial" }
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', $script:DEFAULT_SET_DIR) -Seconds 5 | Out-Null
+    foreach ($file in $Files) {
+        $temporary = "/data/local/tmp/migration-public-$($file.File)"
+        $destination = "$($script:DEFAULT_SET_DIR)/$($file.File)"
+        try {
+            Adb-Dev-Timeout -Serial $Serial -AdbArgs @('push', $file.Source, $temporary) -Seconds 30 | Out-Null
+            Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', $temporary, $destination) -Seconds 10 | Out-Null
+            $actual = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $destination) -Seconds 30
+            if ($actual -cne "$($file.Sha256)  $destination") { throw "Pinned public migration asset differs on ${Serial}: $($file.File)" }
+        } finally {
+            Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'rm', '-f', $temporary) -Seconds 5 | Out-Null
+        }
+    }
+}
+
+function Test-PublicMigrationLobby {
+    param($Intro, [string]$Callsign)
+    # The auto-host has not entered the mine yet; do not require in_game here.
+    try {
+        $mp = $Intro.multiplayer
+        $players = @($mp.players)
+        return $Intro.is_network -eq $true -and $mp.mission_name -ceq '' -and
+        $mp.mission_title -ceq 'Descent Demo' -and $mp.level_num -eq 1 -and
+        $mp.gamemode_name -ceq 'cooperative' -and $mp.i_am_master -eq $true -and
+        $mp.my_player_num -eq 0 -and $mp.master_player_num -eq 0 -and
+        $mp.num_connected -eq 1 -and $mp.num_players -eq 1 -and $players.Count -eq 1 -and
+        $players[0].slot -eq 0 -and $players[0].callsign -ieq $Callsign -and
+        $players[0].is_me -eq $true -and $players[0].connected -eq 1
+    } catch { return $false }
+}
+
+function Test-PublicMigrationState {
+    param($Intro, [int]$LocalSlot, [int]$MasterSlot, [int]$ConnectedPlayers, [bool]$IsMaster,
+        [string]$FirstCallsign, [string]$SecondCallsign)
+    # Missing serialized fields are failed evidence, including under StrictMode.
+    try {
+        if (-not $Intro -or $Intro.in_game -ne $true -or $Intro.is_network -ne $true -or
+            $Intro.screen_mode -cne 'game' -or $Intro.current_level_num -ne 1) { return $false }
+        $mp = $Intro.multiplayer
+        if ($mp.mission_name -cne '' -or $mp.mission_title -cne 'Descent Demo' -or $mp.level_num -ne 1 -or
+            $mp.gamemode_name -cne 'cooperative' -or $mp.network_status -ne 1 -or
+            $mp.num_connected -ne $ConnectedPlayers -or $mp.num_players -ne 2 -or
+            $mp.my_player_num -ne $LocalSlot -or $mp.master_player_num -ne $MasterSlot -or
+            $mp.i_am_master -ne $IsMaster) { return $false }
+        $players = @($mp.players)
+        if ($players.Count -ne 2 -or $FirstCallsign -ieq $SecondCallsign) { return $false }
+        for ($slot = 0; $slot -lt 2; $slot++) {
+            $expected = if ($slot -eq 0) { $FirstCallsign } else { $SecondCallsign }
+            if ($players[$slot].slot -ne $slot -or $players[$slot].callsign -ine $expected -or
+                $players[$slot].is_me -ne ($slot -eq $LocalSlot)) { return $false }
+            if ($slot -eq $LocalSlot -or $ConnectedPlayers -eq 2) {
+                if ($players[$slot].connected -ne 1) { return $false }
+            } elseif ($players[$slot].connected -ne 0) { return $false }
+        }
+        if ($mp.synchronized_object_count -le 0 -or $mp.allocated_object_count -ne $mp.active_object_count) { return $false }
+        return $true
+    } catch { return $false }
+}
+
+function Save-PublicMigrationEvidence {
+    param([string]$Phase, $HostState, $JoinState)
+    @{ phase = $Phase; engine = 'd1'; content = 'pinned-d1-shareware'; level = 1
+        host = $HostState; join = $JoinState; pdata = $script:publicMigrationPdata } |
+        ConvertTo-Json -Depth 100 | Set-Content (Join-Path $script:PublicMigrationEvidenceDirectory "$Phase.json") -Encoding utf8
+}
+
+function Test-PublicMigrationEngineLog {
+    param([string]$Log)
+    return $Log -match 'Loaded native library: dxx-redux-d1\b' -and $Log -notmatch 'Loaded native library: dxx-redux-d2\b'
+}
+
+function Assert-PublicMigrationEngine {
+    param([string]$Serial)
+    $log = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d', '-s', 'MainActivity:I', '*:S') -Seconds 5
+    $log | Set-Content (Join-Path $script:PublicMigrationEvidenceDirectory "$Serial-native-library.log") -Encoding utf8
+    if (-not (Test-PublicMigrationEngineLog -Log $log)) {
+        throw "Public migration did not launch native D1 on $Serial"
+    }
+}
+
 function Test-IntroHostRole {
     param(
         $Intro,
@@ -1573,6 +1734,9 @@ function Test-IntroHostRole {
         [bool]$IsMaster
     )
 
+    if ($PublicShareware -and -not (Test-PublicMigrationState -Intro $Intro -LocalSlot $LocalSlot `
+                -MasterSlot $MasterSlot -ConnectedPlayers $ConnectedPlayers -IsMaster $IsMaster `
+                -FirstCallsign $CALLSIGN1 -SecondCallsign $CALLSIGN2)) { return $false }
     $mp = Get-IntroMultiplayer -Intro $Intro
     return $Intro -and $mp -and
     [bool]$Intro.in_game -and [bool]$Intro.is_network -and
@@ -1605,7 +1769,7 @@ function Wait-SoloMigratedHost {
 
     $script:migrationSoloIntro = $null
     return Wait-ForCondition -Description $Description -TimeoutSec 40 -PollMs 1000 -Condition {
-        $script:migrationSoloIntro = Get-GameIntrospection -Serial $Serial
+        $script:migrationSoloIntro = Get-GameIntrospection -Serial $Serial -Fresh
         $mp = Get-IntroMultiplayer -Intro $script:migrationSoloIntro
         $guidebot = Get-IntroGuidebot -Intro $script:migrationSoloIntro
         if (-not (Test-IntroHostRole -Intro $script:migrationSoloIntro `
@@ -1640,6 +1804,11 @@ function Start-MigratedPeerRejoin {
         [string]$Callsign
     )
 
+    if ($PublicShareware) {
+        $cleared = Adb-Dev-Timeout -Serial $JoiningSerial -AdbArgs @('shell', 'sh', '-c',
+            "'logcat -c && echo DXX_MIGRATION_LOG_CLEARED'") -Seconds 5
+        if ($cleared -cne 'DXX_MIGRATION_LOG_CLEARED') { throw 'Could not clear migration rejoin evidence' }
+    }
     if (-not (Start-SetupActivity -Serial $JoiningSerial)) {
         Write-Status "FAIL: SetupActivity didn't restart on $JoiningSerial" "Red"
         return $false
@@ -1692,8 +1861,8 @@ function Wait-MigratedPairSync {
     $script:migratedHostIntro = $null
     $script:migratedJoinIntro = $null
     return Wait-ForCondition -Description $Description -TimeoutSec $TimeoutSeconds -PollMs 1500 -Condition {
-        $script:migratedHostIntro = Get-GameIntrospection -Serial $HostSerial
-        $script:migratedJoinIntro = Get-GameIntrospection -Serial $JoinSerial
+        $script:migratedHostIntro = Get-GameIntrospection -Serial $HostSerial -Fresh
+        $script:migratedJoinIntro = Get-GameIntrospection -Serial $JoinSerial -Fresh
         if (-not (Test-IntroHostRole -Intro $script:migratedHostIntro `
                     -LocalSlot $HostSlot -MasterSlot $HostSlot `
                     -ConnectedPlayers 2 -IsMaster $true) -or
@@ -1744,8 +1913,8 @@ function Wait-BidirectionalPdata {
         [string]$Description
     )
 
-    $firstIntro = Get-GameIntrospection -Serial $FirstSerial
-    $secondIntro = Get-GameIntrospection -Serial $SecondSerial
+    $firstIntro = Get-GameIntrospection -Serial $FirstSerial -Fresh
+    $secondIntro = Get-GameIntrospection -Serial $SecondSerial -Fresh
     $firstStart = Get-IntroPdataSequence -Intro $firstIntro -PlayerSlot $FirstRemoteSlot
     $secondStart = Get-IntroPdataSequence -Intro $secondIntro -PlayerSlot $SecondRemoteSlot
     if ($null -eq $firstStart -or $null -eq $secondStart) {
@@ -1753,16 +1922,28 @@ function Wait-BidirectionalPdata {
         return $false
     }
     return Wait-ForCondition -Description $Description -TimeoutSec 15 -PollMs 1000 -Condition {
-        $firstNow = Get-GameIntrospection -Serial $FirstSerial
-        $secondNow = Get-GameIntrospection -Serial $SecondSerial
+        $firstNow = Get-GameIntrospection -Serial $FirstSerial -Fresh
+        $secondNow = Get-GameIntrospection -Serial $SecondSerial -Fresh
         $firstMp = Get-IntroMultiplayer -Intro $firstNow
         $secondMp = Get-IntroMultiplayer -Intro $secondNow
         $firstSequence = Get-IntroPdataSequence -Intro $firstNow -PlayerSlot $FirstRemoteSlot
         $secondSequence = Get-IntroPdataSequence -Intro $secondNow -PlayerSlot $SecondRemoteSlot
-        return $firstMp -and $secondMp -and
+        if ($PublicShareware) {
+            if (-not (Test-IntroHostRole -Intro $firstNow -LocalSlot $firstIntro.multiplayer.my_player_num `
+                        -MasterSlot $firstIntro.multiplayer.master_player_num -ConnectedPlayers 2 -IsMaster $firstIntro.multiplayer.i_am_master) -or
+                -not (Test-IntroHostRole -Intro $secondNow -LocalSlot $secondIntro.multiplayer.my_player_num `
+                        -MasterSlot $secondIntro.multiplayer.master_player_num -ConnectedPlayers 2 -IsMaster $secondIntro.multiplayer.i_am_master)) { return $false }
+        }
+        $advanced = $firstMp -and $secondMp -and
         [int]$firstMp.num_connected -eq 2 -and [int]$secondMp.num_connected -eq 2 -and
         $null -ne $firstSequence -and $null -ne $secondSequence -and
         $firstSequence -ne $firstStart -and $secondSequence -ne $secondStart
+        if ($advanced -and $PublicShareware) {
+            $script:publicMigrationPdata = @{ first_serial = $FirstSerial; second_serial = $SecondSerial
+                first_remote_slot = $FirstRemoteSlot; second_remote_slot = $SecondRemoteSlot
+                first_start = $firstStart; first_end = $firstSequence; second_start = $secondStart; second_end = $secondSequence }
+        }
+        return $advanced
     }
 }
 
@@ -1770,7 +1951,7 @@ function Assert-GuidebotRoutingSelection {
     param([string[]]$Serials = @($EMU1, $EMU2))
     if (-not $GuidebotRoutingMode) { return }
     foreach ($serial in $Serials) {
-        $intro = Get-GameIntrospection -Serial $serial
+        $intro = Get-GameIntrospection -Serial $serial -Fresh
         $guidebot = Get-IntroGuidebot -Intro $intro
         if (-not $guidebot -or $guidebot.routing_mode_name -ne $GuidebotRoutingMode) {
             throw "Guidebot routing on $serial did not retain host selection $GuidebotRoutingMode"
@@ -1797,8 +1978,11 @@ function Invoke-HostMigrationScenario {
         }
     }
 
-    $initialHost = Get-GameIntrospection -Serial $EMU1
-    $initialJoin = Get-GameIntrospection -Serial $EMU2
+    if ($PublicShareware) {
+        foreach ($serial in @($EMU1, $EMU2)) { Assert-PublicMigrationEngine -Serial $serial }
+    }
+    $initialHost = Get-GameIntrospection -Serial $EMU1 -Fresh
+    $initialJoin = Get-GameIntrospection -Serial $EMU2 -Fresh
     $initialGuidebot = Get-IntroGuidebot -Intro $initialHost
     if (-not (Test-IntroHostRole -Intro $initialHost -LocalSlot 0 -MasterSlot 0 `
                 -ConnectedPlayers 2 -IsMaster $true) -or
@@ -1819,6 +2003,7 @@ function Invoke-HostMigrationScenario {
         return $false
     }
 
+    if ($PublicShareware) { Save-PublicMigrationEvidence -Phase 'initial' -HostState $initialHost -JoinState $initialJoin }
     Write-Status "Original host exits to the launcher, dropping its inventory"
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_host_migration_leave.jsonc')) { return $false }
     if (-not (Wait-SoloMigratedHost -Serial $EMU2 -HostSlot 1 `
@@ -1830,7 +2015,7 @@ function Invoke-HostMigrationScenario {
     Write-Status "Slot 1 became host and reset object ownership$(if ($checkGuidebot) { ', with Guide-Bot authority' })" "Green"
     Assert-GuidebotRoutingSelection -Serials @($EMU2)
     if (-not (Wait-ForCondition -Description 'Migrated host retains departure spew and recovery records' -TimeoutSec 15 -Condition {
-                $intro = Get-GameIntrospection -Serial $EMU2
+                $intro = Get-GameIntrospection -Serial $EMU2 -Fresh
                 return $intro -and $intro.multiplayer.recovery.live -gt 0 -and
                 $intro.multiplayer.recovery.world_objects -gt 0 -and
                 $intro.multiplayer.recovery.energy_rows -gt 0 -and
@@ -1891,6 +2076,10 @@ function Invoke-HostMigrationScenario {
                 -Description "PDATA after first host migration")) {
         return $false
     }
+    if ($PublicShareware) {
+        Assert-PublicMigrationEngine -Serial $EMU1
+        Save-PublicMigrationEvidence -Phase 'first-rejoin' -HostState $script:migratedHostIntro -JoinState $script:migratedJoinIntro
+    }
     Write-Status "Former host rejoined with object parity and sustained PDATA" "Green"
     Assert-GuidebotRoutingSelection
 
@@ -1925,6 +2114,10 @@ function Invoke-HostMigrationScenario {
                 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
                 -Description "PDATA after second host migration")) {
         return $false
+    }
+    if ($PublicShareware) {
+        Assert-PublicMigrationEngine -Serial $EMU2
+        Save-PublicMigrationEvidence -Phase 'second-rejoin' -HostState $script:migratedHostIntro -JoinState $script:migratedJoinIntro
     }
     Write-Status "Second host swap, rejoin, object parity, and sustained PDATA passed" "Green"
     return $true
@@ -2878,11 +3071,23 @@ try {
     Start-EmulatorIfNeeded -Serial $EMU2 -AvdMap $AVD_MAP
     Write-Status "Both emulators online" "Green"
 
-    # Verify game data
-    foreach ($emu in @($EMU1, $EMU2)) {
-        if (-not (Ensure-StandardGameDataOnDevice -Serial $emu)) {
-            Write-Status "FAIL: Could not ensure standard game data on $emu" "Red"
-            exit 1
+    # Public runs clear admitted disposable targets and stage only pinned D1 shareware.
+    if ($PublicShareware) {
+        Assert-PublicMigrationTargets -HostSerial $EMU1 -JoinSerial $EMU2
+        $script:PublicMigrationTargetsAdmitted = $true
+        . "$PSScriptRoot/../helpers/shareware_test_data.ps1"
+        $publicConfig = Get-SharewareTestGameConfig -RepoRoot $REPO_ROOT -Game d1
+        $D1DataDirectory = Resolve-SharewareTestData -RepoRoot $REPO_ROOT -Game d1 -DataDir $D1DataDirectory
+        $publicFiles = @(foreach ($file in $publicConfig.RequiredHashes) {
+                @{ File = $file.File; Sha256 = $file.Sha256; Source = (Join-Path $D1DataDirectory $file.File) }
+            })
+        foreach ($emu in @($EMU1, $EMU2)) { Stage-PublicMigrationAssets -Serial $emu -Files $publicFiles }
+    } else {
+        foreach ($emu in @($EMU1, $EMU2)) {
+            if (-not (Ensure-StandardGameDataOnDevice -Serial $emu)) {
+                Write-Status "FAIL: Could not ensure standard game data on $emu" "Red"
+                exit 1
+            }
         }
     }
     Write-Status "Game data verified on both emulators" "Green"
@@ -3120,15 +3325,23 @@ try {
     # Start logcat capture BEFORE lan_launch so we catch all MPDIAG messages.
     $logcatFile1 = Join-Path $REPO_ROOT "temp\lan_emu1_logcat.txt"
     $logcatFile2 = Join-Path $REPO_ROOT "temp\lan_emu2_logcat.txt"
-    & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
-    & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
+    if ($PublicShareware) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $cleared = Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'sh', '-c',
+                "'logcat -c && echo DXX_MIGRATION_LOG_CLEARED'") -Seconds 5
+            if ($cleared -cne 'DXX_MIGRATION_LOG_CLEARED') { throw 'Could not clear public migration engine evidence' }
+        }
+    } else {
+        & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
+        & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
+    }
     foreach ($serial in @($EMU1, $EMU2)) {
         Adb-Dev-Timeout -Serial $serial -AdbArgs @(
             "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
         ) -Seconds 10 | Out-Null
     }
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
+    $logcatProc1 = Start-LanLogcatCapture -Serial $EMU1 -OutputPath $logcatFile1 -ErrorPath (Join-Path $REPO_ROOT "temp/lan_emu1_logcat_err.txt")
+    $logcatProc2 = Start-LanLogcatCapture -Serial $EMU2 -OutputPath $logcatFile2 -ErrorPath (Join-Path $REPO_ROOT "temp/lan_emu2_logcat_err.txt") -IncludeMatchmaking
     Start-Sleep -Seconds 1
 
     # Host (EMU1)
@@ -3186,7 +3399,8 @@ try {
     # starting the joiner's finite game-info request sequence.
     $script:hostReadyIntro = $null
     $hostNetworkReady = Wait-ForCondition -Description "Host network lobby" -TimeoutSec $TimeoutSeconds -PollMs 1000 -Condition {
-        $script:hostReadyIntro = Get-GameIntrospection -Serial $EMU1
+        $script:hostReadyIntro = Get-GameIntrospection -Serial $EMU1 -Fresh
+        if ($PublicShareware) { return Test-PublicMigrationLobby -Intro $script:hostReadyIntro -Callsign $CALLSIGN1 }
         $connected = Get-IntroNumConnected -Intro $script:hostReadyIntro
         return (
             $script:hostReadyIntro -and
@@ -3198,6 +3412,7 @@ try {
         Write-Status "FAIL: Host process started but did not enter the network lobby" "Red"
         exit 1
     }
+    if ($PublicShareware) { Assert-PublicMigrationEngine -Serial $EMU1 }
     Write-Status "Host network lobby ready" "Green"
 
     # Joiner (EMU2)

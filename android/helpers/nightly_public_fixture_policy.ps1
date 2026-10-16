@@ -24,6 +24,13 @@ function Test-SuiteMediaIndependentTest {
         $Test.Requires -ceq 'two_emulators') {
         return $arguments.Count -eq 1 -and $arguments[0] -ceq '-PublicShareware'
     }
+    if ($Test.Name -ceq 'test_lan_host_migration_public_shareware' -and
+        $Test.BaseName -ceq 'test_lan' -and $Test.Type -ceq 'ps1' -and
+        $Test.Requires -ceq 'two_emulators') {
+        return $arguments.Count -eq 4 -and $arguments[0] -ceq '-PublicShareware' -and
+            $arguments[1] -ceq '-Game' -and $arguments[2] -ceq 'd1' -and
+            $arguments[3] -ceq '-HostMigration'
+    }
     if ($Test.Name -ceq 'test_demo_import_public_first_play' -and
         $Test.BaseName -ceq 'test_demo_import' -and $Test.Type -ceq 'ps1' -and
         $Test.Requires -ceq 'emulator') {
