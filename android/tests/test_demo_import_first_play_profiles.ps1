@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -85,7 +85,7 @@ function Wait-FirstPlaySetup { param($Label, $Predicate) return $script:state }
 function Set-Content { param([Parameter(Position = 0)]$Path, [Parameter(ValueFromPipeline)]$Value, $Encoding) process { $script:outputWrites++; $script:writtenValues += [string]$Value } }
 function Adb {
     param($AdbArgs, $Seconds)
-    if ($AdbArgs -contains 'logcat') { return 'tap failure diagnostic marker' }
+    if ($AdbArgs -contains 'logcat') { return "$($script:tapAck)`ntap failure diagnostic marker" }
     if ($AdbArgs -contains 'sha256sum') { return "$($script:hash)  $($AdbArgs[-1])" }
     if ($AdbArgs -contains 'cp' -and $AdbArgs[-1] -notlike 'files/saf_provider_source/*') {
         throw 'Source staging attempted to seed the active set'
@@ -94,10 +94,12 @@ function Adb {
 $Serial = 'emulator-5554'
 $script:tapResult = $true
 $script:tapTexts = @()
+$script:wrongTapAck = $false
 function Send-TapButton {
     param($Serial, $Text, $TimeoutSec, $PollMs)
-    if ($Serial -cne 'emulator-5554' -or $TimeoutSec -ne 30 -or $PollMs -ne 500) { throw 'Tap lost its bounded explicit target' }
+    if ($Serial -cne 'emulator-5554' -or $TimeoutSec -ne 120 -or $PollMs -ne 10000) { throw 'Tap lost its bounded explicit target or safe retry interval' }
     $script:tapTexts += $Text
+    $script:tapAck = if ($script:wrongTapAck) { 'tap_button: tapped "Unrelated Button"' } else { 'tap_button: tapped "' + $Text.Trim("'") + '"' }
     return $script:tapResult
 }
 foreach ($label in @('Select Game Files or Archive to Import', 'Import to Current Set', 'Import All')) {
@@ -112,8 +114,85 @@ $failure = ''
 try { Tap-FirstPlayButton -Text 'Import All' } catch { $failure = $_.Exception.Message }
 if ($failure -cne 'Could not tap first-play button: Import All' -or
     'requested_button=Import All' -cnotin $script:writtenValues -or
-    'tap failure diagnostic marker' -cnotin $script:writtenValues) {
+    -not ($script:writtenValues -match 'tap failure diagnostic marker')) {
     throw 'Unacknowledged tap did not fail with preserved button/log diagnostics'
+}
+$script:tapResult = $true
+$script:wrongTapAck = $true
+Assert-Rejected { Tap-FirstPlayButton -Text 'Import All' } 'An unrelated tap acknowledgment accepted the import confirmation'
+$script:wrongTapAck = $false
+foreach ($importScenario in @('archive', 'loose', 'missing_ack', 'missing_copy', 'wrong_hash', 'missing_file', 'wrong_inventory')) {
+    & {
+        $fixtureExpected = @(
+            @{ File = 'descent.hog'; Sha256 = ('a' * 64) },
+            @{ File = 'descent.pig'; Sha256 = ('b' * 64) }
+        )
+        $fixtureKind = if ($importScenario -eq 'archive') { 'archive' } else { 'loose' }
+        $fixtureNames = if ($fixtureKind -eq 'archive') { @('desc14sw.exe') } else { @('descent.hog', 'descent.pig') }
+        $importEvents = [Collections.Generic.List[string]]::new()
+        $importPoll = @{ Count = 0 }
+        function Tap-FirstPlayButton {
+            param($Text)
+            $wanted = if ($fixtureKind -eq 'archive') { 'Import to Current Set' } else { 'Import All' }
+            if ($Text -cne $wanted) { throw 'Wrong production confirmation requested' }
+            $importEvents.Add('tap')
+            if ($importScenario -eq 'missing_ack') { throw 'Mock missing acknowledgment' }
+        }
+        function Wait-SetupCondition { throw 'Import confirmation must use the scroll-capable tap, not a passive viewport gate' }
+        function Adb {
+            param($AdbArgs, $Seconds)
+            if ($AdbArgs -contains 'import_picked_uris') {
+                $wantedUris = @($fixtureNames | ForEach-Object { "content://test.package.saf-test/seekable/$_" }) -join ','
+                if ($AdbArgs -cnotcontains '--esa' -or $AdbArgs[-1] -cne $wantedUris) { throw 'Post-picker callback changed' }
+                $importEvents.Add('callback')
+            }
+            if ($AdbArgs -contains 'logcat') {
+                if ($importScenario -eq 'missing_copy') { return 'No fresh copy completion' }
+                return "Imported descent.hog -> descent.hog (23 bytes)`nImported descent.pig -> descent.pig (51 bytes)"
+            }
+            if ($AdbArgs -contains 'sha256sum') {
+                if ($importEvents -cnotcontains 'tap') { throw 'Publication checked before actual confirmation' }
+                $entry = @($fixtureExpected | Where-Object { $AdbArgs[-1] -ceq "files/imported/sets/default/$($_.File)" })
+                if ($entry.Count -ne 1) { throw 'Publication checked an unpinned path' }
+                if ($importPoll.Count -eq 1 -or ($importScenario -eq 'missing_file' -and $entry[0].File -ceq 'descent.pig')) {
+                    return 'No such file or directory'
+                }
+                if ($importScenario -eq 'wrong_hash' -and $entry[0].File -ceq 'descent.pig') { return "bad-hash  $($AdbArgs[-1])" }
+                return "$($entry[0].Sha256)  $($AdbArgs[-1])"
+            }
+        }
+        function Wait-ForCondition {
+            param($Description, $TimeoutSec, $PollMs, $Condition)
+            if ($TimeoutSec -ne 90 -or $PollMs -ne 500) { throw 'Publication wait lost its bound' }
+            foreach ($attempt in 1..2) {
+                $importPoll.Count++
+                if (& $Condition) { return $true }
+            }
+            return $false
+        }
+        function Assert-FirstPlayFiles {
+            param($Expected, $Label)
+            if (($Expected.File -join ',') -cne 'descent.hog,descent.pig') { throw 'Full pinned inventory was not verified' }
+            $importEvents.Add('inventory')
+            if ($importScenario -eq 'wrong_inventory') { throw 'Mock unexpected published file' }
+        }
+        function Get-FirstPlaySetup { return (New-SetupState) }
+        $importFailure = ''
+        try { Import-FirstPlaySources -Names $fixtureNames -Kind $fixtureKind -Label 'profile' -Expected $fixtureExpected } catch {
+            $importFailure = $_.Exception.Message
+        }
+        $wantedFailure = switch ($importScenario) {
+            'missing_ack' { 'Mock missing acknowledgment' }
+            'wrong_inventory' { 'Mock unexpected published file' }
+            { $_ -in @('missing_copy', 'wrong_hash', 'missing_file') } { 'profile lacks fresh production publication with the expected hashes' }
+            default { '' }
+        }
+        $wantedEvents = if ($importScenario -in @('archive', 'loose', 'wrong_inventory')) { 'callback,tap,inventory' } else { 'callback,tap' }
+        if ($importFailure -cne $wantedFailure -or ($importEvents -join ',') -cne $wantedEvents) {
+            throw "Import scenario $importScenario bypassed confirmation/publication or failed unexpectedly: $importFailure"
+        }
+        if ($importScenario -ne 'missing_ack' -and $importPoll.Count -ne 2) { throw 'Import publication did not wait for fresh copied bytes' }
+    }
 }
 $chooserXml = '<hierarchy><node package="test.package" text="Import Files"/><node package="test.package" text="Pick One or More Files" enabled="true" bounds="[20,40][120,100]"/></hierarchy>'
 $point = Get-FirstPlayPickerChoicePoint -XmlText $chooserXml

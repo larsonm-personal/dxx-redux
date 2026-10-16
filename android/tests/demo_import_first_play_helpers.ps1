@@ -45,7 +45,10 @@ function Tap-FirstPlayButton {
     param([ValidateSet('Select Game Files or Archive to Import', 'Import to Current Set', 'Import All')][string]$Text)
     # Host argv quoting does not survive adb shell's second parse; these fixed labels contain no quotes
     $quotedText = "'$Text'"
-    if (-not (Send-TapButton -Serial $Serial -Text $quotedText -TimeoutSec 30 -PollMs 500)) {
+    # Let each five-second MP search finish before retrying its scroll/click request
+    $tapped = Send-TapButton -Serial $Serial -Text $quotedText -TimeoutSec 120 -PollMs 10000
+    $tapLog = Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-MP:I', '*:S')
+    if (-not $tapped -or $tapLog -notmatch ('tap_button: tapped "' + [regex]::Escape($Text) + '"')) {
         @(
             "requested_button=$Text"
             "remote_shell_argument=$quotedText"
@@ -119,33 +122,56 @@ function Send-FirstPlaySource {
 }
 
 function Import-FirstPlaySources {
-    param([string[]]$Names, [ValidateSet('archive', 'loose')][string]$Kind, [string]$Label)
-    # This is the production callback after a picker result, not DocumentsUI selection
-    $uris = @($Names | ForEach-Object { "content://$($script:PACKAGE).saf-test/seekable/$_" }) -join ','
-    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
-        '--es', 'command', 'import_picked_uris', '--esa', 'uris', $uris) | Out-Null
-    $button = if ($Kind -eq 'archive') { 'Import to Current Set' } else { 'Import All' }
-    if (-not (Wait-SetupCondition -ButtonsOnly -TimeoutSeconds 120 -PollMs 500 -Predicate {
-                param($s) @($s.buttons | Where-Object { $_.text -ceq $button -and $_.enabled }).Count -eq 1
-            })) { throw "$Label did not expose the production import confirmation" }
-    Tap-FirstPlayButton $button
-    if (-not (Wait-SetupCondition -ButtonsOnly -TimeoutSeconds 90 -PollMs 500 -Predicate {
-                param($s) @($s.buttons | Where-Object text -CEQ $button).Count -eq 0 -and
-                @($s.buttons | Where-Object { $_.text -like '*Select Game Files or Archive to Import*' -and $_.enabled }).Count -eq 1
-            })) { throw "$Label did not finish publishing its selected files" }
-    $importLog = Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-Setup:I', '*:S')
-    $importLog | Set-Content (Join-Path $firstPlayOutput "$Label-import.log") -Encoding utf8
-    if ($Kind -eq 'loose') {
-        # Tap helper cleared logcat immediately before confirmation; old files cannot prove a successful repeat
-        foreach ($name in $Names) {
-            $escaped = [regex]::Escape($name)
-            if ($importLog -notmatch "Imported $escaped -> $escaped \([0-9]+ bytes\)") {
-                throw "$Label lacks a fresh production copy completion for $name"
+    param([string[]]$Names, [ValidateSet('archive', 'loose')][string]$Kind, [string]$Label,
+        [Parameter(Mandatory)][array]$Expected)
+    try {
+        # This is the production callback after a picker result, not DocumentsUI selection
+        $uris = @($Names | ForEach-Object { "content://$($script:PACKAGE).saf-test/seekable/$_" }) -join ','
+        Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+            '--es', 'command', 'import_picked_uris', '--esa', 'uris', $uris) | Out-Null
+        $button = if ($Kind -eq 'archive') { 'Import to Current Set' } else { 'Import All' }
+        # The result card can be below the viewport; the existing tap helper scrolls
+        # to it and requires an actual click acknowledgment, not mere button absence
+        Tap-FirstPlayButton $button
+        $publication = @{ Log = '' }
+        $published = Wait-ForCondition -Description "$Label production publication" -TimeoutSec 90 -PollMs 500 -Condition {
+            $publication.Log = Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-Setup:I', 'DXX-MP:I', '*:S')
+            if ($Kind -eq 'loose') {
+                # The tap helper cleared logcat before confirmation; old files cannot prove a repeat
+                foreach ($name in $Names) {
+                    if ($publication.Log -notmatch ("Imported " + [regex]::Escape($name) + ' -> ' +
+                            [regex]::Escape($name) + ' \([0-9]+ bytes\)')) { return $false }
+                }
             }
+            foreach ($file in $Expected) {
+                $path = "$($script:DEFAULT_SET_DIR)/$($file.File)"
+                $actual = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', $path)
+                if ($actual -cne "$($file.Sha256)  $path") { return $false }
+            }
+            return $true
         }
+        $publication.Log | Set-Content (Join-Path $firstPlayOutput "$Label-import.log") -Encoding utf8
+        if (-not $published) { throw "$Label lacks fresh production publication with the expected hashes" }
+        Assert-FirstPlayFiles -Expected $Expected -Label "$Label-published"
+        [ordered]@{ kind = $Kind; files = $Names; callback = 'import_picked_uris'; provider = 'SafTestProvider'; confirmation = $button } |
+            ConvertTo-Json -Depth 5 | Set-Content (Join-Path $firstPlayOutput "$Label-import.json") -Encoding utf8
+    } catch {
+        # Preserve the actual post-import UI before the owner's cleanup stops the app
+        try {
+            Get-FirstPlaySetup | ConvertTo-Json -Depth 100 |
+                Set-Content (Join-Path $firstPlayOutput "$Label-failure-setup.json") -Encoding utf8
+            Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', 'files/setup_buttons.json') | Out-Null
+            Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT', '--ez', 'buttons_only', 'true') | Out-Null
+            Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/setup_buttons.json') |
+                Set-Content (Join-Path $firstPlayOutput "$Label-failure-buttons.json") -Encoding utf8
+            $dump = '/sdcard/first-play-picker.xml'
+            Adb -AdbArgs @('shell', 'rm', '-f', $dump) | Out-Null
+            Adb -AdbArgs @('shell', 'uiautomator', 'dump', $dump) -Seconds 10 | Out-Null
+            Adb -AdbArgs @('shell', 'cat', $dump) |
+                Set-Content (Join-Path $firstPlayOutput "$Label-failure-ui.xml") -Encoding utf8
+        } catch { Write-Warning "Could not capture import failure UI: $_" }
+        throw
     }
-    [ordered]@{ kind = $Kind; files = $Names; callback = 'import_picked_uris'; provider = 'SafTestProvider'; confirmation = $button } |
-        ConvertTo-Json -Depth 5 | Set-Content (Join-Path $firstPlayOutput "$Label-import.json") -Encoding utf8
 }
 
 function Test-FirstPlayDocumentsUiCancel {
@@ -282,7 +308,7 @@ function Invoke-PublicFirstPlay {
         # run_test suppresses graphics onboarding and clears saves; this tests cold content/pilots, not that dialog
         Invoke-FirstPlayPhase empty
         Assert-FirstPlayFiles -Expected @() -Label 'cold-empty'
-        Import-FirstPlaySources -Names @($configs[0].Archive) -Kind archive -Label 'd1-archive'
+        Import-FirstPlaySources -Names @($configs[0].Archive) -Kind archive -Label 'd1-archive' -Expected $configs[0].RequiredHashes
         Wait-FirstPlaySetup -Label 'd1-archive' -Predicate { param($s) Test-FirstPlayReadiness $s $true $false } | Out-Null
         Assert-FirstPlayFiles -Expected $configs[0].RequiredHashes -Label 'd1-archive'
         Invoke-FirstPlayPhase d1
@@ -291,16 +317,18 @@ function Invoke-PublicFirstPlay {
             '--es', 'command', 'clear_set', '--es', 'name', 'default') | Out-Null
         Wait-FirstPlaySetup -Label 'loose-empty' -Predicate { param($s) Test-FirstPlayReadiness $s $false $false } | Out-Null
         Assert-FirstPlayFiles -Expected @() -Label 'loose-empty'
-        Import-FirstPlaySources -Names @('descent.hog') -Kind loose -Label 'incomplete-hog'
+        Import-FirstPlaySources -Names @('descent.hog') -Kind loose -Label 'incomplete-hog' `
+            -Expected @($configs[0].RequiredHashes | Where-Object File -CEQ 'descent.hog')
         Wait-FirstPlaySetup -Label 'incomplete-hog' -Predicate { param($s) Test-FirstPlayReadiness $s $false $false } | Out-Null
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes | Where-Object File -CEQ 'descent.hog') -Label 'incomplete-hog'
         foreach ($label in @('loose-d1', 'repeat-loose-d1')) {
-            Import-FirstPlaySources -Names $configs[0].RequiredFiles -Kind loose -Label $label
+            Import-FirstPlaySources -Names $configs[0].RequiredFiles -Kind loose -Label $label -Expected $configs[0].RequiredHashes
             Wait-FirstPlaySetup -Label $label -Predicate { param($s) Test-FirstPlayReadiness $s $true $false } | Out-Null
             Assert-FirstPlayFiles -Expected $configs[0].RequiredHashes -Label $label
         }
         Invoke-FirstPlayPhase d1_in_d2
-        Import-FirstPlaySources -Names @($configs[1].Archive) -Kind archive -Label 'd2-archive'
+        Import-FirstPlaySources -Names @($configs[1].Archive) -Kind archive -Label 'd2-archive' `
+            -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes)
         Wait-FirstPlaySetup -Label 'both-demos' -Predicate { param($s) Test-FirstPlayReadiness $s $true $true } | Out-Null
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'both-demos'
         Invoke-FirstPlayPhase d2
