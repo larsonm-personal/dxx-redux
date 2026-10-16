@@ -216,6 +216,20 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 # Public coverage is deliberately one native-D1 shareware migration scenario.
+function Start-LanLogcatCapture {
+    param([string]$Serial, [string]$OutputPath, [string]$ErrorPath, [switch]$IncludeMatchmaking)
+    $filters = @('-s', $Serial, 'logcat', '-s', 'DXX-MP:*', 'DXX-Redux:*',
+        'DXX-DLOG:*', 'DXX-Automate:*', 'dxxredux:*', 'AndroidRuntime:*', 'LocalhostProxy:*')
+    if ($IncludeMatchmaking) { $filters += 'MatchmakingService:*' }
+    $options = @{
+        FilePath = $ADB; ArgumentList = $filters; PassThru = $true
+        RedirectStandardOutput = $OutputPath; RedirectStandardError = $ErrorPath
+    }
+    # WindowStyle is unsupported by Start-Process on non-Windows PowerShell.
+    if (Test-RegressionWindowsHost) { $options.WindowStyle = 'Hidden' }
+    return Start-Process @options
+}
+
 function Assert-PublicMigrationArguments {
     param([System.Collections.IDictionary]$Arguments, [string]$SelectedGame, [bool]$Migration,
         [string]$Mission, [int]$Level, [string]$HostName, [string]$JoinName)
@@ -3326,8 +3340,8 @@ try {
             "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
         ) -Seconds 10 | Out-Null
     }
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "DXX-DLOG:*", "DXX-Automate:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -WindowStyle Hidden -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
+    $logcatProc1 = Start-LanLogcatCapture -Serial $EMU1 -OutputPath $logcatFile1 -ErrorPath (Join-Path $REPO_ROOT "temp/lan_emu1_logcat_err.txt")
+    $logcatProc2 = Start-LanLogcatCapture -Serial $EMU2 -OutputPath $logcatFile2 -ErrorPath (Join-Path $REPO_ROOT "temp/lan_emu2_logcat_err.txt") -IncludeMatchmaking
     Start-Sleep -Seconds 1
 
     # Host (EMU1)

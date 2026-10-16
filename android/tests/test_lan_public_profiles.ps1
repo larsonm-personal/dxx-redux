@@ -5,7 +5,7 @@ Set-StrictMode -Version Latest
 $errors = $null
 $owner = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'test_lan.ps1'), [ref]$null, [ref]$errors)
 if ($errors.Count) { throw "LAN owner parse errors: $errors" }
-foreach ($name in @('Assert-PublicMigrationArguments', 'Assert-PublicMigrationTargets', 'Stage-PublicMigrationAssets',
+foreach ($name in @('Start-LanLogcatCapture', 'Assert-PublicMigrationArguments', 'Assert-PublicMigrationTargets', 'Stage-PublicMigrationAssets',
         'Test-PublicMigrationLobby', 'Test-PublicMigrationState', 'Test-PublicMigrationEngineLog', 'Cleanup', 'Test-IntroHostRole', 'Get-IntroMultiplayer', 'Get-IntroPdataSequence', 'Wait-BidirectionalPdata')) {
     $definition = $owner.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
@@ -13,6 +13,34 @@ foreach ($name in @('Assert-PublicMigrationArguments', 'Assert-PublicMigrationTa
     if (-not $definition) { throw "Missing owner function $name" }
     . ([scriptblock]::Create($definition.Extent.Text))
 }
+# Exercise the exact production launcher under both host-platform branches.
+$ADB = 'fixture-adb'
+function Test-RegressionWindowsHost { return $script:windowsCaptureHost }
+function Start-Process {
+    param($FilePath, $ArgumentList, [switch]$PassThru, $RedirectStandardOutput,
+        $RedirectStandardError, $WindowStyle)
+    $script:captureOptions = $PSBoundParameters
+    return [pscustomobject]@{ Id = 123 }
+}
+foreach ($windows in @($false, $true)) {
+    $script:windowsCaptureHost = $windows
+    foreach ($matchmaking in @($false, $true)) {
+        $process = Start-LanLogcatCapture -Serial emulator-5554 -OutputPath capture.log -ErrorPath capture.err -IncludeMatchmaking:$matchmaking
+        $actual = $script:captureOptions
+        if ($process.Id -ne 123 -or $actual.FilePath -cne 'fixture-adb' -or -not $actual.PassThru -or
+            $actual.RedirectStandardOutput -cne 'capture.log' -or $actual.RedirectStandardError -cne 'capture.err') {
+            throw 'Logcat capture lost process ownership or redirected evidence'
+        }
+        if ($actual.ContainsKey('WindowStyle') -ne $windows -or ($windows -and $actual.WindowStyle -cne 'Hidden')) {
+            throw 'Logcat capture WindowStyle is not Windows-only'
+        }
+        $expected = @('-s', 'emulator-5554', 'logcat', '-s', 'DXX-MP:*', 'DXX-Redux:*',
+            'DXX-DLOG:*', 'DXX-Automate:*', 'dxxredux:*', 'AndroidRuntime:*', 'LocalhostProxy:*')
+        if ($matchmaking) { $expected += 'MatchmakingService:*' }
+        if (($actual.ArgumentList -join '|') -cne ($expected -join '|')) { throw 'Logcat capture filters changed' }
+    }
+}
+Remove-Item Function:Start-Process
 $public = $owner.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'PublicShareware' }
 $game = $owner.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'Game' }
 if (-not $public -or $public.DefaultValue -or $game.DefaultValue.SafeGetValue() -cne 'd2') { throw 'Retail defaults changed' }
