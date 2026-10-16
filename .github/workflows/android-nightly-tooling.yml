@@ -1,4 +1,4 @@
-name: Nightly Android tooling lane
+name: Android and JVM tests
 
 on:
   workflow_call:
@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   android:
-    name: ${{ inputs.lane }}
+    name: Run selected tests
     runs-on: ubuntu-24.04
     # Provision/build time is separate from the approximately 45-minute test sample
     timeout-minutes: 90
