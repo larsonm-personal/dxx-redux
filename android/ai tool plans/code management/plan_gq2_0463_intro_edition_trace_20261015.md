@@ -1,0 +1,47 @@
+# Chunk 0463 intro input and edition trace, 2026-10-15
+
+Diagnosis and plans only. Previous goal turn made progress with recording-session PASS122. This checkpoint freshly traces the intro fixture, paired native title consumers, selected movie handling, shared input admission and edition selection. Four review/publication gates remain open; canonical0463TODO.
+
+## What the fixture actually injects and asserts
+
+Whole current intro fixture is59lines, both games/shareware admitted. It writes skip_intro_movie=false, launches, waits intro_active=true, repeats default skip_intro, then requires menu/inactive. It relaunches and repeats with button0. The parser defaults button=-1; whole selected STEP_SKIP_INTRO branch exits immediately once intro is inactive, fails at its timeout, otherwise repeats injections separated by post_delay_ms.
+
+Whole inject_mouse_tap pushes SDL left down/up at1,1 and ignores SDL_PushEvent results. This route does not call Activity dispatchTouchEvent, SkipButtonView, normalized touch conversion or the native intro preference pill. It is native mouse-event dismissal coverage. Whole inject_button on Android calls android_automation_joystick_button; the latter tracks the source and calls joy_button_handler directly, rather than JNI queueing. Selected paired joystick handler tails preserve the final Android button ID, update joystick state and synchronously event_send down/up. Thus the controller phase is synthetic native button0 coverage, not physical Android A mapping or Activity routing. The complete input path/caller lifetime/event_send implementation and all bounds are not audited here.
+
+The two phases send paired down/up, not held input crossing a transition. They assert eventual intro closure/menu only, not accepted-input counts, current screen transition generation, input-triggered completion reason, minimum guard duration, stale request rejection or release gating. Neither physical touch nor hardware timing proof follows.
+
+## Paired title lifecycle and actual admission
+
+Whole paired show_title_screen sets a3second timer, creates the window, begins MOVIE admission with allow_keys, runs the event loop, and ends admission afterward. Whole title handlers close on admitted primary mouse down or guarded joystick down, preserve key/default handling and also close on timer expiry. Only button0 is injected by this fixture; handlers' broader joystick behavior is not certified by that test.
+
+Whole D1 show_titles publishes intro_active around three title screens and clears it at done; per-screen skip preference checkpoints and title music request behavior are retained. Whole D2 show_titles first handles D1-in-D2, otherwise attempts bundler/intro/title/OEM movies with static-screen fallbacks, checks skip preferences between stages and clears intro_active at done. Whole d1_in_d2_show_titles is source context only: this fixture declares d1/d2, not the separate hybrid game selection. Preserve startup song request logic; it is not audio playback proof.
+
+Selected MovieHandler341-392 admits startup mouse taps but consumes ordinary in-game taps; button0/mouse go through shared admission, then movie abort/window close remains locally owned. Escape handling is separate. The complete movie decode loop, its begin/end caller and pause/cleanup remainder were not read in this checkpoint.
+
+Whole native shared policy functions203-341 check held touch/joystick release and suppression deadline, arm before publishing a new generation, reset outstanding requests on begin/end, require ready/kind/deadline for event admission and generation-match for explicit requests. Whole joystick tracker suppresses both down and matching up when a press occurs during the guard. This fixture does not assert those negative cases. Native intro touch-pill634-657 was selected only to show a different route that persists skip preference and synthesizes Escape; no whole-touch-function or JNI exception/durability credit.
+
+Whole applySkipIntroPref reads the launcher-provided preference (or forces it for multiplayer) and calls native setter under exception handling; the native setter stores the flag. Selected introspection exposes the actual intro flag and suppression counters; screen_mode_name maps SCREEN_MENU to menu. The fixture never asserts suppression counters or intro_skip_applied.
+
+## Unresolved causal acceptance gap
+
+D1's title screens self-close after3seconds each. The fixture permits20seconds for the whole skip step and observes only eventual inactive/menu. Those source-defined outcomes can therefore occur without an accepted dismissal event; there is no per-screen acceptance counter or before/after causal assertion to distinguish timer completion. This is an unresolved false-pass candidate for later whole-owner reconciliation, not a newly published finding or runtime reproduction. Do not quietly treat eventual menu as proof touch/controller input worked, and do not subsume it under a music-only owner.
+
+Whole current BR-0649 was read. It concerns request-versus-active title playback in a different music fixture; it remains contextual, not the owner of this causal-input candidate. The intro fixture has no audio assertion or music promise. No new rating/status/quality disposition is assigned here. Current material owner search and remaining harness reconciliation are still required before disposition.
+
+## Edition, dependency and catalog boundaries
+
+Whole Get-TestScriptDataEdition requires shareware-audited scripts to retain retail dependencies, rejects forced shareware for unmarked scripts, defaults marked scripts to shareware and unmarked scripts to retail. Thus the later _shareware additions are functional admission changes: axes and intro default to public data, recording remains retail. Whole Get-ScriptDeps substitutes shareware deps or returns declared retail deps. Whole shareware config binds package identities to source manifest/oracle and lists pinned required hashes, with distinct D1/D2 mission titles. No source package/media/payload was read or executed.
+
+Whole Get-SharewareAutomationDeps intentionally provisions both games. Whole initializer validates host inputs before clearing the disposable set; whole clear helper confines the expected device target and checks absence, while whole device assertion checks each staged SHA256. Selected run_test recovery wrapper initializes the correct edition, resolves deps, verifies isolated data and retries after emulator recovery. Selected preflight rejects PreserveState for marked scripts even when selecting retail override. No actual staging or recovery executed.
+
+Selected resolver input/vars branch reads per-game variables; selected shareware branch overrides MISSION with public mission title and optional per-game overrides. It leaves GAME from the fixture, so intro still launches d1/d2. Full variable expansion/cycle policy, game enumeration, script staging and native activation/outcome correlation remain follow-up. Selected catalog rows register recording in gameplay_scenarios and axes/intro in input_preferences; this is source registration, not a master-suite run or complete catalog validation.
+
+## Original intent and read limits
+
+Three whole original plans were read. plan_intro_test_cleanup retained the input fixture separately because preference coverage was folded into engine preferences; historical filenames are json5. Do not delete it as a duplicate. intro_movie_skip_overlay explicitly preserves launch tap dismissal versus protected mission taps and describes separate real-movie overlay coverage. Current selected helper confirms native mouse injection, not an Android overlay touch test. Centralization research preserves desktop behavior and local screen actions, requires fresh press after release/guard and generation-tagged requests, and specifies a regression matrix broader than this fixture. Historical checked builds/test claims are not fresh acceptance.
+
+Guessed android_screen_advance.c and TouchOverlay.kt were absent; recovered actual header/implementation and fixture-relevant routes. One source-print batch stopped at an unrelated non-ASCII separator; subsequent requested source bodies were rerun explicitly with UTF-8, and the incomplete tail was excluded. Partial source/locator searches give no whole-read credit. Explicit captured contexts alone support this checkpoint.
+
+NEXT remaining launcher/native script admission, variable/dependency resolver tails, current result correlation, native pilot binding persistence and whole material owners/quality rows; reconcile the unresolved causal-input gap without duplicating an existing root. Then consolidated direct unpooled disposition/final/proposed/published/terminal mounted proof. Source gate only closed/four open/canonical0463TODO. Broad165queue/preflights/sweeps/investigations/recovery/globalTSV/0327snapshot/currentHEADsupplement/closure remain required.
+
+HEAD1b26c43cf928f9798513c0652a833c28f50a9e98/product unchanged. Canonical462DONE165TODO627/1278terminal ranks320findings306remediations306fixranks12investigations unchanged. No new finding/remediation/status/rating/runtime/inheritedsaving/evidenceappend/Drivegeneration. Last mounted receipt historical; no fresh remote cloud sync/future task health proof. No product/test/helper edit/execution/build/test/probe/formatter/generator/network/device/provider/media/payload/staging/commit; inline evidence/docs/retention only. Goal active.

@@ -1,0 +1,25 @@
+# Chunk 0471 assigned source and enclosing scripts, 2026-10-15
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Previous turn completed0470publication/terminal mounted backup. This turn revalidatedHEAD/product and current canonical digests against that publication, captured scope inventory and independently replayed it PASS54, then read all assigned frozen additions, complete enclosing/current bodies and full later delta. No previous chunk source package is substituted.
+
+## Exact read coverage
+
+Assigned661frozen lines: MSAA901-988 (88), D2save-source1-91, track-controls1-199 and newmenu1-283. MSAA1-900 is freshly read enclosing context, not900extra assigned lines. Whole current bodies: MSAA988 read1-330/331-660/661-988, restore91 and track199 whole, newmenu284whole =1562current versus1561frozen. All four base and1996original paths absent.
+
+Whole addition patches contain1561add0del/four hunks and1585physical patch rows. Read1-800 and801-1585; combined second output clipped music middle, so rows1215-1255 were explicitly recovered before accepting the whole patch. Assigned projection661add0del/four hunks plus900enclosing MSAA additions. Three current files equal frozen text; newmenu alone adds _shareware:true,1add0del/one hunk. Complete delta read; exact reversal reconstructs its frozen body. No removed source or deleted whole base exists in this scope.
+
+## Script contracts retained for consumer tracing
+
+MSAA's enclosing body initializes accepted tuple and all three configs, selects RGB565/RGBA8888 through a color parameter, loads both base games, accepts2/4 trials through controller preconditions before slow color probes, and checks actual effective samples plus four control/resolve stages/restoration. Menu probe checks after-blit and before-swap with direct/offscreen viewport variants. It later disables runtime MSAA while accepted remains4, uses D2 freespace level3, accepts2/4 again and checks scene marker/main/cockpit/missile subviews. Assigned tail901-988 completes4-sample scene assertions, D2 subview counts/error0 and final current0/accepted4. Actual probe reset/run identity, marker/restoration/error producers and composition/swap ownership remain pending; script PASS text is not pixel/runtime proof.
+
+D2 save-source imports known Obsidian, sets CD source2/preferfalse, requests a menu save, selects it, changes source to mission1/prefertrue, then loads through the restore menu and requires source2/preferfalse. This is a deliberate conflicting pre-load state. Actual save identity/generation, completion/persistence, source restoration precedence and playback controls need native/launcher consumers; no save payload is read or executed here.
+
+Track-controls D2 preview selects builtin source0/track2, checks duration/advancing position, seeks75percent then requires position>130000, pauses/resumes/stops. Both game flows explicitly choose MIDI, SF2, default soundfont and measured-sc55-balanced EQ before gameplay. They assert tracks5/6 next/previous/play, EQ2/sourcegain0; D1tracks11/12 require playing/nonzeropeak/no clipping. FM/HMQ comments do not make this an FM renderer test; preserve the explicit SF2 calibration and reconcile whole existing renderer/oracle owners. Producer freshness, delivery, counter reset and source lifetime remain pending.
+
+Newmenu sets3:4/1280x960 common andD2 config, exercises pilot entry then main menu interaction regions, zoom/pan andD2 high-resolution direct-render fields. It exits/relaunches to assert actual listbox, then newmenu, AF and viewport changes, legacy joystick ownership, D2reticle scroll box, level1 and pause-menu return. Some keyboard phases are log/introspect plus eventual menu assertions; actual viewport/IME/render/canvas and interaction consumers must establish what those observations prove. Current shareware default retains declared retaildeps and needs resolver/mission qualification.
+
+## Next and limits
+
+Trace actual scene/menu probes and renderer hooks, save/load music preference persistence and command/snapshot producers, MIDI preview and native track/EQ/peak/counter oracles, menu scale/interaction callbacks and harness params/edition/freshness/deadline/cleanup. Read whole material existing owners and original/prior plans before any new disposition. Then synthesize direct unpooled decision and immutable publication/Drive proof.
+
+Only the source gate may close after independent source audit. Canonical470DONE157TODO627/1286terminal ranks321findings307remediations307fixranks12investigations unchanged;0471 remainsTODO. Ledger823909530bytes unchanged, prior0470Drive proof historical. HEAD1b26c43cf928f9798513c0652a833c28f50a9e98/productempty. No ledger append, new root/remediation/status/rating/runtime/original saving or new Drive generation. Broad queue/preflights/sweeps/investigations/recovery/globalTSV/0327snapshot/currentHEADdirty-untracked supplement/closure remain required. No product/test/helper edits or execution, build/test/probe/formatter/generator/network/device/provider/media/payload/staging/commit.

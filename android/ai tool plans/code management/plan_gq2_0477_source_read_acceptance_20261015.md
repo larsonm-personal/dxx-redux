@@ -1,0 +1,19 @@
+# Chunk 0477 source read acceptance, 2026-10-15
+
+All seven whole current bodies887lines and whole frozen823 additions read, including865 physical patch rows1-440/441-865. Seven addition hunks823add0del; all paths absent from base and1996 original. Whole later deltas78add14del17hunks read. Initial combined current output clipped; whole save/load and the other affected batch bodies recovered in bounded output before credit.
+
+Profile Uneasy4 is launch-only: seeded random preview with named Uneasy4.zip and uneasy4_render_profile.zip, no in-script visibility/identity assertion. Preserve profiling purpose; actual preview request source selection and success belong to launcher/harness trace.
+
+D2 Abort verifies live mine, front window then native Abort Game transition to menu/no in_game/level0; launcher must offer auto_abort L1 and enabled resume/explorer buttons. Later delta adds shareware metadata only. It does not itself restore the abort save.
+
+Save/load dispatch covers synthetic android_game_request commands auto_minimize, difficulty, pause/overlay_pause, save menu slot contents/selection, load cancellation and game menu; quick save/alter difficulty/quick load proves restored difficulty and D2 route metadata status. Later repairs add shareware, move COMPLETE to actual end, retain comment explaining rebuilt window, and add abort/main-menu restore plus startup resume/repeated abort-reload. Final held primary-fire energy decrease verifies simulation/input resumed, not only rendered/front state. Preserve this stronger behavior and shared native format authority.
+
+SDK lifecycle starts actual level and automap rendered-edge check, then log markers request two host background/resume cycles (second lock screen). It requires exact EGL recreate counts1/2 and generation>=4/6, committed checkpoint, foreground/running and park/wake counters. Later delta adds pause.simulation_paused=true/input_allowed=false/reasons2 for both cycles, followed by escape/front gameplay. These are menu-pause semantics to trace; do not treat foreground alone as unpaused or log as actual HOME execution.
+
+Anniversary support script declares test_disc_content_import owner, builds disposable set, pauses metadata precompute, imports exact device ISO path and waits complete/one managed mod owner/readiness. It launches Mad Decorator level1 and checks search path contains missions, then returns to default and deletes set. Source hash/ISO ownership, actual loose level source and failure cleanup need owning runner/import consumer trace; script body alone does not prove content identity or finally cleanup.
+
+Objective readiness originally D2 only; current delta adds paired vars/D1 dependency, game-specific navigation/levels and D2-only cold-state/adoption predicates. D1 can already be ready before opening map. Both need independent secret labels/edges and eventual objective steps/labels while map stays open. D2 asserts refresh>0/no adoption failures/progress<=1000. Preserve semantically different cold/warm behavior and long240second readiness budget; actual runner master timeout and worker/adoption producer remain to trace.
+
+Missing-pilot autosave resume checks exit save kind/game/description/level and200x100 thumbnail metadata, direct resume, offer re-show, clear_pilot_files then resume with exact startup save-path log, then offer again. Later shareware metadata overrides D2 SAVE_PATH to d2demo. Metadata presence is not full save equivalence or thumbnail pixel validation; clear-pilot and native resume semantics need actual consumers.
+
+No product/test/helper edits or execution, runtime acceptance, payload hashing, finding/remediation/status/rating change or inherited saving. Consumer tracing/whole existing owners/prior plans/direct disposition/publication remain. Retain distinct scenario contracts and current repairs rather than merging fixtures or adding arbitrary sleeps.

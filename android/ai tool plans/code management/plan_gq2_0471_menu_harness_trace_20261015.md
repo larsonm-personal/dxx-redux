@@ -1,0 +1,43 @@
+# Chunk 0471 menu input and harness trace, 2026-10-15
+
+Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. The previous turn advanced the rendering consumer trace with replay186. Current HEAD/product and canonical identities must be revalidated before accepting this source checkpoint. No product/test/helper execution or edit, payload read, runtime proof or new finding.
+
+## Menu state, keyboard and viewport
+
+Whole current newmenu script was reread. It types test, accepts pilot creation, checks menu interaction metadata, applies zoom/pan, asserts D2 high-resolution direct rendering, relaunches to an actual listbox then newmenu, changes AF and dimensions, opens legacy joystick and D2 reticle scroll menus, launches level1 and returns through a pause menu. Keep these distinct behavioral stages; no blanket duplicate-script deletion is justified.
+
+Paired newmenu interaction publishers require the front window, bound the visible nontext regions to64 and add a scroll-owned canvas region for scroll menus. Paired listbox publishers bound visible entries and publish tappable regions for the front listbox. Paired kconfig publishers mark its region scroll-owned and call shared scaled drawing. Kind/count assertions inspect native region publication, not successful physical taps or correct item identity under every gesture schedule.
+
+Whole android_menu_scale.c891lines was read, including scale clamps/destination calculation, temporary scaled drawing, bitmap paths, publication and input classification. Target fill is0.85; zoom is clamped250..3000, pan-10000..10000, effective scale and render dimensions are bounded in their consumers. The viewport action calls this setter then advances. Introspection reads actual scale fields and interaction snapshot counts/generation. direct_render reports the selected draw path; it does not prove a GPU upload, visual text quality or a successful displayed frame.
+
+Interaction snapshots are copied under a spin lock into alternating buffers. Generation changes for active/kind/owner/region differences; snapshot also carries the scale state. Screen-point classification adds keyboard offset, maps destination to source coordinates and combines matching region flags. This is actual ownership/coordinate data, not a fresh complete touch/router/mixer audit. Keep existing controller/gesture generation acceptance separate.
+
+Paired draw blocks update selected input-field Y with scroll offset. Only a front input menu without an active drag requests keyboard opening; a front noninput menu hides it. Native requested state is set before Java callback completion. Native keyboard height is independently supplied from Kotlin. Offset calculation maps occlusion to canvas units, remaps field Y through menu scaling and clamps the shift to occlusion height. Whole ogl_viewport_android.c uses logical drawable size, applies keyboard offset in GL viewport coordinates and fills the exposed keyboard gap.
+
+Selected MainActivity.showKeyboard posts focus/text/type and IME requests on UI, then polls20attempts; hide removes the stored runnable, deactivates proxy, hides IME and resets native height. This checkpoint does not freshly read the poll body or complete GameInputConnection. Whole prior0462keyboard plan was reread as historical reconciliation context; its GQR0274 request-generation, BR0044 JNI cleanup, BR0465 composition, BR0245 event-admission and BR0492 controller-ownership references still require live whole-owner reconciliation before final disposition.
+
+The assigned keyboard stage logs/introspects but does not assert measured keyboard height, text, field Y, offset, real IME composition or touch roundtrip. Its later scale_blit_active assertion reads menu scaling, not IME visibility. Preserve eventual native navigation and direct-render metadata coverage without claiming automated IME/viewport acceptance.
+
+## Edition, resolution and scheduling
+
+Whole run_test.ps1468lines and run_shareware_tests.ps155lines were read, plus selected actual edition/dependency/resolver/catalog/master functions. Get-TestScriptDataEdition defaults an audited _shareware script to shareware and requires retained explicit retail dependencies; explicit retail remains available. Get-ScriptDeps substitutes the paired pinned public fixture dependencies for shareware. Resolve-TestScript overrides MISSION with that edition's title, then filters when before resolving retained values. Thus current newmenu _shareware=true is effective behavior, not a decorative label or a reason to report missing retail assets.
+
+Resolver merges per-game variables and selected parameter option overrides, recursively substitutes string values, rejects unresolved/cyclic variables, validates encoded strict JSON, and writes a fixed .resolved basename. Missing/unparseable input can return the original path. run_test performs a later unresolved-placeholder check; exact resolver/session source admission remains an existing-owner obligation. No resolver or generated file was executed or produced.
+
+The four scripts are present in relevant shared coverage categories. Master discovers standalone JSONC scripts, derives child budget from timing fields and launcher minimum600s, then composes a parent budget from child plus per-game startup overhead and game count. Explicit child timeout is forwarded. run_test derives a timing estimate only when its timeout remains300 and applies the same launcher minimum. Catalog presence and calculated budgets are source evidence, not completed execution.
+
+## Staging, result identity, deadlines and retirement
+
+run_test creates a GUID run ID and unique device filename after resolution, stages before broadcast, and passes ExpectedRunId to Watch-AutomationResult. Push/copy/remove use Adb; staging retries cp and accepts ls presence. Whole selected Adb/Adb-Timeout body bounds process wait and captures streams but does not inspect ExitCode. Unique filename and run ID do not prove exact staged bytes or successful required transport operations. Preserve current correlation while retaining BR0593 staging and required command-outcome acceptance.
+
+Whole Watch-AutomationResult1823-2234 was read. It starts a stopwatch, checks durable results against the exact ordinal run ID, rejects mismatched IDs, supports correlated launcher continuation, and accepts uncorrelated logcat PASS/FAIL only when ExpectedRunId is absent. It can consume a terminal durable result after launcher/game processes exit. Existing current result correlation must not be described as absent.
+
+Its initial timeout can extend for cache activity/progress, post-cache grace and increasing automation sequence. These progress observations are not all tied to ExpectedRunId, and the grace conditions mean TimeoutSeconds alone is not an immutable maximum wall-clock duration. Master outer process budget remains independent. This source fact is retained for existing deadline/progress owners; do not allocate a new timeout finding before whole reconciliation or claim a fresh observed timeout.
+
+run_test registers idempotent cleanup for engine exit and invokes it in finally. It stops its power session, honors LeaveRunning and attempts Stop-AppAndWait while catching errors. That helper discards force-stop output and Wait-ProcessDead result. Preserve cleanup paths while requiring truthful retirement under failure/cancellation through BR0543. Diagnostic final introspection does not determine correlated PASS, and selected fixed-delay setup reads remain subject to BR0588 freshness.
+
+## Read limits and continuation
+
+One Windows wildcard locator failed and supplied no body evidence. Combined output clipped a prior0462plan paragraph, recovered by standalone whole read. Raw source inspection, not helper execution, supplied all credit. Shared menu scale whole-file credit follows complete reads1-155/156-350/351-408/409-504/505-524/525-891; run_test complete disjoint reads cover1-468. Paired engine/kconfig/JNI/Kotlin/master/shared-helper contexts are selected boundaries, not whole subsystems.
+
+Next finish remaining scene-camera/button producers and lower playback; reconcile whole live material BR/quality definitions and original/prior plans, then audit the union of0471source and consumer packages and author a direct unpooled disposition. Only after that close review gates, prepare immutable final package, replay proposed/published canonical operations and verify terminal mounted Drive backup. Chunk remains TODO with only source gate closed. Broad queue/preflights/sweeps/investigations/older recovery/current-head supplement/global reconciliation/closure remain active.
