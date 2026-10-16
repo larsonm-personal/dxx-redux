@@ -74,8 +74,19 @@ def classify_cases(cases, *, light=False):
     # cause an endless rerun of public leaves in the same commit's coverage sweep.
     failed = [c for c in cases if c["status"] == "FAIL"]
     exclusions = [c for c in cases if c["status"] in {"SKIP", "BLOCKED"}]
-    ran = any(c["status"] in {"PASS", "FAIL", "BLOCKED"} for c in cases)
-    return ("FAIL" if failed else "PASS" if ran else "BLOCKED"), exclusions
+    passed = any(c["status"] == "PASS" for c in cases)
+    return ("FAIL" if failed else "PASS" if passed else "BLOCKED"), exclusions
+
+
+def count_cases(cases):
+    """Count structured leaves only; aggregate scripts have unknown leaf counts."""
+    return {
+        "total": len(cases),
+        "passed": sum(c["status"] == "PASS" for c in cases),
+        "failed": sum(c["status"] == "FAIL" for c in cases),
+        "skipped": sum(c["status"] == "SKIP" for c in cases),
+        "excluded": sum(c["status"] in {"SKIP", "BLOCKED"} for c in cases),
+    }
 
 
 def read_ctest_results(path):
@@ -504,7 +515,9 @@ def run_suite(suite, repo, build_root, output, timeout):
             elapsed_seconds=round(time.monotonic() - started - setup_seconds, 3),
             setup_seconds=round(setup_seconds, 3),
             elapsed_wall_seconds=round(time.monotonic() - started, 3),
-            coverage_complete=status == "PASS" and not result["exclusions"],
+            # Aggregate owner success does not establish internal leaf coverage
+            coverage_complete=(status == "PASS" and "counts" in result
+                               and not result["exclusions"]),
         )
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
@@ -682,15 +695,6 @@ def run_suite(suite, repo, build_root, output, timeout):
                 argv = ["xvfb-run", "-a"] + argv
             code = run(argv, virtual_display=suite.get("virtual_display", False))
             status = "PASS" if code == 0 else "BLOCKED" if code == 2 else "FAIL"
-            result["cases"] = [
-                {
-                    "id": suite["id"],
-                    "status": status,
-                    "reason": "Existing owner assertions for the selected "
-                    + ("retail" if retail else "public")
-                    + " profile; aggregate receipt",
-                }
-            ]
             result["exclusions"] = [
                 {
                     "id": suite["id"] + ":" + item["id"],
@@ -700,7 +704,10 @@ def run_suite(suite, repo, build_root, output, timeout):
                 for item in suite.get("profile_exclusions", [])
             ]
             if code == 2:
-                result["exclusions"] += result["cases"]
+                result["exclusions"].append({
+                    "id": suite["id"], "status": "BLOCKED",
+                    "reason": "Aggregate profile owner reported unavailable prerequisites",
+                })
             return finish(
                 status,
                 "Reviewed profile completed; other profiles remain explicit exclusions",
@@ -718,15 +725,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                     blocker_kind="target-capability",
                 )
             code = run([sys.executable, str(script)])
-            result["cases"] = [
-                {
-                    "id": suite["id"],
-                    "status": "PASS" if code == 0 else "FAIL",
-                    "reason": "Aggregate assertion-script result; no internal case count",
-                }
-            ]
             return finish(
-                "PASS" if code == 0 else "FAIL", "Assertion script completed", code
+                "PASS" if code == 0 else "FAIL",
+                "Aggregate assertion script completed; internal case count unknown", code
             )
 
         if suite["kind"] == "python-unittest":
@@ -753,20 +754,11 @@ def run_suite(suite, repo, build_root, output, timeout):
             if not child.exists():
                 return finish("FAIL", "Test process did not produce results", code)
             data = json.loads(child.read_text(encoding="utf-8"))
-            result["counts"] = {
-                "total": data["tests"],
-                "failed": len(data["failures"]),
-                "skipped": len(data["skipped"]),
-            }
             result["cases"] = data["passed"] + data["failures"] + data["skipped"]
-            result["exclusions"] = data["skipped"]
-            status = (
-                "FAIL"
-                if code or not data["successful"]
-                else "BLOCKED"
-                if not data["tests"]
-                else "PASS"
-            )
+            result["counts"] = count_cases(result["cases"])
+            status, result["exclusions"] = classify_cases(result["cases"])
+            if code or not data["successful"]:
+                status = "FAIL"
             return finish(
                 status,
                 "Unittest module completed; skipped cases are incomplete coverage",
@@ -926,16 +918,9 @@ def run_suite(suite, repo, build_root, output, timeout):
                         str(albums),
                     ]
                 )
-                result["cases"] = [
-                    {
-                        "id": suite["id"],
-                        "status": "PASS" if code == 0 else "FAIL",
-                        "reason": "Existing strict database admission assertions",
-                    }
-                ]
                 return finish(
                     "PASS" if code == 0 else "FAIL",
-                    "Strict fingerprint assertions completed",
+                    "Aggregate strict fingerprint assertions completed; internal case count unknown",
                     code,
                 )
         else:
@@ -999,12 +984,7 @@ def run_suite(suite, repo, build_root, output, timeout):
         if code:
             status = "FAIL"
         result["cases"], result["exclusions"] = cases, exclusions
-        result["counts"] = {
-            "total": len(cases),
-            "passed": sum(c["status"] == "PASS" for c in cases),
-            "excluded": len(exclusions),
-            "failed": sum(c["status"] == "FAIL" for c in cases),
-        }
+        result["counts"] = count_cases(cases)
         return finish(
             status, "CTest completed; exclusions remain outside proven coverage", code
         )

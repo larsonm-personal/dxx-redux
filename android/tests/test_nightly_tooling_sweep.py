@@ -25,6 +25,11 @@ class SweepTests(unittest.TestCase):
         return {**{k: self.plan[k] for k in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}, 'lane': 'host',
                 'results': [{'id': ident, 'status': status, 'run_url': 'https://github.com/o/r/actions/runs/1'}]}
 
+    def attempt(self, output, exit_code=None):
+        sweep.write(Path(output, 'attempt.json'), {
+            **sweep.attempt_identity(self.plan, 'host'),
+            'processes': {'master': {'completed': exit_code is not None, 'exit_code': exit_code}}})
+
     def test_representative_validation_covers_four_lanes_within_budgets(self):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
         entries = sweep.policy_entries(policy)
@@ -169,7 +174,7 @@ class SweepTests(unittest.TestCase):
 
     def test_failed_master_without_receipts_is_pending_with_diagnostic(self):
         with tempfile.TemporaryDirectory() as d:
-            sweep.write(Path(d, 'master-process.json'), {'exit_code': 1})
+            self.attempt(d, 1)
             result = sweep.collect(self.plan, self.policy, 'host', d)
             self.assertTrue(all(row['status'] == 'NOT_RUN' for row in result['results']))
             self.assertTrue(all('Master runner exited 1' in row['reason'] for row in result['results']))
@@ -212,7 +217,7 @@ class SweepTests(unittest.TestCase):
             root = Path(d)
             for name, value in (('plan', self.plan), ('policy', self.policy), ('state', self.state)):
                 sweep.write(root / name, value)
-            sweep.write(root / 'master-process.json', {'exit_code': 0})
+            self.attempt(root, 0)
             receipt = sweep.collect(self.plan, self.policy, 'host', root)
             self.assertTrue(all(row['status'] == 'NOT_RUN' for row in receipt['results']))
             argv = ['sweep', 'reconcile', '--plan', str(root / 'plan'), '--policy', str(root / 'policy'), '--state', str(root / 'state'), '--output', str(root / 'out'), '--receipts', str(root / 'results.json')]
@@ -234,9 +239,124 @@ class SweepTests(unittest.TestCase):
 
     def test_partial_journal_retains_terminal_and_ignores_torn_append(self):
         with tempfile.TemporaryDirectory() as d:
+            self.attempt(d)
             Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'commit': SHA, 'status': 'PASS'}) + '\n{"name":')
             result = sweep.collect(self.plan, self.policy, 'host', d)
             self.assertEqual([r['status'] for r in result['results']], ['PASS', 'NOT_RUN'])
+
+    def run_owner_control(self, owner, rows, exit_code=0, stale=False):
+        entry = {'id': owner + ':probe', 'owner': owner, 'lane': 'host',
+                 'args': {'suite': 'probe'}, 'estimated_seconds': 100}
+        policy = {'schema': 1, 'suites': [entry], 'exclusions': []}
+        plan, state = sweep.plan_batch(SHA, {'schema': 1, 'tests': [{'name': 'probe'}]}, policy)
+        with tempfile.TemporaryDirectory() as d:
+            output = Path(d, 'out')
+            output.mkdir()
+            destination = output / ('journal.jsonl' if owner == 'master' else owner + '_probe.json')
+            def emit():
+                if rows is None:
+                    return
+                if owner == 'master':
+                    destination.write_text(''.join(json.dumps({'name': 'probe', 'commit': SHA, **row}) + '\n' for row in rows))
+                else:
+                    sweep.write(destination, {'schema': 1, 'suite': 'probe', **rows[0]})
+            if stale:
+                emit()
+                sweep.write(output / 'results.json', {'stale': True})
+                sweep.write(output / 'attempt.json', {**sweep.attempt_identity(plan, 'host'),
+                    'processes': {owner if owner == 'master' else entry['id']: {'completed': True, 'exit_code': 0}}})
+            def run(*args, **kwargs):
+                self.assertFalse((output / 'results.json').exists())
+                if not stale:
+                    emit()
+                return subprocess.run([sys.executable, '-c', 'raise SystemExit(' + str(exit_code) + ')'], check=False)
+            with patch.object(sweep.subprocess, 'check_output', return_value=SHA), patch.object(sweep, 'run_command', side_effect=run):
+                execution = sweep.execute(plan, policy, 'host', d, output)
+            receipt = sweep.collect(plan, policy, 'host', output)
+            result = sweep.reconcile(plan, policy, state, [receipt])
+            for name, value in (('plan', plan), ('policy', policy), ('state', state)):
+                sweep.write(output / name, value)
+            argv = ['sweep', 'reconcile', '--plan', str(output / 'plan'), '--policy', str(output / 'policy'),
+                    '--state', str(output / 'state'), '--output', str(output / 'final'),
+                    '--receipts', str(output / 'results.json'), '--require-selected']
+            with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                final_exit = sweep.main()
+            return execution, receipt['results'][0], result, final_exit
+
+    def test_real_nonzero_process_cannot_certify_pass(self):
+        for owner in ('master', 'host-adapter'):
+            with self.subTest(owner=owner):
+                execution, row, state, final_exit = self.run_owner_control(owner, [{'status': 'PASS'}], 17)
+                self.assertTrue(execution['runner_failed'])
+                self.assertEqual(row['status'], 'FAIL')
+                self.assertEqual(state['records'][owner + ':probe']['status'], 'FAIL')
+                self.assertEqual(final_exit, 1)
+
+    def test_previous_raw_receipts_are_cleared_before_launch(self):
+        for owner in ('master', 'host-adapter'):
+            with self.subTest(owner=owner):
+                _, row, state, final_exit = self.run_owner_control(owner, [{'status': 'PASS'}], 17, stale=True)
+                self.assertEqual(row['status'], 'NOT_RUN')
+                self.assertEqual(state['records'], {})
+                self.assertEqual(final_exit, 1)
+
+    def test_zero_host_exit_without_receipt_is_pending(self):
+        execution, row, state, final_exit = self.run_owner_control('host-adapter', None)
+        self.assertFalse(execution['runner_failed'])
+        self.assertEqual(row['status'], 'NOT_RUN')
+        self.assertEqual(state['records'], {})
+        self.assertEqual(final_exit, 1)
+
+    def test_conflicting_terminal_journal_cannot_be_overwritten(self):
+        with self.assertRaisesRegex(ValueError, 'Conflicting terminal'):
+            self.run_owner_control('master', [{'status': 'FAIL'}, {'status': 'PASS'}])
+        _, row, _, final_exit = self.run_owner_control('master', [{'status': 'RUNNING'}, {'status': 'PASS'}])
+        self.assertEqual(row['status'], 'PASS')
+        self.assertEqual(final_exit, 0)
+
+    def test_structured_contradictions_and_no_pass_stay_red(self):
+        for detail, expected in (({'attempted_tests': False}, 'BLOCKED'),
+                                 ({'phase': 'preflight'}, 'BLOCKED'),
+                                 ({'exit_code': 17}, 'FAIL'),
+                                 ({'cases': [{'status': 'FAIL'}]}, 'FAIL'),
+                                 ({'cases': [{'status': 'SKIP'}]}, 'BLOCKED'),
+                                 ({'cases': [{'status': 'BLOCKED'}]}, 'BLOCKED'),
+                                 ({'counts': {'total': 0, 'passed': 0, 'failed': 0}}, 'BLOCKED'),
+                                 ({'counts': {'passed': 1, 'failed': 1}}, 'FAIL')):
+            with self.subTest(detail=detail):
+                _, row, _, final_exit = self.run_owner_control('host-adapter', [{'status': 'PASS', **detail}])
+                self.assertEqual(row['status'], expected)
+                self.assertEqual(final_exit, 1)
+                receipt = self.receipt()
+                receipt['results'][0].update(detail)
+                state = sweep.reconcile(self.plan, self.policy, self.state, [receipt])
+                self.assertIn('master:first', sweep.selected_without_pass(self.plan, state))
+
+    def test_real_partial_pass_and_unknown_script_coverage_remain_valid(self):
+        for detail in ({'cases': [{'status': 'PASS'}] * 54 + [{'status': 'SKIP'}] * 3}, {}):
+            _, row, state, final_exit = self.run_owner_control('host-adapter', [{'status': 'PASS', 'coverage_complete': False, **detail}])
+            self.assertEqual(row['status'], 'PASS')
+            record = state['records']['host-adapter:probe']
+            self.assertFalse(record['coverage_complete'])
+            self.assertEqual(record['case_counts']['PASS'], 54 if detail else 0)
+            self.assertNotIn('host-adapter:probe', state['retryable'])
+            self.assertEqual(final_exit, 0)
+
+    def test_unbound_journal_never_certifies(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'commit': SHA, 'status': 'PASS'}) + '\n')
+            self.assertTrue(all(row['status'] == 'NOT_RUN' for row in sweep.collect(self.plan, self.policy, 'host', d)['results']))
+
+    def test_attempt_must_match_batch_lane_and_github_run(self):
+        with tempfile.TemporaryDirectory() as d:
+            for key in ('target_sha', 'catalog_hash', 'batch_id', 'lane', 'run_id', 'run_attempt', 'repository'):
+                with self.subTest(key=key):
+                    self.attempt(d)
+                    attempt = sweep.read(Path(d, 'attempt.json'))
+                    attempt[key] = 'wrong'
+                    sweep.write(Path(d, 'attempt.json'), attempt)
+                    with self.assertRaisesRegex(ValueError, 'attempt provenance'):
+                        sweep.collect(self.plan, self.policy, 'host', d)
 
     def test_no_receipts_no_progress(self):
         self.assertEqual(sweep.reconcile(self.plan, self.policy, self.state, []), self.state)
@@ -253,6 +373,7 @@ class SweepTests(unittest.TestCase):
 
     def test_prelaunch_failure_is_retryable_not_test_failure(self):
         with tempfile.TemporaryDirectory() as d:
+            self.attempt(d)
             Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'commit': SHA, 'status': 'FAIL', 'attempted_tests': False}) + '\n')
             result = sweep.collect(self.plan, self.policy, 'host', d)
             self.assertEqual(result['results'][0]['status'], 'BLOCKED')
@@ -272,12 +393,15 @@ class SweepTests(unittest.TestCase):
         state = sweep.reconcile(self.plan, self.policy, self.state, [receipt])
         self.assertLess(len(json.dumps(state)), 2000)
         self.assertEqual(state['records']['master:first']['case_counts']['FAIL'], 1)
+        self.assertEqual(state['records']['master:first']['status'], 'FAIL')
         self.assertFalse(state['records']['master:first']['coverage_complete'])
 
     def test_success_receipt_is_not_labelled_infrastructure(self):
         with tempfile.TemporaryDirectory() as d:
+            self.attempt(d)
             Path(d, 'journal.jsonl').write_text(json.dumps({'name': 'first', 'status': 'PASS', 'commit': SHA, 'attempted_tests': True}) + '\n')
             with patch.dict(os.environ, {'GITHUB_SERVER_URL': 'https://github.com', 'GITHUB_REPOSITORY': 'o/r', 'GITHUB_RUN_ID': '1'}):
+                self.attempt(d)
                 result = sweep.collect(self.plan, self.policy, 'host', d)
             row = result['results'][0]
             self.assertEqual(row['status'], 'PASS')

@@ -81,6 +81,118 @@ class HostAdapterTests(unittest.TestCase):
     def test_only_explicit_skips_is_blocked(self):
         self.assertEqual(adapter.classify_cases([{"status": "SKIP"}])[0], "BLOCKED")
 
+    def test_only_blocked_leaves_are_blocked(self):
+        for cases in ([{"status": "BLOCKED"}],
+                      [{"status": "BLOCKED"}, {"status": "SKIP"}]):
+            with self.subTest(cases=cases):
+                self.assertEqual(adapter.classify_cases(cases)[0], "BLOCKED")
+                self.assertEqual(adapter.count_cases(cases)["passed"], 0)
+
+    def test_partial_structured_counts_preserve_success_and_exclusions(self):
+        cases = ([{"status": "PASS"}] * 54
+                 + [{"status": "BLOCKED"}] * 2 + [{"status": "SKIP"}])
+        self.assertEqual(adapter.classify_cases(cases)[0], "PASS")
+        self.assertEqual(adapter.count_cases(cases), {
+            "total": 57, "passed": 54, "failed": 0, "skipped": 1, "excluded": 3,
+        })
+
+    def test_unittest_receipts_require_successful_leaves(self):
+        modules = [
+            ("", "BLOCKED", 2, 0, 0, 0),
+            ("    @unittest.skip('fixture absent')\n"
+             "    def test_skip(self): pass\n", "BLOCKED", 2, 0, 1, 0),
+            ("    @unittest.expectedFailure\n"
+             "    def test_expected(self): self.fail('known')\n",
+             "BLOCKED", 2, 0, 1, 0),
+            ("    def test_pass(self): pass\n", "PASS", 0, 1, 0, 0),
+            ("    def test_pass(self): pass\n"
+             "    @unittest.skip('fixture absent')\n"
+             "    def test_skip(self): pass\n", "PASS", 0, 1, 1, 0),
+            ("    def test_fail(self): self.fail('broken')\n", "FAIL", 1, 0, 0, 1),
+        ]
+        for body, status, expected_code, passed, skipped, failed in modules:
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                (root / "test_fixture.py").write_text(
+                    "import unittest\nclass Cases(unittest.TestCase):\n"
+                    + (body or "    pass\n")
+                )
+                suite = {
+                    "id": "fixture", "kind": "python-unittest",
+                    "path": "test_fixture.py", "coverage_scope": "fixture",
+                }
+                code = adapter.run_suite(
+                    suite, root, root / "build", root / "receipt.json", 30
+                )
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(code, expected_code)
+                self.assertEqual(receipt["status"], status)
+                self.assertEqual(receipt["counts"], {
+                    "total": passed + skipped + failed, "passed": passed,
+                    "failed": failed, "skipped": skipped, "excluded": skipped,
+                })
+                self.assertEqual(receipt["coverage_complete"],
+                                 status == "PASS" and not skipped)
+
+    def test_script_owner_pass_does_not_claim_unknown_leaf_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            (root / "fixture.py").write_text("assert 1 + 1 == 2\n")
+            suite = {
+                "id": "fixture", "kind": "python-script",
+                "path": "fixture.py", "coverage_scope": "fixture",
+            }
+            code = adapter.run_suite(
+                suite, root, root / "build", root / "receipt.json", 30
+            )
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(code, 0)
+            self.assertEqual(receipt["status"], "PASS")
+            self.assertTrue(receipt["attempted_tests"])
+            self.assertFalse(receipt["retryable"])
+            self.assertFalse(receipt["coverage_complete"])
+            self.assertNotIn("counts", receipt)
+            self.assertEqual(receipt["exclusions"], [])
+            self.assertEqual(receipt["cases"], [])
+            self.assertIn("Aggregate", receipt["reason"])
+
+    def test_strict_fingerprint_owner_has_no_fabricated_leaf_count(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for relative, content in (
+                ("android/app/src/main/cpp/extract/CMakeLists.txt", "project(fake)"),
+                ("android/tests/test_fingerprint_match_strict.py", "# --matcher"),
+                ("android/app/src/main/assets/known_albums.jsonc", "{}"),
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+
+            class Process:
+                def __init__(self, *args, **kwargs):
+                    pass
+
+                def wait(self, **kwargs):
+                    return 0
+
+            with (
+                patch.object(adapter.shutil, "which", return_value="tool"),
+                patch.object(adapter.subprocess, "Popen", Process),
+            ):
+                code = adapter.run_suite(
+                    adapter.load_suites()["audio:strict-fingerprint"], root,
+                    root / "build", root / "receipt.json", 30,
+                )
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(code, 0)
+            self.assertEqual(receipt["status"], "PASS")
+            self.assertTrue(receipt["attempted_tests"])
+            self.assertFalse(receipt["retryable"])
+            self.assertFalse(receipt["coverage_complete"])
+            self.assertEqual(receipt["cases"], [])
+            self.assertEqual(receipt["exclusions"], [])
+            self.assertNotIn("counts", receipt)
+
     def test_target_path_traversal_rejected(self):
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(ValueError):
             adapter.target_file(Path(directory), "../outside.py")
@@ -296,7 +408,8 @@ class PublicProfileTests(unittest.TestCase):
         self.assertIn("shareware", calls[3][0])
         self.assertFalse(receipt["coverage_complete"])
         self.assertTrue(receipt["attempted_tests"])
-        self.assertEqual(receipt["cases"][0]["status"], "PASS")
+        self.assertEqual(receipt["status"], "PASS")
+        self.assertEqual(receipt["cases"], [])
 
     def test_header_profile_builds_both_workers_and_disables_inner_build(self):
         code, _receipt, calls = self.run_profile("metadata-headers")
@@ -530,9 +643,10 @@ class RetailProfileTests(unittest.TestCase):
                 self.assertNotIn("-UpdateBaseline", argv)
                 self.assertNotIn("-BuildBeforeRun", argv)
                 self.assertFalse(any("-Download" in command for command in calls))
-                self.assertTrue(receipt["coverage_complete"])
+                self.assertFalse(receipt["coverage_complete"])
                 self.assertTrue(receipt["attempted_tests"])
-                self.assertEqual(len(receipt["cases"]), 1)
+                self.assertEqual(receipt["cases"], [])
+                self.assertNotIn("counts", receipt)
 
     def test_counterstrike_route_keeps_existing_bounded_owner(self):
         code, _receipt, calls, root = self.run_profile("retail-counterstrike-route")
@@ -575,11 +689,12 @@ class RetailProfileTests(unittest.TestCase):
                     ],
                 )
                 self.assertEqual(receipt["status"], expected)
-                self.assertEqual(receipt["cases"][0]["status"], expected)
-                self.assertEqual(receipt["coverage_complete"], owner_code == 0)
+                self.assertEqual(receipt["cases"], [])
+                self.assertFalse(receipt["coverage_complete"])
                 if owner_code == 2:
                     self.assertTrue(receipt["retryable"])
-                    self.assertEqual(receipt["exclusions"], receipt["cases"])
+                    self.assertEqual(len(receipt["exclusions"]), 1)
+                    self.assertEqual(receipt["exclusions"][0]["status"], "BLOCKED")
         repo = Path(__file__).resolve().parents[2]
         source = (
             repo / "android/tests/test_guidebot_simulation_timeout_policy.ps1"
@@ -732,7 +847,7 @@ class RetailProfileTests(unittest.TestCase):
                         str(root / "receipt.artifacts/obsidian-liquid.json"),
                     ],
                 )
-                self.assertEqual(receipt["coverage_complete"], owner_code == 0)
+                self.assertFalse(receipt["coverage_complete"])
         repo = Path(__file__).resolve().parents[2]
         owner = (repo / "android/tests/test_secret_area_liquid_obsidian.py").read_text()
         self.assertIn("timeout=60", owner)
@@ -891,6 +1006,49 @@ class ObsidianExtractionTests(unittest.TestCase):
 
 
 class StandaloneCMakeTests(unittest.TestCase):
+    def test_ctest_null_and_excluded_only_receipts_cannot_pass(self):
+        for leaves, expected_code, passed, excluded, skipped in [
+            ("", 2, 0, 0, 0),
+            ('<testcase name="skip"><skipped/></testcase>', 2, 0, 1, 1),
+            ('<testcase name="blocked"><system-out>SKIP: sample media not present'
+             '</system-out></testcase>', 2, 0, 1, 0),
+            ('<testcase name="pass"/><testcase name="blocked"><system-out>'
+             'SKIP: sample media not present</system-out></testcase>', 0, 1, 1, 0),
+        ]:
+            with self.subTest(leaves=leaves), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                suite = adapter.load_suites()["cmake:etc2-limits"]
+                source = root / suite["source"]
+                source.mkdir(parents=True)
+                (source / "CMakeLists.txt").touch()
+
+                class Process:
+                    def __init__(self, argv, **kwargs):
+                        if argv[0] == "ctest":
+                            Path(argv[argv.index("--output-junit") + 1]).write_text(
+                                "<testsuite>" + leaves + "</testsuite>"
+                            )
+
+                    def wait(self, **kwargs):
+                        return 0
+
+                with (
+                    patch.object(adapter.sys, "platform", "linux"),
+                    patch.object(adapter.shutil, "which", return_value="tool"),
+                    patch.object(adapter.subprocess, "Popen", Process),
+                ):
+                    code = adapter.run_suite(
+                        suite, root, root / "build", root / "receipt.json", 30
+                    )
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(code, expected_code)
+                self.assertEqual(receipt["status"], "PASS" if passed else "BLOCKED")
+                self.assertFalse(receipt["coverage_complete"])
+                self.assertEqual(receipt["counts"], {
+                    "total": passed + excluded, "passed": passed, "failed": 0,
+                    "skipped": skipped, "excluded": excluded,
+                })
+
     def test_existing_ctest_projects_build_exact_targets_and_keep_leaf_receipts(self):
         for name, target, public_soundfont in (
             ("etc2-limits", "test_etc2_limits", False),

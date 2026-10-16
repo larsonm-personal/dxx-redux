@@ -163,6 +163,50 @@ def validate_plan(plan, policy):
         raise ValueError('Plan batch identity mismatch')
 
 
+def normalize_result(row):
+    """Never certify a PASS contradicted by the owner's structured evidence."""
+    row = dict(row)
+    if row.get('status') != 'PASS':
+        return row
+    cases = row.get('cases', [])
+    counts = row.get('counts', {})
+    if row.get('exit_code') not in (None, 0):
+        row.update(status='FAIL', reason='PASS receipt has a nonzero test exit code')
+    elif counts.get('failed', 0) or any(case.get('status') in ('FAIL', 'TIMEOUT') for case in cases):
+        row.update(status='FAIL', reason='PASS receipt contains failed leaf cases')
+    elif row.get('attempted_tests') is False or row.get('phase') in ('setup', 'preflight'):
+        row.update(status='BLOCKED', reason='PASS receipt does not attest to test execution', retryable=True)
+    elif counts.get('passed') == 0 or (cases and not any(case.get('status') == 'PASS' for case in cases)):
+        row.update(status='BLOCKED', reason='No structured leaf case passed', attempted_tests=False, retryable=True)
+    if row['status'] != 'PASS':
+        row['coverage_complete'] = False
+    return row
+
+
+def attempt_identity(plan, lane):
+    return {**{key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')},
+            'lane': lane, 'run_id': os.environ.get('GITHUB_RUN_ID', 'local'),
+            'run_attempt': os.environ.get('GITHUB_RUN_ATTEMPT', 'local'),
+            'repository': os.environ.get('GITHUB_REPOSITORY', 'local/unpublished')}
+
+
+def journal_observations(path, sha):
+    observations = {}
+    if Path(path).exists():
+        for line in Path(path).read_text().splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # Recover completed rows after an interrupted append
+            if row.get('commit') != sha:
+                raise ValueError('Journal target mismatch')
+            prior = observations.get(row['name'])
+            if prior and prior.get('status') != 'RUNNING' and prior != row:
+                raise ValueError('Conflicting terminal journal receipt')
+            observations[row['name']] = row
+    return observations
+
+
 def reconcile(plan, policy, state, receipts):
     validate_plan(plan, policy)
     validate_state(state)
@@ -177,6 +221,7 @@ def reconcile(plan, policy, state, receipts):
         lane = receipt.get('lane')
         if receipt.get('retail_assets') != plan.get('retail_assets'):
             raise ValueError('Receipt retail asset identity mismatch')
+        receipt = {**receipt, 'results': [normalize_result(row) for row in receipt.get('results', [])]}
         if retail.lane_requires_retail(plan, lane):
             receipt = retail.public_receipt(receipt)
         for row in receipt.get('results', []):
@@ -224,36 +269,36 @@ def collect(plan, policy, lane, output, blocked_reason=""):
         receipt['retail_assets'] = plan['retail_assets']
     receipt.update(lane=lane, results=[])
     run_url = os.environ.get('GITHUB_SERVER_URL', 'https://github.com') + '/' + os.environ.get('GITHUB_REPOSITORY', 'local/unpublished') + '/actions/runs/' + os.environ.get('GITHUB_RUN_ID', 'local')
-    observations = {}
-    journal = output / 'journal.jsonl'
-    if journal.exists():
-        for line in journal.read_text().splitlines():
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if row.get('commit') != plan['target_sha']:
-                raise ValueError('Journal target mismatch')
-            observations[row['name']] = row
+    attempt_path = output / 'attempt.json'
+    attempt = read(attempt_path) if attempt_path.exists() else {}
+    if attempt and any(attempt.get(key) != value for key, value in attempt_identity(plan, lane).items()):
+        raise ValueError('Execution attempt provenance mismatch')
+    processes = attempt.get('processes', {})
+    observations = journal_observations(output / 'journal.jsonl', plan['target_sha']) if 'master' in processes else {}
     for entry in plan['tests']:
         if entry['lane'] != lane:
             continue
         if entry['owner'] == 'master':
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
-            process_path = output / 'master-process.json'
-            if not row and process_path.exists():
-                exit_code = read(process_path).get('exit_code')
-                if exit_code:
-                    row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
+            exit_code = processes.get('master', {}).get('exit_code')
+            if not row and exit_code:
+                row = {'reason': f'Master runner exited {exit_code} without this test receipt; see master.log. Remains pending.'}
             if status == 'SKIP':
                 status = 'BLOCKED'
         else:
             path = output / (entry['id'].replace(':', '_') + '.json')
-            row = read(path) if path.exists() else {}
+            process = processes.get(entry['id'], {})
+            row = read(path) if process.get('completed') and path.exists() else {}
+            exit_code = process.get('exit_code')
             status = row.get('status', 'NOT_RUN')
             if row and (row.get('schema') != 1 or row.get('suite') != entry['args']['suite']):
                 raise ValueError('Invalid adapter receipt')
+        if status == 'PASS' and exit_code not in (None, 0):
+            row = {**row, 'status': 'FAIL', 'reason': f'Owner process exited {exit_code} despite PASS receipt', 'coverage_complete': False}
+            status = 'FAIL'
+        row = normalize_result({**row, 'status': status})
+        status = row['status']
         if row.get('blocker_kind') == 'interrupted':
             status = 'NOT_RUN'
         if row.get('attempted_tests') is False and status in ('FAIL', 'TIMEOUT'):
@@ -311,6 +356,17 @@ def execute(plan, policy, lane, repo, output):
         raise ValueError('Checkout does not match pinned target')
     output.mkdir(parents=True, exist_ok=True)
     selected = [e for e in plan['tests'] if e['lane'] == lane]
+    # Only receipts produced after this attempt begins may be collected
+    for name in ('attempt.json', 'journal.jsonl', 'master-process.json', 'results.json', 'execution-progress.json'):
+        (output / name).unlink(missing_ok=True)
+    for entry in selected:
+        if entry['owner'] != 'master':
+            (output / (entry['id'].replace(':', '_') + '.json')).unlink(missing_ok=True)
+    attempt = {**attempt_identity(plan, lane), 'processes': {}}
+    write(output / 'attempt.json', attempt)
+    def process_evidence(owner, completed=False, exit_code=None):
+        attempt['processes'][owner] = {'completed': completed, 'exit_code': exit_code}
+        write(output / 'attempt.json', attempt)
     receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id')}
     if plan.get('retail_assets'):
         receipt['retail_assets'] = plan['retail_assets']
@@ -329,20 +385,12 @@ def execute(plan, policy, lane, repo, output):
         if lane in ('host', 'jvm'):
             command.append('-HostOnly')
         # Master owns setup/cleanup and per-test timeout; outer hosted cancellation remains pending.
+        process_evidence('master')
         with (output / 'master.log').open('w') as log:
             process = run_command(command, repo, log)
-        write(output / 'master-process.json', {'exit_code': process.returncode})
+        process_evidence('master', True, process.returncode)
         receipt['runner_failed'] = process.returncode != 0
-        observations = {}
-        if journal.exists():
-            for line in journal.read_text().splitlines():
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # an interrupted append cannot manufacture completion
-                if row.get('commit') != actual:
-                    raise ValueError('Journal target mismatch')
-                observations[row['name']] = row
+        observations = journal_observations(journal, actual)
         for entry in masters:
             row = observations.get(entry['args']['suite'], {})
             status = row.get('status', 'NOT_RUN')
@@ -363,6 +411,7 @@ def execute(plan, policy, lane, repo, output):
             # The master intentionally stops its AVDs. The shareware owner restarts
             # its own device; revalidate only the original CI UID grant first.
             start = time.monotonic()
+            process_evidence(entry['id'])
             with destination.with_suffix('.log').open('w') as log:
                 if os.environ.get('GITHUB_ACTIONS') == 'true':
                     refresh = Path(__file__).resolve().parents[1] / 'helpers/refresh_nightly_kvm_access.sh'
@@ -373,13 +422,16 @@ def execute(plan, policy, lane, repo, output):
                     if setup_failed:
                         reason = 'Approved KVM access refresh failed before shareware owner launch; see owner log'
                         write(destination, {'schema': 1, 'suite': entry['args']['suite'], 'status': 'BLOCKED', 'reason': reason, 'attempted_tests': False, 'phase': 'setup', 'retryable': True, 'blocker_kind': 'infrastructure', 'coverage_complete': False})
+                        process_evidence(entry['id'], True)
                         save(entry, 'BLOCKED', reason)
                         receipt['runner_failed'] = True
                         continue
                 try:
                     process = run_command(command, repo, log, timeout=max(120, entry['estimated_seconds'] * 2))
+                    process_evidence(entry['id'], True, process.returncode)
                     status = 'PASS' if process.returncode == 0 else 'FAIL'
                 except subprocess.TimeoutExpired:
+                    process_evidence(entry['id'], True, 124)
                     status = 'TIMEOUT'
             elapsed += time.monotonic() - start
             write(destination, {'schema': 1, 'suite': entry['args']['suite'], 'status': status, 'reason': '', 'elapsed_seconds': time.monotonic() - start, 'coverage_complete': False})
@@ -393,12 +445,18 @@ def execute(plan, policy, lane, repo, output):
         destination = output / (entry['id'].replace(':', '_') + '.json')
         command = [sys.executable, str(Path(__file__).with_name('run_host_test_suites.py')), '--suite', entry['args']['suite'], '--repo', str(repo), '--build-root', str(output / 'build'), '--output', str(destination)]
         start = time.monotonic()
+        process_evidence(entry['id'])
         with destination.with_suffix('.log').open('w') as log:
-            run_command(command, repo, log)
+            process = run_command(command, repo, log)
+        process_evidence(entry['id'], True, process.returncode)
+        receipt['runner_failed'] = receipt.get('runner_failed', False) or process.returncode != 0
         if destination.exists():
             row = read(destination)
             if row.get('suite') != entry['args']['suite'] or row.get('status') not in ('PASS', 'FAIL', 'BLOCKED'):
                 raise ValueError('Invalid adapter result')
+            if row['status'] == 'PASS' and process.returncode != 0:
+                row.update(status='FAIL', reason=f'Owner process exited {process.returncode} despite PASS receipt')
+            row = normalize_result(row)
             elapsed += max(0, float(row.get('elapsed_seconds', time.monotonic() - start)))
             save(entry, row['status'], row.get('reason', ''), exclusions=row.get('exclusions', []))
         else:
