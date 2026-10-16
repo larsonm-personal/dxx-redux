@@ -1,9 +1,18 @@
 #!/usr/bin/env pwsh
-param([string]$Serial)
+param([string]$Serial, [switch]$PublicFirstPlay)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
+if ($PublicFirstPlay) {
+    try {
+        . "$PSScriptRoot/demo_import_first_play_helpers.ps1"
+        Invoke-PublicFirstPlay -Serial $Serial
+    } finally {
+        if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+    }
+    return
+}
 Assert-IsolatedPhysicalTestApp
 Ensure-EmulatorHealthy | Out-Null
 $oraclePath = "$PSScriptRoot/fixtures/demo_import_oracles.json"

@@ -136,6 +136,24 @@ function Get-PowerShellDependencyClosureText {
     return $text -join "`n"
 }
 
+function Test-FirstPlayLauncherButtonException {
+    param([Parameter(Mandatory)][string]$ScriptPath, [AllowNull()][object]$Info)
+
+    # Other automation avoids stale rendered buttons after reset_state (143a6381f)
+    # Only these cold-content owner phases test the actual buttons without reset_state
+    if ($null -eq $Info -or $Info._standalone -isnot [bool] -or $Info._standalone -ne $false -or
+        $Info._owner -cne 'test_demo_import') { return $false }
+    $reviewedNames = @(
+        'test_public_first_play_empty.jsonc', 'test_public_first_play_d1.jsonc',
+        'test_public_first_play_d1_in_d2.jsonc', 'test_public_first_play_d2.jsonc', 'test_public_first_play_mission.jsonc'
+    )
+    $fullPath = [IO.Path]::GetFullPath($ScriptPath)
+    foreach ($name in $reviewedNames) {
+        if ($fullPath -ceq [IO.Path]::GetFullPath((Join-Path $gameScriptsDir $name))) { return $true }
+    }
+    return $false
+}
+
 foreach ($file in $ps1Files) {
     $ps1ByName[$file.BaseName] = $file
     $supportOwner = Get-PowerShellTestSupportOwner -ScriptPath $file.FullName
@@ -167,7 +185,8 @@ foreach ($file in $jsonFiles) {
         $standaloneJson[$file.BaseName] = $file
     }
 
-    if ($file.BaseName -notmatch '_manual(?:_|$)') {
+    if ($file.BaseName -notmatch '_manual(?:_|$)' -and
+        -not (Test-FirstPlayLauncherButtonException -ScriptPath $file.FullName -Info $info)) {
         $scriptText = Get-Content -LiteralPath $file.FullName -Raw
         if ($scriptText -match '(?s)\{[^{}]*"action"\s*:\s*"tap_button"[^{}]*"text"\s*:\s*"(?:Launch )?Descent\b[^"]*"[^{}]*\}') {
             $failures.Add("$($file.Name): automated game launch must use enter_game instead of launcher button taps")
