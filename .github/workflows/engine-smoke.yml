@@ -44,6 +44,7 @@ jobs:
           python3 android/tests/test_linux_build_cli.py
           python3 android/tests/test_d1_briefing_automation.py
           python3 android/tests/test_save_epoch_contract.py
+          python3 android/tests/test_android_audio_lifecycle.py
 
       # Debug keeps assertions active; tests run serially with a 120-second timeout
       - name: Build all native targets and run asset-free tests
