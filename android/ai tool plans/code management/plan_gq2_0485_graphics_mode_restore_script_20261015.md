@@ -3,9 +3,9 @@
 Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Serial work. Inline evidence/docs/retention/existing ledger backup only; no product/test/helper edits or execution, builds/tests/probes/formatters/generators/network/device/provider/media/payload/staging/commit.
 
 - [x] Read all assigned frozen bodies/hunks/removals and current enclosing bodies/deltas
-- [ ] Trace actual script harness/automation/native consumers at explicit boundaries
-- [ ] Reconcile whole existing owners, prior plans and quality dispositions
-- [ ] Author direct unpooled disposition and conditional continuation
+- [x] Trace actual script harness/automation/native consumers at explicit boundaries
+- [x] Reconcile whole existing owners, prior plans and quality dispositions
+- [x] Author direct unpooled disposition and conditional continuation
 - [ ] Publish exact evidence, independently replay and verify mounted Drive backup
 
 Canonical locator only; no source/patch/consumer/runtime credit:
