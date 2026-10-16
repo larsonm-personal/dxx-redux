@@ -42,6 +42,52 @@ class SweepTests(unittest.TestCase):
         self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
 
+    def test_first_play_is_fixed_public_and_within_each_lane_budget(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        chosen = sweep.select_first_play(plan, policy, catalog)
+        self.assertEqual({e['id'] for e in chosen['tests']}, sweep.FIRST_PLAY_IDS)
+        self.assertNotIn('retail_assets', chosen)
+        for lane in sweep.LANES:
+            self.assertLessEqual(sum(e['estimated_seconds'] for e in chosen['tests'] if e['lane'] == lane), 2700)
+        self.assertTrue(all(e.get('fixture') not in ('retail-base', 'retail-missions') for e in chosen['tests']))
+
+    def test_first_play_rejects_missing_owner_and_retail_reclassification(self):
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        with self.assertRaisesRegex(ValueError, 'absent'):
+            sweep.select_first_play(plan, policy, {'tests': []})
+        bad = copy.deepcopy(policy)
+        next(e for e in bad['suites'] if e['id'] in sweep.FIRST_PLAY_IDS)['fixture'] = 'retail-base'
+        with self.assertRaisesRegex(ValueError, 'asset-free'):
+            sweep.select_first_play(plan, bad, catalog)
+        bad['suites'] = [e for e in bad['suites'] if e['id'] not in sweep.FIRST_PLAY_IDS]
+        with self.assertRaisesRegex(ValueError, 'Missing'):
+            sweep.select_first_play(plan, bad, catalog)
+
+    def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' }}", workflow)
+        self.assertIn("inputs.campaign == 'first-play' && github.sha", workflow)
+        self.assertIn("if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'", workflow)
+        self.assertIn('types: [opened, synchronize, reopened, labeled]', workflow)
+        policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
+        catalog = {'schema': 1, 'tests': [{'name': e['args']['suite']} for e in policy['suites'] if e['owner'] == 'master']}
+        plan, _ = sweep.plan_batch(SHA, catalog, policy)
+        plan = sweep.select_first_play(plan, policy, catalog)
+        state = sweep.fresh_state(plan['target_sha'], plan['catalog_hash'])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, value in (('plan', plan), ('policy', policy), ('state', state)):
+                sweep.write(root / name, value)
+            argv = ['sweep', 'reconcile', '--require-selected', '--plan', str(root / 'plan'),
+                    '--policy', str(root / 'policy'), '--state', str(root / 'state'), '--output', str(root / 'out')]
+            with patch.object(sys, 'argv', argv), patch('builtins.print'):
+                self.assertEqual(sweep.main(), 1)
+            self.assertEqual(sweep.read(root / 'out')['records'], {})
+
     def test_planning_does_not_advance_and_repeats_identically(self):
         old = copy.deepcopy(self.state)
         again, _ = sweep.plan_batch(SHA, self.catalog, self.policy, self.state, 200)
