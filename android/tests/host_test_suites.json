@@ -632,8 +632,8 @@
       "path": "android/tests/test_save_epoch_contract.py",
       "estimated_seconds": 30,
       "python_modules": [],
-      "executables": [],
-      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "executables": ["cc"],
+      "coverage_scope": "Exact-source save callsign reader and epoch wiring controls; skips are incomplete coverage.",
       "constraints": []
     },
     {
