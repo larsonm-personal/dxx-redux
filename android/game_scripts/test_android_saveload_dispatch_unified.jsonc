@@ -37,6 +37,7 @@
     { "action": "log", "message": "=== TEST: Shared Android save/load dispatch ===" },
     { "action": "reset_state" },
     { "action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250 },
+    { "action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 250 },
     {
         "action": "setup_command",
         "command": "write_bool_pref",
@@ -73,6 +74,7 @@
             "screen_mode": "game",
             "difficulty": "1",
             "current_level_num": "1",
+            "player.callsign": "player",
         },
     },
 
@@ -185,7 +187,7 @@
     },
     { "action": "tap_button", "text": "Load Last Save", "launches_game": true },
     { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
-    { "action": "assert", "expect": { "time_paused": "false" } },
+    { "action": "assert", "expect": { "time_paused": "false", "player.callsign": "player" } },
     { "action": "key", "key": "escape", "post_delay_ms": 200 },
     { "action": "select", "text": "Abort Game", "post_delay_ms": 500 },
     { "action": "wait_for", "field": "in_game", "value": "false", "timeout_ms": 5000 },

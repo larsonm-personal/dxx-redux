@@ -499,23 +499,13 @@ function Get-MissionDescriptorInfo {
 
 function New-MetadataKotlinWorker {
     param([Parameter(Mandatory = $true)][string]$CliPath)
-    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $executable = $CliPath
+    $workerArguments = @('--server')
     if (Test-RegressionWindowsHost) {
-        $startInfo.FileName = $env:ComSpec
-        $startInfo.ArgumentList.Add('/d')
-        $startInfo.ArgumentList.Add('/c')
-        $startInfo.ArgumentList.Add($CliPath)
-    } else {
-        $startInfo.FileName = $CliPath
+        $executable = $env:ComSpec
+        $workerArguments = @('/d', '/c', $CliPath, '--server')
     }
-    $startInfo.ArgumentList.Add('--server')
-    $startInfo.RedirectStandardInput = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-    $process = [Diagnostics.Process]::Start($startInfo)
-    return @{ Process = $process; ErrorTask = $process.StandardError.ReadToEndAsync() }
+    return New-MetadataWorker -Executable $executable -Arguments $workerArguments
 }
 
 function Invoke-MetadataKotlinWorker {

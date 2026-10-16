@@ -1,0 +1,17 @@
+# Chunk 0489 graphics, data and harness ownership, 2026-10-15
+
+Diagnosis only; serial work, no product/test/helper edits or execution
+
+Receipt temp/general_cleanup_20261006/gq2-graphics-ownership-progress-0489-20261015.json SHA256 877e214c55366813a72137f57859db96b54d6cbddbc4d060343f60d0fd98c8a0 captures54contexts2417lines,19wholeBR,18currentqualityrows and whole23810-byte0469plan. Forty-four contexts and19whole definitions exactly match the prior0469snapshot's current bytes; eight controller/JNI contexts exactly match0488; two fresh test ranges were read. No source credit from earlier clipped outputs
+
+The complete0469plan has now been recovered in two joined text ranges. It identifies actual LAN fixed-basename payload admission independently from current per-device GUID validation and optional Fresh snapshot clearing. Current graphics helper remains emulator-only; physical-only Fresh defaults do not transfer to its ordinary snapshots. Preserve all ten current/requested/accepted fields, peer checks, unchanged trial/deadline, real controller dispatch and native multiplayer continuation. Flip serial counts wrapper iterations, not successful EGL presentation; changed remote sequence is a packet observation, not complete simulation progress
+
+Direct unpooled recommendation: RETAIN/ISSUES, existing BR-0593 REFERENCE47 MEDIUM23/0/7/10/7 from exact current GQ2-CHUNK-0469 (also0461). Fixed-basename ls admission after unchecked staging can run old bytes under a new GUID. This directly concerns the assigned helper and its maintained caller. BR-0190 required-command status and BR-0588 exact request observation remain separate. BR-0543 process-subset reference47 from0392 has a different component vector and is not pooled into this rating
+
+Whole current owners also retain BR-0251 recovery ordering, BR-0284 run replacement, BR-0029/0044/0492 input/callback ownership, BR-0223/0224/0282/0285 cursor/schema/encoding/numeric contracts, BR-0287 budgets, BR-0482 handoff, BR-0233 output publication and BR-0543 retirement. BR-0199/0200/0647 remain FIXED. GQR-0128/0129 remain DONE; GQR-0170/0173/0174/0242/0277 retain separate JNI/probe/shader/pause/Setup outcome work
+
+Two quality rows have legitimately expanded since0469: GQF-0291/GQR-0277 now include rejected switch_set and destructive cleanup sequencing from0470. Captured current whole rows; OPEN/TODO status unchanged. No stale prior row substituted
+
+GQF-0248 FIXED/GQR-0232 DONE records and current meaningful resolver assertions preserve parsed typed substitution: exact escapes/Unicode/dollars, recursive vars, array/scalar shapes, parameter filtering and failed-resolution prior bytes/mtime. Selected asset-manifest fixture checks metadata preservation and refreshed entries through fake ADB. It is not real transport, content integrity or durable publication validation. Parse-failure fallback and wrapper escaping remain separate from the completed typed-substitution repair
+
+No new finding/remediation/status/rating/runtime acceptance or inherited saving. Whole larger628/905-line graphics plans and historical hardware results are not newly inherited coverage. The two whole prior plans are0392and0469; their historical runtime evidence remains historical. Next consolidate all0489packages and independently replay current source/owners/quality/canonical baseline before closing the three analysis gates. Publication and mounted Drive verification remain open

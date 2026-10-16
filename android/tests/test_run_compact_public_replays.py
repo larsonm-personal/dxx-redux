@@ -197,6 +197,22 @@ class EarlyAbortTests(unittest.TestCase):
                 self.assertEqual(result["phase"], phase)
                 self.assertEqual(result["rng"]["count"], 1 if phase == "carry" else 2)
 
+    def test_windowed_native_diagnostic_archive(self):
+        fixture = self.fixture()
+        directory = Path(fixture[-1]["artifacts"]["result"]).parent
+        console = directory / "runner.log"
+        native = directory / "result.json.failure_test/gamelog.txt"
+        reason = console.read_text()
+        native.write_text("12:00:00 " + reason)
+        self.verify(fixture)
+        console.write_text("Windowed native process exited with code 1\n")
+        self.verify(fixture)
+        for diagnostic in (reason + reason, "Input demo replay stopped: invalid input\n"):
+            with self.subTest(diagnostic=diagnostic):
+                native.write_text(diagnostic)
+                with self.assertRaisesRegex(runner.parity.EvidenceError, "native diagnostic"):
+                    self.verify(fixture)
+
     def test_wrong_boundaries_process_outcomes_and_effects_reject(self):
         for mutation in (
             "frame",

@@ -14,6 +14,7 @@ if ($Secret -and ($Game -ne 'd2' -or $DataEdition -ne 'retail' -or $Cheats)) {
     throw 'Secret validation requires -Game d2 -DataEdition retail without -Cheats'
 }
 . (Join-Path $PSScriptRoot '../helpers/test_helpers.ps1')
+. (Join-Path $PSScriptRoot '../helpers/standard_game_data.ps1')
 if (!$OutputDirectory) {
     $OutputDirectory = Join-Path $script:REPO_ROOT ('android/temp/auto-level-demos-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 }
@@ -25,6 +26,7 @@ $Serial = Initialize-AndroidTestTarget -Serial $Serial
 $diagnostics = if ($RecordState) { 'on' } else { 'off' }
 $scriptName = if ($Secret) { 'test_auto_level_secret.jsonc' } elseif ($Cheats) { 'test_auto_level_cheats.jsonc' } else { 'test_auto_level_demos.jsonc' }
 $games = if ($Game) { @($Game) } else { @('d1', 'd2', 'd1-in-d2') }
+$replayDataCandidates = $null
 try {
     foreach ($scenario in $games) {
         $gameName = if ($scenario -eq 'd1') { 'd1' } else { 'd2' }
@@ -136,7 +138,30 @@ try {
             if (Select-String -LiteralPath $local -Pattern '"type":"checkpoint"' -Quiet) {
                 throw 'Automatic recording contains a checkpoint'
             }
-            & (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') -DemoPath $local -Game $gameName -D1Mission:($scenario -eq 'd1-in-d2') -DataEdition $DataEdition -Mode accelerated -Runner windowed-no-present -StrictComparison -CompareRngTrace -CompareStateTrace:$RecordState -TimeoutSeconds 120 *>&1 |
+            $replayParameters = @{}
+            if ($scenario -eq 'd1-in-d2') {
+                # Imported captures also identify any loaded optional D2 containers
+                if ($header.asset_fingerprints.status -cne 'complete') { throw 'Automatic recording lacks complete asset fingerprints' }
+                if (!$replayDataCandidates) {
+                    $replayDataCandidates = @(& {
+                            . (Join-Path $PSScriptRoot '../helpers/shareware_test_data.ps1')
+                            foreach ($contentGame in @('d1', 'd2')) {
+                                (Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $contentGame).DataDir
+                                Get-StandardGameDataCandidates -RepoRoot $script:REPO_ROOT -Game $contentGame
+                            }
+                        })
+                }
+                $dependencies = @($header.asset_fingerprints.files | Where-Object { !$_.PSObject.Properties['container'] -or !$_.container } | ForEach-Object {
+                        @{ file = $_.name; sha256 = $_.sha256 }
+                    })
+                # Desktop D2 initializes external sound tables even with -nosound
+                if ($dependencies.file -contains 'descent2.ham') {
+                    $dependencies += @(Get-StandardGameDataDeps | Where-Object file -eq 'descent2.s22')
+                }
+                $stage = New-StandardGameDataStage -Destination (Join-Path $destination ("replay-data-level" + $header.level)) -Candidates $replayDataCandidates -Dependencies $dependencies
+                $replayParameters.DataDir = $stage.Path
+            }
+            & (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1') -DemoPath $local -Game $gameName -D1Mission:($scenario -eq 'd1-in-d2') -DataEdition $DataEdition -Mode accelerated -Runner windowed-no-present -StrictComparison -RequireCleanExit -CompareRngTrace -CompareStateTrace:$RecordState -TimeoutSeconds 120 @replayParameters *>&1 |
                 Tee-Object -FilePath (Join-Path $destination ("replay-level" + $header.level + ".txt"))
             if ($LASTEXITCODE -ne 0) { throw "Independent level demo replay failed for $gameName" }
         }

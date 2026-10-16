@@ -27,9 +27,9 @@ static void test_missile_camera_ownership()
 					robot.pos = {};
 					robot.ctype.ai_info.SUB_FLAGS = 0;
 					Ai_local_info[&robot - Objects] = {};
-					vms_vector far = { 0, 0, 150 * F1_0 }, near = { 0, 0, 10 * F1_0 };
-					const int older = obj_create(OBJ_WEAPON, CONCUSSION_ID, 0, &far, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
-					const int newer = obj_create(OBJ_WEAPON, GUIDEDMISS_ID, 0, &near, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
+					vms_vector far_position = { 0, 0, 150 * F1_0 }, near_position = { 0, 0, 10 * F1_0 };
+					const int older = obj_create(OBJ_WEAPON, CONCUSSION_ID, 0, &far_position, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
+					const int newer = obj_create(OBJ_WEAPON, GUIDEDMISS_ID, 0, &near_position, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
 					require(older > 0 && newer > 0, "create both real missile identities");
 					for (int i : { older, newer }) {
 						auto &laser = Objects[i].ctype.laser_info;
@@ -51,7 +51,7 @@ static void test_missile_camera_ownership()
 					if (transition == 2) obj_delete(newer);
 					if (transition == 3) {
 						obj_delete(newer);
-						const int reused = obj_create(OBJ_WEAPON, CONCUSSION_ID, 0, &near, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
+						const int reused = obj_create(OBJ_WEAPON, CONCUSSION_ID, 0, &near_position, &vmd_identity_matrix, F1_0 / 4, CT_WEAPON, MT_NONE, RT_NONE);
 						require(reused == newer, "reuse selected slot with a different signature");
 						Objects[reused].ctype.laser_info = Objects[older].ctype.laser_info;
 						Objects[reused].ctype.laser_info.creation_time = 3 * F1_0;

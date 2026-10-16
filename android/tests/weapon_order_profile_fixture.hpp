@@ -154,6 +154,10 @@ static nlohmann::json exercise_weapon_order_profile(const char *native_demo, con
 		if (!path) continue;
 		std::fprintf(stderr, "Testing recorded orders at replay startup: %s\n", path);
 		new_player_config();
+#ifdef DXX_BUILD_DESCENT_II
+		// Native D1 has no missile camera; persist the matched imported display preference
+		if (path == native_demo) PlayerCfg.MissileViewEnabled = 0;
+#endif
 		require(write_player_file() == 0, "persist conflicting default preferences before replay");
 #ifdef DXX_BUILD_DESCENT_II
 		const auto before_replay = PlayerCfg;
@@ -161,7 +165,9 @@ static nlohmann::json exercise_weapon_order_profile(const char *native_demo, con
 		require(input_demo_replay_load(path, error, sizeof(error)), "load recorder output");
 		input_demo_replay_cmdline_options options = {};
 		options.allow_d1_in_d2 = 1;
-		require(input_demo_apply_replay_common_setup(&options, error, sizeof(error)) && input_demo_start_loaded_replay_common() == 0,
+		const bool setup = input_demo_apply_replay_common_setup(&options, error, sizeof(error));
+		if (!setup) std::fprintf(stderr, "Replay setup failed: %s\n", error);
+		require(setup && input_demo_start_loaded_replay_common() == 0,
 		        "start actual native or imported replay");
 		require(fixture_native_order(0) == expected_primary && fixture_native_order(1) == expected_secondary,
 		        "replay startup restores recorded native orders over conflicting pilot preferences");

@@ -4,6 +4,7 @@
 #include "input_demo_replay.h"
 #include "picosha2.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <map>
@@ -28,6 +29,15 @@ struct source {
 std::map<std::string, source> sources;
 std::string captured;
 bool extra_ham_loaded;
+std::string source_path(const std::string &path)
+{
+	std::string result = path;
+#ifdef _WIN32
+	// PHYSFS preserves mount spelling; Windows callers use both separators
+	std::replace(result.begin(), result.end(), '\\', '/');
+#endif
+	return result;
+}
 std::string basename(const std::string &path)
 {
 	return path.substr(path.find_last_of("/\\") + 1);
@@ -117,14 +127,15 @@ void input_demo_assets_note_file(const char *role, const char *path, PHYSFS_file
 void input_demo_assets_note_archive(const char *role, const char *path)
 {
 	input_demo_recorder_set_asset_provider(input_demo_assets_capture);
+	const auto archive_path = source_path(path);
 	// A repeated mount does not reload already resident bytes
-	if (sources.count(role) && sources[role].path == path) {
+	if (sources.count(role) && sources[role].path == archive_path) {
 		if (input_demo_recorder_is_active() && !unchanged(sources[role])) input_demo_recorder_invalidate_assets("archive source changed during recording");
 		return;
 	}
 	source entry;
 	entry.archive = true;
-	entry.path = path;
+	entry.path = archive_path;
 	entry.name = basename(path);
 	if (!hash_archive(entry.path, entry.digest, entry.size)) entry.digest.clear();
 	input_demo_recorder_note_asset(role, entry.digest.c_str(), entry.size);
@@ -168,7 +179,7 @@ const char *input_demo_assets_capture(void)
 				// Only a verified HOG already in this snapshot can own a member fingerprint
 				for (const auto &container : root["files"]) {
 					const auto found = sources.find(container["role"].get<std::string>());
-					if (found != sources.end() && found->second.archive && found->second.path == entry.origin) file["container"] = container["role"];
+					if (found != sources.end() && found->second.archive && found->second.path == source_path(entry.origin)) file["container"] = container["role"];
 				}
 				if (!file.contains("container")) {
 					root["status"] = "unknown";
@@ -199,7 +210,7 @@ const char *input_demo_assets_capture(void)
 		const char *owner = PHYSFS_getRealDir(level);
 		const char *role = sources.count("mission_hog") ? "mission_hog" : d1 ? "d1_hog"
 		                                                                     : "d2_hog";
-		if (!owner || !sources.count(role) || sources[role].path != owner) {
+		if (!owner || !sources.count(role) || sources[role].path != source_path(owner)) {
 			root["status"] = "unknown";
 			root["error"] = "level source is outside the recorded HOG";
 		}

@@ -267,9 +267,11 @@ static void exercise_network_asset_missions(const char *d2_directory)
 			require(offset + 4 <= data.size() && PHYSFS_close(file), "locate companion mass");
 			set_int(data, offset, mass + F1_0);
 			write_fixture("descent2.ham", data);
-		} else if (!std::strcmp(scenario, "missing"))
-			require(PHYSFS_delete("descent2.ham") && PHYSFS_unmount(hog.c_str()) && PHYSFS_unmount(d2_directory), "remove fixture's optional source before cold client entry");
-		else if (!std::strcmp(scenario, "restored"))
+		} else if (!std::strcmp(scenario, "missing")) {
+			require(PHYSFS_delete("descent2.ham"), "remove fixture's changed HAM before cold client entry");
+			require(PHYSFS_unmount(hog.c_str()), "unmount optional HOG before cold client entry");
+			require(PHYSFS_unmount(d2_directory), "unmount optional directory before cold client entry");
+		} else if (!std::strcmp(scenario, "restored"))
 			require(PHYSFS_mount(d2_directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "restore original optional source for client recovery");
 		network_client_level("descent");
 		record(scenario, network_receive_assets(packets, !std::strcmp(scenario, "same") || !std::strcmp(scenario, "restored")));

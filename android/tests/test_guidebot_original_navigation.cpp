@@ -35,6 +35,7 @@ extern "C" {
 #include "input_demo_start.h"
 extern int escort_set_goal_object(void), find_exit_segment(void);
 extern int time_to_visit_player(object *, ai_local *, ai_static *);
+extern void init_buddy_for_level(void);
 extern void ai_path_set_orient_and_vel(object *, vms_vector *, int, vms_vector *);
 extern int Looking_for_marker, Buddy_messages_suppressed;
 extern int Last_buddy_polish_path_tick, Escort_kill_object, Last_buddy_key;
@@ -138,6 +139,22 @@ static void place(object *o, int seg)
 {
 	obj_relink(o - Objects, seg);
 	compute_segment_center(&o->pos, &Segments[seg]);
+}
+static void level_return_cadence(object *bot)
+{
+	const fix64 saved_time = GameTime64;
+	for (int previous_seconds : { 0, 60 }) {
+		Buddy_last_seen_player = Buddy_last_player_path_created = Escort_last_path_created = previous_seconds * F1_0;
+		GameTime64 = 0;
+		init_buddy_for_level();
+		ai_local local = {};
+		local.mode = AIM_GOTO_PLAYER;
+		ai_static path = {};
+		GameTime64 = 5 * F1_0;
+		check("new_level_return_after_" + std::to_string(previous_seconds), time_to_visit_player(bot, &local, &path) != 0);
+	}
+	GameTime64 = saved_time;
+	init_buddy_for_level();
 }
 // Opt-in diagnostic: ordinary save/load, with no demo checkpoint metadata
 // This exercises live navigation and physics, not the entire game frame loop
@@ -525,6 +542,7 @@ int test_guidebot_live_navigation(const char *output, const char *audit)
 	escort_spawn_at_player();
 	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index) return 1;
 	object *bot = &Objects[Buddy_objnum];
+	level_return_cadence(bot);
 	Buddy_allowed_to_talk = 1;
 	Buddy_messages_suppressed = 1;
 	for (int i = 0; i <= Highest_object_index; ++i)

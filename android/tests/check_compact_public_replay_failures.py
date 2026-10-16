@@ -541,9 +541,16 @@ def verify_early_abort(row, args, case, mutation, spec):
         if phase == "carry"
         else f"ordered input SIM RNG differs at frame {frame}"
     )
-    log = actual.with_name("runner.log").read_text(encoding="utf-8")
+    # Windowed Windows executables retain native diagnostics in gamelog.txt
+    # Console executables also emit them through the wrapper's output
+    logs = [actual.with_name("runner.log"), failures[0].parent / "gamelog.txt"]
+    diagnostics = [
+        re.findall(r"Input demo replay stopped: ([^\r\n]+)", path.read_text(encoding="utf-8"))
+        for path in logs
+        if path.is_file()
+    ]
     require(
-        re.findall(r"Input demo replay stopped: ([^\r\n]+)", log) == [reason],
+        any(diagnostics) and all(reasons == [reason] for reasons in diagnostics if reasons),
         "Early failure has an unrelated or ambiguous native diagnostic",
     )
     header, expected, _, batches = verify_declared_mutation(args, case, row["command"], mutation, frame, phase)

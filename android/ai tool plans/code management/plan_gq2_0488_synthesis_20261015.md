@@ -1,0 +1,19 @@
+# Chunk 0488 consolidated diagnosis, 2026-10-15
+
+Diagnosis only; serial work, no product/test/helper edits or execution
+
+Assigned android/game_scripts/test_msaa_render_and_menu.jsonc L1-L900. Whole frozen/current988 and whole addition patch994 rows read. Enclosing L901-L988 is context only, not extra assigned coverage. Base/original absent, frozen-to-current delta empty. Line900 ends MSAA4 scene completion wait; subsequent assertions and shutdown are enclosing context
+
+Three consumer packages: native probe13contexts1247lines, production render22contexts2261lines, safety/harness/owners82contexts3985lines. Total117overlappingcontexts7493lines,15wholeBR,9rawqualityrows,4wholepriorplans. Reused bodies and records have exact current-byte proof. Partial ranges remain explicit; no broader whole-file/caller credit
+
+Retain the two-game/color-depth script, native engine authority, shared Android production/probe helpers and paired compact upstream hooks. Requested4/effective>=2 assertion remains weaker than production policy's smallest common count>=request. Preserve actual attachment format refresh, completeness/matched samples/error-gated counters, failure latch and latest bound/resolve serial. Private known-color probes, real menu samples and scene markers establish different properties; none alone proves complete scene correctness or successful display. Marker subviews do not prove exact missile-camera identity. Named SavedState fields are not every GL state or prior pixel restoration
+
+Direct graphics setter persists the safety attempt before renderer change. Same-step challenge/candidate-ready polling precedes synthetic controller acceptance, preserving the five-second deadline. Ordinary readiness does not imply preview's same-generation presentation acknowledgement. Current0/accepted4 at shutdown is deliberate. FOV is outside the ten-field safety snapshot. EGL actual swap result reaches safety separately from MSAA flip serial; initial cumulative context count may precede makeCurrent
+
+Disposition REPAIR/RETAIN; coverage ISSUES. Direct existing GQR-0170 REFERENCE56 MEDIUM-HIGH32/0/7/10/7 from exact current GQ2-CHUNK-0077, unpooled. Actual JNI decision/state JSON publication exposure warrants this existing root. BR-0251 mandatory-recovery ordering and GQR-0174 shader admission remain separate. BR-0199/0200/0647FIXED and GQR-0128/0129DONE remain unchanged. Generic harness/run/budget/schema/staging/retirement and input-generation owners remain linked
+
+No new finding/remediation/status/rating/runtime acceptance or inherited saving. Historical Retroid script passes and format-refresh repair are not fresh tests. July EGL extraction's historical326-line reduction earns zero new saving. Conditional implementation must preserve completed repairs, fail safely at the real JNI/shader/recovery owners, and verify actual paired production failure/ordinary controls; deferred allocation/CheckJNI/driver matrix remains unrun
+
+Consolidated evidence and independent audit must pass before closing consumer, owner and disposition gates. Publication remains open until immutable final report/snapshot, exact canonical mutation replay and terminal mounted Drive verification. Canonical still487DONE140TODO627/maxGQC1316GQD1196; proposed nextGQC1317/GQD1197 and488DONE139TODO627 subject fresh publication checks. Evidence ledger844566246bytes/fe2b4d394c6c648cbcf18ec404821f6d6cff3637535290568537ea1b220ae2bd unchanged
+
+Next prepare immutable final report/snapshot/current-head dirty supplement and independent replay, then exact six-operation publication preserving all existing physical rows/statuses/other queue units/evidence prefix. Correct new labels directly; retain the historical GQC1315 display-label erratum for a separately audited correction. Use existing authorized Drive backup helper and independent mounted-byte proof before final gate; remote cloud synchronization is not established

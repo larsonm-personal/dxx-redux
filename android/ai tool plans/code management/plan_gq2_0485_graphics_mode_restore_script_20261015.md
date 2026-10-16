@@ -6,7 +6,7 @@ Diagnosis and plans only under plan_general_diagnosis_resume_20261009.md. Serial
 - [x] Trace actual script harness/automation/native consumers at explicit boundaries
 - [x] Reconcile whole existing owners, prior plans and quality dispositions
 - [x] Author direct unpooled disposition and conditional continuation
-- [ ] Publish exact evidence, independently replay and verify mounted Drive backup
+- [x] Publish exact evidence, independently replay and verify mounted Drive backup
 
 Canonical locator only; no source/patch/consumer/runtime credit:
 GQ2-CHUNK-0485 android/game_scripts/test_graphics_mode_restore.jsonc L1-L517.

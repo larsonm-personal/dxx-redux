@@ -675,6 +675,7 @@ if ($DryRun) {
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
 $producerLock = $null
 $automaticDataStage = $null
+$automaticD2DataStage = $null
 try {
     $producerLock = [IO.File]::Open((Join-Path $runRoot 'producer.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     $resolvedHogDir = $null
@@ -689,7 +690,10 @@ try {
             if (-not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) { throw "D2 HOG directory not found: $resolvedHogDir" }
         } else {
             $d2Dependencies = @($dependencies | Where-Object file -notin @('descent.hog', 'descent.pig'))
-            $resolvedHogDir = (Resolve-StandardGameDataDirectory -Candidates $d2Candidates -Dependencies $d2Dependencies -Label D2).Path
+            # Shared source directories can expose native D1 beside a D2 conversion named DESCENT
+            $stage = New-StandardGameDataStage -Destination (Join-Path $runRoot 'd2-base-data') -Candidates $d2Candidates -Dependencies $d2Dependencies
+            $automaticD2DataStage = $stage.Path
+            $resolvedHogDir = $stage.Path
         }
         if ($d1InD2Selected) {
             if ($D1InD2HogDir) {
@@ -994,8 +998,10 @@ try {
     exit 0
 } finally {
     try {
-        if ($automaticDataStage -and (Test-Path -LiteralPath $automaticDataStage)) {
-            Remove-Item -LiteralPath $automaticDataStage -Recurse -Force
+        foreach ($dataStage in @($automaticDataStage, $automaticD2DataStage)) {
+            if ($dataStage -and (Test-Path -LiteralPath $dataStage)) {
+                Remove-Item -LiteralPath $dataStage -Recurse -Force
+            }
         }
     } finally {
         if ($producerLock) { $producerLock.Dispose() }

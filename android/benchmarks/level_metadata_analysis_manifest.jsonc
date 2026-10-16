@@ -23,7 +23,7 @@
             "mission": null,
             "archive": null,
             "level": 1,
-            "expected_sha256": "b91219c74bd4fb1f942327bc413ab49344535fe1f27c2761efc15ec604582ff2",
+            "expected_sha256": "dfe8658fb9ef1af919380d33c8c15f8be9c661ce5902498e2cffe9b118ad9f83",
         },
         {
             "id": "d1-first-strike-10",
@@ -31,7 +31,7 @@
             "mission": null,
             "archive": null,
             "level": 10,
-            "expected_sha256": "24538e5b7c97cc2ba3d330553ccc811a8769955a5bf9002cc0d66abacce327d2",
+            "expected_sha256": "166eca3368ae1cff418d724f1aa579263c21bac04744bec8dc1614f616d1a4f6",
         },
         {
             "id": "d1-first-strike-21",
@@ -39,7 +39,7 @@
             "mission": null,
             "archive": null,
             "level": 21,
-            "expected_sha256": "1e5bfa8175d99b89b121fbd94d26927a4bd711d09fb599fe1b6a500f701e6644",
+            "expected_sha256": "07ba1c05df0a49beac530a37ceb9a92f55750a2bea7f8c8a6eeff55905bc8fc4",
         },
         {
             "id": "d2-counterstrike-01",
@@ -47,7 +47,7 @@
             "mission": null,
             "archive": null,
             "level": 1,
-            "expected_sha256": "0442707a33da0434d193d960455841f442ea99da8a3fbd264867e41cf5ecd057",
+            "expected_sha256": "a9416575483688ebc79d24a831f42731a57348d615dd278c5a91767e11c49e72",
         },
         {
             "id": "d2-counterstrike-02",
@@ -55,7 +55,7 @@
             "mission": null,
             "archive": null,
             "level": 2,
-            "expected_sha256": "9c838525e66c9d82fcdaa4b3df08d75913401def4c087550745e0c6095786fb3",
+            "expected_sha256": "0967ebe3fd8410fe12b61da0d346b64c6ffc651119d63baa19c722c10541d3f2",
         },
         {
             "id": "d2-counterstrike-12",
@@ -63,7 +63,7 @@
             "mission": null,
             "archive": null,
             "level": 12,
-            "expected_sha256": "98be19524b1cf88b83e0507aeefabc42e3d3f316c0e0296e6e2127755398b22f",
+            "expected_sha256": "799871b0679bab9d98bf836e2daa5f88091363892626762497009d69bd3b2bf6",
         },
         {
             "id": "d2-counterstrike-secret-03",
@@ -71,7 +71,7 @@
             "mission": null,
             "archive": null,
             "level": -3,
-            "expected_sha256": "ddd1a63ed001107fd595e74fe060fc7525e3584b64b95425f669c7d28a17b1ac",
+            "expected_sha256": "1a03ff58d0ecfe27d7389d12291a82eeb41ecbd3751b9ff11e5d2a578f00fabd",
         },
         {
             "id": "d2-kcxf2-03",
@@ -79,7 +79,7 @@
             "mission": "kcxf2",
             "archive": "kcxf2",
             "level": 3,
-            "expected_sha256": "6e731c5493301878a68b86b898c75aed41317cd0ab2b851fdf67796f763e71b7",
+            "expected_sha256": "df81f3c57c8aac7405208372468a0b05079d564e5b46e1f15c906d3c8dcf3aa3",
         },
         {
             "id": "d2-obsidian-06",
@@ -87,7 +87,7 @@
             "mission": "obsidian",
             "archive": "obsidian",
             "level": 6,
-            "expected_sha256": "25fc16bd83925082be84896cd0ba45bcf663d251b866893a4879997cbe9ff25f",
+            "expected_sha256": "0628bbd1f0255cc4525ed59575444d86e4b88b4d89690a51280ea980c08caa50",
         },
         {
             "id": "d2-obsidian-11",
@@ -95,7 +95,7 @@
             "mission": "obsidian",
             "archive": "obsidian",
             "level": 11,
-            "expected_sha256": "f742e8e0d89cd74be92f597d8ec5129cdfe116f35eb341512656a3e731070408",
+            "expected_sha256": "1662cea7899b89d577276a84eedd3cdb525c50904cfe632b95a87a1c568ac881",
         },
         {
             "id": "d2-obsidian-12",
@@ -103,7 +103,7 @@
             "mission": "obsidian",
             "archive": "obsidian",
             "level": 12,
-            "expected_sha256": "a677fb49120d6359b71f61eeadab40e8cd9f1c20bb94106864856029f8f5026b",
+            "expected_sha256": "27c200cb8500bfc647e47a8503d98dde8f65df2464f0560901fa3e46cce4c60c",
         },
     ],
 }

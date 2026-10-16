@@ -62,7 +62,7 @@
     // Complete the opening switches before testing the post-key traversal chain
     { "action": "set_debug", "field": "fire_trigger", "value": "10", "post_delay_ms": 100 },
     { "action": "set_debug", "field": "fire_trigger", "value": "8", "post_delay_ms": 100 },
-    { "action": "set_debug", "field": "guidebot_segment", "value": "220", "post_delay_ms": 100 },
+    // Observe the frontier before teleporting to its endpoint, which starts a return trip
     { "action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500 },
     {
         "action": "wait_for",

@@ -82,8 +82,18 @@ try {
         Device @('shell', 'run-as', $package, 'mkdir', $name) | Out-Null
         $created += $name
     }
-    # Start before staging to keep background discovery separate from these service requests
+    # Stop launcher discovery before staging so the first request owns a cold worker
     Device @('shell', 'am', 'start', '-W', '-n', "$package/.SetupActivity") | Out-Null
+    Device @('logcat', '-c') | Out-Null
+    Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND', '-p', $package,
+        '--es', 'command', 'pause_route_metadata_precompute') | Out-Null
+    $deadline = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        $pauseLog = Device @('logcat', '-d', '-s', 'DXX-Setup:I')
+        if ($pauseLog -match 'pause_route_metadata_precompute: stopped') { break }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    if ($pauseLog -notmatch 'pause_route_metadata_precompute: stopped') { throw 'Launcher precompute did not stop before worker isolation' }
     Device @('shell', 'run-as', $package, 'mkdir', '-p', $dataPath, 'files/empty') | Out-Null
     $dataFiles = Get-ChildItem -LiteralPath $DataDirectory -File | Where-Object {
         if ($ContentGame -eq 'd1') { $_.Name -in @('descent.hog', 'descent.pig') }
@@ -97,6 +107,7 @@ try {
         Device @('shell', 'rm', $deviceFile) | Out-Null
     }
     Device @('logcat', '-c') | Out-Null
+    if (WorkerPid) { throw 'Metadata fixture requires a cold worker before its first request' }
     $failed = Request 'missing-base' "/data/user/0/$package/files/empty" $level
     $expectedProblem = if ($Game -eq 'd1') { 'could not find descent.hog' } elseif ($ContentGame -eq 'd1') { 'could not find descent.hog with descent.pig' } else { 'could not find descent2.hog or d2demo.hog' }
     if ($failed.status -ne 'failed' -or $failed.problems[0] -cne $expectedProblem -or -not $failed.worker_restart_required) {

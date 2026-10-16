@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 $androidRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $androidRoot 'helpers/normalized_json_text.ps1')
 . (Join-Path $androidRoot 'helpers/host_metadata_worker.ps1')
+. (Join-Path $androidRoot 'helpers/test_host_platform.ps1')
 $root = Join-Path $androidRoot ('temp/test_host_metadata_worker-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $root -Force | Out-Null
 $fixture = Join-Path $root 'worker.ps1'
@@ -65,10 +66,11 @@ try {
         }
     }
     # Exercise the real stop helper with harmless EOF-driven children.
-    $python = (Get-Command python3 -ErrorAction Stop).Source
+    $python = Resolve-RegressionPythonCommand
+    if (-not $python) { throw 'Python 3 is required for metadata worker shutdown fixtures' }
     $shutdownFixture = Join-Path $PSScriptRoot 'fixtures/metadata_shutdown_child.py'
     foreach ($mode in @('slow', 'flood', 'nonzero', 'timeout')) {
-        $child = New-MetadataWorker -Executable $python -Arguments @($shutdownFixture, $mode)
+        $child = New-MetadataWorker -Executable $python.Path -Arguments (@($python.PrefixArguments) + @($shutdownFixture, $mode))
         if (-not $child.DiagnosticsDirectory) { $child.DiagnosticsDirectory = Join-Path $root 'shutdown' }
         $childId = $child.Process.Id
         $failure = $null

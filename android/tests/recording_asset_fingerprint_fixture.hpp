@@ -6,6 +6,20 @@ static void test_recording_asset_fingerprints(bool imported)
 	const auto baseline = json::parse(input_demo_assets_capture());
 	require(baseline["status"] == "complete", "actual loaded archives have complete fingerprints");
 	require(json::parse(input_demo_assets_capture()) == baseline, "unchanged sources produce identical fingerprints");
+#ifdef _WIN32
+	char level[PATH_MAX];
+	std::snprintf(level, sizeof(level), "%s", Level_names[Current_level_num - 1]);
+	PHYSFSEXT_locateCorrectCase(level);
+	const char *owner = PHYSFS_getRealDir(level);
+	require(owner != nullptr, "loaded level has an archive owner");
+	std::string archive_path = owner;
+	const std::string archive_role = baseline["files"][0]["role"];
+	for (char separator : { '\\', '/' }) {
+		std::replace(archive_path.begin(), archive_path.end(), separator == '/' ? '\\' : '/', separator);
+		input_demo_assets_note_archive(archive_role.c_str(), archive_path.c_str());
+		require(json::parse(input_demo_assets_capture()) == baseline, "Windows archive separators preserve loaded source identity");
+	}
+#endif
 	char error[256] = {};
 	require(maybe_start_input_demo_recording(0), "start through the manual recording path");
 	for (const auto &entry : baseline["files"])

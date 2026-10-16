@@ -83,7 +83,8 @@ try {
         $hostName = 'NsdHost'
         Send-MpCommand -Serial $hostDevice -Command 'lan_host_lobby' -Extras @(
             '--es', 'callsign', $hostName, '--es', 'game', $Game,
-            '--es', 'mission', $(if ($Game -eq 'd1') { 'descent' } else { 'd2' }), '--es', 'mode', 'coop')
+            # Quote the empty native D1 builtin key for adb shell; descent is imported D1 in D2
+            '--es', 'mission', $(if ($Game -eq 'd1') { "''" } else { 'd2' }), '--es', 'mode', 'coop')
         Send-MpCommand -Serial $clientDevice -Command 'lan_discover' -Extras @('--es', 'callsign', 'NsdClient')
         Wait-Nsd 'NSD registration' { (Read-NsdLog $hostDevice) -match 'Registered lobby=' }
         Wait-Nsd 'NSD resolved and confirmed by UDP' {

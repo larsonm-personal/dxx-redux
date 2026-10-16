@@ -107,6 +107,12 @@
         "post_delay_ms": 2300,
     },
     {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "LT",
+        "timeout_ms": 10000,
+    },
+    {
         "action": "controller_input",
         "axes": {},
     },
@@ -123,6 +129,12 @@
         "post_delay_ms": 2300,
     },
     {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "RT",
+        "timeout_ms": 10000,
+    },
+    {
         "action": "controller_input",
         "axes": {},
     },
@@ -136,6 +148,12 @@
         "key": "L2",
         "pressed": true,
         "post_delay_ms": 2300,
+    },
+    {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "L2",
+        "timeout_ms": 10000,
     },
     {
         "action": "controller_input",
@@ -152,6 +170,12 @@
         "key": "R2",
         "pressed": true,
         "post_delay_ms": 2300,
+    },
+    {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "R2",
+        "timeout_ms": 10000,
     },
     {
         "action": "controller_input",
@@ -175,6 +199,12 @@
             "BRAKE": 0.875,
         },
         "post_delay_ms": 2300,
+    },
+    {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "BRAKE",
+        "timeout_ms": 10000,
     },
     {
         "action": "assert",
@@ -218,6 +248,12 @@
             "GAS": 0.875,
         },
         "post_delay_ms": 2300,
+    },
+    {
+        "action": "wait_for",
+        "field": "controller_mapping.selected_control",
+        "value": "GAS",
+        "timeout_ms": 10000,
     },
     {
         "action": "assert",

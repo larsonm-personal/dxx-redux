@@ -1,0 +1,17 @@
+# Chunk 0487 D2 movie skip controls source read, 2026-10-15
+
+Read complete current264 and frozen264-line addition patch270physicalrows. No later delta; base and 1996original lack this Android script. No enclosing tail, removal or inherited-file saving. A combined locator search was clipped after the complete frozen patch; no whole-plan or owner credit is claimed from that search.
+
+Metadata declares D2 and explicit retail data hashes, including intro-h.mvl and other-h.mvl. No _shareware or nonstandalone owner flag. Maintained default resolver therefore selects retail; the script must observe real movies rather than pass a missing-media fallback. Filenames/hashes and authored expectations are not fresh device execution.
+
+Launcher reset disables resume offer and clears skip_intro_movie. Requires intro_active, then actual movie.current intro.mve. After one second checks visible Skip every launch UI. Synthetic screen_touch down/up at300,300 must produce last_name intro.mve and last_result aborted within five seconds. Then skip_intro completes remaining startup, menu/pilot/New game/Counterstrike/Rookie navigation enters pla.mve with intro_active false and screen_advance_can_activate true.
+
+During this in-game movie the UI must show SKIP. Another ordinary screen tap at300,300 must leave movie.current pla.mve after300ms. A native pause key then requires movie.pause_window true. Synthetic down/up targeting the Skip button must abort pla.mve even while that modal pause exists. Wait requires last_result aborted, last_name pla.mve, screen_advance_kind briefing and movie.frame -1; then skip_briefing and in_game true demonstrate forward transition.
+
+Distinct oracles: generic intro tap versus explicit in-game Skip; ignored ordinary in-game tap; paused-movie Skip versus only dismissing pause; correct authored movie name and aborted status versus mere disappearance; subsequent briefing/game transition. Do not collapse to one generic skip helper or event-injection success. The test does not press the intro preference button or verify persisted skip-every-launch behavior, every controller button, stale generation, held gestures, multitouch, focus/device loss or media decoder/storage failures.
+
+Actual movie consumers already read at explicit bounds: MovieHandler aborts intro mouse only, rejects ordinary in-game mouse down, uses shared admission for primary touch/joy, and consumes a generation-tagged request before normal events; Pause creates a modal. RunMovie brackets screen-advance ownership, pumps nested events and closes remaining pause window on exit, publishes last outcome and clears current name. These partial context reads are captured separately before consumer credit; allocation/open/prep failures and cleanup are not all tested.
+
+NEXT shared screen-advance implementation is in android_input.c (not a guessed standalone TU), JNI generation/request ownership, SkipButtonView and MainActivity UI callback/visibility/automation touch dispatch, introspection producers and actual movie/title/briefing transition. Reconcile historical mine-exit plan's broad tap-to-skip notes against current explicit-button policy. Existing generic run/result/retirement/native boundary owners require actual byte proof and direct priority derivation; do not carry graphics priority automatically.
+
+Diagnosis only; no product/test/helper edits or execution, new finding/status/rating/runtime/original saving or canonical ledger append.

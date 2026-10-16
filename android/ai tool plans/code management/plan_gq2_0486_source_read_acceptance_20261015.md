@@ -1,0 +1,19 @@
+# Chunk 0486 Video Info source review, 2026-10-15
+
+Read whole frozen728-line addition patch and whole current body, plus complete later delta. Base and 1996 original lack the path; no enclosing tail or inherited removal. Exact inventory and delta counts are recorded in source progress.
+
+Owned nonstandalone script for test_graphics_video_overlay; metadata declares both games, mission variables and dependency hashes. Unlike preceding standalone scripts it has no _shareware flag. Do not infer current data-edition selection without the owning runner/helper contract.
+
+Writes accepted ten-field all-off640x480 journal and three configs spelling only effects and dimensions. Starts gameplay, queues TexFilt1, explicitly accepts via Left/A down/up and asserts current/accepted/requested1 and unpaused. Rebinds START/A to Menu, opens admin tray, navigates game-specific positions to Video Info, then checks active/polling UI values plus native idle/current/accepted baseline. Admin tray owns pause while native game window remains front.
+
+Coalesced section edits texture filtering and anisotropy through actual UI controller actions. Current delta replaces frozen idle/queued assertions with live/current/candidate_ready and accepted-old assertions, adds one-second live waits and shortens inter-edit waits from1500ms to500ms. Both edits are already visible while a shared confirmation quiet period is restarted. Confirmed challenge suspends Video Info polling, keeps tray/selection and defaults Cancel; A alone rejects and native plus displayed values return to accepted baseline. This is distinct immediate-apply versus durable-acceptance coverage.
+
+MSAA section edits current2 versus accepted0, then rejects with B and repeats with five-and-a-half-second timeout. Current adds live readiness waits and zero incomplete/positive withheld presentation assertions across idle/challenge/restore. Counters are cumulative, not a per-edit delta; positive withheld can originate in initial setup. CurrentMsaa2 is desired configuration, not effective FBO/sample/resolve proof. Preserve the separate effective MSAA oracle.
+
+Return section cycles TexFilt three times back to accepted1 before quiet period, waits three seconds and requires idle/no modal. First B closes Video Info but leaves admin tray and pause; second B closes tray and requires unpaused gameplay/front window plus no menu. Repeated zero fire state/count and energy>=100 are useful input bounds, not full simulation identity or complete input/fault/lifecycle coverage. Final pass log adds no acceptance.
+
+Freshly read whole118-line owning PowerShell runner. It parses sections, removes _section markers and preserves metadata in setup, runs an independent probe, introspects capabilities, and reuses setup to begin full edits. AF absent with MSAA present remaps combined-edit selection/expected AF2 to MSAA2. MSAA absent remaps Back/timeout cases to texture filtering; neither capability skips combined edits. Return-navigation up count derives from actual supported controls. Therefore generated per-profile assertions, not unchanged template text alone, define executed coverage.
+
+Runner enforces isolated physical test app, serial target, child run_test with LeaveRunning and300-second timeout, checks child exit and finally force-stops package. Log markers are only displayed diagnostics. Existing whole-attempt budget, request correlation, cleanup error and mutable capability-generation owners still require reconciliation; no runner/device execution occurred.
+
+NEXT capture owning runner and VideoInfo/Activity queue providers, selectable capability rows, actual native live/debounce/readiness/presentation and pause/input ownership. Reuse previous evidence only after exact current-byte proof. No product/test/helper edits or execution, new finding/status/rating/runtime/original saving or canonical ledger append.

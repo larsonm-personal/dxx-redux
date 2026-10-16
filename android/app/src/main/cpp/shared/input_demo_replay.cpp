@@ -455,7 +455,8 @@ static void reset_session(void)
 {
 	char error[256] = "";
 
-	if (!input_demo_rng_trace_stop(error, sizeof(error)) && error[0])
+	// Game window close also unloads when the recorder owns the shared RNG trace
+	if (g_input_demo_replay_session.loaded && !input_demo_rng_trace_stop(error, sizeof(error)) && error[0])
 		fprintf(stderr, "Input demo replay rng trace stop failed: %s\n", error);
 	input_demo_state_trace_stop();
 	g_input_demo_replay_session = input_demo_replay_session();

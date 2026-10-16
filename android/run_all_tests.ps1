@@ -504,6 +504,8 @@ $testTimeouts = @{
     "test_enemy_within_level2"            = 420
     "test_flyout_safety"                  = 1800
     "test_mission_movies"                = 1800
+    # Configures both native engines and builds the Kotlin CLI before provenance assertions
+    "test_mission_provenance"            = 600
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
     "test_xcrash_native_report"           = 300
@@ -520,7 +522,8 @@ $testTimeouts = @{
     "test_test_helpers_process_wait"      = 60
     "test_test_process_output_capture"    = 60
     "test_validate_extract_regression_specs" = 60
-    "test_validate_automation_catalog"    = 60
+    # Full dependency-closure validation across standalone and support scripts
+    "test_validate_automation_catalog"    = 180
 }
 
 function Get-RunTestJsoncChildTimeoutSeconds {
@@ -2192,6 +2195,15 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
         $singleEmuFailureStreak = 0
         foreach ($test in $tierSingleEmu) {
             if ($stopEarly) { break }
+            # Child recovery can launch an emulator in that owner's Windows cleanup job
+            if (-not (Test-PhysicalTestTarget) -and -not (Test-DeviceOnline -Serial $emu1Serial)) {
+                Write-Status 'Primary emulator went offline between tests; restoring suite infrastructure' 'Yellow'
+                if (-not (Recover-SingleEmulatorEnvironment -SerialRef ([ref]$emu1Serial))) {
+                    Write-Status 'Tier 2 recovery failed; stopping remaining single-emulator tests' 'Red'
+                    break
+                }
+                $singleEmuFailureStreak = 0
+            }
             $result = Invoke-SingleTest -Test $test
             if ($result.Status -in @("PASS", "SKIP")) {
                 $singleEmuFailureStreak = 0

@@ -207,7 +207,9 @@ static nlohmann::json exercise_classic_asset_missions(const char *d2_directory)
 			set_int(data, offset, mass + F1_0);
 			write_fixture("descent2.ham", data);
 		} else if (!std::strcmp(scenario, "missing")) {
-			require(PHYSFS_delete("descent2.ham") && PHYSFS_unmount(hog.c_str()) && PHYSFS_unmount(d2_directory), "remove optional package from the fixture");
+			require(PHYSFS_delete("descent2.ham"), "remove changed optional HAM from the fixture");
+			require(PHYSFS_unmount(hog.c_str()), "unmount optional HOG from the fixture");
+			require(PHYSFS_unmount(d2_directory), "unmount optional directory from the fixture");
 		}
 		char mission[] = "descent";
 		require(load_mission_by_name(mission), "reselect mission after export cleanup");

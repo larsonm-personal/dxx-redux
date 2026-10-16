@@ -333,6 +333,10 @@ void init_buddy_for_level(void)
 	Escort_goal_index = -1;
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
+	// New levels start a new game clock; discard the previous mine's path timers
+	Buddy_last_seen_player = GameTime64;
+	Buddy_last_player_path_created = GameTime64;
+	Escort_last_path_created = GameTime64;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_init_level();
 #endif

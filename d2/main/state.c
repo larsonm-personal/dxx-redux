@@ -4273,7 +4273,9 @@ int state_get_save_file_callsign(char *filename, char *callsign, int callsign_si
 		swap = 1;
 		version = SWAPINT(version);
 	}
-	if (version < STATE_COMPATIBLE_VERSION) {
+	/* The saved mission is not selected yet; either current D2-engine layout is readable */
+	if (!android_save_version_supported(version, 0, 0) &&
+	    !android_save_version_supported(version, 0, 1)) {
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -4287,6 +4289,13 @@ int state_get_save_file_callsign(char *filename, char *callsign, int callsign_si
 	PHYSFSX_readSXE32(fp, swap);
 	PHYSFSX_readSXE32(fp, swap);
 	PHYSFSX_readSXE32(fp, swap);
+	if (version >= SAVE_EPOCH_D2_VERSION) {
+		fix64 saved_epoch;
+		if (!save_epoch_read(fp, swap, &saved_epoch)) {
+			PHYSFS_close(fp);
+			return 0;
+		}
+	}
 	memset(&pl_rw, 0, sizeof(pl_rw));
 	if (PHYSFS_read(fp, &pl_rw, sizeof(pl_rw), 1) != 1) {
 		PHYSFS_close(fp);

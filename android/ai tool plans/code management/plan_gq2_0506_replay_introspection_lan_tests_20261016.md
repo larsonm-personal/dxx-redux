@@ -1,0 +1,70 @@
+# Chunk 0506 replay, introspection and LAN tests, 2026-10-16
+
+Diagnosis and plans only, serially under plan_general_diagnosis_resume_20261009.md. No product/test/helper edits or execution, builds/formatters/generators/device/network/media/resource/security probes, staging or commit
+
+- [x] Read exact assigned frozen bodies/hunks/removals and current enclosing bodies/deltas
+- [x] Trace actual native/helper/suite consumers at explicit boundaries
+- [x] Reconcile whole existing owners, prior plans and raw quality dispositions
+- [x] Derive direct unpooled disposition and conditional continuation
+- [x] Publish exact evidence, independently replay and verify mounted Drive backup
+
+## Exact canonical assignment
+
+### GQ2-CHUNK-0506
+
+- `android/tests/test_input_demo_replay_menu.ps1`: L1-L67
+- `android/tests/test_input_demo_replay.cpp`: diff hunks 1-30, new L685-L1030
+- `android/tests/test_input_demo_result.cpp`: diff hunks 1-3, new L115-L347
+- `android/tests/test_input_demo_rng_mode.c`: diff hunks 1-9, new L6-L139
+- `android/tests/test_input_demo_rng_trace_compare.ps1`: diff hunks 1-3, new L17-L63
+- `android/tests/test_input_demo_runtime_smoke.ps1`: diff hunks 1-5, new L2-L256
+- `android/tests/test_input_demo_start_difficulty_validation.py`: diff hunks 1-2, new L6-L19
+- `android/tests/test_input_demo_state_trace_compare.ps1`: diff hunks 1-5, new L22-L109
+- `android/tests/test_introspection_accessor_contracts.py`: L1-L92
+- `android/tests/test_jdk_install.sh`: L1-L100
+- `android/tests/test_jsonc_and_tracklist_parsing.ps1`: diff hunks 1-9, new L6-L105
+- `android/tests/test_kconfig_android_shared.c`: diff hunks 1-8, new L7-L66
+- `android/tests/test_lan_active_discovery.ps1`: L1-L85
+- `android/tests/test_lan_broadcast.ps1`: diff hunks 1-3, new L7-L149
+- `android/tests/test_lan_launch_preparation.ps1`: L1-L56
+
+
+Canonical section SHA4546560852a0c948fcc4df5d02830537854179658ebe9a785f5d7d77228b8eea
+Queue: | GQ2-CHUNK-0506 | [ ] TODO | source | low | test-source | `15 related paths` | 821 review lines under android/tests | - |
+
+Fifteen paths / 821 review lines. Recover complete assigned frozen bodies or patch payloads including removals, whole current enclosing sources and complete later deltas before source credit. Named hunk new-line spans are not the whole assignment. Trace actual replay/menu/result/RNG/start validation and comparison paths, introspection contract, JSONC/tracklist and control-config seams, JDK installation and LAN discovery/preparation/broadcast. Preserve current replay asset/failure/cleanup and current device/build/parser/ownership repairs; reconcile whole existing owners and source-only versus runtime evidence before any new admission. Preserve compact paired engine format authority and desktop parity. All later current demo work requires explicit later-delta qualification
+
+Do not begin assigned source credit until chunk0505 terminal handoff and all five gates are proven. This is the next-scope locator only: all five gates open, no assigned source credit. Broad queue, sweeps, investigations, final current-head/worktree supplement and closure remain required; goal active
+
+
+Partial source checkpoint: plan_gq2_0506_source_partial_checkpoint_20261016.md SHAb75deb5c147823fec32e98065a170a4519829a12bb3f17bcc74cabe4d82798a2; seven complete source scopes/354 assigned lines/868 current lines, eight remaining scopes/467 assigned lines. Partial source SHA9e22874384421424372291cd3aebb3c72c784ce38c7a88376ab5b24324586f72; independent PASS360 audit SHA3a5eb2e9fe5f5e6511597c1442a6921e6ddd64bee89ec08b53ce0d406d29afc3. All five gates remain open; canonical505DONE122TODO627 unchanged; no runtime/new finding/original saving; goal active
+
+
+Source gate complete: plan_gq2_0506_source_checkpoint_20261016.md SHA23ee047d49003b7a4d0b13f5b9576b4eb18bb3f59f0c70141b4eaaff9cb1ea28;15scopes821reviewlines/5wholeadditions400+10patchscopes421/wholecurrent3689/equal7/later8/rename1. SourceprogressSHAb675cd219de6f92299ed1cb847abb101357ecd104a2442a231559847778522c9;independentPASS375auditSHA8a1fffa8e7845c613c0973f1f1d5a4e3ccc3041a4c2958e770a8e3bf3f001b33. Four later gates open/canonical505DONE122TODO627 unchanged/no runtime/new finding/original saving/goalactive
+
+
+Partial native/comparer/suite consumer ingress: plan_gq2_0506_consumer_ingress_checkpoint_20261016.md SHA7e8076f13b584be96fb19050eb35f2c85ee318f6eaf01f9b6fc95dd082531c9e;20contexts2483lines/5wholefiles/4wholeBR. ProgressSHA47065298ea9b3c93d0118fc0523db02d0dc8937ff73149ed1dc3ab435c34d606;independentPASS114auditSHA83551118f9ced58c75751b0c32e446988fbb0e4abb22d79841f203188c544d3b. Existing0246/0651/0659/0669 causes and current result/RNG/smoke repairs qualified. All15assigned/all5canonical unchanged; onlysourcegateclosed/fourlatergatesopen/canonical505DONE122TODO627/goalactive
+
+
+JSONC/installer/introspection/LAN consumer checkpoint: plan_gq2_0506_helper_consumers_checkpoint_20261016.md SHAbee13780d97ec431ff8e28f2bf138fc548e1ac893ffb21f24804e4bec3d97774;39freshcontexts2382lines,total59contexts4865lines/15wholefiles/7wholeBR/4rawquality/2wholepriors. ProgressSHAf7a0ad5eea226610f051c980e05fa6c5fc273b6841b92497f4a4a74f337b9458;independentPASS285auditSHAc3201947df01ccb75799c14a42893debf9b43e57b02a09b672916a6018f5c1e6. Preserve0143DONEhistorical82line reduction and0234DONE/currentJDKpins;whole0284/0546/0562 qualified. All15assigned/all5canonical unchanged;onlysourcegateclosed/fourlatergatesopen/canonical505DONE122TODO627/goalactive
+
+
+Replay outcome/comparison consumer checkpoint: plan_gq2_0506_replay_consumers_checkpoint_20261016.md SHA7f90146199750904f4bda7f2215bc61933a4d891627a9bb081d2205b44dab475;11freshcontexts1687lines,total70contexts6552lines/15wholefiles/10wholeBR/4rawquality/2wholepriors. ProgressSHA6635c418e243a2ef62d520687973e2e309964c14261a7e58f66f7e8a14bb6dca;independentPASS335auditSHA82566b5b3ead4f9ca75da8bf790386d5f04f834be8ca118185546a950e1a7f77. Current childexit/terminalwrite/earlyframe repairs preserved; remainingnative mismatch and smoke tracecomparison qualified underexisting owners. All15assigned/all5canonical unchanged;onlysourcegateclosed/fourlatergatesopen/canonical505DONE122TODO627/goalactive
+
+
+Complete replay-wrapper context: plan_gq2_0506_wrapper_complete_checkpoint_20261016.md SHA81417213164124474d9c78af2ca15eef20ff060b139577a4854ac203515bab96;14freshcontexts2146lines,total84contexts8698lines/20wholefilecontexts+1assembledwholewrapper2141/12wholeBR/4rawquality/2wholepriors. ProgressSHA61b5817dc0a955c9e3ec4b6e849128b731ab263fb5eecdb13583c193a60a239b;independentPASS397auditSHA6a424e941bfb39b31f80e42dc092ee42ae4c03bb3b6ba8ca9e83315e287de824. Actual asset precedence/hash and buildconfiguration/defaultlayout boundaries qualified. All15assigned/all5canonical unchanged;onlysourcegateclosed/fourlatergatesopen/canonical505DONE122TODO627/goalactive
+
+
+Native result/assets and LAN checkpoint: plan_gq2_0506_native_lan_consumers_checkpoint_20261016.md SHA82212c2be5cb7de912a1165d2fd6c013f38eb56da7509eaff812b63c7a819bdd;15freshcontexts1539lines,total99contexts10237lines/21wholefilecontexts+2assembledwholes/15wholeBR/4rawquality/2wholepriors. ProgressSHA905f988380d7270a3907bf2697186b2529d50394d891d27e2f2ae80707ef2181;independentPASS465auditSHA4eabc0e1efaded5c3a96d8fb498b5037e10000c1f3315ab23373f83c1b5811da. Archived0298FIXED preserved; actualsourcefingerprints and ADB admission/cleanup limits qualified. All15assigned/all5canonical unchanged;onlysourcegateclosed/fourlatergatesopen/canonical505DONE122TODO627/goalactive
+
+
+Complete consumer tracing: plan_gq2_0506_consumer_complete_checkpoint_20261016.md SHA5733685b1ece2f01767a18589412aa37445d9d5a88891c72760be7943e08e41e;16freshcontexts1885lines,total115contexts12122lines/23wholefilecontexts+3assembledwholes/16wholeBR/4rawquality/2wholepriors/15exactconsumerinventory. ProgressSHA6e71bacd987957fcb8ef361e154b641a9a1ed3bbde877a4c79abc8b420064744;independentPASS549auditSHAd16d9fc0eac809b85127ea3b8e0514f56a3ba6c4d5a60e718af407ddfb00606e. Strictduplicate-keyrepair/JDKLinuxWSLowner/suitefamilyrotation preserved; standalonePythonadmissionlead pending owner reconciliation. All15assigned/all5canonical unchanged;source+consumergatesclosed/threegatesopen/canonical505DONE122TODO627/goalactive
+
+
+Partial owner reconciliation: plan_gq2_0506_owner_reconciliation_checkpoint_20261016.md SHA179b3cbe464e0b666bb6d6699e09e55c8eb013c0e9efa3bc6e3ccdff23a92c81;4freshcontexts184lines,total119contexts12306lines/24wholefilecontexts+3assembledwholes/29wholeBR/6rawquality/5wholepriors. ProgressSHA95a2cdd40c9d39cc6443bf5e80ac3a6375f774dc7ce3407ffea4f86f60aa809e;independentPASS596auditSHA7afd83f76dc29108d565ffa0e543ee6ea9ca721f9b1258cf23065ee54c8db568. SpecificCTest/boundedPython/currentLANrepairs preserved; Pythonadmission and remainingpriority reconciliation pending. All15assigned/all5canonical unchanged;source+consumergatesclosed/threegatesopen/canonical505DONE122TODO627/goalactive
+
+
+Analysis gates1-4 complete: plan_gq2_0506_synthesis_20261016.md SHA8217fc97bb9e46a8bd4f236f77d62641194aa8588cf88d011203a25678a76404;123contexts12588lines/24wholefilecontexts+3assembledwholes/29wholeBR/14rawquality/7wholepriors/7fixranks/9referenceranks/15consumerinventory. SynthesisprogressSHAc99b312bac42eb22bc1ef83fe08dde07b739d8215df15124baecb4ee7247c9fb;independentPASS652auditSHA9d6b21e1d06e96c59549a121211807b176378011a030ed3c0d4234284b117ef0. RETAIN/ISSUES directBR0209REFERENCE50MEDIUM-HIGH23/0/7/10/10unpooled. Preserve strictfixture/RNG/terminal/childexit/nativeadapterrepairs;Pythonchecks retainedsourceonly with conditionalaggregateacceptance,nonewroot/status/rating/runtime/originalsaving. Onlypublicationgateopen/0506TODO/canonical505DONE122TODO627unchanged;finalHEAD/report/snapshot/canonicalreplay/observedterminalmountedDriveproofpending;broadergoalactive
+
+
+0506 TERMINAL: GQC1335ISSUES/GQD1215NO_INHERITED_EFFECT0;506DONE121TODO627/1322terminalranks322findings308remediations.123contexts12588lines/29wholeowners/14rawquality/7wholepriors;BR0209REFERENCE50MEDIUM-HIGH23/0/7/10/10unpooled.No newfinding/remediation/status/rating/runtime/originalsaving.AnalysisPASS652/finalPASS1067/proposedPASS4586/publishedPASS5428.Mounted885497752bytes SHAf568f86ccb8466b823ce72c3c89c83e1c4e6be18e1ffabacaaf03166f2b88a1f;receiptSHAe4a462ade2c158bb350b5b0a0d9639dc5536d71ace4d6ae00f2cfea017990a19;publicationauditSHA584faf367e498f22e639863a64c9faacf71547b9ef9400f7977792fb02f09f53.All5gatesclosed;existingtaskworker37516creationticks639277300441548160terminal,monitor34931exit0,independentverifier38588exit0;no competingcopy/mountedbytesonly.Next0507plan plan_gq2_0507_remaining_test_sources_20261016.md SHA09462579633394bb458682471a4f860bf3d1c428b78b512e35a6fa289ef509a9;canonical15paths791reviewlines/exactassignmentpresent/allgatesopen/noassignedsourcecredit.Broadqueue/sweeps/investigations/currentHEADsupplement/closure remain;goalactive

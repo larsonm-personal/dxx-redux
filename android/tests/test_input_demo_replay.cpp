@@ -1160,8 +1160,11 @@ static int expect_cheat_commands(void)
 					return report_failure("cheat command lost interleaved input sample");
 				continue;
 			}
-			const int cheat = frame ? 1 : i < 2 ? (int) i : i < 5 ? (int) i - 1 : 3;
-			const int frame_time = frame ? 5000 : i < 2 ? 3276 : 4000;
+			const int cheat = frame ? 1 : i < 2 ? (int) i
+			                          : i < 5   ? (int) i - 1
+			                                    : 3;
+			const int frame_time = frame ? 5000 : i < 2 ? 3276
+			                                            : 4000;
 			if (operation.kind != INPUT_DEMO_INPUT_COMMAND || operation.frame_time != frame_time ||
 			    operation.command.kind != INPUT_DEMO_REPLAY_DIRECT_COMMAND_CHEAT || operation.command.value0 != cheat)
 				return report_failure("cheat command order or arguments mismatch");
@@ -1202,7 +1205,7 @@ static int expect_cheat_commands(void)
 		if (!line.empty()) rows.push_back(json::parse(line));
 	std::vector<json> invalid;
 	for (const json &value : { json(-1), json(4), json(UINT64_MAX), json(1.5), json(true), json("1"),
-	                          json(nullptr), json::array(), json::object() })
+	                           json(nullptr), json::array(), json::object() })
 		invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" }, { "cheat", value } });
 	invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" } });
 	invalid.push_back({ { "kind", "direct_command" }, { "command", "cheat" }, { "cheat", 1 }, { "extra", 0 } });
@@ -1269,8 +1272,75 @@ static int expect_ordered_all_weapons_policy(void)
 	return 0;
 }
 
+static int expect_unload_preserves_recording_rng_trace(void)
+{
+	const char *path = "test_input_demo_recording_rng_lifecycle.dximdemo";
+	const std::string trace_path = std::string(path) + INPUT_DEMO_RNG_TRACE_SUFFIX;
+	const std::string replay_trace_path = std::string(path) + ".actual_rngtrace.jsonl";
+	char error[256] = "";
+	for (int record_state : { 0, 1 }) {
+		input_demo_recorder_settings settings;
+		input_demo_recorder_settings_clear(&settings);
+		settings.ordered_input = 0;
+		settings.game = input_demo_test_game_id();
+		settings.mission = input_demo_test_game_name();
+		settings.level = 1;
+		settings.rng_mode = input_demo_test_rng_mode();
+		settings.record_per_frame_state = record_state;
+		if (!input_demo_recorder_start(&settings, error, sizeof(error)))
+			return report_failure(error);
+		input_demo_control_state state = {};
+		input_demo_control_pulse pulse = {};
+		input_demo_result frame_state;
+		fill_test_frame_state(&frame_state, 0);
+		input_demo_rng_trace_set_context(0, 3276);
+		d_srand(1234);
+		(void) d_rand();
+		if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, NULL, error, sizeof(error)))
+			return report_failure(error);
+		// Both game window-close handlers unload replay state before saving the recording
+		input_demo_replay_unload();
+		input_demo_replay_unload();
+		if (!input_demo_rng_trace_is_active() || input_demo_rng_trace_event_count() != 2) {
+			std::fprintf(stderr, "Recording RNG lifecycle: record_state=%d active=%d events=%zu\n", record_state, input_demo_rng_trace_is_active(), input_demo_rng_trace_event_count());
+			return report_failure("replay unload discarded the recording RNG trace");
+		}
+		(void) d_rand();
+		if (!input_demo_recorder_flush(path, error, sizeof(error)))
+			return report_failure(error);
+		std::string text;
+		if (!read_text_file(trace_path.c_str(), &text))
+			return report_failure("could not read recording lifecycle RNG trace");
+		std::istringstream lines(text);
+		std::string line;
+		std::vector<nlohmann::json> events;
+		while (std::getline(lines, line)) events.push_back(nlohmann::json::parse(line));
+		if (events.size() != 4 || events[0]["events"] != 3 || events[0]["truncated"] != false ||
+		    events[1]["type"] != "srand" || events[2]["type"] != "rand" || events[3]["type"] != "rand")
+			return report_failure("saved recording lost RNG events across replay cleanup");
+		if (!input_demo_replay_load(path, error, sizeof(error)))
+			return report_failure(error);
+		input_demo_replay_frame frame;
+		if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)) || frame.has_state != record_state)
+			return report_failure("recording lifecycle ignored per-frame state preference");
+		if (!input_demo_rng_trace_start_replay(replay_trace_path.c_str(), error, sizeof(error)))
+			return report_failure(error);
+		(void) d_rand();
+		input_demo_replay_unload();
+		if (input_demo_rng_trace_is_active() || !read_text_file(replay_trace_path.c_str(), &text) ||
+		    text.find("\"events\":1") == std::string::npos)
+			return report_failure("replay unload did not finalize its own RNG trace");
+		remove(path);
+		remove(trace_path.c_str());
+		remove(replay_trace_path.c_str());
+	}
+	return 0;
+}
+
 int main(void)
 {
+	if (expect_unload_preserves_recording_rng_trace())
+		return 1;
 	if (expect_cheat_commands())
 		return 1;
 	if (expect_replay_loader())

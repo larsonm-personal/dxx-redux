@@ -227,6 +227,11 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *state, ai_local *local, r
 #endif
 #pragma pop_macro("PATH_MAX")
 
+// Legacy GL headers define integer macros for these C++ boolean keywords
+// Fixture JSON must retain actual booleans
+#undef true
+#undef false
+
 static void require(bool condition, const char *message)
 {
 	if (!condition) {
@@ -7233,77 +7238,96 @@ static void test_d2_embedded_sound_reload()
 static void test_death_sound_timing()
 {
 	digi_select_system(SDLAUDIO_SYSTEM);
-	Mission mission = {}; mission.descent_version = 2;
-	Mission *saved_mission = Current_mission; Current_mission = &mission;
+	Mission mission = {};
+	mission.descent_version = 2;
+	Mission *saved_mission = Current_mission;
+	Current_mission = &mission;
 	const std::string original = PHYSFS_getWriteDir();
 	const std::string directory = original + "/death-sound-timing";
 	require(PHYSFS_mkdir("death-sound-timing") && PHYSFS_mount(directory.c_str(), nullptr, 0) && PHYSFS_setWriteDir(directory.c_str()), "isolate death sound banks");
 	auto bank = [](int length) {
 		bytes data;
-		append_int(data, 0x444e5344); append_int(data, 1); append_int(data, 1);
+		append_int(data, 0x444e5344);
+		append_int(data, 1);
+		append_int(data, 1);
 		append(data, { 'd', 'e', 'a', 't', 'h', 0, 0, 0 });
-		append_int(data, length); append_int(data, length); append_int(data, 0);
+		append_int(data, length);
+		append_int(data, length);
+		append_int(data, 0);
 		append(data, bytes(length, 128));
 		return data;
 	};
 	bytes ham;
-	append_int(ham, 0x214d4148); append_int(ham, 3);
+	append_int(ham, 0x214d4148);
+	append_int(ham, 3);
 	for (int i = 0; i < 12; ++i) append_int(ham, 0);
 	append(ham, bytes(132));
 	for (int i = 0; i < 4; ++i) append_int(ham, 0);
 	append(ham, bytes(MAX_BITMAP_FILES * 2));
 	write_fixture("descent2.ham", ham);
 	bytes mission_bank = { 'D', 'H', 'F' };
-	bytes mission_name(13); std::memcpy(mission_name.data(), "descent2.s22", 12);
+	bytes mission_name(13);
+	std::memcpy(mission_name.data(), "descent2.s22", 12);
 	append(mission_bank, mission_name);
 	const bytes mission_pcm = bank(44100);
-	append_int(mission_bank, static_cast<int>(mission_pcm.size())); append(mission_bank, mission_pcm);
+	append_int(mission_bank, static_cast<int>(mission_pcm.size()));
+	append(mission_bank, mission_pcm);
 	write_fixture("mission.hog", mission_bank);
 	write_fixture("descent2.s22", bank(22051));
 	write_fixture("descent2.s11", bank(33075));
 	const auto arguments = GameArg;
 	const ubyte logical = Sounds[52], alternate = AltSounds[52];
 	GameArg.SndNoSound = 1;
-	for (int rate : { 11025, 22050 }) for (int lowmem : { 0, 1 }) {
-		piggy_reset_asset_registry();
-		Piggy_hamfile_version = 3;
-		GameArg.SndDigiSampleRate = rate; GameArg.SysLowMem = lowmem;
-		require(read_sndfile(), "read playback bank with no audio device");
-		require(piggy_sound_duration(0) == fixdiv(22051, 22050), "canonical original high-memory timing ignores playback bank and lowmem");
-		if (rate == 11025 && !lowmem) {
-			const std::string mission = directory + "/mission.hog";
-			const std::string playback_origin = PHYSFS_getRealDir("descent2.s11");
-			require(PHYSFS_mount(mission.c_str(), nullptr, 0), "mount mission with only canonical22k bank");
-			piggy_load_mission_data();
-			require(playback_origin == PHYSFS_getRealDir("descent2.s11") && piggy_sound_duration(0) == 2 * F1_0, "normal mission load refreshes canonical timing despite unchanged playback origin");
-			require(PHYSFS_unmount(mission.c_str()), "leave mission sound source");
-			piggy_load_mission_data();
-			require(piggy_sound_duration(0) == fixdiv(22051, 22050), "normal return restores canonical stock timing");
+	for (int rate : { 11025, 22050 })
+		for (int lowmem : { 0, 1 }) {
+			piggy_reset_asset_registry();
+			Piggy_hamfile_version = 3;
+			GameArg.SndDigiSampleRate = rate;
+			GameArg.SysLowMem = lowmem;
+			require(read_sndfile(), "read playback bank with no audio device");
+			require(piggy_sound_duration(0) == fixdiv(22051, 22050), "canonical original high-memory timing ignores playback bank and lowmem");
+			if (rate == 11025 && !lowmem) {
+				const std::string mission = directory + "/mission.hog";
+				const std::string playback_origin = PHYSFS_getRealDir("descent2.s11");
+				require(PHYSFS_mount(mission.c_str(), nullptr, 0), "mount mission with only canonical22k bank");
+				piggy_load_mission_data();
+				require(playback_origin == PHYSFS_getRealDir("descent2.s11") && piggy_sound_duration(0) == 2 * F1_0, "normal mission load refreshes canonical timing despite unchanged playback origin");
+				require(PHYSFS_unmount(mission.c_str()), "leave mission sound source");
+				piggy_load_mission_data();
+				require(piggy_sound_duration(0) == fixdiv(22051, 22050), "normal return restores canonical stock timing");
+			}
+			Sounds[52] = 0;
+			AltSounds[52] = 255;
+			init_test_corridor();
+			GameTime64 = 10 * F1_0 + F1_0 / 2;
+			FrameTime = 0;
+			sbyte playing = 0;
+			d_srand(1234);
+			d_srand_fx(5678);
+			do_robot_dying_frame(&Objects[0], 10 * F1_0, 2 * F1_0, &playing, 52, F1_0 / 4, F1_0);
+			require(!playing, "death-roll cadence uses canonical identity even when lowmem omits playback");
+			piggy_sound_duration_override(0, 44101, 22050);
+			require(piggy_sound_duration(0) == fixdiv(44101, 22050), "authored odd-length overlay preserves original fixed-point rounding");
+			piggy_sound_duration_override(0, -1, 0);
+			require(piggy_sound_duration(0) == fixdiv(22051, 22050), "overlay reset restores canonical bank timing");
+			piggy_sound_duration_override(0, 0, 22050);
+			require(piggy_sound_duration(0) == 0 && piggy_sound_duration(-1) == F1_0 && piggy_sound_duration(Num_sound_files) == F1_0, "zero duration differs from missing metadata fallback");
 		}
-		Sounds[52] = 0; AltSounds[52] = 255;
-		init_test_corridor();
-		GameTime64 = 10 * F1_0 + F1_0 / 2; FrameTime = 0;
-		sbyte playing = 0;
-		d_srand(1234); d_srand_fx(5678);
-		do_robot_dying_frame(&Objects[0], 10 * F1_0, 2 * F1_0, &playing, 52, F1_0 / 4, F1_0);
-		require(!playing, "death-roll cadence uses canonical identity even when lowmem omits playback");
-		piggy_sound_duration_override(0, 44101, 22050);
-		require(piggy_sound_duration(0) == fixdiv(44101, 22050), "authored odd-length overlay preserves original fixed-point rounding");
-		piggy_sound_duration_override(0, -1, 0);
-		require(piggy_sound_duration(0) == fixdiv(22051, 22050), "overlay reset restores canonical bank timing");
-		piggy_sound_duration_override(0, 0, 22050);
-		require(piggy_sound_duration(0) == 0 && piggy_sound_duration(-1) == F1_0 && piggy_sound_duration(Num_sound_files) == F1_0, "zero duration differs from missing metadata fallback");
-	}
 	auto ordered_bank = [](bool reversed, bool shorter) {
 		bytes data;
-		append_int(data, 0x444e5344); append_int(data, 1); append_int(data, shorter ? 1 : 2);
+		append_int(data, 0x444e5344);
+		append_int(data, 1);
+		append_int(data, shorter ? 1 : 2);
 		int offset = 0;
 		for (int slot = 0; slot < (shorter ? 1 : 2); ++slot) {
 			const int identity = reversed ? 1 - slot : slot;
-			bytes name(8); std::memcpy(name.data(), identity ? "deathB" : "deathA", 6);
+			bytes name(8);
+			std::memcpy(name.data(), identity ? "deathB" : "deathA", 6);
 			append(data, name);
 			const int length = identity ? 22050 : 11025;
-			append_int(data, length); append_int(data, length); append_int(data, offset);
+			append_int(data, length);
+			append_int(data, length);
+			append_int(data, offset);
 			offset += length;
 		}
 		append(data, bytes(offset, 128));
@@ -7323,7 +7347,8 @@ static void test_death_sound_timing()
 	write_fixture("descent2.s11", bank(33075));
 	for (int malformed : { 0, 1, 2 }) {
 		bytes invalid = bank(1);
-		set_int(invalid, malformed == 2 ? 28 : 20, malformed == 0 ? INT_MAX : malformed == 1 ? 22051 : -1);
+		set_int(invalid, malformed == 2 ? 28 : 20, malformed == 0 ? INT_MAX : malformed == 1 ? 22051
+		                                                                                     : -1);
 		write_fixture("descent2.s22", invalid);
 		GameArg.SndDigiSampleRate = 11025;
 		require(read_sndfile() && piggy_sound_duration(0) == F1_0, "invalid canonical metadata cannot overflow or read outside payload");
@@ -7332,11 +7357,14 @@ static void test_death_sound_timing()
 	require(piggy_sound_duration(0) == F1_0, "unrepresentable authored override keeps missing-duration fallback");
 	piggy_reset_asset_registry();
 	require(PHYSFS_delete("descent2.s22"), "remove unavailable retail22k bank");
-	Piggy_hamfile_version = 3; GameArg.SndDigiSampleRate = 22050;
+	Piggy_hamfile_version = 3;
+	GameArg.SndDigiSampleRate = 22050;
 	require(read_sndfile() && piggy_sound_duration(0) == 3 * F1_0, "11k-only installations have deterministic header fallback");
 	piggy_reset_asset_registry();
 	require(piggy_sound_duration(0) == F1_0, "registry reset cannot retain old override timing");
-	Sounds[52] = logical; AltSounds[52] = alternate; GameArg = arguments;
+	Sounds[52] = logical;
+	AltSounds[52] = alternate;
+	GameArg = arguments;
 	Current_mission = saved_mission;
 	require(PHYSFS_delete("descent2.s11") && PHYSFS_delete("descent2.ham") && PHYSFS_delete("mission.hog") && PHYSFS_setWriteDir(original.c_str()) && PHYSFS_unmount(directory.c_str()), "restore death sound fixture filesystem");
 }
@@ -8471,7 +8499,7 @@ static void write_checkpoint_frame_trace(const char *directory, const char *chec
 				else if (invalid < 4) {
 					// Current native save appends cadence, wall, phase and Fusion state after autoselect
 					const size_t offset = damaged.size() - 8 - EXPLODING_WALL_RUNTIME_DISK_BYTES - CADENCE_RUNTIME_DISK_BYTES - (invalid == 1 ? 16 : invalid == 2 ? 8
-					                                                                                                                                          : 4);
+					                                                                                                                                              : 4);
 					set_int(damaged, offset, invalid == 1 ? 2 : 5);
 				} else {
 					// Native object_rw starts with signature, type/id, links, then

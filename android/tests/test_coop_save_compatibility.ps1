@@ -6,6 +6,10 @@ if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this fixture test only on a
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
+$saveFormats = Get-Content (Join-Path $script:REPO_ROOT 'android/app/src/main/cpp/shared/android_save_format.h') -Raw
+$versionMatch = [regex]::Match($saveFormats, '(?m)^#define\s+ANDROID_D1_IN_D2_SAVE_VERSION\s+(\d+)\b')
+if (-not $versionMatch.Success) { throw 'Current D1-in-D2 save version was not found' }
+$currentSaveVersion = [int]$versionMatch.Groups[1].Value
 $root = 'files/d2x-redux'
 $save = "$root/Players/save_sets/coop/descent/coopsave.mg5"
 $marker = "$root/coop_restore_slot.txt"
@@ -26,6 +30,7 @@ function Read-HostAnnouncement {
             $json = [Text.Encoding]::UTF8.GetString($packet) | ConvertFrom-Json
             if ($json.type -eq 'ANNOUNCE') {
                 $warning = if ($json.PSObject.Properties.Name -contains 'save_compatibility_warning') { $json.save_compatibility_warning } else { '' }
+                Write-Host "Discovery reply from ${sender}: warning='$warning'"
                 if (($ExpectedWarning -eq '' -and $warning -eq '') -or ($ExpectedWarning -ne '' -and $warning -match $ExpectedWarning)) { return $json }
             }
         } catch [Net.Sockets.SocketException] {
@@ -78,9 +83,15 @@ try {
     if ($hadMarker) {
         Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', $marker, "$marker.compat-backup") | Out-Null
     }
+    Adb -AdbArgs @('logcat', '-c') | Out-Null
     Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
     Send-MpCommand 'lan_host_lobby' @('--es', 'callsign', 'Compat', '--es', 'game', 'd2', '--es', 'mission', 'descent', '--es', 'mode', 'coop')
+    $hosting = Wait-ForCondition -Description 'save compatibility lobby is hosting' -TimeoutSec 10 -PollMs 300 -Condition {
+        Send-MpCommand 'lan_lobby_status'
+        (Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-MP:I')) -match 'lan_lobby_status: hosting=true'
+    }
+    if (-not $hosting) { throw 'Save compatibility lobby did not start hosting' }
 
     # Missing metadata fixture; native format tests separately cover older versions
     $oldSave = Join-Path $fixtureDir 'old-save.mg5'
@@ -128,14 +139,14 @@ try {
         throw 'Host did not block unsupported D1-in-D2 version 31'
     }
     if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw 'Unsupported save launched a game' }
-    foreach ($version in @(40, 42, 45)) {
+    foreach ($version in (@(40, 42, 45, ($currentSaveVersion - 1), ($currentSaveVersion + 1)) | Sort-Object -Unique)) {
         Write-VersionFixture $oldSave $version
         Push-AppFixture $oldSave $save
         $announce = Read-HostAnnouncement -ExpectedWarning "incompatible format version $version"
         Send-MpCommand 'lan_start_game'
         if (Adb -AdbArgs @('shell', 'pidof', "$($script:PACKAGE):game")) { throw "Incompatible save version $version launched a game" }
     }
-    Write-VersionFixture $oldSave 44
+    Write-VersionFixture $oldSave $currentSaveVersion
     Push-AppFixture $oldSave $save
     $announce = Read-HostAnnouncement
     if ($announce.PSObject.Properties.Name -contains 'save_compatibility_warning') { throw 'Current D1-in-D2 save version was rejected' }
@@ -155,6 +166,8 @@ try {
     if ($log -notmatch 'at least two players are required') { throw 'Start fresh did not clear the save restriction' }
     Write-Host 'PASS: incompatible save retained, host and client warned, Start fresh clears restriction and client warning'
 } finally {
+    # Preserve discovery diagnostics before cleanup and the next test clear logcat
+    Adb -AdbArgs @('logcat', '-b', 'all', '-d', '-s', 'LobbyService:D', 'DXX-MP:I', 'DXX-NetLog:I', 'AndroidRuntime:E') | Write-Output
     if ($probe) { $probe.Dispose() }
     if ($redirectAdded) { Adb -AdbArgs @('emu', 'redir', 'del', 'udp:42490') | Out-Null }
     Send-MpCommand 'lan_stop_lobby'
