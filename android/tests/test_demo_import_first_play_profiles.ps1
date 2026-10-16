@@ -133,9 +133,9 @@ foreach ($invalidXml in @(
 }
 $documentsXml = '<hierarchy><node package="com.google.android.documentsui"/></hierarchy>'
 $documentsActivity = 'topResumedActivity=ActivityRecord{123 u0 com.google.android.documentsui/com.android.documentsui.picker.PickActivity t9}'
-foreach ($package in @('com.android.documentsui', 'com.google.android.documentsui')) {
-    if (-not (Test-FirstPlayDocumentsUiRoot -XmlText $documentsXml.Replace('com.google.android.documentsui', $package) `
-                -ActivityText $documentsActivity.Replace('com.google.android.documentsui', $package))) {
+foreach ($pickerPackage in @('com.android.documentsui', 'com.google.android.documentsui')) {
+    if (-not (Test-FirstPlayDocumentsUiRoot -XmlText $documentsXml.Replace('com.google.android.documentsui', $pickerPackage) `
+                -ActivityText $documentsActivity.Replace('com.google.android.documentsui', $pickerPackage))) {
         throw 'Exact system picker root rejected'
     }
 }
@@ -152,6 +152,8 @@ foreach ($invalidActivity in @('',
         ($documentsActivity + "`n" + 'mResumedActivity=ActivityRecord{234 u0 test.package/.SetupActivity t9}'))) {
     if (Test-FirstPlayDocumentsUiRoot -XmlText $documentsXml -ActivityText $invalidActivity) { throw 'Picker XML passed without exact fresh foreground activity' }
 }
+# PowerShell names are case-insensitive; fixture loops must not overwrite the app PACKAGE
+if ($script:PACKAGE -cne 'test.package') { throw 'Picker fixture controls changed the target app package' }
 foreach ($scenario in @('chooser', 'already_open', 'missing_second_observation')) {
     & {
         $observations = [Collections.Generic.Queue[string]]::new()
