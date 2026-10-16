@@ -11869,6 +11869,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "d1_save_translation_runtime_fixture.hpp"
 #include "../app/src/main/cpp/headless/headless_audio.h"
 #include "public_matcen_stations_fixture.hpp"
+#include "authored_matcen_fixture.hpp"
 #ifdef DXX_BUILD_DESCENT_II
 #include "fcd_audio_cache_fixture.hpp"
 #endif
@@ -11991,6 +11992,27 @@ static void test_udp_security_validation()
 
 int main(int argc, char **argv)
 {
+#ifdef DXX_MATCEN_CAPTURE_ONLY_MAIN
+    // Historical reference adapters compile unchanged gameplay, excluding unrelated
+    // unit-test entry points whose APIs may not exist at that historical revision.
+    mem_init();
+    error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
+    require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
+    require(PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "mount isolated fixture directory");
+    if ((argc == 4 || argc == 5) && !std::strcmp(argv[1], "--public-matcen-stations")) {
+        require(argc == 4 || !std::strcmp(argv[4], "--without-activation"), "recognized matcen fixture control");
+        test_public_matcen_stations(argv[2], argv[3], argc == 4);
+        return 0;
+    }
+    if ((argc == 7 || argc == 8) && !std::strcmp(argv[1], "--authored-matcen-stations")) {
+        require(argc == 7 || !std::strcmp(argv[7], "--no-dispatch"), "recognized authored matcen control");
+        test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
+        return 0;
+    }
+    require(false, "capture-only binary requires an explicit matcen fixture");
+    return 1;
+#else
+
 	if (argc == 2 && std::strcmp(argv[1], "--capture-build-revision") == 0) {
 		std::printf("%s\n", DXX_INPUT_DEMO_GIT_VERSION);
 		return 0;
@@ -12098,6 +12120,11 @@ int main(int argc, char **argv)
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {
 		capture_public_level_replay(argv[2], argv[3]);
 		exercise_public_save_continuation(argv[3]);
+		return 0;
+	}
+	if ((argc == 7 || argc == 8) && std::strcmp(argv[1], "--authored-matcen-stations") == 0) {
+		require(argc == 7 || std::strcmp(argv[7], "--no-dispatch") == 0, "recognized authored matcen control");
+		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
 		return 0;
 	}
 	if ((argc == 4 || argc == 5) && std::strcmp(argv[1], "--public-matcen-stations") == 0) {
@@ -12418,4 +12445,5 @@ int main(int argc, char **argv)
 	PHYSFS_deinit();
 	std::puts("Upstream compatibility integration tests passed");
 	return 0;
+#endif
 }

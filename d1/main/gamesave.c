@@ -45,6 +45,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "menu.h"
 #include "switch.h"
 #include "fuelcen.h"
+#include "matcen_regression_capture.h"
 #include "cntrlcen.h"
 #include "powerup.h"
 #include "hostage.h"
@@ -1047,6 +1048,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 	if (PHYSFSX_readStatusFailed(&Level_game_read_status))
 		return -1;
 
+	matcen_capture_triggers();
+
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
 	if (!level_section_seek(LoadFile, control_offset, 1, 1,
 	                        LEVEL_REACTOR_TRIGGER_SERIALIZED_SIZE, "reactor triggers"))
@@ -1056,6 +1059,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
+	Matcen_regression_capture.declared_disk_count = Num_robot_centers;
 	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, MAX_ROBOT_CENTERS,
 	                        game_top_fileinfo_version > 25 ? LEVEL_MATCEN_SERIALIZED_SIZE : LEVEL_MATCEN_V25_SERIALIZED_SIZE,
 	                        "matcens"))
@@ -1063,6 +1067,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	for (i = 0; i < Num_robot_centers; i++) {
 		matcen_info_read(&RobotCenters[i], load_rewind_file, game_top_fileinfo_version);
+		matcen_capture_record(i);
 		
 		//	Set links in RobotCenters to Station array
 		for (j = 0; j <= Highest_segment_index; j++)
@@ -1070,6 +1075,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 				if (Segments[j].matcen_num == i)
 					RobotCenters[i].fuelcen_num = Segments[j].value;
 	}
+	Matcen_regression_capture.complete = !Matcen_regression_capture.overflow &&
+	    !PHYSFSX_readStatusFailed(&Level_game_read_status);
 	if (!validate_loaded_level_graph(game_top_fileinfo_version, gs_num_objects))
 		return -1;
 
