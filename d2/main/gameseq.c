@@ -977,8 +977,8 @@ void LoadLevel(int level_num,int page_in_textures)
 	load_profile.file_us = android_profile_take_elapsed_us(&load_profile_phase_us);
 #endif
 
-	if (!skip_level_presentation)
-		load_palette(Current_level_palette,1,1);		//don't change screen
+	// Level PIG metadata and identity are required even without presentation
+	load_palette(Current_level_palette,1,1);		//don't change screen
 
 	if (!skip_level_presentation)
 		show_boxed_message(TXT_LOADING, 0);
