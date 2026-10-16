@@ -21,6 +21,22 @@ function Assert-Rejected {
     if (-not $rejected) { throw $Message }
 }
 
+function Assert-MissionDifficultyTransition {
+    param([array]$Steps)
+    $missionIndices = @(for ($i = 0; $i -lt $Steps.Count; $i++) {
+            if ($Steps[$i].action -ceq 'select' -and $Steps[$i].text -ceq 'Public First Play') { $i }
+        })
+    if ($missionIndices.Count -ne 1 -or $missionIndices[0] + 2 -ge $Steps.Count) { throw 'Missing unique mission-to-difficulty transition' }
+    $guard = $Steps[$missionIndices[0] + 1]
+    $selection = $Steps[$missionIndices[0] + 2]
+    # d2/menu.c skips the level dialog when Last_level is one; select is substring-based
+    if ($guard.action -cne 'wait_for' -or $guard.expect.menu_subtitle -cne 'Difficulty Level' -or
+        $guard.expect.'menu.items[0].text' -cne 'Trainee' -or $guard.timeout_ms -ne 10000 -or
+        $selection.action -cne 'select' -or $selection.text -cne 'Trainee') {
+        throw 'Single-level mission must observe difficulty before selecting Trainee, without an Ok step'
+    }
+}
+
 # Small synthetic bytes only: the owner must reject malformed archives before any publication
 function New-ProfileHog {
     param([string[]]$Names = @('d2leva-1.sl2'))
@@ -562,10 +578,22 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
                 throw 'Public mission must not use mission-picker shortcuts or debug state mutation'
             }
             $selections = @($steps | Where-Object action -EQ 'select' | ForEach-Object text) -join '|'
-            if ($selections -cne 'New game|Public First Play|Ok|Trainee|Save Game...|Load Game|level 1|Yes' -or
+            if ($selections -cne 'New game|Public First Play|Trainee|Save Game...|Load Game|level 1|Yes' -or
                 @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.'menu.items'.contains -ceq 'Public First Play' }).Count -ne 1) {
                 throw 'Public mission lost its observed normal mission picker or save/load menus'
             }
+            Assert-MissionDifficultyTransition -Steps $steps
+            $difficultyGuardIndex = -1
+            for ($i = 0; $i -lt $steps.Count; $i++) {
+                if ($steps[$i].action -ceq 'select' -and $steps[$i].text -ceq 'Public First Play') { $difficultyGuardIndex = $i + 1 }
+            }
+            # Recreate run one's failing Ok step, which native substring matching accepts as Rookie
+            $oldSequence = @($steps)
+            $oldSequence[$difficultyGuardIndex] = @{ action = 'select'; text = 'Ok'; timeout_ms = 10000 }
+            Assert-Rejected { Assert-MissionDifficultyTransition -Steps $oldSequence } 'The old Ok-to-Rookie failure sequence was accepted'
+            $wrongMenu = @($steps)
+            $wrongMenu[$difficultyGuardIndex] = @{ action = 'wait_for'; expect = @{ menu_subtitle = 'Select Starting Level'; 'menu.items[0].text' = 'Trainee' }; timeout_ms = 10000 }
+            Assert-Rejected { Assert-MissionDifficultyTransition -Steps $wrongMenu } 'A starting-level menu passed as the single-level difficulty prompt'
             $ammo = @($steps | Where-Object { $_.action -eq 'assert' -and $null -ne $_.expect.'player.secondary_ammo[0]' } | ForEach-Object { $_.expect.'player.secondary_ammo[0]' }) -join ','
             if ($ammo -cne '7,6,5,6,6' -or @($steps | Where-Object { $_.action -eq 'send_button' -and $_.button -eq 101 }).Count -ne 2) {
                 throw 'Public mission lost its nondefault saved-ammo witness'
