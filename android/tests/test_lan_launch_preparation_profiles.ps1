@@ -33,7 +33,7 @@ foreach ($PublicShareware in @($false, $true)) {
         }
     }
 }
-foreach ($name in @('Test-PublicLanEngineLog', 'Test-PublicLanPeerState', 'Assert-LanPreparationTargets', 'Assert-PublicLanDeviceAssets', 'Stage-PublicLanAssets')) {
+foreach ($name in @('Read-LanPreparationLobby', 'Test-LanPreparationLobbyPeers', 'Test-PublicLanEngineLog', 'Test-PublicLanPeerState', 'Assert-LanPreparationTargets', 'Assert-PublicLanDeviceAssets', 'Stage-PublicLanAssets')) {
     $definition = $runner.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -179,6 +179,9 @@ $script:offline = ''
 $script:physical = ''
 $script:badClear = $false
 $script:badHash = $false
+$script:badLobbyClear = $false
+$script:publishedLobby = ''
+$script:nextLobby = ''
 $script:PACKAGE = 'com.dxxredux.test'
 $script:DEFAULT_SET_DIR = 'files/imported/sets/default'
 $D1DataDirectory = $PSScriptRoot
@@ -191,12 +194,24 @@ function Adb-Dev-Timeout {
     if ($AdbArgs[0] -eq 'get-state') { if ($Serial -eq $script:offline) { return $null }; return 'device' }
     if ($AdbArgs -contains 'getprop') { if ($Serial -eq $script:physical) { return '0' }; return '1' }
     if ($AdbArgs -contains 'clear') { if ($script:badClear) { return $null }; return 'Success' }
+    if ($AdbArgs[-1] -like '*rm -f files/mp_introspect.json*') {
+        if ($script:badLobbyClear) { return $null }
+        $script:publishedLobby = ''
+        return 'DXX_LAN_STATE_CLEARED'
+    }
+    if ($AdbArgs -contains 'cat' -and $AdbArgs[-1] -ceq 'files/mp_introspect.json') { return $script:publishedLobby }
     if ($AdbArgs -contains 'sha256sum') {
         $path = $AdbArgs[-1]
         $file = @($publicFiles | Where-Object { $path.EndsWith('/' + $_.File) })[0]
         if ($script:badHash) { return "wrong  $path" }
         return "$($file.Sha256)  $path"
     }
+}
+function Send-MpCommand {
+    param([string]$Serial, [string]$Command)
+    if ($Command -cne 'introspect') { throw 'Unexpected mocked lobby command' }
+    $script:requests.Add(@{ Serial = $Serial; Arguments = @('MP_COMMAND', $Command) })
+    $script:publishedLobby = $script:nextLobby
 }
 Assert-LanPreparationTargets -HostSerial 'emulator-5554' -ClientSerial 'emulator-5556'
 if ($script:requests.Count -ne 4 -or @($script:requests | Where-Object { $_.Arguments[0] -notin @('get-state', 'shell') }).Count) {
@@ -233,10 +248,61 @@ $script:badClear = $false
 $script:badHash = $true
 Assert-Rejected 'changed staged public asset' { Assert-PublicLanDeviceAssets -Serial 'emulator-5554' }
 
+& {
+    Set-StrictMode -Version Latest
+    $hostOnly = '{"callsign":"PrepH3","lan":{"hosting":true,"players":[{"callsign":"PrepH3","connected":true,"ready":true}]}}'
+    $twoNotReady = '{"callsign":"PrepH3","lan":{"hosting":true,"players":[{"callsign":"PrepH3","connected":true,"ready":true},{"callsign":"PrepJ3","connected":true,"ready":false}]}}'
+    $twoReady = $twoNotReady.Replace('"ready":false', '"ready":true')
+    $peers = @{ HostCallsign = 'PrepH3'; ClientCallsign = 'PrepJ3' }
+    if (Test-LanPreparationLobbyPeers -State ($hostOnly | ConvertFrom-Json) @peers -RequireReady) { throw 'Host-only ready lobby passed' }
+    # Reproduce stage7: earlier host-only ready evidence must not override two unready peers
+    $script:publishedLobby = $hostOnly
+    $script:nextLobby = $twoNotReady
+    $script:requests.Clear()
+    $state = Read-LanPreparationLobby -Serial 'emulator-5554'
+    if (-not (Test-LanPreparationLobbyPeers -State $state @peers)) { throw 'Connected two-player lobby was not joined' }
+    if (Test-LanPreparationLobbyPeers -State $state @peers -RequireReady) { throw 'Older host-only readiness overrode the current unready client' }
+    if ($script:requests.Count -ne 3 -or $script:requests[0].Arguments[-1] -notlike '*rm -f files/mp_introspect.json*' -or
+        $script:requests[1].Arguments[0] -cne 'MP_COMMAND' -or $script:requests[2].Arguments[-1] -cne 'files/mp_introspect.json') {
+        throw 'Lobby evidence must be invalidated, requested, then read'
+    }
+    $script:nextLobby = $twoReady
+    $state = Read-LanPreparationLobby -Serial 'emulator-5554'
+    if (-not (Test-LanPreparationLobbyPeers -State $state @peers -RequireReady)) { throw 'Current two-player ready lobby was rejected' }
+    foreach ($mutation in @(
+            { param($s) $s.callsign = 'OtherHost' },
+            { param($s) $s.lan.hosting = $false },
+            { param($s) $s.lan.players[1].callsign = 'PrepJ2' },
+            { param($s) $s.lan.players[1].callsign = 'PrepH3' },
+            { param($s) $s.lan.players[1].connected = $false },
+            { param($s) $s.lan.players[0].ready = $false },
+            { param($s) $s.lan.players[1].PSObject.Properties.Remove('ready') }
+        )) {
+        $state = $twoReady | ConvertFrom-Json
+        & $mutation $state
+        if (Test-LanPreparationLobbyPeers -State $state @peers -RequireReady) { throw 'Wrong, disconnected or unready session peers passed' }
+    }
+    foreach ($missing in @($null, ('{}' | ConvertFrom-Json), ('{"callsign":"PrepH3","lan":null}' | ConvertFrom-Json))) {
+        if (Test-LanPreparationLobbyPeers -State $missing @peers -RequireReady) { throw 'Missing lobby state passed' }
+    }
+    foreach ($raw in @('', '{')) {
+        $script:nextLobby = $raw
+        if ($null -ne (Read-LanPreparationLobby -Serial 'emulator-5554')) { throw 'Unpublished or malformed current state reused prior ready evidence' }
+    }
+    $script:publishedLobby = $twoReady
+    $script:badLobbyClear = $true
+    $script:requests.Clear()
+    Assert-Rejected 'failed lobby evidence invalidation' { Read-LanPreparationLobby -Serial 'emulator-5554' }
+    if ($script:requests.Count -ne 1) { throw 'Failed invalidation continued to request or read stale lobby evidence' }
+    $script:badLobbyClear = $false
+}
+
 # These are orchestration controls, not claims that an emulator session ran
 $source = Get-Content -LiteralPath $runnerPath -Raw
 foreach ($required in @(
         'Get-GameIntrospection -Serial $HostSerial -Fresh',
+        '$state = Read-LanPreparationLobby -Serial $HostSerial',
+        'Test-LanPreparationLobbyPeers -State $state -HostCallsign $hostCallsign -ClientCallsign $clientCallsign -RequireReady',
         'Send-MpCommand -Serial $HostSerial -Command ''lan_host_lobby'' -Extras $hostExtras',
         'LAN final peer evidence:',
         'logcat -c && echo DXX_LAN_LOG_CLEARED',
@@ -253,6 +319,9 @@ foreach ($required in @(
         '-Engine $Engine -Content $Content -NativeLog $clientNativeLog'
     )) {
     if (-not $source.Contains($required)) { throw "Public LAN orchestration control missing: $required" }
+}
+if ($source.Contains("-match 'players=2'") -or $source.Contains("-match 'all_ready=true'")) {
+    throw 'Historical status lines must not prove current lobby membership or readiness'
 }
 $guard = $source.IndexOf('Assert-LanPreparationTargets -HostSerial $hostSerial -ClientSerial $clientSerial')
 $stage = $source.IndexOf('foreach ($serial in @($hostSerial, $clientSerial)) { Stage-PublicLanAssets -Serial $serial }')

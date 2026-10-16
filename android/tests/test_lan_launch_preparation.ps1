@@ -13,6 +13,33 @@ function Read-LaunchLog([string]$Serial) {
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @('logcat', '-d', '-s', 'DXX-Launcher:I', 'DXX-MP:I', 'LobbyService:I') -Seconds 5
 }
 
+function Read-LanPreparationLobby([string]$Serial) {
+    $cleared = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sh', '-c',
+        "'rm -f files/mp_introspect.json && echo DXX_LAN_STATE_CLEARED'") -Seconds 5
+    if ($cleared -cne 'DXX_LAN_STATE_CLEARED') { throw 'Could not clear old LAN lobby evidence' }
+    Send-MpCommand -Serial $Serial -Command 'introspect'
+    $raw = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/mp_introspect.json') -Seconds 5
+    try { return ($raw | ConvertFrom-Json) } catch { return $null }
+}
+
+function Test-LanPreparationLobbyPeers {
+    param($State, [string]$HostCallsign, [string]$ClientCallsign, [switch]$RequireReady)
+
+    if (-not $State -or -not $State.PSObject.Properties['callsign'] -or -not $State.PSObject.Properties['lan']) { return $false }
+    $lan = $State.lan
+    if (-not $lan -or -not $lan.PSObject.Properties['hosting'] -or -not $lan.PSObject.Properties['players']) { return $false }
+    if ($State.callsign -cne $HostCallsign -or $lan.hosting -ne $true -or $HostCallsign -ceq $ClientCallsign) { return $false }
+    $players = @($lan.players)
+    if ($players.Count -ne 2) { return $false }
+    foreach ($player in $players) {
+        if (-not $player -or -not $player.PSObject.Properties['callsign'] -or
+            -not $player.PSObject.Properties['connected'] -or -not $player.PSObject.Properties['ready']) { return $false }
+        if ($player.connected -ne $true -or ($RequireReady -and $player.ready -ne $true)) { return $false }
+    }
+    return @($players | Where-Object { $_.callsign -ceq $HostCallsign }).Count -eq 1 -and
+    @($players | Where-Object { $_.callsign -ceq $ClientCallsign }).Count -eq 1
+}
+
 function Assert-LanPreparationTargets {
     param([string]$HostSerial, [string]$ClientSerial)
 
@@ -126,12 +153,8 @@ function Invoke-D1OnlyLanDiagnostic {
         Send-MpCommand -Serial $clientSerial -Command 'lan_discover' -Extras @('--es', 'callsign', 'D1ProbeJ')
         $observed = Wait-ForCondition -Description 'D1-only LAN admission or explicit rejection' -TimeoutSec 30 -PollMs 1000 -Condition {
             Send-MpCommand -Serial $clientSerial -Command 'lan_join_first_lobby' -Extras @('--es', 'host_addr', $hostIp)
-            $cleared = Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sh', '-c',
-                "'rm -f files/mp_introspect.json && echo DXX_LAN_STATE_CLEARED'") -Seconds 5
-            if ($cleared -cne 'DXX_LAN_STATE_CLEARED') { throw 'Could not clear old D1-only LAN admission evidence' }
-            Send-MpCommand -Serial $clientSerial -Command 'introspect'
-            $raw = Adb-Dev-Timeout -Serial $clientSerial -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/mp_introspect.json') -Seconds 5
-            try { $state = $raw | ConvertFrom-Json } catch { return $false }
+            $state = Read-LanPreparationLobby -Serial $clientSerial
+            if (-not $state) { return $false }
             $state | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory 'd1-only-client-lobby.json') -Encoding utf8
             if ($state.lan.joined_host -eq $hostIp -and $state.lan.joined_lobby_id) {
                 $result = @{ outcome = 'admitted_to_lobby'; gameplay_tested = $false; engine = 'd2'; mission = 'descent' }
@@ -185,14 +208,16 @@ function Invoke-LanPreparationSession {
         Send-MpCommand -Serial $ClientSerial -Command 'lan_discover' -Extras @('--es', 'callsign', $clientCallsign)
         $joined = Wait-ForCondition -Description 'client joined launcher lobby' -TimeoutSec 25 -PollMs 500 -Condition {
             Send-MpCommand -Serial $ClientSerial -Command 'lan_join_first_lobby'
-            Send-MpCommand -Serial $HostSerial -Command 'lan_lobby_status'
-            (Read-LaunchLog $HostSerial) -match 'players=2'
+            $state = Read-LanPreparationLobby -Serial $HostSerial
+            $state | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory "session-$Session-host-joined-lobby.json") -Encoding utf8
+            Test-LanPreparationLobbyPeers -State $state -HostCallsign $hostCallsign -ClientCallsign $clientCallsign
         }
         if (-not $joined) { throw 'Client did not join launcher lobby' }
         $ready = Wait-ForCondition -Description 'both peers ready' -TimeoutSec 20 -PollMs 500 -Condition {
             Send-MpCommand -Serial $ClientSerial -Command 'lan_set_ready' -Extras @('--ez', 'ready', 'true')
-            Send-MpCommand -Serial $HostSerial -Command 'lan_lobby_status'
-            (Read-LaunchLog $HostSerial) -match 'all_ready=true'
+            $state = Read-LanPreparationLobby -Serial $HostSerial
+            $state | ConvertTo-Json -Depth 100 | Set-Content (Join-Path $outputDirectory "session-$Session-host-ready-lobby.json") -Encoding utf8
+            Test-LanPreparationLobbyPeers -State $state -HostCallsign $hostCallsign -ClientCallsign $clientCallsign -RequireReady
         }
         if (-not $ready) { throw 'Lobby did not become ready' }
         # Do not consume the host launch event yet: this models slow host preparation
