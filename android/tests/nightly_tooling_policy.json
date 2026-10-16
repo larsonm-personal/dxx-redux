@@ -341,7 +341,9 @@
     {"id": "master:test_obsidian_level7_switch_guidance", "owner": "master", "lane": "android-single", "args": {"suite": "test_obsidian_level7_switch_guidance"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "master:test_vertigo_level_metadata", "owner": "master", "lane": "android-single", "args": {"suite": "test_vertigo_level_metadata"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "host-profile:retail-vertigo-metadata", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-vertigo-metadata"}, "estimated_seconds": 600, "fixture": "retail-missions"},
-    {"id": "host-profile:retail-obsidian-liquid", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-obsidian-liquid"}, "estimated_seconds": 600, "fixture": "retail-missions"}
+    {"id": "host-profile:retail-obsidian-liquid", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-obsidian-liquid"}, "estimated_seconds": 600, "fixture": "retail-missions"},
+    {"id": "host-profile:retail-input-demos", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-input-demos"}, "estimated_seconds": 600, "fixture": "retail-demos"},
+    {"id": "python:test_private_input_demos.py", "owner": "host-adapter", "lane": "host", "args": {"suite": "python:test_private_input_demos.py"}, "estimated_seconds": 30}
   ],
   "exclusions": [{"id": "retail-media", "reason": "Additional licensed or campaign fixtures not yet provided to the trusted retail profile"}, {"id": "physical-android", "reason": "Physical GPU/touch/audio hardware and multi-device LAN topology are not emulated coverage"}]
 }

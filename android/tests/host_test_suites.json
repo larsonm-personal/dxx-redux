@@ -632,7 +632,9 @@
       "path": "android/tests/test_save_epoch_contract.py",
       "estimated_seconds": 30,
       "python_modules": [],
-      "executables": ["cc"],
+      "executables": [
+        "cc"
+      ],
       "coverage_scope": "Exact-source save callsign reader and epoch wiring controls; skips are incomplete coverage.",
       "constraints": []
     },
@@ -1440,6 +1442,40 @@
         "dxx-redux-{game}-metadata-worker",
         "dxx-redux-{game}-headless-route"
       ]
+    },
+    {
+      "id": "host-profile:retail-input-demos",
+      "kind": "retail-python",
+      "profile": "retail-input-demos",
+      "path": "android/tests/private_input_demos.py",
+      "games": [
+        "d2"
+      ],
+      "target_suffix": "-headless",
+      "fixture": "retail-demos",
+      "public_data": false,
+      "virtual_display": false,
+      "executables": [
+        "cmake"
+      ],
+      "python_modules": [],
+      "estimated_seconds": 600,
+      "coverage_scope": "Two immutable private Counterstrike input recordings: loaded-asset fingerprints, full embedded terminal oracles including exact frame counts, natural exit, and repeated full terminal-state consistency.",
+      "constraints": [
+        "Exact reviewed private assets commit required; originals and generated logs/traces stay private.",
+        "Cross-platform ARM64 recordings replayed on Linux; no rerecording, weakened oracle, or graphical qualification."
+      ],
+      "profile_exclusions": []
+    },
+    {
+      "id": "python:test_private_input_demos.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_private_input_demos.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "Synthetic admission, immutable input, strict oracle, missing output and private headless command controls",
+      "constraints": []
     }
   ],
   "owned_elsewhere": [
