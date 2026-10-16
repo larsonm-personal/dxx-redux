@@ -1080,7 +1080,7 @@ if mode == 'nonzero': sys.exit(1)
                     output = Path(argv[argv.index("-route-confirm-json-out") + 1])
                     # Route discovery mounts the parent of the descriptor directory
                     self.assertEqual(argv[argv.index("-extra-dir") + 1],
-                                     str(root / (output.parent.name + "-input")))
+                                     str((root / (output.parent.name + "-input")).resolve()))
                     save = Path(argv[argv.index("-route-confirm-user-dir") + 1]) / "level1.sav"
                     phase = output.stem
                     if phase.startswith("wrong-"):
