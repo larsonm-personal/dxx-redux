@@ -167,5 +167,4 @@
     { "action": "assert_button", "text": "Load Last Save", "enabled": true },
     { "action": "assert_button", "text": "Save Explorer", "enabled": true },
     { "action": "log", "message": "=== TEST: Missing-pilot autosave resume flow -- COMPLETE ===" },
-    { "action": "introspect" },
 ]

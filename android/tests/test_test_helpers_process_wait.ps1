@@ -46,6 +46,27 @@ if ($runnerSource -notmatch '"test_xcrash_native_report"\s*=\s*300') {
     throw 'xCrash native report test does not allow enough time for a cold native build'
 }
 
+$completeResult = '{"result":"PASS","steps_completed":3,"total_steps":3}' | ConvertFrom-Json
+if (-not (Test-AutomationResultComplete -Result $completeResult)) { throw 'Complete PASS was rejected' }
+foreach ($json in @(
+        '{"result":"PASS"}',
+        '{"result":"PASS","steps_completed":0,"total_steps":0}',
+        '{"result":"PASS","steps_completed":1,"total_steps":2}',
+        '{"result":"PASS","steps_completed":3,"total_steps":2}',
+        '{"result":"PASS","steps_completed":-1,"total_steps":-1}',
+        '{"result":"PASS","steps_completed":"2","total_steps":2}',
+        '{"result":"PASS","steps_completed":true,"total_steps":1}',
+        '{"result":"PASS","steps_completed":1.5,"total_steps":1.5}',
+        '{"result":"PASS","steps_completed":null,"total_steps":1}',
+        '{"result":"FAIL","steps_completed":2,"total_steps":2}',
+        '{"result":"LAUNCHER_CONTINUE","steps_completed":2,"total_steps":3}'
+    )) {
+    if (Test-AutomationResultComplete -Result ($json | ConvertFrom-Json)) { throw "Invalid terminal PASS accepted: $json" }
+}
+if ([regex]::Matches($helperSource, 'Test-AutomationResultComplete -Result \$(terminalResult|resultObj)').Count -ne 2) {
+    throw 'Both automation PASS acceptance paths must validate completion'
+}
+
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
 $otherResult = '{"result":"PASS","run_id":"run-b"}' | ConvertFrom-Json
 $legacyResult = '{"result":"PASS"}' | ConvertFrom-Json

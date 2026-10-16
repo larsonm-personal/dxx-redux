@@ -1766,6 +1766,20 @@ function Test-AutomationResultRunId {
     return ([string]$runIdProperty.Value -ceq $ExpectedRunId)
 }
 
+function Test-AutomationResultComplete {
+    param([AllowNull()][object]$Result)
+
+    if ($null -eq $Result -or $Result.result -cne 'PASS') { return $false }
+    $completed = $Result.PSObject.Properties['steps_completed']
+    $total = $Result.PSObject.Properties['total_steps']
+    if ($null -eq $completed -or $null -eq $total) { return $false }
+    # Both native and launcher producers publish integer counters only at completion
+    foreach ($value in @($completed.Value, $total.Value)) {
+        if ($value -isnot [int] -and $value -isnot [long] -and $value -isnot [bigint]) { return $false }
+    }
+    return ($total.Value -gt 0 -and $completed.Value -eq $total.Value)
+}
+
 function Get-TestStatusFromExitCode {
     param(
         [int]$ExitCode,
@@ -1885,6 +1899,10 @@ function Watch-AutomationResult {
                         $terminalResult = $terminalJson | ConvertFrom-Json
                         if (Test-AutomationResultRunId -Result $terminalResult -ExpectedRunId $ExpectedRunId) {
                             if ($terminalResult.result -eq "PASS") {
+                                if (-not (Test-AutomationResultComplete -Result $terminalResult)) {
+                                    Write-Status "FAIL: Incomplete or invalid PASS result after process exit" "Red"
+                                    return $false
+                                }
                                 Write-Status "PASS (file-based after process exit, $($terminalResult.steps_completed)/$($terminalResult.total_steps) steps)" "Green"
                                 $finished = $true
                                 $passed = $true
@@ -2020,6 +2038,10 @@ function Watch-AutomationResult {
                         Write-Status "Ignoring automation result for run_id=$displayRunId" "Yellow"
                     }
                 } elseif ($resultObj.result -eq "PASS") {
+                    if (-not (Test-AutomationResultComplete -Result $resultObj)) {
+                        Write-Status "FAIL: Incomplete or invalid PASS result" "Red"
+                        return $false
+                    }
                     Write-Status "PASS (file-based, $($resultObj.steps_completed)/$($resultObj.total_steps) steps, $($resultObj.elapsed_ms)ms)" "Green"
                     $finished = $true
                     $passed = $true
