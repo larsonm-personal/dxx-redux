@@ -901,6 +901,17 @@ $allTests += @{
     Arguments = @('-PublicFirstPlay')
 }
 
+# Independent ordinary-use smoke; full first-play retains mission replacement/save coverage
+$allTests += @{
+    Name = 'test_demo_import_public_basic_use'
+    BaseName = 'test_demo_import'
+    Type = 'ps1'
+    Path = (Join-Path $testsDir 'test_demo_import.ps1')
+    Requires = 'emulator'
+    TimeoutSeconds = 720
+    Arguments = @('-PublicBasicUse')
+}
+
 $inputDemoRegressionHeadlessWrapper = Join-Path $testsDir "test_input_demo_regressions.ps1"
 $inputDemoRegressionGraphicsWrapper = Join-Path $testsDir "test_input_demo_regressions_graphics.ps1"
 $inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest -ManifestPath (Join-Path $testsDir "input_demo_graphics_canaries.txt")

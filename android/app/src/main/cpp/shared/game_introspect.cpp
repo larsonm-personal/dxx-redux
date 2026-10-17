@@ -2988,6 +2988,9 @@ extern "C" char *game_introspect_get_state(void)
 		j["next_laser_fire_delta"] = (long long) (Next_laser_fire_time - GameTime64);
 		j["last_laser_fired_delta"] = (long long) (Last_laser_fired_time - GameTime64);
 		j["control_type"] = (int) PlayerCfg.ControlType;
+		/* Read-only Android smoke diagnostics; preserve the pilot's actual color defaults */
+		j["pilot_ship_color"] = (int) PlayerCfg.ShipColor;
+		j["pilot_missile_color"] = (int) PlayerCfg.MissileColor;
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
 		j["rear_view"] = (bool) Rear_view;

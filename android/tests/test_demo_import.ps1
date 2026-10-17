@@ -1,13 +1,14 @@
 #!/usr/bin/env pwsh
-param([string]$Serial, [switch]$PublicFirstPlay)
+param([string]$Serial, [switch]$PublicFirstPlay, [switch]$PublicBasicUse)
 $ErrorActionPreference = 'Stop'
+if ($PublicFirstPlay -and $PublicBasicUse) { throw 'Choose either full public first-play or public basic use' }
 . "$PSScriptRoot/../helpers/test_helpers.ps1"
 $previousSerial = $env:ANDROID_SERIAL
 $Serial = Initialize-AndroidTestTarget -Serial $Serial
-if ($PublicFirstPlay) {
+if ($PublicFirstPlay -or $PublicBasicUse) {
     try {
         . "$PSScriptRoot/demo_import_first_play_helpers.ps1"
-        Invoke-PublicFirstPlay -Serial $Serial
+        Invoke-PublicFirstPlay -Serial $Serial -BasicUse:$PublicBasicUse
     } finally {
         if ($previousSerial) { $env:ANDROID_SERIAL = $previousSerial } else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
     }

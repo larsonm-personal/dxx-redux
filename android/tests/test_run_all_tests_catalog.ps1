@@ -50,6 +50,7 @@ foreach ($name in $generatedJsoncOwners) {
 foreach ($variant in @(
         @{ Name = 'test_lan_host_migration_public_shareware'; BaseName = 'test_lan'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware', '-Game', 'd1', '-HostMigration') },
         @{ Name = 'test_lan_launch_preparation_public_shareware'; BaseName = 'test_lan_launch_preparation'; Type = 'ps1'; Requires = 'two_emulators'; Arguments = @('-PublicShareware') },
+        @{ Name = 'test_demo_import_public_basic_use'; BaseName = 'test_demo_import'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-PublicBasicUse') },
         @{ Name = 'test_demo_import_public_first_play'; BaseName = 'test_demo_import'; Type = 'ps1'; Requires = 'emulator'; Arguments = @('-PublicFirstPlay') })) {
     if (-not (Test-SuiteMediaIndependentTest -Test $variant)) { throw "Public variant rejected: $($variant.Name)" }
     foreach ($case in @(@{ Values = @() }, @{ Values = @('-FutureVariant') }, @{ Values = @($variant.Arguments[0], '-D1DataDirectory', 'other') })) {
