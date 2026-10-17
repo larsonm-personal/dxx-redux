@@ -463,6 +463,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 280 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -894,6 +895,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 280 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -1395,6 +1397,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 280 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -1577,6 +1580,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 280 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -1762,6 +1766,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 259 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -2115,6 +2120,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 205 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -2157,6 +2163,7 @@
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [],
+        "data_warnings": [],
         "route_problem": "level file is missing",
         "problems": [
           "level file is missing"
@@ -2268,6 +2275,7 @@
             "trigger_type": "exit"
           }
         ],
+        "data_warnings": ["Level HXM legacy handling: 205 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
