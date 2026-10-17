@@ -3,7 +3,6 @@
 
 import importlib.util
 import pathlib
-import socket
 import subprocess
 import sys
 import tempfile
@@ -205,23 +204,30 @@ class RunBoundedExtractorTests(unittest.TestCase):
 
     @unittest.skipIf(MODULE.os.name == "nt", "POSIX special-file fixtures")
     def test_rejects_fifo_and_socket_output(self):
-        makers = {
-            "fifo": lambda path: MODULE.os.mkfifo(path),
-            "socket": lambda path: socket.socket(socket.AF_UNIX),
-        }
-        for kind, maker in makers.items():
+        for kind in ("fifo", "socket"):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temp:
-                root = pathlib.Path(temp)
+                # Exercise a path longer than common AF_UNIX absolute-path limits
+                root = pathlib.Path(temp) / ("nested-" * 20)
+                root.mkdir()
                 path = root / kind
-                resource = maker(path)
-                if kind == "socket":
-                    resource.bind(str(path))
-                try:
-                    with self.assertRaisesRegex(RuntimeError, "link or special file"):
-                        MODULE.measure_tree(root, 4, 16384, 16384, strict=True)
-                finally:
-                    if kind == "socket":
-                        resource.close()
+                if kind == "fifo":
+                    MODULE.os.mkfifo(path)
+                else:
+                    # Bind a short relative name without changing the test process cwd
+                    subprocess.run(
+                        [
+                            sys.executable,
+                            "-I",
+                            "-B",
+                            "-c",
+                            "import socket; s = socket.socket(socket.AF_UNIX); s.bind('socket'); s.close()",
+                        ],
+                        cwd=root,
+                        check=True,
+                    )
+                    self.assertTrue(MODULE.stat.S_ISSOCK(path.lstat().st_mode))
+                with self.assertRaisesRegex(RuntimeError, "link or special file"):
+                    MODULE.measure_tree(root, 4, 16384, 16384, strict=True)
 
     @unittest.skipIf(MODULE.os.name == "nt", "POSIX device fixture")
     def test_rejects_device_output_when_creation_is_permitted(self):
