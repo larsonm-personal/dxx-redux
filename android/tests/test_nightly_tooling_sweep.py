@@ -98,8 +98,8 @@ class SweepTests(unittest.TestCase):
 
     def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' }}", workflow)
-        self.assertIn("(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities') && github.sha", workflow)
+        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}", workflow)
+        self.assertIn("(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use') && github.sha", workflow)
         self.assertIn("if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'", workflow)
         self.assertIn('types: [opened, synchronize, reopened, labeled]', workflow)
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
@@ -197,7 +197,7 @@ class SweepTests(unittest.TestCase):
 
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn('options: [nightly, first-play, graphics-capabilities]', workflow)
+        self.assertIn('options: [nightly, first-play, graphics-capabilities, basic-use]', workflow)
         self.assertIn('default: nightly', workflow)
         self.assertIn("GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}", workflow)
         self.assertIn('elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then\n            validation=(--campaign graphics-capabilities)', workflow)
@@ -243,9 +243,13 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
         self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
         self.assertIn('-Game both -Download -RequireArchives', fixture_step)
-        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware',
+        for name in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware',
                      'test_lan_host_migration_public_shareware'):
             self.assertIn(name, workflow)
+            expression = next(line.split(":", 1)[1].strip().rstrip(",") for line in workflow.splitlines()
+                              if "'public_fixtures':" in line)
+            self.assertTrue(eval(expression, {"selected": [{"owner": "master", "args": {"suite": name}}]}))
+        self.assertFalse(eval(expression, {"selected": [{"owner": "master", "args": {"suite": "test_demo_import"}}]}))
         entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
         self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])

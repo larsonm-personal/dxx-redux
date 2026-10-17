@@ -42,7 +42,7 @@ def validate_identity(identity):
 
 
 def lane_requires_retail(plan, lane):
-    return any(entry['lane'] == lane and entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') for entry in plan['tests'])
+    return any(entry['lane'] == lane and entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos', 'retail-corpus') for entry in plan['tests'])
 
 
 def public_receipt(receipt):
@@ -64,6 +64,8 @@ def public_receipt(receipt):
                  'retryable': row.get('retryable') is not False,
                  'blocker_kind': row.get('blocker_kind') if row.get('blocker_kind') in ('infrastructure', 'target-capability', 'test-timeout') else '',
                  'cases': [{'status': case['status']} for case in row.get('cases', []) if case.get('status') in ('PASS', 'FAIL', 'SKIP', 'BLOCKED')]}
+        clean['comparison_only'] = row.get('comparison_only') is True
+        clean['runtime_outcome'] = row.get('runtime_outcome') if row.get('runtime_outcome') in ('ok', 'partial', 'failed', 'timeout', 'unsupported', 'route_mismatch') else ''
         if type(row.get('exit_code')) is int:
             clean['exit_code'] = row['exit_code']
         result['results'].append(clean)
@@ -72,4 +74,10 @@ def public_receipt(receipt):
 
 def demos_available(identity):
     from private_input_demos import ASSETS_COMMIT
-    return bool(identity and identity.get('commit') == ASSETS_COMMIT)
+    from nightly_regression_catalog import CORPUS_COMMIT
+    return bool(identity and identity.get('commit') in (ASSETS_COMMIT, CORPUS_COMMIT))
+
+
+def corpus_available(identity):
+    from nightly_regression_catalog import CORPUS_COMMIT
+    return bool(identity and identity.get('commit') == CORPUS_COMMIT)

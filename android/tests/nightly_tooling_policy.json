@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "mission_corpus": true,
   "scope": "Reviewed suite allowlist. Execution receipts determine coverage; passing an aggregate does not cover skipped leaves.",
   "suites": [
     {"id": "master:test_controller_overlay", "owner": "master", "lane": "android-single", "args": {"suite": "test_controller_overlay"}, "estimated_seconds": 180},
@@ -344,7 +345,8 @@
     {"id": "host-profile:retail-vertigo-metadata", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-vertigo-metadata"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "host-profile:retail-obsidian-liquid", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-obsidian-liquid"}, "estimated_seconds": 600, "fixture": "retail-missions"},
     {"id": "host-profile:retail-input-demos", "owner": "host-adapter", "lane": "host", "args": {"suite": "host-profile:retail-input-demos"}, "estimated_seconds": 600, "fixture": "retail-demos"},
-    {"id": "python:test_private_input_demos.py", "owner": "host-adapter", "lane": "host", "args": {"suite": "python:test_private_input_demos.py"}, "estimated_seconds": 30}
+    {"id": "python:test_private_input_demos.py", "owner": "host-adapter", "lane": "host", "args": {"suite": "python:test_private_input_demos.py"}, "estimated_seconds": 30},
+    {"id": "master:test_demo_import_public_basic_use", "owner": "master", "lane": "android-single", "args": {"suite": "test_demo_import_public_basic_use"}, "estimated_seconds": 720, "coverage_scope": "Public D1, D1-in-D2 and D2 ordinary launcher starts, menu return and live automap; untouched default pilot colors; no interrupted replacement qualification"}
   ],
   "exclusions": [{"id": "retail-media", "reason": "Additional licensed or campaign fixtures not yet provided to the trusted retail profile"}, {"id": "physical-android", "reason": "Physical GPU/touch/audio hardware and multi-device LAN topology are not emulated coverage"}]
 }

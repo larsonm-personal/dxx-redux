@@ -14,6 +14,8 @@ function Invoke-DryRun {
         [string]$Name,
         [string[]]$MissionJson,
         [int[]]$Level,
+        [int[]]$MissionTargetIndex,
+        [switch]$ExactMissionJson,
         [double]$SampleFraction = 1,
         [int]$SampleSeed = 0,
         [string]$SampleStatePath,
@@ -23,7 +25,9 @@ function Invoke-DryRun {
     $output = Join-Path $tempRoot "$Name.json"
     $parameters = @{ HogDir = $tempRoot; DryRun = $true; NoBuild = $true; DryRunJsonOut = $output; Mode = $Mode }
     if ($MissionJson) { $parameters.MissionJson = $MissionJson }
-    if ($Level) { $parameters.Level = $Level }
+    if ($null -ne $Level -and $Level.Count -gt 0) { $parameters.Level = $Level }
+    if ($null -ne $MissionTargetIndex -and $MissionTargetIndex.Count -gt 0) { $parameters.MissionTargetIndex = $MissionTargetIndex }
+    if ($ExactMissionJson) { $parameters.ExactMissionJson = $true }
     if ($SampleFraction -lt 1) { $parameters.SampleFraction = $SampleFraction; $parameters.SampleSeed = $SampleSeed }
     if ($SampleStatePath) { $parameters.SampleStatePath = $SampleStatePath }
     if ($RoutingDevelopmentSet) { $parameters.RoutingDevelopmentSet = $true }
@@ -81,6 +85,18 @@ try {
     }
     if (@($multiDescriptor | Where-Object { $_.identity -notmatch '\|0\|' -or $_.engine_level -ne 1 }).Count) {
         throw 'Level-zero metadata must retain its identity while launching engine level 1'
+    }
+    $exactRoot = @(Invoke-DryRun -Name exact_root -MissionJson diehard.json -ExactMissionJson -MissionTargetIndex 0 -Level 1)
+    if ($exactRoot.Count -ne 1 -or $exactRoot[0].identity -notlike 'diehard.json|0|1|*') {
+        throw 'Exact root selection must not include a nested same-basename mission'
+    }
+    $zero = @(Invoke-DryRun -Name exact_zero -MissionJson '-MOON-.json' -ExactMissionJson -MissionTargetIndex 0 -Level 0)
+    if ($zero.Count -ne 1 -or $zero[0].identity -notlike '-MOON-.json|0|0|*' -or $zero[0].engine_level -ne 1) {
+        throw 'Target zero and level zero filters must retain one exact loose-level identity'
+    }
+    $secret = @(Invoke-DryRun -Name exact_secret -MissionJson Counterstrike.json -ExactMissionJson -MissionTargetIndex 0 -Level -1)
+    if ($secret.Count -ne 1 -or $secret[0].identity -notlike 'Counterstrike.json|0|-1|*') {
+        throw 'Exact route selection must preserve signed secret-level identities'
     }
     $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
     $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)

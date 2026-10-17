@@ -14,11 +14,14 @@ import subprocess
 import sys
 import time
 import nightly_retail as retail
+import nightly_regression_catalog as corpus
 
 VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
                   'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1',
                   'master:test_lan_launch_preparation_public_shareware', 'master:test_android_music_completion',
                   'master:test_launcher_media_controls_generated'}
+
+BASIC_USE_IDS = {'master:test_demo_import_public_basic_use', 'master:test_lan_launch_preparation_public_shareware'}
 
 FIRST_PLAY_IDS = {
     'master:test_demo_import_public_first_play',
@@ -72,7 +75,7 @@ def policy_entries(policy):
     if policy.get('schema') != SCHEMA or not isinstance(policy.get('suites'), list):
         raise ValueError('Invalid policy')
     entries = {}
-    for entry in policy['suites']:
+    for entry in policy['suites'] + (corpus.policy_suites() if policy.get('mission_corpus') is True else []):
         ident = entry.get('id')
         if not isinstance(ident, str) or not re.fullmatch(r'[A-Za-z0-9_.:#-]{1,160}', ident) or ident in entries:
             raise ValueError('Invalid/duplicate suite ID')
@@ -85,7 +88,7 @@ def policy_entries(policy):
             raise ValueError('Only typed exact suite selection is accepted')
         if entry['owner'] == 'shareware' and (entry['args']['game'] not in ('d1', 'd2') or entry['lane'] != 'android-single'):
             raise ValueError('Invalid public gameplay lane/game')
-        if entry.get('fixture') not in (None, 'retail-base', 'retail-missions', 'retail-demos'):
+        if entry.get('fixture') not in (None, 'retail-base', 'retail-missions', 'retail-demos', 'retail-corpus'):
             raise ValueError('Unknown fixture requirement')
         entries[ident] = entry
     return entries
@@ -107,6 +110,22 @@ def fresh_state(sha, catalog_hash):
     return {'schema': SCHEMA, 'target_sha': sha, 'catalog_hash': catalog_hash, 'records': {}, 'retryable': {}, 'excluded': {}}
 
 
+def owner_category(entry):
+    if entry.get('category'):
+        return entry['category']
+    name = entry['id'].lower()
+    for category, words in (
+            ('extraction-fingerprints', ('extract', 'fingerprint', 'disc', 'cd_')),
+            ('music-audio', ('music', 'audio', 'sound', 'redbook', 'pcm', 'hmp', 'fluidsynth')),
+            ('metadata-routes', ('metadata', 'guidebot', 'route', 'secret')),
+            ('save-replay', ('save', 'demo', 'replay', 'checkpoint', 'ordered-input')),
+            ('network', ('lan_', 'network', 'multiplayer', 'coop', 'manual_ip', 'test_mp')),
+            ('graphics', ('graphics', 'render', 'texture', 'fov', 'msaa'))):
+        if any(word in name for word in words):
+            return category
+    return 'tooling'
+
+
 def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None):
     if not SHA.fullmatch(sha) or type(budget) is not int or not 1 <= budget <= 2700:
         raise ValueError('Invalid revision/budget')
@@ -115,7 +134,7 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
         raise ValueError('Invalid master discovery catalog')
     names = {row['name'] for row in catalog['tests']}
     retail.validate_identity(retail_assets)
-    catalog_identity = {'catalog': catalog, 'policy': policy}
+    catalog_identity = {'catalog': catalog, 'policy': policy, 'owners': list(entries.values())}
     if retail_assets:
         catalog_identity['retail_assets'] = retail_assets
     catalog_hash = digest(catalog_identity)
@@ -130,11 +149,24 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
     excluded.extend({'id': row['name'], 'reason': 'not yet admitted: public prerequisites/host support require qualification', 'requires': row.get('requires'), 'manual': row.get('manual')} for row in catalog['tests'] if row['name'] not in admitted)
     used = {lane: 0 for lane in LANES}
     # Untried work precedes repeatedly blocked setup, so one lane cannot starve the rest.
-    ordered = sorted(entries.items(), key=lambda item: (
-        state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
+    rings = {}
+    for ident, entry in entries.items():
+        if ident in state['records'] or ident in state.get('excluded', {}):
+            continue
+        rings.setdefault((entry['lane'], owner_category(entry)), []).append((ident, entry))
+    for ring in rings.values():
+        ring.sort(key=lambda item: (state.get('retryable', {}).get(item[0], {}).get('attempts', 0), digest([sha, item[0]])))
+    # Interleave existing owner families just like the runtime sampler's grouped rings.
+    # A selection never changes progress; only reconciled execution receipts retire work.
+    ordered = [item for _, item in sorted(
+        ((index, item) for ring in rings.values() for index, item in enumerate(ring)),
+        key=lambda row: (row[0], state.get('retryable', {}).get(row[1][0], {}).get('attempts', 0), digest([sha, row[1][0]])))]
     for ident, entry in ordered:
-        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') and not retail_assets:
+        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos', 'retail-corpus') and not retail_assets:
             unavailable.append({'id': ident, 'reason': 'retail configuration unavailable for this run; pending'})
+            continue
+        if entry.get('fixture') == 'retail-corpus' and not retail.corpus_available(retail_assets):
+            unavailable.append({'id': ident, 'reason': 'reviewed mission corpus commit unavailable; pending'})
             continue
         if entry.get('fixture') == 'retail-demos' and not retail.demos_available(retail_assets):
             unavailable.append({'id': ident, 'reason': 'reviewed private demo commit unavailable; pending'})
@@ -161,13 +193,13 @@ def plan_batch(sha, catalog, policy, state=None, budget=2700, retail_assets=None
 
 def select_public_campaign(plan, policy, catalog, campaign):
     """A fixed asset-free sample; never inherits rotating retail selections or progress."""
-    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS}[campaign]
+    campaign_ids = {'first-play': FIRST_PLAY_IDS, 'graphics-capabilities': GRAPHICS_CAPABILITIES_IDS, 'basic-use': BASIC_USE_IDS}[campaign]
     entries = policy_entries(policy)
     if not campaign_ids <= entries.keys():
         raise ValueError(f'Missing {campaign} campaign suites')
     names = {row['name'] for row in catalog['tests']}
     selected = [entry for ident, entry in entries.items() if ident in campaign_ids]
-    if any(entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') for entry in selected):
+    if any(entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos', 'retail-corpus') for entry in selected):
         raise ValueError(f'{campaign} campaign must remain asset-free')
     if any((entry['owner'] == 'master' or campaign == 'graphics-capabilities') and entry['args']['suite'] not in names for entry in selected):
         raise ValueError(f'{campaign} owner absent from pinned catalog')
@@ -196,10 +228,12 @@ def validate_plan(plan, policy):
         ident = entry.get('id')
         if ident in seen or entries.get(ident) != entry:
             raise ValueError('Unapproved or duplicate plan entry')
-        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos') and not plan.get('retail_assets'):
+        if entry.get('fixture') in ('retail-base', 'retail-missions', 'retail-demos', 'retail-corpus') and not plan.get('retail_assets'):
             raise ValueError('Retail selection lacks pinned data identity')
         if entry.get('fixture') == 'retail-demos' and not retail.demos_available(plan.get('retail_assets')):
             raise ValueError('Private demo selection lacks reviewed commit')
+        if entry.get('fixture') == 'retail-corpus' and not retail.corpus_available(plan.get('retail_assets')):
+            raise ValueError('Mission corpus selection lacks reviewed commit')
         seen.add(ident)
     if plan.get('budget_scope') != 'per-lane' or not 1 <= plan.get('budget_seconds', 0) <= 2700:
         raise ValueError('Invalid per-lane budget')
@@ -298,10 +332,17 @@ def reconcile(plan, policy, state, receipts):
             if not isinstance(row.get('run_url'), str) or not row['run_url'].startswith('https://github.com/'):
                 raise ValueError('Missing run provenance')
             compact = {key: row[key] for key in ('status', 'run_url') }
-            compact.update(reason=str(row.get('reason', ''))[:512], coverage_complete=row.get('coverage_complete') is True, attempted_tests=row.get('attempted_tests', True), phase=row.get('phase', 'tests'))
+            compact.update(comparison_only=row.get('comparison_only') is True, runtime_outcome=row.get('runtime_outcome', ''), reason=str(row.get('reason', ''))[:512], coverage_complete=row.get('coverage_complete') is True, attempted_tests=row.get('attempted_tests', True), phase=row.get('phase', 'tests'))
             cases = row.get('cases', [])
             compact['case_counts'] = {status: sum(c.get('status') == status for c in cases) for status in ('PASS', 'FAIL', 'SKIP', 'BLOCKED')}
             compact['exclusions'] = [str(x)[:256] for x in row.get('exclusions', [])[:32]]
+            if ident.startswith('corpus:'):
+                # Many exact route leaves share a run; retain proof without duplicating verbose diagnostics.
+                compact = {key: compact[key] for key in ('status', 'run_url', 'coverage_complete')}
+                if row.get('comparison_only'):
+                    compact.update(comparison_only=True, runtime_outcome=row.get('runtime_outcome', ''))
+                if cases:
+                    compact['case_counts'] = {status: sum(c.get('status') == status for c in cases) for status in ('PASS', 'FAIL') if any(c.get('status') == status for c in cases)}
             prior = result['records'].get(ident)
             if prior and prior != compact:
                 raise ValueError('Conflicting completed receipt')
@@ -357,7 +398,7 @@ def collect(plan, policy, lane, output, blocked_reason=""):
             row = {'reason': blocked_reason}
         if status not in TERMINAL | {'RUNNING', 'NOT_RUN', 'BLOCKED'}:
             raise ValueError('Invalid collected status')
-        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
+        receipt['results'].append({'id': entry['id'], 'status': status, 'reason': row.get('reason', '')[:2048], 'run_url': run_url, 'exclusions': row.get('exclusions', []), 'cases': row.get('cases', []), 'coverage_complete': row.get('coverage_complete', False), 'comparison_only': row.get('comparison_only', False), 'runtime_outcome': row.get('runtime_outcome', ''), 'attempted_tests': row.get('attempted_tests', status in TERMINAL), 'phase': row.get('phase', 'tests' if status in TERMINAL else 'setup'), 'retryable': row.get('retryable', status == 'BLOCKED'), 'blocker_kind': row.get('blocker_kind', 'infrastructure' if status == 'BLOCKED' else '')})
     if retail.lane_requires_retail(plan, lane):
         receipt = retail.public_receipt(receipt)
     write(output / 'results.json', receipt)
@@ -493,6 +534,8 @@ def execute(plan, policy, lane, repo, output):
             continue
         destination = output / (entry['id'].replace(':', '_') + '.json')
         command = [sys.executable, str(Path(__file__).with_name('run_host_test_suites.py')), '--suite', entry['args']['suite'], '--repo', str(repo), '--build-root', str(output / 'build'), '--output', str(destination)]
+        if entry.get('fixture') == 'retail-corpus':
+            command += ['--timeout-seconds', str(max(600, entry['estimated_seconds'] * 2))]
         start = time.monotonic()
         process_evidence(entry['id'])
         with destination.with_suffix('.log').open('w') as log:
@@ -551,7 +594,7 @@ def publish_state(plan, policy, receipts):
         merged = reconcile(plan, policy, previous, receipts)
         if head and merged == previous:
             return merged
-        serialized = json.dumps(merged, indent=2) + '\n'
+        serialized = json.dumps(merged, separators=(',', ':')) + '\n'
         if len(serialized.encode()) > 900000:
             raise ValueError('Ledger exceeds bounded permanent summary size')
         blob = github_api('git/blobs', 'POST', {'content': serialized, 'encoding': 'utf-8'})
@@ -582,7 +625,7 @@ def main():
         p.add_argument('--' + option, required=True)
     p.add_argument('--state')
     p.add_argument('--validation', action='store_true')
-    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities'))
+    p.add_argument('--campaign', choices=('first-play', 'graphics-capabilities', 'basic-use'))
     p = sub.add_parser('retail-check')
     for option in ('plan', 'policy', 'lane'):
         p.add_argument('--' + option, required=True)
@@ -624,7 +667,12 @@ def main():
             raise ValueError('Private checkout is not authorized by this trusted run and plan')
         print('Verified trusted retail lane and immutable data identity')
     elif args.command == 'plan':
-        plan, state = plan_batch(args.target_sha, read(args.catalog), read(args.policy), read(args.state) if args.state and Path(args.state).exists() else None, retail_assets=retail.configured_identity())
+        retail_assets = retail.configured_identity()
+        if retail.corpus_available(retail_assets):
+            controller_sha = subprocess.check_output(['git', '-C', str(corpus.ROOT), 'rev-parse', 'HEAD'], text=True).strip()
+            if controller_sha != args.target_sha:
+                raise ValueError('Corpus controller/catalog differs from exact target; retry the current cmake revision')
+        plan, state = plan_batch(args.target_sha, read(args.catalog), read(args.policy), read(args.state) if args.state and Path(args.state).exists() else None, retail_assets=retail_assets)
         if args.validation:
             state = fresh_state(plan['target_sha'], plan['catalog_hash'])
             validation_ids = VALIDATION_IDS
@@ -658,6 +706,7 @@ def main():
         write(args.output, state)
         summary = {'target_sha': state['target_sha'], 'terminal_owner_attempts': sum(r['status'] in COVERED for r in state['records'].values()), 'fully_covered_owners': sum(r.get('coverage_complete') is True for r in state['records'].values()), 'passed_leaf_cases': sum(r.get('case_counts', {}).get('PASS', 0) for r in state['records'].values()), 'incomplete_owners': [k for k, r in state['records'].items() if r.get('coverage_complete') is not True], 'failures': [k for k, r in state['records'].items() if r['status'] in ('FAIL', 'TIMEOUT')], 'retryable_infrastructure': state.get('retryable', {}), 'excluded': plan['exclusions'], 'target_capability_exclusions': state.get('excluded', {}), 'unavailable_pending': plan.get('unavailable', [])}
         pending = set(policy_entries(policy)) - set(state['records']) - set(state.get('excluded', {})) - {e['id'] for e in plan['exclusions']}
+        summary['matching_unconfirmed_routes'] = {key: row['runtime_outcome'] for key, row in state['records'].items() if row.get('comparison_only')}
         summary['pending_owners'] = len(pending)
         summary['outcome'] = 'incomplete' if pending else ('exhausted_with_failures' if summary['failures'] else ('exhausted_with_exclusions' if summary['incomplete_owners'] or summary['excluded'] or state.get('excluded') else 'complete_pass'))
         summary['selected_without_pass'] = selected_without_pass(plan, state)
