@@ -464,7 +464,6 @@ object TouchBindings {
 
     // --- Cheat code definitions (from gamecntl.c cheat_codes[]) ---
     // Keep in sync with cheat_codes[] in d2/main/gamecntl.c and d1/main/gamecntl.c
-    const val D1_CHEAT_ENABLE_CODE = "gabbagabbahey"
 
     data class CheatDef(
         val code: String,
@@ -517,22 +516,4 @@ object TouchBindings {
             CheatDef("ahimsa", "Toggle robot firing"),
             CheatDef("bittersweet", "Toggle psychedelic walls"),
         )
-}
-
-internal data class TouchCheatInjection(
-    val code: String,
-    val d1CheatsEnabled: Boolean,
-)
-
-internal fun touchCheatCodeToInject(
-    gameVariant: String,
-    code: String,
-    d1CheatsEnabled: Boolean,
-): TouchCheatInjection {
-    if (gameVariant != "d1") return TouchCheatInjection(code, d1CheatsEnabled)
-    val enablesD1Cheats = code.equals(TouchBindings.D1_CHEAT_ENABLE_CODE, ignoreCase = true)
-    if (enablesD1Cheats || d1CheatsEnabled) {
-        return TouchCheatInjection(code, d1CheatsEnabled = true)
-    }
-    return TouchCheatInjection(TouchBindings.D1_CHEAT_ENABLE_CODE + code, d1CheatsEnabled = true)
 }

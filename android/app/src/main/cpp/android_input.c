@@ -1265,6 +1265,27 @@ Java_com_dxxredux_app_MainActivity_nativeGetPauseState(JNIEnv *env, jobject thiz
 	return result;
 }
 
+JNIEXPORT jlong JNICALL
+Java_com_dxxredux_app_MainActivity_nativeRequestCheat(JNIEnv *env, jobject thiz,
+                                                      jlong owner, jlong session, jlong revision, jint modals, jstring code)
+{
+	/* Menu codes are bounded ASCII, never keyboard events or IME text
+	 * Keep the capacity synchronized with pause_request.cheat in android_pause.c */
+	if (!code) return 0;
+	jsize length = (*env)->GetStringLength(env, code);
+	if (length <= 0 || length >= 16) return 0;
+	jchar chars[16];
+	char text[16];
+	(*env)->GetStringRegion(env, code, 0, length, chars);
+	if ((*env)->ExceptionCheck(env)) return 0;
+	for (jsize i = 0; i < length; ++i) {
+		if (!((chars[i] >= 'a' && chars[i] <= 'z') || (chars[i] >= 'A' && chars[i] <= 'Z'))) return 0;
+		text[i] = (char) chars[i];
+	}
+	text[length] = 0;
+	return (jlong) android_pause_request_cheat(owner, session, revision, modals, text);
+}
+
 /* ── In-game query ──────────────────────────────────────────
  *
  * Returns true when the game window is the front window and we're

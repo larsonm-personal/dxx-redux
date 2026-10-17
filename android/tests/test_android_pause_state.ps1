@@ -90,6 +90,30 @@ try {
         & pwsh @arguments *> (Join-Path $outputDirectory "$gameId-fixture.txt")
         if ($LASTEXITCODE -ne 0) { throw "$gameId save/load fixture failed" }
         Running | Out-Null
+        # Use the real overlay selection callback, JNI queue and game-thread effects
+        $weaponCheat = if ($gameId -eq 'd1') { 'bigred' } else { 'honestbob' }
+        foreach ($rearView in @($false, $true)) {
+            if ($rearView) {
+                Automate @(@{ action = 'key'; key = 'r'; post_delay_ms = 100 })
+            }
+            $beforeCheat = Running
+            if ($beforeCheat.native.rear_view -ne $rearView) { throw 'Rear-view fixture setup failed' }
+            foreach ($repeat in 1..2) {
+                Ui 'tray_open'
+                Paused | Out-Null
+                Device @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.GAME_COMMAND', '-p', $script:PACKAGE,
+                    '--es', 'command', 'cheat_menu', '--es', 'value', $weaponCheat) | Out-Null
+                $afterCheat = Wait-State { param($s) $s.native.pause.input_allowed -and $s.native.pause.result -eq 1 -and
+                    $s.native.cheats_enabled -and $s.native.player.energy -eq 200 } 'menu weapon cheat applied after tray closes'
+                if ($afterCheat.native.rear_view -ne $rearView -or
+                    $afterCheat.native.current_cockpit_mode -ne $beforeCheat.native.current_cockpit_mode -or
+                    $afterCheat.native.cockpit_mode -ne $beforeCheat.native.cockpit_mode) {
+                    throw 'Menu cheat altered rear view or cockpit settings'
+                }
+            }
+        }
+        Automate @(@{ action = 'key'; key = 'r'; post_delay_ms = 100 })
+        Running | Out-Null
         Ui 'tray_open'
         $paused = Paused
         if (-not $paused.ui.pause.can_resume) { throw 'User overlay pause must be resumable' }

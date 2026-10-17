@@ -41,6 +41,7 @@ uint64_t android_pause_attach_ui(void);
 void android_pause_detach_ui(uint64_t owner);
 int android_pause_publish_ui(uint64_t owner, uint64_t session, uint64_t revision, unsigned modals);
 uint64_t android_pause_request(uint64_t owner, uint64_t session, uint64_t revision, unsigned modals, int action);
+uint64_t android_pause_request_cheat(uint64_t owner, uint64_t session, uint64_t revision, unsigned modals, const char *code);
 void android_pause_get_snapshot(struct android_pause_snapshot *out);
 
 /* Engine-thread APIs, including nested menu loops */

@@ -2990,6 +2990,8 @@ extern "C" char *game_introspect_get_state(void)
 		j["control_type"] = (int) PlayerCfg.ControlType;
 		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
 		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
+		j["rear_view"] = (bool) Rear_view;
+		j["cheats_enabled"] = (bool) cheats.enabled;
 		int capture_fps = 0, capture_frame = 0;
 		game_automate_capture_clock(&capture_fps, &capture_frame);
 		j["capture_clock"] = { { "fps", capture_fps }, { "frame", capture_frame } };

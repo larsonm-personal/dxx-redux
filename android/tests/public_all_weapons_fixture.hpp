@@ -1,4 +1,5 @@
 #include "weapon_cheat_shared.h"
+#include "cheat_command_fixture.hpp"
 
 // Fresh-level capture driven by native SDL text and ordinary weapon controls
 static void capture_public_all_weapons(const char *game_name, const char *mission, bool bigred)
@@ -277,6 +278,8 @@ static void capture_public_all_weapons(const char *game_name, const char *missio
 	}
 	Players[0] = saved_player;
 	cheats = saved_cheats;
+	settings.ordered_input = 1;
+	test_cheat_command_isolation(code, settings);
 	const json report = { { "game", game_name }, { "mission", mission }, { "scenario", bigred ? "all-weapons-bigred" : "all-weapons" }, { "profile", d1_profile ? "d1" : "d2" }, { "grant", grant }, { "native_code", code }, { "frames", frames }, { "initial", initial }, { "observations", observations }, { "shots", shots }, { "terminal", terminal }, { "post_capture_policy_checks", "pass" }, { "retail_assets_playback", false }, { "android_device_run", false } };
 	const auto text = report.dump(2) + "\n";
 	write_fixture("capture.json", bytes(text.begin(), text.end()));

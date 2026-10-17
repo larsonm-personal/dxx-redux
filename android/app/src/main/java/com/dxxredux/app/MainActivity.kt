@@ -677,6 +677,14 @@ class MainActivity :
         modals: Int,
     ): Boolean
 
+    external fun nativeRequestCheat(
+        owner: Long,
+        session: Long,
+        revision: Long,
+        modals: Int,
+        code: String,
+    ): Long
+
     external fun nativeRequestPauseAction(
         owner: Long,
         session: Long,
@@ -1428,7 +1436,7 @@ class MainActivity :
             }
         }
         touchOverlay.cheatCodeCallback = { code ->
-            for (ch in code) nativeTextInput(ch.code)
+            requestPauseAction(PauseState.RESUME, cheatCode = code)
         }
         touchOverlay.adminTrayOpenedCallback = { publishPauseUi() }
         touchOverlay.adminTrayClosedCallback = { publishPauseUi() }
@@ -2901,7 +2909,10 @@ class MainActivity :
         return state
     }
 
-    private fun requestPauseAction(action: Int): Boolean {
+    private fun requestPauseAction(
+        action: Int,
+        cheatCode: String? = null,
+    ): Boolean {
         if (!gameStarted || pauseUiOwner == 0L || pauseUiSession < 0) return false
         pauseUiTransition = true
         try {
@@ -2918,13 +2929,17 @@ class MainActivity :
             pauseUiRevision++
             // Publish the final UI state and the native action in one mailbox transaction
             pauseRequest =
-                nativeRequestPauseAction(
-                    pauseUiOwner,
-                    pauseUiSession,
-                    pauseUiRevision,
-                    pauseUiModals,
-                    action,
-                )
+                if (cheatCode != null) {
+                    nativeRequestCheat(pauseUiOwner, pauseUiSession, pauseUiRevision, pauseUiModals, cheatCode)
+                } else {
+                    nativeRequestPauseAction(
+                        pauseUiOwner,
+                        pauseUiSession,
+                        pauseUiRevision,
+                        pauseUiModals,
+                        action,
+                    )
+                }
             Log.i(
                 "DXX-Pause",
                 "Requested action=$action request=$pauseRequest revision=$pauseUiRevision modals=$pauseUiModals",
@@ -3461,6 +3476,10 @@ class MainActivity :
                 if (!gameStarted) return
                 val cmd = intent.getStringExtra("command") ?: return
                 when (cmd) {
+                    "cheat_menu" -> {
+                        touchOverlay.selectCheatForAutomation(intent.getStringExtra("value") ?: return)
+                    }
+
                     "pause_ui" -> {
                         when (intent.getStringExtra("value")) {
                             "tray_open" -> {

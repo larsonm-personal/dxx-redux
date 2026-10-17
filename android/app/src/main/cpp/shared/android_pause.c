@@ -10,6 +10,7 @@
 #include "coop/coop_save.h"
 #include "event.h"
 #include "game.h"
+#include "game_cheat.h"
 #include "inferno.h"
 #include "key.h"
 #include "kconfig.h"
@@ -37,7 +38,10 @@ static int last_result, was_blocked;
 struct pause_request {
 	uint64_t owner, session, id, ui_revision;
 	int action, engine_origin;
+	char cheat[16];
 };
+/* Internal action: only the complete-code entry point may enqueue this */
+enum { PAUSE_EXECUTE_CHEAT = ANDROID_PAUSE_QUICK_LOAD + 1 };
 static struct pause_request requests[32];
 static unsigned queue_head, queue_count;
 
@@ -82,19 +86,35 @@ int android_pause_publish_ui(uint64_t id, uint64_t epoch, uint64_t revision, uns
 	return accepted;
 }
 
-uint64_t android_pause_request(uint64_t id, uint64_t epoch, uint64_t revision, unsigned modals, int action)
+static uint64_t queue_ui_request(uint64_t id, uint64_t epoch, uint64_t revision, unsigned modals, int action, const char *cheat)
 {
 	pthread_mutex_lock(&lock);
 	uint64_t result = 0;
 	if (id && id == owner && epoch == session && queue_count < 32 &&
-	    action >= ANDROID_PAUSE_RESUME && action <= ANDROID_PAUSE_QUICK_LOAD && revision > ui_revision) {
+	    revision > ui_revision) {
 		ui_revision = revision;
 		ui_modals = modals & 7u;
 		result = ++request_serial;
-		requests[(queue_head + queue_count++) % 32] = (struct pause_request) { id, epoch, result, revision, action, 0 };
+		struct pause_request *request = &requests[(queue_head + queue_count++) % 32];
+		*request = (struct pause_request) { id, epoch, result, revision, action, 0, { 0 } };
+		if (cheat) strcpy(request->cheat, cheat);
 	}
 	pthread_mutex_unlock(&lock);
 	return result;
+}
+
+uint64_t android_pause_request(uint64_t id, uint64_t epoch, uint64_t revision, unsigned modals, int action)
+{
+	if (action < ANDROID_PAUSE_RESUME || action > ANDROID_PAUSE_QUICK_LOAD) return 0;
+	return queue_ui_request(id, epoch, revision, modals, action, NULL);
+}
+
+uint64_t android_pause_request_cheat(uint64_t id, uint64_t epoch, uint64_t revision, unsigned modals, const char *code)
+{
+	if (!code || !*code || strlen(code) >= sizeof(requests[0].cheat)) return 0;
+	for (const char *p = code; *p; ++p)
+		if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z'))) return 0;
+	return queue_ui_request(id, epoch, revision, modals, PAUSE_EXECUTE_CHEAT, code);
 }
 
 void android_pause_get_snapshot(struct android_pause_snapshot *out)
@@ -243,7 +263,18 @@ void android_pause_tick(void)
 	dispatching = 1;
 	int result = ANDROID_PAUSE_REJECTED;
 	int blockers = android_pause_reasons() & (ANDROID_PAUSE_GRAPHICS | ANDROID_PAUSE_BACKGROUND | ANDROID_PAUSE_COOP | ANDROID_PAUSE_OPERATION);
-	if (Game_wind && !blockers) {
+	if (request.action == PAUSE_EXECUTE_CHEAT) {
+		/* The UI and command share one revision; never resume a different modal */
+		if (android_pause_input_allowed()) {
+			/* Warp cheats can enter nested event loops or unwind the game stack */
+			pthread_mutex_lock(&lock);
+			last_result = ANDROID_PAUSE_APPLIED;
+			pthread_mutex_unlock(&lock);
+			android_pause_publish();
+			result = game_execute_cheat(request.cheat) ? ANDROID_PAUSE_APPLIED : ANDROID_PAUSE_REJECTED;
+		}
+		debug_log_force(DLOG_GAME, "Android cheat command: code=%s result=%d", request.cheat, result);
+	} else if (Game_wind && !blockers) {
 		if (request.action == ANDROID_PAUSE_RESUME && (window_get_front() == Game_wind || user_pause_front())) {
 			/* Kotlin dismisses its resumable UI before sending Resume */
 			debug_modals = 0;
@@ -289,7 +320,7 @@ int android_pause_queue_action(int action)
 		return 0;
 	}
 	uint64_t id = ++request_serial;
-	requests[(queue_head + queue_count++) % 32] = (struct pause_request) { 0, session, id, 0, action, 1 };
+	requests[(queue_head + queue_count++) % 32] = (struct pause_request) { 0, session, id, 0, action, 1, { 0 } };
 	pthread_mutex_unlock(&lock);
 	return 1;
 }

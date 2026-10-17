@@ -122,7 +122,7 @@ class TouchOverlayView
         /** Called with (action, androidKeyCode, unicodeChar) for radial menu key injection. */
         var keyCallback: ((Int, Int, Int) -> Unit)? = null
 
-        /** Called with a cheat code string to inject each char via nativeTextInput. */
+        /** Submit one complete cheat command; the receiver closes the tray and queues native execution. */
         var cheatCodeCallback: ((String) -> Unit)? = null
 
         /** "d1" or "d2" - determines which cheat list to show. Set by MainActivity. */
@@ -130,7 +130,6 @@ class TouchOverlayView
             set(value) {
                 if (field == value) return
                 field = value
-                adminTrayD1CheatsEnabled = false
                 adminTrayCheatsSelectedIndex = 0
             }
 
@@ -962,7 +961,6 @@ class TouchOverlayView
         private var adminTrayCheatsLastY = 0f
         private var adminTrayCheatsDragStartY = 0f
         private var adminTrayCheatsDragging = false
-        private var adminTrayD1CheatsEnabled = false
         private val adminTrayCheatsRects = mutableListOf<RectF>()
         private var adminTrayCheatsBackRect = RectF()
         private var adminTrayCheatsPanelRect = RectF()
@@ -4444,15 +4442,11 @@ class TouchOverlayView
         private fun injectAdminTrayCheat(index: Int) {
             val cheats = currentCheats()
             if (index !in cheats.indices) return
-            val injection =
-                touchCheatCodeToInject(
-                    gameVariant = gameVariant,
-                    code = cheats[index].code,
-                    d1CheatsEnabled = adminTrayD1CheatsEnabled,
-                )
-            adminTrayD1CheatsEnabled = injection.d1CheatsEnabled
-            closeAdminTray()
-            mainHandler.postDelayed({ cheatCodeCallback?.invoke(injection.code) }, 260L)
+            cheatCodeCallback?.invoke(cheats[index].code)
+        }
+
+        internal fun selectCheatForAutomation(code: String) {
+            injectAdminTrayCheat(currentCheats().indexOfFirst { it.code == code })
         }
 
         private fun handleAdminTrayCheatsTouch(event: MotionEvent): Boolean {

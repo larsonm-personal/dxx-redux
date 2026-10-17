@@ -6716,7 +6716,12 @@ extern "C" void game_automate_tick(void)
 					android_pause_get_snapshot(&state);
 					if (android_pause_publish_ui(state.ui_owner + 1, state.session, state.ui_revision + 1, 1) ||
 					    android_pause_publish_ui(state.ui_owner, state.session + 1, state.ui_revision + 1, 1) ||
-					    android_pause_request(state.ui_owner, state.session + 1, state.ui_revision + 1, 0, ANDROID_PAUSE_RESUME)) {
+					    android_pause_request(state.ui_owner, state.session + 1, state.ui_revision + 1, 0, ANDROID_PAUSE_RESUME) ||
+					    android_pause_request_cheat(state.ui_owner + 1, state.session, state.ui_revision + 1, 0, "astral") ||
+					    android_pause_request_cheat(state.ui_owner, state.session + 1, state.ui_revision + 1, 0, "astral") ||
+					    android_pause_request_cheat(state.ui_owner, state.session, state.ui_revision, 0, "astral") ||
+					    android_pause_request_cheat(state.ui_owner, state.session, state.ui_revision + 1, 0, "") ||
+					    android_pause_request_cheat(state.ui_owner, state.session, state.ui_revision + 1, 0, "astral;bigred")) {
 						stop_script_fail("Pause accepted stale activity/session state");
 						break;
 					}
