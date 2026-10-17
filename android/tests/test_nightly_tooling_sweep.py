@@ -98,8 +98,8 @@ class SweepTests(unittest.TestCase):
 
     def test_manual_first_play_requires_selected_receipts_and_exact_target(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' }}", workflow)
-        self.assertIn("(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities') && github.sha", workflow)
+        self.assertIn("REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}", workflow)
+        self.assertIn("(inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use') && github.sha", workflow)
         self.assertIn("if: github.event.action != 'labeled' || github.event.label.name == 'release-first-play'", workflow)
         self.assertIn('types: [opened, synchronize, reopened, labeled]', workflow)
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
@@ -197,7 +197,7 @@ class SweepTests(unittest.TestCase):
 
     def test_graphics_campaign_is_manual_only_and_never_publishes_progress(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
-        self.assertIn('options: [nightly, first-play, graphics-capabilities]', workflow)
+        self.assertIn('options: [nightly, first-play, graphics-capabilities, basic-use]', workflow)
         self.assertIn('default: nightly', workflow)
         self.assertIn("GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}", workflow)
         self.assertIn('elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then\n            validation=(--campaign graphics-capabilities)', workflow)

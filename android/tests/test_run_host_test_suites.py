@@ -39,6 +39,7 @@ class HostAdapterTests(unittest.TestCase):
                     "public-powershell",
                     "retail-powershell",
                     "retail-python",
+                    "retail-corpus",
                     "standalone-cmake",
                 },
             )

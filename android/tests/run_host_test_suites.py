@@ -54,9 +54,10 @@ def write_json(path, data):
     temporary.replace(path)
 
 
-def load_suites():
+def load_suites(repo=None):
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    suites = data["suites"]
+    from nightly_regression_catalog import suites as corpus_suites
+    suites = data["suites"] + (corpus_suites(repo) if repo is not None else corpus_suites())
     if data["schema"] != 1 or len({s["id"] for s in suites}) != len(suites):
         raise ValueError("invalid or duplicate host suite IDs")
     return {s["id"]: s for s in suites}
@@ -527,7 +528,7 @@ def run_suite(suite, repo, build_root, output, timeout):
             elapsed_wall_seconds=round(time.monotonic() - started, 3),
             # Aggregate owner success does not establish internal leaf coverage
             coverage_complete=(status == "PASS" and "counts" in result
-                               and not result["exclusions"]),
+                               and not result["exclusions"] and not result.get("comparison_only")),
         )
         write_json(output, result)
         return 0 if status == "PASS" else 1 if status == "FAIL" else 2
@@ -598,6 +599,98 @@ def run_suite(suite, repo, build_root, output, timeout):
             "BLOCKED", "This initial host adapter is qualified for Linux only"
         )
     try:
+        if suite["kind"] == "retail-corpus":
+            from nightly_regression_catalog import CORPUS_COMMIT
+            from nightly_regression_corpus import compare_metadata, compare_route, freeze_oracles, require_unchanged_oracles
+            if os.environ.get("RETAIL_CHECKOUT_COMMIT") != CORPUS_COMMIT:
+                return finish("BLOCKED", "Reviewed corpus revision is not staged", retryable=True)
+            baseline = target_file(repo, "game_data/mission_files/" + suite["baseline"])
+            archive = next((baseline.with_suffix(ext) for ext in (".zip", ".7z", ".rar")
+                            if baseline.with_suffix(ext).is_file()), None)
+            builtin = baseline.name in ("FirstStrike.json", "Counterstrike.json")
+            if not builtin and archive is None:
+                return finish("BLOCKED", "Archive or CD-source fixture unavailable", retryable=False,
+                              blocker_kind="target-capability")
+            if suite["profile"] == "route":
+                if not baseline.with_suffix(".simulation.json").is_file():
+                    return finish("BLOCKED", "Committed route oracle unavailable", retryable=False, blocker_kind="target-capability")
+                metadata = json.loads(baseline.read_text(encoding="utf-8-sig"))
+                missions = metadata if isinstance(metadata, list) else [metadata]
+                if any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
+                    return finish("BLOCKED", "Nested mission variant requires a variant-aware route stage", retryable=False,
+                                  blocker_kind="target-capability")
+            oracle_paths = (baseline, baseline.with_suffix(".simulation.json"))
+            oracle_bytes = freeze_oracles(oracle_paths)
+            expected_metadata = json.loads(oracle_bytes[baseline])
+            expected_route = json.loads(oracle_bytes[oracle_paths[1]]) if oracle_bytes[oracle_paths[1]] else None
+            def run_corpus(argv):
+                try:
+                    return run(argv)
+                finally:
+                    require_unchanged_oracles(oracle_bytes)
+            verify_retail_stage(repo)
+            cli = repo / "android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli"
+            if not cli.is_file() and run(["bash", str(repo / "android/gradlew"), "-p", str(repo / "android"),
+                                          ":mission-metadata-cli:installDist", "--console=plain"], setup=True):
+                return finish("BLOCKED", "Metadata projection CLI setup failed", retryable=True)
+            for game in ("d1", "d2"):
+                build = build_root / ("engine-" + game)
+                if run(native_configure_arguments(repo, build, game), setup=True):
+                    return finish("BLOCKED", "Corpus worker configuration failed", retryable=True)
+                targets = ["dxx-redux-" + game + "-metadata-worker"]
+                if game == "d2":
+                    targets.append("dxx-redux-d2-headless-route")
+                if run(["cmake", "--build", str(build), "--parallel", "2", "--target", *targets], setup=True):
+                    return finish("BLOCKED", "Corpus worker build failed", retryable=True)
+            def binary(game, suffix):
+                return str(build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix))
+            def document(path):
+                return json.loads(path.read_text(encoding="utf-8-sig")) if path.is_file() else None
+            if suite["profile"] == "metadata":
+                destination = work / "metadata"
+                argv = ["pwsh", "-NoProfile", "-NonInteractive", "-File",
+                        str(repo / "android/helpers/regenerate_all_mission_metadata_host.ps1"),
+                        "-NoBuild", "-NoRegressionCopy", "-MaxParallel", "1",
+                        "-D1Executable", binary("d1", "-metadata-worker"),
+                        "-D2Executable", binary("d2", "-metadata-worker"),
+                        "-OutputRoot", str(destination)]
+                if builtin:
+                    argv += ["-BuiltInOnly", "-CdSourceIds", "__none__",
+                             "-IncludeBuiltInFirstStrike" if baseline.name == "FirstStrike.json" else "-IncludeBuiltInCounterstrike"]
+                else:
+                    argv += ["-ArchivePaths", str(archive), "-CdSourceIds", "__none__"]
+                code = run_corpus(argv)
+                checked = compare_metadata(expected_metadata, document(destination / "metadata" / (("d2xxl_downloads_" if suite["baseline"].startswith("d2xxl_downloads/") else "") + baseline.name)),
+                                           document(destination / "summary.json"), archive.name if archive else baseline.stem)
+            else:
+                destination = work / "route"
+                sha = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+                code = run_corpus(["pwsh", "-NoProfile", "-NonInteractive", "-File",
+                            str(repo / "android/helpers/regenerate_all_guidebot_simulations.ps1"),
+                            "-Mode", "Headless", "-NoBuild", "-ExactMissionJson", "-MissionJson", suite["baseline"],
+                            "-MissionTargetIndex", str(suite["target_index"]), "-Level", str(suite["level_num"]),
+                            "-LevelFileFilter", suite["level_file"],
+                            "-HeadlessExecutable", binary("d2", "-headless-route"),
+                            "-HogDir", str(repo / "game_data/retail-ci/d2"),
+                            "-D1InD2HogDir", str(repo / "game_data/retail-ci/d1"),
+                            "-MaxParallel", "1", "-SampleFraction", "0.000001",
+                            "-SampleSeed", str(max(1, int(sha[:7], 16))), "-OutputRoot", str(destination)])
+                summary = document(destination / "summary.json")
+                checked = compare_route(expected_route,
+                                        document(destination / "results" / baseline.with_suffix(".simulation.json").name),
+                                        summary, suite["baseline"], suite["identity"])
+            if code != 0 and checked["status"] == "PASS":
+                checked = {"status": "FAIL", "reason": "Corpus process failed despite matching output"}
+            result["runtime_outcome"] = checked.get("runtime_outcome", "")
+            result["comparison_only"] = checked.get("comparison_only", False)
+            # Aggregate metadata comparison has unknown individual assertion counts
+            if suite["profile"] == "route" and checked.get("selected") and not result["comparison_only"]:
+                result["cases"] = [{"id": checked["selected"][0], "status": checked["status"]}]
+                result["counts"] = count_cases(result["cases"])
+            return finish(checked["status"], checked["reason"], code,
+                          retryable=checked.get("retryable", checked["status"] == "BLOCKED"),
+                          blocker_kind=checked.get("blocker_kind"))
+
         if suite["kind"] in {"public-powershell", "retail-powershell", "retail-python"}:
             retail = suite["kind"] in {"retail-powershell", "retail-python"}
             script = target_file(repo, suite["path"])
@@ -1034,7 +1127,7 @@ def main():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--timeout-seconds", type=int, default=1800)
     args = parser.parse_args()
-    suites = load_suites()
+    suites = load_suites(args.repo)
     if args.list_json:
         print(json.dumps({"schema": 1, "suites": list(suites.values())}, indent=2))
         return 0

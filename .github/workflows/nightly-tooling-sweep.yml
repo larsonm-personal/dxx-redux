@@ -27,7 +27,7 @@ on:
       campaign:
         description: "Bounded test selection"
         type: choice
-        options: [nightly, first-play, graphics-capabilities]
+        options: [nightly, first-play, graphics-capabilities, basic-use]
         default: nightly
   workflow_call:
 
@@ -63,7 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_SHA: ${{ github.event.pull_request.head.sha }}
-          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities') && github.sha || '' }}
+          CAMPAIGN_SHA: ${{ github.event_name == 'workflow_dispatch' && (inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use') && github.sha || '' }}
         run: |
           sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/cmake" --jq .object.sha)"
           if [[ -n "$PR_SHA" ]]; then sha="$PR_SHA"; fi
@@ -93,12 +93,15 @@ jobs:
           TARGET_SHA: ${{ steps.target.outputs.sha }}
           VALIDATION: ${{ github.event_name == 'pull_request' }}
           FIRST_PLAY: ${{ inputs.campaign == 'first-play' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'release-first-play')) }}
+          BASIC_USE: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'basic-use' }}
           GRAPHICS_CAPABILITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.campaign == 'graphics-capabilities' }}
           RETAIL_ASSETS_COMMIT: ${{ vars.RETAIL_ASSETS_COMMIT }}
         run: |
           python3 control/android/tests/nightly_tooling_sweep.py fetch-state --output plan/previous.json
           validation=()
-          if [[ "$FIRST_PLAY" == true ]]; then
+          if [[ "$BASIC_USE" == true ]]; then
+            validation=(--campaign basic-use)
+          elif [[ "$FIRST_PLAY" == true ]]; then
             validation=(--campaign first-play)
           elif [[ "$GRAPHICS_CAPABILITIES" == true ]]; then
             validation=(--campaign graphics-capabilities)
@@ -177,6 +180,10 @@ jobs:
           bash target/android/get_deps/helpers/get_bounded_python.sh
           command -v ffmpeg
           command -v ffprobe
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
+            bash target/android/get_deps/helpers/get_jdk.sh
+            echo "JAVA_HOME=$RUNNER_TEMP/dxx-nightly-deps/jdk-21" >> "$GITHUB_ENV"
+          fi
       - name: Prepare locked formatter dependencies
         id: formatter_prerequisites
         timeout-minutes: 8
@@ -214,6 +221,10 @@ jobs:
           # Stage only the immutable demo pair when its owner was admitted
           if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-demos' for e in p['tests']))"; then
             python3 control/android/tests/private_input_demos.py --stage --demos retail-input/demos --output target/game_data/retail-ci/demos
+          fi
+          # The existing immutable checkout and trusted gate also own corpus staging
+          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
+            python3 control/android/tests/nightly_regression_catalog.py --source retail-input --repo target --commit "$RETAIL_CHECKOUT_COMMIT"
           fi
           rm -rf retail-input
       - name: Execute admitted host owners
@@ -294,7 +305,7 @@ jobs:
       - name: Reconcile terminal results and retain unresolved failures
         env:
           TARGET_SHA: ${{ needs.plan.outputs.target_sha }}
-          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' }}
+          REQUIRE_SELECTED: ${{ github.event_name == 'pull_request' || inputs.campaign == 'first-play' || inputs.campaign == 'graphics-capabilities' || inputs.campaign == 'basic-use' }}
         run: |
           qualification=()
           if [[ "$REQUIRE_SELECTED" == 'true' ]]; then qualification=(--require-selected); fi
@@ -327,7 +338,7 @@ jobs:
   publish:
     name: Save nightly progress (scheduled/manual only)
     needs: [plan, finish]
-    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
+    if: always() && needs.finish.result == 'success' && github.event_name != 'pull_request' && inputs.campaign != 'first-play' && inputs.campaign != 'graphics-capabilities' && inputs.campaign != 'basic-use' && (github.ref == 'refs/heads/cmake' || (github.event_name == 'schedule' && github.ref_name == github.event.repository.default_branch))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

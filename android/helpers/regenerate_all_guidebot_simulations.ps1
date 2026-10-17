@@ -4,8 +4,10 @@
 param(
     [ValidateSet('Headless', 'Headed', 'Desktop')][string]$Mode = 'Headless',
     [string[]]$MissionJson,
+    [switch]$ExactMissionJson,
     [string]$MissionMetadataRoot,
     [int[]]$Level,
+    [int[]]$MissionTargetIndex,
     [string[]]$LevelFileFilter,
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
@@ -103,7 +105,7 @@ function Get-GuidebotMissionFiles {
     if ($MissionJson) {
         $files = @($files | Where-Object {
                 $relative = $_.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
-                if ($RoutingDevelopmentSet) { return $relative -in $MissionJson }
+                if ($RoutingDevelopmentSet -or $ExactMissionJson) { return $relative -cin $MissionJson }
                 foreach ($pattern in $MissionJson) {
                     if ($_.Name -like $pattern -or $_.BaseName -like $pattern -or $relative -like $pattern) { return $true }
                 }
@@ -131,10 +133,12 @@ function Get-GuidebotWorkItems {
         foreach ($mission in @(Get-GuidebotMissionEntries -Path $file.FullName)) {
             $game = [string](Get-GuidebotPropertyValue $mission 'game' '')
             if ($game -notin @('d1', 'd2')) { continue }
-            $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
+            $selectedTargetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
+            if ($null -ne $MissionTargetIndex -and $MissionTargetIndex.Count -gt 0 -and $selectedTargetIndex -notin $MissionTargetIndex) { continue }
+            $targetIndex = $selectedTargetIndex
             foreach ($levelRecord in @(Get-GuidebotPropertyValue $mission 'levels' @())) {
                 $levelNumber = [int](Get-GuidebotPropertyValue $levelRecord 'level_num' 0)
-                if ($Level -and $levelNumber -notin $Level) { continue }
+                if ($null -ne $Level -and $Level.Count -gt 0 -and $levelNumber -notin $Level) { continue }
                 if ($LevelFileFilter -and [string](Get-GuidebotPropertyValue $levelRecord 'level_file' '') -notin $LevelFileFilter) { continue }
                 $levelFile = [string](Get-GuidebotPropertyValue $levelRecord 'level_file' '')
                 $identity = "$relative|$targetIndex|$levelNumber|$levelFile"

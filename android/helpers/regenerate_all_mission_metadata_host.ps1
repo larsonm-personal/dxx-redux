@@ -2,7 +2,10 @@
 
 param(
     [switch]$NoRegressionCopy,
+    [string]$D1Executable,
+    [string]$D2Executable,
     [switch]$CdSourcesOnly,
+    [switch]$BuiltInOnly,
     [switch]$NoBuild,
     [string]$ArchiveName = "",
     [string[]]$ArchiveNames,
@@ -44,7 +47,10 @@ if ($FlyoutMovieLibrary) {
     $FlyoutMovieLibrary = (Resolve-Path -LiteralPath $FlyoutMovieLibrary -ErrorAction Stop).Path
 }
 $archiveSources = @()
-if (-not $CdSourcesOnly) {
+if ($BuiltInOnly -and ($CdSourcesOnly -or (-not $IncludeBuiltInFirstStrike -and -not $IncludeBuiltInCounterstrike))) {
+    throw 'BuiltInOnly requires an explicitly selected built-in mission'
+}
+if (-not $CdSourcesOnly -and -not $BuiltInOnly) {
     $archiveSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
 }
 $cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.jsonc"
@@ -61,7 +67,7 @@ $stagesDir = Join-Path $outDir "stages"
 $summaryJsonl = Join-Path $outDir "summary.jsonl"
 $largeZipBytes = 524288000
 $largeZipIncludePatterns = @("ewithin-versions.zip")
-$hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or
+$hasArchiveFilter = $BuiltInOnly -or -not [string]::IsNullOrWhiteSpace($ArchiveName) -or
 ($null -ne $ArchiveNames -and $ArchiveNames.Count -gt 0) -or
 ($null -ne $ArchivePaths -and $ArchivePaths.Count -gt 0)
 $missionVariantDirectoryMaskPrecedence = @()
@@ -111,6 +117,14 @@ function Get-PowerShellPath {
 }
 
 function Initialize-HostExecutable {
+    if ($D1Executable -or $D2Executable) {
+        if (-not $D1Executable -or -not $D2Executable -or
+            -not (Test-Path -LiteralPath $D1Executable -PathType Leaf) -or
+            -not (Test-Path -LiteralPath $D2Executable -PathType Leaf)) {
+            throw 'Both explicit metadata workers must exist'
+        }
+        return @{ d1 = $D1Executable; d2 = $D2Executable }
+    }
     if (-not $NoBuild) {
         Write-Status "Incrementally building Windows metadata executables"
         if ($env:OS -eq "Windows_NT") {
@@ -741,6 +755,9 @@ try {
             if (-not $NoRegressionCopy) {
                 Write-Utf8NoBomTextAtomically -Path $firstStrikeRegressionPath -Text ([System.IO.File]::ReadAllText($firstStrikeMetadataPath))
             }
+            $record = [ordered]@{ name = 'FirstStrike'; source = 'builtin'; status = 'passed'; metadata_json = $firstStrikeMetadataPath; regression_json = $firstStrikeRegressionPath }
+            $results += [pscustomobject]$record
+            Write-SummaryRecord -Record $record
             Write-Status "PASSED: built-in First Strike" "Green"
         }
         if (-not $hasArchiveFilter -or $IncludeBuiltInCounterstrike) {
@@ -755,9 +772,13 @@ try {
             if (-not $NoRegressionCopy) {
                 Write-Utf8NoBomTextAtomically -Path $counterstrikeRegressionPath -Text ([System.IO.File]::ReadAllText($counterstrikeMetadataPath))
             }
+            $record = [ordered]@{ name = 'Counterstrike'; source = 'builtin'; status = 'passed'; metadata_json = $counterstrikeMetadataPath; regression_json = $counterstrikeRegressionPath }
+            $results += [pscustomobject]$record
+            Write-SummaryRecord -Record $record
             Write-Status "PASSED: built-in Counterstrike" "Green"
         }
 
+        if (-not $BuiltInOnly) {
         $archives = @(
             foreach ($source in $archiveSources) {
                 Get-ChildItem -LiteralPath $source.Directory -File |
@@ -803,6 +824,7 @@ try {
                         '-ArchiveTimeoutSeconds', [string]$ArchiveTimeoutSeconds, '-OutputRoot', $workerRoot
                     )
                     if ($NoRegressionCopy) { $arguments += '-NoRegressionCopy' }
+                    if ($D1Executable) { $arguments += @('-D1Executable', $D1Executable, '-D2Executable', $D2Executable) }
                     $workerTasks.Add([pscustomobject]@{
                             FilePath = $powershell; Arguments = $arguments; TimeoutSeconds = 0; WorkingDirectory = $repoRoot
                             ArchiveRecord = $archiveRecord; WorkerRoot = $workerRoot; Index = $workerIndex
@@ -958,6 +980,7 @@ try {
             }
         }
 
+        }
         $batchStopwatch.Stop()
         Write-Progress -Activity "Host mission metadata batch" -Completed
         $orderedResults = @($results | Sort-Object source, name, zip)
