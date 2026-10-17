@@ -47,18 +47,36 @@ static inline int mission_descriptor_parse_secret(const char *line, int last_lev
 {
 	const char *begin, *comma, *name_end, *cursor;
 	size_t length;
-	int parsed_origin;
+	int first_origin = 0;
 	if (!line || last_level < 1 || !name || !name_capacity || !origin || !(comma = strchr(line, ','))) return 0;
 	for (begin = line; begin < comma && isspace((unsigned char) *begin); ++begin) {}
 	for (name_end = begin; name_end < comma && !isspace((unsigned char) *name_end); ++name_end) {}
 	for (cursor = name_end; cursor < comma && isspace((unsigned char) *cursor); ++cursor) {}
 	length = (size_t) (name_end - begin);
-	if (cursor != comma || !length || length >= name_capacity ||
-	    !mission_descriptor_parse_count(comma + 1, 1, last_level, &parsed_origin))
+	if (cursor != comma || !length || length >= name_capacity) return 0;
+
+	cursor = comma + 1;
+	for (;;) {
+		char *end;
+		long parsed_origin;
+		while (*cursor && isspace((unsigned char) *cursor)) ++cursor;
+		if (!*cursor || *cursor == ';') return 0;
+		errno = 0;
+		parsed_origin = strtol(cursor, &end, 10);
+		if (cursor == end || errno == ERANGE || parsed_origin < 1 || parsed_origin > last_level) return 0;
+		if (!first_origin) first_origin = (int) parsed_origin;
+		cursor = end;
+		while (*cursor && isspace((unsigned char) *cursor)) ++cursor;
+		if (*cursor == ',') {
+			++cursor;
+			continue;
+		}
+		if (!*cursor || *cursor == ';') break;
 		return 0;
+	}
 	memcpy(name, begin, length);
 	name[length] = 0;
-	*origin = parsed_origin;
+	*origin = first_origin;
 	return 1;
 }
 

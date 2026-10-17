@@ -24,6 +24,12 @@ static inline int level_index_range_is_valid(int index, int count, int total)
 	return index >= 0 && count >= 0 && index <= total && count <= total - index;
 }
 
+static inline int level_normalize_legacy_signed_byte_count(int count)
+{
+	/* Original consumers used signed loop bounds, so negative serialized counts were empty */
+	return count < 0 ? 0 : count;
+}
+
 static inline int level_segment_references_are_valid(const short *children, int child_count,
                                                      const int *vertices, int vertex_count, int segment_count, int loaded_vertex_count)
 {
