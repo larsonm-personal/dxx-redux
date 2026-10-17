@@ -11911,6 +11911,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
+#include "authored_matcen_save_fixture.hpp"
 #include "active_save_runtime_fixture.hpp"
 #include "timer_save_runtime_fixture.hpp"
 #include "wiggle_save_runtime_fixture.hpp"
@@ -12144,6 +12145,11 @@ int main(int argc, char **argv)
 		capture_public_level_replay(argv[2], "door");
 #endif
 		exercise_wiggle_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 8 && std::strcmp(argv[1], "--authored-matcen-save") == 0) {
+		capture_public_level_replay(argv[2], "authored-save", false, argv[3], argv[4], std::atoi(argv[5]));
+		exercise_authored_matcen_save(argv[4], std::atoi(argv[5]), std::atoi(argv[6]), argv[7]);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {

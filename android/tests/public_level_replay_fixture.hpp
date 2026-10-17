@@ -85,7 +85,7 @@ static std::vector<vms_vector> public_capture_route_to(int goal)
 
 #include "quick_recording_exit_fixture.hpp"
 
-static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false)
+static void capture_public_level_replay(const char *directory, const char *scenario, bool imported_d1 = false, const char *extra = nullptr, const char *authored_mission = nullptr, int authored_level = 1)
 {
 	using nlohmann::json;
 	require(!imported_d1 || std::strcmp(scenario, "gameplay-view-lifecycle") == 0 || std::strcmp(scenario, "effect-phase") == 0 || std::strcmp(scenario, "fan-observe") == 0 || std::strcmp(scenario, "all-weapons") == 0 || std::strcmp(scenario, "asset-fingerprints") == 0,
@@ -101,8 +101,15 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	const char *archive = "/descent.hog";
 	char mission[] = "";
 #endif
+	if (authored_mission) {
+#ifdef DXX_BUILD_DESCENT_II
+		archive = "/descent2.hog";
+#endif
+		require(extra && std::strcmp(scenario, "authored-save") == 0 && !imported_d1, "explicit authored save startup");
+	}
 	const std::string hog = std::string(directory) + archive;
 	require(PHYSFS_mount(directory, nullptr, 1) && PHYSFS_mount(hog.c_str(), nullptr, 1), "mount pinned public resources");
+	if (extra) require(PHYSFS_mount(extra, nullptr, 0), "mount pinned authored mission resources");
 	input_demo_assets_note_archive(std::strcmp(game_name, "d1") == 0 || imported_d1 ? "d1_hog" : "d2_hog", hog.c_str());
 	const bool screenshots = std::getenv("DXX_PUBLIC_CAPTURE_SCREENSHOTS") != nullptr;
 	char error[256] = "";
@@ -145,7 +152,9 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	guidebot_routing_set_default(GUIDEBOT_ROUTING_ORIGINAL);
 	guidebot_routing_set_mode(GUIDEBOT_ROUTING_ORIGINAL);
 #endif
-	require(load_mission_by_name(mission), "select real public level");
+	std::string selected_mission = authored_mission ? authored_mission : mission;
+	require(load_mission_by_name(selected_mission.data()), "select requested fixture mission");
+	if (authored_mission) require(authored_level != 0 && authored_level >= Last_secret_level && authored_level <= Last_level, "authored level belongs to descriptor");
 	Player_num = 0;
 	N_players = 1;
 	std::strcpy(Players[0].callsign, "public");
@@ -174,8 +183,12 @@ static void capture_public_level_replay(const char *directory, const char *scena
 	                                                                                                                       : 1;
 	require(level >= 1 && level <= 3, "ordinary authored public D1 level");
 #endif
-	StartNewGame(level);
+	StartNewGame(authored_mission ? authored_level : level);
 	if (!Game_wind) ::game();
+	if (authored_mission) {
+		require(Current_level_num == authored_level, "loaded requested authored level");
+		return;
+	}
 	if (std::strcmp(scenario, "fan-observe") == 0) {
 		observe_public_fan_resources(game_name);
 		return;
