@@ -280,6 +280,9 @@ jobs:
       lane: ${{ matrix.lane }}
       retail_assets: ${{ contains(fromJSON(needs.plan.outputs.retail_lanes), matrix.lane) }}
       retail_commit: ${{ needs.plan.outputs.retail_commit }}
+    # Explicitly name the environment-only secret; the callee keeps its trusted retail-ci gate
+    secrets:
+      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}
 
   finish:
     name: Check results
