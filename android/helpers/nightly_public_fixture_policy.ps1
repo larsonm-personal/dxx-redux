@@ -31,6 +31,11 @@ function Test-SuiteMediaIndependentTest {
         $arguments[1] -ceq '-Game' -and $arguments[2] -ceq 'd1' -and
         $arguments[3] -ceq '-HostMigration'
     }
+    if ($Test.Name -ceq 'test_demo_import_public_basic_use' -and
+        $Test.BaseName -ceq 'test_demo_import' -and $Test.Type -ceq 'ps1' -and
+        $Test.Requires -ceq 'emulator') {
+        return $arguments.Count -eq 1 -and $arguments[0] -ceq '-PublicBasicUse'
+    }
     if ($Test.Name -ceq 'test_demo_import_public_first_play' -and
         $Test.BaseName -ceq 'test_demo_import' -and $Test.Type -ceq 'ps1' -and
         $Test.Requires -ceq 'emulator') {
