@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "target_sha": "445d5dcca96265c3facd2088b2c6e485db538ed7",
+  "catalog_hash": "048e03ff9c5c1cdf366f5e85c7253cfc963a54987a38db0fbc0de368d79f4a6e",
+  "records": {
+    "master:test_gradle_unit_tests": {
+      "status": "PASS",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "reason": "",
+      "coverage_complete": false,
+      "attempted_tests": true,
+      "phase": "tests",
+      "case_counts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "SKIP": 0,
+        "BLOCKED": 0
+      },
+      "exclusions": []
+    }
+  },
+  "retryable": {
+    "master:test_lan_broadcast": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_lan": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_coop_pause": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_mp": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_lan_lobby_discovery": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_obsidian_level4_post_reactor_keys": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_obsidian_level13_open_wall_profile": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_counterstrike_level23_guidebot_trigger_liveness": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "shareware:test_graphics_mode_restore#d2": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "shareware:test_newmenu_render_paths_unified#d1": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "shareware:test_newmenu_render_paths_unified#d2": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_clean_old_artifacts": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_capture_public_d1_fault_probes.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_host_metadata_worker": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_input_demo_assets": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_test_runner_result": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_dependency_install": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_object_packet_decoders": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_sdk_package_cleanup": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_state_persistence_contracts.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_compact_public_gameplay_parity.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_save_runtime_validation.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_d1_replay_parity_compare.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "host-profile:retail-guidebot-timeout": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_fingerprint_mission_zip_budgets": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_linux_build_cli.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_run_compact_public_replays.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_secret_area_serialization_contracts.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_dpog_d1_bitmap_mapping.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_public_combat_profiles": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_metadata_worker_audio_lifecycle.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "cmake:etc2-limits": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "host-profile:metadata-d1": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_public_incoming_robot_hits.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_thief_checkpoint_index_validation.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_extract_all_gog_batch": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "master:test_test_suite_progress": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    },
+    "python:test_legacy_save_header_loadability.py": {
+      "reason": "setup: BLOCKED",
+      "run_url": "https://github.com/larsonm-personal/dxx-redux/actions/runs/39021038784",
+      "attempts": 1
+    }
+  },
+  "excluded": {}
+}
