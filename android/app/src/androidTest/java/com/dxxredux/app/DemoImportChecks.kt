@@ -31,7 +31,7 @@ internal class DemoImportChecks(
         val manager = ModManager.forActiveSet(context.filesDir, context)
         val filename = "fpinterrupt.zip"
         val source = File(context.filesDir, "saf_provider_source/$filename")
-        check(AssetManifest.computeSha256(source) == replacementSha256) { "Replacement source differs" }
+        check(MissionContentIdentity.compute(source).sha256 == replacementSha256) { "Replacement source differs" }
         check(MissionZip.inspect(source)?.importMode == "extracted_bundle") { "Replacement is not a large mission" }
         val previous = manager.listMods().single()
         check(previous.filename == filename && previous.enabled && previous.game == "d1")
@@ -49,7 +49,7 @@ internal class DemoImportChecks(
                 progress.bytesTotal > 12L * 1024L * 1024L &&
                 progress.bytesDone >= 1024L * 1024L && progress.bytesDone < progress.bytesTotal
             ) {
-                check(AssetManifest.computeSha256(manager.modFile(filename)) == previousSha256) {
+                check(MissionContentIdentity.compute(manager.modFile(filename)).sha256 == previousSha256) {
                     "Old ZIP changed before replacement publication"
                 }
                 val persisted = ModManager.forActiveSet(context.filesDir, context).listMods().single()
