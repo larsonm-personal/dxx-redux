@@ -994,6 +994,18 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 	return notes;
 }
 
+static json serialize_level_data_warnings()
+{
+	json warnings = json::array();
+#ifdef DXX_BUILD_DESCENT_II
+	char warning[128];
+	for (int index = 0; index < gamesave_level_data_warning_count(); ++index)
+		if (gamesave_level_data_warning_text(index, warning, sizeof(warning)))
+			warnings.push_back(warning);
+#endif
+	return warnings;
+}
+
 static json serialize_current_level_row(int level_num, const char *level_file,
                                         int base_player_ship_radius,
                                         const level_statistics &statistics)
@@ -1082,6 +1094,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	row["status"] = "ok";
 	row["problems"] = json::array();
 	row["notes"] = serialize_metadata_notes(metadata);
+	row["data_warnings"] = serialize_level_data_warnings();
 	return row;
 }
 
@@ -1236,6 +1249,7 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["status"] = "failed";
 	row["problems"] = json::array({ problem });
 	row["notes"] = json::array();
+	row["data_warnings"] = json::array();
 	return row;
 }
 

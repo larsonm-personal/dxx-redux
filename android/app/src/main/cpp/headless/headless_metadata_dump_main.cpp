@@ -990,6 +990,18 @@ static nlohmann::ordered_json serialize_metadata_notes(const level_metadata_stat
 	return notes;
 }
 
+static nlohmann::ordered_json serialize_level_data_warnings()
+{
+	nlohmann::ordered_json warnings = nlohmann::ordered_json::array();
+#ifdef DXX_BUILD_DESCENT_II
+	char warning[128];
+	for (int index = 0; index < gamesave_level_data_warning_count(); ++index)
+		if (gamesave_level_data_warning_text(index, warning, sizeof(warning)))
+			warnings.push_back(warning);
+#endif
+	return warnings;
+}
+
 struct LevelObjectCounts {
 	int player_starts = 0;
 	int coop_starts = 0;
@@ -1071,6 +1083,7 @@ static nlohmann::ordered_json serialize_current_level(
 	result["travel_time_seconds"] = metadata ? metadata->travel_time_seconds : 0;
 	result["flyout"] = flyout_metadata::collect(level_num, level_file);
 	result["notes"] = serialize_metadata_notes(metadata);
+	result["data_warnings"] = serialize_level_data_warnings();
 	result["guidebot_count"] = metadata ? metadata->guidebot_count : 0;
 	result["guidebot_placed"] = metadata && metadata->guidebot_placed != 0;
 	result["guidebot_accessible"] = metadata && metadata->guidebot_accessible != 0;
@@ -1142,6 +1155,7 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["travel_time_seconds"] = 0;
 	result["flyout"] = flyout_metadata::unavailable("level_not_loaded");
 	result["notes"] = nlohmann::ordered_json::array();
+	result["data_warnings"] = nlohmann::ordered_json::array();
 	result["guidebot_count"] = 0;
 	result["guidebot_placed"] = false;
 	result["guidebot_accessible"] = false;

@@ -73,6 +73,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 static PHYSFSX_read_status Level_game_read_status;
 
+typedef struct level_data_warning_state {
+	unsigned ignored_delta_light_sources;
+	unsigned skipped_delta_light_targets;
+} level_data_warning_state;
+
+static level_data_warning_state Level_data_warnings;
+
 #define PHYSFSX_readAngleVec(angles, file) PHYSFSX_readAngleVecChecked(&Level_game_read_status, (angles), (file))
 #define PHYSFSX_readByte(file) PHYSFSX_readByteChecked(&Level_game_read_status, (file))
 #define PHYSFSX_readFix(file) PHYSFSX_readFixChecked(&Level_game_read_status, (file))
@@ -756,6 +763,71 @@ void write_object(object *obj, short version, PHYSFS_file *f)
 
 extern int remove_trigger_num(int trigger_num);
 
+int gamesave_validate_delta_lights(int delta_light_count)
+{
+	int i;
+	int j;
+
+	Level_data_warnings.ignored_delta_light_sources = 0;
+	Level_data_warnings.skipped_delta_light_targets = 0;
+	for (i = 0; i < Num_static_lights; ++i) {
+		if (!level_index_range_is_valid(Dl_indices[i].index, Dl_indices[i].count, delta_light_count)) {
+			Warning("Invalid level light range light=%d index=%d count=%d total=%d",
+			        i, Dl_indices[i].index, Dl_indices[i].count, delta_light_count);
+			return 0;
+		}
+		if (!level_index_is_valid(Dl_indices[i].segnum, Num_segments) ||
+		    !level_index_is_valid(Dl_indices[i].sidenum, MAX_SIDES_PER_SEGMENT)) {
+			++Level_data_warnings.ignored_delta_light_sources;
+			continue;
+		}
+		for (j = 0; j < Dl_indices[i].count; ++j) {
+			const delta_light *const light = &Delta_lights[Dl_indices[i].index + j];
+			if (!level_index_is_valid(light->segnum, Num_segments) ||
+			    !level_index_is_valid(light->sidenum, MAX_SIDES_PER_SEGMENT))
+				++Level_data_warnings.skipped_delta_light_targets;
+		}
+	}
+	if (Level_data_warnings.ignored_delta_light_sources)
+		con_printf(CON_URGENT, "Ignoring %u unusable dynamic-light source%s\n",
+		           Level_data_warnings.ignored_delta_light_sources,
+		           Level_data_warnings.ignored_delta_light_sources == 1 ? "" : "s");
+	if (Level_data_warnings.skipped_delta_light_targets)
+		con_printf(CON_URGENT, "Skipping %u invalid dynamic-light target reference%s\n",
+		           Level_data_warnings.skipped_delta_light_targets,
+		           Level_data_warnings.skipped_delta_light_targets == 1 ? "" : "s");
+	return 1;
+}
+
+int gamesave_level_data_warning_count(void)
+{
+	return (Level_data_warnings.ignored_delta_light_sources != 0) +
+	       (Level_data_warnings.skipped_delta_light_targets != 0);
+}
+
+int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned buffer_size)
+{
+	if (!buffer || !buffer_size || warning_index < 0)
+		return 0;
+	if (Level_data_warnings.ignored_delta_light_sources) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Ignored %u unusable dynamic-light source%s",
+			         Level_data_warnings.ignored_delta_light_sources,
+			         Level_data_warnings.ignored_delta_light_sources == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.skipped_delta_light_targets && !warning_index) {
+		snprintf(buffer, buffer_size, "Skipped %u invalid dynamic-light target reference%s",
+		         Level_data_warnings.skipped_delta_light_targets,
+		         Level_data_warnings.skipped_delta_light_targets == 1 ? "" : "s");
+		return 1;
+	}
+	buffer[0] = '\0';
+	return 0;
+}
+
 static int validate_loaded_level_graph(int game_version, int object_count, int delta_light_count)
 {
 	int i;
@@ -779,17 +851,10 @@ static int validate_loaded_level_graph(int game_version, int object_count, int d
 			return 0;
 		}
 	}
-	for (i = 0; i < Num_robot_centers; ++i)
-		if (!level_index_is_valid(RobotCenters[i].segnum, Num_segments)) {
-			Warning("Invalid level matcen segment matcen=%d segment=%d", i, RobotCenters[i].segnum);
-			return 0;
-		}
 	for (i = 0; i < Num_segments; ++i) {
 		if (Segment2s[i].special == SEGMENT_IS_ROBOTMAKER &&
-		    !level_index_is_valid(Segment2s[i].matcen_num, Num_robot_centers)) {
-			Warning("Invalid level segment matcen segment=%d matcen=%d", i, Segment2s[i].matcen_num);
-			return 0;
-		}
+		    matcen_get_station_num(Segment2s[i].matcen_num) < 0)
+			con_printf(CON_URGENT, "Level robotmaker segment %d has no legacy matcen record and will remain inert\n", i);
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
 			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
 				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",
@@ -797,23 +862,7 @@ static int validate_loaded_level_graph(int game_version, int object_count, int d
 				return 0;
 			}
 	}
-	for (i = 0; i < Num_static_lights; ++i)
-		if (!level_index_is_valid(Dl_indices[i].segnum, Num_segments) ||
-		    !level_index_is_valid(Dl_indices[i].sidenum, MAX_SIDES_PER_SEGMENT) ||
-		    !level_index_range_is_valid(Dl_indices[i].index, Dl_indices[i].count, delta_light_count)) {
-			Warning("Invalid level light index light=%d segment=%d side=%d index=%d count=%d total=%d",
-			        i, Dl_indices[i].segnum, Dl_indices[i].sidenum,
-			        Dl_indices[i].index, Dl_indices[i].count, delta_light_count);
-			return 0;
-		}
-	for (i = 0; i < delta_light_count; ++i)
-		if (!level_index_is_valid(Delta_lights[i].segnum, Num_segments) ||
-		    !level_index_is_valid(Delta_lights[i].sidenum, MAX_SIDES_PER_SEGMENT)) {
-			Warning("Invalid level delta light light=%d segment=%d side=%d",
-			        i, Delta_lights[i].segnum, Delta_lights[i].sidenum);
-			return 0;
-		}
-	return 1;
+	return gamesave_validate_delta_lights(delta_light_count);
 }
 
 // --------------------------------------------------------------------
@@ -836,6 +885,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	int trig_size;
 
 	PHYSFSX_readStatusReset(&Level_game_read_status);
+	memset(&Level_data_warnings, 0, sizeof(Level_data_warnings));
 
 	//===================== READ FILE INFO ========================
 

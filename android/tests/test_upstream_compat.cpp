@@ -6519,6 +6519,57 @@ static bytes robot_record(int model, fix mass, fix drag)
 	return record;
 }
 
+#ifdef DXX_BUILD_DESCENT_II
+static void test_delta_light_compatibility()
+{
+	char warning[128];
+	Num_segments = 2;
+	Highest_segment_index = 1;
+	Num_static_lights = 2;
+	std::memset(Segments, 0, 2 * sizeof(Segments[0]));
+	for (int segnum = 0; segnum < Num_segments; ++segnum)
+		for (int sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; ++sidenum) {
+			Segments[segnum].children[sidenum] = -1;
+			Segments[segnum].sides[sidenum].wall_num = -1;
+		}
+	Dl_indices[0].segnum = Num_segments;
+	Dl_indices[0].sidenum = 0;
+	Dl_indices[0].index = 0;
+	Dl_indices[0].count = 2;
+	Dl_indices[1].segnum = 0;
+	Dl_indices[1].sidenum = 0;
+	Dl_indices[1].index = 0;
+	Dl_indices[1].count = 2;
+	std::memset(Delta_lights, 0, 2 * sizeof(Delta_lights[0]));
+	Delta_lights[0].segnum = 1;
+	Delta_lights[0].sidenum = 0;
+	Delta_lights[0].vert_light[0] = 1;
+	Delta_lights[1].segnum = Num_segments;
+	Delta_lights[1].sidenum = 0;
+	Segments[1].sides[0].uvls[0].l = F1_0;
+	Light_subtracted[0] = 0;
+	require(gamesave_validate_delta_lights(2), "legacy invalid delta-light references remain loadable");
+	require(gamesave_level_data_warning_count() == 2, "delta-light repairs publish both compact warnings");
+	require(gamesave_level_data_warning_text(0, warning, sizeof(warning)) &&
+	            std::strcmp(warning, "Ignored 1 unusable dynamic-light source") == 0,
+	        "orphan delta-light source warning is stable");
+	require(gamesave_level_data_warning_text(1, warning, sizeof(warning)) &&
+	            std::strcmp(warning, "Skipped 1 invalid dynamic-light target reference") == 0,
+	        "invalid delta-light target warning is stable");
+	require(subtract_light(0, 0) && Segments[1].sides[0].uvls[0].l == F1_0 - DL_SCALE,
+	        "valid targets in a mixed legacy light group remain active");
+
+	Dl_indices[1].index = 1;
+	Dl_indices[1].count = 2;
+	require(!gamesave_validate_delta_lights(2), "out-of-bounds delta-light ranges remain rejected");
+	Num_static_lights = 0;
+	require(gamesave_validate_delta_lights(0) && !gamesave_level_data_warning_count(),
+	        "ordinary levels clear prior delta-light warnings");
+	Num_segments = 0;
+	Highest_segment_index = -1;
+}
+#endif
+
 static void test_d1_indestructible_lights()
 {
 	Mission mission = {};
@@ -12405,6 +12456,7 @@ int main(int argc, char **argv)
 	test_autoselect();
 #ifdef DXX_BUILD_DESCENT_II
 	std::fprintf(stderr, "Testing mission robot reload\n");
+	test_delta_light_compatibility();
 	digi_select_system(SDLAUDIO_SYSTEM);
 	test_robot_reload();
 	std::fprintf(stderr, "Testing D1 monitor replacement and animation\n");

@@ -157,6 +157,42 @@ class MissionMetadataProjectionTest {
             "future_additive_field":{"preserved":true}
         }"""
 
+    @Test
+    fun preservesLevelDataWarningsIncludingEmptyLists() {
+        val warned =
+            Json
+                .parseToJsonElement(
+                    MissionMetadataProjection.project(
+                        rawLevel(
+                            "\"route_required_key_mask\":0,\"route_completing_key_mask_set\":0," +
+                                "\"data_warnings\":[\"Skipped 2 invalid dynamic-light target references\"]",
+                        ),
+                    ),
+                ).jsonObject["levels"]!!
+                .jsonArray
+                .single()
+                .jsonObject
+        assertEquals(
+            "Skipped 2 invalid dynamic-light target references",
+            warned["data_warnings"]!!
+                .jsonArray
+                .single()
+                .jsonPrimitive.content,
+        )
+
+        val normal =
+            Json
+                .parseToJsonElement(
+                    MissionMetadataProjection.project(
+                        rawLevel("\"route_required_key_mask\":0,\"route_completing_key_mask_set\":0"),
+                    ),
+                ).jsonObject["levels"]!!
+                .jsonArray
+                .single()
+                .jsonObject
+        assertEquals(0, normal["data_warnings"]!!.jsonArray.size)
+    }
+
     private fun rawLevel(routeFields: String) =
         """{"status":"ok","levels":[{"level_num":1,$routeFields,"route_steps":[]}]}"""
 }

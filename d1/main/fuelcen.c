@@ -77,6 +77,25 @@ int Num_fuelcenters = 0;
 
 segment * PlayerSegment= NULL;
 
+int matcen_get_station_num(int matcen_num)
+{
+	int fuelcen_num;
+	int segnum;
+
+	if ((unsigned)matcen_num >= (unsigned)Num_robot_centers)
+		return -1;
+	fuelcen_num = RobotCenters[matcen_num].fuelcen_num;
+	if ((unsigned)fuelcen_num >= (unsigned)Num_fuelcenters ||
+	    Station[fuelcen_num].Type != SEGMENT_IS_ROBOTMAKER)
+		return -1;
+	segnum = Station[fuelcen_num].segnum;
+	if ((unsigned)segnum >= (unsigned)Num_segments ||
+	    Segments[segnum].special != SEGMENT_IS_ROBOTMAKER ||
+	    Segments[segnum].matcen_num != matcen_num)
+		return -1;
+	return fuelcen_num;
+}
+
 #ifdef EDITOR
 char	Special_names[MAX_CENTER_TYPES][11] = {
 	"NOTHING   ",
@@ -192,8 +211,13 @@ void matcen_create( segment *segp)
 //	Station[Num_fuelcenters].last_created_sig = -1;
 	compute_segment_center(&Station[Num_fuelcenters].Center, segp );
 
-	segp->matcen_num = Num_robot_centers;
-	Num_robot_centers++;
+	if ((unsigned)Num_robot_centers >= MAX_ROBOT_CENTERS) {
+		segp->matcen_num = -1;
+		Num_fuelcenters++;
+		return;
+	}
+
+	segp->matcen_num = Num_robot_centers++;
 
 	RobotCenters[segp->matcen_num].hit_points = MATCEN_HP_DEFAULT;
 	RobotCenters[segp->matcen_num].interval = MATCEN_INTERVAL_DEFAULT;
@@ -225,16 +249,21 @@ void fuelcen_activate( segment * segp, int station_type )
 //	Trigger (enable) the materialization center in segment segnum
 void trigger_matcen(int segnum)
 {
-	segment		*segp = &Segments[segnum];
+	segment		*segp;
 	vms_vector	pos, delta;
 	FuelCenter	*robotcen;
-	int			objnum;
+	int			fuelcen_num, objnum;
 
-	Assert(segp->special == SEGMENT_IS_ROBOTMAKER);
-	Assert(segp->matcen_num < Num_fuelcenters);
-	Assert((segp->matcen_num >= 0) && (segp->matcen_num <= Highest_segment_index));
+	if ((unsigned)segnum >= (unsigned)Num_segments)
+		return;
+	segp = &Segments[segnum];
+	if (segp->special != SEGMENT_IS_ROBOTMAKER)
+		return;
+	fuelcen_num = matcen_get_station_num(segp->matcen_num);
+	if (fuelcen_num < 0)
+		return;
 
-	robotcen = &Station[RobotCenters[segp->matcen_num].fuelcen_num];
+	robotcen = &Station[fuelcen_num];
 
 	if (robotcen->Enabled == 1)
 		return;
@@ -362,7 +391,7 @@ void robotmaker_proc( FuelCenter * robotcen )
 {
 	fix		dist_to_player;
 	vms_vector	cur_object_loc; //, direction;
-	int		matcen_num, segnum, objnum;
+	int		matcen_num, station_num, segnum, objnum;
 	object	*obj;
 	fix		top_time;
 	vms_vector	direction;
@@ -393,9 +422,15 @@ void robotmaker_proc( FuelCenter * robotcen )
 		return;
 	}
 
+	if ((unsigned)robotcen->segnum >= (unsigned)Num_segments) {
+		robotcen->Enabled = 0;
+		return;
+	}
 	matcen_num = Segments[robotcen->segnum].matcen_num;
+	station_num = matcen_get_station_num(matcen_num);
 
-	if ( matcen_num == -1 ) {
+	if (station_num < 0 || &Station[station_num] != robotcen) {
+		robotcen->Enabled = 0;
 		return;
 	}
 
@@ -692,29 +727,7 @@ void init_all_matcens(void)
 			Station[i].Lives = 3;
 			Station[i].Enabled = 0;
 			Station[i].Disable_time = 0;
-#ifndef NDEBUG
-{
-			//	Make sure this fuelcen is pointed at by a matcen.
-			int	j;
-			for (j=0; j<Num_robot_centers; j++) {
-				if (RobotCenters[j].fuelcen_num == i)
-					break;
-			}
-			Assert(j != Num_robot_centers);
-}
-#endif
-
 		}
-
-#ifndef NDEBUG
-	//	Make sure all matcens point at a fuelcen
-	for (i=0; i<Num_robot_centers; i++) {
-		int	fuelcen_num = RobotCenters[i].fuelcen_num;
-
-		Assert(fuelcen_num < Num_fuelcenters);
-		Assert(Station[fuelcen_num].Type == SEGMENT_IS_ROBOTMAKER);
-	}
-#endif
 
 }
 

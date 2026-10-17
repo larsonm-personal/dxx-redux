@@ -471,6 +471,7 @@ internal data class LevelMetadataLevelRow(
     val status: String,
     val problems: List<String>,
     val notes: List<String>,
+    val dataWarnings: List<String> = emptyList(),
     val replacements: List<LevelMetadataReplacement> = emptyList(),
     val replacementGroups: List<LevelMetadataReplacementGroup> = emptyList(),
 )
@@ -591,6 +592,7 @@ internal data class LevelMetadataResult(
                                 status = row.optString("status", "ok"),
                                 problems = row.optStringList("problems"),
                                 notes = row.optStringList("notes"),
+                                dataWarnings = row.optStringList("data_warnings"),
                                 replacements = row.optReplacements("replacements"),
                                 replacementGroups = row.optReplacementGroups("replacement_groups"),
                             ),

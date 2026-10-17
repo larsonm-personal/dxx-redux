@@ -771,17 +771,10 @@ static int validate_loaded_level_graph(int game_version, int object_count)
 			return 0;
 		}
 	}
-	for (i = 0; i < Num_robot_centers; ++i)
-		if (!level_index_is_valid(RobotCenters[i].segnum, Num_segments)) {
-			Warning("Invalid level matcen segment matcen=%d segment=%d", i, RobotCenters[i].segnum);
-			return 0;
-		}
 	for (i = 0; i < Num_segments; ++i) {
 		if (Segments[i].special == SEGMENT_IS_ROBOTMAKER &&
-		    !level_index_is_valid(Segments[i].matcen_num, Num_robot_centers)) {
-			Warning("Invalid level segment matcen segment=%d matcen=%d", i, Segments[i].matcen_num);
-			return 0;
-		}
+		    matcen_get_station_num(Segments[i].matcen_num) < 0)
+			con_printf(CON_URGENT, "Level robotmaker segment %d has no legacy matcen record and will remain inert\n", i);
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
 			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
 				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",

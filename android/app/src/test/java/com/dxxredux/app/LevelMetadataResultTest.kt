@@ -7,6 +7,33 @@ import org.junit.Test
 
 class LevelMetadataResultTest {
     @Test
+    fun fromJsonReadsLevelDataWarnings() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "levels": [{
+                    "level_num": 2,
+                    "data_warnings": [
+                      "Ignored 1 unusable dynamic-light source",
+                      "Skipped 20 invalid dynamic-light target references"
+                    ]
+                  }]
+                }
+                """.trimIndent(),
+            )
+
+        assertEquals(
+            listOf(
+                "Ignored 1 unusable dynamic-light source",
+                "Skipped 20 invalid dynamic-light target references",
+            ),
+            result.levels.single().dataWarnings,
+        )
+    }
+
+    @Test
     fun fromJsonReadsAndFormatsLevelStatistics() {
         val result =
             LevelMetadataResult.fromJson(

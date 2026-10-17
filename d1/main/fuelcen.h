@@ -130,6 +130,10 @@ typedef struct matcen_info {
 
 extern matcen_info RobotCenters[MAX_ROBOT_CENTERS];
 
+// Resolve the station selected by the original ordinal matcen mapping.
+// Returns -1 when the serialized center has no safe runtime station.
+int matcen_get_station_num(int matcen_num);
+
 extern int Fuelcen_control_center_dead_modelnum;
 extern fix Fuelcen_control_center_strength;
 
