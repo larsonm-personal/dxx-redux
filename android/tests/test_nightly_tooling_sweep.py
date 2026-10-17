@@ -243,9 +243,13 @@ class SweepTests(unittest.TestCase):
         self.assertIn("if: steps.selection.outputs.public_fixtures == 'true'", fixture_step)
         self.assertNotIn("inputs.lane == 'android-single'", fixture_step)
         self.assertIn('-Game both -Download -RequireArchives', fixture_step)
-        for name in ('test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware',
+        for name in ('test_demo_import_public_basic_use', 'test_demo_import_public_first_play', 'test_lan_launch_preparation_public_shareware',
                      'test_lan_host_migration_public_shareware'):
             self.assertIn(name, workflow)
+            expression = next(line.split(":", 1)[1].strip().rstrip(",") for line in workflow.splitlines()
+                              if "'public_fixtures':" in line)
+            self.assertTrue(eval(expression, {"selected": [{"owner": "master", "args": {"suite": name}}]}))
+        self.assertFalse(eval(expression, {"selected": [{"owner": "master", "args": {"suite": "test_demo_import"}}]}))
         entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
         self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])
