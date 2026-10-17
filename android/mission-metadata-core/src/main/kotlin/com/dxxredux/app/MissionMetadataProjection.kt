@@ -116,6 +116,7 @@ object MissionMetadataProjection {
             put("route_required_key_mask", level.requiredInt("route_required_key_mask"))
             put("route_completing_key_mask_set", level.requiredInt("route_completing_key_mask_set"))
             put("route_steps", level["route_steps"] ?: JsonArray(emptyList()))
+            put("data_warnings", level["data_warnings"] ?: JsonArray(emptyList()))
             listOf("guidebot_placement_note", "guidebot_note", "route_problem", "route_note").forEach { name ->
                 putIfNonBlank(name, level.string(name))
             }

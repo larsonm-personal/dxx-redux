@@ -2080,11 +2080,14 @@ void change_light(int segnum, int sidenum, int dir)
 			dlp = &Delta_lights[Dl_indices[i].index];
 
 			for (j=0; j<Dl_indices[i].count; j++) {
+				if (dlp->segnum < 0 || dlp->segnum > Highest_segment_index ||
+				    dlp->sidenum < 0 || dlp->sidenum >= MAX_SIDES_PER_SEGMENT) {
+					++dlp;
+					continue;
+				}
 				for (k=0; k<4; k++) {
 					fix	dl,new_l;
 					dl = dir * dlp->vert_light[k] * DL_SCALE;
-					Assert((dlp->segnum >= 0) && (dlp->segnum <= Highest_segment_index));
-					Assert((dlp->sidenum >= 0) && (dlp->sidenum < MAX_SIDES_PER_SEGMENT));
 					new_l = (Segments[dlp->segnum].sides[dlp->sidenum].uvls[k].l += dl);
 					if (new_l < 0)
 						Segments[dlp->segnum].sides[dlp->sidenum].uvls[k].l = 0;

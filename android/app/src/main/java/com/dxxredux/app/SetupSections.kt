@@ -3906,6 +3906,7 @@ private fun LevelMetadataTable(
                                 },
                             travel = row.travelTimeText,
                             problem = row.metadataProblem(),
+                            warning = row.metadataDataWarning(),
                             note = row.metadataSummaryNote(),
                             onDetails = { selectedLevel = row },
                         )
@@ -3931,6 +3932,7 @@ private fun LevelMetadataTableRow(
     travel: String,
     bold: Boolean = false,
     problem: String? = null,
+    warning: String? = null,
     note: String? = null,
     onDetails: (() -> Unit)? = null,
 ) {
@@ -3966,6 +3968,14 @@ private fun LevelMetadataTableRow(
             it,
             fontSize = 10.sp,
             color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(start = 88.dp, bottom = 2.dp),
+        )
+    }
+    warning?.let {
+        Text(
+            it,
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier.padding(start = 88.dp, bottom = 2.dp),
         )
     }
@@ -4039,6 +4049,9 @@ private fun LevelMetadataLevelDialog(
                     }
                     DetailRow("Status", row.status.replaceFirstChar { it.uppercase() })
                     previewError?.let { ModDetailLine(it, MaterialTheme.colorScheme.error) }
+                    row.dataWarnings.forEach { warning ->
+                        ModDetailLine("Data warning: $warning", MaterialTheme.colorScheme.tertiary)
+                    }
                     DetailRow("Travel", row.travelTimeText.ifBlank { "n/a" })
                     row
                         .metadataNotes()
@@ -4167,6 +4180,9 @@ private fun LevelMetadataLevelRow.metadataSummaryNote(): String? =
         .joinToString("; ") {
             "note: $it"
         }.takeIf { it.isNotBlank() }
+
+private fun LevelMetadataLevelRow.metadataDataWarning(): String? =
+    dataWarnings.joinToString("; ", prefix = "data warning: ").takeIf { dataWarnings.isNotEmpty() }
 
 private fun LevelMetadataLevelRow.metadataNotes(): List<String> {
     val messages =
