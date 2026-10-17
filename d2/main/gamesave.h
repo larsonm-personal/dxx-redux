@@ -36,6 +36,7 @@ extern int Gamesave_num_org_robots;
 
 /* Compact diagnostics for legacy level data that is safe to ignore at runtime. */
 int gamesave_validate_delta_lights(int delta_light_count);
+void gamesave_note_ignored_inert_robot_object(void);
 int gamesave_level_data_warning_count(void);
 int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned buffer_size);
 
@@ -44,6 +45,6 @@ extern void write_game_text_file(char *filename);
 
 extern int Errors_in_mine;
 
-extern void verify_robot_object(object *obj);
+extern int verify_robot_object(object *obj);
 
 #endif /* _GAMESAVE_H */

@@ -266,6 +266,12 @@ void bm_read_all(PHYSFS_file * fp)
 #define N_D2_OBJBITMAPPTRS		502
 #define N_D2_WEAPON_TYPES		62
 
+static d2_ham_validation_report Main_ham_validation_report;
+static d2_ham_validation_report Mission_ham_validation_report;
+static d2_ham_validation_report Level_hxm_validation_report;
+static int Mission_ham_rejected;
+static int Level_hxm_rejected;
+
 extern int Num_bitmap_files;
 int extra_bitmap_num = 0;
 
@@ -313,7 +319,8 @@ int bm_validate_main_ham(PHYSFS_file *fp)
 	size_t size;
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
-	valid = d2_ham_validate_main(data, size, &limits);
+	valid = d2_ham_validate_main(data, size, &limits, &Main_ham_validation_report);
+	if (!valid) memset(&Main_ham_validation_report, 0, sizeof(Main_ham_validation_report));
 	d_free(data);
 	return valid;
 }
@@ -328,7 +335,9 @@ static int bm_validate_extra_ham(PHYSFS_file *fp, int type)
 	valid = d2_ham_validate_extra(data, size, type, &limits,
 	                              N_D2_WEAPON_TYPES, N_D2_ROBOT_TYPES,
 	                              N_D2_ROBOT_JOINTS, N_D2_POLYGON_MODELS,
-	                              N_D2_OBJBITMAPS, N_D2_OBJBITMAPPTRS);
+	                              N_D2_OBJBITMAPS, N_D2_OBJBITMAPPTRS,
+	                              &Mission_ham_validation_report);
+	if (!valid) memset(&Mission_ham_validation_report, 0, sizeof(Mission_ham_validation_report));
 	d_free(data);
 	return valid;
 }
@@ -341,9 +350,96 @@ static int bm_validate_hxm(PHYSFS_file *fp)
 	int valid;
 	if (!bm_read_validation_bytes(fp, &data, &size)) return 0;
 	valid = d2_ham_validate_hxm(data, size, &limits,
-	                            N_robot_types, N_robot_joints, N_polygon_models);
+	                            N_robot_types, N_robot_joints, N_polygon_models,
+	                            &Level_hxm_validation_report);
+	if (!valid) memset(&Level_hxm_validation_report, 0, sizeof(Level_hxm_validation_report));
 	d_free(data);
 	return valid;
+}
+
+void bm_reset_mission_compatibility_warnings(void)
+{
+	memset(&Mission_ham_validation_report, 0, sizeof(Mission_ham_validation_report));
+	Mission_ham_rejected = 0;
+}
+
+void bm_reset_level_compatibility_warnings(void)
+{
+	memset(&Level_hxm_validation_report, 0, sizeof(Level_hxm_validation_report));
+	Level_hxm_rejected = 0;
+}
+
+static int bm_validation_report_warning_count(const d2_ham_validation_report *report)
+{
+	return report->inert_robot_records || report->normalized_empty_joint_offsets ||
+	       report->ignored_trailing_bytes;
+}
+
+int bm_compatibility_warning_count(void)
+{
+	/* Base HAM quirks are installation-wide format details, not level data warnings */
+	return bm_validation_report_warning_count(&Mission_ham_validation_report) +
+	       bm_validation_report_warning_count(&Level_hxm_validation_report) +
+	       Mission_ham_rejected + Level_hxm_rejected;
+}
+
+static int bm_validation_report_warning_text(const d2_ham_validation_report *report,
+	                                          const char *kind, int *warning_index,
+	                                          char *buffer, unsigned buffer_size)
+{
+	unsigned used;
+	int has_item = 0;
+	if (!bm_validation_report_warning_count(report)) return 0;
+	if ((*warning_index)-- != 0) return 0;
+	snprintf(buffer, buffer_size, "%s legacy handling:", kind);
+	used = (unsigned) strlen(buffer);
+#define BM_APPEND_WARNING(...) do { \
+	if (used < buffer_size) { \
+		int written = snprintf(buffer + used, buffer_size - used, __VA_ARGS__); \
+		if (written > 0) used += (unsigned) written; \
+	} \
+} while (0)
+	if (report->inert_robot_records) {
+		BM_APPEND_WARNING(" %u inert robot slot%s", report->inert_robot_records,
+		                  report->inert_robot_records == 1 ? "" : "s");
+		has_item = 1;
+	}
+	if (report->normalized_empty_joint_offsets) {
+		BM_APPEND_WARNING("%s%u unused joint offset%s normalized", has_item ? "; " : " ",
+		                  report->normalized_empty_joint_offsets,
+		                  report->normalized_empty_joint_offsets == 1 ? "" : "s");
+		has_item = 1;
+	}
+	if (report->ignored_trailing_bytes)
+		BM_APPEND_WARNING("%s%u trailer byte%s ignored", has_item ? "; " : " ",
+		                  (unsigned) report->ignored_trailing_bytes,
+		                  report->ignored_trailing_bytes == 1 ? "" : "s");
+#undef BM_APPEND_WARNING
+	return 1;
+}
+
+int bm_compatibility_warning_text(int warning_index, char *buffer, unsigned buffer_size)
+{
+	if (!buffer || !buffer_size || warning_index < 0)
+		return 0;
+	if (bm_validation_report_warning_text(&Mission_ham_validation_report, "Mission HAM",
+	                                      &warning_index, buffer, buffer_size) ||
+	    bm_validation_report_warning_text(&Level_hxm_validation_report, "Level HXM",
+	                                      &warning_index, buffer, buffer_size))
+		return 1;
+	if (Mission_ham_rejected) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Rejected unsafe mission HAM companion");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_hxm_rejected && !warning_index) {
+		snprintf(buffer, buffer_size, "Rejected unsafe level HXM companion");
+		return 1;
+	}
+	buffer[0] = '\0';
+	return 0;
 }
 
 void bm_free_extra_objbitmaps()
@@ -375,6 +471,7 @@ void bm_read_extra_robots(const char *fname,int type)
 	PHYSFS_file *fp;
 	int t,i,version;
 
+	bm_reset_mission_compatibility_warnings();
 	fp = PHYSFSX_openReadBuffered(fname);
 	if (!fp)
 	{
@@ -382,6 +479,7 @@ void bm_read_extra_robots(const char *fname,int type)
 		return;
 	}
 	if (!bm_validate_extra_ham(fp, type)) {
+		Mission_ham_rejected = 1;
 		con_printf(CON_URGENT, "Rejected malformed extra HAM file \"%s\"\n", fname);
 		PHYSFS_close(fp);
 		return;
@@ -468,6 +566,7 @@ void load_robot_replacements(char *level_name)
 	int t,i,j;
 	char ifile_name[FILENAME_LEN];
 
+	bm_reset_level_compatibility_warnings();
 	change_filename_extension(ifile_name, level_name, ".HXM" );
 
 	fp = PHYSFSX_openReadBuffered(ifile_name);
@@ -475,6 +574,7 @@ void load_robot_replacements(char *level_name)
 	if (!fp)		//no robot replacement file
 		return;
 	if (!bm_validate_hxm(fp)) {
+		Level_hxm_rejected = 1;
 		con_printf(CON_URGENT, "Rejected malformed robot replacement file \"%s\"\n", ifile_name);
 		PHYSFS_close(fp);
 		return;

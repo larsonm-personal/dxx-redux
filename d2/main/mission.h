@@ -143,6 +143,9 @@ int load_mission_by_name (char *mission_name);
 int load_mission_by_name_from_current_dir(char *mission_name);
 int load_mission_from_current_dir(char *descriptor);
 
+int mission_compatibility_warning_count(void);
+int mission_compatibility_warning_text(int warning_index, char *buffer, unsigned buffer_size);
+
 /* Whether a resource comes from the active custom mission HOG */
 int mission_owns_resource_archive(const char *source);
 
