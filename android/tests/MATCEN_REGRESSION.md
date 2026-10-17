@@ -88,3 +88,7 @@ python android/tests/run_authored_matcen_stations.py \
 That runner validates frozen startup evidence before launching, runs repeat and no-dispatch controls in fresh directories, and compares with the historical trace. Skips, no authored trigger and native-cap suppression remain review-required. It never generates or replaces expected files. Assets are required locally or in the existing trusted private-asset environment; public PR jobs run source controls and pinned public fixtures only.
 
 Reference provenance is recorded in `fixtures/matcen_reference_provenance.json`: historical gameplay revision, capture-only adapter revision/tree/patch, native binary hashes, immutable asset revision, exact input-tree hashes and each selected capture. The adapter branch is a reference source, not an integration target. The modern implementation pull request targets `cmake`.
+
+## Extended differential campaign
+
+See [MATCEN_DIFFERENTIAL_CAMPAIGN.md](MATCEN_DIFFERENTIAL_CAMPAIGN.md) for the pinned full-corpus load comparison, opt-in all-difficulty lifecycle fixture, independent reference limits and executed-versus-planned coverage.
