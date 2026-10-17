@@ -24,7 +24,8 @@ keyboard inputs exercise native controls, not physical touch hit targets.
 Register `test_demo_import_public_basic_use` with the existing `test_demo_import`
 owner and a 720-second master timeout. No new standalone JSON scripts are added.
 Nightly fixture admission and campaign selection are separate coordinated changes.
-No private assets, new engine hooks or forced gameplay/settings variables are used.
+Two read-only shared introspection fields expose observed pilot ship/missile colors.
+No private assets or forced gameplay/settings variables are used.
 
 ## Verification
 

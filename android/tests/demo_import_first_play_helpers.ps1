@@ -659,7 +659,7 @@ function Get-FirstPlayObservedDefaults {
     param($State)
     # Report observed settings without seeding or prescribing particular default values
     $settings = [ordered]@{}
-    foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default')) {
+    foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default', 'pilot_ship_color', 'pilot_missile_color')) {
         if ($null -eq $State -or -not $State.PSObject.Properties[$field] -or $null -eq $State.$field) {
             throw "Basic-use defaults missing native field: $field"
         }
@@ -725,7 +725,6 @@ function Invoke-FirstPlayPhase {
             run_id = $result.run_id; phase = $Phase
             pilot_origin = $(if ($Phase -eq 'd2') { 'D2 pilot retained from D1-in-D2 phase' } else { 'First native-engine pilot after verified pm clear' })
             settings = Get-FirstPlayObservedDefaults -State $state
-            color = 'Not exposed by native gameplay introspection; no color setting was changed'
         } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $phaseOutput 'default-settings.json') -Encoding utf8
     }
     if ($Phase -eq 'empty') {

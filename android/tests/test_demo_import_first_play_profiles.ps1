@@ -57,14 +57,15 @@ function Assert-BasicUseControls {
 
 $observed = [pscustomobject]@{
     control_type = 3; cockpit_mode = 2; hud_mode = 1; auto_leveling = $false
+    pilot_ship_color = 2; pilot_missile_color = 6
     original_homing = $true; headlight_active_default = $false
     audio = [pscustomobject]@{ effects_volume = 4; music_volume = 0 }
 }
 $defaults = Get-FirstPlayObservedDefaults -State $observed
-if ($defaults.effects_volume -ne 4 -or $defaults.music_volume -ne 0 -or $defaults.auto_leveling -ne $false) {
+if ($defaults.effects_volume -ne 4 -or $defaults.music_volume -ne 0 -or $defaults.auto_leveling -ne $false -or $defaults.pilot_ship_color -ne 2 -or $defaults.pilot_missile_color -ne 6) {
     throw 'Observed defaults were replaced with prescribed values'
 }
-foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default', 'audio')) {
+foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default', 'pilot_ship_color', 'pilot_missile_color', 'audio')) {
     $missing = $observed | ConvertTo-Json | ConvertFrom-Json
     $missing.PSObject.Properties.Remove($field)
     Assert-Rejected { Get-FirstPlayObservedDefaults -State $missing } 'Missing defaults were reported as observed'
