@@ -1,9 +1,13 @@
 package com.dxxredux.app
 
 import android.app.Instrumentation
+import android.net.Uri
+import android.os.Process
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -11,6 +15,66 @@ import java.util.zip.ZipOutputStream
 internal class DemoImportChecks(
     private val instrumentation: Instrumentation,
 ) {
+    /** Instrumented attempt only; the owner retries through the ordinary picker callback */
+    fun pauseMissionReplacement(
+        nonce: String,
+        previousSha256: String,
+        replacementSha256: String,
+    ) {
+        require(nonce.matches(Regex("[a-f0-9]{32}")))
+        require(previousSha256.matches(Regex("[a-f0-9]{64}")))
+        require(replacementSha256.matches(Regex("[a-f0-9]{64}")) && replacementSha256 != previousSha256)
+        val context = instrumentation.targetContext
+        KnownVersions.init(context)
+        val sets = FileSetManager(context.filesDir)
+        check(sets.getActive() == "default") { "Interruption requires the disposable default set" }
+        val manager = ModManager.forActiveSet(context.filesDir, context)
+        val filename = "fpinterrupt.zip"
+        val source = File(context.filesDir, "saf_provider_source/$filename")
+        check(AssetManifest.computeSha256(source) == replacementSha256) { "Replacement source differs" }
+        check(MissionZip.inspect(source)?.importMode == "extracted_bundle") { "Replacement is not a large mission" }
+        val previous = manager.listMods().single()
+        check(previous.filename == filename && previous.enabled && previous.game == "d1")
+        check(previous.displayName == "Public Import Old" && previous.archiveSha256 == previousSha256)
+        check(previous.importMode == "extracted_bundle")
+        check(manager.extractionStore().freshRecord(filename, manager.modFile(filename)) != null) {
+            "Old mission lacks a complete published extraction"
+        }
+        val marker = File(context.filesDir, "first_play_interrupt.json")
+        check(!marker.exists()) { "Stale interruption marker" }
+        val uri = Uri.parse("content://${context.packageName}.saf-test/seekable/$filename")
+        manager.importMissionZip(uri, filename, context.contentResolver) { progress ->
+            if (progress.label.startsWith("Extracting level pack cache for faster launches:") &&
+                progress.label.endsWith(" (import-padding.bin)") &&
+                progress.bytesTotal > 12L * 1024L * 1024L &&
+                progress.bytesDone >= 1024L * 1024L && progress.bytesDone < progress.bytesTotal
+            ) {
+                check(AssetManifest.computeSha256(manager.modFile(filename)) == previousSha256) {
+                    "Old ZIP changed before replacement publication"
+                }
+                val persisted = ModManager.forActiveSet(context.filesDir, context).listMods().single()
+                check(persisted.filename == filename && persisted.archiveSha256 == previousSha256)
+                check(persisted.displayName == "Public Import Old" && persisted.enabled)
+                AtomicFilePublication.writeUtf8(
+                    marker,
+                    JSONObject()
+                        .put("run_id", nonce)
+                        .put("checkpoint", "extracting_before_publication")
+                        .put("process_id", Process.myPid())
+                        .put("previous_sha256", previousSha256)
+                        .put("replacement_sha256", replacementSha256)
+                        .put("bytes_done", progress.bytesDone)
+                        .put("bytes_total", progress.bytesTotal)
+                        .toString(2),
+                )
+                // The host verifies this durable marker, then kills this exact app process
+                CountDownLatch(1).await(90, TimeUnit.SECONDS)
+                error("Host did not interrupt the replacement at the observed barrier")
+            }
+        }
+        error("Replacement completed without reaching the interruption barrier")
+    }
+
     fun run() =
         runBlocking {
             val context = instrumentation.targetContext

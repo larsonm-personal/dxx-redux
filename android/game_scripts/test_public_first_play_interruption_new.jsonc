@@ -1,0 +1,35 @@
+// Owned public D1 replacement witness; unchanged demo level bytes under a generation-specific alias
+[
+    { "_info": { "games": ["d1"], "_standalone": false, "_owner": "test_demo_import" } },
+    { "action": "enter_launcher" },
+    { "action": "assert", "expect": { "active_set": "default", "d1.ready": true, "d2.ready": false, "content_entries": { "contains": "mod:fpinterrupt.zip" } } },
+    { "action": "tap_button", "text": "Launch Descent 1", "exact": true, "launches_game": true },
+    { "action": "skip_intro", "timeout_ms": 30000, "post_delay_ms": 200 },
+    { "action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000 },
+    { "action": "key", "key": "enter", "post_delay_ms": 100 },
+    { "action": "select", "text": "New game", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "assert", "expect": { "menu.items": { "contains": "Public Import New" } } },
+    { "action": "assert", "expect": { "menu.items": { "not_contains": "Public Import Old" } } },
+    { "action": "select", "text": "Public Import New", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "wait_for", "expect": { "menu_subtitle": "Difficulty Level", "menu.items[0].text": "Trainee" }, "timeout_ms": 10000 },
+    { "action": "select", "text": "Trainee", "timeout_ms": 10000, "post_delay_ms": 100 },
+    { "action": "skip_briefing", "timeout_ms": 30000, "post_delay_ms": 100 },
+    { "action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000 },
+    { "action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000 },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": true, "screen_mode": "game", "current_level_num": 1,
+            "player_dead": false, "time_paused": false, "difficulty": 0,
+            "mission_asset_owner": "mod/fpinterrupt.zip", "physfs.search_path": { "contains": "fpinterrupt.hog" },
+        },
+    },
+    { "action": "introspect" },
+    { "action": "log", "message": "PASS: normal D1 mission selection reached Public Import New level one" },
+    { "action": "enter_launcher" },
+    { "action": "wait_for", "field": "game_running", "value": "false", "timeout_ms": 30000 },
+    // Only this owner's mission exists; remove its public fixture after the live-game witness
+    { "action": "delete_mod", "file": "fpinterrupt.zip" },
+    { "action": "clear_mods" },
+    { "action": "assert", "expect": { "content_entries": { "not_contains": "mod:fpinterrupt.zip" } } },
+]

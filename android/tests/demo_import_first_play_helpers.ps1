@@ -128,8 +128,8 @@ function Get-FirstPlayBytesHash {
 }
 
 function Get-FirstPlayHogMember {
-    param([byte[]]$Bytes, [string]$Name)
-    if ($Bytes.Length -lt 3 -or $Bytes.Length -gt 2292566 -or
+    param([byte[]]$Bytes, [string]$Name, [ValidateSet(2292566, 2339773)][int]$MaxBytes = 2292566)
+    if ($Bytes.Length -lt 3 -or $Bytes.Length -gt $MaxBytes -or
         [Text.Encoding]::ASCII.GetString($Bytes, 0, 3) -cne 'DHF') { throw 'Invalid bounded public HOG' }
     $stream = [IO.MemoryStream]::new($Bytes, $false)
     $reader = [IO.BinaryReader]::new($stream)
@@ -344,6 +344,286 @@ function Test-FirstPlayDocumentsUiCancel {
     Write-Output 'PASS: actual DocumentsUI open/cancel; installer selection is separately injected through SafTestProvider'
 }
 
+function New-FirstPlayReplacementMission {
+    param([string]$SourceHog, [string]$OutputDirectory, [ValidateSet('old', 'new')][string]$Generation)
+    # Both generations use unchanged level one from the pinned original D1 shareware HOG
+    if ((Get-Item -LiteralPath $SourceHog).Length -ne 2339773) { throw 'Replacement source is not the pinned D1 HOG' }
+    $bytes = [IO.File]::ReadAllBytes($SourceHog)
+    $sourceHash = Get-FirstPlayBytesHash $bytes
+    if ($sourceHash -cne '26d1e31e7709dfe6dddf17ccd37f5c82e866dce49a0faf07e90ba3213b288eab') {
+        throw 'Replacement source is not the pinned D1 HOG'
+    }
+    $level = Get-FirstPlayHogMember -Bytes $bytes -Name 'level01.sdl' -MaxBytes 2339773
+    $title = if ($Generation -ceq 'old') { 'Public Import Old' } else { 'Public Import New' }
+    $alias = if ($Generation -ceq 'old') { 'fpold1.rdl' } else { 'fpnew1.rdl' }
+    $hog = [IO.MemoryStream]::new()
+    $writer = [IO.BinaryWriter]::new($hog)
+    try {
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('DHF'))
+        $name = [byte[]]::new(13)
+        [Text.Encoding]::ASCII.GetBytes($alias).CopyTo($name, 0)
+        $writer.Write($name)
+        $writer.Write([uint32]$level.Length)
+        $writer.Write($level)
+        $writer.Flush()
+        $missionHog = $hog.ToArray()
+    } finally { $writer.Dispose(); $hog.Dispose() }
+    $descriptor = [Text.Encoding]::ASCII.GetBytes("name = $title`ntype = normal`nnum_levels = 1`n$alias`nnum_secrets = 0`n")
+    $directory = Join-Path $OutputDirectory "interruption-$Generation"
+    New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    $path = Join-Path $directory 'fpinterrupt.zip'
+    $payloads = @(@{ Name = 'fpinterrupt.msn'; Bytes = $descriptor }, @{ Name = 'fpinterrupt.hog'; Bytes = $missionHog })
+    $archive = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($entry in $payloads) {
+            $item = $archive.CreateEntry($entry.Name, [IO.Compression.CompressionLevel]::NoCompression)
+            $item.LastWriteTime = [DateTimeOffset]::new(2000, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+            $output = $item.Open()
+            try { $output.Write($entry.Bytes, 0, $entry.Bytes.Length) } finally { $output.Dispose() }
+        }
+        # Actual stored bytes cross the 10 MiB durable-extraction threshold, without a ZIP bomb
+        $padding = $archive.CreateEntry('docs/import-padding.bin', [IO.Compression.CompressionLevel]::NoCompression)
+        $padding.LastWriteTime = [DateTimeOffset]::new(2000, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+        $output = $padding.Open()
+        $block = [byte[]]::new(65536)
+        $block[0] = if ($Generation -ceq 'old') { 79 } else { 78 }
+        $paddingDigest = [Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
+        try {
+            foreach ($index in 1..192) { $output.Write($block, 0, $block.Length); $paddingDigest.AppendData($block) }
+            $paddingHash = [Convert]::ToHexString($paddingDigest.GetHashAndReset()).ToLowerInvariant()
+        } finally { $output.Dispose(); $paddingDigest.Dispose() }
+    } finally { $archive.Dispose() }
+    $size = (Get-Item -LiteralPath $path).Length
+    if ($size -le 12MB -or $size -ge 15MB) { throw 'Replacement fixture escaped its bounded size' }
+    $fixture = @{
+        Path = $path; File = 'fpinterrupt.zip'; Sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        Size = $size; Title = $title; Alias = $alias; SourceSha256 = $sourceHash
+        LevelSha256 = (Get-FirstPlayBytesHash $level); DescriptorSha256 = (Get-FirstPlayBytesHash $descriptor)
+        HogSha256 = (Get-FirstPlayBytesHash $missionHog); PaddingSha256 = $paddingHash
+        DescriptorSize = $descriptor.Length; HogSize = $missionHog.Length
+    }
+    $fixture | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $directory 'fixture.json') -Encoding utf8
+    return $fixture
+}
+
+function Test-FirstPlayReplacementDiskIdentity {
+    param($Manifest, [string]$HashLine, [hashtable]$Fixture)
+    $mods = @($Manifest.mods)
+    return ($Fixture.Sha256 -cmatch '^[a-f0-9]{64}$' -and $mods.Count -eq 1 -and
+        $mods[0].filename -ceq 'fpinterrupt.zip' -and $mods[0].displayName -ceq $Fixture.Title -and
+        $mods[0].kind -ceq 'mission_zip' -and $mods[0].game -ceq 'd1' -and
+        $mods[0].enabled -is [bool] -and $mods[0].enabled -and $mods[0].importMode -ceq 'extracted_bundle' -and
+        $mods[0].archiveSha256 -ceq $Fixture.Sha256 -and $mods[0].sizeBytes -eq $Fixture.Size -and
+        $HashLine -ceq "$($Fixture.Sha256)  $($script:DEFAULT_SET_DIR)/.content/mods/fpinterrupt.zip")
+}
+
+function Assert-FirstPlayReplacementDisk {
+    param([hashtable]$Fixture, [string]$Label)
+    $manifestText = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "$($script:DEFAULT_SET_DIR)/.content/mods/mod_manifest.json")
+    $hash = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', "$($script:DEFAULT_SET_DIR)/.content/mods/fpinterrupt.zip")
+    $manifestText | Set-Content (Join-Path $firstPlayOutput "$Label-manifest.json") -Encoding utf8
+    $hash | Set-Content (Join-Path $firstPlayOutput "$Label-archive-hash.txt") -Encoding utf8
+    $manifest = $manifestText | ConvertFrom-Json
+    if (-not (Test-FirstPlayReplacementDiskIdentity -Manifest $manifest -HashLine $hash -Fixture $Fixture)) {
+        throw "$Label lost the exact published mission generation or has duplicate ownership"
+    }
+}
+
+function Test-FirstPlayReplacementCacheIdentity {
+    param($Manifest, [hashtable]$Fixture)
+    $records = @($Manifest.entries)
+    if ($records.Count -ne 1 -or $records[0].owner_filename -cne 'fpinterrupt.zip' -or
+        $records[0].owner_sha256 -cne $Fixture.Sha256 -or $records[0].owner_size_bytes -ne $Fixture.Size -or
+        $records[0].import_mode -cne 'extracted_bundle') { return $false }
+    $expected = @{
+        'fpinterrupt.msn' = @{ Path = 'missions/fpinterrupt.msn'; Size = $Fixture.DescriptorSize; Hash = $Fixture.DescriptorSha256 }
+        'fpinterrupt.hog' = @{ Path = 'missions/fpinterrupt.hog'; Size = $Fixture.HogSize; Hash = $Fixture.HogSha256 }
+        'docs/import-padding.bin' = @{ Path = 'docs/import-padding.bin'; Size = 12MB; Hash = $Fixture.PaddingSha256 }
+    }
+    $files = @($records[0].files)
+    if ($files.Count -ne 3 -or @($files.entry_path | Sort-Object -Unique).Count -ne 3) { return $false }
+    foreach ($file in $files) {
+        $entry = $expected[$file.entry_path]
+        if (-not $entry -or $file.relative_path -cne $entry.Path -or $file.size_bytes -ne $entry.Size -or
+            $entry.Hash -cnotmatch '^[a-f0-9]{64}$' -or $file.sha256 -cne $entry.Hash) { return $false }
+    }
+    return $true
+}
+
+function Assert-FirstPlayReplacementCache {
+    param([hashtable]$Fixture, [string]$Label)
+    $root = "$($script:DEFAULT_SET_DIR)/.content/mod_support/mods/.extracted_mission_zips"
+    $raw = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "$root/manifest.json")
+    $raw | Set-Content (Join-Path $firstPlayOutput "$Label-extraction.json") -Encoding utf8
+    $manifest = $raw | ConvertFrom-Json
+    if (-not (Test-FirstPlayReplacementCacheIdentity -Manifest $manifest -Fixture $Fixture)) {
+        throw "$Label has duplicate, incomplete or stale mission extraction identity"
+    }
+    foreach ($file in $manifest.entries[0].files) {
+        $path = "$root/fpinterrupt.zip/$($file.relative_path)"
+        $actual = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', $path)
+        if ($actual -cne "$($file.sha256)  $path") { throw "$Label extracted mission bytes differ" }
+    }
+    $temporary = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sh', '-c',
+        "'if test -e $root/fpinterrupt.zip.tmp; then echo STALE; else echo CLEAN; fi'")
+    if ($temporary -cne 'CLEAN') { throw "$Label retained an incomplete extraction after successful import" }
+}
+
+function Assert-FirstPlayReplacementReady {
+    param([hashtable]$Fixture, [string]$Label)
+    Assert-FirstPlayReplacementDisk -Fixture $Fixture -Label $Label
+    Wait-FirstPlaySetup -Label $Label -Predicate {
+        param($state)
+        if (-not (Test-FirstPlayReadiness $state $true $false)) { return $false }
+        $mods = @($state.content_entries | Where-Object { $_.id -like 'mod:*' })
+        return ($mods.Count -eq 1 -and $mods[0].id -ceq 'mod:fpinterrupt.zip' -and
+            $mods[0].name -ceq $Fixture.Title -and $mods[0].game -ceq 'd1' -and $mods[0].kind -ceq 'mission_zip' -and
+            $mods[0].enabled -is [bool] -and $mods[0].enabled -and $mods[0].managed -is [bool] -and $mods[0].managed)
+    } | Out-Null
+}
+
+function Import-FirstPlayReplacement {
+    param([hashtable]$Fixture, [string]$Label)
+    Send-FirstPlaySource -Path $Fixture.Path -Name $Fixture.File -Sha256 $Fixture.Sha256
+    Adb -AdbArgs @('logcat', '-c') | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        '--es', 'command', 'import_picked_uris', '--esa', 'uris', "content://$($script:PACKAGE).saf-test/seekable/fpinterrupt.zip") | Out-Null
+    $publication = @{ Log = '' }
+    $published = Wait-ForCondition -Description "$Label mission publication" -TimeoutSec 90 -PollMs 500 -Condition {
+        $publication.Log = Adb -AdbArgs @('logcat', '-d', '-s', 'DXX-Setup:I', '*:S')
+        if ($publication.Log -notmatch 'Mission ZIP import ok: fpinterrupt\.zip \([0-9]+ bytes\)') { return $false }
+        $raw = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', "$($script:DEFAULT_SET_DIR)/.content/mods/mod_manifest.json")
+        try { $manifest = $raw | ConvertFrom-Json } catch { return $false }
+        $hash = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', "$($script:DEFAULT_SET_DIR)/.content/mods/fpinterrupt.zip")
+        Test-FirstPlayReplacementDiskIdentity -Manifest $manifest -HashLine $hash -Fixture $Fixture
+    }
+    $publication.Log | Set-Content (Join-Path $firstPlayOutput "$Label-import.log") -Encoding utf8
+    if (-not $published) { throw "$Label lacks fresh production publication of the exact mission generation" }
+    Assert-FirstPlayReplacementReady -Fixture $Fixture -Label $Label
+    Assert-FirstPlayReplacementCache -Fixture $Fixture -Label $Label
+}
+
+function Test-FirstPlayInterruptionMarker {
+    param($Marker, [string]$Nonce, [hashtable]$Previous, [hashtable]$Replacement, [string]$ProcessId)
+    return ($Nonce -cmatch '^[a-f0-9]{32}$' -and $ProcessId -cmatch '^[1-9][0-9]*$' -and
+        $Marker.run_id -ceq $Nonce -and $Marker.checkpoint -ceq 'extracting_before_publication' -and
+        [string]$Marker.process_id -ceq $ProcessId -and
+        $Marker.previous_sha256 -ceq $Previous.Sha256 -and $Marker.replacement_sha256 -ceq $Replacement.Sha256 -and
+        $Previous.Sha256 -cmatch '^[a-f0-9]{64}$' -and $Replacement.Sha256 -cmatch '^[a-f0-9]{64}$' -and
+        $Previous.Sha256 -cne $Replacement.Sha256 -and
+        ($Marker.bytes_done -is [int] -or $Marker.bytes_done -is [long]) -and
+        ($Marker.bytes_total -is [int] -or $Marker.bytes_total -is [long]) -and
+        $Marker.bytes_done -ge 1MB -and $Marker.bytes_done -lt $Marker.bytes_total -and
+        $Marker.bytes_total -gt 12MB -and $Marker.bytes_total -lt 15MB)
+}
+
+function Test-FirstPlayInterruptionDeadline {
+    param([double]$ElapsedSeconds)
+    # The 90-second device barrier cannot begin before the host starts instrumentation
+    # Allow five seconds for a confirmed force-stop, retaining at least ten seconds of margin
+    return ($ElapsedSeconds -ge 0 -and $ElapsedSeconds -lt 75)
+}
+
+function Test-FirstPlayProcessDead {
+    param([AllowNull()][string]$Output, $Diagnostic)
+    return ($Diagnostic -and $Diagnostic.exit_code -is [int] -and $Diagnostic.exit_code -eq 1 -and
+        $Diagnostic.timed_out -is [bool] -and -not $Diagnostic.timed_out -and
+        [string]::IsNullOrWhiteSpace($Output) -and [string]::IsNullOrWhiteSpace($Diagnostic.error) -and
+        [string]::IsNullOrWhiteSpace($Diagnostic.stderr))
+}
+
+function Invoke-FirstPlayInterruptedReplacement {
+    param([string]$SourceHog, [array]$BaseFiles)
+    $previous = New-FirstPlayReplacementMission -SourceHog $SourceHog -OutputDirectory $firstPlayOutput -Generation old
+    $replacement = New-FirstPlayReplacementMission -SourceHog $SourceHog -OutputDirectory $firstPlayOutput -Generation new
+    $nonce = [Guid]::NewGuid().ToString('N')
+    try {
+        Import-FirstPlayReplacement -Fixture $previous -Label 'interruption-old-import'
+        Invoke-FirstPlayPhase interruption_old -EvidenceLabel 'interruption-old-before'
+        Assert-FirstPlayReplacementReady -Fixture $previous -Label 'interruption-old-before'
+        Send-FirstPlaySource -Path $replacement.Path -Name $replacement.File -Sha256 $replacement.Sha256
+        Assert-FirstPlayEmulator -Serial $Serial
+        Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
+        $cleared = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sh', '-c',
+            "'rm -f files/first_play_interrupt.json && echo FIRST_PLAY_INTERRUPT_FRESH'")
+        if ($cleared -cne 'FIRST_PLAY_INTERRUPT_FRESH') { throw 'Could not invalidate interruption evidence' }
+        Adb -AdbArgs @('logcat', '-c') | Out-Null
+        # No -w: the host must observe the running importer before killing it at its test-only barrier
+        $interruptionClock = [Diagnostics.Stopwatch]::StartNew()
+        Adb -AdbArgs @('shell', 'am', 'instrument', '-e', 'suite', 'demo_import_interruption',
+            '-e', 'nonce', $nonce, '-e', 'previous_sha256', $previous.Sha256,
+            '-e', 'replacement_sha256', $replacement.Sha256,
+            "$($script:PACKAGE).test/com.dxxredux.app.RecoveryInstrumentation") |
+            Set-Content (Join-Path $firstPlayOutput 'interruption-instrument-start.txt') -Encoding utf8
+        $checkpoint = @{ Marker = $null; ProcessId = '' }
+        $reached = Wait-ForCondition -Description 'nonzero incomplete extraction barrier' -TimeoutSec 60 -PollMs 500 -Condition {
+            $raw = Adb -Seconds 5 -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', 'files/first_play_interrupt.json')
+            try { $checkpoint.Marker = $raw | ConvertFrom-Json } catch { return $false }
+            $checkpoint.ProcessId = [string](Adb -Seconds 5 -AdbArgs @('shell', 'pidof', $script:PACKAGE))
+            Test-FirstPlayInterruptionMarker -Marker $checkpoint.Marker -Nonce $nonce -Previous $previous `
+                -Replacement $replacement -ProcessId $checkpoint.ProcessId
+        }
+        Adb -Seconds 5 -AdbArgs @('logcat', '-d') | Set-Content (Join-Path $firstPlayOutput 'interruption-before-kill.log') -Encoding utf8
+        $checkpoint.Marker | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $firstPlayOutput 'interruption-marker.json') -Encoding utf8
+        if (-not $reached) { throw 'Importer never reached the correlated incomplete-extraction barrier; no intentional interruption claimed' }
+        Assert-FirstPlayReplacementDisk -Fixture $previous -Label 'interruption-at-barrier'
+        # Recheck the PID immediately before stopping the package; a stale marker is never sufficient
+        $livePid = [string](Adb -Seconds 5 -AdbArgs @('shell', 'pidof', $script:PACKAGE))
+        if (-not (Test-FirstPlayInterruptionMarker -Marker $checkpoint.Marker -Nonce $nonce -Previous $previous `
+                    -Replacement $replacement -ProcessId $livePid)) { throw 'Importer exited before the intentional interruption' }
+        if (-not (Test-FirstPlayInterruptionDeadline $interruptionClock.Elapsed.TotalSeconds)) {
+            throw 'Interruption evidence arrived too late to prove the importer is still at its barrier'
+        }
+        $stopDiagnostic = $null
+        Adb-Timeout -Seconds 5 -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) `
+            -DiagnosticResult ([ref]$stopDiagnostic) | Out-Null
+        $stopElapsed = $interruptionClock.Elapsed.TotalSeconds
+        [ordered]@{ elapsed_seconds = $stopElapsed; diagnostic = $stopDiagnostic } | ConvertTo-Json -Depth 5 |
+            Set-Content (Join-Path $firstPlayOutput 'interruption-force-stop.json') -Encoding utf8
+        if ($stopDiagnostic.exit_code -ne 0 -or $stopDiagnostic.timed_out -or $stopDiagnostic.error -or
+            $stopDiagnostic.stderr -or $stopElapsed -ge 80) {
+            throw 'Force-stop did not complete successfully before the extraction barrier deadline'
+        }
+        $death = @{ Diagnostic = $null; Output = '' }
+        $dead = Wait-ForCondition -Description 'interrupted importer process death' -TimeoutSec 15 -PollMs 250 -Condition {
+            $diagnostic = $null
+            $death.Output = Adb-Timeout -Seconds 5 -AdbArgs @('shell', 'pidof', $script:PACKAGE) -DiagnosticResult ([ref]$diagnostic)
+            $death.Diagnostic = $diagnostic
+            Test-FirstPlayProcessDead -Output $death.Output -Diagnostic $death.Diagnostic
+        }
+        $death | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $firstPlayOutput 'interruption-process-death.json') -Encoding utf8
+        if (-not $dead) { throw 'Transport did not confirm the interrupted importer process exited' }
+        Assert-FirstPlayReplacementDisk -Fixture $previous -Label 'interruption-after-kill'
+        Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'find', "$($script:DEFAULT_SET_DIR)/.content", '-type', 'f') |
+            Set-Content (Join-Path $firstPlayOutput 'interruption-after-kill-files.txt') -Encoding utf8
+        # Cache regeneration is allowed; only old publication identity and actual usability are required
+        Invoke-FirstPlayPhase interruption_old -EvidenceLabel 'interruption-old-after'
+        Assert-FirstPlayReplacementReady -Fixture $previous -Label 'interruption-old-after'
+        foreach ($file in $BaseFiles) {
+            $path = "$($script:DEFAULT_SET_DIR)/$($file.File)"
+            $actual = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'sha256sum', $path)
+            if ($actual -cne "$($file.Sha256)  $path") { throw 'Interrupted replacement changed public base data' }
+        }
+        # The same archive bytes are retried by the real launcher callback, without the interruption hook
+        Import-FirstPlayReplacement -Fixture $replacement -Label 'interruption-retry'
+        Invoke-FirstPlayPhase interruption_new
+        Assert-FirstPlayFiles -Expected $BaseFiles -Label 'interruption-cleanup'
+        [ordered]@{
+            result = 'PASS'; run_id = $nonce; interrupted_process_id = $checkpoint.ProcessId
+            previous_sha256 = $previous.Sha256; replacement_sha256 = $replacement.Sha256
+            checkpoint = 'nonzero incomplete durable-cache extraction, before ZIP and mod-manifest publication'
+            first_attempt = 'androidTest invokes production SAF mission importer with a blocking progress callback; host force-stops app'
+            recovery = 'old mission normal D1 button/menu launch before retry; cache regeneration permitted'
+            retry = 'identical replacement archive through production post-picker callback, then normal D1 mission launch'
+        } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $firstPlayOutput 'interruption-summary.json') -Encoding utf8
+        Write-Output 'PASS: interrupted public mission replacement preserved playable old content and retry reached the new mission'
+    } finally {
+        foreach ($fixture in @($previous, $replacement)) {
+            if (Test-Path -LiteralPath $fixture.Path) { Remove-Item -LiteralPath $fixture.Path -Force }
+        }
+    }
+}
+
 function Assert-FirstPlayMissionReturnProcess {
     param([string]$Log)
     # Reuse the isolation owner's log-PID oracle, scoped to this post-resume transition
@@ -358,21 +638,25 @@ function Assert-FirstPlayMissionReturnProcess {
 }
 
 function Invoke-FirstPlayPhase {
-    param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2', 'mission')][string]$Phase)
+    param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2', 'mission', 'interruption_old', 'interruption_new')][string]$Phase,
+        [ValidatePattern('^[a-z][a-z0-9_-]*$')][string]$EvidenceLabel = $Phase)
     $phaseScripts = @{
         empty = 'test_public_first_play_empty.jsonc'
         d1 = 'test_public_first_play_d1.jsonc'
         d1_in_d2 = 'test_public_first_play_d1_in_d2.jsonc'
         d2 = 'test_public_first_play_d2.jsonc'
         mission = 'test_public_first_play_mission.jsonc'
+        interruption_old = 'test_public_first_play_interruption_old.jsonc'
+        interruption_new = 'test_public_first_play_interruption_new.jsonc'
     }
     $name = $phaseScripts[$Phase]
-    $phaseOutput = Join-Path $firstPlayOutput $Phase
+    $phaseOutput = Join-Path $firstPlayOutput $EvidenceLabel
     New-Item -ItemType Directory -Force -Path $phaseOutput | Out-Null
     $pwsh = Get-RegressionCurrentPwshPath
+    $phaseTimeout = if ($Phase -like 'interruption_*') { 120 } else { 180 }
     # No Params or edition override: only these exact reviewed repository scripts bypass data recovery seeding
     & $pwsh -NoProfile -NonInteractive -File "$PSScriptRoot/../helpers/run_test.ps1" `
-        -ScriptName $name -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds 180 2>&1 |
+        -ScriptName $name -Serial $Serial -PreserveState -LeaveRunning -TimeoutSeconds $phaseTimeout 2>&1 |
         Tee-Object -FilePath (Join-Path $phaseOutput 'runner.log') | Out-Host
     $exitCode = $LASTEXITCODE
     foreach ($file in @('automation_result.json', 'automation_log.jsonl', 'introspect.json', 'setup_introspect.json')) {
@@ -402,7 +686,7 @@ function Invoke-FirstPlayPhase {
         if ($nativeLog -match 'Loaded native library:') { throw 'An engine started despite missing game files' }
     } else {
         # D1 has no asset_trace.runtime_engine field, so require the actual native-library load too
-        $engine = if ($Phase -eq 'd1') { 'd1' } else { 'd2' }
+        $engine = if ($Phase -eq 'd1' -or $Phase -like 'interruption_*') { 'd1' } else { 'd2' }
         $otherEngine = if ($engine -eq 'd1') { 'd2' } else { 'd1' }
         if ($nativeLog -notmatch "Loaded native library: dxx-redux-$engine\b" -or
             $nativeLog -match "Loaded native library: dxx-redux-$otherEngine\b") { throw "First-play $Phase loaded the wrong native engine or lacks its load evidence" }
@@ -451,6 +735,7 @@ function Invoke-PublicFirstPlay {
         Wait-FirstPlaySetup -Label 'd1-archive' -Predicate { param($s) Test-FirstPlayReadiness $s $true $false } | Out-Null
         Assert-FirstPlayFiles -Expected $configs[0].RequiredHashes -Label 'd1-archive'
         Invoke-FirstPlayPhase d1
+        Invoke-FirstPlayInterruptedReplacement -SourceHog (Join-Path $d1Loose 'descent.hog') -BaseFiles $configs[0].RequiredHashes
 
         Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
             '--es', 'command', 'clear_set', '--es', 'name', 'default') | Out-Null
@@ -479,7 +764,7 @@ function Invoke-PublicFirstPlay {
         Invoke-FirstPlayPhase mission
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'mission-cleanup'
         [ordered]@{
-            result = 'PASS'; phases = @('empty', 'd1', 'd1_in_d2', 'd2', 'mission'); run_ids = @($firstPlayRunIds | Sort-Object)
+            result = 'PASS'; phases = @('empty', 'd1', 'interruption_old', 'interruption_old', 'interruption_new', 'd1_in_d2', 'd2', 'mission'); run_ids = @($firstPlayRunIds | Sort-Object)
             installers = @($configs | ForEach-Object { @{ name = $_.Archive; sha256 = $_.ArchiveSha256 } })
             picker = 'actual DocumentsUI open/cancel only'; imports = 'SafTestProvider production post-picker callback'
             cold_state = 'pm clear on verified disposable emulator'; graphics_onboarding = 'suppressed by existing run_test marker'
@@ -488,6 +773,7 @@ function Invoke-PublicFirstPlay {
             mission_identity = 'Pinned source/member and imported ZIP hashes, unique descriptor/member mapping, active mod owner and saved mission name; no direct level-filename introspection'
             exit_save = 'enter_launcher uses the synchronous automation auto-exit save path; Load Last Save is a real launcher button'
             mission_return = 'Resumed custom mission -> normal Abort Game -> native menu -> built-in D2 demo in the same log-verified process; custom HOG detached and new-game ammunition reset'
+            interrupted_replacement = 'Instrumented extraction attempt killed before publication; old public D1 mission remains playable, identical ordinary retry launches replacement'
             native_d1_identity = 'fresh MainActivity native-library load plus correlated level-one PASS; D1 has no asset_trace'
         } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $firstPlayOutput 'summary.json') -Encoding utf8
         Write-Output 'PASS: public import and button launches, generated mission selection, normal menu save/restore and launcher resume'

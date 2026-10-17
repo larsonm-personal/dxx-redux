@@ -42,7 +42,8 @@ $toolMediaFreeOwners = @('test_pcm_ring', 'test_touch_layout_format', 'test_dist
 foreach ($name in $toolMediaFreeOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 }
-$generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file_set_content', 'test_soundfont_download_catalog')
+$generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file_set_content', 'test_soundfont_download_catalog',
+    'test_public_first_play_interruption_old', 'test_public_first_play_interruption_new')
 foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
