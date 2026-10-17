@@ -23,6 +23,28 @@ class HostAdapterTests(unittest.TestCase):
         self.enterContext(patch.object(adapter.sys, "platform", "linux"))
         self.enterContext(patch.object(adapter.signal, "SIGKILL", 9, create=True))
 
+    def test_nested_corpus_metadata_and_routes_stop_before_build_or_flattening(self):
+        from nightly_regression_catalog import CORPUS_COMMIT
+        for profile in ("metadata", "route"):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                baseline = root / "game_data/mission_files/variant.json"
+                baseline.parent.mkdir(parents=True)
+                baseline.write_text(json.dumps([{"mission_path": "REBIRTH/mission.mn2"}]))
+                baseline.with_suffix(".zip").touch()
+                baseline.with_suffix(".simulation.json").write_text("[]")
+                suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": profile,
+                         "baseline": "variant.json", "coverage_scope": "synthetic"}
+                with patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}), patch.object(
+                        adapter.subprocess, "Popen") as launch:
+                    code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+                receipt = json.loads((root / "receipt.json").read_text())
+                self.assertEqual(code, 2)
+                self.assertEqual(receipt["blocker_kind"], "target-capability")
+                self.assertFalse(receipt["retryable"])
+                self.assertFalse(receipt["attempted_tests"])
+                launch.assert_not_called()
+
     def test_registry_ids_are_unique_and_no_arbitrary_commands(self):
         suites = adapter.load_suites()
         self.assertGreater(len(suites), 70)

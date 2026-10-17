@@ -614,11 +614,11 @@ def run_suite(suite, repo, build_root, output, timeout):
             if suite["profile"] == "route":
                 if not baseline.with_suffix(".simulation.json").is_file():
                     return finish("BLOCKED", "Committed route oracle unavailable", retryable=False, blocker_kind="target-capability")
-                metadata = json.loads(baseline.read_text(encoding="utf-8-sig"))
-                missions = metadata if isinstance(metadata, list) else [metadata]
-                if any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
-                    return finish("BLOCKED", "Nested mission variant requires a variant-aware route stage", retryable=False,
-                                  blocker_kind="target-capability")
+            metadata = json.loads(baseline.read_text(encoding="utf-8-sig"))
+            missions = metadata if isinstance(metadata, list) else [metadata]
+            if any("/" in row.get("mission_path", "").replace("\\", "/") for row in missions):
+                return finish("BLOCKED", "Nested mission variant requires a variant-aware regression stage", retryable=False,
+                              blocker_kind="target-capability")
             oracle_paths = (baseline, baseline.with_suffix(".simulation.json"))
             oracle_bytes = freeze_oracles(oracle_paths)
             expected_metadata = json.loads(oracle_bytes[baseline])

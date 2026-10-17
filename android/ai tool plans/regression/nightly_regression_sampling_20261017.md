@@ -38,7 +38,7 @@ never uploaded. Only existing sanitized receipts leave the retail lane.
 Each night samples individual levels; terminal receipts traverse the full admitted
 level pool on the same commit before the cycle stops. Missing/unsupported levels
 remain explicitly outside confirmed coverage. Nested descriptor variants
-are excluded until the existing route stage becomes variant-aware. CD-image source
+are excluded from both metadata and route execution until their existing stages become variant-aware. CD-image source
 metadata, absent archive references and physical-device behavior remain explicit.
 CD regeneration/AcoustID publication are not invoked: menu T is a writing producer,
 not a read-only validator. Existing extractor and strict-fingerprint owners retain
