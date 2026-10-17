@@ -138,6 +138,10 @@ typedef struct matcen_info {
 
 extern matcen_info RobotCenters[MAX_ROBOT_CENTERS];
 
+// Resolve the station selected by the original ordinal matcen mapping.
+// Returns -1 when the serialized center has no safe runtime station.
+int matcen_get_station_num(int matcen_num);
+
 //--repair-- extern object *RepairObj;  // which object getting repaired, or NULL
 
 // Called when a materialization center gets triggered by the player

@@ -1,7 +1,55 @@
+static void test_legacy_matcen_binding_resolution()
+{
+	Num_segments = 4;
+	Highest_segment_index = Num_segments - 1;
+	Num_fuelcenters = 4;
+	Num_robot_centers = 2;
+	std::memset(Station, 0, sizeof(Station));
+	std::memset(RobotCenters, 0, sizeof(RobotCenters));
+#ifdef DXX_BUILD_DESCENT_II
+	std::memset(Segment2s, 0, sizeof(*Segment2s) * Num_segments);
+	auto set_robotmaker = [](int segnum, int matcen_num) {
+		Segment2s[segnum].special = SEGMENT_IS_ROBOTMAKER;
+		Segment2s[segnum].matcen_num = matcen_num;
+	};
+#else
+	std::memset(Segments, 0, sizeof(*Segments) * Num_segments);
+	auto set_robotmaker = [](int segnum, int matcen_num) {
+		Segments[segnum].special = SEGMENT_IS_ROBOTMAKER;
+		Segments[segnum].matcen_num = matcen_num;
+	};
+#endif
+	set_robotmaker(1, 0);
+	set_robotmaker(2, 2);
+	set_robotmaker(3, 1);
+	for (int i = 1; i != 4; ++i) {
+		Station[i].Type = SEGMENT_IS_ROBOTMAKER;
+		Station[i].segnum = i;
+		Station[i].Lives = 3;
+	}
+	RobotCenters[0].fuelcen_num = 1;
+	RobotCenters[0].segnum = 99;
+	RobotCenters[1].fuelcen_num = 3;
+	RobotCenters[1].segnum = -7;
+	require(matcen_get_station_num(0) == 1 && matcen_get_station_num(1) == 3,
+	        "legacy ordinals resolve independently of stale serialized backlinks");
+	require(matcen_get_station_num(2) == -1,
+	        "robotmaker ordinal without a disk record remains inert instead of being renumbered");
+	trigger_matcen(2);
+	require(Station[2].Enabled == 0 && Station[2].Lives == 3,
+	        "triggering an unbound legacy placeholder is a side-effect-free no-op");
+	RobotCenters[1].fuelcen_num = MAX_NUM_FUELCENS;
+	require(matcen_get_station_num(1) == -1, "out-of-range station link remains inert");
+	RobotCenters[1].fuelcen_num = 2;
+	require(matcen_get_station_num(1) == -1,
+	        "contradictory station backlink is not used to remap a legacy ordinal");
+}
+
 // Exercise the actual engine station arrays and native mode wrappers
 static void test_matcen_stations(const char *output)
 {
 	nlohmann::json trace = nlohmann::json::array();
+	test_legacy_matcen_binding_resolution();
 #ifdef __ANDROID__
 	const int routes = 4;
 #else

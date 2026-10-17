@@ -279,23 +279,27 @@ void paging_touch_robot_maker( segment * segp )
 	segment2	*seg2p = &Segment2s[segp-Segments];
 
 	if ( seg2p->special == SEGMENT_IS_ROBOTMAKER )	{
-		paging_touch_vclip(&Vclip[VCLIP_MORPHING_ROBOT]);
-			int	i;
-			uint	flags;
-			int	robot_index;
+		int matcen_num = seg2p->matcen_num;
+		int	i;
+		uint	flags;
+		int	robot_index;
 
-			for (i=0;i<2;i++) {
-				robot_index = i*32;
-				flags = RobotCenters[seg2p->matcen_num].robot_flags[i];
-				while (flags) {
-					if (flags & 1)	{
-						// Page in robot_index
-						paging_touch_robot( robot_index );
-					}
-					flags >>= 1;
-					robot_index++;
+		paging_touch_vclip(&Vclip[VCLIP_MORPHING_ROBOT]);
+		if (matcen_get_station_num(matcen_num) < 0)
+			return;
+
+		for (i=0;i<2;i++) {
+			robot_index = i*32;
+			flags = RobotCenters[matcen_num].robot_flags[i];
+			while (flags) {
+				if (flags & 1)	{
+					// Page in robot_index
+					paging_touch_robot( robot_index );
 				}
+				flags >>= 1;
+				robot_index++;
 			}
+		}
 	}
 }
 
