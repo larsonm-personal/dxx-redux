@@ -42,6 +42,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physfsx_android_shared.h"
 #include "android_mission_assets.h"
 #endif
+#include "bm.h"
 #include "piggy.h"
 #include "d1_in_d2/d1_in_d2.h"
 

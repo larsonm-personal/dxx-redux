@@ -72,6 +72,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 static PHYSFSX_read_status Level_game_read_status;
 
 typedef struct level_data_warning_state {
+	unsigned inert_robotmaker_segments;
 	unsigned normalized_trigger_link_counts;
 	unsigned ignored_invalid_trigger_links;
 } level_data_warning_state;
@@ -80,7 +81,8 @@ static level_data_warning_state Level_data_warnings;
 
 int gamesave_level_data_warning_count(void)
 {
-	return (Level_data_warnings.normalized_trigger_link_counts != 0) +
+	return (Level_data_warnings.inert_robotmaker_segments != 0) +
+	       (Level_data_warnings.normalized_trigger_link_counts != 0) +
 	       (Level_data_warnings.ignored_invalid_trigger_links != 0) +
 	       mission_compatibility_warning_count();
 }
@@ -89,6 +91,15 @@ int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned b
 {
 	if (!buffer || !buffer_size || warning_index < 0)
 		return 0;
+	if (Level_data_warnings.inert_robotmaker_segments) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Left %u unbound robotmaker segment%s inert",
+			         Level_data_warnings.inert_robotmaker_segments,
+			         Level_data_warnings.inert_robotmaker_segments == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
 	if (Level_data_warnings.normalized_trigger_link_counts) {
 		if (!warning_index) {
 			snprintf(buffer, buffer_size, "Bounded %u legacy trigger link count%s",
@@ -815,8 +826,10 @@ static int validate_loaded_level_graph(int game_version, int object_count)
 	}
 	for (i = 0; i < Num_segments; ++i) {
 		if (Segments[i].special == SEGMENT_IS_ROBOTMAKER &&
-		    matcen_get_station_num(Segments[i].matcen_num) < 0)
+		    matcen_get_station_num(Segments[i].matcen_num) < 0) {
+			++Level_data_warnings.inert_robotmaker_segments;
 			con_printf(CON_URGENT, "Level robotmaker segment %d has no legacy matcen record and will remain inert\n", i);
+		}
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
 			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
 				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",
