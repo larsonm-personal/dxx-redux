@@ -655,6 +655,25 @@ function Assert-FirstPlayMissionReturnProcess {
     return $markers[0].Groups['process'].Value
 }
 
+function Get-FirstPlayObservedDefaults {
+    param($State)
+    # Report observed settings without seeding or prescribing particular default values
+    $settings = [ordered]@{}
+    foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default')) {
+        if ($null -eq $State -or -not $State.PSObject.Properties[$field] -or $null -eq $State.$field) {
+            throw "Basic-use defaults missing native field: $field"
+        }
+        $settings[$field] = $State.$field
+    }
+    foreach ($field in @('effects_volume', 'music_volume')) {
+        if (-not $State.audio -or -not $State.audio.PSObject.Properties[$field] -or $null -eq $State.audio.$field) {
+            throw "Basic-use defaults missing audio field: $field"
+        }
+        $settings[$field] = $State.audio.$field
+    }
+    return $settings
+}
+
 function Invoke-FirstPlayPhase {
     param([ValidateSet('empty', 'd1', 'd1_in_d2', 'd2', 'mission', 'interruption_old', 'interruption_new')][string]$Phase,
         [ValidatePattern('^[a-z][a-z0-9_-]*$')][string]$EvidenceLabel = $Phase)
@@ -700,6 +719,15 @@ function Invoke-FirstPlayPhase {
         [ordered]@{ run_id = $result.run_id; process_id = $returnProcess; transition = 'resumed_custom -> native menu -> builtin_live' } |
             ConvertTo-Json | Set-Content (Join-Path $phaseOutput 'mission-return-process.json') -Encoding utf8
     }
+    if ($Phase -in @('d1', 'd1_in_d2', 'd2')) {
+        $state = Get-Content (Join-Path $phaseOutput 'introspect.json') -Raw | ConvertFrom-Json
+        [ordered]@{
+            run_id = $result.run_id; phase = $Phase
+            pilot_origin = $(if ($Phase -eq 'd2') { 'D2 pilot retained from D1-in-D2 phase' } else { 'First native-engine pilot after verified pm clear' })
+            settings = Get-FirstPlayObservedDefaults -State $state
+            color = 'Not exposed by native gameplay introspection; no color setting was changed'
+        } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $phaseOutput 'default-settings.json') -Encoding utf8
+    }
     if ($Phase -eq 'empty') {
         if ($nativeLog -match 'Loaded native library:') { throw 'An engine started despite missing game files' }
     } else {
@@ -713,7 +741,7 @@ function Invoke-FirstPlayPhase {
 }
 
 function Invoke-PublicFirstPlay {
-    param([string]$Serial)
+    param([string]$Serial, [switch]$BasicUse)
     . "$PSScriptRoot/../helpers/shareware_test_data.ps1"
     # Verify both pinned originals before touching the emulator; no implicit download or corpus expansion
     $configs = @('d1', 'd2') | ForEach-Object { Get-SharewareTestGameConfig -RepoRoot $script:REPO_ROOT -Game $_ }
@@ -753,7 +781,9 @@ function Invoke-PublicFirstPlay {
         Wait-FirstPlaySetup -Label 'd1-archive' -Predicate { param($s) Test-FirstPlayReadiness $s $true $false } | Out-Null
         Assert-FirstPlayFiles -Expected $configs[0].RequiredHashes -Label 'd1-archive'
         Invoke-FirstPlayPhase d1
-        Invoke-FirstPlayInterruptedReplacement -SourceHog (Join-Path $d1Loose 'descent.hog') -BaseFiles $configs[0].RequiredHashes
+        if (-not $BasicUse) {
+            Invoke-FirstPlayInterruptedReplacement -SourceHog (Join-Path $d1Loose 'descent.hog') -BaseFiles $configs[0].RequiredHashes
+        }
 
         Adb -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
             '--es', 'command', 'clear_set', '--es', 'name', 'default') | Out-Null
@@ -777,6 +807,20 @@ function Invoke-PublicFirstPlay {
         Assert-FirstPlayFiles -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes) -Label 'final'
         # Keep the independent picker smoke after the priority import/engine evidence
         Test-FirstPlayDocumentsUiCancel -Expected @($configs[0].RequiredHashes + $configs[1].RequiredHashes)
+        if ($BasicUse) {
+            [ordered]@{
+                result = 'PASS'; profile = 'public-basic-use'; phases = @('empty', 'd1', 'd1_in_d2', 'd2')
+                run_ids = @($firstPlayRunIds | Sort-Object)
+                installers = @($configs | ForEach-Object { @{ name = $_.Archive; sha256 = $_.ArchiveSha256 } })
+                cold_state = 'pm clear on verified disposable emulator; native D1 and D2 pilots created by normal menus'
+                controls = 'Two Game Menu open/cancel cycles and TAB/ESC automap; live unpaused level one after every return'
+                defaults = 'Observed settings in each phase default-settings.json; no color or settings overrides'
+                graphics_onboarding = 'Suppressed by existing run_test marker'
+                omitted = @('mission replacement', 'custom mission save/restore', 'launcher Load Last Save')
+            } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $firstPlayOutput 'summary.json') -Encoding utf8
+            Write-Output 'PASS: independent public basic use; full first-play mission flows were not run'
+            return
+        }
         $missionFixture = New-FirstPlayMission -SourceHog (Join-Path $d2Loose 'd2demo.hog') -OutputDirectory $firstPlayOutput
         try { Import-FirstPlayMission -Fixture $missionFixture } finally { Remove-Item -LiteralPath $missionFixture.Path -Force }
         Invoke-FirstPlayPhase mission

@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess', 'Assert-FirstPlayReplacementLevel', 'New-FirstPlayReplacementMission', 'Test-FirstPlayReplacementDiskIdentity', 'Test-FirstPlayReplacementCacheIdentity', 'Test-FirstPlayInterruptionMarker', 'Test-FirstPlayInterruptionDeadline', 'Test-FirstPlayProcessDead')) {
+foreach ($name in @('Get-FirstPlayObservedDefaults', 'Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess', 'Assert-FirstPlayReplacementLevel', 'New-FirstPlayReplacementMission', 'Test-FirstPlayReplacementDiskIdentity', 'Test-FirstPlayReplacementCacheIdentity', 'Test-FirstPlayInterruptionMarker', 'Test-FirstPlayInterruptionDeadline', 'Test-FirstPlayProcessDead')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -19,6 +19,55 @@ function Assert-Rejected {
     $rejected = $false
     try { & $Action | Out-Null } catch { $rejected = $true }
     if (-not $rejected) { throw $Message }
+}
+
+function Assert-BasicUseControls {
+    param([array]$Steps)
+    $begin = @(for ($i = 0; $i -lt $Steps.Count; $i++) {
+            if ($Steps[$i].action -ceq 'log' -and $Steps[$i].message -ceq 'BASIC_USE_BEGIN menu_map') { $i }
+        })
+    $end = @(for ($i = 0; $i -lt $Steps.Count; $i++) {
+            if ($Steps[$i].action -ceq 'log' -and $Steps[$i].message -ceq 'BASIC_USE_END menu_map') { $i }
+        })
+    if ($begin.Count -ne 1 -or $end.Count -ne 1 -or $end[0] -le $begin[0]) { throw 'Missing ordered basic-use markers' }
+    $flow = @($Steps[($begin[0] + 1)..($end[0] - 1)])
+    $actions = @($flow | ForEach-Object action) -join ','
+    if ($actions -cne 'key,wait_for,assert,key,wait_for,assert,key,wait_for,assert,key,wait_for,assert,key,wait_for,assert,key,wait_for,wait_for,assert' -or
+        (@($flow | Where-Object action -CEQ 'key' | ForEach-Object key) -join ',') -cne 'escape,escape,escape,escape,tab,escape') {
+        throw 'Basic use must exercise ordinary menu/map inputs with observed transitions'
+    }
+    foreach ($index in @(1, 7)) {
+        if ($flow[$index].field -cne 'menu_subtitle' -or $flow[$index].value -cne 'Game Menu' -or $flow[$index].timeout_ms -ne 5000 -or
+            $flow[$index + 1].expect.in_game -ne $true -or $flow[$index + 1].expect.game_window_is_front -ne $false -or
+            $flow[$index + 1].expect.time_paused -ne $true) { throw 'Menu open lacks paused in-game evidence' }
+    }
+    foreach ($index in @(4, 10, 17)) {
+        if ($flow[$index].field -cne 'game_window_is_front' -or $flow[$index].value -cne 'true' -or $flow[$index].timeout_ms -ne 5000) {
+            throw 'Menu/map return must await the gameplay window'
+        }
+        $state = $flow[$index + 1].expect
+        if ($state.in_game -ne $true -or $state.screen_mode -cne 'game' -or $state.current_level_num -ne 1 -or
+            $state.player_dead -ne $false -or $state.time_paused -ne $false) { throw 'Menu/map return lacks live unpaused level-one evidence' }
+    }
+    if ($flow[13].field -cne 'automap_active' -or $flow[13].value -cne 'true' -or $flow[13].timeout_ms -ne 5000 -or
+        $flow[14].expect.automap_active -ne $true -or $flow[14].expect.in_game -ne $true -or
+        $flow[16].field -cne 'automap_active' -or $flow[16].value -cne 'false' -or $flow[16].timeout_ms -ne 5000 -or
+        $flow[18].expect.automap_active -ne $false) { throw 'Automap lost observed open/close evidence' }
+}
+
+$observed = [pscustomobject]@{
+    control_type = 3; cockpit_mode = 2; hud_mode = 1; auto_leveling = $false
+    original_homing = $true; headlight_active_default = $false
+    audio = [pscustomobject]@{ effects_volume = 4; music_volume = 0 }
+}
+$defaults = Get-FirstPlayObservedDefaults -State $observed
+if ($defaults.effects_volume -ne 4 -or $defaults.music_volume -ne 0 -or $defaults.auto_leveling -ne $false) {
+    throw 'Observed defaults were replaced with prescribed values'
+}
+foreach ($field in @('control_type', 'cockpit_mode', 'hud_mode', 'auto_leveling', 'original_homing', 'headlight_active_default', 'audio')) {
+    $missing = $observed | ConvertTo-Json | ConvertFrom-Json
+    $missing.PSObject.Properties.Remove($field)
+    Assert-Rejected { Get-FirstPlayObservedDefaults -State $missing } 'Missing defaults were reported as observed'
 }
 
 function Assert-MissionDifficultyTransition {
@@ -670,6 +719,13 @@ $owner = [Management.Automation.Language.Parser]::ParseFile($ownerPath, [ref]$nu
 if ($parseErrors.Count) { throw "Demo import owner parser errors: $parseErrors" }
 $public = $owner.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'PublicFirstPlay' }
 if (-not $public -or $public.DefaultValue) { throw 'Full corpus must remain default; public journey requires an explicit switch' }
+$basic = $owner.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'PublicBasicUse' }
+if (-not $basic -or $basic.DefaultValue -or
+    -not $source.Contains('if (-not $BasicUse) {') -or
+    -not $source.Contains("profile = 'public-basic-use'; phases = @('empty', 'd1', 'd1_in_d2', 'd2')") -or
+    -not $source.Contains("omitted = @('mission replacement', 'custom mission save/restore', 'launcher Load Last Save')")) {
+    throw 'Independent basic-use profile lost its explicit scope or honest omission receipt'
+}
 $clearIndex = $source.IndexOf("@('shell', 'pm', 'clear'")
 $guardIndex = $source.LastIndexOf('Assert-FirstPlayEmulator -Serial $Serial', $clearIndex)
 $healthIndex = $source.IndexOf('Ensure-EmulatorHealthy | Out-Null')
@@ -736,11 +792,32 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission', 'interruption_o
             throw "First-play $phase does not launch through the normal button"
         }
         $liveAssertions = @($steps | Where-Object { $_.action -eq 'assert' -and $_.expect.in_game -eq $true -and $_.expect.current_level_num -eq 1 })
-        $expectedLiveCount = if ($phase -eq 'mission') { 4 } else { 1 }
+        $expectedLiveCount = if ($phase -eq 'mission' -or $phase -in @('d1', 'd1_in_d2', 'd2')) { 4 } else { 1 }
         $expectedNewGames = if ($phase -eq 'mission') { 2 } else { 1 }
         if (@($steps | Where-Object { $_.action -eq 'select' -and $_.text -ceq 'New game' }).Count -ne $expectedNewGames -or
             $liveAssertions.Count -ne $expectedLiveCount) {
             throw "First-play $phase lost ordinary new-game navigation or live level-one evidence"
+        }
+        if ($phase -in @('d1', 'd1_in_d2', 'd2')) {
+            Assert-BasicUseControls -Steps $steps
+            if (@($steps | Where-Object action -in @('set_debug', 'set_field', 'setup_command', 'send_button', 'set_objective_overlay')).Count) {
+                throw 'Basic use must leave fresh pilot settings untouched and use ordinary keys'
+            }
+            foreach ($index in 0..($steps.Count - 1)) {
+                if ($steps[$index].action -notin @('assert', 'wait_for', 'key')) { continue }
+                $without = @(for ($i = 0; $i -lt $steps.Count; $i++) { if ($i -ne $index) { $steps[$i] } })
+                # Only mutate the bounded basic block; setup retains its existing owner controls
+                $beginIndex = @(for ($i = 0; $i -lt $steps.Count; $i++) { if ($steps[$i].message -ceq 'BASIC_USE_BEGIN menu_map') { $i } })[0]
+                $endIndex = @(for ($i = 0; $i -lt $steps.Count; $i++) { if ($steps[$i].message -ceq 'BASIC_USE_END menu_map') { $i } })[0]
+                if ($index -gt $beginIndex -and $index -lt $endIndex) {
+                    Assert-Rejected { Assert-BasicUseControls -Steps $without } 'Basic use accepted a missing input, wait or assertion'
+                }
+            }
+            $pausedReturn = $steps | ConvertTo-Json -Depth 30 | ConvertFrom-Json
+            foreach ($step in $pausedReturn) {
+                if ($step.action -ceq 'assert' -and $step.expect.time_paused -eq $false) { $step.expect.time_paused = $true }
+            }
+            Assert-Rejected { Assert-BasicUseControls -Steps $pausedReturn } 'Basic use accepted a still-paused return'
         }
         if ($phase -eq 'd2' -and @($steps | Where-Object {
                     $_.action -eq 'assert' -and $_.expect.'asset_trace.runtime_engine' -ceq 'd2' -and
