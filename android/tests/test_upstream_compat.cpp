@@ -87,6 +87,8 @@ void cockpit_decode_alpha(grs_bitmap *bm);
 #include "multi.h"
 #include "net_udp.h"
 int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr);
+int net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struct _sockaddr sender_addr);
+int net_udp_mdata_source_is_authorized(ubyte pnum, struct _sockaddr sender_addr, int needack);
 #include "newdemo.h"
 #include "newmenu.h"
 #include "object.h"
@@ -11957,6 +11959,7 @@ static void test_mission_movie_scan(const char *vertigo_directory)
 #include "recording_asset_fingerprint_fixture.hpp"
 #include "public_level_replay_fixture.hpp"
 #include "public_save_continuation_fixture.hpp"
+#include "authored_matcen_save_fixture.hpp"
 #include "active_save_runtime_fixture.hpp"
 #include "timer_save_runtime_fixture.hpp"
 #include "wiggle_save_runtime_fixture.hpp"
@@ -11992,6 +11995,10 @@ static void test_udp_security_validation()
 {
 	const int saved_players = N_players;
 	const int saved_master = Multi_master_playernum;
+	const int saved_player_num = Player_num;
+	const int saved_retro_protocol = Netgame.RetroProtocol;
+	const struct _sockaddr saved_host_addr = Netgame.players[0].protocol.udp.addr;
+	const struct _sockaddr saved_peer_addr = Netgame.players[1].protocol.udp.addr;
 	ubyte quit[] = { MULTI_QUIT, 1 };
 	ubyte batch[] = { MULTI_QUIT, 1, MULTI_QUIT, 1 };
 	ubyte unknown[] = { 255 };
@@ -12000,8 +12007,15 @@ static void test_udp_security_validation()
 	ubyte message[37];
 	ubyte observer_message[47] = {};
 	ubyte observer_update[4 + 8 * MAX_OBSERVERS];
+	ubyte powcap[MAX_POWERUP_TYPES + 1] = {};
+	ubyte remove_object[] = { MULTI_REMOVE_OBJECT, 1, 0, (ubyte) -1, 0 };
+	ubyte sequence[UPID_SEQUENCE_SIZE] = {};
+	UDP_sequence_packet decoded_sequence = {};
 	ubyte outer[UPID_MAX_SIZE] = {};
 	struct _sockaddr sender = {};
+	struct _sockaddr host_sender = {};
+	struct _sockaddr peer_sender = {};
+	const unsigned sequence_connected_offset = 5 + CALLSIGN_LEN + 1;
 
 	N_players = 2;
 	Multi_master_playernum = 0;
@@ -12017,10 +12031,22 @@ static void test_udp_security_validation()
 	        "reject unknown multiplayer opcode");
 	require(!multi_validate_bigdata_from_player(robot_claim, sizeof(robot_claim), 0),
 	        "reject spoofed robot owner command");
+	require(multi_validate_bigdata_from_player(robot_claim, sizeof(robot_claim), 1),
+	        "accept obsolete authenticated robot command for safe handler drop");
 	require(multi_validate_bigdata_from_player(kill_host, sizeof(kill_host), 0),
 	        "accept host-authored kill result");
 	require(!multi_validate_bigdata_from_player(kill_host, sizeof(kill_host), 1),
 	        "reject peer-forged host kill result");
+	powcap[0] = MULTI_POWCAP_UPDATE;
+	require(multi_validate_bigdata_from_player(powcap, sizeof(powcap), 1),
+	        "accept authenticated peer powerup cap update");
+	require(!multi_validate_bigdata_from_player(powcap, sizeof(powcap), OBSERVER_PLAYER_ID),
+	        "reject observer powerup cap update");
+	require(multi_validate_bigdata_from_player(remove_object, sizeof(remove_object), 1),
+	        "accept state-independent reliable remove-object framing");
+	remove_object[1] = 0;
+	require(!multi_validate_bigdata_from_player(remove_object, sizeof(remove_object), 1),
+	        "reject invalid remove-object network index");
 
 	std::memset(message, 'A', sizeof(message));
 	message[0] = MULTI_MESSAGE;
@@ -12047,6 +12073,37 @@ static void test_udp_security_validation()
 	        "accept bounded host observer update");
 	require(!multi_validate_bigdata_from_player(observer_update, sizeof(observer_update), 1),
 	        "reject non-host observer update");
+
+	sequence[0] = UPID_REQUEST;
+	sequence[5] = 'P';
+	sequence[sequence_connected_offset + 2] = 255;
+	sequence[sequence_connected_offset + 3] = 8;
+	require(net_udp_receive_sequence_packet(sequence, &decoded_sequence, sender),
+	        "accept legacy automatic sequence colors");
+	require(decoded_sequence.player.color == 255 && decoded_sequence.player.missilecolor == 8,
+	        "preserve automatic colors for slot assignment normalization");
+
+	host_sender.sin_addr.s_addr = htonl(0x7f000001u);
+	host_sender.sin_port = htons(42430);
+	peer_sender.sin_addr.s_addr = htonl(0x7f000002u);
+	peer_sender.sin_port = htons(42431);
+	Netgame.players[0].protocol.udp.addr = host_sender;
+	Netgame.players[1].protocol.udp.addr = peer_sender;
+	Player_num = 2;
+	N_players = 3;
+	Netgame.RetroProtocol = 1;
+	require(net_udp_mdata_source_is_authorized(1, peer_sender, 0),
+	        "accept direct RetroProtocol normal traffic from its claimed peer");
+	require(!net_udp_mdata_source_is_authorized(1, host_sender, 0),
+	        "reject direct RetroProtocol peer spoofing through another route");
+	require(net_udp_mdata_source_is_authorized(1, host_sender, 1),
+	        "accept reliable traffic relayed by the host");
+	require(!net_udp_mdata_source_is_authorized(1, peer_sender, 1),
+	        "reject direct reliable traffic that bypasses the host");
+	Netgame.RetroProtocol = 0;
+	require(net_udp_mdata_source_is_authorized(1, host_sender, 0),
+	        "accept non-Retro normal traffic relayed by the host");
+	N_players = 2;
 
 	outer[0] = 255;
 	require(!valid_size(outer, 1, sender), "reject unknown outer packet type");
@@ -12079,11 +12136,27 @@ static void test_udp_security_validation()
 		marker[16] = '\0';
 		require(multi_validate_bigdata_from_player(marker, sizeof(marker), 1),
 		        "accept bounded marker payload");
+		require(multi_validate_bigdata_from_player(marker, sizeof(marker), 0),
+		        "accept host marker catch-up for another player");
+		N_players = 3;
+		require(!multi_validate_bigdata_from_player(marker, sizeof(marker), 2),
+		        "reject peer marker impersonation");
+		N_players = 2;
+
+		ubyte flags[6] = { MULTI_FLAGS, 1, 0, 0, 0, 0 };
+		require(multi_validate_bigdata_from_player(flags, sizeof(flags), 0),
+		        "accept host flag catch-up for another player");
+		require(multi_validate_bigdata_from_player(flags, sizeof(flags), 1),
+		        "accept authenticated player flag update");
 	}
 #endif
 
 	N_players = saved_players;
 	Multi_master_playernum = saved_master;
+	Player_num = saved_player_num;
+	Netgame.RetroProtocol = saved_retro_protocol;
+	Netgame.players[0].protocol.udp.addr = saved_host_addr;
+	Netgame.players[1].protocol.udp.addr = saved_peer_addr;
 	std::puts("PASS: UDP multiplayer command validation");
 }
 
@@ -12355,6 +12428,11 @@ int main(int argc, char **argv)
 		capture_public_level_replay(argv[2], "door");
 #endif
 		exercise_wiggle_save_runtime(argv[3]);
+		return 0;
+	}
+	if (argc == 8 && std::strcmp(argv[1], "--authored-matcen-save") == 0) {
+		capture_public_level_replay(argv[2], "authored-save", false, argv[3], argv[4], std::atoi(argv[5]));
+		exercise_authored_matcen_save(argv[4], std::atoi(argv[5]), std::atoi(argv[6]), argv[7]);
 		return 0;
 	}
 	if (argc == 4 && std::strcmp(argv[1], "--public-save-continuation") == 0) {

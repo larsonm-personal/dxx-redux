@@ -2194,8 +2194,7 @@ int net_udp_receive_sequence_packet(ubyte *data, UDP_sequence_packet *seq, struc
 
 	if (!data || !seq || !data[callsign_offset] ||
 	    !memchr(data + callsign_offset, '\0', CALLSIGN_LEN + 1) ||
-	    data[connected_offset + 1] > 9 || data[connected_offset + 2] > 7 ||
-	    data[connected_offset + 3] > 7 || data[connected_offset + 4] > 1 ||
+	    data[connected_offset + 1] > 9 || data[connected_offset + 4] > 1 ||
 	    (data[0] == UPID_ADDPLAYER && data[connected_offset] >= MAX_PLAYERS))
 		return 0;
 	
@@ -4512,6 +4511,11 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			Netgame.players[i].rank = data[len];					len++;
 			Netgame.players[i].color = data[len];                   len++; 
 			Netgame.players[i].missilecolor = data[len];					len++;
+			/* Values above the palette range are the legacy "automatic" choice. */
+			if (Netgame.players[i].color > 7)
+				Netgame.players[i].color = i < MAX_PLAYERS ? i : 0;
+			if (Netgame.players[i].missilecolor > 7)
+				Netgame.players[i].missilecolor = Netgame.players[i].color;
 			memcpy(Netgame.players[i].client_id, &data[len], 37);			len += 37;
 #ifdef __ANDROID__
 			len += android_net_udp_auth_read_player(data + len, i);
@@ -8736,6 +8740,13 @@ void net_udp_send_mdata(int needack, fix64 time)
 	memset(&UDP_MData.mbuf, 0, sizeof(ubyte)*UPID_MDATA_BUF_SIZE);
 }
 
+int net_udp_mdata_source_is_authorized(ubyte pnum, struct _sockaddr sender_addr, int needack)
+{
+	if (Netgame.RetroProtocol && !needack)
+		return is_player_ip(sender_addr, pnum);
+	return is_master_ip(sender_addr);
+}
+
 void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_addr, int needack)
 {
 	int pnum = data[5], dataoffset = (needack?10:6);
@@ -8757,8 +8768,15 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 			return;
 		}
 	} else {
-		if (!is_master_ip(sender_addr)) {
-			drop_rx_packet(data, "not received from master ip");
+		/* RetroProtocol normal traffic is deliberately peer-to-peer.  Reliable
+		 * traffic and non-Retro traffic still arrive through the host. */
+		if (Netgame.RetroProtocol && !needack) {
+			if (!net_udp_mdata_source_is_authorized(pnum, sender_addr, needack)) {
+				drop_rx_packet(data, "direct packet does not match claimed player ip");
+				return;
+			}
+		} else if (!net_udp_mdata_source_is_authorized(pnum, sender_addr, needack)) {
+			drop_rx_packet(data, "relayed packet not received from master ip");
 			return;
 		}
 		authenticated_sender = pnum;
@@ -8772,17 +8790,19 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 #else
 	command_len = data_len - dataoffset;
 #endif
-	/* A host must never amplify a malformed command batch to its peers. */
-	if (!multi_validate_bigdata_from_player(data + dataoffset, command_len, authenticated_sender)) {
-		drop_rx_packet(data, "invalid multiplayer command framing");
-		return;
-	}
 	// Add needack packet and check for possible redundancy
 	if (needack)
 	{
 		/* Packet numbers occupy four bytes on the wire, including in ACKs */
 		if (!net_udp_noloss_validate_mdata(GET_INTEL_INT(&data[6]), pnum, sender_addr))
 			return;
+	}
+	/* A host must never amplify a malformed command batch to its peers.  ACK
+	 * authenticated reliable packets first so malformed input cannot wedge the
+	 * sender's retry queue. */
+	if (!multi_validate_bigdata_from_player(data + dataoffset, command_len, authenticated_sender)) {
+		drop_rx_packet(data, "invalid multiplayer command framing");
+		return;
 	}
 	if (multi_i_am_master())
 		forward_to_observers(data, data_len, needack);

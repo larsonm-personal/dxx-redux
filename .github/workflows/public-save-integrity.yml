@@ -94,6 +94,19 @@ jobs:
         shell: pwsh
         run: ./android/helpers/setup_shareware_test_data.ps1 -Game both -Download
 
+      - name: Qualify fresh-process matcen save continuation on public geometry
+        timeout-minutes: 4
+        run: |
+          python3 android/tests/test_authored_matcen_save.py
+          mkdir -p "$RUNNER_TEMP/matcen-save-base"
+          cp game_data/shareware/d1/descent.{hog,pig} "$RUNNER_TEMP/matcen-save-base/"
+          xvfb-run -a python3 android/tests/run_authored_matcen_save.py \
+            --executable "$PWD/buildd1-save/main/test_upstream_compat" \
+            --base "$RUNNER_TEMP/matcen-save-base" \
+            --extra "$PWD/android/tests/fixtures/authored_matcen_save/public" \
+            --inputs "$PWD/android/tests/fixtures/authored_matcen_save/public-secret.json" \
+            --output "$PWD/temp/authored-matcen-save-ci" --timeout 45
+
       - name: Qualify native ordered input phases and causal failures
         timeout-minutes: 12
         run: |
@@ -351,6 +364,7 @@ jobs:
             temp/wall-blast-save-shareware/
             temp/public-pickup-ci/
             temp/public-save-continuation-ci/
+            temp/authored-matcen-save-ci/
             temp/public-combat-ci/
             temp/public-robot-combat-visual-ci/
             temp/public-guidebot-visual-ci/

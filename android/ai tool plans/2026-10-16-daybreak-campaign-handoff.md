@@ -52,10 +52,17 @@ Source: `C:\Users\first last\Downloads\Daybreak-campaign-handoff.md`
 - Integrated the historical matcen capture/comparison foundation and exposed compact `data_warnings` through native and Kotlin metadata projections
 - Restored mission-local mixed-case song-list lookup while preserving PhysFS mount priority and mission-to-stock switching
 - Diagnosed PR81's first-play failure as an Android FORTIFY abort caused by a long mission basename, then bounded the legacy eight-character player/network/8.3 consumers in both engines
+- Qualified PR81's actual interrupted public mission-replacement owner on an isolated integrated tree: the importer was force-stopped at a nonzero pre-publication extraction checkpoint, the prior mission remained playable, and an identical retry published and launched the replacement
+- Qualified PR80's private rendered Vignettes secret-level continuation with the pinned retail/archive hashes: the native write and two independent cold restores produced byte-identical reports and four real authored births, while the no-dispatch control produced none
+- Found and corrected PR80's Windows test-build portability issue in its isolated tree by passing explicitly mutable mission-name storage to the legacy loader
+- Reproduced the PR80 save-continuation owner and PR81 interruption owner in the main working tree as uncommitted, git-visible changes, including their CI/catalog registrations
 - Preserved all pre-existing corpus and simulation JSON edits; no commit, push, merge, or baseline auto-accept was performed
 
 ## Remaining external qualifications
 
-- Rerun PR81's actual interrupted Android replacement owner after the long-mission-name fix is present on its integrated tree
-- Run PR80's private rendered Vignettes continuation and any desired secret-return/network-continuation campaigns
+- Run any desired secret-return/network-continuation campaigns through their separate owners
 - Qualify unsupplied packs and optional external assets only when those inputs are made available
+
+PR81 evidence: `temp/pr81-integrated/android/temp/public-first-play-20261016-222057-640/summary.json` and `interruption-summary.json`
+
+PR80 main-tree evidence: `temp/authored-matcen-save-vignettes-main-final-20261016/results.json`

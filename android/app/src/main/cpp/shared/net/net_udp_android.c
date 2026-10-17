@@ -287,8 +287,7 @@ const char *android_net_udp_game_info_preflight(
 #endif
 		if (!memchr(player, '\0', CALLSIGN_LEN + 1) ||
 		    player[CALLSIGN_LEN + 1] > max_connected ||
-		    player[CALLSIGN_LEN + 2] > 9 || player[CALLSIGN_LEN + 3] > 7 ||
-		    player[CALLSIGN_LEN + 4] > 7 ||
+		    player[CALLSIGN_LEN + 2] > 9 ||
 		    !memchr(player + CALLSIGN_LEN + 5, '\0', 37))
 			return "full game info player record incorrect";
 	}

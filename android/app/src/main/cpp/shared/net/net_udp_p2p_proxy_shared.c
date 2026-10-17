@@ -261,8 +261,12 @@ void net_udp_process_proxy(ubyte *data, struct _sockaddr sender_addr, int data_l
 			return;
 		}
 
-		/* The host validates the origin route; clients validate the authorized host relay */
-		logical_sender = multi_i_am_master() ? Netgame.players[from_player].protocol.udp.addr : sender_addr;
+		/* Heartbeats and RetroProtocol normal batches authenticate the claimed
+		 * peer route.  Reliable gameplay continues to authenticate the host relay. */
+		logical_sender = multi_i_am_master() || contents[0] == UPID_MDATA_PNORM ||
+		                         contents[0] == UPID_P2P_PING || contents[0] == UPID_P2P_PONG
+		                     ? Netgame.players[from_player].protocol.udp.addr
+		                     : sender_addr;
 		net_udp_process_packet(contents, logical_sender,
 		                       data_len - UPID_PROXY_HEADER_SIZE, 1);
 	} else {

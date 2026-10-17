@@ -620,7 +620,7 @@ multi_do_claim_robot(const ubyte *buf)
 		return;
 	}
 
-	if (Objects[botnum].type != OBJ_ROBOT) {
+	if (Objects[botnum].type != OBJ_ROBOT || Objects[botnum].id >= N_robot_types) {
 		return;
 	}
 	
@@ -656,7 +656,7 @@ multi_do_release_robot(const ubyte *buf)
 		return;
 	}
 
-	if (Objects[botnum].type != OBJ_ROBOT) {
+	if (Objects[botnum].type != OBJ_ROBOT || Objects[botnum].id >= N_robot_types) {
 		return;
 	}
 	
@@ -701,7 +701,8 @@ multi_do_robot_position(const ubyte *buf)
 		return;
 	}
 
-	if ((Objects[botnum].type != OBJ_ROBOT) || (Objects[botnum].flags & OF_EXPLODING)) {
+	if ((Objects[botnum].type != OBJ_ROBOT) || Objects[botnum].id >= N_robot_types ||
+	    (Objects[botnum].flags & OF_EXPLODING)) {
 		return;
 	}
 		
@@ -792,7 +793,7 @@ multi_explode_robot_sub(int botnum, int killer,char isthief)
 		return 0;
 	}
 
-	if (Objects[botnum].type != OBJ_ROBOT) { // Object is robot?
+	if (Objects[botnum].type != OBJ_ROBOT || Objects[botnum].id >= N_robot_types) { // Object is robot?
 		return 0;
 	}
 

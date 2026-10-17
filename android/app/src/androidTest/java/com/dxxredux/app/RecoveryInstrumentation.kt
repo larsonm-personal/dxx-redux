@@ -53,6 +53,7 @@ class RecoveryInstrumentation : Instrumentation() {
     private var sliderNavigationOnly = false
     private var graphicsCapabilitiesOnly = false
     private var demoImportOnly = false
+    private var demoImportInterruption: Bundle? = null
     private var enemyWithinImportOnly = false
     private var controllerOverlayOnly = false
 
@@ -68,6 +69,7 @@ class RecoveryInstrumentation : Instrumentation() {
         sliderNavigationOnly = arguments?.getString("suite") == "slider_navigation"
         graphicsCapabilitiesOnly = arguments?.getString("suite") == "graphics_capabilities"
         demoImportOnly = arguments?.getString("suite") == "demo_import"
+        if (arguments?.getString("suite") == "demo_import_interruption") demoImportInterruption = arguments
         enemyWithinImportOnly = arguments?.getString("suite") == "enemy_within_import"
         controllerOverlayOnly = arguments?.getString("suite") == "controller_overlay"
         missionLoadingOnly = arguments?.getString("suite") == "mission_loading"
@@ -93,6 +95,14 @@ class RecoveryInstrumentation : Instrumentation() {
                 result.putString("stream", "PASS: Enemy Within full wrapper probe, URI import and Rebirth assets\n")
                 finish(Activity.RESULT_OK, result)
                 return
+            }
+            demoImportInterruption?.let { arguments ->
+                DemoImportChecks(this).pauseMissionReplacement(
+                    arguments.getString("nonce").orEmpty(),
+                    arguments.getString("previous_sha256").orEmpty(),
+                    arguments.getString("replacement_sha256").orEmpty(),
+                )
+                error("Interrupted import instrumentation must not return successfully")
             }
             if (demoImportOnly) {
                 DemoImportChecks(this).run()

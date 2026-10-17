@@ -447,6 +447,7 @@ private class PeerProxy(
                 payloadLen = length
                 payload = data.copyOfRange(0, length)
             }
+            if (isTransportKeepalive(payload, payloadLen)) return
             diagnostics.send(
                 "engine-delivery-send",
                 localSocket,
@@ -544,6 +545,7 @@ private class PeerProxy(
                     payloadLen = pkt.length
                     payload = pkt.data.copyOfRange(0, pkt.length)
                 }
+                if (isTransportKeepalive(payload, payloadLen)) continue
                 diagnostics.send("engine-delivery-send", localSocket, DatagramPacket(payload, payloadLen, engineAddr))
                 packetsReceived++
                 bytesReceived += payloadLen
@@ -603,6 +605,11 @@ private class PeerProxy(
         }
         Log.w(TAG, "keepalive loop EXITED slot=${config.peerSlot} count=$keepaliveCount")
     }
+
+    private fun isTransportKeepalive(
+        payload: ByteArray,
+        payloadLen: Int,
+    ): Boolean = payloadLen == 1 && payload[0] == 0.toByte()
 
     fun close(reason: String) {
         diagnostics.closing(reason, localSocket, realSocket)

@@ -1,0 +1,6 @@
+name = Public Save
+type = normal
+num_levels = 1
+level01.sdl
+num_secrets = 1
+level03.sdl,1

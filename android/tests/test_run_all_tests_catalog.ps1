@@ -42,7 +42,8 @@ $toolMediaFreeOwners = @('test_pcm_ring', 'test_touch_layout_format', 'test_dist
 foreach ($name in $toolMediaFreeOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 }
-$generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file_set_content', 'test_soundfont_download_catalog')
+$generatedJsoncOwners = @('test_demo_group_file_set_content', 'test_unified_file_set_content', 'test_soundfont_download_catalog',
+    'test_public_first_play_interruption_old', 'test_public_first_play_interruption_new')
 foreach ($name in $generatedJsoncOwners) {
     $mediaFree += @{ Name = $name; BaseName = $name; Type = 'jsonc'; Requires = 'emulator'; Arguments = @('-TimeoutSeconds', '600') }
 }
@@ -99,7 +100,7 @@ foreach ($name in $nativeMediaFreeOwners) {
     }
 }
 foreach ($name in @('test_android_matcen_stations', 'test_android_secret_origins', 'test_android_ktx2_mipmaps',
-    'test_android_d1_mod_patches', 'test_android_mod_bitmaps', 'test_android_mod_renderer', 'test_android_mod_sounds', 'test_android_mod_save')) {
+        'test_android_d1_mod_patches', 'test_android_mod_bitmaps', 'test_android_mod_renderer', 'test_android_mod_sounds', 'test_android_mod_save')) {
     $deniedMediaFree += @{ Name = $name; BaseName = $name; Type = 'ps1'; Requires = 'emulator'; Arguments = @() }
 }
 foreach ($name in $toolMediaFreeOwners) {

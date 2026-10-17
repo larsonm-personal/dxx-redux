@@ -3581,9 +3581,7 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 		case MULTI_TRIGGER:
 		case MULTI_TYPING_STATE:
 		case MULTI_RANK:
-		case MULTI_MARKER:
 		case MULTI_GUIDED:
-		case MULTI_FLAGS:
 		case MULTI_DROP_BLOB:
 		case MULTI_SOUND_FUNCTION:
 		case MULTI_CAPTURE_BONUS:
@@ -3623,11 +3621,19 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 				return 0;
 			break;
 
+		case MULTI_MARKER:
+		case MULTI_FLAGS:
+			pnum = buf[1];
+			if (pnum >= (unsigned) N_players ||
+			    (authenticated_sender >= 0 && pnum != (unsigned) authenticated_sender &&
+			     authenticated_sender != multi_who_is_master()))
+				return 0;
+			break;
+
 		case MULTI_SAVE_GAME:
 		case MULTI_RESTORE_GAME:
 		case MULTI_HEARTBEAT:
 		case MULTI_KILLGOALS:
-		case MULTI_POWCAP_UPDATE:
 		case MULTI_DO_BOUNTY:
 		case MULTI_GMODE_UPDATE:
 		case MULTI_RESPAWN_ROBOT:
@@ -3688,10 +3694,8 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 			const int owner = (sbyte) buf[3];
 			if (remote_objnum < 1 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
-			objnum = objnum_remote_to_local(remote_objnum, owner);
-			if (objnum < 0 || objnum > Highest_object_index ||
-			    (Objects[objnum].type != OBJ_POWERUP && Objects[objnum].type != OBJ_HOSTAGE))
-				return 0;
+			/* The normal copy can remove the object before its reliable twin is
+			 * validated.  The handler performs the state-dependent safe drop. */
 			break;
 		}
 
@@ -3703,10 +3707,8 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 			const int owner = (sbyte) buf[4];
 			if (remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
 				return 0;
-			objnum = objnum_remote_to_local(remote_objnum, owner);
-			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_ROBOT ||
-			    Objects[objnum].id >= N_robot_types)
-				return 0;
+			/* Robot state can legitimately be obsolete by the time a reliable
+			 * retry arrives.  Each handler bounds and type-checks mapped state. */
 			break;
 		}
 
@@ -3717,10 +3719,6 @@ static int multi_validate_command_from_player(const ubyte *buf, unsigned len, in
 			const int owner = (sbyte) buf[7];
 			if (killer < -1 || killer >= MAX_OBJECTS || killer_owner < -1 || killer_owner >= N_players ||
 			    remote_objnum < 0 || remote_objnum >= MAX_OBJECTS || owner < -1 || owner >= N_players)
-				return 0;
-			objnum = objnum_remote_to_local(remote_objnum, owner);
-			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_ROBOT ||
-			    Objects[objnum].id >= N_robot_types)
 				return 0;
 			break;
 		}

@@ -28,8 +28,8 @@ function Test-SuiteMediaIndependentTest {
         $Test.BaseName -ceq 'test_lan' -and $Test.Type -ceq 'ps1' -and
         $Test.Requires -ceq 'two_emulators') {
         return $arguments.Count -eq 4 -and $arguments[0] -ceq '-PublicShareware' -and
-            $arguments[1] -ceq '-Game' -and $arguments[2] -ceq 'd1' -and
-            $arguments[3] -ceq '-HostMigration'
+        $arguments[1] -ceq '-Game' -and $arguments[2] -ceq 'd1' -and
+        $arguments[3] -ceq '-HostMigration'
     }
     if ($Test.Name -ceq 'test_demo_import_public_first_play' -and
         $Test.BaseName -ceq 'test_demo_import' -and $Test.Type -ceq 'ps1' -and
@@ -62,6 +62,7 @@ function Test-SuiteMediaIndependentTest {
         'jsonc:emulator' {
             @('test_public_first_play_empty', 'test_public_first_play_d1',
                 'test_public_first_play_d1_in_d2', 'test_public_first_play_d2', 'test_public_first_play_mission',
+                'test_public_first_play_interruption_old', 'test_public_first_play_interruption_new',
                 'test_compute_faster_dialog', 'test_debug_log_refresh_button',
                 'test_controller_raw_inputs', 'test_controller_trigger_axis_priority',
                 'test_launcher_media_controls',

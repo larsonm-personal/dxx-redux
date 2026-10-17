@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess', 'Assert-FirstPlayReplacementLevel', 'New-FirstPlayReplacementMission', 'Test-FirstPlayReplacementDiskIdentity', 'Test-FirstPlayReplacementCacheIdentity', 'Test-FirstPlayInterruptionMarker', 'Test-FirstPlayInterruptionDeadline', 'Test-FirstPlayProcessDead')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -68,7 +68,7 @@ function New-ProfileHog {
             $writer.Write([byte[]]@(1, 2, 3))
         }
         $writer.Flush()
-        return ,$stream.ToArray()
+        return , $stream.ToArray()
     } finally { $writer.Dispose(); $stream.Dispose() }
 }
 $profileHog = New-ProfileHog
@@ -507,6 +507,164 @@ Assert-Rejected { Assert-FirstPlayFiles -Expected $expected -Label unpublished }
 $script:state = [pscustomobject]@{ active_set = 'default' }
 Assert-Rejected { Assert-FirstPlayFiles -Expected @() -Label missing } 'Missing file inventory accepted'
 
+# Transport failures cannot stand in for observed process death
+$deadDiagnostic = @{ exit_code = 1; timed_out = $false; error = ''; stderr = '' }
+if (-not (Test-FirstPlayProcessDead -Output '' -Diagnostic $deadDiagnostic)) { throw 'Verified pidof absence rejected' }
+foreach ($diagnostic in @(
+        $null, @{}, @{ exit_code = $null; timed_out = $false; error = ''; stderr = '' },
+        @{ exit_code = 1; timed_out = $true; error = ''; stderr = '' },
+        @{ exit_code = 1; timed_out = $false; error = 'transport failed'; stderr = '' },
+        @{ exit_code = 1; timed_out = $false; error = ''; stderr = 'device offline' },
+        @{ exit_code = 0; timed_out = $false; error = ''; stderr = '' },
+        @{ exit_code = '1'; timed_out = $false; error = ''; stderr = '' }
+    )) {
+    if (Test-FirstPlayProcessDead -Output $null -Diagnostic $diagnostic) { throw 'Unverified transport accepted as process death' }
+}
+if (Test-FirstPlayProcessDead -Output '4321' -Diagnostic $deadDiagnostic) { throw 'Live PID accepted as dead' }
+foreach ($elapsed in @(0, 74.9)) {
+    if (-not (Test-FirstPlayInterruptionDeadline $elapsed)) { throw 'Fresh interruption deadline rejected' }
+}
+foreach ($elapsed in @(-1, 75, 80, 90, [double]::NaN, [double]::PositiveInfinity)) {
+    if (Test-FirstPlayInterruptionDeadline $elapsed) { throw 'Expired or unknown barrier age accepted' }
+}
+
+# Rejected evidence must never turn an unrelated crash or completed import into an intentional kill
+$previousFixture = @{
+    Sha256 = ('a' * 64); Size = 12600000; Title = 'Public Import Old'
+    DescriptorSha256 = ('c' * 64); DescriptorSize = 85; HogSha256 = ('d' * 64); HogSize = 90000
+    PaddingSha256 = ('e' * 64)
+}
+$replacementFixture = @{ Sha256 = ('b' * 64); Size = 12600001; Title = 'Public Import New' }
+$interruptionNonce = 'f' * 32
+function New-InterruptionMarker {
+    return [pscustomobject]@{
+        run_id = $interruptionNonce; checkpoint = 'extracting_before_publication'; process_id = 4321
+        previous_sha256 = $previousFixture.Sha256; replacement_sha256 = $replacementFixture.Sha256
+        bytes_done = 1048576; bytes_total = 12600000
+    }
+}
+if (-not (Test-FirstPlayInterruptionMarker -Marker (New-InterruptionMarker) -Nonce $interruptionNonce `
+            -Previous $previousFixture -Replacement $replacementFixture -ProcessId '4321')) { throw 'Valid extraction barrier rejected' }
+foreach ($mutate in @(
+        { param($m) $m.run_id = '0' * 32 }, { param($m) $m.checkpoint = 'copying' },
+        { param($m) $m.process_id = 9999 }, { param($m) $m.previous_sha256 = '0' * 64 },
+        { param($m) $m.replacement_sha256 = $previousFixture.Sha256 },
+        { param($m) $m.bytes_done = 0 }, { param($m) $m.bytes_done = -1 },
+        { param($m) $m.bytes_done = $m.bytes_total }, { param($m) $m.bytes_done = $m.bytes_total + 1 },
+        { param($m) $m.bytes_done = '1048576' }, { param($m) $m.bytes_total = '12600000' },
+        { param($m) $m.bytes_total = 12MB }, { param($m) $m.bytes_total = 15MB }
+    )) {
+    $marker = New-InterruptionMarker
+    & $mutate $marker
+    if (Test-FirstPlayInterruptionMarker -Marker $marker -Nonce $interruptionNonce -Previous $previousFixture `
+            -Replacement $replacementFixture -ProcessId '4321') { throw 'Invalid or complete extraction passed the kill gate' }
+}
+foreach ($invalidProcess in @('', '0', '4321 9999', ' 4321', 'offline')) {
+    if (Test-FirstPlayInterruptionMarker -Marker (New-InterruptionMarker) -Nonce $interruptionNonce `
+            -Previous $previousFixture -Replacement $replacementFixture -ProcessId $invalidProcess) { throw 'Unverified importer PID accepted' }
+}
+if (Test-FirstPlayInterruptionMarker -Marker $null -Nonce $interruptionNonce -Previous $previousFixture `
+        -Replacement $replacementFixture -ProcessId '4321') { throw 'Missing extraction marker accepted' }
+
+function New-ReplacementManifest {
+    return [pscustomobject]@{ mods = @([pscustomobject]@{
+                filename = 'fpinterrupt.zip'; displayName = 'Public Import Old'; game = 'd1'; kind = 'mission_zip'
+                enabled = $true; importMode = 'extracted_bundle'; archiveSha256 = $previousFixture.Sha256
+                sizeBytes = $previousFixture.Size
+            })
+    }
+}
+$oldHashLine = "$($previousFixture.Sha256)  $($script:DEFAULT_SET_DIR)/.content/mods/fpinterrupt.zip"
+if (-not (Test-FirstPlayReplacementDiskIdentity -Manifest (New-ReplacementManifest) -HashLine $oldHashLine `
+            -Fixture $previousFixture)) { throw 'Valid old publication rejected' }
+foreach ($mutate in @(
+        { param($m) $m.mods += $m.mods[0] }, { param($m) $m.mods = @() },
+        { param($m) $m.mods[0].filename = 'fpinterrupt-copy.zip' },
+        { param($m) $m.mods[0].displayName = 'Public Import New' },
+        { param($m) $m.mods[0].archiveSha256 = $replacementFixture.Sha256 },
+        { param($m) $m.mods[0].sizeBytes-- }, { param($m) $m.mods[0].enabled = $false },
+        { param($m) $m.mods[0].enabled = 'true' }, { param($m) $m.mods[0].game = 'd2' },
+        { param($m) $m.mods[0].kind = 'dxa' }, { param($m) $m.mods[0].importMode = 'stored_zip' }
+    )) {
+    $manifest = New-ReplacementManifest
+    & $mutate $manifest
+    if (Test-FirstPlayReplacementDiskIdentity -Manifest $manifest -HashLine $oldHashLine -Fixture $previousFixture) {
+        throw 'Wrong generation, duplicate or invalid old mission publication accepted'
+    }
+}
+foreach ($badHash in @('', $oldHashLine.Replace('fpinterrupt.zip', 'other.zip'), $oldHashLine.Replace('a' * 64, 'b' * 64))) {
+    if (Test-FirstPlayReplacementDiskIdentity -Manifest (New-ReplacementManifest) -HashLine $badHash -Fixture $previousFixture) {
+        throw 'Missing, unrelated or replacement archive accepted as old content'
+    }
+}
+function New-ReplacementCache {
+    return [pscustomobject]@{ entries = @([pscustomobject]@{
+                owner_filename = 'fpinterrupt.zip'; owner_sha256 = $previousFixture.Sha256
+                owner_size_bytes = $previousFixture.Size; import_mode = 'extracted_bundle'
+                files = @(
+                    [pscustomobject]@{ entry_path = 'fpinterrupt.msn'; relative_path = 'missions/fpinterrupt.msn'; size_bytes = 85; sha256 = ('c' * 64) },
+                    [pscustomobject]@{ entry_path = 'fpinterrupt.hog'; relative_path = 'missions/fpinterrupt.hog'; size_bytes = 90000; sha256 = ('d' * 64) },
+                    [pscustomobject]@{ entry_path = 'docs/import-padding.bin'; relative_path = 'docs/import-padding.bin'; size_bytes = 12MB; sha256 = ('e' * 64) }
+                )
+            })
+    }
+}
+if (-not (Test-FirstPlayReplacementCacheIdentity -Manifest (New-ReplacementCache) -Fixture $previousFixture)) {
+    throw 'Valid complete mission extraction rejected'
+}
+foreach ($mutate in @(
+        { param($m) $m.entries += $m.entries[0] }, { param($m) $m.entries = @() },
+        { param($m) $m.entries[0].owner_sha256 = $replacementFixture.Sha256 },
+        { param($m) $m.entries[0].owner_size_bytes-- }, { param($m) $m.entries[0].owner_filename = 'other.zip' },
+        { param($m) $m.entries[0].import_mode = 'stored_zip' },
+        { param($m) $m.entries[0].files = @($m.entries[0].files[0..1]) },
+        { param($m) $m.entries[0].files[1] = $m.entries[0].files[0] },
+        { param($m) $m.entries[0].files[0].relative_path = '../fpinterrupt.msn' },
+        { param($m) $m.entries[0].files[0].sha256 = $replacementFixture.Sha256 },
+        { param($m) $m.entries[0].files[0].size_bytes-- }
+    )) {
+    $cache = New-ReplacementCache
+    & $mutate $cache
+    if (Test-FirstPlayReplacementCacheIdentity -Manifest $cache -Fixture $previousFixture) { throw 'Stale or incomplete extraction accepted' }
+}
+foreach ($generation in @('Old', 'New')) {
+    $alias = if ($generation -ceq 'Old') { 'fpold1.sdl' } else { 'fpnew1.sdl' }
+    $descriptorText = "name = Public Import $generation`ntype = normal`nnum_levels = 1`n$alias`nnum_secrets = 0`n"
+    $descriptor = [Text.Encoding]::ASCII.GetBytes($descriptorText)
+    $hog = New-ProfileHog -Names @($alias)
+    $level = [byte[]]@(1, 2, 3)
+    Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $hog -Level $level
+    foreach ($extension in @('.rdl', '.SDL')) {
+        $wrongAlias = $alias.Replace('.sdl', $extension)
+        $wrongDescriptor = [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace($alias, $wrongAlias))
+        $wrongHog = New-ProfileHog -Names @($wrongAlias)
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $wrongAlias -Descriptor $wrongDescriptor -Hog $wrongHog -Level $level } 'Consistently renamed shareware bytes selected the wrong decoder'
+    }
+    foreach ($wrongDescriptor in @(
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace($alias, 'other.sdl')),
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace("Public Import $generation", 'Other title')),
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace('num_levels = 1', 'num_levels = 2'))
+        )) {
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $wrongDescriptor -Hog $hog -Level $level } 'Mismatched replacement descriptor accepted'
+    }
+    $changedHog = [byte[]]$hog.Clone()
+    $changedHog[$changedHog.Length - 1] = 4
+    foreach ($wrongHog in @(
+            (New-ProfileHog -Names @('other.sdl')), (New-ProfileHog -Names @($alias, $alias)),
+            ([byte[]]$hog[0..($hog.Length - 2)]), $changedHog
+        )) {
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $wrongHog -Level $level } 'Missing, duplicate, truncated or changed replacement level accepted'
+    }
+}
+if (-not $source.Contains('Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $missionHog -Level $level')) {
+    throw 'Replacement generator lost its pre-write shareware consistency guard'
+}
+$badD1Source = [IO.Path]::GetTempFileName()
+try {
+    [IO.File]::WriteAllBytes($badD1Source, [byte[]]::new(2339773))
+    Assert-Rejected { New-FirstPlayReplacementMission -SourceHog $badD1Source -OutputDirectory 'unused-profile-output' -Generation old } 'Unpinned D1 source generated a replacement mission'
+} finally { Remove-Item -LiteralPath $badD1Source -Force }
+
 $ownerPath = Join-Path $PSScriptRoot 'test_demo_import.ps1'
 $owner = [Management.Automation.Language.Parser]::ParseFile($ownerPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "Demo import owner parser errors: $parseErrors" }
@@ -560,7 +718,7 @@ foreach ($invalidInfo in @(
         throw 'Catalog accepted missing, standalone, or foreign first-play ownership'
     }
 }
-foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
+foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission', 'interruption_old', 'interruption_new')) {
     $path = Join-Path $PSScriptRoot "../game_scripts/test_public_first_play_$phase.jsonc"
     $steps = Read-JsoncFile -Path $path
     $info = $steps[0]._info
@@ -573,7 +731,7 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
     }
     if (@($steps | Where-Object action -in @('enter_game', 'start_level', 'reset_state')).Count) { throw "First-play $phase bypasses normal launch" }
     if ($phase -ne 'empty') {
-        $button = if ($phase -eq 'd1') { 'Launch Descent 1' } else { 'Launch Descent 2' }
+        $button = if ($phase -eq 'd1' -or $phase -like 'interruption_*') { 'Launch Descent 1' } else { 'Launch Descent 2' }
         if (@($steps | Where-Object { $_.action -eq 'tap_button' -and $_.text -ceq $button -and $_.launches_game -eq $true }).Count -ne 1) {
             throw "First-play $phase does not launch through the normal button"
         }
@@ -591,6 +749,22 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
                     $_.expect.'asset_trace.current_pigfile' -ceq 'groupa.pig'
                 }).Count -ne 1) {
             throw 'Native D2 trace must assert the requested palette/pig names; pinned import hashes prove the demo asset'
+        }
+        if ($phase -like 'interruption_*') {
+            $title = if ($phase -ceq 'interruption_old') { 'Public Import Old' } else { 'Public Import New' }
+            $other = if ($phase -ceq 'interruption_old') { 'Public Import New' } else { 'Public Import Old' }
+            if ($info.games.Count -ne 1 -or $info.games[0] -cne 'd1' -or
+                @($steps | Where-Object { $_.action -ceq 'select' -and $_.text -ceq $title }).Count -ne 1 -or
+                @($steps | Where-Object { $_.action -ceq 'assert' -and $_.expect.'menu.items'.not_contains -ceq $other }).Count -ne 1 -or
+                $liveAssertions[0].expect.mission_asset_owner -cne 'mod/fpinterrupt.zip' -or
+                $liveAssertions[0].expect.'physfs.search_path'.contains -cne 'fpinterrupt.hog' -or
+                $liveAssertions[0].expect.player_dead -ne $false -or $liveAssertions[0].expect.time_paused -ne $false -or
+                @($steps | Where-Object action -CEQ 'select_mission').Count) {
+                throw 'Interrupted replacement lost native D1, exact generation selection or live mission evidence'
+            }
+            $deleteCount = @($steps | Where-Object action -in @('delete_mod', 'clear_mods')).Count
+            if (($phase -ceq 'interruption_old' -and $deleteCount -ne 0) -or
+                ($phase -ceq 'interruption_new' -and $deleteCount -ne 2)) { throw 'Interrupted replacement cleanup changed old-content preservation' }
         }
         if ($phase -eq 'mission') {
             if (@($steps | Where-Object { $_.action -eq 'select_mission' -or $_.action -like 'debug*' -or $_.action -in @('set_debug', 'set_field') }).Count) {
@@ -665,4 +839,4 @@ foreach ($phase in @('empty', 'd1', 'd1_in_d2', 'd2', 'mission')) {
         }
     }
 }
-Write-Host 'PASS: public first-play target, readiness, hash, mission packaging/publication, normal save/resume, same-process built-in return and correlated-evidence controls'
+Write-Host 'PASS: public first-play target, readiness, hash, mission packaging/publication, normal save/resume, same-process built-in return, interrupted replacement identity/barrier and correlated-evidence controls'

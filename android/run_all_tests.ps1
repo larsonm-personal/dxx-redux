@@ -897,7 +897,7 @@ $allTests += @{
     Type = 'ps1'
     Path = (Join-Path $testsDir 'test_demo_import.ps1')
     Requires = 'emulator'
-    TimeoutSeconds = 900
+    TimeoutSeconds = 1080
     Arguments = @('-PublicFirstPlay')
 }
 

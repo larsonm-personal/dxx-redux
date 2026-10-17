@@ -58,6 +58,38 @@ class ProxyFailureTest {
     }
 
     @Test(timeout = 10_000)
+    fun transportKeepaliveIsNotDeliveredToEngine() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val socket = DatagramSocket(0, loopback)
+        val proxy = LocalhostProxy(scope, socket)
+        try {
+            DatagramSocket(NetworkConstants.ENGINE_PORT, loopback).use { engine ->
+                DatagramSocket(0, loopback).use { remote ->
+                    engine.soTimeout = 250
+                    val localPort = DatagramSocket(0, loopback).use { it.localPort }
+                    proxy.addPeer(PeerProxyConfig(0, localPort, InetSocketAddress(loopback, remote.localPort), false))
+                    proxy.start()
+
+                    send(remote, socket.localPort, 0)
+                    try {
+                        receive(engine)
+                        throw AssertionError("Transport keepalive reached the engine")
+                    } catch (_: SocketTimeoutException) {
+                    }
+
+                    engine.soTimeout = 2_000
+                    send(remote, socket.localPort, 43)
+                    assertEquals(43.toByte(), receive(engine))
+                }
+            }
+        } finally {
+            proxy.shutdown()
+            scope.cancel()
+            socket.close()
+        }
+    }
+
+    @Test(timeout = 10_000)
     fun gameplayIOExceptionIsLoggedAndExistingForwardingContinues() {
         NetLog.entries.clear()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
