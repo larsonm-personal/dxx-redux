@@ -27,6 +27,9 @@ int main(int argc, char **argv)
 	const short valid_segments[2] = { 0, 1 };
 	const short valid_sides[2] = { 0, 5 };
 	const short invalid_sides[2] = { 0, 6 };
+	short repair_segments[3] = { 0, 9, 1 };
+	short repair_sides[3] = { 0, 1, 5 };
+	level_link_repair_report repair;
 	const char *name = "test_level_section_io.bin";
 	unsigned char value;
 	PHYSFSX_read_status read_status;
@@ -68,6 +71,16 @@ int main(int argc, char **argv)
 	CHECK(level_links_are_valid(2, 2, valid_segments, valid_sides, 2, 6));
 	CHECK(!level_links_are_valid(3, 2, valid_segments, valid_sides, 2, 6));
 	CHECK(!level_links_are_valid(2, 2, valid_segments, invalid_sides, 2, 6));
+	repair = level_repair_legacy_links(93, 3, repair_segments, repair_sides, 2, 6);
+	CHECK(repair.count == 2);
+	CHECK(repair.normalized_count == 1);
+	CHECK(repair.ignored_invalid_links == 1);
+	CHECK(repair_segments[0] == 0 && repair_sides[0] == 0);
+	CHECK(repair_segments[1] == 1 && repair_sides[1] == 5);
+	repair = level_repair_legacy_links(-1, 3, repair_segments, repair_sides, 2, 6);
+	CHECK(repair.count == 0);
+	CHECK(repair.normalized_count == 1);
+	CHECK(repair.ignored_invalid_links == 0);
 	CHECK(level_compiled_mine_minimum_segment_size(1, 1) == 20);
 	CHECK(level_compiled_mine_minimum_segment_size(0, 1) == 40);
 	CHECK(level_compiled_mine_minimum_segment_size(1, 6) == 26);

@@ -41,6 +41,10 @@ extern int Gamesave_current_version;
 
 extern int Gamesave_num_org_robots;
 
+/* Compact diagnostics for legacy level data that is safe to ignore at runtime. */
+int gamesave_level_data_warning_count(void);
+int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned buffer_size);
+
 // In dumpmine.c
 extern void write_game_text_file(char *filename);
 

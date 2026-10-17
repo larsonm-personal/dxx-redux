@@ -1081,6 +1081,10 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 		case OBJ_ROBOT:
 			if (d1_in_d2_ai_drop_robots(id, num, init_vel, pos, segnum, &objnum))
 				return objnum;
+			if (!robot_info_is_usable(id)) {
+				con_printf(CON_URGENT, "Ignoring spawn request for unusable robot definition %d\n", id);
+				return -1;
+			}
 			for (count=0; count<num; count++) {
 #ifdef NETWORK
 				if ((Game_mode & GM_MULTI) && Net_create_loc >= MAX_NET_CREATE_OBJECTS)

@@ -87,11 +87,11 @@ static test_buffer make_pbm(unsigned width, unsigned height, unsigned compressio
 	return buffer;
 }
 
-static test_buffer make_delta_anim(uint8_t delta_code)
+static test_buffer make_delta_anim(unsigned width, uint8_t delta_code, uint8_t delta_count)
 {
-	const uint8_t first_body[] = { 1, 2 };
-	const uint8_t delta[] = { 0, 0, 0, 0, 1, delta_code, 2, 9 };
-	test_buffer first = make_pbm(2, 1, 0, first_body, sizeof(first_body));
+	const uint8_t first_body[] = { 1, 2, 3, 0 };
+	const uint8_t delta[] = { 0, 0, 0, 0, 1, delta_code, delta_count, 9 };
+	test_buffer first = make_pbm(width, 1, 0, first_body, (width + 1) & ~1u);
 	test_buffer second = { { 0 }, 0 };
 	test_buffer anim = { { 0 }, 0 };
 	size_t form = begin_form(&second, "PBM ");
@@ -122,6 +122,11 @@ int main(void)
 	CHECK(image.pixels[0] == 7 && image.pixels[3] == 7);
 	iff_safe_free_image(&image);
 
+	buffer = make_pbm(3, 1, 1, rle_body, sizeof(rle_body));
+	CHECK(iff_safe_decode_bitmap(buffer.data, buffer.size, &image) == IFF_SAFE_OK);
+	CHECK(image.width == 3 && image.pixels[0] == 7 && image.pixels[2] == 7);
+	iff_safe_free_image(&image);
+
 	buffer = (test_buffer) { { 0 }, 0 };
 	{
 		const uint8_t planar_body[] = { 0x80, 0 };
@@ -132,6 +137,18 @@ int main(void)
 	}
 	CHECK(iff_safe_decode_bitmap(buffer.data, buffer.size, &image) == IFF_SAFE_OK);
 	CHECK(image.pixels[0] == 1 && image.pixels[1] == 0);
+	iff_safe_free_image(&image);
+
+	buffer = (test_buffer) { { 0 }, 0 };
+	{
+		const uint8_t planar_body[] = { 0x80, 0x80 };
+		const size_t form = begin_form(&buffer, "ILBM");
+		append_bmhd(&buffer, 9, 1, 1, 0, 0);
+		append_chunk(&buffer, "BODY", planar_body, sizeof(planar_body));
+		finish_form(&buffer, form);
+	}
+	CHECK(iff_safe_decode_bitmap(buffer.data, buffer.size, &image) == IFF_SAFE_OK);
+	CHECK(image.pixels[0] == 1 && image.pixels[7] == 0 && image.pixels[8] == 1);
 	iff_safe_free_image(&image);
 
 	buffer = make_pbm(4, 1, 1, (const uint8_t[]) { 4, 1, 2, 3, 4, 5 }, 6);
@@ -153,14 +170,20 @@ int main(void)
 	finish_form(&buffer, 0);
 	CHECK(iff_safe_decode_bitmap(buffer.data, buffer.size, &image) == IFF_SAFE_CORRUPT);
 
-	buffer = make_delta_anim(0);
+	buffer = make_delta_anim(2, 0, 2);
 	CHECK(iff_safe_decode_anim(buffer.data, buffer.size, frames, 2, &frame_count) == IFF_SAFE_OK);
 	CHECK(frame_count == 2 && frames[0].pixels[0] == 1 && frames[1].pixels[0] == 9 && frames[1].pixels[1] == 9);
 	iff_safe_free_frames(frames, frame_count);
 	memset(frames, 0, sizeof(frames));
 	CHECK(iff_safe_decode_anim(buffer.data, buffer.size, frames, 1, &frame_count) == IFF_SAFE_TOO_MANY_FRAMES);
 
-	buffer = make_delta_anim(0x83);
+	buffer = make_delta_anim(3, 0, 4);
+	CHECK(iff_safe_decode_anim(buffer.data, buffer.size, frames, 2, &frame_count) == IFF_SAFE_OK);
+	CHECK(frame_count == 2 && frames[1].width == 3 && frames[1].pixels[0] == 9 && frames[1].pixels[2] == 9);
+	iff_safe_free_frames(frames, frame_count);
+	memset(frames, 0, sizeof(frames));
+
+	buffer = make_delta_anim(2, 0x83, 2);
 	CHECK(iff_safe_decode_anim(buffer.data, buffer.size, frames, 2, &frame_count) == IFF_SAFE_CORRUPT);
 
 	puts("PASS: bounded IFF/ABM decoding");

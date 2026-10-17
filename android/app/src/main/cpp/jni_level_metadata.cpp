@@ -996,12 +996,10 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 static json serialize_level_data_warnings()
 {
 	json warnings = json::array();
-#ifdef DXX_BUILD_DESCENT_II
 	char warning[128];
 	for (int index = 0; index < gamesave_level_data_warning_count(); ++index)
 		if (gamesave_level_data_warning_text(index, warning, sizeof(warning)))
 			warnings.push_back(warning);
-#endif
 	return warnings;
 }
 

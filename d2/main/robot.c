@@ -31,6 +31,13 @@ int	N_robot_joints = 0;
 //	Robot stuff
 robot_info Robot_info[MAX_ROBOT_TYPES];
 
+int robot_info_is_usable(int robot_id)
+{
+	return robot_id >= 0 && robot_id < N_robot_types &&
+	       Robot_info[robot_id].model_num >= 0 &&
+	       Robot_info[robot_id].model_num < N_polygon_models;
+}
+
 //Big array of joint positions.  All robots index into this array
 
 #define deg(a) ((int) (a) * 32768 / 180)

@@ -50,11 +50,19 @@ static void test_secret_origins(const char *trace_path)
 			const bool loaded = load_mission_from_current_dir(descriptor) != 0;
 			require(loaded == item.valid, "actual mission descriptor admission matches validated origin list");
 			if (loaded) {
+				char warning[96];
+				const bool has_extra_origin = std::strchr(item.origins, ',') != nullptr;
 				require(Last_level == item.levels, "preserve ordinary mission level list");
 				require(Last_secret_level == -1, "preserve validated secret level");
 				require(Secret_level_table[0] == item.first, "actual secret table preserves first origin");
 				const std::string name = std::string("secret.") + level_extension;
 				require(name == Secret_level_names[0], "actual secret name preserved");
+				require(mission_compatibility_warning_count() == (has_extra_origin ? 1 : 0),
+				        "ignored secret origins publish exactly one compact warning");
+				if (has_extra_origin)
+					require(mission_compatibility_warning_text(0, warning, sizeof(warning)) &&
+					            std::strcmp(warning, "Used first secret origin; ignored 1 extra origin") == 0,
+					        "ignored secret origin warning is stable");
 			}
 			formats.push_back({ { "format", extension }, { "loaded", loaded }, { "first_origin", loaded ? item.first : 0 } });
 			free_mission();
