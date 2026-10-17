@@ -34,7 +34,7 @@ class SweepTests(unittest.TestCase):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
         entries = sweep.policy_entries(policy)
         selected = [entries[ident] for ident in sweep.VALIDATION_IDS]
-        self.assertEqual(len(selected), 11)
+        self.assertEqual(len(selected), 12)
         self.assertEqual({entry['lane'] for entry in selected}, set(sweep.LANES))
         for lane in sweep.LANES:
             self.assertLessEqual(sum(entry['estimated_seconds'] for entry in selected if entry['lane'] == lane), 2700)
@@ -46,6 +46,7 @@ class SweepTests(unittest.TestCase):
         self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
         self.assertIn('python:test_music_spectra.py', sweep.VALIDATION_IDS)
+        self.assertIn('shareware:test_auto_level_cheats#d2', sweep.VALIDATION_IDS)
 
     def test_host_installs_isolated_pinned_spectral_runtime(self):
         root = Path(__file__).resolve().parents[2]
@@ -266,6 +267,104 @@ class SweepTests(unittest.TestCase):
         entries = sweep.policy_entries(sweep.read(Path(__file__).with_name('nightly_tooling_policy.json')))
         self.assertEqual(entries['master:test_lan_launch_preparation']['fixture'], 'retail-base')
         self.assertNotIn('fixture', entries['master:test_lan_launch_preparation_public_shareware'])
+
+    def test_only_selected_auto_level_owners_require_native_replay_setup(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        expression = next(
+            line.split(":", 1)[1].strip().rstrip(",") for line in workflow.splitlines() if "'native_replay':" in line
+        )
+        for owner in ("shareware", "master"):
+            for name in ("test_auto_level_cheats", "test_auto_level_demos", "test_death"):
+                selected = [{"owner": owner, "args": {"suite": name}}]
+                self.assertEqual(
+                    eval(expression, {"selected": selected}), owner == "shareware" and name != "test_death"
+                )
+        self.assertFalse(eval(expression, {"selected": []}))
+        setup = workflow.split("      - name: Provision selected auto-level replay prerequisites", 1)[1].split(
+            "      - name:", 1
+        )[0]
+        self.assertIn("if: steps.selection.outputs.native_replay == 'true'", setup)
+        self.assertIn("bash android/get_deps/helpers/get_linux_build_prereqs.sh", setup)
+        self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
+        self.assertIn("timeout-minutes: 10", setup)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Native replay display setup runs in the Linux Android job')
+    def test_native_replay_display_wraps_unchanged_executor_only_when_selected(self):
+        workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
+        step = workflow.split("      - name: Execute reviewed test selection", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("NATIVE_REPLAY: ${{ steps.selection.outputs.native_replay }}", step)
+        script = "\n".join(line[10:] for line in step.split("        run: |\n", 1)[1].splitlines())
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            helpers = root / "control/android/helpers"
+            helpers.mkdir(parents=True)
+            (helpers / "refresh_nightly_kvm_access.sh").write_text("exit 0\n")
+            binary = root / "bin"
+            binary.mkdir()
+            python = binary / "python3"
+            python.write_text(
+                f"#!{sys.executable}\nimport json, os, sys\n"
+                'json.dump({"argv": sys.argv[1:], "env": {k: os.environ.get(k) for k in '
+                '("DISPLAY", "LIBGL_ALWAYS_SOFTWARE", "SDL_VIDEODRIVER", "SDL_AUDIODRIVER")}}, '
+                'open(os.environ["OBSERVATION"], "w"))\n'
+                'sys.exit(int(os.environ.get("EXECUTOR_EXIT", "0")))\n'
+            )
+            python.chmod(0o755)
+            xvfb = binary / "xvfb-run"
+            xvfb.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$XVFB_ARGUMENTS"\nshift 3\nDISPLAY=:91 exec "$@"\n')
+            xvfb.chmod(0o755)
+            for selected in ("false", "true"):
+                with self.subTest(native_replay=selected):
+                    env = {
+                        key: value
+                        for key, value in os.environ.items()
+                        if key not in ("DISPLAY", "LIBGL_ALWAYS_SOFTWARE", "SDL_VIDEODRIVER", "SDL_AUDIODRIVER")
+                    }
+                    env.update(
+                        PATH=str(binary) + os.pathsep + os.environ["PATH"],
+                        NATIVE_REPLAY=selected,
+                        SWEEP_LANE="android-single",
+                        GITHUB_WORKSPACE=str(root),
+                        OBSERVATION=str(root / "observed.json"),
+                        XVFB_ARGUMENTS=str(root / "xvfb.txt"),
+                    )
+                    subprocess.run(["bash", "-c", script], cwd=root, env=env, check=True)
+                    failed = subprocess.run(["bash", "-c", script], cwd=root, env={**env, "EXECUTOR_EXIT": "17"})
+                    self.assertEqual(failed.returncode, 17)
+                    observed = json.loads((root / "observed.json").read_text())
+                    self.assertEqual(
+                        observed["argv"],
+                        [
+                            "control/android/tests/nightly_tooling_sweep.py",
+                            "execute",
+                            "--plan",
+                            "plan/plan.json",
+                            "--policy",
+                            "control/android/tests/nightly_tooling_policy.json",
+                            "--lane",
+                            "android-single",
+                            "--repo",
+                            str(root / "target"),
+                            "--output",
+                            str(root / "results"),
+                        ],
+                    )
+                    self.assertEqual(
+                        observed["env"],
+                        dict(
+                            zip(
+                                ("DISPLAY", "LIBGL_ALWAYS_SOFTWARE", "SDL_VIDEODRIVER", "SDL_AUDIODRIVER"),
+                                (":91", "1", "x11", "dummy") if selected == "true" else (None,) * 4,
+                            )
+                        ),
+                    )
+                    if selected == "true":
+                        self.assertEqual(
+                            (root / "xvfb.txt").read_text().splitlines()[:3],
+                            ["-a", "-s", "-screen 0 1280x720x24 -nolisten tcp"],
+                        )
+                    else:
+                        self.assertFalse((root / "xvfb.txt").exists())
 
     def test_first_play_evidence_is_public_only_and_keeps_receipt_root(self):
         workflow = (Path(__file__).parents[2] / '.github/workflows/android-nightly-tooling.yml').read_text()

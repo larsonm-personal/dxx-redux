@@ -19,7 +19,8 @@ import nightly_regression_catalog as corpus
 VALIDATION_IDS = {'master:test_run_all_tests_catalog', 'master:test_controller_overlay', 'shareware:test_death#d1',
                   'master:test_gradle_unit_tests', 'extractor:full', 'audio:strict-fingerprint', 'engine:ctest-d1',
                   'master:test_lan_launch_preparation_public_shareware', 'master:test_android_music_completion',
-                  'master:test_launcher_media_controls_generated', 'python:test_music_spectra.py'}
+                  'master:test_launcher_media_controls_generated', 'python:test_music_spectra.py',
+                  'shareware:test_auto_level_cheats#d2'}
 
 BASIC_USE_IDS = {'master:test_demo_import_public_basic_use', 'master:test_lan_launch_preparation_public_shareware'}
 
