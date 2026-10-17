@@ -126,6 +126,24 @@ class RetailBoundaryTests(unittest.TestCase):
             with patch.dict(os.environ, ENV, clear=True), patch('sys.argv', argv), patch('builtins.print'):
                 self.assertEqual(sweep.main(), 0)
 
+    def test_reusable_workflow_passes_only_named_retail_secret(self):
+        caller = (ROOT / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        callee = (ROOT / '.github/workflows/android-nightly-tooling.yml').read_text()
+        android_job = caller.split('\n  android:\n', 1)[1].split('\n  finish:\n', 1)[0]
+        # A selected environment alone does not expose its secrets to a reusable job
+        self.assertIn('    secrets:\n      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}\n', android_job)
+        named_secrets = android_job.split('    secrets:\n', 1)[1].split('\n\n', 1)[0]
+        self.assertEqual(named_secrets.splitlines(), [
+            '      RETAIL_ASSETS_READ_TOKEN: ${{ secrets.RETAIL_ASSETS_READ_TOKEN }}'])
+        declaration = callee.split('    secrets:\n', 1)[1].split('\n\n', 1)[0]
+        self.assertEqual(declaration.splitlines(), [
+            '      RETAIL_ASSETS_READ_TOKEN:',
+            '        required: false'])
+        # Public/JVM calls need no credential; the existing retail-only runtime gate does
+        self.assertNotIn('    environment:', android_job)
+        self.assertIn('        if: inputs.retail_assets\n', callee)
+        self.assertIn('[[ -n "$RETAIL_READ_TOKEN" ]]', callee)
+
     def test_workflow_secret_and_artifact_boundary_is_explicit(self):
         for name in ('nightly-tooling-sweep.yml', 'android-nightly-tooling.yml'):
             source = (ROOT / '.github/workflows' / name).read_text()
