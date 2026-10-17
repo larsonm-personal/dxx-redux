@@ -288,6 +288,7 @@ class SweepTests(unittest.TestCase):
         self.assertIn("xvfb xauth libgl1-mesa-dri", setup)
         self.assertIn("timeout-minutes: 10", setup)
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Native replay display setup runs in the Linux Android job')
     def test_native_replay_display_wraps_unchanged_executor_only_when_selected(self):
         workflow = (Path(__file__).parents[2] / ".github/workflows/android-nightly-tooling.yml").read_text()
         step = workflow.split("      - name: Execute reviewed test selection", 1)[1].split("      - name:", 1)[0]
