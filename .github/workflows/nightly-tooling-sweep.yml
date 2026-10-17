@@ -180,10 +180,22 @@ jobs:
           bash target/android/get_deps/helpers/get_bounded_python.sh
           command -v ffmpeg
           command -v ffprobe
-          if python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
-            bash target/android/get_deps/helpers/get_jdk.sh
-            echo "JAVA_HOME=$RUNNER_TEMP/dxx-nightly-deps/jdk-21" >> "$GITHUB_ENV"
+      - name: Prepare asset-free metadata CLI
+        id: metadata_cli_prerequisites
+        timeout-minutes: 15
+        env:
+          VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [[ "$VALIDATE_METADATA_CLI" != true ]] && ! python3 -c "import json,sys; p=json.load(open('plan/plan.json')); sys.exit(not any(e.get('fixture') == 'retail-corpus' for e in p['tests']))"; then
+            exit 0
           fi
+          bash target/android/get_deps/helpers/get_jdk.sh
+          export JAVA_HOME="$RUNNER_TEMP/dxx-nightly-deps/jdk-21"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          # The wrapper JAR and properties are generated, not tracked
+          bash target/android/get_deps/helpers/get_gradle_wrapper.sh
+          bash target/android/gradlew -p target/android -PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain
+          test -x target/android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli
       - name: Prepare locked formatter dependencies
         id: formatter_prerequisites
         timeout-minutes: 8
@@ -237,7 +249,7 @@ jobs:
       - name: Recover completed receipts after failure or interruption
         if: always()
         env:
-          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
+          SETUP_FAILED: ${{ (steps.prerequisites.outcome == 'failure' || steps.public_prerequisites.outcome == 'failure' || steps.metadata_cli_prerequisites.outcome == 'failure' || steps.formatter_prerequisites.outcome == 'failure' || steps.retail_stage.outcome == 'failure' || steps.retail_gate.outcome == 'failure' || steps.retail_checkout.outcome == 'failure') && steps.execute.outcome == 'skipped' }}
         run: |
           blocked=()
           if [[ "$SETUP_FAILED" == true ]]; then blocked=(--blocked-reason 'host lane provisioning failed; inspect setup logs'); fi

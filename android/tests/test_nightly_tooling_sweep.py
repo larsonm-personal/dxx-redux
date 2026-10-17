@@ -687,6 +687,25 @@ class SweepTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 sweep.run_command([sys.executable, '-c', 'import time; time.sleep(60)'], d, log, timeout=0.1)
 
+    def test_host_metadata_cli_bootstraps_before_private_inputs(self):
+        workflow = (Path(__file__).parents[2] / '.github/workflows/nightly-tooling-sweep.yml').read_text()
+        host = workflow[workflow.index('  host:'):workflow.index('  android:')]
+        setup = host.split('      - name: Prepare asset-free metadata CLI', 1)[1].split('      - name:', 1)[0]
+        self.assertIn("VALIDATE_METADATA_CLI: ${{ github.event_name == 'pull_request' }}", setup)
+        self.assertIn('"$VALIDATE_METADATA_CLI" != true', setup)
+        self.assertIn("e.get('fixture') == 'retail-corpus'", setup)
+        self.assertIn('timeout-minutes: 15', setup)
+        self.assertLess(setup.index('get_jdk.sh'), setup.index('export JAVA_HOME='))
+        self.assertLess(setup.index('export JAVA_HOME='), setup.index('get_gradle_wrapper.sh'))
+        self.assertLess(setup.index('get_gradle_wrapper.sh'), setup.index('bash target/android/gradlew'))
+        self.assertIn('-PhostJvmOnly=true :mission-metadata-cli:installDist --console=plain', setup)
+        self.assertIn('test -x target/android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli', setup)
+        self.assertLess(host.index('> target/dependency_base.txt'), host.index('Prepare asset-free metadata CLI'))
+        self.assertLess(host.index('Prepare asset-free metadata CLI'), host.index('Verify trusted retail checkout boundary'))
+        self.assertLess(host.index('Prepare asset-free metadata CLI'), host.index('Check out immutable private retail inputs'))
+        self.assertNotIn('secrets.', setup)
+        self.assertIn("steps.metadata_cli_prerequisites.outcome == 'failure'", host)
+
     def test_source_hooks_do_not_use_wildcard_or_random_target(self):
         root = Path(__file__).resolve().parents[2]
         source = (root / 'android/run_all_tests.ps1').read_text()
