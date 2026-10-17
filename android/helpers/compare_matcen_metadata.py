@@ -13,34 +13,57 @@ class MatcenMismatch(ValueError):
     pass
 
 
+def resolve_binding(capture, binding):
+    """Resolve compact deltas without promoting unbound observations to references."""
+    ordinal = binding.get("effective_ordinal")
+    disk = capture["disk_records"]
+    record = dict(disk[ordinal]) if type(ordinal) is int and 0 <= ordinal < len(disk) else {}
+    if binding.get("binding_status") in ("invalid_segment", "physical_out_of_bounds"):
+        record = {}
+    record.update(binding.get("record_overrides", {}))
+    station = {"index": record.get("station"), "segment": binding.get("segment"), "type": 4}
+    if binding.get("station_status") not in ("matching_station", "wrong_station_type", "different_station_segment"):
+        station = {}
+    station.update(binding.get("station_overrides", {}))
+    words = record.get("robot_flags", [])
+    types = {i * 32 + bit for i, word in enumerate(words) for bit in range(32) if word & (1 << bit)}
+    return {
+        **binding,
+        "effective_record": record,
+        "station": station,
+        "eligible_robots": sorted(
+            (robot for robot in capture["robot_models"] if robot["type"] in types), key=lambda robot: robot["type"]
+        ),
+    }
+
+
 def validate_capture(value):
-    if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 1:
+    if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 2:
         raise MatcenMismatch("Missing supported matcen capture")
     if value.get("capture_status") != "complete" or value.get("admission") != "loaded":
         raise MatcenMismatch("A rejected, missing or incomplete level is not a compatibility pass")
-    for name in ("generated_count", "disk_count", "declared_disk_count"):
-        if type(value.get(name)) is not int or value[name] < 0:
-            raise MatcenMismatch(f"Invalid {name}")
-    for name in ("authored_segments", "disk_records", "triggers", "runtime_bindings"):
+    if type(value.get("declared_disk_count")) is not int or value["declared_disk_count"] < 0:
+        raise MatcenMismatch("Invalid declared_disk_count")
+    for name in ("bindings", "disk_records", "triggers", "robot_models"):
         if not isinstance(value.get(name), list) or any(not isinstance(v, dict) for v in value[name]):
             raise MatcenMismatch(f"Invalid {name}")
-    if (
-        len(value["authored_segments"]) != value["generated_count"]
-        or len(value["runtime_bindings"]) != value["generated_count"]
-        or len(value["disk_records"]) != value["disk_count"]
-        or value["disk_count"] != value["declared_disk_count"]
-    ):
-        raise MatcenMismatch("Missing captured segments, bindings or disk records")
-    for name in ("authored_segments", "runtime_bindings"):
-        rows = value[name]
-        pairs = [(row.get("segment"), row.get("generated_ordinal")) for row in rows]
-        if any(type(a) is not int or type(b) is not int for a, b in pairs) or len(set(pairs)) != len(pairs):
-            raise MatcenMismatch("Missing or duplicate segment/ordinal identity")
-        if len({a for a, b in pairs}) != len(pairs) or len({b for a, b in pairs}) != len(pairs):
-            raise MatcenMismatch("Segment and ordinal identities must each be unique")
-    for row in value["runtime_bindings"]:
+    if len(value["disk_records"]) != value["declared_disk_count"]:
+        raise MatcenMismatch("Missing captured disk records")
+    pairs = [(row.get("segment"), row.get("generated_ordinal")) for row in value["bindings"]]
+    if any(type(a) is not int or type(b) is not int for a, b in pairs):
+        raise MatcenMismatch("Missing segment/ordinal identity")
+    if len({a for a, b in pairs}) != len(pairs) or len({b for a, b in pairs}) != len(pairs):
+        raise MatcenMismatch("Segment and ordinal identities must each be unique")
+    models = [row.get("type") for row in value["robot_models"]]
+    if any(type(t) is not int or t < 0 for t in models) or len(set(models)) != len(models):
+        raise MatcenMismatch("Missing or duplicate robot model identity")
+    for row in value["bindings"]:
+        for name in ("record_overrides", "station_overrides"):
+            if not isinstance(row.get(name, {}), dict):
+                raise MatcenMismatch(f"Invalid {name}")
+        resolved = resolve_binding(value, row)
         if row.get("station_status") == "matching_station":
-            station, record = row.get("station", {}), row.get("effective_record", {})
+            station, record = resolved["station"], resolved["effective_record"]
             if (
                 record.get("station") != station.get("index")
                 or station.get("segment") != row.get("segment")
@@ -53,20 +76,15 @@ def validate_capture(value):
 
 def compare_capture(reference, actual):
     reference, actual = validate_capture(reference), validate_capture(actual)
-    for name in (
-        "generated_count",
-        "disk_count",
-        "declared_disk_count",
-        "authored_segments",
-        "disk_records",
-        "triggers",
-    ):
+    for name in ("declared_disk_count", "disk_records", "triggers"):
         if reference[name] != actual[name]:
             raise MatcenMismatch(f"Authored {name} changed (ordered links and duplicates are significant)")
+    if len(reference["bindings"]) != len(actual["bindings"]):
+        raise MatcenMismatch("Changed generated binding count")
     unresolved = []
-    for before, after in zip(reference["runtime_bindings"], actual["runtime_bindings"]):
-        for key in ("segment", "generated_ordinal"):
-            if key not in before or before[key] != after.get(key):
+    for before, after in zip(reference["bindings"], actual["bindings"]):
+        for key in ("segment", "generated_ordinal", "serialized_matcen", "serialized_station"):
+            if before.get(key) != after.get(key):
                 raise MatcenMismatch(f"Changed binding {key}")
         if before.get("binding_status") != "disk_bound" or before.get("station_status") != "matching_station":
             unresolved.append(
@@ -79,13 +97,14 @@ def compare_capture(reference, actual):
             continue
         if after.get("binding_status") != "disk_bound" or after.get("station_status") != "matching_station":
             raise MatcenMismatch("Defined historical disk binding was lost")
+        before, after = resolve_binding(reference, before), resolve_binding(actual, after)
         for key in ("effective_ordinal", "segment_station", "station", "eligible_robots"):
             if key not in before or before[key] != after.get(key):
                 raise MatcenMismatch(f"Defined historical {key} changed")
         for key in ("robot_flags", "hit_points", "interval"):
-            if key not in before.get("effective_record", {}) or before["effective_record"][key] != after.get(
-                "effective_record", {}
-            ).get(key):
+            if key not in before["effective_record"] or before["effective_record"][key] != after[
+                "effective_record"
+            ].get(key):
                 raise MatcenMismatch(f"Defined historical robot record {key} changed")
     return {"defined_bindings_match": True, "unbound_requires_review": unresolved}
 

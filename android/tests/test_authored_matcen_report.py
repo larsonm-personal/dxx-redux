@@ -120,12 +120,16 @@ def evidence(dispatch=True):
     return metadata, report
 
 
+def compact(metadata):
+    return runner.compact_capture(metadata, "d1")
+
+
 class AuthoredMatcenReportTests(unittest.TestCase):
     def setUp(self):
         self.metadata, self.report = evidence()
 
     def validate(self):
-        return runner.validate_report(self.report, self.metadata, "d1", "synthetic", 1)
+        return runner.validate_report(self.report, compact(self.metadata), "d1", "synthetic", 1)
 
     def test_positive_and_compact_historical_comparison(self):
         expected = runner.normalize_trace(self.report)
@@ -138,11 +142,68 @@ class AuthoredMatcenReportTests(unittest.TestCase):
                 copy.deepcopy(self.report),
                 evidence(False)[1],
                 expected,
-                self.metadata,
+                compact(self.metadata),
                 "d1",
                 "synthetic",
                 1,
             ),
+        )
+
+    def test_compact_projection_retains_sparse_trigger_ids_and_duplicate_links(self):
+        trigger = self.metadata["triggers"][0]
+        trigger["index"] = 1
+        trigger["links"] *= 2
+        trigger["declared_link_count"] = 2
+        self.metadata["triggers"].insert(0, dict(trigger, index=0, flags=0))
+        projected = compact(self.metadata)
+        self.assertEqual([1], [t["index"] for t in projected["triggers"]])
+        self.assertEqual(trigger["links"], projected["triggers"][0]["links"])
+        runner.preflight(projected, "d1")
+        runner.preflight(self.metadata, "d1")
+        self.metadata["triggers"].pop(0)
+        with self.assertRaisesRegex(runner.EvidenceError, "trigger identity"):
+            runner.preflight(self.metadata, "d1")
+
+    def test_invalid_bindings_survive_projection_and_require_review(self):
+        for status in ("invalid_segment", "physical_out_of_bounds", "invalid_station"):
+            with self.subTest(status=status):
+                raw = copy.deepcopy(self.metadata)
+                binding = raw["runtime_bindings"][0]
+                binding.pop("station")
+                if status == "invalid_station":
+                    binding["station_status"] = status
+                else:
+                    binding["binding_status"] = status
+                    for key in ("effective_record", "eligible_robots", "station_status"):
+                        binding.pop(key)
+                    if status == "invalid_segment":
+                        binding.pop("effective_ordinal")
+                    else:
+                        binding["effective_ordinal"] = 20
+                projected = compact(raw)
+                resolved = runner.resolve_binding(projected, projected["bindings"][0])
+                self.assertEqual({}, resolved["station"])
+                self.assertEqual(1, len(runner.compare_capture(projected, projected)["unbound_requires_review"]))
+                with self.assertRaises((runner.EvidenceError, KeyError)):
+                    runner.preflight(projected, "d1")
+
+    def test_converted_d1_trigger_uses_source_flags(self):
+        self.assertTrue(runner.is_matcen_trigger({"type": 0, "flags": 0, "source_flags": 64}, "d2"))
+        self.assertFalse(runner.is_matcen_trigger({"type": 2, "flags": 0, "source_flags": 1}, "d2"))
+
+    def test_compact_projection_keeps_only_deltas_and_shared_models(self):
+        projected = compact(self.metadata)
+        binding = projected["bindings"][0]
+        self.assertNotIn("record_overrides", binding)
+        self.assertNotIn("station_overrides", binding)
+        self.assertNotIn("eligible_robots", binding)
+        self.assertEqual(self.metadata["runtime_bindings"][0]["eligible_robots"], projected["robot_models"])
+        self.metadata["runtime_bindings"][0]["effective_record"]["interval"] = 2
+        self.assertEqual({"interval": 2}, compact(self.metadata)["bindings"][0]["record_overrides"])
+        self.metadata.update(disk_records=[], disk_count=0, declared_disk_count=0)
+        self.assertEqual(
+            self.metadata["runtime_bindings"][0]["effective_record"],
+            compact(self.metadata)["bindings"][0]["record_overrides"],
         )
 
     def test_no_spawn_cannot_be_its_own_passing_baseline(self):
@@ -236,14 +297,14 @@ class AuthoredMatcenReportTests(unittest.TestCase):
         expected["cases"][0]["births"][0]["frame"] += 1
         with self.assertRaisesRegex(runner.EvidenceError, "historical"):
             runner.compare_reports(
-                self.report, self.report, evidence(False)[1], expected, self.metadata, "d1", "synthetic", 1
+                self.report, self.report, evidence(False)[1], expected, compact(self.metadata), "d1", "synthetic", 1
             )
 
     def test_no_dispatch_birth_rejected(self):
         control = evidence(False)[1]
         control["cases"][0]["births"] = copy.deepcopy(self.report["cases"][0]["births"])
         with self.assertRaisesRegex(runner.EvidenceError, "no-dispatch"):
-            runner.validate_report(control, self.metadata, "d1", "synthetic", 1, False)
+            runner.validate_report(control, compact(self.metadata), "d1", "synthetic", 1, False)
 
     def test_missing_metadata_never_starts_native(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(runner.subprocess, "run") as native:
@@ -264,7 +325,7 @@ class AuthoredMatcenReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.object(runner.subprocess, "run") as native:
             root = Path(directory)
             self.metadata["capture_status"] = "overflow"
-            (root / "metadata.json").write_text(json.dumps(self.metadata))
+            (root / "metadata.json").write_text(json.dumps(compact(self.metadata)))
             (root / "expected.json").write_text(json.dumps(self.report))
             (root / "inputs.json").write_text("{}")
             args = argparse.Namespace(
@@ -275,7 +336,7 @@ class AuthoredMatcenReportTests(unittest.TestCase):
                 level=1,
                 inputs=root / "inputs.json",
             )
-            with self.assertRaises(runner.EvidenceError):
+            with self.assertRaises((runner.EvidenceError, runner.MatcenMismatch)):
                 runner.run(args)
             native.assert_not_called()
 
@@ -288,7 +349,7 @@ class AuthoredMatcenReportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             metadata_path, expected_path = root / "metadata.json", root / "expected.json"
-            metadata_path.write_text(json.dumps(self.metadata))
+            metadata_path.write_text(json.dumps(compact(self.metadata)))
             expected_path.write_text(json.dumps(runner.normalize_trace(self.report)))
             original = (metadata_path.read_bytes(), expected_path.read_bytes())
             (root / "base").mkdir()
@@ -350,14 +411,14 @@ class AuthoredMatcenReportTests(unittest.TestCase):
     def test_redundant_runtime_backlink_normalization_allowed(self):
         reference = copy.deepcopy(self.metadata)
         reference["runtime_bindings"][0]["effective_record"]["segment"] = 9001
-        self.assertEqual("passed", runner.validate_report(self.report, reference, "d1", "synthetic", 1))
+        self.assertEqual("passed", runner.validate_report(self.report, compact(reference), "d1", "synthetic", 1))
 
     def test_defined_mask_change_rejected_against_frozen_reference(self):
         reference = copy.deepcopy(self.metadata)
         reference["runtime_bindings"][0]["effective_record"]["robot_flags"] = [4]
         reference["runtime_bindings"][0]["eligible_robots"] = [{"type": 2, "model": 3, "status": "valid_model"}]
         with self.assertRaisesRegex(runner.EvidenceError, "frozen metadata"):
-            runner.validate_report(self.report, reference, "d1", "synthetic", 1)
+            runner.validate_report(self.report, compact(reference), "d1", "synthetic", 1)
 
     def test_incidental_ids_normalized_only_for_history(self):
         expected = runner.normalize_trace(self.report)
@@ -366,13 +427,13 @@ class AuthoredMatcenReportTests(unittest.TestCase):
         self.assertEqual(
             "passed",
             runner.compare_reports(
-                self.report, copy.deepcopy(self.report), control, expected, self.metadata, "d1", "synthetic", 1
+                self.report, copy.deepcopy(self.report), control, expected, compact(self.metadata), "d1", "synthetic", 1
             ),
         )
         repeat = copy.deepcopy(self.report)
         repeat["cases"][0]["births"][0]["signature"] = 100
         with self.assertRaisesRegex(runner.EvidenceError, "non-deterministic"):
-            runner.compare_reports(self.report, repeat, control, expected, self.metadata, "d1", "synthetic", 1)
+            runner.compare_reports(self.report, repeat, control, expected, compact(self.metadata), "d1", "synthetic", 1)
 
     def test_duplicate_signatures_rejected(self):
         self.report["cases"][0]["births"][0]["signature"] = 10
@@ -384,7 +445,7 @@ class AuthoredMatcenReportTests(unittest.TestCase):
         binding = self.metadata["runtime_bindings"][0]
         binding["station"]["index"] = binding["segment_station"] = binding["effective_record"]["station"] = 1
         with self.assertRaisesRegex(runner.EvidenceError, "frozen metadata"):
-            runner.validate_report(self.report, reference, "d1", "synthetic", 1)
+            runner.validate_report(self.report, compact(reference), "d1", "synthetic", 1)
 
     def test_wrong_edition_rejected(self):
         self.report["game"] = "d2"
