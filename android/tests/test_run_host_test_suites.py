@@ -45,6 +45,43 @@ class HostAdapterTests(unittest.TestCase):
                 self.assertFalse(receipt["attempted_tests"])
                 launch.assert_not_called()
 
+    def test_corpus_setup_uses_host_jvm_and_reports_static_failure_stage(self):
+        from nightly_regression_catalog import CORPUS_COMMIT
+        for profile in ("metadata", "route"):
+            for failure_at, kind in ((0, "metadata-cli-setup"),
+                                     (1, "corpus-worker-configure"),
+                                     (2, "corpus-worker-build"),
+                                     (3, "corpus-worker-configure"),
+                                     (4, "corpus-worker-build")):
+                with (self.subTest(profile=profile, failure_at=failure_at),
+                      tempfile.TemporaryDirectory() as directory):
+                    root = Path(directory).resolve()
+                    baseline = root / "game_data/mission_files/fixture.json"
+                    baseline.parent.mkdir(parents=True)
+                    baseline.write_text(json.dumps([{"mission_path": "fixture.mn2"}]))
+                    baseline.with_suffix(".zip").touch()
+                    baseline.with_suffix(".simulation.json").write_text("[]")
+                    suite = {"id": "corpus:fixture", "kind": "retail-corpus", "profile": profile,
+                             "baseline": "fixture.json", "coverage_scope": "synthetic"}
+                    with (patch.dict(adapter.os.environ, {"RETAIL_CHECKOUT_COMMIT": CORPUS_COMMIT}),
+                          patch.object(adapter, "verify_retail_stage"),
+                          patch.object(adapter.subprocess, "Popen") as launch):
+                        launch.return_value.wait.side_effect = [0] * failure_at + [9]
+                        code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+                    receipt = json.loads((root / "receipt.json").read_text())
+                    self.assertEqual(launch.call_args_list[0].args[0], [
+                        "bash", str(root / "android/gradlew"), "-p", str(root / "android"),
+                        "-PhostJvmOnly=true", ":mission-metadata-cli:installDist", "--console=plain"])
+                    self.assertEqual(launch.call_count, failure_at + 1)
+                    self.assertEqual(code, 2)
+                    self.assertEqual(receipt["phase"], "setup")
+                    self.assertEqual(receipt["blocker_kind"], kind)
+                    self.assertEqual(receipt["exit_code"], 9)
+                    self.assertTrue(receipt["retryable"])
+                    self.assertFalse(receipt["attempted_tests"])
+                    self.assertFalse(receipt["coverage_complete"])
+                    self.assertEqual(receipt["cases"], [])
+
     def test_registry_ids_are_unique_and_no_arbitrary_commands(self):
         suites = adapter.load_suites()
         self.assertGreater(len(suites), 70)

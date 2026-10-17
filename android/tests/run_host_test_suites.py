@@ -630,18 +630,25 @@ def run_suite(suite, repo, build_root, output, timeout):
                     require_unchanged_oracles(oracle_bytes)
             verify_retail_stage(repo)
             cli = repo / "android/mission-metadata-cli/build/install/mission-metadata-cli/bin/mission-metadata-cli"
-            if not cli.is_file() and run(["bash", str(repo / "android/gradlew"), "-p", str(repo / "android"),
-                                          ":mission-metadata-cli:installDist", "--console=plain"], setup=True):
-                return finish("BLOCKED", "Metadata projection CLI setup failed", retryable=True)
+            if not cli.is_file():
+                code = run(["bash", str(repo / "android/gradlew"), "-p", str(repo / "android"),
+                            "-PhostJvmOnly=true", ":mission-metadata-cli:installDist", "--console=plain"], setup=True)
+                if code:
+                    return finish("BLOCKED", "Metadata projection CLI setup failed", code,
+                                  retryable=True, blocker_kind="metadata-cli-setup")
             for game in ("d1", "d2"):
                 build = build_root / ("engine-" + game)
-                if run(native_configure_arguments(repo, build, game), setup=True):
-                    return finish("BLOCKED", "Corpus worker configuration failed", retryable=True)
+                code = run(native_configure_arguments(repo, build, game), setup=True)
+                if code:
+                    return finish("BLOCKED", "Corpus worker configuration failed", code,
+                                  retryable=True, blocker_kind="corpus-worker-configure")
                 targets = ["dxx-redux-" + game + "-metadata-worker"]
                 if game == "d2":
                     targets.append("dxx-redux-d2-headless-route")
-                if run(["cmake", "--build", str(build), "--parallel", "2", "--target", *targets], setup=True):
-                    return finish("BLOCKED", "Corpus worker build failed", retryable=True)
+                code = run(["cmake", "--build", str(build), "--parallel", "2", "--target", *targets], setup=True)
+                if code:
+                    return finish("BLOCKED", "Corpus worker build failed", code,
+                                  retryable=True, blocker_kind="corpus-worker-build")
             def binary(game, suffix):
                 return str(build_root / ("engine-" + game) / "main" / ("dxx-redux-" + game + suffix))
             def document(path):

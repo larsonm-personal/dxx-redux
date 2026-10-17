@@ -62,7 +62,9 @@ def public_receipt(receipt):
                  'coverage_complete': row.get('coverage_complete') is True,
                  'attempted_tests': row.get('attempted_tests') is True,
                  'retryable': row.get('retryable') is not False,
-                 'blocker_kind': row.get('blocker_kind') if row.get('blocker_kind') in ('infrastructure', 'target-capability', 'test-timeout') else '',
+                 'blocker_kind': row.get('blocker_kind') if row.get('blocker_kind') in (
+                     'infrastructure', 'target-capability', 'test-timeout',
+                     'metadata-cli-setup', 'corpus-worker-configure', 'corpus-worker-build') else '',
                  'cases': [{'status': case['status']} for case in row.get('cases', []) if case.get('status') in ('PASS', 'FAIL', 'SKIP', 'BLOCKED')]}
         clean['comparison_only'] = row.get('comparison_only') is True
         clean['runtime_outcome'] = row.get('runtime_outcome') if row.get('runtime_outcome') in ('ok', 'partial', 'failed', 'timeout', 'unsupported', 'route_mismatch') else ''

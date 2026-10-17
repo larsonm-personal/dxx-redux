@@ -114,6 +114,24 @@ class RetailBoundaryTests(unittest.TestCase):
             self.assertFalse(result['results'][0]['attempted_tests'])
             self.assertEqual(sweep.reconcile(plan, self.policy, state, [result])['records'], {})
 
+    def test_corpus_setup_stages_survive_projection_without_raw_diagnostics(self):
+        plan, state = self.plan(self.identity)
+        for kind in ('metadata-cli-setup', 'corpus-worker-configure', 'corpus-worker-build'):
+            with self.subTest(kind=kind):
+                receipt = {key: plan[key] for key in ('schema', 'target_sha', 'catalog_hash', 'batch_id', 'retail_assets')}
+                receipt.update(lane='android-single', results=[{
+                    'id': 'master:retail', 'status': 'BLOCKED', 'phase': 'setup',
+                    'reason': 'PRIVATE_COMPILER_OUTPUT', 'blocker_kind': kind,
+                    'exit_code': 9, 'retryable': True, 'attempted_tests': False}])
+                clean = retail.public_receipt(receipt)
+                self.assertEqual(clean['results'][0]['blocker_kind'], kind)
+                self.assertEqual(clean['results'][0]['exit_code'], 9)
+                self.assertNotIn('PRIVATE_COMPILER_OUTPUT', json.dumps(clean))
+                with patch.dict(os.environ, {'GITHUB_RUN_ID': '123'}):
+                    ledger = sweep.reconcile(plan, self.policy, state, [receipt])
+                self.assertEqual(ledger['records'], {})
+                self.assertIn('master:retail', ledger['retryable'])
+
     def test_checkout_cli_rejects_untrusted_or_changed_configuration(self):
         plan, _ = self.plan(self.identity)
         with tempfile.TemporaryDirectory() as directory:
