@@ -163,6 +163,8 @@ void paging_touch_robot( int robot_index )
 {
 	int i;
 	d1_in_d2_require_robot(robot_index);
+	if (!robot_info_is_usable(robot_index))
+		return;
 
 	// Page in robot_index
 	paging_touch_model(Robot_info[robot_index].model_num);

@@ -368,6 +368,11 @@ object * create_morph_robot( segment *segp, vms_vector *object_pos, int object_i
 	object	*obj;
 	int		default_behavior;
 	d1_in_d2_require_robot(object_id);
+	if (!robot_info_is_usable(object_id)) {
+		con_printf(CON_URGENT, "Ignoring robotmaker request for unusable robot definition %d\n",
+		           object_id);
+		return NULL;
+	}
 
 	Players[Player_num].num_robots_level++;
 	Players[Player_num].num_robots_total++;

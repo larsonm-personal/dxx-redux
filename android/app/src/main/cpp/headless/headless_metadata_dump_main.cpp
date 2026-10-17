@@ -323,12 +323,12 @@ static int load_base_mission(const char *requested_mission, char *error, size_t 
 		return 0;
 	}
 #ifdef DXX_BUILD_DESCENT_II
- if (d1_in_d2_use_d1_gameplay()) {
-  char d1_mission[] = D1_MISSION_FILENAME;
-  if (load_mission_by_name(d1_mission)) return 1;
-  snprintf(error, error_size, "%s", "could not load built-in D1 mission");
-  return 0;
- }
+	if (d1_in_d2_use_d1_gameplay()) {
+		char d1_mission[] = D1_MISSION_FILENAME;
+		if (load_mission_by_name(d1_mission)) return 1;
+		snprintf(error, error_size, "%s", "could not load built-in D1 mission");
+		return 0;
+	}
 	char d2_mission[] = "d2";
 	char d2_demo_mission[] = "d2demo";
 
@@ -993,12 +993,10 @@ static nlohmann::ordered_json serialize_metadata_notes(const level_metadata_stat
 static nlohmann::ordered_json serialize_level_data_warnings()
 {
 	nlohmann::ordered_json warnings = nlohmann::ordered_json::array();
-#ifdef DXX_BUILD_DESCENT_II
 	char warning[128];
 	for (int index = 0; index < gamesave_level_data_warning_count(); ++index)
 		if (gamesave_level_data_warning_text(index, warning, sizeof(warning)))
 			warnings.push_back(warning);
-#endif
 	return warnings;
 }
 

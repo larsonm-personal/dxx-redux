@@ -65,6 +65,22 @@ static int num_missions = -1;
 Mission *Current_mission = NULL; // currently loaded mission
 /* Keep the exact successfully mounted custom archive for teardown */
 static char Current_mission_hog[PATH_MAX];
+static unsigned Mission_ignored_extra_secret_origins;
+
+int mission_compatibility_warning_count(void)
+{
+	return Mission_ignored_extra_secret_origins != 0;
+}
+
+int mission_compatibility_warning_text(int warning_index, char *buffer, unsigned buffer_size)
+{
+	if (!buffer || !buffer_size || warning_index || !Mission_ignored_extra_secret_origins)
+		return 0;
+	snprintf(buffer, buffer_size, "Used first secret origin; ignored %u extra origin%s",
+	         Mission_ignored_extra_secret_origins,
+	         Mission_ignored_extra_secret_origins == 1 ? "" : "s");
+	return 1;
+}
 
 // Allocate the Level_names, Secret_level_names and Secret_level_table arrays
 static int allocate_levels(void)
@@ -584,6 +600,7 @@ int load_mission(mle *mission)
 	Current_mission->n_secret_levels = 0;
 
 	//init vars
+	Mission_ignored_extra_secret_origins = 0;
 	Last_level = 0;
 	Last_secret_level = 0;
 	memset(&Briefing_text_filename, '\0', sizeof(Briefing_text_filename));
@@ -707,12 +724,15 @@ int load_mission(mle *mission)
 				}
 				for (i=0;i<n_secret_levels;i++) {
 					int origin;
+					unsigned extra_origins;
 					if (!PHYSFSX_fgets(buf,sizeof(buf),mfile) ||
-					    !mission_descriptor_parse_secret(buf, Last_level, Secret_level_names[i],
-					                                     sizeof(Secret_level_names[i]), &origin)) {
+					    !mission_descriptor_parse_secret_ex(buf, Last_level, Secret_level_names[i],
+					                                        sizeof(Secret_level_names[i]), &origin,
+					                                        &extra_origins)) {
 						parse_error = 1;
 						break;
 					}
+					Mission_ignored_extra_secret_origins += extra_origins;
 					Secret_level_table[i] = (ubyte)origin;
 					Last_secret_level--;
 				}

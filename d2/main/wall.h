@@ -26,7 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file.h"
 
-#define MAX_WALLS               254 // Maximum number of walls
+#define MAX_WALLS               255 // Maximum number of walls addressable before the 255 no-wall sentinel
 #define MAX_WALL_ANIMS          60  // Maximum different types of doors
 #define MAX_DOORS               90  // Maximum number of open doors
 

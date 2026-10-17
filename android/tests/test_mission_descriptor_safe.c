@@ -19,6 +19,7 @@ int main(void)
 	char present[] = "briefing =\tbrief.tex\r\n";
 	char output[13];
 	int value;
+	unsigned extra_origins;
 
 	expect(!mission_descriptor_value(NULL), "null line has no value");
 	expect(!mission_descriptor_value(missing), "missing equals has no value");
@@ -57,6 +58,10 @@ int main(void)
 	expect(mission_descriptor_parse_secret("secret.rdl, 2, 3 ; comment", 3, output, sizeof(output), &value) &&
 	           !strcmp(output, "secret.rdl") && value == 2,
 	       "multiple valid secret origins preserve the first origin");
+	expect(mission_descriptor_parse_secret_ex("secret.rdl, 2, 3 ; comment", 3, output, sizeof(output),
+	                                          &value, &extra_origins) &&
+	           value == 2 && extra_origins == 1,
+	       "ignored secret origins are reported to the caller");
 	expect(!mission_descriptor_parse_secret(NULL, 3, output, sizeof(output), &value),
 	       "truncated secret list is rejected");
 	expect(!mission_descriptor_parse_secret("secret.rdl", 3, output, sizeof(output), &value),

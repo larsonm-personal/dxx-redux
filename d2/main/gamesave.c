@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "newdemo.h"
 #include "gameseq.h"
+#include "mission.h"
 #include "automap.h"
 #include "polyobj.h"
 #include "text.h"
@@ -76,6 +77,13 @@ static PHYSFSX_read_status Level_game_read_status;
 typedef struct level_data_warning_state {
 	unsigned ignored_delta_light_sources;
 	unsigned skipped_delta_light_targets;
+	unsigned bounded_delta_light_ranges;
+	unsigned ignored_missing_delta_light_targets;
+	unsigned normalized_delta_light_counts;
+	unsigned inert_robotmaker_segments;
+	unsigned ignored_inert_robot_objects;
+	unsigned normalized_trigger_link_counts;
+	unsigned ignored_invalid_trigger_links;
 } level_data_warning_state;
 
 static level_data_warning_state Level_data_warnings;
@@ -198,11 +206,15 @@ char Save_pof_names[MAX_POLYGON_MODELS][FILENAME_LEN];
 void check_and_fix_matrix(vms_matrix *m);
 
 // Refresh robot properties without repeating level-load counters or player initialization
-void verify_robot_object(object *obj)
+int verify_robot_object(object *obj)
 {
+	if (!obj || N_robot_types <= 0)
+		return 0;
 	// Make sure valid id...
 	if ( obj->id >= N_robot_types )
 		obj->id = obj->id % N_robot_types;
+	if (!robot_info_is_usable(obj->id))
+		return 0;
 
 	// Make sure model number & size are correct...
 	if ( obj->render_type == RT_POLYOBJ ) {
@@ -242,6 +254,7 @@ void verify_robot_object(object *obj)
 		obj->mtype.phys_info.mass = Robot_info[obj->id].mass;
 		obj->mtype.phys_info.drag = Robot_info[obj->id].drag;
 	}
+	return 1;
 }
 
 int verify_object( object * obj )	{
@@ -770,11 +783,24 @@ int gamesave_validate_delta_lights(int delta_light_count)
 
 	Level_data_warnings.ignored_delta_light_sources = 0;
 	Level_data_warnings.skipped_delta_light_targets = 0;
+	Level_data_warnings.bounded_delta_light_ranges = 0;
+	Level_data_warnings.ignored_missing_delta_light_targets = 0;
 	for (i = 0; i < Num_static_lights; ++i) {
-		if (!level_index_range_is_valid(Dl_indices[i].index, Dl_indices[i].count, delta_light_count)) {
-			Warning("Invalid level light range light=%d index=%d count=%d total=%d",
-			        i, Dl_indices[i].index, Dl_indices[i].count, delta_light_count);
-			return 0;
+		if (Dl_indices[i].count > 0) {
+			if (Dl_indices[i].index < 0 || Dl_indices[i].index >= delta_light_count) {
+				++Level_data_warnings.bounded_delta_light_ranges;
+				Level_data_warnings.ignored_missing_delta_light_targets += Dl_indices[i].count;
+				Warning("Ignoring unavailable level light range light=%d index=%d count=%d total=%d",
+				        i, Dl_indices[i].index, Dl_indices[i].count, delta_light_count);
+				Dl_indices[i].count = 0;
+			} else if (Dl_indices[i].count > delta_light_count - Dl_indices[i].index) {
+				const int available = delta_light_count - Dl_indices[i].index;
+				++Level_data_warnings.bounded_delta_light_ranges;
+				Level_data_warnings.ignored_missing_delta_light_targets += Dl_indices[i].count - available;
+				Warning("Bounding level light range light=%d index=%d count=%d->%d total=%d",
+				        i, Dl_indices[i].index, Dl_indices[i].count, available, delta_light_count);
+				Dl_indices[i].count = available;
+			}
 		}
 		if (!level_index_is_valid(Dl_indices[i].segnum, Num_segments) ||
 		    !level_index_is_valid(Dl_indices[i].sidenum, MAX_SIDES_PER_SEGMENT)) {
@@ -796,13 +822,32 @@ int gamesave_validate_delta_lights(int delta_light_count)
 		con_printf(CON_URGENT, "Skipping %u invalid dynamic-light target reference%s\n",
 		           Level_data_warnings.skipped_delta_light_targets,
 		           Level_data_warnings.skipped_delta_light_targets == 1 ? "" : "s");
+	if (Level_data_warnings.bounded_delta_light_ranges)
+		con_printf(CON_URGENT, "Bounded %u dynamic-light range%s and ignored %u missing target record%s\n",
+		           Level_data_warnings.bounded_delta_light_ranges,
+		           Level_data_warnings.bounded_delta_light_ranges == 1 ? "" : "s",
+		           Level_data_warnings.ignored_missing_delta_light_targets,
+		           Level_data_warnings.ignored_missing_delta_light_targets == 1 ? "" : "s");
 	return 1;
+}
+
+void gamesave_note_ignored_inert_robot_object(void)
+{
+	++Level_data_warnings.ignored_inert_robot_objects;
 }
 
 int gamesave_level_data_warning_count(void)
 {
 	return (Level_data_warnings.ignored_delta_light_sources != 0) +
-	       (Level_data_warnings.skipped_delta_light_targets != 0);
+	       (Level_data_warnings.skipped_delta_light_targets != 0) +
+	       (Level_data_warnings.bounded_delta_light_ranges != 0) +
+	       (Level_data_warnings.normalized_delta_light_counts != 0) +
+	       (Level_data_warnings.inert_robotmaker_segments != 0) +
+	       (Level_data_warnings.ignored_inert_robot_objects != 0) +
+	       (Level_data_warnings.normalized_trigger_link_counts != 0) +
+	       (Level_data_warnings.ignored_invalid_trigger_links != 0) +
+	       mission_compatibility_warning_count() +
+	       bm_compatibility_warning_count();
 }
 
 int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned buffer_size)
@@ -824,6 +869,69 @@ int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned b
 		         Level_data_warnings.skipped_delta_light_targets == 1 ? "" : "s");
 		return 1;
 	}
+	if (Level_data_warnings.skipped_delta_light_targets)
+		--warning_index;
+	if (Level_data_warnings.bounded_delta_light_ranges) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Bounded %u dynamic-light range%s; ignored %u missing target%s",
+			         Level_data_warnings.bounded_delta_light_ranges,
+			         Level_data_warnings.bounded_delta_light_ranges == 1 ? "" : "s",
+			         Level_data_warnings.ignored_missing_delta_light_targets,
+			         Level_data_warnings.ignored_missing_delta_light_targets == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.normalized_delta_light_counts) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Normalized %u legacy signed dynamic-light count%s to empty",
+			         Level_data_warnings.normalized_delta_light_counts,
+			         Level_data_warnings.normalized_delta_light_counts == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.inert_robotmaker_segments) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Left %u unbound robotmaker segment%s inert",
+			         Level_data_warnings.inert_robotmaker_segments,
+			         Level_data_warnings.inert_robotmaker_segments == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.ignored_inert_robot_objects) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Ignored %u robot object%s with no usable definition",
+			         Level_data_warnings.ignored_inert_robot_objects,
+			         Level_data_warnings.ignored_inert_robot_objects == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.normalized_trigger_link_counts) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Bounded %u legacy trigger link count%s",
+			         Level_data_warnings.normalized_trigger_link_counts,
+			         Level_data_warnings.normalized_trigger_link_counts == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.ignored_invalid_trigger_links) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Ignored %u invalid trigger target%s",
+			         Level_data_warnings.ignored_invalid_trigger_links,
+			         Level_data_warnings.ignored_invalid_trigger_links == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (mission_compatibility_warning_text(warning_index, buffer, buffer_size))
+		return 1;
+	warning_index -= mission_compatibility_warning_count();
+	if (bm_compatibility_warning_text(warning_index, buffer, buffer_size))
+		return 1;
 	buffer[0] = '\0';
 	return 0;
 }
@@ -853,8 +961,10 @@ static int validate_loaded_level_graph(int game_version, int object_count, int d
 	}
 	for (i = 0; i < Num_segments; ++i) {
 		if (Segment2s[i].special == SEGMENT_IS_ROBOTMAKER &&
-		    matcen_get_station_num(Segment2s[i].matcen_num) < 0)
+		    matcen_get_station_num(Segment2s[i].matcen_num) < 0) {
+			++Level_data_warnings.inert_robotmaker_segments;
 			con_printf(CON_URGENT, "Level robotmaker segment %d has no legacy matcen record and will remain inert\n", i);
+		}
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
 			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
 				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",
@@ -886,6 +996,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	PHYSFSX_readStatusReset(&Level_game_read_status);
 	memset(&Level_data_warnings, 0, sizeof(Level_data_warnings));
+	bm_reset_level_compatibility_warnings();
 
 	//===================== READ FILE INFO ========================
 
@@ -1104,13 +1215,18 @@ int load_game_data(PHYSFS_file *LoadFile)
 		else
 			trigger_read(&Triggers[i], load_rewind_file);
 	}
-	for (i = 0; i < Num_triggers; ++i)
-		if (!level_links_are_valid(Triggers[i].num_links, MAX_WALLS_PER_LINK,
-		                           Triggers[i].seg, Triggers[i].side,
-		                           Num_segments, MAX_SIDES_PER_SEGMENT)) {
-			Warning("Invalid level trigger links trigger=%d count=%d", i, Triggers[i].num_links);
-			return -1;
-		}
+	for (i = 0; i < Num_triggers; ++i) {
+		const int serialized_count = Triggers[i].num_links;
+		const level_link_repair_report repair = level_repair_legacy_links(
+			serialized_count, MAX_WALLS_PER_LINK, Triggers[i].seg, Triggers[i].side,
+			Num_segments, MAX_SIDES_PER_SEGMENT);
+		Triggers[i].num_links = repair.count;
+		Level_data_warnings.normalized_trigger_link_counts += repair.normalized_count;
+		Level_data_warnings.ignored_invalid_trigger_links += repair.ignored_invalid_links;
+		if (repair.normalized_count || repair.ignored_invalid_links)
+			Warning("Repaired level trigger links trigger=%d count=%d->%d invalid=%u",
+			        i, serialized_count, repair.count, repair.ignored_invalid_links);
+	}
 	if (PHYSFSX_readStatusFailed(&Level_game_read_status))
 		return -1;
 
@@ -1162,6 +1278,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 			Int3();	//shouldn't be here!!!
 		} else {
 			dl_index_read(&Dl_indices[i], LoadFile);
+			if (Dl_indices[i].count < 0)
+				++Level_data_warnings.normalized_delta_light_counts;
 			Dl_indices[i].count = (sbyte) level_normalize_legacy_signed_byte_count(Dl_indices[i].count);
 		}
 	}
