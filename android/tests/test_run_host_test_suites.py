@@ -82,6 +82,29 @@ class HostAdapterTests(unittest.TestCase):
                     self.assertFalse(receipt["coverage_complete"])
                     self.assertEqual(receipt["cases"], [])
 
+    def test_spectral_suite_blocks_missing_matplotlib_before_tests(self):
+        suite = adapter.load_suites()["python:test_music_spectra.py"]
+        self.assertEqual(set(suite["python_modules"]), {"numpy", "scipy", "imageio_ffmpeg", "matplotlib"})
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            with (
+                patch.object(
+                    adapter.importlib.util,
+                    "find_spec",
+                    side_effect=lambda name: None if name == "matplotlib" else object(),
+                ),
+                patch.object(adapter.subprocess, "Popen") as launch,
+            ):
+                code = adapter.run_suite(suite, root, root / "build", root / "receipt.json", 30)
+            receipt = json.loads((root / "receipt.json").read_text())
+            self.assertEqual(code, 2)
+            self.assertEqual(receipt["status"], "BLOCKED")
+            self.assertEqual(receipt["reason"], "Missing prerequisites: matplotlib")
+            self.assertEqual(receipt["phase"], "preflight")
+            self.assertFalse(receipt["attempted_tests"])
+            self.assertFalse(receipt["coverage_complete"])
+            launch.assert_not_called()
+
     def test_registry_ids_are_unique_and_no_arbitrary_commands(self):
         suites = adapter.load_suites()
         self.assertGreater(len(suites), 70)

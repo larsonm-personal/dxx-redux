@@ -419,7 +419,8 @@
       "python_modules": [
         "numpy",
         "scipy",
-        "imageio_ffmpeg"
+        "imageio_ffmpeg",
+        "matplotlib"
       ],
       "executables": [],
       "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",

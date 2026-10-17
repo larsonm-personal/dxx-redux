@@ -34,7 +34,7 @@ class SweepTests(unittest.TestCase):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
         entries = sweep.policy_entries(policy)
         selected = [entries[ident] for ident in sweep.VALIDATION_IDS]
-        self.assertEqual(len(selected), 10)
+        self.assertEqual(len(selected), 11)
         self.assertEqual({entry['lane'] for entry in selected}, set(sweep.LANES))
         for lane in sweep.LANES:
             self.assertLessEqual(sum(entry['estimated_seconds'] for entry in selected if entry['lane'] == lane), 2700)
@@ -45,6 +45,14 @@ class SweepTests(unittest.TestCase):
         self.assertTrue(all(e.get('fixture') not in ('retail-base', 'retail-missions') for e in selected))
         self.assertIn('master:test_android_music_completion', sweep.VALIDATION_IDS)
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
+        self.assertIn('python:test_music_spectra.py', sweep.VALIDATION_IDS)
+
+    def test_host_installs_pinned_spectral_plot_dependency(self):
+        root = Path(__file__).resolve().parents[2]
+        requirements = (root / "android/tests/music_spectral/requirements.txt").read_text().splitlines()
+        matplotlib_pin = next(line for line in requirements if line.startswith("matplotlib=="))
+        workflow = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
+        self.assertIn(" -m pip install imageio-ffmpeg==0.6.0 " + matplotlib_pin, workflow)
 
     def test_public_network_recovery_is_bounded_and_not_default_pr_work(self):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))

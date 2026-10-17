@@ -167,7 +167,7 @@ jobs:
             libphysfs-dev libsdl1.2-dev libsdl-mixer1.2-dev libpng-dev libglew-dev zlib1g-dev \
             xvfb xauth libgl1-mesa-dri ffmpeg python3-numpy python3-scipy python3-venv
           python3 -m venv --system-site-packages "$RUNNER_TEMP/dxx-nightly-python"
-          "$RUNNER_TEMP/dxx-nightly-python/bin/python" -m pip install imageio-ffmpeg==0.6.0
+          "$RUNNER_TEMP/dxx-nightly-python/bin/python" -m pip install imageio-ffmpeg==0.6.0 matplotlib==3.10.3
           echo "$RUNNER_TEMP/dxx-nightly-python/bin" >> "$GITHUB_PATH"
       - name: Prepare host dependency location
         run: |
