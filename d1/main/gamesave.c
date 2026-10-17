@@ -51,6 +51,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "weapon.h"
 #include "newdemo.h"
 #include "gameseq.h"
+#include "mission.h"
 #include "automap.h"
 #include "polyobj.h"
 #include "text.h"
@@ -69,6 +70,59 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 static PHYSFSX_read_status Level_game_read_status;
+
+typedef struct level_data_warning_state {
+	unsigned inert_robotmaker_segments;
+	unsigned normalized_trigger_link_counts;
+	unsigned ignored_invalid_trigger_links;
+} level_data_warning_state;
+
+static level_data_warning_state Level_data_warnings;
+
+int gamesave_level_data_warning_count(void)
+{
+	return (Level_data_warnings.inert_robotmaker_segments != 0) +
+	       (Level_data_warnings.normalized_trigger_link_counts != 0) +
+	       (Level_data_warnings.ignored_invalid_trigger_links != 0) +
+	       mission_compatibility_warning_count();
+}
+
+int gamesave_level_data_warning_text(int warning_index, char *buffer, unsigned buffer_size)
+{
+	if (!buffer || !buffer_size || warning_index < 0)
+		return 0;
+	if (Level_data_warnings.inert_robotmaker_segments) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Left %u unbound robotmaker segment%s inert",
+			         Level_data_warnings.inert_robotmaker_segments,
+			         Level_data_warnings.inert_robotmaker_segments == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.normalized_trigger_link_counts) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Bounded %u legacy trigger link count%s",
+			         Level_data_warnings.normalized_trigger_link_counts,
+			         Level_data_warnings.normalized_trigger_link_counts == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (Level_data_warnings.ignored_invalid_trigger_links) {
+		if (!warning_index) {
+			snprintf(buffer, buffer_size, "Ignored %u invalid trigger target%s",
+			         Level_data_warnings.ignored_invalid_trigger_links,
+			         Level_data_warnings.ignored_invalid_trigger_links == 1 ? "" : "s");
+			return 1;
+		}
+		--warning_index;
+	}
+	if (mission_compatibility_warning_text(warning_index, buffer, buffer_size))
+		return 1;
+	buffer[0] = '\0';
+	return 0;
+}
 
 #define PHYSFSX_readAngleVec(angles, file) PHYSFSX_readAngleVecChecked(&Level_game_read_status, (angles), (file))
 #define PHYSFSX_readByte(file) PHYSFSX_readByteChecked(&Level_game_read_status, (file))
@@ -772,8 +826,10 @@ static int validate_loaded_level_graph(int game_version, int object_count)
 	}
 	for (i = 0; i < Num_segments; ++i) {
 		if (Segments[i].special == SEGMENT_IS_ROBOTMAKER &&
-		    matcen_get_station_num(Segments[i].matcen_num) < 0)
+		    matcen_get_station_num(Segments[i].matcen_num) < 0) {
+			++Level_data_warnings.inert_robotmaker_segments;
 			con_printf(CON_URGENT, "Level robotmaker segment %d has no legacy matcen record and will remain inert\n", i);
+		}
 		for (j = 0; j < MAX_SIDES_PER_SEGMENT; ++j)
 			if (!level_optional_index_is_valid(Segments[i].sides[j].wall_num, Num_walls)) {
 				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d",
@@ -802,6 +858,7 @@ int load_game_data(PHYSFS_file *LoadFile)
 	int trig_size;
 
 	PHYSFSX_readStatusReset(&Level_game_read_status);
+	memset(&Level_data_warnings, 0, sizeof(Level_data_warnings));
 
 	//===================== READ FILE INFO ========================
 
@@ -1030,13 +1087,18 @@ int load_game_data(PHYSFS_file *LoadFile)
 				Triggers[i].side[j] = PHYSFSX_readShort(LoadFile);
 		}
 	}
-	for (i = 0; i < Num_triggers; ++i)
-		if (!level_links_are_valid(Triggers[i].num_links, MAX_WALLS_PER_LINK,
-		                           Triggers[i].seg, Triggers[i].side,
-		                           Num_segments, MAX_SIDES_PER_SEGMENT)) {
-			Warning("Invalid level trigger links trigger=%d count=%d", i, Triggers[i].num_links);
-			return -1;
-		}
+	for (i = 0; i < Num_triggers; ++i) {
+		const int serialized_count = Triggers[i].num_links;
+		const level_link_repair_report repair = level_repair_legacy_links(
+			serialized_count, MAX_WALLS_PER_LINK, Triggers[i].seg, Triggers[i].side,
+			Num_segments, MAX_SIDES_PER_SEGMENT);
+		Triggers[i].num_links = repair.count;
+		Level_data_warnings.normalized_trigger_link_counts += repair.normalized_count;
+		Level_data_warnings.ignored_invalid_trigger_links += repair.ignored_invalid_links;
+		if (repair.normalized_count || repair.ignored_invalid_links)
+			Warning("Repaired level trigger links trigger=%d count=%d->%d invalid=%u",
+			        i, serialized_count, repair.count, repair.ignored_invalid_links);
+	}
 	if (PHYSFSX_readStatusFailed(&Level_game_read_status))
 		return -1;
 

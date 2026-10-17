@@ -59,6 +59,48 @@ static inline int level_links_are_valid(int count, int maximum, const short *seg
 	return 1;
 }
 
+typedef struct level_link_repair_report {
+	int count;
+	unsigned normalized_count;
+	unsigned ignored_invalid_links;
+} level_link_repair_report;
+
+static inline level_link_repair_report level_repair_legacy_links(int count, int maximum,
+                                                                 short *segments, short *sides,
+                                                                 int segment_count, int side_count)
+{
+	level_link_repair_report report = { 0, 0, 0 };
+	int readable_count;
+	int write_index = 0;
+	int i;
+
+	if (!segments || !sides || maximum < 0 || segment_count < 1 || side_count < 1) {
+		report.normalized_count = 1;
+		return report;
+	}
+	if (count < 0) {
+		report.normalized_count = 1;
+		return report;
+	}
+	readable_count = count;
+	if (readable_count > maximum) {
+		readable_count = maximum;
+		report.normalized_count = 1;
+	}
+	for (i = 0; i < readable_count; ++i) {
+		if (segments[i] < 0 || segments[i] >= segment_count ||
+		    sides[i] < 0 || sides[i] >= side_count) {
+			++report.ignored_invalid_links;
+			continue;
+		}
+		segments[write_index] = segments[i];
+		sides[write_index] = sides[i];
+		++write_index;
+	}
+	report.count = write_index;
+	return report;
+}
+
 enum {
 	LEVEL_COMPILED_VERTEX_SERIALIZED_SIZE = 12,
 	LEVEL_OBJECT_MINIMUM_SERIALIZED_SIZE = 79,

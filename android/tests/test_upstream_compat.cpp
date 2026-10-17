@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
@@ -7,6 +8,11 @@
 #include <sstream>
 #include <vector>
 #include <zlib.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 #include "input_demo_object_trace.h"
 #include "input_demo_ai_trace.h"
 #include "input_demo_world_trace.h"
@@ -455,12 +461,14 @@ static void test_pcx_bounds()
 		        "PCX rejects a zero or overlong RLE run without publishing pixels");
 	}
 
-	for (bytes invalid : { pcx_fixture(2, 1, 1, {}), pcx_fixture(8193, 1, 8193, {}) }) {
-		bitmap = {};
-		write_fixture(name, invalid);
-		require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_WRONG_VERSION && !bitmap.bm_data,
-		        "PCX rejects invalid dimensions or encoded row sizes before allocation");
-	}
+	bitmap = {};
+	write_fixture(name, pcx_fixture(2, 1, 1, {}));
+	require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_WRONG_VERSION && !bitmap.bm_data,
+	        "PCX rejects encoded rows shorter than the visible width before allocation");
+	bitmap = {};
+	write_fixture(name, pcx_fixture(8193, 1, 8193, {}));
+	require(pcx_read_bitmap(name, &bitmap, BM_LINEAR, nullptr) == PCX_ERROR_WRONG_VERSION && !bitmap.bm_data,
+	        "PCX rejects dimensions above the bounded image limit before allocation");
 
 	bytes reversed = pcx_fixture(1, 1, 1, {});
 	set_short(reversed, 4, 2);
@@ -493,7 +501,7 @@ static void test_iff_roundtrip()
 {
 	ubyte palette[768] = {};
 	char name[] = "bounded.bbm";
-	for (int width : { 3, 65 }) {
+	for (int width : { 3, 65, 127 }) {
 		std::vector<ubyte> pixels(static_cast<size_t>(width) * 2);
 		for (size_t i = 0; i < pixels.size(); ++i)
 			pixels[i] = static_cast<ubyte>((i * 17) & 0xff);
@@ -6561,7 +6569,17 @@ static void test_delta_light_compatibility()
 
 	Dl_indices[1].index = 1;
 	Dl_indices[1].count = 2;
-	require(!gamesave_validate_delta_lights(2), "out-of-bounds delta-light ranges remain rejected");
+	require(gamesave_validate_delta_lights(2) && Dl_indices[1].count == 1,
+	        "partially available delta-light ranges retain every serialized target");
+	require(gamesave_level_data_warning_count() == 3,
+	        "bounded delta-light ranges publish a compact compatibility warning");
+	require(gamesave_level_data_warning_text(2, warning, sizeof(warning)) &&
+	            std::strcmp(warning, "Bounded 1 dynamic-light range; ignored 1 missing target") == 0,
+	        "bounded delta-light range warning is stable");
+	Dl_indices[1].index = -1;
+	Dl_indices[1].count = 1;
+	require(gamesave_validate_delta_lights(2) && Dl_indices[1].count == 0,
+	        "wholly unavailable delta-light ranges become inert without an invalid access");
 	Num_static_lights = 0;
 	require(gamesave_validate_delta_lights(0) && !gamesave_level_data_warning_count(),
 	        "ordinary levels clear prior delta-light warnings");
@@ -12052,7 +12070,38 @@ int main(int argc, char **argv)
 	mem_init();
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
-	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	const bool isolate_generated_fixtures = argc == 1 || (argc == 2 && std::strcmp(argv[1], "--graphics") == 0);
+	if (isolate_generated_fixtures) {
+		char original_directory[32768];
+#ifdef _WIN32
+		require(_getcwd(original_directory, sizeof(original_directory)) != nullptr, "resolve fixture parent directory");
+#else
+		require(getcwd(original_directory, sizeof(original_directory)) != nullptr, "resolve fixture parent directory");
+#endif
+		require(PHYSFS_setWriteDir(original_directory) != 0, "select fixture parent directory");
+		(void) PHYSFS_mkdir("temp");
+		std::ostringstream scratch_name;
+		scratch_name << "temp/upstream-compat-"
+#ifdef DXX_BUILD_DESCENT_II
+		             << "d2-"
+#else
+		             << "d1-"
+#endif
+		             << std::chrono::steady_clock::now().time_since_epoch().count();
+		const std::string scratch_relative = scratch_name.str();
+		const std::string scratch = std::string(original_directory) + "/" + scratch_relative;
+		require(PHYSFS_mkdir(scratch_relative.c_str()) != 0, "create repo-local temporary fixture directory");
+#ifdef _WIN32
+		require(_chdir(scratch.c_str()) == 0, "enter repo-local temporary fixture directory");
+#else
+		require(chdir(scratch.c_str()) == 0, "enter repo-local temporary fixture directory");
+#endif
+		require(PHYSFS_setWriteDir(scratch.c_str()) != 0 && PHYSFS_mount(scratch.c_str(), nullptr, 0) != 0 &&
+		            PHYSFS_mount(original_directory, nullptr, 1) != 0,
+		        "mount repo-local temporary fixture directory");
+	} else
+		require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0,
+		        "mount caller-selected fixture directory");
 	if (argc == 2 && std::strcmp(argv[1], "--udp-security-validation") == 0) {
 		test_udp_security_validation();
 		return 0;

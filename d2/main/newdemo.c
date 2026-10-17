@@ -675,6 +675,10 @@ void nd_read_object(object *obj)
 		break;
 
 	case OBJ_ROBOT:
+		if (!robot_info_is_usable(obj->id)) {
+			nd_playback_v_bad_read = -1;
+			return;
+		}
 		obj->control_type = CT_AI;
 		// (MarkA and MikeK said we should not do the crazy last secret stuff with multiple reactors...
 		// This necessary code is our vindication. --MK, 2/15/96)

@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 #define LEVEL_METADATA_MAX_SEGMENTS                         9000
-#define LEVEL_METADATA_MAX_WALLS                            254
+#define LEVEL_METADATA_MAX_WALLS                            255
 #define LEVEL_METADATA_MAX_TRIGGERS                         100
 #define LEVEL_METADATA_MAX_TRIGGER_ACTIONS                  16
 #define LEVEL_METADATA_MAX_OBJECTS                          1000

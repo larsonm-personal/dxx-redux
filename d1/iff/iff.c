@@ -659,8 +659,11 @@ int rle_span(ubyte *dest,ubyte *src,int len)
 				if (lit_cnt > 1) {*cnt_ptr = lit_cnt-2; --dptr;}		//save old lit count
 				*dptr++ = -(rep_cnt-1);
 				*dptr++ = last;
-				last = src[n];
-				lit_cnt = (n<len)?1:0;
+				if (n < len) {
+					last = src[n];
+					lit_cnt = 1;
+				} else
+					lit_cnt = 0;
 
 				continue;		//go to next char
 			} else n--;
@@ -678,9 +681,11 @@ int rle_span(ubyte *dest,ubyte *src,int len)
 
 			if (lit_cnt == 127) {
 				*cnt_ptr = lit_cnt;
-				//cnt_ptr = dptr++;
-				lit_cnt = 1;
-				last = src[++n];
+				lit_cnt = 0;
+				if (++n < len) {
+					lit_cnt = 1;
+					last = src[n];
+				}
 			}
 			else lit_cnt++;
 		}
@@ -706,7 +711,7 @@ int write_body(PHYSFS_file *ofile,iff_bitmap_header *bitmap_header,int compressi
 	int w=bitmap_header->w,h=bitmap_header->h;
 	int y,odd=w&1;
 	long len = EVEN(w) * h,newlen,total_len=0;
-	ubyte *p=bitmap_header->raw_data,*new_span;
+	ubyte *p=bitmap_header->raw_data,*new_span,*padded_span;
 	long save_pos;
 
 	put_sig(body_sig,ofile);
@@ -714,17 +719,25 @@ int write_body(PHYSFS_file *ofile,iff_bitmap_header *bitmap_header,int compressi
 	PHYSFS_writeSBE32(ofile, len);
 
     //if (! (new_span = malloc(bitmap_header->w+(bitmap_header->w/128+2)*2))) return IFF_NO_MEM;
-	MALLOC( new_span, ubyte, bitmap_header->w + (bitmap_header->w/128+2));//adb: removed *2
-	if (new_span == NULL) return IFF_NO_MEM;
+	MALLOC( new_span, ubyte, 2 * EVEN(bitmap_header->w) + 2);
+	MALLOC( padded_span, ubyte, EVEN(bitmap_header->w));
+	if (new_span == NULL || padded_span == NULL) {
+		d_free(new_span);
+		d_free(padded_span);
+		return IFF_NO_MEM;
+	}
 
 	for (y=bitmap_header->h;y--;) {
+		memcpy(padded_span,p,bitmap_header->w);
+		if (odd)
+			padded_span[bitmap_header->w] = 0;
 
 		if (compression_on) {
-			total_len += newlen = rle_span(new_span,p,bitmap_header->w+odd);
+			total_len += newlen = rle_span(new_span,padded_span,bitmap_header->w+odd);
 			PHYSFS_write(ofile,new_span,newlen,1);
 		}
 		else
-			PHYSFS_write(ofile,p,bitmap_header->w+odd,1);
+			PHYSFS_write(ofile,padded_span,bitmap_header->w+odd,1);
 
 		p+=bitmap_header->row_size;	//bitmap_header->w;
 	}
@@ -740,6 +753,7 @@ int write_body(PHYSFS_file *ofile,iff_bitmap_header *bitmap_header,int compressi
 	}
 
 	d_free(new_span);
+	d_free(padded_span);
 
 	return ((compression_on) ? (EVEN(total_len)+8) : (len+8));
 
@@ -776,13 +790,15 @@ int write_tiny(PHYSFS_file *ofile,iff_bitmap_header *bitmap_header,int compressi
 	for (y=0;y<new_h;y++) {
 		for (x=xofs=0;x<new_w;x++,xofs+=skip)
 			tspan[x] = p[xofs];
+		if (odd)
+			tspan[new_w] = 0;
 
 		if (compression_on) {
 			total_len += newlen = rle_span(new_span,tspan,new_w+odd);
 			PHYSFS_write(ofile,new_span,newlen,1);
 		}
 		else
-			PHYSFS_write(ofile,p,new_w+odd,1);
+			PHYSFS_write(ofile,tspan,new_w+odd,1);
 
 		p += skip * bitmap_header->row_size;		//bitmap_header->w;
 
