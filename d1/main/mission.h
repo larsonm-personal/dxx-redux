@@ -103,6 +103,9 @@ int load_mission_by_name (char *mission_name);
 int load_mission_by_name_from_current_dir(char *mission_name);
 int load_mission_from_current_dir(char *descriptor);
 
+int mission_compatibility_warning_count(void);
+int mission_compatibility_warning_text(int warning_index, char *buffer, unsigned buffer_size);
+
 //Handles creating and selecting from the mission list.
 //Returns 1 if a mission was loaded.
 int select_mission (int anarchy_mode, char *message, int (*when_selected)(void));

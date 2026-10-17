@@ -3,6 +3,7 @@
 #include "d1_in_d2/d1_pig_validation.h"
 
 #include <limits.h>
+#include <string.h>
 
 #define D2_HAM_SIGNATURE         0x214d4148
 #define D2_EXTRA_HAM_SIGNATURE   0x5848414d
@@ -103,11 +104,21 @@ static int d2_ham_valid_optional_index(int value, int count)
 	return value == -1 || (value >= 0 && value < count);
 }
 
-static int d2_ham_read_robot_meta(const uint8_t *record, d2_ham_robot_meta *meta)
+static int d2_ham_read_robot_meta(const uint8_t *record, d2_ham_robot_meta *meta,
+                                  d2_ham_validation_report *report)
 {
 	int joint;
 	if (!record || !meta) return 0;
 	meta->model = d2_ham_i32(record);
+	if (meta->model == -1) {
+		/* The original demo HAM uses sparse robot tables with inert -1 model slots */
+		meta->guns = 0;
+		for (joint = 0; joint < 45; ++joint)
+			meta->joint_count[joint] = meta->joint_offset[joint] = 0;
+		if (report) ++report->inert_robot_records;
+		return 1;
+	}
+	if (meta->model < -1) return 0;
 	meta->guns = record[118];
 	if (meta->guns > 8) return 0;
 	for (joint = 0; joint < 45; ++joint) {
@@ -115,9 +126,11 @@ static int d2_ham_read_robot_meta(const uint8_t *record, d2_ham_robot_meta *meta
 		meta->joint_offset[joint] = d2_ham_i16(record + 298 + joint * 4);
 		if (meta->joint_count[joint] < 0) return 0;
 		/* Legacy writers left unused offsets negative; an empty list has no addressable range */
-		if (!meta->joint_count[joint])
+		if (!meta->joint_count[joint]) {
+			if (meta->joint_offset[joint] && report)
+				++report->normalized_empty_joint_offsets;
 			meta->joint_offset[joint] = 0;
-		else if (meta->joint_offset[joint] < 0)
+		} else if (meta->joint_offset[joint] < 0)
 			return 0;
 	}
 	for (joint = 0; joint < meta->guns; ++joint)
@@ -129,7 +142,8 @@ static int d2_ham_validate_robot_meta(const d2_ham_robot_meta *meta, int model_c
                                       int joint_count)
 {
 	int joint;
-	if (!meta || meta->model < 0 || meta->model >= model_count) return 0;
+	if (!meta || meta->model < -1 || meta->model >= model_count) return 0;
+	if (meta->model == -1) return 1;
 	for (joint = 0; joint < 45; ++joint)
 		if (meta->joint_offset[joint] > joint_count ||
 		    meta->joint_count[joint] > joint_count - meta->joint_offset[joint])
@@ -217,7 +231,8 @@ static int d2_ham_validate_bitmap_table(d2_ham_cursor *cursor, int count,
 }
 
 int d2_ham_validate_main(const uint8_t *data, size_t size,
-                         const d2_ham_validation_limits *limits)
+	                     const d2_ham_validation_limits *limits,
+	                     d2_ham_validation_report *report)
 {
 	d2_ham_cursor cursor;
 	d2_ham_model_meta models[D2_HAM_MAX_MODELS];
@@ -225,6 +240,7 @@ int d2_ham_validate_main(const uint8_t *data, size_t size,
 	const uint8_t *records, *pointers;
 	size_t total_model_bytes = 0;
 	int version, sound_offset = 0, count, robot_count, joint_count, model_count, i, value;
+	if (report) memset(report, 0, sizeof(*report));
 	if (!data || !limits || size < 8 || size > D2_HAM_MAX_FILE_BYTES ||
 	    limits->max_models > D2_HAM_MAX_MODELS || limits->max_robots > D2_HAM_MAX_ROBOTS)
 		return 0;
@@ -250,7 +266,7 @@ int d2_ham_validate_main(const uint8_t *data, size_t size,
 		return 0;
 	for (i = 0; i < robot_count; ++i) {
 		if (!d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &records) ||
-		    !d2_ham_read_robot_meta(records, &robots[i]))
+		    !d2_ham_read_robot_meta(records, &robots[i], report))
 			return 0;
 	}
 	if (!d2_ham_skip_records(&cursor, limits->max_joints, 8, &joint_count) ||
@@ -293,7 +309,7 @@ int d2_ham_validate_main(const uint8_t *data, size_t size,
 int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
                           const d2_ham_validation_limits *limits, int base_weapons, int base_robots,
                           int base_joints, int base_models, int base_object_bitmaps,
-                          int base_object_bitmap_ptrs)
+	                      int base_object_bitmap_ptrs, d2_ham_validation_report *report)
 {
 	d2_ham_cursor cursor;
 	d2_ham_model_meta models[D2_HAM_MAX_MODELS];
@@ -301,6 +317,7 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 	const uint8_t *record, *pointers;
 	size_t total_model_bytes = 0;
 	int robot_count, joint_count, model_count, bitmaps, pointer_count, i, value;
+	if (report) memset(report, 0, sizeof(*report));
 	if (!data || !limits || (type != 1 && type != 2) || size > D2_HAM_MAX_FILE_BYTES ||
 	    limits->max_models > D2_HAM_MAX_MODELS || limits->max_robots > D2_HAM_MAX_ROBOTS ||
 	    base_weapons < 0 || base_robots < 0 || base_joints < 0 || base_models < 0 ||
@@ -317,7 +334,7 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 		return 0;
 	for (i = 0; i < robot_count; ++i) {
 		if (!d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &record) ||
-		    !d2_ham_read_robot_meta(record, &robots[i]))
+		    !d2_ham_read_robot_meta(record, &robots[i], report))
 			return 0;
 	}
 	if (!d2_ham_skip_records(&cursor, limits->max_joints - base_joints, 8, &joint_count) ||
@@ -342,15 +359,19 @@ int d2_ham_validate_extra(const uint8_t *data, size_t size, int type,
 		if (d2_ham_u16(pointers + (size_t) i * 2) >= limits->max_object_bitmaps) return 0;
 	if (cursor.position == cursor.end) return 1;
 	/* The legacy type-2 writer appended a second pointer table that the loader ignored */
-	return type == 2 &&
-	       d2_ham_validate_bitmap_table(&cursor, pointer_count,
-	                                    limits->max_object_bitmaps, NULL) &&
-	       cursor.position == cursor.end;
+	if (type == 2 &&
+	    d2_ham_validate_bitmap_table(&cursor, pointer_count,
+	                                 limits->max_object_bitmaps, NULL) &&
+	    cursor.position == cursor.end) {
+		if (report) report->ignored_trailing_bytes = (size_t) pointer_count * 2;
+		return 1;
+	}
+	return 0;
 }
 
 int d2_ham_validate_hxm(const uint8_t *data, size_t size,
                         const d2_ham_validation_limits *limits, int robot_count, int joint_count,
-                        int model_count)
+	                    int model_count, d2_ham_validation_report *report)
 {
 	d2_ham_cursor cursor;
 	d2_ham_model_meta meta;
@@ -358,6 +379,7 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 	const uint8_t *record;
 	size_t total_model_bytes = 0;
 	int count, i, index, value;
+	if (report) memset(report, 0, sizeof(*report));
 	if (!data || !limits || size > D2_HAM_MAX_FILE_BYTES || robot_count < 0 ||
 	    robot_count > limits->max_robots || joint_count < 0 || joint_count > limits->max_joints ||
 	    model_count < 0 || model_count > limits->max_models)
@@ -372,7 +394,7 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 	for (i = 0; i < count; ++i) {
 		if (!d2_ham_read_i32(&cursor, &index) || index < 0 || index >= robot_count ||
 		    !d2_ham_take(&cursor, D2_HAM_ROBOT_RECORD_SIZE, &record) ||
-		    !d2_ham_read_robot_meta(record, &robot) ||
+		    !d2_ham_read_robot_meta(record, &robot, report) ||
 		    !d2_ham_validate_robot_meta(&robot, model_count, joint_count))
 			return 0;
 	}
@@ -404,6 +426,9 @@ int d2_ham_validate_hxm(const uint8_t *data, size_t size,
 		    !d2_ham_take(&cursor, 2, &record) || d2_ham_u16(record) >= limits->max_object_bitmaps)
 			return 0;
 	if (cursor.position == cursor.end) return 1;
-	// Some legacy HXM writers append one unused zero word that the original loader ignored
-	return cursor.end - cursor.position == 4 && d2_ham_i32(cursor.data + cursor.position) == 0;
+	/* Legacy editors can leave a zero-filled reserved suffix; the loader never reads it */
+	for (i = (int) cursor.position; (size_t) i < cursor.end; ++i)
+		if (cursor.data[i]) return 0;
+	if (report) report->ignored_trailing_bytes = cursor.end - cursor.position;
+	return 1;
 }

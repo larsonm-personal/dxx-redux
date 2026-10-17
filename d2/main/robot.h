@@ -145,6 +145,7 @@ extern robot_info Robot_info[MAX_ROBOT_TYPES];     // Robot info for AI system, 
 
 //how many kinds of robots
 extern  int N_robot_types;      // Number of robot types.  We used to assume this was the same as N_polygon_models.
+int robot_info_is_usable(int robot_id);
 
 //test data for one robot
 #define MAX_ROBOT_JOINTS 1600

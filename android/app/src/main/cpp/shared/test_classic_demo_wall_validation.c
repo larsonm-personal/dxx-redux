@@ -3,7 +3,7 @@
 #include <limits.h>
 #include <stdio.h>
 
-#define TEST_MAX_WALLS 254
+#define TEST_MAX_WALLS 255
 
 static int fail(const char *message)
 {

@@ -43,11 +43,12 @@ static inline int mission_descriptor_copy_level_name(const char *line, char *out
 	return 1;
 }
 
-static inline int mission_descriptor_parse_secret(const char *line, int last_level, char *name, size_t name_capacity, int *origin)
+static inline int mission_descriptor_parse_secret_ex(const char *line, int last_level, char *name, size_t name_capacity, int *origin, unsigned *extra_origins)
 {
 	const char *begin, *comma, *name_end, *cursor;
 	size_t length;
 	int first_origin = 0;
+	unsigned parsed_origins = 0;
 	if (!line || last_level < 1 || !name || !name_capacity || !origin || !(comma = strchr(line, ','))) return 0;
 	for (begin = line; begin < comma && isspace((unsigned char) *begin); ++begin) {}
 	for (name_end = begin; name_end < comma && !isspace((unsigned char) *name_end); ++name_end) {}
@@ -65,6 +66,7 @@ static inline int mission_descriptor_parse_secret(const char *line, int last_lev
 		parsed_origin = strtol(cursor, &end, 10);
 		if (cursor == end || errno == ERANGE || parsed_origin < 1 || parsed_origin > last_level) return 0;
 		if (!first_origin) first_origin = (int) parsed_origin;
+		++parsed_origins;
 		cursor = end;
 		while (*cursor && isspace((unsigned char) *cursor)) ++cursor;
 		if (*cursor == ',') {
@@ -77,7 +79,13 @@ static inline int mission_descriptor_parse_secret(const char *line, int last_lev
 	memcpy(name, begin, length);
 	name[length] = 0;
 	*origin = first_origin;
+	if (extra_origins) *extra_origins = parsed_origins - 1;
 	return 1;
+}
+
+static inline int mission_descriptor_parse_secret(const char *line, int last_level, char *name, size_t name_capacity, int *origin)
+{
+	return mission_descriptor_parse_secret_ex(line, last_level, name, name_capacity, origin, NULL);
 }
 
 static inline int mission_descriptor_make_text_filename(const char *value, const char *extension, char *output, size_t capacity)
