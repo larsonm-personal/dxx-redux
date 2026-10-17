@@ -1871,10 +1871,18 @@ int create_gated_robot( int segnum, int object_id, vms_vector *pos)
 	object	*objp;
 	segment	*segp = &Segments[segnum];
 	vms_vector	object_pos;
-	robot_info	*robptr = &Robot_info[object_id];
+	robot_info	*robptr;
 	int		i, count=0;
-	fix		objsize = Polygon_models[robptr->model_num].rad;
+	fix		objsize;
 	int		default_behavior;
+
+	if (!robot_info_is_usable(object_id)) {
+		con_printf(CON_URGENT, "Ignoring boss gate request for unusable robot definition %d\n",
+		           object_id);
+		return -1;
+	}
+	robptr = &Robot_info[object_id];
+	objsize = Polygon_models[robptr->model_num].rad;
 
 	if (GameTime64 - Last_gate_time < Gate_interval)
 		return -1;

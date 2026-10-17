@@ -244,7 +244,7 @@ static void test_public_matcen_stations(const char *directory, const char *outpu
 		json counts = json::array(), births = json::array();
 		for (int center = 0; center < expected_centers; ++center) {
 			const bool active = dispatch && (center == first || center == second);
-			require(activation_counts[center] == active, "trigger dispatch activates exactly its unique mapped ordinals");
+			require(activation_counts[center] == static_cast<uint8_t>(active), "trigger dispatch activates exactly its unique mapped ordinals");
 			counts.push_back(activation_counts[center]);
 		}
 		for (int frame = 0; frame < 2400; ++frame) {
@@ -268,7 +268,8 @@ static void test_public_matcen_stations(const char *directory, const char *outpu
 		}
 		for (int center : { first, second }) {
 			int produced = 0;
-			for (const auto &birth : births) if (birth["ordinal"] == center) ++produced;
+			for (const auto &birth : births)
+				if (birth["ordinal"] == center) ++produced;
 			require(dispatch && !empty_mask ? produced > 1 && produced <= 5 : produced == 0, "dispatch and mask controls bound actual native production");
 		}
 		dispatch_cases.push_back({ { "scenario", scenario }, { "authored_triggers", authored_triggers }, { "synthetic_links", true }, { "zeroed_robot_masks", empty_mask }, { "source_segment", source_segment }, { "source_side", source_side }, { "trigger", 0 }, { "links", { first_segment, second_segment, first_segment } }, { "mapping", mapping }, { "cleared_authored_robots", cleared }, { "activation_lights", activation_lights }, { "activation_counts", counts }, { "births", births } });

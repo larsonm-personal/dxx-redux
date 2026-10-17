@@ -134,6 +134,7 @@ object MissionMetadataProjection {
     // Versioned regression data is additive; older metadata may omit it.
     private fun validateMatcenRegression(value: JsonElement): JsonObject {
         val block = requireNotNull(value as? JsonObject) { "matcen_regression must be an object" }
+
         fun requiredInteger(name: String): Int {
             val primitive = block[name] as? JsonPrimitive
             return requireNotNull(primitive?.takeUnless { it.isString }?.intOrNull) {

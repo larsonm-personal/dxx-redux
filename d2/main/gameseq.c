@@ -1706,7 +1706,7 @@ void DoEndGame(void)
 		do_end_briefing_screens (Ending_text_filename);
 
 		//try doing special credits
-		sprintf(tname,"%s.ctb",Current_mission_filename);
+		snprintf(tname, sizeof(tname), "%.8s.ctb", Current_mission_filename);
 		credits_show(tname);
 	}
 

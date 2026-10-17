@@ -86,8 +86,14 @@ class MissionMetadataProjectionTest {
     fun rejectsMissingMatcenRegressionFields() {
         val valid = Json.parseToJsonElement(validMatcenRegression).jsonObject
         for (name in listOf(
-            "schema_version", "capture_status", "generated_count", "disk_count",
-            "authored_segments", "disk_records", "triggers", "runtime_bindings",
+            "schema_version",
+            "capture_status",
+            "generated_count",
+            "disk_count",
+            "authored_segments",
+            "disk_records",
+            "triggers",
+            "runtime_bindings",
         )) {
             val block = JsonObject(valid.filterKeys { it != name }).toString()
             assertThrows("missing $name", IllegalArgumentException::class.java) { projectMatcenLevel(block) }
@@ -127,7 +133,10 @@ class MissionMetadataProjectionTest {
         assertEquals(block, projectMatcenLevel(block.toString())["matcen_regression"])
     }
 
-    private fun assertInvalidMatcenField(name: String, value: String) {
+    private fun assertInvalidMatcenField(
+        name: String,
+        value: String,
+    ) {
         val valid = Json.parseToJsonElement(validMatcenRegression).jsonObject.toMutableMap()
         valid[name] = Json.parseToJsonElement(value)
         assertThrows("$name=$value", IllegalArgumentException::class.java) {
@@ -137,11 +146,16 @@ class MissionMetadataProjectionTest {
 
     private fun projectMatcenLevel(block: String? = null): JsonObject {
         val optional = block?.let { ",\"matcen_regression\":$it" }.orEmpty()
-        return MissionMetadataProjection.project(
-            Json.parseToJsonElement(
-                rawLevel("\"route_required_key_mask\":0,\"route_completing_key_mask_set\":1$optional"),
-            ).jsonObject,
-        )["levels"]!!.jsonArray.single().jsonObject
+        return MissionMetadataProjection
+            .project(
+                Json
+                    .parseToJsonElement(
+                        rawLevel("\"route_required_key_mask\":0,\"route_completing_key_mask_set\":1$optional"),
+                    ).jsonObject,
+            )["levels"]!!
+            .jsonArray
+            .single()
+            .jsonObject
     }
 
     private val validMatcenRegression =

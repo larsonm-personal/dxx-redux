@@ -3,6 +3,7 @@
 Never generates or updates references. Logical disk-unbound slots are observations,
 not golden robot definitions: their allocated globals can contain previous-level data.
 """
+
 import argparse
 import json
 from pathlib import Path
@@ -23,10 +24,12 @@ def validate_capture(value):
     for name in ("authored_segments", "disk_records", "triggers", "runtime_bindings"):
         if not isinstance(value.get(name), list) or any(not isinstance(v, dict) for v in value[name]):
             raise MatcenMismatch(f"Invalid {name}")
-    if (len(value["authored_segments"]) != value["generated_count"] or
-        len(value["runtime_bindings"]) != value["generated_count"] or
-        len(value["disk_records"]) != value["disk_count"] or
-        value["disk_count"] != value["declared_disk_count"]):
+    if (
+        len(value["authored_segments"]) != value["generated_count"]
+        or len(value["runtime_bindings"]) != value["generated_count"]
+        or len(value["disk_records"]) != value["disk_count"]
+        or value["disk_count"] != value["declared_disk_count"]
+    ):
         raise MatcenMismatch("Missing captured segments, bindings or disk records")
     for name in ("authored_segments", "runtime_bindings"):
         rows = value[name]
@@ -38,15 +41,26 @@ def validate_capture(value):
     for row in value["runtime_bindings"]:
         if row.get("station_status") == "matching_station":
             station, record = row.get("station", {}), row.get("effective_record", {})
-            if (record.get("station") != station.get("index") or station.get("segment") != row.get("segment")
-                or station.get("type") != 4 or type(station.get("index")) is not int):
+            if (
+                record.get("station") != station.get("index")
+                or station.get("segment") != row.get("segment")
+                or station.get("type") != 4
+                or type(station.get("index")) is not int
+            ):
                 raise MatcenMismatch("Contradictory supposedly safe station join")
     return value
 
 
 def compare_capture(reference, actual):
     reference, actual = validate_capture(reference), validate_capture(actual)
-    for name in ("generated_count", "disk_count", "declared_disk_count", "authored_segments", "disk_records", "triggers"):
+    for name in (
+        "generated_count",
+        "disk_count",
+        "declared_disk_count",
+        "authored_segments",
+        "disk_records",
+        "triggers",
+    ):
         if reference[name] != actual[name]:
             raise MatcenMismatch(f"Authored {name} changed (ordered links and duplicates are significant)")
     unresolved = []
@@ -55,8 +69,13 @@ def compare_capture(reference, actual):
             if key not in before or before[key] != after.get(key):
                 raise MatcenMismatch(f"Changed binding {key}")
         if before.get("binding_status") != "disk_bound" or before.get("station_status") != "matching_station":
-            unresolved.append({"segment": before["segment"], "historical_status": before.get("binding_status"),
-                               "current_status": after.get("binding_status")})
+            unresolved.append(
+                {
+                    "segment": before["segment"],
+                    "historical_status": before.get("binding_status"),
+                    "current_status": after.get("binding_status"),
+                }
+            )
             continue
         if after.get("binding_status") != "disk_bound" or after.get("station_status") != "matching_station":
             raise MatcenMismatch("Defined historical disk binding was lost")
@@ -64,7 +83,9 @@ def compare_capture(reference, actual):
             if key not in before or before[key] != after.get(key):
                 raise MatcenMismatch(f"Defined historical {key} changed")
         for key in ("robot_flags", "hit_points", "interval"):
-            if key not in before.get("effective_record", {}) or before["effective_record"][key] != after.get("effective_record", {}).get(key):
+            if key not in before.get("effective_record", {}) or before["effective_record"][key] != after.get(
+                "effective_record", {}
+            ).get(key):
                 raise MatcenMismatch(f"Defined historical robot record {key} changed")
     return {"defined_bindings_match": True, "unbound_requires_review": unresolved}
 
@@ -74,7 +95,8 @@ def level_index(document):
     result = {}
     for mission in missions:
         name = mission.get("mission_filename", "").casefold()
-        if name.endswith((".msn", ".mn2")): name = name.rsplit(".", 1)[0]
+        if name.endswith((".msn", ".mn2")):
+            name = name.rsplit(".", 1)[0]
         game = mission.get("game")
         if game not in ("d1", "d2"):
             raise MatcenMismatch("Missing native game/edition identity")
@@ -94,7 +116,9 @@ def compare_documents(reference, actual):
             continue  # Existing files may deliberately contain only selected reference levels.
         if key not in observed:
             raise MatcenMismatch(f"Missing reference level {key}")
-        results.append({"level": key, **compare_capture(level["matcen_regression"], observed[key].get("matcen_regression"))})
+        results.append(
+            {"level": key, **compare_capture(level["matcen_regression"], observed[key].get("matcen_regression"))}
+        )
     if not results:
         raise MatcenMismatch("No matcen reference cases were compared")
     return results

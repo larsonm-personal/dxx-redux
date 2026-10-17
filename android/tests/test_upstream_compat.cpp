@@ -44,6 +44,11 @@ extern "C" {
 #include "digi.h"
 #include "d1_shareware_table.h"
 #include "sounds.h"
+#include "songs.h"
+extern bim_song_info *BIMSongs;
+extern int Num_bim_songs;
+void songs_init(void);
+#include "songlist_path.h"
 #include "dxxerror.h"
 #ifdef USE_SDLMIXER
 #include "digi_mixer.h"
@@ -87,6 +92,7 @@ int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr);
 #include "object.h"
 #include "player_death_runtime.h"
 #include "palette.h"
+#include "playsave.h"
 #include "physfsx.h"
 #include "cadence_runtime.h"
 #include "exploding_wall_runtime.h"
@@ -168,7 +174,11 @@ extern int Boss_dying_sound_playing;
 #endif
 extern int Num_boss_gate_segs;
 extern short Boss_gate_segs[MAX_BOSS_TELEPORT_SEGS];
+int find_hli_entry(void);
 int gate_in_robot(int type, int segnum);
+#ifdef DXX_BUILD_DESCENT_II
+int create_gated_robot(int segnum, int object_id, vms_vector *pos);
+#endif
 void collide_robot_and_weapon(object *robot, object *weapon, vms_vector *point);
 extern int Hit_type, Hit_seg;
 extern fvi_info Hit_data;
@@ -4356,6 +4366,24 @@ static void test_boss_preparation_and_gating()
 				                                                                                  : GameTime64 - 3 * Gate_interval / 4;
 				require(Last_gate_time == expected_time, "gate success and failed placement/cap preserve native retry timing");
 			}
+#ifdef DXX_BUILD_DESCENT_II
+		if (profile == 2) {
+			create_frame_robot(AIB_NORMAL, 100 * F1_0);
+			init_morphs();
+			N_robot_types = 11;
+			Robot_info[10] = Robot_info[0];
+			Robot_info[10].model_num = -1;
+			vms_vector origin = {};
+			const int previous_highest = Highest_object_index;
+			const int previous_total = Players[0].num_robots_total;
+			const fix64 previous_gate_time = Last_gate_time;
+			require(create_gated_robot(1, 10, &origin) == -1 &&
+			            Highest_object_index == previous_highest &&
+			            Players[0].num_robots_total == previous_total &&
+			            Last_gate_time == previous_gate_time,
+			        "boss gating leaves an accepted inert robot definition unspawned");
+		}
+#endif
 		if (profile == 1) {
 			const fix old_frame = FrameTime;
 			const eclip old_effect = Effects[ECLIP_NUM_BOSS];
@@ -12059,27 +12087,125 @@ static void test_udp_security_validation()
 	std::puts("PASS: UDP multiplayer command validation");
 }
 
+static void test_songlist_mount_priority()
+{
+	const auto saved_cfg = GameCfg;
+	GameCfg.MusicType = MUSIC_TYPE_NONE;
+	auto archive = [](const char *path, const char *member, const char *track, bool exact_tie) {
+		bytes hog = { 'D', 'H', 'F' };
+		auto entry = [&](const char *name, const char *song) {
+			char field[13] = {};
+			std::snprintf(field, sizeof(field), "%s", name);
+			hog.insert(hog.end(), field, field + sizeof(field));
+			const std::string content = std::string(song) + "\n";
+			append_int(hog, content.size());
+			hog.insert(hog.end(), content.begin(), content.end());
+		};
+		entry(member, track);
+		if (exact_tie) entry("descent.sng", "exact.hmp");
+		entry("unrelated.sng", "neighbor.hmp");
+		write_fixture(path, hog);
+	};
+	auto check = [](const char *mount, const char *member, const char *track, const char *request = "descent.sng") {
+		char path[PATH_MAX];
+		songlist_path(request, path, sizeof(path));
+		const char *source = PHYSFS_getRealDir(path);
+		const std::string resolution = std::string("song list resolves the expected logical member: expected ") + member +
+		                               " from " + mount + ", got " + path + " from " + (source ? source : "<none>");
+		require(!d_stricmp(path, member), resolution.c_str());
+		require(source && !std::strcmp(source, mount), "song list resolves the highest priority mount");
+		const auto data = read_fixture(path);
+		const std::string expected = std::string(track) + "\n";
+		require(std::string(data.begin(), data.end()) == expected, "resolved song-list bytes match the selected archive");
+		songs_init();
+		require(Num_bim_songs == 1 && !std::strcmp(BIMSongs[0].filename, track), "production songs_init consumes the selected song list");
+	};
+	char path[PATH_MAX];
+	for (const char *unchanged : { "absent.sng", "d1-original/descent.sng", "../descent.sng", "d1-original\\descent.sng" }) {
+		songlist_path(unchanged, path, sizeof(path));
+		require(!std::strcmp(path, unchanged), "absent or non-root song list is unchanged");
+	}
+	archive("descent2.hog", "descent.sng", "stock.hmp", false);
+	archive("song-mission.hog", "Descent.sng", "mission.hmp", false);
+	archive("song-tie.hog", "DESCENT.SNG", "upper.hmp", true);
+	require(PHYSFS_mount("descent2.hog", nullptr, 0), "mount stock soundtrack");
+	for (int repeat = 0; repeat < 2; ++repeat) {
+		require(PHYSFS_mount("song-mission.hog", nullptr, 0), "activate mixed-case mission soundtrack");
+		check("song-mission.hog", "Descent.sng", "mission.hmp");
+		require(PHYSFS_unmount("song-mission.hog"), "retire mission soundtrack");
+		check("descent2.hog", "descent.sng", "stock.hmp");
+	}
+	require(PHYSFS_mount("song-mission.hog", nullptr, 1), "mount mission behind stock");
+	check("descent2.hog", "descent.sng", "stock.hmp");
+	require(PHYSFS_unmount("song-mission.hog"), "release lower-priority mission");
+	archive("song-enhanced.hog", "DXX-R.SNG", "enhanced.hmp", false);
+	require(PHYSFS_mount("song-enhanced.hog", nullptr, 0), "mount mixed-case enhanced song list");
+	check("song-enhanced.hog", "DXX-R.SNG", "enhanced.hmp", "dxx-r.sng");
+	require(PHYSFS_unmount("song-enhanced.hog"), "release enhanced song list");
+	require(PHYSFS_mount("song-tie.hog", nullptr, 0), "activate same-mount case variants");
+	check("song-tie.hog", "descent.sng", "exact.hmp");
+	require(PHYSFS_unmount("song-tie.hog") && PHYSFS_unmount("descent2.hog"), "release song-list fixture mounts");
+	songs_uninit();
+#ifdef DXX_BUILD_DESCENT_II
+	require(PHYSFS_unmount("__dxx_d2_presentation__.hog"), "release isolated presentation song list");
+#endif
+	for (const char *path : { "descent2.hog", "song-mission.hog", "song-tie.hog", "song-enhanced.hog" })
+		require(PHYSFS_delete(path), "remove song-list fixture");
+	GameCfg = saved_cfg;
+	std::puts("PASS: song-list mount priority and mission-stock-mission switching");
+}
+
+static void test_long_mission_highest_level_key()
+{
+	const auto saved_cfg = PlayerCfg;
+	Mission *const saved_mission = Current_mission;
+	Mission mission = {};
+	char long_name[] = "fpinterrupt";
+	mission.filename = long_name;
+	Current_mission = &mission;
+	PlayerCfg.NHighestLevels = 0;
+	const int first = find_hli_entry();
+	require(first == 0 && PlayerCfg.NHighestLevels == 1 &&
+	            !std::strcmp(PlayerCfg.HighestLevels[first].Shortname, "fpinterr"),
+	        "long mission names use their legacy eight-character highest-level key");
+	require(find_hli_entry() == first && PlayerCfg.NHighestLevels == 1,
+	        "reopening a long mission reuses its highest-level entry");
+	char colliding_name[] = "fpinterruption-two";
+	mission.filename = colliding_name;
+	require(find_hli_entry() == first && PlayerCfg.NHighestLevels == 1,
+	        "legacy highest-level keys retain their historical eight-character collision behavior");
+	char distinct_name[] = "different-long-name";
+	mission.filename = distinct_name;
+	const int second = find_hli_entry();
+	require(second == 1 && PlayerCfg.NHighestLevels == 2 &&
+	            !std::strcmp(PlayerCfg.HighestLevels[second].Shortname, "differen"),
+	        "distinct long mission names create bounded highest-level entries");
+	PlayerCfg = saved_cfg;
+	Current_mission = saved_mission;
+	std::puts("PASS: long mission highest-level keys remain bounded and legacy-compatible");
+}
+
 int main(int argc, char **argv)
 {
 #ifdef DXX_MATCEN_CAPTURE_ONLY_MAIN
-    // Historical reference adapters compile unchanged gameplay, excluding unrelated
-    // unit-test entry points whose APIs may not exist at that historical revision.
-    mem_init();
-    error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
-    require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
-    require(PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "mount isolated fixture directory");
-    if ((argc == 4 || argc == 5) && !std::strcmp(argv[1], "--public-matcen-stations")) {
-        require(argc == 4 || !std::strcmp(argv[4], "--without-activation"), "recognized matcen fixture control");
-        test_public_matcen_stations(argv[2], argv[3], argc == 4);
-        return 0;
-    }
-    if ((argc == 7 || argc == 8) && !std::strcmp(argv[1], "--authored-matcen-stations")) {
-        require(argc == 7 || !std::strcmp(argv[7], "--no-dispatch"), "recognized authored matcen control");
-        test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
-        return 0;
-    }
-    require(false, "capture-only binary requires an explicit matcen fixture");
-    return 1;
+	// Historical reference adapters compile unchanged gameplay, excluding unrelated
+	// unit-test entry points whose APIs may not exist at that historical revision.
+	mem_init();
+	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
+	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
+	require(PHYSFS_setWriteDir(".") && PHYSFS_mount(".", nullptr, 1), "mount isolated fixture directory");
+	if ((argc == 4 || argc == 5) && !std::strcmp(argv[1], "--public-matcen-stations")) {
+		require(argc == 4 || !std::strcmp(argv[4], "--without-activation"), "recognized matcen fixture control");
+		test_public_matcen_stations(argv[2], argv[3], argc == 4);
+		return 0;
+	}
+	if ((argc == 7 || argc == 8) && !std::strcmp(argv[1], "--authored-matcen-stations")) {
+		require(argc == 7 || !std::strcmp(argv[7], "--no-dispatch"), "recognized authored matcen control");
+		test_authored_matcen(argv[2], argv[3], argv[4], std::atoi(argv[5]), argv[6], argc == 7);
+		return 0;
+	}
+	require(false, "capture-only binary requires an explicit matcen fixture");
+	return 1;
 #else
 
 	if (argc == 2 && std::strcmp(argv[1], "--capture-build-revision") == 0) {
@@ -12123,6 +12249,20 @@ int main(int argc, char **argv)
 	} else
 		require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0,
 		        "mount caller-selected fixture directory");
+	if (argc == 1) {
+		test_songlist_mount_priority();
+		test_long_mission_highest_level_key();
+	}
+	if (argc == 2 && std::strcmp(argv[1], "--songlist-mount-priority") == 0) {
+		test_songlist_mount_priority();
+		PHYSFS_deinit();
+		return 0;
+	}
+	if (argc == 2 && std::strcmp(argv[1], "--long-mission-highest-level-key") == 0) {
+		test_long_mission_highest_level_key();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--udp-security-validation") == 0) {
 		test_udp_security_validation();
 		return 0;

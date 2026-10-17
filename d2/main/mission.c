@@ -905,12 +905,12 @@ int load_mission(mle *mission)
 				input_demo_assets_note_archive("mission_hog", Current_mission_hog);
 		}
 
-		snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.tex",Current_mission_filename);
+		snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%.8s.tex",Current_mission_filename);
 		if (!PHYSFSX_exists(Briefing_text_filename,1))
-			snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%s.txb",Current_mission_filename);
-		snprintf(Ending_text_filename, sizeof(Ending_text_filename), "%s.tex",Current_mission_filename);
+			snprintf(Briefing_text_filename, sizeof(Briefing_text_filename), "%.8s.txb",Current_mission_filename);
+		snprintf(Ending_text_filename, sizeof(Ending_text_filename), "%.8s.tex",Current_mission_filename);
 		if (!PHYSFSX_exists(Ending_text_filename,1))
-			snprintf(Ending_text_filename, sizeof(Ending_text_filename), "%s.txb",Current_mission_filename);
+			snprintf(Ending_text_filename, sizeof(Ending_text_filename), "%.8s.txb",Current_mission_filename);
 	}
 
 	while (PHYSFSX_fgets(buf,sizeof(buf),mfile)) {

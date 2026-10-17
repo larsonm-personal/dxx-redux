@@ -26,6 +26,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 #include "pstypes.h"
 #include "songs.h"
+#include "songlist_path.h"
 #include "d1_in_d2/d1_in_d2_presentation.h"
 #include "digi.h"
 #include "rbaudio.h"
@@ -80,7 +81,7 @@ void songs_init()
 	int i = 0;
 	char inputline[80+1];
 	PHYSFS_file * fp = NULL;
-	char sng_file[PATH_MAX];
+	char sng_file[PATH_MAX], sng_name[PATH_MAX];
 	const char *loaded_sng = "base";
 
 	Songs_initialized = 0;
@@ -98,7 +99,8 @@ void songs_init()
 #endif
 	   ) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
 	{
-		d1_in_d2_presentation_resource("dxx-r.sng", sng_file, sizeof(sng_file));
+		songlist_path("dxx-r.sng", sng_name, sizeof(sng_name));
+		d1_in_d2_presentation_resource(sng_name, sng_file, sizeof(sng_file));
 		fp = PHYSFSX_openReadBuffered(sng_file);
 	}
 	if (fp != NULL)
@@ -110,7 +112,8 @@ void songs_init()
 #endif
 	   ) // try to open regular descent.sng
 	{
-		d1_in_d2_presentation_resource("descent.sng", sng_file, sizeof(sng_file));
+		songlist_path("descent.sng", sng_name, sizeof(sng_name));
+		d1_in_d2_presentation_resource(sng_name, sng_file, sizeof(sng_file));
 		fp = PHYSFSX_openReadBuffered(sng_file);
 		if (fp != NULL)
 			loaded_sng = "descent.sng";

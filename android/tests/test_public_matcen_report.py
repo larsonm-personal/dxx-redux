@@ -49,16 +49,48 @@ def report(game):
     for scenario in ("wall_dispatch", "sub", "reverse", "no_dispatch", "empty_mask"):
         first, second = (0, len(centers) - 1) if scenario == "reverse" else (len(centers) - 1, 0)
         dispatched = scenario != "no_dispatch"
-        dispatch_cases.append(dict(
-            scenario=scenario, synthetic_links=True, zeroed_robot_masks=scenario == "empty_mask", authored_triggers=[dict(links=[[7, 2]])],
-            source_segment=1, source_side=0, trigger=0,
-            links=[centers[index][1] for index in (first, second, first)],
-            mapping=[dict(ordinal=index, station=station, segment=segment, robot_flags=[8] + ([0] if game == "d2" else [])) for index, (station, segment) in enumerate(centers)],
-            cleared_authored_robots=[],
-            activation_counts=[int(dispatched and index in (first, second)) for index in range(len(centers))],
-            activation_lights=[dict(signature=index + 20, segment=centers[center][1]) for index, center in enumerate((first, second))] if dispatched else [],
-            births=[dict(frame=frame, object=90 + center, signature=100 + frame * 10 + center, id=3, shields=65536, ordinal=center, station=centers[center][0], segment=centers[center][1]) for frame in (1, 30) for center in (0, len(centers) - 1)] if scenario not in ("no_dispatch", "empty_mask") else [],
-        ))
+        dispatch_cases.append(
+            dict(
+                scenario=scenario,
+                synthetic_links=True,
+                zeroed_robot_masks=scenario == "empty_mask",
+                authored_triggers=[dict(links=[[7, 2]])],
+                source_segment=1,
+                source_side=0,
+                trigger=0,
+                links=[centers[index][1] for index in (first, second, first)],
+                mapping=[
+                    dict(
+                        ordinal=index, station=station, segment=segment, robot_flags=[8] + ([0] if game == "d2" else [])
+                    )
+                    for index, (station, segment) in enumerate(centers)
+                ],
+                cleared_authored_robots=[],
+                activation_counts=[int(dispatched and index in (first, second)) for index in range(len(centers))],
+                activation_lights=[
+                    dict(signature=index + 20, segment=centers[center][1])
+                    for index, center in enumerate((first, second))
+                ]
+                if dispatched
+                else [],
+                births=[
+                    dict(
+                        frame=frame,
+                        object=90 + center,
+                        signature=100 + frame * 10 + center,
+                        id=3,
+                        shields=65536,
+                        ordinal=center,
+                        station=centers[center][0],
+                        segment=centers[center][1],
+                    )
+                    for frame in (1, 30)
+                    for center in (0, len(centers) - 1)
+                ]
+                if scenario not in ("no_dispatch", "empty_mask")
+                else [],
+            )
+        )
     return dict(
         dispatch_cases=dispatch_cases,
         schema=1,
@@ -78,7 +110,24 @@ class MatcenEvidenceTests(unittest.TestCase):
 
     def test_dispatch_negative_controls(self):
         for game in ("d1", "d2"):
-            for mutation in ("missing", "no_births", "mask", "segment", "ordinal", "station", "order", "duplicate", "no_dispatch", "empty_mask", "authored", "synthetic", "frame", "type", "sub_timing", "missing_origin"):
+            for mutation in (
+                "missing",
+                "no_births",
+                "mask",
+                "segment",
+                "ordinal",
+                "station",
+                "order",
+                "duplicate",
+                "no_dispatch",
+                "empty_mask",
+                "authored",
+                "synthetic",
+                "frame",
+                "type",
+                "sub_timing",
+                "missing_origin",
+            ):
                 with self.subTest(game=game, mutation=mutation):
                     value = report(game)
                     row = value["dispatch_cases"][0]
@@ -100,7 +149,9 @@ class MatcenEvidenceTests(unittest.TestCase):
                     elif mutation == "duplicate":
                         row["activation_counts"][0] += 1
                     elif mutation in ("no_dispatch", "empty_mask"):
-                        value["dispatch_cases"][3 if mutation == "no_dispatch" else 4]["births"] = copy.deepcopy(row["births"])
+                        value["dispatch_cases"][3 if mutation == "no_dispatch" else 4]["births"] = copy.deepcopy(
+                            row["births"]
+                        )
                     elif mutation == "authored":
                         row["authored_triggers"] = []
                     elif mutation == "synthetic":
@@ -191,15 +242,18 @@ def historical_report(game):
     value["cases"] = copy.deepcopy(golden["cases"])
     value["dispatch_cases"] = copy.deepcopy(golden["dispatch_cases"])
     for row in value["cases"] + value["dispatch_cases"]:
-        row["cleared_authored_robots"] = [[index, robot, index + 1]
-                                           for index, robot in enumerate(row.pop("cleared_robot_types"))]
+        row["cleared_authored_robots"] = [
+            [index, robot, index + 1] for index, robot in enumerate(row.pop("cleared_robot_types"))
+        ]
         for index, birth in enumerate(row["births"]):
             birth.update(object=index, signature=index + 1)
     for row in value["dispatch_cases"]:
         row["mapping"] = copy.deepcopy(golden["mapping"])
         row["authored_triggers"] = copy.deepcopy(golden["authored_triggers"])
-        row["activation_lights"] = [dict(segment=segment, signature=index + 1)
-                                    for index, segment in enumerate(row.pop("activation_light_segments"))]
+        row["activation_lights"] = [
+            dict(segment=segment, signature=index + 1)
+            for index, segment in enumerate(row.pop("activation_light_segments"))
+        ]
     return value
 
 
@@ -213,7 +267,15 @@ class HistoricalMatcenTests(unittest.TestCase):
         # Every mutation passes the old semantic/self-consistency validator.
         # Matching a second execution of these bad results must not bless them.
         for game in ("d1", "d2"):
-            for mutation in ("mask", "authored_segment", "dispatch_frame", "case_frame", "omitted_trigger", "trigger_order", "link_order"):
+            for mutation in (
+                "mask",
+                "authored_segment",
+                "dispatch_frame",
+                "case_frame",
+                "omitted_trigger",
+                "trigger_order",
+                "link_order",
+            ):
                 with self.subTest(game=game, mutation=mutation):
                     value = historical_report(game)
                     if mutation == "case_frame":
@@ -232,7 +294,9 @@ class HistoricalMatcenTests(unittest.TestCase):
                             elif mutation == "trigger_order":
                                 row["authored_triggers"].reverse()
                             elif mutation == "link_order":
-                                next(trigger for trigger in row["authored_triggers"] if len(trigger["links"]) > 1)["links"].reverse()
+                                next(trigger for trigger in row["authored_triggers"] if len(trigger["links"]) > 1)[
+                                    "links"
+                                ].reverse()
                     stations.validate_report(value, game)
                     with self.assertRaisesRegex(stations.EvidenceError, "differs from bc19490fb"):
                         stations.validate_historical_report(value, game)
