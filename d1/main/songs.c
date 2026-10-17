@@ -26,6 +26,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 #include "pstypes.h"
 #include "songs.h"
+#include "songlist_path.h"
 #include "digi.h"
 #include "rbaudio.h"
 #ifdef USE_SDLMIXER
@@ -96,7 +97,10 @@ void songs_init()
 	    && android_music_get_prefer_mission_soundtrack()
 #endif
 	   ) // try dxx-r.sng - a songfile specifically for dxx which level authors CAN use (dxx does not care if descent.sng contains MP3/OGG/etc. as well) besides the normal descent.sng containing files other versions of the game cannot play. this way a mission can contain a DOS-Descent compatible OST (hmp files) as well as a OST using MP3, OGG, etc.
-		fp = PHYSFSX_openReadBuffered( "dxx-r.sng" );
+	{
+		songlist_path("dxx-r.sng", sng_file, sizeof(sng_file));
+		fp = PHYSFSX_openReadBuffered(sng_file);
+	}
 	if (fp != NULL)
 		loaded_sng = "dxx-r.sng";
 
@@ -106,7 +110,8 @@ void songs_init()
 #endif
 	   ) // try to open regular descent.sng
 	{
-		fp = PHYSFSX_openReadBuffered( "descent.sng" );
+		songlist_path("descent.sng", sng_file, sizeof(sng_file));
+		fp = PHYSFSX_openReadBuffered(sng_file);
 		if (fp != NULL)
 			loaded_sng = "descent.sng";
 	}

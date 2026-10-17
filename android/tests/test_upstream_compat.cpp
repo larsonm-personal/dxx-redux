@@ -38,6 +38,11 @@ extern "C" {
 #include "digi.h"
 #include "d1_shareware_table.h"
 #include "sounds.h"
+#include "songs.h"
+extern bim_song_info *BIMSongs;
+extern int Num_bim_songs;
+void songs_init(void);
+#include "songlist_path.h"
 #include "dxxerror.h"
 #ifdef USE_SDLMIXER
 #include "digi_mixer.h"
@@ -12040,6 +12045,72 @@ static void test_udp_security_validation()
 	std::puts("PASS: UDP multiplayer command validation");
 }
 
+static void test_songlist_mount_priority()
+{
+	const auto saved_cfg = GameCfg;
+	GameCfg.MusicType = MUSIC_TYPE_NONE;
+	auto archive = [](const char *path, const char *member, const char *track, bool exact_tie) {
+		bytes hog = { 'D', 'H', 'F' };
+		auto entry = [&](const char *name, const char *song) {
+			char field[13] = {};
+			std::snprintf(field, sizeof(field), "%s", name);
+			hog.insert(hog.end(), field, field + sizeof(field));
+			const std::string content = std::string(song) + "\n";
+			append_int(hog, content.size());
+			hog.insert(hog.end(), content.begin(), content.end());
+		};
+		entry(member, track);
+		if (exact_tie) entry("descent.sng", "exact.hmp");
+		entry("unrelated.sng", "neighbor.hmp");
+		write_fixture(path, hog);
+	};
+	auto check = [](const char *mount, const char *member, const char *track, const char *request = "descent.sng") {
+		char path[PATH_MAX];
+		songlist_path(request, path, sizeof(path));
+		require(!std::strcmp(path, member), "song list resolves the exact expected member");
+		const char *source = PHYSFS_getRealDir(path);
+		require(source && !std::strcmp(source, mount), "song list resolves the highest priority mount");
+		const auto data = read_fixture(path);
+		const std::string expected = std::string(track) + "\n";
+		require(std::string(data.begin(), data.end()) == expected, "resolved song-list bytes match the selected archive");
+		songs_init();
+		require(Num_bim_songs == 1 && !std::strcmp(BIMSongs[0].filename, track), "production songs_init consumes the selected song list");
+	};
+	char path[PATH_MAX];
+	for (const char *unchanged : { "absent.sng", "d1-original/descent.sng", "../descent.sng", "d1-original\\descent.sng" }) {
+		songlist_path(unchanged, path, sizeof(path));
+		require(!std::strcmp(path, unchanged), "absent or non-root song list is unchanged");
+	}
+	archive("descent2.hog", "descent.sng", "stock.hmp", false);
+	archive("song-mission.hog", "Descent.sng", "mission.hmp", false);
+	archive("song-tie.hog", "DESCENT.SNG", "upper.hmp", true);
+	require(PHYSFS_mount("descent2.hog", nullptr, 0), "mount stock soundtrack");
+	for (int repeat = 0; repeat < 2; ++repeat) {
+		require(PHYSFS_mount("song-mission.hog", nullptr, 0), "activate mixed-case mission soundtrack");
+		check("song-mission.hog", "Descent.sng", "mission.hmp");
+		require(PHYSFS_unmount("song-mission.hog"), "retire mission soundtrack");
+		check("descent2.hog", "descent.sng", "stock.hmp");
+	}
+	require(PHYSFS_mount("song-mission.hog", nullptr, 1), "mount mission behind stock");
+	check("descent2.hog", "descent.sng", "stock.hmp");
+	require(PHYSFS_unmount("song-mission.hog"), "release lower-priority mission");
+	archive("song-enhanced.hog", "DXX-R.SNG", "enhanced.hmp", false);
+	require(PHYSFS_mount("song-enhanced.hog", nullptr, 0), "mount mixed-case enhanced song list");
+	check("song-enhanced.hog", "DXX-R.SNG", "enhanced.hmp", "dxx-r.sng");
+	require(PHYSFS_unmount("song-enhanced.hog"), "release enhanced song list");
+	require(PHYSFS_mount("song-tie.hog", nullptr, 0), "activate same-mount case variants");
+	check("song-tie.hog", "descent.sng", "exact.hmp");
+	require(PHYSFS_unmount("song-tie.hog") && PHYSFS_unmount("descent2.hog"), "release song-list fixture mounts");
+	songs_uninit();
+#ifdef DXX_BUILD_DESCENT_II
+	require(PHYSFS_unmount("__dxx_d2_presentation__.hog"), "release isolated presentation song list");
+#endif
+	for (const char *path : { "descent2.hog", "song-mission.hog", "song-tie.hog", "song-enhanced.hog" })
+		require(PHYSFS_delete(path), "remove song-list fixture");
+	GameCfg = saved_cfg;
+	std::puts("PASS: song-list mount priority and mission-stock-mission switching");
+}
+
 int main(int argc, char **argv)
 {
 	if (argc == 2 && std::strcmp(argv[1], "--capture-build-revision") == 0) {
@@ -12052,6 +12123,12 @@ int main(int argc, char **argv)
 	error_init([](const char *message) { std::fprintf(stderr, "%s\n", message); });
 	require(PHYSFS_init(argv[0]) != 0, "initialize PhysFS");
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
+	if (argc == 1) test_songlist_mount_priority();
+	if (argc == 2 && std::strcmp(argv[1], "--songlist-mount-priority") == 0) {
+		test_songlist_mount_priority();
+		PHYSFS_deinit();
+		return 0;
+	}
 	if (argc == 2 && std::strcmp(argv[1], "--udp-security-validation") == 0) {
 		test_udp_security_validation();
 		return 0;
