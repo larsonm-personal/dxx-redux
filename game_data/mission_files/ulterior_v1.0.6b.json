@@ -623,7 +623,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 2 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 10 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "route_note": "no reactor, exit exists",
         "notes": [
@@ -831,7 +831,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 8 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 25 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1004,7 +1004,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 13 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1161,7 +1161,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 32 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 15 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1309,7 +1309,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 29 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1505,7 +1505,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 4 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1753,7 +1753,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 24 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -1926,7 +1926,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 4 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2107,7 +2107,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 10 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2255,7 +2255,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 14 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2412,7 +2412,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 17 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 20 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2784,7 +2784,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 4 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -2941,7 +2941,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 29 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3098,7 +3098,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 29 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3255,7 +3255,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 22 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 10 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3447,7 +3447,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 14 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 10 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3733,7 +3733,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 9 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 10 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -3975,7 +3975,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 36 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 15 unused joint offsets normalized; 4 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -4123,7 +4123,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 25 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -4280,7 +4280,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 25 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -4572,7 +4572,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 33 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -4920,7 +4920,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 14 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 15 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "route_note": "key-route optimization reached its work budget",
         "notes": [
@@ -5161,7 +5161,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 27 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored", "Level HXM legacy handling: 5 unused joint offsets normalized"],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
@@ -5433,7 +5433,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 13 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -5671,7 +5671,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
@@ -5789,7 +5789,7 @@
             "trigger_type": "exit"
           }
         ],
-        "data_warnings": [],
+        "data_warnings": ["Normalized 5 legacy signed dynamic-light counts to empty", "Mission HAM legacy handling: 45 unused joint offsets normalized; 140 trailer bytes ignored"],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
