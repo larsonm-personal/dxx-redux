@@ -7,7 +7,7 @@ $source = Get-Content -LiteralPath $helperPath -Raw
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($helperPath, [ref]$null, [ref]$parseErrors)
 if ($parseErrors.Count) { throw "First-play helper parser errors: $parseErrors" }
-foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess', 'New-FirstPlayReplacementMission', 'Test-FirstPlayReplacementDiskIdentity', 'Test-FirstPlayReplacementCacheIdentity', 'Test-FirstPlayInterruptionMarker', 'Test-FirstPlayInterruptionDeadline', 'Test-FirstPlayProcessDead')) {
+foreach ($name in @('Assert-FirstPlayEmulator', 'Test-FirstPlayReadiness', 'Assert-FirstPlayFiles', 'Send-FirstPlaySource', 'Tap-FirstPlayButton', 'Import-FirstPlaySources', 'Get-FirstPlayPickerChoicePoint', 'Test-FirstPlayDocumentsUiRoot', 'Test-FirstPlayDocumentsUiCancel', 'Get-FirstPlayBytesHash', 'Get-FirstPlayHogMember', 'New-FirstPlayMission', 'Test-FirstPlayMissionPublication', 'Import-FirstPlayMission', 'Assert-FirstPlayMissionReturnProcess', 'Assert-FirstPlayReplacementLevel', 'New-FirstPlayReplacementMission', 'Test-FirstPlayReplacementDiskIdentity', 'Test-FirstPlayReplacementCacheIdentity', 'Test-FirstPlayInterruptionMarker', 'Test-FirstPlayInterruptionDeadline', 'Test-FirstPlayProcessDead')) {
     $function = $ast.Find({ param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
         }, $true)
@@ -624,6 +624,38 @@ foreach ($mutate in @(
     $cache = New-ReplacementCache
     & $mutate $cache
     if (Test-FirstPlayReplacementCacheIdentity -Manifest $cache -Fixture $previousFixture) { throw 'Stale or incomplete extraction accepted' }
+}
+foreach ($generation in @('Old', 'New')) {
+    $alias = if ($generation -ceq 'Old') { 'fpold1.sdl' } else { 'fpnew1.sdl' }
+    $descriptorText = "name = Public Import $generation`ntype = normal`nnum_levels = 1`n$alias`nnum_secrets = 0`n"
+    $descriptor = [Text.Encoding]::ASCII.GetBytes($descriptorText)
+    $hog = New-ProfileHog -Names @($alias)
+    $level = [byte[]]@(1, 2, 3)
+    Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $hog -Level $level
+    foreach ($extension in @('.rdl', '.SDL')) {
+        $wrongAlias = $alias.Replace('.sdl', $extension)
+        $wrongDescriptor = [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace($alias, $wrongAlias))
+        $wrongHog = New-ProfileHog -Names @($wrongAlias)
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $wrongAlias -Descriptor $wrongDescriptor -Hog $wrongHog -Level $level } 'Consistently renamed shareware bytes selected the wrong decoder'
+    }
+    foreach ($wrongDescriptor in @(
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace($alias, 'other.sdl')),
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace("Public Import $generation", 'Other title')),
+            [Text.Encoding]::ASCII.GetBytes($descriptorText.Replace('num_levels = 1', 'num_levels = 2'))
+        )) {
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $wrongDescriptor -Hog $hog -Level $level } 'Mismatched replacement descriptor accepted'
+    }
+    $changedHog = [byte[]]$hog.Clone()
+    $changedHog[$changedHog.Length - 1] = 4
+    foreach ($wrongHog in @(
+            (New-ProfileHog -Names @('other.sdl')), (New-ProfileHog -Names @($alias, $alias)),
+            ([byte[]]$hog[0..($hog.Length - 2)]), $changedHog
+        )) {
+        Assert-Rejected { Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $wrongHog -Level $level } 'Missing, duplicate, truncated or changed replacement level accepted'
+    }
+}
+if (-not $source.Contains('Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $missionHog -Level $level')) {
+    throw 'Replacement generator lost its pre-write shareware consistency guard'
 }
 $badD1Source = [IO.Path]::GetTempFileName()
 try {

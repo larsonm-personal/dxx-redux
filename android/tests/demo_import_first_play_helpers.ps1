@@ -344,6 +344,23 @@ function Test-FirstPlayDocumentsUiCancel {
     Write-Output 'PASS: actual DocumentsUI open/cancel; installer selection is separately injected through SafTestProvider'
 }
 
+function Assert-FirstPlayReplacementLevel {
+    param([string]$Alias, [byte[]]$Descriptor, [byte[]]$Hog, [byte[]]$Level)
+    # d1/main/gamemine.c selects the shareware decoder by the exact lowercase .sdl extension
+    if ($Alias -cnotin @('fpold1.sdl', 'fpnew1.sdl')) { throw 'Replacement level must preserve the D1 shareware extension' }
+    $title = if ($Alias -ceq 'fpold1.sdl') { 'Public Import Old' } else { 'Public Import New' }
+    $expected = "name = $title`ntype = normal`nnum_levels = 1`n$Alias`nnum_secrets = 0`n"
+    if ([Text.Encoding]::ASCII.GetString($Descriptor) -cne $expected -or
+        $Level.Length -eq 0 -or $Hog.Length -ne $Level.Length + 20 -or
+        [Text.Encoding]::ASCII.GetString($Hog, 3, 13).TrimEnd([char]0) -cne $Alias) {
+        throw 'Replacement descriptor and single HOG member must name the same shareware level'
+    }
+    $member = Get-FirstPlayHogMember -Bytes $Hog -Name $Alias -MaxBytes 2339773
+    if ((Get-FirstPlayBytesHash $member) -cne (Get-FirstPlayBytesHash $Level)) {
+        throw 'Replacement HOG changed the original shareware level bytes'
+    }
+}
+
 function New-FirstPlayReplacementMission {
     param([string]$SourceHog, [string]$OutputDirectory, [ValidateSet('old', 'new')][string]$Generation)
     # Both generations use unchanged level one from the pinned original D1 shareware HOG
@@ -355,7 +372,7 @@ function New-FirstPlayReplacementMission {
     }
     $level = Get-FirstPlayHogMember -Bytes $bytes -Name 'level01.sdl' -MaxBytes 2339773
     $title = if ($Generation -ceq 'old') { 'Public Import Old' } else { 'Public Import New' }
-    $alias = if ($Generation -ceq 'old') { 'fpold1.rdl' } else { 'fpnew1.rdl' }
+    $alias = if ($Generation -ceq 'old') { 'fpold1.sdl' } else { 'fpnew1.sdl' }
     $hog = [IO.MemoryStream]::new()
     $writer = [IO.BinaryWriter]::new($hog)
     try {
@@ -369,6 +386,7 @@ function New-FirstPlayReplacementMission {
         $missionHog = $hog.ToArray()
     } finally { $writer.Dispose(); $hog.Dispose() }
     $descriptor = [Text.Encoding]::ASCII.GetBytes("name = $title`ntype = normal`nnum_levels = 1`n$alias`nnum_secrets = 0`n")
+    Assert-FirstPlayReplacementLevel -Alias $alias -Descriptor $descriptor -Hog $missionHog -Level $level
     $directory = Join-Path $OutputDirectory "interruption-$Generation"
     New-Item -ItemType Directory -Force -Path $directory | Out-Null
     $path = Join-Path $directory 'fpinterrupt.zip'
