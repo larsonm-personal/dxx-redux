@@ -23,6 +23,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <string.h>
 
 #include "fuelcen.h"
+#include "matcen_regression_capture.h"
+matcen_regression_capture Matcen_regression_capture;
 #include "gameseg.h"
 #include "game.h"		// For FrameTime
 #include "dxxerror.h"
@@ -114,6 +116,7 @@ char	Special_names[MAX_CENTER_TYPES][11] = {
 // Resets all fuel center info
 void fuelcen_reset()
 {
+	matcen_capture_reset();
 	Num_fuelcenters = 0;
 
 	for(unsigned i=0; i<sizeof(Segment2s)/sizeof(Segment2s[0]); i++ )
@@ -205,6 +208,7 @@ void matcen_create( segment *segp)
 	if (Num_fuelcenters >= MAX_NUM_FUELCENS)
 		Error("Too many special segments (maximum is %d).\n", MAX_NUM_FUELCENS);
 
+	matcen_capture_segment(seg2p-Segment2s, Num_robot_centers, seg2p->matcen_num, seg2p->value);
 	seg2p->value = Num_fuelcenters;
 	Station[Num_fuelcenters].Type = station_type;
 	Station[Num_fuelcenters].Capacity = i2f(Difficulty_level + 3);

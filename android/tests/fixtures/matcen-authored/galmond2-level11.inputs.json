@@ -1,0 +1,21 @@
+{
+  "game": "d2",
+  "mission": "galmond2",
+  "level": 11,
+  "base_files": {
+    "alien1.pig": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233",
+    "alien2.pig": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055",
+    "descent2.ham": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d",
+    "descent2.hog": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703",
+    "descent2.s22": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728",
+    "fire.pig": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156",
+    "groupa.pig": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b",
+    "ice.pig": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1",
+    "water.pig": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"
+  },
+  "extra_files": {
+    "missions/galmond2.hog": "fe88bc90255977e03218acfac959365322fcf02f813af8296ca4dec1d26bf4a2",
+    "missions/galmond2.mn2": "171c202aedc7b9b4fe8d939fb9779af3ab873959fa0c4786c921f0a181ca4414",
+    "missions/galmond2.txt": "fbaede34d13460f50afa3c38ebc36f1aa4b8b41d118ff616680371a1acfb5432"
+  }
+}

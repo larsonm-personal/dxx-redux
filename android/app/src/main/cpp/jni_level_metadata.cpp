@@ -67,6 +67,7 @@ extern "C" {
 #endif
 
 #include "level_statistics.hpp"
+#include "matcen_regression.hpp"
 #include "flyout_metadata.hpp"
 #include "level_texture_diagnostics.h"
 #include "midi_metadata_json.hpp"
@@ -1037,6 +1038,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	row["secrets"] = secret_area_total(secret_state);
 	row["secret_areas_complete"] = secret_area_liquid_metadata_complete() != 0;
 	row["matcens"] = metadata ? metadata->matcen_count : 0;
+	row["matcen_regression"] = matcen_regression_serialize<json>();
 	row["energy_centers"] = metadata ? metadata->energy_center_count : 0;
 	row["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
 	row["mine_volume_normalized"] = metadata ? metadata->mine_volume_normalized : 0.0;
@@ -1220,6 +1222,7 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["reactors"] = 0;
 	row["secrets"] = 0;
 	row["matcens"] = 0;
+	row["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>(false);
 	row["energy_centers"] = 0;
 	row["mine_volume"] = 0.0;
 	row["mine_volume_normalized"] = 0.0;
@@ -1261,6 +1264,7 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	breadcrumb_metadata_level(request, level_num, level_file);
 	if (coop_starts)
 		*coop_starts = 0;
+	matcen_capture_reset();
 	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
 		levels.push_back(failed_level_row(
 		    level_num, level_file, "level file is missing", "missing"));

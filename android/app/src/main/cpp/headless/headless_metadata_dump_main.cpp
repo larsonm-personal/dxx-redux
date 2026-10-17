@@ -58,6 +58,7 @@ extern "C" {
 #include "midi_metadata_json.hpp"
 #include "mission_intent_classification.hpp"
 
+#include "matcen_regression.hpp"
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #include "level_metadata_replacements.hpp"
@@ -1071,6 +1072,7 @@ static nlohmann::ordered_json serialize_current_level(
 	result["energy_center_group_distance"] = metadata ? metadata->energy_center_group_distance : 0;
 	result["energy_center_nearest_raw_distance"] = metadata ? metadata->energy_center_nearest_raw_distance : 0;
 	result["matcen_count"] = metadata ? metadata->matcen_count : 0;
+	result["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>();
 	result["matcen_raw_count"] = metadata ? metadata->matcen_raw_count : 0;
 	result["matcen_segment_count"] = metadata ? metadata->matcen_segment_count : 0;
 	result["mine_volume"] = metadata ? metadata->mine_volume : 0.0;
@@ -1142,6 +1144,7 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["energy_center_group_distance"] = 0;
 	result["energy_center_nearest_raw_distance"] = 0;
 	result["matcen_count"] = 0;
+	result["matcen_regression"] = matcen_regression_serialize<nlohmann::ordered_json>(false);
 	result["matcen_raw_count"] = 0;
 	result["matcen_segment_count"] = 0;
 	result["mine_volume"] = 0.0;
@@ -1224,6 +1227,7 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 		timing->begin("load_level");
 	}
 	trace_dump_init("load_level");
+	matcen_capture_reset();
 	if (!level_file || !level_file[0] || !PHYSFSX_exists(level_file, 1)) {
 		fprintf(stderr, "SECRET-AREA-DUMP WARN level missing %s\n", level_file ? level_file : "<null>");
 		levels.push_back(serialize_failed_level(level_num, level_file, "level file is missing"));

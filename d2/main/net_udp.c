@@ -6370,7 +6370,7 @@ int net_udp_setup_game()
 	if (!HoardEquipped() && (Netgame.gamemode == NETGAME_HOARD || Netgame.gamemode == NETGAME_TEAM_HOARD)) // did we restore a hoard mode but don't have hoard installed right now? then fall back to anarchy!
 		Netgame.gamemode = NETGAME_ANARCHY;
 
-	strcpy(Netgame.mission_name, Current_mission_filename);
+	snprintf(Netgame.mission_name, sizeof(Netgame.mission_name), "%.8s", Current_mission_filename);
 	strcpy(Netgame.mission_title, Current_mission_longname);
 
 	sprintf( slevel, "1" ); Netgame.levelnum = 1;

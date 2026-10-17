@@ -6189,7 +6189,7 @@ int net_udp_setup_game()
 	if (Netgame.gamemode == NETGAME_COOPERATIVE) // did we restore Coop as default? then fix max players right now!
 		Netgame.max_numplayers = 4;
 
-	strcpy(Netgame.mission_name, Current_mission_filename);
+	snprintf(Netgame.mission_name, sizeof(Netgame.mission_name), "%.8s", Current_mission_filename);
 	strcpy(Netgame.mission_title, Current_mission_longname);
 
 	sprintf( slevel, "1" ); Netgame.levelnum = 1;

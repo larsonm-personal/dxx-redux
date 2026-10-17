@@ -226,7 +226,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 	Netgame.AllowSecretWarps = mode == NETGAME_COOPERATIVE && allow_secret_warps;
 	Netgame.PlayerSpewNoExpire = player_spew_no_expire ? 1 : 0;
 	Netgame.RefusePlayers = 1; /* android port: require host approval for mid-game joins */
-	strcpy(Netgame.mission_name, Current_mission_filename);
+	snprintf(Netgame.mission_name, sizeof(Netgame.mission_name), "%.8s", Current_mission_filename);
 	strcpy(Netgame.mission_title, Current_mission_longname);
 	sprintf(Netgame.game_name, "%s%s", Players[Player_num].callsign, TXT_S_GAME);
 

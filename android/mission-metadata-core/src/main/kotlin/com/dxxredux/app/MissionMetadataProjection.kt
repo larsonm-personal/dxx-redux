@@ -113,6 +113,7 @@ object MissionMetadataProjection {
                     "route_status",
                 )
             names.forEach { name -> level[name]?.let { put(name, it) } }
+            level["matcen_regression"]?.let { put("matcen_regression", validateMatcenRegression(it)) }
             put("route_required_key_mask", level.requiredInt("route_required_key_mask"))
             put("route_completing_key_mask_set", level.requiredInt("route_completing_key_mask_set"))
             put("route_steps", level["route_steps"] ?: JsonArray(emptyList()))
@@ -129,6 +130,31 @@ object MissionMetadataProjection {
             val status = level.string("status", "ok")
             if (status != "ok") put("status", status)
         }
+
+    // Versioned regression data is additive; older metadata may omit it.
+    private fun validateMatcenRegression(value: JsonElement): JsonObject {
+        val block = requireNotNull(value as? JsonObject) { "matcen_regression must be an object" }
+
+        fun requiredInteger(name: String): Int {
+            val primitive = block[name] as? JsonPrimitive
+            return requireNotNull(primitive?.takeUnless { it.isString }?.intOrNull) {
+                "matcen_regression.$name must be an integer"
+            }
+        }
+        require(requiredInteger("schema_version") == 1) { "Unsupported matcen_regression.schema_version" }
+        val status = block["capture_status"] as? JsonPrimitive
+        require(status?.isString == true && status.content in setOf("complete", "incomplete")) {
+            "matcen_regression.capture_status must be complete or incomplete"
+        }
+        for (name in listOf("generated_count", "disk_count")) {
+            require(requiredInteger(name) >= 0) { "matcen_regression.$name must be nonnegative" }
+        }
+        for (name in listOf("authored_segments", "disk_records", "triggers", "runtime_bindings")) {
+            val entries = requireNotNull(block[name] as? JsonArray) { "matcen_regression.$name must be an array" }
+            require(entries.all { it is JsonObject }) { "matcen_regression.$name entries must be objects" }
+        }
+        return block
+    }
 
     private fun JsonObject.string(
         name: String,

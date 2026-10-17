@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "gameplay_revision": "bc19490fb58d0db5f6ba0fd440db33b59b9861fe",
+  "capture_revision": "ffdb397624d4f61d5d2129ef705402f867b14942",
+  "capture_tree": "6b73a7400a3565d63bafcb0b4e8ac085503351e3",
+  "capture_patch_sha256": "21c0e30a755c8bc9b4113ed319deb126b199442fc491dc6129a0fed657447a96",
+  "asset_revision": "7eb5d0e266432afe229fa9fa3c6f9ac1c7313cd1",
+  "build": {
+    "configuration": "Release",
+    "capture_only_cpp_define": "DXX_MATCEN_CAPTURE_ONLY_MAIN",
+    "source_note": "Binaries compiled from this exact adapter file tree before the final metadata-count export commit was recorded; embedded Git labels may name its parent plus dirty state. File-tree identity and binary hashes are recorded independently."
+  },
+  "binaries": {
+    "d1/test_upstream_compat": "c4dbb754122a5cf66deba48d2dd3b2e37cef8cc1672856b663e8b756230d395b",
+    "d1/dxx-redux-d1-headless-metadata": "b05389c8d8b0aeb358d0e3a7d55d3ba19b334db48161542d41cc7dd820a348b1",
+    "d1/dxx-redux-d1-metadata-worker": "1a194c24ff6f98407fad2e71dd4c7f6f2e1c873b8dd5eb3be007e704c4575867",
+    "d2/test_upstream_compat": "76ae9f97c4ed069b6e11fe1c2ab44d57139596f1ffaf8b6889d33919f3db6e37",
+    "d2/dxx-redux-d2-headless-metadata": "c854ac54530768f01b1328aeed91a78ec6f6618b433247460bd2ab5684f7ae14",
+    "d2/dxx-redux-d2-metadata-worker": "faefc784fbcd7c394eddd2dd2e8cf93cea7b588188d4db77732a5d6e9a0df72b"
+  },
+  "cases": [
+    {
+      "archive": "missions/ORION-D2.zip",
+      "descriptor": "ORION-D2.MN2",
+      "game": "d2",
+      "level": 7,
+      "level_file": "level07.rl2",
+      "metadata": "game_data/mission_files/ORION-D2.json",
+      "trace": "android/tests/fixtures/matcen-authored/orion-d2-level7.json",
+      "inputs": "android/tests/fixtures/matcen-authored/orion-d2-level7.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "84e0d5baa15e8ad684e3f680040e5f865a18090e9db77c4afd3e2b3ce3eeec49"
+    },
+    {
+      "archive": "missions/Orion.ZIP",
+      "descriptor": "Orion.msn",
+      "game": "d1",
+      "level": 7,
+      "level_file": "level07.rdl",
+      "metadata": "game_data/mission_files/Orion.json",
+      "trace": "android/tests/fixtures/matcen-authored/orion-level7.json",
+      "inputs": "android/tests/fixtures/matcen-authored/orion-level7.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "93aaa460bf73574601bbc471baae43b6556e6e2c2be6c84afb418b02d3d5270e"
+    },
+    {
+      "archive": "missions/Vignettes.zip",
+      "descriptor": "vignette.msn",
+      "game": "d1",
+      "level": -1,
+      "level_file": "slevel.rdl",
+      "metadata": "game_data/mission_files/Vignettes.json",
+      "trace": "android/tests/fixtures/matcen-authored/vignette-secret1.json",
+      "inputs": "android/tests/fixtures/matcen-authored/vignette-secret1.inputs.json",
+      "expected_status": "passed",
+      "capture_sha256": "39ffaf77286e3a3825dc34a5692369bc3394f5af2fb762600a861bd22c63756a"
+    },
+    {
+      "archive": "missions/Vignettes.zip",
+      "descriptor": "vignette.msn",
+      "game": "d1",
+      "level": 13,
+      "level_file": "level24.rdl",
+      "metadata": "game_data/mission_files/Vignettes.json",
+      "trace": "android/tests/fixtures/matcen-authored/vignette-level13.json",
+      "inputs": "android/tests/fixtures/matcen-authored/vignette-level13.inputs.json",
+      "expected_status": "passed",
+      "capture_sha256": "16ba8b5b02ec127d08bce90bccf61422ac8f5b3e9f3addd86ec75d979cb254c0"
+    },
+    {
+      "archive": "missions/Vignettes.zip",
+      "descriptor": "vignette.msn",
+      "game": "d1",
+      "level": 17,
+      "level_file": "level31.rdl",
+      "metadata": "game_data/mission_files/Vignettes.json",
+      "trace": "android/tests/fixtures/matcen-authored/vignette-level17.json",
+      "inputs": "android/tests/fixtures/matcen-authored/vignette-level17.inputs.json",
+      "expected_status": "passed",
+      "capture_sha256": "56e55f8483271b23060333e43d9f7aee5e4a2386b34f40103980a168134d4216"
+    },
+    {
+      "archive": "missions/Vignettes.zip",
+      "descriptor": "vignette.msn",
+      "game": "d1",
+      "level": 20,
+      "level_file": "level37.rdl",
+      "metadata": "game_data/mission_files/Vignettes.json",
+      "trace": "android/tests/fixtures/matcen-authored/vignette-level20.json",
+      "inputs": "android/tests/fixtures/matcen-authored/vignette-level20.inputs.json",
+      "expected_status": "passed",
+      "capture_sha256": "60aa9518f998b3f68aad5c9f50777378104a9448e036163a87ab1de5c11bcb1c"
+    },
+    {
+      "archive": "missions/Vignettes.zip",
+      "descriptor": "vignette.msn",
+      "game": "d1",
+      "level": 21,
+      "level_file": "level43.rdl",
+      "metadata": "game_data/mission_files/Vignettes.json",
+      "trace": "android/tests/fixtures/matcen-authored/vignette-level21.json",
+      "inputs": "android/tests/fixtures/matcen-authored/vignette-level21.inputs.json",
+      "expected_status": "passed",
+      "capture_sha256": "7d0bed31aabbf3d020e440a509929f2d641987d3140e3dd50e454d124f92c3fe"
+    },
+    {
+      "archive": "missions/galmond2.zip",
+      "descriptor": "galmond2.mn2",
+      "game": "d2",
+      "level": 2,
+      "level_file": "PAN20.RL2",
+      "metadata": "game_data/mission_files/galmond2.json",
+      "trace": "android/tests/fixtures/matcen-authored/galmond2-level2.json",
+      "inputs": "android/tests/fixtures/matcen-authored/galmond2-level2.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "811d62e193449969a90a853292a7e4002b7f073becb5c5615a51cb5647e06258"
+    },
+    {
+      "archive": "missions/galmond2.zip",
+      "descriptor": "galmond2.mn2",
+      "game": "d2",
+      "level": 3,
+      "level_file": "ARIEL21.RL2",
+      "metadata": "game_data/mission_files/galmond2.json",
+      "trace": "android/tests/fixtures/matcen-authored/galmond2-level3.json",
+      "inputs": "android/tests/fixtures/matcen-authored/galmond2-level3.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "8bf402ad96a36219c1c19966ad96a35796cfd983dc0217ca42c83f4f3b10d96b"
+    },
+    {
+      "archive": "missions/galmond2.zip",
+      "descriptor": "galmond2.mn2",
+      "game": "d2",
+      "level": 11,
+      "level_file": "TRITON29.RL2",
+      "metadata": "game_data/mission_files/galmond2.json",
+      "trace": "android/tests/fixtures/matcen-authored/galmond2-level11.json",
+      "inputs": "android/tests/fixtures/matcen-authored/galmond2-level11.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "f67710bfc540c7affc2def82e16bedf97e52f0e72525f1c2795f4f514382c110"
+    },
+    {
+      "archive": "missions/ironblade.zip",
+      "descriptor": "IRONBL01.MSN",
+      "game": "d1",
+      "level": 3,
+      "level_file": "hosthell.rdl",
+      "metadata": "game_data/mission_files/ironblade.json",
+      "trace": "android/tests/fixtures/matcen-authored/ironbl01-level3.json",
+      "inputs": "android/tests/fixtures/matcen-authored/ironbl01-level3.inputs.json",
+      "expected_status": "review-required",
+      "capture_sha256": "371af58c6b7cb03edf719d8802ada2c1c6fd2fa74a3529900b7c68398541102a"
+    }
+  ],
+  "capture_hash_encoding": "SHA256 of the additive matcen_regression block encoded as UTF-8 JSON with sorted keys and separators comma/colon, without whitespace or trailing newline"
+}

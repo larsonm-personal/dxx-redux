@@ -131,6 +131,8 @@ jobs:
         timeout-minutes: 3
         run: |
           python3 android/tests/test_public_matcen_report.py
+          python3 android/tests/test_matcen_metadata.py
+          python3 android/tests/test_authored_matcen_report.py
           env -u DISPLAY -u WAYLAND_DISPLAY SDL_VIDEODRIVER=invalid \
             pwsh -NoProfile -File android/tests/test_public_matcen_stations.ps1 \
             -D1Exe "$PWD/buildd1-save/main/test_upstream_compat" \

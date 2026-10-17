@@ -1,0 +1,15 @@
+{
+  "game": "d1",
+  "mission": "Orion",
+  "level": 7,
+  "base_files": {
+    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"
+  },
+  "extra_files": {
+    "missions/Orion.hog": "bf44527b014eac06b0cfec97e3b0e5349053abaf643d61a84f7334f520f78123",
+    "missions/Orion.msn": "8b4a9f221fdaa1a32ce34f29c29bed40e8cd8a38417d73250ba97dd27f35befe",
+    "missions/Orion.rep": "bd2bdbd1298597eae8ae8d178784ffeaa90f70339da09345a185348052d9b5e6",
+    "missions/Orion.txt": "fa24e8dce0047892ffede0630e09340d0adc28d464b5971a1798575662d913c8"
+  }
+}

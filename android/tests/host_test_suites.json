@@ -526,6 +526,28 @@
       "constraints": []
     },
     {
+      "id": "python:test_matcen_metadata.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_matcen_metadata.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": []
+    },
+    {
+      "id": "python:test_authored_matcen_report.py",
+      "kind": "python-unittest",
+      "path": "android/tests/test_authored_matcen_report.py",
+      "estimated_seconds": 30,
+      "python_modules": [],
+      "executables": [],
+      "coverage_scope": "All unittest cases discovered in this single module; skips are incomplete coverage.",
+      "constraints": [
+        "The symlink rejection case is skipped when the host does not permit creation of file symlinks."
+      ]
+    },
+    {
       "id": "python:test_public_robot_combat_replay.py",
       "kind": "python-unittest",
       "path": "android/tests/test_public_robot_combat_replay.py",

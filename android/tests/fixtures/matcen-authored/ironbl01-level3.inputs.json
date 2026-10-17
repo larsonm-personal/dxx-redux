@@ -1,0 +1,13 @@
+{
+  "game": "d1",
+  "mission": "IRONBL01",
+  "level": 3,
+  "base_files": {
+    "descent.hog": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052",
+    "descent.pig": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"
+  },
+  "extra_files": {
+    "missions/IRONBL01.HOG": "4282c7bfce3e130ba175f83aa74eb7b7dc36ca7815f2999de22e2bba6603758e",
+    "missions/IRONBL01.MSN": "f47b53f71b713cd7db770b97a20bd11494e489b5a00475364c852aeba9d5ef30"
+  }
+}

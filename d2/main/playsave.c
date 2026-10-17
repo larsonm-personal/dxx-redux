@@ -1248,9 +1248,12 @@ int plr_is_selectable(const char *filename)
 int find_hli_entry()
 {
 	int i;
+	char mission_shortname[sizeof(PlayerCfg.HighestLevels[0].Shortname)];
+
+	snprintf(mission_shortname, sizeof(mission_shortname), "%.8s", Current_mission_filename);
 
 	for (i=0;i<PlayerCfg.NHighestLevels;i++)
-		if (!d_stricmp(PlayerCfg.HighestLevels[i].Shortname, Current_mission_filename))
+		if (!d_stricmp(PlayerCfg.HighestLevels[i].Shortname, mission_shortname))
 			break;
 
 	if (i==PlayerCfg.NHighestLevels) { //not found. create entry
@@ -1260,7 +1263,7 @@ int find_hli_entry()
 		else
 			PlayerCfg.NHighestLevels++;
 
-		strcpy(PlayerCfg.HighestLevels[i].Shortname, Current_mission_filename);
+		snprintf(PlayerCfg.HighestLevels[i].Shortname, sizeof(PlayerCfg.HighestLevels[i].Shortname), "%s", mission_shortname);
 		PlayerCfg.HighestLevels[i].LevelNum = 0;
 	}
 
