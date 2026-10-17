@@ -47,12 +47,17 @@ class SweepTests(unittest.TestCase):
         self.assertIn('master:test_launcher_media_controls_generated', sweep.VALIDATION_IDS)
         self.assertIn('python:test_music_spectra.py', sweep.VALIDATION_IDS)
 
-    def test_host_installs_pinned_spectral_plot_dependency(self):
+    def test_host_installs_isolated_pinned_spectral_runtime(self):
         root = Path(__file__).resolve().parents[2]
         requirements = (root / "android/tests/music_spectral/requirements.txt").read_text().splitlines()
-        matplotlib_pin = next(line for line in requirements if line.startswith("matplotlib=="))
+        self.assertTrue(all("==" in line for line in requirements if line and not line.startswith("#")))
+        packages = {line.split("==", 1)[0] for line in requirements}
+        self.assertTrue({"numpy", "scipy", "matplotlib", "imageio-ffmpeg", "contourpy"} <= packages)
         workflow = (root / ".github/workflows/nightly-tooling-sweep.yml").read_text()
-        self.assertIn(" -m pip install imageio-ffmpeg==0.6.0 " + matplotlib_pin, workflow)
+        self.assertIn('python3 -m venv "$RUNNER_TEMP/dxx-nightly-python"', workflow)
+        self.assertNotIn("--system-site-packages", workflow)
+        self.assertIn(" -m pip install -r control/android/tests/music_spectral/requirements.txt", workflow)
+        self.assertIn('"$RUNNER_TEMP/dxx-nightly-python/bin/python" -m pip check', workflow)
 
     def test_public_network_recovery_is_bounded_and_not_default_pr_work(self):
         policy = sweep.read(Path(__file__).with_name('nightly_tooling_policy.json'))
